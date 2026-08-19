@@ -92,7 +92,7 @@ systemowy: znaleziono **5 luk danych**, każda z mierzalnym wpływem na decyzje.
 2. `damageShields` — tarcze „prevent the next N damage".
 3. `regenerationShields` — tarcze regeneracji.
 4. `cantBeRegeneratedThisTurn` — blokada regeneracji.
-5. **`types` permanentu na bitwisku** — luka znaleziona DOPIERO w trakcie
+5. **`types` permanentu na polu bitwy** — luka znaleziona DOPIERO w trakcie
    naprawy: widok nie niósł linii typów, choć widnieje ona na karcie. Bez niej
    żaden filtr typu („artifact creatures") nie dawał się rozpoznać po stronie
    kontrolera — to blokowało naprawę luki nr 1. Face-down dla przeciwnika

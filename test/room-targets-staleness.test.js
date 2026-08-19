@@ -37,7 +37,7 @@ function exileTo(state, controllerId, objectId, newId) {
   assert.equal(r.ok, true, r.events[0]?.reason);
 }
 
-test('lista celów pokoju pomija kandydata, który zniknął z bitwiska', () => {
+test('lista celów pokoju pomija kandydata, który zniknął z pola bitwy', () => {
   const state = game();
   addCreature(state, 'cre-ok', 'p1');
   addCreature(state, 'cre-gone', 'p2');

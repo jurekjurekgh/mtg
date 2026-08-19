@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Thornhide%20Wolves&set=m19",
+  "print": "Thornhide Wolves (M19)",
+  "name": "Thornhide Wolves",
+  "mana_cost": "{4}{G}",
+  "cmc": 5,
+  "type_line": "Creature — Wolf",
+  "oracle_text": "",
+  "power": "4",
+  "toughness": "5",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [],
+  "set": "m19",
+  "collector_number": "1",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/c/fc0f3812-bb6c-4d99-b505-9dfd84e3fd95.jpg",
+    "normal": "https://cards.scryfall.io/normal/front/f/c/fc0f3812-bb6c-4d99-b505-9dfd84e3fd95.jpg"
+  },
+  "pobrano": "2026-08-19"
+}

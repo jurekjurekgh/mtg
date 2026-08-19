@@ -82,7 +82,7 @@ i dane kolekcji. Warstwa danych działa już w pełni na katalogu syntetycznym.
 
 ## M5 — Pierwsza pionowa ścieżka UI
 
-- [x] UI renderujące PlayerView (`src/table/render.js` — status tury, stos, bitwiska,
+- [x] UI renderujące PlayerView (`src/table/render.js` — status tury, stos, pola bitwy,
       ręka z pełnymi danymi, log partii);
 - [x] wysyłanie Command do engine (klik = komenda do sesji, `src/table/main.js`);
 - [x] prezentacja Event i błędów (polski log zdarzeń sesji + wpisy odrzuceń
@@ -207,7 +207,7 @@ Zakres:
 - [x] **koszt {X} w zdolnościach** (`cost.manaX`): X = minimalna wartość dla celu
       (moc stwora u Liry), `xValue` w komendzie i zdarzeniu;
 - [x] **blokada odkręcania**: efekt `lock_untap` (stwór nie odkręca się, dopóki źródło
-      na bitwisku i zatapnięte) — „doesn't untap for as long as this artifact remains
+      na polu bitwy i zatapnięte) — „doesn't untap for as long as this artifact remains
       tapped" Liry; `untapLockedBy` czyści się samo po wyjściu źródła ze strefy;
 - [x] **flying i vigilance**: keywordy na obiektach i w PlayerView; flying — blokowanie
       tylko przez stwory z lataniem (walidacja + `legalBlockerOptions`); vigilance —
@@ -273,7 +273,7 @@ Zakres:
       (brak = „fail to find") → reveal (`card_revealed`) → tasowanie WŁASNEJ
       biblioteki seedem `state.seed + state.objectSequence` (Fisher-Yates z
       `shuffle.js`, deterministycznie) → `library_searched`;
-      na bitwisku zdolność jest martwa — skanowanie `legalActivatedAbilities`
+      na polu bitwy zdolność jest martwa — skanowanie `legalActivatedAbilities`
       ją pomija (regresja wykryta partią botów: widok oferował komendę, którą
       execute słusznie odrzucał);
 - [x] **załączniki uogólnione** (`src/engine/attachments.js` przepisany):
@@ -281,7 +281,7 @@ Zakres:
       ze wspólnym deskryptorem buffu (`attachmentGrant`), liczonym w
       `effective*` z uproszczonej warstwy CR 613; polityki utraty gospodarza:
       bestow → zostaje jako stwór (CR 702.103b), equipment → zostaje
-      odłączony na bitwisku (CR 704.5n), czysta aura → grób właściciela
+      odłączony na polu bitwy (CR 704.5n), czysta aura → grób właściciela
       (CR 704.5m, zdarzenie `permanent_put_into_graveyard` z reason
       `aura_without_legal_host`); interakcje kumulują się (Embrace + Cloak na
       jednym nosicielu);
@@ -296,7 +296,7 @@ Zakres:
       keywords}`; equip jako zdolność aktywowana (`keyword: 'equip'`) —
       legalna sorcery-speed, cel wyłącznie własny stwór, koszt z deskryptora;
       `attachEquipmentToCreature` przepina między nosicielami (re-equip);
-      śmierć nosiciela zostawia equipment odłączony na bitwisku;
+      śmierć nosiciela zostawia equipment odłączony na polu bitwy;
 - [x] **wirtualne landy podstawowe w rejestrze** (`VIRTUAL_BASIC_LANDS`):
       Plains/Island/Swamp/Mountain/Forest jako `supported` z types
       `['Basic','Land']` — `parseDeckText` dopasowuje dokładne nazwy
@@ -317,12 +317,12 @@ Zakres:
       equip 288, cycling 101, aura 152) — wcześniej equip 0/80;
 - [x] UI: log sesji tłumaczy nowe zdarzenia po polsku, `resolve_backup`
       wysoko w rankingu sugestii, etykiety akcji (`Zagraj aurę…`, `Cycling…`,
-      `Wyposaż…`, `Backup…`), karta na bitwisku pokazuje załączone aury i
+      `Wyposaż…`, `Backup…`), karta na polu bitwy pokazuje załączone aury i
       equipment (badgie);
 - [x] testy `test/real-cards-batch4.test.js` (29 scenariuszy: legalne i
       nielegalne przypadki każdej karty — blok menace ≥2, haste vs choroba,
       backup self/other/grant-cleanup/queue, cycling find/fail-to-find/
-      bez-many/martwy-na-bitwisku, aura cast/stos/fizzle/zgon gospodarza,
+      bez-many/martwy-na-polu bitwy, aura cast/stos/fizzle/zgon gospodarza,
       equip sorcery-speed/cudzy-stwór/re-equip/kumulacja buffów, determinizm
       replay) + smoke 10 partii z twarde wymaganymi padami wszystkich
       czterech mechanik (backup, equip, cycling, cast aury);
@@ -395,9 +395,9 @@ Zakres:
       (NIE jest stworem), a gospodarz dostaje buff z deskryptora (+2/+2, reach)
       liczony w `effectivePower/Toughness/Keywords` ze stanem (combat, SBA
       śmierci, PlayerView, koszty {X}); zaczarowany stwór ginie → aura
-      **odłącza się i zostaje na bitwisku jako stwór** (CR 702.103b, zdarzenie
+      **odłącza się i zostaje na polu bitwy jako stwór** (CR 702.103b, zdarzenie
       `object_detached` z samej zmiany strefy gospodarza — relacja attachedTo
-      nigdy nie wskazuje obiektu spoza bitwiska, pilnuje inwariant); cel
+      nigdy nie wskazuje obiektu spoza pola bitwy, pilnuje inwariant); cel
       nielegalny przy rozstrzygnięciu → karta wchodzi jako zwykły stwór
       (specjalna reguła bestow — inne aury poszłyby do grobu); wygnanie
       załączonej aury (np. predykat enchantment Kap-py) przywraca jej kind
@@ -416,7 +416,7 @@ Zakres:
 - [x] protokół: `COMMAND_TYPES += resolve_scry`, `EVENT_TYPES +=`
       `permanent_sacrificed`, `scry_started`, `scry_resolved`;
 - [x] boty: heuristic punktuje `resolve_scry` (keep bazowo; land(y) na spód,
-      gdy ręka/bitwisko są nasycone landami), aggro traktuje `resolve_scry`
+      gdy ręka/pole bitwy są nasycone landami), aggro traktuje `resolve_scry`
       jak prostą komendę (keep) — żaden bot nie utyka na decyzji scry;
       heuristic ocenia też warianty **bestow** generycznie (buff większego
       z własnych stworów vs zwykły cast; wzmocnienie cudzego stwora odrzuca)
@@ -464,8 +464,8 @@ Zakres:
 
 - [x] karta jako **kafelek wyglądający jak karta** (kolorowa ramka, koszt, typ,
       pole reguł, P/T) zamiast tekstowego chipu — `buildFace` w `render.js`;
-- [x] **stół na całą szerokość**: bitwisko wroga u góry, stos pośrodku, Twoje
-      bitwisko na dole, ręka na samym dole (układ „naprzeciwko\" jak fizyczny stół);
+- [x] **stół na całą szerokość**: pole bitwy wroga u góry, stos pośrodku, Twoje
+      pole bitwy na dole, ręka na samym dole (układ „naprzeciwko\" jak fizyczny stół);
 - [x] rozdzielenie lądów i stworów z układem perspektywicznym (wróg: lądy przy
       krawędzi, stworzenia w stronę środka; Ty odwrotnie);
 - [x] **pasek statusu** (tura, faza/krok, liczniki) + **pasek graczy** (życie,
@@ -543,7 +543,7 @@ Zakres:
 - trample przydziela blokerom pełną siłę (istniejące uproszczenie combatu),
   a nadmiar liczy względem łącznej wytrzymałości — bez kolejności
   przydziału CR 510.1c;
-- landfall dotyczy wyłącznie wejścia landa na bitwisko (CR 702.36: „a land
+- landfall dotyczy wyłącznie wejścia landa na pole bitwy (CR 702.36: „a land
   enters") — bez obsługi innych zdarzeń (np. transform w landa).
 
 **Exit:** 359/359 testów zielonych (13 nowych w `test/real-cards-batch5.test.js`
@@ -573,8 +573,8 @@ Zakres:
 - [x] **trigger „when you cast a spell"** (`triggers.js`) — Illusory Demon:
       rzucenie czaru (`spell_cast`) LUB zagranie permanentu (`permanent_cast`)
       przez kontrolera poświęca źródło. Poprawka poprawności: ev
-      `permanent_cast` niesie obiekt już na bitwisku — casting SAMEJ karty
-      nie poświęca jej (w MtG źródło jest na stosie, nie na bitwisku);
+      `permanent_cast` niesie obiekt już na polu bitwy — casting SAMEJ karty
+      nie poświęca jej (w MtG źródło jest na stosie, nie na polu bitwy);
 - [x] **land creatures** — token Forest Dryad Jyoti: `types ['Land','Creature']`
       + `kind 'creature'` (walczy, ma chorobę przywołania) i może być tapnięty
       na manę (rozszerzona legalność `tap_for_mana`/`tapLandForMana` o typ
@@ -631,7 +631,7 @@ Zakres (mechaniki GENERYCZNE, ADR 0002 — zero warunków po nazwie karty):
       działa z grobu, a persist widzi liczniki sprzed śmierci;
 - [x] **persist (CR 702.79)** — trigger `dies` z warunkiem
       `noMinusCountersWhenDied` + efekt `return_with_counter`;
-- [x] **powrót na bitwisko zatapniętego** (`return_to_battlefield_tapped`)
+- [x] **powrót na pole bitwy zatapniętego** (`return_to_battlefield_tapped`)
       oraz **tokeny niebędące stworami** (Treasure: artefakt bez P/T,
       z własną zdolnością) — `createBattlefieldToken` przyjmuje `abilities`;
 - [x] **koszt „Sacrifice this\"** (`cost.sacrificeSelf`) — poświęcenie źródła
@@ -911,7 +911,7 @@ Zakres generyczny (ADR 0002):
 - [x] `search_library_to_battlefield` przyjmuje kwalifikator wielu typów
       (`Basic` AND `Land`), więc działa zarówno dla Elk, jak i wcześniejszego
       Cartographera;
-- [x] inwariant combat usuwa z atakujących obiekt opuszczający bitwisko, a dla
+- [x] inwariant combat usuwa z atakujących obiekt opuszczający pole bitwy, a dla
       blockera usuwa tylko referencję do żywego obiektu i zachowuje marker
       `blockedAttackers` (zwykły atak nie trafia gracza; trample może przejść);
 - [x] testy `test/real-cards-batch10.test.js` obejmują materializację, legalne i
@@ -925,8 +925,8 @@ Zakres generyczny (ADR 0002):
 - plot jest minimalnym klientowym modelem: karta pozostaje jawna w exile,
       bez osobnej strefy „plotted" poza flagą obiektu; nie dodano alternatywnych
       efektów zastępujących koszt poza zerem many przy cast;
-- mill nie kaskaduje triggerów na odejście z bitwiska, bo biblioteka nie jest
-      bitwiskiem; dynamiczny X jest deterministycznym odczytem stanu;
+- mill nie kaskaduje triggerów na odejście z pola bitwy, bo biblioteka nie jest
+      polem bitwy; dynamiczny X jest deterministycznym odczytem stanu;
 - zwykły Goblin Piker nie wnosi nowej mechaniki, ale jest pełnoprawną kartą
       `supported` z drukiem i testem materializacji.
 
@@ -1010,7 +1010,7 @@ mechaniki w 100%"):
 
 Wybory celów pokoi lochu są **decyzjami GRACZA** (decyzja właściciela
 2026-08-03): Forge, Arena i Throne kolejkują `resolve_room_target` z pełną
-listą legalnych celów (stworów na bitwisku / odsłoniętych kart), Trap! —
+listą legalnych celów (stworów na polu bitwy / odsłoniętych kart), Trap! —
 z obu graczy; **boty odpowiadają deterministycznie** (aggro/heuristic:
 Trap! → przeciwnik, Forge/Arena → własny najsilniejszy stwór, Throne →
 najsilniejszy odsłonięty). Przy dwóch decyzjach zakolejkowanych w jednej
@@ -1210,8 +1210,8 @@ Zakres generyczny (ADR 0002) — **pełne mechaniki, zero ograniczeń na kartach
 - [x] **aura „Enchant player"** (Curse of the Pierced Heart, CR 303.4/702.5) —
       nowy typ aury obok bestow/czystej: deskryptor `aura: { enchant: 'player' }`,
       rzucanie z wyborem GRACZA jako celu (`legalAuraCasts`/`castAuraSpell`),
-      rozstrzygnięcie wchodzi na bitwisko z `enchantedPlayerId` (kind
-      'enchantment', nie 'aura' — gracz nie opuszcza bitwiska, więc aura nigdy
+      rozstrzygnięcie wchodzi na pole bitwy z `enchantedPlayerId` (kind
+      'enchantment', nie 'aura' — gracz nie opuszcza pola bitwy, więc aura nigdy
       nie staje się osierocona, CR 704.5m dotyczy obiektów); trigger
       `enchantedPlayerUpkeep` w upkeep ZACZAROWANEGO gracza (nie kontrolera)
       zadaje 1 obrażeń temu graczowi (`damage_enchanted_player`; bez
@@ -1430,11 +1430,11 @@ Nowe, generyczne mechaniki engine (zero warunków na nazwę karty, ADR 0002):
   `station_status_changed` dla logu/UI). Przy 0 mocy zdolność rozstrzyga się
   bez liczników (CR 107.1c).
 - **Saga (CR 714):** deskryptor rozdziałów na karcie; wejście Sagi na
-  bitwisko kładzie licznik lore i odpala rozdział I (714.3a/2a), po kroku
+  pole bitwy kładzie licznik lore i odpala rozdział I (714.3a/2a), po kroku
   dobierania kontrolera („after your draw step\", 714.3b — w engine: wejście
   do precombat main aktywnego) kolejny licznik odpala następny rozdział;
   po ostatnim rozdziale Saga jest poświęcana (714.4) — chyba że sama
-  opuściła bitwisko w trakcie rozdziału (Shiva: przemiana w Jill). Efekty
+  opuściła pole bitwy w trakcie rozdziału (Shiva: przemiana w Jill). Efekty
   rozdziałów: „stwór nie może być blokowany do końca tury\", „tap all lands
   your opponents control\", „exile + return transformed\".
 - **Karta dwustronna z Sagi na rewersie (transform DFC):** wspólny kod
@@ -1460,7 +1460,7 @@ Nowe, generyczne mechaniki engine (zero warunków na nazwę karty, ADR 0002):
   able\" wymusza atak, gdy stwór jest w stanie (jak goad, ale statyczne);
   legalne opcje ataku łączą zbiór obowiązkowych z dotychczasowymi goadem.
 - **Statyczny warunek „controls another artifact\":** staticBonus +2/+0
-  (Ramroller) — `controlsAnotherArtifact` sprawdza bitwisko i groby
+  (Ramroller) — `controlsAnotherArtifact` sprawdza pole bitwy i groby
   (uproszczenie jak przy Affinity).
 - **Trigger na załączniku „equipped creature attacks\":** zdolność siedzi na
   sprzęcie (nie na nosicielu); cele: atakujący + deterministycznie
@@ -1622,7 +1622,7 @@ koegzystencji pendingScry + pendingDevours.
 
 **Ograniczenia jawne (w `support.limitations` kart):**
 - prawo legend (CR 704.5j) NIE jest zaimplementowane — dwie kopie Trostani
-  na bitwisku nie znikają (pre-istniejąca luka wszystkich legendarnych
+  na polu bitwy nie znikają (pre-istniejąca luka wszystkich legendarnych
   kart; talie singleton łagodzą w praktyce);
 - jednoprzebiegowy model triggerów: zdarzenia wytworzone PRZEZ triggery nie
   są reskanowane w tej samej komendzie — własne obrażenia ETB Fear nie
@@ -1758,7 +1758,7 @@ obsługuje pusty podzbiór natywnie).
 
 **Nowe mechaniki silnika (generyczne, ADR 0002).** (1) **Modyfikatory
 kosztu z permanentów** (CR 601.2f): `costReductionForSpell` skanuje
-bitwisko kontrolera rzucającego (static z `costModifier{spellTypes,
+pole bitwy kontrolera rzucającego (static z `costModifier{spellTypes,
 amount}`), a `reduceGenericCost` obniża WYŁĄCZNIE część generyczną (cap na
 `parseManaCost`, fallback: całość generyczna) — aplikowane w jednym choke
 poincie `effectiveSpellManaCost` (legalność :601 i płatność :204,
@@ -1787,7 +1787,7 @@ exile_permanent).
 Metalcraft na karcie) rzucała TypeError. Testy Batchu 19 wychwyciły też
 udokumentowane semantyki silnika (klucze obiektów zmieniają się przy
 zmianie strefy — CR 400.7; triggery rozstrzygają się natychmiast w komendzie;
-castPermanent kładzie permanent od razu na bitwisku) — asercje zapisywane
+castPermanent kładzie permanent od razu na polu bitwy) — asercje zapisywane
 po cardId przez `findId`.
 
 **Boty i UI.** Obie kontrolery odpowiadają deterministycznie na
@@ -1864,12 +1864,12 @@ słownika kolekcji).
   legalBlockerOptions) — spójność oferty i walidacji (Ember Beast).
 - **Linked animation „as long as this creature remains on the
   battlefield"** — efekt `animate_linked`: wpis w `state.linkedAnimations`;
-  odejście źródła z bitwiska cofa animację celu (choke point
+  odejście źródła z pola bitwy cofa animację celu (choke point
   moveObjectDirectly — wszystkie zmiany stref) (Skilled Animator).
 - **Triggery:** `land_entered_under_opponent_control` (Nightshade Harvester —
   „that player loses 1 life" przez kontekst zdarzenia),
   `card_put_into_graveyard_from_nonbattlefield` z filtrem podtypu (Disa —
-  Lhurgoyf z ręki/biblioteki na bitwisko), `any_combat_damage_to_player`
+  Lhurgoyf z ręki/biblioteki na pole bitwy), `any_combat_damage_to_player`
   grupowany raz na komendę (Disa — token Tarmogoyf).
 - **Token Tarmogoyf** — dynamiczne P/T: liczba typów kart we WSZYSTKICH
   grobach (+1 do wytrzymałości) przez marker statycznego pumpa
@@ -1928,7 +1928,7 @@ Hexproof (702.11), choroba + {T} (302.6), hand size 7 (514.1), first-turn bez dr
 
 ## M48 / Brylant — Tematy 16–20 + UX A/B/C (2026-08-07)
 
-Rozdział obrażeń (510.1c), mana per step (106.4), tokeny poza bitwiskiem (704.5d), legend face-down (708.2), morph koszty z pipami (702.37). UX morph label, koszty w etykietach, face-down odsłaniane. 983/983.
+Rozdział obrażeń (510.1c), mana per step (106.4), tokeny poza polem bitwy (704.5d), legend face-down (708.2), morph koszty z pipami (702.37). UX morph label, koszty w etykietach, face-down odsłaniane. 983/983.
 
 ## T1–T6 / Stos, cele triggerów, auto-tap, mulligan, regeneracja, triggery na stosie (2026-08-07, PR #32 domknięcie)
 
@@ -1942,7 +1942,7 @@ Rozdział obrażeń (510.1c), mana per step (106.4), tokeny poza bitwiskiem (704
 
 ## M50 / PR #34 — Saga Mesmerize jako wybór gracza + audyt limitations (2026-08-08)
 
-Na zgłoszenie właściciela: **Mesmerize (Shiva, Warden of Ice — rozdziały I/II Sagi)** celował dotąd deterministycznie we własnego najsilniejszego stwora. Nowa implementacja: cel wybiera **KONTROLER Sagi** blokującą decyzją `resolve_trigger_target` (wzorzec T2: jak Forge Devil, Kor Sanctifiers, Puppeteer Clique, Greatsword of Tyr). Kolejność kandydatów (bitwisko) = dawny determinizm, więc proste boty biorą pierwszą ofertę i zachowują dotychczasowe zachowanie.
+Na zgłoszenie właściciela: **Mesmerize (Shiva, Warden of Ice — rozdziały I/II Sagi)** celował dotąd deterministycznie we własnego najsilniejszego stwora. Nowa implementacja: cel wybiera **KONTROLER Sagi** blokującą decyzją `resolve_trigger_target` (wzorzec T2: jak Forge Devil, Kor Sanctifiers, Puppeteer Clique, Greatsword of Tyr). Kolejność kandydatów (pole bitwy) = dawny determinizm, więc proste boty biorą pierwszą ofertę i zachowują dotychczasowe zachowanie.
 
 Zakres:
 
@@ -2476,7 +2476,7 @@ engine znalazła 4 tematy + 1 latentny crash pełnego B0. Plan:
    trigger transform wilkołaka (upkeep) na stosie, źródło umiera w oknie priorytetu
    (seed 1025, random red vs heuristic green — -1/-1 z Trigonu), resolveTriggerEntry
    buduje stub LKI bez `transformTo`, efekt transform rzucał błąd. Fix: transform
-   dotyczy permanentu NA bitwisku — przy źródle poza bitwiskiem no-op (CR 608.2b),
+   dotyczy permanentu NA polu bitwy — przy źródle poza polem bitwy no-op (CR 608.2b),
    jak `exile_return_transformed` (Jill). Pełne B0 nie było liczone po M64 — bug latentny.
 
 **Zweryfikowane OK (bez zmian):** Might of the Masses (liczba stworów w chwili
@@ -2604,7 +2604,7 @@ odrzucenia stwora / ataku i nie powinna zależeć od dnia/nocy.
   permanenty z keywordem `daybound` (→ night) / `nightbound` (→ day); emituje
   `day_night_changed`. Karty bez tych keywordów (zwykły transform DFC) nietknięte.
 - Wyzwalacze: wejście daybound przy null → day (CR 708.9c); rzut czaru przy
-  `dayNight !== 'night'` i daybound na bitwisku → night (CR 708.9d — warunek naturalnie
+  `dayNight !== 'night'` i daybound na polu bitwy → night (CR 708.9d — warunek naturalnie
   ogranicza do pierwszego rzutu); upkeep aktywnego przy night bez czaru w JEGO poprzedniej
   turze → day (CR 708.9f).
 - Wejście nightbound: permanent z daybound wchodzący w nocy wchodzi jako nightbound
@@ -2645,8 +2645,8 @@ day/night to osobne mechaniki MtG).
   (resolve_exploit_choice: poświęć INNEGO stwora albo skip; bez kandydatów decyzji
   brak); po poświęceniu zdarzenie `exploited` odpala trigger „exploits" na źródle
   (extra niesie exploitedId LKI).
-- **Unearth (CR 702.87)** — z grobu na bitwisko pod kontrolą właściciela z haste;
-  flaga `unearthExile` — moveObjectDirectly wygnuje zamiast opuścić bitwisko;
+- **Unearth (CR 702.87)** — z grobu na pole bitwy pod kontrolą właściciela z haste;
+  flaga `unearthExile` — moveObjectDirectly wygnuje zamiast opuścić pole bitwy;
   delayed exile na najbliższym end step.
 - **Alternatywny koszt ze Skarbów (Security Rhox)** — wariant `treasureAlt` cast_permanent:
   koszt alternatywny (bez redukcji), „Spend only mana produced by Treasures" —
@@ -2661,7 +2661,7 @@ day/night to osobne mechaniki MtG).
   „can't block") + upkeep damage do kontrolera.
 - **Cele czarów** — `artifact_or_enchantment` (Expose), player z `opponent`.
 
-**Fixy wykryte testami/benchmarkiem:** `transfer_counters_on_dies` — cel poza bitwiskiem
+**Fixy wykryte testami/benchmarkiem:** `transfer_counters_on_dies` — cel poza polem bitwy
 = no-op (CR 608.2b, crash przy rozstrzyganiu triggera na stosie).
 
 **Talie:** black +3 (Silumgar, Dreams, Etherium; 15S), red +Relic Robber (17M), green
@@ -2797,7 +2797,7 @@ Fireball, Spread the Sickness, Warmaker Gunship.
    (dokładnie 1 atakujący); exalted_pump +1/+1 do końca tury; druga zdolność
    „you may tap target creature" z requiresTarget.
 5. **Cloak (Veiled Ascension)** — upkeep „you may cloak top card" = wierzch
-   biblioteki na bitwisko face-down 2/2; flying counter od statycznej zdolności
+   biblioteki na pole bitwy face-down 2/2; flying counter od statycznej zdolności
    `faceDownEnterFlyingCounter`.
 6. **Lash sacrifice-or-pay** — dodatkowy koszt „sacrifice a creature OR pay {4}"
    (`orPayMana` + `payAltCost`); wariant poświęcenia i zapłaty maną.
@@ -2845,7 +2845,7 @@ Uwagi właściciela z testów na telefonie (przed mergem):
 - **D** niemane zdolności aktywowane idą NA STOS (CR 602.2a) — Soulmender
   {T}:gain 1 life daje okno odpowiedzi instanitem. Wyjątki: mana abilities
   (CR 605.1a) i morph/megamorph (CR 702.36e). `ability_resolved` event + log.
-- **E** w modalach wyboru przy permanentach na bitwisku dopisywana nazwa
+- **E** w modalach wyboru przy permanentach na polu bitwy dopisywana nazwa
   właściciela („(Ty)"/„(Nieprzyjaciel)").
 - **F** karta-gospodarz pokazuje przypięte aury/equipmenty („zaczarowana: X",
   „wyposażona: X").
@@ -2853,7 +2853,7 @@ Uwagi właściciela z testów na telefonie (przed mergem):
 Zaktualizowano ~27 plików testów aktywowanych zdolności o rozstrzygnięcie stosu
 (D) — `npm test` **1310/1310**, build **50 modułów / ~1453.6 kB**. Pełne B0 13500
 **0 crashy (heuristic 78.5% ogółem; 65.3% aggro / 93.9% random)**. D ujawniło
-też 2 crashy Station (cel/źródło poza bitwiskiem przed rozstrzygnięciem) —
+też 2 crashy Station (cel/źródło poza polem bitwy przed rozstrzygnięciem) —
 naprawione (CR 608.2b).
 
 ## M73 — Audyt PR #41: 9 błędów naprawionych (2026-08-11, PR #42 `arena/019ff0e1-mtg`)

@@ -39,7 +39,7 @@ function putCard(state, id, cardId, controllerId = 'p1', zone = 'battlefield') {
   return state.objects.get(id);
 }
 
-// Stwór testowy spoza katalogu (transza 2): prosty obiekt bitwiska.
+// Stwór testowy spoza katalogu (transza 2): prosty obiekt pola bitwy.
 function putBlank(state, id, controllerId = 'p1', extra = {}) {
   addObject(state, {
     id, instanceId: `i-${id}`, cardId: extra.cardId ?? 'x-test', controllerId, zone: extra.zone ?? 'battlefield',
@@ -290,7 +290,7 @@ test("Sagittars' Volley: niszczy cel i zadaje 1 obr. LATAJĄCYM przeciwnika (nie
     .find((c) => c.type === 'cast_spell' && c.objectId === 'volley' && c.targets[0] === 'cel');
   execute(state, cast);
   resolveStack(state);
-  assert.ok(!state.zones.battlefield.includes('cel'), 'cel zszedł z bitwiska');
+  assert.ok(!state.zones.battlefield.includes('cel'), 'cel zszedł z pola bitwy');
   assert.ok([...state.objects.values()].some((o) => o.cardId === 'x-cel' && o.zone === 'graveyard'),
     'cel zniszczony (trafił do grobu)');
   assert.equal(state.objects.get('inny-ptak').damage, 1, 'latający przeciwnika dostaje 1 obrażenie');

@@ -155,7 +155,7 @@ test('Wormfang Newt ETB exile + LTB return exiled land', () => {
   // Po cast_permanent: czar (newt) na stosie, ETB trigger jeszcze nie.
   assert.equal(state.zones.stack.length, 1, 'czar newt na stosie');
   // Rozstrzygnij stos (2 pass per gracz). Po rozstrzygnięciu czaru:
-  // newt na bitwisku (nowe id), ETB trigger odpala się.
+  // newt na polu bitwy (nowe id), ETB trigger odpala się.
   resolveStack(state);
   // Po resolveTopOfStack + processTriggers: pendingTriggerTargets z land_you_control
   assert.equal(state.pendingTriggerTargets.length, 1, 'pendingTriggerTargets ma 1');
@@ -166,18 +166,18 @@ test('Wormfang Newt ETB exile + LTB return exiled land', () => {
   resolveStack(state);
   // Po rozstrzygnięciu: land w exile (id zmieniony przez moveObjectDirectly,
   // bo exile_own_land wygnał go z battlefield), newt (z exiledCardIds) na
-  // bitwisku (nowe id po resolvePermanentSpell).
+  // polu bitwy (nowe id po resolvePermanentSpell).
   const exiledLand = [...state.objects.values()].find((o) =>
     o.zone === 'exile' && o.cardId === 'basic-forest'
   );
   assert.ok(exiledLand, 'land wygnały do exile');
   assert.ok(!state.zones.battlefield.some((id) => state.objects.get(id)?.cardId === 'basic-forest'),
-    'land nie na bitwisku');
+    'land nie na polu bitwy');
   // newt po ETB ma nowe id (resolveTopOfStack). Szukamy po cardId.
   const newt = [...state.objects.values()].find((o) =>
     o.zone === 'battlefield' && o.cardId === 'wormfang-newt'
   );
-  assert.ok(newt, 'newt na bitwisku');
+  assert.ok(newt, 'newt na polu bitwy');
   assert.ok(Array.isArray(newt.exiledCardIds) && newt.exiledCardIds.length > 0, 'newt.exiledCardIds zapisane');
   // LTB: wyślij newta do grobu
   const r3 = execute(state, {
@@ -186,10 +186,10 @@ test('Wormfang Newt ETB exile + LTB return exiled land', () => {
   assert.equal(r3.ok, true, 'move_object newt → graveyard: ' + JSON.stringify(r3));
   // LTB trigger (leaves_battlefield) idzie na stos → rozstrzygnij
   resolveStack(state);
-  // land wrócił na bitwisko (controler = właściciel p1)
+  // land wrócił na pole bitwy (controler = właściciel p1)
   const landOnBattlefield = [...state.objects.values()].find((o) =>
     o.zone === 'battlefield' && o.cardId === 'basic-forest'
   );
-  assert.ok(landOnBattlefield, 'land wrócił na bitwisko');
+  assert.ok(landOnBattlefield, 'land wrócił na pole bitwy');
   assert.equal(landOnBattlefield.controllerId, 'p1', 'land wraca do właściciela (p1)');
 });

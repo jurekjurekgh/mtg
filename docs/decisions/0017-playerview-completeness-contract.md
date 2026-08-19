@@ -21,7 +21,7 @@ Trzy niezależne zgłoszenia właściciela z rozgrywki miały tę samą przyczyn
 
 Audyt M92 (systematyczne zestawienie pól `createGameState` × `playerView` ×
 odczytów bota) znalazł kolejne pięć luk tej samej klasy — w tym brak `types`
-permanentu na bitwisku, czyli informacji wydrukowanej wprost na karcie.
+permanentu na polu bitwy, czyli informacji wydrukowanej wprost na karcie.
 
 Wspólny mianownik: **kontroler nie jest głupi — jest ślepy.** Skoro dostaje
 widok, a nie stan (ADR 0003), to pole nieobecne w widoku jest dla niego

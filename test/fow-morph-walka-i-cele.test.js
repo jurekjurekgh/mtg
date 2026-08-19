@@ -178,7 +178,7 @@ test('B2: morph blokuje — deklaracja bloków nie zdradza nazwy', () => {
 
 // ---------------------------------------------------------------------------
 // C. Morph jako CEL czarów i efektów (rozszerzenie zakresu przez właściciela).
-//    Morph przez cały czas ŻYJE na bitwisku.
+//    Morph przez cały czas ŻYJE na polu bitwy.
 // ---------------------------------------------------------------------------
 
 const ZYWY_MORPH_JAKO_CEL = [

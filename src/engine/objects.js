@@ -16,7 +16,7 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
   assertZone(toZone);
   if (!object || !newObjectId || state.objects.has(newObjectId)) throw new Error('Nieprawidłowy ruch obiektu');
   // M69 (Unearth, CR 702.87b): „Exile it ... if it would leave the battlefield"
-  // — permanent z flagą unearthExile opuszczający bitwisko idzie do exile
+  // — permanent z flagą unearthExile opuszczający pole bitwy idzie do exile
   // zamiast docelowej strefy (replacement, jak finality dla dies). Delayed
   // exile na end step też przechodzi tu — cel to już exile, bez zmian.
   if (object.zone === 'battlefield' && object.unearthExile && toZone !== 'exile') {
@@ -27,7 +27,7 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
   if (object.zone === 'stack' && object.flashedBack && toZone !== 'exile') {
     toZone = 'exile';
   }
-  // Obiekt może opuścić bitwisko przez koszt/efekt w oknie combat (np.
+  // Obiekt może opuścić pole bitwy przez koszt/efekt w oknie combat (np.
   // sacrifice aktywowanego permanenta). Combat nie może zachować wiszącego
   // odwołania do starego obiektu — usuwamy go z atakujących i bloków przed
   // zmianą strefy, bez znajomości konkretnej karty.
@@ -50,10 +50,10 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
   // CR 400.7: nowy obiekt nie pamięta stanu poprzedniego — modyfikatory
   // statystyk, obrażenia i przypisane cele nie przechodzą przez zmianę strefy.
   // Liczniki również znikają (CR 122.2), a face-down permanent po wyjściu
-  // z bitwiska jest obracany twarzą do góry. Aura bestow opuszczająca bitwisko
+  // z pola bitwy jest obracany twarzą do góry. Aura bestow opuszczająca pole bitwy
   // przestaje być załączona i wraca do bycia stworem (to wciąż ta sama
   // karta-stwór — kind wraca do baseKind).
-  // CR 400.3 + CR 110.2a: kontrola istnieje wyłącznie na bitwisku i na stosie.
+  // CR 400.3 + CR 110.2a: kontrola istnieje wyłącznie na polu bitwy i na stosie.
   // Obiekt w grobie / exile / ręce / bibliotece jest kontrolowany przez swojego
   // WŁAŚCICIELA. Bez tego stwór przejęty efektem „gain control" (Puppeteer
   // Clique, Awaken the Sleeper) po śmierci lądował w grobie ZŁODZIEJA i
@@ -65,13 +65,13 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
     : object.controllerId;
   const moved = Object.freeze({
     ...object, id: newObjectId, zone: toZone, controllerId: controllerAfterMove,
-    // Crew Captain / enteredThisTurn: numer tury WEJŚCIA na bitwisko.
-    // Opuszczenie bitwiska czyści flagę (nowy obiekt, CR 400.7).
+    // Crew Captain / enteredThisTurn: numer tury WEJŚCIA na pole bitwy.
+    // Opuszczenie pola bitwy czyści flagę (nowy obiekt, CR 400.7).
     enteredOnTurn: toZone === 'battlefield' ? state.turn.number : null,
     damage: 0, powerModifier: 0, toughnessModifier: 0, chosenTargets: null,
     // CR 110.6/400.7: tapnięcie to status PERMANENTU — istnieje wyłącznie na
-    // bitwisku. Nowy obiekt nie pamięta poprzedniego istnienia, a permanent
-    // wchodzi na bitwisko nietapnięty (CR 110.6b), chyba że efekt wprost
+    // polu bitwy. Nowy obiekt nie pamięta poprzedniego istnienia, a permanent
+    // wchodzi na pole bitwy nietapnięty (CR 110.6b), chyba że efekt wprost
     // każe inaczej (entersTapped ustawia tapnięcie PO przeniesieniu).
     // Bez tego stwór odbity na rękę wracał na stół tapnięty, a reanimacja
     // tapniętego stwora dawała tapnięty permanent.
@@ -86,12 +86,12 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
     //    didn't attack this turn") nie transformowała się po powrocie na stół.
     // ŚWIADOMY WYJĄTEK: `isBlockingThisCombat`, `formerCounters`, `formerZone`
     // i `formerAbilityGrants` to LKI (CR 603.10) — persist i Guildsworn
-    // Prowler („if it wasn't blocking") czytają je PO opuszczeniu bitwiska.
+    // Prowler („if it wasn't blocking") czytają je PO opuszczeniu pola bitwy.
     damagedThisTurn: false, damagedByDeathtouch: false, attackedThisTurn: false,
     attacking: false, blocking: false, saddled: false, monstrous: false,
     abilityResolvedThisTurn: 0, tempBasePT: null,
     // LKI płatności Skarbem NIE przechodzi przez zmianę strefy (CR 400.7) —
-    // permanent wchodzący na bitwisko inną drogą (reanimacja, token) nie
+    // permanent wchodzący na pole bitwy inną drogą (reanimacja, token) nie
     // był rzucany za manę ze Skarba (Marut). castPermanent wpisuje wartość
     // na obiekcie PO przeniesieniu, więc rzut z ręki ją zachowuje.
     manaFromTreasureSpent: 0,
@@ -110,13 +110,13 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
   });
   state.objects.delete(object.id); state.objects.set(newObjectId, moved);
   // Załączniki wskazujące odchodzący obiekt rozłączają się od razu —
-  // attachedTo nigdy nie wskazuje obiektu spoza bitwiska (inwariant).
+  // attachedTo nigdy nie wskazuje obiektu spoza pola bitwy (inwariant).
   // Polityki zależą od rodziny: bestow znów jest stworem (CR 702.103b),
   // equipment zostaje odłączony (CR 704.5n), czysta aura idzie do grobu
   // (CR 704.5m) — detale w attachments.js.
   if (object.zone === 'battlefield') detachAttachmentsFromHost(state, objectId);
   // Animacje z linkiem (Skilled Animator: „as long as this creature remains
-  // on the battlefield") kończą się, gdy ŹRÓDŁO opuszcza bitwisko — cofamy
+  // on the battlefield") kończą się, gdy ŹRÓDŁO opuszcza pole bitwy — cofamy
   // animację celu (root cause: trwałość efektu zależy od strefy źródła,
   // więc naprawiamy ją w jedynym choke poincie zmian stref). To samo
   // dotyczy kosztów/efektów wygnań, poświęceń i zniszczeń — wszystkie

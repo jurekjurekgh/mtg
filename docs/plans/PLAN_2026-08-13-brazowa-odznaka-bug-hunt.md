@@ -18,7 +18,7 @@ Wyjątek: Faceless Butcher („another target creature") — źródło wykluczon
 
 ### BUG 2 — Wavecrash Triton: lock_untap trwały zamiast „next untap step" (CR 701.30e)
 Wavecrash Triton (heroic) używa `lock_untap` — blokada jest TRWAŁA, dopóki
-źródło na bitwisku (jak Entrancing Lyre). Oracle: „That creature doesn't
+źródło na polu bitwy (jak Entrancing Lyre). Oracle: „That creature doesn't
 untap during its controller's NEXT untap step" — jednorazowa, niezależnie od
 źródła. Wymaga osobnego efektu.
 
@@ -26,10 +26,10 @@ untap during its controller's NEXT untap step" — jednorazowa, niezależnie od
 „Amass N — choose an Army you control or create one" — przy 2+ armiach gracz
 wybiera. Engine bierze pierwszą (`find`) bez decyzji. Dunland Crebain.
 
-### BUG 4 — Caravan Vigil (Morbid) wymusza bitwisko bez opcji „may" (CR)
+### BUG 4 — Caravan Vigil (Morbid) wymusza pole bitwy bez opcji „may" (CR)
 Oracle: „You MAY put that card onto the battlefield instead of into your hand
 if a creature died this turn." Engine ustawia destination='battlefield'
-bezwzględnie przy `creatureDiedThisTurn` — brak wyboru ręka/bitwisko.
+bezwzględnie przy `creatureDiedThisTurn` — brak wyboru ręka/pole bitwy.
 
 ### BUG 5 — Goad nie uniemożliwia blokowania (CR 701.38)
 „Goaded creatures can't block." `canBlock`/`isLegalBlocker` nie sprawdzają

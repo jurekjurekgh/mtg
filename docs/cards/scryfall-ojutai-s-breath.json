@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Ojutai%27s%20Breath&set=dtk",
+  "print": "Ojutai's Breath (DTK)",
+  "name": "Ojutai's Breath",
+  "mana_cost": "{2}{U}",
+  "cmc": 3,
+  "type_line": "Instant",
+  "oracle_text": "Tap target creature. It doesn't untap during its controller's next untap step.\nRebound (If you cast this spell from your hand, exile it as it resolves. At the beginning of your next upkeep, you may cast this card from exile without paying its mana cost.)",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Rebound"
+  ],
+  "set": "dtk",
+  "collector_number": "1",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/a/f/af51e5a1-7d46-4dad-a25c-6767cbd03dff.jpg",
+    "normal": "https://cards.scryfall.io/normal/front/a/f/af51e5a1-7d46-4dad-a25c-6767cbd03dff.jpg"
+  },
+  "pobrano": "2026-08-19"
+}

@@ -231,7 +231,7 @@ test('loch: Forge — gracz WYBIERA cel spośród legalnych stworów (2× +1/+1)
   assert.ok(state.pendingRoomTargets.length === 1, 'Forge kolejkuje wybór celu');
   const pending = state.pendingRoomTargets[0];
   assert.equal(pending.kind, 'creature');
-  assert.deepEqual([...pending.candidateIds].sort(), ['enemy', 'own'].sort(), 'kandydaci: oba stwory na bitwisku');
+  assert.deepEqual([...pending.candidateIds].sort(), ['enemy', 'own'].sort(), 'kandydaci: oba stwory na polu bitwy');
   const view = playerView(state, 'p1');
   const choices = view.legalCommands.filter((cmd) => cmd.type === 'resolve_room_target');
   assert.equal(choices.length, 2, 'PlayerView oferuje wybór z legalnych celów');
@@ -248,9 +248,9 @@ test('loch: Forge — gracz WYBIERA cel spośród legalnych stworów (2× +1/+1)
   assert.ok(state.events.some((event) => event.type === 'room_target_resolved' && event.targetId === 'enemy'));
 });
 
-test('loch: Forge bez stworów na bitwisku nie kolejkuje wyboru', () => {
+test('loch: Forge bez stworów na polu bitwy nie kolejkuje wyboru', () => {
   const state = mainPhase(game());
-  const room = ventureToNextRoom(state, 1); // pokój 2 — Forge, puste bitwisko
+  const room = ventureToNextRoom(state, 1); // pokój 2 — Forge, puste pole bitwy
   assert.equal(room, 2);
   assert.equal(state.pendingRoomTargets.length, 0, 'brak legalnych celów = brak wyboru');
 });
@@ -351,7 +351,7 @@ test('loch: Throne of the Dead Three — gracz WYBIERA stwora z odsłoniętych (
   // Gracz wybiera Armored Skaab (1/4).
   resolveRoomTarget(state, 'lib2');
   const put = [...state.objects.values()].find((o) => o.cardId === 'armored-skaab' && o.zone === 'battlefield');
-  assert.ok(put, 'Throne: wybrany stwór wchodzi na bitwisko');
+  assert.ok(put, 'Throne: wybrany stwór wchodzi na pole bitwy');
   assert.equal(put.counters['+1/+1'], 3, 'Throne: trzy liczniki +1/+1');
   assert.ok(effectiveKeywords(put, state).includes('hexproof'), 'Throne: hexproof do następnej tury');
   assert.ok(state.events.some((event) => event.type === 'hexproof_granted' && event.objectId === put.id));

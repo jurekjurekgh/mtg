@@ -33,7 +33,7 @@ test('extractBotMoves: każdy wpis modala jako osobna linia (nie zlepione)', () 
     entries: [
       { text: 'Tura 5 — Nieprzyjaciel' },
       { text: 'Faza: Główna 1' },
-      { text: 'G Garruk\'s Companion wchodzi na bitwisko' },
+      { text: 'G Garruk\'s Companion wchodzi na pole bitwy' },
       { text: 'G Garruk\'s Companion zostaje rozstrzygnięty' },
     ],
   });
@@ -43,7 +43,7 @@ test('extractBotMoves: każdy wpis modala jako osobna linia (nie zlepione)', () 
     'Rozgrywka',
     '  • Tura 5 — Nieprzyjaciel',
     '  • Faza: Główna 1',
-    '  • G Garruk\'s Companion wchodzi na bitwisko',
+    '  • G Garruk\'s Companion wchodzi na pole bitwy',
     '  • G Garruk\'s Companion zostaje rozstrzygnięty',
   ]);
   // Główna obserwacja: „Faza: Główna 1" NIE jest zlepiona z
@@ -117,7 +117,7 @@ test('extractTileText: pusty kafel → pusty string', () => {
 // =============================================================================
 // M122/#7 — ekstraktor gubił ŻYWY STAN kafla (nakładka `ovl-*`).
 //
-// Na bitwisku kafel renderuje się z `skipLiveState: true`: P/T i znaczniki
+// Na polu bitwy kafel renderuje się z `skipLiveState: true`: P/T i znaczniki
 // (tapnięcie, choroba, liczniki, „zakryty (morph)", „wyposaża → X") trafiają
 // wtedy do NAKŁADKI o klasach `ovl-badges` / `ovl-pt`, a nie do `.face`.
 // Ekstraktor czytał tylko `.face`, więc transkrypt pokazywał
@@ -158,7 +158,7 @@ function fakeNode(className, text, children = []) {
   return node;
 }
 
-test('M122: extractTileText czyta P/T i znaczniki z nakładki bitwiska', () => {
+test('M122: extractTileText czyta P/T i znaczniki z nakładki pola bitwy', () => {
   const tile = fakeNode('tile', null, [
     fakeNode('cardvis', null, [
       fakeNode('face', null, [

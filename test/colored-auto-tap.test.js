@@ -130,7 +130,7 @@ test('integracja: rzut stwora {1}{G} (Gorehorn) z puli {R}{R} + Las — Las tapo
   assert.ok(r.ok, r.events[0]?.reason);
   assert.equal(state.objects.get('forest').tapped, true, 'Las tapowany za część generyczną');
   assert.equal(state.players[0].mana, 0);
-  // Rozstrzygnij stos (T1) — stwór na bitwisku.
+  // Rozstrzygnij stos (T1) — stwór na polu bitwy.
   const first = state.turn.priorityPlayerId;
   const other = state.players.find((p) => p.id !== first).id;
   assert.ok(execute(state, { type: 'pass_priority', playerId: first }).ok);

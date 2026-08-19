@@ -5,7 +5,7 @@ import { addMana } from '../src/engine/resources.js';
 import { jumpToStep } from '../src/engine/turn.js';
 
 /**
- * Tworzenie tokenów (Etap 5): efekt czaru create_token tworzy token na bitwisku
+ * Tworzenie tokenów (Etap 5): efekt czaru create_token tworzy token na polu bitwy
  * kontrolera, token dostaje cardId 'token_*' (render klasyfikuje go przez tokenChip)
  * i własne statystyki oraz summoning sickness.
  */
@@ -28,7 +28,7 @@ function passRoundResolving(state) {
   execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
 }
 
-test('czar create_token tworzy token na bitwisku kontrolera', () => {
+test('czar create_token tworzy token na polu bitwy kontrolera', () => {
   const state = setup();
   execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'swarm', targets: [] });
   passRoundResolving(state);
@@ -49,7 +49,7 @@ test('rozstrzygnięcie tworzenia tokenu emituje zdarzenie token_created', () => 
   assert.ok(state.events.some((e) => e.type === 'token_created'), 'brak zdarzenia token_created');
 });
 
-test('token jest widoczny w bitwisku jako stwór (render klasy token)', () => {
+test('token jest widoczny w polu bitwy jako stwór (render klasy token)', () => {
   const state = setup();
   execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'swarm', targets: [] });
   passRoundResolving(state);

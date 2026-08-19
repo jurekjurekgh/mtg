@@ -9,7 +9,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
  * surowe staty definicji zamiast efektywnych („Ty tworzysz token Tarmogoyf
  * (0/0)", choć na stole token ma staty z CDA — „liczba typów kart w grobach").
  * Zdarzenie token_created musi nieść statystyki WIDZIANE po wejściu na
- * bitwisko (CR 613: CDA aplikuje się przed SBA) — to one trafiają do panelu.
+ * pole bitwy (CR 613: CDA aplikuje się przed SBA) — to one trafiają do panelu.
  */
 
 const REGISTRY = createCardRegistry();

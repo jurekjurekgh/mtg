@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Static%20Net&set=bro",
+  "print": "Static Net (BRO)",
+  "name": "Static Net",
+  "mana_cost": "{3}{W}",
+  "cmc": 4,
+  "type_line": "Enchantment",
+  "oracle_text": "When this enchantment enters, exile target nonland permanent an opponent controls until this enchantment leaves the battlefield.\nWhen this enchantment enters, you gain 2 life and create a tapped Powerstone token.",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [],
+  "set": "bro",
+  "collector_number": "1",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/a/5ab5cb30-3ced-4450-a3c4-b519f3762620.jpg",
+    "normal": "https://cards.scryfall.io/normal/front/5/a/5ab5cb30-3ced-4450-a3c4-b519f3762620.jpg"
+  },
+  "pobrano": "2026-08-19"
+}

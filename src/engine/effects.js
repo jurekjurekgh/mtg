@@ -107,7 +107,7 @@ function shuffleOwnLibrary(state, ownerId) {
   });
 }
 
-/** Położenie wybranego stwora Throne: bitwisko + liczniki + hexproof + tasowanie. */
+/** Położenie wybranego stwora Throne: pole bitwy + liczniki + hexproof + tasowanie. */
 function thronePutChosenCreature(state, pending, targetId) {
   const ownerId = pending.playerId;
   const object = state.objects.get(targetId);
@@ -403,7 +403,7 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
   const targetIsPlayer = state.players.some((player) => player.id === targetId);
   const targetObject = targetIsPlayer ? null : state.objects.get(targetId);
   // =========================================================================
-  // M133 (CR 608.2b) — cel, którego JUŻ NIE MA na bitwisku, to FIZZLE, a nie
+  // M133 (CR 608.2b) — cel, którego JUŻ NIE MA na polu bitwy, to FIZZLE, a nie
   // awaria silnika.
   //
   // Objaw: `Error: Nieprawidłowy cel obrażeń` wywalał CAŁY benchmark (crash
@@ -412,7 +412,7 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
   // od dawna, talie tylko zmieniły rozdania. Ścieżka: zdolność aktywowana
   // z obrażeniami leży na stosie, cel ginie wcześniej (inne obrażenia, SBA,
   // poświęcenie), a przy rozstrzyganiu `markDamage` dostaje obiekt spoza
-  // bitwiska i rzuca wyjątek.
+  // pola bitwy i rzuca wyjątek.
   //
   // Reguła: „Jeśli wszystkie cele są nielegalne, czar/zdolność nie
   // rozstrzyga się" — skutek ma po prostu nie nastąpić. Zwracamy 0 zadanych
@@ -530,7 +530,7 @@ export function queueSearchChoice(state, sourceObject, { qualifier, destination,
   state.pendingSearchChoice = {
     playerId: ownerId, qualifier, destination,
     // Caravan Vigil Morbid: gracz wybiera, czy znaleziony ląd ląduje w ręce
-    // czy na bitwisko („you may put it onto the battlefield instead of into
+    // czy na pole bitwy („you may put it onto the battlefield instead of into
     // your hand"). destinations = dopuszczalne strefy; null = jedna.
     destinations: destinations ? [...destinations] : null,
     entersTapped, sourceCardId: sourceObject.cardId ?? null,
@@ -553,7 +553,7 @@ export function queueSearchChoice(state, sourceObject, { qualifier, destination,
 /**
  * Audyt PR #41 (B4): „Face-down creatures you control enter with a flying
  * counter on them." (Veiled Ascension) — generyczna zdolność statyczna na
- * źródle; każdy zakryty stwór kontrolera wchodzący na bitwisko (cloak, morph,
+ * źródle; każdy zakryty stwór kontrolera wchodzący na pole bitwy (cloak, morph,
  * megamorph, disguise) dostaje flying counter, gdy kontroler ma takie źródło.
  */
 export function maybeAddFaceDownFlyingCounter(state, controllerId, objectId) {
@@ -583,7 +583,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // czar o kilku celach zadaje obrażenia właściwemu z nich, zamiast lać
     // wszystko w pierwszy. Bez pola zachowanie bez zmian (slot 0).
     const targetId = targets[effect.targetIndex ?? 0];
-    // CR 608.2b: cel-stwór, który zniknął z bitwiska przed rozstrzygnięciem
+    // CR 608.2b: cel-stwór, który zniknął z pola bitwy przed rozstrzygnięciem
     // (T6 — okno odpowiedzi na triggerze), sprawia, że efekt nic nie robi.
     if (targetId != null && !state.players.some((player) => player.id === targetId)) {
       const targetObj = state.objects.get(targetId);
@@ -753,7 +753,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   if (effect.type === 'pump') {
     // Trigger bez jawnych celów (np. landfall) pumpuje samo źródło.
     const targetId = targets[0] ?? sourceObject.id;
-    // CR 608.2b: cel, który zniknął z bitwiska przed rozstrzygnięciem
+    // CR 608.2b: cel, który zniknął z pola bitwy przed rozstrzygnięciem
     // (T6 — okno odpowiedzi; źródło triggera może być LKI stubem), sprawia,
     // że efekt nic nie robi.
     const pumpTarget = state.objects.get(targetId);
@@ -974,7 +974,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
   }
   // Cloak (Veiled Ascension, MKC; CR 702.75 — „cloak"): wierzch biblioteki
-  // gracza na bitwisko TWARZĄ W DÓŁ jako bezimienny stwór 2/2 bez zdolności
+  // gracza na pole bitwy TWARZĄ W DÓŁ jako bezimienny stwór 2/2 bez zdolności
   // (jak morph). Rzeczywisty cardId zostaje ukryty (faceDown), a obiekt ma
   // cechy tylko 2/2 (CR 708.2). Wracający na górę po obrocie twarzą do góry
   // odzyskuje cechy karty (turnFaceUp).
@@ -1281,11 +1281,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   }
   if (effect.type === 'search_basic_land_morbid') {
     // Caravan Vigil (Temat 6): search basic land → ręka; Morbid (stwór zginął
-    // w tej turze) → bitwisko zamiast ręki. Wybór karty należy do gracza.
+    // w tej turze) → pole bitwy zamiast ręki. Wybór karty należy do gracza.
     // Caravan Vigil (CR): „Search your library for a basic land ... put it
     // into your hand, then shuffle. Morbid — You MAY put that card onto the
     // battlefield instead of into your hand if a creature died this turn."
-    // Ręka jest ZAWSZE dozwolona; przy morbid gracz wybiera ręka ALBO bitwisko.
+    // Ręka jest ZAWSZE dozwolona; przy morbid gracz wybiera ręka ALBO pole bitwy.
     const toBattlefield = Boolean(state.creatureDiedThisTurn);
     return queueSearchChoice(state, sourceObject, {
       qualifier: { types: ['Basic', 'Land'] },
@@ -1373,6 +1373,17 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       throw new Error('Nieprawidłowy gracz-cel dobrania');
     }
     drawPlayerCards(state, targetPlayerId, amount, 'effect');
+    return;
+  }
+  if (effect.type === 'mill_both_players') {
+    // Ghoulcaller's Bell: „{T}: Each player mills a card." — mieli OBAJ gracze
+    // (własną bibliotekę i przeciwnika). Pełna ścieżka mill_cards (ochrona
+    // scry/surveil, eventy card_milled) — reużywana per gracz.
+    const amount = effect.amount ?? 1;
+    if (!Number.isInteger(amount) || amount < 1) throw new RangeError('Mill wymaga dodatniej liczby kart');
+    const opponentId = state.players.find((p) => p.id !== sourceObject.controllerId)?.id;
+    applyEffect(state, { type: 'mill_cards', amount }, sourceObject, [sourceObject.controllerId], context);
+    if (opponentId) applyEffect(state, { type: 'mill_cards', amount }, sourceObject, [opponentId], context);
     return;
   }
   if (effect.type === 'draw_cards_both_players') {
@@ -1466,7 +1477,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // stwór musi atakować w każdym combacie do końca tury.
     const targetId = targets[0];
     if (!targetId) return;
-    // CR 608.2b: cel zniknął z bitwiska przed rozstrzygnięciem — brak efektu.
+    // CR 608.2b: cel zniknął z pola bitwy przed rozstrzygnięciem — brak efektu.
     const goadTarget = state.objects.get(targetId);
     if (!goadTarget || goadTarget.zone !== 'battlefield' || goadTarget.kind !== 'creature') return;
     goadUntilNextTurn(state, targetId, sourceObject.controllerId);
@@ -1476,7 +1487,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Nadanie zdolności „do końca tury" (Fake Your Own Death). Deskryptory
     // zdolności są generyczne — engine ich nie interpretuje po nazwie karty.
     const targetId = targets[0] ?? sourceObject.id;
-    // CR 608.2b: cel zniknął z bitwiska przed rozstrzygnięciem — brak efektu.
+    // CR 608.2b: cel zniknął z pola bitwy przed rozstrzygnięciem — brak efektu.
     const grantTarget = state.objects.get(targetId);
     if (!grantTarget || grantTarget.zone !== 'battlefield' || grantTarget.kind !== 'creature') return;
     grantAbilitiesUntilEndOfTurn(state, targetId, effect.abilities ?? []);
@@ -1485,7 +1496,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   if (effect.type === 'grant_keywords_until_end_of_turn') {
     // Nadanie keywordów celowi „do końca tury" (Stirring Bard: menace, haste).
     const targetId = targets[0] ?? sourceObject.id;
-    // CR 608.2b: cel zniknął z bitwiska przed rozstrzygnięciem — brak efektu.
+    // CR 608.2b: cel zniknął z pola bitwy przed rozstrzygnięciem — brak efektu.
     const keywordTarget = state.objects.get(targetId);
     if (!keywordTarget || keywordTarget.zone !== 'battlefield' || keywordTarget.kind !== 'creature') return;
     grantKeywordsUntilEndOfTurn(state, targetId, effect.keywords ?? []);
@@ -1512,12 +1523,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'return_to_battlefield_tapped') {
-    // Powrót obiektu z grobu na bitwisko ZATAPNIĘTEGO pod kontrolą właściciela
+    // Powrót obiektu z grobu na pole bitwy ZATAPNIĘTEGO pod kontrolą właściciela
     // (Fake Your Own Death). Cel domyślny: samo źródło (trigger „when this
     // creature dies" — obiekt jest już w grobie po zmianie strefy).
     const targetId = targets[0] ?? sourceObject.id;
     const object = state.objects.get(targetId);
-    // Obiekt mógł już wrócić na bitwisko (dwa nadane triggery „dies" na tym
+    // Obiekt mógł już wrócić na pole bitwy (dwa nadane triggery „dies" na tym
     // samym stworze — drugi widzi już nowy obiekt, CR 400.7): efekt nic nie robi.
     if (!object || object.zone !== 'graveyard') return;
     const newId = `permanent-${state.objectSequence++}`;
@@ -1552,13 +1563,34 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     return;
   }
+  // Warunkowe rozgałęzienie efektów (Trade Route Envoy: „draw a card if you
+  // control a creature with a counter on it. If you don't, put a +1/+1 counter
+  // on this creature"). Generyczne if/then/else po deskryptorze warunku —
+  // `then` wykonuje się, gdy warunek zachodzi, `else` w przeciwnym razie.
+  // Warunki są wspólne z triggers.js (conditionHolds) — ta sama semantyka
+  // „intervening if" dla efektu.
+  if (effect.type === 'conditional') {
+    const controllerId = sourceObject.controllerId;
+    let holds = false;
+    if (effect.condition === 'landEnteredThisTurn') {
+      holds = (state.landEnteredThisTurn?.[controllerId] ?? 0) > 0;
+    }
+    if (effect.condition === 'controlsCreatureWithCounter') {
+      holds = [...state.objects.values()].some((object) => object.zone === 'battlefield'
+        && object.controllerId === controllerId && object.kind === 'creature'
+        && Object.values(object.counters ?? {}).some((count) => count > 0));
+    }
+    const branch = holds ? effect.then : effect.else;
+    if (branch) applyEffect(state, branch, sourceObject, targets, context);
+    return;
+  }
   if (effect.type === 'add_counter') {
     // Licznik na celu (domyślnie na źródle) — np. trigger Canonized in Blood:
     // „put a +1/+1 counter on target creature you control". `targetIndex`
     // wskazuje inną pozycję na liście celów (Greatsword of Tyr: cel 0 =
     // nosiciel-atakujący).
     const targetId = targets[effect.targetIndex ?? 0] ?? sourceObject.id;
-    // CR 608.2b: cel, który zniknął z bitwiska przed rozstrzygnięciem
+    // CR 608.2b: cel, który zniknął z pola bitwy przed rozstrzygnięciem
     // (T6 — okno odpowiedzi), sprawia, że efekt nic nie robi.
     const targetObj = state.objects.get(targetId);
     if (!targetObj || targetObj.zone !== 'battlefield') return;
@@ -1609,7 +1641,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   if (effect.type === 'tap_permanents') {
     // Aerith Rescue Mission („Take 59 Flights of Stairs"): tap up to N target
     // creatures — tapujemy wszystkie przekazane cele (już przefiltrowane przez
-    // rozstrzyganie modalne na żywe na bitwisku).
+    // rozstrzyganie modalne na żywe na polu bitwy).
     for (const targetId of targets) {
       const object = state.objects.get(targetId);
       if (!object || object.zone !== 'battlefield' || object.tapped) continue;
@@ -1620,7 +1652,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   }
   if (effect.type === 'lock_untap') {
     // Stwór nie odkręca się, dopóki źródło (np. zatapnięta Lira) jest na
-    // bitwisku i zatapnięte; blokada wygasa, gdy źródło opuści bitwisko.
+    // polu bitwy i zatapnięte; blokada wygasa, gdy źródło opuści pole bitwy.
     // Dla aury Spectral Prison: cel to zaczarowany stwór (attachedTo).
     const targetId = targets[0] ?? sourceObject.attachedTo;
     if (!targetId) return;
@@ -1657,7 +1689,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Odkręcenie permanentu — domyślnie źródła (np. trigger Midnight Guard:
     // „Whenever another creature enters, untap this creature").
     const targetId = targets[0] ?? sourceObject.id;
-    // CR 608.2b: cel zniknął z bitwiska przed rozstrzygnięciem — brak efektu
+    // CR 608.2b: cel zniknął z pola bitwy przed rozstrzygnięciem — brak efektu
     // (źródło triggera może być LKI stubem, gdy odeszło w oknie odpowiedzi).
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return;
@@ -1710,9 +1742,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   if (effect.type === 'transform') {
     const object = state.objects.get(sourceObject.id);
     // LKI (CR 603.10/608.2b): trigger transform wilkołaków poszedł na stos,
-    // a źródło zdążyło opuścić bitwisko (np. -1/-1 z Trigonu, ping w oknie
+    // a źródło zdążyło opuścić pole bitwy (np. -1/-1 z Trigonu, ping w oknie
     // priorytetu) — stub źródła nie ma transformTo; transform dotyczy
-    // permanentu NA bitwisku, więc przy braku źródła efekt jest no-op
+    // permanentu NA polu bitwy, więc przy braku źródła efekt jest no-op
     // (bez crasha). Pełne B0 (seed 1025, random red vs heuristic green).
     if (!sourceObject || sourceObject.zone !== 'battlefield' || !sourceObject.transformTo) return;
     const target = sourceObject.transformTo;
@@ -1826,6 +1858,21 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     return;
   }
+  if (effect.type === 'destroy_if_least_power') {
+    // Wretched Banquet: „Destroy target creature IF it has the least power or
+    // is tied for least power among creatures on the battlefield." Warunek
+    // oceniany przy rozstrzyganiu (CR 608.2b); niespełniony = brak efektu.
+    const targetId = targets[effect.targetIndex ?? 0];
+    if (targetId == null) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
+    const creatures = [...state.objects.values()].filter((o) => o.zone === 'battlefield' && o.kind === 'creature');
+    const minPower = Math.min(...creatures.map((o) => effectivePower(o, state) ?? 0));
+    const targetPower = effectivePower(object, state) ?? 0;
+    if (targetPower !== minPower) return; // nie najmniejsza moc — nic się nie dzieje
+    applyEffect(state, { type: 'destroy_permanent' }, sourceObject, [targetId], context);
+    return;
+  }
   if (effect.type === 'destroy_permanent') {
     // Destroy target artifact/permanent (Shatter, CR 701.7): cel trafia do grobu
     // (zmiana strefy battlefield → graveyard), co odpala trigger „dies\" przez
@@ -1869,7 +1916,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Poświęcenie permanentu: domyślnie samo źródło („sacrifice it"), z
     // możliwością wskazania celu przez targets[0]. Trafia do grobu (nie exile).
     const targetId = targets[0] ?? sourceObject.id;
-    // CR 608.2b: cel zniknął z bitwiska przed rozstrzygnięciem — brak efektu.
+    // CR 608.2b: cel zniknął z pola bitwy przed rozstrzygnięciem — brak efektu.
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return;
     // Finality counter (CR 122.1b): poświęcenie też jest śmiercią — zamiast
@@ -1883,7 +1930,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'return_with_counter') {
-    // Persist (CR 702.79): stwór wraca z grobu na bitwisko pod kontrolą
+    // Persist (CR 702.79): stwór wraca z grobu na pole bitwy pod kontrolą
     // WŁAŚCICIELA z licznikiem -1/-1, o ile nie miał liczników -1/-1 w chwili
     // śmierci (LKI — formerCounters ustawiane przy zmianie strefy).
     const targetId = targets[0] ?? sourceObject.id;
@@ -2039,7 +2086,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return true;
   }
   if (effect.type === 'turn_face_up') {
-    // CR 608.2b: źródło zniknęło z bitwiska (LKI stub) — nie ma czego obracać.
+    // CR 608.2b: źródło zniknęło z pola bitwy (LKI stub) — nie ma czego obracać.
     const flipSource = state.objects.get(sourceObject.id);
     if (!flipSource || flipSource.zone !== 'battlefield' || !flipSource.faceDown) return;
     turnFaceUp(state, sourceObject.id, effect.counters ?? {});
@@ -2210,7 +2257,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   // Batch 23: Shiv's Embrace — "{R}: Enchanted creature gets +1/+0 until
-  // end of turn." Aura na bitwisku pompuje swojego gospodarza (attachedTo).
+  // end of turn." Aura na polu bitwy pompuje swojego gospodarza (attachedTo).
   if (effect.type === 'pump_enchanted_creature') {
     const enchantedId = sourceObject.attachedTo;
     if (!enchantedId) return;
@@ -2284,7 +2331,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // znacznik na obiekcie — zdejmowany w cleanup razem z innymi grantami.
     const targetId = targets[0];
     if (!targetId) return;
-    // CR 608.2b: cel zniknął z bitwiska przed rozstrzygnięciem — brak efektu.
+    // CR 608.2b: cel zniknął z pola bitwy przed rozstrzygnięciem — brak efektu.
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
     if (effect.ifDealtDamage) {
@@ -2299,7 +2346,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Coralhelm Guide: "Target creature can't be blocked this turn."
     const targetId = targets[0];
     if (!targetId) return;
-    // CR 608.2b: cel zniknął z bitwiska przed rozstrzygnięciem — brak efektu.
+    // CR 608.2b: cel zniknął z pola bitwy przed rozstrzygnięciem — brak efektu.
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
     state.objects.set(targetId, Object.freeze({ ...object, cantBeBlocked: true }));
@@ -2360,7 +2407,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Efekt po resolve_food_choice: +5/+5 jeśli poświęcono Food, +3/+3 wpp.
     const targetId = targets[0];
     if (!targetId) return;
-    // CR 608.2b: cel zniknął z bitwiska przed rozstrzygnięciem — brak efektu.
+    // CR 608.2b: cel zniknął z pola bitwy przed rozstrzygnięciem — brak efektu.
     const foodTarget = state.objects.get(targetId);
     if (!foodTarget || foodTarget.zone !== 'battlefield' || foodTarget.kind !== 'creature') return;
     const amount = effect.sacrificed ? 5 : 3;
@@ -2665,11 +2712,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // (Jill → Shiva; Saga III Shivy: powrót STRONĄ PRZEDNIA — ta sama
     // mechanika: deskryptor transformTo wskazuje zawsze „inną\" stronę).
     // Nowy obiekt (CR 400.7): liczniki i modyfikacje nie przechodzą, wchodzi
-    // z summoning sickness jak każdy permanent wchodzący na bitwisko.
+    // z summoning sickness jak każdy permanent wchodzący na pole bitwy.
     const target = sourceObject.transformTo;
     if (!target) return;
     const object = state.objects.get(sourceObject.id);
-    // Źródło zdążyło opuścić bitwisko (np. rozdział Sagi po zniszczeniu) —
+    // Źródło zdążyło opuścić pole bitwy (np. rozdział Sagi po zniszczeniu) —
     // efekt nie ma czego przemieniać (CR 608.2b), bez błędu.
     if (!object || object.zone !== 'battlefield') return;
     const exileId = `exile-${state.objectSequence++}`;
@@ -2697,7 +2744,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       id: bfId, zone: 'battlefield', summoningSickness: true,
       // Komplet charakterystyk drugiej strony (CR 711.2) — wspólny helper
       // niesie też `kind`, którego wcześniej brakowało: strona zmieniająca
-      // rodzaj permanentu (Incubator → Phyrexian) wracała z bitwiska jako
+      // rodzaj permanentu (Incubator → Phyrexian) wracała z pola bitwy jako
       // obiekt o rodzaju strony przedniej.
       ...transformedCharacteristics(target, exiled),
       manaCost: target.manaCost ?? exiled.manaCost ?? 0,
@@ -2757,7 +2804,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // control becomes an artifact creature with base power and toughness 5/5
     // FOR AS LONG AS this creature remains on the battlefield"). Obiekt jest
     // mutowany jak przy animacji do końca tury, ale wpis ląduje w
-    // state.linkedAnimations — przy odejściu źródła z bitwiska (objects.js)
+    // state.linkedAnimations — przy odejściu źródła z pola bitwy (objects.js)
     // animacja jest COFANA (root cause: trwałość efektu wiąże się ze strefą
     // źródła, nie z końcem tury).
     const targetId = targets[0];
@@ -2799,7 +2846,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const counterName = effect.counter ?? '+1/+1';
     const amount = (sourceObject.formerCounters ?? {})[counterName] ?? 0;
     const targetId = targets[0];
-    // CR 608.2b: cel mógł opuścić bitwisko między wyborem a rozstrzygnięciem
+    // CR 608.2b: cel mógł opuścić pole bitwy między wyborem a rozstrzygnięciem
     // (stos triggerów) — brak efektu zamiast crasha addCounter.
     const target = targetId ? state.objects.get(targetId) : null;
     if (amount > 0 && target && target.zone === 'battlefield') addCounter(state, targetId, counterName, amount);
@@ -2893,12 +2940,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Zatapnięty w koszcie stwór przychodzi jako targets[0] (abilities.js
     // tapOtherCreature). D (2026-08-11): zdolność idzie na STOS — przeciwnik
     // mógł odpowiedzieć instanitem (usunąć zatapniętego stwora), więc przy
-    // rozstrzyganiu cel może być już poza bitwiskiem. CR 608.2b: jeśli cel
+    // rozstrzyganiu cel może być już poza polem bitwy. CR 608.2b: jeśli cel
     // nie jest już legalny, efekt nic nie robi (koszt tap już zapłacony).
     const tappedId = targets[0];
     const tapped = state.objects.get(tappedId);
     if (!tapped || tapped.zone !== 'battlefield') return;
-    // Źródło (Spacecraft) mogło opuścić bitwisko przed rozstrzygnięciem
+    // Źródło (Spacecraft) mogło opuścić pole bitwy przed rozstrzygnięciem
     // (CR 608.2b — zdolność na stosie, przeciwnik mógł odpowiedzieć) —
     // wtedy nie ma na co kłaść liczników.
     const stationSource = state.objects.get(sourceObject.id);
@@ -3070,7 +3117,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         // legalTargetCandidates z spells.js (cykl: spells.js →
         // effects.js → spells.js). Wzorzec identyczny jak w
         // spells.js legalTargetCandidates (CR 601.2c): gracze +
-        // stwory na bitwisku (z wyłączeniem źródła). Hexproof
+        // stwory na polu bitwy (z wyłączeniem źródła). Hexproof
         // celu nie blokuje efektu bezcelowego (Stomping Slabs
         // zadaje 7 dmg, nie jest celowany; czar jest „any target"
         // w rozstrzygnięciu, nie w trakcie wyboru).
@@ -3257,6 +3304,20 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     modifyStats(state, targetId, { power: amount, toughness: amount });
     return;
   }
+  // Basilisk Gate (CLB): „Target creature gets +X/+X until end of turn, where
+  // X is the number of Gates you control" — pump dynamiczny po liczbie
+  // kontrolowanych permanentów o podtypie Gate (CR 205.3d).
+  if (effect.type === 'pump_by_gates') {
+    const targetId = targets[0];
+    if (targetId == null) return;
+    const target = state.objects.get(targetId);
+    if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') return;
+    const gates = [...state.objects.values()].filter((o) => o.zone === 'battlefield'
+      && o.controllerId === sourceObject.controllerId
+      && (o.subtypes ?? []).includes('Gate')).length;
+    modifyStats(state, targetId, { power: gates, toughness: gates });
+    return;
+  }
   // Hecteyes (FIN): ETB each opponent discards a card
   if (effect.type === 'discard_each_opponent') {
     const opponents = state.players.filter((p) => p.id !== sourceObject.controllerId);
@@ -3370,7 +3431,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // beginning of the next end step or if it would leave the battlefield.
   // Unearth only as a sorcery." Podobne do Puppeteer (haste + delayed exile),
   // ale obiekt wraca do WŁAŚCICIELA (nie kontrolera źródła) i niesie flagę
-  // unearthExile — moveObjectDirectly wygnuje go zamiast opuścić bitwisko.
+  // unearthExile — moveObjectDirectly wygnuje go zamiast opuścić pole bitwy.
   if (effect.type === 'unearth_return') {
     const sourceObj = state.objects.get(sourceObject.id);
     if (!sourceObj || sourceObj.zone !== 'graveyard' || sourceObj.kind !== 'creature') return;

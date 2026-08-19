@@ -154,7 +154,9 @@ test('sesje z tym samym seedem przebiegają identycznie (bez Math.random)', () =
 
 test('partia z czarami przechodzi przez stos i event log to opisuje', () => {
   const { registry, decks } = buildDecks('green.txt', 'red.txt');
-  const session = createSession({ seed: 1, registry, decks });
+  // Seed 4 po Batch 35 E3 (green +Trade Route Envoy, red bez zmian) —
+  // przelosowane hunterem (kolejne trafienia: 17, 32).
+  const session = createSession({ seed: 4, registry, decks });
   playOut(session);
   // W obu taliach są instants — w długiej partii któryś musiał zostać rzucony.
   assert.ok(
@@ -179,7 +181,10 @@ test('log opisuje decyzję devour (Gorger Wurm) — wymaganie i poświęcenie', 
   // Crows) — poprzedni seed przestał odtwarzać scenariusz devour.
   // Seed 16 po transzy 2 batcha 33 (green +2, innistrad +1) — przelosowane hunterem.
   // Seed 28 po batchu 34 (green +1, innistrad +1) — przelosowane hunterem.
-  const session = createSession({ seed: 28, registry, decks });
+  // Seed 81 po Batch 35 E2 (innistrad +Wolfkin Bond +Mark of the Vampire) —
+  // przelosowane hunterem (kolejne trafienia: 108, 166).
+  // Seed 1 po Batch 35 E3 (innistrad +Blazing Torch) — przelosowane hunterem.
+  const session = createSession({ seed: 1, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Devour \(Gorger Wurm\): .* może poświęcać inne swoje stwory \(po 1× \+1\/\+1 za każdego\)$/.test(t)),
@@ -196,7 +201,10 @@ test('log opisuje decyzję endure (Kin-Tree Nurturer) — wybór i tryb', () => 
   // 4 po Cuombajj Witches (black +1) — przelosowane hunterem.
   // Seed 3 po M132 (dosypanie lądów wg reguły 2:1 — green +6, black +3):
   // zmiana składu talii zmienia rozdanie, więc scenariusz trzeba przelosować.
-  const session = createSession({ seed: 3, registry, decks });
+  // Seed 1 po Batch 35 E3 (black +Mindstab) — przelosowane hunterem.
+  // Seed 6 po Batchu 36 (green +Feral Invocation +Grizzled Leotau +1 Forest).
+  // Seed 1 po Batchu 36 E3 (black +Wretched Banquet +1 Swamp).
+  const session = createSession({ seed: 1, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Endure \(Kin-Tree Nurturer\): Nieprzyjaciel wybiera — 1× licznik \+1\/\+1 albo token Spirit 1\/1$/.test(t)),
@@ -218,7 +226,13 @@ test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora',
   // rozchodzi się od pierwszego szukania — przelosowane hunterem.
   // Seed 112 po M132 (green +6 lądów, red +3) — scenariusz delirium jest
   // rzadki, hunter przeszedł 400 seedów (kolejne trafienia: 136, 206).
-  const session = createSession({ seed: 112, registry, decks });
+  // Seed 18 po Batch 35 E2 (red +Titan's Strength +1 Mountain) — przelosowane
+  // hunterem (kolejne trafienia: 81, 133).
+  // Seed 81 po Batch 35 E3 (green +Trade Route Envoy) — przelosowane hunterem.
+  // Seed 43 po Batchu 36 (green +Feral Invocation +Grizzled Leotau +1 Forest).
+  // Seed 48 po Batchu 36 E4 (red +Molten Nursery).
+  // Seed 87 — dokładna polityka tego pliku (hunter z chooseHumanCommand).
+  const session = createSession({ seed: 87, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Delirium \(Fear of Burning Alive\):.+otrzymuje 4 obrażenia$/.test(t)),
@@ -231,7 +245,10 @@ test('log opisuje wybór kart z grobu na wierzch biblioteki (Forever Young)', ()
   // seed 12 po Batch 28; seed 2 po Batch 32; seed 4 po transzy 2 batcha 33;
   // seed 11 po batchu 34, 5 po Krumar Initiate, 1 po Cuombajj Witches.
   // Seed 14 po M132 (green +6 lądów, black +3) — przelosowane hunterem.
-  const session = createSession({ seed: 14, registry, decks });
+  // Seed 1 po Batch 35 E3 (green +Trade Route Envoy) — przelosowane hunterem.
+  // Seed 3 po Batch 35 E3b (black +Mindstab) — przelosowane hunterem.
+  // Seed 12 po Batchu 36 E3 (black +Wretched Banquet +1 Swamp).
+  const session = createSession({ seed: 12, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /wybiera karty-stwory z grobu na wierzch biblioteki \(Forever Young\)/.test(t)),

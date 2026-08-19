@@ -46,7 +46,7 @@ C. `snapshot` zlepia `tiles()` przez `text()` (zamienia `\n` na spację) —
 ### Bugi UI (rzeczywiste, zgłoszone właścicielowi wcześniej)
 
 D. Modal „Ruch przeciwnika" traktuje dwie akcje tego samego czaru (np.
-   `Garruk's Companion wchodzi na bitwisko` + `Garruk's Companion zostaje
+   `Garruk's Companion wchodzi na pole bitwy` + `Garruk's Companion zostaje
    rozstrzygnięty`) jako osobne wpisy — DOM dostaje 2 `<div>` obok siebie.
    Na stole to wygląda OK (CSS je rozdziela), ale log gry w `console.log`
    widzi dublety i tester zgłasza szum. **Fix:** sensowne grupowanie

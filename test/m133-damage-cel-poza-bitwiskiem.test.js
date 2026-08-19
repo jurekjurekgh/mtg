@@ -1,5 +1,5 @@
 // =============================================================================
-// M133 (CR 608.2b) — obrażenia w cel, którego JUŻ NIE MA na bitwisku, to
+// M133 (CR 608.2b) — obrażenia w cel, którego JUŻ NIE MA na polu bitwy, to
 // FIZZLE, a nie awaria silnika.
 //
 // OBJAW: `Error: Nieprawidłowy cel obrażeń` przerywał CAŁY proces benchmarku
@@ -17,7 +17,7 @@
 // się zamiast zastosować regułę „jeśli wszystkie cele są nielegalne, czar lub
 // zdolność nie rozstrzyga się".
 //
-// NAPRAWA: brak celu na bitwisku → 0 zadanych obrażeń + zdarzenie
+// NAPRAWA: brak celu na polu bitwy → 0 zadanych obrażeń + zdarzenie
 // `damage_fizzled` z powodem (L24 — skutek bez zdarzenia jest niewidoczny dla
 // reszty systemu i wygląda jak zawieszona gra).
 // =============================================================================
@@ -42,7 +42,7 @@ function board() {
   return state;
 }
 
-test('M133: cel, który opuścił bitwisko, NIE wywala silnika (CR 608.2b)', () => {
+test('M133: cel, który opuścił pole bitwy, NIE wywala silnika (CR 608.2b)', () => {
   const state = board();
   const source = state.objects.get('src');
   // Cel trafia do grobu, zanim zdolność się rozstrzygnie.
@@ -96,7 +96,7 @@ test('M133: log opisuje fizzle po ludzku, bez surowego typu zdarzenia', () => {
   );
   assert.ok(text, 'zdarzenie ma opis w logu');
   assert.match(text, /Goblin Piker/, `opis nazywa źródło: ${text}`);
-  assert.match(text, /cel opuścił bitwisko/, `opis podaje powód: ${text}`);
+  assert.match(text, /cel opuścił pole bitwy/, `opis podaje powód: ${text}`);
   assert.doesNotMatch(text, /damage_fizzled/, 'żadnego surowego typu zdarzenia w UI');
 });
 
@@ -104,14 +104,14 @@ test('M133 (anty-over-fix): normalne obrażenia w żywy cel działają bez zmian
   const state = board();
   const source = state.objects.get('src');
   const dealt = dealNonCombatDamage(state, source, 'victim', 2);
-  assert.equal(dealt, 2, 'cel na bitwisku dostaje pełne obrażenia');
+  assert.equal(dealt, 2, 'cel na polu bitwy dostaje pełne obrażenia');
   assert.ok(state.events.some((e) => e.type === 'damage_dealt' && e.amount === 2),
     'zdarzenie damage_dealt powstaje normalnie');
   assert.ok(!state.events.some((e) => e.type === 'damage_fizzled'),
     'żywy cel nie może generować fizzla');
 });
 
-test('M133 (anty-over-fix): obrażenia w GRACZA nie przechodzą przez bramkę bitwiska', () => {
+test('M133 (anty-over-fix): obrażenia w GRACZA nie przechodzą przez bramkę pola bitwy', () => {
   const state = board();
   const source = state.objects.get('src');
   const before = state.players.find((p) => p.id === 'p2').life;

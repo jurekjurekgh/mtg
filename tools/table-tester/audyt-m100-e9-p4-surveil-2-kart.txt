@@ -38,7 +38,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Relic Robber
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Relic Robber wchodzi na bitwisko
+  [ROZGRYWKA]   • Relic Robber wchodzi na pole bitwy
   [ROZGRYWKA]   • Relic Robber zostaje rozstrzygnięty
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
   [ROZGRYWKA]   • Atak: Relic Robber
@@ -49,7 +49,7 @@
   [ROZGRYWKA]   • Relic Robber — trigger (obrażenia bojowe graczowi)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty tworzysz token Goblin Construct (0/1)
-  [ROZGRYWKA]   • Goblin Construct wchodzi na bitwisko
+  [ROZGRYWKA]   • Goblin Construct wchodzi na pole bitwy
   [ROZGRYWKA]   • Relic Robber — trigger się rozstrzyga
   [ROZGRYWKA]   • Tura 7 — Ty
   >> Rzuć: Shatter (koszt 1R) → cel: Goblin Construct (Ty)
@@ -81,7 +81,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Impact Tremors
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Impact Tremors wchodzi na bitwisko
+  [ROZGRYWKA]   • Impact Tremors wchodzi na pole bitwy
   [ROZGRYWKA]   • Impact Tremors zostaje rozstrzygnięty
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
   [ROZGRYWKA]   • Atak: Relic Robber
@@ -92,7 +92,7 @@
   [ROZGRYWKA]   • Relic Robber — trigger (obrażenia bojowe graczowi)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty tworzysz token Goblin Construct (0/1)
-  [ROZGRYWKA]   • Goblin Construct wchodzi na bitwisko
+  [ROZGRYWKA]   • Goblin Construct wchodzi na pole bitwy
   [ROZGRYWKA]   • Relic Robber — trigger się rozstrzyga
   [ROZGRYWKA]   • Tura 9 — Ty
   [ROZGRYWKA]   • Faza: Podtrzymanie
@@ -114,7 +114,7 @@
   >> Zagraj: Civilized Scholar (koszt 2U)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Civilized Scholar
-  [ROZGRYWKA]   • Civilized Scholar wchodzi na bitwisko
+  [ROZGRYWKA]   • Civilized Scholar wchodzi na pole bitwy
   [ROZGRYWKA]   • Civilized Scholar zostaje rozstrzygnięty
   >> Zagraj ląd: Mountain
   [ROZGRYWKA] Rozgrywka
@@ -140,7 +140,7 @@
   [modal choice]     Rzuć z Cleave: Lunar Rejection (koszt 4) → cel: Relic Robber (Nieprzyjaciel)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty rzuca Lunar Rejection z kosztem Cleave → cel: Goblin Construct
-  [ROZGRYWKA]   • Ty: Goblin Construct — bitwisko → ręka
+  [ROZGRYWKA]   • Ty: Goblin Construct — pole bitwy → ręka
   [ROZGRYWKA]   • Ty dobiera: Island
   [ROZGRYWKA]   • Lunar Rejection zostaje rozstrzygnięty
   >> Dobierz kartę
@@ -155,7 +155,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Seismic Monstrosaur
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Seismic Monstrosaur wchodzi na bitwisko
+  [ROZGRYWKA]   • Seismic Monstrosaur wchodzi na pole bitwy
   [ROZGRYWKA]   • Seismic Monstrosaur zostaje rozstrzygnięty
   [ROZGRYWKA]   • Impact Tremors zadaje 1 obrażenie (Ty)
   [ROZGRYWKA]   • Ty: życie 14 → 13
@@ -168,7 +168,7 @@
   [ROZGRYWKA]   • Relic Robber — trigger (obrażenia bojowe graczowi)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty tworzysz token Goblin Construct (0/1)
-  [ROZGRYWKA]   • Goblin Construct wchodzi na bitwisko
+  [ROZGRYWKA]   • Goblin Construct wchodzi na pole bitwy
   [ROZGRYWKA]   • Relic Robber — trigger się rozstrzyga
   [ROZGRYWKA]   • Tura 13 — Ty
   [ROZGRYWKA]   • Faza: Podtrzymanie
@@ -186,13 +186,13 @@
   >> Zagraj: Jeskai Devotee (koszt 1R)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Jeskai Devotee
-  [ROZGRYWKA]   • Jeskai Devotee wchodzi na bitwisko
+  [ROZGRYWKA]   • Jeskai Devotee wchodzi na pole bitwy
   [ROZGRYWKA]   • Jeskai Devotee zostaje rozstrzygnięty
   >> Zagraj: Gurmag Drowner (koszt 3U)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Gurmag Drowner
   [ROZGRYWKA]   • Jeskai Devotee — trigger się rozstrzyga
-  [ROZGRYWKA]   • Gurmag Drowner wchodzi na bitwisko
+  [ROZGRYWKA]   • Gurmag Drowner wchodzi na pole bitwy
   [ROZGRYWKA]   • Gurmag Drowner zostaje rozstrzygnięty
   >> Dalej (pass)
   [ROZGRYWKA] Rozgrywka
@@ -206,7 +206,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
   [ROZGRYWKA]   • Nieprzyjaciel: zdolność Seismic Monstrosaur rozstrzygnięta
-  [ROZGRYWKA]   • Brawler's Plate wchodzi na bitwisko
+  [ROZGRYWKA]   • Brawler's Plate wchodzi na pole bitwy
   [ROZGRYWKA]   • Brawler's Plate zostaje rozstrzygnięty
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
   [ROZGRYWKA]   • Atak: Seismic Monstrosaur

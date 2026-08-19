@@ -88,7 +88,7 @@ wariant.
 
 ### B2. attacks_alone (Angelic Benediction) — brak filtra kontrolera
 `processTriggers` dla `attacks_alone` odpala trigger na KAŻDYM źródle na
-bitwisku; „Whenever a creature **you control** attacks alone" — trigger na
+polu bitwy; „Whenever a creature **you control** attacks alone" — trigger na
 Benediction przeciwnika odpala się, gdy JA atakuję samotnie (błędny exalted
 pump mojego stwora + „you may tap target creature" przeciwnika).
 **Fix:** `tryFire` tylko gdy `source.controllerId === attacker.controllerId`.
@@ -107,7 +107,7 @@ on them" jest realizowana wyłącznie w efekcie `cloak`. Morph face-down
 (Monastery Flock — azorius ma i Veiled, i Flocka) wchodzący przy Veiled nie
 dostaje licznika. **Fix:** generyczny hook przy wejściu dowolnego face-down
 stwora kontrolera (cloak + morph + inne ścieżki), jeśli źródło ze zdolnością
-`faceDownEnterFlyingCounter` na bitwisku.
+`faceDownEnterFlyingCounter` na polu bitwy.
 
 ### B5. Oil counters — nadmierna generalizacja w counterDelta
 `counterDelta` dodaje `oil` do P/T dla KAŻDEGO obiektu. Sam licznik oil nie
@@ -163,7 +163,7 @@ Wykonane dla ścieżki `performActivation` (niemane, bez morph/megamorph).
 - C/C2: „Stos — nazwa" + życie w górnym panelu — przy zdolności na stosie.
 - D: log ability_resolved — po polsku, z nazwą.
 - E: właściciele w modalach — (Ty)/(Nieprzyjaciel) tylko dla permanentów na
-  bitwisku (nie dla kart w ręce/grobie — tam kontroler nie ma sensu).
+  polu bitwy (nie dla kart w ręce/grobie — tam kontroler nie ma sensu).
 - F: „zaczarowana: X"/„wyposażona: X" na gospodarzu.
 
 ## Porządek commitów

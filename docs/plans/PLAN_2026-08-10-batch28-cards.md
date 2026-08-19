@@ -35,7 +35,7 @@ Batch 28 = **9 nowych kart** + para Villager//Moonscarred (już kompletna od M36
    wróć na battlefield z haste; `unearthExile` na obiekcie — delayed trigger „exile at
    the beginning of the next end step" ORAZ replacement „if it would leave the
    battlefield, exile instead" (moveObjectDirectly: obiekt z unearthExile przy wyjściu
-   z bitwiska → exile).
+   z pola bitwy → exile).
 3. **Token u ofiary (Relic Robber)** — combat_damage_to_player: create_token z
    controllerId = CEL (gracz poszkodowany); token_goblin_construct 0/1 bezbarwny
    artifact creature, keywords can't block, trigger upkeep: 1 damage do kontrolera.

@@ -127,7 +127,10 @@ test('hover: tor scryfall daje duży obraz, tory lokalne wchodzą przed nim', ()
   assert.deepEqual(hoverImageSources(highlandGame, { hoverMode: 'fot' })[0], 'img/509FOT.png');
 
   const noArt = { ...highlandGame, artId: null };
-  assert.deepEqual(hoverImageSources(noArt, { hoverMode: 'fot' }), scryfall);
+  // M146 (uwaga właściciela): karta bez artId w trybie FOT/KON nie pokazuje
+  // NIC (pusty podgląd) — spadek na Scryfall był mylący (inny format niż
+  // panoramiczny FOT). Basic landy, tokeny i Undercity nie mają FOT/KON.
+  assert.deepEqual(hoverImageSources(noArt, { hoverMode: 'fot' }), []);
 
   const withArt = { ...highlandGame, artId: 77 };
   assert.deepEqual(hoverImageSources(withArt, { hoverMode: 'fot' })[0], 'img/77FOT.png');

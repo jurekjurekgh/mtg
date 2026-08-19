@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Ghoulcaller%27s%20Bell&set=isd",
+  "print": "Ghoulcaller's Bell (ISD)",
+  "name": "Ghoulcaller's Bell",
+  "mana_cost": "{1}",
+  "cmc": 1,
+  "type_line": "Artifact",
+  "oracle_text": "{T}: Each player mills a card.",
+  "power": null,
+  "toughness": null,
+  "colors": [],
+  "color_identity": [],
+  "keywords": [
+    "Mill"
+  ],
+  "set": "isd",
+  "set_name": "",
+  "collector_number": "224",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/8/6/863e7c2a-698c-4dce-a10b-ca58e4affa57.jpg",
+    "normal": "https://cards.scryfall.io/normal/front/8/6/863e7c2a-698c-4dce-a10b-ca58e4affa57.jpg"
+  },
+  "pobrano": "2026-08-19"
+}

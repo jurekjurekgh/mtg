@@ -17,7 +17,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 //  2) Wavecrash Triton: lock_untap trwały (jak Entrancing Lyre) zamiast
 //     „doesn't untap during controller's next untap step".
 //  3) Amass z wieloma armiami bez wyboru (engine bierze pierwszą).
-//  4) Caravan Vigil Morbid wymusza bitwisko bez opcji „may" (ręka).
+//  4) Caravan Vigil Morbid wymusza pole bitwy bez opcji „may" (ręka).
 //  5) Goad nie uniemożliwia blokowania (CR 701.38).
 // =============================================================================
 
@@ -74,7 +74,7 @@ test('BUG1: Cloudbound Moogle — „target creature\" może celować w siebie (
   assert.ok(r.ok, r.events?.[0]?.reason);
   fullPass(state);
   const selfId = state.zones.battlefield.find((id) => state.objects.get(id)?.cardId === 'cloudbound-moogle');
-  assert.ok(selfId, 'Moogle na bitwisku');
+  assert.ok(selfId, 'Moogle na polu bitwy');
   // ETB „put a +1/+1 counter on target creature" — jedyny stwór to Moogle,
   // więc trigger MUSI mieć go jako kandydata (self). Bez fixa trigger nie odpala.
   assert.equal(state.pendingTriggerTargets.length, 1, 'ETB z celem czeka na decyzję');
@@ -128,7 +128,7 @@ test('BUG5: goaded creature MOŻE blokować (CR 701.38b — goad to wymóg ataku
 // ---------------------------------------------------------------------------
 // BUG 4 — Caravan Vigil Morbid „may"
 // ---------------------------------------------------------------------------
-test('BUG4: Caravan Vigil Morbid — gracz wybiera ręka ALBO bitwisko („may\")', () => {
+test('BUG4: Caravan Vigil Morbid — gracz wybiera ręka ALBO pole bitwy („may\")', () => {
   const state = game();
   mainPhase(state);
   addRealCard(state, 'forest', 'basic-forest', 'p1', 'library');
@@ -138,13 +138,13 @@ test('BUG4: Caravan Vigil Morbid — gracz wybiera ręka ALBO bitwisko („may\"
   execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'vigil' });
   fullPass(state);
   assert.ok(state.pendingSearchChoice, 'szukanie czeka na decyzję');
-  // Gracz ma wybór destination: ręka (always) albo bitwisko (morbid „may").
+  // Gracz ma wybór destination: ręka (always) albo pole bitwy (morbid „may").
   const v = playerView(state, 'p1');
   const cmds = v.legalCommands.filter((c) => c.type === 'resolve_search_choice');
   const hasHandOption = cmds.some((c) => c.destination === 'hand');
   const hasBfOption = cmds.some((c) => c.destination === 'battlefield');
   assert.ok(hasHandOption, 'opcja „do ręki\" dostępna (always)');
-  assert.ok(hasBfOption, 'opcja „na bitwisko\" dostępna (morbid)');
+  assert.ok(hasBfOption, 'opcja „na pole bitwy\" dostępna (morbid)');
 });
 
 // ---------------------------------------------------------------------------

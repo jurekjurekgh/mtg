@@ -237,7 +237,7 @@ test('Feedback: „Enchant enchantment" — rzut, załączenie i obrażenia w up
   addCardFromRegistry(state, 'fb', 'feedback', 'p1', 'hand');
   addEnchantment(state, 'ench', 'p2', { colors: ['U'] });
   castAuraSpell(state, 'p1', 'fb', { targetId: 'ench' });
-  assert.ok(resolveStack(state), 'aura weszła na bitwisko');
+  assert.ok(resolveStack(state), 'aura weszła na pole bitwy');
   const aura = byCard(state, 'feedback', 'battlefield');
   assert.ok(aura && aura.attachedTo === 'ench', 'aura zaczarowała enchantment');
   // Przejście untap→upkeep p2 prawdziwymi passami: step_advanced(upkeep)
@@ -320,7 +320,7 @@ test('Greater Tanuki: channel z ręki — basic land tapped, karta do grobu, tas
   const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'lib-forest' });
   assert.ok(pick.ok, `wybór forestu: ${pick.events?.[0]?.reason ?? ''}`);
   const bfLands = state.zones.battlefield.filter((id) => state.objects.get(id)?.kind === 'land');
-  assert.equal(bfLands.length, 1, 'dokładnie jeden basic land na bitwisku');
+  assert.equal(bfLands.length, 1, 'dokładnie jeden basic land na polu bitwy');
   assert.equal(state.objects.get(bfLands[0]).cardId, 'basic-forest', 'wybrany przez gracza basic land');
   assert.equal(state.objects.get(bfLands[0]).tapped, true, 'wchodzi tapped');
   assert.equal(state.players[0].mana, 0, 'zapłacono {2}{G}');

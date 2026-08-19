@@ -196,7 +196,7 @@ test('B4: zakryty stwór jest bezbarwny, bezimienny, bez podtypów i o koszcie 0
   assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'flock', faceDown: true }).ok);
   assert.ok(resolveStack(state), 'czar face-down rozstrzygnięty');
   const fd = [...state.objects.values()].find((o) => o.zone === 'battlefield' && o.faceDown);
-  assert.ok(fd, 'zakryty stwór na bitwisku');
+  assert.ok(fd, 'zakryty stwór na polu bitwy');
   assert.deepEqual([...(fd.colors ?? [])], [], 'face-down jest bezbarwny (CR 708.2)');
   assert.deepEqual([...(fd.subtypes ?? [])], [], 'face-down nie ma podtypów (CR 708.2)');
   assert.equal(fd.manaCost, 0, 'face-down ma mana value 0 (CR 708.2)');

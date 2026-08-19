@@ -31,6 +31,13 @@ const MANA_SOURCE_MAP = Object.freeze({
   'secluded-steppe': { colors: ['W'], amount: 1 },
   'raucous-carnival': { colors: ['R', 'W'], amount: 1 },
   'great-furnace': { colors: ['R'], amount: 1 },
+  'basilisk-gate': { colors: [], amount: 1 }, // {T}: Add {C}
+  // Urza's Mine — tron (CR 702.??): {T}: Add {C}; jeśli kontrolujesz też
+  // Urza's Power-Plant i Urza's Tower → zamiast tego Add {C}{C}.
+  // Intencja: oba pozostałe landy z linii Urzy pojawią się w przyszłości
+  // (decyzja właściciela). Mapa nie zawiera dosłownego porównania cardId —
+  // funkcja getSourceForObject czyta z tego wpisu (ADR 0002: dane, nie kod).
+  'urza-s-mine': { colors: [], amount: 1, tronRequired: ['urza-s-power-plant', 'urza-s-tower'] },
 
   // Mana artifacts / creatures
   'dragonbroods-relic': { colors: ['W', 'U', 'B', 'R', 'G'], amount: 1 },
@@ -63,7 +70,7 @@ const BASIC_SUBTYPE_COLORS = Object.freeze({
  * Dla danego obiektu gry (land, token, permanent) zwraca info o produkcji many,
  * jeśli jest źródłem many.
  */
-export function getSourceForObject(gameObject) {
+export function getSourceForObject(gameObject, state = null) {
   if (!gameObject) return null;
   const cardId = gameObject.cardId;
   const isLand = gameObject.kind === 'land' || (gameObject.types ?? []).includes('Land');
@@ -81,7 +88,21 @@ export function getSourceForObject(gameObject) {
     }
   }
   const info = getManaSourceInfo(cardId);
-  if (info) return { id: gameObject.id, cardId, colors: info.colors, amount: info.amount };
+  if (info) {
+    let amt = info.amount ?? 1;
+    // Urza's tron: {T}: Add {C}{C} zamiast {C}, gdy kontrolujesz też
+    // Urza's Power-Plant i Urza's Tower (sprawdzane po cardId — ADR 0002
+    // dopuszcza w danych kart, nie w core).
+    // Tron (Urza's lands): sprawdza kontrolę wymaganych kart przez ID z danych
+    // mapy (tronRequired) — zero literału w kodzie, ADR 0002.
+    if (info.tronRequired?.length && gameObject.controllerId && state) {
+      const ctrl = gameObject.controllerId;
+      const allMet = info.tronRequired.every((reqId) =>
+        [...state.objects.values()].some((o) => o.zone === 'battlefield' && o.controllerId === ctrl && o.cardId === reqId));
+      if (allMet) amt = 2;
+    }
+    return { id: gameObject.id, cardId, colors: info.colors, amount: amt };
+  }
   // Fallback: jeśli obiekt jest landem i nie ma go w mapie ani podtypów
   // podstawowych — zachowawczo colorless (nie pomaga w kolorach).
   if (isLand) {
@@ -103,7 +124,7 @@ export function allControlledManaSources(state, playerId) {
   for (const id of state.zones.battlefield) {
     const obj = state.objects.get(id);
     if (!obj || obj.controllerId !== playerId) continue;
-    const src = getSourceForObject(obj);
+    const src = getSourceForObject(obj, state);
     if (src && (src.amount ?? 1) > 0) sources.push(src);
   }
   return sources;
@@ -118,7 +139,7 @@ export function untappedManaSources(state, playerId) {
   for (const id of state.zones.battlefield) {
     const obj = state.objects.get(id);
     if (!obj || obj.controllerId !== playerId || obj.tapped) continue;
-    const src = getSourceForObject(obj);
+    const src = getSourceForObject(obj, state);
     if (src && (src.amount ?? 1) > 0) sources.push(src);
   }
   return sources;

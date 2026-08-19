@@ -725,7 +725,7 @@ test('B (2026-08-11): etykieta aktywacji nie dubluje kosztu zdolności', async (
   const reg = createCardRegistry();
   const soul = reg.get('soulmender');
   assert.ok(soul, 'brak soulmender');
-  // Symulujemy widok: source na bitwisku p1, komenda aktywacji.
+  // Symulujemy widok: source na polu bitwy p1, komenda aktywacji.
   const view = {
     playerId: 'p1',
     players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }],
@@ -1498,7 +1498,7 @@ test('M100 E13: object_attached via equip bez zmian — „X wyposaża Y" (regre
 });
 
 // --- M112: sekcja `combat` z PlayerView na stole (ADR 0017) -----------------
-// Do tej pory kafle bitwiska NIE pokazywały walki: gracz widział tapnięcie,
+// Do tej pory kafle pola bitwy NIE pokazywały walki: gracz widział tapnięcie,
 // ale nie to, kto atakuje, kto blokuje i kto jest niezablokowany. Dane są
 // w widoku od M107 (`view.combat` — informacja publiczna, CR 508/509),
 // warstwa stołu po prostu z nich nie korzystała.

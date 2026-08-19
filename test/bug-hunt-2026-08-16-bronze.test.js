@@ -235,7 +235,7 @@ test('B6: token-kopia Cogwork Assembler znika w kroku końcowym TURY PRZECIWNIKA
     execute(state, pass);
   }
   const token = [...state.objects.values()].find((o) => o.zone === 'battlefield' && o.name === "Dragonbroods' Relic");
-  assert.ok(token, 'token-kopia wszedł na bitwisko');
+  assert.ok(token, 'token-kopia wszedł na pole bitwy');
   assert.equal(state.delayedTriggers.length, 1, 'opóźniony trigger wygnania jest uzbrojony');
 
   // Przewijamy turę PRZECIWNIKA do jej kroku końcowego.

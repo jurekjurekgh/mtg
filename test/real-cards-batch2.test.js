@@ -248,7 +248,7 @@ test('artefakt można zagrać z ręki jak permanent (main phase, koszt many)', (
   assert.equal(state.players[0].mana, 0);
   resolveStack(state); // T1: czar artefaktu rozstrzyga się po rundzie passów
   const lyre = [...state.objects.values()].find((o) => o.cardId === 'entrancing-lyre' && o.zone === 'battlefield');
-  assert.ok(lyre, 'lira nie weszła na bitwisko');
+  assert.ok(lyre, 'lira nie weszła na pole bitwy');
   assert.equal(lyre.kind, 'artifact');
 });
 
@@ -319,7 +319,7 @@ test('Zoraline: trigger wejścia płaci 2 many i 2 życia i wraca stwora z grobu
   assert.equal(state.players[0].life, 18, '2 życia nie zapłacone');
   assert.equal(state.zones.graveyard.some((id) => state.objects.get(id)?.cardId === 'highland-game'), false, 'karta nie wyszła z grobu');
   const returned = [...state.objects.values()].find((o) => o.cardId === 'highland-game' && o.zone === 'battlefield');
-  assert.ok(returned, 'karta nie wróciła na bitwisko');
+  assert.ok(returned, 'karta nie wróciła na pole bitwy');
   assert.ok(hasCounter(returned, 'finality'), 'brak finality counter na wskrzeszonej karcie');
 });
 

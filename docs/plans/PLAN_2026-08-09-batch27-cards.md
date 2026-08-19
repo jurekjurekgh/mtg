@@ -72,7 +72,7 @@ untap), Scroll Thief (combat_damage_to_player + draw), Giant Spider/Minotaur (va
 
 - `edit_file` psuje PL → python3; commit msg przez /tmp.
 - DFC: tył (Homicidal Brute) `limited` (jak krallenhorde-wantons); transformTo na froncie;
-  transform wymaga źródła NA bitwisku (M65 fix — no-op przy LKI stub).
+  transform wymaga źródła NA polu bitwy (M65 fix — no-op przy LKI stub).
 - attackedThisTurn: czyścić w cleanup (koniec tury); triggery end step przed cleanup.
 - „Your end step" (Homicidal) — tylko aktywny gracz; trigger end step istnieje
   (Canonized/Puppeteer) — warunek controllerId === activePlayerId.

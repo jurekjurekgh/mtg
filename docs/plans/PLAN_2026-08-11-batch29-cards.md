@@ -28,7 +28,7 @@ Scryfall pobrane z `set=` przez fetch_page (api zablokowane), artId+plan ze sło
    gdy zaczarowany stwór zadaje combat damage graczowi-przeciwnikowi, „you may draw"
    (mayFire + draw_cards). Skan auracji załączonych do źródła obrażeń.
 3. **Cloak (Veiled Ascension)** — upkeep: „you may cloak the top card of your library"
-   = wierzch biblioteki na bitwisko FACE-DOWN jako 2/2 (CR 702.75); flying counter na
+   = wierzch biblioteki na pole bitwy FACE-DOWN jako 2/2 (CR 702.75); flying counter na
    face-down; face-down wchodzące z flying counter.
 4. **Exalted + attacks-alone (Angelic Benediction)** — exalted (attacker alone +1/+1)
    + trigger „whenever a creature you control attacks alone, you may tap target creature".

@@ -60,7 +60,11 @@ test('Bug A: hand_top_choice_required nie wpisuje nazwy karty z palca (ADR 0002)
 function playAndCollectPanel(session, { maxMoves = 400 } = {}) {
   const shown = [];
   const showBotMoves = () => {
-    for (let guard = 0; guard < 500 && session.state.status === 'active'; guard += 1) {
+    // M146: kolekcjonujemy OSTATNIE ruchy także po zakończeniu partii — gdy
+    // partia kończy się w trakcie ruchu bota (np. śmiertelne obrażenia),
+    // bufor modala niesie ostatnie zagrania, a `status !== 'active'` kończył
+    // pętlę PRZED ich zebraniem (fałszywy alarm „zniszczenie poza panelem").
+    for (let guard = 0; guard < 500; guard += 1) {
       const moves = session.botMoves ?? [];
       const meaningful = moves.filter((m) => !/^Faza:/.test(m.text ?? ''));
       if (meaningful.length === 0 && moves.length > 0) {
@@ -128,4 +132,55 @@ test('Bug B: Fathom Fleet Cutthroat — zniszczenie w panelu Rozgrywka', () => {
     `Zniszczenia w panelu są mniejsze niż w logu:\n${raport.join('\n')}\nŁącznie: panel ${laczniePanel}, log ${lacznieLog}`,
   );
   assert.ok(lacznieLog > 0, 'żaden seed nie wyprodukował zniszczeń — test nic nie sprawdza');
+});
+
+// --- M146: stats_modified opisuje każdy wariant skutku (nie „undefined/undefined") ---
+
+test('M146: stats_modified lock_untap ma czytelny opis (nie undefined/undefined)', () => {
+  const text = describeGameEvent({
+    type: 'stats_modified', objectId: 'lyre-host', cardId: 'entrancing-lyre',
+    untapLocked: true, sourceId: 'lyre',
+  }, { ...helpers, nameOfObject: (id) => ({ 'lyre-host': 'Krumar Initiate', lyre: 'Entrancing Lyre' }[id] ?? id) });
+  assert.ok(!text.includes('undefined'), `undefined w opisie: ${text}`);
+  assert.match(text, /nie odkręca się/);
+  assert.match(text, /Entrancing Lyre/);
+});
+
+test('M146: stats_modified skipsNextUntap i base PT mają czytelne opisy', () => {
+  const nameOfObject = (id) => ({ host: 'Wavecrash Triton' }[id] ?? id);
+  const skip = describeGameEvent({ type: 'stats_modified', objectId: 'host', cardId: 'wavecrash-triton', skipsNextUntap: true }, { ...helpers, nameOfObject });
+  assert.ok(!skip.includes('undefined'), `undefined w opisie: ${skip}`);
+  assert.match(skip, /nie odkręca się w następnym kroku odkręcania/);
+  const base = describeGameEvent({ type: 'stats_modified', objectId: 'host', cardId: 'x', basePower: 4, baseToughness: 4, untilEndOfTurn: true }, { ...helpers, nameOfObject });
+  assert.ok(!base.includes('undefined'), `undefined w opisie: ${base}`);
+  assert.match(base, /staje się 4\/4 do końca tury/);
+});
+
+// --- M146 (uwaga właściciela): trigger PRZECIWNIKA nie mówi „twoich" -------
+test('M146: trigger przeciwnika (Nefarious Imp) opisuje „permanenty (Nieprzyjaciel)", nie „twoje"', () => {
+  const names = { p1: 'Czarodziejka', p2: 'Nieprzyjaciel' };
+  const text = describeGameEvent({
+    type: 'ability_triggered',
+    objectId: 'imp', cardId: 'nefarious-imp',
+    trigger: 'permanents_you_control_leave_battlefield',
+  }, {
+    ...helpers,
+    nameOf: (id) => ({ 'nefarious-imp': 'Nefarious Imp' }[id] ?? id),
+    controllerOf: () => 'p2', // źródło należy do bota
+  }, names);
+  assert.ok(!text.includes('twoich'), `zaimek „twoich" przy cudzym triggerze: ${text}`);
+  assert.match(text, /permanentów \(Nieprzyjaciel\)/);
+});
+
+test('M146: trigger WŁASNY nadal mówi „twoich" (perspektywa gracza)', () => {
+  const names = { p1: 'Czarodziejka', p2: 'Nieprzyjaciel' };
+  const text = describeGameEvent({
+    type: 'ability_triggered',
+    objectId: 'x', cardId: 'x',
+    trigger: 'permanents_you_control_leave_battlefield',
+  }, {
+    ...helpers,
+    controllerOf: () => 'p1', // źródło gracza
+  }, names);
+  assert.match(text, /twoich permanentów/);
 });

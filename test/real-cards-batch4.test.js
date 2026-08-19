@@ -205,7 +205,7 @@ test('Backup: wejście stwora z backup kolejkuje decyzję kontrolera (jawny trig
   assert.deepEqual(pending.grantKeywords, ['menace']);
   assert.ok(state.events.some((e) => e.type === 'ability_triggered' && e.backup === true));
   const src = findOnBattlefield(state, 'gloomfang-mauler');
-  assert.ok(src, 'Mauler powinien być na bitwisku');
+  assert.ok(src, 'Mauler powinien być na polu bitwy');
 });
 
 test('Backup: blokada gry — pass i tapowanie odrzucane do czasu resolve_backup', () => {
@@ -405,8 +405,8 @@ test('Swampcycling: bez many odrzucone (nielegalna aktywacja)', () => {
   assert.match(result.events[0].reason, /illegal_ability/);
 });
 
-test('Swampcycling: na bitwisku zdolność jest martwa — widok jej nie oferuje (CR 702.28a)', () => {
-  // Regresja: bez pominięcia cyclingu w skanowaniu zdolności na bitwisku
+test('Swampcycling: na polu bitwy zdolność jest martwa — widok jej nie oferuje (CR 702.28a)', () => {
+  // Regresja: bez pominięcia cyclingu w skanowaniu zdolności na polu bitwy
   // widok oferował komendę, którą execute słusznie odrzucał — bot wybierał
   // „legalną" komendę i partia padała na command_rejected.
   const state = game();
@@ -415,7 +415,7 @@ test('Swampcycling: na bitwisku zdolność jest martwa — widok jej nie oferuje
   addMana(state, 'p1', 3);
   const view = playerView(state, 'p1');
   const offered = view.legalCommands.filter((c) => c.type === 'activate_ability' && c.objectId === 'mauler-battle');
-  assert.deepEqual(offered, [], 'cycling z ręki nie może być oferowany na bitwisku');
+  assert.deepEqual(offered, [], 'cycling z ręki nie może być oferowany na polu bitwy');
   const result = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'mauler-battle', abilityIndex: 0 });
   assert.equal(result.ok, false);
   assert.match(result.events[0].reason, /illegal_ability/);
@@ -448,10 +448,10 @@ test("Serra's Embrace: cast = czar aury na stosie, bez celu nie da się rzucić"
   assert.ok(cast.ok);
   assert.ok(cast.events.some((e) => e.type === 'aura_spell_cast' && e.bestow === false));
   const stacked = [...state.objects.values()].find((o) => o.cardId === 'serras-embrace' && o.zone === 'stack');
-  assert.ok(stacked, 'aura ma trafić na stos, nie wprost na bitwisko');
+  assert.ok(stacked, 'aura ma trafić na stos, nie wprost na pole bitwy');
   passBoth(state, 'p1');
   const aura = findOnBattlefield(state, 'serras-embrace');
-  assert.ok(aura, 'aura wchodzi na bitwisko po rozstrzygnięciu');
+  assert.ok(aura, 'aura wchodzi na pole bitwy po rozstrzygnięciu');
   assert.equal(aura.kind, 'aura');
   assert.equal(aura.attachedTo, 'host');
 });
@@ -612,7 +612,7 @@ test('Cloak of the Bat: haste pomija chorobę przywołania w turze wejścia nosi
   assert.ok(withHaste.ok, 'haste z equipmentu ma dać atak w turze wejścia');
 });
 
-test('Cloak of the Bat: śmierć nosiciela = cloak zostaje odłączony na bitwisku; re-equip działa', () => {
+test('Cloak of the Bat: śmierć nosiciela = cloak zostaje odłączony na polu bitwy; re-equip działa', () => {
   const state = game();
   const cloak = castCloak(state);
   addSimpleCreature(state, 'carrier', 'p1', { power: 1, toughness: 2 });
@@ -622,7 +622,7 @@ test('Cloak of the Bat: śmierć nosiciela = cloak zostaje odłączony na bitwis
   markDamage(state, 'carrier', 5);
   assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);
   const cloakAfter = state.objects.get(cloak.id);
-  assert.equal(cloakAfter.zone, 'battlefield', 'equipment zostaje na bitwisku (CR 704.5n)');
+  assert.equal(cloakAfter.zone, 'battlefield', 'equipment zostaje na polu bitwy (CR 704.5n)');
   assert.equal(cloakAfter.attachedTo, null);
   assert.ok(state.events.some((e) => e.type === 'object_detached' && e.objectId === cloak.id));
   // Re-equip na nowego nosiciela.

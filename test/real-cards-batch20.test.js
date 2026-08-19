@@ -109,7 +109,7 @@ test('Rustwing Falcon: {W} 1/2 z flying, legalny rzut z Plains', () => {
   resolveStack(state);
 assert.ok(rCast.ok, rCast.events[0]?.reason);
   const obj = [...state.objects.values()].find((o) => o.cardId === 'rustwing-falcon' && o.zone === 'battlefield');
-  assert.ok(obj, 'Falcon nie na bitwisku');
+  assert.ok(obj, 'Falcon nie na polu bitwy');
   assert.ok(effectiveKeywords(obj, state).includes('flying'));
   assert.equal(obj.zone, 'battlefield');
 });
@@ -127,7 +127,7 @@ test('Monastery Flock: zwykły rzut 0/5 defender flying', () => {
   resolveStack(state);
 assert.ok(rCast.ok, rCast.events[0]?.reason);
   const obj = [...state.objects.values()].find((o) => o.cardId === 'monastery-flock' && o.zone === 'battlefield' && !o.faceDown);
-  assert.ok(obj, 'Flock nie na bitwisku');
+  assert.ok(obj, 'Flock nie na polu bitwy');
   const kw = effectiveKeywords(obj, state);
   assert.ok(kw.includes('defender') && kw.includes('flying'));
   assert.equal(obj.power, 0);
@@ -242,7 +242,7 @@ test('Caravan Vigil: bez morbid → basic land do ręki', () => {
   assert.ok(inHand, 'basic land w ręce (bez morbid)');
 });
 
-test('Caravan Vigil: z morbid → basic land na bitwisko', () => {
+test('Caravan Vigil: z morbid → basic land na pole bitwy', () => {
   const state = game();
   mainPhase(state);
   state.creatureDiedThisTurn = true;
@@ -254,11 +254,11 @@ test('Caravan Vigil: z morbid → basic land na bitwisko', () => {
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   execute(state, { type: 'pass_priority', playerId: 'p2' });
   // Temat 6: wybór karty z biblioteki. BUG4 fix: przy morbid gracz wybiera
-  // ręka ALBO bitwisko („may") — tu wybieramy bitwisko.
+  // ręka ALBO pole bitwy („may") — tu wybieramy pole bitwy.
   assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
   assert.ok(execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'basic2', destination: 'battlefield' }).ok);
   const onBF = [...state.objects.values()].some((o) => o.cardId === 'basic-forest' && o.zone === 'battlefield');
-  assert.ok(onBF, 'basic land na bitwisku (morbid, wybór gracza)');
+  assert.ok(onBF, 'basic land na polu bitwy (morbid, wybór gracza)');
 });
 
 // --- Chittering Rats (DST) — ETB: opponent hand card → top of library --------
@@ -299,25 +299,25 @@ test('Goldmeadow Nomad: aktywacja z grobu → token Kithkin + wygnanie źródła
   resolveStack(state); // D: zdolność na stosie → token + wygnanie po rozstrzygnięciu
   // Źródło wygnane z grobu.
   assert.equal(state.objects.get('nomad')?.zone, undefined, 'nomad wygnany z grobu');
-  // Token Kithkin na bitwisku.
+  // Token Kithkin na polu bitwy.
   const token = [...state.objects.values()].some((o) => o.cardId === 'token_kithkin' && o.zone === 'battlefield');
-  assert.ok(token, 'token Kithkin na bitwisku');
+  assert.ok(token, 'token Kithkin na polu bitwy');
 });
 
 // Regresja 2026-08-07 (zgłoszenie C przed scaleniem PR #32): zdolność
-// „z grobu" oferowała się i aktywowała, gdy Nomad leżał na bitwisku.
-test('Goldmeadow Nomad: na bitwisku zdolność „z grobu\" nie jest oferowana ani aktywowalna', () => {
+// „z grobu" oferowała się i aktywowała, gdy Nomad leżał na polu bitwy.
+test('Goldmeadow Nomad: na polu bitwy zdolność „z grobu\" nie jest oferowana ani aktywowalna', () => {
   const state = game();
   mainPhase(state);
   addRealCard(state, 'nomad', 'goldmeadow-nomad', 'p1', 'battlefield');
   giveMana(state, 'p1', 1, ['W']);
-  // Oferta: brak activate_ability dla nomada na bitwisku (zdolność z grobu).
+  // Oferta: brak activate_ability dla nomada na polu bitwy (zdolność z grobu).
   const view = playerView(state, 'p1');
   const offered = (view.legalCommands ?? []).find((c) => c.type === 'activate_ability' && c.objectId === 'nomad');
-  assert.ok(!offered, 'zdolność z grobu nie może być oferowana na bitwisku');
-  // Walidacja: aktywacja z bitwiska odrzucona.
+  assert.ok(!offered, 'zdolność z grobu nie może być oferowana na polu bitwy');
+  // Walidacja: aktywacja z pola bitwy odrzucona.
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'nomad', abilityIndex: 0 });
-  assert.ok(!r.ok, 'aktywacja z bitwiska powinna być nielegalna');
+  assert.ok(!r.ok, 'aktywacja z pola bitwy powinna być nielegalna');
   assert.match(r.events[0]?.reason ?? '', /z grobu/);
 });
 
@@ -339,7 +339,7 @@ assert.ok(rCast.ok, rCast.events[0]?.reason);
   assert.equal(state.objects.get('sac'), undefined, 'własny stwór wygnany (koszt)');
   // Fear on battlefield.
   const fear = [...state.objects.values()].find((o) => o.cardId === 'fear-of-abduction' && o.zone === 'battlefield');
-  assert.ok(fear, 'Fear na bitwisku');
+  assert.ok(fear, 'Fear na polu bitwy');
   // ETB: cel „target creature an opponent controls" — decyzja gracza.
   const tgt = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_trigger_target' && c.targetId === 'foe');
   assert.ok(tgt, 'cel ETB Fear w ofercie');
@@ -358,7 +358,7 @@ test('Moonlit Meditation: aura na stwora; pierwsze tokeny → kopie zaczarowaneg
   mainPhase(state);
   // Stwór-cel aury (Highland Game 2/1).
   addRealCard(state, 'host', 'highland-game', 'p1', 'battlefield');
-  // Moonlit Meditation bezpośrednio na bitwisku (załączona do hosta).
+  // Moonlit Meditation bezpośrednio na polu bitwy (załączona do hosta).
   const mmDef = REGISTRY.get('moonlit-meditation');
   const mmData = gameObjectDataOf(mmDef);
   addObject(state, {

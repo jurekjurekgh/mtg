@@ -28,3 +28,6 @@
 9x Mountain
 1x Index
 1x Magic Damper
+1x Twiddle
+1x Omenspeaker
+1x Mysteries of the Deep

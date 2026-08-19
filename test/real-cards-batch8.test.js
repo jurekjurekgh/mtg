@@ -495,7 +495,7 @@ test('interakcja: Phyrexian Rager + Evangel — dwa dobrania włączają statycz
   assert.equal(effectivePower(state.objects.get('ev'), state), 3);
 });
 
-test('interakcja: Nefarious Imp widzi tokeny Gather the Townsfolk odchodzące z bitwiska', () => {
+test('interakcja: Nefarious Imp widzi tokeny Gather the Townsfolk odchodzące z pola bitwy', () => {
   const state = mainPhase(game());
   addLibraryCard(state, 'lib1', 'p1');
   addRealCard(state, 'imp', 'nefarious-imp', 'p1', 'battlefield');

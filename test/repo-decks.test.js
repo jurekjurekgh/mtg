@@ -39,9 +39,11 @@ test('talia red streszcza się przewidywalnie (kolory i landy)', () => {
   // M132 (zgłoszenie B właściciela): +3 Mountain — talia rosła z batchami
   // o same czary i zjechała do 2,32 karty nielandowej na ląd (próg 2,00).
   // Proporcji pilnuje teraz `test/m132-proporcje-landow.test.js`.
-  assert.equal(summary.total, 66);
-  assert.equal(summary.lands, 22);
-  assert.equal(summary.spells, 44);
+  // M145 Batch 35 E2: red + Titan's Strength + 1 Mountain (próg M132).
+  // M146 Batch 36 E4: red + Molten Nursery.
+  assert.equal(summary.total, 69);
+  assert.equal(summary.lands, 23);
+  assert.equal(summary.spells, 46);
   assert.ok((summary.colors.get('R') ?? 0) >= 12, 'czerwone karty obecne');
 });
 

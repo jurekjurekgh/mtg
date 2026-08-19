@@ -300,7 +300,7 @@ test('Wedgelight Rammer: ETB tworzy token Robot 2/2 (artefaktowy stwór)', () =>
   assert.ok(rCast2.ok);
   resolveStack(state);
   const robotId = findId(state, 'token_robot');
-  assert.ok(robotId, 'Robot powinien wejść na bitwisko');
+  assert.ok(robotId, 'Robot powinien wejść na pole bitwy');
   const robot = state.objects.get(robotId);
   assert.equal(robot.kind, 'creature');
   assert.ok(robot.types.includes('Artifact'), 'Robot jest artefaktem');
@@ -395,7 +395,7 @@ test('Jill: ETB — kandydatami dowolny nie-land (własny i przeciwnika), najsil
   // Kontroler celuje we WŁASNY stwór — wraca na rękę właściciela.
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'own' }).ok);
   passBoth(state); // T6: rozstrzygnij trigger ze stosu
-  assert.equal(state.objects.get('own'), undefined, 'Własny stwór zniknął z bitwiska');
+  assert.equal(state.objects.get('own'), undefined, 'Własny stwór zniknął z pola bitwy');
   assert.ok(findId(state, 'highland-game', 'hand'), 'Własny stwór wrócił na rękę');
   assert.equal(state.objects.get('foe-big').zone, 'battlefield', 'Cel przeciwnika został');
   assert.equal(state.objects.get('foe-small').zone, 'battlefield', 'Słabszy zostaje');
@@ -412,7 +412,7 @@ test('Jill: „up to one\" — cel przeciwnika nadal działa', () => {
   resolveStack(state);
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'foe-big' }).ok);
   passBoth(state); // T6: rozstrzygnij trigger ze stosu
-  assert.equal(state.objects.get('foe-big'), undefined, 'Cel przeciwnika zniknął z bitwiska');
+  assert.equal(state.objects.get('foe-big'), undefined, 'Cel przeciwnika zniknął z pola bitwy');
   assert.ok(findId(state, 'highland-game', 'hand'), 'Cel przeciwnika wrócił na rękę');
 });
 
@@ -448,7 +448,7 @@ test('Jill: {3}{U}{U},{T} wygania i zwraca przemienioną jako Shiva z rozdziałe
   // decyzję CELU (resolve_trigger_target) zamiast iść od razu na stos.
   // Jedyny własny stwór to sama Shiva — kontroler ją wskazuje.
   const shivaId = findId(state, 'shiva-warden-of-ice');
-  assert.ok(shivaId, 'Shiva powinna być na bitwisku po transformacji');
+  assert.ok(shivaId, 'Shiva powinna być na polu bitwy po transformacji');
   assert.equal(state.pendingTriggerTargets.length, 1, 'decyzja celu Mesmerize czeka');
   const pending = state.pendingTriggerTargets[0];
   assert.equal(pending.playerId, 'p1');
@@ -511,7 +511,7 @@ test('Shiva: rozdział III tapuje landy przeciwnika i zwraca Jill (bez poświęc
   addBasicLand(state, 'foe-land-1', 'p2', 'Swamp', 'B');
   addBasicLand(state, 'foe-land-2', 'p2', 'Island', 'U');
   addCreature(state, 'foe', 'p2', 3, 3);
-  // Shiva na bitwisku bezpośrednio (jak po transformie) — z 2 licznikami lore.
+  // Shiva na polu bitwy bezpośrednio (jak po transformie) — z 2 licznikami lore.
   // Obiekt po stronie odwrotnej DFC zna stronę przednią (transformTo w drugą
   // stronę) — dokładnie tak buduje ją efekt exile_return_transformed.
   const jillDef = REGISTRY.get('jill-shivas-dominant');
@@ -540,7 +540,7 @@ test('Shiva: rozdział III tapuje landy przeciwnika i zwraca Jill (bez poświęc
   assert.ok(eventsOfType(state, 'saga_chapter_fired').some((e) => e.chapter === 3));
   // Jill powracająca odpala swój ETB („up to one other nonland permanent\") —
   // stwór przeciwnika wrócił na rękę jako NOWY obiekt (CR 400.7).
-  assert.ok(!state.objects.get('foe') || state.objects.get('foe').zone !== 'battlefield', 'Stwór przeciwnika zniknął z bitwiska');
+  assert.ok(!state.objects.get('foe') || state.objects.get('foe').zone !== 'battlefield', 'Stwór przeciwnika zniknął z pola bitwy');
   assert.ok(findId(state, 'highland-game', 'hand'), 'Stwór przeciwnika odbity na rękę przez ETB Jill');
 });
 
@@ -580,7 +580,7 @@ test('Ethersworn Shieldmage: obrażenia czaru do artefaktowego stwora kasowane d
   addCreature(state, 'plain', 'p2', 3, 3);
   addRealCard(state, 'mage', 'ethersworn-shieldmage', 'p2', 'battlefield');
   // Ręczna aktywacja filtra prewencji na tę turę (karta została dodana na
-  // bitwisko bez rzutu, więc trigger ETB nie odpalił automatycznie).
+  // pole bitwy bez rzutu, więc trigger ETB nie odpalił automatycznie).
   state.preventDamageThisTurn = [{ typesInclude: ['Artifact'], isCreature: true }];
   addRealCard(state, 'bolt', 'fiery-fall', 'p1', 'hand');
   addMana(state, 'p1', 6);
@@ -742,7 +742,7 @@ test('Plague Reaver: discard 2 + sacrifice → powrót w następnym upkeep celu-
   passBoth(state); // upkeep p2 → opóźniony trigger (na stos)
   passBoth(state); // T6: rozstrzygnij opóźniony trigger ze stosu
   const back = findId(state, 'plague-reaver');
-  assert.ok(back, 'Reaver wrócił na bitwisko z grobu');
+  assert.ok(back, 'Reaver wrócił na pole bitwy z grobu');
   assert.equal(state.objects.get(back).controllerId, 'p2', 'Pod kontrolą wybranego przeciwnika');
   assert.ok(state.objects.get(back).summoningSickness, 'Wchodzi z chorobą przywołania');
   assert.ok(eventsOfType(state, 'control_changed').some((e) => e.cardId === 'plague-reaver' && e.controllerId === 'p2'));
@@ -1023,5 +1023,5 @@ test('Stoic Rebuttal: kontruje też czar-stwór (bestow) — „Counter target s
   assert.ok(r.ok, r.events?.map((e) => e.reason).join(''));
   passBoth(state);
   assert.ok(state.zones.graveyard.includes(findId(state, 'leafcrown-dryad', 'graveyard')), 'Czar-stwór skontrowany (nie wszedł jako stwór)');
-  assert.equal(findId(state, 'leafcrown-dryad'), null, 'Brak Dryady na bitwisku');
+  assert.equal(findId(state, 'leafcrown-dryad'), null, 'Brak Dryady na polu bitwy');
 });

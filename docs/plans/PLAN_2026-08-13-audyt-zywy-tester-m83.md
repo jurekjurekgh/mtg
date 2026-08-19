@@ -46,7 +46,7 @@ uproszczeń z perspektywy gracza, potem je naprawić.
   twarz + nakładka); na telefonie pojedyncze.
 - Re-equip tego samego stworu przez testera (klikacz) — artefakt testera;
   poprawka bota (#8) obejmuje bot, tester pozostaje prosty.
-- Banishment Decree na token (token znika poza bitwiskiem — CR 704.5d, OK).
+- Banishment Decree na token (token znika poza polem bitwy — CR 704.5d, OK).
 
 ## Kolejność commitów
 1. plan

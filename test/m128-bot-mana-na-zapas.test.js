@@ -37,7 +37,7 @@ const REGISTRY = createCardRegistry();
 let counter = 0;
 
 /**
- * Stół bota (p2) w jego głównej fazie: `source` na bitwisku, N nietapniętych
+ * Stół bota (p2) w jego głównej fazie: `source` na polu bitwy, N nietapniętych
  * lądów (bot ma z nich manę BEZ aktywowania czegokolwiek) i karty w ręce.
  * Biblioteka niepusta, żeby nie mieszała się bramka jałowego scry z M126.
  */

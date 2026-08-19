@@ -164,7 +164,7 @@ krok po kroku do identycznego stanu końcowego.
       Talia `decks/real-batch3.txt`.
 - [x] **Czwarty batch realnych kart (2026-08-01):** Gloomfang Mauler (MOM,
       menace + PEŁNY backup 2 z blokującą decyzją `resolve_backup` +
-      swampcycling — typecycling w engine, martwy na bitwisku), Serra's
+      swampcycling — typecycling w engine, martwy na polu bitwy), Serra's
       Embrace (DVD, pierwsza czysta aura: czar aury, fizzle do grobu, grób
       po zgonie gospodarza — odwrotnie niż bestow), Cloak of the Bat (CLB,
       pierwszy equipment: equip sorcery-speed, flying+haste nosiciela,
@@ -211,7 +211,7 @@ krok po kroku do identycznego stanu końcowego.
       (CR 603.2), scry poza własną turą, fateful hour, zwykły morph.
       Talia `decks/real-batch8.txt`.
 - [x] **Dziewiąty batch realnych kart (2026-08-03, 5 kart):** Kor Cartographer
-      (CMR, ETB wyszukuje Plains na bitwisko tapped), Scorpion Sentinel (FIN,
+      (CMR, ETB wyszukuje Plains na pole bitwy tapped), Scorpion Sentinel (FIN,
       statyczne +3/+0 od siedmiu landów), Dunland Crebain (LTR, flying + amass
       Orcs 2), Dragonbroods' Relic (TDM, tap stwora/mana + sorcery sacrifice
       tworzący Reliquary Dragon) oraz Secluded Steppe (DDO, ETB tapped + zwykły

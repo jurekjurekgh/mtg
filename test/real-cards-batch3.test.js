@@ -128,7 +128,7 @@ test('Rupture Spire: z maną w puli płaci {1} i zostaje (trigger obowiązkowy)'
   const pay = execute(state, { type: 'resolve_pay_or_sacrifice', playerId: 'p1', pay: true });
   assert.ok(pay.ok, pay.events[0]?.reason);
   assert.equal(state.players[0].mana, 0, '1 many nie zostało dopłacone');
-  assert.ok(findOnBattlefield(state, 'rupture-spire'), 'Spire nie jest na bitwisku');
+  assert.ok(findOnBattlefield(state, 'rupture-spire'), 'Spire nie jest na polu bitwy');
 });
 
 test('Rupture Spire: bez many auto-tapuje innego nietapniętego landa i płaci', () => {
@@ -153,7 +153,7 @@ test('Rupture Spire: bez many i bez landów do zatapnięcia jest poświęcany', 
   assert.equal(result.ok, true, result.events[0]?.reason);
   assert.ok(result.events.some((e) => e.type === 'permanent_sacrificed' && e.cardId === 'rupture-spire'), 'brak zdarzenia poświęcenia');
   assert.ok(result.events.some((e) => e.type === 'ability_triggered' && e.sacrificed === true), 'trigger nie odnotował poświęcenia');
-  assert.equal(findOnBattlefield(state, 'rupture-spire'), undefined, 'Spire nie może zostać na bitwisku');
+  assert.equal(findOnBattlefield(state, 'rupture-spire'), undefined, 'Spire nie może zostać na polu bitwy');
   assert.ok(state.zones.graveyard.some((id) => state.objects.get(id)?.cardId === 'rupture-spire'), 'Spire nie trafił do grobu');
 });
 
@@ -291,7 +291,7 @@ test('bestow: rozstrzygnięcie z legalnym celem — aura załączona, nie jest s
   resolveStack(state);
   assert.equal(state.zones.stack.length, 0);
   const aura = findOnBattlefield(state, 'leafcrown-dryad');
-  assert.ok(aura, 'Dryad nie wszedł na bitwisko');
+  assert.ok(aura, 'Dryad nie wszedł na pole bitwy');
   assert.equal(aura.kind, 'aura', 'załączony Dryad NIE jest stworem');
   assert.equal(aura.attachedTo, 'host');
   assert.ok(state.events.some((e) => e.type === 'object_attached'), 'brak zdarzenia załączenia');
@@ -359,13 +359,13 @@ test('bestow: nielegalny cel przy rozstrzygnięciu — karta wchodzi jako ZWYKŁ
   // Druga runda passów rozstrzyga czar aury: cel nielegalny → stwór wchodzi.
   for (const p of ['p1', 'p2']) execute(state, { type: 'pass_priority', playerId: p });
   const dryad = findOnBattlefield(state, 'leafcrown-dryad');
-  assert.ok(dryad, 'Dryad nie wszedł na bitwisko');
+  assert.ok(dryad, 'Dryad nie wszedł na pole bitwy');
   assert.equal(dryad.kind, 'creature', 'przy nielegalnym celu Dryad ma wejść jako stwór');
   assert.equal(dryad.attachedTo, null);
   assert.ok(state.events.some((e) => e.type === 'permanent_entered_battlefield' && e.unattached), 'brak zdarzenia wejścia bez załączenia');
 });
 
-test('bestow: śmierć gospodarza — aura odłącza się i ZOSTAJE na bitwisku jako stwór (CR 702.103b)', () => {
+test('bestow: śmierć gospodarza — aura odłącza się i ZOSTAJE na polu bitwy jako stwór (CR 702.103b)', () => {
   const state = bestowAttachedState();
   // Zabijamy gospodarza instantem. Uwaga: buff bestow podnosi wytrzymałość
   // gospodarza do 4 (2/2 +2/+2) — potrzeba co najmniej 4 obrażeń, bierzemy 5.
@@ -414,7 +414,7 @@ test('bestow: Kappa może wygnąć załączoną aurę (dla predykatu wciąż jes
   assert.equal(result.ok, true, result.events[0]?.reason);
   // Temat 2: „you may ... exile target artifact or enchantment" — kontroler
   // wybiera cel (załączona aura-dryad jest Enchantmentem); id dynamiczne
-  // (po T1 obiekt zmienia id przy wejściu na bitwisko).
+  // (po T1 obiekt zmienia id przy wejściu na pole bitwy).
   const dryadId = findOnBattlefield(state, 'leafcrown-dryad').id;
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p2', targetId: dryadId }).ok);
   resolveStack(state); // T6: trigger Kap-py ze stosu
@@ -516,7 +516,7 @@ test('Kappa Tech-Wrecker: predykat nie sięga po stwora bez typu Artifact/Enchan
   const result = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.equal(result.ok, true);
   assert.ok(!result.events.some((e) => e.type === 'object_moved' && e.toZone === 'exile'), 'zwykły stwór nie może być celem Kap-py');
-  assert.ok(findOnBattlefield(state, 'highland-game'), 'stwór pozostaje na bitwisku');
+  assert.ok(findOnBattlefield(state, 'highland-game'), 'stwór pozostaje na polu bitwy');
 });
 
 // --- Prismari Campus: ETB tapped + {4},{T}: Scry 1 ---------------------

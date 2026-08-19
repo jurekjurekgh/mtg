@@ -248,7 +248,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Armored Skaab
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Armored Skaab wchodzi na bitwisko
+  [ROZGRYWKA]   • Armored Skaab wchodzi na pole bitwy
   [ROZGRYWKA]   • Armored Skaab zostaje rozstrzygnięty
   [ROZGRYWKA]   • Nieprzyjaciel mieli Howl of the Night Pack do grobu
   [ROZGRYWKA]   • Nieprzyjaciel mieli Garruk's Companion do grobu
@@ -266,7 +266,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Gurmag Drowner
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Gurmag Drowner wchodzi na bitwisko
+  [ROZGRYWKA]   • Gurmag Drowner wchodzi na pole bitwy
   [ROZGRYWKA]   • Gurmag Drowner zostaje rozstrzygnięty
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
   [ROZGRYWKA]   • Atak: Armored Skaab
@@ -285,7 +285,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Coralhelm Guide
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Coralhelm Guide wchodzi na bitwisko
+  [ROZGRYWKA]   • Coralhelm Guide wchodzi na pole bitwy
   [ROZGRYWKA]   • Coralhelm Guide zostaje rozstrzygnięty
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
   [ROZGRYWKA]   • Atak: Armored Skaab, Gurmag Drowner
@@ -303,7 +303,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Faza: Główna 2
   [ROZGRYWKA]   • Ty zagrywa Frontline War-Rager
-  [ROZGRYWKA]   • Frontline War-Rager wchodzi na bitwisko
+  [ROZGRYWKA]   • Frontline War-Rager wchodzi na pole bitwy
   [ROZGRYWKA]   • Frontline War-Rager zostaje rozstrzygnięty
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
@@ -311,7 +311,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Scroll Thief
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Scroll Thief wchodzi na bitwisko
+  [ROZGRYWKA]   • Scroll Thief wchodzi na pole bitwy
   [ROZGRYWKA]   • Scroll Thief zostaje rozstrzygnięty
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
   [ROZGRYWKA]   • Atak: Armored Skaab, Gurmag Drowner
@@ -337,7 +337,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Jwari Shapeshifter
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Jwari Shapeshifter wchodzi na bitwisko
+  [ROZGRYWKA]   • Jwari Shapeshifter wchodzi na pole bitwy
   [ROZGRYWKA]   • Jwari Shapeshifter zostaje rozstrzygnięty
   [ROZGRYWKA]   • Jwari Shapeshifter ginie
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
@@ -375,7 +375,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Giant Spider
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Giant Spider wchodzi na bitwisko
+  [ROZGRYWKA]   • Giant Spider wchodzi na pole bitwy
   [ROZGRYWKA]   • Giant Spider zostaje rozstrzygnięty
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
   [ROZGRYWKA]   • Atak: Armored Skaab, Gurmag Drowner, Coralhelm Guide, Scroll Thief
@@ -403,7 +403,7 @@
   >> Zagraj: Warmaker Gunship (koszt 2R)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Warmaker Gunship
-  [ROZGRYWKA]   • Warmaker Gunship wchodzi na bitwisko
+  [ROZGRYWKA]   • Warmaker Gunship wchodzi na pole bitwy
   [ROZGRYWKA]   • Warmaker Gunship zostaje rozstrzygnięty
   [ROZGRYWKA]   • Warmaker Gunship — wybierz cel triggera (wymagany)
   >> Warmaker Gunship — cel triggera (5 opcji)
@@ -431,9 +431,9 @@
 --- krok 70 | Koniec partii — wygrywa On ---
   STOS: Trigger: Scroll Thief (obrażenia bojowe graczowi)
   AKCJE: (brak)
-  RĘKA: Fear of Burning Alive · 6 · Enchantment Creature — Nightmare · Gdy wejdzie na bitwisko: 4 obrażenia każdemu przeciwnikowi. · Gdy źródło, które kontrolujesz, zada niebojowe obrażenia przeciwnikowi — ten stwór zada tyle samo obrażeń celowi (delirium).
-  MOJE POLA: Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na bitwisko: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · połóż liczniki charge (station) | Mountain · Basic Land — Mountain · T: dodaj 1 manę
-  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na bitwisko: mieli 4 karty (do grobu). | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. | Coralhelm Guide · 2 · Creature — Merfolk Scout Ally · {5}: cel: stwór — nie może być blokowany | Scroll Thief · 3 · Creature — Merfolk Rogue · Gdy zada obrażenia graczowi: dobierz 1 kartę. | Giant Spider · 4 · Creature — Spider · Zasięg
+  RĘKA: Fear of Burning Alive · 6 · Enchantment Creature — Nightmare · Gdy wejdzie na pole bitwy: 4 obrażenia każdemu przeciwnikowi. · Gdy źródło, które kontrolujesz, zada niebojowe obrażenia przeciwnikowi — ten stwór zada tyle samo obrażeń celowi (delirium).
+  MOJE POLA: Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · połóż liczniki charge (station) | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. | Coralhelm Guide · 2 · Creature — Merfolk Scout Ally · {5}: cel: stwór — nie może być blokowany | Scroll Thief · 3 · Creature — Merfolk Rogue · Gdy zada obrażenia graczowi: dobierz 1 kartę. | Giant Spider · 4 · Creature — Spider · Zasięg
   LOG: Ty: życie 9 → 7 ⏎ Gurmag Drowner zadaje 2 obrażenia (Ty) ⏎ Ty: życie 10 → 9 ⏎ Armored Skaab zadaje 1 obrażenie (Ty) ⏎ Frontline War-Rager blokuje Scroll Thief ⏎ Atak: Armored Skaab, Gurmag Drowner, Coralhelm Guide, Scroll Thief
 
 == POKRYCIE UI == akcje widziane: 14, kliknięte: 24, modale: 3

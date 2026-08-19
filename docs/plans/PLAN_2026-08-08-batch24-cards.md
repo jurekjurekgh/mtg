@@ -51,8 +51,8 @@
    (engine rozstrzyga zdolności natychmiast — brak zdolności na stosie, więc
    redirect zdolności nieobsługiwany; dokumentacja).
 7. **Mystic Sanctuary.** `entersTappedCondition` nowy typ `islands_you_control_at_least`
-   (count podtypów Island na bitwisku — wchodzący land jeszcze nie jest na
-   bitwisku, więc liczone są „inne"). Trigger ETB landa z warunkiem
+   (count podtypów Island na polu bitwy — wchodzący land jeszcze nie jest na
+   polu bitwy, więc liczone są „inne"). Trigger ETB landa z warunkiem
    `enteredUntapped` (eventData.tapped z permanent_entered_battlefield) +
    nowy kandydat `instant_or_sorcery_card_in_graveyard` (controlledBy controller,
    optional) + nowy efekt `put_graveyard_card_on_top` (na wierzch = przed

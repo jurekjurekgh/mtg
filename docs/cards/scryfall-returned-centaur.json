@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Returned%20Centaur&set=ori",
+  "print": "Returned Centaur (ORI)",
+  "name": "Returned Centaur",
+  "mana_cost": "{3}{B}",
+  "cmc": 4,
+  "type_line": "Creature — Zombie Centaur",
+  "oracle_text": "When this creature enters, target player mills four cards.",
+  "power": "2",
+  "toughness": "4",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [
+    "Mill"
+  ],
+  "set": "ori",
+  "collector_number": "1",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/1/0/103b369c-da58-40e7-98aa-5a5471434bca.jpg",
+    "normal": "https://cards.scryfall.io/normal/front/1/0/103b369c-da58-40e7-98aa-5a5471434bca.jpg"
+  },
+  "pobrano": "2026-08-19"
+}

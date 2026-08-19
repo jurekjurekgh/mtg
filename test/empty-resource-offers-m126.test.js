@@ -29,7 +29,7 @@ const SESSION = {
 };
 
 let counter = 0;
-/** Stół: `source` na bitwisku + kontrolowany stan biblioteki i ręki. */
+/** Stół: `source` na polu bitwy + kontrolowany stan biblioteki i ręki. */
 function board({ source, hand = [], ownLibrary = [], mana = 6 }) {
   const state = createGameState({ seed: 5, players: [{ id: 'p1' }, { id: 'p2' }] });
   state.turn = jumpToStep(state.turn, 'main', 'p1');

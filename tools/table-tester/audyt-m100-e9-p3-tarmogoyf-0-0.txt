@@ -22,17 +22,17 @@
   >> Zagraj: Dawntreader Elk (koszt 1G)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Dawntreader Elk
-  [ROZGRYWKA]   • Dawntreader Elk wchodzi na bitwisko
+  [ROZGRYWKA]   • Dawntreader Elk wchodzi na pole bitwy
   [ROZGRYWKA]   • Dawntreader Elk zostaje rozstrzygnięty
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Tura 5 — Ty
-  >> Aktywuj: Dawntreader Elk (Ty) (koszt G, poświęć) — szukaj w bibliotece na bitwisko
+  >> Aktywuj: Dawntreader Elk (Ty) (koszt G, poświęć) — szukaj w bibliotece na pole bitwy
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Ty aktywuje zdolność: Dawntreader Elk — szukanie karty w bibliotece na bitwisko
-  [ROZGRYWKA]   • Ty szuka karty w bibliotece (Dawntreader Elk) — wybiera, którą wziąć na bitwisko albo rezygnuje
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Dawntreader Elk — szukanie karty w bibliotece na pole bitwy
+  [ROZGRYWKA]   • Ty szuka karty w bibliotece (Dawntreader Elk) — wybiera, którą wziąć na pole bitwy albo rezygnuje
   [ROZGRYWKA]   • Ty: zdolność Dawntreader Elk rozstrzygnięta
   >> Wybierz: Szukanie w bibliotece (11 opcji)
   [modal choice] Wybierz: Szukanie w bibliotece Szukanie — nie znajduj karty (rezygnuję) Szukanie: Swamp Szukanie: Swamp Szukanie: Forest Szukanie: Swamp Szukanie: Swamp Szukanie: Swamp Szukanie: Swamp Szukanie: Forest Szukanie: Forest Szukanie: Mountain
@@ -49,8 +49,8 @@
   [modal choice]     Szukanie: Mountain
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty odsłania Swamp
-  [ROZGRYWKA]   • Ty: Swamp — biblioteka → bitwisko
-  [ROZGRYWKA]   • Swamp wchodzi na bitwisko
+  [ROZGRYWKA]   • Ty: Swamp — biblioteka → pole bitwy
+  [ROZGRYWKA]   • Swamp wchodzi na pole bitwy
   >> Dobierz kartę
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty dobiera: Forest
@@ -71,7 +71,7 @@
   >> Zagraj: Ainok Artillerist (koszt 2G)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Ainok Artillerist
-  [ROZGRYWKA]   • Ainok Artillerist wchodzi na bitwisko
+  [ROZGRYWKA]   • Ainok Artillerist wchodzi na pole bitwy
   [ROZGRYWKA]   • Ainok Artillerist zostaje rozstrzygnięty
   >> Rzuć: Bone Splinters (koszt B) → cel: Ainok Artillerist (Ty) — poświęć Ainok Artillerist (Ty)
   [ROZGRYWKA] Rozgrywka
@@ -88,7 +88,7 @@
   >> Zagraj: Disa the Restless (koszt 2BRG)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Disa the Restless
-  [ROZGRYWKA]   • Disa the Restless wchodzi na bitwisko
+  [ROZGRYWKA]   • Disa the Restless wchodzi na pole bitwy
   [ROZGRYWKA]   • Disa the Restless zostaje rozstrzygnięty
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
@@ -102,9 +102,9 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty rzuca Carrion Call
   [ROZGRYWKA]   • Ty tworzysz token Phyrexian Insect (1/1)
-  [ROZGRYWKA]   • Phyrexian Insect wchodzi na bitwisko
+  [ROZGRYWKA]   • Phyrexian Insect wchodzi na pole bitwy
   [ROZGRYWKA]   • Ty tworzysz token Phyrexian Insect (1/1)
-  [ROZGRYWKA]   • Phyrexian Insect wchodzi na bitwisko
+  [ROZGRYWKA]   • Phyrexian Insect wchodzi na pole bitwy
   [ROZGRYWKA]   • Carrion Call zostaje rozstrzygnięty
   >> Wybierz: Deklaracja atakujących (2 opcje)
   [combat wizard] atakuję 1 z 1 stworów (profil greedy)
@@ -118,7 +118,7 @@
   [ROZGRYWKA]   • Faza: Koniec walki
   [ROZGRYWKA]   • Disa the Restless — trigger (obrażenia bojowe zadane graczowi)
   [ROZGRYWKA]   • Ty tworzysz token Tarmogoyf (0/0)
-  [ROZGRYWKA]   • Tarmogoyf wchodzi na bitwisko
+  [ROZGRYWKA]   • Tarmogoyf wchodzi na pole bitwy
   [ROZGRYWKA]   • Disa the Restless — trigger się rozstrzyga
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
@@ -126,7 +126,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Nefarious Imp
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Nefarious Imp wchodzi na bitwisko
+  [ROZGRYWKA]   • Nefarious Imp wchodzi na pole bitwy
   [ROZGRYWKA]   • Nefarious Imp zostaje rozstrzygnięty
   [ROZGRYWKA]   • Tura 13 — Ty
   >> Dobierz kartę
@@ -164,7 +164,7 @@
   [ROZGRYWKA]   • Faza: Koniec walki
   [ROZGRYWKA]   • Disa the Restless — trigger (obrażenia bojowe zadane graczowi)
   [ROZGRYWKA]   • Ty tworzysz token Tarmogoyf (0/0)
-  [ROZGRYWKA]   • Tarmogoyf wchodzi na bitwisko
+  [ROZGRYWKA]   • Tarmogoyf wchodzi na pole bitwy
   [ROZGRYWKA]   • Disa the Restless — trigger się rozstrzyga
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
@@ -186,12 +186,12 @@
   >> Zagraj: Goblin Deathraiders (koszt BR)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Goblin Deathraiders
-  [ROZGRYWKA]   • Goblin Deathraiders wchodzi na bitwisko
+  [ROZGRYWKA]   • Goblin Deathraiders wchodzi na pole bitwy
   [ROZGRYWKA]   • Goblin Deathraiders zostaje rozstrzygnięty
   >> Zagraj: Canonized in Blood (koszt 1B)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Canonized in Blood
-  [ROZGRYWKA]   • Canonized in Blood wchodzi na bitwisko
+  [ROZGRYWKA]   • Canonized in Blood wchodzi na pole bitwy
   [ROZGRYWKA]   • Canonized in Blood zostaje rozstrzygnięty
   >> Wybierz: Deklaracja atakujących (32 opcje)
   [combat wizard] atakuję 5 z 5 stworów (profil greedy)
@@ -201,8 +201,8 @@
 --- krok 46 | Koniec partii — wygrywa Ty ---
   STOS: Trigger: Disa the Restless (obrażenia bojowe zadane graczowi)
   AKCJE: (brak)
-  RĘKA: Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza bitwisko: scry 1. | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na bitwisko: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na bitwisko z licznikiem.
-  MOJE POLA: Disa the Restless · 5 · Legendary Creature — Human Scout · Gdy karta trafia do grobu spoza bitwiska: karta z grobu na bitwisko. · Gdy jeden z twoich stworów zada obrażenia bojowe graczowi: stwórz token Tarmogoyf. | Phyrexian Insect · 0 · Creature Token — Phyrexian Insect · Infect | Tarmogoyf · 0 · Creature Token — Lhurgoyf · liczba typów kart w grobach/liczba typów kart w grobach +1 | Goblin Deathraiders · 2 · Creature — Goblin Warrior · Zadeptywanie | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {7}: stwórz token Vampire Demon | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  RĘKA: Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem.
+  MOJE POLA: Disa the Restless · 5 · Legendary Creature — Human Scout · Gdy karta trafia do grobu spoza pola bitwy: karta z grobu na pole bitwy. · Gdy jeden z twoich stworów zada obrażenia bojowe graczowi: stwórz token Tarmogoyf. | Phyrexian Insect · 0 · Creature Token — Phyrexian Insect · Infect | Tarmogoyf · 0 · Creature Token — Lhurgoyf · liczba typów kart w grobach/liczba typów kart w grobach +1 | Goblin Deathraiders · 2 · Creature — Goblin Warrior · Zadeptywanie | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {7}: stwórz token Vampire Demon | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
   POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
   LOG: Nieprzyjaciel otrzymuje znaki trucizny (+1, łącznie: 1) ⏎ Phyrexian Insect zadaje 1 obrażenie (Nieprzyjaciel) ⏎ Nefarious Imp zadaje 2 obrażenia (Disa the Restless) ⏎ Disa the Restless zadaje 5 obrażeń (Nefarious Imp) ⏎ Nefarious Imp blokuje Disa the Restless ⏎ Atak: Disa the Restless, Phyrexian Insect, Phyrexian Insect, Tarmogoyf
 

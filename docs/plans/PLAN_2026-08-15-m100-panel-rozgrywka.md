@@ -121,7 +121,7 @@ Cytat z testów na telefonie: modal pokazał „Nieprzyjaciel zagrywa
 kreatura Segmented Krotiq". Obiekt LEŻĄCY na stole twarzą w dół jest dla
 przeciwnika bezimiennym 2/2 (CR 708.2) — modal/log/atak/blok/podział obrażeń/
 celowanie **nie mogą** ujawnić jego nazwy. (Ujawnienie przy ZNIKNIĘCIU ze
-stołu jest legalne — CR 708.8/708.9: opuszczający bitwisko morph zostaje
+stołu jest legalne — CR 708.8/708.9: opuszczający pole bitwy morph zostaje
 odsłonięty — więc LKI typu `targetCardIds`/`sourceCardId` po śmierci może
 nazywać).
 
@@ -270,7 +270,7 @@ detektorów zgodne między trybami).** Transkrypty w `tools/table-tester/`:
   zgłoszeń (oba tryby).
 - `audyt-m100-v2-azo-grn-34.txt` (+ weryfikowany snap): matchup morphowy —
   żywe dowody BUG A: „Nieprzyjaciel zagrywa morph twarzą w dół (2/2)",
-  „morph wchodzi na bitwisko", „Face-down creature" na polu wroga, własny
+  „morph wchodzi na pole bitwy", „Face-down creature" na polu wroga, własny
   morph nazwany („Ty zagrywa Willbender twarzą w dół"). Detektor złapał
   drugorzędne: surowy slug triggera `enchantment_you_control_enters` w LOGU
   — etykieta dodana, po rebuildzie 0 zgłoszeń w obu trybach.
@@ -398,7 +398,7 @@ narzędzi testera) oraz wszystkie zmiany testów. Wnioski:
    `advanceStep` i rozstrzygnięcie wierzchołka stosu zerują dodatkowo —
    podwojenie intencjonalne, replay deterministyczny. **WNIOSEK: poprawne.**
 3. **Własność obiektów przy zmianie strefy (objects.js, CR 400.3/110.2a/
-   110.6b/400.7).** `moveObjectDirectly` przy zejściu z bitwiska przywraca
+   110.6b/400.7).** `moveObjectDirectly` przy zejściu z pola bitwy przywraca
    kontrolera właścicielowi (naprawia grob złodzieja typu Puppeteer
    Clique), odkręca permanent (`tapped:false`) i czyści historię tury
    (damagedThisTurn, attackedThisTurn, monstrous, …) — bo „nowy obiekt"

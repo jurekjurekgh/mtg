@@ -20,7 +20,7 @@ export function createToken({ name = 'Token', kind = 'creature', power = 1, toug
 }
 
 /**
- * Tworzy token na bitwisku kontrolera. Wywoływane z efektu czaru/zdolności;
+ * Tworzy token na polu bitwy kontrolera. Wywoływane z efektu czaru/zdolności;
  * token dostaje `summoningSickness` (jak świeżo zagrany permanent).
  * `types`/`subtypes` pozwalają tworzyć tokeny-landy (np. Forest Dryad Jyoti:
  * land creature — walczy jako stwór, a dzięki types ['Land','Creature'] może
@@ -42,11 +42,11 @@ export function createBattlefieldToken(state, controllerId, { cardId, name, kind
     id, instanceId, cardId, controllerId, zone: 'battlefield',
     kind, power, toughness, manaCost: 0, abilities,
     keywords, types, subtypes, colors,
-    // Właścicielem tokenu jest gracz, pod czyją kontrolą wszedł na bitwisko
+    // Właścicielem tokenu jest gracz, pod czyją kontrolą wszedł na pole bitwy
     // (CR 111.2) — istotne przy efektach „creatures they own".
     ownerId: controllerId,
     // CR 111: jawny znacznik tokenu — SBA CR 704.5e usuwa token, który
-    // znalazł się poza bitwiskiem.
+    // znalazł się poza polem bitwy.
     isToken: true,
     ...(station ? { station } : {}),
     ...(saga ? { saga } : {}),
@@ -64,7 +64,7 @@ export function createBattlefieldToken(state, controllerId, { cardId, name, kind
   state.objects.set(id, token);
   state.zones.battlefield.push(id);
   // M100/E10 (P3 — Żywy Tester h04): zdarzenie niesie statystyki EFEKTYWNE
-  // (widziane po wejściu na bitwisko), nie surowe z definicji — CDA jak
+  // (widziane po wejściu na pole bitwy), nie surowe z definicji — CDA jak
   // „Tarmogoyf: typy kart w grobach" działa od razu (CR 613.3, SBA po ETB),
   // a komunikat „tworzysz token Tarmogoyf (0/0)" kłamał (na stole 3/4).
   // Import permanents.js jest bezpieczny (brak cyklu: permanents nie
@@ -72,7 +72,7 @@ export function createBattlefieldToken(state, controllerId, { cardId, name, kind
   const effPower = isCreature ? effectivePower(token, state) : null;
   const effToughness = isCreature ? effectiveToughness(token, state) : null;
   state.events.push(event('token_created', { objectId: id, cardId, controllerId, name, power: effPower, toughness: effToughness }));
-  // Token wchodzi na bitwisko natychmiast po utworzeniu; jawne zdarzenie ETB
+  // Token wchodzi na pole bitwy natychmiast po utworzeniu; jawne zdarzenie ETB
   // pozwala generycznym zdolnościom tokenu działać tak samo jak zdolnościom
   // zwykłego permanenta (np. Reliquary Dragon z Dragonbroods' Relic).
   state.events.push(event('permanent_entered_battlefield', {

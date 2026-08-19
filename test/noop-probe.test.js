@@ -87,12 +87,12 @@ test('diff: zmiana życia gracza to ścieżka players[0].life', () => {
   assert.deepEqual(diffFingerprintPaths(before, after), ['players[0].life']);
 });
 
-test('diff: przejście karty z ręki na bitwisko daje ścieżki stref i obiektu', () => {
+test('diff: przejście karty z ręki na pole bitwy daje ścieżki stref i obiektu', () => {
   const before = fakeFp({ zones: { hand: ['forest1'], battlefield: [], stack: [] }, objects: [{ id: 'forest1', zone: 'hand' }] });
   const after = fakeFp({ zones: { hand: [], battlefield: ['forest1'], stack: [] }, objects: [{ id: 'forest1', zone: 'battlefield' }] });
   const paths = diffFingerprintPaths(before, after);
   assert.ok(paths.includes('zones.hand'), `strefa ręki zmieniona: ${paths.join(', ')}`);
-  assert.ok(paths.includes('zones.battlefield'), `strefa bitwiska zmieniona: ${paths.join(', ')}`);
+  assert.ok(paths.includes('zones.battlefield'), `strefa pola bitwy zmieniona: ${paths.join(', ')}`);
   assert.ok(paths.includes('objects[0].zone'), `strefa obiektu zmieniona: ${paths.join(', ')}`);
 });
 

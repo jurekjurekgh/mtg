@@ -394,7 +394,7 @@ function hasColorManaForObject(state, playerId, object, phyrexianPayWithLife = 0
 /**
  * M69 (Security Rhox): dostępna mana ze Skarbów — pula (treasureMana, śledzona
  * per jednostka przy addMana fromTreasure) + nietapnięte tokeny Treasure na
- * bitwisku. Koszt alternatywny „Spend only mana produced by Treasures".
+ * polu bitwy. Koszt alternatywny „Spend only mana produced by Treasures".
  */
 export function treasureManaAvailable(state, playerId) {
   const player = state.players.find((p) => p.id === playerId);
@@ -513,7 +513,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     if (available < totalMana) throw new Error('Koszt alternatywny wymaga many ze Skarbów');
     const treasureUnits = Array.from({ length: available }, () => ['W', 'U', 'B', 'R', 'G']);
     if (!matchColorRequirements(treasureUnits, requirements)) throw new Error('Brak kolorowej many ze Skarbów');
-    // Dołóż Skarby z bitwiska do puli (koszt: poświęć token, dodaj manę any
+    // Dołóż Skarby z pola bitwy do puli (koszt: poświęć token, dodaj manę any
     // fromTreasure) — spendMana wyda manę skarbową w pierwszej kolejności.
     let need = totalMana - (player.treasureMana ?? 0);
     for (const id of [...state.zones.battlefield]) {
@@ -537,7 +537,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   }
   const manaSpent = totalMana;
   // Rzut permanenta to rzut CZARU (CR 601): obiekt ląduje na STOSIE, a na
-  // bitwisko wchodzi dopiero przy rozstrzygnięciu (spells.resolveTopOfStack
+  // pole bitwy wchodzi dopiero przy rozstrzygnięciu (spells.resolveTopOfStack
   // — gałąź bez deskryptora spell). Przeciwnik może odpowiedzieć instanitem
   // albo skontrować czar-stwora (Stoic Rebuttal); ETB i cechy wejścia
   // rozstrzygają się przy wejściu, nie przy rzucie.
@@ -609,7 +609,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     colors: faceDown ? [] : [...(object.colors ?? [])],
   });
   state.events.push(e);
-  // entersWithCounters i bloodthirst to cechy WEJŚCIA na bitwisko — aplikuje
+  // entersWithCounters i bloodthirst to cechy WEJŚCIA na pole bitwy — aplikuje
   // je rozstrzygnięcie stosu (spells.js), po rundzie passów (CR 608.2a).
   return e;
 }
@@ -681,17 +681,17 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
   } else {
     const host = state.objects.get(targetId);
     if (object.aura?.enchantType === 'artifact_or_creature') {
-      if (!host || host.zone !== 'battlefield') throw new Error('Czarem aury trzeba celować w permanent na bitwisku');
+      if (!host || host.zone !== 'battlefield') throw new Error('Czarem aury trzeba celować w permanent na polu bitwy');
       const isArtOrCreature = host.kind === 'creature' || host.kind === 'artifact' || (host.types ?? []).includes('Artifact');
       if (!isArtOrCreature) throw new Error('Czarem aury trzeba celować w artefakt lub stwora');
       if (host.controllerId !== playerId) throw new Error('Czarem aury trzeba celować we własny permanent');
     } else if (object.aura?.enchant === 'enchantment' || object.aura?.enchantType === 'enchantment') {
       // Batch 23: Feedback — „Enchant enchantment". Legalność gospodarza
       // wspólna z attach/SBA (attachments.isLegalAuraHost): enchantment na
-      // bitwisku (także enchantment creature, CR 303.4a).
+      // polu bitwy (także enchantment creature, CR 303.4a).
       if (!host || host.zone !== 'battlefield'
         || (host.kind !== 'enchantment' && !(host.types ?? []).includes('Enchantment'))) {
-        throw new Error('Celem czaru aury musi być enchantment na bitwisku');
+        throw new Error('Celem czaru aury musi być enchantment na polu bitwy');
       }
     } else if (object.aura?.enchantType === 'creature_or_land') {
       const isLand = host && (host.kind === 'land' || (host.types ?? []).includes('Land'));
@@ -702,10 +702,10 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
       // Chronic Flooding: „Enchant land" — walidacja spójna z ofertą.
       const isLand = host && (host.kind === 'land' || (host.types ?? []).includes('Land'));
       if (!host || host.zone !== 'battlefield' || !isLand) {
-        throw new Error('Celem czaru aury musi być ląd na bitwisku');
+        throw new Error('Celem czaru aury musi być ląd na polu bitwy');
       }
     } else {
-      if (!host || host.zone !== 'battlefield' || host.kind !== 'creature') throw new Error('Celem czaru aury musi być stwór na bitwisku');
+      if (!host || host.zone !== 'battlefield' || host.kind !== 'creature') throw new Error('Celem czaru aury musi być stwór na polu bitwy');
     }
     // Hexproof (CR 702.11b): aura to czar z celem — nie może zaczarować
     // cudzego permanenta z hexproof. Oferta i walidacja spójne.
@@ -726,7 +726,7 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
   state.spellsCastThisTurn += 1;
   const stackId = `spell-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
-  // Deskryptor czaru aury (jak czar): rozstrzygnięcie = wejście na bitwisko
+  // Deskryptor czaru aury (jak czar): rozstrzygnięcie = wejście na pole bitwy
   // załączone (albo — dla curse — z enchantedPlayerId).
   const stacked = Object.freeze({
     ...moved,
@@ -753,11 +753,11 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
 }
 
 /**
- * Warianty rzucenia aury (karta w ręce × legalny cel-stwór na bitwisku).
+ * Warianty rzucenia aury (karta w ręce × legalny cel-stwór na polu bitwy).
  * Cel to DOWOLNY stwór („enchant creature" bez ograniczenia kontrolera).
  * Karty z bestow dają warianty bestow:true; czyste aury — warianty zwykłe
  * (bestow:false, koszt many karty). Aury wymagają celu już przy rzuceniu
- * (CR 601.2c) — bez stwora na bitwisku nie da się jej w ogóle rzucić.
+ * (CR 601.2c) — bez stwora na polu bitwy nie da się jej w ogóle rzucić.
  */
 export function legalAuraCasts(state, playerId) {
   const player = state.players.find((entry) => entry.id === playerId);
@@ -803,7 +803,7 @@ export function legalAuraCasts(state, playerId) {
       }
     } else if (object.aura?.enchant === 'land' || object.aura?.enchantType === 'land') {
       // Chronic Flooding: „Enchant land" — gospodarzem jest dowolny land na
-      // bitwisku (także przeciwnika; ta aura nie jest „przyjazna").
+      // polu bitwy (także przeciwnika; ta aura nie jest „przyjazna").
       for (const targetId of state.zones.battlefield) {
         const target = state.objects.get(targetId);
         if (!target || target.zone !== 'battlefield') continue;
@@ -890,7 +890,7 @@ export function playLand(state, playerId, objectId) {
       if (anyPlayerLow) shouldEnterTapped = false;
     }
     // Batch 24 (Mystic Sanctuary): „enters tapped unless you control three or
-    // more other Islands" — wchodzący land NIE jest jeszcze na bitwisku, więc
+    // more other Islands" — wchodzący land NIE jest jeszcze na polu bitwy, więc
     // liczymy kontrolowane landy o podtypie Island (są z definicji „inne").
     if (cond.type === 'islands_you_control_at_least') {
       const islands = state.zones.battlefield.filter((id) => {

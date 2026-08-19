@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Wretched%20Banquet&set=con",
+  "print": "Wretched Banquet (CON)",
+  "name": "Wretched Banquet",
+  "mana_cost": "{B}",
+  "cmc": 1,
+  "type_line": "Sorcery",
+  "oracle_text": "Destroy target creature if it has the least power or is tied for least power among creatures on the battlefield.",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [],
+  "set": "con",
+  "set_name": "",
+  "collector_number": "56",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/b/3bdaf55b-2de3-4c8a-90ae-9c88c9d00fd7.jpg",
+    "normal": "https://cards.scryfall.io/normal/front/3/b/3bdaf55b-2de3-4c8a-90ae-9c88c9d00fd7.jpg"
+  },
+  "pobrano": "2026-08-19"
+}

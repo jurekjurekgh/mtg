@@ -34,7 +34,7 @@ function game() {
   return state;
 }
 
-test('B9/E: etykieta celu z bitwiska dopisuje kontrolera — „(Ty)"/„(Nieprzyjaciel)"', () => {
+test('B9/E: etykieta celu z pola bitwy dopisuje kontrolera — „(Ty)"/„(Nieprzyjaciel)"', () => {
   const state = game();
   const c1 = Object.freeze({
     id: 'c1', cardId: 'highland-game', name: 'Highland Game', controllerId: 'p1', ownerId: 'p1',
@@ -56,7 +56,7 @@ test('B9/E: etykieta celu z bitwiska dopisuje kontrolera — „(Ty)"/„(Nieprz
   // p1 aktywuje zdolność na stworze p1 („(Ty)") — cel to stwór p2 („(Nieprzyjaciel)").
   assert.ok(label.includes('(Ty)'), `etykieta ma kontrolera źródła: ${label}`);
   assert.ok(label.includes('(Nieprzyjaciel)'), `etykieta ma kontrolera celu: ${label}`);
-  // Karta w ręce (poza bitwiskiem) nie dostaje dopisku kontrolera.
+  // Karta w ręce (poza polem bitwy) nie dostaje dopisku kontrolera.
   const h1 = Object.freeze({
     id: 'h1', cardId: 'highland-game', name: 'Highland Game', controllerId: 'p1', ownerId: 'p1',
     zone: 'hand', kind: 'spell', colors: [], keywords: [], abilities: [], spell: { timing: 'sorcery' },

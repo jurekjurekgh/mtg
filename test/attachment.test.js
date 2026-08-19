@@ -54,7 +54,7 @@ test('attachAuraToCreature: odrzuca nie-stwora, brak deskryptora aury i zaczarow
     kind: 'land', abilities: [], keywords: [], subtypes: [], types: ['Land'],
   });
   assert.throws(() => attachAuraToCreature(state, 'aura', 'plains'), /nie ma legalnego gospodarza/);
-  assert.throws(() => attachAuraToCreature(state, 'host', 'host'), /aurę na bitwisku/);
+  assert.throws(() => attachAuraToCreature(state, 'host', 'host'), /aurę na polu bitwy/);
   assert.throws(() => attachAuraToCreature(state, 'aura', 'aura'), /samej siebie/);
 });
 
@@ -115,8 +115,8 @@ test('removeIllegalAttachments (SBA): odłącza tylko załączniki z nielegalnym
 test('zmiana strefy gospodarza samodzielnie rozłącza załączniki (inwariant attachedTo)', () => {
   const state = gameWithHostAndAura();
   attachAuraToCreature(state, 'aura', 'host');
-  // Gospodarz odchodzi z bitwiska (jak przy śmierci/wygnaniu) — aura odłącza
-  // się w chwili ruchu i zostaje na bitwisku jako stwór (CR 702.103b).
+  // Gospodarz odchodzi z pola bitwy (jak przy śmierci/wygnaniu) — aura odłącza
+  // się w chwili ruchu i zostaje na polu bitwy jako stwór (CR 702.103b).
   moveObjectDirectly(state, 'host', 'graveyard', 'grave-x');
   const aura = state.objects.get('aura');
   assert.equal(aura.zone, 'battlefield');
@@ -125,7 +125,7 @@ test('zmiana strefy gospodarza samodzielnie rozłącza załączniki (inwariant a
   assert.ok(state.events.some((e) => e.type === 'object_detached' && e.objectId === 'aura'));
 });
 
-test('aura odchodząca z bitwiska wraca do bycia stworem (baseKind)', () => {
+test('aura odchodząca z pola bitwy wraca do bycia stworem (baseKind)', () => {
   const state = gameWithHostAndAura();
   attachAuraToCreature(state, 'aura', 'host');
   // Sama aura trafia do grobu (np. wygnana jako enchantment) — obiekt
@@ -191,7 +191,7 @@ test('attachEquipmentToCreature: equipment pozostaje artefaktem i trzyma gospoda
   assert.ok(state.events.some((e) => e.type === 'object_attached' && e.via === 'equip'));
 });
 
-test('equipment: re-equip przepina na nowego gospodarza, a utrata gospodarza zostawia go na bitwisku (CR 704.5n)', () => {
+test('equipment: re-equip przepina na nowego gospodarza, a utrata gospodarza zostawia go na polu bitwy (CR 704.5n)', () => {
   const state = gameWithHostAndEquipment();
   attachEquipmentToCreature(state, 'cloak', 'host');
   addObject(state, {
@@ -203,7 +203,7 @@ test('equipment: re-equip przepina na nowego gospodarza, a utrata gospodarza zos
   assert.equal(moved.attachedTo, 'second');
   assert.deepEqual(attachmentsAttachedTo(state, 'host'), []);
   assert.deepEqual(attachmentsAttachedTo(state, 'second').map((a) => a.id), ['cloak']);
-  // Śmierć gospodarza: equipment odłącza się i ZOSTAJE na bitwisku.
+  // Śmierć gospodarza: equipment odłącza się i ZOSTAJE na polu bitwy.
   const events = detachAttachmentsFromHost(state, 'second');
   assert.equal(events.length, 1);
   assert.equal(events[0].type, 'object_detached');
@@ -222,7 +222,7 @@ test('SBA: equipment na nielegalnym gospodarzu odłącza się i zostaje; czysta 
     kind: 'enchantment', manaCost: 4, abilities: [], keywords: [], subtypes: ['Aura'], types: ['Enchantment'], aura: PURE_AURA,
   });
   attachAuraToCreature(state, 'embrace', 'host');
-  // Gospodarz przestaje być stworem na bitwisku (symulacja: ręczna zmiana kind).
+  // Gospodarz przestaje być stworem na polu bitwy (symulacja: ręczna zmiana kind).
   state.objects.set('host', Object.freeze({ ...state.objects.get('host'), kind: 'land' }));
   const events = removeIllegalAttachments(state);
   const graves = events.filter((e) => e.type === 'permanent_put_into_graveyard');

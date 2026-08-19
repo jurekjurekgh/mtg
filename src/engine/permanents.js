@@ -31,7 +31,7 @@ function isUntapLocked(state, object) {
     // Lira: blokada działa, gdy źródło jest zatapnięte.
     if (source.tapped) return true;
     // Aura lock (Spectral Prison): blokada działa zawsze, gdy źródło jest
-    // załączoną aurą na bitwisku (nie wymaga tapped).
+    // załączoną aurą na polu bitwy (nie wymaga tapped).
     if (source.kind === 'aura' && source.attachedTo) return true;
     return false;
   });
@@ -143,7 +143,7 @@ function staticConditionHolds(state, object, condition) {
   if (!condition) return true;
   // Crew Captain: „has indestructible as long as it entered this turn".
   // Flaga enteredOnTurn (numer tury wejścia) — NIE summoning sickness:
-  // kradzież/zmiana kontroli nakłada SS (CR 302.6) bez wejścia na bitwisko.
+  // kradzież/zmiana kontroli nakłada SS (CR 302.6) bez wejścia na pole bitwy.
   if (condition.enteredThisTurn) return object.enteredOnTurn === state?.turn?.number;
   if (condition.minCardsDrawnThisTurn != null) {
     const drawn = (state?.cardsDrawnThisTurn ?? {})[object.controllerId] ?? 0;
@@ -401,7 +401,7 @@ function counterDelta(object) {
 
 /** Ciągłe buffy „do końca tury" (CR 611.2c — patrz state.untilEndOfTurnBuffs):
  *  czytane przy każdym odczycie statystyk — obejmują też obiekty, które
- *  weszły na bitwisko PO rozstrzygnięciu efektu (Hysterical Blindness,
+ *  weszły na pole bitwy PO rozstrzygnięciu efektu (Hysterical Blindness,
  *  Turn the Tide, Angel of the Dawn, Your Temple). */
 function untilEndOfTurnBonuses(state, object) {
   if (!state || !object || object.zone !== 'battlefield' || object.kind !== 'creature') {
@@ -413,7 +413,7 @@ function untilEndOfTurnBonuses(state, object) {
     // buff.objectId ogranicza do wskazanego obiektu; inaczej buff grupowy.
     if (buff.objectId != null && buff.objectId !== object.id) continue;
     // CR 611.2c (M101/B2): buff grupowy niesie ZAMROŻONĄ przy rozstrzygnięciu
-    // listę objectIds — permanent, który wszedł na bitwisko później, nie jest
+    // listę objectIds — permanent, który wszedł na pole bitwy później, nie jest
     // nim objęty (przedtem liczyła się tylko bieżąca kontrola, więc świeży
     // stwór „łapał" Angel of the Dawn czy Hysterical Blindness).
     if (Array.isArray(buff.objectIds) && !buff.objectIds.includes(object.id)) continue;
@@ -483,7 +483,7 @@ export function attachmentSubtypes(state, object) {
   return out;
 }
 
-/** Efektywne podtypy stwora na bitwisku — własne + granty załączników. */
+/** Efektywne podtypy stwora na polu bitwy — własne + granty załączników. */
 export function effectiveSubtypesOnBattlefield(state, object) {
   const own = object?.subtypes ?? [];
   const granted = attachmentSubtypes(state, object);
@@ -799,7 +799,7 @@ export function clearStatModifiers(state) {
  */
 export function grantAbilitiesUntilEndOfTurn(state, objectId, abilities) {
   const object = state.objects.get(objectId);
-  if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error('Zdolności do końca tury można nadawać tylko stworowi na bitwisku');
+  if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error('Zdolności do końca tury można nadawać tylko stworowi na polu bitwy');
   if (!Array.isArray(abilities) || abilities.length === 0) throw new TypeError('Lista nadawanych zdolności nie może być pusta');
   const grants = [...(object.abilityGrants ?? []), ...abilities.map((ability) => Object.freeze({ ...ability }))];
   return replaceObject(state, object, { abilityGrants: Object.freeze(grants) });
@@ -812,7 +812,7 @@ export function grantAbilitiesUntilEndOfTurn(state, objectId, abilities) {
 export function grantBasicLandTypeUntilEndOfTurn(state, objectId, subtype) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield' || !((object.types ?? []).includes('Land') || object.kind === 'land')) {
-    throw new Error('Typ podstawowy można nadać tylko landowi na bitwisku');
+    throw new Error('Typ podstawowy można nadać tylko landowi na polu bitwy');
   }
   if (typeof subtype !== 'string' || !subtype) throw new TypeError('Typ podstawowy musi być napisem');
   const updated = replaceObject(state, object, { typeGrant: Object.freeze({ subtypes: Object.freeze([subtype]) }) });
@@ -828,7 +828,7 @@ export function grantBasicLandTypeUntilEndOfTurn(state, objectId, subtype) {
 export function goadUntilNextTurn(state, objectId, sourceControllerId) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') {
-    throw new Error('Goadować można tylko stwora na bitwisku');
+    throw new Error('Goadować można tylko stwora na polu bitwy');
   }
   if (object.goaded) return object;
   // CR 701.38c: goad trwa do początku NASTĘPNEJ tury gracza, który goadował —
@@ -847,7 +847,7 @@ export function goadUntilNextTurn(state, objectId, sourceControllerId) {
  */
 export function grantKeywordsUntilEndOfTurn(state, objectId, keywords, options = {}) {
   const object = state.objects.get(objectId);
-  if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error('Tymczasowe keywordy można nadawać tylko stworowi na bitwisku');
+  if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error('Tymczasowe keywordy można nadawać tylko stworowi na polu bitwy');
   if (!Array.isArray(keywords) || keywords.some((k) => typeof k !== 'string' || !k)) throw new TypeError('Keywordy muszą być niepustymi napisami');
   const grants = [...new Set([...(object.keywordGrants ?? []), ...keywords])];
   const updated = replaceObject(state, object, { keywordGrants: grants });

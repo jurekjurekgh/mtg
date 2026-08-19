@@ -18,14 +18,14 @@ export function createCardInstance({ id, cardId, ownerId }) {
   return Object.freeze({ id, cardId, ownerId });
 }
 
-export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, entersWithCountersIf = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, exploit = null, treasureAltCost = null, cardName = null, name = null, isToken = false, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, enterAsCopy = null }) {
+export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, entersWithCountersIf = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, exploit = null, treasureAltCost = null, cardName = null, name = null, isToken = false, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false }) {
   if (!id || !instanceId || !cardId || !controllerId || !zone) {
     throw new TypeError('Obiekt gry wymaga id, instanceId, cardId, controllerId i zone');
   }
   return Object.freeze({
     id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities,
     // Właściciel obiektu (CR 108.3): gracz, z czyjej talii pochodzi karta;
-    // dla tokenów — gracz, pod czyją kontrolą wszedł na bitwisko. Domyślnie
+    // dla tokenów — gracz, pod czyją kontrolą wszedł na pole bitwy. Domyślnie
     // równy kontrolerowi; rozjeżdża się po efektach zmiany kontroli
     // (reanimacja pod cudzą kontrolą). Efekt „each player gains control of
     // all creatures they own" (Trostani Discordant) czyta właśnie to pole.
@@ -58,13 +58,20 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // więc 1 symbol = 1 mana albo 2 życia.
     phyrexianManaCost,
     morph, plot, plotted: Boolean(plotted), plottedAtTurn: plottedAtTurn ?? null, entersWithCounters,
+    // Suspend (CR 702.62, Mindstab): deskryptor { cost, colors, timeCounters }
+    // + stan karty zawieszonej w exile (suspended, timeCounters) i gotowość
+    // do rzutu bez kosztu po zdjęciu ostatniego licznika (suspendReady).
+    suspend: suspend ? Object.freeze({ ...suspend }) : null,
+    suspended: Boolean(suspended),
+    timeCounters: timeCounters ?? 0,
+    suspendReady: Boolean(suspendReady),
     entersWithCountersIf: entersWithCountersIf ? Object.freeze({ ...entersWithCountersIf }) : null,
     keywords: Object.freeze([...keywords]), subtypes: Object.freeze([...subtypes]),
     transformTo,
     // Pełna linia typów z definicji (np. ['Enchantment','Creature']) — predykaty
     // mechanik (np. „artefakt lub enchantment") nie opierają się na samym kind.
     types: Object.freeze([...types]),
-    // Cecha z definicji (np. Rupture Spire): permanent wchodzi na bitwisko tapped.
+    // Cecha z definicji (np. Rupture Spire): permanent wchodzi na pole bitwy tapped.
     entersTapped: Boolean(entersTapped),
     // Czasowe entersTapped z warunkiem (Raucous Carnival): land wchodzi
     // zatapnięty, chyba że warunek jest spełniony (wtedy wchodzi untapped).
@@ -107,9 +114,15 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     }) : null,
     // Equipment (CR 301.5/702.6): permanent-artefakt ze zdolnością equip;
     // załączony daje zaczarowanemu nosicielowi pump/keywordy, a po utracie
-    // gospodarza ZOSTAJE na bitwisku odłączony (nie ginie jak aura).
+    // gospodarza ZOSTAJE na polu bitwy odłączony (nie ginie jak aura).
     equipment: equipment ? (() => {
       const base = { equip: equipment.equip, pump: equipment.pump ? Object.freeze({ ...equipment.pump }) : null, keywords: Object.freeze([...(equipment.keywords ?? [])]), subtypes: Object.freeze([...(equipment.subtypes ?? [])]) };
+      // M146 (Blazing Torch): zdolności NADANE nosicielowi — muszą przejść
+      // przez cały łańcuch registry → gameObject (L21/L48), inaczej giną
+      // po cichu i sprzęt jest martwy. Pole tylko gdy niepuste (jak registry).
+      if (equipment.grantedAbilities?.length) {
+        base.grantedAbilities = Object.freeze(equipment.grantedAbilities.map((a) => Object.freeze({ ...a })));
+      }
       if (equipment.conditionalKeywords && equipment.conditionalKeywords.length > 0) {
         base.conditionalKeywords = Object.freeze(equipment.conditionalKeywords.map((ck) => Object.freeze({ condition: Object.freeze({ ...ck.condition }), keywords: Object.freeze([...ck.keywords]) })));
       }
@@ -133,13 +146,13 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // poświęcenia; alternatywny koszt ze Skarbów (Security Rhox).
     exploit: exploit ? Object.freeze({}) : null,
     treasureAltCost: treasureAltCost ? Object.freeze({ ...treasureAltCost }) : null,
-    // Załącznik (CR 301/702.103): aura jest na bitwisku NIE-stworem (kind
+    // Załącznik (CR 301/702.103): aura jest na polu bitwy NIE-stworem (kind
     // 'aura') i wskazuje zaczarowany obiekt; odłączenie przywraca pierwotny
     // kind (stwór / czysty enchantment) — patrz attachments.js.
     attachedTo: null, baseKind: null,
     tapped: false, summoningSickness: false, damage: 0,
-    // Numer tury, w której obiekt wszedł na bitwisko (Crew Captain —
-    // „as long as it entered this turn\"). null poza bitwiskiem.
+    // Numer tury, w której obiekt wszedł na pole bitwy (Crew Captain —
+    // „as long as it entered this turn\"). null poza polem bitwy.
     enteredOnTurn: null,
     damagedByDeathtouch: false,
     powerModifier: 0, toughnessModifier: 0, chosenTargets: null,
@@ -169,7 +182,7 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     formerCounters: Object.freeze({}), formerZone: null, formerAbilityGrants: Object.freeze([]),
     // CR 111 / CR 111.7: JAWNY znacznik tokenu. Wcześniej token rozpoznawano
     // po `name != null`, ale to heurystyka — kartom też wolno nieść `name`,
-    // więc reguła stanu „token poza bitwiskiem przestaje istnieć" kasowałaby
+    // więc reguła stanu „token poza polem bitwy przestaje istnieć" kasowałaby
     // zwykłe karty. Flagę ustawia wyłącznie createBattlefieldToken.
     isToken,
     // Saga (CR 714, Shiva Warden of Ice): deskryptor rozdziałów; liczniki lore

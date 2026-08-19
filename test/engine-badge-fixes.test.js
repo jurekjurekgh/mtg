@@ -12,7 +12,7 @@ import { moveObjectDirectly } from '../src/engine/objects.js';
 // =============================================================================
 // Odznaka „wyłapywacz błędów" (sesja 2026-08-08, M55) — 5 błędów/uproszczeń
 // vs zasady MtG znalezionych w przeglądzie istniejących kart i mechanik.
-//   1. Channel (Greater Tanuki) oferowany z bitwiska — nielegalna komenda.
+//   1. Channel (Greater Tanuki) oferowany z pola bitwy — nielegalna komenda.
 //   2. PlayerView nie oferował 4 decyzji (reveal/proliferate/damage/modal)
 //      — gra (człowiek i bot) soft-lockowała.
 //   3. Stomping Slabs — kompletny no-op (pendingRevealOrder nigdy nie
@@ -80,17 +80,17 @@ function passRounds(state, rounds = 4) {
 
 // ---------------------------------------------------------------- 1. Channel
 
-test('B1: channel (Greater Tanuki) tylko z ręki — nigdy z bitwiska', () => {
+test('B1: channel (Greater Tanuki) tylko z ręki — nigdy z pola bitwy', () => {
   const state = newState();
   giveMana(state, 'p1', 3, { G: 1 });
   addCardFromRegistry(state, 'tanuki', 'greater-tanuki', 'p1', 'hand');
   const handOffers = legalActivatedAbilities(state, 'p1').filter((a) => a.objectId === 'tanuki');
   assert.equal(handOffers.length, 1, 'channel oferowany z ręki');
-  // Ten sam stwór na bitwisku: zdolność channel nie może być oferowana (CR 702.85a).
+  // Ten sam stwór na polu bitwy: zdolność channel nie może być oferowana (CR 702.85a).
   const moved = moveObjectDirectly(state, 'tanuki', 'battlefield', 'tanuki-bf');
   state.objects.set('tanuki-bf', Object.freeze({ ...moved, summoningSickness: false, kind: 'creature' }));
   const bfOffers = legalActivatedAbilities(state, 'p1').filter((a) => a.objectId === 'tanuki-bf');
-  assert.equal(bfOffers.length, 0, 'channel NIE oferowany z bitwiska');
+  assert.equal(bfOffers.length, 0, 'channel NIE oferowany z pola bitwy');
 });
 
 // ------------------------------------------------- 3. Stomping Slabs (real flow)

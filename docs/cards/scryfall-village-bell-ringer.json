@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Village%20Bell-Ringer&set=isd",
+  "print": "Village Bell-Ringer (ISD)",
+  "name": "Village Bell-Ringer",
+  "mana_cost": "{2}{W}",
+  "cmc": 3,
+  "type_line": "Creature — Human Scout",
+  "oracle_text": "Flash (You may cast this spell any time you could cast an instant.)\nWhen this creature enters, untap all creatures you control.",
+  "power": "1",
+  "toughness": "4",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [
+    "Flash"
+  ],
+  "set": "isd",
+  "collector_number": "1",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/b/cb6912b3-bab9-4937-afdd-3711e6d792a0.jpg",
+    "normal": "https://cards.scryfall.io/normal/front/c/b/cb6912b3-bab9-4937-afdd-3711e6d792a0.jpg"
+  },
+  "pobrano": "2026-08-19"
+}

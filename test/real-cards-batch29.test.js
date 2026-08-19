@@ -166,7 +166,7 @@ test('Curiosity: zaczarowany stwór zadaje damage przeciwnikowi -> you may draw'
   assert.ok(r.ok, 'rzut aury: ' + (r.events?.[0]?.reason ?? ''));
   assert.ok(resolveStack(state), 'stos rozstrzygnięty');
   const auraObj = [...state.objects.values()].find((o) => o.cardId === 'curiosity' && o.zone === 'battlefield');
-  assert.ok(auraObj, 'aura na bitwisku');
+  assert.ok(auraObj, 'aura na polu bitwy');
   assert.equal(auraObj.attachedTo, 'host', 'aura załączona');
   // host atakuje samotnie i zadaje combat damage graczowi p2
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
@@ -358,7 +358,7 @@ test('Fireball: cel zniknięty przed rozstrzygnięciem — jego udział przepada
   addRealCard(state, 't2', 'gloomfang-mauler', 'p2', 'battlefield');
   addMana(state, 'p1', 10, { colors: ['R'] });
   assert.ok(execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'fb', targets: ['t1', 't2'], xValue: 4 }).ok);
-  // Cel 1 opuszcza bitwisko przed rozstrzygnięciem (odpowiedź instanitem).
+  // Cel 1 opuszcza pole bitwy przed rozstrzygnięciem (odpowiedź instanitem).
   moveObjectDirectly(state, 't1', 'exile', 'exile-t1');
   assert.ok(resolveStack(state), 'stos rozstrzygnięty');
   assert.equal(state.objects.get('t2').damage, 2, 'żywy cel bierze swój udział (4/2)');
@@ -542,7 +542,7 @@ test('Audyt B3: Curiosity odpala też przy niecombat damage (Welder Automaton) (
   assert.ok(castAura.ok, 'rzut aury: ' + (castAura.events?.[0]?.reason ?? ''));
   assert.ok(resolveStack(state), 'stos po aurze rozstrzygnięty');
   const curiOnBoard = state.zones.battlefield.map((id) => state.objects.get(id)).find((o) => o?.cardId === 'curiosity');
-  assert.ok(curiOnBoard, 'Curiosity na bitwisku');
+  assert.ok(curiOnBoard, 'Curiosity na polu bitwy');
   assert.equal(curiOnBoard.attachedTo, 'welder', 'Curiosity zaczarowuje Weldera');
   // Aktywuj Weldera {3}{R}: 1 obrażeń każdemu przeciwnikowi (niecombat).
   const act = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'welder', abilityIndex: 0 });
@@ -569,7 +569,7 @@ test('Audyt B4: morph wchodzący przy Veiled Ascension dostaje flying counter', 
   assert.ok(r.ok, 'morph: ' + (r.events?.[0]?.reason ?? ''));
   assert.ok(resolveStack(state), 'stos rozstrzygnięty');
   const fd = [...state.objects.values()].find((o) => o.zone === 'battlefield' && o.faceDown);
-  assert.ok(fd, 'zakryty stwór na bitwisku');
+  assert.ok(fd, 'zakryty stwór na polu bitwy');
   assert.equal(state.objects.get(fd.id).counters.flying, 1, 'morph dostaje flying counter od Veiled');
   // Licznik flying daje flying także zakrytemu (CR 122.1b; ruling cloak —
   // „other effects can grant it characteristics"). Drukowane keywordy nadal
@@ -649,7 +649,7 @@ test('Audyt B6: gospodarz zyskuje protection na stosie -> czysta aura fizzluje (
   // W oknie odpowiedzi gospodarz zyskuje protection od blue.
   setField(state, 'host', { protectionFromColors: ['U'] });
   assert.ok(resolveStack(state), 'stos rozstrzygnięty');
-  assert.ok(!state.zones.battlefield.some((id) => state.objects.get(id)?.cardId === 'curiosity'), 'aura NIE weszła na bitwisko');
+  assert.ok(!state.zones.battlefield.some((id) => state.objects.get(id)?.cardId === 'curiosity'), 'aura NIE weszła na pole bitwy');
   assert.ok(state.zones.graveyard.some((id) => state.objects.get(id)?.cardId === 'curiosity'), 'aura poszła do grobu (fizzle)');
 });
 
@@ -726,7 +726,7 @@ test('Audyt B7.2: cel equipu zniszczony w oknie odpowiedzi -> fizzle (CR 608.2b)
   markDamage(state, 'carrier', 9);
   assert.ok(resolveStack(state), 'stos rozstrzygnięty');
   assert.equal(state.objects.get('cloak').attachedTo, null, 'equip nie założony (cel nielegalny)');
-  assert.equal(state.objects.get('cloak').zone, 'battlefield', 'equipment zostaje na bitwisku');
+  assert.equal(state.objects.get('cloak').zone, 'battlefield', 'equipment zostaje na polu bitwy');
 });
 
 // --- Audyt PR #41 (B7.2): ninjutsu na stosie — okno odpowiedzi
@@ -795,7 +795,7 @@ test('Audyt B8: Necrosquito — śmierć SIEBIE nie dokłada oil („another")',
   const necroId = state.zones.battlefield.find((id) => state.objects.get(id)?.cardId === 'necrosquito');
   assert.equal(state.objects.get(necroId).counters.oil, 2, '2 oil przy wejściu');
   // Zniszczenie samego Necrosquito — trigger „another" nie odpala (brak źródła
-  // na bitwisku; count bez zmian, obiekt w grobie).
+  // na polu bitwy; count bez zmian, obiekt w grobie).
   const before = state.events.length;
   const graveId = 'grave-necro';
   state.zones.battlefield = state.zones.battlefield.filter((id) => id !== necroId);
@@ -817,7 +817,7 @@ test('Audyt B8: Veiled Ascension ETB — flying counter na KAŻDYM face-down, kt
   assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'veiled' }).ok, 'rzut Veiled');
   assert.ok(resolveStack(state), 'stos');
   const fd = state.zones.battlefield.map((id) => state.objects.get(id)).find((o) => o?.faceDown);
-  assert.ok(fd, 'face-down na bitwisku');
+  assert.ok(fd, 'face-down na polu bitwy');
   assert.equal(state.objects.get(fd.id).counters.flying, 1, 'ETB kładzie flying counter na stojące face-down');
 });
 

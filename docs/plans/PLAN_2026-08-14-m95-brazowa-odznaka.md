@@ -31,7 +31,7 @@ Repro: obaj gracze na 0 życia → `winnerId: 'p2'`.
 Fix: SBA zbiera komplet przegranych w jednym przebiegu; `winnerId = null`,
 `state.isDraw = true`, zdarzenia `player_lost` dla obu graczy.
 
-### 2. CR 400.3 / 110.2a — karta poza bitwiskiem zachowywała kontrolera *(krytyczny)*
+### 2. CR 400.3 / 110.2a — karta poza polem bitwy zachowywała kontrolera *(krytyczny)*
 Stwór przejęty efektem „gain control" (Puppeteer Clique, Awaken the Sleeper)
 po śmierci trafiał do grobu **złodzieja** i zostawał jego kartą na stałe;
 właściciel nie widział jej we własnym grobie i nie mógł jej reanimować.
@@ -58,7 +58,7 @@ Fix: `render.js` (baner „REMIS"), `main.js` (wskaźnik tury), `session.js`
 
 ### 5. CR 400.7 — `damagedThisTurn` przeciekało na nowy obiekt
 Stwór, który dostał obrażenia, zginął (albo wrócił na rękę) i ponownie wszedł
-na bitwisko, nadal był „dealt damage this turn".
+na pole bitwy, nadal był „dealt damage this turn".
 **Realna karta:** Fathom Fleet Cutthroat („Destroy target creature that was
 dealt damage this turn") mógł celować w nietknięty, świeży obiekt.
 

@@ -92,7 +92,7 @@ test('CR 104.4b: remis w realnej partii — obopólne obrażenia bojowe', () => 
 });
 
 // =============================================================================
-// BUG 2 — CR 400.7 / 110.2a: karta opuszczająca bitwisko wraca pod kontrolę
+// BUG 2 — CR 400.7 / 110.2a: karta opuszczająca pole bitwy wraca pod kontrolę
 // WŁAŚCICIELA
 //
 // Objaw: stwór przejęty efektem „gain control" (Puppeteer Clique, Awaken the
@@ -100,9 +100,9 @@ test('CR 104.4b: remis w realnej partii — obopólne obrażenia bojowe', () => 
 // i pozostawał jego kartą na stałe. To samo dla wygnania i poświęcenia.
 //
 // CR 110.2a: „A permanent's controller is, by default, the player who put it
-// onto the battlefield" — ale kontrola istnieje TYLKO na bitwisku.
+// onto the battlefield" — ale kontrola istnieje TYLKO na polu bitwy.
 // CR 108.3: „The owner of a card is the player who started the game with it."
-// CR 400.3: obiekt w strefie innej niż bitwisko/stos jest kontrolowany przez
+// CR 400.3: obiekt w strefie innej niż pole bitwy/stos jest kontrolowany przez
 // swojego właściciela — karta wraca więc do grobu/ręki/biblioteki WŁAŚCICIELA.
 //
 // Dowód niespójności wewnętrznej: `bounce_permanent` i `bounce_to_library_top`
@@ -124,7 +124,7 @@ test('CR 400.7: skradziony stwór po śmierci wraca do grobu WŁAŚCICIELA', () 
   assert.ok(inGrave, 'stwór musi trafić do grobu');
   assert.equal(inGrave.ownerId, 'p2', 'właściciel się nie zmienia');
   assert.equal(inGrave.controllerId, 'p2',
-    'karta poza bitwiskiem jest kontrolowana przez WŁAŚCICIELA (CR 400.3) — inaczej złodziej przejmuje ją na stałe');
+    'karta poza polem bitwy jest kontrolowana przez WŁAŚCICIELA (CR 400.3) — inaczej złodziej przejmuje ją na stałe');
 });
 
 test('CR 400.7: wszystkie strefy docelowe zwracają kartę właścicielowi', () => {
@@ -144,7 +144,7 @@ test('CR 400.7: destroy i exile skradzionego permanentu — spójnie z bounce', 
     const source = creature(state, { id: 'st', controllerId: 'p1', ownerId: 'p2' });
     applyEffect(state, { type: effectType }, source, ['st']);
     const moved = [...state.objects.values()].find((o) => o.cardId === 'x-test' && o.zone !== 'battlefield');
-    assert.ok(moved, `${effectType}: obiekt musi opuścić bitwisko`);
+    assert.ok(moved, `${effectType}: obiekt musi opuścić pole bitwy`);
     assert.equal(moved.controllerId, 'p2',
       `${effectType}: karta wraca pod kontrolę właściciela (spójnie z bounce_permanent)`);
   }
@@ -199,18 +199,18 @@ test('CR 400.7: status tapnięcia nie przechodzi przez zmianę strefy', () => {
     state.objects.set('o', Object.freeze({ ...object, tapped: true }));
     const moved = moveObjectDirectly(state, 'o', zone, 'n1');
     assert.notEqual(moved.tapped, true,
-      `battlefield → ${zone}: karta poza bitwiskiem nie ma stanu tapnięcia (CR 110.6)`);
+      `battlefield → ${zone}: karta poza polem bitwy nie ma stanu tapnięcia (CR 110.6)`);
   }
 });
 
-test('CR 110.6b: permanent wraca na bitwisko NIETAPNIĘTY (bounce → ponowne zagranie)', () => {
+test('CR 110.6b: permanent wraca na pole bitwy NIETAPNIĘTY (bounce → ponowne zagranie)', () => {
   const state = createGameState({ seed: 11, players: [{ id: 'p1' }, { id: 'p2' }] });
   const object = creature(state, { id: 'o', controllerId: 'p1' });
   state.objects.set('o', Object.freeze({ ...object, tapped: true }));
   moveObjectDirectly(state, 'o', 'hand', 'h1');
   const back = moveObjectDirectly(state, 'h1', 'battlefield', 'b1');
   assert.notEqual(back.tapped, true,
-    'permanent wchodzi na bitwisko nietapnięty, chyba że efekt mówi inaczej (CR 110.6b)');
+    'permanent wchodzi na pole bitwy nietapnięty, chyba że efekt mówi inaczej (CR 110.6b)');
 });
 
 test('CR 110.6b: reanimacja tapniętego stwora daje NIETAPNIĘTY permanent', () => {
@@ -284,7 +284,7 @@ test('remis: warstwa prezentacji rozpoznaje isDraw w PlayerView', () => {
 // zostawiało flagi opisujące HISTORIĘ permanentu w tej turze:
 //
 //  BUG 5 — `damagedThisTurn`: stwór, który dostał obrażenia, zginął (albo wrócił
-//    na rękę) i ponownie wszedł na bitwisko, nadal był „dealt damage this turn".
+//    na rękę) i ponownie wszedł na pole bitwy, nadal był „dealt damage this turn".
 //    Realna karta: Fathom Fleet Cutthroat („Destroy target creature that was
 //    dealt damage this turn") mogła celować w nietknięty, świeży obiekt.
 //
@@ -340,8 +340,8 @@ test('CR 400.7: pozostałe flagi turowe też nie przeciekają', () => {
   assert.notEqual(moved.damagedByDeathtouch, true, 'znacznik deathtouch nie przechodzi');
   assert.notEqual(moved.saddled, true, 'saddled to stan permanentu');
   assert.notEqual(moved.monstrous, true, 'monstrous to stan permanentu');
-  assert.notEqual(moved.attacking, true, 'obiekt poza bitwiskiem nie atakuje');
-  assert.notEqual(moved.blocking, true, 'obiekt poza bitwiskiem nie blokuje');
+  assert.notEqual(moved.attacking, true, 'obiekt poza polem bitwy nie atakuje');
+  assert.notEqual(moved.blocking, true, 'obiekt poza polem bitwy nie blokuje');
   assert.ok(!moved.abilityResolvedThisTurn, 'licznik rozstrzygnięć zdolności zeruje się (CR 400.7)');
 });
 

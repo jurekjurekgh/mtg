@@ -92,7 +92,7 @@ test('Idyllic Grange: mniej niż 3 INNE Plains → wchodzi TAPPED, trigger count
   const r = execute(state, { type: 'play_land', playerId: 'p1', objectId: 'grange' });
   assert.ok(r.ok, 'land drop: ' + (r.events?.[0]?.reason ?? ''));
   const grange = byCard(state, 'idyllic-grange', 'battlefield');
-  assert.ok(grange, 'grange na bitwisku');
+  assert.ok(grange, 'grange na polu bitwy');
   assert.equal(grange.tapped, true, 'wchodzi tapped przy 2 innych Plains (bug C)');
   passRounds(state, 2);
   assert.equal(state.pendingTriggerTargets.length, 0, 'brak decyzji celu countera');
@@ -201,7 +201,7 @@ test('Fertile Thicket: ogląda wierzch WŁASNEJ biblioteki — karty przeciwnika
     'wybrany na wierzch, karty p2 w niezmienionym przeplocie, reszta na spód');
 });
 
-test('Springbloom Druid: sacrifice → gracz wybiera DWA basic landy → oba TAPPED na bitwisku', () => {
+test('Springbloom Druid: sacrifice → gracz wybiera DWA basic landy → oba TAPPED na polu bitwy', () => {
   const state = newState();
   giveMana(state, 'p1', 3, { G: 1 });
   addPlains(state, 'pl1', 'p1');
@@ -217,21 +217,21 @@ test('Springbloom Druid: sacrifice → gracz wybiera DWA basic landy → oba TAP
   const sac = execute(state, { type: 'resolve_springbloom', playerId: 'p1', sacrificeLandId: 'pl1' });
   assert.ok(sac.ok, 'poświęcenie: ' + (sac.events?.[0]?.reason ?? ''));
   assert.ok(!state.objects.get('pl1') || state.objects.get('pl1').zone !== 'battlefield',
-    'pl1 odszedł z bitwiska');
+    'pl1 odszedł z pola bitwy');
   assert.ok(byCard(state, 'basic-plains', 'graveyard'), 'poświęcony land trafił do grobu (nowy obiekt strefy)');
   // Decyzja nr 1: wybieram forest → wchodzi TAPPED, „up to two" otwiera decyzję nr 2.
   assert.ok(state.pendingSearchChoice, 'pierwsza decyzja szukania');
   const s1 = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'lf1' });
   assert.ok(s1.ok, '1. wybór: ' + (s1.events?.[0]?.reason ?? ''));
   const forest = byCard(state, 'basic-forest', 'battlefield');
-  assert.ok(forest, 'forest na bitwisku');
+  assert.ok(forest, 'forest na polu bitwy');
   assert.equal(forest.tapped, true, 'forest wchodzi tapped');
   assert.ok(state.pendingSearchChoice, '„up to two" → druga decyzja szukania');
   // Decyzja nr 2: wybieram plains → też tapped.
   const s2 = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'lf2' });
   assert.ok(s2.ok, '2. wybór: ' + (s2.events?.[0]?.reason ?? ''));
   const plains = byCard(state, 'basic-plains', 'battlefield');
-  assert.ok(plains && plains.tapped === true, 'plains też tapped na bitwisku');
+  assert.ok(plains && plains.tapped === true, 'plains też tapped na polu bitwy');
   assert.equal(state.pendingSearchChoice, null, 'łańcuch domknięty po 2 znalezieniach');
 });
 
@@ -270,7 +270,7 @@ const HANDLED_TRIGGER_EVENTS = new Set([
   'dies', 'enchanted_creature_damage_to_opponent', 'end_step', 'enter_battlefield', 'equipped_creature_attacks',
   'exploits', 'land_entered_under_opponent_control',
   'land_entered_under_your_control', 'leaves_battlefield', 'mentor_attacks',
-  'creature_you_control_enters', 'enchantment_you_control_enters', 'other_creature_you_control_dies',
+  'creature_you_control_enters', 'enchantment_you_control_enters', 'artifact_you_control_enters', 'other_creature_you_control_dies',
   'noncombat_damage_to_opponent', 'other_permanent_you_control_dies',
   'permanents_you_control_leave_battlefield',
   'player_casts_spell', 'turned_face_up', 'upkeep', 'when_you_cast_spell',

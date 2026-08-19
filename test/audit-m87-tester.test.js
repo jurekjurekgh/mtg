@@ -266,6 +266,6 @@ test('C: Steel Sabotage tryb Kontr kontruje artifact creature na stosie', () => 
   assert.ok(execute(state, { type: 'pass_priority', playerId: 'p2' }).ok);
   const cog = [...state.objects.values()].find((o) => o.cardId === 'cogwork-assembler');
   assert.ok(cog, 'Cogwork nadal istnieje jako obiekt');
-  assert.notEqual(cog.zone, 'battlefield', 'skontruwany nie wchodzi na bitwisko');
+  assert.notEqual(cog.zone, 'battlefield', 'skontruwany nie wchodzi na pole bitwy');
   assert.equal(cog.zone, 'graveyard', `oczekiwano grobu, jest ${cog.zone}`);
 });

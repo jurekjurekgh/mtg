@@ -113,7 +113,7 @@ mechanicy, ostrza, red, sojusznicy, spellslinger, tokens, wiedzmin).
 
 Ponowny przebieg `mechanicy vs graveyard --seed 909`:
 - mielenie własnej biblioteki: **7 → 0** (teraz 11× celuje w gracza),
-- surowe nazwy stref: **kilka → 0** („biblioteka → ręka", „bitwisko → ręka").
+- surowe nazwy stref: **kilka → 0** („biblioteka → ręka", „pole bitwy → ręka").
 
 ### Odrzucone jako fałszywe alarmy (metodyka: sprawdzić, czy treść niesie inne zdarzenie)
 

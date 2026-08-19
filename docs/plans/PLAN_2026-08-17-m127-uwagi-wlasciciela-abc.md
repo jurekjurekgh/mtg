@@ -182,7 +182,7 @@ Talie małe mają odwrotny problem (do 51 % lądów).
   wprost, ilu lądów brakuje.
 * **M133 (znalezione przy okazji).** Zmiana talii ujawniła **crash silnika**:
   `Error: Nieprawidłowy cel obrażeń` wywracał cały benchmark, gdy cel zdolności
-  opuścił bitwisko przed rozstrzygnięciem. Wbrew CR 608.2b engine rzucał
+  opuścił pole bitwy przed rozstrzygnięciem. Wbrew CR 608.2b engine rzucał
   wyjątkiem zamiast fizzlować. Naprawione u źródła + nowe zdarzenie
   `damage_fizzled` z powodem (L24) i opisem w logu.
 

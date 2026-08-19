@@ -33,7 +33,7 @@ artId ze słownika kolekcji.
    — trigger `other_creature_you_control_dies` ze źródłem w grobie + optional
    pay → return źródła do ręki.
 2. **Copy na wejściu (Ally)** (Jwari Shapeshifter) — „you may enter as a copy"
-   — blokująca decyzja kopiowania stworów-Ally z bitwiska.
+   — blokująca decyzja kopiowania stworów-Ally z pola bitwy.
 3. **Investigate / Clue token** (Floodhound) — efekt `investigate` + token_clue.
 4. **Prewencja combat „except by enchanted/enchantment creatures”** (Inspire Awe)
    — nowy filtr prewencji.

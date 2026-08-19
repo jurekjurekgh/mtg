@@ -96,7 +96,7 @@ test('M141/C: Benevolent Blessing nie zdejmuje własnej aury mimo ochrony od bia
   const after = state.objects.get('blessing');
   // aura mogła dostać nowe id po SBA? Szukaj po cardId
   const found = [...state.objects.values()].find(o => o.cardId === 'benevolent-blessing' && o.zone === 'battlefield');
-  assert.ok(found, 'Benevolent Blessing zostaje na bitwisku mimo ochrony od białego (własna aura)');
+  assert.ok(found, 'Benevolent Blessing zostaje na polu bitwy mimo ochrony od białego (własna aura)');
   assert.equal(found.attachedTo, 'crea');
 
   // przeciwnika biała aura na tym samym stworze powinna spaść
@@ -120,7 +120,7 @@ test('M141/C: Benevolent Blessing nie zdejmuje własnej aury mimo ochrony od bia
 // BUG D: Jwari Shapeshifter kopia traciła station/saga (CR 707.2)
 test('M141/D: Jwari jako kopia spacecraft zachowuje station', () => {
   const state = game();
-  // Przygotuj cel-kopię: Wedgelight Rammer na bitwisku
+  // Przygotuj cel-kopię: Wedgelight Rammer na polu bitwy
   putCard(state, 'rammer', 'wedgelight-rammer', 'battlefield');
   // Jwari wchodzi jako kopia — symulujemy pendingEnterAsCopy
   const jwariCard = registry.get('jwari-shapeshifter');

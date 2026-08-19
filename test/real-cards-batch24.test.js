@@ -116,7 +116,7 @@ test('Faceless Butcher: ETB exile other creature, LTB return under owner control
   assert.ok(r && r.ok, 'cel wybrany');
   passRounds(state, 3); // trigger na stosie -> rozstrzygnięcie (exile)
   const butcher = byCard(state, 'faceless-butcher', 'battlefield');
-  assert.ok(butcher, 'butcher na bitwisku');
+  assert.ok(butcher, 'butcher na polu bitwy');
   // moveObjectDirectly tworzy NOWY obiekt — szukamy po cardId i sile.
   const exiled = [...state.objects.values()].find((o) => o.cardId === 'x-test' && o.power === 3 && o.zone === 'exile');
   assert.ok(exiled, 'stwór przeciwnika wygnany');
@@ -126,7 +126,7 @@ test('Faceless Butcher: ETB exile other creature, LTB return under owner control
   assert.ok(rKill.ok, 'move_object: ' + (rKill.events?.[0]?.reason ?? ''));
   passRounds(state, 2);
   const returned = [...state.objects.values()].find((o) => o.cardId === 'x-test' && o.zone === 'battlefield' && o.controllerId === 'p2' && o.power === 3);
-  assert.ok(returned, 'wygnany stwór wrócił na bitwisko pod kontrolą właściciela');
+  assert.ok(returned, 'wygnany stwór wrócił na pole bitwy pod kontrolą właściciela');
 });
 
 function castPermanentViaCmd(state, objectId, extra = {}) {
@@ -149,7 +149,7 @@ test('Unbreakable Bond: reanimacja z lifelink counter (keyword lifelink)', () =>
   assert.ok(r, 'rzut');
   passRounds(state, 1);
   const revived = [...state.objects.values()].find((o) => o.cardId === 'x-test' && o.zone === 'battlefield');
-  assert.ok(revived, 'stwór wrócił na bitwisko');
+  assert.ok(revived, 'stwór wrócił na pole bitwy');
   assert.equal((revived.counters ?? {}).lifelink, 1, 'licznik lifelink na obiekcie');
   assert.ok(effectiveKeywords(revived, state).includes('lifelink'), 'keyword lifelink (CR 122.1b)');
 });
@@ -179,7 +179,7 @@ test('Spinewoods Paladin: ETB gain 3 life + plot → cast z exile bez many', () 
   assert.equal(state.players[0].mana, manaBefore, 'cast zaplotowany bez many');
   passRounds(state, 3);
   const paladin = byCard(state, 'spinewoods-paladin', 'battlefield');
-  assert.ok(paladin, 'paladyn na bitwisku');
+  assert.ok(paladin, 'paladyn na polu bitwy');
   assert.equal(state.players[0].life, 23, 'ETB: +3 życia');
   assert.ok(effectiveKeywords(paladin, state).includes('trample'));
 });
@@ -389,7 +389,7 @@ test('Scion Summoner: ETB token Eldrazi Scion, sacrifice → Add {C}', () => {
   castPermanentViaCmd(state, 'scion');
   passRounds(state, 3);
   const token = [...state.objects.values()].find((o) => o.name === 'Eldrazi Scion' && o.zone === 'battlefield');
-  assert.ok(token, 'token Eldrazi Scion na bitwisku');
+  assert.ok(token, 'token Eldrazi Scion na polu bitwy');
   assert.equal(token.power, 1);
   assert.equal(token.toughness, 1);
   const manaBefore = state.players[0].mana;

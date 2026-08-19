@@ -1,6 +1,6 @@
 // M102/U7 — kafel aury/ekwipunku na STOLE nie mówi, do kogo jest przypięty.
 //
-// Objaw: na bitwisku leży „Warrior's Sword" przypięty do „Ainok Tracker".
+// Objaw: na polu bitwy leży „Warrior's Sword" przypięty do „Ainok Tracker".
 // Kafel GOSPODARZA poprawnie pokazuje badge „wyposażona: Warrior's Sword",
 // ale kafel samego MIECZA nie pokazuje niczego — gracz nie widzi, kogo ten
 // ekwipunek wzmacnia. Przy dwóch stworach i dwóch ekwipunkach powiązania są
@@ -100,7 +100,7 @@ function miniels() {
   return els;
 }
 
-/** Renderuje bitwisko i zwraca tekst własnej strefy. */
+/** Renderuje pole bitwy i zwraca tekst własnej strefy. */
 function renderBattlefield(battlefield, { nameOfObject } = {}) {
   const view = {
     status: 'active', winnerId: null, playerId: 'p1',

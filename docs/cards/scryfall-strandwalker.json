@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Strandwalker&set=mbs",
+  "print": "Strandwalker (MBS)",
+  "name": "Strandwalker",
+  "mana_cost": "{5}",
+  "cmc": 5,
+  "type_line": "Artifact — Equipment",
+  "oracle_text": "Living weapon (When this Equipment enters, create a 0/0 black Phyrexian Germ creature token, then attach this to it.)\nEquipped creature gets +2/+4 and has reach.\nEquip {4}",
+  "power": null,
+  "toughness": null,
+  "colors": [],
+  "color_identity": [],
+  "keywords": [
+    "Equip",
+    "Living weapon"
+  ],
+  "set": "mbs",
+  "collector_number": "1",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/0/d0d7ff8f-7733-4323-8575-c50b3e730dbc.jpg",
+    "normal": "https://cards.scryfall.io/normal/front/d/0/d0d7ff8f-7733-4323-8575-c50b3e730dbc.jpg"
+  },
+  "pobrano": "2026-08-19"
+}

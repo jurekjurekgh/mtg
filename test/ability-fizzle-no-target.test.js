@@ -81,7 +81,7 @@ test('zdolność celowana bez legalnego celu fizzluje zamiast wywalać partię (
   assert.ok(activated.ok, `aktywacja odrzucona: ${activated.events?.[0]?.reason}`);
   assert.equal(state.zones.stack.length, 1, 'zdolność czeka na stosie');
 
-  // W oknie odpowiedzi cel znika z bitwiska (CR 608.2b — cel nielegalny).
+  // W oknie odpowiedzi cel znika z pola bitwy (CR 608.2b — cel nielegalny).
   moveObjectDirectly(state, victim.id, 'graveyard', `grave-${state.objectSequence++}`);
 
   // Rozstrzygnięcie NIE MOŻE rzucić wyjątkiem — zdolność po prostu fizzluje.

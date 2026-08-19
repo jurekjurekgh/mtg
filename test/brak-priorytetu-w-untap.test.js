@@ -43,7 +43,7 @@ function makeState() {
 }
 
 /**
- * Dokłada na bitwisko odkręconego dorka many (Scorned Villager, „{T}: Add {G}")
+ * Dokłada na pole bitwy odkręconego dorka many (Scorned Villager, „{T}: Add {G}")
  * bez choroby przywołania — czyli stwora, którego zdolność JEST aktywowalna,
  * gdy tylko gracz dostanie priorytet. Dokładnie taki stwór (Moonscarred
  * Werewolf) dał się aktywować w untapie w transkrypcie /tmp/g1.txt.

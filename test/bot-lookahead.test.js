@@ -72,7 +72,7 @@ test('simulate: wykonuje kandydata na klonie i nie mutuje oryginalnego stanu', (
   // Oryginał nietknięty: land wciąż w ręce, brak buffa.
   assert.equal(state.objects.get('hand-land').zone, 'hand');
   assert.equal(state.objects.get('ge').powerModifier ?? 0, 0);
-  // Klon: land na bitwisku, landfall dał +2/+2.
+  // Klon: land na polu bitwy, landfall dał +2/+2.
   assert.equal(sim.view.zones.battlefield.some((o) => o.cardId === 'holdout-settlement'), true);
 });
 

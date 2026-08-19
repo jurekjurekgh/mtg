@@ -18,3 +18,5 @@ Thumbs.db
 .tune-out.txt
 
 .collection-A-D.csv
+# Domyślny transkrypt Żywego Testera (bez --out) — artefakt przebiegu.
+tools/table-tester/transcript.txt

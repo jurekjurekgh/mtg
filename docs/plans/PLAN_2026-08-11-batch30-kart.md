@@ -32,7 +32,7 @@ singleton (paradygmat M32).
 ## Nowe / rozszerzone mechaniki generyczne (ADR 0002)
 
 1. **Bounce na wierzch biblioteki** (Banishment Decree) — nowy efekt
-   `bounce_to_library_top` (obiekt na bitwisku → wierzch biblioteki WŁAŚCICIELA,
+   `bounce_to_library_top` (obiekt na polu bitwy → wierzch biblioteki WŁAŚCICIELA,
    CR 108.3/400.7; wzorzec `bounce_permanent`). Typy celów: artifact/creature/
    enchantment (cel `artifact_or_creature_or_enchantment`).
 2. **X-cost czar generycznie** (Consume Spirit, Epic Experiment) — rozszerzenie
@@ -41,7 +41,7 @@ singleton (paradygmat M32).
    „Spend only black mana on X" (kolorowa walidacja X), damage any target +
    gain X life.
 3. **„entered this turn"** (Crew Captain) — znacznik `enteredThisTurn` na
-   permanentach (ustawiany przy wejściu na bitwisko, czyszczony w cleanup),
+   permanentach (ustawiany przy wejściu na pole bitwy, czyszczony w cleanup),
    statyczny warunek `enteredThisTurn` + `indestructible`.
 4. **atakuje samotnie + dynamiczny pump** (Altar of the Goyf) — trigger
    `attacks_alone` (istnieje — exalted), pump `card_types_in_all_graveyards`

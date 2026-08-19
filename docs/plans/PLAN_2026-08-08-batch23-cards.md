@@ -11,7 +11,7 @@
 - **Welder Automaton (AER)** {2} 2/1 — `{3}{R}: 1 damage to each opponent` — czysta aktywowana zdolność bez celu (`damage_each_opponent:1`), wzorzec `Thermo-Alchemist` / `Fiery Inscription`. Bez nowego typu celu.
 - **Scorch Spitter (M20)** {R} 1/1 — trigger `attacks` → `damage` 1 do gracza/planeswalkera atakowanego. Wzorzec `Zoraline` (`attacks` trigger), ale cel to `defending_player` (specjalny). Rozszerzenie triggera `attacks` o efekt `damage_to_defending_player`.
 - **Turn the Tide (MBS)** {1}{U} Instant — `Creatures your opponents control get -2/-0 until EOT`. Istniejący efekt `pump` z ujemnym `power` na wielu celach. Wymaga nowego typu celu `creature_opponent_controls` + efekt `pump_all` (lub iteracja po `legalTargetCandidates` dla masowego pump).
-- **Greater Tanuki (NEO)** {4}{G}{G} 6/5 Trample — `Channel — {2}{G}, Discard this card: Search library for basic land, put tapped, shuffle`. Wzorzec `Cycling` (discard + draw) + `search_library_to_battlefield` (istnieje dla `Caravan Vigil` itp.). Channel to discard z ręki jako koszt aktywowanej? W karcie Channel to zdolność z ręki (jak cycling), nie z bitwiska. Wymaga nowej komendy `channel` lub re-use `cycling` z dodatkowym efektem search (analogicznie do `Cycling` → `search`). Najprościej: zdolność `activated` z strefy `hand` (jak `cycling`), koszt `{2}{G}` + `discardCard`.
+- **Greater Tanuki (NEO)** {4}{G}{G} 6/5 Trample — `Channel — {2}{G}, Discard this card: Search library for basic land, put tapped, shuffle`. Wzorzec `Cycling` (discard + draw) + `search_library_to_battlefield` (istnieje dla `Caravan Vigil` itp.). Channel to discard z ręki jako koszt aktywowanej? W karcie Channel to zdolność z ręki (jak cycling), nie z pola bitwy. Wymaga nowej komendy `channel` lub re-use `cycling` z dodatkowym efektem search (analogicznie do `Cycling` → `search`). Najprościej: zdolność `activated` z strefy `hand` (jak `cycling`), koszt `{2}{G}` + `discardCard`.
 
 ### Umiarkowane (nowe typy celów / drobne nowe efekty)
 - **Expunge (USG)** {2}{B} Instant — `Destroy target nonartifact, nonblack creature. It can't be regenerated. Cycling {2}`. Nowy filtr celu `nonartifact_nonblack_creature` (kombinacja dwóch warunków) + efekt `cant_be_regenerated_this_turn` przed `destroy` (wzorzec `Rage of Purphoros`). Cycling już istnieje (generic).
@@ -22,14 +22,14 @@
 ### Trudne (nowe efekty silnika)
 - **Vandalize (DTK)** {4}{R} Sorcery — `Choose one or both — Destroy artifact, Destroy land`. Modal „choose one or both” = 3 warianty (artifact / land / both). Wymaga rozszerzenia `spell.modes` o semantykę „one or both” (wybór 1 lub 2 celów). Proponowane uproszczenie: 3 tryby `Artifact`, `Land`, `Both` (każdy z własnymi celami i efektami `destroy`). 100% pokrycia Oracle (gracz może wybrać każdy legalny podzbiór), implementacja generyczna bez nowego typu komendy — re-use `cast_spell` z `modeIndex`.
 - **Deepwood Denizen (MH2)** {2}{G} 3/2 Vigilance — `{5}{G},{T}: Draw a card. This ability costs {1} less for each +1/+1 counter on creatures you control`. Nowa redukcja kosztu zdolności aktywowanej. Wymaga `ability.costReduction` w `abilities.js` (analogicznie do `effectiveSpellManaCost`): `costReduction: { perCounter: '+1/+1', amount: 1 }` + funkcja `effectiveAbilityManaCost(state, source, ability)`.
-- **Greater Tanuki channel** — jak wyżej, ale trudne bo Channel to zdolność z ręki, nie z bitwiska; wymaga bramki `channel_unresolved` lub re-use `cycling` z efektem `search_library_to_battlefield_tapped`.
+- **Greater Tanuki channel** — jak wyżej, ale trudne bo Channel to zdolność z ręki, nie z pola bitwy; wymaga bramki `channel_unresolved` lub re-use `cycling` z efektem `search_library_to_battlefield_tapped`.
 
 ## Nowe mechaniki do zaimplementowania w silniku (efekty)
 
 1. **`damage_to_defending_player`** — Scorch Spitter: `attacks` trigger → `damage` 1 do `defendingPlayer` (pobierany z `state.combat.defendingPlayerId`).
 2. **`pump_opponents_creatures`** — Turn the Tide: `pump` z filtrem `opponent` i `power:-2` na wszystkich legalnych.
 3. **`nonartifact_nonblack_creature`** — Expunge: kombinacja `type: 'creature' && !artifact && !black`.
-4. **`enchantment` target** — Feedback: `enchantment` na bitwisku.
+4. **`enchantment` target** — Feedback: `enchantment` na polu bitwy.
 5. **`enchanted_controller_upkeep` trigger** — Feedback: `upkeep` z warunkiem `enchanted`.
 6. **`cant_attack_player`** — Vow of Wildness: static `cantAttack: { playerId: 'you' }` sprawdzane w `legalAttackerOptions`.
 7. **`cost_reduction_per_counter` na ability** — Deepwood Denizen.

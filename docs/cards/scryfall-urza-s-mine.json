@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Urza%27s%20Mine&set=2xm",
+  "print": "Urza's Mine (2XM)",
+  "name": "Urza's Mine",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Land — Urza's Mine",
+  "oracle_text": "{T}: Add {C}. If you control an Urza's Power-Plant and an Urza's Tower, add {C}{C} instead.",
+  "power": null,
+  "toughness": null,
+  "colors": [],
+  "color_identity": [],
+  "keywords": [],
+  "set": "2xm",
+  "collector_number": "1",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/8/08dea8f6-bd32-44a3-bec4-93a5607819df.jpg",
+    "normal": "https://cards.scryfall.io/normal/front/0/8/08dea8f6-bd32-44a3-bec4-93a5607819df.jpg"
+  },
+  "pobrano": "2026-08-19"
+}

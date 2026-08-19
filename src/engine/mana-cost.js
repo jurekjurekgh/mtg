@@ -63,13 +63,13 @@ export function parseManaCost(manaCostStr) {
  * Łączna liczba many potrzebnej (generic + wszystkie kolorowe symbole)
  */
 /**
- * Modyfikatory kosztu czarów z permanentów na bitwisku (CR 601.2f/618,
+ * Modyfikatory kosztu czarów z permanentów na polu bitwy (CR 601.2f/618,
  * Etherium Sculptor: „Artifact spells you cast cost {1} less to cast").
  * Sumuje `amount` zdolności statycznych z deskryptorem `costModifier`
  * kontrolowanych przez kontrolera rzucanego obiektu, których `spellTypes`
  * pasują do typów rzucanej karty (każdy wymieniony typ musi być na karcie).
  * Zwraca 0, gdy nic nie redukuje. Zdolność żyje na permanencie — znika
- * natychmiast po jego odejściu z bitwiska (liczona przy każdym odczycie).
+ * natychmiast po jego odejściu z pola bitwy (liczona przy każdym odczycie).
  */
 export function costReductionForSpell(state, object) {
   if (!state || !object?.controllerId) return 0;
@@ -131,6 +131,15 @@ export function conditionalCostReduction(state, object) {
     const artifacts = controlled()
       .filter((c) => c.kind === 'artifact' || (c.types ?? []).includes('Artifact')).length;
     return artifacts >= condition.controlsArtifactsAtLeast ? amount : 0;
+  }
+  // Affinity (CR 702.42, Steelfin Whale): „This spell costs {1} less to cast
+  // for each artifact you control" — obniżka PER ARTEFAKT, nie progowa.
+  // `amount` = obniżka za każdy artefakt (zwykle 1). Warunek niesie flagę,
+  // więc liczba artefaktów kontrolera mnoży kwotę.
+  if (condition.affinityToArtifacts) {
+    const artifacts = controlled()
+      .filter((c) => c.kind === 'artifact' || (c.types ?? []).includes('Artifact')).length;
+    return artifacts * amount;
   }
   if (condition.controlsSubtype != null) {
     const has = controlled().some((c) => (c.subtypes ?? []).includes(condition.controlsSubtype));

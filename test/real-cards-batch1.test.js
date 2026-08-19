@@ -148,7 +148,7 @@ test('Kappa Tech-Wrecker: wchodzi z licznikiem deathtouch', () => {
   resolveStack(state); // T1: licznik ETB ląduje przy rozstrzygnięciu stosu
   assert.ok(state.events.some((e) => e.type === 'counter_added' && e.counter === 'deathtouch'), 'brak counter_added');
   const kappa = [...state.objects.values()].find((o) => o.cardId === 'kappa-tech-wrecker' && o.zone === 'battlefield');
-  assert.ok(kappa, 'Kappa nie ma na bitwisku');
+  assert.ok(kappa, 'Kappa nie ma na polu bitwy');
   assert.ok(hasCounter(kappa, 'deathtouch'), 'brak licznika deathtouch');
   const view = playerView(state, 'p1');
   const battlefieldKappa = view.zones.battlefield.find((o) => o.id === kappa.id);
@@ -180,9 +180,9 @@ test('Kappa Tech-Wrecker: ninjutsu zwraca atakującego i wchodzi zatapnięta i a
   assert.equal(state.combat.attackers.includes('attacker'), false);
   // B7.2: ninjutsu na stosie — Kappa wchodzi po rozstrzygnięciu.
   assert.ok(resolveStack(state), 'stos po ninjutsu');
-  // Kappa jest na bitwisku: zatapnięta, atakująca, z licznikiem deathtouch.
+  // Kappa jest na polu bitwy: zatapnięta, atakująca, z licznikiem deathtouch.
   const kappa = [...state.objects.values()].find((o) => o.cardId === 'kappa-tech-wrecker' && o.zone === 'battlefield');
-  assert.ok(kappa, 'Kappa nie weszła na bitwisko');
+  assert.ok(kappa, 'Kappa nie weszła na pole bitwy');
   assert.equal(kappa.tapped, true);
   assert.ok(state.combat.attackers.includes(kappa.id), 'Kappa nie jest atakująca');
   assert.ok(hasCounter(kappa, 'deathtouch'), 'wejście przez ninjutsu nie dało licznika');

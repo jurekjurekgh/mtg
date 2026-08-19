@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Palace%20Familiar&set=dtk",
+  "print": "Palace Familiar (DTK)",
+  "name": "Palace Familiar",
+  "mana_cost": "{1}{U}",
+  "cmc": 2,
+  "type_line": "Creature — Bird",
+  "oracle_text": "Flying\nWhen this creature dies, draw a card.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Flying"
+  ],
+  "set": "dtk",
+  "collector_number": "1",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/c/fc0c17c9-54af-4dd4-8d4a-fd5a7b8c3c77.jpg",
+    "normal": "https://cards.scryfall.io/normal/front/f/c/fc0c17c9-54af-4dd4-8d4a-fd5a7b8c3c77.jpg"
+  },
+  "pobrano": "2026-08-19"
+}

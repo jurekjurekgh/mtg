@@ -24,7 +24,7 @@
   this turn.` Aktywowana zdolność z celem-stworem, efekt „can't be blocked"
   (nieblokowalny; efekt `cant_block` z Sagi Shiva M33 — weryfikacja nazwy).
 - **Caravan Vigil (ISD)** {G} Sorcery — szukaj basic land do ręki (istnieje);
-  **Morbid** — jeśli stwór zginął w tej turze, połóż na bitwisko zamiast do ręki.
+  **Morbid** — jeśli stwór zginął w tej turze, połóż na pole bitwy zamiast do ręki.
   **Nowe:** warunek `creatureDiedThisTurn` (śledzenie śmierci stwora w turze).
 - **Gorehorn Minotaurs (MM2)** {2}{R}{R} 3/3 — **Bloodthirst 2**: jeśli przeciwnik
   był obrażony w tej turze, wchodzi z dwoma +1/+1. **Nowe:** warunek
@@ -40,7 +40,7 @@
   cycling z ręki, ale z grobu) + nowy token `token_kithkin`.
 - **Fear of Abduction (DSK)** {4}{W}{W} 5/5 Enchantment Creature — **dodatkowy
   koszt** „exile a creature you control" (jak sacrifice-cost, ale exile); ETB:
-  **wygnaj** cel-stwora przeciwnika; **opuszczenie bitwiska** → zwróć wygnane
+  **wygnaj** cel-stwora przeciwnika; **opuszczenie pola bitwy** → zwróć wygnane
   karty do ręki właściciela. **Nowe:** koszt-additional `exileCreatureYouControl`,
   efekt „banish" (wygnanie z linkiem powrotu przy odejściu źródła).
 

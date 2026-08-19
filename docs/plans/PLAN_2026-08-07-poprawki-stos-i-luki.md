@@ -7,7 +7,7 @@ maskowania. Każdy temat = osobny commit + testy + aktualizacja
 
 ## T1 (KRYTYCZNY) — Permanenty na stosie: rzut i rozstrzyganie (CR 601/608/702)
 
-**Błąd:** `castPermanent` przenosi obiekt z ręki OD RAZU na bitwisko.
+**Błąd:** `castPermanent` przenosi obiekt z ręki OD RAZU na pole bitwy.
 Przeciwnik nie może odpowiedzieć instanitem na rzut stwora (Stoic Rebuttal
 nie kontruje stworów), ETB/liczniki/bloodthirst rozstrzygają się w chwili
 rzutu zamiast po rozstrzygnięciu, a timing sorcery nie pilnuje pustego stosu.
@@ -19,7 +19,7 @@ rzutu zamiast po rozstrzygnięciu, a timing sorcery nie pilnuje pustego stosu.
    `permanent_cast` niesie obiekt na stosie. `entersWithCounters` i
    bloodthirst PRZENOSIMY do rozstrzygnięcia.
 2. `resolveTopOfStack` (spells.js): gałąź dla obiektu BEZ `object.spell`
-   (czar permanentu) → wejście na bitwisko (nowe id, patch faceDown/
+   (czar permanentu) → wejście na pole bitwy (nowe id, patch faceDown/
    manaFromTreasureSpent z LKI stosu), liczniki ETB, bloodthirst, zdarzenia
    `permanent_entered_battlefield` + `spell_resolved{permanent:true}`.
 3. `castAdventureCreature` (spells.js): strona-stwór przygody też na stos

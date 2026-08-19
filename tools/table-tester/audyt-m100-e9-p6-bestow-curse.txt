@@ -47,7 +47,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Maritime Guard
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Maritime Guard wchodzi na bitwisko
+  [ROZGRYWKA]   • Maritime Guard wchodzi na pole bitwy
   [ROZGRYWKA]   • Maritime Guard zostaje rozstrzygnięty
   [ROZGRYWKA]   • Tura 5 — Ty
   >> Dobierz kartę
@@ -61,9 +61,9 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Faza: Główna 2
   [ROZGRYWKA]   • Ty zagrywa Phyrexian Rager
-  [ROZGRYWKA]   • Phyrexian Rager wchodzi na bitwisko
+  [ROZGRYWKA]   • Phyrexian Rager wchodzi na pole bitwy
   [ROZGRYWKA]   • Phyrexian Rager zostaje rozstrzygnięty
-  [ROZGRYWKA]   • Phyrexian Rager — trigger (wejście na bitwisko)
+  [ROZGRYWKA]   • Phyrexian Rager — trigger (wejście na pole bitwy)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty dobiera: Curse of the Pierced Heart
   [ROZGRYWKA]   • Ty: życie 20 → 19
@@ -95,7 +95,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Faza: Główna 2
   [ROZGRYWKA]   • Ty zagrywa Scorned Villager
-  [ROZGRYWKA]   • Scorned Villager wchodzi na bitwisko
+  [ROZGRYWKA]   • Scorned Villager wchodzi na pole bitwy
   [ROZGRYWKA]   • Scorned Villager zostaje rozstrzygnięty
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
@@ -103,7 +103,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Gurmag Drowner
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Gurmag Drowner wchodzi na bitwisko
+  [ROZGRYWKA]   • Gurmag Drowner wchodzi na pole bitwy
   [ROZGRYWKA]   • Gurmag Drowner zostaje rozstrzygnięty
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
   [ROZGRYWKA]   • Atak: Maritime Guard
@@ -128,7 +128,7 @@
   [modal choice]   ▶ Zagraj aurę: Curse of the Pierced Heart (koszt 1R) → zaczaruj Ty
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty rzuca Curse of the Pierced Heart za koszt bestow → cel: Ty
-  [ROZGRYWKA]   • Curse of the Pierced Heart wchodzi na bitwisko
+  [ROZGRYWKA]   • Curse of the Pierced Heart wchodzi na pole bitwy
   >> Wybierz: Deklaracja atakujących (2 opcje)
   [combat wizard] atakuję 0 z 1 stworów (profil random)
   [combat wizard] Zatwierdź atak
@@ -173,7 +173,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Skilled Animator
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Skilled Animator wchodzi na bitwisko
+  [ROZGRYWKA]   • Skilled Animator wchodzi na pole bitwy
   [ROZGRYWKA]   • Skilled Animator zostaje rozstrzygnięty
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
   [ROZGRYWKA]   • Atak: Maritime Guard, Gurmag Drowner
@@ -271,9 +271,9 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Faza: Główna 2
   [ROZGRYWKA]   • Ty zagrywa Undead Servant
-  [ROZGRYWKA]   • Undead Servant wchodzi na bitwisko
+  [ROZGRYWKA]   • Undead Servant wchodzi na pole bitwy
   [ROZGRYWKA]   • Undead Servant zostaje rozstrzygnięty
-  [ROZGRYWKA]   • Undead Servant — trigger (wejście na bitwisko)
+  [ROZGRYWKA]   • Undead Servant — trigger (wejście na pole bitwy)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Undead Servant — trigger się rozstrzyga
   >> Zagraj ląd: Island
@@ -284,7 +284,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Apprentice Wizard
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Apprentice Wizard wchodzi na bitwisko
+  [ROZGRYWKA]   • Apprentice Wizard wchodzi na pole bitwy
   [ROZGRYWKA]   • Apprentice Wizard zostaje rozstrzygnięty
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
   [ROZGRYWKA]   • Atak: Gurmag Drowner, Skilled Animator
@@ -311,8 +311,8 @@
 --- krok 75 | Koniec partii — wygrywa On ---
   STOS: Stos pusty
   AKCJE: (brak)
-  RĘKA: Ballista Watcher · 4 · Creature — Human Soldier Werewolf · Daybound · {3}, {T}: cel: dowolny cel — 1 obrażenie | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na bitwisko: odkręć. | Boros Challenger · 2 · Creature — Human Soldier · Gdy ten stwór atakuje jako mentor: . · {4}: +1/+1 do końca tury | Spectral Prison · 2 · Enchantment · Gdy wejdzie na bitwisko: blokada odkręcania (póki źródło zatapnięte). · Gdy zaczarowany stwór staje się celem czaru: poświęć ten permanent. | Gather the Townsfolk · 2 · Sorcery · Stwórz ×2 1/1 Human (5 przy życiu ≤ 5)
-  MOJE POLA: Scorned Villager · 2 · Creature — Human Werewolf · Transform · {T}: dodaj manę · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). | Curse of the Pierced Heart · 2 · Enchantment — Aura Curse · Na początku upkeep (gdy rzucono 2+ czary): 1 obrażenie zaczarowanemu graczowi. | Undead Servant · 4 · Creature — Zombie · Gdy wejdzie na bitwisko: stwórz token Zombie (za każdą kartę o tej nazwie w grobie). | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  RĘKA: Ballista Watcher · 4 · Creature — Human Soldier Werewolf · Daybound · {3}, {T}: cel: dowolny cel — 1 obrażenie | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. | Boros Challenger · 2 · Creature — Human Soldier · Gdy ten stwór atakuje jako mentor: . · {4}: +1/+1 do końca tury | Spectral Prison · 2 · Enchantment · Gdy wejdzie na pole bitwy: blokada odkręcania (póki źródło zatapnięte). · Gdy zaczarowany stwór staje się celem czaru: poświęć ten permanent. | Gather the Townsfolk · 2 · Sorcery · Stwórz ×2 1/1 Human (5 przy życiu ≤ 5)
+  MOJE POLA: Scorned Villager · 2 · Creature — Human Werewolf · Transform · {T}: dodaj manę · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). | Curse of the Pierced Heart · 2 · Enchantment — Aura Curse · Na początku upkeep (gdy rzucono 2+ czary): 1 obrażenie zaczarowanemu graczowi. | Undead Servant · 4 · Creature — Zombie · Gdy wejdzie na pole bitwy: stwórz token Zombie (za każdą kartę o tej nazwie w grobie). | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
   POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Maritime Guard · 2 · Creature — Merfolk Soldier | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. | Apprentice Wizard · 3 · Creature — Human Wizard · {1}, {T}: dodaj manę
   LOG: Ty: życie 5 → 4 ⏎ Skilled Animator zadaje 1 obrażenie (Ty) ⏎ Ty: życie 7 → 5 ⏎ Gurmag Drowner zadaje 2 obrażenia (Ty) ⏎ Ty: życie 8 → 7 ⏎ Maritime Guard zadaje 1 obrażenie (Ty)
 

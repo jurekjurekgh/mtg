@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Piercing%20Rays&set=mh2",
+  "print": "Piercing Rays (MH2)",
+  "name": "Piercing Rays",
+  "mana_cost": "{1}{W}",
+  "cmc": 2,
+  "type_line": "Sorcery",
+  "oracle_text": "Exile target tapped creature.\nForecast — {2}{W}, Reveal this card from your hand: Tap target untapped creature. (Activate this ability only during your upkeep and only once each turn.)",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [
+    "Forecast"
+  ],
+  "set": "mh2",
+  "set_name": "",
+  "collector_number": "24",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/a/eaeb9fd0-c46a-4246-838f-a5b7a8ea8eef.jpg",
+    "normal": "https://cards.scryfall.io/normal/front/e/a/eaeb9fd0-c46a-4246-838f-a5b7a8ea8eef.jpg"
+  },
+  "pobrano": "2026-08-19"
+}

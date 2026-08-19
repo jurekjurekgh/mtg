@@ -59,7 +59,7 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   return base;
 }
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, onNthResolve = null }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, forecast = false, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, landwalk = null, onNthResolve = null }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -102,6 +102,15 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // „can't be blocked except by [kolor]" (Dread Warlock): statyczna restrykcja
     // blokowania — canBlock/declareBlockers wymagają blokera tego koloru.
     cantBeBlockedExceptByColors: cantBeBlockedExceptByColors ? Object.freeze([...cantBeBlockedExceptByColors]) : null,
+    // „can't be blocked by [podtypy]" (Blazing Torch — nadawane nosicielowi):
+    // statyczna restrykcja blokowania — canBlock odrzuca blokerów o tych
+    // podtypach. Zdarza się w `equipment.grantedAbilities`, więc trafia do
+    // combat przez attachmentsAttachedTo.
+    cantBeBlockedBySubtypes: cantBeBlockedBySubtypes ? Object.freeze([...cantBeBlockedBySubtypes]) : null,
+    // Landwalk (CR 702.33, Emerald Oryx — forestwalk): „This creature can't be
+    // blocked as long as defending player controls a [podtyp]". { subtype } —
+    // generyczny (inne landwalki w przyszłości). Sprawdzane w canBlock.
+    landwalk: landwalk ? Object.freeze({ ...landwalk }) : null,
     // „This creature can't attack/block alone" (Ember Beast, CR 508.1d/509.1c):
     // statyczne ograniczenia deklaracji — walidacja w declareAttackers/
     // declareBlockers (inny atakujący/blokujący tego samego celu wymagany).
@@ -121,6 +130,10 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     costModifier: costModifier ? Object.freeze({ ...costModifier }) : null,
     costReduction: costReduction ? Object.freeze({ ...costReduction }) : null,
     channel: channel ? Object.freeze({ ...channel }) : null,
+    // Forecast (CR 702.94, Piercing Rays): „[koszt], Reveal this card from
+    // your hand: [efekt]. Activate only during your upkeep and only once each
+    // turn." Zdolność aktywowana z RĘKI; karta zostaje w ręce (ujawniona).
+    forecast: Boolean(forecast),
     fromGraveyard: Boolean(fromGraveyard),
     // Veiled Ascension (MKC): „Face-down creatures you control enter with a
     // flying counter on them." — statyczna zdolność, która modyfikuje wejście
@@ -273,7 +286,7 @@ const CREW_OPTION_CAP = 32;
  * Legalne podzbiory stworów do kosztu crew (CR 701.36): „Tap any number of
  * creatures you control with total power N or more". Deterministycznie
  * (ADR 0005): pierwszy jest minimalny zachłanny podzbiór (najsłabsze stwory
- * w kolejności bitwiska — boty biorą najtańszy tap), potem pozostałe
+ * w kolejności pola bitwy — boty biorą najtańszy tap), potem pozostałe
  * podzbiory (maski bitowe w kolejności rosnącej liczności) do limitu.
  */
 function legalCrewSubsets(state, crewableIds, neededPower) {
@@ -336,7 +349,7 @@ export function legalActivatedAbilities(state, playerId) {
       const ability = object.abilities[index];
       if (ability?.type !== ABILITY_TYPE.activated) continue;
       // Zdolność „z grobu" (Goldmeadow Nomad: „Exile this card from your
-      // graveyard") działa WYŁĄCZNIE z grobu — na bitwisku nie jest oferowana
+      // graveyard") działa WYŁĄCZNIE z grobu — na polu bitwy nie jest oferowana
       // (oferta z grobu jest niżej; spójność oferty i walidacji).
       if (ability.fromGraveyard) continue;
       // Mana dostępna na TĘ aktywację: koszt {T} wyklucza samo źródło z
@@ -348,15 +361,15 @@ export function legalActivatedAbilities(state, playerId) {
       // znika z legalnych akcji do końca tury (stan resetowany przy zmianie tury).
       if (ability.oncePerTurn && state.abilityActivatedThisTurn?.[`${id}:${index}`]) continue;
       if (ability.timing === 'sorcery' && !sorcerySpeed) continue;
-      // Ninjutsu działa wyłącznie z ręki — na bitwisku nie ma czego aktywować.
+      // Ninjutsu działa wyłącznie z ręki — na polu bitwy nie ma czego aktywować.
       if (ability.keyword === 'ninjutsu') continue;
-      // Cycling również działa wyłącznie z ręki (CR 702.28a) — na bitwisku
+      // Cycling również działa wyłącznie z ręki (CR 702.28a) — na polu bitwy
       // ta zdolność jest martwa; oferowanie jej kończy się odrzuceniem legalnej
       // z pozoru komendy (execute krzyczy „Cycling aktywuje się z ręki").
       if (ability.cycling) continue;
       // Channel (CR 702.85a, Greater Tanuki) — jak cycling: zdolność karty
-      // w RĘCE; na bitwisku jest martwa. Bez tego bota oferowano channel z
-      // bitwiska i execute odrzucał „Channel aktywuje się z ręki" (regresja
+      // w RĘCE; na polu bitwy jest martwa. Bez tego bota oferowano channel z
+      // pola bitwy i execute odrzucał „Channel aktywuje się z ręki" (regresja
       // benchmarku B0 po dodaniu Greater Tanuki do talii green).
       if (ability.channel) continue;
       // Megamorph (obrócenie twarzą do góry) działa tylko, póki permanent
@@ -580,7 +593,7 @@ export function legalActivatedAbilities(state, playerId) {
       // aktywował Cellar Door tylko bezpośrednimi komendami w testach).
       const opponentTarget = targetSpec.length === 1 && targetSpec[0].type === 'opponent';
       const anyPlayerTarget = targetSpec.length === 1 && targetSpec[0].type === 'player';
-      // Dla celów bitwiskowych (creature, artifact, artifact_or_creature, ...)
+      // Dla celów pole bitwywych (creature, artifact, artifact_or_creature, ...)
       // używamy wspólnej legalTargetCandidates — inaczej enumeracja oferuje
       // TYLKO stwory i bot dostaje cel, który validateTargets odrzuca (M82:
       // Cogwork Assembler — cel 'artifact' oferował zwykłe stwory).
@@ -617,6 +630,47 @@ export function legalActivatedAbilities(state, playerId) {
       }
     }
   }
+  // Equipment ze zdolnościami NADANYMI nosicielowi (Blazing Torch: „Equipped
+  // creature has '{T}, Sacrifice Blazing Torch: Blazing Torch deals 2 damage
+  // to any target.'") — zdolność aktywuje kontroler sprzętu, gdy sprzęt jest
+  // przypięty do jego stwora. {T} tapuje NOSICIELA (CR 302.6 — choroba
+  // przywołania dotyczy stwora), a poświęcenie obejmuje sam sprzęt
+  // (cost.sacrificeSelf — poniżej).
+  for (const id of state.zones.battlefield) {
+    const object = state.objects.get(id);
+    if (object?.controllerId !== playerId || !object.equipment?.grantedAbilities) continue;
+    if (!object.attachedTo) continue;
+    const host = state.objects.get(object.attachedTo);
+    if (!host || host.zone !== 'battlefield' || host.controllerId !== playerId
+      || (host.kind !== 'creature' && !(host.types ?? []).includes('Creature'))) continue;
+    if (host.tapped) continue; // {T} w koszcie — nosiciel musi być odkręcony
+    if (tapBlockedBySummoningSickness(state, host, { cost: { tap: true } })) continue;
+    for (let index = 0; index < object.equipment.grantedAbilities.length; index += 1) {
+      const ability = object.equipment.grantedAbilities[index];
+      if (ability?.type !== ABILITY_TYPE.activated) continue;
+      if (ability.timing === 'sorcery' && !sorcerySpeed) continue;
+      if ((ability.cost?.mana ?? 0) > baseMana) continue;
+      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+      const targetSpec = ability.targets ?? [];
+      if (targetSpec.length === 0) {
+        out.push({ objectId: id, abilityIndex: index, ability, grantedFromEquipment: true });
+        continue;
+      }
+      if (targetSpec.length === 1 && targetSpec[0].type === 'any_target') {
+        // „any target": gracze + stwory na polu bitwy (spójnie z validateTargets).
+        const candidates = [...state.players.map((entry) => entry.id),
+          ...state.zones.battlefield.filter((bfId) => state.objects.get(bfId)?.kind === 'creature')];
+        for (const targetId of candidates) {
+          out.push({ objectId: id, abilityIndex: index, ability, grantedFromEquipment: true, targets: [targetId] });
+        }
+        continue;
+      }
+      const candidates = legalTargetCandidates(state, playerId, targetSpec[0], object);
+      for (const targetId of candidates) {
+        out.push({ objectId: id, abilityIndex: index, ability, grantedFromEquipment: true, targets: [targetId] });
+      }
+    }
+  }
   // Cycling (CR 702.28) — zdolność aktywowana karty w RĘCE z szybkością
   // instanta (dostępna z priorytetem, niezależnie od fazy). Koszt: mana;
   // odrzucenie karty jest częścią kosztu rozpatrywaną przy aktywacji.
@@ -643,6 +697,32 @@ export function legalActivatedAbilities(state, playerId) {
       if (effManaChannel > baseMana) continue;
       if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
       out.push({ objectId: id, abilityIndex: index, ability });
+    }
+  }
+  // Forecast (CR 702.94, Piercing Rays) — zdolność z RĘKI, tylko w swoim
+  // upkeepie, raz na turę. Karta zostaje w ręce (koszt to UJAWNIENIE).
+  if (state.turn?.step === 'upkeep' && state.turn.activePlayerId === playerId) {
+    for (const id of state.zones.hand) {
+      const object = state.objects.get(id);
+      if (object?.controllerId !== playerId) continue;
+      for (let index = 0; index < (object.abilities ?? []).length; index += 1) {
+        const ability = object.abilities[index];
+        if (ability?.type !== ABILITY_TYPE.activated || !ability.forecast) continue;
+        // „Only once each turn" — jak oncePerTurn (Snarling Wolf).
+        if (state.abilityActivatedThisTurn?.[`${id}:${index}`]) continue;
+        const mana = effectiveAbilityManaCost(state, playerId, ability, object);
+        if (mana > baseMana) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+        const targetSpec = ability.targets ?? [];
+        if (targetSpec.length === 0) {
+          out.push({ objectId: id, abilityIndex: index, ability });
+          continue;
+        }
+        const candidates = legalTargetCandidates(state, playerId, targetSpec[0], object);
+        for (const targetId of candidates) {
+          out.push({ objectId: id, abilityIndex: index, ability, targets: [targetId] });
+        }
+      }
     }
   }
   // Aktywowane z GROBU (Goldmeadow Nomad: "{W}, Exile this card from your
@@ -690,10 +770,18 @@ export function legalActivatedAbilities(state, playerId) {
  * go na maszynowe odrzucenie. `attackerId` jest wymagany wyłącznie dla
  * Ninjutsu; `targets` i `xValue` dla zdolności celowanych/{X}.
  */
-export function activateAbility(state, playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, opponentTargetIdArg) {
+export function activateAbility(state, playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, opponentTargetIdArg, grantedFromEquipmentArg) {
   const object = state.objects.get(objectId);
   if (!object || object.controllerId !== playerId) throw new Error('Nielegalny obiekt zdolności');
-  const ability = (object.abilities ?? [])[abilityIndex];
+  // Zdolność NADANA nosicielowi przez przypięty sprzęt (Blazing Torch) żyje
+  // w `equipment.grantedAbilities` — index liczony względem tej listy
+  // (spójnie z ofertą legalActivatedAbilities, komenda niesie flagę
+  // grantedFromEquipment). Zwykłe zdolności (np. equip samego sprzętu)
+  // czytamy z object.abilities — rozróżnienie PO FLADZE, bo obie listy
+  // mogą istnieć na tym samym obiekcie (equip + granted).
+  const ability = grantedFromEquipmentArg
+    ? (object.equipment?.grantedAbilities ?? [])[abilityIndex]
+    : (object.abilities ?? [])[abilityIndex];
   if (!ability || ability.type !== ABILITY_TYPE.activated) throw new Error('Nieznana zdolność aktywowana');
   if (ability.timing === 'sorcery') {
     const sorcerySpeed = state.turn.activePlayerId === playerId
@@ -711,6 +799,9 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   if (ability.channel) {
     return activateChannel(state, playerId, object, abilityIndex, ability);
   }
+  if (ability.forecast) {
+    return activateForecast(state, playerId, object, abilityIndex, ability, targets);
+  }
   if (ability.keyword === 'equip') {
     return activateEquip(state, playerId, object, abilityIndex, targets);
   }
@@ -721,13 +812,13 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   }
 
   // Zdolność „z grobu" (Goldmeadow Nomad) wymaga, by źródło było W GROBIE —
-  // na bitwisku taka zdolność nie istnieje (CR 113.6: zdolność karty działa
+  // na polu bitwy taka zdolność nie istnieje (CR 113.6: zdolność karty działa
   // w strefie, z której jej tekst to przewiduje). Zwykłe zdolności aktywowane
-  // wymagają permanenta na bitwisku.
+  // wymagają permanenta na polu bitwy.
   if (ability.fromGraveyard) {
     if (object.zone !== 'graveyard') throw new Error('Zdolność z grobu wymaga źródła w grobie');
   } else if (object.zone !== 'battlefield') {
-    throw new Error('Zdolność wymaga permanenta na bitwisku');
+    throw new Error('Zdolność wymaga permanenta na polu bitwy');
   }
   // Morph/megamorph (CR 702.36/702.37): obrót twarzą do góry działa tylko,
   // póki permanent leży twarzą w dół — po obrocie zdolność wygasa. Walidacja
@@ -801,6 +892,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
       state.pendingAbilityActivation = {
         playerId, objectId, abilityIndex, attackerId, targets, xValue,
         crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId,
+        grantedFromEquipment: grantedFromEquipmentArg ?? false,
       };
       state.turn.priorityPlayerId = opponentId;
       const e = event('opponent_target_required', {
@@ -820,6 +912,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     };
     state.pendingAbilityActivation = {
       playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId,
+      grantedFromEquipment: grantedFromEquipmentArg ?? false,
     };
     state.turn.priorityPlayerId = playerId;
     const e = event('discard_choice_required', {
@@ -829,7 +922,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     state.events.push(e);
     return e;
   }
-  return performActivation(state, { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, opponentTargetId: opponentTargetIdArg });
+  return performActivation(state, { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, opponentTargetId: opponentTargetIdArg, grantedFromEquipment: grantedFromEquipmentArg ?? false });
 }
 
 /**
@@ -844,12 +937,17 @@ export function performActivation(state, ctx) {
   const opponentTargetId = ctx.opponentTargetId;
   const object = state.objects.get(objectId);
   if (!object || object.controllerId !== playerId) throw new Error('Nielegalny obiekt zdolności');
-  const ability = (object.abilities ?? [])[abilityIndex];
+  // Zdolność NADANA nosicielowi przez przypięty sprzęt (Blazing Torch) żyje
+  // w `equipment.grantedAbilities` — spójnie z activateAbility i ofertą;
+  // rozróżnienie po fladze grantedFromEquipment (jak wyżej).
+  const ability = ctx.grantedFromEquipment
+    ? (object.equipment?.grantedAbilities ?? [])[abilityIndex]
+    : (object.abilities ?? [])[abilityIndex];
   if (!ability || ability.type !== ABILITY_TYPE.activated) throw new Error('Nieznana zdolność aktywowana');
   if (ability.fromGraveyard) {
     if (object.zone !== 'graveyard') throw new Error('Zdolność z grobu wymaga źródła w grobie');
   } else if (object.zone !== 'battlefield') {
-    throw new Error('Zdolność wymaga permanenta na bitwisku');
+    throw new Error('Zdolność wymaga permanenta na polu bitwy');
   }
   const cost = ability.cost ?? {};
   const colorReqs = colorRequirementsOf(cost);
@@ -932,6 +1030,22 @@ export function performActivation(state, ctx) {
   if (cost.tap) {
     tapObject(state, objectId, playerId);
   }
+  // Koszt „{T}" zdolności NADANEJ nosicielowi (Blazing Torch): tapuje się
+  // NOSICIEL (stwór ze sprzętem), nie sam sprzęt — zdolność ma nosiciel
+  // („Equipped creature has ..."), więc CR 302.6 (choroba przywołania)
+  // dotyczy stwora, nie artefaktu. Spójnie z ofertą (legalActivatedAbilities).
+  if (cost.tapHost) {
+    const host = object.attachedTo ? state.objects.get(object.attachedTo) : null;
+    if (!host || host.zone !== 'battlefield' || host.controllerId !== playerId
+      || (host.kind !== 'creature' && !(host.types ?? []).includes('Creature'))) {
+      throw new Error('Brak nosiciela sprzętu (koszt tap)');
+    }
+    if (host.tapped) throw new Error('Nosiciel jest już tapped');
+    if (tapBlockedBySummoningSickness(state, host, { cost: { tap: true } })) {
+      throw new Error('Choroba przywołania: nosiciel bez haste nie aktywuje {T} w turze wejścia');
+    }
+    tapObject(state, host.id, playerId);
+  }
   if (creatureToTap) {
     const tapId = ctx.tapCreatureId ?? creatureToTap;
     tapObject(state, tapId, playerId);
@@ -968,7 +1082,7 @@ export function performActivation(state, ctx) {
     applyEffect(state, { type: 'sacrifice_permanent' }, object, []);
     // Zmiana strefy = nowy obiekt (CR 400.7): efekty referencjonujące źródło
     // PO jego poświęceniu (Plague Reaver — powrót z grobu w upkeep przeciwnika)
-    // dostają obiekt z GROBU, nie dawny obiekt z bitwiska.
+    // dostają obiekt z GROBU, nie dawny obiekt z pola bitwy.
     const sacrificed = state.events.slice(sacrificeMarker).find((entry) => entry.type === 'permanent_sacrificed');
     effectSource = (sacrificed && state.objects.get(sacrificed.objectId)) ?? object;
   }
@@ -1202,13 +1316,64 @@ function activateChannel(state, playerId, cardObject, abilityIndex, ability) {
 }
 
 /**
+ * Forecast (CR 702.94, Piercing Rays): zdolność z RĘKI. Koszt: mana +
+ * UJAWNIENIE karty (karta zostaje w ręce); tylko w swoim upkeepie, raz na
+ * turę. Efekt idzie na stos (CR 602.2a) — przeciwnik może odpowiedzieć.
+ */
+function activateForecast(state, playerId, cardObject, abilityIndex, ability, targets) {
+  if (cardObject.zone !== 'hand') throw new Error('Forecast aktywuje się z ręki');
+  if (state.turn?.step !== 'upkeep' || state.turn.activePlayerId !== playerId) {
+    throw new Error('Forecast tylko w swoim upkeepie');
+  }
+  if (state.abilityActivatedThisTurn?.[`${cardObject.id}:${abilityIndex}`]) {
+    throw new Error('Forecast tylko raz na turę');
+  }
+  const forecastReqs = colorRequirementsOf(ability.cost);
+  if (forecastReqs.length > 0 && !canPayColoredCost(state, playerId, forecastReqs)) {
+    throw new Error('Brak kolorowego źródła many na forecast');
+  }
+  const effMana = effectiveAbilityManaCost(state, playerId, ability, cardObject);
+  spendMana(state, playerId, effMana, forecastReqs);
+  // „Only once each turn": zapisujemy aktywację (jak oncePerTurn).
+  state.abilityActivatedThisTurn = {
+    ...(state.abilityActivatedThisTurn ?? {}),
+    [`${cardObject.id}:${abilityIndex}`]: true,
+  };
+  // Ujawnienie karty (koszt) — wróg widzi, co ujawniono (jawne dane).
+  state.events.push(event('card_revealed', {
+    playerId, cardId: cardObject.cardId, objectId: cardObject.id, fromHand: true,
+  }));
+  const forecastAbility = Object.freeze({
+    type: 'activated',
+    forecast: true,
+    effect: Array.isArray(ability.effect) ? Object.freeze(ability.effect.map((e) => Object.freeze({ ...e }))) : Object.freeze({ ...ability.effect }),
+    targets: ability.targets ? Object.freeze(ability.targets.map((t) => Object.freeze({ ...t }))) : null,
+    cost: Object.freeze({ mana: effMana, colors: Object.freeze([...(ability.cost?.colors ?? [])]) }),
+  });
+  // Cele: walidacja jak w głównej ścieżce (spójnie z ofertą — L48).
+  let chosenTargets = [];
+  const targetSpec = ability.targets ?? [];
+  if (targetSpec.length > 0) {
+    if (!Array.isArray(targets) || targets.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów forecast');
+    chosenTargets = validateTargets(state, targetSpec, targets, playerId, cardObject.colors ?? [], cardObject).map((e) => e.id);
+  }
+  return queueActivatedAbilityToStack(state, {
+    playerId, objectId: cardObject.id, abilityIndex,
+    ability: forecastAbility,
+    effectSourceId: cardObject.id,
+    effectTargets: chosenTargets,
+    eventExtra: { forecast: true },
+  });
+}
+
+/**
  * Equip (CR 702.6): zapłać koszt equip i załóż equipment na własnego stwora.
  * Szybkość sorcery (faza main aktywnego gracza, pusty stos). Equip może też
  * przełożyć equipment między własnymi stworami (attachEquipmentToCreature
  * przepina obiekt, który już był załączony).
  */
 function activateEquip(state, playerId, object, abilityIndex, targets) {
-  if (object.zone !== 'battlefield' || !object.equipment) throw new Error('Equip działa tylko na equipment na bitwisku');
+  if (object.zone !== 'battlefield' || !object.equipment) throw new Error('Equip działa tylko na equipment na polu bitwy');
   // M101/B1 (CR 702.6b): „Equip only as a sorcery" — walidacja spójna z ofertą
   // (legalActivatedAbilities). Bez tego execute przyjmowałby komendę spoza
   // okna sorcery, mimo że widok jej nie proponuje.
@@ -1268,7 +1433,7 @@ function activateNinjutsu(state, playerId, cardObject, abilityIndex, ability, at
   const handId = `hand-${state.objectSequence++}`;
   moveObjectDirectly(state, attackerId, 'hand', handId);
   // Audyt PR #41 (B7.2, CR 702.48a + 602.2a): ninjutsu to aktywowana zdolność
-  // NA STOSIE — karta wchodzi na bitwisko zatapnięta i atakująca przy
+  // NA STOSIE — karta wchodzi na pole bitwy zatapnięta i atakująca przy
   // rozstrzyganiu (po pełnej rundzie passów; przeciwnik może odpowiedzieć
   // instanitem, np. zniszczyć kartę z ręki nie zdąży — ale może kontrować).
   const ninjutsuAbility = Object.freeze({

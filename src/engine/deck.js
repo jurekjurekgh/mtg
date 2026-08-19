@@ -64,6 +64,24 @@ export function installDeck(state, deck, { seed }) {
       // deskryptor musi przejść z karty na obiekt biblioteki (lekcja L21).
       costReduction: card.costReduction,
       enchantPlayer: card.enchantPlayer ?? false,
+      // M146 (L21 — deskryptor ginie po cichu, gdy brak go w łańcuchu):
+      // pola mechanik, które createCardDeck kładzie na wpisie talii, muszą
+      // dotrzeć do obiektu gry. Pominięcie = mechanika martwa w PRAWDZIWYCH
+      // partiach przy zielonych testach (helpery testowe robią `...data`,
+      // więc nie łapią dziury). Jwari (enterAsCopy) wchodził jako 0/0 i ginął,
+      // Mindstab (suspend) nie oferował zawieszenia.
+      enterAsCopy: card.enterAsCopy ?? null,
+      suspend: card.suspend ?? null,
+      saga: card.saga ?? null,
+      station: card.station ?? null,
+      adventure: card.adventure ?? null,
+      kicker: card.kicker ?? null,
+      buyback: card.buyback ?? null,
+      protectionFromColors: card.protectionFromColors ?? null,
+      exploit: card.exploit ?? null,
+      bloodthirst: card.bloodthirst ?? null,
+      treasureAltCost: card.treasureAltCost ?? null,
+      additionalCost: card.additionalCost ?? null,
       // Właściciel karty (CR 108.3) — jawny, żeby efekty „gains control of
       // all creatures they own" (Trostani Discordant) działały po zmianach
       // kontroli (reanimacja pod cudzą kontrolą).

@@ -5,7 +5,7 @@
  * — każdy `<div>` w modale (wpis, karta, etykieta) tracił swój
  * wizualny separator. W realnej przeglądarce użytkownik widzi układ
  * CSS, ale w transkrypcie pojawiały się zlepki („Faza: Główna 1G
- * Garruk's Companion wchodzi na bitwisko") — to SZUM, który maskował
+ * Garruk's Companion wchodzi na pole bitwy") — to SZUM, który maskował
  * realne bugi UI.
  *
  * Rozwiązanie: wydzielamy ekstraktory, które zwracają LISTY linii
@@ -73,13 +73,13 @@ function readField(el, fieldClass) {
  *   extractBotMoves({ title: 'Rozgrywka', entries: [
  *     { text: 'Tura 5 — Nieprzyjaciel' },
  *     { text: 'Faza: Główna 1' },
- *     { text: 'G Garruk\\'s Companion wchodzi na bitwisko' },
+ *     { text: 'G Garruk\\'s Companion wchodzi na pole bitwy' },
  *   ]})
  *   // → [
  *   //   'Rozgrywka',
  *   //   '  • Tura 5 — Nieprzyjaciel',
  *   //   '  • Faza: Główna 1',
- *   //   '  • G Garruk\\'s Companion wchodzi na bitwisko',
+ *   //   '  • G Garruk\\'s Companion wchodzi na pole bitwy',
  *   // ]
  */
 export function extractBotMoves({ title = '', entries = [] } = {}) {
