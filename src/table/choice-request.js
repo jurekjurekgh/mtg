@@ -177,12 +177,17 @@ export function renderLookWizard(host, { kind, cards, onComplete, onCancel, prob
     renderIntro();
     choiceNode(host, 'div', 'choice-request-intro', kind === 'index'
       ? 'Ustaw nową kolejność od góry — wybieraj karty po kolei:'
-      : 'Ułóż karty na wierzchu biblioteki (od góry) — wybieraj po kolei:');
+      : 'Wybierz w kolejności od najwyższej do najniższej na szczycie biblioteki:');
     const options = choiceNode(host, 'div', 'choice-request-options');
     const remaining = keptIds.filter((kept) => !orderIds.includes(kept));
     for (const id of remaining) {
       const card = list.find((c) => c.id === id);
-      const button = choiceNode(options, 'button', 'action choice-request-option', `Kolejna na wierzchu: ${card?.name ?? id}`);
+      // M149 (uwaga B właściciela): komunikat nie brzmi już generycznie
+      // „Kolejna karta na wierzchu", tylko enumeruje KONKRETNĄ kartę i jej
+      // pozycję od góry — gracz widzi, którą układa.
+      const pos = orderIds.length + 1;
+      const button = choiceNode(options, 'button', 'action choice-request-option',
+        `${pos}. na wierzchu: ${card?.name ?? id}`);
       button.type = 'button';
       // M136 (backlog: „sonda surveil — decyzja pośrednia nie ma klucza"):
       // krok kolejności był ostatnim miejscem wizarda scry/surveil poza

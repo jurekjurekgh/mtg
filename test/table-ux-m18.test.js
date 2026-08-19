@@ -267,9 +267,9 @@ test('surveil z dwiema kartami na wierzchu pyta jeszcze o kolejność — klikan
   clickButton(host, 'Na cmentarz'); // Alpha → grób
   clickButton(host, 'Na wierzch biblioteki'); // Beta → wierzch
   clickButton(host, 'Na wierzch biblioteki'); // Gamma → wierzch
-  assert.match(host.textContent, /Ułóż karty na wierzchu/, 'brak kroku kolejności wierzchu');
-  clickButton(host, 'Kolejna na wierzchu: Gamma');
-  clickButton(host, 'Kolejna na wierzchu: Beta');
+  assert.match(host.textContent, /od najwyższej do najniższej/, 'brak kroku kolejności wierzchu');
+  clickButton(host, '1. na wierzchu: Gamma');
+  clickButton(host, '2. na wierzchu: Beta');
   assert.deepEqual(calls, [{ millIds: ['c1'], topOrder: ['c3', 'c2'] }], 'topOrder dokładnie w kolejności klikania');
 });
 

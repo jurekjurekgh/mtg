@@ -32,7 +32,9 @@ Gałąź: `arena/01a01a7b-mtg` (PR #65).
 - [x] A1: bot nie aktywuje Treasure bez celu do zagrania (już chronione przez `unlocksSomething`; zweryfikowane testem).
 - [x] A2: trick bojowy (pump do końca tury) we własnym upkeep/draw/end → kara -60 (poniżej passu); main przed atakiem OK.
 - [x] A3: Bone Splinters — porównanie TMC (poświęcenie tylko gdy TMC celu wyższy); PlayerView battlefield niesie manaCost (ADR 0017, z wyjątkiem face-down CR 708.2).
-- [ ] B: komunikat kolejności w Surveil/Scry czytelny.
-- [ ] C: cel Cuombajj Witches jako modal z celami.
+- [x] B: komunikat kolejności w Surveil/Scry — „Wybierz w kolejności od najwyższej do
+   najniższej na szczycie biblioteki:" + enumeracja („1. na wierzchu: …").
+- [x] C: resolve_opponent_target (Cuombajj Witches) grupowany w modal z celami
+   (choiceRequestGroupKey + choiceRequestType 'target' + descriptor).
 - [x] D: player_sacrifices_creature celuje w przeciwnika; self = kara, foe = zysk.
 - [ ] `npm run test:all` zielony; push; CI zielony.

@@ -56,6 +56,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_hand_creature: 'Położenie stwora z ręki',
   resolve_legend_choice: 'Prawo legend (który zostaje?)',
   resolve_trigger_target: 'Cel triggera (wybór)',
+  resolve_opponent_target: 'Wskaż cel obrażeń (wybór przeciwnika)',
   resolve_optional_trigger_choice: 'Efekt „you may"',
   resolve_enter_as_copy: 'Wejście jako kopia',
   resolve_destroy_equipment_choice: 'Zniszczenie equipmentu',
@@ -299,6 +300,7 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_backup') return 'resolve_backup';
   if (command.type === 'resolve_sacrifice_choice') return 'resolve_sacrifice_choice';
   if (command.type === 'resolve_trigger_target') return 'resolve_trigger_target';
+  if (command.type === 'resolve_opponent_target') return 'resolve_opponent_target';
   if (command.type === 'resolve_search_choice') return 'resolve_search_choice';
   if (command.type === 'resolve_color_choice') return 'resolve_color_choice';
   if (command.type === 'resolve_fertile_thicket') return 'resolve_fertile_thicket';
@@ -347,6 +349,7 @@ function choiceRequestType(commands) {
   if (first.type === 'resolve_backup') return 'target';
   if (first.type === 'resolve_sacrifice_choice') return 'sacrifice';
   if (first.type === 'resolve_trigger_target') return 'target';
+  if (first.type === 'resolve_opponent_target') return 'target';
   if (first.type === 'resolve_search_choice') return 'target';
   if (first.type === 'resolve_color_choice') return 'command';
   if (first.type === 'resolve_fertile_thicket') return 'target';

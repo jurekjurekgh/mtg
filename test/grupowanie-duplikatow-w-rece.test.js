@@ -90,3 +90,21 @@ test('M102/U4: pozostałe akcje przechodzą nietknięte', () => {
   const types = entries.map((e) => (e.command ?? e.first)?.type);
   assert.deepEqual(types, ['play_land', 'pass_priority', 'concede']);
 });
+
+// M149/C (uwaga właściciela): wybór celu Cuombajj Witches (resolve_opponent_target)
+// ma się pokazywać jako MODAL z celami, nie jako X osobnych przycisków „play".
+// Wiele komend resolve_opponent_target (różne cele) grupuje się w jeden
+// `{ request }` (otwierany modala), spójnie z resolve_trigger_target.
+test('M149/C: wiele celów resolve_opponent_target grupuje się w jeden modal (request)', () => {
+  const commands = [
+    { type: 'resolve_opponent_target', playerId: 'p1', targetId: 'a' },
+    { type: 'resolve_opponent_target', playerId: 'p1', targetId: 'b' },
+    { type: 'resolve_opponent_target', playerId: 'p1', targetId: 'c' },
+  ];
+  const entries = buildActionEntries(commands, session, view);
+  assert.equal(entries.length, 1, `oczekiwano 1 wpisu-modal, jest ${entries.length}`);
+  const entry = entries[0];
+  assert.ok(entry.request, 'resolve_opponent_target z wieloma celami musi otwierać modal (request)');
+  assert.equal(entry.request.options.length, 3, 'modal niesie wszystkie cele');
+  assert.equal(entry.request.type, 'target', 'typ modala to target');
+});

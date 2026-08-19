@@ -227,9 +227,9 @@ test('renderLookWizard kind=index: lista kart, potem kolejność klikaną od gó
     assert.ok(btn, `brak przycisku ${prefix} w: ${host.textContent}`);
     btn.click();
   };
-  clickByText('Kolejna na wierzchu: Island');
-  clickByText('Kolejna na wierzchu: Swamp');
-  clickByText('Kolejna na wierzchu: Forest');
+  clickByText('1. na wierzchu: Island');
+  clickByText('2. na wierzchu: Swamp');
+  clickByText('3. na wierzchu: Forest');
   assert.deepEqual(calls, [{ order: ['c3', 'c1', 'c2'] }], 'order dokładnie w kolejności klikania');
 });
 
@@ -595,9 +595,9 @@ test('M148: wizard scry — przy ≥2 kartach na wierzchu gracz wybiera KOLEJNO�
   clickByText('Zostaw na wierzchu');   // c2 → wierzch
   clickByText('Zostaw na wierzchu');   // c3 → wierzch
   // Po decyzjach wizard pyta o kolejność dwóch kart na wierzchu.
-  assert.match(host.textContent, /Ułóż karty na wierzchu biblioteki/);
-  clickByText('Kolejna na wierzchu: Las');
-  clickByText('Kolejna na wierzchu: Góra');
+  assert.match(host.textContent, /od najwyższej do najniższej/);
+  clickByText('1. na wierzchu: Las');
+  clickByText('2. na wierzchu: Góra');
   assert.deepEqual(calls, [{ bottomIds: ['c1'], topOrder: ['c2', 'c3'] }],
     'scry wysyła bottomIds + topOrder (kolejność klikania)');
 });
