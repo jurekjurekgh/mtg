@@ -444,11 +444,15 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
   // (stwór, artefakt, enchantment). Źródło triggera nie jest celem
   // własnym (żeby ETB Thistledown nie odpalał na siebie).
   if (spec.type === 'nonland_permanent') {
+    // „Target nonland permanent an opponent controls\" (Static Net) — domyślnie
+    // dowolny nie-ląd inny niż źródło; `opponentControls` zawęża do PRZECIWNIKA
+    // kontrolera źródła (spójne z creature_opponent_controls).
     return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
       if (!object || object.zone !== 'battlefield') return false;
       if (object.id === sourceObject.id) return false;
       if (hexproofBlocked(object)) return false;
+      if (spec.opponentControls && object.controllerId === sourceObject.controllerId) return false;
       const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
       return !isLand;
     });

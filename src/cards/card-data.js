@@ -6688,6 +6688,56 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // 6. Static Net (BRO) {3}{W} Enchantment —
+  //    ETB: exile target nonland permanent an opponent controls until leaves;
+  //    ETB: gain 2 life and create a tapped Powerstone token.
+  defineCard({
+    id: 'static-net', name: 'Static Net', set: 'BRO',
+    types: ['Enchantment'], colors: ['W'], manaCost: 4,
+    oracleText: "When this enchantment enters, exile target nonland permanent an opponent controls until this enchantment leaves the battlefield.\\nWhen this enchantment enters, you gain 2 life and create a tapped Powerstone token.",
+    imageUri: 'https://cards.scryfall.io/large/front/5/a/5ab5cb30-3ced-4450-a3c4-b519f3762620.jpg',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'nonland_permanent', opponentControls: true } },
+        effect: { type: 'exile_nonland_permanent_linked' },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [
+          { type: 'gain_life', amount: 2 },
+          {
+            type: 'create_token', cardId: 'token_powerstone', name: 'Powerstone',
+            kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Powerstone'],
+            tapped: true,
+          },
+        ],
+      }),
+      // Linked exile return (CR 400.7): „until this enchantment leaves the
+      // battlefield\" — LTB przywraca wygnany permanent pod kontrolą właściciela.
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'leaves_battlefield' },
+        effect: { type: 'return_exiled_to_battlefield' },
+      }),
+    ],
+    artId: 497, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+    notes: ['exile linked: id wygnanego zapisane na źródle (exiledCardIds), LTB przywraca (jak Faceless Butcher); Powerstone produkuje {C} (restrykcja „tylko czary artefaktów\" nieimplementowana — patrz MANA_SOURCE_MAP)'],
+  }),
+
+  // Token Powerstone (BRO): artefakt „{T}: Add {C} — spend only to cast
+  // artifact spells\" (CR 106.3 — restrykcja many). Produkcja bezbarwna w
+  // MANA_SOURCE_MAP; restrykcja artefaktowa nieimplementowana (notes).
+  defineCard({
+    id: 'token_powerstone', name: 'Powerstone', set: null,
+    types: ['Artifact', 'Token'], subtypes: ['Powerstone'], colors: [],
+    manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Static Net'] },
+    notes: ['{T}: Add {C}; restrykcja „tylko czary artefaktów\" nieimplementowana'],
+  }),
+
   // 4. Satyr Wayfinder (M15) {1}{G} 1/1 Satyr —
   //    ETB: reveal top 4, may take a land to hand, rest to grave.
   defineCard({

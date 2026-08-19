@@ -46,6 +46,10 @@ const MANA_SOURCE_MAP = Object.freeze({
   'apprentice-wizard': { colors: [], amount: 3 }, // {C}{C}{C}
   'seers-lantern': { colors: [], amount: 1 }, // {T}: Add {C}
   'token_treasure': { colors: ['W', 'U', 'B', 'R', 'G'], amount: 1 },
+  // Static Net (BRO): Powerstone — „{T}: Add {C} — Spend this mana only to
+  // cast artifact spells.\" Restrykcja artefaktowa nieimplementowana (engine
+  // nie zna ograniczeń użycia many poza fromTreasure); produkuje bezbarwną {C}.
+  'token_powerstone': { colors: [], amount: 1 },
   'token_food': { colors: [], amount: 0 }, // nie daje many
   'token_robot': { colors: [], amount: 0 },
   'token_wolf': { colors: [], amount: 0 },

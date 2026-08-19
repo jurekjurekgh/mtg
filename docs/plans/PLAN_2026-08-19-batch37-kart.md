@@ -57,6 +57,10 @@ Lista właściciela. Oracle ze Scryfalla (pobrane 2026-08-19, ADR 0010 §2a).
    (M147: nowy pending `pendingSatyrLook` + komenda `resolve_satyr_look_choice`;
    efekt `reveal_top_pick_land_rest_grave` — odsłoń 4, możesz wziąć ląd do ręki,
    reszta do grobu; oba boty, opisy UI, fingerprint. Talia green +1 karta.)
-8. Static Net (linked exile + powerstone)
+8. ~~Static Net (linked exile + powerstone)~~ — zrobione (M147: efekt
+   `exile_nonland_permanent_linked` — linked exile nie-lądowego permanentu
+   przeciwnika do LTB (jak Faceless Butcher); token Powerstone (zatapnięty,
+   {C} — restrykcja artefaktowa nieimplementowana, notes); create_token
+   wspiera `tapped`. Talia azorius +1 karta +1 ląd.)
 9. Strandwalker (living weapon) + Urza's Mine (tron)
 10. Dokumentacja

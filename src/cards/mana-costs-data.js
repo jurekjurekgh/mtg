@@ -288,4 +288,5 @@ export const MANA_COSTS = {
   "urza-s-mine": "",
   "ojutais-breath": "{2}{U}",
   "satyr-wayfinder": "{1}{G}",
+  "static-net": "{3}{W}",
 };

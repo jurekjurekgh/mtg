@@ -49,7 +49,7 @@
 1x Jwari Shapeshifter
 1x Floodhound
 1x Steel Sabotage
-19x Plains
+20x Plains
 12x Island
 1x Rustwing Falcon
 1x Monastery Flock
@@ -70,3 +70,4 @@
 1x Palace Familiar
 1x Village Bell-Ringer
 1x Ojutai's Breath
+1x Static Net

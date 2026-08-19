@@ -1084,6 +1084,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         abilities: effect.abilities ?? [],
         // M69 (Relic Robber — Goblin Construct „This token can't block").
         cantBlock: Boolean(effect.cantBlock),
+        // M147 (Static Net — Powerstone): token wchodzi ZATAPNIĘTY.
+        tapped: Boolean(effect.tapped),
       });
     }
     return;
@@ -1840,6 +1842,29 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'exile' }));
     return;
   }
+  if (effect.type === 'exile_nonland_permanent_linked') {
+    // Static Net (BRO): „When this enchantment enters, exile target nonland
+    // permanent an opponent controls until this enchantment leaves the
+    // battlefield." — LINKED exile: id wygnanego zapamiętujemy na źródle
+    // (exiledCardIds), a LTB (leaves_battlefield) przywraca go przez
+    // return_exiled_to_battlefield (jak Faceless Butcher / Wormfang Newt).
+    const targetId = targets[effect.targetIndex ?? 0];
+    if (targetId == null) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') return;
+    if ((object.types ?? []).includes('Land')) return; // nonland
+    const exileId = `exile-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'exile', exileId);
+    state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'exile' }));
+    const src = state.objects.get(sourceObject.id);
+    if (src) {
+      const exiled = [...(src.exiledCardIds ?? [])];
+      if (!exiled.includes(exileId)) exiled.push(exileId);
+      state.objects.set(sourceObject.id, Object.freeze({ ...src, exiledCardIds: exiled }));
+    }
+    return;
+  }
+
   if (effect.type === 'exile_own_land') {
     // Wormfang Newt (ETB): exile land you control (T2: cel wybiera
     // kontroler) i zapamiętaj id wygnanej karty na źródle, żeby LTB

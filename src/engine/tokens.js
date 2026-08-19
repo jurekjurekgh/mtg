@@ -26,7 +26,7 @@ export function createToken({ name = 'Token', kind = 'creature', power = 1, toug
  * land creature — walczy jako stwór, a dzięki types ['Land','Creature'] może
  * też być tapnięty na manę).
  */
-export function createBattlefieldToken(state, controllerId, { cardId, name, kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [], keywords = [], abilities = [], cantBlock = false, transformTo = null, station = null, saga = null }) {
+export function createBattlefieldToken(state, controllerId, { cardId, name, kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [], keywords = [], abilities = [], cantBlock = false, transformTo = null, station = null, saga = null, tapped = false }) {
   if (!state || !state.players.some((p) => p.id === controllerId)) throw new Error('Nieznany kontroler tokenu');
   if (!cardId || !name) throw new TypeError('Token wymaga cardId i nazwy');
   // Token niebędący stworem (np. Treasure — artefakt) nie ma statystyk:
@@ -53,6 +53,10 @@ export function createBattlefieldToken(state, controllerId, { cardId, name, kind
   });
   const token = Object.freeze({
     ...base, name, summoningSickness: true,
+    // Static Net (BRO): „create a tapped Powerstone token\" — token WCHODZI
+    // na pole bitwy zatapniętny (enters tapped), co nie jest „becomes tapped\"
+    // (CR 701.21a — brak zdarzenia object_tapped jest poprawny). L24/C.
+    ...(tapped ? { tapped: true } : {}),
     enteredOnTurn: state.turn.number,
     ...(cantBlock ? { cantBlock: true } : {}),
     // CR 707.8a: token-kopia permanentu dwustronnego jest tokenem

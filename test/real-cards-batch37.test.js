@@ -443,3 +443,81 @@ test('Satyr Wayfinder: rezygnacja — żaden ląd do ręki, reszta do grobu', ()
   assert.equal(zoneOfCardId(state, 'highland-game'), 'graveyard');
   assert.equal(zoneOfCardId(state, 'basic-swamp'), 'graveyard');
 });
+
+// --- Static Net {3}{W} Enchantment: linked exile + Powerstone + gain 2 life --
+test('Static Net: dane zgodne z Oracle ({3}{W} Enchantment)', () => {
+  const def = REGISTRY.get('static-net');
+  assert.equal(MANA_COSTS['static-net'], '{3}{W}');
+  assert.equal(def.manaCost, 4);
+  assert.deepEqual(def.types, ['Enchantment']);
+  const etbs = def.abilities.filter((a) => a.trigger?.event === 'enter_battlefield');
+  assert.equal(etbs.length, 2, 'dwa ETB');
+  assert.equal(etbs[0].effect.type, 'exile_nonland_permanent_linked');
+  assert.equal(etbs[0].trigger.requiresTarget.type, 'nonland_permanent');
+  assert.deepEqual(etbs[1].effect.map((e) => e.type), ['gain_life', 'create_token']);
+  assert.equal(etbs[1].effect[1].cardId, 'token_powerstone');
+  assert.equal(etbs[1].effect[1].tapped, true);
+  const ltb = def.abilities.find((a) => a.trigger?.event === 'leaves_battlefield');
+  assert.equal(ltb.effect.type, 'return_exiled_to_battlefield');
+});
+
+test('Static Net: ETB wygnuje nie-lądowy permanent przeciwnika; LTB go przywraca', () => {
+  const state = newState();
+  putCard(state, 'net', 'static-net', 'p1', 'hand');
+  putCard(state, 'foe', 'highland-game', 'p2', 'battlefield'); // stwór (nie-ląd)
+  addMana(state, 'p1', 4);
+  execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'net'));
+  // Rozstrzygnij permanent na stosie (pełne rundy passów), ale NIE rozwiązuj
+  // decyzji celu triggera — przechodzimy tylko puste passy, aż zostanie sam cel.
+  for (let i = 0; i < 16; i += 1) {
+    const view = playerView(state, state.turn.priorityPlayerId);
+    const pass = view.legalCommands.find((c) => c.type === 'pass_priority');
+    const triggerTarget = view.legalCommands.find((c) => c.type === 'resolve_trigger_target');
+    if (triggerTarget) break;
+    if (!pass) break;
+    execute(state, pass);
+  }
+  const targetChoice = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'resolve_trigger_target' && c.targetId === 'foe');
+  assert.ok(targetChoice, 'cel wygnania: stwór przeciwnika');
+  execute(state, targetChoice);
+  resolveStack(state); // dokończ — drugi ETB (life+powerstone) też
+  assert.equal(zoneOfCardId(state, 'highland-game'), 'exile', 'stwór wygnany');
+  // LTB: zniszcz Static Net → wygnany wraca.
+  const netObj = [...state.objects.values()].find((o) => o.cardId === 'static-net' && o.zone === 'battlefield');
+  assert.ok(netObj, 'net na polu bitwy');
+  const marker = state.events.length;
+  applyEffect(state, { type: 'sacrifice_permanent' }, netObj, []);
+  processTriggers(state, state.events.slice(marker));
+  resolveStack(state);
+  assert.equal(zoneOfCardId(state, 'highland-game'), 'battlefield', 'wygnany permanent wraca po LTB');
+});
+
+test('Static Net: ETB zysk 2 życia i token Powerstone (zatapnięty)', () => {
+  const state = newState();
+  putCard(state, 'net', 'static-net', 'p1', 'hand');
+  putCard(state, 'foe', 'highland-game', 'p2', 'battlefield');
+  const lifeBefore = state.players.find((p) => p.id === 'p1').life;
+  addMana(state, 'p1', 4);
+  execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'net'));
+  for (let i = 0; i < 16; i += 1) {
+    const view = playerView(state, state.turn.priorityPlayerId);
+    const triggerTarget = view.legalCommands.find((c) => c.type === 'resolve_trigger_target');
+    if (triggerTarget) break;
+    const pass = view.legalCommands.find((c) => c.type === 'pass_priority');
+    if (!pass) break;
+    execute(state, pass);
+  }
+  const targetChoice = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'resolve_trigger_target' && c.targetId === 'foe');
+  execute(state, targetChoice);
+  resolveStack(state);
+  const lifeAfter = state.players.find((p) => p.id === 'p1').life;
+  assert.equal(lifeAfter, lifeBefore + 2, 'zysk 2 życia');
+  const ps = [...state.objects.values()].find((o) => o.cardId === 'token_powerstone');
+  assert.ok(ps, 'Powerstone token utworzony');
+  assert.equal(ps.tapped, true, 'Powerstone zatapnięty');
+  assert.ok((ps.types ?? []).includes('Artifact'), 'Powerstone to artefakt');
+});

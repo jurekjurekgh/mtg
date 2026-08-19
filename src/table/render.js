@@ -781,6 +781,7 @@ function describeEffect(e) {
     exile_opponent_creature: () => 'wygnij stwora przeciwnika',
     exile_own_land: () => 'wygnij własny ląd',
     exile_target_creature: () => 'wygnij stwora',
+    exile_nonland_permanent_linked: () => 'wygnij nie-lądowy permanent do odejścia',
     exile_return_transformed: () => 'wygnij, potem wróć przekształcone',
     explore: () => 'explore',
     investigate: () => 'investigate (stwórz token Clue)',
