@@ -30,8 +30,10 @@ Lista właściciela. Oracle ze Scryfalla (pobrane 2026-08-19, ADR 0010 §2a).
 
 ## Plan commitów
 
-1. Plan + dane Scryfall
-2. Reuse (Returned, Liliana, Palace, Thornhide)
+1. ~~Plan + dane Scryfall~~ — zrobione (PR #64)
+2. ~~Reuse (Returned, Liliana, Palace, Thornhide)~~ — zrobione (M147 transza A:
+   artId/plan ze słownika, talie green/black/azorius + karty i lądy wg M132,
+   seedy 5 testów przelosowane hunterem L25).
 3. Ojutai's Breath (dont_untap + rebound)
 4. Village Bell-Ringer + Satyr Wayfinder (untap all + reveal/pick land)
 5. Static Net (linked exile + powerstone)

@@ -38,7 +38,7 @@
 1x Spread the Sickness
 1x Consume Spirit
 1x Dread Warlock
-20x Swamp
+21x Swamp
 2x Island
 2x Plains
 1x Chittering Rats
@@ -50,3 +50,5 @@
 1x Cuombajj Witches
 1x Mindstab
 1x Wretched Banquet
+1x Returned Centaur
+1x Liliana's Triumph

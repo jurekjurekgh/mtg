@@ -44,7 +44,7 @@
 1x Altar of the Goyf
 1x Inspiring Bard
 1x Inspire Awe
-27x Forest
+28x Forest
 1x Might of the Masses
 1x Carapace Forger
 1x Lurking Green Dragon
@@ -58,3 +58,4 @@
 1x Trade Route Envoy
 1x Feral Invocation
 1x Grizzled Leotau
+1x Thornhide Wolves

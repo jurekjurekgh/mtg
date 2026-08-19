@@ -232,7 +232,8 @@ test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora',
   // Seed 43 po Batchu 36 (green +Feral Invocation +Grizzled Leotau +1 Forest).
   // Seed 48 po Batchu 36 E4 (red +Molten Nursery).
   // Seed 87 — dokładna polityka tego pliku (hunter z chooseHumanCommand).
-  const session = createSession({ seed: 87, registry, decks });
+  // Seed 4 po Batchu 37 transza A (green +Thornhide Wolves +1 Forest) — przelosowane hunterem.
+  const session = createSession({ seed: 4, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Delirium \(Fear of Burning Alive\):.+otrzymuje 4 obrażenia$/.test(t)),
@@ -248,7 +249,8 @@ test('log opisuje wybór kart z grobu na wierzch biblioteki (Forever Young)', ()
   // Seed 1 po Batch 35 E3 (green +Trade Route Envoy) — przelosowane hunterem.
   // Seed 3 po Batch 35 E3b (black +Mindstab) — przelosowane hunterem.
   // Seed 12 po Batchu 36 E3 (black +Wretched Banquet +1 Swamp).
-  const session = createSession({ seed: 12, registry, decks });
+  // Seed 6 po Batchu 37 transza A (green +Thornhide Wolves, black +Returned Centaur +Liliana's Triumph) — przelosowane hunterem.
+  const session = createSession({ seed: 6, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /wybiera karty-stwory z grobu na wierzch biblioteki \(Forever Young\)/.test(t)),

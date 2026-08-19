@@ -280,4 +280,8 @@ export const MANA_COSTS = {
   "grizzled-leotau": "{G}{W}",
   "survivor-of-korlis": "{W}",
   "emerald-oryx": "{3}{G}",
+  "returned-centaur": "{3}{B}",
+  "lilianas-triumph": "{1}{B}",
+  "palace-familiar": "{1}{U}",
+  "thornhide-wolves": "{4}{G}",
 };

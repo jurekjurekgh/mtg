@@ -6560,6 +6560,77 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // =========================================================================
+  // Batch 37 (2026-08-19, lista właściciela). Oracle ze Scryfalla
+  // (docs/cards/scryfall-*.json, ADR 0010 §2a), artId i plan ze słownika
+  // tools/collection-art-ids.csv. Transza A: reuse mechanik.
+  // =========================================================================
+
+  // 1. Returned Centaur (ORI) {3}{B} 2/4 Zombie Centaur — ETB: target player mills 4
+  defineCard({
+    id: 'returned-centaur', name: 'Returned Centaur', set: 'ORI',
+    types: ['Creature'], subtypes: ['Zombie', 'Centaur'], colors: ['B'],
+    power: 2, toughness: 4, manaCost: 4,
+    oracleText: 'When this creature enters, target player mills four cards.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/0/103b369c-da58-40e7-98aa-5a5471434bca.jpg',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'player', prefer: 'opponent' } },
+        effect: { type: 'mill_cards', amount: 4 },
+      }),
+    ],
+    artId: 120, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Liliana's Triumph (WAR) {1}{B} Instant — each opponent sacrifices a creature
+  defineCard({
+    id: 'lilianas-triumph', name: "Liliana's Triumph", set: 'WAR',
+    types: ['Instant'], colors: ['B'], manaCost: 2,
+    oracleText: "Each opponent sacrifices a creature of their choice. If you control a Liliana planeswalker, each opponent also discards a card.",
+    imageUri: 'https://cards.scryfall.io/large/front/8/4/84803db8-fdb0-462b-92f6-33d591593d2d.jpg',
+    spell: {
+      timing: 'instant',
+      // „Each opponent\" w formacie 1v1 = jedyny przeciwnik. Wybór poświęcanego
+      // stwora należy do CELU (blokująca decyzja resolve_sacrifice_choice).
+      targets: [{ type: 'player' }],
+      effects: [{ type: 'player_sacrifices_creature' }],
+    },
+    artId: 38, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+    notes: ["klauzula „If you control a Liliana planeswalker, each opponent also discards\" — w katalogu brak planeswalkerów, więc warunek nigdy nie zachodzi (nieimplementowany)", '„Each opponent\" w 1v1 = celowy przeciwnik; poświęcenie „of their choice\" przez resolve_sacrifice_choice'],
+  }),
+
+  // 3. Palace Familiar (DTK) {1}{U} 1/1 Bird — Flying; dies: draw a card
+  defineCard({
+    id: 'palace-familiar', name: 'Palace Familiar', set: 'DTK',
+    types: ['Creature'], subtypes: ['Bird'], colors: ['U'],
+    keywords: ['flying'], power: 1, toughness: 1, manaCost: 2,
+    oracleText: 'Flying\\nWhen this creature dies, draw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/c/fc0c17c9-54af-4dd4-8d4a-fd5a7b8c3c77.jpg',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies' },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+    ],
+    artId: 146, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. Thornhide Wolves (M19) {4}{G} 4/5 Wolf — bez zdolności
+  defineCard({
+    id: 'thornhide-wolves', name: 'Thornhide Wolves', set: 'M19',
+    types: ['Creature'], subtypes: ['Wolf'], colors: ['G'],
+    power: 4, toughness: 5, manaCost: 5,
+    oracleText: '',
+    imageUri: 'https://cards.scryfall.io/large/front/f/c/fc0f3812-bb6c-4d99-b505-9dfd84e3fd95.jpg',
+    artId: 450, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */
