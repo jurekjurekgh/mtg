@@ -348,6 +348,9 @@ export async function runTableGame({
     // zawsze zamykały pauzę pierwszym kliknięciem i nigdy jej nie dotykały.
     const mandatory = by(/Dobierz kartę/)
       || by(/^Odrzuć:/)
+      || by(/^Poświęć:/)
+      || by(/^Rzuć z odbiciem:/)
+      || by(/^Rzuć zawieszone:/)
       || (profile === 'impatient' ? null : by(/Wznów grę bota/))
       || by(/zakończ|Zakończ/)
       || by(/Rozstrzygnij obrażenia/);
