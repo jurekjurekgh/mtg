@@ -5262,6 +5262,12 @@ export function playerView(state, playerId) {
     pendingHandTopChoice: activeHandTopChoice
       ? { sourceCardId: state.pendingHandTopChoice.sourceCardId ?? null }
       : null,
+    // M163/A (uwaga właściciela): Exploit (Silumgar Butcher) — tytuł grupy
+    // nazywa źródło decyzji. sourceCardId = karta publiczna na polu bitwy;
+    // TYLKO właściciel decyzji (ten sam wzorzec co pendingHandTopChoice).
+    pendingExploit: activeExploit
+      ? { sourceCardId: state.objects.get(state.pendingExploits[0].sourceId)?.cardId ?? null }
+      : null,
     // Cel triggera (resolve_trigger_target): nazwa źródła musi trafić do UI
     // (uwagi B/C właściciela 2026-08-10 — opcje modala bez nazwy karty).
     pendingTriggerTarget: (() => {

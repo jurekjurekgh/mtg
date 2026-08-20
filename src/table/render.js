@@ -334,6 +334,11 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_enter_as_copy') return 'resolve_enter_as_copy';
   if (command.type === 'resolve_destroy_equipment_choice') return 'resolve_destroy_equipment_choice';
   if (command.type === 'resolve_discard_choice') return 'resolve_discard_choice';
+  // M163/A (uwaga właściciela): decyzje wielowariantowe bez klucza renderują
+  // się jako luźne przyciski z identycznymi etykietami (Exploit Butchera).
+  if (command.type === 'resolve_exploit_choice') return 'resolve_exploit_choice';
+  if (command.type === 'resolve_epic_choice') return 'resolve_epic_choice';
+  if (command.type === 'resolve_optional_draw') return 'resolve_optional_draw';
   if (command.type === 'resolve_hand_top_choice') return 'resolve_hand_top_choice';
   if (command.type === 'resolve_land_type_choice') return 'resolve_land_type_choice';
   if (command.type === 'resolve_pay_or_sacrifice') return 'resolve_pay_or_sacrifice';
@@ -1337,6 +1342,11 @@ function choiceSourceTitle(cmd, session, view) {
   if (cmd?.type === 'resolve_hand_top_choice' && view?.pendingHandTopChoice?.sourceCardId) {
     return `${session.nameOf(view.pendingHandTopChoice.sourceCardId)} — karta z ręki na wierzch biblioteki`;
   }
+  // M163/A: Exploit (Silumgar Butcher) — tytuł grupy nazywa źródło decyzji
+  // (karta publiczna na polu bitwy; pendingExploit w widoku tylko właściciela).
+  if (cmd?.type === 'resolve_exploit_choice' && view?.pendingExploit?.sourceCardId) {
+    return `${session.nameOf(view.pendingExploit.sourceCardId)} — Exploit (poświęć stwora)`;
+  }
   if (!cmd || cmd.objectId == null) return null;
   const zones = ['hand', 'battlefield', 'stack', 'graveyard', 'library'];
   let object = null;
@@ -1829,6 +1839,38 @@ export function commandLabel(cmd, session, view) {
       if (cmd.done === true) return 'Devour: koniec poświęcania (wejście bez liczników)';
       return `Devour: poświęć ${nameOfObjectId(cmd.targetId)}`;
     }
+    case 'resolve_exploit_choice': {
+      // M163/A (uwaga właściciela): Exploit (Silumgar Butcher) renderował
+      // N identycznych „Exploit (wybór poświęcenia)" — bez treści i bez
+      // grupowania (case nie istniał). Etykieta nazywa POŚWIĘCANEGO stwora
+      // (własnego — jawnego w widoku wybierającego), wzorzec devour.
+      if (cmd.skip) return 'Exploit: nie poświęcaj (bez efektu „exploits")';
+      return `Exploit: poświęć ${nameOfObjectId(cmd.targetId)}`;
+    }
+    case 'resolve_color_choice': {
+      // M163/A: warianty koloru miały identyczne etykiety słownikowe.
+      const COLOR_LABELS = { W: 'Biały (W)', U: 'Niebieski (U)', B: 'Czarny (B)', R: 'Czerwony (R)', G: 'Zielony (G)' };
+      return `Kolor: ${COLOR_LABELS[cmd.color] ?? cmd.color}`;
+    }
+    case 'resolve_land_type_choice': {
+      // M163/A: warianty typu landa — j.w. (identyczne etykiety).
+      const LAND_LABELS = { Plains: 'Równina (Plains)', Island: 'Wyspa (Island)', Swamp: 'Bagna (Swamp)', Mountain: 'Góry (Mountain)', Forest: 'Las (Forest)' };
+      return `Typ landa: ${LAND_LABELS[cmd.landType] ?? cmd.landType}`;
+    }
+    case 'resolve_moonlit_choice': {
+      // M163/A: zamiana vs zwykły token — j.w.
+      return cmd.replace
+        ? 'Moonlit: zamiana — token kopii zaczarowanej karty'
+        : 'Moonlit: zwykły token (bez zamiany)';
+    }
+    case 'resolve_optional_draw': {
+      // M163/A: tak/nie dobioru — j.w.
+      return cmd.draw ? 'Dobierz kartę (you may)' : 'Nie dobieraj';
+    }
+    case 'resolve_optional_trigger_choice': {
+      // M163/A: tak/nie dobrowolnego efektu — j.w.
+      return cmd.fire ? 'Uruchom efekt dobrowolny (you may)' : 'Zrezygnuj z efektu';
+    }
     case 'resolve_endure_choice': {
       // Endure (Kin-Tree Nurturer): liczniki na źródle albo token Spirit.
       return cmd.mode === 'token'
@@ -1950,7 +1992,10 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_epic_choice': {
       // Epic Experiment — rzuć wygnany czar bez kosztu albo zakończ.
       if (cmd.done) return 'Epic Experiment: zakończ (reszta kart do grobu)';
-      return `Epic Experiment: rzuć bez kosztu — ${nameOfObjectId(cmd.cardId)}`;
+      // M163/A (klasa M151/suspend): oferta per legalny zestaw celów — bez
+      // celu w etykiecie warianty tej samej karty są nieodróżnialne.
+      const epicTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
+      return `Epic Experiment: rzuć bez kosztu — ${nameOfObjectId(cmd.cardId)}${epicTargets ? ` → cel: ${epicTargets}` : ''}`;
     }
     case 'resolve_look_top_choice': {
       // Gurmag Drowner — wybierz kartę z wierzchu do ręki.
