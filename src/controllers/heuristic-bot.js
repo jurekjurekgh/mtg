@@ -1074,6 +1074,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           // Dobranie kart z czaru to przewaga kartowa.
           if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') score += 6 * (effect.amount ?? 1);
+          // M158/Batch 39 (Wrap in Flames): wrapper „each of up to N targets"
+          // różnicuje warianty celami — wyceniamy KAŻDY cel wg efektów
+          // wewnętrznych (damage: wróg +, własny −; cant_block: drobny plus
+          // na wrogu). Bez tego remis wariantów brał pierwsze 3 kreatury
+          // z pola bitwy — także WŁASNE.
+          if (effect.type === 'apply_to_each_target') {
+            const inner = Array.isArray(effect.effects) ? effect.effects : [];
+            const hasDamage = inner.some((x) => x?.type === 'damage');
+            const hasCantBlock = inner.some((x) => x?.type === 'cant_block');
+            if (hasDamage || hasCantBlock) {
+              for (const slot of cmd.targets ?? []) {
+                const t3 = objectOnBoard(view, slot);
+                if (!t3) continue;
+                const mine = t3.controllerId === view.playerId;
+                if (hasDamage) score += mine ? -60 : 12 + (t3.power ?? 0) * 2;
+                else if (hasCantBlock) score += mine ? -10 : 8;
+              }
+            }
+          }
           // M157/L28 (inwentaryzacja): kradzież stwora do końca tury (Spreading
           // Insurrection, Awaken the Sleeper) — warianty różnią się celem;
           // wartość = tymczasowy zysk najsilniejszego stwora wroga.

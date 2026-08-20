@@ -920,6 +920,20 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     return;
   }
+  if (effect.type === 'apply_to_each_target') {
+    // M158/Batch 39 (Wrap in Flames): „deals 1 damage to EACH of up to three
+    // target creatures. Those creatures can't block this turn." — generyczny
+    // wrapper aplikujący listę efektów wewnętrznych RAZ NA CEL (cele
+    // wielokrotne z variableTargets czaru). Cele nielegalne pomijają efekty
+    // same (CR 608.2b — każdy wewnętrzny efekt sprawdza strefę).
+    const inner = Array.isArray(effect.effects) ? effect.effects : [];
+    for (const targetId of targets) {
+      for (const innerEffect of inner) {
+        applyEffect(state, innerEffect, sourceObject, [targetId], context);
+      }
+    }
+    return;
+  }
   if (effect.type === 'regenerate') {
     // M158/Batch 39 (Exterminator Magmarch, CR 701.12): „{1}{B}: Regenerate
     // this creature." — tarcza regeneracji do końca tury; zużywa ją

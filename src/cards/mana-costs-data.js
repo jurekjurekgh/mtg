@@ -307,4 +307,5 @@ export const MANA_COSTS = {
   "exterminator-magmarch": "{2}{B}{R}",
   "dire-fleet-ravager": "{3}{B}{B}",
   "wishful-merfolk": "{1}{U}",
+  "wrap-in-flames": "{3}{R}",
 };

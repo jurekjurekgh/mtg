@@ -7163,6 +7163,30 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // ---- Batch 39 — transza C: wielocelowy czar „each of up to N" ----
+  defineCard({
+    id: 'wrap-in-flames', name: 'Wrap in Flames', set: 'MM2',
+    types: ['Sorcery'], colors: ['R'], manaCost: 4,
+    oracleText: 'Wrap in Flames deals 1 damage to each of up to three target creatures. Those creatures can\'t block this turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/2/82e1dcb2-9471-48d9-98c8-12194e3a88ac.jpg?1783938401',
+    spell: {
+      timing: 'sorcery',
+      modes: [{
+        name: 'Owinięcie w płomienie',
+        variableTargets: { max: 3, min: 0 },
+        effects: [{
+          type: 'apply_to_each_target',
+          effects: [
+            { type: 'damage', amount: 1 },
+            { type: 'cant_block' },
+          ],
+        }],
+      }],
+    },
+    artId: null, plan: null,
+    support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */

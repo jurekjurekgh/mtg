@@ -42,9 +42,10 @@ test('talia red streszcza się przewidywalnie (kolory i landy)', () => {
   // M145 Batch 35 E2: red + Titan's Strength + 1 Mountain (próg M132).
   // M146 Batch 36 E4: red + Molten Nursery.
   // Batch 38: red + Mysidian Elder + 1 Mountain.
-  assert.equal(summary.total, 71);
-  assert.equal(summary.lands, 24);
-  assert.equal(summary.spells, 47);
+  // Batch 39 C: red + Wrap in Flames + 1 Mountain.
+  assert.equal(summary.total, 73);
+  assert.equal(summary.lands, 25);
+  assert.equal(summary.spells, 48);
   assert.ok((summary.colors.get('R') ?? 0) >= 12, 'czerwone karty obecne');
 });
 

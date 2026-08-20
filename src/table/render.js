@@ -807,6 +807,7 @@ function describeEffect(e) {
     regenerate: () => 'tarcza regeneracji (przetrwa zniszczenie do końca tury)',
     each_player_loses_life_fraction: () => 'każdy gracz traci część życia (zaokrąglone w górę)',
     becomes_subtype_until_end_of_turn: () => 'zmiana podtypu i utrata keyworda do końca tury',
+    apply_to_each_target: () => 'ten sam efekt na każdym z celów',
     ferocious_draw_discard: () => 'ferocious: dobierz, potem odrzuć',
     fertile_thicket_reveal: () => 'odsłoń wierzch biblioteki',
     goad: () => 'goad (musi atakować)',

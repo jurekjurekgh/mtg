@@ -235,11 +235,12 @@ test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora',
   // Seed 43 po Batchu 36 (green +Feral Invocation +Grizzled Leotau +1 Forest).
   // Seed 48 po Batchu 36 E4 (red +Molten Nursery).
   // Seed 9 po Batchu 39 A (green +Knight +4 Plains) — przelosowane hunterem.
+  // Seed 168 po Batchu 39 C (red +Wrap in Flames +1 Mountain) — hunter.
   // Seed 87 — dokładna polityka tego pliku (hunter z chooseHumanCommand).
   // Seed 26 po Batchu 37 (green +Satyr Wayfinder) — przelosowane hunterem.
   // Seed 26; po M153 (zmiana strategii blokowania/Station) — przelosowane
   // hunterem na 66; po Batch 38 (green/red zmieniły się) — na 319.
-  const session = createSession({ seed: 9, registry, decks });
+  const session = createSession({ seed: 168, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Delirium \(Fear of Burning Alive\):.+otrzymuje 4 obrażenia$/.test(t)),

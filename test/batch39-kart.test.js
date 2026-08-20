@@ -200,3 +200,51 @@ test('B3: Wishful Merfolk — traci defender i staje się Humanem do końca tury
   assert.ok(effectiveKeywords(restored, state).includes('defender'), 'cleanup przywraca defendera');
   assert.ok(!legalAttackerOptions(state, 'p1').some((opt) => opt.includes('wish')), 'znów nie atakuje');
 });
+
+
+// ---- Transza C: Wrap in Flames (each of up to three) ----
+test('C1: Wrap in Flames — warianty 0..3 cele, obrażenia + cant_block na KAŻDYM wybranym', () => {
+  const state = game();
+  putCard(state, 'e1', 'colossodon-yearling', 'p2'); // 2/4 wroga (przeżyje 1 dmg)
+  putCard(state, 'e2', 'thornhide-wolves', 'p2'); // 5/5 wroga
+  putCard(state, 'mine', 'colossodon-yearling', 'p1'); // 2/4 własny
+  putCard(state, 'wrap', 'wrap-in-flames', 'p1', 'hand');
+  addMana(state, 'p1', 6);
+
+  const view = playerView(state, 'p1');
+  const casts = view.legalCommands.filter((c) => c.type === 'cast_spell' && c.objectId === 'wrap');
+  assert.ok(casts.length > 0, 'są oferty rzutu (warianty variableTargets)');
+  const sizes = new Set(casts.map((c) => (c.targets ?? []).length));
+  assert.ok(sizes.has(0) && sizes.has(1) && sizes.has(2) && sizes.has(3),
+    `warianty 0..3 cele: ${[...sizes].join(',')} (kandydatów 3 -> komplet podzbiorów)`);
+
+  // Wybór dwóch wrogów — obrażenia 1 + cant_block na KAŻDYM; własny nietknięty.
+  const chosen = casts.find((c) => (c.targets ?? []).length === 2
+    && c.targets.includes('e1') && c.targets.includes('e2'));
+  assert.ok(chosen, 'wariant para wrogów');
+  assert.ok(execute(state, chosen).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+
+  assert.equal(state.objects.get('e1').damage, 1, 'e1: 1 obrażenie');
+  assert.equal(state.objects.get('e2').damage, 1, 'e2: 1 obrażenie');
+  assert.equal(state.objects.get('e1').cantBlock, true, 'e1 nie może blokować');
+  assert.equal(state.objects.get('e2').cantBlock, true, 'e2 nie może blokować');
+  assert.equal(state.objects.get('mine').damage ?? 0, 0, 'własny stwór nietknięty');
+  assert.notEqual(state.objects.get('mine').cantBlock, true, 'własny może blokować');
+});
+
+test('C2: bot rzuca Wrap we WROGÓW, nie we własne stwory (wycena wariantów)', async () => {
+  const { createHeuristicBot } = await import('../src/controllers/heuristic-bot.js');
+  const state = game();
+  putCard(state, 'e1', 'highland-game', 'p2');
+  putCard(state, 'mine', 'colossodon-yearling', 'p1');
+  putCard(state, 'wrap2', 'wrap-in-flames', 'p1', 'hand');
+  addMana(state, 'p1', 6);
+  const view = playerView(state, 'p1');
+  const choice = createHeuristicBot({ seed: 39 }).chooseCommand(view, {});
+  if (choice.type === 'cast_spell' && choice.objectId === 'wrap2') {
+    const hitsOwn = (choice.targets ?? []).includes('mine');
+    assert.ok(!hitsOwn, `bot nie pali własnego stwora: ${JSON.stringify(choice)}`);
+  }
+});
