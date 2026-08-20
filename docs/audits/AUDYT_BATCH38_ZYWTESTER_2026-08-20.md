@@ -106,14 +106,23 @@ Wszystkie 10 znalezisk naprawione. Każda zielona transza (`npm test` +
 Nowy detektor Testera (Z7, `detectTokenRawId`) — strażnik wycieku raw id
 tokenu; zweryfikowany na transkrypcie sprzed naprawy (6 trafień) i po (0).
 
-## Obserwacje poza zakresem (pre-existing, nie naprawiane)
+## Obserwacje poza zakresem — naprawione
 
-- **`test/bot-benchmark.test.js`** — losowy async flake „Ta karta nie ma
-  drugiej strony (craft)" po zakończeniu testu (resource leak harnessu B0).
-  Pre-existing; zmiany bota (Z3/Z4/Z9/Z10) to wyłącznie wycena w
-  heuristic-bot.js — nie dotykają ścieżki craft/transform w engine.
-- **Steelfin Whale** (living weapon) — trigger wejścia artefaktu bywa
-  „bez efektu (zerowy wynik)" przy wejściu na pole bitwy. Pre-existing
-  interakcja innej karty, poza listą Batch 38.
-- **Cuombajj Witches „Cel obrażeń"** (oś 3) — obowiązkowy wybór celu, ptaszek
-  wyciszenia niepotrzebny; to nie błąd, tylko zgłoszenie detektora Oś 3.
+- **craft na kopii bez drugiej strony** — token-kopia artefaktu z craft
+  (przez enterAsCopy) niosła zdolność craft bez `transformTo`; aktywacja
+  rzucała „Ta karta nie ma drugiej strony (craft)" i przerywała partię
+  (async crash w `test/bot-benchmark.test.js`, failował CI od c8404c0).
+  Naprawione: `craft_transform` to no-op bez `transformTo` (CR 608.2b),
+  `legalActivatedAbilities` nie oferuje craft bez `transformTo`, `enterAsCopy`
+  kopiuje `transformTo`. `test:all` zielone.
+- **Steelfin Whale fałszywy alarm** — `detectFalseNoEffect` flagował „zerowy
+  wynik" Steelfin Whale (odkręcenie i tak odkręconego) obok tokena Germ
+  z living weapon Strandwalkera (inny trigger w sąsiedztwie). Naprawione:
+  detektor wymaga, by dowód dotyczył TEGO SAMEGO źródła. Transkrypt
+  green-mechanicy seed 170: 0 zgłoszeń (było 1).
+
+## Nie-błąd (potwierdzone)
+
+- **Cuombajj Witches „Cel obrażeń"** (oś 3) — obowiązkowy wybór celu
+  (`resolve_damage_target`, wskazuje przeciwnik); ptaszek wyciszenia
+  niepotrzebny. To nie błąd, tylko zgłoszenie detektora Oś 3.
