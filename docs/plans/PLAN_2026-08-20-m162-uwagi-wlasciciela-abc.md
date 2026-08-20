@@ -9,7 +9,7 @@ przed kodowaniem; naprawy u root cause; testy RED→GREEN.
 ## Etapy
 
 - [x] **0. Rozpoznanie A (zdublowane talie na liście wyboru).**
-  Werdykt: **brak reprodukcji w aktualnym kodzie** — wstrzyknięty
+  Werdykt początkowy: brak reprodukcji w świeżym artefakcie — wstrzyknięty
   REPO_DECKS ma 12 unikalnych kluczy, pętla populacji `#deck-human`/
   `#deck-bot` (main.js:1243) wykonuje się raz, artefakt ma jeden
   `<script>` (bundle) i jedno `bootstrapTable()`; jsdom na świeżym
@@ -21,8 +21,14 @@ przed kodowaniem; naprawy u root cause; testy RED→GREEN.
   repozytorium wyglądają jak duplikaty; ewentualnie przeglądarka
   trzyma stary artefakt z cache. **Bez wskazania, którą listę widać,
   nie patchujemy w ciemno** (AGENTS: nie maskuj, znajdź root cause).
-  → pytanie do właściciela na końcu tury.
-- [ ] **1. Fix C — Chittering Rats: modal „Karta z ręki na wierzch (i z n)".**
+  → pytanie do właściciela na końcu tury. **Odpowiedź właściciela:**
+  duble w wersji desktopowej — plik ściągnięty „Zapisz jako..." i
+  otwierany lokalnie (HTML z opcjami runtime'owymi w selectach).
+  Root cause: populacja nieidempotentna; „Zapisz jako..." serializuje
+  DOM po uruchomieniu skryptu, ponowne uruchomienie dokładało komplet.
+  Fix w etapie 1A: src/table/deck-selects.js (populateDeckSelects
+  czyści przed wypełnieniem; deckTitle przeniesiony z main.js).
+- [x] **1. Fix C — Chittering Rats: modal „Karta z ręki na wierzch (i z n)".**
   Root cause: `commandLabel` NIE MA przypadku `resolve_hand_top_choice`
   — etykieta spada do słownikowej „Karta z ręki na wierzch" i choice-
   request numeruje identyczne wpisy „(1 z 5)". Ręka WYBIERAJĄCEGO jest
@@ -40,7 +46,7 @@ przed kodowaniem; naprawy u root cause; testy RED→GREEN.
   Kryteria: test z ETB Ratsów u bota → każda opcja modala nazywa kartę
   z ręki gracza; tytuł nazywa źródło; brak numerowania przy różnych
   nazwach.
-- [ ] **2. Fix B — Ghoulcaller's Bell: bot dzwoni co turę do własnej zguby.**
+- [x] **2. Fix B — Ghoulcaller's Bell: bot dzwoni co turę do własnej zguby.**
   Root cause: efekt `mill_both_players` nie ma wyceny w heuristic-bocie
   → aktywacja {T} dostaje bazowe +2, wygrywa z passem (0) przy braku
   lepszego ruchu — bot mieli obie biblioteki także PRZEGRYWAJĄC wyścig
@@ -57,7 +63,7 @@ przed kodowaniem; naprawy u root cause; testy RED→GREEN.
   cokolwiek innego/pass); bot z większą może aktywować; remis = nie
   aktywuje. `npm test` + build zielone; `test:slow` (próbka regresji
   bota) bez regresji.
-- [ ] **3. Domknięcie:** PROJECT_STATE (M162), handoff, opis PR
+- [x] **3. Domknięcie:** PROJECT_STATE (M162), handoff, opis PR
   kumulatywnie; A dokumentowane jako otwarte pytanie do właściciela.
 
 ## Planowane commity
@@ -78,3 +84,18 @@ przed kodowaniem; naprawy u root cause; testy RED→GREEN.
 - A: zakaz łatania bez reprodukcji — czekamy na odpowiedź właściciela.
 - Testy UI bez DOM (mini-harness), testy bota na playerView (wzorce
   audit-m119 / m160).
+
+## Podsumowanie wykonania
+
+- B+C zaimplementowane RED→GREEN (5/7 czerwonych przed): wycena wyścigu
+  bibliotek dla mill_both_players w obu gałęziach bota; etykieta
+  resolve_hand_top_choice nazywa kartę, tytuł modala źródło (FoW:
+  pending tylko właściciel decyzji).
+- Przegląd pozostałych modali resolve_* wykonany w rozpoznaniu: jedyny
+  brak nazwy to hand_top_choice (wszystkie inne nazywają kartę/cel lub
+  opisują skutek) — udokumentowane w PLAN i commicie.
+- A rozwiązane po odpowiedzi właściciela (idempotentna populacja;
+  testy A1/A2 + jsdom end-to-end serialize→rerun→12 unikalnych opcji).
+- Incident: reset workspace w trakcie (ENVIRONMENT §2) — odzyskano z
+  origin + cherry-pick; stan końcowy: npm test 2514/2514 (fast),
+  build 51 modułów / 2140.9 kB.

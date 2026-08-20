@@ -1,7 +1,41 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-20 (M161: audyt PR #67 + gotowość madness na czary — routing po kind)
-- **Poprzednia:** 2026-08-20 (PR #67: M159 audyt PR #66 + pętla jakości, M160 uwagi właściciela A/B)
+- **Ostatnia aktualizacja:** 2026-08-20 (M162: uwagi właściciela A/B/C — talie „Zapisz jako...", Bell bota, modal Ratsów)
+- **Poprzednia:** 2026-08-20 (M161: audyt PR #67 + gotowość madness na czary — routing po kind)
+
+## M162 — uwagi właściciela z testów A/B/C (2026-08-20, PR #68)
+
+Plan: `docs/plans/PLAN_2026-08-20-m162-uwagi-wlasciciela-abc.md`.
+`test/m162-uwagi-wlasciciela.test.js` (7 testów, RED→GREEN 5/7).
+
+- **A (zdublowane talie): NAPRAWIONE.** Odpowiedź właściciela: duble tylko
+  w wersji desktopowej — HTML ściągnięty „Zapisz jako..." i otwierany
+  lokalnie (fragment HTML pokazał selecty z już wstrzykniętymi opcjami).
+  Root cause: „Zapisz jako..." serializuje DOM po uruchomieniu skryptu,
+  a populacja selectów NIE była idempotentna — ponowne uruchomienie
+  dokładało drugi komplet. Fix: src/table/deck-selects.js
+  (populateDeckSelects czyści select przed wypełnieniem; deckTitle
+  przeniesiony z main.js). Weryfikacja: testy A1/A2 + jsdom end-to-end
+  (serialize → ponowne uruchomienie → 12 unikalnych opcji, wcześniej 24).
+- **B (Ghoulcaller's Bell):** mill_both_players bez wyceny → {T} warte
+  bazowe +2 wygrywało z passem i bot dzwonił co turę także przegrywając
+  wyścig o karty. Wycena wyścigu bibliotek w OBU gałęziach (cast_spell +
+  activate_ability, L41): ostatnia własna karta −120; przeciwnik do zera
+  +80; nie prowadzę −40; prowadzę +6..+16.
+- **C (Chittering Rats):** modal resolve_hand_top_choice bez nazw kart
+  („(1 z 5)") — brak case'a w commandLabel. Etykieta nazywa KARTĘ z ręki
+  wybierającego (ręka dla niego jawna — FoW), playerView wystawia
+  pendingHandTopChoice.sourceCardId TYLKO właścicielowi decyzji
+  (precedens pendingTriggerTarget), tytuł modala nazywa źródło. Przegląd
+  pozostałych resolve_*: jedyny brak — reszta nazywa kartę/cel albo opisuje
+  skutek (explore/discover/food).
+- **Incident środowiskowy:** workspace zresetowany w trakcie sesji
+  (ENVIRONMENT §2 — drugi raz w projekcie); historia odtworzona z origin
+  + cherry-pick; nic nie przepadło (wszystkie commity wypchnięte przed
+  resetem).
+
+**Stan:** `npm test` **2516/2516** (fast), `test:slow` **9/9**, build
+**52 moduły / 2142.5 kB**.
 
 ## M161 — audyt PR #67 + gotowość madness na czary (2026-08-20, PR #68)
 
