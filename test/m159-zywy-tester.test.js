@@ -143,10 +143,21 @@ test('Z5a: rzut Invasion of the Giants z ręki — lore 1 i rozdział I (scry 2)
   assert.equal(state.pendingScry.playerId, 'p1');
 });
 
-test('Z5b (strażnik łańcucha pól): każda karta z saga w rejestrze niesie saga na obiekcie', () => {
+test('Z5b (strażnik łańcucha pól): żaden deskryptor mechaniki nie ginie w materialize', () => {
+  // Klasa Z5: gameObjectDataOf ma osobne gałęzie per kind i każda kopiuje
+  // pola RĘCZNIE — karta z mechaniką w „nietypowej” gałęzi (Saga-enchantment,
+  // w przyszłości np. instant z madness) gubi deskryptor PO CICHU. Każde
+  // pole mechaniki obecne na definicji musi trafić na obiekt gry.
+  const MECHANIC_FIELDS = ['madness', 'saga', 'warp', 'suspend', 'plot', 'kicker',
+    'adventure', 'buyback', 'bestow', 'devour', 'endure', 'exploit', 'backup',
+    'bloodthirst', 'additionalCost', 'costReduction', 'treasureAltCost',
+    'equipment', 'aura', 'station', 'morph', 'entersWithCounters', 'rebound'];
   for (const def of REGISTRY.all()) {
-    if (!def.saga) continue;
     const data = gameObjectDataOf(def);
-    assert.ok(data.saga, `${def.id}: gameObjectDataOf gubi deskryptor saga (gałąź kind=${data.kind})`);
+    for (const field of MECHANIC_FIELDS) {
+      if (!def[field]) continue;
+      assert.ok(data[field],
+        `${def.id}: gameObjectDataOf gubi deskryptor ${field} (gałąź kind=${data.kind})`);
+    }
   }
 });
