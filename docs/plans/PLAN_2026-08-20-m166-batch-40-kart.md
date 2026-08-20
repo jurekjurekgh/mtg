@@ -43,6 +43,15 @@ pobrano z `set=ltc`; Mosquito Guard MOR (nie DDF) i Sarkhan's Rage DTK
   `test/batch40-kart.test.js`, wyceny botów dla nowych efektów (L50),
   PROJECT_STATE/handoff, opis PR.
 
+## Reguła talii dla batcha (nauczka transzy A)
+
+Nowe karty trafiają WYŁĄCZNIE do `decks/tokens.txt` (W/G/U, jedyna
+wielokolorowa talia bez odwołań w testach): green/azorius/red/black mają
+zamrożone seedy w testach scenariuszowych (L25) — dodanie karty do tych
+talii łamie 5 testów i wymaga re-losowania seedów (wzorzec „huntera"
+z library-manipulation-modal). Strażnik M33+ wymaga obecności w JAKIEJKOLIWIEK
+talii — tokens spełnia.
+
 ## Ryzyka / pułapki
 
 - Inferno Titan: decyzja podziału MUSI pełnić CR 608.2b/„divided as you
