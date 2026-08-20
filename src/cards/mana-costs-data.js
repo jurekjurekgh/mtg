@@ -304,4 +304,7 @@ export const MANA_COSTS = {
   "knight-of-the-skyward-eye": "{1}{W}",
   "breaching-hippocamp": "{3}{U}",
   "squires-lightblade": "{W}",
+  "exterminator-magmarch": "{2}{B}{R}",
+  "dire-fleet-ravager": "{3}{B}{B}",
+  "wishful-merfolk": "{1}{U}",
 };

@@ -90,6 +90,10 @@ function isPlayerId(state, id) {
 function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   const condition = trigger?.condition ?? {};
   if (condition.noSpellsLastTurn) return state.lastTurnSpellsCast === 0;
+  // M158/Batch 39 (Exterminator Magmarch): warunki multiplayer („if ANOTHER
+  // opponent ...") są w 1v1 martwe z definicji formatu (jest dokładnie jeden
+  // przeciwnik) — jak brak strefy dowodzenia (ADR 0022: fakt formatu).
+  if (condition.anotherOpponentExists) return state.players.length > 2;
   if (condition.minSpellsLastTurn != null) return state.lastTurnSpellsCast >= condition.minSpellsLastTurn;
   // „Whenever a player casts a WHITE spell" (Angel's Feather): trigger
   // `player_casts_spell` z warunkiem na kolorze rzucanego czaru — kolory

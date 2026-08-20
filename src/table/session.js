@@ -961,6 +961,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         return `token ${e.name} przestaje istnieć (trafił do ${zoneName} — token istnieje tylko na polu bitwy)`;
       }
       case 'shield_consumed': return `${nameOfObject(e.objectId)} zużywa tarczę (shield)`;
+      case 'players_lost_life_fraction':
+        return `każdy gracz traci ${e.numerator ?? 1}/${e.denominator ?? 3} życia (zaokrąglone w górę)`;
+      case 'became_subtype':
+        return `${nameOfObject(e.objectId)} staje się ${e.subtypes.join(' ')} do końca tury${(e.lostKeywords ?? []).length > 0 ? ` (traci ${e.lostKeywords.join(', ')})` : ''}`;
       // M119/Z1 (audyt żywym testerem): odmiana liczby mnogiej. Log pokazywał
       // graczowi „dostaje +2 licznik +1/+1” i „traci 2 licznik stun” —
       // `polishPlural` istniał w tym pliku (obrażenia, karty), ale liczniki

@@ -920,6 +920,66 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     return;
   }
+  if (effect.type === 'regenerate') {
+    // M158/Batch 39 (Exterminator Magmarch, CR 701.12): „{1}{B}: Regenerate
+    // this creature." — tarcza regeneracji do końca tury; zużywa ją
+    // tryRegenerate przy próbie zniszczenia (state-based/effects), a cleanup
+    // czyści niewykorzystane tarcze (razem z cantBeRegeneratedThisTurn).
+    const targetId = targets[0] ?? sourceObject.id;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') return;
+    if (!(state.regenerationShields ?? []).includes(targetId)) {
+      state.regenerationShields = [...(state.regenerationShields ?? []), targetId];
+    }
+    state.events.push(event('regeneration_shield_added', {
+      objectId: targetId, cardId: object.cardId, playerId: sourceObject.controllerId,
+    }));
+    return;
+  }
+  if (effect.type === 'each_player_loses_life_fraction') {
+    // M158/Batch 39 (Dire Fleet Ravager): „each player loses a third of their
+    // life, rounded up" — generyczny ułamek (numerator/denominator), zaokr.
+    // w górę; to UTRATA życia, nie obrażenia (jak lose_life — bez triggerów
+    // damage i bez prewencji).
+    const numerator = effect.numerator ?? 1;
+    const denominator = effect.denominator ?? 3;
+    for (const player of state.players) {
+      const loss = Math.ceil((player.life * numerator) / denominator);
+      if (loss > 0) changeLife(state, player.id, -loss);
+    }
+    state.events.push(event('players_lost_life_fraction', {
+      sourceId: sourceObject.id, cardId: sourceObject.cardId,
+      numerator, denominator,
+    }));
+    return;
+  }
+  if (effect.type === 'becomes_subtype_until_end_of_turn') {
+    // M158/Batch 39 (Wishful Merfolk): „This creature loses defender and
+    // becomes a Human until end of turn." — nadpisanie podtypów DO KOŃCA TURY
+    // (wzorzec originalBeforeAnimation: zapamiętany oryginał, cleanup
+    // przywraca) + tymczasowa utrata keywordów (lostKeywordsUntilEOT
+    // odejmowane w effectiveKeywords).
+    const targetId = targets[0] ?? sourceObject.id;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') return;
+    const patch = {
+      lostKeywordsUntilEOT: Object.freeze([
+        ...new Set([...(object.lostKeywordsUntilEOT ?? []), ...(effect.losesKeywords ?? [])]),
+      ]),
+    };
+    if (Array.isArray(effect.subtypes) && effect.subtypes.length > 0 && !object.subtypesBeforeOverride) {
+      patch.subtypesBeforeOverride = Object.freeze([...(object.subtypes ?? [])]);
+      patch.subtypes = Object.freeze([...effect.subtypes]);
+    }
+    state.objects.set(targetId, Object.freeze({ ...object, ...patch }));
+    state.events.push(event('became_subtype', {
+      objectId: targetId, cardId: object.cardId,
+      subtypes: [...(patch.subtypes ?? object.subtypes ?? [])],
+      lostKeywords: [...(effect.losesKeywords ?? [])],
+      untilEndOfTurn: true,
+    }));
+    return;
+  }
   if (effect.type === 'attach_self_to_target') {
     // M158/Batch 39 (Squire's Lightblade): „When this Equipment enters,
     // attach it to target creature you control." — przypięcie ŹRÓDŁA

@@ -18,7 +18,7 @@ export function createCardInstance({ id, cardId, ownerId }) {
   return Object.freeze({ id, cardId, ownerId });
 }
 
-export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, entersWithCountersIf = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, exploit = null, treasureAltCost = null, cardName = null, name = null, isToken = false, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, rebound = null, reboundCast = false, reboundReady = false }) {
+export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, entersWithCountersIf = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, exploit = null, treasureAltCost = null, cardName = null, name = null, isToken = false, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, rebound = null, reboundCast = false, reboundReady = false }) {
   if (!id || !instanceId || !cardId || !controllerId || !zone) {
     throw new TypeError('Obiekt gry wymaga id, instanceId, cardId, controllerId i zone');
   }
@@ -77,6 +77,9 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     entersWithCountersIf: entersWithCountersIf ? Object.freeze({ ...entersWithCountersIf }) : null,
     keywords: Object.freeze([...keywords]), subtypes: Object.freeze([...subtypes]),
     transformTo,
+    // M158/Batch 39: tymczasowe nadpisanie podtypów + utrata keywordów (EOT).
+    subtypesBeforeOverride: subtypesBeforeOverride ? Object.freeze([...subtypesBeforeOverride]) : null,
+    lostKeywordsUntilEOT: Object.freeze([...(lostKeywordsUntilEOT ?? [])]),
     // Pełna linia typów z definicji (np. ['Enchantment','Creature']) — predykaty
     // mechanik (np. „artefakt lub enchantment") nie opierają się na samym kind.
     types: Object.freeze([...types]),

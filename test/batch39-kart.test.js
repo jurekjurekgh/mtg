@@ -15,6 +15,8 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { effectiveKeywords, effectivePower } from '../src/engine/permanents.js';
 import { clearStatModifiers } from '../src/engine/permanents.js';
+import { applyEffect } from '../src/engine/effects.js';
+import { legalAttackerOptions } from '../src/engine/combat.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -141,4 +143,60 @@ test('A5: Mesmerist — {U},{T}: gracz-cel mieli 2', () => {
   const libAfter = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === 'p2').length;
   assert.equal(libAfter, libBefore - 2, 'przeciwnik mieli 2 karty');
   assert.equal(state.objects.get('merf').tapped, true, 'źródło zatapowane kosztem {T}');
+});
+
+
+// ---- Transza B ----
+test('B1: Magmarch {1}{B}: Regenerate — tarcza chroni przed zniszczeniem, zużywa się', () => {
+  const state = game();
+  putCard(state, 'mag', 'exterminator-magmarch', 'p1');
+  addMana(state, 'p1', 4, { colors: ['B', 'B'] });
+  const offer = playerView(state, 'p1').legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'mag');
+  assert.ok(offer, 'oferta {1}{B}: Regenerate');
+  assert.ok(execute(state, offer).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+  assert.ok((state.regenerationShields ?? []).includes('mag'), 'tarcza regeneracji aktywna');
+
+  // Destroy (CR 701.12): tarcza zużyta, stwór ODTAPANY i żyje.
+  applyEffect(state, { type: 'destroy_permanent' }, state.objects.get('mag'), ['mag']);
+  assert.ok(state.objects.has('mag') && state.objects.get('mag').zone === 'battlefield', 'regeneracja zamiast grobu');
+  assert.equal(state.objects.get('mag').tapped, true, 'regeneracja odtapowuje... (CR 701.12: tapped)');
+  assert.ok(!(state.regenerationShields ?? []).includes('mag'), 'tarcza zużyta');
+});
+
+test('B2: Ravager ETB — każdy gracz traci 1/3 życia zaokrąglone w górę', () => {
+  const state = game();
+  putCard(state, 'rav', 'dire-fleet-ravager', 'p1');
+  state.players[1].life = 5; // ceil(5/3) = 2
+  applyEffect(state, { type: 'each_player_loses_life_fraction', numerator: 1, denominator: 3 },
+    state.objects.get('rav'), []);
+  assert.equal(state.players[0].life, 13, '20 - ceil(20/3)=7 -> 13');
+  assert.equal(state.players[1].life, 3, '5 - ceil(5/3)=2 -> 3');
+});
+
+test('B3: Wishful Merfolk — traci defender i staje się Humanem do końca tury', () => {
+  const state = game();
+  const merf = putCard(state, 'wish', 'wishful-merfolk', 'p1');
+  assert.ok(merf.keywords.includes('defender'));
+  // Defender blokuje atak (CR 702.3).
+  assert.ok(!legalAttackerOptions(state, 'p1').some((opt) => opt.includes('wish')), 'z defenderem nie atakuje');
+
+  addMana(state, 'p1', 4, { colors: ['U', 'U'] });
+  const offer = playerView(state, 'p1').legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'wish');
+  assert.ok(offer, 'oferta {1}{U}');
+  assert.ok(execute(state, offer).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+
+  const after = state.objects.get('wish');
+  assert.deepEqual([...after.subtypes], ['Human'], 'staje się Humanem (nadpisanie podtypów)');
+  assert.ok(!effectiveKeywords(after, state).includes('defender'), 'bez defendera');
+  assert.ok(legalAttackerOptions(state, 'p1').some((opt) => opt.includes('wish')), 'może atakować');
+
+  clearStatModifiers(state);
+  const restored = state.objects.get('wish');
+  assert.deepEqual([...restored.subtypes], ['Merfolk'], 'cleanup przywraca Merfolka');
+  assert.ok(effectiveKeywords(restored, state).includes('defender'), 'cleanup przywraca defendera');
+  assert.ok(!legalAttackerOptions(state, 'p1').some((opt) => opt.includes('wish')), 'znów nie atakuje');
 });

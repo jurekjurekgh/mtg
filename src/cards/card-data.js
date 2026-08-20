@@ -7104,6 +7104,65 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // ---- Batch 39 — transza B: proste nowe mechaniki ----
+  defineCard({
+    id: 'exterminator-magmarch', name: 'Exterminator Magmarch', set: 'M3C',
+    types: ['Artifact', 'Creature'], subtypes: ['Phyrexian', 'Construct'], colors: ['B', 'R'],
+    power: 5, toughness: 3, manaCost: 4,
+    oracleText: 'Whenever you cast an instant or sorcery spell that targets only a single nonland permanent an opponent controls, if another opponent controls one or more nonland permanents that spell could target, choose one of those permanents. Copy that spell. The copy targets the chosen permanent.\n{1}{B}: Regenerate this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/e/2e600de8-6afa-46d8-ba87-552798cdb040.jpg?1783911405',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        // Trigger multiplayer: w 1v1 warunek „another opponent" jest martwy
+        // z definicji formatu (decyzja ADR 0022 — fakt formatu, jak brak
+        // strefy dowodzenia). Działa od razu, gdy engine pozna >2 graczy.
+        trigger: { event: 'when_you_cast_spell', condition: { anotherOpponentExists: true } },
+        effect: [],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, colors: ['B'] },
+        effect: { type: 'regenerate' },
+      }),
+    ],
+    artId: null, plan: null,
+    support: { status: 'supported', limitations: [] },
+    notes: ['trigger kopiowania wymaga DRUGIEGO przeciwnika — w 1v1 nigdy się nie odpala (fakt formatu, jak brak command zone); {1}{B}: Regenerate = tarcza regeneracji do końca tury (CR 701.12)'],
+  }),
+  defineCard({
+    id: 'dire-fleet-ravager', name: 'Dire Fleet Ravager', set: 'OTC',
+    types: ['Creature'], subtypes: ['Orc', 'Pirate', 'Wizard'], colors: ['B'],
+    keywords: ['menace', 'deathtouch'], power: 4, toughness: 4, manaCost: 5,
+    oracleText: 'Menace, deathtouch\nWhen this creature enters, each player loses a third of their life, rounded up.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/d/0d114e88-c5bd-416d-b9f1-25be1432c98c.jpg?1783911931',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'each_player_loses_life_fraction', numerator: 1, denominator: 3 },
+      }),
+    ],
+    artId: null, plan: null,
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'wishful-merfolk', name: 'Wishful Merfolk', set: 'ELD',
+    types: ['Creature'], subtypes: ['Merfolk'], colors: ['U'],
+    keywords: ['defender'], power: 3, toughness: 2, manaCost: 2,
+    oracleText: 'Defender\n{1}{U}: This creature loses defender and becomes a Human until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/9/f9358d5d-726e-43e0-a58e-4cfe7c755913.jpg?1783932647',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, colors: ['U'] },
+        effect: { type: 'becomes_subtype_until_end_of_turn', subtypes: ['Human'], losesKeywords: ['defender'] },
+      }),
+    ],
+    artId: null, plan: null,
+    support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */
