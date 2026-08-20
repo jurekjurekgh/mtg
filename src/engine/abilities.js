@@ -640,6 +640,15 @@ export function legalActivatedAbilities(state, playerId) {
         // — Rustvine Cultivator; ewazja, którą cel już ma — Coralhelm Guide),
         // nic nie zmienia — chowany jak no-op equip (U9).
         if (abilityEffectIsNoOp(state, object, ability, target)) continue;
+        // M155 (audyt żywym testerem, Sterling Keykeeper): zdolność z kosztem
+        // {T} już TAPUJE źródło (object). Oferta, która celuje w SAME ŹRÓDŁO
+        // efektem tap_permanent („{2},{T}: tap target creature" na sobie),
+        // jest czystym no-opem — źródło jest już tapnięte przez koszt, więc
+        // efekt nic nie zmienia. Chowany (gracz zachowuje legalność wg CR 602,
+        // ale UI nie sugeruje bezsensownego tapnięcia własnego źródła).
+        if (ability.cost?.tap && target?.id === object?.id
+          && (Array.isArray(ability.effect) ? ability.effect : [ability.effect])
+            .some((e) => e?.type === 'tap_permanent')) continue;
         const xValue = ability.cost?.manaX && target ? (effectivePower(target, state) ?? 0) : undefined;
         const cost = xValue !== undefined ? xValue : (ability.cost?.mana ?? 0);
         if (cost > mana) continue;

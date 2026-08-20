@@ -115,3 +115,15 @@ test('Batch38/Z7: token w playerView niesie jawną nazwę (Squirrel, nie token_s
   assert.ok(tok, 'token w widoku');
   assert.equal(tok.name, 'Squirrel', `jawna nazwa tokenu: ${tok.name}`);
 });
+
+// --- Z8: Sterling Keykeeper nie oferuje tapnięcia samego siebie (no-op) ---
+test('Batch38/Z8: tap_permanent z kosztem {T} nie celuje w własne źródło (no-op)', () => {
+  const state = newState();
+  state.players.find((p) => p.id === 'p1').mana = 5;
+  putCard(state, 'sterling', 'sterling-keykeeper', 'p1', 'battlefield');
+  putCard(state, 'foe', 'highland-game', 'p2', 'battlefield');
+  const acts = playerView(state, 'p1').legalCommands
+    .filter((c) => c.type === 'activate_ability' && c.objectId === 'sterling');
+  assert.ok(acts.some((a) => a.targets?.includes('foe')), 'cel-pieprz (stwór wroga) oferowany');
+  assert.ok(!acts.some((a) => a.targets?.includes('sterling')), 'brak no-op self-tap');
+});
