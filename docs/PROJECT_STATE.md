@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-20 (M156: audyt PR #65 + fixy F1–F3)
+- **Ostatnia aktualizacja:** 2026-08-20 (M156: audyt PR #65 + fixy F1–F3 + pętla jakości Q1/Q2 + strażnik L51)
 - **Poprzednia:** 2026-08-20 (PR #65 scalony: M147–M155 — poniżej backfill)
 
 ## M156 — audyt PR #65 + fixy (2026-08-20, PR #66)
@@ -32,8 +32,18 @@ target creatures" zaimplementowane jako 1 cel, odnotowane w `notes` — wg
 polityki M111 to kandydat na `limitations` (nowy powód w strażniku) albo
 implementacja wielocelowego triggera ETB.
 
-**Stan:** `npm run test:all` **2445/2445**, `npm test` 2436/2436, build
-**51 modułów / 2072.2 kB**, próbka regresji bota 9/9 (0 crashy). Rejestr:
+**Pętla jakości (etap 5, ADR 0021):** sonda inwentaryzacji typów efektów
+w kontekstach celowanych (card-data vs wyceny bota) — 2 kolejne wystąpienia
+klasy L50: **Q1** Withstand (prewencja any_target bez wyceny → bot chronił
+stwora PRZECIWNIKA), **Q2** Servant of the Scale (transfer liczników
+nieprzyjazny → liczniki do najsłabszego własnego). Fixy + **strażnik
+klasyfikacji celów triggerów** (`triggerEffectIsHostile` w game-state,
+`test/bot-trigger-target-classification-guard.test.js` — nowy typ efektu
+w triggerze z celem bez klasyfikacji = czerwony test przed merge; zweryfikowany
+mutacyjnie). Lekcja **L51**.
+
+**Stan:** `npm run test:all` **2451/2451** (rdzeń 2442 + slow 9), build
+**51 modułów / 2075.0 kB**, próbka regresji bota 9/9 (0 crashy). Rejestr:
 **308 wspieranych kart** (bez tokenów/tyłów DFC), 12 talii.
 
 ## Backfill — PR #65 (M147–M155, scalony 2026-08-20)

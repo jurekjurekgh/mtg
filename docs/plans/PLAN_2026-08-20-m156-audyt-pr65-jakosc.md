@@ -28,7 +28,7 @@
    M147–M155; nie ma handoffu po PR #65. Uzupełniam zwięzłe wpisy stanu
    (bez rekonstrukcji szczegółów — źródłem są opisy commitów squash `1a5accc`
    i plany M147–M155). — *kryterium: PROJECT_STATE odzwierciedla stan main*
-5. **Pętla jakości (ADR 0021 pkt 4).** W miarę budżetu sesji:
+5. **[x] Pętla jakości (ADR 0021 pkt 4).** W miarę budżetu sesji:
    (a) audyt Żywym Testerem innej osi niż poprzednia sesja, albo
    (b) polowanie na niezgodności z CR (odznaka) ścieżkami innymi niż poprzednio.
    Każde znalezisko: repro → fix root cause → test regresyjny → commit. —
@@ -66,4 +66,10 @@
   uzupełniony o backfill M147–M155 + wpis M156; README liczniki odświeżone.
 - F4 (Weftblade „up to two targets") — otwarte, zgłoszone właścicielowi
   w opisie PR (decyzja: wielocelowy trigger ETB vs limitations).
-- Etap 5 (pętla jakości): kolejne sesje wg ADR 0021.
+- Etap 5 wykonany: sonda inwentaryzacji efektów celowanych → Q1 (Withstand:
+  prewencja na wroga), Q2 (Servant: liczniki do najsłabszego własnego);
+  fixy RED→GREEN (test/bot-quality-m156.test.js) + strażnik klasyfikacji
+  celów triggerów (triggerEffectIsHostile,
+  test/bot-trigger-target-classification-guard.test.js, weryfikacja
+  mutacyjna) + lekcja L51. Commity: 66462c3.
+- Stan końcowy sesji: test:all 2451/2451, build 51/2075.0 kB.
