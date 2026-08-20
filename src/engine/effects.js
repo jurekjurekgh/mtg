@@ -920,6 +920,48 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     return;
   }
+  if (effect.type === 'reveal_subtype_deal_damage') {
+    // M158/Batch 39 (Invasion of the Giants II): „Then you may reveal a
+    // Giant card from your hand. When you do, this Saga deals 2 damage to
+    // target opponent or planeswalker." — blokująca decyzja gracza
+    // (pendingRevealChoice): ujawnij kartę podtypu (obrażenia) albo zrezygnuj.
+    const controllerId = sourceObject.controllerId;
+    const subtype = effect.subtype ?? null;
+    const cardIds = state.zones.hand.filter((id) => {
+      const card = state.objects.get(id);
+      return card && card.controllerId === controllerId
+        && subtype != null && (card.subtypes ?? []).includes(subtype);
+    });
+    if (cardIds.length === 0) return;
+    state.pendingRevealChoice = {
+      playerId: controllerId,
+      cardIds: [...cardIds],
+      amount: effect.amount ?? 2,
+      sourceId: sourceObject.id,
+      cardId: sourceObject.cardId ?? null,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('reveal_choice_required', {
+      playerId: controllerId, subtype, count: cardIds.length, amount: effect.amount ?? 2,
+    }));
+    return;
+  }
+  if (effect.type === 'next_spell_discount') {
+    // M158/Batch 39 (Invasion of the Giants III): „The next Giant spell you
+    // cast this turn costs {2} less to cast." — rabat jednorazowy (konsumowany
+    // przez cast*), wygasa w cleanup („this turn").
+    const controllerId = sourceObject.controllerId;
+    const entry = { playerId: controllerId, amount: effect.amount ?? 2, subtype: effect.subtype ?? null };
+    state.pendingSpellDiscounts = [
+      ...(state.pendingSpellDiscounts ?? []).filter((d) => !(d.playerId === controllerId && d.subtype === entry.subtype)),
+      entry,
+    ];
+    state.events.push(event('spell_discount_armed', {
+      playerId: controllerId, amount: entry.amount, subtype: entry.subtype,
+    }));
+    return;
+  }
   if (effect.type === 'apply_to_each_target') {
     // M158/Batch 39 (Wrap in Flames): „deals 1 damage to EACH of up to three
     // target creatures. Those creatures can't block this turn." — generyczny

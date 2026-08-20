@@ -808,6 +808,9 @@ function describeEffect(e) {
     each_player_loses_life_fraction: () => 'każdy gracz traci część życia (zaokrąglone w górę)',
     becomes_subtype_until_end_of_turn: () => 'zmiana podtypu i utrata keyworda do końca tury',
     apply_to_each_target: () => 'ten sam efekt na każdym z celów',
+    reveal_subtype_deal_damage: () => 'możesz ujawnić kartę z ręki — obrażenia przeciwnika',
+    next_spell_discount: () => 'następny czar podtypu tańszy w tej turze',
+    return_card_from_graveyard_to_hand: () => 'zwrot karty z grobu do ręki',
     ferocious_draw_discard: () => 'ferocious: dobierz, potem odrzuć',
     fertile_thicket_reveal: () => 'odsłoń wierzch biblioteki',
     goad: () => 'goad (musi atakować)',
@@ -1919,6 +1922,15 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_look_top_choice': {
       // Gurmag Drowner — wybierz kartę z wierzchu do ręki.
       return `Weź do ręki: ${nameOfObjectId(cmd.cardId)}`;
+    }
+    case 'resolve_madness_cast': {
+      return cmd.cast
+        ? `Rzuć za koszt madness: ${nameOfObjectId(cmd.cardId)}`
+        : 'Przełóż do cmentarza (rezygnacja z madness)';
+    }
+    case 'resolve_reveal_choice': {
+      if (cmd.cardId == null) return 'Nie ujawniaj (bez obrażeń)';
+      return `Ujawnij z ręki: ${nameOfObjectId(cmd.cardId)} — obrażenia przeciwnika`;
     }
     case 'resolve_satyr_look_choice': {
       // Satyr Wayfinder — wybierz ląd z odsłoniętych do ręki albo zrezygnuj.

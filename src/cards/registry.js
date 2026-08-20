@@ -87,6 +87,12 @@ export function defineCard(data) {
       timeCounters: data.suspend.timeCounters ?? 4,
     }) : null,
     // Warp (EOE, Weftblade Enhancer): alternatywny koszt { cost, colors } z ręki.
+    // M158/Batch 39 (Revolutionist, CR 702.34): Madness — alternatywny koszt
+    // rzutu po odrzuceniu do exile.
+    madness: data.madness ? Object.freeze({
+      cost: data.madness.cost,
+      colors: Object.freeze([...(data.madness.colors ?? [])]),
+    }) : null,
     warp: data.warp ? Object.freeze({
       cost: data.warp.cost,
       colors: Object.freeze([...(data.warp.colors ?? [])]),

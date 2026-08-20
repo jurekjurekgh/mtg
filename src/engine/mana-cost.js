@@ -71,10 +71,34 @@ export function parseManaCost(manaCostStr) {
  * Zwraca 0, gdy nic nie redukuje. Zdolność żyje na permanencie — znika
  * natychmiast po jego odejściu z pola bitwy (liczona przy każdym odczycie).
  */
+/**
+ * M158/Batch 39 (Invasion of the Giants III): zużycie jednorazowego rabatu
+ * na następny czar podtypu — wywoływane po UDANYM rzucie czaru/permanentu
+ * (rabat „the NEXT ... spell" nie zostaje na kolejne zaklęcia).
+ */
+export function consumePendingSpellDiscount(state, object) {
+  if (!state || !object?.controllerId || !(state.pendingSpellDiscounts ?? []).length) return;
+  const idx = (state.pendingSpellDiscounts ?? []).findIndex((d) => {
+    if (d.playerId !== object.controllerId) return false;
+    if (d.subtype != null && !(object.subtypes ?? []).includes(d.subtype)) return false;
+    return (d.amount ?? 0) > 0;
+  });
+  if (idx === -1) return;
+  state.pendingSpellDiscounts = state.pendingSpellDiscounts.filter((_, i) => i !== idx);
+}
+
 export function costReductionForSpell(state, object) {
   if (!state || !object?.controllerId) return 0;
   const spellTypes = object.types ?? [];
   let reduction = 0;
+  // M158/Batch 39 (Invasion of the Giants III): jednorazowy rabat na następny
+  // czar podtypu („The next Giant spell ... costs {2} less") — konsumowany
+  // przy udanym rzucie (consumePendingSpellDiscount), wygasa w cleanup.
+  for (const discount of state.pendingSpellDiscounts ?? []) {
+    if (discount.playerId !== object.controllerId) continue;
+    if (discount.subtype != null && !(object.subtypes ?? []).includes(discount.subtype)) continue;
+    reduction += discount.amount ?? 0;
+  }
   for (const candidate of state.objects.values()) {
     if (candidate?.zone !== 'battlefield' || candidate.controllerId !== object.controllerId) continue;
     for (const ability of candidate.abilities ?? []) {

@@ -2038,6 +2038,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Ramp: poświęcenie landa → 2 basic landy tapped (od M70 trigger żyje).
         return finish(cmd.sacrificeLandId != null ? 40 : 10);
       }
+      case 'resolve_madness_cast': {
+        // M158/Batch 39: rzut za koszt madness to niemal zawsze zysk (karta
+        // za pół ceny); odmowa tylko gdy many brak.
+        return finish(cmd.cast ? 60 : 0);
+      }
+      case 'resolve_reveal_choice': {
+        // M158/Batch 39 (Invasion of the Giants II): ujawnij Olbrzyma za 2
+        // obrażenia przeciwnika — darmowy damage, prawie zawsze warto.
+        return finish(cmd.cardId != null ? 40 + (cmd.amount ?? 2) * 4 : 0);
+      }
       case 'resolve_satyr_look_choice': {
         // Satyr Wayfinder: wzięcie lądu do ręki = pewna mana (zawsze lepsze niż
         // rezygnacja, bo reszta i tak idzie do grobu). Ląd premiami za manabazę.

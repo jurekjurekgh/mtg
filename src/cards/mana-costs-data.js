@@ -308,4 +308,6 @@ export const MANA_COSTS = {
   "dire-fleet-ravager": "{3}{B}{B}",
   "wishful-merfolk": "{1}{U}",
   "wrap-in-flames": "{3}{R}",
+  "invasion-of-the-giants": "{U}{R}",
+  "revolutionist": "{5}{R}",
 };

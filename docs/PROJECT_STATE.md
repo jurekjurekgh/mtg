@@ -1,7 +1,43 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-20 (M157: ADR 0022, fixy A–F, F4(a) wielocelowy trigger, L28 strażnik wycen)
+- **Ostatnia aktualizacja:** 2026-08-20 (M158: Batch 39 komplet 10/10 — Madness, Saga warunkowa, wielocelowe czary)
 - **Poprzednia:** 2026-08-20 (PR #65 scalony: M147–M155 — poniżej backfill)
+
+## M158 — Batch 39 (10 kart, lista właściciela 2026-08-20, PR #66)
+
+Transze A–E (commity d5c4361…8328f4b), każda samodzielnie zielona.
+
+1. **A — reuse:** Merfolk Mesmerist ({U},{T}: mill 2), Knight of the
+   Skyward Eye (oncePerTurn +3/+3), Breaching Hippocamp (notSelf w
+   creature_you_control), Squire's Lightblade (NOWY efekt
+   attach_self_to_target — ETB-attach equipmentu do wybranego stwora).
+2. **B — proste mechaniki:** Exterminator Magmarch (NOWY efekt regenerate —
+   tarcza w istniejących regenerationShields; trigger multiplayer martwy
+   w 1v1 — warunek anotherOpponentExists), Dire Fleet Ravager (NOWY
+   each_player_loses_life_fraction 1/3 zaokr. w górę), Wishful Merfolk
+   (NOWY becomes_subtype_until_end_of_turn: nadpisanie podtypów + utrata
+   keyworda do EOT, cleanup przywraca — wzorzec originalBeforeAnimation).
+3. **C:** Wrap in Flames — NOWY wrapper apply_to_each_target (efekty per
+   cel) na czarach variableTargets (enumeracja 0..3 istnieje); wycena
+   bota per cel (nie pali własnych stworów).
+4. **D:** Invasion of the Giants (Saga): I scry 2; II NOWY
+   reveal_subtype_deal_damage (pendingRevealChoice — pełna checklista
+   nowego pendingu); III NOWY next_spell_discount (rabat na następny czar
+   podtypu, konsumowany przy rzucie, wygasa w cleanup).
+5. **E:** Revolutionist — NOWA MECHANIKA **Madness (CR 702.34)**:
+   odrzucenie → exile + resolve_madness_cast (rzut za koszt madness,
+   timing ignorowany, albo cmentarz); choke point resolve_discard_choice;
+   łańcuch pola madness przez registry→materialize→addObject (L21).
+
+Talie: azorius +3 (Mesmerist/Hippocamp/Wishful), green +Knight +4 Plains,
+mechanicy +Lightblade +3 Plains, black +2 +4 Mountain, red +Wrap +1 M,
+spellslinger +Invasion +Revolutionist +2 M. Seedy przelosowane (L25).
+Strażniki wszystko złapały w trakcie: M122 (etykieta), M137 (łańcuch pól),
+repo-decks (snapshoty) — naprawione od razu.
+
+**Stan:** `npm test` **2474/2474**, `test:slow` 9/9 (test:all 2483), build
+**51 modułów / 2121.4 kB**. Katalog: 318 wspieranych kart. ⚠ GH_TOKEN
+wygasł przy transzy D — commity D/E czekają na push po reconnect.
 
 ## M157 — uwagi właściciela z review PR #66 (2026-08-20, PR #66)
 

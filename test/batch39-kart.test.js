@@ -17,6 +17,7 @@ import { effectiveKeywords, effectivePower } from '../src/engine/permanents.js';
 import { clearStatModifiers } from '../src/engine/permanents.js';
 import { applyEffect } from '../src/engine/effects.js';
 import { legalAttackerOptions } from '../src/engine/combat.js';
+import { effectiveSpellManaCost } from '../src/engine/spells.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -247,4 +248,125 @@ test('C2: bot rzuca Wrap we WROGÓW, nie we własne stwory (wycena wariantów)',
     const hitsOwn = (choice.targets ?? []).includes('mine');
     assert.ok(!hitsOwn, `bot nie pali własnego stwora: ${JSON.stringify(choice)}`);
   }
+});
+
+
+// ---- Transza D: Invasion of the Giants (Saga) ----
+test('D1: rozdział II — dobierz + ujawnij Olbrzyma za 2 obrażenia przeciwnika', () => {
+  const state = game();
+  putCard(state, 'lib0', 'highland-game', 'p1', 'library');
+  const saga = putCard(state, 'saga', 'invasion-of-the-giants', 'p1');
+  addObject(state, {
+    id: 'giant', instanceId: 'i-giant', cardId: 'highland-game', controllerId: 'p1', ownerId: 'p1',
+    zone: 'hand', kind: 'spell', power: null, toughness: null, manaCost: 3,
+    abilities: [], keywords: [], subtypes: ['Giant'], types: ['Creature'], colors: ['R'],
+  });
+  const foeLife = state.players.find((pl) => pl.id === 'p2').life;
+
+  applyEffect(state, REGISTRY.get('invasion-of-the-giants').saga.chapters[1][0], saga, []);
+  applyEffect(state, REGISTRY.get('invasion-of-the-giants').saga.chapters[1][1], saga, []);
+
+  assert.equal(state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === 'p1').length, 2,
+    'dobrano kartę (2 karty w ręce)');
+  assert.ok(state.pendingRevealChoice, 'decyzja ujawnienia otwarta');
+  const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_reveal_choice');
+  assert.ok(offers.some((c) => c.cardId === 'giant'), 'wariant ujawnienia Olbrzyma');
+  assert.ok(offers.some((c) => c.cardId == null), 'wariant rezygnacji');
+
+  const reveal = offers.find((c) => c.cardId === 'giant');
+  assert.ok(execute(state, reveal).ok);
+  assert.equal(state.players.find((pl) => pl.id === 'p2').life, foeLife - 2, 'przeciwnik traci 2 życia');
+  assert.equal(state.pendingRevealChoice, null, 'decyzja zamknięta');
+  assert.ok(state.events.some((e) => e.type === 'card_revealed'), 'karta ujawniona (jawna)');
+});
+
+test('D2: rozdział II bez Olbrzyma w ręce — brak decyzji', () => {
+  const state = game();
+  const saga = putCard(state, 'saga2', 'invasion-of-the-giants', 'p1');
+  for (const e of REGISTRY.get('invasion-of-the-giants').saga.chapters[1]) applyEffect(state, e, saga, []);
+  assert.equal(state.pendingRevealChoice, null, 'brak Olbrzyma — brak decyzji');
+});
+
+test('D3: rozdział III — następny czar Olbrzyma tańszy o {2}, rabat jednorazowy', () => {
+  const state = game();
+  const saga = putCard(state, 'saga3', 'invasion-of-the-giants', 'p1');
+  applyEffect(state, REGISTRY.get('invasion-of-the-giants').saga.chapters[2][0], saga, []);
+  assert.equal((state.pendingSpellDiscounts ?? []).length, 1, 'rabat uzbrojony');
+
+  addObject(state, {
+    id: 'gspell', instanceId: 'i-gspell', cardId: 'wrap-in-flames', controllerId: 'p1', ownerId: 'p1',
+    zone: 'hand', kind: 'spell', manaCost: 6,
+    abilities: [], keywords: [], subtypes: ['Giant'], types: ['Sorcery'], colors: ['R'],
+    spell: { timing: 'sorcery', targets: [], effects: [{ type: 'draw_cards', amount: 0 }] },
+  });
+  const costBefore = effectiveSpellManaCost(state, state.objects.get('gspell'));
+  assert.equal(costBefore, 4, '6 - 2 rabatu = 4');
+
+  addMana(state, 'p1', 4);
+  const cast = playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'gspell');
+  assert.ok(cast, 'czar rzucalny za 4 po rabacie');
+  assert.ok(execute(state, cast).ok);
+  assert.equal((state.pendingSpellDiscounts ?? []).length, 0, 'rabat skonsumowany (jednorazowy)');
+});
+
+
+// ---- Transza E: Revolutionist + Madness (CR 702.34) ----
+test('E1: odrzucenie Revolutionista — exile + decyzja; rzut za {3}{R} wystawia stwora', () => {
+  const state = game();
+  putCard(state, 'rev', 'revolutionist', 'p1', 'hand');
+  state.pendingDiscardChoice = {
+    playerId: 'p1', count: 1, handIds: ['rev'], purpose: 'effect',
+    sourceCardId: null, restorePriorityTo: 'p1',
+  };
+  assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'rev' }).ok);
+
+  const exiled = [...state.objects.values()].find((o) => o.cardId === 'revolutionist' && o.zone === 'exile');
+  assert.ok(exiled, 'karta w exile (nie w grobie) — CR 702.34a');
+  assert.equal(exiled.madnessReady, true);
+  assert.ok(state.pendingMadnessCast, 'decyzja madness otwarta');
+
+  addMana(state, 'p1', 4, { colors: ['R'] });
+  const cast = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_madness_cast' && c.cast);
+  assert.ok(cast, 'oferta rzutu za madness');
+  assert.ok(execute(state, cast).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+
+  const onBf = [...state.objects.values()].find((o) => o.cardId === 'revolutionist' && o.zone === 'battlefield');
+  assert.ok(onBf, 'Revolutionist wystawiony za {3}{R}');
+  assert.equal(state.players.find((pl) => pl.id === 'p1').mana, 0, 'wydano 4 many (koszt madness)');
+});
+
+test('E2: odmowa madness — karta trafia do cmentarza', () => {
+  const state = game();
+  putCard(state, 'rev2', 'revolutionist', 'p1', 'hand');
+  state.pendingDiscardChoice = {
+    playerId: 'p1', count: 1, handIds: ['rev2'], purpose: 'effect',
+    sourceCardId: null, restorePriorityTo: 'p1',
+  };
+  execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'rev2' });
+  const decline = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_madness_cast' && !c.cast);
+  assert.ok(decline, 'oferta rezygnacji');
+  assert.ok(execute(state, decline).ok);
+  const inGrave = [...state.objects.values()].find((o) => o.cardId === 'revolutionist' && o.zone === 'graveyard');
+  assert.ok(inGrave, 'karta przełożona do cmentarza');
+});
+
+test('E3: ETB Revolutionista — zwrot instantu/sorcery z grobu do ręki', () => {
+  const state = game();
+  putCard(state, 'gySpell', 'wrap-in-flames', 'p1', 'graveyard');
+  const rev = putCard(state, 'rev3', 'revolutionist', 'p1');
+  const ability = REGISTRY.get('revolutionist').abilities[0];
+  state.pendingTriggerTargets.push({
+    playerId: 'p1', sourceId: rev.id, cardId: rev.cardId,
+    ability: Object.freeze(JSON.parse(JSON.stringify(ability))), candidates: [],
+    allowNone: false, fixedTargetIds: [], extra: {},
+  });
+  const offer = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_trigger_target' && c.targetId === 'gySpell');
+  assert.ok(offer, 'instant/sorcery z grobu w kandydatach');
+  assert.ok(execute(state, offer).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+  const inHand = [...state.objects.values()].find((o) => o.cardId === 'wrap-in-flames' && o.zone === 'hand');
+  assert.ok(inHand, 'czar wrócił do ręki');
 });

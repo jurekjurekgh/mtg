@@ -7187,6 +7187,53 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // ---- Batch 39 — transza D: Saga z rozdziałami warunkowymi ----
+  defineCard({
+    id: 'invasion-of-the-giants', name: 'Invasion of the Giants', set: 'KHM',
+    types: ['Enchantment'], subtypes: ['Saga'], colors: ['R', 'U'], manaCost: 2,
+    oracleText: '(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — Scry 2.\nII — Draw a card. Then you may reveal a Giant card from your hand. When you do, this Saga deals 2 damage to target opponent or planeswalker.\nIII — The next Giant spell you cast this turn costs {2} less to cast.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/f/7f5075a0-c72a-474c-937c-95dc9205d14f.jpg?1783928196',
+    saga: {
+      chapters: [
+        // I — Scry 2.
+        [{ type: 'scry', amount: 2 }],
+        // II — dobierz + opcjonalne ujawnienie Olbrzyma za 2 obrażenia
+        // przeciwnika (pendingRevealChoice; w 1v1 planeswalker nie istnieje).
+        [{ type: 'draw_cards', amount: 1 }, { type: 'reveal_subtype_deal_damage', subtype: 'Giant', amount: 2 }],
+        // III — następny czar Olbrzyma w tej turze tańszy o {2} (rabat
+        // konsumowany przez rzut; w katalogu nie ma jeszcze Olbrzymów —
+        // decyzja właściciela 2026-08-19: efekty warunkowe kodujemy TERAZ).
+        [{ type: 'next_spell_discount', amount: 2, subtype: 'Giant' }],
+      ],
+    },
+    artId: null, plan: null,
+    support: { status: 'supported', limitations: [] },
+    notes: ['II: planeswalker-cel nie istnieje w 1v1 — obrażenia idą w przeciwnika', 'III: zadziała od razu po dodaniu pierwszej karty z podtypem Giant'],
+  }),
+
+  // ---- Batch 39 — transza E: Madness (CR 702.34) ----
+  defineCard({
+    id: 'revolutionist', name: 'Revolutionist', set: 'MH2',
+    types: ['Creature'], subtypes: ['Human', 'Wizard'], colors: ['R'],
+    power: 3, toughness: 3, manaCost: 6,
+    oracleText: 'When this creature enters, return target instant or sorcery card from your graveyard to your hand.\nMadness {3}{R} (If you discard this card, discard it into exile. When you do, cast it for its madness cost or put it into your graveyard.)',
+    imageUri: 'https://cards.scryfall.io/large/front/b/b/bb8f3008-a3ba-4f73-afa6-ad81074b3196.jpg?1783926839',
+    madness: { cost: 4, colors: ['R'] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          requiresTarget: { type: 'instant_or_sorcery_card_in_graveyard', controlledBy: 'controller', optional: true },
+        },
+        effect: { type: 'return_card_from_graveyard_to_hand' },
+      }),
+    ],
+    artId: null, plan: null,
+    support: { status: 'supported', limitations: [] },
+    notes: ['Madness: odrzucenie trafia do exile z jednorazową decyzją rzutu za {3}{R} (timing ignorowany — CR 702.34a) albo przełożenia do grobu'],
+  }),
+
 ]);
 
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */

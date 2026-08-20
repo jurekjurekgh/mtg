@@ -38,6 +38,8 @@ export function gameObjectDataOf(card) {
     if (card.suspend) data.suspend = card.suspend;
     // Warp (EOE, Weftblade Enhancer): alternatywny koszt { cost, colors } z ręki.
     if (card.warp) data.warp = card.warp;
+    // M158/Batch 39: Madness (CR 702.34) — alternatywny koszt po odrzuceniu.
+    if (card.madness) data.madness = card.madness;
     // Backup (Gloomfang Mauler): ETB trigger z decyzją resolve_backup.
     if (card.backup) data.backup = card.backup;
     // Devour (Gorger Wurm): ETB z sekwencyjną decyzją resolve_devour_choice.

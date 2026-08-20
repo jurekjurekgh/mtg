@@ -640,6 +640,16 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         const sourceName = objectOrLki(e.source, e.sourceCardId);
         return `${sourceName} — obrażenia przepadają: cel opuścił pole bitwy`;
       }
+      case 'madness_ready_required':
+        return `${nameOf(e.cardId)} — odrzucona z madness: możesz rzucić za {${e.cost ?? '?'}} albo przełożyć do cmentarza`;
+      case 'madness_declined':
+        return `${nameOf(e.cardId)} — madness odrzucona, karta do cmentarza`;
+      case 'reveal_choice_required':
+        return `możesz ujawnić kartę (${e.subtype ?? '?'}) z ręki — ${e.amount ?? 2} obrażenia przeciwnika`;
+      case 'reveal_choice_resolved':
+        return e.cardId != null ? `ujawnia kartę — ${e.amount ?? 2} obrażenia przeciwnika` : 'nie ujawnia karty';
+      case 'spell_discount_armed':
+        return `następny czar (${e.subtype ?? 'dowolny'}) w tej turze tańszy o {${e.amount ?? 2}}`;
       case 'regeneration_shield_added': return `${nameOf(e.cardId)} — tarcza regeneracji (następne zniszczenie w tej turze)`;
       case 'permanent_regenerated': return `${nameOf(e.cardId)} zostaje zregenerowany — odtapowany, bez obrażeń`;
       case 'damage_shield_created': {
