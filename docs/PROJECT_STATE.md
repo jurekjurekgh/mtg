@@ -3,6 +3,42 @@
 - **Ostatnia aktualizacja:** 2026-08-20 (M162: uwagi właściciela A/B/C — talie „Zapisz jako...", Bell bota, modal Ratsów)
 - **Poprzednia:** 2026-08-20 (M161: audyt PR #67 + gotowość madness na czary — routing po kind)
 
+## M164 — etap Sagi jako badge tekstowy (2026-08-20, PR #68)
+
+Pytanie właściciela: jak oznaczony jest etap Sagi na karcie? Stan przed:
+generyczny licznik „lore×N" + lista rozdziałów w rulesText (M159/Z4), bez
+badge'a AKTYWNEGO rozdziału. Fix (buildStateOverlay): badge
+„Rozdział II (2/3)" (lore = numer rozdziału, CR 714.3), dedup licznika
+lore na Sadze, SAGA_ROMAN wspólny dla rulesText i badge, CSS
+.ovl-badge.saga (fiolet). Testy: `test/m164-saga-etap-badge.test.js` (6).
+
+## M163 — uwagi właściciela z testów A/B (2026-08-20, PR #68)
+
+Plan: `docs/plans/PLAN_2026-08-20-m163-uwagi-wlasciciela-ab.md`.
+Testy: `test/m163-uwagi-wlasciciela.test.js` (5, RED→GREEN 5/5).
+
+- **A (Exploit Butchera — powtórka klasy M162/C + brak grupowania):**
+  resolve_exploit_choice bez case'a w commandLabel i bez klucza
+  choiceRequestGroupKey → N identycznych „Exploit (wybór poświęcenia)".
+  Etykieta nazywa poświęcanego stwora + skip; JEDNA grupa z tytułem
+  (pendingExploit.sourceCardId w playerView, tylko właściciel — wzorzec
+  M162/C). Przegląd systematyczny COMMAND_TYPES × label × groupKey (zlecenie
+  właściciela): ta sama klasa w color/land_type/moonlit/optional_draw/
+  optional_trigger_choice (identyczne etykiety) i epic (cel w etykiecie —
+  klasa M151 — + grupowanie) — wszystkie naprawione. **Strażnik A3**
+  (skan źródła render.js): każdy typ komendy ma etykietę (case albo
+  świadomy allowlist), każda decyzja resolve_* ma klucz grupowania (albo
+  świadomy allowlist) — nowy typ decyzji bez nich czerwieni test
+  z instrukcją (sygnał klasy L52).
+- **B (inicjatywa):** po ODZYSKANIU inicjatywy komunikat „obejmuje ją
+  po raz pierwszy i zagłębia się w Podziemia" był nieprawdziwy (gracz
+  nadal w lochu, pokój 3). Root cause: firstTime = „zmiana posiadacza";
+  poprawnie = „wejście do Podziemi teraz" (undercityProgress == 0).
+  Mechanika venture bez zmian (awans pokoju przy każdym objęciu, CR 725.4).
+
+**Stan (M163+M164):** `npm test` **2527/2527** (fast), `test:slow` **9/9**,
+build **52 moduły / 2147.1 kB**.
+
 ## M162 — uwagi właściciela z testów A/B/C (2026-08-20, PR #68)
 
 Plan: `docs/plans/PLAN_2026-08-20-m162-uwagi-wlasciciela-abc.md`.

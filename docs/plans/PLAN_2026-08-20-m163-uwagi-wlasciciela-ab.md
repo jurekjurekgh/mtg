@@ -35,7 +35,7 @@ dokładny przegląd pozostałych zdolności pod kątem obu objawów.
   każdym objęciu — CR 725.4; brak akcji tylko gdy gracz już posiada
   inicjatywę). Komunikat „obejmuje ją po raz pierwszy i zagłębia się
   w Podziemia" prawdziwy wyłącznie przy wejściu do pokoju 1.
-- [ ] **4. Domknięcie:** PROJECT_STATE (M163), handoff, opis PR.
+- [x] **4. Domknięcie:** PROJECT_STATE (M163), handoff, opis PR.
 
 ## Kryteria ukończenia
 
