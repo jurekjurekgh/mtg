@@ -105,3 +105,15 @@ Wszystkie 10 znalezisk naprawione. Każda zielona transza (`npm test` +
 
 Nowy detektor Testera (Z7, `detectTokenRawId`) — strażnik wycieku raw id
 tokenu; zweryfikowany na transkrypcie sprzed naprawy (6 trafień) i po (0).
+
+## Obserwacje poza zakresem (pre-existing, nie naprawiane)
+
+- **`test/bot-benchmark.test.js`** — losowy async flake „Ta karta nie ma
+  drugiej strony (craft)" po zakończeniu testu (resource leak harnessu B0).
+  Pre-existing; zmiany bota (Z3/Z4/Z9/Z10) to wyłącznie wycena w
+  heuristic-bot.js — nie dotykają ścieżki craft/transform w engine.
+- **Steelfin Whale** (living weapon) — trigger wejścia artefaktu bywa
+  „bez efektu (zerowy wynik)" przy wejściu na pole bitwy. Pre-existing
+  interakcja innej karty, poza listą Batch 38.
+- **Cuombajj Witches „Cel obrażeń"** (oś 3) — obowiązkowy wybór celu, ptaszek
+  wyciszenia niepotrzebny; to nie błąd, tylko zgłoszenie detektora Oś 3.
