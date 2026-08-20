@@ -56,13 +56,16 @@ nowych+starych efektów są rozstrzygane dobrze, czy bot gra efektywnie.
 
 ## Znaleziska (10) — docs/audits/AUDYT_BATCH38_ZYWTESTER_2026-08-20.md
 
-- Z1 [log] Fear of Burning Alive „(?)" — brak targetCardId w delirium damage_dealt
-- Z2 [log] „4 liczników czasu" — sztywna odmiana (session.js:788)
-- Z3 [bot] Courage in Crisis buforuje stwora przeciwnika (add_counter)
-- Z4 [bot] Ruinous Rampage zły tryb (damage_each_opponent w pętli czaru)
-- Z5 [ui] odwrócona kolejność trybów modalnych (unshift)
-- Z6 [tester] warp „Rzuć za warp:" nie łapane przez pickAction
-- Z7 [ui] nazwa tokenu = raw id (token_squirrel/token_wizard)
-- Z8 [engine] Sterling Keykeeper no-op self-tap
-- Z9 [bot] atak 0/1 tokenem Wizard
-- Z10 [bot] Pristine Talisman darmowe życie ignorowane
+Wszystkie naprawione (testy regresyjne w test/batch38-audit-fixes.test.js).
+
+- [x] Z1 [log] Fear of Burning Alive „(?)" — LKI cardId w delirium damage_dealt
+- [x] Z2 [log] „4 liczników czasu" — polishPlural (session.js)
+- [x] Z3 [bot] Courage in Crisis buforuje stwora przeciwnika (add_counter)
+- [x] Z4 [bot] Ruinous Rampage zły tryb (damage_each_opponent w pętli czaru)
+- [x] Z5 [ui] odwrócona kolejność trybów modalnych (unshift)
+- [x] Z6 [tester] warp „Rzuć za warp:" łapane przez pickAction
+- [x] Z7 [ui] nazwa tokenu zamiast raw id (playerView/session/render)
+- [x] Z8 [engine] Sterling Keykeeper brak no-op self-tap
+- [x] Z9 [bot] brak ataku 0/1 bez drenażu/ewazji
+- [x] Z10 [bot] Pristine Talisman darmowe życie tapnięciem
+- [x] nowy detektor Testera: detectTokenRawId (Z7)

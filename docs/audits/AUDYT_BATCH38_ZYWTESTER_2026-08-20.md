@@ -73,4 +73,35 @@ odtworzone w transkrypcie.
 
 ## Naprawy i testy regresyjne
 
-(wypełniane w trakcie — każda zielona transza = osobny commit)
+Wszystkie 10 znalezisk naprawione. Każda zielona transza (`npm test` +
+`npm run build`) = osobny commit na PR #65. Testy regresyjne w
+`test/batch38-audit-fixes.test.js`.
+
+- **Z1** — `damage_dealt` z `resolve_delirium_target` niesie `sourceCardId`/
+  `targetCardId` (LKI); log pokazuje nazwę celu, nie „(?)". (game-state.js)
+- **Z2** — `card_suspended` używa `polishPlural` (licznik/liczniki/liczników),
+  zgodnie z render.js/M151. (session.js)
+- **Z3** — `add_counter` z pozytywnym licznikiem premiuje WŁASNY stwór, mocno
+  karze wzmacnianie stwora przeciwnika (Courage in Crisis). (heuristic-bot.js)
+- **Z4** — `damage_each_opponent` / `lose_life_each_opponent` wyceniane w
+  pętli czarów (4×N, dobicie bonus); bot wybiera tryb obrażeń nad
+  bezsensownym wygnaniem (Ruinous Rampage). (heuristic-bot.js)
+- **Z5** — tryby modalne iterowane od końca w `legalSpellCasts`, więc po
+  `unshift` w playerView pojawiają się w kolejności Oracle (mode 0 pierwszy).
+  (spells.js)
+- **Z6** — tester: `pickAction` łapie „Rzuć za warp:" (wzorzec nowej
+  mechaniki Warp). (tools/table-tester/run-game.mjs)
+- **Z7** — tokeny niosą jawną nazwę (`object.name`) w playerView battlefield;
+  `nameOfObject`/`nameOfObjectId` wolą ją od `nameOf(cardId)` (raw id).
+  (game-state.js, session.js, render.js)
+- **Z8** — brak oferty no-op self-tap: zdolność z kosztem {T} nie celuje
+  w własne źródło efektem `tap_permanent` (Sterling Keykeeper).
+  (abilities.js)
+- **Z9** — atakujący o mocy 0 (0/1 token) bez drenażu/ewazji nie atakuje
+  (wartość poniżej passu mimo premii „otwartej presji"). (heuristic-bot.js)
+- **Z10** — zdolność many z riderem `gain_life` (Pristine Talisman) nie
+  dostaje kary M128 „tapowanie na zapas" — darmowe życie zawsze warte
+  tapnięcia. (heuristic-bot.js)
+
+Nowy detektor Testera (Z7, `detectTokenRawId`) — strażnik wycieku raw id
+tokenu; zweryfikowany na transkrypcie sprzed naprawy (6 trafień) i po (0).
