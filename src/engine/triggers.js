@@ -1319,7 +1319,7 @@ export function processTriggers(state, recentEvents) {
     // legend). Wcześniej skan obejmował wyłącznie zgony SBA (creature_destroyed)
     // i object_moved — poświęcenia (Village Rites, devour) i zniszczenia
     // (Bone Splinters, Shatter) cicho gubiły triggery dies.
-    const fireDeathTriggers = (died) => {
+    const fireDeathTriggers = (died, simultaneousFellows = []) => {
       markDescended(died);
       if (!died) return;
       for (const ability of abilitiesOnDeath(died)) {
@@ -1329,6 +1329,22 @@ export function processTriggers(state, recentEvents) {
         if (ability?.trigger?.event === 'dies' || ability?.trigger?.event === 'any_creature_dies') {
           // M67 (Guildsworn): LKI „wasn't blocking" — flaga z chwili śmierci.
           tryFire(state, ability, died, [], events, { wasBlocking: died?.isBlockingThisCombat === true });
+        }
+      }
+      // M160/A (Selhoff Occultist, CR 603.10a): przy JEDNOCZESNYCH zgonach
+      // (jeden przebieg SBA — walka, masowe -X/-X) zdolności
+      // any_creature_dies stworów, które zginęły RAZEM z `died`, też odpalają
+      // — „patrzą wstecz” na stół sprzed zdarzenia. Pętla po polu bitwy niżej
+      // ich nie widzi (leżą już w grobie), więc czytamy LKI współpoległych
+      // ze zdarzeń tej samej partii SBA. Własna śmierć (fellow === died)
+      // odpaliła wyżej — tu wyłącznie CUDZE zgony, więc excludeSelf
+      // („another creature dies”) również się liczy.
+      for (const fellow of simultaneousFellows) {
+        if (!fellow || fellow.id === died.id) continue;
+        for (const ability of abilitiesOnDeath(fellow)) {
+          if (ability?.trigger?.event === 'any_creature_dies') {
+            tryFire(state, ability, fellow, [], events);
+          }
         }
       }
       for (const source of state.objects.values()) {
@@ -1366,15 +1382,28 @@ export function processTriggers(state, recentEvents) {
       // Finality (exile) NIE uruchamia triggera „dies" (CR 122.1b — obiekt
       // nie umiera, jest wygnany).
       if (ev.toZone === 'exile') return;
-      fireDeathTriggers(state.objects.get(ev.toId));
+      // M160/A: współzgony tej samej partii SBA (simultaneousIds) — LKI
+      // poległych źródeł z ich zdarzeń śmierci w bieżącej kolejce skanu.
+      const fellows = (ev.simultaneousIds ?? []).length > 1
+        ? queue
+          .filter((sibling) => sibling !== ev && sibling.type === 'creature_destroyed'
+            && sibling.toZone !== 'exile'
+            && (ev.simultaneousIds ?? []).includes(sibling.fromId))
+          .map((sibling) => state.objects.get(sibling.toId) ?? sibling.object)
+        : [];
+      // M160/A: TOKEN po śmierci przestaje istnieć (SBA CR 704.5e usuwa
+      // trupa z grobu) — bez fallbacku na LKI zdarzenia śmierć tokena była
+      // NIEWIDZIALNA dla triggerów any_creature_dies (fireDeathTriggers
+      // dostawał undefined i wychodził).
+      fireDeathTriggers(state.objects.get(ev.toId) ?? ev.object, fellows);
     }
     if (ev.type === 'permanent_sacrificed') {
       if (ev.toZone === 'exile') return; // finality
-      fireDeathTriggers(state.objects.get(ev.objectId));
+      fireDeathTriggers(state.objects.get(ev.objectId) ?? ev.object);
     }
     if (ev.type === 'permanent_destroyed') {
       if (ev.toZone === 'exile') return; // finality
-      fireDeathTriggers(state.objects.get(ev.objectId));
+      fireDeathTriggers(state.objects.get(ev.objectId) ?? ev.object);
     }
     // „Whenever one or more permanents you control leave the battlefield"
     // (Nefarious Imp). Jedno zdarzenie = jedno odejście; CR 603.2 mówi
