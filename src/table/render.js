@@ -1077,6 +1077,12 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   }
   const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
   const parts = effects.filter((e) => e && typeof e.type === 'string' && e.type !== '').map(describeEffect).join(', ');
+  // M159/Z2 (Żywy Tester g7, Exterminator Magmarch): trigger z warunkiem
+  // multiplayer („if another opponent…”) jest w 1v1 martwy z definicji
+  // formatu — kafel mówi to wprost zamiast renderować pusty szum.
+  if (trigger.condition?.anotherOpponentExists) {
+    return 'Trigger wymaga drugiego przeciwnika — nieaktywny w grze 1v1';
+  }
   if (trigger.event === 'dies') return `Gdy ta karta umrze: ${parts}.`;
   if (trigger.event === 'combat_damage_to_player') return `Gdy zada obrażenia graczowi: ${parts}.`;
   if (trigger.event === 'enter_battlefield' && trigger.sacrificeIfUnpaid) return `Gdy wejdzie na pole bitwy: zapłać {${trigger.payMana ?? 0}} albo ją poświęć (płatność automatyczna).`;
@@ -1164,7 +1170,7 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
 }
 
 /** Tekst reguł do pola karty: keywordy, efekty czaru lub opis zdolności. */
-function rulesText(info) {
+export function rulesText(info) {
   if (info.faceDown) return '';
   const keywordLine = (info.keywords ?? []).map((kw) => KEYWORD_LABELS[kw] ?? kw).join(' ');
   const abilityLine = info.abilities && info.abilities.length

@@ -1,0 +1,210 @@
+== NOWA PARTIA: gracz=green vs bot=mechanicy, seed=11, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Forest
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Thornhide Wolves
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Basilisk Gate
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Etherium Sculptor
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Etherium Sculptor wchodzi na pole bitwy
+  [ROZGRYWKA]   • Etherium Sculptor zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Knight of the Skyward Eye
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Wybierasz, którą kartę odrzucić przy limicie ręki
+  >> Wybierz: Karta do odrzucenia (8 opcji)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Knight of the Skyward Eye Odrzuć: Death-Hood Cobra Odrzuć: Anthem of Champions Odrzuć: Deadly Recluse Odrzuć: Feral Invocation Odrzuć: Trade Route Envoy Odrzuć: Thornhide Wolves Odrzuć: Woolly Loxodon
+  [modal choice]   ▶ Odrzuć: Knight of the Skyward Eye
+  [modal choice]     Odrzuć: Death-Hood Cobra
+  [modal choice]     Odrzuć: Anthem of Champions
+  [modal choice]     Odrzuć: Deadly Recluse
+  [modal choice]     Odrzuć: Feral Invocation
+  [modal choice]     Odrzuć: Trade Route Envoy
+  [modal choice]     Odrzuć: Thornhide Wolves
+  [modal choice]     Odrzuć: Woolly Loxodon
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Lodestone Needle
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Lodestone Needle wchodzi na pole bitwy
+  [ROZGRYWKA]   • Lodestone Needle zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Lodestone Needle — cel odrzucony, trigger bez efektu
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Maritime Guard
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Maritime Guard wchodzi na pole bitwy
+  [ROZGRYWKA]   • Maritime Guard zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Etherium Sculptor
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Etherium Sculptor zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 19
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Fierce Empath
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Wybierasz, którą kartę odrzucić przy limicie ręki
+  >> Wybierz: Karta do odrzucenia (8 opcji)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Death-Hood Cobra Odrzuć: Anthem of Champions Odrzuć: Deadly Recluse Odrzuć: Fierce Empath Odrzuć: Feral Invocation Odrzuć: Trade Route Envoy Odrzuć: Thornhide Wolves Odrzuć: Woolly Loxodon
+  [modal choice]   ▶ Odrzuć: Death-Hood Cobra
+  [modal choice]     Odrzuć: Anthem of Champions
+  [modal choice]     Odrzuć: Deadly Recluse
+  [modal choice]     Odrzuć: Fierce Empath
+  [modal choice]     Odrzuć: Feral Invocation
+  [modal choice]     Odrzuć: Trade Route Envoy
+  [modal choice]     Odrzuć: Thornhide Wolves
+  [modal choice]     Odrzuć: Woolly Loxodon
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Gurmag Drowner
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Gurmag Drowner wchodzi na pole bitwy
+  [ROZGRYWKA]   • Gurmag Drowner zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Exploit: Nieprzyjaciel nie poświęca — zdolność odpada
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Etherium Sculptor, Maritime Guard
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Etherium Sculptor zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 19 → 18
+  [ROZGRYWKA]   • Maritime Guard zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 17
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Highland Game
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Wybierasz, którą kartę odrzucić przy limicie ręki
+  >> Wybierz: Karta do odrzucenia (8 opcji)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Highland Game Odrzuć: Anthem of Champions Odrzuć: Deadly Recluse Odrzuć: Fierce Empath Odrzuć: Feral Invocation Odrzuć: Trade Route Envoy Odrzuć: Thornhide Wolves Odrzuć: Woolly Loxodon
+  [modal choice]   ▶ Odrzuć: Highland Game
+  [modal choice]     Odrzuć: Anthem of Champions
+  [modal choice]     Odrzuć: Deadly Recluse
+  [modal choice]     Odrzuć: Fierce Empath
+  [modal choice]     Odrzuć: Feral Invocation
+  [modal choice]     Odrzuć: Trade Route Envoy
+  [modal choice]     Odrzuć: Thornhide Wolves
+  [modal choice]     Odrzuć: Woolly Loxodon
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Simian Simulacrum
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Squire's Lightblade
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Squire's Lightblade wchodzi na pole bitwy
+  [ROZGRYWKA]   • Squire's Lightblade zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Squire's Lightblade — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Squire's Lightblade — cel: Gurmag Drowner
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Squire's Lightblade wyposaża Gurmag Drowner
+  [ROZGRYWKA]   • Gurmag Drowner zyskuje: pierwsze uderzenie
+  [ROZGRYWKA]   • Squire's Lightblade — trigger się rozstrzyga
+  [ROZGRYWKA]   • Simian Simulacrum wchodzi na pole bitwy
+  [ROZGRYWKA]   • Simian Simulacrum zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Simian Simulacrum — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Simian Simulacrum — cel: Gurmag Drowner
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Gurmag Drowner dostaje +2 liczniki +1/+1 (razem 2)
+  [ROZGRYWKA]   • Simian Simulacrum — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Etherium Sculptor, Maritime Guard, Gurmag Drowner
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Gurmag Drowner zadaje 5 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 12
+  [ROZGRYWKA]   • Etherium Sculptor zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 12 → 11
+  [ROZGRYWKA]   • Maritime Guard zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 10
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Zagraj: Deadly Recluse (koszt 1G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Deadly Recluse
+  [ROZGRYWKA]   • Deadly Recluse wchodzi na pole bitwy
+  [ROZGRYWKA]   • Deadly Recluse zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Lodestone Needle — craft — przemiana artefaktu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Lodestone Needle rozstrzygnięta
+  [ROZGRYWKA]   • Nieprzyjaciel: Squire's Lightblade — pole bitwy → wygnanie
+  [ROZGRYWKA]   • Nieprzyjaciel: Lodestone Needle — pole bitwy → wygnanie
+  [ROZGRYWKA]   • Nieprzyjaciel: Guidestone Compass — wygnanie → pole bitwy
+  [ROZGRYWKA]   • Lodestone Needle przemienia się w Guidestone Compass
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Guidestone Compass — explore (odsłonięcie wierzchu biblioteki) → cel: Simian Simulacrum
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Island
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Guidestone Compass rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Gurmag Drowner, Simian Simulacrum
+  >> Wybierz: Deklaracja blokujących (3 opcje)
+  [combat wizard] blokuję 1 stworami: Deadly Recluse (1/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Deadly Recluse blokuje Simian Simulacrum
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Gurmag Drowner zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 10 → 6
+  [ROZGRYWKA]   • Simian Simulacrum zadaje 2 obrażenia (Deadly Recluse)
+  [ROZGRYWKA]   • Deadly Recluse zadaje 1 obrażenie (Simian Simulacrum)
+  [ROZGRYWKA]   • Simian Simulacrum ginie
+  [ROZGRYWKA]   • Deadly Recluse ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Vow of Wildness
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Guidestone Compass — explore (odsłonięcie wierzchu biblioteki) → cel: Gurmag Drowner
+== KONIEC PARTII == Koniec partii — wygrywa On
+
+--- krok 38 | Koniec partii — wygrywa On ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · 4/3 | Woolly Loxodon · 7 · Creature — Elephant Warrior · Morph · Morph {6}: możesz zagrać twarzą w dół jako 2/2 za {3}, potem obrócić za koszt Morph · 6/7 | Feral Invocation · 3 · Enchantment — Aura · Flash (błysk) · stwór: +2/+2 | Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Thornhide Wolves · 5 · Creature — Wolf · 4/5 | Fierce Empath · 3 · Creature — Elf · Gdy wejdzie na pole bitwy: szukaj w bibliotece do ręki. · 1/1 | Vow of Wildness · 3 · Enchantment — Aura · stwór: +3/+3 · stwór ma: Zadeptywanie · zaczarowany nie może atakować ciebie
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×4 | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · 1/2 | Maritime Guard · 2 · Creature — Merfolk Soldier · 1/3 | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · +1/+1×3 · 5/7 | Guidestone Compass · 0 · Artifact · {1}, {T}: cel: twój stwór — explore
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Trade Route Envoy, Woolly Loxodon, Deadly Recluse, Feral Invocation, Forest, Anthem of Champions, Death-Hood Cobra ⏎ Nowa partia (seed 11). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 6, kliknięte: 9, modale: 4, sondy noop: 20 (panel 15, modal 5)
+== DETEKTORY: brak zgłoszeń ==
