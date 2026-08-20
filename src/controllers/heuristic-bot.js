@@ -1074,6 +1074,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           // Dobranie kart z czaru to przewaga kartowa.
           if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') score += 6 * (effect.amount ?? 1);
+          // M156/Q1 (pętla jakości, Withstand — cantrip z prewencją „any
+          // target"): prewencja bez wyceny = remis wariantów → bot rzucał
+          // „prevent the next 3 damage" na STWORA PRZECIWNIKA (czysta strata
+          // karty + tarcza dla wroga). Generycznie (ADR 0002): prewencja po
+          // WŁASNEJ stronie = skromny plus (sytuacyjna), po stronie wroga =
+          // kara przebijająca bazę 50.
+          if (effect.type === 'prevent_next_damage') {
+            const slot = cmd.targets?.[effect.targetIndex ?? 0] ?? null;
+            const victim = slot ? objectOnBoard(view, slot) : null;
+            const amount = effect.amount ?? 1;
+            if (slot === view.playerId || (victim && victim.controllerId === view.playerId)) {
+              score += 2 + amount; // własny stwór/gracz — tarcza na przyszłość
+            } else if (slot != null && (slot === enemy(view)?.id
+              || (victim && victim.controllerId === enemy(view)?.id))) {
+              score -= 60; // osłanianie strony przeciwnika — bezsensowne zagranie
+            }
+          }
           // M155 (audyt żywym testerem, Ruinous Rampage): „deals N damage to
           // each opponent\" (i lose_life każdego przeciwnika) nie miało wyceny
           // w pętli czarów (było tylko w modalnym triggerze, linia 582). Bot
