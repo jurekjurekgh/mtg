@@ -758,9 +758,15 @@ export function detectFalseNoEffect(lines, { window: windowSize = 1 } = {}) {
     const from = Math.max(0, i - 1);
     const to = Math.min(entries.length, i + 1 + windowSize);
     const near = entries.slice(from, to);
+    // M155 (audyt żywym testerem): gdy ZNAMY źródło „zerowego wyniku"
+    // (np. „Steelfin Whale — trigger bez efektu"), dowód musi być zmianą
+    // DOTYCZĄCĄ TEGO SAMEGO źródła (nazwa w wpisie) — inaczej wzięlibyśmy
+    // niepowiązany skutek innego triggera w sąsiedztwie (Germ z living
+    // weapon przy „zerowym wyniku" Steelfin Whale — fałszywy alarm).
+    // Fallback na dowolny CHANGE tylko, gdy źródło nieznane (brak nazwy).
     const evidence = near.find((entry) => entry !== entries[i]
       && CHANGE.test(entry)
-      && (!name || entry.includes(name) || CHANGE.test(entry)));
+      && (name ? entry.includes(name) : CHANGE.test(entry)));
     if (!evidence) continue;
     const key = entries[i].slice(0, 80);
     if (seen.has(key)) continue;
