@@ -87,6 +87,13 @@ export function gameObjectDataOf(card) {
     // nie stwora — obiekt niesie flagę, a docelowego gracza wybiera się przy
     // rzucaniu (cast_permanent z targetem gracza, jak czar aury).
     if (card.aura?.enchant === 'player') data.enchantPlayer = true;
+    // M159/Z5 (Żywy Tester + sanity engine): Saga BEZ typu Creature (Invasion
+    // of the Giants) — deskryptor rozdziałów był kopiowany wyłącznie w gałęzi
+    // stworów (Shiva, Enchantment Creature), więc czysty enchantment-Saga
+    // wchodził na stół bez pola `saga`: zero liczników lore, zero rozdziałów,
+    // karta nie robiła NIC. Testy Batch 39 były zielone, bo czytały rozdziały
+    // z REJESTRU zamiast z obiektu (martwy test — klasa L5/L21).
+    if (card.saga) data.saga = card.saga;
     return data;
   }
   if (card.types.includes('Artifact')) {

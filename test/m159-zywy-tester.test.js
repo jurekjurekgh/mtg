@@ -12,12 +12,14 @@
 //     kończącego się „: ." (pusta treść po dwukropku).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createGameState, addObject } from '../src/engine/game-state.js';
+import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { stateFingerprint } from '../src/engine/fingerprint.js';
 import { applyEffect } from '../src/engine/effects.js';
 import { rulesText } from '../src/table/render.js';
+import { jumpToStep } from '../src/engine/turn.js';
+import { addMana } from '../src/engine/resources.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -112,5 +114,39 @@ test('Z3 (strażnik): żadna karta katalogu nie renderuje opisu „...: ."', () 
     if (def.saga?.chapters?.length) {
       assert.ok(text.includes('Saga —'), `${def.id}: Saga bez opisu rozdziałów — ${text}`);
     }
+  }
+});
+
+// ---- Z5: Saga bez typu Creature działa na stole (Invasion of the Giants) ---
+
+test('Z5a: rzut Invasion of the Giants z ręki — lore 1 i rozdział I (scry 2) odpala', () => {
+  const state = game();
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  putCard(state, 'inv', 'invasion-of-the-giants', 'p1', 'hand');
+  // Scry potrzebuje niepustej biblioteki (inaczej rozdział I to no-op).
+  putCard(state, 'lib1', 'wrap-in-flames', 'p1', 'library');
+  putCard(state, 'lib2', 'revolutionist', 'p1', 'library');
+  addMana(state, 'p1', 2, { colors: ['U', 'R'] });
+  const offer = playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_permanent' && c.objectId === 'inv');
+  assert.ok(offer, 'oferta rzutu Sagi');
+  assert.ok(execute(state, offer).ok);
+  for (let i = 0; i < 8 && !state.pendingScry; i += 1) {
+    execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  }
+  const onBf = [...state.objects.values()].find((o) => o.cardId === 'invasion-of-the-giants' && o.zone === 'battlefield');
+  assert.ok(onBf, 'Saga na polu bitwy');
+  assert.ok(onBf.saga, 'obiekt na stole NIESIE deskryptor saga (nie tylko rejestr — L5/L21)');
+  assert.equal(onBf.counters?.lore, 1, 'licznik lore po wejściu (CR 714.3a)');
+  assert.ok(state.pendingScry, 'rozdział I: scry 2 czeka na decyzję');
+  assert.equal(state.pendingScry.playerId, 'p1');
+});
+
+test('Z5b (strażnik łańcucha pól): każda karta z saga w rejestrze niesie saga na obiekcie', () => {
+  for (const def of REGISTRY.all()) {
+    if (!def.saga) continue;
+    const data = gameObjectDataOf(def);
+    assert.ok(data.saga, `${def.id}: gameObjectDataOf gubi deskryptor saga (gałąź kind=${data.kind})`);
   }
 });
