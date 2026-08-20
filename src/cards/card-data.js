@@ -7026,6 +7026,84 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // ---- Batch 39 (lista właściciela 2026-08-20) — transza A: czyste reuse ----
+  defineCard({
+    id: 'merfolk-mesmerist', name: 'Merfolk Mesmerist', set: 'M12',
+    types: ['Creature'], subtypes: ['Merfolk', 'Wizard'], colors: ['U'],
+    power: 1, toughness: 2, manaCost: 2,
+    oracleText: '{U}, {T}: Target player mills two cards.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/2/220dede5-472c-4a09-bdf0-73e722d9d4d2.jpg?1783941089',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, colors: ['U'], tap: true },
+        targets: [{ type: 'player' }],
+        effect: { type: 'mill_cards', amount: 2 },
+      }),
+    ],
+    artId: null, plan: null,
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'knight-of-the-skyward-eye', name: 'Knight of the Skyward Eye', set: 'ALA',
+    types: ['Creature'], subtypes: ['Human', 'Knight'], colors: ['W'],
+    power: 2, toughness: 2, manaCost: 2,
+    oracleText: '{3}{G}: This creature gets +3/+3 until end of turn. Activate only once each turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/d/1d56e2bf-1937-42c1-8f61-1fd93e84cef7.jpg?1783942581',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 4, colors: ['G'] },
+        effect: { type: 'pump', power: 3, toughness: 3 },
+        oncePerTurn: true,
+      }),
+    ],
+    artId: null, plan: null,
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'breaching-hippocamp', name: 'Breaching Hippocamp', set: 'THS',
+    types: ['Creature'], subtypes: ['Horse', 'Fish'], colors: ['U'],
+    keywords: ['flash'], power: 3, toughness: 2, manaCost: 4,
+    oracleText: 'Flash (You may cast this spell any time you could cast an instant.)\nWhen this creature enters, untap another target creature you control.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/8/8841c01e-015e-4541-942a-f8859dd03fea.jpg?1783939802',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature_you_control', notSelf: true } },
+        effect: { type: 'untap_permanent' },
+      }),
+    ],
+    artId: null, plan: null,
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'squires-lightblade', name: "Squire's Lightblade", set: 'EOE',
+    types: ['Artifact'], subtypes: ['Equipment'], colors: ['W'], manaCost: 1,
+    keywords: ['flash'],
+    oracleText: 'Flash\nWhen this Equipment enters, attach it to target creature you control. That creature gains first strike until end of turn.\nEquipped creature gets +1/+0.\nEquip {3}',
+    imageUri: 'https://cards.scryfall.io/large/front/2/a/2a0accba-85d4-4aa4-a70c-80fcce48c261.jpg?1783905989',
+    equipment: { equip: 3, pump: { power: 1, toughness: 0 } },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature_you_control' } },
+        effect: [
+          { type: 'attach_self_to_target' },
+          { type: 'grant_keywords_until_end_of_turn', keywords: ['first_strike'] },
+        ],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'equip',
+        cost: { mana: 3 },
+        effect: [],
+      }),
+    ],
+    artId: null, plan: null,
+    support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */

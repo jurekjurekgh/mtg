@@ -803,6 +803,7 @@ function describeEffect(e) {
     copy_creature: () => 'stań się kopią celu',
     job_select: () => 'job select (stwórz 1/1 Hero i przypnij)',
     living_weapon: () => 'living weapon (stwórz 0/0 Germ i przypnij)',
+    attach_self_to_target: () => 'przypnij ten sprzęt do wybranego stwora',
     ferocious_draw_discard: () => 'ferocious: dobierz, potem odrzuć',
     fertile_thicket_reveal: () => 'odsłoń wierzch biblioteki',
     goad: () => 'goad (musi atakować)',

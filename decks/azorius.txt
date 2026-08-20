@@ -50,7 +50,7 @@
 1x Floodhound
 1x Steel Sabotage
 21x Plains
-13x Island
+15x Island
 1x Rustwing Falcon
 1x Monastery Flock
 1x Coralhelm Guide
@@ -76,3 +76,5 @@
 1x Lotusguard Disciple
 1x Weftblade Enhancer
 1x Talion's Messenger
+1x Merfolk Mesmerist
+1x Breaching Hippocamp

@@ -334,6 +334,9 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       const object = state.objects.get(objectId);
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature'
         || object.controllerId !== sourceObject.controllerId) return false;
+      // M158/Batch 39 (Breaching Hippocamp): „ANOTHER target creature you
+      // control" — `notSelf` wyklucza źródło (jak w gałęzi 'creature').
+      if (spec.notSelf && object.id === sourceObject.id) return false;
       // M154 (Batch 38, Talion's Messenger): cel może być zawężony do podtypu
       // („target Faerie you control") — dane, nie warunek na nazwę karty.
       if (spec.subtype && !(object.subtypes ?? []).includes(spec.subtype)) return false;

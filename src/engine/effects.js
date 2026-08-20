@@ -920,6 +920,21 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     return;
   }
+  if (effect.type === 'attach_self_to_target') {
+    // M158/Batch 39 (Squire's Lightblade): „When this Equipment enters,
+    // attach it to target creature you control." — przypięcie ŹRÓDŁA
+    // (equipmentu) do wybranego celu; trigger z requiresTarget
+    // creature_you_control. Generyczne: dowolny equipment z ETB-attach,
+    // cel wybiera gracz (jak living weapon, ale z wyborem).
+    const targetId = targets[0];
+    if (!targetId) return;
+    const target = state.objects.get(targetId);
+    if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') return;
+    const self = state.objects.get(sourceObject.id);
+    if (!self || self.zone !== 'battlefield' || !self.equipment) return;
+    attachEquipmentToCreature(state, sourceObject.id, targetId);
+    return;
+  }
   if (effect.type === 'living_weapon') {
     // Living weapon (CR 702.91, Strandwalker): „When this Equipment enters,
     // create a 0/0 black Phyrexian Germ creature token, then attach this to

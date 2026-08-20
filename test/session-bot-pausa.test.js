@@ -71,8 +71,9 @@ function playOutAckingPauses(session, { maxMoves = 500 } = {}) {
 
 test('pauza po każdym istotnym zagraniu bota: rzut, ląd, zdolność, zmiana strefy', () => {
   const { registry, decks } = buildDecks();
-  // Seed 2 po Batchu 36 E4 (red +Molten Nursery) — przelosowane hunterem.
-  const session = createSession({ seed: 2, registry, decks, pauseOnBotMoves: true });
+  // Seed 2 po Batchu 36 E4 (red +Molten Nursery); seed 3 po Batchu 39 A
+  // (green +Knight of the Skyward Eye +4 Plains) — przelosowane hunterem.
+  const session = createSession({ seed: 3, registry, decks, pauseOnBotMoves: true });
   const visited = playOutAckingPauses(session);
   assert.equal(session.state.status, 'finished', 'partia nie doszła do końca');
   assert.ok(visited.length > 3, `za mało pauz w pełnej partii: ${visited.length}`);

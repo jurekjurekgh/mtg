@@ -110,7 +110,8 @@ test('M99: skutek czaru bota (+X/+X) też trafia do modala, nie tylko do logu', 
   // Seed 42 → 3 po batchu 34 (black +1, green +1) — przelosowane hunterem.
   // Seed 1 po Batchu 36 (green +Feral Invocation +Grizzled Leotau +1 Forest) —
   // przelosowane hunterem.
-  const session = makeSession(1);
+  // Seed 2 po Batchu 39 A (green +Knight +4 Plains) — przelosowane hunterem.
+  const session = makeSession(2);
   const { modalTexts, log } = playCollectingModals(session);
   const pumpInLog = log.filter((t) => /dostaje \+\d+\/\+\d+/.test(t));
   assert.ok(pumpInLog.length > 0, 'seed 3 miał produkować pump w logu');

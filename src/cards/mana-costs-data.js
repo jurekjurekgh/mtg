@@ -300,4 +300,8 @@ export const MANA_COSTS = {
   "chatter-of-the-squirrel": "{G}",
   "silken-strength": "{1}{G}",
   "lotusguard-disciple": "{2}{W}",
+  "merfolk-mesmerist": "{1}{U}",
+  "knight-of-the-skyward-eye": "{1}{W}",
+  "breaching-hippocamp": "{3}{U}",
+  "squires-lightblade": "{W}",
 };
