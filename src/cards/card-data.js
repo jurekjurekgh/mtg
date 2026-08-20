@@ -7224,7 +7224,11 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         type: ABILITY_TYPE.triggered,
         trigger: {
           event: 'enter_battlefield',
-          requiresTarget: { type: 'instant_or_sorcery_card_in_graveyard', controlledBy: 'controller', optional: true },
+          // M159/F3 (audyt PR #66, ADR 0022): cel OBOWIĄZKOWY — Oracle mówi
+          // „return target instant or sorcery card...”, bez „you may”
+          // (inaczej niż Mystic Sanctuary, które „you may” MA — tam optional
+          // zostaje). Brak legalnych celów = trigger nie robi nic (CR 608.2b).
+          requiresTarget: { type: 'instant_or_sorcery_card_in_graveyard', controlledBy: 'controller' },
         },
         effect: { type: 'return_card_from_graveyard_to_hand' },
       }),

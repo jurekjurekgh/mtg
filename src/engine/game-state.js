@@ -3,7 +3,7 @@ import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
 import { initialTurn, jumpToStep, nextTurnStep } from './turn.js';
 import { assertStateInvariants } from './invariants.js';
-import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, spendMana, treasureManaAvailable } from './resources.js';
+import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, spendMana, treasureManaAvailable, canPayMadnessCost } from './resources.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, canPayManaCost, coloredPipsOf, matchColorRequirements } from './mana-cost.js';
 import { allControlledManaSources } from './mana-sources.js';
@@ -4686,8 +4686,17 @@ export function playerView(state, playerId) {
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeMadnessCast) {
     // M158/Batch 39: Madness — rzuć za koszt madness albo do cmentarza.
-    legalCommands.unshift(command('resolve_madness_cast', playerId, { cast: false }));
-    legalCommands.unshift(command('resolve_madness_cast', playerId, { cast: true }));
+    // M159/F2+F4 (audyt PR #66): oferta rzutu TYLKO gdy gracza stać (L48
+    // oferta=walidacja — inaczej reject i crash bota); obie oferty niosą
+    // cardId/objectId (etykieta UI nazywa kartę).
+    const madnessPending = state.pendingMadnessCast;
+    const madnessObj = state.objects.get(madnessPending.objectId);
+    const madnessIds = { objectId: madnessPending.objectId, cardId: madnessPending.cardId };
+    legalCommands.unshift(command('resolve_madness_cast', playerId, { cast: false, ...madnessIds }));
+    if (madnessObj && madnessObj.zone === 'exile' && madnessObj.madnessReady
+      && canPayMadnessCost(state, playerId, madnessObj)) {
+      legalCommands.unshift(command('resolve_madness_cast', playerId, { cast: true, ...madnessIds }));
+    }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeEpicExperiment) {
     // Epic Experiment: rzuć wygnany instant/sorcery MV<=X bez kosztu albo zakończ.
     // Oferta per legalny zestaw celów (i per tryb) — czar z celem bez

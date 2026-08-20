@@ -408,6 +408,25 @@ export function treasureManaAvailable(state, playerId) {
   return total;
 }
 
+/**
+ * M159/F2 (audyt PR #66, L48 oferta=walidacja): czy gracza STAĆ na rzut karty
+ * za koszt madness. Lustro bramek płatności castPermanent(madnessCast:true):
+ * redukcje generyczne, producibleMana, pipy karty (hasColorManaForObject)
+ * i wymagania kolorowe kosztu madness. PlayerView oferuje resolve_madness_cast
+ * { cast: true } wyłącznie, gdy ta funkcja zwraca true — inaczej oferta bez
+ * skutku kończy się rejectem, a bot (cast=60 > odmowa=0) crashuje sesję.
+ */
+export function canPayMadnessCost(state, playerId, object) {
+  if (!object?.madness) return false;
+  let cost = object.madness.cost ?? object.manaCost ?? 0;
+  cost = reduceGenericCost(object.cardId, cost, costReductionForSpell(state, object) + conditionalCostReduction(state, object));
+  const phyrexian = object.phyrexianManaCost ?? 0;
+  if (producibleMana(state, playerId) < cost + phyrexian) return false;
+  if (!hasColorManaForObject(state, playerId, object, 0)) return false;
+  const requirements = (object.madness.colors ?? []).map((color) => [color]);
+  return hasColorRequirements(state, playerId, requirements);
+}
+
 export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, treasureAlt = false, warpCast = false, madnessCast = false } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
@@ -431,7 +450,12 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // Flash (CR 702.8): permanent z flash można zagrać w każdej fazie (jak instant);
   // bez flash — tylko w swojej main phase (plot też rzuca się jako sorcery).
   const hasFlash = (object.keywords ?? []).includes('flash');
-  if (!hasFlash && (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase))) throw new Error('Zagranie poza main phase');
+  // M159/F1 (audyt PR #66, CR 702.34e): rzut za koszt madness następuje przy
+  // rozstrzyganiu jednorazowej decyzji (jak suspend/rebound) i IGNORUJE
+  // timing — także w cleanup (odrzucenie ponad limit ręki) i w turze
+  // przeciwnika. Bez wyjątku bramka odrzucała rzut, a heuristic-bot zawsze
+  // wybierał cast:true → crash sesji „Bot wybrał nielegalną komendę".
+  if (!hasFlash && !madnessCast && (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase))) throw new Error('Zagranie poza main phase');
   // Timing sorcery (CR 307.1/117.1a): rzut permanenta bez flash wymaga
   // PUSTEGO stosu — czar idzie na stos i rozstrzyga się po rundzie passów.
   if (!hasFlash && !madnessCast && state.zones.stack.length > 0) throw new Error('Zagranie przy niepustym stosie');

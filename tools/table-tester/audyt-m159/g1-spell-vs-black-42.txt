@@ -1,0 +1,364 @@
+== NOWA PARTIA: gracz=spellslinger vs bot=black, seed=42, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Mountain (1 z 4)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Rzuć: Index (koszt U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Index
+  [ROZGRYWKA]   • Wykonujesz Index (patrzy na 5 kart: Forge Devil, Coralhelm Guide, Invasion of the Giants, Revolutionist, Epic Experiment)
+  >> Wybierz: Index — kolejność na wierzchu biblioteki (1 opcja)
+  [modal choice] Index 5 — karty na wierzchu biblioteki (ułóż w dowolnej kolejności): 1. Forge Devil 2. Coralhelm Guide 3. Invasion of the Giants 4. Revolutionist 5. Epic ExperimentUstaw nową kolejność od góry — wybieraj karty po kolei:1. na wierzchu: Forge Devil1. na wierzchu: Coralhelm Guide1. na wierzchu: Invasion of the Giants1. na wierzchu: Revolutionist1. na wierzchu: Epic ExperimentZamknij (dokończysz później)
+  [modal choice]   ▶ 1. na wierzchu: Forge Devil
+  [modal choice]     1. na wierzchu: Coralhelm Guide
+  [modal choice]     1. na wierzchu: Invasion of the Giants
+  [modal choice]     1. na wierzchu: Revolutionist
+  [modal choice]     1. na wierzchu: Epic Experiment
+  [modal choice] Index 5 — karty na wierzchu biblioteki (ułóż w dowolnej kolejności): 1. Forge Devil 2. Coralhelm Guide 3. Invasion of the Giants 4. Revolutionist 5. Epic ExperimentUstaw nową kolejność od góry — wybieraj karty po kolei:2. na wierzchu: Coralhelm Guide2. na wierzchu: Invasion of the Giants2. na wierzchu: Revolutionist2. na wierzchu: Epic ExperimentZamknij (dokończysz później)
+  [modal choice]   ▶ 2. na wierzchu: Coralhelm Guide
+  [modal choice]     2. na wierzchu: Invasion of the Giants
+  [modal choice]     2. na wierzchu: Revolutionist
+  [modal choice]     2. na wierzchu: Epic Experiment
+  [modal choice] Index 5 — karty na wierzchu biblioteki (ułóż w dowolnej kolejności): 1. Forge Devil 2. Coralhelm Guide 3. Invasion of the Giants 4. Revolutionist 5. Epic ExperimentUstaw nową kolejność od góry — wybieraj karty po kolei:3. na wierzchu: Invasion of the Giants3. na wierzchu: Revolutionist3. na wierzchu: Epic ExperimentZamknij (dokończysz później)
+  [modal choice]   ▶ 3. na wierzchu: Invasion of the Giants
+  [modal choice]     3. na wierzchu: Revolutionist
+  [modal choice]     3. na wierzchu: Epic Experiment
+  [modal choice] Index 5 — karty na wierzchu biblioteki (ułóż w dowolnej kolejności): 1. Forge Devil 2. Coralhelm Guide 3. Invasion of the Giants 4. Revolutionist 5. Epic ExperimentUstaw nową kolejność od góry — wybieraj karty po kolei:4. na wierzchu: Revolutionist4. na wierzchu: Epic ExperimentZamknij (dokończysz później)
+  [modal choice]   ▶ 4. na wierzchu: Revolutionist
+  [modal choice]     4. na wierzchu: Epic Experiment
+  [modal choice] Index 5 — karty na wierzchu biblioteki (ułóż w dowolnej kolejności): 1. Forge Devil 2. Coralhelm Guide 3. Invasion of the Giants 4. Revolutionist 5. Epic ExperimentUstaw nową kolejność od góry — wybieraj karty po kolei:5. na wierzchu: Epic ExperimentZamknij (dokończysz później)
+  [modal choice]   ▶ 5. na wierzchu: Epic Experiment
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kończysz Index — kolejność na wierzchu (od góry): Forge Devil, Coralhelm Guide, Invasion of the Giants, Revolutionist, Epic Experiment
+  [ROZGRYWKA]   • Index zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Krumar Initiate
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Krumar Initiate wchodzi na pole bitwy
+  [ROZGRYWKA]   • Krumar Initiate zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forge Devil
+  >> Zagraj ląd: Mountain (1 z 3)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Zagraj: Forge Devil (koszt R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Forge Devil
+  [ROZGRYWKA]   • Forge Devil wchodzi na pole bitwy
+  [ROZGRYWKA]   • Forge Devil zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Forge Devil — wybierz cel triggera (wymagany)
+  >> Forge Devil — cel triggera (2 opcje)
+  [modal choice] Forge Devil — cel triggera Forge Devil — cel triggera: Krumar Initiate (Nieprzyjaciel) Forge Devil — cel triggera: Forge Devil (Ty)
+  [modal choice]   ▶ Forge Devil — cel triggera: Krumar Initiate (Nieprzyjaciel)
+  [modal choice]     Forge Devil — cel triggera: Forge Devil (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Forge Devil — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Forge Devil — cel: Krumar Initiate
+  [ROZGRYWKA]   • Forge Devil zadaje 1 obrażenie (Krumar Initiate)
+  [ROZGRYWKA]   • Forge Devil zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 19
+  [ROZGRYWKA]   • Forge Devil — trigger się rozstrzyga
+  >> Cel czaru: Sweet Oblivion (2 opcje)
+  [modal choice] Cel czaru: Sweet Oblivion Rzuć: Sweet Oblivion (koszt 1U) → cel: Nieprzyjaciel Rzuć: Sweet Oblivion (koszt 1U) → cel: Ty
+  [modal choice]   ▶ Rzuć: Sweet Oblivion (koszt 1U) → cel: Nieprzyjaciel
+  [modal choice]     Rzuć: Sweet Oblivion (koszt 1U) → cel: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Sweet Oblivion → cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Cuombajj Witches do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Plague Reaver do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Swamp do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Reassembling Skeleton do grobu
+  [ROZGRYWKA]   • Sweet Oblivion zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Dunland Crebain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dunland Crebain wchodzi na pole bitwy
+  [ROZGRYWKA]   • Dunland Crebain zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Dunland Crebain — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Orc Army (0/0)
+  [ROZGRYWKA]   • Orc Army wchodzi na pole bitwy
+  [ROZGRYWKA]   • Orc Army dostaje +2 liczniki +1/+1 (razem 2)
+  [ROZGRYWKA]   • Dunland Crebain — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Krumar Initiate
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Forge Devil (1/1)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Forge Devil blokuje Krumar Initiate
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Krumar Initiate zadaje 2 obrażenia (Forge Devil)
+  [ROZGRYWKA]   • Forge Devil zadaje 1 obrażenie (Krumar Initiate)
+  [ROZGRYWKA]   • Forge Devil ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Coralhelm Guide
+  >> Zagraj ląd: Mountain (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Zagraj: Coralhelm Guide (koszt 1U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Coralhelm Guide
+  [ROZGRYWKA]   • Coralhelm Guide wchodzi na pole bitwy
+  [ROZGRYWKA]   • Coralhelm Guide zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Returned Centaur
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Returned Centaur wchodzi na pole bitwy
+  [ROZGRYWKA]   • Returned Centaur zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Returned Centaur — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Returned Centaur — cel: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Mielisz Invasion of the Giants do grobu
+  [ROZGRYWKA]   • Mielisz Revolutionist do grobu
+  [ROZGRYWKA]   • Mielisz Epic Experiment do grobu
+  [ROZGRYWKA]   • Mielisz Mountain do grobu
+  [ROZGRYWKA]   • Returned Centaur — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Krumar Initiate, Dunland Crebain, Orc Army
+  >> Wybierz: Deklaracja blokujących (3 opcje)
+  [combat wizard] blokuję 1 stworami: Coralhelm Guide (2/1)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Coralhelm Guide blokuje Orc Army
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Krumar Initiate zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 19 → 17
+  [ROZGRYWKA]   • Dunland Crebain zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 16
+  [ROZGRYWKA]   • Orc Army zadaje 2 obrażenia (Coralhelm Guide)
+  [ROZGRYWKA]   • Coralhelm Guide zadaje 2 obrażenia (Orc Army)
+  [ROZGRYWKA]   • Orc Army ginie
+  [ROZGRYWKA]   • Coralhelm Guide ginie
+  [ROZGRYWKA]   • token Orc Army przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Rzuć: Mysteries of the Deep (koszt 4U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Mysteries of the Deep
+  [ROZGRYWKA]   • Dobierasz: Curate
+  [ROZGRYWKA]   • Dobierasz: Shatter
+  [ROZGRYWKA]   • Mysteries of the Deep zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Dementia Bat
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dementia Bat wchodzi na pole bitwy
+  [ROZGRYWKA]   • Dementia Bat zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Krumar Initiate, Dunland Crebain, Returned Centaur
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Krumar Initiate zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 14
+  [ROZGRYWKA]   • Dunland Crebain zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 13
+  [ROZGRYWKA]   • Returned Centaur zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 11
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Rzuć: Curate (koszt 1U)
+  [kreator many] Płatność 1U — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: UTapnij: Mountain (R)Tapnij: Island (U)Tapnij — źródła: 5
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Curate
+  [ROZGRYWKA]   • Wykonujesz surveil (patrzy na 2 karty: Twiddle, Island)
+  >> Wybierz: Surveil — karty do grobu (5 opcji)
+  [modal choice] Surveil 2 — obejrzane karty: 1. Twiddle 2. IslandKarta 1 z 2: TwiddleNa cmentarzNa wierzch bibliotekiZamknij (dokończysz później)
+  [modal choice]   ▶ Na cmentarz
+  [modal choice]     Na wierzch biblioteki
+  [modal choice] Surveil 2 — obejrzane karty: 1. Twiddle → cmentarz 2. IslandKarta 2 z 2: IslandNa cmentarzNa wierzch bibliotekiZamknij (dokończysz później)
+  [modal choice]   ▶ Na cmentarz
+  [modal choice]     Na wierzch biblioteki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Mielisz Twiddle do grobu
+  [ROZGRYWKA]   • Mielisz Island do grobu
+  [ROZGRYWKA]   • Kończysz surveil — 2 karty idą do grobu
+  [ROZGRYWKA]   • Dobierasz: Maritime Guard
+  [ROZGRYWKA]   • Curate zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj ląd: Mountain (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Zagraj: Maritime Guard (koszt 1U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Maritime Guard
+  [ROZGRYWKA]   • Maritime Guard wchodzi na pole bitwy
+  [ROZGRYWKA]   • Maritime Guard zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Consume Spirit → cel: Maritime Guard
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Consume Spirit zadaje 3 obrażenia (Maritime Guard)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 23
+  [ROZGRYWKA]   • Consume Spirit zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Maritime Guard ginie
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Krumar Initiate, Dunland Crebain, Returned Centaur, Dementia Bat
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Krumar Initiate zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 9
+  [ROZGRYWKA]   • Dunland Crebain zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 9 → 8
+  [ROZGRYWKA]   • Returned Centaur zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 8 → 6
+  [ROZGRYWKA]   • Dementia Bat zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 6 → 4
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj ląd: Mountain (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Wybierz: Ucieczka (Escape) — karty do wygnania (64 opcje)
+  [modal choice] Wybierz: Ucieczka (Escape) — karty do wygnania Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Coralhelm Guide, Twiddle (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Coralhelm Guide, Mysteries of the Deep (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Mountain, Maritime Guard (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Mountain, Curate (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Mountain, Island (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Mountain, Twiddle (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Mountain, Mysteries of the Deep (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Mountain, Coralhelm Guide (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Maritime Guard (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Curate (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Island (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Twiddle (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Mysteries of the Deep (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Coralhelm Guide (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Mountain (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Maritime Guard (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Curate (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Island (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Twiddle (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Mysteries of the Deep (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Coralhelm Guide (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Mountain (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Epic Experiment (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Maritime Guard (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Curate (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Island (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Twiddle (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Mysteries of the Deep (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Coralhelm Guide (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Mountain (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Epic Experiment (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Revolutionist (1 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Coralhelm Guide, Twiddle (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Coralhelm Guide, Mysteries of the Deep (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Mountain, Maritime Guard (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Mountain, Curate (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Mountain, Island (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Mountain, Twiddle (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Mountain, Mysteries of the Deep (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Mountain, Coralhelm Guide (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Maritime Guard (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Curate (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Island (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Twiddle (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Mysteries of the Deep (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Coralhelm Guide (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Mountain (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Maritime Guard (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Curate (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Island (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Twiddle (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Mysteries of the Deep (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Coralhelm Guide (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Mountain (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Epic Experiment (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Maritime Guard (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Curate (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Island (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Twiddle (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Mysteries of the Deep (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Coralhelm Guide (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Mountain (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Epic Experiment (2 z 2) Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Revolutionist (2 z 2)
+  [modal choice]   ▶ Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Coralhelm Guide, Twiddle (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Coralhelm Guide, Mysteries of the Deep (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Mountain, Maritime Guard (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Mountain, Curate (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Mountain, Island (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Mountain, Twiddle (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Mountain, Mysteries of the Deep (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Mountain, Coralhelm Guide (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Maritime Guard (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Curate (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Island (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Twiddle (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Mysteries of the Deep (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Coralhelm Guide (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Mountain (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Maritime Guard (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Curate (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Island (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Twiddle (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Mysteries of the Deep (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Coralhelm Guide (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Mountain (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Epic Experiment (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Maritime Guard (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Curate (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Island (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Twiddle (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Mysteries of the Deep (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Coralhelm Guide (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Mountain (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Epic Experiment (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Revolutionist (1 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Coralhelm Guide, Twiddle (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Coralhelm Guide, Mysteries of the Deep (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Mountain, Maritime Guard (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Mountain, Curate (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Mountain, Island (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Mountain, Twiddle (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Mountain, Mysteries of the Deep (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Mountain, Coralhelm Guide (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Maritime Guard (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Curate (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Island (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Twiddle (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Mysteries of the Deep (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Coralhelm Guide (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Epic Experiment, Mountain (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Maritime Guard (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Curate (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Island (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Twiddle (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Mysteries of the Deep (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Coralhelm Guide (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Mountain (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Revolutionist, Epic Experiment (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Maritime Guard (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Curate (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Island (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Twiddle (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Mysteries of the Deep (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Coralhelm Guide (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Mountain (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Epic Experiment (2 z 2)
+  [modal choice]     Ucieczka: Sweet Oblivion (koszt 4) — wygnaj: Index, Forge Devil, Invasion of the Giants, Revolutionist (2 z 2)
+  [kreator many] Płatność Escape (4) — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: UTapnij: Mountain (R)Tapnij: Island ( — źródła: 7
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Sweet Oblivion → cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Ty: Index — cmentarz → wygnanie
+  [ROZGRYWKA]   • Ty: Forge Devil — cmentarz → wygnanie
+  [ROZGRYWKA]   • Ty: Coralhelm Guide — cmentarz → wygnanie
+  [ROZGRYWKA]   • Ty: Twiddle — cmentarz → wygnanie
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Hecteyes do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Lash of the Balrog do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Fathom Fleet Cutthroat do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Canonized in Blood do grobu
+  [ROZGRYWKA]   • Sweet Oblivion zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Underdark Explorer
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Underdark Explorer wchodzi na pole bitwy
+  [ROZGRYWKA]   • Underdark Explorer zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Underdark Explorer — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Underdark Explorer — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Mountain
+  [ROZGRYWKA]   • Nieprzyjaciel: Mountain — biblioteka → ręka
+  [ROZGRYWKA]   • Nieprzyjaciel znajduje Mountain i tasuje bibliotekę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+== KONIEC PARTII == Koniec partii — wygrywa On
+
+--- krok 49 | Koniec partii — wygrywa On ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Mountain · Basic Land — Mountain · T: dodaj 1 manę | Shatter · 2 · Instant · zniszcz cel · cel: artefakt
+  MOJE POLA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×5 | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Krumar Initiate · 2 · Creature — Human Cleric · {X}, {B}, {T}, zapłać X życia: endure X (liczniki +1/+1 albo token Spirit) · 2/2 | Dunland Crebain · 3 · Creature — Bird Horror · Latanie · Gdy wejdzie na pole bitwy: amass (stwórz/rozrośnij Armię). · 1/1 | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 2/4 | Dementia Bat · 5 · Creature — Phyrexian Bat · Latanie · {4}, {B}, poświęć: cel: przeciwnik — odrzuć 2 karty · 2/2 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · choroba · 5/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Mountain, Mysteries of the Deep, Index, Sweet Oblivion, Mountain, Mountain, Mountain ⏎ Nowa partia (seed 42). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 17, kliknięte: 25, modale: 7, sondy noop: 120 (panel 46, modal 74)
+== DETEKTORY: brak zgłoszeń ==

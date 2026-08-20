@@ -115,6 +115,14 @@ export function runStateBasedActions(state) {
       }
     }
   }
+  // CR 704.3: akcje state-based wykonują się JEDNOCZEŚNIE — najpierw
+  // zbieramy wszystkie ofiary tego przebiegu (decyzje na stanie sprzed
+  // ruchów), potem przenosimy. Każde zdarzenie śmierci niesie
+  // `simultaneousIds` (id wszystkich stworów umierających DO GROBU w tym
+  // przebiegu) — triggery any_creature_dies stworów, które zginęły razem,
+  // patrzą wstecz (CR 603.10a) i muszą zobaczyć współzgony (M160/A:
+  // Selhoff Occultist mielił 1× zamiast 3× przy trzech zgonach w walce).
+  const dying = [];
   for (const object of [...state.objects.values()]) {
     if (object.zone !== 'battlefield' || object.kind !== 'creature' || object.toughness === null) continue;
     // Jwari: „enter as a copy” — SBA nie zabija 0/0, dopoki gracz nie wybierze celu.
@@ -142,15 +150,23 @@ export function runStateBasedActions(state) {
     // Wytrzymałość <= 0 NIE jest zniszczeniem — regeneracja nie chroni.
     if (!killedByZeroToughness && tryRegenerate(state, object, events)) continue;
     // Finality counter: zamiast do grobu, stwór idzie do exile (CR 122.1b
-    // w minimalnym wymiarze — dotyczy śmierci z obrażeń).
+    // w minimalnym wymiarze — dotyczy śmierci z obrażeń). Wygnanie NIE jest
+    // śmiercią — nie wchodzi do simultaneousIds.
     const hasFinality = (object.counters ?? {}).finality > 0;
+    dying.push({ object, hasFinality });
+  }
+  const simultaneousIds = dying.filter((d) => !d.hasFinality).map((d) => d.object.id);
+  for (const { object, hasFinality } of dying) {
     const toZone = hasFinality ? 'exile' : 'graveyard';
     const toId = hasFinality ? `exile-${state.objectSequence++}` : `grave-${state.objectSequence++}`;
     moveObjectDirectly(state, object.id, toZone, toId);
     // `object` to LKI zniszczonego permanentu (CR 603.10) — triggery
     // „leaves the battlefield" muszą je odczytać także wtedy, gdy obiekt już
     // nie istnieje w stanie (token usunięty przez SBA CR 704.5e).
-    const destroyed = event('creature_destroyed', { fromId: object.id, toId, toZone, cardId: object.cardId, object });
+    const destroyed = event('creature_destroyed', {
+      fromId: object.id, toId, toZone, cardId: object.cardId, object,
+      ...(simultaneousIds.length > 1 ? { simultaneousIds: [...simultaneousIds] } : {}),
+    });
     state.events.push(destroyed); events.push(destroyed);
   }
   // CR 122.3 (anihilacja liczników): jeśli permanent ma jednocześnie liczniki

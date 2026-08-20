@@ -1,0 +1,578 @@
+== NOWA PARTIA: gracz=black vs bot=spellslinger, seed=7, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Lab Rats
+  >> Rzuć: Lab Rats (koszt B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Rzucasz Lab Rats
+  [ROZGRYWKA]   • Ty tworzysz token Rat (1/1)
+  [ROZGRYWKA]   • Rat wchodzi na pole bitwy
+  [ROZGRYWKA]   • Lab Rats zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Jeskai Devotee
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Jeskai Devotee wchodzi na pole bitwy
+  [ROZGRYWKA]   • Jeskai Devotee zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Zagraj: Reassembling Skeleton (koszt 1B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Reassembling Skeleton
+  [ROZGRYWKA]   • Reassembling Skeleton wchodzi na pole bitwy
+  [ROZGRYWKA]   • Reassembling Skeleton zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Rat
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Jeskai Devotee blokuje Rat
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Rat zadaje 1 obrażenie (Jeskai Devotee)
+  [ROZGRYWKA]   • Jeskai Devotee zadaje 2 obrażenia (Rat)
+  [ROZGRYWKA]   • Rat ginie
+  [ROZGRYWKA]   • token Rat przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Twiddle — tryb: Tapnięcie → cel: Reassembling Skeleton
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Twiddle — tryb: Tapnięcie zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Epic Experiment
+  [ROZGRYWKA]   • Jeskai Devotee — trigger (drugi czar w turze)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Jeskai Devotee dostaje +1/+1
+  [ROZGRYWKA]   • Jeskai Devotee — trigger się rozstrzyga
+  [ROZGRYWKA]   • Epic Experiment zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Jeskai Devotee
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Jeskai Devotee zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 17
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Zagraj: Zoraline, Cosmos Caller (koszt 1WB)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Zoraline, Cosmos Caller
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller wchodzi na pole bitwy
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller — trigger bez efektu (brak legalnych celów)
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Reassembling Skeleton
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Reassembling Skeleton zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 19
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Jeskai Windscout
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Jeskai Windscout wchodzi na pole bitwy
+  [ROZGRYWKA]   • Jeskai Windscout zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Zagraj: Nefarious Imp (koszt 2B)
+  [kreator many] Płatność 2B — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: BTapnij: Swamp (B)Tapnij: Swamp (B)Tapnij: Pl — źródła: 4
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Nefarious Imp
+  [ROZGRYWKA]   • Nefarious Imp wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nefarious Imp zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Reassembling Skeleton, Zoraline, Cosmos Caller
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller — trigger bez efektu (brak legalnych celów)
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller — trigger (atak nietoperza)
+  [ROZGRYWKA]   • Ty: życie 17 → 18
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller — trigger się rozstrzyga
+  [ROZGRYWKA]   • Jeskai Devotee blokuje Reassembling Skeleton; Jeskai Windscout blokuje Zoraline, Cosmos Caller
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Reassembling Skeleton zadaje 1 obrażenie (Jeskai Devotee)
+  [ROZGRYWKA]   • Jeskai Devotee zadaje 2 obrażenia (Reassembling Skeleton)
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller zadaje 3 obrażenia (Jeskai Windscout)
+  [ROZGRYWKA]   • Jeskai Windscout zadaje 2 obrażenia (Zoraline, Cosmos Caller)
+  [ROZGRYWKA]   • Reassembling Skeleton ginie
+  [ROZGRYWKA]   • Jeskai Windscout ginie
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Nefarious Imp — trigger (odejście twoich permanentów z pola bitwy)
+  [ROZGRYWKA]   • Wykonujesz scry (patrzy na 1 kartę: Swamp)
+  [ROZGRYWKA]   • Nefarious Imp — trigger się rozstrzyga
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [modal choice] Scry 1 — obejrzane karty: 1. SwampKarta 1 z 1: SwampNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kończysz scry — na spód (1/1): Swamp
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Omenspeaker
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Omenspeaker wchodzi na pole bitwy
+  [ROZGRYWKA]   • Omenspeaker zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Omenspeaker — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel wykonuje scry (patrzy na 2 karty)
+  [ROZGRYWKA]   • Omenspeaker — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel kończy scry — zostawia na wierzchu biblioteki
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forge Devil
+  [ROZGRYWKA]   • Jeskai Devotee — trigger (drugi czar w turze)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Jeskai Devotee dostaje +1/+1
+  [ROZGRYWKA]   • Jeskai Devotee — trigger się rozstrzyga
+  [ROZGRYWKA]   • Forge Devil wchodzi na pole bitwy
+  [ROZGRYWKA]   • Forge Devil zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Forge Devil — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Forge Devil — cel: Zoraline, Cosmos Caller
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Forge Devil zadaje 1 obrażenie (Zoraline, Cosmos Caller)
+  [ROZGRYWKA]   • Forge Devil zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 19 → 18
+  [ROZGRYWKA]   • Forge Devil — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Jeskai Devotee
+  >> Wybierz: Deklaracja blokujących (4 opcje)
+  [combat wizard] blokuję 1 stworami: Zoraline, Cosmos Caller (3/3)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller blokuje Jeskai Devotee
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Jeskai Devotee zadaje 3 obrażenia (Zoraline, Cosmos Caller)
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller zadaje 3 obrażenia (Jeskai Devotee)
+  [ROZGRYWKA]   • Jeskai Devotee ginie
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller ginie
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Nefarious Imp — trigger (odejście twoich permanentów z pola bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Wykonujesz scry (patrzy na 1 kartę: Dunland Crebain)
+  [ROZGRYWKA]   • Nefarious Imp — trigger się rozstrzyga
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [modal choice] Scry 1 — obejrzane karty: 1. Dunland CrebainKarta 1 z 1: Dunland CrebainNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kończysz scry — na spód (1/1): Dunland Crebain
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Aktywuj: Reassembling Skeleton (koszt 1B) — wróć na pole bitwy zatapnięte
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Reassembling Skeleton
+  [ROZGRYWKA]   • Ty: Reassembling Skeleton — cmentarz → pole bitwy
+  [ROZGRYWKA]   • Ty: zdolność Reassembling Skeleton rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Nefarious Imp
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Nefarious Imp zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 18 → 16
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Release the Ants → cel: Nefarious Imp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Release the Ants zadaje 1 obrażenie (Nefarious Imp)
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Shatter
+  [ROZGRYWKA]   • Odsłaniasz Forever Young
+  [ROZGRYWKA]   • Clash: Nieprzyjaciel przegrywa (mana value 2 vs 2)
+  [ROZGRYWKA]   • Nefarious Imp ginie
+  [ROZGRYWKA]   • Nieprzyjaciel zostawia odsłoniętą kartę na wierzchu biblioteki
+  >> Wybierz: Clash — wierzch czy spód? (2 opcje)
+  [modal choice] Wybierz: Clash — wierzch czy spód? Clash: Forever Young na wierzch biblioteki Clash: Forever Young na spód biblioteki
+  [modal choice]   ▶ Clash: Forever Young na wierzch biblioteki
+  [modal choice]     Clash: Forever Young na spód biblioteki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zostawiasz odsłoniętą kartę na wierzchu biblioteki
+  [ROZGRYWKA]   • Release the Ants zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Omenspeaker, Forge Devil
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Omenspeaker zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 17
+  [ROZGRYWKA]   • Forge Devil zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 16
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forever Young
+  >> Rzuć: Forever Young (koszt 1B)
+  [kreator many] Płatność 1B — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: BTapnij: Swamp (B)Tapnij: Swamp (B)Tapnij: Pl — źródła: 5
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Swamp (B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Rzucasz Forever Young
+  [ROZGRYWKA]   • Wybierasz karty-stwory z grobu na wierzch biblioteki (Forever Young) — do wyboru 2
+  >> Wybierz: Karta z grobu na wierzch biblioteki (3 opcje)
+  [modal choice] Wybierz: Karta z grobu na wierzch biblioteki Koniec przenoszenia na wierzch biblioteki Na wierzch biblioteki: Nefarious Imp Na wierzch biblioteki: Zoraline, Cosmos Caller
+  [modal choice]   ▶ Koniec przenoszenia na wierzch biblioteki
+  [modal choice]     Na wierzch biblioteki: Nefarious Imp
+  [modal choice]     Na wierzch biblioteki: Zoraline, Cosmos Caller
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Forever Young zostaje rozstrzygnięty
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Reassembling Skeleton
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Reassembling Skeleton zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 16 → 15
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Civilized Scholar
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Civilized Scholar wchodzi na pole bitwy
+  [ROZGRYWKA]   • Civilized Scholar zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Omenspeaker, Forge Devil
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Omenspeaker zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 15
+  [ROZGRYWKA]   • Forge Devil zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 15 → 14
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Zagraj: Puppeteer Clique (koszt 3BB)
+  [kreator many] Płatność 3BB — tapuj źródła po jednympozostało 5 many · kolory do pokrycia: B, BTapnij: Swamp (B)Tapnij: Swamp (B)Tapnij — źródła: 7
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Swamp (B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Puppeteer Clique
+  [ROZGRYWKA]   • Puppeteer Clique wchodzi na pole bitwy
+  [ROZGRYWKA]   • Puppeteer Clique zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Puppeteer Clique — wybierz cel triggera (wymagany)
+  >> Puppeteer Clique — cel triggera (2 opcje)
+  [modal choice] Puppeteer Clique — cel triggera Puppeteer Clique — cel triggera: Jeskai Devotee Puppeteer Clique — cel triggera: Jeskai Windscout
+  [modal choice]   ▶ Puppeteer Clique — cel triggera: Jeskai Devotee
+  [modal choice]     Puppeteer Clique — cel triggera: Jeskai Windscout
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Puppeteer Clique — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Puppeteer Clique — cel: Jeskai Devotee
+  [ROZGRYWKA]   • Ty: Jeskai Devotee — cmentarz → pole bitwy
+  [ROZGRYWKA]   • Jeskai Devotee przechodzi pod kontrolę gracza Ty
+  [ROZGRYWKA]   • Puppeteer Clique — trigger się rozstrzyga
+  >> Aktywuj: Jeskai Devotee (Ty) (koszt 1) — dodaj manę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Jeskai Devotee — dodanie many do puli ({U}, {R}, {W})
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Reassembling Skeleton, Jeskai Devotee
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Civilized Scholar blokuje Jeskai Devotee
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Reassembling Skeleton zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 15 → 14
+  [ROZGRYWKA]   • Jeskai Devotee zadaje 2 obrażenia (Civilized Scholar)
+  [ROZGRYWKA]   • Civilized Scholar ginie
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Jeskai Devotee — trigger (opóźniony trigger)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Jeskai Devotee zostaje wygnany (opóźniony trigger)
+  [ROZGRYWKA]   • Jeskai Devotee — trigger się rozstrzyga (opóźniony)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Inspiration → cel: Nieprzyjaciel
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Inspiration zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 17 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Zagraj: Dementia Bat (koszt 4B)
+  [kreator many] Płatność 4B — tapuj źródła po jednympozostało 5 many · kolory do pokrycia: BTapnij: Swamp (B)Tapnij: Swamp (B)Tapnij: Pl — źródła: 8
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Swamp (B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Dementia Bat
+  [ROZGRYWKA]   • Dementia Bat wchodzi na pole bitwy
+  [ROZGRYWKA]   • Dementia Bat zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Reassembling Skeleton, Puppeteer Clique
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Omenspeaker blokuje Reassembling Skeleton
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Reassembling Skeleton zadaje 1 obrażenie (Omenspeaker)
+  [ROZGRYWKA]   • Omenspeaker zadaje 1 obrażenie (Reassembling Skeleton)
+  [ROZGRYWKA]   • Puppeteer Clique zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 14 → 11
+  [ROZGRYWKA]   • Reassembling Skeleton ginie
+  >> Aktywuj: Reassembling Skeleton (koszt 1B) — wróć na pole bitwy zatapnięte
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Reassembling Skeleton
+  [ROZGRYWKA]   • Ty: Reassembling Skeleton — cmentarz → pole bitwy
+  [ROZGRYWKA]   • Ty: zdolność Reassembling Skeleton rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Mysteries of the Deep
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Mysteries of the Deep zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 19 — Ty
+  >> Aktywuj: Dementia Bat (Ty) (koszt 4B, poświęć) — odrzuć 2 karty → cel: Nieprzyjaciel
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Dementia Bat → cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera, którą kartę odrzucić efektem (Dementia Bat)
+  [ROZGRYWKA]   • Ty: zdolność Dementia Bat rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Mountain
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera, którą kartę odrzucić efektem (Dementia Bat)
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Island
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Wretched Banquet
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Puppeteer Clique, Reassembling Skeleton
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Omenspeaker blokuje Reassembling Skeleton
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Puppeteer Clique zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 11 → 8
+  [ROZGRYWKA]   • Reassembling Skeleton zadaje 1 obrażenie (Omenspeaker)
+  [ROZGRYWKA]   • Omenspeaker zadaje 1 obrażenie (Reassembling Skeleton)
+  [ROZGRYWKA]   • Reassembling Skeleton ginie
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Omenspeaker, Forge Devil
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Omenspeaker zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 13
+  [ROZGRYWKA]   • Forge Devil zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 12
+  [ROZGRYWKA]   • Tura 21 — Ty
+  >> Aktywuj: Reassembling Skeleton (koszt 1B) — wróć na pole bitwy zatapnięte
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Reassembling Skeleton
+  >> Aktywuj: Reassembling Skeleton (koszt 1B) — wróć na pole bitwy zatapnięte
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Reassembling Skeleton
+  >> Aktywuj: Reassembling Skeleton (koszt 1B) — wróć na pole bitwy zatapnięte
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Reassembling Skeleton
+  [ROZGRYWKA]   • Ty: Reassembling Skeleton — cmentarz → pole bitwy
+  [ROZGRYWKA]   • Ty: zdolność Reassembling Skeleton rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: zdolność Reassembling Skeleton rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: zdolność Reassembling Skeleton rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Spread the Sickness
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Puppeteer Clique
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Puppeteer Clique zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 8 → 5
+  [ROZGRYWKA]   • Tura 22 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Revolutionist
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Revolutionist wchodzi na pole bitwy
+  [ROZGRYWKA]   • Revolutionist zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Revolutionist — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Revolutionist — cel: Twiddle
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: Twiddle — cmentarz → ręka
+  [ROZGRYWKA]   • Revolutionist — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Twiddle — tryb: Tapnięcie → cel: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Twiddle — tryb: Tapnięcie zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Omenspeaker, Forge Devil
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Omenspeaker zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 12 → 11
+  [ROZGRYWKA]   • Forge Devil zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 10
+  [ROZGRYWKA]   • Tura 23 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Cel czaru: Spread the Sickness (5 opcji)
+  [modal choice] Cel czaru: Spread the Sickness Rzuć: Spread the Sickness (koszt 4B) → cel: Revolutionist (Nieprzyjaciel) Rzuć: Spread the Sickness (koszt 4B) → cel: Reassembling Skeleton (Ty) Rzuć: Spread the Sickness (koszt 4B) → cel: Puppeteer Clique (Ty) Rzuć: Spread the Sickness (koszt 4B) → cel: Forge Devil (Nieprzyjaciel) Rzuć: Spread the Sickness (koszt 4B) → cel: Omenspeaker (Nieprzyjaciel)
+  [modal choice]   ▶ Rzuć: Spread the Sickness (koszt 4B) → cel: Revolutionist (Nieprzyjaciel)
+  [modal choice]     Rzuć: Spread the Sickness (koszt 4B) → cel: Reassembling Skeleton (Ty)
+  [modal choice]     Rzuć: Spread the Sickness (koszt 4B) → cel: Puppeteer Clique (Ty)
+  [modal choice]     Rzuć: Spread the Sickness (koszt 4B) → cel: Forge Devil (Nieprzyjaciel)
+  [modal choice]     Rzuć: Spread the Sickness (koszt 4B) → cel: Omenspeaker (Nieprzyjaciel)
+  [kreator many] Płatność 4B — tapuj źródła po jednympozostało 5 many · kolory do pokrycia: BTapnij: Swamp (B)Tapnij: Swamp (B)Tapnij: Pl — źródła: 9
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Swamp (B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Spread the Sickness → cel: Revolutionist
+  [ROZGRYWKA]   • Revolutionist zostaje zniszczony
+  [ROZGRYWKA]   • Spread the Sickness zostaje rozstrzygnięty
+  >> Cel czaru: Wretched Banquet (4 opcje)
+  [modal choice] Cel czaru: Wretched Banquet Rzuć: Wretched Banquet (koszt B) → cel: Reassembling Skeleton (Ty) Rzuć: Wretched Banquet (koszt B) → cel: Puppeteer Clique (Ty) Rzuć: Wretched Banquet (koszt B) → cel: Forge Devil (Nieprzyjaciel) Rzuć: Wretched Banquet (koszt B) → cel: Omenspeaker (Nieprzyjaciel)
+  [modal choice]   ▶ Rzuć: Wretched Banquet (koszt B) → cel: Reassembling Skeleton (Ty)
+  [modal choice]     Rzuć: Wretched Banquet (koszt B) → cel: Puppeteer Clique (Ty)
+  [modal choice]     Rzuć: Wretched Banquet (koszt B) → cel: Forge Devil (Nieprzyjaciel)
+  [modal choice]     Rzuć: Wretched Banquet (koszt B) → cel: Omenspeaker (Nieprzyjaciel)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Wretched Banquet → cel: Reassembling Skeleton
+  [ROZGRYWKA]   • Reassembling Skeleton zostaje zniszczony
+  [ROZGRYWKA]   • Wretched Banquet zostaje rozstrzygnięty
+  >> Aktywuj: Reassembling Skeleton (koszt 1B) — wróć na pole bitwy zatapnięte
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Reassembling Skeleton
+  [ROZGRYWKA]   • Ty: Reassembling Skeleton — cmentarz → pole bitwy
+  [ROZGRYWKA]   • Ty: zdolność Reassembling Skeleton rozstrzygnięta
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Puppeteer Clique
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Puppeteer Clique zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 5 → 2
+  [ROZGRYWKA]   • Tura 24 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Omenspeaker, Forge Devil
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Omenspeaker zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 10 → 9
+  [ROZGRYWKA]   • Forge Devil zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 9 → 8
+  [ROZGRYWKA]   • Tura 25 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Cel czaru: Unbreakable Bond (3 opcje)
+  [modal choice] Cel czaru: Unbreakable Bond Rzuć: Unbreakable Bond (koszt 4B) → cel: Dementia Bat Rzuć: Unbreakable Bond (koszt 4B) → cel: Nefarious Imp Rzuć: Unbreakable Bond (koszt 4B) → cel: Zoraline, Cosmos Caller
+  [modal choice]   ▶ Rzuć: Unbreakable Bond (koszt 4B) → cel: Dementia Bat
+  [modal choice]     Rzuć: Unbreakable Bond (koszt 4B) → cel: Nefarious Imp
+  [modal choice]     Rzuć: Unbreakable Bond (koszt 4B) → cel: Zoraline, Cosmos Caller
+  [kreator many] Płatność 4B — tapuj źródła po jednympozostało 5 many · kolory do pokrycia: BTapnij: Swamp (B)Tapnij: Swamp (B)Tapnij: Pl — źródła: 10
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Swamp (B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Unbreakable Bond → cel: Dementia Bat
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Negate → cel: Unbreakable Bond
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Negate zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+== KONIEC PARTII == Koniec partii — wygrywa Ty
+
+--- krok 103 | Koniec partii — wygrywa Ty ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: (pusta)
+  MOJE POLA: Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Reassembling Skeleton · 2 · Creature — Skeleton Warrior · {1}, {B}: wróć na pole bitwy zatapnięte · 1/1 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×7 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×5 | Omenspeaker · 2 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: scry 2. · 1/3 | Forge Devil · 1 · Creature — Devil · Gdy wejdzie na pole bitwy: zada 1 obrażenie celowi i 1 obrażenie kontrolerowi. · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Unbreakable Bond, Swamp, Dementia Bat, Reassembling Skeleton, Puppeteer Clique, Nefarious Imp, Zoraline, Cosmos Caller ⏎ Nowa partia (seed 7). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 25, kliknięte: 31, modale: 9, sondy noop: 126 (panel 92, modal 34)
+== DETEKTORY: brak zgłoszeń ==

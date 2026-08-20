@@ -294,7 +294,11 @@ function choiceRequestGroupKey(command) {
     return `permanent-x:${command.objectId}`;
   }
   if (command.type === 'activate_ability'
-    && (command.targets?.length || command.xValue != null || command.attackerId != null || command.tapCreatureId != null || command.tapOtherCreatureId != null || command.crewCreatureIds?.length)) {
+    && (command.targets?.length || command.xValue != null || command.attackerId != null || command.tapCreatureId != null || command.tapOtherCreatureId != null || command.crewCreatureIds?.length
+      // M160/B1 (Seismic Monstrosaur): warianty kosztu „poświęć ląd” (jeden
+      // wpis per ląd) grupują się jak crew/tap — bez tego panel pokazywał
+      // N identycznych wpisów „Aktywuj: … — dobierz 1 kartę”.
+      || command.sacrificeLandId != null)) {
     return `ability:${command.objectId}:${command.abilityIndex}`;
   }
   if (command.type === 'resolve_scry') return 'resolve_scry';
@@ -1077,6 +1081,12 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   }
   const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
   const parts = effects.filter((e) => e && typeof e.type === 'string' && e.type !== '').map(describeEffect).join(', ');
+  // M159/Z2 (Żywy Tester g7, Exterminator Magmarch): trigger z warunkiem
+  // multiplayer („if another opponent…”) jest w 1v1 martwy z definicji
+  // formatu — kafel mówi to wprost zamiast renderować pusty szum.
+  if (trigger.condition?.anotherOpponentExists) {
+    return 'Trigger wymaga drugiego przeciwnika — nieaktywny w grze 1v1';
+  }
   if (trigger.event === 'dies') return `Gdy ta karta umrze: ${parts}.`;
   if (trigger.event === 'combat_damage_to_player') return `Gdy zada obrażenia graczowi: ${parts}.`;
   if (trigger.event === 'enter_battlefield' && trigger.sacrificeIfUnpaid) return `Gdy wejdzie na pole bitwy: zapłać {${trigger.payMana ?? 0}} albo ją poświęć (płatność automatyczna).`;
@@ -1164,7 +1174,7 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
 }
 
 /** Tekst reguł do pola karty: keywordy, efekty czaru lub opis zdolności. */
-function rulesText(info) {
+export function rulesText(info) {
   if (info.faceDown) return '';
   const keywordLine = (info.keywords ?? []).map((kw) => KEYWORD_LABELS[kw] ?? kw).join(' ');
   const abilityLine = info.abilities && info.abilities.length
@@ -1221,7 +1231,19 @@ function rulesText(info) {
     ].filter(Boolean).join(' · ')
     : '';
   const landLine = info.kind === 'land' ? 'T: dodaj 1 manę' : '';
-  return [keywordLine, spellLine, plotLine, equipLine, auraLine, abilityLine, morphLine, landLine].filter(Boolean).join(' · ');
+  // M159/Z4 (Żywy Tester g6): Saga w ręce/na stole renderowała się BEZ
+  // treści („Invasion of the Giants · 2 · Enchantment — Saga” i nic) —
+  // rozdziały są całą treścią karty dla gracza (ta sama rodzina co pusty
+  // opis aury M100/E10 i M138/Z9). Opisujemy je z deskryptorów (ADR 0002).
+  const sagaLine = info.saga?.chapters?.length
+    ? `Saga — ${info.saga.chapters.map((chapter, index) => {
+      const roman = ['I', 'II', 'III', 'IV'][index] ?? String(index + 1);
+      const chapterParts = (Array.isArray(chapter) ? chapter : [chapter])
+        .filter((e) => e && typeof e.type === 'string').map(describeEffect).filter(Boolean).join(', ');
+      return `${roman}: ${chapterParts || '?'}`;
+    }).join(' · ')}`
+    : '';
+  return [keywordLine, spellLine, plotLine, equipLine, auraLine, abilityLine, morphLine, sagaLine, landLine].filter(Boolean).join(' · ');
 }
 
 /** Etykieta przycisku akcji — po polsku, z nazwami kart i celów.
@@ -1347,7 +1369,8 @@ function choiceSourceTitle(cmd, session, view) {
   // grupują się po obiekcie — bez tej gałęzi tytuł spadał do generycznego
   // „Wybierz: Wariant (N opcji)" i gracz nie wiedział, czego dotyczy wybór.
   if (cmd.type === 'activate_ability'
-    && (cmd.tapOtherCreatureId != null || cmd.tapCreatureId != null || cmd.crewCreatureIds?.length)) {
+    && (cmd.tapOtherCreatureId != null || cmd.tapCreatureId != null || cmd.crewCreatureIds?.length
+      || cmd.sacrificeLandId != null)) {
     return `Aktywuj: ${name}`;
   }
   return null;
@@ -1713,6 +1736,10 @@ export function commandLabel(cmd, session, view) {
           ? ` (koszt: ${costHtml})` : ` (koszt ${costHtml})`)
         : '';
       const tapPart = cmd.tapCreatureId ? ` — tapnij ${nameOfObjectId(cmd.tapCreatureId)}` : (cmd.tapOtherCreatureId ? ` — tapnij ${nameOfObjectId(cmd.tapOtherCreatureId)}` : '');
+      // M160/B2 (Seismic Monstrosaur): koszt „poświęć ląd” enumeruje wariant
+      // per ląd — etykieta MUSI nazwać, który ląd ginie (poświęcenie to
+      // koszt, CR 601.2h; sześć identycznych wpisów było nierozróżnialnych).
+      const sacLandPart = cmd.sacrificeLandId != null ? ` — poświęć: ${nameOfObjectId(cmd.sacrificeLandId)}` : '';
       // M101/B7: nazwij AKCJĘ, którą gracz wykonuje (crew albo saddle — nie
       // oba naraz), i powiedz wprost, że wskazane stwory zostaną TAPNIĘTE.
       // Tapnięcie to koszt (CR 701.36a/702.171a), więc gracz musi je widzieć
@@ -1725,7 +1752,7 @@ export function commandLabel(cmd, session, view) {
         ? ' — UWAGA: twoja biblioteka jest pusta, zdolność nie zadziała'
         : (abilityFizzlesOnHand(ability, view)
           ? ' — UWAGA: brak pasującej karty w ręce, zdolność nie zadziała' : '');
-      return `Aktywuj: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability, { withCost: false, withTarget: false })}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${crewPart}${emptyLibWarn}`;
+      return `Aktywuj: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability, { withCost: false, withTarget: false })}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${sacLandPart}${crewPart}${emptyLibWarn}`;
     }
     case 'declare_attackers': {
       const names = (cmd.attackerIds ?? []).map((id) => nameOfObjectId(id));
@@ -1924,9 +1951,11 @@ export function commandLabel(cmd, session, view) {
       return `Weź do ręki: ${nameOfObjectId(cmd.cardId)}`;
     }
     case 'resolve_madness_cast': {
+      // M159/F4 (audyt PR #66): oferta niesie objectId (karta w exile —
+      // strefa publiczna) i cardId; etykieta ma NAZYWAĆ kartę, nie „?".
       return cmd.cast
-        ? `Rzuć za koszt madness: ${nameOfObjectId(cmd.cardId)}`
-        : 'Przełóż do cmentarza (rezygnacja z madness)';
+        ? `Rzuć za koszt madness: ${nameOfObjectId(cmd.objectId ?? cmd.cardId)}`
+        : `Przełóż do cmentarza (rezygnacja z madness): ${nameOfObjectId(cmd.objectId ?? cmd.cardId)}`;
     }
     case 'resolve_reveal_choice': {
       if (cmd.cardId == null) return 'Nie ujawniaj (bez obrażeń)';
@@ -2188,6 +2217,9 @@ function cardInfo(session, object, combat = null) {
     plot: details.plot || null,
     equipment: faceDown ? null : (details.equipment || object.equipment || null),
     aura: faceDown ? null : (details.aura || object.aura || null),
+    // M159/Z4: rozdziały Sagi są treścią kafla (rulesText) — bez tego pola
+    // Saga renderowała się bez żadnego opisu.
+    saga: faceDown ? null : (details.saga || object.saga || null),
     attachedTo: object.attachedTo ?? null,
     hostName: object.attachedTo ? (session.nameOfObject?.(object.attachedTo) ?? '') : '',
     // F (2026-08-11): karta-gospodarz pokazuje przypięte do niej aury/equipmenty
@@ -2580,6 +2612,7 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
     abilities: details.abilities || [],
     morph: details.morph || null,
     plot: details.plot || null,
+    saga: details.saga || null, // M159/Z4: rozdziały Sagi w podglądzie karty
     set: details.set ?? null,
     imageUri: details.imageUri ?? null,
     artId: details.artId ?? null,

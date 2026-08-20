@@ -38,7 +38,7 @@ function stableStringify(value) {
  */
 export function stateFingerprint(state) {
   const objects = [...state.objects.values()]
-    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, keywordGrants, abilityGrants, typeGrant, subtypes, transformTo, untapLockedBy, types, entersTapped, attachedTo, baseKind, bestow, aura, equipment, backup, colors, phyrexianManaCost, goaded, goadedUntilTurn, hexproofUntilTurn, enchantPlayer, enchantedPlayerId, cantBlock, cantBeBlocked }) => ({
+    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, keywordGrants, abilityGrants, typeGrant, subtypes, transformTo, untapLockedBy, types, entersTapped, attachedTo, baseKind, bestow, aura, equipment, backup, colors, phyrexianManaCost, goaded, goadedUntilTurn, hexproofUntilTurn, enchantPlayer, enchantedPlayerId, cantBlock, cantBeBlocked, lostKeywordsUntilEOT, subtypesBeforeOverride, madnessReady }) => ({
       id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets,
       abilities: abilities ?? [],
       counters: { ...(counters ?? {}) }, faceDown: Boolean(faceDown),
@@ -61,6 +61,12 @@ export function stateFingerprint(state) {
       // zdolności, (b) dwa stany różniące się prawem do blokowania miały
       // identyczny fingerprint, więc weryfikacja replayów ich nie odróżniała.
       cantBlock: Boolean(cantBlock), cantBeBlocked: Boolean(cantBeBlocked),
+      // M159/Z1 (Żywy Tester, klasa M122/#1): stan „do końca tury” i madness
+      // na obiekcie też są częścią stanu gry (Wishful Merfolk — utrata
+      // keywordów; Revolutionist — gotowość rzutu za madness z exile).
+      lostKeywordsUntilEOT: [...(lostKeywordsUntilEOT ?? [])],
+      subtypesBeforeOverride: subtypesBeforeOverride ? [...subtypesBeforeOverride] : null,
+      madnessReady: Boolean(madnessReady),
     }))
     .sort((a, b) => a.id.localeCompare(b.id));
   const zones = Object.fromEntries(Object.entries(state.zones).map(([zone, ids]) => [zone, [...ids]]));
@@ -93,6 +99,12 @@ export function stateFingerprint(state) {
     })),
     // M109 (Spare from Evil): ochrona „do końca tury" jest
     // częścią stanu gry — dwa stany różniące się nią nie są identyczne.
+    // M159/Z1 (Żywy Tester g7, klasa M122/#1): tarcze regeneracji i blokada
+    // regeneracji „do końca tury” są stanem gry — bez nich sonda „oferta bez
+    // skutku” fałszywie zgłaszała działający Regenerate (Exterminator
+    // Magmarch), a replay nie odróżniał stanów z tarczą i bez.
+    regenerationShields: [...(state.regenerationShields ?? [])],
+    cantBeRegeneratedThisTurn: [...(state.cantBeRegeneratedThisTurn ?? [])],
     untilEndOfTurnProtections: (state.untilEndOfTurnProtections ?? []).map((g) => ({
       controllerId: g.controllerId,
       objectIds: Array.isArray(g.objectIds) ? [...g.objectIds] : null,
