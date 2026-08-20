@@ -1,7 +1,43 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-20 (M156: audyt PR #65 + fixy F1–F3 + pętla jakości Q1/Q2 + strażnik L51)
+- **Ostatnia aktualizacja:** 2026-08-20 (M157: ADR 0022, fixy A–F, F4(a) wielocelowy trigger, L28 strażnik wycen)
 - **Poprzednia:** 2026-08-20 (PR #65 scalony: M147–M155 — poniżej backfill)
+
+## M157 — uwagi właściciela z review PR #66 (2026-08-20, PR #66)
+
+Decyzje właściciela: **ADR 0022** (KAŻDA karta supported = 100% Oracle albo
+nieobsługiwana — koniec „świadomego długu"), F4 tylko opcja (a), L28-inwentaryzacja
+w tej sesji, uszkodzony plik audytu usunąć.
+
+1. **ADR 0022** + rejestr README + AGENTS.md zaktualizowane; strażnik notes
+   rozszerzony o „uproszczenie".
+2. **Plik audytu Batch38** — ścieżka uszkodzona na FS sandboxa (ghost dentry);
+   treść odzyskana z blobu gita → `docs/audits/AUDYT_2026-08-20-batch38-zywy-tester.md`.
+3. **Fixy A–F z testów właściciela** (`test/m157-uwagi-wlasciciela.test.js`):
+   - A: usunięta syntetyczna „niby-karta" z hovera i pełnego ekranu;
+   - B: 8 tokenów bez obrazu dostało imageUri ze Scryfall (m.in. Bird Soldier,
+     Powerstone, Germ) + invariant „każdy token ma obraz";
+   - C: **Skilled Animator** — animacja trwa do zejścia ŹRÓDŁA („for as long
+     as..."), nie do końca tury; cleanup pomija żywe linki; revert w
+     moveObjectDirectly synchronizuje Station (L46 w ścieżce linked);
+   - D: **stun** (Lodestone Needle) — zdjęcie licznika i pierwszy untap po
+     stunie = pauza z renderem (kreatura „nigdy nie odkręcała się wizualnie");
+   - E: „Log partii" pokazuje całą rozgrywkę (koniec okna 80 wpisów);
+   - F: panel liczników trucizny (obraz „Poison Counter" tecc/13 + liczniki
+     graczy); playerView niesie `poison` (ADR 0017).
+4. **F4(a) — Weftblade Enhancer 100% Oracle**: wielocelowy trigger ETB
+   („each of up to two target creatures") — deskryptor `count/upTo`,
+   `applyTriggerEffects` per cel, `resolve_trigger_target` z `targetIds`,
+   enumeracja wariantów (cap 32, L19), etykiety, klucze opcji (L32),
+   wycena bota (para własnych). „Uproszczenie" usunięte z notes.
+5. **L28 — inwentaryzacja wycen** (czary/zdolności celowane):
+   strażnik `test/bot-targeted-effect-valuation-guard.test.js` (weryfikacja
+   mutacyjna) + 4 naprawy (Mournful Zombie leczył wroga, kradzież bez wyceny,
+   2× remis w wyborze karty z grobu). L51 zaktualizowana o drugi strażnik.
+
+**Stan:** `npm test` **2458/2458**, `test:slow` 9/9 (test:all 2467), build
+**51 modułów / 2088.6 kB**. ⚠ GH_TOKEN wygasł w trakcie sesji — commity
+M157 czekają na push po reconnect.
 
 ## M156 — audyt PR #65 + fixy (2026-08-20, PR #66)
 

@@ -34,18 +34,26 @@ Decyzje właściciela w review PR #66:
 
 ## Kolejność commitów (każdy zielony: npm test + build)
 
-1. Plan + ADR 0022 (100% Oracle albo nieobsługiwana) + sprawa pliku audytu.
-2. A — usunięcie zaślepki hover.
-3. B — imageUri tokenu Bird Soldier (+ test).
-4. C — animate_linked duration (RED→GREEN + interakcje station/sync).
-5. D — rerender po zdjęciu stun countera.
-6. E — brak czyszczenia logu.
-7. F — panel trucizny (+ test).
-8. F4(a) — wielocelowy trigger ETB (engine+widok+boty+UI) — Weftblade 2 cele;
+1. [x] Plan + ADR 0022 (100% Oracle albo nieobsługiwana) + sprawa pliku audytu.
+2. [x] A — usunięcie zaślepki hover.
+3. [x] B — imageUri tokenu Bird Soldier (+ test).
+4. [x] C — animate_linked duration (RED→GREEN + interakcje station/sync).
+5. [x] D — rerender po zdjęciu stun countera.
+6. [x] E — brak czyszczenia logu.
+7. [x] F — panel trucizny (+ test).
+8. [x] F4(a) — wielocelowy trigger ETB (engine+widok+boty+UI) — Weftblade 2 cele;
    usunięcie „uproszczenia" z notes.
-9. L28 — inwentaryzacja efektów celowanych czarów/zdolności vs 3 tabele bota
+9. [x] L28 — inwentaryzacja efektów celowanych czarów/zdolności vs 3 tabele bota
    (rozszerzenie strażnika M156 o ścieżki cast_spell/activate_ability).
-10. Domknięcie: PROJECT_STATE, handoff, opis PR.
+10. [x] Domknięcie: PROJECT_STATE, handoff, opis PR.
+
+## Podsumowanie wykonania
+
+- ADR 0022 + rejestr + AGENTS + strażnik notes (/uproszczen/) — commit 1ac0a8d.
+- A–F (commity 7afa3f4), F4(a) (00b4046), L28 (2ab3124).
+- Stan końcowy: npm test 2458/2458, test:slow 9/9, build 51/2088.6 kB.
+- Plik audytu Batch38 przetransferowany pod nową nazwę (uszkodzona ścieżka FS).
+- GH_TOKEN wygasł po commicie F4(a) — push M157 wstrzymany do reconnectu.
 
 ## Ryzyka/pułapki
 

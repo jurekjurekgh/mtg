@@ -49,6 +49,9 @@ każde wystąpienie łataliśmy pojedynczym wpisem (dokładnie wzorzec L28).
    policz typy efektów w kontekstach celowanych z `card-data.js` i sprawdź
    obecność w wycenach (grep w heuristic-bocie). Połowa tropów będzie fałszywa
    (L15) — każdy zweryfikowany zapisz z uzasadnieniem.
+   **Od M157 to STAŁY strażnik** (obydwie ścieżki): triggery —
+   `test/bot-trigger-target-classification-guard.test.js` (M156); czary/
+   zdolności — `test/bot-targeted-effect-valuation-guard.test.js`.
 3. Klasyfikacja per ZDOLNOŚĆ, nie per efekt: zdolność [tap_permanent +
    add_counter stun] (Lodestone Needle) jest wroga przez dowolny efekt wrogi.
 
