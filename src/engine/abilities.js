@@ -1198,6 +1198,10 @@ export function performActivation(state, ctx) {
   const activated = event('ability_activated', {
     playerId, objectId, abilityIndex,
     cardId: effectSource.cardId ?? object.cardId,
+    // M158/A (zgłoszenie właściciela): nazwa zdolności kluczowej (Morph,
+    // Megamorph) — bez tego log mówił tylko „aktywuje zdolność: Woolly
+    // Loxodon", nie mówiąc JAKĄ zdolność.
+    keyword: ability.keyword ?? null,
     effectTypes: effectList.map((e) => e?.type).filter(Boolean),
     // M150/C2: kolory wyprodukowanej many (Jeskai Devotee) w logu.
     ...(manaColors.length ? { manaColors } : {}),
@@ -1265,6 +1269,7 @@ export function queueActivatedAbilityToStack(state, { playerId, objectId, abilit
   const stackManaColors = collectManaColors(Array.isArray(ability.effect) ? ability.effect : [ability.effect]);
   const activated = event('ability_activated', {
     playerId, objectId: effectSourceId, cardId: entry.cardId, abilityIndex,
+    keyword: ability.keyword ?? null,
     effectTypes: (Array.isArray(ability.effect) ? ability.effect : [ability.effect]).map((e) => e?.type).filter(Boolean),
     // M150/C2: kolory wyprodukowanej many w logu.
     ...(stackManaColors.length ? { manaColors: stackManaColors } : {}),

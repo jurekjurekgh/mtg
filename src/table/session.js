@@ -688,6 +688,13 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       case 'ability_activated': {
         if (e.attackerId) return `${whoN(e.playerId)} używa Ninjutsu (${nameOfObject(e.objectId)} wchodzi zamiast ${nameOfObject(e.attackerId)})`;
         if (e.cycling) return `${whoN(e.playerId)} aktywuje cycling: ${nameOf(e.cardId)}`;
+        // M158/A (zgłoszenie właściciela): odkrycie morph MUSI nazywać
+        // zdolność — „aktywuje zdolność: Woolly Loxodon" nie mówiło, CO się
+        // dzieje (sąsiednia linia opisuje obrót, ta — decyzję aktywacji).
+        if (e.keyword === 'morph' || e.keyword === 'megamorph') {
+          const name = e.keyword === 'morph' ? 'Morph' : 'Megamorph';
+          return `${whoN(e.playerId)} aktywuje ${name}: ${e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId)} — odkrycie karty za koszt ${name.toLowerCase()}`;
+        }
         if (e.keyword === 'equip') {
           const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
           // M100/E13 (zgłoszenie A): „wyposaża: X → Y" wyglądało jak SKUTEK,
