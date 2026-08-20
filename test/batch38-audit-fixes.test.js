@@ -89,3 +89,29 @@ test('Batch38/Z5: tryby modalne oferowane w kolejności Oracle (Fortify: Ofensyw
   assert.equal(modes[0], 'Ofensywa (+2/+0)', `mode 0 pierwszy (domyślna sugestia): ${modes.join(', ')}`);
   assert.equal(modes[1], 'Obrona (+0/+2)', `mode 1 drugi: ${modes.join(', ')}`);
 });
+
+// --- Z7: token w widoku niesie jawną nazwę (nie raw id) ---
+test('Batch38/Z7: token w playerView niesie jawną nazwę (Squirrel, nie token_squirrel)', () => {
+  const state = newState();
+  state.players.find((p) => p.id === 'p1').mana = 1;
+  state.players.find((p) => p.id === 'p1').manaPool = { G: 1 };
+  putCard(state, 'ch', 'chatter-of-the-squirrel', 'p1', 'hand');
+  const cast = playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'ch');
+  assert.ok(cast);
+  execute(state, cast);
+  const resolveStack = (s) => {
+    for (let i = 0; i < 24 && s.zones.stack.length > 0; i += 1) {
+      const v = playerView(s, s.turn.priorityPlayerId);
+      const n = v.legalCommands.find((c) => c.type.startsWith('resolve_'))
+        ?? v.legalCommands.find((c) => c.type === 'pass_priority');
+      if (!n) return false;
+      execute(s, n);
+    }
+    return s.zones.stack.length === 0;
+  };
+  resolveStack(state);
+  const view = playerView(state, 'p1');
+  const tok = view.zones.battlefield.find((o) => o.cardId === 'token_squirrel');
+  assert.ok(tok, 'token w widoku');
+  assert.equal(tok.name, 'Squirrel', `jawna nazwa tokenu: ${tok.name}`);
+});

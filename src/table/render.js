@@ -1477,10 +1477,14 @@ export function commandLabel(cmd, session, view) {
     // M100/E12 (pytanie właściciela): własny morph nazwany ZE znacznikiem
     // „(Morph)" — sama nazwa sugerowałaby pełnego stwora, a to zakryte 2/2.
     // M127: brzmienie znacznika z jednego źródła (session.faceDownName).
+    // M155 (audyt żywym testerem): tokeny niosą jawną nazwę (object.name);
+    // cardId `token_*` jest poza rejestrem, więc session.nameOf zwracałby
+    // surowy id („token_squirrel").
+    const tokenName = object?.isToken ? (object.name ?? null) : null;
     const base = object
       ? (object.faceDown
         ? faceDownName(object.cardId != null ? session.nameOf(object.cardId) : null)
-        : session.nameOf(object.cardId))
+        : (tokenName || session.nameOf(object.cardId)))
       : session.nameOfObject(id);
     // E (2026-08-11): permanent na polu bitwy, który mogą mieć OBAJ gracze
     // (np. stwór na stole) — do nazwy w modalach wyboru dopisujemy kontrolera,

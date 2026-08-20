@@ -1368,6 +1368,10 @@ export function createSession(config) {
     if (object.faceDown) {
       return faceDownName(object.controllerId === HUMAN_ID ? nameOf(object.cardId) : null);
     }
+    // M155 (audyt żywym testerem): tokeny niosą JAWNĄ nazwę w `object.name`
+    // (cardId `token_*` poza rejestrem → nameOf zwracałby „token_squirrel").
+    // Nazwa tokenu z pola obiektu, nie z mapy rejestru kart.
+    if (object.isToken && object.name != null) return object.name;
     return nameOf(object.cardId);
   }
 

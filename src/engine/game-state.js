@@ -3734,6 +3734,12 @@ export function playerView(state, playerId) {
           // Face-down permanent ukrywa tożsamość przed przeciwnikiem (FoW);
           // kontroler zna swoją kartę.
           cardId: object.faceDown && object.controllerId !== playerId ? null : object.cardId,
+          // M155 (audyt żywym testerem): tokeny (Treasure, Squirrel, Wizard...)
+          // niosą JAWNĄ nazwę w `object.name` (cardId to `token_*` spoza
+          // rejestru, więc nameOf(cardId) zwraca surowy id „token_squirrel").
+          // Przekazujemy nazwę, żeby kafle i cele pokazywały „Squirrel" zamiast
+          // „token_squirrel".
+          ...(object.isToken ? { name: object.name } : {}),
           controllerId: object.controllerId, zone: object.zone,
           kind: object.kind,
           power: effectivePower(object, state), toughness: effectiveToughness(object, state),
