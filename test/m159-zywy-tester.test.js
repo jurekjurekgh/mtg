@@ -87,13 +87,30 @@ test('Z2: kafel Magmarcha mówi o martwym triggerze 1v1 zamiast „Gdy rzucisz c
   assert.ok(text.includes('tarcza regeneracji'), `opis Regenerate zniknął: ${text}`);
 });
 
+test('Z4: kafel Sagi opisuje rozdziały (Invasion of the Giants nie jest pustym kaflem)', () => {
+  const def = REGISTRY.get('invasion-of-the-giants');
+  const text = rulesText({
+    cardId: def.id, controllerId: 'p1', abilities: def.abilities ?? [],
+    keywords: def.keywords ?? [], spell: def.spell ?? null,
+    equipment: def.equipment ?? null, plot: def.plot ?? null, saga: def.saga ?? null,
+  });
+  assert.ok(text.includes('Saga'), `kafel Sagi bez treści: ${text}`);
+  assert.ok(text.includes('I:') && text.includes('II:') && text.includes('III:'),
+    `kafel Sagi nie opisuje rozdziałów: ${text}`);
+  assert.ok(text.includes('scry 2'), `rozdział I bez opisu scry: ${text}`);
+});
+
 test('Z3 (strażnik): żadna karta katalogu nie renderuje opisu „...: ."', () => {
   for (const def of REGISTRY.all()) {
     const text = rulesText({
       cardId: def.id, controllerId: 'p1', abilities: def.abilities ?? [],
       keywords: def.keywords ?? [], spell: def.spell ?? null,
-      equipment: def.equipment ?? null, plot: def.plot ?? null,
+      equipment: def.equipment ?? null, plot: def.plot ?? null, saga: def.saga ?? null,
     });
     assert.ok(!text.includes(': .'), `${def.id}: pusty opis zdolności na kaflu — „${text}"`);
+    // M159/Z4: karta z rozdziałami Sagi musi mieć linię „Saga — …” na kaflu.
+    if (def.saga?.chapters?.length) {
+      assert.ok(text.includes('Saga —'), `${def.id}: Saga bez opisu rozdziałów — ${text}`);
+    }
   }
 });

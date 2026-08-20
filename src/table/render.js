@@ -1227,7 +1227,19 @@ export function rulesText(info) {
     ].filter(Boolean).join(' · ')
     : '';
   const landLine = info.kind === 'land' ? 'T: dodaj 1 manę' : '';
-  return [keywordLine, spellLine, plotLine, equipLine, auraLine, abilityLine, morphLine, landLine].filter(Boolean).join(' · ');
+  // M159/Z4 (Żywy Tester g6): Saga w ręce/na stole renderowała się BEZ
+  // treści („Invasion of the Giants · 2 · Enchantment — Saga” i nic) —
+  // rozdziały są całą treścią karty dla gracza (ta sama rodzina co pusty
+  // opis aury M100/E10 i M138/Z9). Opisujemy je z deskryptorów (ADR 0002).
+  const sagaLine = info.saga?.chapters?.length
+    ? `Saga — ${info.saga.chapters.map((chapter, index) => {
+      const roman = ['I', 'II', 'III', 'IV'][index] ?? String(index + 1);
+      const chapterParts = (Array.isArray(chapter) ? chapter : [chapter])
+        .filter((e) => e && typeof e.type === 'string').map(describeEffect).filter(Boolean).join(', ');
+      return `${roman}: ${chapterParts || '?'}`;
+    }).join(' · ')}`
+    : '';
+  return [keywordLine, spellLine, plotLine, equipLine, auraLine, abilityLine, morphLine, sagaLine, landLine].filter(Boolean).join(' · ');
 }
 
 /** Etykieta przycisku akcji — po polsku, z nazwami kart i celów.
@@ -2196,6 +2208,9 @@ function cardInfo(session, object, combat = null) {
     plot: details.plot || null,
     equipment: faceDown ? null : (details.equipment || object.equipment || null),
     aura: faceDown ? null : (details.aura || object.aura || null),
+    // M159/Z4: rozdziały Sagi są treścią kafla (rulesText) — bez tego pola
+    // Saga renderowała się bez żadnego opisu.
+    saga: faceDown ? null : (details.saga || object.saga || null),
     attachedTo: object.attachedTo ?? null,
     hostName: object.attachedTo ? (session.nameOfObject?.(object.attachedTo) ?? '') : '',
     // F (2026-08-11): karta-gospodarz pokazuje przypięte do niej aury/equipmenty
@@ -2588,6 +2603,7 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
     abilities: details.abilities || [],
     morph: details.morph || null,
     plot: details.plot || null,
+    saga: details.saga || null, // M159/Z4: rozdziały Sagi w podglądzie karty
     set: details.set ?? null,
     imageUri: details.imageUri ?? null,
     artId: details.artId ?? null,
