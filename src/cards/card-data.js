@@ -4050,6 +4050,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // etykiety pokazywały surowy „token_eldrazi_scion" (audyt żywym testerem).
   defineCard({
     id: 'token_eldrazi_scion', name: 'Eldrazi Scion', set: null,
+    imageUri: 'https://cards.scryfall.io/large/front/c/6/c6ee5e2c-d98b-434e-9175-d20f7f713b88.jpg?1783911127', // M157/B: token ze Scryfall
     types: ['Creature', 'Token'], subtypes: ['Eldrazi', 'Scion'], colors: [],
     power: 1, toughness: 1, manaCost: 0,
     abilities: [
@@ -4837,12 +4838,14 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // Tokeny Batchu 28
   defineCard({
     id: 'token_bird_soldier', name: 'Bird Soldier', set: null,
+    imageUri: 'https://cards.scryfall.io/large/front/b/7/b7b55dcf-ae63-4b84-8d39-80b5a6de3c1a.jpg?1783942409', // M157/B: token ze Scryfall
     types: ['Creature', 'Token'], subtypes: ['Bird', 'Soldier'], colors: ['W'],
     keywords: ['flying'], power: 1, toughness: 1, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Flurry of Wings'] },
   }),
   defineCard({
     id: 'token_goblin_construct', name: 'Goblin Construct', set: null,
+    imageUri: 'https://cards.scryfall.io/large/front/b/2/b24a63e2-c2b3-43f8-a15a-68886bec7d60.jpg?1783929495', // M157/B: token ze Scryfall
     types: ['Artifact', 'Creature', 'Token'], subtypes: ['Goblin', 'Construct'], colors: [],
     power: 0, toughness: 1, manaCost: 0,
     oracleText: 'This token can\'t block.\nAt the beginning of your upkeep, this token deals 1 damage to you.',
@@ -5924,6 +5927,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // (endure) jest BEZ latania — to inny token, więc osobna definicja.
   defineCard({
     id: 'token_spirit_flying', name: 'Spirit', set: null,
+    imageUri: 'https://cards.scryfall.io/large/front/6/f/6f5a5786-e2be-4bb0-b971-81d1d5cc8f52.jpg?1783903574', // M157/B: token ze Scryfall
     types: ['Creature', 'Token'], subtypes: ['Spirit'], colors: ['W'],
     keywords: ['flying'], power: 1, toughness: 1, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
@@ -6088,6 +6092,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // i zdolnością „{2}: Transform this token"; druga strona to token_phyrexian.
   defineCard({
     id: 'token_incubator', name: 'Incubator', set: null,
+    imageUri: 'https://cards.scryfall.io/large/front/c/5/c5229eb0-9356-43a6-9b1b-6366f3c1e405.jpg?1783905793', // M157/B: token ze Scryfall
     types: ['Artifact', 'Token'], subtypes: ['Incubator'], colors: [],
     manaCost: 0,
     abilities: [
@@ -6105,6 +6110,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // (na stole żywy dzięki licznikom +1/+1 przeniesionym z przedniej strony).
   defineCard({
     id: 'token_phyrexian', name: 'Phyrexian', set: null,
+    imageUri: 'https://cards.scryfall.io/large/back/c/5/c5229eb0-9356-43a6-9b1b-6366f3c1e405.jpg?1783905793', // M157/B: token ze Scryfall
     types: ['Artifact', 'Creature', 'Token'], subtypes: ['Phyrexian'], colors: [],
     power: 0, toughness: 0, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
@@ -6732,6 +6738,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // MANA_SOURCE_MAP; restrykcja artefaktowa nieimplementowana (notes).
   defineCard({
     id: 'token_powerstone', name: 'Powerstone', set: null,
+    imageUri: 'https://cards.scryfall.io/large/front/d/4/d45fe4b6-aeaf-4f84-b660-c7b482ed8512.jpg?1783919908', // M157/B: token ze Scryfall
     types: ['Artifact', 'Token'], subtypes: ['Powerstone'], colors: [],
     manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Static Net'] },
@@ -6787,6 +6794,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // (żyje dzięki +2/+4 z equipmentu).
   defineCard({
     id: 'token_germ', name: 'Germ', set: null,
+    imageUri: 'https://cards.scryfall.io/large/front/6/5/65c65445-1016-4fd3-963e-1c9eb252d4a6.jpg?1783903574', // M157/B: token ze Scryfall
     types: ['Creature', 'Token'], subtypes: ['Phyrexian', 'Germ'], colors: ['B'],
     power: 0, toughness: 0, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Strandwalker (living weapon)'] },

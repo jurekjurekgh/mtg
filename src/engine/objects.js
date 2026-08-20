@@ -2,6 +2,7 @@ import { event } from '../protocol/types.js';
 import { assertZone } from './zones.js';
 import { assertStateInvariants } from './invariants.js';
 import { detachAttachmentsFromHost } from './attachments.js';
+import { syncStationKind } from './counters.js';
 
 /**
  * Kontrolowana zmiana strefy obiektu gry (CR 400.7): stary obiekt przestaje
@@ -151,6 +152,10 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
           objectId: targetId, cardId: reverted.cardId,
           sourceId: objectId, kind: reverted.kind,
         }));
+        // M157/C3 (L46/M141-A w ścieżce linked): każda ścieżka kończąca
+        // animację musi przeliczyć trwały warunek Station — inaczej spacecraft
+        // z 9+ charge wraca do artefaktu po zejściu AnimatoRA mimo progu.
+        syncStationKind(state, targetId);
       }
     }
   }

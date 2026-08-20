@@ -754,6 +754,17 @@ export function clearStatModifiers(state) {
   for (const object of state.objects.values()) {
     if (object.zone !== 'battlefield') continue;
     if (object.originalBeforeAnimation) {
+      // M157/C (uwaga właściciela, Skilled Animator): animacja LINKED („for as
+      // long as this creature remains on the battlefield") NIE kończy się
+      // w cleanup — trwa do odejścia ŹRÓDŁA z pola bitwy (cofnięcie w
+      // moveObjectDirectly na podstawie state.linkedAnimations). Cleanup
+      // kończy wyłącznie animacje „until end of turn".
+      const hasLiveLink = (state.linkedAnimations ?? [])
+        .some((entry) => entry.targetId === object.id);
+      if (hasLiveLink) {
+        // Stacja i tak jest zsynchronizowana (obiekt niezmieniony), a animacja
+        // trwa — przechodzimy do kolejnych modyfikatorów tego obiektu.
+      } else {
       replaceObject(state, object, {
         kind: object.originalBeforeAnimation.kind,
         types: object.originalBeforeAnimation.types,
@@ -769,6 +780,7 @@ export function clearStatModifiers(state) {
       // rodzaj wg liczników (CR 205.1). Bez tego stwór traci typ Creature
       // mimo spełnionego progu.
       syncStationKind(state, object.id);
+      }
     }
     const current = state.objects.get(object.id);
     if (current.saddled || current.tempBasePT || current.damagedThisTurn) {

@@ -121,6 +121,7 @@ function bootstrapTable() {
     turnHistory1: el('turn-history-1'),
     turnHistory2: el('turn-history-2'),
     daynight: el('daynight'),
+    poison: el('poison'),
     undercity: el('undercity'),
     hoverPreview: el('hover-preview'),
     contextMenu: el('context-menu'),

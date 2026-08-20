@@ -1489,6 +1489,12 @@ export function createSession(config) {
   // Uwaga C (2026-08-12): śledzimy ostatnią FAZĘ pokazaną w modalu ruchu bota,
   // żeby dodawać nagłówek „Faza: …" tylko przy ZMIANIE fazy (nie co krok).
   let lastBotPhaseKey = null;
+  // M157/D (uwaga właściciela, Lodestone Needle): obiekty, które zdjęły
+  // licznik stun (blokada untap, CR 122.1b). Ich KOLEJNY untap jest istotny —
+  // bez pauzy kreatura „nigdy nie odkręcała się wizualnie" (engine ją
+  // odkręcał w upkeepie i legalnie atakowała, ale między upkeepem bota
+  // a jego atakiem nie było żadnego renderu stołu).
+  const stunLockedObjectIds = new Set();
   // Uwaga A (2026-08-12, po merge PR #44): nagłówek fazy jest OCZEKUJĄCY —
   // wypychamy go dopiero, gdy w tej fazie pojawi się prawdziwa akcja.
   // Puste „Faza: Odkręcenie / Dobieranie / Sprzątanie" znikały z raportu.
@@ -1751,6 +1757,24 @@ export function createSession(config) {
       noteBotMove(e);
       recordTurnEvent(e);
       if (BOT_PAUSE_EVENTS.has(e.type)) significant = true;
+      // M157/D: koniec blokady stun ma być WIDOCZNY na stole. (a) zdjęcie
+      // licznika stun = pauza (gracz widzi zejście licznika na kaflu);
+      // (b) pierwszy untap po stunie = pauza z jawnym wpisem w modalu —
+      // object_untapped to normalnie szum (BOT_MOVE_NOISE), więc bez tego
+      // bufor pauzy byłby pusty (L24), a kafel zostałby narysowany
+      // zatapowany aż do okna ataku.
+      if (e.type === 'counter_removed' && e.counter === 'stun') {
+        stunLockedObjectIds.add(e.objectId);
+        significant = true;
+      } else if (e.type === 'object_untapped' && stunLockedObjectIds.has(e.objectId)) {
+        stunLockedObjectIds.delete(e.objectId);
+        significant = true;
+        botMoves.push({
+          type: 'object_untapped',
+          text: `${nameOfObject(e.objectId)} odkręca się (koniec liczników stun)`,
+          cardId: e.cardId ?? null,
+        });
+      }
       // M100/E8: bez pauzy własna linia dobrania zginęłaby wyczyszczona
       // przez następną komendę gracza (apply czyści bufor) — komunikat
       // pojawia się na starcie własnej tury jak ruch bota.

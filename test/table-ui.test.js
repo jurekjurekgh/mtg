@@ -77,6 +77,8 @@ function installMiniDom() {
     // M24: loch Undercity — karta specjalna na stole z zaznaczeniem pokoju.
     'daynight',
     'undercity',
+    // M157/F: panel liczników trucizny (jak Undercity/Day-Night).
+    'poison',
     // M18: pełny ekran karty (dwuklik / karta bez akcji) i modal ruchu bota.
     'card-fullscreen', 'card-fullscreen-body', 'card-fullscreen-close',
     'choice-request', 'choice-request-body', 'choice-request-close',
