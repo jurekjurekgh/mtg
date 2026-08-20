@@ -1907,6 +1907,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // M150/A (Battle-Rattle Shaman): trigger PRZYJAZNY (pump +2/+0,
         // licznik +1/+1) celuje WłASNY stwór — `cmd.friendly` niesie flagę
         // wyliczoną z deskryptora efektu (generycznie, ADR 0002).
+        // M157/F4(a): wariant wielocelowy — suma wycen po celach (pusty = 0).
+        if (Array.isArray(cmd.targetIds)) {
+          let score = 0;
+          for (const id of cmd.targetIds) {
+            const t2 = objectOnBoard(view, id);
+            if (!t2) continue;
+            const v2 = (t2.power ?? 0) * 2 + (t2.toughness ?? 0);
+            score += (cmd.friendly
+              ? (t2.controllerId === view.playerId ? 30 + v2 : -20 - v2)
+              : (t2.controllerId === view.playerId ? -20 - v2 : 30 + v2));
+          }
+          return finish(score);
+        }
         const target = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
         if (!target) {
           const playerId = cmd.targetId;

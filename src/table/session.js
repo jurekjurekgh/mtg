@@ -82,6 +82,9 @@ export function commandOptionKey(cmd) {
     'attackerIds', 'assignments',
     // M112: decyzje wizarda scry/surveil (klucz sondy musi rozróżniać warianty).
     'bottomIds', 'millIds', 'topOrder', 'order',
+    // M157/F4(a): warianty wielocelowego celu triggera muszą mieć różne
+    // klucze (L32 — dedup po pełnej tożsamości komendy).
+    'targetId', 'targetIds',
   ];
   const out = {};
   for (const k of fields) if (cmd[k] !== undefined) out[k] = cmd[k];

@@ -2503,6 +2503,39 @@ export function execute(state, input) {
     if (cmd.type !== 'resolve_trigger_target') return reject('trigger_target_unresolved');
     if (cmd.playerId !== pending.playerId) return reject('trigger_target_not_your_decision');
     const legal = legalTriggerTargetCandidates(state, pending);
+    // M157/F4(a) (ADR 0022): trigger wielocelowy („each of up to N target...",
+    // requiresTarget.count > 1) — decyzja w JEDNEJ komendzie z tablicą
+    // targetIds (0..N celów, bez duplikatów; zero legalne przy upTo).
+    const multiSpec = pending.ability?.trigger?.requiresTarget;
+    const multiCount = Number.isInteger(multiSpec?.count) && multiSpec.count > 1 ? multiSpec.count : 1;
+    if (multiCount > 1 && Array.isArray(cmd.targetIds)) {
+      const chosenList = [...new Set(cmd.targetIds)];
+      if (chosenList.length > multiCount) return reject('illegal_trigger_target');
+      if (chosenList.length === 0 && !multiSpec.upTo) return reject('illegal_trigger_target');
+      if (chosenList.some((id) => !legal.includes(id))) return reject('illegal_trigger_target');
+      const beforeMulti = state.events.length;
+      state.pendingTriggerTargets.shift();
+      const srcM = state.objects.get(pending.sourceId);
+      const srcLegalM = Boolean(srcM
+        && ['battlefield', 'graveyard', 'exile'].includes(srcM.zone)
+        && triggerConditionHolds(state, pending.ability, srcM, pending.extra ?? {}));
+      if (srcLegalM && chosenList.length > 0) {
+        queueTriggerToStack(state, pending.ability, srcM,
+          [...pending.fixedTargetIds, ...chosenList], [], pending.extra ?? {});
+      }
+      state.events.push(event('trigger_target_resolved', {
+        playerId: pending.playerId, sourceId: pending.sourceId, cardId: pending.cardId,
+        targetId: chosenList[0] ?? null, targetIds: [...chosenList],
+        noEffect: !srcLegalM || chosenList.length === 0,
+        remaining: state.pendingTriggerTargets.length,
+      }));
+      if (state.pendingTriggerTargets.length > 0) {
+        state.turn.priorityPlayerId = state.pendingTriggerTargets[0].playerId;
+      } else if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+        state.turn.priorityPlayerId = pending.restorePriorityTo;
+      }
+      return accepted(state, cmd, { ok: true, events: state.events.slice(beforeMulti) });
+    }
     const chosen = cmd.targetId ?? null;
     if (chosen === null) {
       if (!pending.allowNone) return reject('illegal_trigger_target');
@@ -4330,14 +4363,44 @@ export function playerView(state, playerId) {
     // M150/A: flaga `friendly` (pump/licznik na własnym) niesiona w komendzie,
     // żeby bot NIE celował przyjaznego pumpu w WROGIEGO stwora.
     const triggerFriendly = triggerTargetEffectFriendly(triggerTargetHead.ability);
-    if (triggerTargetHead.allowNone) {
-      legalCommands.unshift(command('resolve_trigger_target', playerId, { targetId: null, friendly: triggerFriendly }));
-    }
-    // unshift wkłada na początek — iterujemy ODWROTNIE, żeby PIERWSZA oferta
-    // była pierwszym kandydatem (dawny wybór deterministyczny — boty biorą
-    // pierwszą ofertę).
-    for (const targetId of [...legal].reverse()) {
-      legalCommands.unshift(command('resolve_trigger_target', playerId, { targetId, friendly: triggerFriendly }));
+    // M157/F4(a): wielocelowy trigger (count > 1, „each of up to N") —
+    // warianty = podzbiory celów o rozmiarze 1..count (bez powtórzeń,
+    // porządek deterministyczny) + zero celów przy upTo. CAP 32 wariantów
+    // (L19 — enumeracja kombinacyjna ma limit w dniu narodzin). Pary
+    // najbardziej wartościowe (pełny efekt) lądują jako PIERWSZE oferty.
+    const multiSpecOffer = triggerTargetHead.ability?.trigger?.requiresTarget;
+    const multiCountOffer = Number.isInteger(multiSpecOffer?.count) && multiSpecOffer.count > 1
+      ? multiSpecOffer.count : 1;
+    if (multiCountOffer > 1) {
+      const MULTI_TRIGGER_TARGET_CAP = 32;
+      const variants = [];
+      for (let size = multiCountOffer; size >= 1; size -= 1) {
+        const combo = (start, acc) => {
+          if (variants.length >= MULTI_TRIGGER_TARGET_CAP) return;
+          if (acc.length === size) { variants.push([...acc]); return; }
+          for (let i = start; i < legal.length; i += 1) {
+            combo(i + 1, [...acc, legal[i]]);
+            if (variants.length >= MULTI_TRIGGER_TARGET_CAP) return;
+          }
+        };
+        combo(0, []);
+      }
+      if (multiSpecOffer.upTo) variants.push([]);
+      // unshift od końca — PIERWSZĄ ofertą jest pierwszy wariant pełnego
+      // rozmiaru (deterministycznie: najwcześniejsze kandydaty).
+      for (const targetIds of [...variants].reverse()) {
+        legalCommands.unshift(command('resolve_trigger_target', playerId, { targetIds: [...targetIds], friendly: triggerFriendly }));
+      }
+    } else {
+      if (triggerTargetHead.allowNone) {
+        legalCommands.unshift(command('resolve_trigger_target', playerId, { targetId: null, friendly: triggerFriendly }));
+      }
+      // unshift wkłada na początek — iterujemy ODWROTNIE, żeby PIERWSZA oferta
+      // była pierwszym kandydatem (dawny wybór deterministyczny — boty biorą
+      // pierwszą ofertę).
+      for (const targetId of [...legal].reverse()) {
+        legalCommands.unshift(command('resolve_trigger_target', playerId, { targetId, friendly: triggerFriendly }));
+      }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeMoonlitChoice) {
     // Moonlit Meditation (Temat 9): „you may instead create copies" — tak/nie.

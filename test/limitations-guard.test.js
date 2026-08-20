@@ -56,7 +56,10 @@ test('notes NIE opisuje luk — nie mówi „nie obsługujemy/nie obejmuje"', ()
   const suspicious = [];
   for (const card of REGISTRY.all()) {
     for (const text of card.notes ?? []) {
-      if (/nie obsługuj|nie obejmuje|bez wsparcia|nieobsługiwan/i.test(text)) {
+      // ADR 0022 (M157): słowo 'uproszczenie' w kontekście zachowania karty to
+      // luka wobec Oracle opisana jako polityka — zakazana (pełny Oracle albo
+      // unsupported).
+      if (/nie obsługuj|nie obejmuje|bez wsparcia|nieobsługiwan|uproszczen/i.test(text)) {
         suspicious.push(`${card.id}: ${text}`);
       }
     }

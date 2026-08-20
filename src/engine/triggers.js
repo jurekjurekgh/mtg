@@ -628,6 +628,21 @@ function fireSagaChapter(state, sagaObject, chapterNumber, events, chapterTarget
  */
 function applyTriggerEffects(state, ability, source, targets, context = {}) {
   const before = state.events.length;
+  // M157/F4(a) (ADR 0022): trigger wielocelowy („on EACH of up to N target
+  // ...", requiresTarget.count > 1) aplikuje listę efektów RAZ NA CEL —
+  // „each of" to ten sam efekt dla każdego wybranego celu (Weftblade
+  // Enhancer). Cele, które stały się nielegalne, pomijają efekty same
+  // (applyEffect sprawdza strefę — CR 608.2b).
+  const spec = ability?.trigger?.requiresTarget;
+  const multi = Number.isInteger(spec?.count) && spec.count > 1;
+  if (multi && targets.length > 0) {
+    for (const targetId of targets) {
+      for (const effect of toEffectList(ability)) {
+        applyEffect(state, effect, source, [targetId], context);
+      }
+    }
+    return state.events.slice(before);
+  }
   for (const effect of toEffectList(ability)) {
     applyEffect(state, effect, source, targets, context);
   }

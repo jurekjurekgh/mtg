@@ -6972,13 +6972,15 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature', optional: true } },
+        // ADR 0022 / M157 F4(a): „each of up to two target creatures" —
+        // pełne Oracle: dwa cele (count: 2, upTo — może być mniej/zero).
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature', count: 2, upTo: true } },
         effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
       }),
     ],
     artId: 286, plan: 'The Edge',
     support: { status: 'supported', limitations: [] },
-    notes: ['Warp: rzut z ręki za {2}{W}, wygnanie w najbliższym kroku końcowym (warpReady), rzut z exile za {2}{W} w późniejszej turze', 'ETB: uproszczenie — licznik na jednym celu (zamiast „each of up to two”), optional'],
+    notes: ['Warp: rzut z ręki za {2}{W}, wygnanie w najbliższym kroku końcowym (warpReady), rzut z exile za {2}{W} w późniejszej turze'],
   }),
 
   // 4. Talion's Messenger (WOE) {2}{U} 1/3 Faerie Noble Flying — attack with a

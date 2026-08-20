@@ -223,3 +223,89 @@ test('F2: playerView projektuje liczniki trucizny graczy', () => {
   assert.equal(view.players.find((p) => p.id === 'p1').poison, 4, 'poison p1 jawny');
   assert.equal(view.players.find((p) => p.id === 'p2').poison ?? 0, 0, 'poison p2 default 0');
 });
+
+
+// F4(a) — Weftblade Enhancer: „put a +1/+1 counter on each of up to two
+// target creatures" — PEŁNE Oracle (ADR 0022): dwa cele, efekty per cel.
+test('F4a: dane Weftblade — requiresTarget count 2 (upTo), bez „uproszczenia"', () => {
+  const def = REGISTRY.get('weftblade-enhancer');
+  const spec = def.abilities[0].trigger.requiresTarget;
+  assert.equal(spec.count, 2, '„up to two" = deskryptor count: 2');
+  assert.equal(spec.upTo, true, '„up to" pozwala wybrać mniej/zero');
+  assert.equal(spec.optional, undefined, 'upTo zastępuje optional');
+  for (const note of def.notes ?? []) {
+    assert.doesNotMatch(note, /uproszczen/i, 'ADR 0022: notes nie opisują luk wobec Oracle');
+  }
+});
+
+test('F4b: ETB Weftblade — oferta par celów, licznik na KAŻDYM wybranym', async () => {
+  const { execute, playerView } = await import('../src/engine/game-state.js');
+  const state = createGameState({ seed: 44, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const { jumpToStep } = await import('../src/engine/turn.js');
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  for (const [id, cid, ctrl] of [['a', 'highland-game', 'p1'], ['b', 'thornhide-wolves', 'p1'], ['e', 'colossodon-yearling', 'p2']]) {
+    putCard(state, id, cid, ctrl);
+  }
+  putCard(state, 'w', 'weftblade-enhancer', 'p1', 'hand');
+  const { addMana } = await import('../src/engine/resources.js');
+  addMana(state, 'p1', 10);
+
+  const cast = playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_permanent' && c.objectId === 'w');
+  assert.ok(cast, 'oferta rzutu Weftblade');
+  assert.ok(execute(state, cast).ok, cast.reason ?? 'rzut przyjęty');
+  // Wejście na pole bitwy dopiero po rozstrzygnięciu stosu (runda pasów).
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+
+  // ETB trigger z dwoma slotami celów — decyzja czeka na p1.
+  assert.ok(state.pendingTriggerTargets.length > 0, 'decyzja celu triggera otwarta');
+  const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_trigger_target');
+  const pairs = offers.filter((c) => Array.isArray(c.targetIds) && c.targetIds.length === 2);
+  const singles = offers.filter((c) => Array.isArray(c.targetIds) && c.targetIds.length === 1);
+  const empty = offers.filter((c) => Array.isArray(c.targetIds) && c.targetIds.length === 0);
+  assert.ok(pairs.length >= 3, `oferty PAR celów (a+b, a+e, b+e): ${pairs.length}`);
+  // 4 kandydatów: a, b, e oraz sam Weftblade (własny stwór — legalny cel).
+  assert.ok(singles.length === 4, `oferty pojedynczych celów: ${singles.length}`);
+  assert.ok(empty.length === 1, 'oferta „zero celów" (upTo)');
+
+  // Wybór pary a+b (oba własne) — licznik +1/+1 na KAŻDYM.
+  const pair = pairs.find((c) => c.targetIds.includes('a') && c.targetIds.includes('b'));
+  assert.ok(pair, 'para a+b w ofercie');
+  assert.ok(execute(state, pair).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+  assert.equal((state.objects.get('a').counters ?? {})['+1/+1'], 1, 'licznik na a');
+  assert.equal((state.objects.get('b').counters ?? {})['+1/+1'], 1, 'licznik na b');
+  assert.equal((state.objects.get('e').counters ?? {})['+1/+1'] ?? 0, 0, 'bez licznika na e');
+});
+
+test('F4c: warianty wielocelowe mają różne klucze opcji (L32) i etykiety', async () => {
+  const { commandOptionKey } = await import('../src/table/session.js');
+  const k1 = commandOptionKey({ type: 'resolve_trigger_target', targetIds: ['a', 'b'] });
+  const k2 = commandOptionKey({ type: 'resolve_trigger_target', targetIds: ['b', 'a'] });
+  const k3 = commandOptionKey({ type: 'resolve_trigger_target', targetIds: ['a'] });
+  const k4 = commandOptionKey({ type: 'resolve_trigger_target', targetId: 'a' });
+  assert.notEqual(k1, k2); assert.notEqual(k1, k3); assert.notEqual(k3, k4);
+});
+
+test('F4d: bot heuristic wybiera parę WŁASNYCH stworów (friendly add_counter)', async () => {
+  const { playerView } = await import('../src/engine/game-state.js');
+  const { createHeuristicBot } = await import('../src/controllers/heuristic-bot.js');
+  const state = createGameState({ seed: 45, players: [{ id: 'p1' }, { id: 'p2' }] });
+  for (const [id, cid, ctrl] of [['mine1', 'highland-game', 'p1'], ['mine2', 'thornhide-wolves', 'p1'], ['foe', 'colossodon-yearling', 'p2']]) {
+    putCard(state, id, cid, ctrl);
+  }
+  const ability = REGISTRY.get('weftblade-enhancer').abilities[0];
+  state.pendingTriggerTargets.push({
+    playerId: 'p1', sourceId: 'mine1', cardId: 'weftblade-enhancer',
+    ability: Object.freeze(JSON.parse(JSON.stringify(ability))), candidates: [],
+    allowNone: false, fixedTargetIds: [], extra: {},
+  });
+  const view = playerView(state, 'p1');
+  const choice = createHeuristicBot({ seed: 45 }).chooseCommand(view, {});
+  assert.equal(choice.type, 'resolve_trigger_target');
+  assert.deepEqual([...(choice.targetIds ?? [])].sort(), ['mine1', 'mine2'],
+    `bot wzmacnia OBA własne stwory: ${JSON.stringify(choice)}`);
+});

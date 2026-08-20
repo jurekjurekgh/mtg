@@ -1984,6 +1984,11 @@ export function commandLabel(cmd, session, view) {
       const source = view.pendingTriggerTarget?.cardId
         ? `${escapeHtml(session.nameOf(view.pendingTriggerTarget.cardId))} — ` : '';
       const effectType = view.pendingTriggerTarget?.effectType;
+      // M157/F4(a): wariant wielocelowy — lista celów w etykiecie.
+      if (Array.isArray(cmd.targetIds)) {
+        if (cmd.targetIds.length === 0) return `${source}bez celów („up to")`;
+        return `${source}cele triggera: ${cmd.targetIds.map((id) => nameOfObjectId(id)).join(' i ')}`;
+      }
       if (cmd.targetId == null) {
         if (effectType === 'bounce_permanent') return `${source}nie zwracaj niczego (odmowa)`;
         return `${source}bez celu (odmowa — „up to one"/„you may")`;
