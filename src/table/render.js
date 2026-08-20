@@ -1924,9 +1924,11 @@ export function commandLabel(cmd, session, view) {
       return `Weź do ręki: ${nameOfObjectId(cmd.cardId)}`;
     }
     case 'resolve_madness_cast': {
+      // M159/F4 (audyt PR #66): oferta niesie objectId (karta w exile —
+      // strefa publiczna) i cardId; etykieta ma NAZYWAĆ kartę, nie „?".
       return cmd.cast
-        ? `Rzuć za koszt madness: ${nameOfObjectId(cmd.cardId)}`
-        : 'Przełóż do cmentarza (rezygnacja z madness)';
+        ? `Rzuć za koszt madness: ${nameOfObjectId(cmd.objectId ?? cmd.cardId)}`
+        : `Przełóż do cmentarza (rezygnacja z madness): ${nameOfObjectId(cmd.objectId ?? cmd.cardId)}`;
     }
     case 'resolve_reveal_choice': {
       if (cmd.cardId == null) return 'Nie ujawniaj (bez obrażeń)';
