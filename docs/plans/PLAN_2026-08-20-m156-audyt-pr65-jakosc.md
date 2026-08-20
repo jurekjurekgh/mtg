@@ -11,12 +11,12 @@
 
 ## Etapy (kryteria ukończenia)
 
-1. **PR na start (ADR 0020 A).** Gałąź `arena/01a01eb3-mtg` wypchnięta,
+1. **[x] PR na start (ADR 0020 A).** Gałąź `arena/01a01eb3-mtg` wypchnięta,
    PR otwarty po pierwszym commicie (plan). — *kryterium: PR istnieje na GitHubie*
-2. **Baseline.** (done: npm test 2431/2431, build 51/2071.3 kB, benchmark 9/9) `npm test` + `npm run build` + `node --test test/bot-benchmark.test.js`
+2. **[x] Baseline.** (done: npm test 2431/2431, build 51/2071.3 kB, benchmark 9/9) `npm test` + `npm run build` + `node --test test/bot-benchmark.test.js`
    na `main`; wynik porównany z PROJECT_STATE (spodziewane ~2428+ testów,
    build ~51 modułów / ~2 MB). — *kryterium: zielono, liczby zanotowane*
-3. **Audyt PR #65 (ADR 0020 B / 0016).** Przegląd diffu `c536182..1a5accc`:
+3. **[x] Audyt PR #65 (ADR 0020 B / 0016).** Przegląd diffu `c536182..1a5accc`:
    - engine (reguły, stan, FoW, determinizm) — M148 scry order, M149 bot/UI,
      M150, M153 station/blokowanie/day-night, M155 craft no-op;
    - karty Batch 37/38 vs Oracle (Scryfall przez fetch_page, ADR 0010 §2a);
@@ -24,7 +24,7 @@
    - testy RED→GREEN na próbce.
    Raport: `docs/audits/AUDYT_PR65_2026-08-20.md`. Znalezione błędy naprawiam
    od razu u root cause. — *kryterium: raport + (jeśli były) fixy zielone* (raport: docs/audits/AUDYT_PR65_2026-08-20.md — znaleziska F1–F4, D1)
-4. **Zaległość dokumentacyjna PR #65.** `docs/PROJECT_STATE.md` nie ma wpisów
+4. **[x] Zaległość dokumentacyjna PR #65.** `docs/PROJECT_STATE.md` nie ma wpisów
    M147–M155; nie ma handoffu po PR #65. Uzupełniam zwięzłe wpisy stanu
    (bez rekonstrukcji szczegółów — źródłem są opisy commitów squash `1a5accc`
    i plany M147–M155). — *kryterium: PROJECT_STATE odzwierciedla stan main*
@@ -58,4 +58,12 @@
 
 ## Podsumowanie wykonania
 
-(do uzupełnienia na końcu sesji)
+- Etapy 1–4 wykonane: PR #66 otwarty po commicie planu; baseline zielony
+  (npm test 2431/2431 → po fixach 2436/2436; test:all 2445/2445; build
+  51/2072.2 kB; próbka bota 9/9); audyt PR #65 w
+  `docs/audits/AUDYT_PR65_2026-08-20.md` (znaleziska F1–F4 + D1); fixy F1–F3
+  wdrożone RED→GREEN (`test/bot-pr65-audit-fixes.test.js`); PROJECT_STATE
+  uzupełniony o backfill M147–M155 + wpis M156; README liczniki odświeżone.
+- F4 (Weftblade „up to two targets") — otwarte, zgłoszone właścicielowi
+  w opisie PR (decyzja: wielocelowy trigger ETB vs limitations).
+- Etap 5 (pętla jakości): kolejne sesje wg ADR 0021.

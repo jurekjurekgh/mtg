@@ -1,7 +1,82 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-19 (M146: 5 znalezisk z testów + „pole bitwy" zamiast „bitwisko")
-- **Poprzednia:** 2026-08-19 (M146: Batch 36 kompletny — 10 kart, w tym forecast i forestwalk)
+- **Ostatnia aktualizacja:** 2026-08-20 (M156: audyt PR #65 + fixy F1–F3)
+- **Poprzednia:** 2026-08-20 (PR #65 scalony: M147–M155 — poniżej backfill)
+
+## M156 — audyt PR #65 + fixy (2026-08-20, PR #66)
+
+Sesja wg ADR 0020/0021 (prompt bez tematu → pętla domyślna). Audyt squash
+`1a5accc` (diff `c536182..1a5accc`): raport `docs/audits/AUDYT_PR65_2026-08-20.md`.
+
+**Zweryfikowane poprawne (skrót):** scry topOrder (M148), warp (Weftblade),
+rebound (Ojutai's Breath), Satyr Wayfinder, Static Net (linked exile +
+Powerstone), living weapon (Strandwalker), creature_or_vehicle ×4 ścieżki,
+craft no-op (M155), Z5/Z8, FoW (manaCost/name/suspend w widoku — jawne),
+dane kart vs Scryfall (strażniki L23/L26 zielone), oba boty obsługują nowe
+decyzje (L48), wyceny większości nowych efektów (L50).
+
+**Naprawione (RED→GREEN, `test/bot-pr65-audit-fixes.test.js`):**
+1. **F1** — `triggerTargetEffectFriendly` nie znał `grant_keywords_until_end_of_turn`
+   → bot obdarowywał lifelink+indestructible najlepszego stwora PRZECIWNIKA
+   (Lotusguard, Batch 38). Fix: gałąź grant_keywords + zbiór
+   HOSTILE_GRANTED_KEYWORDS. Piąte powtórzenie klasy L50.
+2. **F2** — `destroy_artifact_gain_life_mana_value` bez wyceny → bot rzucał
+   Divine Offering we WŁASNY artefakt-źródło many. Fix: wpisy w tabelach bota
+   (HOSTILE_PERMANENT_EFFECTS, REMOVAL_EFFECTS, HOSTILE_TRIGGER_TARGET_EFFECTS).
+3. **F3** — Divine Offering: życie przyznawane tylko przy skutecznym destroy;
+   wg CR 608.2c to dwie sekwencyjne instrukcje — życie niezależne (LKI).
+   Test Batch 38 odwrócony z uzasadnieniem (L44).
+
+**Otwarte do decyzji właściciela (F4):** Weftblade Enhancer „each of up to two
+target creatures" zaimplementowane jako 1 cel, odnotowane w `notes` — wg
+polityki M111 to kandydat na `limitations` (nowy powód w strażniku) albo
+implementacja wielocelowego triggera ETB.
+
+**Stan:** `npm run test:all` **2445/2445**, `npm test` 2436/2436, build
+**51 modułów / 2072.2 kB**, próbka regresji bota 9/9 (0 crashy). Rejestr:
+**308 wspieranych kart** (bez tokenów/tyłów DFC), 12 talii.
+
+## Backfill — PR #65 (M147–M155, scalony 2026-08-20)
+
+Squash `1a5accc`; poprzednia sesja nie zdążyła zaktualizować PROJECT_STATE
+(zrekonstruowane tu z opisów commitów i planów `docs/plans/2026-08-19-m14*.md`/`m15*.md`):
+
+- **M147:** audyt PR #64 (czysty + fix F1 Wretched Banquet — wycena
+  destroy_if_least_power); **Batch 37 (10 kart):** Returned Centaur, Palace
+  Familiar, Thornhide Wolves, Village Bell-Ringer (untap_all_creatures_you_control),
+  Liliana's Triumph (warunek controlsPlaneswalkerWithSubtype + planeswalker
+  zakodowany z wyprzedzeniem — decyzja właściciela 2026-08-19), Urza's Mine
+  (tron), Ojutai's Breath (rebound), Satyr Wayfinder (reveal/pick land),
+  Static Net (exile linked + Powerstone), Strandwalker (living weapon).
+- **M148:** FOT/KON hover bez zaślepki; **scry — wybór kolejności kart
+  na wierzchu (CR 701.18)** — topOrder w resolve_scry + wizard.
+- **M149:** bot — trick poza combatem kara, Bone Splinters TMC (PlayerView
+  manaCost — ADR 0017), Grave Exchange nie w siebie; UI — etykiety kolejności
+  surv/scry, modal Cuombajj Witches; Treasure nie marnowane.
+- **M150:** Battle-Rattle Shaman (triggerTargetEffectFriendly — friendly/hostile
+  cele triggerów), przydział obrażeń, Jeskai Devotee (kolory many w logu),
+  manaColors w ability_activated.
+- **M151:** etykiety suspend/rebound/exploit, MAIN_LOG_NOISE (szum poza główny
+  log), stos bez fałszywego celu (activatedEntry.targets tylko gdy cele),
+  tester: rebound/suspend + detektory FalseNoEffect/szum.
+- **M152:** audyt Żywym Testerem pozostałych kart (m.in. Satyr Wayfinder label,
+  fix nameOfObject dla ukrytych stref).
+- **M153:** Station — bot tapuje do progu tylko po własnym ataku (postcombat),
+  log stationTappedCreatureId; karty specjalne klikalne (Day/Night fullscreen).
+- **Batch 38 (10 kart):** Divine Offering, Colossodon Yearling, Fortify
+  (modal +2/+0 / +0/+2), Mysidian Elder (token Wizard ping), Pristine
+  Talisman (mana ability + rider życia), Chatter of the Squirrel (Squirrel),
+  Silken Strength (aura creature/Vehicle + untap), Weftblade Enhancer (warp),
+  Lotusguard Disciple (grant lifelink+indestructible), Talion's Messenger
+  (faerie_attacks).
+- **Audyt Żywym Testerem Batch 38 (Z1–Z10)** — wszystkie naprawione:
+  log „(?)" delirium LKI, odmiana liczników, Courage in Crisis (bot),
+  Ruinous Rampage tryb, kolejność trybów modalnych, tester warp, raw id
+  tokenu w UI, no-op self-tap (Sterling Keykeeper), atak 0/1, darmowe życie
+  z Pristine; nowy detektor detectTokenRawId.
+- **M155:** craft no-op bez transformTo (fix flake CI benchmarku),
+  detektor FalseNoEffect — dowód tego samego źródła.
+
 ## M146 — 5 znalezisk z testów właściciela (2026-08-19, PR #64)
 
 1. **Gurmag Drowner exploit** — zweryfikowane: działa od fixa installDeck
