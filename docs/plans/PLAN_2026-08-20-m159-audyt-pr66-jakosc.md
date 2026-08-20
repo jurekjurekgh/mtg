@@ -20,13 +20,13 @@ domyślna. Sesja startuje z `main` = `238ff70` (squash PR #66: M156+M157+M158).
   Wynik: 4 znaleziska (F1 timing madness/CR 702.34e + crash bota, F2 oferta
   madness bez walidacji płatności, F3 obowiązkowy cel Revolutionista jako
   optional, F4 etykieta bez nazwy karty) + 2 obserwacje.
-- [ ] **3. Pętla jakości (ADR 0021 §4):** audyt Żywym Testerem z perspektywy
+- [x] **3. Pętla jakości (ADR 0021 §4):** audyt Żywym Testerem z perspektywy
   gracza na taliach z kartami Batch 39 (spellslinger: Invasion/Revolutionist;
   azorius; black: Ravager/Magmarch; red: Wrap in Flames) — kolejka handoffu
   M158 wskazuje ten krok jawnie. Trzy osie (TESTER_STOLU): bezsens bota,
   kompletność logu/modali, ptaszki auto-pass. Naprawy u root cause +
   detektory na znalezione klasy.
-- [ ] **4. Zamknięcie:** PROJECT_STATE, handoff, opis PR kumulacyjnie,
+- [x] **4. Zamknięcie:** PROJECT_STATE, handoff, opis PR kumulacyjnie,
   blok przekazania w czacie.
 
 ## Ryzyka / pułapki
@@ -42,4 +42,11 @@ domyślna. Sesja startuje z `main` = `238ff70` (squash PR #66: M156+M157+M158).
 
 ## Podsumowanie wykonania
 
-(uzupełniane na końcu sesji)
+- Audyt PR #66: 4 znaleziska (F1–F4) naprawione + 2 obserwacje w raporcie.
+- Pętla jakości: 9 partii Żywym Testerem (g1–g8 + g7b kontrolna),
+  5 znalezisk (Z1–Z5) naprawionych u root cause + 2 nowe strażniki klasy
+  (Z3 puste opisy kafli, Z5b łańcuch pól materialize — oba mutacyjnie).
+- Najpoważniejsze: Z5 — Invasion of the Giants nie działał na stole w ogóle
+  (deskryptor saga gubiony w materialize dla czystych enchantmentów).
+- Stan końcowy: npm test 2491/2491, test:slow 9/9, build 51/2127.4 kB.
+- ⚠ GH_TOKEN wygasł w trakcie — commity od cd2b9e6 czekają na push.

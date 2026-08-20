@@ -1,7 +1,45 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-20 (M158: Batch 39 komplet 10/10 — Madness, Saga warunkowa, wielocelowe czary)
-- **Poprzednia:** 2026-08-20 (PR #65 scalony: M147–M155 — poniżej backfill)
+- **Ostatnia aktualizacja:** 2026-08-20 (M159: audyt PR #66 + pętla jakości — madness timing, Saga-enchantment)
+- **Poprzednia:** 2026-08-20 (M158: Batch 39 komplet 10/10)
+
+## M159 — audyt PR #66 + pętla jakości (2026-08-20, PR #67)
+
+Sesja wg ADR 0020/0021 (prompt bez tematu → pętla domyślna). Audyt squash
+`238ff70` (diff `1a5accc..238ff70`): raport `docs/audits/AUDYT_PR66_2026-08-20.md`.
+
+**Fixy audytu (RED→GREEN, `test/pr66-audit-fixes.test.js`, 7 testów):**
+1. **F1** — madness łamał CR 702.34e: bramka „Zagranie poza main phase”
+   odrzucała rzut po odrzuceniu w cleanup (limit ręki!) i w turze
+   przeciwnika → heuristic-bot (cast=60) crashował sesję „Bot wybrał
+   nielegalną komendę”. Wyjątek `madnessCast` (wzór suspend/rebound).
+2. **F2** — oferta `cast:true` bez walidacji płatności (L48):
+   `canPayMadnessCost` (lustro bramek castPermanent) + oferta warunkowa.
+3. **F3** — Revolutionist: cel ETB obowiązkowy (Oracle bez „you may”) —
+   usunięte `optional:true` (ADR 0022).
+4. **F4** — oferty madness niosą cardId/objectId; etykieta nazywa kartę.
+
+**Pętla jakości (Żywy Tester, 9 partii g1–g8 na taliach Batch 39,
+`test/m159-zywy-tester.test.js`, 9 testów):**
+- **Z1** — fingerprint nie zawierał `regenerationShields`,
+  `cantBeRegeneratedThisTurn` ani pól obiektu `lostKeywordsUntilEOT`/
+  `subtypesBeforeOverride`/`madnessReady` (klasa M122/#1) — sonda noop
+  fałszywie zgłaszała działający Regenerate (g7); dodane (Z1a–d mutacyjnie).
+- **Z2** — trigger multiplayer (anotherOpponentExists) renderował
+  „Gdy rzucisz czar: .” — kafel mówi teraz „nieaktywny w grze 1v1”.
+- **Z3** — strażnik katalogowy: żadna karta nie renderuje opisu „: .”.
+- **Z4** — kafel/podgląd Sagi nie pokazywał NIC o rozdziałach (rodzina
+  M100/E10) — rulesText renderuje „Saga — I: … II: … III: …”.
+- **Z5 (poważne)** — `gameObjectDataOf` kopiował `saga` tylko w gałęzi
+  stworów → Invasion of the Giants (czysty Enchantment) wchodził na stół
+  BEZ deskryptora: zero lore, zero rozdziałów, karta nie robiła NIC.
+  Testy Batch 39 zielone, bo czytały rejestr, nie obiekt (L5/L21).
+  Fix + **Z5b: generyczny strażnik łańcucha pól materialize** (wszystkie
+  deskryptory mechanik, zweryfikowany mutacyjnie).
+
+**Stan:** `npm test` **2491/2491**, `test:slow` 9/9, build **51 modułów /
+2127.4 kB**. ⚠ GH_TOKEN wygasł przy ostatnim commicie (cd2b9e6 — Z5b
+strażnik) — push po reconnect.
 
 ## M158 — Batch 39 (10 kart, lista właściciela 2026-08-20, PR #66)
 
