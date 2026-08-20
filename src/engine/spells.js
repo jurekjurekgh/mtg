@@ -1695,7 +1695,14 @@ function resolvePermanentSpell(state, stackId, object, before) {
   // generyczny (`entersWithCountersIf: { morbid, counters }`), bez nazw kart.
   if (!permanent.faceDown && permanent.entersWithCountersIf) {
     const rule = permanent.entersWithCountersIf;
-    const holds = rule.morbid ? Boolean(state.creatureDiedThisTurn) : false;
+    // M166/C (Adamant, ELD — Locthwain Paladin): „If at least three <color>
+    // mana was spent to cast this spell" — breakdown kolorów jedzie z
+    // obiektu stosu (manaColorsSpent z spendMana).
+    let holds = rule.morbid ? Boolean(state.creatureDiedThisTurn) : false;
+    if (!holds && rule.adamant) {
+      const spent = permanent.manaColorsSpent ?? [];
+      holds = spent.filter((color) => color === rule.adamant.color).length >= (rule.adamant.min ?? 3);
+    }
     if (holds) {
       for (const [name, amount] of Object.entries(rule.counters ?? {})) addCounter(state, newId, name, amount);
     }

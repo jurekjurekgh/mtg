@@ -316,4 +316,6 @@ export const MANA_COSTS = {
   "cacophodon": "{3}{G}",
   "feed-the-infection": "{3}{B}",
   "mosquito-guard": "{W}",
+  "locthwain-paladin": "{3}{B}",
+  "sarkhans-rage": "{4}{R}",
 };

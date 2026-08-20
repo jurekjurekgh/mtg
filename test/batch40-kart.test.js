@@ -232,3 +232,62 @@ test('B4: Enrage odpala TEZ gdy obrazenia zabija stwora (CR 603.10 looks-back)',
   const dead = [...state.objects.values()].find((o) => o.cardId === 'cacophodon' && o.zone === 'graveyard');
   assert.ok(dead, 'Cacophodon zginął od obrażeń');
 });
+
+// ---- Transza C: platnosc/warunki ----------------------------------------------
+
+test('C1: Locthwain Paladin — Adamant: 3 czarnej many = +1/+1 przy wejsciu', () => {
+  // Scenariusz 1: 3 czarne jednostki (koszt {3}{B} caly czarny) -> licznik.
+  const state = game('p1');
+  putCard(state, 'pal', 'locthwain-paladin', 'p1', 'hand');
+  addMana(state, 'p1', 4, { colors: ['B'] });
+  const cast = playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_permanent' && c.objectId === 'pal');
+  assert.ok(cast, 'oferta rzutu Paladyna');
+  assert.ok(execute(state, cast).ok);
+  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  const onBf = [...state.objects.values()].find((o) => o.cardId === 'locthwain-paladin' && o.zone === 'battlefield');
+  assert.ok(onBf, 'Paladyn na polu bitwy');
+  assert.equal((onBf.counters ?? {})['+1/+1'], 1, 'Adamant spelniony (3 czarnej many) = licznik');
+
+  // Scenariusz 2: tylko 1 czarna jednostka (reszta bezbarwna z puli) -> bez licznika.
+  const s2 = game('p1');
+  putCard(s2, 'pal', 'locthwain-paladin', 'p1', 'hand');
+  addMana(s2, 'p1', 1, { colors: ['B'] });
+  addMana(s2, 'p1', 3, { colors: [] });
+  execute(s2, playerView(s2, 'p1').legalCommands.find((c) => c.type === 'cast_permanent' && c.objectId === 'pal'));
+  execute(s2, { type: 'pass_priority', playerId: s2.turn.priorityPlayerId });
+  execute(s2, { type: 'pass_priority', playerId: s2.turn.priorityPlayerId });
+  const onBf2 = [...s2.objects.values()].find((o) => o.cardId === 'locthwain-paladin' && o.zone === 'battlefield');
+  assert.ok(onBf2, 'Paladyn na polu bitwy (bez Ademanta)');
+  assert.equal((onBf2.counters ?? {})['+1/+1'], undefined, 'Adamant NIEspelniony (1 czarna) = bez licznika');
+});
+
+test("C2: Sarkhan's Rage — 5 w cel; bez Smoka +2 w siebie, ze Smokiem nic", () => {
+  // Bez Smoka: p2 (rzucajacy) dostaje 5 w siebie + 2 odbicia = 7.
+  const state = game('p2');
+  putCard(state, 'rage', 'sarkhans-rage', 'p2', 'hand');
+  addMana(state, 'p2', 5, { colors: ['R'] });
+  const lifeBefore = state.players.find((pl) => pl.id === 'p2').life;
+  const cast = playerView(state, 'p2').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'rage' && c.targets?.[0] === 'p2');
+  assert.ok(cast, 'oferta 5 obrazen w siebie');
+  assert.ok(execute(state, cast).ok);
+  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  assert.equal(state.players.find((pl) => pl.id === 'p2').life, lifeBefore - 7,
+    '5 obrazen w cel + 2 w siebie (brak Smoka)');
+
+  // Ze Smokiem pod kontrola: bez odbicia.
+  const s2 = game('p2');
+  const dragon = putCard(s2, 'drake', 'kappa-tech-wrecker', 'p2', 'battlefield');
+  s2.objects.set('drake', Object.freeze({ ...dragon, subtypes: [...dragon.subtypes, 'Dragon'] }));
+  putCard(s2, 'rage', 'sarkhans-rage', 'p2', 'hand');
+  addMana(s2, 'p2', 5, { colors: ['R'] });
+  const life2 = s2.players.find((pl) => pl.id === 'p2').life;
+  execute(s2, playerView(s2, 'p2').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'rage' && c.targets?.[0] === 'p2'));
+  execute(s2, { type: 'pass_priority', playerId: s2.turn.priorityPlayerId });
+  execute(s2, { type: 'pass_priority', playerId: s2.turn.priorityPlayerId });
+  assert.equal(s2.players.find((pl) => pl.id === 'p2').life, life2 - 5,
+    'kontrola Smoka = tylko 5 obrazen w cel (bez odbicia)');
+});

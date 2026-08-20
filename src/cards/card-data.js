@@ -7375,6 +7375,43 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // ---- Batch 40 — transza C: płatność/warunki ----
+
+  // 7. Locthwain Paladin (ELD) {3}{B} 3/2 Human Knight — menace + Adamant:
+  //    >=3 czarnej many wydanej na rzut -> ETB z +1/+1 (breakdown kolorów
+  //    many z spendMana; entersWithCountersIf.adamant).
+  defineCard({
+    id: 'locthwain-paladin', name: 'Locthwain Paladin', set: 'ELD',
+    types: ['Creature'], subtypes: ['Human', 'Knight'], colors: ['B'],
+    keywords: ['menace'], power: 3, toughness: 2, manaCost: 4,
+    oracleText: 'Menace (This creature can\'t be blocked except by two or more creatures.)\nAdamant — If at least three black mana was spent to cast this spell, this creature enters with a +1/+1 counter on it.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/a/da6f21a8-3dd0-42af-8a93-84f98968c781.jpg?1783932637',
+    entersWithCountersIf: { adamant: { color: 'B', min: 3 }, counters: { '+1/+1': 1 } },
+    artId: null, plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Sarkhan's Rage (DTK) {4}{R} Instant — 5 obrażeń w dowolny cel;
+  //    bez kontrolowanego Smoka 2 obrażenia w rzucającego (warunek
+  //    generyczny controlsNoCreatureSubtype + damage_to_controller).
+  defineCard({
+    id: 'sarkhans-rage', name: "Sarkhan's Rage", set: 'DTK',
+    types: ['Instant'], colors: ['R'], manaCost: 5,
+    oracleText: "Sarkhan's Rage deals 5 damage to any target. If you control no Dragons, Sarkhan's Rage deals 2 damage to you.",
+    imageUri: 'https://cards.scryfall.io/large/front/4/7/4787924f-3186-4e18-b53c-dd67c5f42220.jpg?1783938586',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'any_target' }],
+      effects: [
+        { type: 'damage', amount: 5 },
+        { type: 'conditional', condition: 'controlsNoCreatureSubtype', subtype: 'Dragon',
+          then: { type: 'damage_to_controller', amount: 2 } },
+      ],
+    },
+    artId: null, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */

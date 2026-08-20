@@ -65,6 +65,11 @@ export function consumeManaPool(player, amount, requirements) {
   const units = expandManaPool(player.manaPool);
   const n = units.length;
   const pipUsed = new Array(n).fill(false);
+  // M166/C (Adamant, CR 117.7/podpowiedź ELD): kolory MANY WYDANEJ —
+  // zwracamy zużyte JEDNOKOLOROWE jednostki (dwubarwne/trzybarwne są
+  // niejednoznaczne co do koloru i nie liczą się żadnej stronie).
+  // ZWROT zamiast pola na playerze — księgowanie tymczasowe nie może
+  // zostawiać śladu w stanie (sonda no-op vs koszt, klasa U9).
   if (requirements.length > 0) {
     const matchPips = (pos) => {
       if (pos >= requirements.length) return true;
@@ -95,12 +100,18 @@ export function consumeManaPool(player, amount, requirements) {
     toConsume -= 1;
   }
   const newPool = {};
+  const consumedColors = [];
   for (let i = 0; i < n; i += 1) {
-    if (consume[i]) continue;
+    if (consume[i]) {
+      // M166/C: zwracamy kolory wydanych jednostek (tylko jednoznaczne).
+      if (units[i].length === 1) consumedColors.push(units[i][0]);
+      continue;
+    }
     const key = manaUnitKey(units[i]);
     newPool[key] = (newPool[key] ?? 0) + 1;
   }
   player.manaPool = newPool;
+  return consumedColors;
 }
 
 export function spendMana(state, playerId, amount, requirements = []) {
@@ -182,13 +193,17 @@ export function spendMana(state, playerId, amount, requirements = []) {
   // Konsumpcja z kolorowej puli: pipy do pasujących jednostek, reszta (generic)
   // od bezbarwnych — MtG: każdy pip koloru opłacony maną tego koloru.
   // Przy koszcie 0 pomijamy konsumpcję (nic nie jest wydawane).
-  if (!payNothing) consumeManaPool(player, amount, requirements);
+  const consumedColors = payNothing ? [] : consumeManaPool(player, amount, requirements);
   player.mana -= amount;
+  // M166/C: kolory wydanej many (Adamant — „at least three <color> mana was
+  // spent to cast this spell"). Czytane przez castPermanent/castSpell
+  // NATYCHNIAST po spendMana (przed inną płatnością).
+  const spentColors = consumedColors;
   // Mana ze Skarba wydaje się w pierwszej kolejności (deterministycznie, ADR
   // 0005): Marut pyta, ILE many ze Skarba wydano na jego rzut.
   const treasure = Math.min(player.treasureMana ?? 0, amount);
   if (treasure > 0) player.treasureMana = (player.treasureMana ?? 0) - treasure;
-  state.lastManaSpend = { playerId, amount, treasure };
+  state.lastManaSpend = { playerId, amount, treasure, colors: spentColors };
   const e = event('mana_changed', { playerId, amount: -amount, total: player.mana, treasureSpent: treasure });
   state.events.push(e);
   return e;
@@ -642,9 +657,15 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   const treasureSpent = totalMana > 0 && state.lastManaSpend?.playerId === playerId
     ? (state.lastManaSpend.treasure ?? 0)
     : 0;
+  // M166/C (Adamant): breakdown kolorów many wydanej na TEN rzut — idzie
+  // z obiektem stosu do permanentu (entersWithCountersIf.adamant czyta go
+  // przy wejściu, jak manaFromTreasureSpent dla Maruta).
+  const manaColorsSpent = totalMana > 0 && state.lastManaSpend?.playerId === playerId
+    ? Object.freeze([...(state.lastManaSpend.colors ?? [])])
+    : Object.freeze([]);
   consumePendingSpellDiscount(state, object);
   const stacked = Object.freeze({
-    ...moved, ...patch, wasCast: true, manaFromTreasureSpent: treasureSpent,
+    ...moved, ...patch, wasCast: true, manaFromTreasureSpent: treasureSpent, manaColorsSpent,
     // M154 (Warp): permanent rzucony za koszt warp — przy wejściu zbroimy
     // opóźniony trigger wygnania w końcowym kroku (resolvePermanentSpell).
     ...(warpCast ? { warped: true } : {}),

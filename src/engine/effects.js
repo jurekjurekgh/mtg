@@ -1762,6 +1762,15 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // i podtypie PLANESWALKERA (ADR 0002: brak nazw kart). Działa od razu,
     // gdy w katalogu pojawi się jakikolwiek planeswalker o podtypie Liliana
     // (decyzja właściciela 2026-08-19 — kodujemy efekt z wyprzedzeniem).
+    // M166/C (Sarkhan's Rage, DTK): „If you control no Dragons" — negatywny
+    // warunek po podtypie STWORA (generyczny; ADR 0002).
+    if (effect.condition === 'controlsNoCreatureSubtype') {
+      const sub = effect.subtype;
+      holds = sub != null && ![...state.objects.values()].some((object) => object.zone === 'battlefield'
+        && object.controllerId === controllerId
+        && object.kind === 'creature'
+        && (object.subtypes ?? []).includes(sub));
+    }
     if (effect.condition === 'controlsPlaneswalkerWithSubtype') {
       const sub = effect.subtype;
       holds = sub != null && [...state.objects.values()].some((object) => object.zone === 'battlefield'
