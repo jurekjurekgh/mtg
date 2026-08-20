@@ -853,6 +853,30 @@ export function detectLogNoiseLeak(lines) {
   return found;
 }
 
+/**
+ * M155 (audyt żywym testerem) — WYCIEK RAW ID TOKENU do UI.
+ *
+ * Tokeny niosą JAWNĄ nazwę w `object.name` (cardId to `token_*` poza
+ * rejestrem kart), ale niektóre ścieżki nazywania (nameOfObjectId / kafel)
+ * wołały `nameOf(cardId)` i pokazywały surowy identyfikator „token_squirrel"
+ * zamiast „Squirrel" — gracz widział w kaflach i celach nieczytelny slug
+ * (Batch 38: Chatter of the Squirrel, Mysidian Elder). To strażnik nawrotu:
+ * w dowolnej rozgrywce `token_<nazwa>` w kaflu pola/cele = utrata nazwy.
+ */
+export function detectTokenRawId(lines) {
+  const found = [];
+  const RAW = /(?:^|\| |: )(token_[a-z][a-z0-9_]*)/g;
+  for (const line of lines) {
+    if (!/POLA|\[modal|AKCJE:|cel:|zaczaruj|wyposaża/.test(line)) continue;
+    const match = RAW.exec(line);
+    if (!match) continue;
+    push(found, 'ui',
+      `Surowy identyfikator tokenu zamiast nazwy: „${match[1]}\"`,
+      line.trim());
+  }
+  return found;
+}
+
 export function runDetectors(lines, { actionRecords = [], windowRecords = null, profile = null, probeRecords = [], rejectionRecords = null, harmfulNames = new Set(), allCardNames = new Set(), myPermanentNames = new Set(), enemyPermanentNames = new Set() } = {}) {
   const all = [
     ...detectRawText(lines),
@@ -883,6 +907,8 @@ export function runDetectors(lines, { actionRecords = [], windowRecords = null, 
     ...detectFalseNoEffect(lines),
     ...detectTruncatedCardText(lines),
     ...detectLogNoiseLeak(lines),
+    // M155 — wyciek raw id tokenu do kafli/celów (token_squirrel zamiast Squirrel).
+    ...detectTokenRawId(lines),
   ];
   // Deduplikacja: ten sam komunikat + dowód pojawia się raz.
   const seen = new Set();

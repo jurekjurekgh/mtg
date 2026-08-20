@@ -13,6 +13,7 @@ import {
   detectDeadEndWindow, detectNoResponseWindow, detectGroupWithoutTick,
   detectNoEffectOffers,
   detectBotUntapsMyPermanent,
+  detectTokenRawId,
   runDetectors, formatFindings,
 } from '../tools/table-tester/detectors.mjs';
 
@@ -898,4 +899,27 @@ test('detectBotUntapsMyPermanent: milczy, gdy cel jest własny albo tryb tap', (
   ];
   assert.equal(detectBotUntapsMyPermanent(tap, new Set(['Mountain']), new Set()).length, 0,
     'tryb Tapnięcie to nie odkręcanie');
+});
+
+// M155 — wyciek raw id tokenu (token_squirrel zamiast Squirrel) w kaflach/celach.
+test('detectTokenRawId: łapie surowy id tokenu w kaflu pola', () => {
+  const lines = ['  MOJE POLA: token_squirrel · 0 · Creature — Squirrel · 1/1 | Colossodon Yearling · 3 · Creature — Beast · 2/4'];
+  const found = detectTokenRawId(lines);
+  assert.equal(found.length, 1, JSON.stringify(found));
+  assert.match(found[0].message, /token_squirrel/);
+});
+
+test('detectTokenRawId: łapie surowy id tokenu w celu/modalu', () => {
+  const lines = ['  [modal choice] Lotusguard Disciple — cel triggera: token_wizard (Nieprzyjaciel)'];
+  const found = detectTokenRawId(lines);
+  assert.equal(found.length, 1, JSON.stringify(found));
+  assert.match(found[0].message, /token_wizard/);
+});
+
+test('detectTokenRawId: milczy, gdy token ma czytelną nazwę (bez surowego id)', () => {
+  const ok = [
+    '  MOJE POLA: Squirrel · 0 · Creature — Squirrel · 1/1 | Colossodon Yearling · 3 · Creature — Beast · 2/4',
+    '  [modal choice] Lotusguard Disciple — cel triggera: Wizard (Nieprzyjaciel)',
+  ];
+  assert.equal(detectTokenRawId(ok).length, 0, 'czytelne nazwy to nie wyciek');
 });
