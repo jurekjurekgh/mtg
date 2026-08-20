@@ -2427,7 +2427,9 @@ function buildFace(parent, info, { size = '', skipLiveState = false, textless = 
     }
     // A (2026-08-11): liczniki na karcie (np. „+1/+1 ×2", „oil ×3", „charge ×5").
     for (const [name, count] of Object.entries(info.counters ?? {})) {
-      if (count > 0) flags.push(`${COUNTER_LABELS[name] ?? name} ×${count}`);
+      // M165 (korekta właściciela): najpierw ILOŚĆ, potem co — „2x +1/+1"
+      // (było „+1/+1 ×2" — wyglądało jak działanie matematyczne).
+      if (count > 0) flags.push(`${count}x ${COUNTER_LABELS[name] ?? name}`);
     }
     if (flags.length) {
       const badges = div(face, 'fbadges');
@@ -2506,7 +2508,8 @@ export function buildStateOverlay(visual, info) {
     // (bez dublowania „lore×N" + „Rozdział II (2/3)").
     for (const [name, count] of Object.entries(info.counters ?? {})) {
       if (count > 0 && !(name === 'lore' && info.saga?.chapters?.length)) {
-        flags.push(['counter', `${COUNTER_LABELS[name] ?? name}×${count}`]);
+        // M165: najpierw ILOŚĆ — „2x +1/+1" (korekta wizualna właściciela).
+        flags.push(['counter', `${count}x ${COUNTER_LABELS[name] ?? name}`]);
       }
     }
     // M164 (pytanie właściciela 2026-08-20): ETAP Sagi jako badge tekstowy —

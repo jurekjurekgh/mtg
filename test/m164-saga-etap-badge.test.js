@@ -91,7 +91,7 @@ test('S4: obiekt NIE-będący Sagą z licznikiem lore zachowuje stary licznik', 
   const visual = new MiniEl('div');
   buildStateOverlay(visual, { isBattlefield: true, kind: 'creature', saga: null, counters: { lore: 2 } });
   const texts = badgeTexts(visual);
-  assert.ok(texts.some((t) => t.includes('lore×2')), `licznik lore bez Sagi: [${texts}]`);
+  assert.ok(texts.some((t) => t.includes('2x lore')), `licznik lore bez Sagi (format M165): [${texts}]`);
   assert.ok(!texts.some((t) => t.includes('Rozdział')), `bez badge'u rozdziału: [${texts}]`);
 });
 
