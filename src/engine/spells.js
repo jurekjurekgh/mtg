@@ -498,6 +498,88 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
 }
 
 /**
+ * M161/O1 (zasada właściciela 2026-08-20: kod mechaniki gotowy na karty,
+ * które dopiero przyjdą; obserwacja audytu PR #66): rzut INSTANT/SORCERY
+ * za koszt madness (CR 702.34). W katalogu nie ma dziś takiej karty (strażnik
+ * katalogu w test/m161-madness-spell-path.test.js sygnalizuje pierwszą),
+ * ale routing resolve_madness_cast po kind kieruje tu obiekty spell.
+ *
+ * Wzorzec: handlery suspend/rebound — rzut z exile w rozstrzyganiu
+ * jednorazowej decyzji, timing IGNOROWANY (CR 702.34e — także sorcery w
+ * cleanup i w turze przeciwnika), cele walidowane jak przy zwykłym rzucie.
+ * Różnica: koszt madness się PŁACI (redukcje generyczne i płatność pipami
+ * madness.colors — lustro castPermanent, M161/O2).
+ *
+ * Jawny zakres (pierwsza realna karta go rozszerza świadomie, test S10
+ * pilnuje sygnału): czary bez kosztów dodatkowych (additionalCost), bez
+ * xCost/fireball i bez trybów variableTargets — enumeracja ofert
+ * (epicCastOffers) te kształty pomija, a ręczna komenda dostaje czytelny
+ * powód odrzucenia zamiast cichego obejścia.
+ */
+export function castMadnessSpell(state, playerId, objectId, targets, modeIndex) {
+  const object = state.objects.get(objectId);
+  if (!object || object.controllerId !== playerId || object.zone !== 'exile' || !object.madnessReady) {
+    throw new Error('Nielegalny czar madness');
+  }
+  if (object.kind !== 'spell') throw new Error('Ten obiekt nie jest czarem');
+  if (!object.madness) throw new Error('Ta karta nie ma mechaniki madness');
+  if (object.spell?.xCost || object.spell?.fireball) throw new Error('Madness: czar X/fireball poza zakresem');
+  if (object.spell?.additionalCost) throw new Error('Madness: dodatkowy koszt czaru poza zakresem');
+  const chosen = Array.isArray(targets) ? targets : [];
+  let chosenTargets = [];
+  let chosenMode;
+  let targetSpec;
+  if (object.spell?.modes) {
+    if (!Number.isInteger(modeIndex) || modeIndex < 0 || modeIndex >= object.spell.modes.length) {
+      throw new Error('Nieprawidłowy tryb czaru madness');
+    }
+    const mode = object.spell.modes[modeIndex];
+    if (mode.variableTargets) throw new Error('Madness: variableTargets poza zakresem');
+    targetSpec = mode.targets ?? [];
+    chosenMode = modeIndex;
+  } else {
+    targetSpec = object.spell?.targets ?? [];
+  }
+  if (chosen.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów czaru madness');
+  if (targetSpec.length > 0) {
+    chosenTargets = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object);
+  }
+  // Koszt madness (CR 702.34a) z redukcjami generycznymi — jak w castPermanent.
+  let cost = object.madness.cost ?? object.manaCost ?? 0;
+  cost = reduceGenericCost(object.cardId, cost, costReductionForSpell(state, object) + conditionalCostReduction(state, object));
+  // Pipy KOSZTU MADNESS, nie karty (M161/O2); spendMana egzekwuje kolory
+  // jako głęboką obronę (auto-tap kolorowopasujących źródeł).
+  const requirements = (object.madness.colors ?? []).map((color) => [color]);
+  if (producibleMana(state, playerId) < cost) throw new Error('Niewystarczająca mana');
+  if (!canPayColoredCost(state, playerId, requirements)) throw new Error('Brak kolorowego źródła many');
+  spendMana(state, playerId, cost, requirements);
+  consumePendingSpellDiscount(state, object);
+  state.spellsCastThisTurn += 1;
+  const stackId = `spell-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
+  const stacked = Object.freeze({
+    ...moved,
+    tapped: false,
+    chosenTargets: chosenTargets.map((entry) => entry.id),
+    ...(chosenMode != null ? { chosenMode } : {}),
+    // Gotowość madness jest jednorazowa — konsumowana rzutem.
+    madnessReady: false,
+  });
+  state.objects.set(stackId, stacked);
+  const e = event('spell_cast', {
+    playerId, fromId: objectId, object: stacked, cardId: object.cardId,
+    targets: chosenTargets.map((entry) => entry.id),
+    targetCardIds: chosenTargets.map((entry) => entry.cardId),
+    madness: true,
+    manaSpent: cost,
+    colors: [...(object.colors ?? [])],
+    ...(chosenMode != null ? { modeIndex: chosenMode } : {}),
+  });
+  state.events.push(e);
+  return e;
+}
+
+/**
  * Fireball (X-cost, „any number of targets"): X wybiera gracz (komenda niesie
  * xValue), cele to dowolna liczba legalnych stworów i/lub graczy (najpierw
  * stworów, potem graczy — mogą się powtarzać). Koszt = {X} + {R} + {1} za każdy

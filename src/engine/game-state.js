@@ -18,7 +18,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment } from './combat.js';
-import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, legalEscapeCasts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets } from './spells.js';
+import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, legalEscapeCasts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell } from './spells.js';
 import { legalActivatedAbilities, activateAbility, performActivation } from './abilities.js';
 import { clearMarkedDamage, clearStatModifiers, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, transformedCharacteristics, untapObject } from './permanents.js';
 import { addCounter } from './counters.js';
@@ -1724,7 +1724,15 @@ export function execute(state, input) {
     }
     if (!card || card.zone !== 'exile' || !card.madnessReady) return reject('illegal_madness_cast');
     try {
-      const e = castPermanent(state, pending.playerId, pending.objectId, { madnessCast: true });
+      // M161/O1 (zasada właściciela 2026-08-20 — gotowość kodu mechaniki na
+      // przyszłe karty): routing po kind. Instant/sorcery z madness idzie
+      // ścieżką czarów (cele + płatność kosztu madness + stos), permanent —
+      // castPermanent. Dziś w katalogu tylko permanent (Revolutionist);
+      // strażnik katalogu w test/m161-madness-spell-path.test.js sygnalizuje
+      // pierwszą kartę czarową z madness.
+      const e = card.kind === 'spell'
+        ? castMadnessSpell(state, pending.playerId, pending.objectId, cmd.targets, cmd.modeIndex)
+        : castPermanent(state, pending.playerId, pending.objectId, { madnessCast: true });
       state.pendingMadnessCast = null;
       if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) {
         state.turn.priorityPlayerId = pending.restorePriorityTo;
@@ -4695,7 +4703,23 @@ export function playerView(state, playerId) {
     legalCommands.unshift(command('resolve_madness_cast', playerId, { cast: false, ...madnessIds }));
     if (madnessObj && madnessObj.zone === 'exile' && madnessObj.madnessReady
       && canPayMadnessCost(state, playerId, madnessObj)) {
-      legalCommands.unshift(command('resolve_madness_cast', playerId, { cast: true, ...madnessIds }));
+      // M161/O1: instant/sorcery z madness — oferta per legalny zestaw celów
+      // (i per tryb modalny), jak przy suspend/epic (czar z celem bez
+      // chosenTargets fizzluje, CR 601.2c / 608.2b). Czary z kosztem
+      // dodatkowym/X są poza zakresem castMadnessSpell — nie oferujemy ich
+      // wcale (L48 oferta=walidacja). Brak puli celów = tylko rezygnacja.
+      if (madnessObj.kind === 'spell') {
+        if (!madnessObj.spell?.additionalCost && !madnessObj.spell?.xCost) {
+          for (const offer of epicCastOffers(state, playerId, madnessObj)) {
+            legalCommands.unshift(command('resolve_madness_cast', playerId, {
+              cast: true, ...madnessIds, targets: offer.targets,
+              ...(offer.modeIndex != null ? { modeIndex: offer.modeIndex } : {}),
+            }));
+          }
+        }
+      } else {
+        legalCommands.unshift(command('resolve_madness_cast', playerId, { cast: true, ...madnessIds }));
+      }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeEpicExperiment) {
     // Epic Experiment: rzuć wygnany instant/sorcery MV<=X bez kosztu albo zakończ.

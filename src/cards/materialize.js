@@ -119,6 +119,13 @@ export function gameObjectDataOf(card) {
     // Spelle mogą nosić zdolności aktywowane z ręki (cycling — Fiery Fall,
     // CR 702.28): materializujemy je także na obiekcie czaru.
     const data = { kind: 'spell', manaCost: card.manaCost, spell: card.spell, plot: card.plot ?? null, suspend: card.suspend ?? null, colors: colors(), abilities: card.abilities ?? [], cardName: card.name };
+    // M161/O1 (zasada właściciela: gotowość na przyszłe karty): instant/
+    // sorcery z madness — deskryptor musi przejść na obiekt gry, inaczej
+    // odrzucenie nie otworzy decyzji madness (klasa Z5/L21 — gałąź spell
+    // kopiuje pola ręcznie). Dziś żadna karta katalogu tego nie używa;
+    // strażnik katalogu w test/m161-madness-spell-path.test.js sygnalizuje
+    // pierwszą.
+    if (card.madness) data.madness = card.madness;
     return data;
   }
   return { kind: 'card', manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors(), cardName: card.name };

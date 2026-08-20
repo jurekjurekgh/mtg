@@ -410,11 +410,13 @@ export function treasureManaAvailable(state, playerId) {
 
 /**
  * M159/F2 (audyt PR #66, L48 oferta=walidacja): czy gracza STAĆ na rzut karty
- * za koszt madness. Lustro bramek płatności castPermanent(madnessCast:true):
- * redukcje generyczne, producibleMana, pipy karty (hasColorManaForObject)
- * i wymagania kolorowe kosztu madness. PlayerView oferuje resolve_madness_cast
- * { cast: true } wyłącznie, gdy ta funkcja zwraca true — inaczej oferta bez
- * skutku kończy się rejectem, a bot (cast=60 > odmowa=0) crashuje sesję.
+ * za koszt madness. Lustro bramek płatności castPermanent(madnessCast:true)/
+ * castMadnessSpell: redukcje generyczne, producibleMana i pipy KOSZTU
+ * MADNESS (M161/O2 — nie pipy karty; dla karty o innych kolorach kosztu
+ * madness niż bazowy to jedyna słuszna bramka). PlayerView oferuje
+ * resolve_madness_cast { cast: true } wyłącznie, gdy ta funkcja zwraca
+ * true — inaczej oferta bez skutku kończy się rejectem, a bot
+ * (cast=60 > odmowa=0) crashuje sesję.
  */
 export function canPayMadnessCost(state, playerId, object) {
   if (!object?.madness) return false;
@@ -422,7 +424,6 @@ export function canPayMadnessCost(state, playerId, object) {
   cost = reduceGenericCost(object.cardId, cost, costReductionForSpell(state, object) + conditionalCostReduction(state, object));
   const phyrexian = object.phyrexianManaCost ?? 0;
   if (producibleMana(state, playerId) < cost + phyrexian) return false;
-  if (!hasColorManaForObject(state, playerId, object, 0)) return false;
   const requirements = (object.madness.colors ?? []).map((color) => [color]);
   return hasColorRequirements(state, playerId, requirements);
 }
@@ -502,7 +503,24 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // Plot – rzut bez kosztu many (bez koloru) – pomijamy walidację kolorową
   // (jak legalSpellCasts dla zaplotowanych czarów). Koszt alternatywny ze
   // Skarbów walidujemy osobno niżej.
-  if (!plotted && !faceDown && !treasureAltCost && !hasColorManaForObject(state, playerId, object, phyrexianPayWithLife)) throw new Error('Brak kolorowego źródła many');
+  // M161/O2 (zasada właściciela 2026-08-20 — gotowość kodu na przyszłe karty):
+  // przy koszcie alternatywnym madness/warp bramka kolorów sprawdza pipy
+  // AKTYWNEGO kosztu alternatywnego, a nie pipy karty (dotąd
+  // hasColorManaForObject → coloredPipsOf(cardId)). Dla dzisiejszego katalogu
+  // tożsame (Revolutionist {5}{R} vs {3}{R}, Weftblade {5}{W} vs {2}{W}) —
+  // pierwsza karta o innych kolorach kosztu madness/warp przechodzi przez
+  // właściwą bramkę (obserwacja audytu PR #66).
+  const altCostColors = madnessCast
+    ? (object.madness?.colors ?? []).map((color) => [color])
+    : warpCast
+      ? (object.warp?.colors ?? []).map((color) => [color])
+      : null;
+  if (!plotted && !faceDown && !treasureAltCost) {
+    const colorGateOk = altCostColors
+      ? hasColorRequirements(state, playerId, altCostColors)
+      : hasColorManaForObject(state, playerId, object, phyrexianPayWithLife);
+    if (!colorGateOk) throw new Error('Brak kolorowego źródła many');
+  }
   // Phyrexian mana (CR 118.9): każdy symbol {W/P} można opłacić maną ({W})
   // albo 2 życiem — wybór NALEŻY DO GRACZA (parametr phyrexianPayWithLife
   // komendy cast_permanent; PlayerView wylicza wszystkie opłacalne warianty,
@@ -535,10 +553,10 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // obowiązują (root cause: face-down Monastery Flock wymagał {U} z powodu
   // pipów karty; cicha zła płatność w consumeManaPool to maskowała).
   // Plot – rzut bez kosztu many – nie ma też wymagań kolorowych (CR 702.136).
-  const requirements = (faceDown || plotted) ? [] : madnessCast
-    ? (object.madness?.colors ?? []).map((color) => [color])
-    : warpCast
-      ? (object.warp?.colors ?? []).map((color) => [color])
+  // M161/O2: przy madness/warp pipy AKTYWNEGO kosztu alternatywnego
+  // (altCostColors — ta sama lista co bramka kolorów wyżej).
+  const requirements = (faceDown || plotted) ? [] : altCostColors
+    ? altCostColors
     : treasureAltCost
       ? (treasureAltCost.colors ?? []).map((color) => [color])
       : [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips];

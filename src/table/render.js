@@ -1953,8 +1953,12 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_madness_cast': {
       // M159/F4 (audyt PR #66): oferta niesie objectId (karta w exile —
       // strefa publiczna) i cardId; etykieta ma NAZYWAĆ kartę, nie „?".
+      // M161/O1: instant/sorcery z madness enumeruje ofertę PER cel (jak
+      // suspend, M151) — etykieta nazywa cel, inaczej N wpisów wygląda
+      // identycznie.
+      const madTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
       return cmd.cast
-        ? `Rzuć za koszt madness: ${nameOfObjectId(cmd.objectId ?? cmd.cardId)}`
+        ? `Rzuć za koszt madness: ${nameOfObjectId(cmd.objectId ?? cmd.cardId)}${madTargets ? ` → cel: ${madTargets}` : ''}`
         : `Przełóż do cmentarza (rezygnacja z madness): ${nameOfObjectId(cmd.objectId ?? cmd.cardId)}`;
     }
     case 'resolve_reveal_choice': {
