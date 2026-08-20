@@ -37,7 +37,7 @@ Reguła trwała idzie do `docs/LESSONS.md`.
   `docs/audits/AUDYT_PR67_2026-08-20.md` — commit 9c763cd. Znalezisko D1
   (brak sekcji M160 w PROJECT_STATE — backfill w etapie 4); obserwacje
   O1/O2 = temat zadania.
-- [ ] **3. Implementacja gotowości madness (RED→GREEN,
+- [x] **3. Implementacja gotowości madness (RED→GREEN,
   `test/m161-madness-spell-path.test.js`)** — jeden samodzielnie zielony
   commit:
   - **3a. Routing po kind:** w `resolve_madness_cast` gałąź
@@ -64,19 +64,33 @@ Reguła trwała idzie do `docs/LESSONS.md`.
     „ścieżka istnieje, dopisz testy kartowe".
   - Kryteria: RED przed implementacją (potwierdzone na sztywno), potem
     `npm test` + `npm run build` zielone.
-- [ ] **4. Domknięcie dokumentacji:** backfill M160 do PROJECT_STATE (D1),
-  sekcja M161, reguła trwała w `docs/LESSONS.md` (L50), handoff sesji,
+- [x] **4. Domknięcie dokumentacji:** backfill M160 do PROJECT_STATE (D1),
+  sekcja M161, reguła trwała w `docs/LESSONS.md` (L52), handoff sesji,
   opis PR #68 kumulatywnie. Osobny commit (dokumentacja po ostatnim
   funkcjonalnym — ADR 0020 C).
-- [ ] **5. Zamknięcie sesji:** blok przekazania w czacie (ADR 0013 §2).
+- [x] **5. Zamknięcie sesji:** blok przekazania w czacie (ADR 0013 §2).
 
 ## Planowane commity
 
 1. `9c763cd` — audyt PR #67 (raport).
-2. Ten plan (przed kodowaniem).
-3. 3a–3d w jednym zielonym commicie (testy + implementacja; RED zweryfikowany
-   lokalnie przed implementacją).
-4. Dokumentacja (PROJECT_STATE backfill M160 + M161, LESSONS L50, handoff).
+2. `1e4a922` — ten plan (przed kodowaniem).
+3. `6f3fae7` — 3a–3d w jednym zielonym commicie (testy + implementacja;
+   RED zweryfikowany: 10/11 czerwonych przed implementacją).
+4. Dokumentacja (PROJECT_STATE backfill M160 + M161, LESSONS L52, handoff).
+
+## Podsumowanie wykonania
+
+- Etapy 0–5 odhaczone; wszystkie commity wypchnięte na PR #68.
+- RED→GREEN potwierdzone: S1–S4 (routing czarów), S5/S6 (kolory kosztu
+  madness ≠ pipy karty), S7/S8 (oferty), S10 (granice zakresu) czerwone
+  przed; S5b (strażnik odwrotny) zielony przed i po.
+- Dodatkowo poza plan, w zakresie zasady: etykieta UI z celem (wzorzec
+  M151), materialize spell-branch z `madness` (klasa Z5/L21), filtr
+  ofert additionalCost/xCost (L48).
+- Pakiet: npm test 2507/2507, test:slow 9/9, build 51 modułów / 2137.5 kB.
+- Reguła trwała zapisana jako L52 w LESSONS (decyzja właściciela
+  2026-08-20); nowego ADR nie wymagano (mieści się w ADR 0001/0002 —
+  uzasadnienie w sekcji Kontekst).
 
 ## Ryzyka / pułapki
 

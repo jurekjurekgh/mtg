@@ -1,7 +1,52 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-20 (M159: audyt PR #66 + pętla jakości — madness timing, Saga-enchantment)
-- **Poprzednia:** 2026-08-20 (M158: Batch 39 komplet 10/10)
+- **Ostatnia aktualizacja:** 2026-08-20 (M161: audyt PR #67 + gotowość madness na czary — routing po kind)
+- **Poprzednia:** 2026-08-20 (PR #67: M159 audyt PR #66 + pętla jakości, M160 uwagi właściciela A/B)
+
+## M161 — audyt PR #67 + gotowość madness na czary (2026-08-20, PR #68)
+
+Sesja wg ADR 0020; zlecenie właściciela: zasada **„nie zostawiamy
+nieobsłużonych ścieżek zależnych od przyszłych kart — kod mechaniki
+gotowy, ścieżka martwa dziś zasygnalizowana"** (reguła trwała: L52).
+Audyt PR #67 (squash `015f715`): raport `docs/audits/AUDYT_PR67_2026-08-20.md`
+— F1–F4/Z1–Z5/M160 zweryfikowane poprawne (M160/A weryfikacją mutacyjną),
+znalezisko **D1** (praca M160 nie istniała w PROJECT_STATE — backfill poniżej),
+obserwacje **O1/O2** = temat zadania.
+
+**Implementacja (RED→GREEN, `test/m161-madness-spell-path.test.js`, 11 testów,
+10 czerwonych przed):**
+1. **O1 routing po kind** — `resolve_madness_cast`: instant/sorcery z madness
+   → nowa `spells.castMadnessSpell` (wzorzec suspend/rebound: cele/tryby,
+   stos, timing ignorowany CR 702.34e; koszt madness PŁACONY z redukcjami).
+   Oferta playerView per legalny zestaw celów i per tryb (`epicCastOffers`);
+   czary z additionalCost/xCost poza zakresem — brak oferty + jawny reject.
+   Etykieta UI nazywa cel (wzorzec M151). Materialize: gałąź spell zachowuje
+   deskryptor `madness` (klasa Z5/L21).
+2. **O2 bramka kolorów kosztu alternatywnego** — `castPermanent` przy
+   madnessCast/warpCast sprawdza pipy AKTYWNEGO kosztu
+   (`altCostColors`), nie pipy karty; `canPayMadnessCost` bez redundantnej
+   bramki pipów karty. Dla katalogu zachowanie tożsame (Revolutionist,
+   Weftblade).
+3. **Sygnał** — strażnik katalogu (S9): czerwienieje przy pierwszej karcie
+   instant/sorcery z madness w katalogu, z instrukją w komunikacie
+   (ścieżka gotowa — S1–S4; dopisać testy kartowe, ew. rozszerzyć zakres).
+
+**Stan:** `npm test` **2507/2507** (fast), `test:slow` 9/9, build
+**51 modułów / 2137.5 kB**. Katalog bez zmian (ADR 0001/0022 — ścieżka
+martwa dla katalogu, żywa w testach syntetycznych).
+
+## M160 — uwagi właściciela z testów (2026-08-20, PR #67; backfill M161/D1)
+
+Backfill: praca wykonana w PR #67, ale nieopisana w PROJECT_STATE (luka
+dokumentacyjna znaleziona w audycie PR #67 — D1):
+- **A (Selhoff Occultist, CR 603.10a):** jednoczesne zgony (jeden przebieg
+  SBA — walka, masowe -X/-X) niosą `simultaneousIds`; triggery
+  `any_creature_dies` współzgony stworów patrzą wstecz i odpalają
+  (weryfikacja mutacyjna w audycie PR #67). Tokeny: fallback na LKI
+  zdarzenia śmierci (CR 704.5e). `test/m160-uwagi-wlasciciela.test.js` (5).
+- **B1/B2 (Seismic Monstrosaur):** `sacrificeLandId` w kluczu grupowania
+  panelu akcji i w etykiecie („poświęć: <ląd>") — warianty per ląd
+  rozróżnialne; pola generyczne komendy (ADR 0002).
 
 ## M159 — audyt PR #66 + pętla jakości (2026-08-20, PR #67)
 
@@ -128,13 +173,13 @@ rebound (Ojutai's Breath), Satyr Wayfinder, Static Net (linked exile +
 Powerstone), living weapon (Strandwalker), creature_or_vehicle ×4 ścieżki,
 craft no-op (M155), Z5/Z8, FoW (manaCost/name/suspend w widoku — jawne),
 dane kart vs Scryfall (strażniki L23/L26 zielone), oba boty obsługują nowe
-decyzje (L48), wyceny większości nowych efektów (L50).
+decyzje (L48), wyceny większości nowych efektów (L52).
 
 **Naprawione (RED→GREEN, `test/bot-pr65-audit-fixes.test.js`):**
 1. **F1** — `triggerTargetEffectFriendly` nie znał `grant_keywords_until_end_of_turn`
    → bot obdarowywał lifelink+indestructible najlepszego stwora PRZECIWNIKA
    (Lotusguard, Batch 38). Fix: gałąź grant_keywords + zbiór
-   HOSTILE_GRANTED_KEYWORDS. Piąte powtórzenie klasy L50.
+   HOSTILE_GRANTED_KEYWORDS. Piąte powtórzenie klasy L52.
 2. **F2** — `destroy_artifact_gain_life_mana_value` bez wyceny → bot rzucał
    Divine Offering we WŁASNY artefakt-źródło many. Fix: wpisy w tabelach bota
    (HOSTILE_PERMANENT_EFFECTS, REMOVAL_EFFECTS, HOSTILE_TRIGGER_TARGET_EFFECTS).
@@ -149,7 +194,7 @@ implementacja wielocelowego triggera ETB.
 
 **Pętla jakości (etap 5, ADR 0021):** sonda inwentaryzacji typów efektów
 w kontekstach celowanych (card-data vs wyceny bota) — 2 kolejne wystąpienia
-klasy L50: **Q1** Withstand (prewencja any_target bez wyceny → bot chronił
+klasy L52: **Q1** Withstand (prewencja any_target bez wyceny → bot chronił
 stwora PRZECIWNIKA), **Q2** Servant of the Scale (transfer liczników
 nieprzyjazny → liczniki do najsłabszego własnego). Fixy + **strażnik
 klasyfikacji celów triggerów** (`triggerEffectIsHostile` w game-state,
@@ -284,7 +329,7 @@ Raport: `docs/audits/AUDYT_2026-08-18-m146-zywy-tester.md`.
 4. **Nowy detektor** `detectBotUntapsMyPermanent` (klasa „bot odkręca TWÓJ
    permanent"), zweryfikowany dwustronnie.
 
-Lekcja **L50** (nowy typ efektu = sprawdź wycenę w heuristic-bocie, obie
+Lekcja **L52** (nowy typ efektu = sprawdź wycenę w heuristic-bocie, obie
 ścieżki: czary i zdolności).
 
 **Stan:** `npm run test:all` **2310/2310**, build 51 / 1958.4 kB, benchmark

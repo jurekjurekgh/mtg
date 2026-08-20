@@ -1156,3 +1156,40 @@ ten plik → **wszystkie** ADR-y → LESSONS → ENVIRONMENT. Potem dopiero
 stan projektu. Co robić jest w ADR 0020, nie w pytaniu do właściciela.
 
 **Sformalizowane w:** nagłówek `AGENTS.md` §0, wskaźnik w `README.md`.
+
+## L52 (2026-08-20) — Ścieżka mechaniki zależna od przyszłych kart: zaimplementuj i zasygnalizuj, nie odnotuj
+
+**Objaw:** audyt PR #66 zostawił dwie obserwacje „bez zmian kodu":
+`resolve_madness_cast` wołał bezwarunkowo `castPermanent` (pierwsza karta
+instant z madness dostalaby reject), a bramka kolorów sprawdzała pipy
+KARTY zamiast kolorów kosztu madness (dziś tożsame dla Revolutionista).
+Obie były zapisane wyłącznie w raporcie audytu — wiedza o nich nie
+przetrwałaby dłużej niż pamięć o pliku `docs/audits/AUDYT_PR66_*`.
+
+**Przyczyna (decyzja właściciela 2026-08-20, nadająca regułę trwałą):**
+audyt interpretował ADR 0001 („nie budujemy spekulatywnie") jako
+"nie implementujemy, dopóki karta nie przyjdzie". Właściciel rozstrzygnął
+odwrotnie dla KODU MECHANIKI: nie zostawiamy takich sytuacji nieobsłużonych
+— przygotowujemy kod zdolności na sytuację, gdy takie karty się pojawią.
+Ścieżka może być dziś martwa (bo nie występuje karta, która ją obsługuje),
+ale musi być zasygnalizowana, żeby w przyszłości o niej nie zapomnieć.
+ADR 0001 nadal obowiązuje dla KATALOGU: karty nie dodajemy spekulatywnie.
+
+**Reguła:** gdy audyt/realizacja odkryje lukę mechaniki ujawnioną dopiero
+przez hipotetyczną kartę:
+1. **implementuj generycznie** (routing po `kind`/deskryptorach, bramki wg
+   AKTYWNEGO kosztu — jak altCostColors w `castPermanent`), bez specjalnych
+   przypadków po nazwie karty (ADR 0002);
+2. **wyprowadź ścieżkę na powierzchnię we wszystkich warstwach** — engine,
+   oferta playerView (L48), etykieta UI (cel musi być nazwany), boty;
+3. **zasygnalizuj granice zakresu JAWNYM rejectem** (czytelny powód), nie
+   cichym obejściem;
+4. **daj strażnika, który czerwienieje w dniu wejścia pierwszej takiej
+   karty** (test katalogowy z instrukcją w komunikacie asercji) + testy
+   ścieżki na obiektach syntetycznych (RED→GREEN).
+
+**Sygnał:** fraza w raporcie audytu „pierwsza karta X będzie wymagała Y"
+to zadanie na TERAZ dla kodu mechaniki — nie wpis do zapomnienia.
+
+**Sformalizowane w:** M161 (routing madness po kind, `castMadnessSpell`,
+strażnik katalogu w `test/m161-madness-spell-path.test.js`).
