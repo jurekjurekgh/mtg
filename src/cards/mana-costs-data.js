@@ -310,4 +310,7 @@ export const MANA_COSTS = {
   "wrap-in-flames": "{3}{R}",
   "invasion-of-the-giants": "{U}{R}",
   "revolutionist": "{5}{R}",
+  "blade-blizzard-kitsune": "{2}{W}",
+  "knockout-maneuver": "{2}{G}",
+  "krotiq-nestguard": "{2}{G}",
 };

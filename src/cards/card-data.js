@@ -7238,6 +7238,77 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['Madness: odrzucenie trafia do exile z jednorazową decyzją rzutu za {3}{R} (timing ignorowany — CR 702.34a) albo przełożenia do grobu'],
   }),
 
+  // =========================================================================
+  // Batch 40 (10 kart, lista właściciela 2026-08-20) — transza A: reuse.
+  // Dane Scryfall: docs/cards/scryfall-*.json (ADR 0010 §2a).
+  // =========================================================================
+
+  // 1. Blade-Blizzard Kitsune (NEO) {2}{W} 2/2 Fox Ninja — ninjutsu {3}{W}
+  //    + double strike (oba istnieją: Kappa Batch 1, double strike Batch 21).
+  defineCard({
+    id: 'blade-blizzard-kitsune', name: 'Blade-Blizzard Kitsune', set: 'NEO',
+    types: ['Creature'], subtypes: ['Fox', 'Ninja'], colors: ['W'],
+    keywords: ['double_strike'], power: 2, toughness: 2, manaCost: 3,
+    oracleText: 'Ninjutsu {3}{W} ({3}{W}, Return an unblocked attacker you control to hand: Put this card onto the battlefield from your hand tapped and attacking.)\nDouble strike',
+    imageUri: 'https://cards.scryfall.io/large/front/d/8/d8419d27-8c6e-4f38-98b4-60dd9a910c43.jpg?1783923926',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'ninjutsu',
+        cost: { mana: 4, colors: ['W'] },
+      }),
+    ],
+    artId: null, plan: 'Kamigawa',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Knockout Maneuver (TDM) {2}{G} Sorcery — licznik +1/+1 na swoim
+  //    stworze, POTEM zadaje obrażenia równe mocy (z licznikiem — efekty
+  //    sekwencyjne, damage_from_target_power czyta effectivePower) w stwora
+  //    przeciwnika (wzorzec Diplomatic Relations, Batch 38).
+  defineCard({
+    id: 'knockout-maneuver', name: 'Knockout Maneuver', set: 'TDM',
+    types: ['Sorcery'], colors: ['G'], manaCost: 3,
+    oracleText: 'Put a +1/+1 counter on target creature you control, then it deals damage equal to its power to target creature an opponent controls.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/d/9d218831-2a41-46a3-8e9d-93462cae5cab.jpg?1783907340',
+    spell: {
+      timing: 'sorcery',
+      // CR 608.2b: „then" — sekwencja: licznik najpierw (cel 0), obrażenia
+      // = moc PO liczniku (effectivePower czyta +1/+1 wliczone).
+      targets: [{ type: 'creature_you_control' }, { type: 'creature_opponent_controls' }],
+      effects: [
+        { type: 'add_counter', counter: '+1/+1', amount: 1, targetIndex: 0 },
+        { type: 'damage_from_target_power', sourceTargetIndex: 0, targetIndex: 1 },
+      ],
+    },
+    artId: null, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Krotiq Nestguard (TDM) {2}{G} 4/4 Insect — defender; {2}{G}: może
+  //    atakować w tej turze jakby nie miał defendera (lostKeywordsUntilEOT —
+  //    warstwa z Wishful Merfolk; cleanup końca tury przywraca).
+  defineCard({
+    id: 'krotiq-nestguard', name: 'Krotiq Nestguard', set: 'TDM',
+    types: ['Creature'], subtypes: ['Insect'], colors: ['G'],
+    keywords: ['defender'], power: 4, toughness: 4, manaCost: 3,
+    oracleText: 'Defender\n{2}{G}: This creature can attack this turn as though it didn\'t have defender.',
+    imageUri: 'https://cards.scryfall.io/large/front/a/5/a5d0a9fb-1068-478d-a78c-6fd77cc313f0.jpg?1783907339',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 3, colors: ['G'] },
+        // „attack as though it didn't have defender" = utrata defendera
+        // do końca tury (przenośnik generyczny becomes_subtype_until_end_of_
+        // turn bez nadpisywania podtypów — niesie wyłącznie losesKeywords).
+        effect: [{ type: 'becomes_subtype_until_end_of_turn', losesKeywords: ['defender'] }],
+      }),
+    ],
+    artId: null, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+    notes: ['aktywacja odsuwa defendera do końca tury (cleanup przywraca) — atak legalny po aktywacji, w następnej turze znów nie'],
+  }),
+
 ]);
 
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */
