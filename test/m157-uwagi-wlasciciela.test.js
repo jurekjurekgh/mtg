@@ -309,3 +309,48 @@ test('F4d: bot heuristic wybiera parę WŁASNYCH stworów (friendly add_counter)
   assert.deepEqual([...(choice.targetIds ?? [])].sort(), ['mine1', 'mine2'],
     `bot wzmacnia OBA własne stwory: ${JSON.stringify(choice)}`);
 });
+
+
+// L28 (inwentaryzacja, M157): dwa realne błędy wyceny znalezione strażnikiem
+// test/bot-targeted-effect-valuation-guard.test.js.
+test('L28a: Mournful Zombie — bot leczy SIEBIE, nie przeciwnika', async () => {
+  const { playerView } = await import('../src/engine/game-state.js');
+  const { createHeuristicBot } = await import('../src/controllers/heuristic-bot.js');
+  const { jumpToStep } = await import('../src/engine/turn.js');
+  const state = createGameState({ seed: 28, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  const { addMana } = await import('../src/engine/resources.js');
+  addMana(state, 'p1', 2, { colors: ['W', 'W'] });
+  putCard(state, 'zombie', 'mournful-zombie', 'p1');
+  const view = playerView(state, 'p1');
+  const offers = view.legalCommands.filter((c) => c.type === 'activate_ability' && c.objectId === 'zombie');
+  assert.ok(offers.length > 0, 'jest oferta aktywacji {W},{T}');
+  const self = offers.find((c) => c.targets?.[0] === 'p1');
+  const foe = offers.find((c) => c.targets?.[0] === 'p2');
+  assert.ok(self && foe, 'oba cele-gracze w ofercie');
+  const choice = createHeuristicBot({ seed: 28 }).chooseCommand(view, {});
+  if (choice.type === 'activate_ability' && choice.objectId === 'zombie') {
+    assert.equal(choice.targets?.[0], 'p1', `życie dla SIEBIE, nie wroga: ${JSON.stringify(choice)}`);
+  }
+});
+
+test('L28b: Spreading Insurrection — bot kradnie NAJMOCNIEJSZEGO stwora wroga', async () => {
+  const { playerView } = await import('../src/engine/game-state.js');
+  const { createHeuristicBot } = await import('../src/controllers/heuristic-bot.js');
+  const { jumpToStep } = await import('../src/engine/turn.js');
+  const { addMana } = await import('../src/engine/resources.js');
+  const state = createGameState({ seed: 29, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  addMana(state, 'p1', 10);
+  putCard(state, 'ins', 'spreading-insurrection', 'p1', 'hand');
+  putCard(state, 'small', 'highland-game', 'p2');
+  putCard(state, 'big', 'thornhide-wolves', 'p2');
+  const view = playerView(state, 'p1');
+  const choice = createHeuristicBot({ seed: 29 }).chooseCommand(view, {});
+  assert.equal(choice.type, 'cast_spell', `bot powinien rzucić kradzież: ${JSON.stringify(choice)}`);
+  assert.equal(choice.targets?.[0], 'big', `cel = najsilniejszy stwór wroga: ${JSON.stringify(choice)}`);
+});

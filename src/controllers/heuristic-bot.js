@@ -1074,6 +1074,28 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           // Dobranie kart z czaru to przewaga kartowa.
           if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') score += 6 * (effect.amount ?? 1);
+          // M157/L28 (inwentaryzacja): kradzież stwora do końca tury (Spreading
+          // Insurrection, Awaken the Sleeper) — warianty różnią się celem;
+          // wartość = tymczasowy zysk najsilniejszego stwora wroga.
+          if (effect.type === 'gain_control_until_end_of_turn') {
+            const foe2 = enemy(view);
+            if (target && foe2 && target.controllerId === foe2.id) {
+              score += 12 + (target.power ?? 0) * 2 + (target.toughness ?? 0);
+            }
+          }
+          // M157/L28: efekty celujące KARTĘ we WŁASNYM grobie (Unbreakable
+          // Bond) — remis wariantów zwracał pierwszą kartę; premiujemy
+          // najcenniejszego stwora w grobie (P/T z widoku grobu).
+          if (effect.type === 'return_permanent_from_graveyard') {
+            const slot = cmd.targets?.[effect.targetIndex ?? 0] ?? null;
+            const gyCard = slot ? (view.zones.graveyard ?? []).find((o) => o.id === slot) : null;
+            if (gyCard) {
+              const gyDef = cardDef(gyCard.cardId);
+              const gyValue = ((gyCard.power ?? gyDef?.power ?? 0) * 2)
+                + (gyCard.toughness ?? gyDef?.toughness ?? 0);
+              score += 10 + gyValue;
+            }
+          }
           // M156/Q1 (pętla jakości, Withstand — cantrip z prewencją „any
           // target"): prewencja bez wyceny = remis wariantów → bot rzucał
           // „prevent the next 3 damage" na STWORA PRZECIWNIKA (czysta strata
@@ -1317,6 +1339,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
           }
           if (effect.type === 'gain_life') score += 2 + (effect.amount ?? 0);
+          // M157/L28 (Mournful Zombie „{W},{T}: Target player gains 1 life"):
+          // cel-gracz bez wyceny = remis → bot mógł LECZYĆ PRZECIWNIKA.
+          // Życie sobie = plus, przeciwnikowi = kara.
+          if (effect.type === 'gain_life_target') {
+            const slot = cmd.targets?.[effect.targetIndex ?? 0] ?? null;
+            const amount2 = effect.amount ?? 1;
+            if (slot === view.playerId) score += 2 + amount2;
+            else if (slot != null && slot === enemy(view)?.id) score -= 25 + amount2;
+          }
+          // M157/L28: zwrot karty z grobu w upkeep (Plague Reaver) — jak
+          // w pętli czarów: premiujemy najcenniejszego stwora z grobu.
+          if (effect.type === 'return_to_battlefield_under_control_at_upkeep') {
+            const slot = cmd.targets?.[effect.targetIndex ?? 0] ?? null;
+            const gyCard = slot ? (view.zones.graveyard ?? []).find((o) => o.id === slot) : null;
+            if (gyCard) {
+              const gyDef = cardDef(gyCard.cardId);
+              score += 10 + ((gyCard.power ?? gyDef?.power ?? 0) * 2)
+                + (gyCard.toughness ?? gyDef?.toughness ?? 0);
+            }
+          }
           // M96 (audyt Żywym Testerem): zdolności celujące w GRACZA nie były
           // w ogóle wyceniane — każdy cel dostawał to samo `score = 2`, więc
           // bot 7× z rzędu zmielił WŁASNĄ bibliotekę Cellar Door („Target
