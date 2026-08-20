@@ -69,3 +69,21 @@ Wszystkie naprawione (testy regresyjne w test/batch38-audit-fixes.test.js).
 - [x] Z9 [bot] brak ataku 0/1 bez drenażu/ewazji
 - [x] Z10 [bot] Pristine Talisman darmowe życie tapnięciem
 - [x] nowy detektor Testera: detectTokenRawId (Z7)
+
+## Podsumowanie wykonania
+
+Audyt „z perspektywy gracza" narzędziem Żywego Testera na PR #65 — wcieliłem
+się w gracza taliami z kartami Batch 38 i rozegrałem 15+ partii przeciw
+botowi (transkrypty w `tools/table-tester/audyt-batch38-zywy/`).
+
+- Karty Batch 38 (Divine Offering, Weftblade, Colossodon, Talion's, Fortify,
+  Mysidian, Pristine, Chatter, Silken, Lotusguard) zachowują się poprawnie
+  na stole (w tym kombinacje nowych+starych efektów).
+- Zebrałem 10 unikalnych znalezisk (błędy/niejasności/głupie zachowania bota),
+  wszystkie naprawione u root cause, każda zielona transza = osobny commit:
+  Z1 log „(?)", Z2 odmiana liczników, Z3 bot wzmacnia wroga, Z4 zły tryb
+  obrażeń, Z5 odwrócona kolejność trybów, Z6 tester nie łapie warp, Z7 raw id
+  tokenu, Z8 no-op self-tap, Z9 atak 0/1, Z10 darmowe życie ignorowane.
+- Dodałem nowy detektor Testera (`detectTokenRawId`, Z7) — zweryfikowany na
+  transkrypcie sprzed (6 trafień) i po naprawie (0).
+- `npm test` zielone (2428), `npm run build` zielony, push do PR #65.
