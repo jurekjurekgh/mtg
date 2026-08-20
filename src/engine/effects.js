@@ -2747,7 +2747,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // you control or artifact card from your graveyard → return transformed.
     // Blokująca decyzja: wybór artefaktu do wygnania (jak resolve_sacrifice_choice).
     const target = sourceObject.transformTo;
-    if (!target) throw new Error('Ta karta nie ma drugiej strony (craft)');
+    // M155 (audyt żywym testerem / benchmark B0): token-kopia artefaktu
+    // z craft (np. przez enterAsCopy) mogła nieść zdolność craft, ale NIE
+    // drugą stronę (transformTo). Zamiast crasha „Ta karta nie ma drugiej
+    // strony (craft)" — no-op (CR 608.2b: craft bez drugiej strony nic nie
+    // robi; oferta legalActivatedAbilities też nie oferuje craft bez
+    // transformTo).
+    if (!target) return;
     // Find valid exile targets: artifacts you control on battlefield (not self)
     // + artifact cards in your graveyard.
     const controllerId = sourceObject.controllerId;

@@ -392,6 +392,11 @@ export function legalActivatedAbilities(state, playerId) {
       // Megamorph (obrócenie twarzą do góry) działa tylko, póki permanent
       // leży twarzą w dół; po obrocie zdolność wygasa.
       if ((ability.keyword === 'megamorph' || ability.keyword === 'morph') && !object.faceDown) continue;
+      // Craft (CR 702.9? — Lodestone Needle // Guidestone Compass): wymaga
+      // drugiej strony (transformTo). Kopia bez drugiej strony (enterAsCopy
+      // skopiował zdolność craft, ale transformTo jest warunkowe) nie ma czego
+      // przywrócić — nie oferujemy (no-op zamiast crasha, jak efekty.js).
+      if (ability.keyword === 'craft' && !object.transformTo) continue;
       // Craft wymaga innego artefaktu do wygnania (z battlefield lub graveyard).
       if (ability.keyword === 'craft') {
         const hasOtherArtifact = state.zones.battlefield.some((bfId) => {

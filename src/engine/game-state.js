@@ -2333,6 +2333,11 @@ export function execute(state, input) {
             // (jak token-kopia). CR 707.2 — kopiowalne są WSZYSTKIE cechy.
             ...(target.station ? { station: target.station } : {}),
             ...(target.saga ? { saga: target.saga } : {}),
+            // M155: kopia karty DWUSTRONNEJ (enterAsCopy, np. Jwari
+            // Shapeshifter kopiujący stwora z craft/transform) musi też
+            // skopiować drugą stronę — inaczej zdolność craft/transform jest
+            // na kopii, ale bez transformTo (crash zamiast no-op).
+            ...(target.transformTo ? { transformTo: target.transformTo } : {}),
           });
           const clean = { ...updated };
           delete clean.enteringAsCopy;

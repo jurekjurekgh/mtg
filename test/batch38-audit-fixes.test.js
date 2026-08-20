@@ -221,3 +221,34 @@ test('Batch38/Z10: bot tapuje Pristine Talisman za darmowe życie (mana+life rid
   assert.equal(chosen.type, 'activate_ability',
     `bot ma tapnąć Talisman za darmowe życie, wybrał: ${chosen.type}`);
 });
+
+// --- M155 (pre-existing, benchmark B0): craft na kopii bez drugiej strony ---
+// Token-kopia artefaktu z craft (np. przez enterAsCopy) mogła nieść zdolność
+// craft bez transformTo → `craft_transform` rzucał „Ta karta nie ma drugiej
+// strony (craft)" i przerywał partię. Teraz: no-op (CR 608.2b) + oferta craft
+// wymaga transformTo.
+test('Batch38/pre-existing craft: aktywacja craft bez drugiej strony nie crashuje', () => {
+  const state = newState();
+  state.players.find((p) => p.id === 'p1').mana = 5;
+  // Artefakt z craft (Lodestone Needle // Guidestone Compass), ale bez
+  // transformTo — symuluje kopię, która skopiowała zdolność, nie drugą stronę.
+  putCard(state, 'needle', 'lodestone-needle', 'p1', 'battlefield');
+  state.objects.set('needle', Object.freeze({ ...state.objects.get('needle'), transformTo: null }));
+  putCard(state, 'art2', 'greatsword-of-tyr', 'p1', 'battlefield');
+  const acts = playerView(state, 'p1').legalCommands
+    .filter((c) => c.type === 'activate_ability' && c.objectId === 'needle');
+  // Oferta craft nie powinna istnieć bez transformTo.
+  assert.ok(!acts.some((a) => a.abilityIndex != null
+    && state.objects.get('needle').abilities?.[a.abilityIndex]?.keyword === 'craft'),
+    'craft bez transformTo nie jest oferowany');
+});
+
+// M155/pre-existing: craft_transform z brakującym transformTo to no-op (nie throw).
+test('Batch38/pre-existing craft: applyEffect craft_transform bez transformTo nie rzuca', async () => {
+  const { applyEffect } = await import('../src/engine/effects.js');
+  const state = newState();
+  putCard(state, 'needle', 'lodestone-needle', 'p1', 'battlefield');
+  const src = { id: 'needle', controllerId: 'p1', cardId: 'lodestone-needle' }; // bez transformTo
+  assert.doesNotThrow(() => applyEffect(state, { type: 'craft_transform' }, src, []),
+    'craft bez drugiej strony to no-op, nie crash');
+});
