@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Knight%20of%20the%20Skyward%20Eye&set=ala",
+  "print": "Knight of the Skyward Eye (ALA)",
+  "name": "Knight of the Skyward Eye",
+  "mana_cost": "{1}{W}",
+  "cmc": 2,
+  "type_line": "Creature — Human Knight",
+  "oracle_text": "{3}{G}: This creature gets +3/+3 until end of turn. Activate only once each turn.",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "G",
+    "W"
+  ],
+  "keywords": [],
+  "set": "ala",
+  "collector_number": "15",
+  "rarity": "common",
+  "pobrano": "2026-08-20",
+  "power": "2",
+  "toughness": "2",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/1/d/1d56e2bf-1937-42c1-8f61-1fd93e84cef7.jpg?1783942581",
+    "normal": "https://cards.scryfall.io/large/front/1/d/1d56e2bf-1937-42c1-8f61-1fd93e84cef7.jpg?1783942581"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Invasion%20of%20the%20Giants&set=khm",
+  "print": "Invasion of the Giants (KHM)",
+  "name": "Invasion of the Giants",
+  "mana_cost": "{U}{R}",
+  "cmc": 2,
+  "type_line": "Enchantment — Saga",
+  "oracle_text": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — Scry 2.\nII — Draw a card. Then you may reveal a Giant card from your hand. When you do, this Saga deals 2 damage to target opponent or planeswalker.\nIII — The next Giant spell you cast this turn costs {2} less to cast.",
+  "colors": [
+    "R",
+    "U"
+  ],
+  "color_identity": [
+    "R",
+    "U"
+  ],
+  "keywords": [
+    "Scry"
+  ],
+  "set": "khm",
+  "collector_number": "215",
+  "rarity": "uncommon",
+  "pobrano": "2026-08-20",
+  "power": null,
+  "toughness": null,
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/f/7f5075a0-c72a-474c-937c-95dc9205d14f.jpg?1783928196",
+    "normal": "https://cards.scryfall.io/large/front/7/f/7f5075a0-c72a-474c-937c-95dc9205d14f.jpg?1783928196"
+  }
+}

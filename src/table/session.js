@@ -82,6 +82,9 @@ export function commandOptionKey(cmd) {
     'attackerIds', 'assignments',
     // M112: decyzje wizarda scry/surveil (klucz sondy musi rozróżniać warianty).
     'bottomIds', 'millIds', 'topOrder', 'order',
+    // M157/F4(a): warianty wielocelowego celu triggera muszą mieć różne
+    // klucze (L32 — dedup po pełnej tożsamości komendy).
+    'targetId', 'targetIds',
   ];
   const out = {};
   for (const k of fields) if (cmd[k] !== undefined) out[k] = cmd[k];
@@ -637,6 +640,16 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         const sourceName = objectOrLki(e.source, e.sourceCardId);
         return `${sourceName} — obrażenia przepadają: cel opuścił pole bitwy`;
       }
+      case 'madness_ready_required':
+        return `${nameOf(e.cardId)} — odrzucona z madness: możesz rzucić za {${e.cost ?? '?'}} albo przełożyć do cmentarza`;
+      case 'madness_declined':
+        return `${nameOf(e.cardId)} — madness odrzucona, karta do cmentarza`;
+      case 'reveal_choice_required':
+        return `możesz ujawnić kartę (${e.subtype ?? '?'}) z ręki — ${e.amount ?? 2} obrażenia przeciwnika`;
+      case 'reveal_choice_resolved':
+        return e.cardId != null ? `ujawnia kartę — ${e.amount ?? 2} obrażenia przeciwnika` : 'nie ujawnia karty';
+      case 'spell_discount_armed':
+        return `następny czar (${e.subtype ?? 'dowolny'}) w tej turze tańszy o {${e.amount ?? 2}}`;
       case 'regeneration_shield_added': return `${nameOf(e.cardId)} — tarcza regeneracji (następne zniszczenie w tej turze)`;
       case 'permanent_regenerated': return `${nameOf(e.cardId)} zostaje zregenerowany — odtapowany, bez obrażeń`;
       case 'damage_shield_created': {
@@ -675,6 +688,13 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       case 'ability_activated': {
         if (e.attackerId) return `${whoN(e.playerId)} używa Ninjutsu (${nameOfObject(e.objectId)} wchodzi zamiast ${nameOfObject(e.attackerId)})`;
         if (e.cycling) return `${whoN(e.playerId)} aktywuje cycling: ${nameOf(e.cardId)}`;
+        // M158/A (zgłoszenie właściciela): odkrycie morph MUSI nazywać
+        // zdolność — „aktywuje zdolność: Woolly Loxodon" nie mówiło, CO się
+        // dzieje (sąsiednia linia opisuje obrót, ta — decyzję aktywacji).
+        if (e.keyword === 'morph' || e.keyword === 'megamorph') {
+          const name = e.keyword === 'morph' ? 'Morph' : 'Megamorph';
+          return `${whoN(e.playerId)} aktywuje ${name}: ${e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId)} — odkrycie karty za koszt ${name.toLowerCase()}`;
+        }
         if (e.keyword === 'equip') {
           const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
           // M100/E13 (zgłoszenie A): „wyposaża: X → Y" wyglądało jak SKUTEK,
@@ -958,6 +978,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         return `token ${e.name} przestaje istnieć (trafił do ${zoneName} — token istnieje tylko na polu bitwy)`;
       }
       case 'shield_consumed': return `${nameOfObject(e.objectId)} zużywa tarczę (shield)`;
+      case 'players_lost_life_fraction':
+        return `każdy gracz traci ${e.numerator ?? 1}/${e.denominator ?? 3} życia (zaokrąglone w górę)`;
+      case 'became_subtype':
+        return `${nameOfObject(e.objectId)} staje się ${e.subtypes.join(' ')} do końca tury${(e.lostKeywords ?? []).length > 0 ? ` (traci ${e.lostKeywords.join(', ')})` : ''}`;
       // M119/Z1 (audyt żywym testerem): odmiana liczby mnogiej. Log pokazywał
       // graczowi „dostaje +2 licznik +1/+1” i „traci 2 licznik stun” —
       // `polishPlural` istniał w tym pliku (obrażenia, karty), ale liczniki
@@ -1489,6 +1513,12 @@ export function createSession(config) {
   // Uwaga C (2026-08-12): śledzimy ostatnią FAZĘ pokazaną w modalu ruchu bota,
   // żeby dodawać nagłówek „Faza: …" tylko przy ZMIANIE fazy (nie co krok).
   let lastBotPhaseKey = null;
+  // M157/D (uwaga właściciela, Lodestone Needle): obiekty, które zdjęły
+  // licznik stun (blokada untap, CR 122.1b). Ich KOLEJNY untap jest istotny —
+  // bez pauzy kreatura „nigdy nie odkręcała się wizualnie" (engine ją
+  // odkręcał w upkeepie i legalnie atakowała, ale między upkeepem bota
+  // a jego atakiem nie było żadnego renderu stołu).
+  const stunLockedObjectIds = new Set();
   // Uwaga A (2026-08-12, po merge PR #44): nagłówek fazy jest OCZEKUJĄCY —
   // wypychamy go dopiero, gdy w tej fazie pojawi się prawdziwa akcja.
   // Puste „Faza: Odkręcenie / Dobieranie / Sprzątanie" znikały z raportu.
@@ -1751,6 +1781,24 @@ export function createSession(config) {
       noteBotMove(e);
       recordTurnEvent(e);
       if (BOT_PAUSE_EVENTS.has(e.type)) significant = true;
+      // M157/D: koniec blokady stun ma być WIDOCZNY na stole. (a) zdjęcie
+      // licznika stun = pauza (gracz widzi zejście licznika na kaflu);
+      // (b) pierwszy untap po stunie = pauza z jawnym wpisem w modalu —
+      // object_untapped to normalnie szum (BOT_MOVE_NOISE), więc bez tego
+      // bufor pauzy byłby pusty (L24), a kafel zostałby narysowany
+      // zatapowany aż do okna ataku.
+      if (e.type === 'counter_removed' && e.counter === 'stun') {
+        stunLockedObjectIds.add(e.objectId);
+        significant = true;
+      } else if (e.type === 'object_untapped' && stunLockedObjectIds.has(e.objectId)) {
+        stunLockedObjectIds.delete(e.objectId);
+        significant = true;
+        botMoves.push({
+          type: 'object_untapped',
+          text: `${nameOfObject(e.objectId)} odkręca się (koniec liczników stun)`,
+          cardId: e.cardId ?? null,
+        });
+      }
       // M100/E8: bez pauzy własna linia dobrania zginęłaby wyczyszczona
       // przez następną komendę gracza (apply czyści bufor) — komunikat
       // pojawia się na starcie własnej tury jak ruch bota.

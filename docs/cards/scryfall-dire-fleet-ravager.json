@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Dire%20Fleet%20Ravager&set=otc",
+  "print": "Dire Fleet Ravager (OTC)",
+  "name": "Dire Fleet Ravager",
+  "mana_cost": "{3}{B}{B}",
+  "cmc": 5,
+  "type_line": "Creature — Orc Pirate Wizard",
+  "oracle_text": "Menace, deathtouch\nWhen this creature enters, each player loses a third of their life, rounded up.",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [
+    "Menace",
+    "Deathtouch"
+  ],
+  "set": "otc",
+  "collector_number": "132",
+  "rarity": "mythic",
+  "pobrano": "2026-08-20",
+  "power": "4",
+  "toughness": "4",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/d/0d114e88-c5bd-416d-b9f1-25be1432c98c.jpg?1783911931",
+    "normal": "https://cards.scryfall.io/large/front/0/d/0d114e88-c5bd-416d-b9f1-25be1432c98c.jpg?1783911931"
+  }
+}

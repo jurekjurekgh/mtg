@@ -5,7 +5,7 @@ import { effectiveProtectionFromColors, isProtectedFromSource } from './attachme
 import { addCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
-import { parseManaCost, canPayManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, matchColorRequirements, coloredPipsOf } from './mana-cost.js';
+import { parseManaCost, canPayManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, matchColorRequirements, coloredPipsOf, consumePendingSpellDiscount } from './mana-cost.js';
 import { allControlledManaSources, getSourceForObject, manaUnitKey } from './mana-sources.js';
 
 /** Idempotentna inicjalizacja zasobów; createGameState wykonuje ją automatycznie. */
@@ -408,13 +408,17 @@ export function treasureManaAvailable(state, playerId) {
   return total;
 }
 
-export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, treasureAlt = false, warpCast = false } = {}) {
+export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, treasureAlt = false, warpCast = false, madnessCast = false } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   // Zaplotowana karta leży w exile (plotted: true) i rzuca się BEZ kosztu many
   // (CR 702.136 — „Cast it as a sorcery on a later turn without paying its
   // mana cost"). Batch 24: Spinewoods Paladin — plot dla permanentów.
   const plotted = object?.zone === 'exile' && object.plotted;
+  // M158/Batch 39 (CR 702.34): rzut za koszt madness z exile (karta
+  // odrzucona z madnessReady) — timing ignorowany (rzut w rozstrzyganiu
+  // zdolności, jak rebound/suspend).
+  const madnessLive = object?.zone === 'exile' && object.madnessReady;
   // M154 (Batch 38, Warp): karta z warpReady (wygnana po warp-caście w końcowym
   // kroku) można rzucić w późniejszej turze ZA KOSZT WARP (nie za darmo).
   const warpReady = object?.zone === 'exile' && object.warpReady;
@@ -422,7 +426,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   if (plotted && object.plottedAtTurn != null && state.turn.number <= object.plottedAtTurn) {
     throw new Error('Plot: można rzucić dopiero w późniejszej turze');
   }
-  if (!player || !object || object.controllerId !== playerId || (object.zone !== 'hand' && !plotted && !warpReady)) throw new Error('Nielegalny permanent');
+  if (!player || !object || object.controllerId !== playerId || (object.zone !== 'hand' && !plotted && !warpReady && !madnessLive)) throw new Error('Nielegalny permanent');
   if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') throw new Error('Ten obiekt nie jest zagrywalnym permanentem');
   // Flash (CR 702.8): permanent z flash można zagrać w każdej fazie (jak instant);
   // bez flash — tylko w swojej main phase (plot też rzuca się jako sorcery).
@@ -430,10 +434,12 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   if (!hasFlash && (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase))) throw new Error('Zagranie poza main phase');
   // Timing sorcery (CR 307.1/117.1a): rzut permanenta bez flash wymaga
   // PUSTEGO stosu — czar idzie na stos i rozstrzyga się po rundzie passów.
-  if (!hasFlash && state.zones.stack.length > 0) throw new Error('Zagranie przy niepustym stosie');
+  if (!hasFlash && !madnessCast && state.zones.stack.length > 0) throw new Error('Zagranie przy niepustym stosie');
   if (warpCast && !object.warp) throw new Error('Ta karta nie ma mechaniki warp');
+  if (madnessCast && !object.madness) throw new Error('Ta karta nie ma mechaniki madness');
   if (warpCast && (faceDown || kicked || treasureAlt || phyrexianPayWithLife > 0)) throw new Error('Koszt warp wyklucza morph/kicker/phyrexian/skarby');
-  let cost = plotted ? 0 : (warpCast ? (object.warp?.cost ?? object.manaCost ?? 0) : (object.manaCost ?? 0));
+  let cost = plotted ? 0 : (warpCast ? (object.warp?.cost ?? object.manaCost ?? 0)
+    : (madnessCast ? (object.madness?.cost ?? object.manaCost ?? 0) : (object.manaCost ?? 0)));
   if (faceDown) {
     if (!object.morph || object.morph.cost == null) throw new Error('Ta karta nie może być zagrana twarzą w dół');
     // M111 (CR 601.2f + 708.2): rzut zakryty to czar-STWÓR bez innych typów,
@@ -505,12 +511,14 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // obowiązują (root cause: face-down Monastery Flock wymagał {U} z powodu
   // pipów karty; cicha zła płatność w consumeManaPool to maskowała).
   // Plot – rzut bez kosztu many – nie ma też wymagań kolorowych (CR 702.136).
-  const requirements = (faceDown || plotted) ? [] : warpCast
-    ? (object.warp?.colors ?? []).map((color) => [color])
+  const requirements = (faceDown || plotted) ? [] : madnessCast
+    ? (object.madness?.colors ?? []).map((color) => [color])
+    : warpCast
+      ? (object.warp?.colors ?? []).map((color) => [color])
     : treasureAltCost
       ? (treasureAltCost.colors ?? []).map((color) => [color])
       : [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips];
-  if (!faceDown && !plotted && !warpCast && !treasureAltCost && !hasColorRequirements(state, playerId, requirements)) {
+  if (!faceDown && !plotted && !warpCast && !madnessCast && !treasureAltCost && !hasColorRequirements(state, playerId, requirements)) {
     throw new Error('Brak kolorowego źródła many');
   }
   if (treasureAltCost) {
@@ -592,11 +600,16 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   const treasureSpent = totalMana > 0 && state.lastManaSpend?.playerId === playerId
     ? (state.lastManaSpend.treasure ?? 0)
     : 0;
+  consumePendingSpellDiscount(state, object);
   const stacked = Object.freeze({
     ...moved, ...patch, wasCast: true, manaFromTreasureSpent: treasureSpent,
     // M154 (Warp): permanent rzucony za koszt warp — przy wejściu zbroimy
     // opóźniony trigger wygnania w końcowym kroku (resolvePermanentSpell).
     ...(warpCast ? { warped: true } : {}),
+    // M158: rzut za madness — traci gotowość (jednorazowa).
+    ...(madnessCast ? { madnessReady: false } : {}),
+    // M158/Batch 39: jednorazowy rabat na następny czar podtypu (III Sagi)
+    // konsumuje też rzut permanentu-spell („Giant spell" obejmuje stwory).
     chosenTargets: [],
     // Kicker (CR 702.33): fakt opłacenia dodatkowego kosztu — triggery
     // „if it was kicked" filtrują po tej fladze (jak wasCast).

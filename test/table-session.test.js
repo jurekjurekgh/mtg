@@ -206,7 +206,8 @@ test('log opisuje decyzję endure (Kin-Tree Nurturer) — wybór i tryb', () => 
   // Seed 1 po Batch 35 E3 (black +Mindstab) — przelosowane hunterem.
   // Seed 6 po Batchu 36 (green +Feral Invocation +Grizzled Leotau +1 Forest).
   // Seed 1 po Batchu 36 E3 (black +Wretched Banquet +1 Swamp).
-  const session = createSession({ seed: 10, registry, decks });
+  // Seed 8 po Batchu 39 B (black +Magmarch +Ravager +4 Mountain) — przelosowane hunterem.
+  const session = createSession({ seed: 8, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Endure \(Kin-Tree Nurturer\): Nieprzyjaciel wybiera — 1× licznik \+1\/\+1 albo token Spirit 1\/1$/.test(t)),
@@ -233,11 +234,13 @@ test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora',
   // Seed 81 po Batch 35 E3 (green +Trade Route Envoy) — przelosowane hunterem.
   // Seed 43 po Batchu 36 (green +Feral Invocation +Grizzled Leotau +1 Forest).
   // Seed 48 po Batchu 36 E4 (red +Molten Nursery).
+  // Seed 9 po Batchu 39 A (green +Knight +4 Plains) — przelosowane hunterem.
+  // Seed 168 po Batchu 39 C (red +Wrap in Flames +1 Mountain) — hunter.
   // Seed 87 — dokładna polityka tego pliku (hunter z chooseHumanCommand).
   // Seed 26 po Batchu 37 (green +Satyr Wayfinder) — przelosowane hunterem.
   // Seed 26; po M153 (zmiana strategii blokowania/Station) — przelosowane
   // hunterem na 66; po Batch 38 (green/red zmieniły się) — na 319.
-  const session = createSession({ seed: 319, registry, decks });
+  const session = createSession({ seed: 168, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Delirium \(Fear of Burning Alive\):.+otrzymuje 4 obrażenia$/.test(t)),
@@ -254,7 +257,8 @@ test('log opisuje wybór kart z grobu na wierzch biblioteki (Forever Young)', ()
   // Seed 3 po Batch 35 E3b (black +Mindstab) — przelosowane hunterem.
   // Seed 12 po Batchu 36 E3 (black +Wretched Banquet +1 Swamp).
   // Seed 6 po Batchu 37 transza A (green +Thornhide Wolves, black +Returned Centaur +Liliana's Triumph) — przelosowane hunterem.
-  const session = createSession({ seed: 6, registry, decks });
+  // Seed 10 po Batchu 39 B (black +Magmarch +Ravager +4 Mountain) — przelosowane hunterem.
+  const session = createSession({ seed: 10, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /wybiera karty-stwory z grobu na wierzch biblioteki \(Forever Young\)/.test(t)),

@@ -559,6 +559,10 @@ export function effectiveKeywords(object, state = null) {
   // — więc odbiór wygrywa np. z buffem „gains flying" z innej aury.
   if (state && object.zone === 'battlefield') {
     const lost = new Set();
+    // M158/Batch 39 (Wishful Merfolk): własna tymczasowa utrata keywordów
+    // („loses defender ... until end of turn") — ta sama warstwa co odbiór
+    // z załączników (odbiera po grantach).
+    for (const keyword of object.lostKeywordsUntilEOT ?? []) lost.add(keyword);
     for (const attachment of attachmentsAttachedTo(state, object.id)) {
       const descriptor = attachment.aura ?? attachment.equipment ?? null;
       for (const keyword of descriptor?.losesKeywords ?? []) lost.add(keyword);
@@ -753,7 +757,29 @@ export function clearStatModifiers(state) {
   state.untilEndOfTurnProtections = [];
   for (const object of state.objects.values()) {
     if (object.zone !== 'battlefield') continue;
+    // M158/Batch 39 (Wishful Merfolk): nadpisanie podtypów i utrata
+    // keywordów DO KOŃCA TURY — cleanup przywraca oryginalne podtypy
+    // (wzorzec originalBeforeAnimation) i zdejmuje utraty.
+    if (object.subtypesBeforeOverride || (object.lostKeywordsUntilEOT ?? []).length > 0) {
+      replaceObject(state, object, {
+        ...(object.subtypesBeforeOverride
+          ? { subtypes: object.subtypesBeforeOverride, subtypesBeforeOverride: null }
+          : {}),
+        lostKeywordsUntilEOT: Object.freeze([]),
+      });
+    }
     if (object.originalBeforeAnimation) {
+      // M157/C (uwaga właściciela, Skilled Animator): animacja LINKED („for as
+      // long as this creature remains on the battlefield") NIE kończy się
+      // w cleanup — trwa do odejścia ŹRÓDŁA z pola bitwy (cofnięcie w
+      // moveObjectDirectly na podstawie state.linkedAnimations). Cleanup
+      // kończy wyłącznie animacje „until end of turn".
+      const hasLiveLink = (state.linkedAnimations ?? [])
+        .some((entry) => entry.targetId === object.id);
+      if (hasLiveLink) {
+        // Stacja i tak jest zsynchronizowana (obiekt niezmieniony), a animacja
+        // trwa — przechodzimy do kolejnych modyfikatorów tego obiektu.
+      } else {
       replaceObject(state, object, {
         kind: object.originalBeforeAnimation.kind,
         types: object.originalBeforeAnimation.types,
@@ -769,6 +795,7 @@ export function clearStatModifiers(state) {
       // rodzaj wg liczników (CR 205.1). Bez tego stwór traci typ Creature
       // mimo spełnionego progu.
       syncStationKind(state, object.id);
+      }
     }
     const current = state.objects.get(object.id);
     if (current.saddled || current.tempBasePT || current.damagedThisTurn) {

@@ -9,7 +9,7 @@ import { effectiveProtectionFromColors } from './attachments.js';
 import { addCounter } from './counters.js';
 import { shuffle } from './shuffle.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
-import { parseManaCost, canPayManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, coloredPipsOf } from './mana-cost.js';
+import { parseManaCost, canPayManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, coloredPipsOf, consumePendingSpellDiscount } from './mana-cost.js';
 import { allControlledManaSources } from './mana-sources.js';
 
 function hasColorForSpell(state, playerId, cardId) {
@@ -423,6 +423,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   const altManaExtra = (sacrificeCost && payAltCost) ? (orPayMana ?? 0) : 0;
   const manaSpent = baseMana + altManaExtra;
   spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId));
+  consumePendingSpellDiscount(state, object);
   state.spellsCastThisTurn += 1;
   // Poświęcenie stwora jest KOSZTEM rzutu — następuje, zanim czar trafi na stos
   // (nawet przy późniejszym kontrczarze stwór pozostaje poświęcony — CR 601.2h).
@@ -544,6 +545,7 @@ function castFireball(state, playerId, objectId, targets, xValue) {
   if (!object.plotted && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
   const manaSpent = object.plotted ? 0 : totalCost;
   spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId));
+  consumePendingSpellDiscount(state, object);
   state.spellsCastThisTurn += 1;
   const stackId = `spell-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
@@ -591,6 +593,7 @@ function castXCostSpell(state, playerId, objectId, targets, xValue) {
     for (let i = 0; i < X; i += 1) xPips.push(['B']);
   }
   spendMana(state, playerId, manaSpent, xPips);
+  consumePendingSpellDiscount(state, object);
   state.spellsCastThisTurn += 1;
   const stackId = `spell-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
@@ -629,6 +632,7 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
   const manaSpent = object.plotted ? 0
     : reduceAlternativeCost(state, object, object.spell.cleave.manaCost ?? 0, coloredPipsOf(object.cardId).map((req) => req[0]));
   spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId));
+  consumePendingSpellDiscount(state, object);
   state.spellsCastThisTurn += 1;
   if (sacrificeCost) {
     const sacObject = state.objects.get(sacrificeTargetId);
@@ -2110,6 +2114,7 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   }
   const manaSpent = modalCost;
   spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId));
+  consumePendingSpellDiscount(state, object);
   state.spellsCastThisTurn += 1;
   const stackId = `spell-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
@@ -2231,6 +2236,7 @@ export function castEscape(state, playerId, objectId, targets, escapeExileIds) {
   if (!hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
   const manaSpent = escapeCost;
   spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId));
+  consumePendingSpellDiscount(state, object);
   state.spellsCastThisTurn += 1;
   for (const exId of escapeExileIds) {
     const exileId = `exile-${state.objectSequence++}`;
@@ -2310,6 +2316,7 @@ export function castFlashback(state, playerId, objectId, targets) {
   }
   const manaSpent = flashbackCost;
   spendMana(state, playerId, manaSpent, requirements);
+  consumePendingSpellDiscount(state, object);
   state.spellsCastThisTurn += 1;
   const stackId = `spell-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
@@ -2384,6 +2391,7 @@ export function castAdventure(state, playerId, objectId, targets) {
     throw new Error('Brak kolorowego źródła many');
   }
   spendMana(state, playerId, cost, requirements);
+  consumePendingSpellDiscount(state, object);
   state.spellsCastThisTurn += 1;
   const stackId = `spell-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
@@ -2447,6 +2455,7 @@ export function castAdventureCreature(state, playerId, objectId) {
   if (cost > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana');
   if (!hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
   spendMana(state, playerId, cost, coloredPipsOf(object.cardId));
+  consumePendingSpellDiscount(state, object);
   state.spellsCastThisTurn += 1;
   // Rzut strony-stwora to rzut CZARU — obiekt idzie na STOS (jak cast_permanent);
   // na pole bitwy wchodzi po rozstrzygnięciu (resolvePermanentSpell). Obiekt

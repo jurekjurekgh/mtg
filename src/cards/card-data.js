@@ -4050,6 +4050,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // etykiety pokazywały surowy „token_eldrazi_scion" (audyt żywym testerem).
   defineCard({
     id: 'token_eldrazi_scion', name: 'Eldrazi Scion', set: null,
+    imageUri: 'https://cards.scryfall.io/large/front/c/6/c6ee5e2c-d98b-434e-9175-d20f7f713b88.jpg?1783911127', // M157/B: token ze Scryfall
     types: ['Creature', 'Token'], subtypes: ['Eldrazi', 'Scion'], colors: [],
     power: 1, toughness: 1, manaCost: 0,
     abilities: [
@@ -4837,12 +4838,14 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // Tokeny Batchu 28
   defineCard({
     id: 'token_bird_soldier', name: 'Bird Soldier', set: null,
+    imageUri: 'https://cards.scryfall.io/large/front/b/7/b7b55dcf-ae63-4b84-8d39-80b5a6de3c1a.jpg?1783942409', // M157/B: token ze Scryfall
     types: ['Creature', 'Token'], subtypes: ['Bird', 'Soldier'], colors: ['W'],
     keywords: ['flying'], power: 1, toughness: 1, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Flurry of Wings'] },
   }),
   defineCard({
     id: 'token_goblin_construct', name: 'Goblin Construct', set: null,
+    imageUri: 'https://cards.scryfall.io/large/front/b/2/b24a63e2-c2b3-43f8-a15a-68886bec7d60.jpg?1783929495', // M157/B: token ze Scryfall
     types: ['Artifact', 'Creature', 'Token'], subtypes: ['Goblin', 'Construct'], colors: [],
     power: 0, toughness: 1, manaCost: 0,
     oracleText: 'This token can\'t block.\nAt the beginning of your upkeep, this token deals 1 damage to you.',
@@ -5924,6 +5927,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // (endure) jest BEZ latania — to inny token, więc osobna definicja.
   defineCard({
     id: 'token_spirit_flying', name: 'Spirit', set: null,
+    imageUri: 'https://cards.scryfall.io/large/front/6/f/6f5a5786-e2be-4bb0-b971-81d1d5cc8f52.jpg?1783903574', // M157/B: token ze Scryfall
     types: ['Creature', 'Token'], subtypes: ['Spirit'], colors: ['W'],
     keywords: ['flying'], power: 1, toughness: 1, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
@@ -6088,6 +6092,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // i zdolnością „{2}: Transform this token"; druga strona to token_phyrexian.
   defineCard({
     id: 'token_incubator', name: 'Incubator', set: null,
+    imageUri: 'https://cards.scryfall.io/large/front/c/5/c5229eb0-9356-43a6-9b1b-6366f3c1e405.jpg?1783905793', // M157/B: token ze Scryfall
     types: ['Artifact', 'Token'], subtypes: ['Incubator'], colors: [],
     manaCost: 0,
     abilities: [
@@ -6105,6 +6110,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // (na stole żywy dzięki licznikom +1/+1 przeniesionym z przedniej strony).
   defineCard({
     id: 'token_phyrexian', name: 'Phyrexian', set: null,
+    imageUri: 'https://cards.scryfall.io/large/back/c/5/c5229eb0-9356-43a6-9b1b-6366f3c1e405.jpg?1783905793', // M157/B: token ze Scryfall
     types: ['Artifact', 'Creature', 'Token'], subtypes: ['Phyrexian'], colors: [],
     power: 0, toughness: 0, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
@@ -6732,6 +6738,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // MANA_SOURCE_MAP; restrykcja artefaktowa nieimplementowana (notes).
   defineCard({
     id: 'token_powerstone', name: 'Powerstone', set: null,
+    imageUri: 'https://cards.scryfall.io/large/front/d/4/d45fe4b6-aeaf-4f84-b660-c7b482ed8512.jpg?1783919908', // M157/B: token ze Scryfall
     types: ['Artifact', 'Token'], subtypes: ['Powerstone'], colors: [],
     manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Static Net'] },
@@ -6787,6 +6794,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // (żyje dzięki +2/+4 z equipmentu).
   defineCard({
     id: 'token_germ', name: 'Germ', set: null,
+    imageUri: 'https://cards.scryfall.io/large/front/6/5/65c65445-1016-4fd3-963e-1c9eb252d4a6.jpg?1783903574', // M157/B: token ze Scryfall
     types: ['Creature', 'Token'], subtypes: ['Phyrexian', 'Germ'], colors: ['B'],
     power: 0, toughness: 0, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Strandwalker (living weapon)'] },
@@ -6964,13 +6972,15 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature', optional: true } },
+        // ADR 0022 / M157 F4(a): „each of up to two target creatures" —
+        // pełne Oracle: dwa cele (count: 2, upTo — może być mniej/zero).
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature', count: 2, upTo: true } },
         effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
       }),
     ],
     artId: 286, plan: 'The Edge',
     support: { status: 'supported', limitations: [] },
-    notes: ['Warp: rzut z ręki za {2}{W}, wygnanie w najbliższym kroku końcowym (warpReady), rzut z exile za {2}{W} w późniejszej turze', 'ETB: uproszczenie — licznik na jednym celu (zamiast „each of up to two”), optional'],
+    notes: ['Warp: rzut z ręki za {2}{W}, wygnanie w najbliższym kroku końcowym (warpReady), rzut z exile za {2}{W} w późniejszej turze'],
   }),
 
   // 4. Talion's Messenger (WOE) {2}{U} 1/3 Faerie Noble Flying — attack with a
@@ -7014,6 +7024,214 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     ],
     artId: 18, plan: 'Amonkhet',
     support: { status: 'supported', limitations: [] },
+  }),
+
+  // ---- Batch 39 (lista właściciela 2026-08-20) — transza A: czyste reuse ----
+  defineCard({
+    id: 'merfolk-mesmerist', name: 'Merfolk Mesmerist', set: 'M12',
+    types: ['Creature'], subtypes: ['Merfolk', 'Wizard'], colors: ['U'],
+    power: 1, toughness: 2, manaCost: 2,
+    oracleText: '{U}, {T}: Target player mills two cards.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/2/220dede5-472c-4a09-bdf0-73e722d9d4d2.jpg?1783941089',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, colors: ['U'], tap: true },
+        targets: [{ type: 'player' }],
+        effect: { type: 'mill_cards', amount: 2 },
+      }),
+    ],
+    artId: null, plan: null,
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'knight-of-the-skyward-eye', name: 'Knight of the Skyward Eye', set: 'ALA',
+    types: ['Creature'], subtypes: ['Human', 'Knight'], colors: ['W'],
+    power: 2, toughness: 2, manaCost: 2,
+    oracleText: '{3}{G}: This creature gets +3/+3 until end of turn. Activate only once each turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/d/1d56e2bf-1937-42c1-8f61-1fd93e84cef7.jpg?1783942581',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 4, colors: ['G'] },
+        effect: { type: 'pump', power: 3, toughness: 3 },
+        oncePerTurn: true,
+      }),
+    ],
+    artId: null, plan: null,
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'breaching-hippocamp', name: 'Breaching Hippocamp', set: 'THS',
+    types: ['Creature'], subtypes: ['Horse', 'Fish'], colors: ['U'],
+    keywords: ['flash'], power: 3, toughness: 2, manaCost: 4,
+    oracleText: 'Flash (You may cast this spell any time you could cast an instant.)\nWhen this creature enters, untap another target creature you control.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/8/8841c01e-015e-4541-942a-f8859dd03fea.jpg?1783939802',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature_you_control', notSelf: true } },
+        effect: { type: 'untap_permanent' },
+      }),
+    ],
+    artId: null, plan: null,
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'squires-lightblade', name: "Squire's Lightblade", set: 'EOE',
+    types: ['Artifact'], subtypes: ['Equipment'], colors: ['W'], manaCost: 1,
+    keywords: ['flash'],
+    oracleText: 'Flash\nWhen this Equipment enters, attach it to target creature you control. That creature gains first strike until end of turn.\nEquipped creature gets +1/+0.\nEquip {3}',
+    imageUri: 'https://cards.scryfall.io/large/front/2/a/2a0accba-85d4-4aa4-a70c-80fcce48c261.jpg?1783905989',
+    equipment: { equip: 3, pump: { power: 1, toughness: 0 } },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature_you_control' } },
+        effect: [
+          { type: 'attach_self_to_target' },
+          { type: 'grant_keywords_until_end_of_turn', keywords: ['first_strike'] },
+        ],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'equip',
+        cost: { mana: 3 },
+        effect: [],
+      }),
+    ],
+    artId: null, plan: null,
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // ---- Batch 39 — transza B: proste nowe mechaniki ----
+  defineCard({
+    id: 'exterminator-magmarch', name: 'Exterminator Magmarch', set: 'M3C',
+    types: ['Artifact', 'Creature'], subtypes: ['Phyrexian', 'Construct'], colors: ['B', 'R'],
+    power: 5, toughness: 3, manaCost: 4,
+    oracleText: 'Whenever you cast an instant or sorcery spell that targets only a single nonland permanent an opponent controls, if another opponent controls one or more nonland permanents that spell could target, choose one of those permanents. Copy that spell. The copy targets the chosen permanent.\n{1}{B}: Regenerate this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/e/2e600de8-6afa-46d8-ba87-552798cdb040.jpg?1783911405',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        // Trigger multiplayer: w 1v1 warunek „another opponent" jest martwy
+        // z definicji formatu (decyzja ADR 0022 — fakt formatu, jak brak
+        // strefy dowodzenia). Działa od razu, gdy engine pozna >2 graczy.
+        trigger: { event: 'when_you_cast_spell', condition: { anotherOpponentExists: true } },
+        effect: [],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, colors: ['B'] },
+        effect: { type: 'regenerate' },
+      }),
+    ],
+    artId: null, plan: null,
+    support: { status: 'supported', limitations: [] },
+    notes: ['trigger kopiowania wymaga DRUGIEGO przeciwnika — w 1v1 nigdy się nie odpala (fakt formatu, jak brak command zone); {1}{B}: Regenerate = tarcza regeneracji do końca tury (CR 701.12)'],
+  }),
+  defineCard({
+    id: 'dire-fleet-ravager', name: 'Dire Fleet Ravager', set: 'OTC',
+    types: ['Creature'], subtypes: ['Orc', 'Pirate', 'Wizard'], colors: ['B'],
+    keywords: ['menace', 'deathtouch'], power: 4, toughness: 4, manaCost: 5,
+    oracleText: 'Menace, deathtouch\nWhen this creature enters, each player loses a third of their life, rounded up.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/d/0d114e88-c5bd-416d-b9f1-25be1432c98c.jpg?1783911931',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'each_player_loses_life_fraction', numerator: 1, denominator: 3 },
+      }),
+    ],
+    artId: null, plan: null,
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'wishful-merfolk', name: 'Wishful Merfolk', set: 'ELD',
+    types: ['Creature'], subtypes: ['Merfolk'], colors: ['U'],
+    keywords: ['defender'], power: 3, toughness: 2, manaCost: 2,
+    oracleText: 'Defender\n{1}{U}: This creature loses defender and becomes a Human until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/9/f9358d5d-726e-43e0-a58e-4cfe7c755913.jpg?1783932647',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, colors: ['U'] },
+        effect: { type: 'becomes_subtype_until_end_of_turn', subtypes: ['Human'], losesKeywords: ['defender'] },
+      }),
+    ],
+    artId: null, plan: null,
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // ---- Batch 39 — transza C: wielocelowy czar „each of up to N" ----
+  defineCard({
+    id: 'wrap-in-flames', name: 'Wrap in Flames', set: 'MM2',
+    types: ['Sorcery'], colors: ['R'], manaCost: 4,
+    oracleText: 'Wrap in Flames deals 1 damage to each of up to three target creatures. Those creatures can\'t block this turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/2/82e1dcb2-9471-48d9-98c8-12194e3a88ac.jpg?1783938401',
+    spell: {
+      timing: 'sorcery',
+      modes: [{
+        name: 'Owinięcie w płomienie',
+        variableTargets: { max: 3, min: 0 },
+        effects: [{
+          type: 'apply_to_each_target',
+          effects: [
+            { type: 'damage', amount: 1 },
+            { type: 'cant_block' },
+          ],
+        }],
+      }],
+    },
+    artId: null, plan: null,
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // ---- Batch 39 — transza D: Saga z rozdziałami warunkowymi ----
+  defineCard({
+    id: 'invasion-of-the-giants', name: 'Invasion of the Giants', set: 'KHM',
+    types: ['Enchantment'], subtypes: ['Saga'], colors: ['R', 'U'], manaCost: 2,
+    oracleText: '(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — Scry 2.\nII — Draw a card. Then you may reveal a Giant card from your hand. When you do, this Saga deals 2 damage to target opponent or planeswalker.\nIII — The next Giant spell you cast this turn costs {2} less to cast.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/f/7f5075a0-c72a-474c-937c-95dc9205d14f.jpg?1783928196',
+    saga: {
+      chapters: [
+        // I — Scry 2.
+        [{ type: 'scry', amount: 2 }],
+        // II — dobierz + opcjonalne ujawnienie Olbrzyma za 2 obrażenia
+        // przeciwnika (pendingRevealChoice; w 1v1 planeswalker nie istnieje).
+        [{ type: 'draw_cards', amount: 1 }, { type: 'reveal_subtype_deal_damage', subtype: 'Giant', amount: 2 }],
+        // III — następny czar Olbrzyma w tej turze tańszy o {2} (rabat
+        // konsumowany przez rzut; w katalogu nie ma jeszcze Olbrzymów —
+        // decyzja właściciela 2026-08-19: efekty warunkowe kodujemy TERAZ).
+        [{ type: 'next_spell_discount', amount: 2, subtype: 'Giant' }],
+      ],
+    },
+    artId: null, plan: null,
+    support: { status: 'supported', limitations: [] },
+    notes: ['II: planeswalker-cel nie istnieje w 1v1 — obrażenia idą w przeciwnika', 'III: zadziała od razu po dodaniu pierwszej karty z podtypem Giant'],
+  }),
+
+  // ---- Batch 39 — transza E: Madness (CR 702.34) ----
+  defineCard({
+    id: 'revolutionist', name: 'Revolutionist', set: 'MH2',
+    types: ['Creature'], subtypes: ['Human', 'Wizard'], colors: ['R'],
+    power: 3, toughness: 3, manaCost: 6,
+    oracleText: 'When this creature enters, return target instant or sorcery card from your graveyard to your hand.\nMadness {3}{R} (If you discard this card, discard it into exile. When you do, cast it for its madness cost or put it into your graveyard.)',
+    imageUri: 'https://cards.scryfall.io/large/front/b/b/bb8f3008-a3ba-4f73-afa6-ad81074b3196.jpg?1783926839',
+    madness: { cost: 4, colors: ['R'] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          requiresTarget: { type: 'instant_or_sorcery_card_in_graveyard', controlledBy: 'controller', optional: true },
+        },
+        effect: { type: 'return_card_from_graveyard_to_hand' },
+      }),
+    ],
+    artId: null, plan: null,
+    support: { status: 'supported', limitations: [] },
+    notes: ['Madness: odrzucenie trafia do exile z jednorazową decyzją rzutu za {3}{R} (timing ignorowany — CR 702.34a) albo przełożenia do grobu'],
   }),
 
 ]);

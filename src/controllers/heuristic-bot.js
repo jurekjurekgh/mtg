@@ -392,6 +392,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     ['damage_from_target_power', 60],
     ['destroy_permanent', 90],
     ['destroy_if_least_power', 90],
+    // M156/F2 (audyt PR #65, Divine Offering): niszczenie artefaktu z riderem
+    // życia to nadal usunięcie permanentu — bez wpisu remis wariantów = baza
+    // 50 i bot rzucał czar we WŁASNY artefakt-źródło many (klasa L50/M147-F1).
+    ['destroy_artifact_gain_life_mana_value', 90],
     ['exile_permanent', 90],
     ['exile_target_creature', 90],
     ['exile_all', 40],
@@ -886,6 +890,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // PRZECIWNIKA — zysk skalowany jego wartością.
           const REMOVAL_EFFECTS = new Set([
             'destroy_permanent', 'destroy_if_least_power',
+            'destroy_artifact_gain_life_mana_value',
             'exile_permanent', 'exile_target_creature',
             'bounce_permanent', 'bounce_to_library_top',
           ]);
@@ -1069,6 +1074,64 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           // Dobranie kart z czaru to przewaga kartowa.
           if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') score += 6 * (effect.amount ?? 1);
+          // M158/Batch 39 (Wrap in Flames): wrapper „each of up to N targets"
+          // różnicuje warianty celami — wyceniamy KAŻDY cel wg efektów
+          // wewnętrznych (damage: wróg +, własny −; cant_block: drobny plus
+          // na wrogu). Bez tego remis wariantów brał pierwsze 3 kreatury
+          // z pola bitwy — także WŁASNE.
+          if (effect.type === 'apply_to_each_target') {
+            const inner = Array.isArray(effect.effects) ? effect.effects : [];
+            const hasDamage = inner.some((x) => x?.type === 'damage');
+            const hasCantBlock = inner.some((x) => x?.type === 'cant_block');
+            if (hasDamage || hasCantBlock) {
+              for (const slot of cmd.targets ?? []) {
+                const t3 = objectOnBoard(view, slot);
+                if (!t3) continue;
+                const mine = t3.controllerId === view.playerId;
+                if (hasDamage) score += mine ? -60 : 12 + (t3.power ?? 0) * 2;
+                else if (hasCantBlock) score += mine ? -10 : 8;
+              }
+            }
+          }
+          // M157/L28 (inwentaryzacja): kradzież stwora do końca tury (Spreading
+          // Insurrection, Awaken the Sleeper) — warianty różnią się celem;
+          // wartość = tymczasowy zysk najsilniejszego stwora wroga.
+          if (effect.type === 'gain_control_until_end_of_turn') {
+            const foe2 = enemy(view);
+            if (target && foe2 && target.controllerId === foe2.id) {
+              score += 12 + (target.power ?? 0) * 2 + (target.toughness ?? 0);
+            }
+          }
+          // M157/L28: efekty celujące KARTĘ we WŁASNYM grobie (Unbreakable
+          // Bond) — remis wariantów zwracał pierwszą kartę; premiujemy
+          // najcenniejszego stwora w grobie (P/T z widoku grobu).
+          if (effect.type === 'return_permanent_from_graveyard') {
+            const slot = cmd.targets?.[effect.targetIndex ?? 0] ?? null;
+            const gyCard = slot ? (view.zones.graveyard ?? []).find((o) => o.id === slot) : null;
+            if (gyCard) {
+              const gyDef = cardDef(gyCard.cardId);
+              const gyValue = ((gyCard.power ?? gyDef?.power ?? 0) * 2)
+                + (gyCard.toughness ?? gyDef?.toughness ?? 0);
+              score += 10 + gyValue;
+            }
+          }
+          // M156/Q1 (pętla jakości, Withstand — cantrip z prewencją „any
+          // target"): prewencja bez wyceny = remis wariantów → bot rzucał
+          // „prevent the next 3 damage" na STWORA PRZECIWNIKA (czysta strata
+          // karty + tarcza dla wroga). Generycznie (ADR 0002): prewencja po
+          // WŁASNEJ stronie = skromny plus (sytuacyjna), po stronie wroga =
+          // kara przebijająca bazę 50.
+          if (effect.type === 'prevent_next_damage') {
+            const slot = cmd.targets?.[effect.targetIndex ?? 0] ?? null;
+            const victim = slot ? objectOnBoard(view, slot) : null;
+            const amount = effect.amount ?? 1;
+            if (slot === view.playerId || (victim && victim.controllerId === view.playerId)) {
+              score += 2 + amount; // własny stwór/gracz — tarcza na przyszłość
+            } else if (slot != null && (slot === enemy(view)?.id
+              || (victim && victim.controllerId === enemy(view)?.id))) {
+              score -= 60; // osłanianie strony przeciwnika — bezsensowne zagranie
+            }
+          }
           // M155 (audyt żywym testerem, Ruinous Rampage): „deals N damage to
           // each opponent\" (i lose_life każdego przeciwnika) nie miało wyceny
           // w pętli czarów (było tylko w modalnym triggerze, linia 582). Bot
@@ -1295,6 +1358,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
           }
           if (effect.type === 'gain_life') score += 2 + (effect.amount ?? 0);
+          // M157/L28 (Mournful Zombie „{W},{T}: Target player gains 1 life"):
+          // cel-gracz bez wyceny = remis → bot mógł LECZYĆ PRZECIWNIKA.
+          // Życie sobie = plus, przeciwnikowi = kara.
+          if (effect.type === 'gain_life_target') {
+            const slot = cmd.targets?.[effect.targetIndex ?? 0] ?? null;
+            const amount2 = effect.amount ?? 1;
+            if (slot === view.playerId) score += 2 + amount2;
+            else if (slot != null && slot === enemy(view)?.id) score -= 25 + amount2;
+          }
+          // M157/L28: zwrot karty z grobu w upkeep (Plague Reaver) — jak
+          // w pętli czarów: premiujemy najcenniejszego stwora z grobu.
+          if (effect.type === 'return_to_battlefield_under_control_at_upkeep') {
+            const slot = cmd.targets?.[effect.targetIndex ?? 0] ?? null;
+            const gyCard = slot ? (view.zones.graveyard ?? []).find((o) => o.id === slot) : null;
+            if (gyCard) {
+              const gyDef = cardDef(gyCard.cardId);
+              score += 10 + ((gyCard.power ?? gyDef?.power ?? 0) * 2)
+                + (gyCard.toughness ?? gyDef?.toughness ?? 0);
+            }
+          }
           // M96 (audyt Żywym Testerem): zdolności celujące w GRACZA nie były
           // w ogóle wyceniane — każdy cel dostawał to samo `score = 2`, więc
           // bot 7× z rzędu zmielił WŁASNĄ bibliotekę Cellar Door („Target
@@ -1885,6 +1968,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // M150/A (Battle-Rattle Shaman): trigger PRZYJAZNY (pump +2/+0,
         // licznik +1/+1) celuje WłASNY stwór — `cmd.friendly` niesie flagę
         // wyliczoną z deskryptora efektu (generycznie, ADR 0002).
+        // M157/F4(a): wariant wielocelowy — suma wycen po celach (pusty = 0).
+        if (Array.isArray(cmd.targetIds)) {
+          let score = 0;
+          for (const id of cmd.targetIds) {
+            const t2 = objectOnBoard(view, id);
+            if (!t2) continue;
+            const v2 = (t2.power ?? 0) * 2 + (t2.toughness ?? 0);
+            score += (cmd.friendly
+              ? (t2.controllerId === view.playerId ? 30 + v2 : -20 - v2)
+              : (t2.controllerId === view.playerId ? -20 - v2 : 30 + v2));
+          }
+          return finish(score);
+        }
         const target = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
         if (!target) {
           const playerId = cmd.targetId;
@@ -1941,6 +2037,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       case 'resolve_springbloom': {
         // Ramp: poświęcenie landa → 2 basic landy tapped (od M70 trigger żyje).
         return finish(cmd.sacrificeLandId != null ? 40 : 10);
+      }
+      case 'resolve_madness_cast': {
+        // M158/Batch 39: rzut za koszt madness to niemal zawsze zysk (karta
+        // za pół ceny); odmowa tylko gdy many brak.
+        return finish(cmd.cast ? 60 : 0);
+      }
+      case 'resolve_reveal_choice': {
+        // M158/Batch 39 (Invasion of the Giants II): ujawnij Olbrzyma za 2
+        // obrażenia przeciwnika — darmowy damage, prawie zawsze warto.
+        return finish(cmd.cardId != null ? 40 + (cmd.amount ?? 2) * 4 : 0);
       }
       case 'resolve_satyr_look_choice': {
         // Satyr Wayfinder: wzięcie lądu do ręki = pewna mana (zawsze lepsze niż

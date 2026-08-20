@@ -1,7 +1,169 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-19 (M146: 5 znalezisk z testów + „pole bitwy" zamiast „bitwisko")
-- **Poprzednia:** 2026-08-19 (M146: Batch 36 kompletny — 10 kart, w tym forecast i forestwalk)
+- **Ostatnia aktualizacja:** 2026-08-20 (M158: Batch 39 komplet 10/10 — Madness, Saga warunkowa, wielocelowe czary)
+- **Poprzednia:** 2026-08-20 (PR #65 scalony: M147–M155 — poniżej backfill)
+
+## M158 — Batch 39 (10 kart, lista właściciela 2026-08-20, PR #66)
+
+Transze A–E (commity d5c4361…8328f4b), każda samodzielnie zielona.
+
+1. **A — reuse:** Merfolk Mesmerist ({U},{T}: mill 2), Knight of the
+   Skyward Eye (oncePerTurn +3/+3), Breaching Hippocamp (notSelf w
+   creature_you_control), Squire's Lightblade (NOWY efekt
+   attach_self_to_target — ETB-attach equipmentu do wybranego stwora).
+2. **B — proste mechaniki:** Exterminator Magmarch (NOWY efekt regenerate —
+   tarcza w istniejących regenerationShields; trigger multiplayer martwy
+   w 1v1 — warunek anotherOpponentExists), Dire Fleet Ravager (NOWY
+   each_player_loses_life_fraction 1/3 zaokr. w górę), Wishful Merfolk
+   (NOWY becomes_subtype_until_end_of_turn: nadpisanie podtypów + utrata
+   keyworda do EOT, cleanup przywraca — wzorzec originalBeforeAnimation).
+3. **C:** Wrap in Flames — NOWY wrapper apply_to_each_target (efekty per
+   cel) na czarach variableTargets (enumeracja 0..3 istnieje); wycena
+   bota per cel (nie pali własnych stworów).
+4. **D:** Invasion of the Giants (Saga): I scry 2; II NOWY
+   reveal_subtype_deal_damage (pendingRevealChoice — pełna checklista
+   nowego pendingu); III NOWY next_spell_discount (rabat na następny czar
+   podtypu, konsumowany przy rzucie, wygasa w cleanup).
+5. **E:** Revolutionist — NOWA MECHANIKA **Madness (CR 702.34)**:
+   odrzucenie → exile + resolve_madness_cast (rzut za koszt madness,
+   timing ignorowany, albo cmentarz); choke point resolve_discard_choice;
+   łańcuch pola madness przez registry→materialize→addObject (L21).
+
+Talie: azorius +3 (Mesmerist/Hippocamp/Wishful), green +Knight +4 Plains,
+mechanicy +Lightblade +3 Plains, black +2 +4 Mountain, red +Wrap +1 M,
+spellslinger +Invasion +Revolutionist +2 M. Seedy przelosowane (L25).
+Strażniki wszystko złapały w trakcie: M122 (etykieta), M137 (łańcuch pól),
+repo-decks (snapshoty) — naprawione od razu.
+
+6. **Zgłoszenie A (po teście):** odkrycie Morph/Megamorph w „Rozgrywce"
+   nazywa teraz zdolność — pole `keyword` w zdarzeniu ability_activated
+   (obie ścieżki: natychmiastowa i stos) + gałąź etykiety
+   (`test/morph-label.test.js`).
+
+**Stan:** `npm test` **2474/2474**, `test:slow` 9/9 (test:all 2483), build
+**51 modułów / 2121.4 kB**. Katalog: 318 wspieranych kart. ⚠ GH_TOKEN
+wygasł przy transzy D — commity D/E czekają na push po reconnect.
+
+## M157 — uwagi właściciela z review PR #66 (2026-08-20, PR #66)
+
+Decyzje właściciela: **ADR 0022** (KAŻDA karta supported = 100% Oracle albo
+nieobsługiwana — koniec „świadomego długu"), F4 tylko opcja (a), L28-inwentaryzacja
+w tej sesji, uszkodzony plik audytu usunąć.
+
+1. **ADR 0022** + rejestr README + AGENTS.md zaktualizowane; strażnik notes
+   rozszerzony o „uproszczenie".
+2. **Plik audytu Batch38** — ścieżka uszkodzona na FS sandboxa (ghost dentry);
+   treść odzyskana z blobu gita → `docs/audits/AUDYT_2026-08-20-batch38-zywy-tester.md`.
+3. **Fixy A–F z testów właściciela** (`test/m157-uwagi-wlasciciela.test.js`):
+   - A: usunięta syntetyczna „niby-karta" z hovera i pełnego ekranu;
+   - B: 8 tokenów bez obrazu dostało imageUri ze Scryfall (m.in. Bird Soldier,
+     Powerstone, Germ) + invariant „każdy token ma obraz";
+   - C: **Skilled Animator** — animacja trwa do zejścia ŹRÓDŁA („for as long
+     as..."), nie do końca tury; cleanup pomija żywe linki; revert w
+     moveObjectDirectly synchronizuje Station (L46 w ścieżce linked);
+   - D: **stun** (Lodestone Needle) — zdjęcie licznika i pierwszy untap po
+     stunie = pauza z renderem (kreatura „nigdy nie odkręcała się wizualnie");
+   - E: „Log partii" pokazuje całą rozgrywkę (koniec okna 80 wpisów);
+   - F: panel liczników trucizny (obraz „Poison Counter" tecc/13 + liczniki
+     graczy); playerView niesie `poison` (ADR 0017).
+4. **F4(a) — Weftblade Enhancer 100% Oracle**: wielocelowy trigger ETB
+   („each of up to two target creatures") — deskryptor `count/upTo`,
+   `applyTriggerEffects` per cel, `resolve_trigger_target` z `targetIds`,
+   enumeracja wariantów (cap 32, L19), etykiety, klucze opcji (L32),
+   wycena bota (para własnych). „Uproszczenie" usunięte z notes.
+5. **L28 — inwentaryzacja wycen** (czary/zdolności celowane):
+   strażnik `test/bot-targeted-effect-valuation-guard.test.js` (weryfikacja
+   mutacyjna) + 4 naprawy (Mournful Zombie leczył wroga, kradzież bez wyceny,
+   2× remis w wyborze karty z grobu). L51 zaktualizowana o drugi strażnik.
+
+**Stan:** `npm test` **2458/2458**, `test:slow` 9/9 (test:all 2467), build
+**51 modułów / 2088.6 kB**. ⚠ GH_TOKEN wygasł w trakcie sesji — commity
+M157 czekają na push po reconnect.
+
+## M156 — audyt PR #65 + fixy (2026-08-20, PR #66)
+
+Sesja wg ADR 0020/0021 (prompt bez tematu → pętla domyślna). Audyt squash
+`1a5accc` (diff `c536182..1a5accc`): raport `docs/audits/AUDYT_PR65_2026-08-20.md`.
+
+**Zweryfikowane poprawne (skrót):** scry topOrder (M148), warp (Weftblade),
+rebound (Ojutai's Breath), Satyr Wayfinder, Static Net (linked exile +
+Powerstone), living weapon (Strandwalker), creature_or_vehicle ×4 ścieżki,
+craft no-op (M155), Z5/Z8, FoW (manaCost/name/suspend w widoku — jawne),
+dane kart vs Scryfall (strażniki L23/L26 zielone), oba boty obsługują nowe
+decyzje (L48), wyceny większości nowych efektów (L50).
+
+**Naprawione (RED→GREEN, `test/bot-pr65-audit-fixes.test.js`):**
+1. **F1** — `triggerTargetEffectFriendly` nie znał `grant_keywords_until_end_of_turn`
+   → bot obdarowywał lifelink+indestructible najlepszego stwora PRZECIWNIKA
+   (Lotusguard, Batch 38). Fix: gałąź grant_keywords + zbiór
+   HOSTILE_GRANTED_KEYWORDS. Piąte powtórzenie klasy L50.
+2. **F2** — `destroy_artifact_gain_life_mana_value` bez wyceny → bot rzucał
+   Divine Offering we WŁASNY artefakt-źródło many. Fix: wpisy w tabelach bota
+   (HOSTILE_PERMANENT_EFFECTS, REMOVAL_EFFECTS, HOSTILE_TRIGGER_TARGET_EFFECTS).
+3. **F3** — Divine Offering: życie przyznawane tylko przy skutecznym destroy;
+   wg CR 608.2c to dwie sekwencyjne instrukcje — życie niezależne (LKI).
+   Test Batch 38 odwrócony z uzasadnieniem (L44).
+
+**Otwarte do decyzji właściciela (F4):** Weftblade Enhancer „each of up to two
+target creatures" zaimplementowane jako 1 cel, odnotowane w `notes` — wg
+polityki M111 to kandydat na `limitations` (nowy powód w strażniku) albo
+implementacja wielocelowego triggera ETB.
+
+**Pętla jakości (etap 5, ADR 0021):** sonda inwentaryzacji typów efektów
+w kontekstach celowanych (card-data vs wyceny bota) — 2 kolejne wystąpienia
+klasy L50: **Q1** Withstand (prewencja any_target bez wyceny → bot chronił
+stwora PRZECIWNIKA), **Q2** Servant of the Scale (transfer liczników
+nieprzyjazny → liczniki do najsłabszego własnego). Fixy + **strażnik
+klasyfikacji celów triggerów** (`triggerEffectIsHostile` w game-state,
+`test/bot-trigger-target-classification-guard.test.js` — nowy typ efektu
+w triggerze z celem bez klasyfikacji = czerwony test przed merge; zweryfikowany
+mutacyjnie). Lekcja **L51**.
+
+**Stan:** `npm run test:all` **2451/2451** (rdzeń 2442 + slow 9), build
+**51 modułów / 2075.0 kB**, próbka regresji bota 9/9 (0 crashy). Rejestr:
+**308 wspieranych kart** (bez tokenów/tyłów DFC), 12 talii.
+
+## Backfill — PR #65 (M147–M155, scalony 2026-08-20)
+
+Squash `1a5accc`; poprzednia sesja nie zdążyła zaktualizować PROJECT_STATE
+(zrekonstruowane tu z opisów commitów i planów `docs/plans/2026-08-19-m14*.md`/`m15*.md`):
+
+- **M147:** audyt PR #64 (czysty + fix F1 Wretched Banquet — wycena
+  destroy_if_least_power); **Batch 37 (10 kart):** Returned Centaur, Palace
+  Familiar, Thornhide Wolves, Village Bell-Ringer (untap_all_creatures_you_control),
+  Liliana's Triumph (warunek controlsPlaneswalkerWithSubtype + planeswalker
+  zakodowany z wyprzedzeniem — decyzja właściciela 2026-08-19), Urza's Mine
+  (tron), Ojutai's Breath (rebound), Satyr Wayfinder (reveal/pick land),
+  Static Net (exile linked + Powerstone), Strandwalker (living weapon).
+- **M148:** FOT/KON hover bez zaślepki; **scry — wybór kolejności kart
+  na wierzchu (CR 701.18)** — topOrder w resolve_scry + wizard.
+- **M149:** bot — trick poza combatem kara, Bone Splinters TMC (PlayerView
+  manaCost — ADR 0017), Grave Exchange nie w siebie; UI — etykiety kolejności
+  surv/scry, modal Cuombajj Witches; Treasure nie marnowane.
+- **M150:** Battle-Rattle Shaman (triggerTargetEffectFriendly — friendly/hostile
+  cele triggerów), przydział obrażeń, Jeskai Devotee (kolory many w logu),
+  manaColors w ability_activated.
+- **M151:** etykiety suspend/rebound/exploit, MAIN_LOG_NOISE (szum poza główny
+  log), stos bez fałszywego celu (activatedEntry.targets tylko gdy cele),
+  tester: rebound/suspend + detektory FalseNoEffect/szum.
+- **M152:** audyt Żywym Testerem pozostałych kart (m.in. Satyr Wayfinder label,
+  fix nameOfObject dla ukrytych stref).
+- **M153:** Station — bot tapuje do progu tylko po własnym ataku (postcombat),
+  log stationTappedCreatureId; karty specjalne klikalne (Day/Night fullscreen).
+- **Batch 38 (10 kart):** Divine Offering, Colossodon Yearling, Fortify
+  (modal +2/+0 / +0/+2), Mysidian Elder (token Wizard ping), Pristine
+  Talisman (mana ability + rider życia), Chatter of the Squirrel (Squirrel),
+  Silken Strength (aura creature/Vehicle + untap), Weftblade Enhancer (warp),
+  Lotusguard Disciple (grant lifelink+indestructible), Talion's Messenger
+  (faerie_attacks).
+- **Audyt Żywym Testerem Batch 38 (Z1–Z10)** — wszystkie naprawione:
+  log „(?)" delirium LKI, odmiana liczników, Courage in Crisis (bot),
+  Ruinous Rampage tryb, kolejność trybów modalnych, tester warp, raw id
+  tokenu w UI, no-op self-tap (Sterling Keykeeper), atak 0/1, darmowe życie
+  z Pristine; nowy detektor detectTokenRawId.
+- **M155:** craft no-op bez transformTo (fix flake CI benchmarku),
+  detektor FalseNoEffect — dowód tego samego źródła.
+
 ## M146 — 5 znalezisk z testów właściciela (2026-08-19, PR #64)
 
 1. **Gurmag Drowner exploit** — zweryfikowane: działa od fixa installDeck

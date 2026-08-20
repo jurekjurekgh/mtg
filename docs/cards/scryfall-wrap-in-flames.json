@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Wrap%20in%20Flames&set=mm2",
+  "print": "Wrap in Flames (MM2)",
+  "name": "Wrap in Flames",
+  "mana_cost": "{3}{R}",
+  "cmc": 4,
+  "type_line": "Sorcery",
+  "oracle_text": "Wrap in Flames deals 1 damage to each of up to three target creatures. Those creatures can't block this turn.",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [],
+  "set": "mm2",
+  "collector_number": "136",
+  "rarity": "common",
+  "pobrano": "2026-08-20",
+  "power": null,
+  "toughness": null,
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/8/2/82e1dcb2-9471-48d9-98c8-12194e3a88ac.jpg?1783938401",
+    "normal": "https://cards.scryfall.io/large/front/8/2/82e1dcb2-9471-48d9-98c8-12194e3a88ac.jpg?1783938401"
+  }
+}

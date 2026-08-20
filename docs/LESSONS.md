@@ -24,6 +24,41 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 
 ---
 
+## L51 (2026-08-20) — Efekt celowany bez klasyfikacji to remis wariantów; strażnik zamiast łatek
+
+**Objaw:** klasa L50 po raz szósty (M96, M135, M138/Z1, M146, M156/F1, M156/Q1+Q2):
+bot obdarowywał lifelink+indestructible najlepszego stwora PRZECIWNIKA
+(Lotusguard), rzucał prewencję „any target" we wroga (Withstand), przekazywał
+liczniki +1/+1 najsłabszemu własnemu stworowi (Servant of the Scale). Każdy
+raz: efekt w kontekście CELOWANYM bez wyceny/klasyfikacji → wszystkie warianty
+remisują → pierwsza oferta z listy.
+
+**Przyczyna:** klasyfikacja żyje w ROZPROSZONYCH miejscach (trzy tabele
+heuristic-bota + `triggerTargetEffectFriendly` w game-state + gałęzie
+per-effekt). Nowa karta z nowym typem efektu nie wymusza żadnej z nich —
+każde wystąpienie łataliśmy pojedynczym wpisem (dokładnie wzorzec L28).
+
+**Reguła:**
+1. Typ efektu w **triggerze z celem** musi być świadomie sklasyfikowany:
+   wrogi (`HOSTILE_TRIGGER_TARGET_EFFECTS` / `triggerEffectIsHostile`),
+   przyjazny (gałąź `triggerTargetEffectFriendly`) albo przejrzany neutralny
+   (wpis w `REVIEWED_NEUTRAL` w strażniku). Pilnuje tego
+   `test/bot-trigger-target-classification-guard.test.js` — nowy typ = czerwony
+   test PRZED merge, nie „głupi bot" po merge.
+2. Przy dodawaniu czaru/zdolności z celem uruchom sondę inwentaryzacji:
+   policz typy efektów w kontekstach celowanych z `card-data.js` i sprawdź
+   obecność w wycenach (grep w heuristic-bocie). Połowa tropów będzie fałszywa
+   (L15) — każdy zweryfikowany zapisz z uzasadnieniem.
+   **Od M157 to STAŁY strażnik** (obydwie ścieżki): triggery —
+   `test/bot-trigger-target-classification-guard.test.js` (M156); czary/
+   zdolności — `test/bot-targeted-effect-valuation-guard.test.js`.
+3. Klasyfikacja per ZDOLNOŚĆ, nie per efekt: zdolność [tap_permanent +
+   add_counter stun] (Lodestone Needle) jest wroga przez dowolny efekt wrogi.
+
+**Sygnał ostrzegawczy:** trzecia łatka w tej samej tabeli = czas na
+inwentaryzację WSZYSTKICH typów i odwrócenie domyślności (strażnik), nie na
+czwarty wpis.
+
 ## L50 (2026-08-18) — Nowy typ efektu w karcie batcha wymaga WYCENY w heuristic-bocie
 
 **Objaw:** dwie nowe karty Batch 35 weszły z martwą wyceną efektów — bot

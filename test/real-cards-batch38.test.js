@@ -105,14 +105,20 @@ test('Divine Offering: niszczy artefakt i daje życie równe jego MV', () => {
   assert.equal(state.players.find((p) => p.id === 'p1').life, 23, 'zysk życia = MV artefaktu (3)');
 });
 
-test('Divine Offering: nie daje życia, gdy artefakt ma indestructible', () => {
+// M156/F3 (audyt PR #65): test ODWRÓCONY z uzasadnieniem, żeby nikt nie
+// przywrócił starej interpretacji. Oracle: „Destroy target artifact. You gain
+// life equal to its mana value." to DWIE sekwencyjne instrukcje (CR 608.2c)
+// — indestructible blokuje wyłącznie destroy (CR 702.12), a zysk życia jest
+// osobnym zdaniem i następuje zawsze (mana value z LKI, CR 400.7).
+test('Divine Offering: indestructible blokuje destroy, ale życie jest przyznane', () => {
   const state = newState();
   putCard(state, 'do', 'divine-offering', 'p1', 'hand');
   putCard(state, 'art', 'pristine-talisman', 'p2', 'battlefield', { manaCost: 3, keywords: ['indestructible'] });
   addMana(state, 'p1', 2, { colors: ['W', 'W'] });
   const cast = playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'do');
   execute(state, cast); resolveStack(state);
-  assert.equal(state.players.find((p) => p.id === 'p1').life, 20, 'bez zniszczenia bez zysku życia');
+  assert.equal(zoneOfCardId(state, 'pristine-talisman'), 'battlefield', 'indestructible: artefakt przeżywa');
+  assert.equal(state.players.find((p) => p.id === 'p1').life, 23, 'życie = MV niezależnie od powodzenia destroy');
 });
 
 // --- Colossodon Yearling: vanilla 2/4 ---

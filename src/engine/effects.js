@@ -920,6 +920,137 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     return;
   }
+  if (effect.type === 'reveal_subtype_deal_damage') {
+    // M158/Batch 39 (Invasion of the Giants II): „Then you may reveal a
+    // Giant card from your hand. When you do, this Saga deals 2 damage to
+    // target opponent or planeswalker." — blokująca decyzja gracza
+    // (pendingRevealChoice): ujawnij kartę podtypu (obrażenia) albo zrezygnuj.
+    const controllerId = sourceObject.controllerId;
+    const subtype = effect.subtype ?? null;
+    const cardIds = state.zones.hand.filter((id) => {
+      const card = state.objects.get(id);
+      return card && card.controllerId === controllerId
+        && subtype != null && (card.subtypes ?? []).includes(subtype);
+    });
+    if (cardIds.length === 0) return;
+    state.pendingRevealChoice = {
+      playerId: controllerId,
+      cardIds: [...cardIds],
+      amount: effect.amount ?? 2,
+      sourceId: sourceObject.id,
+      cardId: sourceObject.cardId ?? null,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('reveal_choice_required', {
+      playerId: controllerId, subtype, count: cardIds.length, amount: effect.amount ?? 2,
+    }));
+    return;
+  }
+  if (effect.type === 'next_spell_discount') {
+    // M158/Batch 39 (Invasion of the Giants III): „The next Giant spell you
+    // cast this turn costs {2} less to cast." — rabat jednorazowy (konsumowany
+    // przez cast*), wygasa w cleanup („this turn").
+    const controllerId = sourceObject.controllerId;
+    const entry = { playerId: controllerId, amount: effect.amount ?? 2, subtype: effect.subtype ?? null };
+    state.pendingSpellDiscounts = [
+      ...(state.pendingSpellDiscounts ?? []).filter((d) => !(d.playerId === controllerId && d.subtype === entry.subtype)),
+      entry,
+    ];
+    state.events.push(event('spell_discount_armed', {
+      playerId: controllerId, amount: entry.amount, subtype: entry.subtype,
+    }));
+    return;
+  }
+  if (effect.type === 'apply_to_each_target') {
+    // M158/Batch 39 (Wrap in Flames): „deals 1 damage to EACH of up to three
+    // target creatures. Those creatures can't block this turn." — generyczny
+    // wrapper aplikujący listę efektów wewnętrznych RAZ NA CEL (cele
+    // wielokrotne z variableTargets czaru). Cele nielegalne pomijają efekty
+    // same (CR 608.2b — każdy wewnętrzny efekt sprawdza strefę).
+    const inner = Array.isArray(effect.effects) ? effect.effects : [];
+    for (const targetId of targets) {
+      for (const innerEffect of inner) {
+        applyEffect(state, innerEffect, sourceObject, [targetId], context);
+      }
+    }
+    return;
+  }
+  if (effect.type === 'regenerate') {
+    // M158/Batch 39 (Exterminator Magmarch, CR 701.12): „{1}{B}: Regenerate
+    // this creature." — tarcza regeneracji do końca tury; zużywa ją
+    // tryRegenerate przy próbie zniszczenia (state-based/effects), a cleanup
+    // czyści niewykorzystane tarcze (razem z cantBeRegeneratedThisTurn).
+    const targetId = targets[0] ?? sourceObject.id;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') return;
+    if (!(state.regenerationShields ?? []).includes(targetId)) {
+      state.regenerationShields = [...(state.regenerationShields ?? []), targetId];
+    }
+    state.events.push(event('regeneration_shield_added', {
+      objectId: targetId, cardId: object.cardId, playerId: sourceObject.controllerId,
+    }));
+    return;
+  }
+  if (effect.type === 'each_player_loses_life_fraction') {
+    // M158/Batch 39 (Dire Fleet Ravager): „each player loses a third of their
+    // life, rounded up" — generyczny ułamek (numerator/denominator), zaokr.
+    // w górę; to UTRATA życia, nie obrażenia (jak lose_life — bez triggerów
+    // damage i bez prewencji).
+    const numerator = effect.numerator ?? 1;
+    const denominator = effect.denominator ?? 3;
+    for (const player of state.players) {
+      const loss = Math.ceil((player.life * numerator) / denominator);
+      if (loss > 0) changeLife(state, player.id, -loss);
+    }
+    state.events.push(event('players_lost_life_fraction', {
+      sourceId: sourceObject.id, cardId: sourceObject.cardId,
+      numerator, denominator,
+    }));
+    return;
+  }
+  if (effect.type === 'becomes_subtype_until_end_of_turn') {
+    // M158/Batch 39 (Wishful Merfolk): „This creature loses defender and
+    // becomes a Human until end of turn." — nadpisanie podtypów DO KOŃCA TURY
+    // (wzorzec originalBeforeAnimation: zapamiętany oryginał, cleanup
+    // przywraca) + tymczasowa utrata keywordów (lostKeywordsUntilEOT
+    // odejmowane w effectiveKeywords).
+    const targetId = targets[0] ?? sourceObject.id;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') return;
+    const patch = {
+      lostKeywordsUntilEOT: Object.freeze([
+        ...new Set([...(object.lostKeywordsUntilEOT ?? []), ...(effect.losesKeywords ?? [])]),
+      ]),
+    };
+    if (Array.isArray(effect.subtypes) && effect.subtypes.length > 0 && !object.subtypesBeforeOverride) {
+      patch.subtypesBeforeOverride = Object.freeze([...(object.subtypes ?? [])]);
+      patch.subtypes = Object.freeze([...effect.subtypes]);
+    }
+    state.objects.set(targetId, Object.freeze({ ...object, ...patch }));
+    state.events.push(event('became_subtype', {
+      objectId: targetId, cardId: object.cardId,
+      subtypes: [...(patch.subtypes ?? object.subtypes ?? [])],
+      lostKeywords: [...(effect.losesKeywords ?? [])],
+      untilEndOfTurn: true,
+    }));
+    return;
+  }
+  if (effect.type === 'attach_self_to_target') {
+    // M158/Batch 39 (Squire's Lightblade): „When this Equipment enters,
+    // attach it to target creature you control." — przypięcie ŹRÓDŁA
+    // (equipmentu) do wybranego celu; trigger z requiresTarget
+    // creature_you_control. Generyczne: dowolny equipment z ETB-attach,
+    // cel wybiera gracz (jak living weapon, ale z wyborem).
+    const targetId = targets[0];
+    if (!targetId) return;
+    const target = state.objects.get(targetId);
+    if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') return;
+    const self = state.objects.get(sourceObject.id);
+    if (!self || self.zone !== 'battlefield' || !self.equipment) return;
+    attachEquipmentToCreature(state, sourceObject.id, targetId);
+    return;
+  }
   if (effect.type === 'living_weapon') {
     // Living weapon (CR 702.91, Strandwalker): „When this Equipment enters,
     // create a 0/0 black Phyrexian Germ creature token, then attach this to
@@ -1981,15 +2112,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const manaValue = object.manaCost ?? 0;
     // Niszcz (CR 701.7) — reużycie logicznej części destroy_permanent przez
     // ponowne wywołanie efektu (niszczy i emituje zdarzenia); potem zysk życia.
-    const before = state.events.length;
     applyEffect(state, { type: 'destroy_permanent' }, sourceObject, [targetId]);
-    const destroyed = state.events.slice(before).some((e) => e.type === 'permanent_destroyed'
-      || e.type === 'object_moved');
-    // Zysk życia równy mana value TYLKO, gdy artefakt faktycznie zniszczono
-    // (nie-indestructible, bez tarczy/regeneracji). W innym razie „you gain life
-    // equal to its mana value" nie następuje (CR: efekty sekwencyjne).
-    // changeLife samo emituje life_changed — nie dublujemy zdarzenia.
-    if (destroyed && manaValue > 0) {
+    // M156/F3 (audyt PR #65): „Destroy target artifact. You gain life equal to
+    // its mana value." to DWIE sekwencyjne instrukcje (CR 608.2c) — zysk życia
+    // NIE zależy od powodzenia zniszczenia. Indestructible/regeneracja/tarcza
+    // blokują wyłącznie pierwsze zdanie; mana value bierzemy z chwili przed
+    // próbą zniszczenia (LKI, CR 400.7). changeLife samo emituje life_changed.
+    if (manaValue > 0) {
       changeLife(state, sourceObject.controllerId, manaValue);
     }
     return;

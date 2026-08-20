@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Breaching%20Hippocamp&set=ths",
+  "print": "Breaching Hippocamp (THS)",
+  "name": "Breaching Hippocamp",
+  "mana_cost": "{3}{U}",
+  "cmc": 4,
+  "type_line": "Creature — Horse Fish",
+  "oracle_text": "Flash (You may cast this spell any time you could cast an instant.)\nWhen this creature enters, untap another target creature you control.",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Flash"
+  ],
+  "set": "ths",
+  "collector_number": "43",
+  "rarity": "common",
+  "pobrano": "2026-08-20",
+  "power": "3",
+  "toughness": "2",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/8/8/8841c01e-015e-4541-942a-f8859dd03fea.jpg?1783939802",
+    "normal": "https://cards.scryfall.io/large/front/8/8/8841c01e-015e-4541-942a-f8859dd03fea.jpg?1783939802"
+  }
+}

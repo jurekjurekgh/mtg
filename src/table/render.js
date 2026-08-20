@@ -803,6 +803,14 @@ function describeEffect(e) {
     copy_creature: () => 'stań się kopią celu',
     job_select: () => 'job select (stwórz 1/1 Hero i przypnij)',
     living_weapon: () => 'living weapon (stwórz 0/0 Germ i przypnij)',
+    attach_self_to_target: () => 'przypnij ten sprzęt do wybranego stwora',
+    regenerate: () => 'tarcza regeneracji (przetrwa zniszczenie do końca tury)',
+    each_player_loses_life_fraction: () => 'każdy gracz traci część życia (zaokrąglone w górę)',
+    becomes_subtype_until_end_of_turn: () => 'zmiana podtypu i utrata keyworda do końca tury',
+    apply_to_each_target: () => 'ten sam efekt na każdym z celów',
+    reveal_subtype_deal_damage: () => 'możesz ujawnić kartę z ręki — obrażenia przeciwnika',
+    next_spell_discount: () => 'następny czar podtypu tańszy w tej turze',
+    return_card_from_graveyard_to_hand: () => 'zwrot karty z grobu do ręki',
     ferocious_draw_discard: () => 'ferocious: dobierz, potem odrzuć',
     fertile_thicket_reveal: () => 'odsłoń wierzch biblioteki',
     goad: () => 'goad (musi atakować)',
@@ -1915,6 +1923,15 @@ export function commandLabel(cmd, session, view) {
       // Gurmag Drowner — wybierz kartę z wierzchu do ręki.
       return `Weź do ręki: ${nameOfObjectId(cmd.cardId)}`;
     }
+    case 'resolve_madness_cast': {
+      return cmd.cast
+        ? `Rzuć za koszt madness: ${nameOfObjectId(cmd.cardId)}`
+        : 'Przełóż do cmentarza (rezygnacja z madness)';
+    }
+    case 'resolve_reveal_choice': {
+      if (cmd.cardId == null) return 'Nie ujawniaj (bez obrażeń)';
+      return `Ujawnij z ręki: ${nameOfObjectId(cmd.cardId)} — obrażenia przeciwnika`;
+    }
     case 'resolve_satyr_look_choice': {
       // Satyr Wayfinder — wybierz ląd z odsłoniętych do ręki albo zrezygnuj.
       if (cmd.pickId == null) return 'Nie bierz lądu (reszta do grobu)';
@@ -1984,6 +2001,11 @@ export function commandLabel(cmd, session, view) {
       const source = view.pendingTriggerTarget?.cardId
         ? `${escapeHtml(session.nameOf(view.pendingTriggerTarget.cardId))} — ` : '';
       const effectType = view.pendingTriggerTarget?.effectType;
+      // M157/F4(a): wariant wielocelowy — lista celów w etykiecie.
+      if (Array.isArray(cmd.targetIds)) {
+        if (cmd.targetIds.length === 0) return `${source}bez celów („up to")`;
+        return `${source}cele triggera: ${cmd.targetIds.map((id) => nameOfObjectId(id)).join(' i ')}`;
+      }
       if (cmd.targetId == null) {
         if (effectType === 'bounce_permanent') return `${source}nie zwracaj niczego (odmowa)`;
         return `${source}bez celu (odmowa — „up to one"/„you may")`;
@@ -2422,16 +2444,13 @@ export function renderMiniFace(el, session, objectId) {
  */
 export function renderHoverPreview(host, info, hoverMode = 'scryfall') {
   clear(host);
-  const key = String(hoverMode || 'scryfall').toLowerCase();
   const shape = hoverPreviewShape(hoverMode);
   const candidates = hoverImageSources(artOf(info), { hoverMode });
-  // M148 (uwaga właściciela, trzeci raz): w torach FOT/KON karta BEZ lokalnej
-  // ilustracji (basic land, token, karta specjalna — brak artId) ma po najechaniu
-  // NIE pokazywać NIC — dokładnie jak w legacy HTML. Wcześniej buildFace rysował
-  // syntetyczną twarz ZANIM sprawdzono kandydatów, więc zaślepka wyskakiwała.
-  // W torze scryfall fallback (syntetyczna twarz) zostaje — tam zawsze coś ma być.
-  if (!candidates.length && key !== 'scryfall') return host;
-  const face = buildFace(host, info, { size: 'lg' });
+  // M157/A (uwaga właściciela, czwarty raz — usuwamy zaślepkę całkiem):
+  // podgląd hover/tap NIE rysuje syntetycznej „niby-karty". Każda karta ma
+  // ilustrację (Scryfall; FOT/KON z artId), a pseudo-karta z gradientem
+  // i pseudo-tekstem tylko mignęła przed wczytaniem obrazu i psuła UX.
+  // M148 zachowane: bez kandydatów (FOT/KON bez artId) podgląd jest PUSTY.
   if (!candidates.length) return host;
   const img = document.createElement('img');
   img.className = 'hover-img';
@@ -2441,7 +2460,8 @@ export function renderHoverPreview(host, info, hoverMode = 'scryfall') {
   img.style.maxHeight = `${shape.height}px`;
   img.style.objectFit = shape.fit;
   host.appendChild(img);
-  attachImageWithFallback(img, candidates, face);
+  // M157/A: brak warstwy fallbacku — podgląd pokazuje WYŁĄCZNIE ilustrację.
+  attachImageWithFallback(img, candidates, null);
   const art = artOf(info);
   const hasLocal = art.artId != null && art.artId !== '';
   const hint = hasLocal ? ' · scroll zmienia tor' : '';
@@ -2457,7 +2477,8 @@ export function renderHoverPreview(host, info, hoverMode = 'scryfall') {
 export function renderCardFullscreen(host, info, { positionText = null } = {}) {
   clear(host);
   if (!info) return host;
-  const face = buildFace(host, info, { size: 'lg' });
+  // M157/A (uwaga właściciela): pełny ekran bez syntetycznej „niby-karty" —
+  // wyłącznie skan karty (tożsamość własnej karty zakrytej niesie alt obrazu).
   const candidates = hoverImageSources(artOf(info), { hoverMode: 'scryfall' });
   if (candidates.length) {
     const img = document.createElement('img');
@@ -2465,7 +2486,7 @@ export function renderCardFullscreen(host, info, { positionText = null } = {}) {
     img.alt = info.faceDown ? 'Karta zakryta' : info.name;
     img.decoding = 'async';
     host.appendChild(img);
-    attachImageWithFallback(img, candidates, face);
+    attachImageWithFallback(img, candidates, null);
   }
   // Pozycja w karuzeli strefy („2 / 7") — swipe w lewo/prawo przechodzi po
   // kartach strefy, więc gracz widzi, gdzie jest i ile ich zostało.
@@ -2812,7 +2833,10 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   }
 
   // --- Log -------------------------------------------------------------
-  const entries = session.log.slice(-80).reverse();
+  // M157/E (uwaga właściciela): log pokazuje CAŁĄ rozgrywkę — bez okna
+  // ostatnich 80 wpisów (≈4 pełne tury), które wyglądało jak cykliczne
+  // czyszczenie sekcji. Najnowsze nadal na górze (reverse).
+  const entries = [...session.log].reverse();
   for (const entry of entries) {
     const kind = entry.kind === 'event' && /^—.*—$/.test(entry.text) ? 'step' : entry.kind;
     div(els.log, `log-${kind}`, entry.text);
@@ -2842,6 +2866,9 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   // --- Day/Night (M68) — globalny znacznik, jak loch -------------------
   renderDayNight(els, session, view, { onClick: onDayNightClick, hover });
 
+  // --- Liczniki trucizny (M157/F) — panel jak Undercity/Day/Night --------
+  renderPoisonPanel(els, view);
+
   // --- Loch Undercity (M24) -------------------------------------------
   renderUndercity(els, session, view, { onClick: onUndercityClick });
 }
@@ -2857,6 +2884,34 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
  * z lochami — karta Day//Night (img ze Scryfall TVOW 21, front/back wg
  * designation) + status. Ukryty, gdy designation nie jest ustalone.
  */
+// M157/F (uwaga właściciela): liczniki trucizny mają być jawnie widoczne —
+// panel w stylu Undercity/Day-Night z ilustracją karty „Poison Counter"
+// (Scryfall tecc/13) i licznikami graczy. Widoczny, gdy ktoś ma truciznę.
+const POISON_COUNTER_CARD = Object.freeze({
+  name: 'Poison Counter',
+  imageUri: 'https://cards.scryfall.io/large/front/8/a/8a9cb417-8709-4336-be36-2fb0cea31fe1.jpg?1783904328',
+});
+
+export function renderPoisonPanel(els, view) {
+  if (!els.poison) return;
+  const any = (view.players ?? []).some((p) => (p.poison ?? 0) > 0);
+  els.poison.hidden = !any;
+  if (!any) return;
+  clear(els.poison);
+  const card = div(els.poison, 'poison-card');
+  const img = document.createElement('img');
+  img.src = POISON_COUNTER_CARD.imageUri;
+  img.alt = POISON_COUNTER_CARD.name;
+  img.loading = 'lazy';
+  card.appendChild(img);
+  const info = div(els.poison, 'poison-info');
+  div(info, 'poison-status', 'Liczniki trucizny');
+  for (const p of view.players ?? []) {
+    div(info, 'poison-count', `${p.id === view.playerId ? 'Ty' : 'Nieprzyjaciel'}: ${p.poison ?? 0} ${polishPluralCount(p.poison ?? 0, 'licznik', 'liczniki', 'liczników')} trucizny`);
+  }
+  div(info, 'poison-note', 'Gracz z 10 licznikami trucizny przegrywa (CR 704.10). Liczniki znikają tylko z końcem gry — obrażenia ich nie leczą.');
+}
+
 export function renderDayNight(els, session, view, { onClick = null, hover = null } = {}) {
   if (!els.daynight) return;
   const designation = view.dayNight ?? null;

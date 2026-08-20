@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Merfolk%20Mesmerist&set=m12",
+  "print": "Merfolk Mesmerist (M12)",
+  "name": "Merfolk Mesmerist",
+  "mana_cost": "{1}{U}",
+  "cmc": 2,
+  "type_line": "Creature — Merfolk Wizard",
+  "oracle_text": "{U}, {T}: Target player mills two cards.",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Mill"
+  ],
+  "set": "m12",
+  "collector_number": "66",
+  "rarity": "common",
+  "pobrano": "2026-08-20",
+  "power": "1",
+  "toughness": "2",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/2/2/220dede5-472c-4a09-bdf0-73e722d9d4d2.jpg?1783941089",
+    "normal": "https://cards.scryfall.io/large/front/2/2/220dede5-472c-4a09-bdf0-73e722d9d4d2.jpg?1783941089"
+  }
+}

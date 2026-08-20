@@ -85,9 +85,14 @@ test('pełny ekran realnej karty pokazuje skan ze Scryfalla w rozmiarze large', 
   assert.match(host.textContent, /Dotknij ✕/, 'jest podpowiedź, jak zamknąć');
 });
 
-test('pełny ekran karty syntetycznej (bez druku) pokazuje twarz, nie pustkę', () => {
+// M157/A (uwaga właściciela, 2026-08-20): pełny ekran BEZ syntetycznej
+// „niby-karty" — token z ilustracją Scryfall pokazuje skan; karta bez
+// ŻADNEGO obrazu pokazuje pustkę (do czasu uzupełnienia imageUri w danych),
+// a nie rysowaną pseudo-kartę z pseudo-tekstem.
+test('pełny ekran tokenu pokazuje skan; bez żadnego obrazu — pusto, bez niby-karty', () => {
   const registry = createCardRegistry();
   const details = registry.get('token_wolf');
+  assert.ok(details.imageUri, 'token_wolf ma ilustrację Scryfall w danych');
   const host = new MiniEl('#fullscreen');
   renderCardFullscreen(host, {
     name: details.name, colors: details.colors, kind: 'creature',
@@ -95,10 +100,23 @@ test('pełny ekran karty syntetycznej (bez druku) pokazuje twarz, nie pustkę', 
     power: details.power, toughness: details.toughness,
     livePower: details.power, liveToughness: details.toughness,
     spell: null, abilities: [], morph: null, set: details.set,
-    imageUri: null, artId: null,
+    imageUri: details.imageUri, artId: null,
   });
-  assert.equal(imagesIn(host).length, 0, 'brak druku = brak <img>');
-  assert.match(host.textContent, /Wolf/, 'zostaje syntetyczna twarz z nazwą');
+  const img = imagesIn(host)[0];
+  assert.ok(img, 'token z imageUri pokazuje <img>');
+  assert.match(img.src, /cards\.scryfall\.io/, 'skan tokenu ze Scryfalla');
+
+  const bare = new MiniEl('#fullscreen-bare');
+  renderCardFullscreen(bare, {
+    name: 'Nic', colors: [], kind: 'artifact', types: ['Artifact'],
+    subtypes: [], keywords: [], manaCost: 0, power: null, toughness: null,
+    livePower: null, liveToughness: null, spell: null, abilities: [], morph: null,
+    set: null, imageUri: null, artId: null,
+  });
+  assert.equal(imagesIn(bare).length, 0, 'brak druku = brak <img>');
+  assert.equal(bare.findAll((el) => String(el.className).startsWith('face')).length, 0,
+    'M157/A: bez syntetycznej twarzy na pełnym ekranie');
+  assert.doesNotMatch(bare.textContent, /Nic/, 'pseudo-karta z nazwą się nie rysuje');
 });
 
 test('karta zakryta na pełnym ekranie pokazuje rewers, nie swoją tożsamość (FoW)', () => {
@@ -338,7 +356,9 @@ test('pełny ekran własnej karty twarzą w dół pokazuje prawdziwą kartę (CR
     set: 'KTK', imageUri: 'https://cards.scryfall.io/large/front/x.jpg', artId: null,
     faceDown: false, // własna odsłonięta (cardInfoForFullscreen przekazuje faceDown=false dla właściciela)
   }, { zoom: true });
-  assert.match(host.textContent, /Monastery Flock/, 'własna karta face-down pokazuje nazwę');
   const imgs = imagesIn(host);
   assert.ok(imgs.length > 0 && /scryfall/.test(imgs[0].src), 'własna face-down pokazuje druk');
+  // M157/A: pełny ekran nie rysuje już syntetycznej twarzy — tożsamość własnej
+  // karty zakrytej niesie alt obrazu (dostępny dla czytników/devtools).
+  assert.equal(imgs[0].alt, 'Monastery Flock', 'własna karta face-down rozpoznawalna po alcie');
 });
