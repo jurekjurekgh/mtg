@@ -3,6 +3,34 @@
 - **Ostatnia aktualizacja:** 2026-08-20 (M162: uwagi właściciela A/B/C — talie „Zapisz jako...", Bell bota, modal Ratsów)
 - **Poprzednia:** 2026-08-20 (M161: audyt PR #67 + gotowość madness na czary — routing po kind)
 
+## M166 — Batch 40: 10 kart (lista właściciela 2026-08-20, PR #68) — W TOKU, 8/10
+
+Plan: `docs/plans/PLAN_2026-08-20-m166-batch-40-kart.md` (kontynuacja:
+transze D-E). Testy: `test/batch40-kart.test.js` (9, RED→GREEN).
+Dane Scryfall ×10 (ADR 0010 §2a, printy wg setów właściciela).
+
+- **Transza A (14cf91a + 30c8729):** Kitsune (ninjutsu+double strike),
+  Knockout Maneuver (licznik→obrażenia=moc), Krotiq Nestguard (defender
+  odsuwany do EOT). Nauczki: strażnik M33+ wymaga talii w TYM samym
+  commicie; nowe karty → WYŁĄCZNIE tokens/ostrza/graveyard (green/azorius/
+  red/black mają zamrożone seedy — 5 testów); pipeline npm test|grep
+  maskuje status (14cf91a poszedł czerwony, naprawiony natychmiast).
+- **Transza B (9fb54af):** NOWE: Enrage (event 'dealt_damage' + LKI
+  CR 603.10: targetLki w damage_dealt, sourceLki w pendingach triggerów,
+  walidacje czytają objects.get ?? LKI), Corrupted
+  (opponents_lose_life_if_poison), Reinforce (zdolność z ręki: discard
+  jako koszt + cel — wzorzec cycling/forecast). Etykiety M122/M126 +
+  HANDLED_TRIGGER_EVENTS uzupełnione.
+- **Transza C (455aedd):** NOWE: Adamant (kolory many wydanej — zwrót
+  z consumeManaPool do lastManaSpend.colors, manaColorsSpent na obiekcie
+  stosu, entersWithCountersIf.adamant; registry normalizuje adamant —
+  klasa L21), controlsNoCreatureSubtype (negatywny warunek podtypowy) +
+  damage_to_controller = pełny Sarkhan's Rage.
+- **Pozostały D (Inferno Titan — decyzja podziału obrażeń „as you
+  choose") i E (Cenn's Tactician — statyka bloku dodatkowego).**
+
+**Stan:** `npm test` **2538/2538** (fast), build **52 moduły / 2166.6 kB**.
+
 ## M164 — etap Sagi jako badge tekstowy (2026-08-20, PR #68)
 
 Pytanie właściciela: jak oznaczony jest etap Sagi na karcie? Stan przed:

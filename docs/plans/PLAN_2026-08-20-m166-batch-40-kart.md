@@ -27,12 +27,12 @@ pobrano z `set=ltc`; Mosquito Guard MOR (nie DDF) i Sarkhan's Rage DTK
 
 ## Etapy (transze, każda samodzielnie zielona: npm test + build)
 
-- [ ] **0.** Dane Scryfall ×10 + ten plan (commit).
-- [ ] **1. Transza A (reuse):** Kitsune, Knockout Maneuver, Krotiq Nestguard
+- [x] **0.** Dane Scryfall ×10 + ten plan (commit).
+- [x] **1. Transza A (reuse):** 14cf91a + fix talii 30c8729 (nauczka: M33+ wymaga talii od razu; tokens.txt). Kitsune, Knockout Maneuver, Krotiq Nestguard
   (+ testy per karta; MANA_COSTS + strażniki L23/L26).
-- [ ] **2. Transza B ( nowe słowa kluczowe proste):** Cacophodon (enrage),
+- [x] **2. Transza B (nowe słowa kluczowe proste):** 9fb54af — Enrage z LKI (CR 603.10: targetLki w damage_dealt + sourceLki w pendingach triggerów), Corrupted, Reinforce (zdolność z ręki z discard + cel). Cacophodon (enrage),
   Feed the Infection (corrupted), Mosquito Guard (reinforce).
-- [ ] **3. Transza C (płatność/warunki):** Locthwain Paladin (adamant —
+- [x] **3. Transza C (płatność/warunki):** 455aedd — Adamant (kolory wydanej many przez zwrot consumeManaPool — bez śladu w stanie, sonda U9), controlsNoCreatureSubtype. Locthwain Paladin (adamant —
   kolory wydanej many), Sarkhan's Rage (controlsNoSubtype).
 - [ ] **4. Transza D (decyzja podziału):** Inferno Titan (damage divided
   as you choose — pending + komenda + COMMAND_TYPES + boty + render +
@@ -67,3 +67,26 @@ talii — tokens spełnia.
   i na maszynowy strażnik limitations (ADR 0022: zero odchyłek).
 - Wszystkie nowe resolve_*/efekty: przegląd pod kątem L48 (oferta=
   walidacja) i A3 (etykieta + grupowanie).
+
+## Stan na przerwaniu (kontynuacja: transze D i E)
+
+Wykonano 8/10 kart (transze A-C, commity 14cf91a…455aedd, pakiet 2538/2538).
+Pozostały DWIE najcięższe:
+
+- **D. Inferno Titan**: {R}:+1/+0 (pump reuse); trigger „enters or attacks"
+  (dwa triggery: enter_battlefield + attacks) z 3 obrażeniami DZIELONYMI
+  DOWOLNIE na 1-3 celów. Wymaga NOWEJ decyzji podziału (kwoty ≥1 na cel,
+  suma = 3; wzorce: pendingDamageAssignment — walka, apply_to_each_target —
+  Wrap in Flames). Nowa komenda resolve_* → COMMAND_TYPES + strażnik A3
+  (etykieta + grupowanie!) + oba boty + render. Alternatywa projektowa:
+  requiresTarget count 1-3 (upTo) + efekt damage_divided z decyzją kwot
+  per cel w JEDNEJ komendzie (jak targetIds multi-target M157/F4a).
+- **E. Cenn's Tactician**: {W},{T}: licznik na celu Soldierzie (reuse);
+  STATYKA „each creature you control with a +1/+1 counter can block an
+  additional creature" — model deklaracji bloków: legalBlockerOptions/
+  walidacja assignments muszą dopuścić tego samego blokera w dwóch
+  slotach, gdy kontroler ma to źródło; wycena bota + render informacji.
+
+Dane Scryfall obu kart są w docs/cards/ (inferno-titan, cenns-tactician).
+Reguła talii: tokens.txt (Cenn's Tactician {W} — Plains są); Inferno Titan
+{4}{R}{R} → ostrza.txt (Mountain) — NIE red.txt (zamrożone seedy).
