@@ -271,8 +271,11 @@ Przed implementacją karty ustal:
 - najważniejsze interakcje z istniejącym katalogiem;
 - jawne ograniczenia wsparcia.
 
-**`limitations` kontra `notes` (M111).** Pole `support.limitations` znaczy
-dokładnie jedno: **tu NIE gramy pełnego Oracle**. Opis zachowania („decyzja
+**`limitations` kontra `notes` (M111, zastąpione przez [ADR 0022](docs/decisions/0022-full-oracle-or-unsupported.md)).**
+Zasada nadrzędna właściciela (2026-08-20): **KAŻDA karta `supported` = 100%
+zgodna z Oracle albo nieobsługiwana** — nie ma „częściowego Oracle".
+Pole `support.limitations` opisuje wyłącznie fakty strukturalne (token, tył
+DFC, brak strefy dowodzenia w 1v1), nigdy odchyłkę zachowania karty. Opis zachowania („decyzja
 jest blokująca", „one or more liczone per komenda", „bot bierze pierwszą
 ofertę") to `notes`. Dzięki temu liczba kart z niepustym `limitations` jest
 wiarygodnym licznikiem długu wobec Oracle. Strażnik

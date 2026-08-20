@@ -1,5 +1,11 @@
 # Audyt Żywym Testerem — Batch 38 (2026-08-20)
 
+> **Nota (M157, 2026-08-20):** plik przemianowany z
+> `AUDIT_BATCH38_ZYWTESTER_2026-08-20.md` — stara ścieżka była uszkodzona
+> na poziomie systemu plików sandboxa (nieczytelna dla narzędzi mimo
+> poprawnego blobu w git). Treść bez zmian; decyzja właściciela: uszkodzony
+> plik usunąć.
+
 ## Cel i metoda
 
 Audyt „z perspektywy gracza" narzędziem `tools/table-tester/` na PR #65.

@@ -48,7 +48,7 @@
 - **`edit_file` psuje polskie znaki** → edycje przez `python3`+`pathlib`
   (ENVIRONMENT §4).
 - **GH_TOKEN może wygasnąć** → push retry, bez proszenia o token w czacie.
-- **Dziwny artefakt FS**: `docs/audits/AUDIT_BATCH38_ZYWTESTER_2026-08-20.md`
+- **Dziwny artefakt FS**: `docs/audits/AUDYT_2026-08-20-batch38-zywy-tester.md`
   widoczny w `ls`, ale `stat`/`cat` z bash nie znajdują go (python3 czyta OK)
   — do zbadania przy okazji; nie blokuje audytu.
 - **Benchmark pełny B0 tylko na komendę właściciela** (ADR 0018) — używam
