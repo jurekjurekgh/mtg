@@ -2608,7 +2608,8 @@ export function execute(state, input) {
       if (chosenList.some((id) => !legal.includes(id))) return reject('illegal_trigger_target');
       const beforeMulti = state.events.length;
       state.pendingTriggerTargets.shift();
-      const srcM = state.objects.get(pending.sourceId);
+      // M166/B: źródło umarłe (Enrage) — LKI z pendingu (CR 603.10).
+      const srcM = state.objects.get(pending.sourceId) ?? pending.sourceLki ?? null;
       const srcLegalM = Boolean(srcM
         && ['battlefield', 'graveyard', 'exile'].includes(srcM.zone)
         && triggerConditionHolds(state, pending.ability, srcM, pending.extra ?? {}));
@@ -2637,7 +2638,8 @@ export function execute(state, input) {
     }
     const before = state.events.length;
     state.pendingTriggerTargets.shift();
-    const source = state.objects.get(pending.sourceId);
+    // M166/B: źródło umarłe (Enrage) — LKI z pendingu (CR 603.10).
+    const source = state.objects.get(pending.sourceId) ?? pending.sourceLki ?? null;
     const sourceLegal = Boolean(source
       && ['battlefield', 'graveyard', 'exile'].includes(source.zone)
       && triggerConditionHolds(state, pending.ability, source, pending.extra ?? {}));

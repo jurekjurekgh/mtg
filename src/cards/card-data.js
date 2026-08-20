@@ -7309,6 +7309,72 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['aktywacja odsuwa defendera do końca tury (cleanup przywraca) — atak legalny po aktywacji, w następnej turze znów nie'],
   }),
 
+  // ---- Batch 40 — transza B: nowe słowa kluczowe proste ----
+
+  // 4. Cacophodon (RIX) {3}{G} 2/5 Dinosaur — Enrage: gdy otrzyma obrażenia,
+  //    odkręć celowany permanent (NOWY trigger event 'dealt_damage';
+  //    untap_permanent istnieje — Twiddle, M146).
+  defineCard({
+    id: 'cacophodon', name: 'Cacophodon', set: 'RIX',
+    types: ['Creature'], subtypes: ['Dinosaur'], colors: ['G'],
+    power: 2, toughness: 5, manaCost: 4,
+    oracleText: 'Enrage — Whenever this creature is dealt damage, untap target permanent.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/5/351b213e-b23e-4287-947a-6bd81f1cf751.jpg?1783935290',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dealt_damage', requiresTarget: { type: 'permanent' } },
+        effect: { type: 'untap_permanent' },
+      }),
+    ],
+    artId: null, plan: 'Ixalan',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Feed the Infection (ONE) {3}{B} Sorcery — draw 3, lose 3; Corrupted:
+  //    każdy przeciwnik z >=3 poison traci 3 życia (NOWY efekt
+  //    opponents_lose_life_if_poison; poison w stanie gry od M157/F).
+  defineCard({
+    id: 'feed-the-infection', name: 'Feed the Infection', set: 'ONE',
+    types: ['Sorcery'], colors: ['B'], manaCost: 4,
+    oracleText: 'You draw three cards and you lose 3 life.\nCorrupted — Each opponent who has three or more poison counters loses 3 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/f/9f013a1a-d4b9-4380-9802-c299ee6c4492.jpg?1783918046',
+    spell: {
+      timing: 'sorcery',
+      targets: [],
+      effects: [
+        { type: 'draw_cards', amount: 3 },
+        // "you lose 3 life" — scope controller (lose_life domyślnie celuje przeciwników).
+        { type: 'lose_life', amount: 3, scope: 'controller' },
+        { type: 'opponents_lose_life_if_poison', min: 3, amount: 3 },
+      ],
+    },
+    artId: null, plan: 'Phyrexia',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 6. Mosquito Guard (MOR) {W} 1/1 Kithkin Soldier — first strike +
+  //    Reinforce 1—{1}{W} (NOWE słowo: zdolność z RĘKI, koszt mana + discard,
+  //    licznik +1/+1 na celu stworze; wzorzec cycling/channel + cele forecast).
+  defineCard({
+    id: 'mosquito-guard', name: 'Mosquito Guard', set: 'MOR',
+    types: ['Creature'], subtypes: ['Kithkin', 'Soldier'], colors: ['W'],
+    keywords: ['first_strike'], power: 1, toughness: 1, manaCost: 1,
+    oracleText: 'First strike\nReinforce 1—{1}{W} ({1}{W}, Discard this card: Put a +1/+1 counter on target creature.)',
+    imageUri: 'https://cards.scryfall.io/large/front/5/e/5e5bca35-5098-4100-815b-de141c82eb6a.jpg?1783942803',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, colors: ['W'] },
+        reinforce: { amount: 1 },
+        targets: [{ type: 'creature' }],
+        effect: [{ type: 'add_counter', counter: '+1/+1', amount: 1, targetIndex: 0 }],
+      }),
+    ],
+    artId: null, plan: 'Lorwyn',
+    support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */

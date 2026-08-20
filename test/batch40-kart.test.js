@@ -118,3 +118,117 @@ test('A3: Krotiq Nestguard — defender blokuje atak; po {2}{G} atakuje; cleanup
   assert.ok(!legalAttackerOptions(state, 'p1').some((opt) => opt.includes(nest.id)),
     'w następnej turze znowu nie atakuje (defender przywrócony)');
 });
+
+// ---- Transza B: nowe slowa kluczowe proste -----------------------------------
+
+test('B1: Cacophodon - Enrage: obrazenia odpalaja trigger, odkreca cel permanentu', () => {
+  // Tura p2 (instant zagrany z własnym priorytetem — oferta cast_spell wymaga priorytetu).
+  const state = game('p2');
+  putCard(state, 'caco', 'cacophodon', 'p1', 'battlefield');
+  putCard(state, 'guy', 'highland-game', 'p1', 'battlefield');
+  state.objects.set('guy', Object.freeze({ ...state.objects.get('guy'), tapped: true }));
+  putCard(state, 'ants', 'release-the-ants', 'p2', 'hand');
+  addMana(state, 'p2', 2, { colors: ['R'] });
+  const cast = playerView(state, 'p2').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'ants' && c.targets?.[0] === 'caco');
+  assert.ok(cast, 'oferta 1 obrazenia w Cacophodona');
+  assert.ok(execute(state, cast).ok);
+  for (let i = 0; i < 12; i += 1) {
+    const pending = state.pendingTriggerTargets?.[0];
+    if (pending) {
+      assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: pending.playerId, targetId: 'guy' }).ok);
+      continue;
+    }
+    if (state.zones.stack.length > 0) {
+      assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
+      continue;
+    }
+    break;
+  }
+  const caco = [...state.objects.values()].find((o) => o.cardId === 'cacophodon' && o.zone === 'battlefield');
+  assert.ok(caco, 'Cacophodon (2/5) przezyl 1 obrazenie');
+  assert.equal(caco.damage, 1, 'obrazenia odnotowane');
+  assert.equal(state.objects.get('guy').tapped, false, 'Enrage odkrecil wybrany permanent');
+});
+
+test('B2: Feed the Infection - draw 3 + lose 3 + Corrupted (poison >= 3)', () => {
+  const state = game('p1');
+  for (let i = 0; i < 8; i += 1) putCard(state, 'lib' + i, 'highland-game', 'p1', 'library');
+  const p2 = state.players.find((pl) => pl.id === 'p2');
+  p2.poison = 3;
+  const p1LifeBefore = 20;
+  const p2LifeBefore = p2.life;
+  putCard(state, 'fti', 'feed-the-infection', 'p1', 'hand');
+  addMana(state, 'p1', 4, { colors: ['B'] });
+  const cast = playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'fti');
+  assert.ok(cast, 'oferta rzutu');
+  assert.ok(execute(state, cast).ok);
+  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  const hand = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === 'p1').length;
+  assert.equal(hand, 3, 'dobre 3 karty (draw 3)');
+  assert.equal(state.players.find((pl) => pl.id === 'p1').life, p1LifeBefore - 3, 'gracz traci 3 zycia');
+  assert.equal(p2.life, p2LifeBefore - 3, 'Corrupted: przeciwnik z 3 poison traci 3 zycia');
+
+  const s2 = game('p1');
+  for (let i = 0; i < 8; i += 1) putCard(s2, 'lib' + i, 'highland-game', 'p1', 'library');
+  const foe2 = s2.players.find((pl) => pl.id === 'p2');
+  foe2.poison = 2;
+  const foeLife = foe2.life;
+  putCard(s2, 'fti', 'feed-the-infection', 'p1', 'hand');
+  addMana(s2, 'p1', 4, { colors: ['B'] });
+  execute(s2, playerView(s2, 'p1').legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'fti'));
+  execute(s2, { type: 'pass_priority', playerId: s2.turn.priorityPlayerId });
+  execute(s2, { type: 'pass_priority', playerId: s2.turn.priorityPlayerId });
+  assert.equal(foe2.life, foeLife, 'ponizej progu 3 poison - bez utraty zycia');
+});
+
+test('B3: Mosquito Guard - Reinforce 1 z reki: discard jako koszt + licznik na celu', () => {
+  const state = game('p1');
+  putCard(state, 'guy', 'highland-game', 'p1', 'battlefield');
+  putCard(state, 'guard', 'mosquito-guard', 'p1', 'hand');
+  addMana(state, 'p1', 2, { colors: ['W'] });
+  const activate = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'activate_ability' && c.objectId === 'guard' && c.targets?.[0] === 'guy');
+  assert.ok(activate, 'oferta reinforce z celem (zdolnosc karty w rece)');
+  assert.ok(execute(state, activate).ok);
+  assert.ok(!state.objects.get('guard') || state.objects.get('guard')?.zone !== 'hand', 'karta odrzucona (koszt)');
+  const grave = [...state.objects.values()].find((o) => o.cardId === 'mosquito-guard' && o.zone === 'graveyard');
+  assert.ok(grave, 'Mosquito Guard w grobie (discard)');
+  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  assert.equal((state.objects.get('guy').counters ?? {})['+1/+1'], 1, 'licznik +1/+1 na celu');
+  assert.equal(state.players.find((pl) => pl.id === 'p1').mana, 0, 'mana wydana');
+});
+
+test('B4: Enrage odpala TEZ gdy obrazenia zabija stwora (CR 603.10 looks-back)', () => {
+  const state = game('p2');
+  putCard(state, 'caco', 'cacophodon', 'p1', 'battlefield'); // 2/5
+  state.objects.set('caco', Object.freeze({ ...state.objects.get('caco'), damage: 4 })); // 1 obrażenie zabije
+  putCard(state, 'guy', 'highland-game', 'p1', 'battlefield');
+  state.objects.set('guy', Object.freeze({ ...state.objects.get('guy'), tapped: true }));
+  putCard(state, 'ants', 'release-the-ants', 'p2', 'hand');
+  addMana(state, 'p2', 2, { colors: ['R'] });
+  const cast = playerView(state, 'p2').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'ants' && c.targets?.[0] === 'caco');
+  assert.ok(cast, 'oferta dośmiertelnego obrażenia');
+  assert.ok(execute(state, cast).ok);
+  let untapSeen = false;
+  for (let i = 0; i < 12; i += 1) {
+    const pending = state.pendingTriggerTargets?.[0];
+    if (pending) {
+      untapSeen = true;
+      assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: pending.playerId, targetId: 'guy' }).ok);
+      continue;
+    }
+    if (state.zones.stack.length > 0) {
+      assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
+      continue;
+    }
+    break;
+  }
+  assert.ok(untapSeen, 'trigger Enrage odpalił mimo śmierci źródła (LKI)');
+  assert.equal(state.objects.get('guy').tapped, false, 'odkręcenie celu działa po śmierci Cacophodona');
+  const dead = [...state.objects.values()].find((o) => o.cardId === 'cacophodon' && o.zone === 'graveyard');
+  assert.ok(dead, 'Cacophodon zginął od obrażeń');
+});

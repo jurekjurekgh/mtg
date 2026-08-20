@@ -281,6 +281,8 @@ const HANDLED_TRIGGER_EVENTS = new Set([
   'you_cast_spell_targeting_permanent',
   // M114 (Chronic Flooding): „whenever enchanted land becomes tapped".
   'enchanted_permanent_tapped',
+  // M166/B (Batch 40, Cacophodon): „Whenever this creature is dealt damage".
+  'dealt_damage',
 ]);
 
 test('strażnik: każdy trigger w registry używa zdarzenia obsługiwanego przez engine', () => {

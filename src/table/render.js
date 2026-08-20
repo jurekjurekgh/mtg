@@ -162,6 +162,8 @@ export function stepLabel(turn) {
 /** M73d (B): polskie nazwy typów celów (koniec surowych slugów w opisach). */
 const TARGET_TYPE_LABELS = Object.freeze({
   creature: 'stwór', player: 'gracz', any_target: 'dowolny cel',
+  // M166/B (Cacophodon — untap target permanent).
+  permanent: 'permanent',
   artifact: 'artefakt', artifact_or_creature: 'artefakt lub stwór',
   artifact_or_enchantment: 'artefakt lub enchantment',
   artifact_or_creature_or_enchantment: 'artefakt, stwór lub enchantment',
@@ -819,6 +821,8 @@ function describeEffect(e) {
     attach_self_to_target: () => 'przypnij ten sprzęt do wybranego stwora',
     regenerate: () => 'tarcza regeneracji (przetrwa zniszczenie do końca tury)',
     each_player_loses_life_fraction: () => 'każdy gracz traci część życia (zaokrąglone w górę)',
+    // M166/B (Batch 40, Feed the Infection — Corrupted).
+    opponents_lose_life_if_poison: () => 'każdy przeciwnik z licznikami poison traci życie',
     becomes_subtype_until_end_of_turn: () => 'zmiana podtypu i utrata keyworda do końca tury',
     apply_to_each_target: () => 'ten sam efekt na każdym z celów',
     reveal_subtype_deal_damage: () => 'możesz ujawnić kartę z ręki — obrażenia przeciwnika',

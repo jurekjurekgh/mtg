@@ -313,4 +313,7 @@ export const MANA_COSTS = {
   "blade-blizzard-kitsune": "{2}{W}",
   "knockout-maneuver": "{2}{G}",
   "krotiq-nestguard": "{2}{G}",
+  "cacophodon": "{3}{G}",
+  "feed-the-infection": "{3}{B}",
+  "mosquito-guard": "{W}",
 };

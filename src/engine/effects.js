@@ -466,6 +466,9 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
     source: sourceObject.id, target: targetId, amount: dealt, combat: false,
     sourceCardId: sourceObject.cardId ?? null,
     targetCardId: targetIsPlayer ? null : (targetObject?.cardId ?? null),
+    // M166/B (Enrage): LKI celu — trigger „is dealt damage" odpala również,
+    // gdy stwór zginął w SBA tej samej komendy (CR 603.10 looks-back).
+    ...(targetIsPlayer || !targetObject ? {} : { targetLki: Object.freeze({ ...targetObject }) }),
   }));
   if (dealt <= 0) return 0;
   if (effectiveKeywords(sourceObject, state).includes('infect')) {
@@ -1007,6 +1010,20 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       sourceId: sourceObject.id, cardId: sourceObject.cardId,
       numerator, denominator,
     }));
+    return;
+  }
+  if (effect.type === 'opponents_lose_life_if_poison') {
+    // M166/B (Feed the Infection, Corrupted — ONE): „Each opponent who has
+    // three or more poison counters loses 3 life." Warunek rozstrzygany
+    // PER PRZECIWNIK na rozpatrywaniu efektu (poison jest w stanie gry —
+    // M157/F). Utrata życia, nie obrażenia (nie da się zapobiec).
+    const min = effect.min ?? 3;
+    const amount = effect.amount ?? 3;
+    for (const player of state.players) {
+      if (player.id === sourceObject.controllerId) continue;
+      if ((player.poison ?? 0) < min) continue;
+      changeLife(state, player.id, -amount);
+    }
     return;
   }
   if (effect.type === 'becomes_subtype_until_end_of_turn') {

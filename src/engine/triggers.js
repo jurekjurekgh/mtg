@@ -417,6 +417,17 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
         && object.id !== sourceObject.id;
     });
   }
+  // M166/B (Cacophodon — Enrage): „untap target permanent" — dowolny
+  // permanent na polu bitwy (również ląd i samo źródło), bez hexproof,
+  // najcenniejszy pierwszy (determinizm).
+  if (spec.type === 'permanent') {
+    return state.zones.battlefield
+      .filter((objectId) => {
+        const object = state.objects.get(objectId);
+        return object && object.zone === 'battlefield' && !hexproofBlocked(object);
+      })
+      .sort((a, b) => targetValue(state.objects.get(b)) - targetValue(state.objects.get(a)));
+  }
   if (spec.type === 'artifact_or_creature') {
     return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
@@ -1005,6 +1016,10 @@ function queueTargetDecision(state, ability, source, candidates, allowNone, fixe
     playerId: controllerId,
     sourceId: source.id,
     cardId: source.cardId,
+    // M166/B (Enrage, CR 603.10): źródło może już nie żyć pod swoim id
+    // (zginęło w SBA tej samej komendy, co odpaliło trigger). LKI pozwala
+    // dokończyć decyzję celu i rozstrzygnąć trigger z umarłego źródła.
+    sourceLki: state.objects.has(source.id) ? null : Object.freeze({ ...source }),
     ability: Object.freeze({ ...ability }),
     candidates: [...candidates],
     allowNone: Boolean(allowNone),
@@ -1049,7 +1064,9 @@ function triggerSourceZoneLegal(source, triggerEvent) {
 }
 
 export function triggerTargetDecisionPending(state, pending) {
-  const source = state.objects.get(pending.sourceId);
+  // M166/B: źródło umarłe (Enrage) — LKI z pendingu; zone ze snapshotu
+  // (moment zdarzenia), więc prawa „leaves the battlefield" nie odcinają.
+  const source = state.objects.get(pending.sourceId) ?? pending.sourceLki ?? null;
   if (!triggerSourceZoneLegal(source, pending.ability?.trigger?.event)) return false;
   // Warunek zależny od ZDARZENIA (Batch 24 — Mystic Sanctuary „enters
   // untapped", spellColorsInclude itd.) musi być przeliczany z kontekstem
@@ -1074,7 +1091,8 @@ export function triggerConditionHolds(state, ability, source, extra = {}) {
 
 /** Legalni kandydaci decyzji celu triggera w chwili rozstrzygania. */
 export function legalTriggerTargetCandidates(state, pending) {
-  const source = state.objects.get(pending.sourceId);
+  // M166/B (Enrage): źródło umarłe — LKI z pendingu (CR 603.10).
+  const source = state.objects.get(pending.sourceId) ?? pending.sourceLki ?? null;
   if (!triggerSourceZoneLegal(source, pending.ability?.trigger?.event)) return [];
   const spec = pending.specOverride ?? pending.ability?.trigger?.requiresTarget;
   return triggerTargetCandidates(state, spec, source, pending.extra);
@@ -1465,6 +1483,27 @@ export function processTriggers(state, recentEvents) {
         for (const ability of effectiveAbilities(exploiter)) {
           if (ability?.trigger?.event === 'exploits') {
             tryFire(state, ability, exploiter, [], events, { exploitedId: ev.exploitedId });
+          }
+        }
+      }
+    }
+    // M166/B (Enrage, RIX — Cacophodon): „Whenever this creature is dealt
+    // damage" — dowolne obrażenia STWORA (combat i niecombat; amount > 0,
+    // CR 119.3 — w pełni zapobiegnięte nie odpala). Obiekt szukany po id
+    // ze zdarzenia; jeśli zginął w tej samej komendzie, odczyt LKI nie jest
+    // jeszcze prowadzony w payloadzie damage_dealt (uproszczenie jak przy
+    // Curiosity — patrz komentarz wyżej); trigger działa dla stwora, który
+    // obrażenia PRZEŻYŁ (2/5 Cacophodon w typowym scenariuszu).
+    if (ev.type === 'damage_dealt' && ev.amount > 0 && !isPlayerId(state, ev.target)) {
+      // Obiekt na polu bitwy ALBO LKI ze zdarzenia (stwór zginął w SBA tej
+      // samej komendy — trigger „looks back", CR 603.10). Zdolności czytamy
+      // z LKI; efekty celują niezależnie (źródło triggera nie musi żyć).
+      const victim = state.objects.get(ev.target) ?? ev.targetLki ?? null;
+      if (victim && victim.kind === 'creature'
+        && (state.objects.get(ev.target)?.zone === 'battlefield' || ev.targetLki)) {
+        for (const ability of effectiveAbilities(victim)) {
+          if (ability?.trigger?.event === 'dealt_damage') {
+            tryFire(state, ability, victim, [], events, { damageAmount: ev.amount, damageSourceId: ev.source });
           }
         }
       }

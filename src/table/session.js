@@ -258,6 +258,8 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   // card-data.js go nie widział, a w logu gracza świeciło „trigger (delayed)".
   delayed: 'opóźniony trigger',
   enchanted_permanent_tapped: 'zatapnięcie zaczarowanego permanentu',
+  // M166/B (Batch 40, Cacophodon): Enrage.
+  dealt_damage: 'otrzymanie obrażeń',
   you_cast_spell_targeting_permanent: 'rzucenie czaru celującego w permanent',
 });
 

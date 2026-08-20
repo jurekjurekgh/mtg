@@ -592,6 +592,9 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
       const damage = event('damage_dealt', {
         source: blockerId, target: attackerId, amount: blockerDealt, combat: true,
         sourceCardId: blocker.cardId, targetCardId: attacker.cardId,
+        // M166/B (Enrage): LKI celu — trigger „is dealt damage" odpala też,
+        // gdy stwór zginął w SBA tej samej komendy (CR 603.10 looks-back).
+        targetLki: Object.freeze({ ...attacker }),
       });
       state.events.push(damage); events.push(damage);
     }
@@ -667,6 +670,8 @@ function assignDamageToBlockers(state, events, attacker, attackerId, blockers, a
     const damage = event('damage_dealt', {
       source: attackerId, target: blockerId, amount: dealt, combat: true,
       sourceCardId: attacker.cardId, targetCardId: blocker.cardId,
+      // M166/B (Enrage): LKI celu — patrz ścieżka blokera wyżej.
+      targetLki: Object.freeze({ ...blocker }),
     });
     state.events.push(damage); events.push(damage);
   }

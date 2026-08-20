@@ -76,7 +76,7 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   return base;
 }
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, forecast = false, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, landwalk = null, onNthResolve = null }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, forecast = false, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, landwalk = null, onNthResolve = null }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -147,6 +147,9 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     costModifier: costModifier ? Object.freeze({ ...costModifier }) : null,
     costReduction: costReduction ? Object.freeze({ ...costReduction }) : null,
     channel: channel ? Object.freeze({ ...channel }) : null,
+    // M166/B (Reinforce, CR 702.29a): zdolność karty w RĘCE — koszt mana +
+    // odrzucenie karty; efekt: liczniki +1/+1 na celu stworze.
+    reinforce: reinforce ? Object.freeze({ ...reinforce }) : null,
     // Forecast (CR 702.94, Piercing Rays): „[koszt], Reveal this card from
     // your hand: [efekt]. Activate only during your upkeep and only once each
     // turn." Zdolność aktywowana z RĘKI; karta zostaje w ręce (ujawniona).
@@ -730,6 +733,29 @@ export function legalActivatedAbilities(state, playerId) {
       out.push({ objectId: id, abilityIndex: index, ability });
     }
   }
+  // Reinforce (CR 702.29a, Mosquito Guard) — zdolność karty w RĘCE,
+  // dowolny moment z priorytetem (jak cycling); koszt mana + DISCARD;
+  // efekt celuje w stwora (enumeracja celów jak forecast, L48).
+  for (const id of state.zones.hand) {
+    const object = state.objects.get(id);
+    if (object?.controllerId !== playerId) continue;
+    for (let index = 0; index < (object.abilities ?? []).length; index += 1) {
+      const ability = object.abilities[index];
+      if (ability?.type !== ABILITY_TYPE.activated || !ability.reinforce) continue;
+      const effManaReinforce = effectiveAbilityManaCost(state, playerId, ability, object);
+      if (effManaReinforce > baseMana) continue;
+      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+      const targetSpec = ability.targets ?? [];
+      if (targetSpec.length === 0) {
+        out.push({ objectId: id, abilityIndex: index, ability });
+        continue;
+      }
+      const candidates = legalTargetCandidates(state, playerId, targetSpec[0], object);
+      for (const targetId of candidates) {
+        out.push({ objectId: id, abilityIndex: index, ability, targets: [targetId] });
+      }
+    }
+  }
   // Forecast (CR 702.94, Piercing Rays) — zdolność z RĘKI, tylko w swoim
   // upkeepie, raz na turę. Karta zostaje w ręce (koszt to UJAWNIENIE).
   if (state.turn?.step === 'upkeep' && state.turn.activePlayerId === playerId) {
@@ -829,6 +855,9 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   }
   if (ability.channel) {
     return activateChannel(state, playerId, object, abilityIndex, ability);
+  }
+  if (ability.reinforce) {
+    return activateReinforce(state, playerId, object, abilityIndex, ability, targets);
   }
   if (ability.forecast) {
     return activateForecast(state, playerId, object, abilityIndex, ability, targets);
@@ -1344,6 +1373,51 @@ function activateCycling(state, playerId, cardObject, abilityIndex, ability) {
     eventExtra: { cycling: true },
   });
 }
+/**
+ * M166/B (Reinforce, CR 702.29a, Mosquito Guard): „{1}{W}, Discard this
+ * card: Put a +1/+1 counter on target creature." Zdolność karty w RĘCE:
+ * koszt = mana + ODRZUCENIE karty (przed wejściem zdolności na stos,
+ * CR 117.11/601.2h jak cycling), efekt przez stos z wybranym celem —
+ * przeciwnik może odpowiedzieć (cel może zniknąć → efekt fizzluje).
+ */
+function activateReinforce(state, playerId, cardObject, abilityIndex, ability, targets) {
+  if (cardObject.zone !== 'hand') throw new Error('Reinforce aktywuje się z ręki');
+  const reinforceReqs = colorRequirementsOf(ability.cost);
+  if (reinforceReqs.length > 0 && !canPayColoredCost(state, playerId, reinforceReqs)) {
+    throw new Error('Brak kolorowego źródła many na reinforce');
+  }
+  const effMana = effectiveAbilityManaCost(state, playerId, ability, cardObject);
+  spendMana(state, playerId, effMana, reinforceReqs);
+  // Odrzucenie karty to KOSZT (przed stosem) — karta do grobu.
+  const graveId = `grave-${state.objectSequence++}`;
+  const discarded = moveObjectDirectly(state, cardObject.id, 'graveyard', graveId);
+  state.events.push(event('card_discarded', {
+    playerId, fromId: cardObject.id, objectId: graveId, cardId: discarded.cardId,
+    cost: true, reinforce: true,
+  }));
+  // Kopia zdolności do kolejki (źródło poleci do grobu — licznik celuje dalej).
+  const reinforceAbility = Object.freeze({
+    type: 'activated',
+    reinforce: Object.freeze({ ...ability.reinforce }),
+    effect: Array.isArray(ability.effect) ? Object.freeze(ability.effect.map((e) => Object.freeze({ ...e }))) : Object.freeze({ ...ability.effect }),
+    targets: ability.targets ? Object.freeze(ability.targets.map((t) => Object.freeze({ ...t }))) : null,
+    cost: Object.freeze({ mana: effMana, colors: Object.freeze([...(ability.cost?.colors ?? [])]) }),
+  });
+  let chosenTargets = [];
+  const targetSpec = ability.targets ?? [];
+  if (targetSpec.length > 0) {
+    if (!Array.isArray(targets) || targets.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów reinforce');
+    chosenTargets = validateTargets(state, targetSpec, targets, playerId, cardObject.colors ?? [], cardObject).map((e) => e.id);
+  }
+  return queueActivatedAbilityToStack(state, {
+    playerId, objectId: cardObject.id, abilityIndex,
+    ability: reinforceAbility,
+    effectSourceId: graveId,
+    effectTargets: chosenTargets,
+    eventExtra: { reinforce: true },
+  });
+}
+
 function activateChannel(state, playerId, cardObject, abilityIndex, ability) {
   if (cardObject.zone !== 'hand') throw new Error('Channel aktywuje się z ręki');
   const channelReqs = colorRequirementsOf(ability.cost);
