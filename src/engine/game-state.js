@@ -5255,6 +5255,13 @@ export function playerView(state, playerId) {
     pendingLookTopN: pendingLookTopNView,
     pendingEpicExperiment: pendingEpicExperimentView,
     pendingModalTrigger: pendingModalTriggerView, pendingProliferate: pendingProliferateView,
+    // M162/C (uwaga właściciela): Chittering Rats — tytuł modala
+    // resolve_hand_top_choice nazywa ŹRÓDŁO decyzji. sourceCardId to karta
+    // na polu bitwy (informacja publiczna); wystawiamy TYLKO właścicielowi
+    // decyzji (precedens pendingTriggerTarget — uwagi B/C 2026-08-10).
+    pendingHandTopChoice: activeHandTopChoice
+      ? { sourceCardId: state.pendingHandTopChoice.sourceCardId ?? null }
+      : null,
     // Cel triggera (resolve_trigger_target): nazwa źródła musi trafić do UI
     // (uwagi B/C właściciela 2026-08-10 — opcje modala bez nazwy karty).
     pendingTriggerTarget: (() => {

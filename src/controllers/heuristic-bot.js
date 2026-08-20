@@ -1039,6 +1039,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             else if (millsSelf) score -= 50;
             else if (millsFoe) score += 20 + 3 * (effect.amount ?? 1);
           }
+          // M162/B (uwaga właściciela): symetryczny mill (Ghoulcaller's Bell —
+          // „each player mills") — wycena WYŚCIGU bibliotek. Bez tej gałęzi
+          // efekt nie miał ŻADNEJ wyceny, więc aktywacja {T} warta bazowe +2
+          // wygrywała z passem i bot dzwonił CO TURĘ także przegrywając wyścig
+          // o karty (deck-out). Reguła: symetryczny mill opłaca się tylko
+          // PROWADZĄC w kartach. Liczniki bibliotek są w PlayerView (ADR 0017).
+          if (effect.type === 'mill_both_players') {
+            const n = effect.amount ?? 1;
+            const myLib = view.zones.library.filter((o) => o.controllerId === view.playerId).length;
+            const foeLib = view.zones.library.filter((o) => o.controllerId !== view.playerId).length;
+            if (myLib - n <= 0) score -= 120; // milduję własną ostatnią kartę — samobójstwo
+            else if (foeLib - n <= 0) score += 80; // przeciwnik dobiera z pustej = wygrana
+            else if (myLib <= foeLib) score -= 40; // nie prowadzę — dzwonienie szkodzi bardziej mnie
+            else score += 6 + Math.min(10, myLib - foeLib); // prowadzę: mały zysk rosnący z przewagą
+          }
           // M149/D (uwaga właściciela): „target player sacrifices a creature"
           // (Grave Exchange, Liliana's Triumph) — cel to GRACZ. Gdy celujemy
           // w SIEBIE, to MY poświęcamy własnego stwora (strata); w przeciwnika —
@@ -1395,6 +1410,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               const amount = effect.amount ?? 0;
               score += hitsSelf ? -30 - 2 * amount : 10 + 3 * amount;
             }
+          }
+          // M162/B (uwaga właściciela, Ghoulcaller's Bell): symetryczny mill
+          // bez celu („each player mills") — ta sama wycena wyścigu bibliotek
+          // co w gałęzi cast_spell (L41: bliźniacze gałęzie trzymamy razem).
+          if (effect.type === 'mill_both_players') {
+            const n = effect.amount ?? 1;
+            const myLib = view.zones.library.filter((o) => o.controllerId === view.playerId).length;
+            const foeLib = view.zones.library.filter((o) => o.controllerId !== view.playerId).length;
+            if (myLib - n <= 0) score -= 120; // milduję własną ostatnią kartę — samobójstwo
+            else if (foeLib - n <= 0) score += 80; // przeciwnik dobiera z pustej = wygrana
+            else if (myLib <= foeLib) score -= 40; // nie prowadzę — dzwonienie szkodzi bardziej mnie
+            else score += 6 + Math.min(10, myLib - foeLib); // prowadzę: mały zysk rosnący z przewagą
           }
           if (effect.type === 'station_counters') {
             // Station (Wedgelight Rammer / Warmaker Gunship): cenne tylko do

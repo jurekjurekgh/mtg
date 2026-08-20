@@ -1331,6 +1331,12 @@ function choiceSourceTitle(cmd, session, view) {
   if (cmd?.type === 'resolve_modal_choice' && view?.pendingModalTrigger?.cardId) {
     return `${session.nameOf(view.pendingModalTrigger.cardId)} — wybór trybu`;
   }
+  // M162/C (uwaga właściciela): Chittering Rats — źródło decyzji „karta z
+  // ręki na wierzch biblioteki" w tytule modala (sourceCardId z pendingu,
+  // wystawiony w playerView wyłącznie właścicielowi decyzji).
+  if (cmd?.type === 'resolve_hand_top_choice' && view?.pendingHandTopChoice?.sourceCardId) {
+    return `${session.nameOf(view.pendingHandTopChoice.sourceCardId)} — karta z ręki na wierzch biblioteki`;
+  }
   if (!cmd || cmd.objectId == null) return null;
   const zones = ['hand', 'battlefield', 'stack', 'graveyard', 'library'];
   let object = null;
@@ -1949,6 +1955,14 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_look_top_choice': {
       // Gurmag Drowner — wybierz kartę z wierzchu do ręki.
       return `Weź do ręki: ${nameOfObjectId(cmd.cardId)}`;
+    }
+    case 'resolve_hand_top_choice': {
+      // M162/C (uwaga właściciela): Chittering Rats u bota otwierał modal
+      // „Karta z ręki na wierzch (1 z 5)…" — ten case w ogóle nie istniał,
+      // więc etykieta spadała do słownikowej i choice-request numerował
+      // identyczne wpisy. Ręka WYBIERAJĄCEGO jest dla niego jawna (FoW),
+      // więc etykieta nazywa KARTĘ (wzorzec resolve_graveyard_top_choice).
+      return `Karta z ręki na wierzch biblioteki: ${nameOfObjectId(cmd.cardId)}`;
     }
     case 'resolve_madness_cast': {
       // M159/F4 (audyt PR #66): oferta niesie objectId (karta w exile —
