@@ -392,6 +392,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     ['damage_from_target_power', 60],
     ['destroy_permanent', 90],
     ['destroy_if_least_power', 90],
+    // M156/F2 (audyt PR #65, Divine Offering): niszczenie artefaktu z riderem
+    // życia to nadal usunięcie permanentu — bez wpisu remis wariantów = baza
+    // 50 i bot rzucał czar we WŁASNY artefakt-źródło many (klasa L50/M147-F1).
+    ['destroy_artifact_gain_life_mana_value', 90],
     ['exile_permanent', 90],
     ['exile_target_creature', 90],
     ['exile_all', 40],
@@ -886,6 +890,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // PRZECIWNIKA — zysk skalowany jego wartością.
           const REMOVAL_EFFECTS = new Set([
             'destroy_permanent', 'destroy_if_least_power',
+            'destroy_artifact_gain_life_mana_value',
             'exile_permanent', 'exile_target_creature',
             'bounce_permanent', 'bounce_to_library_top',
           ]);

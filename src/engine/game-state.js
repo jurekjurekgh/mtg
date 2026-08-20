@@ -60,9 +60,14 @@ function commandIdentityKey(cmd) {
  */
 const HOSTILE_TRIGGER_TARGET_EFFECTS = new Set([
   'damage', 'damage_from_target_power', 'destroy_permanent', 'destroy_if_least_power',
+  'destroy_artifact_gain_life_mana_value',
   'exile_permanent', 'exile_target_creature', 'bounce_permanent', 'bounce_to_library_top',
   'sacrifice_permanent', 'player_sacrifices_creature', 'tap_permanent', 'shrink', 'pump_negative',
 ]);
+// Keywordy SZKODLIWE dla obdarowanego (nadanie ich wrogowi to zysk, nie strata).
+// W katalogu dziś nie występują, ale klasyfikacja „każdy grant = przyjazny"
+// bez tego zbioru byłaby pułapką przy pierwszej karcie typu „gains defender".
+const HOSTILE_GRANTED_KEYWORDS = new Set(['defender', 'cant_block', 'cant_attack']);
 export function triggerTargetEffectFriendly(ability) {
   const effs = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
   if (effs.length === 0) return false;
@@ -72,7 +77,12 @@ export function triggerTargetEffectFriendly(ability) {
   return effs.some((e) =>
     (e?.type === 'pump' && (e.power ?? 0) >= 0 && (e.toughness ?? 0) >= 0
       && (e.power ?? 0) + (e.toughness ?? 0) > 0)
-    || (e?.type === 'add_counter' && typeof e.counter === 'string' && e.counter.startsWith('+')));
+    || (e?.type === 'add_counter' && typeof e.counter === 'string' && e.counter.startsWith('+'))
+    // M156/F1 (Lotusguard Disciple): nadanie keywordów do końca tury jest
+    // przyjazne dla obdarowanego (lifelink, indestructible, flying...) — bez
+    // tej gałęzi friendly=false i bot obdarowywał NAJLEPSZEGO stwora wroga.
+    || (e?.type === 'grant_keywords_until_end_of_turn' && (e.keywords ?? []).length > 0
+      && !(e.keywords ?? []).some((k) => HOSTILE_GRANTED_KEYWORDS.has(k))));
 }
 
 // Re-eksport niskopoziomowych API dla kompatybilności istniejących konsumentów.

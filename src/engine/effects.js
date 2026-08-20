@@ -1981,15 +1981,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const manaValue = object.manaCost ?? 0;
     // Niszcz (CR 701.7) — reużycie logicznej części destroy_permanent przez
     // ponowne wywołanie efektu (niszczy i emituje zdarzenia); potem zysk życia.
-    const before = state.events.length;
     applyEffect(state, { type: 'destroy_permanent' }, sourceObject, [targetId]);
-    const destroyed = state.events.slice(before).some((e) => e.type === 'permanent_destroyed'
-      || e.type === 'object_moved');
-    // Zysk życia równy mana value TYLKO, gdy artefakt faktycznie zniszczono
-    // (nie-indestructible, bez tarczy/regeneracji). W innym razie „you gain life
-    // equal to its mana value" nie następuje (CR: efekty sekwencyjne).
-    // changeLife samo emituje life_changed — nie dublujemy zdarzenia.
-    if (destroyed && manaValue > 0) {
+    // M156/F3 (audyt PR #65): „Destroy target artifact. You gain life equal to
+    // its mana value." to DWIE sekwencyjne instrukcje (CR 608.2c) — zysk życia
+    // NIE zależy od powodzenia zniszczenia. Indestructible/regeneracja/tarcza
+    // blokują wyłącznie pierwsze zdanie; mana value bierzemy z chwili przed
+    // próbą zniszczenia (LKI, CR 400.7). changeLife samo emituje life_changed.
+    if (manaValue > 0) {
       changeLife(state, sourceObject.controllerId, manaValue);
     }
     return;
