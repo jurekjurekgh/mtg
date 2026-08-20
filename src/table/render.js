@@ -620,6 +620,10 @@ const KEYWORD_LABELS = Object.freeze({
 });
 
 // A (2026-08-11): czytelne nazwy liczników pokazywanych na kartach na stole.
+// M164: cyfry rzymskie rozdziałów Sagi — wspólny słownik dla rulesText
+// (M159/Z4) i badge'u etapu na nakładce kafla (pytanie właściciela 2026-08-20).
+const SAGA_ROMAN = ['I', 'II', 'III', 'IV', 'V'];
+
 const COUNTER_LABELS = Object.freeze({
   '+1/+1': '+1/+1', '-1/-1': '-1/-1', oil: 'oil', charge: 'charge', lore: 'lore',
   // Diament cz.2: znaczniki-liczniki zdolności po polsku (było surowe
@@ -1242,7 +1246,7 @@ export function rulesText(info) {
   // opis aury M100/E10 i M138/Z9). Opisujemy je z deskryptorów (ADR 0002).
   const sagaLine = info.saga?.chapters?.length
     ? `Saga — ${info.saga.chapters.map((chapter, index) => {
-      const roman = ['I', 'II', 'III', 'IV'][index] ?? String(index + 1);
+      const roman = SAGA_ROMAN[index] ?? String(index + 1);
       const chapterParts = (Array.isArray(chapter) ? chapter : [chapter])
         .filter((e) => e && typeof e.type === 'string').map(describeEffect).filter(Boolean).join(', ');
       return `${roman}: ${chapterParts || '?'}`;
@@ -2498,8 +2502,22 @@ export function buildStateOverlay(visual, info) {
     if (info.damage > 0) flags.push(['dmg', `−${info.damage}`]);
     if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push(['sick', 'choroba']);
     // A (2026-08-11): liczniki na nakładce ilustracji.
+    // M164: licznik `lore` Sagi pokazujemy WYŁĄCZNIE w badge etapu poniżej
+    // (bez dublowania „lore×N" + „Rozdział II (2/3)").
     for (const [name, count] of Object.entries(info.counters ?? {})) {
-      if (count > 0) flags.push(['counter', `${COUNTER_LABELS[name] ?? name}×${count}`]);
+      if (count > 0 && !(name === 'lore' && info.saga?.chapters?.length)) {
+        flags.push(['counter', `${COUNTER_LABELS[name] ?? name}×${count}`]);
+      }
+    }
+    // M164 (pytanie właściciela 2026-08-20): ETAP Sagi jako badge tekstowy —
+    // analogia do aur/equipmentów/liczników. Dotąd jedynym znacznikiem postępu
+    // był generyczny licznik „lore×N"; badge nazywa AKTYWNY rozdział
+    // (licznik lore = numer rozdziału, CR 714.3).
+    if (info.saga?.chapters?.length) {
+      const total = info.saga.chapters.length;
+      const lore = info.counters?.lore ?? 0;
+      const roman = SAGA_ROMAN[lore - 1] ?? String(lore);
+      flags.push(['saga', lore > 0 ? `Rozdział ${roman} (${lore}/${total})` : `Saga — ${total} rozdz.`]);
     }
     // F (2026-08-11): przypięte aury/equipmenty na nakładce gospodarza.
     for (const att of info.attachments ?? []) {
