@@ -42,7 +42,27 @@ nowych+starych efektów są rozstrzygane dobrze, czy bot gra efektywnie.
 
 1. Plan audytu + rozpoznanie.
 2. Partia 1–N (transkrypty w tools/table-tester/audyt-*batch38*).
-3. Zbiór 10 znalezisk → mini-roadmapa napraw.
-4. Naprawy (inkrementalne commity, każdy zielony).
+3. Zbiór 10 znalezisk → mini-roadmapa napraw (AUDYT_BATCH38_ZYWTESTER).
+4. Naprawy (inkrementalne commity, każdy zielony):
+   - Z1/Z2 (log): targetCardId w delirium damage_dealt; polishPluralCount w logu.
+   - Z5 (ui): kolejność trybów modalnych.
+   - Z7 (ui): nazwa tokenu zamiast raw id.
+   - Z6 (tester): obsługa „Rzuć za warp:".
+   - Z8 (engine): no-op self-tap oferta.
+   - Z3/Z4/Z9/Z10 (bot): add_counter własny stwór; damage_each_opponent
+     w pętli czaru; brak ataku 0/1 bez evasion; gain_life rider Pristine.
 5. Nowe detektory Testera (jeśli wyjdą z logów).
 6. Raport audytu docs/audits/ + opis PR.
+
+## Znaleziska (10) — docs/audits/AUDYT_BATCH38_ZYWTESTER_2026-08-20.md
+
+- Z1 [log] Fear of Burning Alive „(?)" — brak targetCardId w delirium damage_dealt
+- Z2 [log] „4 liczników czasu" — sztywna odmiana (session.js:788)
+- Z3 [bot] Courage in Crisis buforuje stwora przeciwnika (add_counter)
+- Z4 [bot] Ruinous Rampage zły tryb (damage_each_opponent w pętli czaru)
+- Z5 [ui] odwrócona kolejność trybów modalnych (unshift)
+- Z6 [tester] warp „Rzuć za warp:" nie łapane przez pickAction
+- Z7 [ui] nazwa tokenu = raw id (token_squirrel/token_wizard)
+- Z8 [engine] Sterling Keykeeper no-op self-tap
+- Z9 [bot] atak 0/1 tokenem Wizard
+- Z10 [bot] Pristine Talisman darmowe życie ignorowane

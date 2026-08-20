@@ -1,0 +1,430 @@
+== NOWA PARTIA: gracz=wiedzmin vs bot=green, seed=93, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Island (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Fertile Thicket (wchodzi zatapnięty)
+  [ROZGRYWKA]   • Fertile Thicket — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Fertile Thicket — trigger się rozstrzyga
+  [ROZGRYWKA]   • Fertile Thicket: Nieprzyjaciel kładzie wybranego landa na wierzch, resztę na spód
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Village Rites
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Satyr Wayfinder
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Satyr Wayfinder wchodzi na pole bitwy
+  [ROZGRYWKA]   • Satyr Wayfinder zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Satyr Wayfinder — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Satyr Wayfinder — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel: Grizzled Outcasts — biblioteka → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel: Springbloom Druid — biblioteka → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel: Altar of the Goyf — biblioteka → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel: Circle of the Land Druid — biblioteka → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel bierze żadnego lądu z wierzchu do ręki (reszta do grobu)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Zagraj: Barkform Harvester (koszt 3)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Barkform Harvester
+  [ROZGRYWKA]   • Barkform Harvester wchodzi na pole bitwy
+  [ROZGRYWKA]   • Barkform Harvester zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Silken Strength → cel: Satyr Wayfinder
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Silken Strength zaczarowuje Satyr Wayfinder
+  [ROZGRYWKA]   • Silken Strength wchodzi na pole bitwy
+  [ROZGRYWKA]   • Silken Strength — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Silken Strength — trigger bez efektu (nic się nie wydarzyło (zerowy wynik))
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Dawntreader Elk
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Zagraj: Dawntreader Elk (koszt 1G)
+  [kreator many] Płatność 1G — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: GTapnij: Island (U)Tapnij: Island (U)Tapnij:  — źródła: 4
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Dawntreader Elk
+  [ROZGRYWKA]   • Dawntreader Elk wchodzi na pole bitwy
+  [ROZGRYWKA]   • Dawntreader Elk zostaje rozstrzygnięty
+  >> Zagraj: Highland Game (koszt 1G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Highland Game
+  [ROZGRYWKA]   • Highland Game wchodzi na pole bitwy
+  [ROZGRYWKA]   • Highland Game zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Barkform Harvester
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Satyr Wayfinder blokuje Barkform Harvester
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Barkform Harvester zadaje 2 obrażenia (Satyr Wayfinder)
+  [ROZGRYWKA]   • Satyr Wayfinder zadaje 2 obrażenia (Barkform Harvester)
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Courage in Crisis → cel: Highland Game
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Highland Game dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Highland Game dostaje +1 licznik +1/+1 (razem 2)
+  [ROZGRYWKA]   • Proliferate: 1 cel dostaje dodatkowe liczniki
+  [ROZGRYWKA]   • Courage in Crisis zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 9 — Ty
+  >> Aktywuj: Dawntreader Elk (Ty) (koszt G, poświęć) — szukaj w bibliotece na pole bitwy
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Dawntreader Elk — szukanie karty w bibliotece na pole bitwy
+  >> Aktywuj: Barkform Harvester (Ty) (koszt 2) — karta z grobu na spód biblioteki → cel: Dawntreader Elk
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Barkform Harvester → cel: Dawntreader Elk
+  [ROZGRYWKA]   • Ty: Dawntreader Elk — cmentarz → biblioteka
+  [ROZGRYWKA]   • Ty: zdolność Barkform Harvester rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Szukasz karty w bibliotece (Dawntreader Elk) — wybiera, którą wziąć na pole bitwy albo rezygnuje
+  [ROZGRYWKA]   • Ty: zdolność Dawntreader Elk rozstrzygnięta
+  >> Wybierz: Szukanie w bibliotece (4 opcje)
+  [modal choice] Wybierz: Szukanie w bibliotece Szukanie — nie znajduj karty (rezygnuję) Szukanie: Swamp Szukanie: Forest Szukanie: Island
+  [modal choice]     Szukanie — nie znajduj karty (rezygnuję)
+  [modal choice]   ▶ Szukanie: Swamp
+  [modal choice]     Szukanie: Forest
+  [modal choice]     Szukanie: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odsłaniasz Swamp
+  [ROZGRYWKA]   • Ty: Swamp — biblioteka → pole bitwy
+  [ROZGRYWKA]   • Swamp wchodzi na pole bitwy
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Barkform Harvester, Highland Game
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Satyr Wayfinder blokuje Barkform Harvester
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Barkform Harvester zadaje 2 obrażenia (Satyr Wayfinder)
+  [ROZGRYWKA]   • Satyr Wayfinder zadaje 2 obrażenia (Barkform Harvester)
+  [ROZGRYWKA]   • Highland Game zadaje 4 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 16
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Morph twarzą w dół (2/2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Morph wchodzi na pole bitwy
+  [ROZGRYWKA]   • Morph zostaje rozstrzygnięty (twarzą w dół)
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Tumbleweed Rising
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Elemental (2/2)
+  [ROZGRYWKA]   • Elemental wchodzi na pole bitwy
+  [ROZGRYWKA]   • Tumbleweed Rising zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Satyr Wayfinder
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Satyr Wayfinder zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 18
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Dalej (pass)
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Zagraj: Delta Bloodflies (koszt 1B)
+  [kreator many] Płatność 1B — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: BTapnij: Island (U)Tapnij: Island (U)Tapnij:  — źródła: 7
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Delta Bloodflies
+  [ROZGRYWKA]   • Delta Bloodflies wchodzi na pole bitwy
+  [ROZGRYWKA]   • Delta Bloodflies zostaje rozstrzygnięty
+  >> Zagraj: Jill, Shiva's Dominant (koszt 2U)
+  [kreator many] Płatność 2U — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: UTapnij: Island (U)Tapnij: Forest (G)Tapnij:  — źródła: 5
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Jill, Shiva's Dominant
+  [ROZGRYWKA]   • Jill, Shiva's Dominant wchodzi na pole bitwy
+  [ROZGRYWKA]   • Jill, Shiva's Dominant zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Jill, Shiva's Dominant — wybierz inny permanent do zwrotu na rękę (można odmówić)
+  >> Jill, Shiva's Dominant — cel triggera (8 opcji)
+  [modal choice] Jill, Shiva's Dominant — cel triggera Jill, Shiva's Dominant — zwróć do ręki: Morph (Nieprzyjaciel) Jill, Shiva's Dominant — zwróć do ręki: Barkform Harvester (Ty) Jill, Shiva's Dominant — zwróć do ręki: Elemental (Nieprzyjaciel) Jill, Shiva's Dominant — zwróć do ręki: Highland Game (Ty) Jill, Shiva's Dominant — zwróć do ręki: Delta Bloodflies (Ty) Jill, Shiva's Dominant — zwróć do ręki: Satyr Wayfinder (Nieprzyjaciel) Jill, Shiva's Dominant — zwróć do ręki: Silken Strength (Nieprzyjaciel) Jill, Shiva's Dominant — nie zwracaj niczego (odmowa)
+  [modal choice]   ▶ Jill, Shiva's Dominant — zwróć do ręki: Morph (Nieprzyjaciel)
+  [modal choice]     Jill, Shiva's Dominant — zwróć do ręki: Barkform Harvester (Ty)
+  [modal choice]     Jill, Shiva's Dominant — zwróć do ręki: Elemental (Nieprzyjaciel)
+  [modal choice]     Jill, Shiva's Dominant — zwróć do ręki: Highland Game (Ty)
+  [modal choice]     Jill, Shiva's Dominant — zwróć do ręki: Delta Bloodflies (Ty)
+  [modal choice]     Jill, Shiva's Dominant — zwróć do ręki: Satyr Wayfinder (Nieprzyjaciel)
+  [modal choice]     Jill, Shiva's Dominant — zwróć do ręki: Silken Strength (Nieprzyjaciel)
+  [modal choice]     Jill, Shiva's Dominant — nie zwracaj niczego (odmowa)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Jill, Shiva's Dominant — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Jill, Shiva's Dominant — cel: Morph
+  [ROZGRYWKA]   • Nieprzyjaciel: Segmented Krotiq — pole bitwy → ręka
+  [ROZGRYWKA]   • Jill, Shiva's Dominant — trigger się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Barkform Harvester, Highland Game
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Barkform Harvester zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 16 → 14
+  [ROZGRYWKA]   • Highland Game zadaje 4 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 14 → 10
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Segmented Krotiq
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Segmented Krotiq wchodzi na pole bitwy
+  [ROZGRYWKA]   • Segmented Krotiq zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Colossodon Yearling
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Colossodon Yearling wchodzi na pole bitwy
+  [ROZGRYWKA]   • Colossodon Yearling zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Satyr Wayfinder, Elemental
+  >> Wybierz: Deklaracja blokujących (9 opcji)
+  [combat wizard] blokuję 1 stworami: Delta Bloodflies (1/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Delta Bloodflies blokuje Elemental
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Satyr Wayfinder zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 16
+  [ROZGRYWKA]   • Elemental zadaje 2 obrażenia (Delta Bloodflies)
+  [ROZGRYWKA]   • Delta Bloodflies zadaje 1 obrażenie (Elemental)
+  [ROZGRYWKA]   • Delta Bloodflies ginie
+  >> Aktywuj: Barkform Harvester (Ty) (koszt 2) — karta z grobu na spód biblioteki → cel: Delta Bloodflies
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Barkform Harvester → cel: Delta Bloodflies
+  [ROZGRYWKA]   • Ty: Delta Bloodflies — cmentarz → biblioteka
+  [ROZGRYWKA]   • Ty: zdolność Barkform Harvester rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Apprentice Wizard
+  >> Dalej (pass)
+  >> Zagraj: Apprentice Wizard (koszt 1UU)
+  [kreator many] Płatność 1UU — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: U, UTapnij: Island (U)Tapnij: Island (U)Tapn — źródła: 7
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Apprentice Wizard
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Apprentice Wizard wchodzi na pole bitwy
+  [ROZGRYWKA]   • Apprentice Wizard zostaje rozstrzygnięty
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (8 opcji)
+  [combat wizard] atakuję 3 z 3 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Barkform Harvester, Highland Game, Jill, Shiva's Dominant
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Segmented Krotiq blokuje Highland Game; Colossodon Yearling blokuje Jill, Shiva's Dominant
+  >> Rozstrzygnij obrażenia w walce
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Barkform Harvester zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 10 → 8
+  [ROZGRYWKA]   • Highland Game zadaje 4 obrażenia (Segmented Krotiq)
+  [ROZGRYWKA]   • Segmented Krotiq zadaje 6 obrażeń (Highland Game)
+  [ROZGRYWKA]   • Jill, Shiva's Dominant zadaje 2 obrażenia (Colossodon Yearling)
+  [ROZGRYWKA]   • Colossodon Yearling zadaje 2 obrażenia (Jill, Shiva's Dominant)
+  [ROZGRYWKA]   • Highland Game ginie
+  [ROZGRYWKA]   • Jill, Shiva's Dominant ginie
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Highland Game — trigger (śmierć stwora)
+  >> Cel zdolności: Barkform Harvester (2 opcje)
+  [modal choice] Cel zdolności: Barkform Harvester Aktywuj: Barkform Harvester (Ty) (koszt 2) — karta z grobu na spód biblioteki → cel: Jill, Shiva's Dominant Aktywuj: Barkform Harvester (Ty) (koszt 2) — karta z grobu na spód biblioteki → cel: Highland Game
+  [modal choice]   ▶ Aktywuj: Barkform Harvester (Ty) (koszt 2) — karta z grobu na spód biblioteki → cel: Jill, Shiva's Dominant
+  [modal choice]     Aktywuj: Barkform Harvester (Ty) (koszt 2) — karta z grobu na spód biblioteki → cel: Highland Game
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Barkform Harvester → cel: Jill, Shiva's Dominant
+  >> Cel zdolności: Barkform Harvester (2 opcje)
+  [modal choice] Cel zdolności: Barkform Harvester Aktywuj: Barkform Harvester (Ty) (koszt 2) — karta z grobu na spód biblioteki → cel: Jill, Shiva's Dominant Aktywuj: Barkform Harvester (Ty) (koszt 2) — karta z grobu na spód biblioteki → cel: Highland Game
+  [modal choice]   ▶ Aktywuj: Barkform Harvester (Ty) (koszt 2) — karta z grobu na spód biblioteki → cel: Jill, Shiva's Dominant
+  [modal choice]     Aktywuj: Barkform Harvester (Ty) (koszt 2) — karta z grobu na spód biblioteki → cel: Highland Game
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Barkform Harvester → cel: Jill, Shiva's Dominant
+  [ROZGRYWKA]   • Ty: Jill, Shiva's Dominant — cmentarz → biblioteka
+  [ROZGRYWKA]   • Ty: zdolność Barkform Harvester rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: zdolność Barkform Harvester rozstrzygnięta bez efektu (cel nielegalny)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: życie 16 → 18
+  [ROZGRYWKA]   • Highland Game — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Satyr Wayfinder, Elemental, Segmented Krotiq, Colossodon Yearling
+  >> Wybierz: Deklaracja blokujących (5 opcji)
+  [combat wizard] blokuję 1 stworami: Apprentice Wizard (0/1)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Apprentice Wizard blokuje Colossodon Yearling
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Satyr Wayfinder zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 16
+  [ROZGRYWKA]   • Elemental zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 14
+  [ROZGRYWKA]   • Segmented Krotiq zadaje 6 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 8
+  [ROZGRYWKA]   • Colossodon Yearling zadaje 2 obrażenia (Apprentice Wizard)
+  [ROZGRYWKA]   • Apprentice Wizard ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 15 — Ty
+  >> Rzuć: Village Rites (koszt B) — poświęć Barkform Harvester (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Village Rites
+  [ROZGRYWKA]   • Barkform Harvester zostaje poświęcony
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Village Rites zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Maritime Guard
+  >> Zagraj ląd: Island (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Zagraj: Maritime Guard (koszt 1U)
+  [kreator many] Płatność 1U — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: UTapnij: Island (U)Tapnij: Island (U)Tapnij:  — źródła: 7
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Maritime Guard
+  [ROZGRYWKA]   • Maritime Guard wchodzi na pole bitwy
+  [ROZGRYWKA]   • Maritime Guard zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Rustvine Cultivator
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rustvine Cultivator wchodzi na pole bitwy
+  [ROZGRYWKA]   • Rustvine Cultivator zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Segmented Krotiq, Colossodon Yearling
+  >> Wybierz: Deklaracja blokujących (3 opcje)
+  [combat wizard] blokuję 1 stworami: Maritime Guard (1/3)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Maritime Guard blokuje Colossodon Yearling
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Segmented Krotiq zadaje 6 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 8 → 2
+  [ROZGRYWKA]   • Colossodon Yearling zadaje 2 obrażenia (Maritime Guard)
+  [ROZGRYWKA]   • Maritime Guard zadaje 1 obrażenie (Colossodon Yearling)
+  [ROZGRYWKA]   • Tura 17 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Leafcrown Dryad
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Zagraj: Leafcrown Dryad (koszt 1G)
+  [kreator many] Płatność 1G — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: GTapnij: Island (U)Tapnij: Island (U)Tapnij:  — źródła: 9
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Leafcrown Dryad
+  [ROZGRYWKA]   • Leafcrown Dryad wchodzi na pole bitwy
+  [ROZGRYWKA]   • Leafcrown Dryad zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Maritime Guard
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Elemental i Rustvine Cultivator blokują Maritime Guard
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Rozdzielasz obrażenia bojowe (trample albo wielu blokerów)
+  >> Wybierz: Rozdzielenie obrażeń bojowych (1 opcja)
+  [modal choice] Rozdziel obrażenia bojowe — przydziel moc atakujących blokującym:Maritime Guard (moc 1)Elemental (wytrz. 2, śmiertelne 2)−10+1↑↓Rustvine Cultivator (wytrz. 2, śmiertelne 2)−10+1↑↓Zatwierdź przydziałDomyślnie (lethal-first)Zamknij (dokończysz później)
+  [modal choice]   ▶ Zatwierdź przydział
+  [modal choice]     Domyślnie (lethal-first)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Elemental zadaje 2 obrażenia (Maritime Guard)
+  [ROZGRYWKA]   • Rustvine Cultivator zadaje 1 obrażenie (Maritime Guard)
+  [ROZGRYWKA]   • Maritime Guard ginie
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Rustvine Cultivator — licznik na celu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rustvine Cultivator dostaje +1 licznik oil (razem 1)
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Rustvine Cultivator rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Satyr Wayfinder, Elemental, Segmented Krotiq, Colossodon Yearling
+  >> Wybierz: Deklaracja blokujących (5 opcji)
+  [combat wizard] blokuję 1 stworami: Leafcrown Dryad (2/2)
+  [combat wizard] Zatwierdź bloki
+== KONIEC PARTII == Koniec partii — wygrywa On
+
+--- krok 88 | Koniec partii — wygrywa On ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: (pusta)
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×5 | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×6 | Satyr Wayfinder · 2 · Creature — Satyr · Zasięg · Gdy wejdzie na pole bitwy: odsłoń wierzch, możesz wziąć ląd do ręki, resztę do grobu. · zaczarowana: Silken Strength · 2/3 | Silken Strength · 2 · Enchantment Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent. · aura → Satyr Wayfinder | Elemental · 0 · Creature — Elemental · 2/2 | Segmented Krotiq · 6 · Creature — Insect · Megamorph {7}: możesz zagrać twarzą w dół jako 2/2 za {3}, potem obrócić za koszt Megamorph (+1/+1) · 6/5 | Colossodon Yearling · 3 · Creature — Beast · −2 · 2/4 | Rustvine Cultivator · 1 · Creature — Phyrexian Elf Druid · {T}: połóż licznik oil · {T}, zdejmij 1 licznik oil: cel: ląd — odkręć · oil×1 · 1/2
+  LOG: Jill, Shiva's Dominant zadaje 2 obrażenia (Colossodon Yearling) ⏎ Segmented Krotiq zadaje 6 obrażeń (Highland Game) ⏎ Highland Game zadaje 4 obrażenia (Segmented Krotiq) ⏎ Nieprzyjaciel: życie 10 → 8 ⏎ Barkform Harvester zadaje 2 obrażenia (Nieprzyjaciel) ⏎ Segmented Krotiq blokuje Highland Game; Colossodon Yearling blokuje Jill, Shiva's Dominant
+
+== POKRYCIE UI == akcje widziane: 29, kliknięte: 30, modale: 5, sondy noop: 101 (panel 84, modal 17)
+== DETEKTORY: 1 zgłoszeń (do weryfikacji) ==
+  [bot] 1
+    - Bot wzmacnia TWÓJ permanent („Highland Game") — płaci za korzyść przeciwnika
+      [ROZGRYWKA]   • Nieprzyjaciel rzuca Courage in Crisis → cel: Highland Game
