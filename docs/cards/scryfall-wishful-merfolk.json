@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Wishful%20Merfolk&set=eld",
+  "print": "Wishful Merfolk (ELD)",
+  "name": "Wishful Merfolk",
+  "mana_cost": "{1}{U}",
+  "cmc": 2,
+  "type_line": "Creature — Merfolk",
+  "oracle_text": "Defender\n{1}{U}: This creature loses defender and becomes a Human until end of turn.",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Defender"
+  ],
+  "set": "eld",
+  "collector_number": "73",
+  "rarity": "common",
+  "pobrano": "2026-08-20",
+  "power": "3",
+  "toughness": "2",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/9/f9358d5d-726e-43e0-a58e-4cfe7c755913.jpg?1783932647",
+    "normal": "https://cards.scryfall.io/large/front/f/9/f9358d5d-726e-43e0-a58e-4cfe7c755913.jpg?1783932647"
+  }
+}

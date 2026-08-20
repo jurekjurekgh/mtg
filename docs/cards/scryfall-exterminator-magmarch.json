@@ -1,0 +1,30 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Exterminator%20Magmarch&set=m3c",
+  "print": "Exterminator Magmarch (M3C)",
+  "name": "Exterminator Magmarch",
+  "mana_cost": "{2}{B}{R}",
+  "cmc": 4,
+  "type_line": "Artifact Creature — Phyrexian Construct",
+  "oracle_text": "Whenever you cast an instant or sorcery spell that targets only a single nonland permanent an opponent controls, if another opponent controls one or more nonland permanents that spell could target, choose one of those permanents. Copy that spell. The copy targets the chosen permanent.\n{1}{B}: Regenerate this creature.",
+  "colors": [
+    "B",
+    "R"
+  ],
+  "color_identity": [
+    "B",
+    "R"
+  ],
+  "keywords": [
+    "Regenerate"
+  ],
+  "set": "m3c",
+  "collector_number": "124",
+  "rarity": "rare",
+  "pobrano": "2026-08-20",
+  "power": "5",
+  "toughness": "3",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/2/e/2e600de8-6afa-46d8-ba87-552798cdb040.jpg?1783911405",
+    "normal": "https://cards.scryfall.io/large/front/2/e/2e600de8-6afa-46d8-ba87-552798cdb040.jpg?1783911405"
+  }
+}
