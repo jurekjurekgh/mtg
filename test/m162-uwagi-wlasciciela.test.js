@@ -21,6 +21,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 import { commandLabel, choiceGroupTitle } from '../src/table/render.js';
+import { populateDeckSelects } from '../src/table/deck-selects.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -165,4 +166,64 @@ test('C3: decyzja działa po wyborze (karta ląduje na wierzchu biblioteki)', ()
   assert.equal(state.pendingHandTopChoice, null, 'decyzja zamknięta');
   const onTop = state.zones.library.find((id) => state.objects.get(id)?.controllerId === 'p1');
   assert.equal(state.objects.get(onTop)?.cardId, 'brute-force', 'wybrana karta NA WIERZCHU biblioteki');
+});
+
+// ---- A: zdublowane talie w pliku zapisanym „Zapisz jako..." --------------------
+//
+// Właściciel: duble występują w wersji desktopowej — HTML ściągnięty
+// „Zapisz jako..." i otwierany lokalnie. „Zapisz jako..." serializuje DOM
+// PO uruchomieniu skryptu, więc <select> niesie już opcje runtime'owe;
+// ponowne uruchomienie skryptu DOKŁADAŁO drugi komplet. Populacja ma być
+// idempotentna (czyści select przed wypełnieniem).
+
+class SelectMiniEl {
+  constructor() {
+    this.children = [];
+    this.value = '';
+  }
+  appendChild(child) { this.children.push(child); return child; }
+  replaceChildren(...nodes) { this.children = nodes.flat(); }
+  get options() { return this.children; }
+}
+class OptionMiniEl {
+  constructor() { this.value = ''; this.textContent = ''; }
+}
+
+test('A1: select z opcjami z poprzedniego uruchomienia (plik „Zapisz jako...") — dokładnie jeden komplet', () => {
+  const before = globalThis.document;
+  globalThis.document = { createElement: (tag) => new (tag === 'option' ? OptionMiniEl : SelectMiniEl)() };
+  try {
+    const repoDecks = { red: '# Red — singleton', black: '# Black — singleton', green: '# Green — singleton' };
+    const select = new SelectMiniEl();
+    // Symulacja zapisanego pliku: select już ma komplet opcji z runtime'u.
+    for (const key of Object.keys(repoDecks).sort()) {
+      const option = new OptionMiniEl();
+      option.value = key;
+      option.textContent = key;
+      select.appendChild(option);
+    }
+    assert.equal(select.options.length, 3, 'pre: zapisany plik niesie 3 opcje w DOM');
+    const keys = populateDeckSelects([select], repoDecks);
+    assert.deepEqual(keys, ['black', 'green', 'red']);
+    assert.equal(select.options.length, 3, `po ponownym uruchomieniu skryptu: 3 opcje, a nie ${select.options.length} (duble!)`);
+    assert.deepEqual(select.options.map((o) => o.value), ['black', 'green', 'red']);
+    assert.ok(select.options.every((o) => o.textContent.startsWith('#') === false), 'tytuły bez surowego #');
+  } finally {
+    globalThis.document = before;
+  }
+});
+
+test('A2: podwójne wywołanie (idempotencja) i puste selecty startowe', () => {
+  const before = globalThis.document;
+  globalThis.document = { createElement: (tag) => new (tag === 'option' ? OptionMiniEl : SelectMiniEl)() };
+  try {
+    const repoDecks = { a: '# A', b: '# B' };
+    const fresh = new SelectMiniEl(); // świeży artefakt: pusty select w HTML
+    populateDeckSelects([fresh, null], repoDecks); // null-select pomijany
+    populateDeckSelects([fresh], repoDecks); // drugi przebieg nic nie psuje
+    assert.equal(fresh.options.length, 2, 'dwa wywołania = nadal 2 opcje');
+    assert.deepEqual(fresh.options.map((o) => o.value), ['a', 'b']);
+  } finally {
+    globalThis.document = before;
+  }
 });

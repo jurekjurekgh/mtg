@@ -14,6 +14,7 @@
  */
 
 import { shuffle } from '../engine/shuffle.js';
+import { populateDeckSelects } from './deck-selects.js';
 import { createRng } from '../engine/rng.js';
 import { createGameState, execute, playerView } from '../engine/game-state.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
@@ -83,12 +84,6 @@ function runSelfTest() {
     ? 'Wszystko działa — możesz zaczynać partię.'
     : 'Coś nie zadziałało — zgłoś to w PR.';
   el.appendChild(summary);
-}
-
-/** Nagłówek „# Nazwa talii" z treści pliku decks/*.txt (bez pełnego parsowania). */
-function deckTitle(text, fallback) {
-  const titleLine = text.split(/\r?\n/).find((row) => row.trim().startsWith('#'));
-  return titleLine ? titleLine.trim().slice(1).trim() : fallback;
 }
 
 /** Składa UI stołu i podpina je pod sesję gry. */
@@ -1240,15 +1235,11 @@ function bootstrapTable() {
 
   // --- Wybór talii -----------------------------------------------------
   if (deckKeys.length >= 2) {
-    for (const selectId of ['deck-human', 'deck-bot']) {
-      const select = el(selectId);
-      for (const key of deckKeys) {
-        const option = document.createElement('option');
-        option.value = key;
-        option.textContent = deckTitle(repoDecks[key], key);
-        select.appendChild(option);
-      }
-    }
+    // M162/A (uwaga właściciela): plik zapisany przez „Zapisz jako..."
+    // niesie opcje z poprzedniego uruchomienia w DOM — populacja jest
+    // IDEMPOTENTNA (czyści select przed wypełnieniem), więc lokalna
+    // kopia zapisana z przeglądarki nie dubluje talii.
+    populateDeckSelects([el('deck-human'), el('deck-bot')], repoDecks);
     const defaultHuman = deckKeys.includes('synthetic-aggro') ? 'synthetic-aggro' : deckKeys[0];
     const defaultBot = deckKeys.includes('synthetic-growth') ? 'synthetic-growth' : deckKeys.find((key) => key !== defaultHuman);
     el('deck-human').value = defaultHuman;
