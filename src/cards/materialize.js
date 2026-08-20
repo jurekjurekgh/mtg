@@ -36,6 +36,8 @@ export function gameObjectDataOf(card) {
     // Suspend (CR 702.62, Mindstab): { cost, colors, timeCounters } — specjalna
     // akcja z ręki (jak plot), karta w exile z licznikami czasu.
     if (card.suspend) data.suspend = card.suspend;
+    // Warp (EOE, Weftblade Enhancer): alternatywny koszt { cost, colors } z ręki.
+    if (card.warp) data.warp = card.warp;
     // Backup (Gloomfang Mauler): ETB trigger z decyzją resolve_backup.
     if (card.backup) data.backup = card.backup;
     // Devour (Gorger Wurm): ETB z sekwencyjną decyzją resolve_devour_choice.

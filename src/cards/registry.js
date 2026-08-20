@@ -86,6 +86,11 @@ export function defineCard(data) {
       colors: Object.freeze([...(data.suspend.colors ?? [])]),
       timeCounters: data.suspend.timeCounters ?? 4,
     }) : null,
+    // Warp (EOE, Weftblade Enhancer): alternatywny koszt { cost, colors } z ręki.
+    warp: data.warp ? Object.freeze({
+      cost: data.warp.cost,
+      colors: Object.freeze([...(data.warp.colors ?? [])]),
+    }) : null,
     entersWithCounters: data.entersWithCounters ? Object.freeze({ ...data.entersWithCounters }) : null,
     // M108 (Somberwald Spider): liczniki wejścia WARUNKOWE (morbid, CR 614.1c).
     entersWithCountersIf: data.entersWithCountersIf ? Object.freeze({

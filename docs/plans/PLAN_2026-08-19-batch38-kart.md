@@ -50,6 +50,6 @@ ADR 0010 §2a).
 10. Dokumentacja (PROJECT_STATE, handoff).
 
 ## Kryteria ukończenia
-- [ ] Wszystkie karty zdefiniowane z Oracle (scryfall-*.json).
-- [ ] Wszystkie wspierane karty obecne w taliach (repo-decks guard).
-- [ ] `npm run test:all` zielony; build; push; CI; opis PR.
+- [x] Wszystkie karty zdefiniowane z Oracle (scryfall-*.json).
+- [x] Wszystkie wspierane karty obecne w taliach (repo-decks guard).
+- [x] `npm run test:all` zielony; build; push; CI; opis PR.

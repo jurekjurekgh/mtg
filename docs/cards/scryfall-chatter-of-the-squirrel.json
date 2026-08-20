@@ -5,7 +5,7 @@
   "mana_cost": "{G}",
   "cmc": 1,
   "type_line": "Sorcery",
-  "oracle_text": "Create a 1/1 green Squirrel creature token.\\nFlashback {1}{G} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+  "oracle_text": "Create a 1/1 green Squirrel creature token.\nFlashback {1}{G} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
   "colors": [
     "G"
   ],

@@ -221,6 +221,7 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   aura_host_targeted_by_spell: 'gospodarz aury celem czaru',
   spell_targets_this_creature: 'twoja karta celuje w to stworzenie',
   bat_attacks: 'atak nietoperza',
+  faerie_attacks: 'atak z Faerie',
   beginning_of_combat: 'początek walki',
   card_put_into_graveyard_from_nonbattlefield: 'karta do grobu spoza pola bitwy',
   combat_damage_to_player: 'obrażenia bojowe graczowi',

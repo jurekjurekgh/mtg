@@ -5,7 +5,7 @@
   "mana_cost": "{1}{G}",
   "cmc": 2,
   "type_line": "Enchantment — Aura",
-  "oracle_text": "Flash\\nEnchant creature or Vehicle\\nWhen this Aura enters, untap enchanted permanent.\\nEnchanted permanent gets +1/+2 and has reach.",
+  "oracle_text": "Flash\nEnchant creature or Vehicle\nWhen this Aura enters, untap enchanted permanent.\nEnchanted permanent gets +1/+2 and has reach.",
   "colors": [
     "G"
   ],

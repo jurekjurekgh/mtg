@@ -1726,6 +1726,20 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }));
     return;
   }
+  // M154 (Batch 38, Silken Strength): „When this Aura enters, untap enchanted
+  // permanent." — odkręca GOSPODARZA aury (sourceObject.attachedTo). Generyczne:
+  // jak pump_enchanted_creature, ale dla dowolnego zaczarowanego permanentu.
+  if (effect.type === 'untap_enchanted_permanent') {
+    const enchantedId = sourceObject.attachedTo;
+    if (!enchantedId) return;
+    const object = state.objects.get(enchantedId);
+    if (!object || object.zone !== 'battlefield') return;
+    if (object.tapped) {
+      state.objects.set(enchantedId, Object.freeze({ ...object, tapped: false }));
+      state.events.push(event('object_untapped', { objectId: enchantedId, playerId: sourceObject.controllerId }));
+    }
+    return;
+  }
   if (effect.type === 'untap_permanent') {
     // Odkręcenie permanentu — domyślnie źródła (np. trigger Midnight Guard:
     // „Whenever another creature enters, untap this creature").
@@ -1951,6 +1965,33 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const targetPower = effectivePower(object, state) ?? 0;
     if (targetPower !== minPower) return; // nie najmniejsza moc — nic się nie dzieje
     applyEffect(state, { type: 'destroy_permanent' }, sourceObject, [targetId], context);
+    return;
+  }
+  // M154 (Batch 38, Divine Offering): „Destroy target artifact. You gain life
+  // equal to its mana value." — zniszcz artefakt-cel i zyskaj życie równe jego
+  // mana value (przed zniszczeniem; CR 701.7). Generyczne: cel-arteFakt,
+  // efekt niszczy i nagradza życiem wg kosztu many celu.
+  if (effect.type === 'destroy_artifact_gain_life_mana_value') {
+    const targetId = targets[effect.targetIndex ?? 0];
+    if (targetId == null) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') return;
+    const isArtifact = object.kind === 'artifact' || (object.types ?? []).includes('Artifact');
+    if (!isArtifact) return; // nie-artefakt — brak efektu (legalność zapewnia target type)
+    const manaValue = object.manaCost ?? 0;
+    // Niszcz (CR 701.7) — reużycie logicznej części destroy_permanent przez
+    // ponowne wywołanie efektu (niszczy i emituje zdarzenia); potem zysk życia.
+    const before = state.events.length;
+    applyEffect(state, { type: 'destroy_permanent' }, sourceObject, [targetId]);
+    const destroyed = state.events.slice(before).some((e) => e.type === 'permanent_destroyed'
+      || e.type === 'object_moved');
+    // Zysk życia równy mana value TYLKO, gdy artefakt faktycznie zniszczono
+    // (nie-indestructible, bez tarczy/regeneracji). W innym razie „you gain life
+    // equal to its mana value" nie następuje (CR: efekty sekwencyjne).
+    // changeLife samo emituje life_changed — nie dublujemy zdarzenia.
+    if (destroyed && manaValue > 0) {
+      changeLife(state, sourceObject.controllerId, manaValue);
+    }
     return;
   }
   if (effect.type === 'destroy_permanent') {

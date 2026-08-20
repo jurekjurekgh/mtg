@@ -408,18 +408,21 @@ export function treasureManaAvailable(state, playerId) {
   return total;
 }
 
-export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, treasureAlt = false } = {}) {
+export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, treasureAlt = false, warpCast = false } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   // Zaplotowana karta leży w exile (plotted: true) i rzuca się BEZ kosztu many
   // (CR 702.136 — „Cast it as a sorcery on a later turn without paying its
   // mana cost"). Batch 24: Spinewoods Paladin — plot dla permanentów.
   const plotted = object?.zone === 'exile' && object.plotted;
+  // M154 (Batch 38, Warp): karta z warpReady (wygnana po warp-caście w końcowym
+  // kroku) można rzucić w późniejszej turze ZA KOSZT WARP (nie za darmo).
+  const warpReady = object?.zone === 'exile' && object.warpReady;
   // CR 702.136: "on a later turn" — can't cast the same turn you plotted.
   if (plotted && object.plottedAtTurn != null && state.turn.number <= object.plottedAtTurn) {
     throw new Error('Plot: można rzucić dopiero w późniejszej turze');
   }
-  if (!player || !object || object.controllerId !== playerId || (object.zone !== 'hand' && !plotted)) throw new Error('Nielegalny permanent');
+  if (!player || !object || object.controllerId !== playerId || (object.zone !== 'hand' && !plotted && !warpReady)) throw new Error('Nielegalny permanent');
   if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') throw new Error('Ten obiekt nie jest zagrywalnym permanentem');
   // Flash (CR 702.8): permanent z flash można zagrać w każdej fazie (jak instant);
   // bez flash — tylko w swojej main phase (plot też rzuca się jako sorcery).
@@ -428,7 +431,9 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // Timing sorcery (CR 307.1/117.1a): rzut permanenta bez flash wymaga
   // PUSTEGO stosu — czar idzie na stos i rozstrzyga się po rundzie passów.
   if (!hasFlash && state.zones.stack.length > 0) throw new Error('Zagranie przy niepustym stosie');
-  let cost = plotted ? 0 : (object.manaCost ?? 0);
+  if (warpCast && !object.warp) throw new Error('Ta karta nie ma mechaniki warp');
+  if (warpCast && (faceDown || kicked || treasureAlt || phyrexianPayWithLife > 0)) throw new Error('Koszt warp wyklucza morph/kicker/phyrexian/skarby');
+  let cost = plotted ? 0 : (warpCast ? (object.warp?.cost ?? object.manaCost ?? 0) : (object.manaCost ?? 0));
   if (faceDown) {
     if (!object.morph || object.morph.cost == null) throw new Error('Ta karta nie może być zagrana twarzą w dół');
     // M111 (CR 601.2f + 708.2): rzut zakryty to czar-STWÓR bez innych typów,
@@ -500,10 +505,12 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // obowiązują (root cause: face-down Monastery Flock wymagał {U} z powodu
   // pipów karty; cicha zła płatność w consumeManaPool to maskowała).
   // Plot – rzut bez kosztu many – nie ma też wymagań kolorowych (CR 702.136).
-  const requirements = (faceDown || plotted) ? [] : treasureAltCost
-    ? (treasureAltCost.colors ?? []).map((color) => [color])
-    : [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips];
-  if (!faceDown && !plotted && !treasureAltCost && !hasColorRequirements(state, playerId, requirements)) {
+  const requirements = (faceDown || plotted) ? [] : warpCast
+    ? (object.warp?.colors ?? []).map((color) => [color])
+    : treasureAltCost
+      ? (treasureAltCost.colors ?? []).map((color) => [color])
+      : [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips];
+  if (!faceDown && !plotted && !warpCast && !treasureAltCost && !hasColorRequirements(state, playerId, requirements)) {
     throw new Error('Brak kolorowego źródła many');
   }
   if (treasureAltCost) {
@@ -587,6 +594,9 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     : 0;
   const stacked = Object.freeze({
     ...moved, ...patch, wasCast: true, manaFromTreasureSpent: treasureSpent,
+    // M154 (Warp): permanent rzucony za koszt warp — przy wejściu zbroimy
+    // opóźniony trigger wygnania w końcowym kroku (resolvePermanentSpell).
+    ...(warpCast ? { warped: true } : {}),
     chosenTargets: [],
     // Kicker (CR 702.33): fakt opłacenia dodatkowego kosztu — triggery
     // „if it was kicked" filtrują po tej fladze (jak wasCast).
@@ -698,6 +708,12 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
       if (!host || host.zone !== 'battlefield' || (host.kind !== 'creature' && !isLand)) {
         throw new Error('Celem czaru aury musi być stwór albo ląd');
       }
+    } else if (object.aura?.enchantType === 'creature_or_vehicle') {
+      // M154 (Batch 38): Silken Strength — „Enchant creature or Vehicle".
+      const isVehicle = host && (host.subtypes ?? []).includes('Vehicle');
+      if (!host || host.zone !== 'battlefield' || (host.kind !== 'creature' && !isVehicle)) {
+        throw new Error('Celem czaru aury musi być stwór albo Vehicle');
+      }
     } else if (object.aura?.enchant === 'land' || object.aura?.enchantType === 'land') {
       // Chronic Flooding: „Enchant land" — walidacja spójna z ofertą.
       const isLand = host && (host.kind === 'land' || (host.types ?? []).includes('Land'));
@@ -719,7 +735,8 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
       throw new Error('Celem czaru aury nie może być permanent z protection od koloru czaru');
     }
     const auraHostType = (object.aura?.enchant === 'enchantment' || object.aura?.enchantType === 'enchantment')
-      ? 'enchantment' : 'creature';
+      ? 'enchantment'
+      : (object.aura?.enchantType === 'creature_or_vehicle' ? 'creature_or_vehicle' : 'creature');
     spellTargets = Object.freeze([Object.freeze({ type: auraHostType })]);
   }
   spendMana(state, playerId, cost, coloredPipsOf(object.cardId));
@@ -818,6 +835,16 @@ export function legalAuraCasts(state, playerId) {
         if (!target || target.zone !== 'battlefield') continue;
         const isLand = target.kind === 'land' || (target.types ?? []).includes('Land');
         if ((target.kind === 'creature' || isLand) && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
+          for (const bestow of options) out.push({ objectId: id, targetId, bestow });
+        }
+      }
+    } else if (object.aura?.enchantType === 'creature_or_vehicle') {
+      // M154 (Batch 38): Silken Strength — stwór albo Vehicle.
+      for (const targetId of state.zones.battlefield) {
+        const target = state.objects.get(targetId);
+        if (!target || target.zone !== 'battlefield') continue;
+        const isVehicle = (target.subtypes ?? []).includes('Vehicle');
+        if ((target.kind === 'creature' || isVehicle) && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
           for (const bestow of options) out.push({ objectId: id, targetId, bestow });
         }
       }

@@ -5,7 +5,7 @@
   "mana_cost": "{2}{R}",
   "cmc": 3,
   "type_line": "Creature — Human Wizard",
-  "oracle_text": "When this creature enters, create a 0/1 black Wizard creature token with \\\"Whenever you cast a noncreature spell, this token deals 1 damage to each opponent.\\\"",
+  "oracle_text": "When this creature enters, create a 0/1 black Wizard creature token with \"Whenever you cast a noncreature spell, this token deals 1 damage to each opponent.\"",
   "power": "1",
   "toughness": "3",
   "colors": [

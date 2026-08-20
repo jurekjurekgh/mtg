@@ -36,6 +36,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   cast_permanent: 'Zagranie permanentu',
   plot_card: 'Plotowanie karty',
   suspend_card: 'Zawieszenie karty',
+  warp_card: 'Rzut za koszt warp',
   cast_spell: 'Rzucenie czaru',
   cast_cleave: 'Rzucenie z Cleave',
   activate_ability: 'Aktywacja zdolności',
@@ -172,6 +173,7 @@ const TARGET_TYPE_LABELS = Object.freeze({
   other_nonland_permanent: 'inny permanent niebędący lądem',
   nonartifact_nonblack_creature: 'stwór niebędący artefaktem ani czarnym',
   creature_you_control: 'twój stwór', creature_opponent_controls: 'stwór przeciwnika',
+  creature_or_vehicle: 'stwór lub Vehicle',
   creature_with_subtypes: 'stwór z podtypem', creature_with_power_at_least: 'stwór o sile ≥',
   creature_card_in_graveyard: 'karta-stwór w grobie', creature_card_in_opponent_graveyard: 'karta-stwór w grobie przeciwnika',
   card_in_graveyard: 'karta w grobie', permanent_card_in_graveyard: 'karta-permanent w grobie',
@@ -265,7 +267,7 @@ export const OPTION_IGNORABLE_TYPES = Object.freeze([
 ]);
 
 const ACTION_RANK = Object.freeze({
-  resolve_mulligan_choice: -3, resolve_mulligan_bottom_choice: -3, resolve_backup: -2, resolve_scry: -1, resolve_surveil: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, suspend_card: 3, cast_permanent: 4, cast_spell: 5, cast_cleave: 5, activate_ability: 5,
+  resolve_mulligan_choice: -3, resolve_mulligan_bottom_choice: -3, resolve_backup: -2, resolve_scry: -1, resolve_surveil: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, suspend_card: 3, warp_card: 3, cast_permanent: 4, cast_spell: 5, cast_cleave: 5, activate_ability: 5,
   declare_attackers: 5, declare_blockers: 6, resolve_combat: 7, pass_priority: 8, concede: 9,
 });
 
@@ -775,6 +777,7 @@ function describeEffect(e) {
     damage_to_controller: () => `${damageCount(e.amount)} kontrolerowi`,
     destroy_if_least_power: () => 'zniszcz, jeśli cel ma najmniejszą moc na polu bitwy (lub remisuje)',
     destroy_permanent: () => 'zniszcz cel',
+    destroy_artifact_gain_life_mana_value: () => 'zniszcz artefakt; zyskujesz życie równe jego kosztowi many',
     set_base_pt_until_end_of_turn: () => `bazowe P/T ${e.power}/${e.toughness} do końca tury`,
     mill_from_bottom: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} od spodu biblioteki`,
     grant_abilities: () => 'nadaj zdolność do końca tury',
@@ -862,6 +865,7 @@ function describeEffect(e) {
     turn_face_up: () => 'obróć twarzą do góry',
     unearth_return: () => 'unearth (z grobu z haste, exile na końcu tury)',
     untap_permanent: () => 'odkręć',
+    untap_enchanted_permanent: () => 'odkręć zaczarowany permanent',
     untap_all_creatures_you_control: () => 'odkręć wszystkie twoje stwory',
     venture_into_undercity: () => 'venture do lochu',
     // M122/#5 (Żywy Tester, ostrza vs wiedzmin seed 3005): panel akcji
@@ -1536,6 +1540,16 @@ export function commandLabel(cmd, session, view) {
     case 'plot_card': {
       const card = obj(cmd.objectId);
       return `Plotuj: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.plot?.cost != null ? manaCostHtml(`{${card.plot.cost}}`) : '?'})`;
+    }
+    case 'warp_card': {
+      const card = obj(cmd.objectId);
+      const wc = card?.warp;
+      const remaining = wc ? Math.max(0, (wc.cost ?? 0) - (wc.colors ?? []).length) : 0;
+      const costStr = wc
+        ? `${(wc.colors ?? []).map((c) => `{${c}}`).join('')}${remaining > 0 ? `{${remaining}}` : ''}`
+        : null;
+      const cost = costStr != null ? manaCostHtml(costStr) : '?';
+      return `Rzuć za warp: ${nameOfObjectId(cmd.objectId)} (koszt ${cost})`;
     }
     case 'suspend_card': {
       const card = obj(cmd.objectId);

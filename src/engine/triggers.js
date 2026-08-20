@@ -332,8 +332,12 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
   if (spec.type === 'creature_you_control') {
     return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
-      return object && object.zone === 'battlefield' && object.kind === 'creature'
-        && object.controllerId === sourceObject.controllerId;
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature'
+        || object.controllerId !== sourceObject.controllerId) return false;
+      // M154 (Batch 38, Talion's Messenger): cel może być zawężony do podtypu
+      // („target Faerie you control") — dane, nie warunek na nazwę karty.
+      if (spec.subtype && !(object.subtypes ?? []).includes(spec.subtype)) return false;
+      return true;
     });
   }
   if (spec.type === 'ally_creature_on_battlefield') {
@@ -362,6 +366,17 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       return object && object.zone === 'battlefield' && object.kind === 'creature'
         && object.controllerId !== sourceObject.controllerId
         && !hexproofBlocked(object);
+    });
+  }
+  // M154 (Batch 38, Lotusguard Disciple): cel „creature or Vehicle" —
+  // stwór LUB Vehicle (artefakt z podtypem Vehicle) na polu bitwy, bez hexproof.
+  if (spec.type === 'creature_or_vehicle') {
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      if (!object || object.zone !== 'battlefield') return false;
+      const isVehicle = (object.subtypes ?? []).includes('Vehicle');
+      if (object.kind !== 'creature' && !isVehicle) return false;
+      return !hexproofBlocked(object);
     });
   }
   if (spec.type === 'creature') {
@@ -686,6 +701,13 @@ function resolveDelayedTrigger(state, payload, events) {
     if (!object || object.zone !== 'battlefield') return false;
     const exileId = `exile-${state.objectSequence++}`;
     moveObjectDirectly(state, pending.objectId, 'exile', exileId);
+    // M154 (Warp): wygnana w końcowym kroku karta dostaje `warpReady`, więc
+    // można ją rzucić z exile w późniejszej turze za koszt warp (castPermanent
+    // warpCast). Zwykłe exile_object (Puppeteer Clique) nic nie dokleja.
+    if (pending.warp) {
+      const exiled = state.objects.get(exileId);
+      state.objects.set(exileId, Object.freeze({ ...exiled, warpReady: true, warped: false }));
+    }
     const fired = event('object_exiled', {
       objectId: exileId, fromId: pending.objectId, cardId: object.cardId,
       playerId: pending.playerId, delayed: true,
@@ -1871,6 +1893,24 @@ export function processTriggers(state, recentEvents) {
           for (const ability of effectiveAbilities(source)) {
             if (ability?.trigger?.event === 'attacks_alone') {
               tryFire(state, ability, source, [], events, { attackerId: aloneId });
+            }
+          }
+        }
+      }
+      // M154 (Batch 38, Talion's Messenger): „Whenever you attack with one or
+      // more Faeries” — tribe trigger jak bat_attacks, ale odpala się RAZ na
+      // combat, gdy aktywny gracz atakuje z ≥1 Faerie. Kontrolerem źródła
+      // jest aktywny gracz (ten, kto deklaruje atakujących).
+      {
+        const attackedWithFaerie = (ev.attackerIds ?? []).some((id) => {
+          const a = state.objects.get(id);
+          return a && a.zone === 'battlefield' && (a.subtypes ?? []).includes('Faerie');
+        });
+        if (attackedWithFaerie) {
+          for (const object of state.objects.values()) {
+            if (object.zone !== 'battlefield' || object.controllerId !== ev.playerId) continue;
+            for (const ability of effectiveAbilities(object)) {
+              if (ability?.trigger?.event === 'faerie_attacks') tryFire(state, ability, object, [], events);
             }
           }
         }

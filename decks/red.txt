@@ -41,10 +41,11 @@
 1x Impact Tremors
 1x Cogwork Assembler
 1x Titan's Strength
-22x Mountain
+23x Mountain
 1x Gorehorn Minotaurs
 1x Great Furnace
 1x Bomat Bazaar Barge
 1x Soulbright Flamekin
 1x Spreading Insurrection
 1x Molten Nursery
+1x Mysidian Elder

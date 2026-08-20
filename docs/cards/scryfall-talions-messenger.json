@@ -5,7 +5,7 @@
   "mana_cost": "{2}{U}",
   "cmc": 3,
   "type_line": "Creature — Faerie Noble",
-  "oracle_text": "Flying\\nWhenever you attack with one or more Faeries, draw a card, then discard a card. When you discard a card this way, put a +1/+1 counter on target Faerie you control.",
+  "oracle_text": "Flying\nWhenever you attack with one or more Faeries, draw a card, then discard a card. When you discard a card this way, put a +1/+1 counter on target Faerie you control.",
   "power": "1",
   "toughness": "3",
   "colors": [

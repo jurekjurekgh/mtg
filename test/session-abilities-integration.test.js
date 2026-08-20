@@ -58,7 +58,8 @@ test('pełna partia z użyciem zdolności i tokenów przechodzi przez protokół
   // Seed 2 po Batch 35 E3 (green +Trade Route Envoy) — przelosowane hunterem.
   // Seed 3 po Batchu 36 (green +Feral Invocation +Grizzled Leotau +1 Forest).
   // Seed 3 po Batchu 37 (green +Satyr Wayfinder) — przelosowane hunterem.
-  const session = createSession({ seed: 3, registry, decks });
+  // Seed 1 po Batch 38 (green/red zmieniły się) — przelosowane hunterem.
+  const session = createSession({ seed: 1, registry, decks });
   playOut(session);
   assert.equal(session.state.status, 'finished', 'partia nie doszła do rozstrzygnięcia');
   assert.ok(
@@ -75,7 +76,8 @@ test('log tłumaczy zdolności i tokeny na polski bez wycieku surowych typów', 
   const { registry, decks } = buildDecks();
   // Seed 3 po Batchu 36 (green +Feral Invocation +Grizzled Leotau +1 Forest).
   // Seed 3 po Batchu 37 (green +Satyr Wayfinder) — przelosowane hunterem.
-  const session = createSession({ seed: 3, registry, decks });
+  // Seed 1 po Batch 38 (green/red zmieniły się) — przelosowane hunterem.
+  const session = createSession({ seed: 1, registry, decks });
   playOut(session);
   assert.ok(
     session.log.some((e) => e.text.includes('aktywuje zdolność')),

@@ -236,8 +236,8 @@ test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora',
   // Seed 87 — dokładna polityka tego pliku (hunter z chooseHumanCommand).
   // Seed 26 po Batchu 37 (green +Satyr Wayfinder) — przelosowane hunterem.
   // Seed 26; po M153 (zmiana strategii blokowania/Station) — przelosowane
-  // hunterem na 66.
-  const session = createSession({ seed: 66, registry, decks });
+  // hunterem na 66; po Batch 38 (green/red zmieniły się) — na 319.
+  const session = createSession({ seed: 319, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Delirium \(Fear of Burning Alive\):.+otrzymuje 4 obrażenia$/.test(t)),
