@@ -785,7 +785,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       case 'card_discarded': return `${whoN(e.playerId)} odrzuca ${nameOf(e.cardId)}`;
       case 'card_milled': return `${whoN(e.playerId)} mieli ${nameOf(e.cardId)} do grobu`;
       case 'card_plotted': return `${whoN(e.playerId)} plotuje ${nameOf(e.cardId)} (karta trafia do exile)`;
-      case 'card_suspended': return `${whoN(e.playerId)} zawiesza ${nameOf(e.cardId)} (${e.timeCounters ?? 4} liczników czasu)`;
+      case 'card_suspended': {
+        const n = e.timeCounters ?? 4;
+        // M155 (audyt żywym testerem): zgodna odmiana z render.js (M151) —
+        // „4 liczniki czasu" zamiast sztywnego „4 liczników".
+        return `${whoN(e.playerId)} zawiesza ${nameOf(e.cardId)} (${n} ${polishPlural(n, 'licznik', 'liczniki', 'liczników')} czasu)`;
+      }
       case 'time_counter_removed': {
         const ready = e.ready ? ' — ostatni licznik zdjęty, zdolność wyzwalana idzie na stos' : '';
         return `${whoN(e.playerId)} zdejmuje licznik czasu z ${nameOf(e.cardId)} (zostało ${e.remaining ?? 0})${ready}`;

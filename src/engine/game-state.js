@@ -3119,6 +3119,11 @@ export function execute(state, input) {
     const before = state.events.length;
     state.events.push(event('damage_dealt', {
       source: pending.sourceId, target: cmd.targetId, amount: pending.amount, combat: false,
+      // M155 (audyt żywym testerem): LKI cardId — cel mógł zginąć w SBA tego
+      // samego rozstrzygnięcia; bez tego log pokazywał „(?)" (Fear of Burning
+      // Alive delirium: „zadaje 4 obrażenia (?)").
+      sourceCardId: state.objects.get(pending.sourceId)?.cardId ?? null,
+      targetCardId: state.objects.get(cmd.targetId)?.cardId ?? null,
     }));
     markDamage(state, cmd.targetId, pending.amount);
     state.pendingDeliriumTargets.shift();
