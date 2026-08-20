@@ -35,6 +35,11 @@ spellslinger +Invasion +Revolutionist +2 M. Seedy przelosowane (L25).
 Strażniki wszystko złapały w trakcie: M122 (etykieta), M137 (łańcuch pól),
 repo-decks (snapshoty) — naprawione od razu.
 
+6. **Zgłoszenie A (po teście):** odkrycie Morph/Megamorph w „Rozgrywce"
+   nazywa teraz zdolność — pole `keyword` w zdarzeniu ability_activated
+   (obie ścieżki: natychmiastowa i stos) + gałąź etykiety
+   (`test/morph-label.test.js`).
+
 **Stan:** `npm test` **2474/2474**, `test:slow` 9/9 (test:all 2483), build
 **51 modułów / 2121.4 kB**. Katalog: 318 wspieranych kart. ⚠ GH_TOKEN
 wygasł przy transzy D — commity D/E czekają na push po reconnect.
