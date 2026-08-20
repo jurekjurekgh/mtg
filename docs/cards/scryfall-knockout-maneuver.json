@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Knockout%20Maneuver&set=tdm",
+  "print": "Knockout Maneuver (TDM)",
+  "name": "Knockout Maneuver",
+  "mana_cost": "{2}{G}",
+  "cmc": 3.0,
+  "type_line": "Sorcery",
+  "oracle_text": "Put a +1/+1 counter on target creature you control, then it deals damage equal to its power to target creature an opponent controls.",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [],
+  "set": "tdm",
+  "collector_number": "147",
+  "rarity": "uncommon",
+  "pobrano": "2026-08-20",
+  "power": null,
+  "toughness": null,
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/9/d/9d218831-2a41-46a3-8e9d-93462cae5cab.jpg?1783907340",
+    "normal": "https://cards.scryfall.io/large/front/9/d/9d218831-2a41-46a3-8e9d-93462cae5cab.jpg?1783907340"
+  }
+}

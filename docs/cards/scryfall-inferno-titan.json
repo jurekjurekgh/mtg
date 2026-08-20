@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Inferno%20Titan&set=ltc",
+  "print": "Inferno Titan (LTC)",
+  "name": "Inferno Titan",
+  "mana_cost": "{4}{R}{R}",
+  "cmc": 6.0,
+  "type_line": "Creature — Giant",
+  "oracle_text": "{R}: This creature gets +1/+0 until end of turn.\nWhenever this creature enters or attacks, it deals 3 damage divided as you choose among one, two, or three targets.",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [],
+  "set": "ltc",
+  "collector_number": "223",
+  "rarity": "mythic",
+  "pobrano": "2026-08-20",
+  "power": "6",
+  "toughness": "6",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/b/db61b57c-b870-41af-87b7-037ec52fe063.jpg?1783915930",
+    "normal": "https://cards.scryfall.io/large/front/d/b/db61b57c-b870-41af-87b7-037ec52fe063.jpg?1783915930"
+  }
+}

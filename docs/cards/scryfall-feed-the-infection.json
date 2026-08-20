@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Feed%20the%20Infection&set=one",
+  "print": "Feed the Infection (ONE)",
+  "name": "Feed the Infection",
+  "mana_cost": "{3}{B}",
+  "cmc": 4.0,
+  "type_line": "Sorcery",
+  "oracle_text": "You draw three cards and you lose 3 life.\nCorrupted — Each opponent who has three or more poison counters loses 3 life.",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [
+    "Corrupted"
+  ],
+  "set": "one",
+  "collector_number": "93",
+  "rarity": "uncommon",
+  "pobrano": "2026-08-20",
+  "power": null,
+  "toughness": null,
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/9/f/9f013a1a-d4b9-4380-9802-c299ee6c4492.jpg?1783918046",
+    "normal": "https://cards.scryfall.io/large/front/9/f/9f013a1a-d4b9-4380-9802-c299ee6c4492.jpg?1783918046"
+  }
+}

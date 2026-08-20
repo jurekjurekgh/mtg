@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Sarkhan%27s%20Rage&set=dtk",
+  "print": "Sarkhan's Rage (DTK)",
+  "name": "Sarkhan's Rage",
+  "mana_cost": "{4}{R}",
+  "cmc": 5.0,
+  "type_line": "Instant",
+  "oracle_text": "Sarkhan's Rage deals 5 damage to any target. If you control no Dragons, Sarkhan's Rage deals 2 damage to you.",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [],
+  "set": "dtk",
+  "collector_number": "153",
+  "rarity": "common",
+  "pobrano": "2026-08-20",
+  "power": null,
+  "toughness": null,
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/4/7/4787924f-3186-4e18-b53c-dd67c5f42220.jpg?1783938586",
+    "normal": "https://cards.scryfall.io/large/front/4/7/4787924f-3186-4e18-b53c-dd67c5f42220.jpg?1783938586"
+  }
+}

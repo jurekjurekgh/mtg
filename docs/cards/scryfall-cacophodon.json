@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Cacophodon&set=rix",
+  "print": "Cacophodon (RIX)",
+  "name": "Cacophodon",
+  "mana_cost": "{3}{G}",
+  "cmc": 4.0,
+  "type_line": "Creature — Dinosaur",
+  "oracle_text": "Enrage — Whenever this creature is dealt damage, untap target permanent.",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Enrage"
+  ],
+  "set": "rix",
+  "collector_number": "123",
+  "rarity": "uncommon",
+  "pobrano": "2026-08-20",
+  "power": "2",
+  "toughness": "5",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/5/351b213e-b23e-4287-947a-6bd81f1cf751.jpg?1783935290",
+    "normal": "https://cards.scryfall.io/large/front/3/5/351b213e-b23e-4287-947a-6bd81f1cf751.jpg?1783935290"
+  }
+}

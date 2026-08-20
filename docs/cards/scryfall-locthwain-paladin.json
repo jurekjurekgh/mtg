@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Locthwain%20Paladin&set=eld",
+  "print": "Locthwain Paladin (ELD)",
+  "name": "Locthwain Paladin",
+  "mana_cost": "{3}{B}",
+  "cmc": 4.0,
+  "type_line": "Creature — Human Knight",
+  "oracle_text": "Menace (This creature can't be blocked except by two or more creatures.)\nAdamant — If at least three black mana was spent to cast this spell, this creature enters with a +1/+1 counter on it.",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [
+    "Adamant",
+    "Menace"
+  ],
+  "set": "eld",
+  "collector_number": "93",
+  "rarity": "common",
+  "pobrano": "2026-08-20",
+  "power": "3",
+  "toughness": "2",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/a/da6f21a8-3dd0-42af-8a93-84f98968c781.jpg?1783932637",
+    "normal": "https://cards.scryfall.io/large/front/d/a/da6f21a8-3dd0-42af-8a93-84f98968c781.jpg?1783932637"
+  }
+}

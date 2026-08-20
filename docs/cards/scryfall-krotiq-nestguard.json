@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Krotiq%20Nestguard&set=tdm",
+  "print": "Krotiq Nestguard (TDM)",
+  "name": "Krotiq Nestguard",
+  "mana_cost": "{2}{G}",
+  "cmc": 3.0,
+  "type_line": "Creature — Insect",
+  "oracle_text": "Defender\n{2}{G}: This creature can attack this turn as though it didn't have defender.",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Defender"
+  ],
+  "set": "tdm",
+  "collector_number": "148",
+  "rarity": "common",
+  "pobrano": "2026-08-20",
+  "power": "4",
+  "toughness": "4",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/a/5/a5d0a9fb-1068-478d-a78c-6fd77cc313f0.jpg?1783907339",
+    "normal": "https://cards.scryfall.io/large/front/a/5/a5d0a9fb-1068-478d-a78c-6fd77cc313f0.jpg?1783907339"
+  }
+}
