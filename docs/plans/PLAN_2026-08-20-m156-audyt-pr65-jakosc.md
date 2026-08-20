@@ -13,7 +13,7 @@
 
 1. **PR na start (ADR 0020 A).** Gałąź `arena/01a01eb3-mtg` wypchnięta,
    PR otwarty po pierwszym commicie (plan). — *kryterium: PR istnieje na GitHubie*
-2. **Baseline.** `npm test` + `npm run build` + `node --test test/bot-benchmark.test.js`
+2. **Baseline.** (done: npm test 2431/2431, build 51/2071.3 kB, benchmark 9/9) `npm test` + `npm run build` + `node --test test/bot-benchmark.test.js`
    na `main`; wynik porównany z PROJECT_STATE (spodziewane ~2428+ testów,
    build ~51 modułów / ~2 MB). — *kryterium: zielono, liczby zanotowane*
 3. **Audyt PR #65 (ADR 0020 B / 0016).** Przegląd diffu `c536182..1a5accc`:
@@ -23,7 +23,7 @@
    - mechaniki generyczne (ADR 0002 — brak specjalnych przypadków po nazwie);
    - testy RED→GREEN na próbce.
    Raport: `docs/audits/AUDYT_PR65_2026-08-20.md`. Znalezione błędy naprawiam
-   od razu u root cause. — *kryterium: raport + (jeśli były) fixy zielone*
+   od razu u root cause. — *kryterium: raport + (jeśli były) fixy zielone* (raport: docs/audits/AUDYT_PR65_2026-08-20.md — znaleziska F1–F4, D1)
 4. **Zaległość dokumentacyjna PR #65.** `docs/PROJECT_STATE.md` nie ma wpisów
    M147–M155; nie ma handoffu po PR #65. Uzupełniam zwięzłe wpisy stanu
    (bez rekonstrukcji szczegółów — źródłem są opisy commitów squash `1a5accc`
