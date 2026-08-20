@@ -1834,8 +1834,13 @@ export function legalSpellCasts(state, playerId) {
       if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) continue;
     }
     // Modal „Choose one" (Aerith Rescue Mission): każdy tryb enumerujemy osobno.
+    // M155 (audyt żywym testerem): playerView wstawia komendy przez `unshift`,
+    // więc kolejność widziana przez gracza jest ODWROTNA do `casts`. Iterujemy
+    // tryby OD KOŃCA, żeby na panelu/liście celów tryby pojawiły się w kolejności
+    // z Oracle (mode 0 pierwszy — domyślna sugestia; Fortify: Ofensywa przed
+    // Obroną zamiast odwrotnie).
     if (object.spell.modes) {
-      for (let modeIndex = 0; modeIndex < object.spell.modes.length; modeIndex += 1) {
+      for (let modeIndex = object.spell.modes.length - 1; modeIndex >= 0; modeIndex -= 1) {
         for (const cast of legalModeCasts(state, playerId, id, modeIndex, object.spell.modes[modeIndex])) {
           casts.push(cast);
         }

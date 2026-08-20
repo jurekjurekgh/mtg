@@ -75,3 +75,17 @@ test('Batch38/Z2: log zawieszenia używa poprawnej odmiany „liczniki czasu"', 
   assert.match(text, /4 liczniki czasu/, `poprawna odmiana: ${text}`);
   assert.doesNotMatch(text, /liczników czasu/, 'nie sztywna odmiana');
 });
+
+// --- Z5: modalne tryby w kolejności Oracle (mode 0 pierwszy) ---
+test('Batch38/Z5: tryby modalne oferowane w kolejności Oracle (Fortify: Ofensywa przed Obroną)', () => {
+  const state = newState();
+  state.players.find((p) => p.id === 'p1').mana = 3;
+  state.players.find((p) => p.id === 'p1').manaPool = { W: 3 };
+  putCard(state, 'f', 'fortify', 'p1', 'hand');
+  putCard(state, 'c', 'highland-game', 'p1', 'battlefield');
+  const casts = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'cast_spell' && c.objectId === 'f');
+  assert.ok(casts.length >= 2, 'oba tryby oferowane');
+  const modes = casts.map((c) => REGISTRY.get('fortify').spell.modes[c.modeIndex].name);
+  assert.equal(modes[0], 'Ofensywa (+2/+0)', `mode 0 pierwszy (domyślna sugestia): ${modes.join(', ')}`);
+  assert.equal(modes[1], 'Obrona (+0/+2)', `mode 1 drugi: ${modes.join(', ')}`);
+});
