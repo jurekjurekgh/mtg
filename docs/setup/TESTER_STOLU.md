@@ -299,6 +299,31 @@ sprawdzono na transkrypcie SPRZED naprawy (musi zgłosić: 10/1/2 trafienia)
 i PO naprawie (musi zamilknąć: 0). Detektor, który tylko „nie hałasuje”, nie
 dowodzi niczego.
 
+### Oś 6 (M151) — przeciek szumu do logu gracza
+
+`detectLogNoiseLeak` (`info`) — strażnik dokumentowanego wyciszenia
+`mana_produced` („przygotowuje manę”) i `step_advanced` („— faza/krok —”).
+Root cause (M151): `apply()`/`streamAutoEvents` logowały `describeEvent`
+bez filtra, więc log gracza zalewało 18× „przygotowuje manę” i 140× „— …/… —”
+w jednej partii, mimo że TESTER_STOLU.md dokumentuje je jako wyciszone.
+Od M151 obowiązuje `MAIN_LOG_NOISE` w `session.js`; detektor pilnuje nawrotu.
+Jeśli detektor zgłasza „przygotowuje manę”/„— faza/krok —” w logu gracza,
+to znaczy, że filtr przestał działać (regresja).
+
+### M151 — obsługa nowych wzorców akcji w Testerze
+
+Tester zna teraz akcje `Poświęć: …` (Liliana's Triumph — każdy przeciwnik
+poświęca stwora), `Rzuć z odbiciem: …` / `Rzuć zawieszone: …` (rebound/suspend
+free-cast) i `Zostaw w wygnaniu (koniec odbicia/zawieszenia)`. Bez tych wzorców
+tester zatrzymywał się w oknie, w którym człowiek po prostu kliknąłby — a to
+blokowało audyt talii z tymi mechanikami (naprawiono w `run-game.mjs`).
+
+**M151 — detektor `detectFalseNoEffect` używa okna POJEDYNCZEGO (naprzód).**
+Poprzednie ±4 mieszało dwa niezależne triggery w tym samym oknie (Veiled
+Ascension „zerowy wynik” + osobny pump Akrasan Squire) i produkowało fałszywe
+alarmy. Legalny przypadek L24 (efekt mutuje stan bez zdarzenia) ma skutek jako
+NASTĘPNY wpis; inny trigger wchodzi między nie innymi zdarzeniami.
+
 ## Ograniczenia (ważne)
 
 - **jsdom nie renderuje obrazów ani layoutu** — audyt dotyczy treści DOM

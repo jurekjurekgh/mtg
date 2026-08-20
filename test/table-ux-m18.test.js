@@ -267,13 +267,13 @@ test('surveil z dwiema kartami na wierzchu pyta jeszcze o kolejność — klikan
   clickButton(host, 'Na cmentarz'); // Alpha → grób
   clickButton(host, 'Na wierzch biblioteki'); // Beta → wierzch
   clickButton(host, 'Na wierzch biblioteki'); // Gamma → wierzch
-  assert.match(host.textContent, /Ułóż karty na wierzchu/, 'brak kroku kolejności wierzchu');
-  clickButton(host, 'Kolejna na wierzchu: Gamma');
-  clickButton(host, 'Kolejna na wierzchu: Beta');
+  assert.match(host.textContent, /od najwyższej do najniższej/, 'brak kroku kolejności wierzchu');
+  clickButton(host, '1. na wierzchu: Gamma');
+  clickButton(host, '2. na wierzchu: Beta');
   assert.deepEqual(calls, [{ millIds: ['c1'], topOrder: ['c3', 'c2'] }], 'topOrder dokładnie w kolejności klikania');
 });
 
-test('scry: decyzje wierzch/spód po kolei, bez kroku kolejności (spójne z silnikiem)', () => {
+test('scry: decyzje wierzch/spód po kolei; przy 1 karcie na wierzchu kolejność jest trywialna (topOrder 1-elementowy)', () => {
   const host = new MiniEl('#choice');
   const calls = [];
   renderLookWizard(host, {
@@ -284,8 +284,10 @@ test('scry: decyzje wierzch/spód po kolei, bez kroku kolejności (spójne z sil
   assert.match(host.textContent, /Scry 2/);
   clickButton(host, 'Na spód biblioteki');
   assert.match(host.textContent, /Mountain → spód/);
+  // Ostatnia karta (c2) zostaje na wierzchu; przy 1 karcie krok kolejności
+  // jest pomijany, a topOrder to trywialna permutacja jednego elementu.
   clickButton(host, 'Zostaw na wierzchu');
-  assert.deepEqual(calls, [{ bottomIds: ['c1'] }]);
+  assert.deepEqual(calls, [{ bottomIds: ['c1'], topOrder: ['c2'] }]);
 });
 
 test('lookWizardKindOf rozpoznaje żądanie tylko wtedy, gdy to czyste scry/surveil tego gracza', () => {

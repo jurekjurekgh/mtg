@@ -1,0 +1,418 @@
+== NOWA PARTIA: gracz=red vs bot=azorius, seed=101, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Mountain (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Rustwing Falcon
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rustwing Falcon wchodzi na pole bitwy
+  [ROZGRYWKA]   • Rustwing Falcon zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Geological Appraiser
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Zagraj: Cloak of the Bat (koszt 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Cloak of the Bat
+  [ROZGRYWKA]   • Cloak of the Bat wchodzi na pole bitwy
+  [ROZGRYWKA]   • Cloak of the Bat zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Rustwing Falcon
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Rustwing Falcon zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 19
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Molten Nursery
+  >> Zagraj: Welder Automaton (koszt 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Welder Automaton
+  [ROZGRYWKA]   • Welder Automaton wchodzi na pole bitwy
+  [ROZGRYWKA]   • Welder Automaton zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Lotusguard Disciple
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Lotusguard Disciple wchodzi na pole bitwy
+  [ROZGRYWKA]   • Lotusguard Disciple zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Lotusguard Disciple — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Lotusguard Disciple — cel: Welder Automaton
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Welder Automaton zyskuje: dotykanie życia, niezniszczalność
+  [ROZGRYWKA]   • Lotusguard Disciple — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Rustwing Falcon
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Rustwing Falcon zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 19 → 18
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Zagraj: Molten Nursery (koszt 2R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Molten Nursery
+  [ROZGRYWKA]   • Molten Nursery wchodzi na pole bitwy
+  [ROZGRYWKA]   • Molten Nursery zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Welder Automaton
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Lotusguard Disciple blokuje Welder Automaton
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Welder Automaton zadaje 2 obrażenia (Lotusguard Disciple)
+  [ROZGRYWKA]   • Lotusguard Disciple zadaje 2 obrażenia (Welder Automaton)
+  [ROZGRYWKA]   • Welder Automaton ginie
+  [ROZGRYWKA]   • Lotusguard Disciple ginie
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Your Temple Is Under Attack — tryb: Zawrzyj pakt → cel: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Dobierasz: Ramroller
+  [ROZGRYWKA]   • Dobierasz: Mysidian Elder
+  [ROZGRYWKA]   • Your Temple Is Under Attack — tryb: Zawrzyj pakt zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Rustwing Falcon
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Rustwing Falcon zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 17
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Battle-Rattle Shaman
+  >> Zagraj: Mysidian Elder (koszt 2R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mysidian Elder
+  [ROZGRYWKA]   • Mysidian Elder wchodzi na pole bitwy
+  [ROZGRYWKA]   • Mysidian Elder zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Mysidian Elder — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty tworzysz token Wizard (0/1)
+  [ROZGRYWKA]   • token_wizard wchodzi na pole bitwy
+  [ROZGRYWKA]   • Mysidian Elder — trigger się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Morph twarzą w dół (2/2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Morph wchodzi na pole bitwy
+  [ROZGRYWKA]   • Morph zostaje rozstrzygnięty (twarzą w dół)
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Rustwing Falcon
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Rustwing Falcon zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 16
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Brute Force
+  >> Cel czaru: Brute Force (4 opcje)
+  [modal choice] Cel czaru: Brute Force Rzuć: Brute Force (koszt R) → cel: Morph (Nieprzyjaciel) Rzuć: Brute Force (koszt R) → cel: token_wizard (Ty) Rzuć: Brute Force (koszt R) → cel: Mysidian Elder (Ty) Rzuć: Brute Force (koszt R) → cel: Rustwing Falcon (Nieprzyjaciel)
+  [modal choice]   ▶ Rzuć: Brute Force (koszt R) → cel: Morph (Nieprzyjaciel)
+  [modal choice]     Rzuć: Brute Force (koszt R) → cel: token_wizard (Ty)
+  [modal choice]     Rzuć: Brute Force (koszt R) → cel: Mysidian Elder (Ty)
+  [modal choice]     Rzuć: Brute Force (koszt R) → cel: Rustwing Falcon (Nieprzyjaciel)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Brute Force → cel: Morph
+  [ROZGRYWKA]   • token_wizard — trigger (rzucenie czaru niebędącego stworem)
+  [ROZGRYWKA]   • token_wizard zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 19
+  [ROZGRYWKA]   • token_wizard — trigger się rozstrzyga
+  [ROZGRYWKA]   • Brute Force zostaje rozstrzygnięty
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Mysidian Elder, token_wizard
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Morph blokuje Mysidian Elder
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Mysidian Elder zadaje 1 obrażenie (Morph)
+  [ROZGRYWKA]   • Morph zadaje 5 obrażeń (Mysidian Elder)
+  [ROZGRYWKA]   • Mysidian Elder ginie
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Piercing Rays → cel: token_wizard
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: token_wizard — pole bitwy → wygnanie
+  [ROZGRYWKA]   • Piercing Rays zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Rustwing Falcon, Morph
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Rustwing Falcon zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 15
+  [ROZGRYWKA]   • Morph zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 15 → 13
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Zagraj: Battle-Rattle Shaman (koszt 3R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Battle-Rattle Shaman
+  [ROZGRYWKA]   • Battle-Rattle Shaman wchodzi na pole bitwy
+  [ROZGRYWKA]   • Battle-Rattle Shaman zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Początek walki
+  [ROZGRYWKA]   • Battle-Rattle Shaman — wybierz cel triggera (można odmówić)
+  >> Battle-Rattle Shaman — cel triggera (4 opcje)
+  [modal choice] Battle-Rattle Shaman — cel triggera Battle-Rattle Shaman — cel triggera: Rustwing Falcon (Nieprzyjaciel) Battle-Rattle Shaman — cel triggera: Morph (Nieprzyjaciel) Battle-Rattle Shaman — cel triggera: Battle-Rattle Shaman (Ty) Battle-Rattle Shaman — bez celu (odmowa — „up to one"/„you may")
+  [modal choice]   ▶ Battle-Rattle Shaman — cel triggera: Rustwing Falcon (Nieprzyjaciel)
+  [modal choice]     Battle-Rattle Shaman — cel triggera: Morph (Nieprzyjaciel)
+  [modal choice]     Battle-Rattle Shaman — cel triggera: Battle-Rattle Shaman (Ty)
+  [modal choice]     Battle-Rattle Shaman — bez celu (odmowa — „up to one"/„you may")
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Battle-Rattle Shaman — trigger (początek walki)
+  [ROZGRYWKA]   • Battle-Rattle Shaman — cel: Rustwing Falcon
+  [ROZGRYWKA]   • Battle-Rattle Shaman — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Początek walki
+  [ROZGRYWKA]   • Battle-Rattle Shaman — wybierz cel triggera (można odmówić)
+  >> Battle-Rattle Shaman — cel triggera (4 opcje)
+  [modal choice] Battle-Rattle Shaman — cel triggera Battle-Rattle Shaman — cel triggera: Rustwing Falcon (Nieprzyjaciel) Battle-Rattle Shaman — cel triggera: Morph (Nieprzyjaciel) Battle-Rattle Shaman — cel triggera: Battle-Rattle Shaman (Ty) Battle-Rattle Shaman — bez celu (odmowa — „up to one"/„you may")
+  [modal choice]   ▶ Battle-Rattle Shaman — cel triggera: Rustwing Falcon (Nieprzyjaciel)
+  [modal choice]     Battle-Rattle Shaman — cel triggera: Morph (Nieprzyjaciel)
+  [modal choice]     Battle-Rattle Shaman — cel triggera: Battle-Rattle Shaman (Ty)
+  [modal choice]     Battle-Rattle Shaman — bez celu (odmowa — „up to one"/„you may")
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Battle-Rattle Shaman — trigger (początek walki)
+  [ROZGRYWKA]   • Battle-Rattle Shaman — cel: Rustwing Falcon
+  [ROZGRYWKA]   • Rustwing Falcon dostaje +2/+0
+  [ROZGRYWKA]   • Battle-Rattle Shaman — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Rustwing Falcon, Morph
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Battle-Rattle Shaman (2/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Battle-Rattle Shaman blokuje Morph
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Rustwing Falcon zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 10
+  [ROZGRYWKA]   • Monastery Flock zadaje 2 obrażenia (Battle-Rattle Shaman)
+  [ROZGRYWKA]   • Battle-Rattle Shaman zadaje 2 obrażenia (Monastery Flock)
+  [ROZGRYWKA]   • Monastery Flock ginie
+  [ROZGRYWKA]   • Battle-Rattle Shaman ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Turn the Tide
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Zagraj: Ramroller (koszt 3)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Ramroller
+  >> Molten Nursery — cel triggera (3 opcje)
+  [modal choice] Molten Nursery — cel triggera Molten Nursery — cel triggera: Nieprzyjaciel Molten Nursery — cel triggera: Rustwing Falcon (Nieprzyjaciel) Molten Nursery — cel triggera: Ty
+  [modal choice]   ▶ Molten Nursery — cel triggera: Nieprzyjaciel
+  [modal choice]     Molten Nursery — cel triggera: Rustwing Falcon (Nieprzyjaciel)
+  [modal choice]     Molten Nursery — cel triggera: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Molten Nursery — trigger (rzucenie czaru)
+  [ROZGRYWKA]   • Molten Nursery — cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Molten Nursery zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 19 → 18
+  [ROZGRYWKA]   • Molten Nursery — trigger się rozstrzyga
+  [ROZGRYWKA]   • Ramroller wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ramroller zostaje rozstrzygnięty
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Talion's Messenger
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Talion's Messenger wchodzi na pole bitwy
+  [ROZGRYWKA]   • Talion's Messenger zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Rustwing Falcon
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Rustwing Falcon zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 10 → 9
+  [ROZGRYWKA]   • Tura 17 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Fiery Fall
+  >> Dalej (pass)
+  >> Zagraj: Geological Appraiser (koszt 2RR)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Geological Appraiser
+  [ROZGRYWKA]   • Geological Appraiser wchodzi na pole bitwy
+  [ROZGRYWKA]   • Geological Appraiser zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Geological Appraiser — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odsłaniasz Fireball
+  [ROZGRYWKA]   • Wykonujesz discover (3) — trafiono Fireball
+  [ROZGRYWKA]   • Geological Appraiser — trigger się rozstrzyga
+  >> Wybierz: Discover — rzucić czy wziąć do ręki? (2 opcje)
+  [modal choice] Wybierz: Discover — rzucić czy wziąć do ręki? Discover: weź kartę do ręki Discover: rzuć bez kosztu many
+  [modal choice]   ▶ Discover: weź kartę do ręki
+  [modal choice]     Discover: rzuć bez kosztu many
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: Fireball — wygnanie → ręka
+  >> Wybierz: Deklaracja atakujących (1 opcja)
+  [combat wizard] atakuję 0 z 0 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Ramroller
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Ramroller zadaje 4 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 18 → 14
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Lodestone Needle
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Lodestone Needle wchodzi na pole bitwy
+  [ROZGRYWKA]   • Lodestone Needle zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Lodestone Needle — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Lodestone Needle — cel: Ramroller
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ramroller dostaje +2 liczniki stun (razem 2)
+  [ROZGRYWKA]   • Lodestone Needle — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Porcelain Legionnaire — phyrexian: 1× po 2 życia
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 14 → 12
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Porcelain Legionnaire wchodzi na pole bitwy
+  [ROZGRYWKA]   • Porcelain Legionnaire zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Talion's Messenger
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Talion's Messenger — wybierz cel triggera (wymagany)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Talion's Messenger — trigger (atak z Faerie)
+  [ROZGRYWKA]   • Talion's Messenger — cel: Talion's Messenger
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera, którą kartę odrzucić efektem (Talion's Messenger)
+  [ROZGRYWKA]   • Talion's Messenger dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Talion's Messenger — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Coralhelm Guide
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Talion's Messenger zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 9 → 7
+  [ROZGRYWKA]   • Tura 19 — Ty
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Titan's Strength
+  >> Cel czaru: Titan's Strength (5 opcji)
+  [modal choice] Cel czaru: Titan's Strength Rzuć: Titan's Strength (koszt R) → cel: Porcelain Legionnaire (Nieprzyjaciel) Rzuć: Titan's Strength (koszt R) → cel: Geological Appraiser (Ty) Rzuć: Titan's Strength (koszt R) → cel: Talion's Messenger (Nieprzyjaciel) Rzuć: Titan's Strength (koszt R) → cel: Ramroller (Ty) Rzuć: Titan's Strength (koszt R) → cel: Rustwing Falcon (Nieprzyjaciel)
+  [modal choice]   ▶ Rzuć: Titan's Strength (koszt R) → cel: Porcelain Legionnaire (Nieprzyjaciel)
+  [modal choice]     Rzuć: Titan's Strength (koszt R) → cel: Geological Appraiser (Ty)
+  [modal choice]     Rzuć: Titan's Strength (koszt R) → cel: Talion's Messenger (Nieprzyjaciel)
+  [modal choice]     Rzuć: Titan's Strength (koszt R) → cel: Ramroller (Ty)
+  [modal choice]     Rzuć: Titan's Strength (koszt R) → cel: Rustwing Falcon (Nieprzyjaciel)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Titan's Strength → cel: Porcelain Legionnaire
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Wykonujesz scry (patrzy na 1 kartę: Spreading Insurrection)
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [modal choice] Scry 1 — obejrzane karty: 1. Spreading InsurrectionKarta 1 z 1: Spreading InsurrectionNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kończysz scry — na spód (1/1): Spreading Insurrection
+  [ROZGRYWKA]   • Titan's Strength zostaje rozstrzygnięty
+  >> Dalej (pass)
+  >> Zagraj: Bomat Bazaar Barge (koszt 4)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Bomat Bazaar Barge
+  >> Molten Nursery — cel triggera (7 opcji)
+  [modal choice] Molten Nursery — cel triggera Molten Nursery — cel triggera: Nieprzyjaciel Molten Nursery — cel triggera: Rustwing Falcon (Nieprzyjaciel) Molten Nursery — cel triggera: Ramroller (Ty) Molten Nursery — cel triggera: Talion's Messenger (Nieprzyjaciel) Molten Nursery — cel triggera: Geological Appraiser (Ty) Molten Nursery — cel triggera: Porcelain Legionnaire (Nieprzyjaciel) Molten Nursery — cel triggera: Ty
+  [modal choice]   ▶ Molten Nursery — cel triggera: Nieprzyjaciel
+  [modal choice]     Molten Nursery — cel triggera: Rustwing Falcon (Nieprzyjaciel)
+  [modal choice]     Molten Nursery — cel triggera: Ramroller (Ty)
+  [modal choice]     Molten Nursery — cel triggera: Talion's Messenger (Nieprzyjaciel)
+  [modal choice]     Molten Nursery — cel triggera: Geological Appraiser (Ty)
+  [modal choice]     Molten Nursery — cel triggera: Porcelain Legionnaire (Nieprzyjaciel)
+  [modal choice]     Molten Nursery — cel triggera: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Molten Nursery — trigger (rzucenie czaru)
+  [ROZGRYWKA]   • Molten Nursery — cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Molten Nursery zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 12 → 11
+  [ROZGRYWKA]   • Molten Nursery — trigger się rozstrzyga
+  [ROZGRYWKA]   • Bomat Bazaar Barge wchodzi na pole bitwy
+  [ROZGRYWKA]   • Bomat Bazaar Barge zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Bomat Bazaar Barge — trigger (wejście na pole bitwy)
+  >> Aktywuj: Bomat Bazaar Barge (Ty) (koszt załoga 3) — stanie się stworem do końca tury — załoga: tapnij Geologic
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Bomat Bazaar Barge — załoga: Geological Appraiser
+  [ROZGRYWKA]   • Bomat Bazaar Barge staje się stworzeniem 5/5 do końca tury
+  [ROZGRYWKA]   • Ty: zdolność Bomat Bazaar Barge rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Soulbright Flamekin
+  [ROZGRYWKA]   • Bomat Bazaar Barge — trigger się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Serra's Embrace → cel: Talion's Messenger
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Serra's Embrace zaczarowuje Talion's Messenger
+  [ROZGRYWKA]   • Serra's Embrace wchodzi na pole bitwy
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Rustwing Falcon, Talion's Messenger, Porcelain Legionnaire
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Talion's Messenger — wybierz cel triggera (wymagany)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Talion's Messenger — trigger (atak z Faerie)
+  [ROZGRYWKA]   • Talion's Messenger — cel: Talion's Messenger
+== KONIEC PARTII == Koniec partii — wygrywa On
+
+--- krok 75 | Koniec partii — wygrywa On ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Fiery Fall · 6 · Instant · Obrażenia 5 · cel: stwór · Cycling {1}, {R} → szukaj: Basic lub Land | Fireball · 1 · Sorcery · X obrażeń podzielone po równo między cele | Soulbright Flamekin · 2 · Creature — Elemental Shaman · {2}: cel: stwór — zdobądź Zadeptywanie do końca tury · 2/1
+  MOJE POLA: Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech | Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Ramroller · 3 · Artifact Creature — Juggernaut · musi atakować · +2/+0 · gdy kontrolujesz inny artefakt · ogłuszenie×1 · 4/3 | Geological Appraiser · 4 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: discover (odsłoń i rzuć za darmo). · 3/2 | Bomat Bazaar Barge · 4 · Artifact — Vehicle · Gdy wejdzie na pole bitwy: dobierz 1 kartę. · załoga 3: stanie się stworem do końca tury | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×5
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Rustwing Falcon · 1 · Creature — Bird · Latanie · 1/2 | Talion's Messenger · 3 · Creature — Faerie Noble · Latanie Czujność · Trigger atak z Faerie: dobierz 1 kartę, odrzuć 1 kartę, połóż licznik +1/+1. · +1/+1×2 · zaczarowana: Serra's Embrace · 5/7 | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Porcelain Legionnaire · 2 · Artifact Creature — Phyrexian Soldier · Pierwsze uderzenie · 3/1 | Serra's Embrace · 4 · Enchantment Aura · stwór: +2/+2 · stwór ma: Latanie, Czujność · aura → Talion's Messenger
+  LOG: Atak: Ramroller ⏎ Fireball — discover ⏎ Geological Appraiser — trigger się rozstrzyga ⏎ Wykonujesz discover (3) — trafiono Fireball ⏎ Odsłaniasz Fireball ⏎ Geological Appraiser — trigger (wejście na pole bitwy)
+
+== POKRYCIE UI == akcje widziane: 31, kliknięte: 30, modale: 7, sondy noop: 89 (panel 68, modal 21)
+== DETEKTORY: brak zgłoszeń ==

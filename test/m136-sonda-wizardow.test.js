@@ -77,12 +77,12 @@ test('M136: krok kolejności w wizardzie SURVEIL ma klucz sondy przy ostatniej k
   keepSecond.click();
   // Teraz krok kolejności: dwie karty do ułożenia. Pierwszy wybór NIE domyka
   // wizarda (komenda jeszcze nieznana), więc klucza być nie musi.
-  const orderButtons = nodes(host).filter((n) => n.tagName === 'button' && /Kolejna na wierzchu/.test(n.textContent));
+  const orderButtons = nodes(host).filter((n) => n.tagName === 'button' && /na wierzchu:/.test(n.textContent));
   assert.equal(orderButtons.length, 2, 'dwie karty do ułożenia');
   orderButtons[0].click();
   // Po pierwszym wyborze została JEDNA karta — to kliknięcie domyka wizard,
   // więc klucz sondy MUSI już być (to była luka wskazana w backlogu).
-  const lastStep = nodes(host).filter((n) => n.tagName === 'button' && /Kolejna na wierzchu/.test(n.textContent));
+  const lastStep = nodes(host).filter((n) => n.tagName === 'button' && /na wierzchu:/.test(n.textContent));
   assert.equal(lastStep.length, 1, 'została ostatnia karta');
   assert.ok(lastStep[0].dataset.optionKey,
     'ostatni krok kolejności musi nieść data-option-key (inaczej sonda nie mierzy surveil)');
@@ -96,9 +96,9 @@ test('M136: klucz z kroku kolejności opisuje DOKŁADNIE wysyłaną komendę', (
   renderLookWizard(host, { kind: 'surveil', cards, probeKeyFor, onComplete: (cmd) => { sent = cmd; } });
   nodes(host).find((n) => n.tagName === 'button' && /wierzch/i.test(n.textContent)).click();
   nodes(host).find((n) => n.tagName === 'button' && /wierzch/i.test(n.textContent)).click();
-  const order = nodes(host).filter((n) => n.tagName === 'button' && /Kolejna na wierzchu/.test(n.textContent));
+  const order = nodes(host).filter((n) => n.tagName === 'button' && /na wierzchu:/.test(n.textContent));
   order[0].click();
-  const last = nodes(host).filter((n) => n.tagName === 'button' && /Kolejna na wierzchu/.test(n.textContent))[0];
+  const last = nodes(host).filter((n) => n.tagName === 'button' && /na wierzchu:/.test(n.textContent))[0];
   const keyBeforeClick = last.dataset.optionKey;
   last.click();
   assert.ok(sent, 'wizard wysłał komendę');

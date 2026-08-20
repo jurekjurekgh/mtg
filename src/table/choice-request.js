@@ -166,21 +166,28 @@ export function renderLookWizard(host, { kind, cards, onComplete, onCancel, prob
   const finish = () => {
     // topOrder musi być permutacją kart zostających na wierzchu — przy 0/1
     // karcie krok kolejności jest zbędny i trywialna permutacja wystarczy.
-    if (kind === 'index') onComplete?.({ order: orderIds.length > 0 ? [...orderIds] : [...keptIds] });
-    else if (kind === 'surveil') onComplete?.({ millIds: [...badIds], topOrder: orderIds.length > 0 ? [...orderIds] : [...keptIds] });
-    else onComplete?.({ bottomIds: [...badIds] });
+    // M148: scry jak surveil — gracz wybiera KOLEJNOŚĆ reszty na wierzchu.
+    const topOrder = orderIds.length > 0 ? [...orderIds] : [...keptIds];
+    if (kind === 'index') onComplete?.({ order: topOrder });
+    else if (kind === 'surveil') onComplete?.({ millIds: [...badIds], topOrder });
+    else onComplete?.({ bottomIds: [...badIds], topOrder });
   };
   const stepOrder = () => {
     clearChoiceElement(host);
     renderIntro();
     choiceNode(host, 'div', 'choice-request-intro', kind === 'index'
       ? 'Ustaw nową kolejność od góry — wybieraj karty po kolei:'
-      : 'Ułóż karty na wierzchu biblioteki (od góry) — wybieraj po kolei:');
+      : 'Wybierz w kolejności od najwyższej do najniższej na szczycie biblioteki:');
     const options = choiceNode(host, 'div', 'choice-request-options');
     const remaining = keptIds.filter((kept) => !orderIds.includes(kept));
     for (const id of remaining) {
       const card = list.find((c) => c.id === id);
-      const button = choiceNode(options, 'button', 'action choice-request-option', `Kolejna na wierzchu: ${card?.name ?? id}`);
+      // M149 (uwaga B właściciela): komunikat nie brzmi już generycznie
+      // „Kolejna karta na wierzchu", tylko enumeruje KONKRETNĄ kartę i jej
+      // pozycję od góry — gracz widzi, którą układa.
+      const pos = orderIds.length + 1;
+      const button = choiceNode(options, 'button', 'action choice-request-option',
+        `${pos}. na wierzchu: ${card?.name ?? id}`);
       button.type = 'button';
       // M136 (backlog: „sonda surveil — decyzja pośrednia nie ma klucza"):
       // krok kolejności był ostatnim miejscem wizarda scry/surveil poza
@@ -193,7 +200,9 @@ export function renderLookWizard(host, { kind, cards, onComplete, onCancel, prob
         const finalOrder = [...orderIds, id];
         const key = kind === 'index'
           ? probeKeyFor({ order: [...finalOrder] })
-          : probeKeyFor({ millIds: [...badIds], topOrder: [...finalOrder] });
+          : kind === 'surveil'
+            ? probeKeyFor({ millIds: [...badIds], topOrder: [...finalOrder] })
+            : probeKeyFor({ bottomIds: [...badIds], topOrder: [...finalOrder] });
         if (key) button.dataset.optionKey = key;
       }
       button.addEventListener('click', () => {
@@ -218,9 +227,12 @@ export function renderLookWizard(host, { kind, cards, onComplete, onCancel, prob
     const finishingKey = (nextBad, nextKept) => {
       if (!probeKeyFor) return null;
       if (index + 1 < list.length) return null;
-      if (kind === 'surveil' && nextKept.length >= 2) return null;
+      // Surveil/scry: gdy ≥2 karty zostają na wierzchu, po decyzjach następuje
+      // jeszcze krok KOLEJNOŚCI — komenda nie jest jeszcze znana, klucza brak.
+      if ((kind === 'surveil' || kind === 'scry') && nextKept.length >= 2) return null;
       if (kind === 'surveil') return probeKeyFor({ millIds: [...nextBad], topOrder: [...nextKept] });
-      return probeKeyFor({ bottomIds: [...nextBad] });
+      if (kind === 'scry') return probeKeyFor({ bottomIds: [...nextBad], topOrder: [...nextKept] });
+      return probeKeyFor({ order: [...nextKept] });
     };
     const bad = choiceNode(options, 'button', 'action choice-request-option', labels.toBad);
     bad.type = 'button';
@@ -244,8 +256,9 @@ export function renderLookWizard(host, { kind, cards, onComplete, onCancel, prob
   };
   const next = (index) => {
     if (index + 1 < list.length) { stepCard(index + 1); return; }
-    // Surveil: reszta na wierzchu „in any order" — przy ≥2 pytamy o kolejność.
-    if (kind === 'surveil' && keptIds.length >= 2) stepOrder();
+    // Surveil/scry: reszta na wierzchu „in any order" (CR 701.18/701.41) —
+    // przy ≥2 pytamy o kolejność (M148, zgłoszenie właściciela).
+    if ((kind === 'surveil' || kind === 'scry') && keptIds.length >= 2) stepOrder();
     else finish();
   };
 
@@ -585,36 +598,65 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
       // M136: po zmianie przydziału klucz sondy musi opisywać NOWY stan.
       if (typeof host.__refreshDamageProbeKey === 'function') host.__refreshDamageProbeKey();
     };
-    entry.blockers.forEach((b, idx) => {
-      const row = choiceNode(rows, 'div', 'damage-wizard-row');
-      const liveBlockerName = objectName(view, session, b.id);
-      const blockerName = liveBlockerName !== '?'
-        ? liveBlockerName
-        : (b.cardId ? session.nameOf(b.cardId) : '?');
-      choiceNode(row, 'span', 'damage-wizard-name',
-        `${blockerName} (wytrz. ${b.toughness}${b.damage ? `, obrażenia ${b.damage}` : ''}, śmiertelne ${b.lethal})`);
-      const minus = choiceNode(row, 'button', 'ghost-btn damage-wizard-minus', '−1');
-      minus.type = 'button';
-      const amountEl = choiceNode(row, 'span', 'damage-wizard-amount', '0');
-      state.amounts.set(`${key}:${b.id}`, amountEl);
-      const plus = choiceNode(row, 'button', 'ghost-btn damage-wizard-plus', '+1');
-      plus.type = 'button';
-      minus.addEventListener('click', () => {
-        if (amounts[idx] <= 0) return;
-        amounts[idx] -= 1;
-        // Jeśli ten bloker spadł poniżej lethal, późniejsi nie mogą mieć
-        // obrażeń (reguła kolejności CR 510.1d).
-        if (amounts[idx] < b.lethal) {
-          for (let j = idx + 1; j < amounts.length; j += 1) amounts[j] = 0;
-        }
-        render();
+    // M150/B (CR 510.1c): atakujący wybiera KOLEJNOŚĆ przydziału obrażeń.
+    // Wcześniej kolejność deklaracji bloków była sztywna i nie dało się
+    // w ogóle przydzielić obrażeń późniejszemu blokerowi, dopóki wcześniejszy
+    // nie dostał lethal (CR 510.1d) — np. 2/2 atakujący blokowany przez 2/2 i 4/4
+    // mógł zabrać obrażenia tylko pierwszemu. Przyciski ↑/↓ zmieniają
+    // kolejność, więc gracz może ustawić śmiertelny cel jako pierwszy.
+    const swapBlockerOrder = (idx, targetIdx) => {
+      const list = entry.blockers;
+      const am = amounts;
+      [list[idx], list[targetIdx]] = [list[targetIdx], list[idx]];
+      [am[idx], am[targetIdx]] = [am[targetIdx], am[idx]];
+      buildRows();
+      render();
+    };
+    const buildRows = () => {
+      // Wyczyść wiersze blokerów przed przebudową. `innerHTML = ''` działa
+      // i w przeglądarce, i w stubach MiniEl testów (nie każda ma
+      // replaceChildren).
+      rows.innerHTML = '';
+      entry.blockers.forEach((b, idx) => {
+        const row = choiceNode(rows, 'div', 'damage-wizard-row');
+        const liveBlockerName = objectName(view, session, b.id);
+        const blockerName = liveBlockerName !== '?'
+          ? liveBlockerName
+          : (b.cardId ? session.nameOf(b.cardId) : '?');
+        choiceNode(row, 'span', 'damage-wizard-name',
+          `${blockerName} (wytrz. ${b.toughness}${b.damage ? `, obrażenia ${b.damage}` : ''}, śmiertelne ${b.lethal})`);
+        const minus = choiceNode(row, 'button', 'ghost-btn damage-wizard-minus', '−1');
+        minus.type = 'button';
+        const amountEl = choiceNode(row, 'span', 'damage-wizard-amount', '0');
+        state.amounts.set(`${key}:${b.id}`, amountEl);
+        const plus = choiceNode(row, 'button', 'ghost-btn damage-wizard-plus', '+1');
+        plus.type = 'button';
+        minus.addEventListener('click', () => {
+          if (amounts[idx] <= 0) return;
+          amounts[idx] -= 1;
+          // Jeśli ten bloker spadł poniżej lethal, późniejsi nie mogą mieć
+          // obrażeń (reguła kolejności CR 510.1d).
+          if (amounts[idx] < b.lethal) {
+            for (let j = idx + 1; j < amounts.length; j += 1) amounts[j] = 0;
+          }
+          render();
+        });
+        plus.addEventListener('click', () => {
+          if (!canIncrease(idx)) return;
+          amounts[idx] += 1;
+          render();
+        });
+        const up = choiceNode(row, 'button', 'ghost-btn damage-wizard-up', '↑');
+        up.type = 'button';
+        up.title = 'Przesuń wyżej w kolejności przydziału';
+        up.addEventListener('click', () => { if (idx > 0) swapBlockerOrder(idx, idx - 1); });
+        const down = choiceNode(row, 'button', 'ghost-btn damage-wizard-down', '↓');
+        down.type = 'button';
+        down.title = 'Przesuń niżej w kolejności przydziału';
+        down.addEventListener('click', () => { if (idx < entry.blockers.length - 1) swapBlockerOrder(idx, idx + 1); });
       });
-      plus.addEventListener('click', () => {
-        if (!canIncrease(idx)) return;
-        amounts[idx] += 1;
-        render();
-      });
-    });
+    };
+    buildRows();
     state.entries.push({
       attackerId: key, blockers: entry.blockers, amounts,
       trample: Boolean(entry.trample), power: entry.power,

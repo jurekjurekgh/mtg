@@ -124,7 +124,7 @@ function defaultBotFactory(seed, ctx) {
     pump: 'zmiana statystyk celu',
     scry: 'scry na wierzchu biblioteki',
     search_library_to_battlefield: 'szukanie karty w bibliotece na pole bitwy',
-    station_counters: 'liczniki charge ze Station (moc zatapniętego stwora)',
+    station_counters: 'liczniki charge ze Station',
     take_initiative: 'objęcie inicjatywy',
     transform: 'transform karty',
     untap_permanent: 'odtapnięcie celu',
@@ -221,6 +221,7 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   aura_host_targeted_by_spell: 'gospodarz aury celem czaru',
   spell_targets_this_creature: 'twoja karta celuje w to stworzenie',
   bat_attacks: 'atak nietoperza',
+  faerie_attacks: 'atak z Faerie',
   beginning_of_combat: 'początek walki',
   card_put_into_graveyard_from_nonbattlefield: 'karta do grobu spoza pola bitwy',
   combat_damage_to_player: 'obrażenia bojowe graczowi',
@@ -695,7 +696,18 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
           .map((type) => ABILITY_EFFECT_LABELS[type])
           .filter(Boolean)
           .join(', ');
-        return `${whoN(e.playerId)} aktywuje zdolność: ${sourceName}${desc ? ` — ${desc}` : ''}${xPart}${targets ? ` → cel: ${targets}` : ''}${crewPart}`;
+        // M150/C2: zdolność dodająca manę (Jeskai Devotee „{1}: Add {U}, {R},
+        // or {W}\") loguje też, JAKĄ manę produkuje — „dodanie many do puli
+        // ({U}, {R}, {W})” zamiast milczeć o kolorze (uwaga właściciela).
+        const manaPart = (e.manaColors?.length)
+          ? ` (${e.manaColors.map((color) => `{${color}}`).join(', ')})`
+          : '';
+        // M153/A1: Station — nazwa zatapianego INNEGO stwora (koszt
+        // tapOtherCreature), albo Morph, gdy zakryty (CR 708.2).
+        const stationPart = e.stationTappedCreatureId
+          ? ` (tapuje: ${nameOfObject(e.stationTappedCreatureId)})`
+          : '';
+        return `${whoN(e.playerId)} aktywuje zdolność: ${sourceName}${desc ? ` — ${desc}` : ''}${manaPart}${xPart}${targets ? ` → cel: ${targets}` : ''}${crewPart}${stationPart}`;
       }
       // D (2026-08-11): zdolność aktywowana rozstrzygnięta ze stosu.
       case 'ability_resolved': {
@@ -773,13 +785,20 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       case 'card_discarded': return `${whoN(e.playerId)} odrzuca ${nameOf(e.cardId)}`;
       case 'card_milled': return `${whoN(e.playerId)} mieli ${nameOf(e.cardId)} do grobu`;
       case 'card_plotted': return `${whoN(e.playerId)} plotuje ${nameOf(e.cardId)} (karta trafia do exile)`;
-      case 'card_suspended': return `${whoN(e.playerId)} zawiesza ${nameOf(e.cardId)} (${e.timeCounters ?? 4} liczników czasu)`;
+      case 'card_suspended': {
+        const n = e.timeCounters ?? 4;
+        // M155 (audyt żywym testerem): zgodna odmiana z render.js (M151) —
+        // „4 liczniki czasu" zamiast sztywnego „4 liczników".
+        return `${whoN(e.playerId)} zawiesza ${nameOf(e.cardId)} (${n} ${polishPlural(n, 'licznik', 'liczniki', 'liczników')} czasu)`;
+      }
       case 'time_counter_removed': {
         const ready = e.ready ? ' — ostatni licznik zdjęty, zdolność wyzwalana idzie na stos' : '';
         return `${whoN(e.playerId)} zdejmuje licznik czasu z ${nameOf(e.cardId)} (zostało ${e.remaining ?? 0})${ready}`;
       }
       case 'suspend_ready_required': return `${whoN(e.playerId)}: ostatni licznik czasu zdjęty z ${nameOf(e.cardId)} — możesz rzucić ją bez kosztu many albo zostawić w wygnaniu`;
       case 'suspend_declined': return `${whoN(e.playerId)} zostawia ${nameOf(e.cardId)} w wygnaniu (koniec zawieszenia)`;
+      case 'rebound_ready_required': return `${whoN(e.playerId)}: ${nameOf(e.cardId)} odbija się — możesz rzucić ją bez kosztu many albo zostawić w wygnaniu`;
+      case 'rebound_declined': return `${whoN(e.playerId)} zostawia ${nameOf(e.cardId)} w wygnaniu (koniec odbicia)`;
       case 'card_revealed': return `${whoN(e.playerId)} odsłania ${nameOf(e.cardId)}`;
       case 'library_searched': return e.foundCardId
         ? `${whoN(e.playerId)} przeszukuje bibliotekę i tasuje`
@@ -879,6 +898,17 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         // M100/E4: wzięta karta to wiedza własna; reszta do grobu opisują
         // jawne zdarzenia przeniesienia (grób publiczny).
         const pickName = (e.playerId === HUMAN_ID && e.pickCardId) ? nameOf(e.pickCardId) : 'kartę';
+        return `${whoN(e.playerId)} bierze ${pickName} z wierzchu do ręki (reszta do grobu)`;
+      }
+      case 'satyr_look_started': {
+        if (e.cardIds?.length && e.playerId === HUMAN_ID) {
+          const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
+          return `${whoN(e.playerId)} odsłania ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki (${names}) — może wziąć ląd do ręki`;
+        }
+        return `${whoN(e.playerId)} odsłania ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki — może wziąć ląd do ręki`;
+      }
+      case 'satyr_look_resolved': {
+        const pickName = (e.pickId != null && e.playerId === HUMAN_ID && e.pickCardId) ? nameOf(e.pickCardId) : 'żadnego lądu';
         return `${whoN(e.playerId)} bierze ${pickName} z wierzchu do ręki (reszta do grobu)`;
       }
       // M100/E4: karty Epic Experiment lecą na ODKRYTY exile (publiczne) —
@@ -1262,6 +1292,16 @@ export function createSession(config) {
     lines: [],
   };
   const TURN_NOISE = new Set(['step_advanced', 'mana_produced', 'turn_started']);
+  /**
+   * M151 (audyt żywym testerem): szum GŁÓWNEGO LOGU gracza. TESTER_STOLU.md
+   * (oś 2) dokumentuje `mana_produced` i `step_advanced` jako wyciszone, a
+   * `describeEvent` zwraca dla nich tekst — więc `apply()`/`streamAutoEvents`
+   * wpisywały je do logu (18× „przygotowuje manę" i 140× „— faza/krok —"
+   * w jednej partii). Modal „Ruch bota" i tak ma własną bramkę BOT_MOVE_NOISE.
+   * `turn_started` NIE jest szumem (decyzja właściciela — początek tury to
+   * istotna informacja), więc zostaje.
+   */
+  const MAIN_LOG_NOISE = new Set(['mana_produced', 'step_advanced']);
   function recordTurnEvent(e) {
     if (e.type === 'turn_started') {
       turnHistory.push(currentTurn);
@@ -1328,6 +1368,10 @@ export function createSession(config) {
     if (object.faceDown) {
       return faceDownName(object.controllerId === HUMAN_ID ? nameOf(object.cardId) : null);
     }
+    // M155 (audyt żywym testerem): tokeny niosą JAWNĄ nazwę w `object.name`
+    // (cardId `token_*` poza rejestrem → nameOf zwracałby „token_squirrel").
+    // Nazwa tokenu z pola obiektu, nie z mapy rejestru kart.
+    if (object.isToken && object.name != null) return object.name;
     return nameOf(object.cardId);
   }
 
@@ -1699,6 +1743,9 @@ export function createSession(config) {
   function streamAutoEvents(events) {
     let significant = false;
     for (const e of events) {
+      // M151: główny log gracza nie przyjmuje szumu (mana/fazy) — patrz
+      // MAIN_LOG_NOISE. noteBotMove/recordTurnEvent mają własne bramki.
+      if (MAIN_LOG_NOISE.has(e.type)) { noteBotMove(e); recordTurnEvent(e); continue; }
       const text = describeEvent(e);
       if (text) sessionLog('event', text);
       noteBotMove(e);
@@ -1888,6 +1935,9 @@ export function createSession(config) {
       awaitingBotAck = false;
       let ownDraw = false;
       for (const e of result.events) {
+        // M151: główny log gracza nie przyjmuje szumu (mana/fazy) — patrz
+        // MAIN_LOG_NOISE; noteBotMove/recordTurnEvent mają własne bramki.
+        if (MAIN_LOG_NOISE.has(e.type)) { noteBotMove(e); recordTurnEvent(e); continue; }
         const text = describeEvent(e);
         if (text) sessionLog('event', text);
         // M100/E2 (symetria rozstrzygnięć): komenda CZŁOWIEKA też może

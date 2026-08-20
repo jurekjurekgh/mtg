@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Silken+Strength&set=dft",
+  "print": "Silken Strength (DFT)",
+  "name": "Silken Strength",
+  "mana_cost": "{1}{G}",
+  "cmc": 2,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Flash\nEnchant creature or Vehicle\nWhen this Aura enters, untap enchanted permanent.\nEnchanted permanent gets +1/+2 and has reach.",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Enchant",
+    "Flash"
+  ],
+  "set": "dft",
+  "set_name": "Aetherdrift",
+  "collector_number": "180",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/e/ce0e1ded-9b00-4d7b-884c-70a429783b1f.jpg?1783907865",
+    "normal": "https://cards.scryfall.io/normal/front/c/e/ce0e1ded-9b00-4d7b-884c-70a429783b1f.jpg?1783907865"
+  },
+  "pobrano": "2026-08-19"
+}

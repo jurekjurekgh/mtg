@@ -49,8 +49,8 @@
 1x Jwari Shapeshifter
 1x Floodhound
 1x Steel Sabotage
-18x Plains
-12x Island
+21x Plains
+13x Island
 1x Rustwing Falcon
 1x Monastery Flock
 1x Coralhelm Guide
@@ -67,3 +67,12 @@
 1x Sterling Keykeeper
 1x Survivor of Korlis
 1x Piercing Rays
+1x Palace Familiar
+1x Village Bell-Ringer
+1x Ojutai's Breath
+1x Static Net
+1x Divine Offering
+1x Fortify
+1x Lotusguard Disciple
+1x Weftblade Enhancer
+1x Talion's Messenger

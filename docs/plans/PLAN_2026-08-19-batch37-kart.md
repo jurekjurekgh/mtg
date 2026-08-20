@@ -30,10 +30,39 @@ Lista właściciela. Oracle ze Scryfalla (pobrane 2026-08-19, ADR 0010 §2a).
 
 ## Plan commitów
 
-1. Plan + dane Scryfall
-2. Reuse (Returned, Liliana, Palace, Thornhide)
-3. Ojutai's Breath (dont_untap + rebound)
-4. Village Bell-Ringer + Satyr Wayfinder (untap all + reveal/pick land)
-5. Static Net (linked exile + powerstone)
-6. Strandwalker (living weapon) + Urza's Mine (tron)
-7. Dokumentacja
+1. ~~Plan + dane Scryfall~~ — zrobione (PR #64)
+2. ~~Reuse (Returned, Liliana, Palace, Thornhide)~~ — zrobione (M147 transza A:
+   artId/plan ze słownika, talie green/black/azorius + karty i lądy wg M132,
+   seedy 5 testów przelosowane hunterem L25).
+3. ~~Village Bell-Ringer (untap_all_creatures_you_control)~~ — zrobione
+   (M147 transza B: nowy efekt generyczny `untap_all_creatures_you_control`
+   + opis w render.js, talia azorius +1 karta +1 ląd, seed przelosowany L25).
+4. ~~Liliana's Triumph (planeswalker) + Urza's Mine (tron)~~ — zrobione
+   (M147: efekty warunkowe zakodowane Z WYPRZEDZENIEM — decyzja właściciela
+   2026-08-19. Liliana: `conditional controlsPlaneswalkerWithSubtype` w
+   effects.js; Urza's Mine: tron już w mana-sources.js (tronRequired), dodana
+   karta. Oba działają od razu po dodaniu kart wyzwalających. Talia mechanicy
+   +Urza's Mine.)
+5. ~~Ojutai's Breath (dont_untap + rebound)~~ — zrobione (M147: nowa mechanika
+   **rebound** CR 702.97 — exile po rozstrzygnięciu gdy rzucony z ręki,
+   jednorazowa decyzja rzutu bez kosztu na początku następnego upkeepu;
+   efekty generyczne przez registry→identity→state, jak suspend.)
+6. ~~Fix CI (szybki rdzeń vs test:all)~~ — zrobione (M147: błąd root cause —
+   oferta decyzji w playerView była w innej kolejności niż bramki execute:
+   `optional_trigger` przed `suspend`/`rebound`, więc przy współistniejących
+   decyzjach bot brał ofertę odrzucaną bramką `suspend_unresolved`/
+   `rebound_unresolved`. Naprawione: kolejność ofert zgodna z execute + guardy
+   `pendingSuspendCast`/`pendingReboundCast` w bloku akcji normalnych.)
+7. ~~Satyr Wayfinder (reveal top 4, pick land to hand, rest to grave)~~ — zrobione
+   (M147: nowy pending `pendingSatyrLook` + komenda `resolve_satyr_look_choice`;
+   efekt `reveal_top_pick_land_rest_grave` — odsłoń 4, możesz wziąć ląd do ręki,
+   reszta do grobu; oba boty, opisy UI, fingerprint. Talia green +1 karta.)
+8. ~~Static Net (linked exile + powerstone)~~ — zrobione (M147: efekt
+   `exile_nonland_permanent_linked` — linked exile nie-lądowego permanentu
+   przeciwnika do LTB (jak Faceless Butcher); token Powerstone (zatapnięty,
+   {C} — restrykcja artefaktowa nieimplementowana, notes); create_token
+   wspiera `tapped`. Talia azorius +1 karta +1 ląd.)
+9. ~~Strandwalker (living weapon)~~ — zrobione (M147: nowy efekt `living_weapon`
+   — utwórz 0/0 Germ i przypnij sprzęt (CR 702.91, jak job_select); token
+   Germ; +2/+4 i reach przez equipment. Talia mechanicy +1 karta.)
+10. Dokumentacja — w toku (PROJECT_STATE + handoff na końcu sesji)

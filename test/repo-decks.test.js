@@ -41,9 +41,10 @@ test('talia red streszcza się przewidywalnie (kolory i landy)', () => {
   // Proporcji pilnuje teraz `test/m132-proporcje-landow.test.js`.
   // M145 Batch 35 E2: red + Titan's Strength + 1 Mountain (próg M132).
   // M146 Batch 36 E4: red + Molten Nursery.
-  assert.equal(summary.total, 69);
-  assert.equal(summary.lands, 23);
-  assert.equal(summary.spells, 46);
+  // Batch 38: red + Mysidian Elder + 1 Mountain.
+  assert.equal(summary.total, 71);
+  assert.equal(summary.lands, 24);
+  assert.equal(summary.spells, 47);
   assert.ok((summary.colors.get('R') ?? 0) >= 12, 'czerwone karty obecne');
 });
 

@@ -348,13 +348,21 @@ export async function runTableGame({
     // zawsze zamykały pauzę pierwszym kliknięciem i nigdy jej nie dotykały.
     const mandatory = by(/Dobierz kartę/)
       || by(/^Odrzuć:/)
+      || by(/^Poświęć:/)
+      || by(/^Weź ląd do ręki:/)
+      || by(/^Nie bierz lądu/)
+      || by(/^Rzuć z odbiciem:/)
+      || by(/^Rzuć zawieszone:/)
       || (profile === 'impatient' ? null : by(/Wznów grę bota/))
       || by(/zakończ|Zakończ/)
       || by(/Rozstrzygnij obrażenia/);
     if (mandatory) return mandatory;
 
     // Pula „ruchów rozwijających" — z niej wybiera profil.
-    const plays = all(/Zagraj ląd|^Rzuć:|^Zagraj:|^Aktywuj:|^Cycling:|^Wyposaż:|^Flashback:|^Cel czaru|^Cel zdolności:|^Bestow:|^Aura:|^Wybierz:|cel triggera/);
+    // M155 (audyt żywym testerem): „Rzuć za warp:" (Weftblade Enhancer — nowa
+    // mechanika Batch 38) to rzut PERMANENTA; bez wzorca tester nigdy nie
+    // ćwiczył warp. Dokładamy do puli ruchów i priorytetów greedy.
+    const plays = all(/Zagraj ląd|^Rzuć:|^Rzuć za warp:|^Zagraj:|^Aktywuj:|^Cycling:|^Wyposaż:|^Flashback:|^Cel czaru|^Cel zdolności:|^Bestow:|^Aura:|^Wybierz:|cel triggera/);
     const decisions = all(/Odrzucenie karty|Poświęcenie|Zapłata|Dopłata|Karta z ręki|Wybór koloru|Wybór typu|Kolejność|Proliferate|Cel obrażeń|Rozdzielenie|Wybierz tryb|wybór trybu|Moonlit|Przekierowanie|Dobrowolna|Index|Rozstrzygnij|Pokój|wybierz cel|Karta do ręki|Szukanie|Wybór efektu|Karta na wierzch|Karty do grobu|Surveil|Stomping|odsłonięte|reveal_exile|Craft:|wygnaj|pomijam|brak karty/);
     const pass = by(/Dalej|pass/);
 
@@ -402,6 +410,7 @@ export async function runTableGame({
         // Zachowanie historyczne (regresja wyników z M80–M96).
         return by(/Zagraj ląd/)
           || by(/^Rzuć:/)
+          || by(/^Rzuć za warp:/)
           || by(/^Zagraj:/)
           || by(/^Aktywuj:/)
           || by(/^Wybierz:/)

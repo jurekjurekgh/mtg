@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Talion%27s+Messenger&set=woe",
+  "print": "Talion's Messenger (WOE)",
+  "name": "Talion's Messenger",
+  "mana_cost": "{2}{U}",
+  "cmc": 3,
+  "type_line": "Creature — Faerie Noble",
+  "oracle_text": "Flying\nWhenever you attack with one or more Faeries, draw a card, then discard a card. When you discard a card this way, put a +1/+1 counter on target Faerie you control.",
+  "power": "1",
+  "toughness": "3",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Flying"
+  ],
+  "set": "woe",
+  "set_name": "Wilds of Eldraine",
+  "collector_number": "73",
+  "rarity": "rare",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/5/35fb0640-5b04-4687-b863-46a8b8d36809.jpg?1783915114",
+    "normal": "https://cards.scryfall.io/normal/front/3/5/35fb0640-5b04-4687-b863-46a8b8d36809.jpg?1783915114"
+  },
+  "pobrano": "2026-08-19"
+}

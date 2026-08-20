@@ -920,6 +920,33 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     return;
   }
+  if (effect.type === 'living_weapon') {
+    // Living weapon (CR 702.91, Strandwalker): „When this Equipment enters,
+    // create a 0/0 black Phyrexian Germ creature token, then attach this to
+    // it.\" — jak job_select, ale token to 0/0 Germ (żyje dzięki +2/+4
+    // z equipmentu). Deskryptor tokenu generyczny (dane karty, ADR 0002).
+    const ctrl = sourceObject.controllerId;
+    const germ = createBattlefieldToken(state, ctrl, {
+      cardId: effect.cardId ?? 'token_germ',
+      name: effect.name ?? 'Germ',
+      kind: 'creature',
+      power: 0, toughness: 0,
+      colors: ['B'],
+      types: ['Creature'],
+      subtypes: ['Phyrexian', 'Germ'],
+    });
+    const equipment = state.objects.get(sourceObject.id);
+    if (equipment && equipment.zone === 'battlefield' && equipment.equipment) {
+      const attached = Object.freeze({ ...equipment, attachedTo: germ.id });
+      state.objects.set(sourceObject.id, attached);
+      state.events.push(event('object_attached', {
+        objectId: sourceObject.id, hostId: germ.id,
+        cardId: equipment.cardId, controllerId: equipment.controllerId,
+        hostCardId: 'token_germ', via: 'living_weapon',
+      }));
+    }
+    return;
+  }
   if (effect.type === 'investigate') {
     const amount = effect.amount ?? 1;
     for (let i = 0; i < amount; i += 1) {
@@ -1084,6 +1111,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         abilities: effect.abilities ?? [],
         // M69 (Relic Robber — Goblin Construct „This token can't block").
         cantBlock: Boolean(effect.cantBlock),
+        // M147 (Static Net — Powerstone): token wchodzi ZATAPNIĘTY.
+        tapped: Boolean(effect.tapped),
       });
     }
     return;
@@ -1580,6 +1609,18 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         && object.controllerId === controllerId && object.kind === 'creature'
         && Object.values(object.counters ?? {}).some((count) => count > 0));
     }
+    // Liliana's Triumph (Batch 37): „If you control a Liliana planeswalker,
+    // each opponent also discards a card.\" — generyczny warunek po typie
+    // i podtypie PLANESWALKERA (ADR 0002: brak nazw kart). Działa od razu,
+    // gdy w katalogu pojawi się jakikolwiek planeswalker o podtypie Liliana
+    // (decyzja właściciela 2026-08-19 — kodujemy efekt z wyprzedzeniem).
+    if (effect.condition === 'controlsPlaneswalkerWithSubtype') {
+      const sub = effect.subtype;
+      holds = sub != null && [...state.objects.values()].some((object) => object.zone === 'battlefield'
+        && object.controllerId === controllerId
+        && (object.types ?? []).includes('Planeswalker')
+        && (object.subtypes ?? []).includes(sub));
+    }
     const branch = holds ? effect.then : effect.else;
     if (branch) applyEffect(state, branch, sourceObject, targets, context);
     return;
@@ -1685,6 +1726,20 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }));
     return;
   }
+  // M154 (Batch 38, Silken Strength): „When this Aura enters, untap enchanted
+  // permanent." — odkręca GOSPODARZA aury (sourceObject.attachedTo). Generyczne:
+  // jak pump_enchanted_creature, ale dla dowolnego zaczarowanego permanentu.
+  if (effect.type === 'untap_enchanted_permanent') {
+    const enchantedId = sourceObject.attachedTo;
+    if (!enchantedId) return;
+    const object = state.objects.get(enchantedId);
+    if (!object || object.zone !== 'battlefield') return;
+    if (object.tapped) {
+      state.objects.set(enchantedId, Object.freeze({ ...object, tapped: false }));
+      state.events.push(event('object_untapped', { objectId: enchantedId, playerId: sourceObject.controllerId }));
+    }
+    return;
+  }
   if (effect.type === 'untap_permanent') {
     // Odkręcenie permanentu — domyślnie źródła (np. trigger Midnight Guard:
     // „Whenever another creature enters, untap this creature").
@@ -1696,6 +1751,22 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (object.tapped) {
       state.objects.set(targetId, Object.freeze({ ...object, tapped: false }));
       state.events.push(event('object_untapped', { objectId: targetId, playerId: sourceObject.controllerId }));
+    }
+    return;
+  }
+  if (effect.type === 'untap_all_creatures_you_control') {
+    // Village Bell-Ringer: „When this creature enters, untap all creatures you
+    // control.\" — odkręca KAŻDEGO stwora kontrolera źródła (CR 701.16a),
+    // po jednym zdarzeniu object_untapped na stwora.
+    const ctrl = sourceObject.controllerId;
+    for (const objectId of state.zones.battlefield) {
+      const object = state.objects.get(objectId);
+      if (!object || object.zone !== 'battlefield') continue;
+      if (object.kind !== 'creature' || object.controllerId !== ctrl) continue;
+      if (object.tapped) {
+        state.objects.set(objectId, Object.freeze({ ...object, tapped: false }));
+        state.events.push(event('object_untapped', { objectId, playerId: ctrl }));
+      }
     }
     return;
   }
@@ -1812,6 +1883,29 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'exile' }));
     return;
   }
+  if (effect.type === 'exile_nonland_permanent_linked') {
+    // Static Net (BRO): „When this enchantment enters, exile target nonland
+    // permanent an opponent controls until this enchantment leaves the
+    // battlefield." — LINKED exile: id wygnanego zapamiętujemy na źródle
+    // (exiledCardIds), a LTB (leaves_battlefield) przywraca go przez
+    // return_exiled_to_battlefield (jak Faceless Butcher / Wormfang Newt).
+    const targetId = targets[effect.targetIndex ?? 0];
+    if (targetId == null) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') return;
+    if ((object.types ?? []).includes('Land')) return; // nonland
+    const exileId = `exile-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'exile', exileId);
+    state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'exile' }));
+    const src = state.objects.get(sourceObject.id);
+    if (src) {
+      const exiled = [...(src.exiledCardIds ?? [])];
+      if (!exiled.includes(exileId)) exiled.push(exileId);
+      state.objects.set(sourceObject.id, Object.freeze({ ...src, exiledCardIds: exiled }));
+    }
+    return;
+  }
+
   if (effect.type === 'exile_own_land') {
     // Wormfang Newt (ETB): exile land you control (T2: cel wybiera
     // kontroler) i zapamiętaj id wygnanej karty na źródle, żeby LTB
@@ -1871,6 +1965,33 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const targetPower = effectivePower(object, state) ?? 0;
     if (targetPower !== minPower) return; // nie najmniejsza moc — nic się nie dzieje
     applyEffect(state, { type: 'destroy_permanent' }, sourceObject, [targetId], context);
+    return;
+  }
+  // M154 (Batch 38, Divine Offering): „Destroy target artifact. You gain life
+  // equal to its mana value." — zniszcz artefakt-cel i zyskaj życie równe jego
+  // mana value (przed zniszczeniem; CR 701.7). Generyczne: cel-arteFakt,
+  // efekt niszczy i nagradza życiem wg kosztu many celu.
+  if (effect.type === 'destroy_artifact_gain_life_mana_value') {
+    const targetId = targets[effect.targetIndex ?? 0];
+    if (targetId == null) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') return;
+    const isArtifact = object.kind === 'artifact' || (object.types ?? []).includes('Artifact');
+    if (!isArtifact) return; // nie-artefakt — brak efektu (legalność zapewnia target type)
+    const manaValue = object.manaCost ?? 0;
+    // Niszcz (CR 701.7) — reużycie logicznej części destroy_permanent przez
+    // ponowne wywołanie efektu (niszczy i emituje zdarzenia); potem zysk życia.
+    const before = state.events.length;
+    applyEffect(state, { type: 'destroy_permanent' }, sourceObject, [targetId]);
+    const destroyed = state.events.slice(before).some((e) => e.type === 'permanent_destroyed'
+      || e.type === 'object_moved');
+    // Zysk życia równy mana value TYLKO, gdy artefakt faktycznie zniszczono
+    // (nie-indestructible, bez tarczy/regeneracji). W innym razie „you gain life
+    // equal to its mana value" nie następuje (CR: efekty sekwencyjne).
+    // changeLife samo emituje life_changed — nie dublujemy zdarzenia.
+    if (destroyed && manaValue > 0) {
+      changeLife(state, sourceObject.controllerId, manaValue);
+    }
     return;
   }
   if (effect.type === 'destroy_permanent') {
@@ -2626,7 +2747,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // you control or artifact card from your graveyard → return transformed.
     // Blokująca decyzja: wybór artefaktu do wygnania (jak resolve_sacrifice_choice).
     const target = sourceObject.transformTo;
-    if (!target) throw new Error('Ta karta nie ma drugiej strony (craft)');
+    // M155 (audyt żywym testerem / benchmark B0): token-kopia artefaktu
+    // z craft (np. przez enterAsCopy) mogła nieść zdolność craft, ale NIE
+    // drugą stronę (transformTo). Zamiast crasha „Ta karta nie ma drugiej
+    // strony (craft)" — no-op (CR 608.2b: craft bez drugiej strony nic nie
+    // robi; oferta legalActivatedAbilities też nie oferuje craft bez
+    // transformTo).
+    if (!target) return;
     // Find valid exile targets: artifacts you control on battlefield (not self)
     // + artifact cards in your graveyard.
     const controllerId = sourceObject.controllerId;
@@ -3374,6 +3501,34 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.turn.priorityPlayerId = controllerId;
     state.events.push(event('look_top_started', {
       playerId: controllerId, count: topIds.length,
+      cardIds: topIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
+    }));
+    return true;
+  }
+  // Satyr Wayfinder (M15): „When this creature enters, reveal the top four
+  // cards of your library. You may put a land card from among them into your
+  // hand. Put the rest into your graveyard.\" — blokująca decyzja kontrolera:
+  // może wybrać LĄD z odsłoniętych do ręki (lub zrezygnować — „you may\");
+  // reszta (i te bez wyboru) idzie do grobu. Nowy pendingSatyrLook.
+  if (effect.type === 'reveal_top_pick_land_rest_grave') {
+    const controllerId = sourceObject.controllerId;
+    const n = effect.amount ?? 4;
+    const topIds = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === controllerId).slice(0, n);
+    if (topIds.length === 0) return;
+    const landIds = topIds.filter((id) => {
+      const o = state.objects.get(id);
+      return o && ((o.kind ?? '') === 'land' || (o.types ?? []).includes('Land'));
+    });
+    state.pendingSatyrLook = {
+      playerId: controllerId,
+      objectIds: [...topIds],
+      landIds: [...landIds],
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('satyr_look_started', {
+      playerId: controllerId, count: topIds.length,
+      landCount: landIds.length,
       cardIds: topIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
     }));
     return true;

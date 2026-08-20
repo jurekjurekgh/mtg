@@ -118,7 +118,9 @@ test('M100/E3: dobrana z EFEKTU karta człowieka trafia do modala (draw step zos
   let checked = 0;
   // Seedy 3/13 dołożone po batchu 34 (azorius +3, black +1): dawna lista
   // przestała produkować dobranie z EFEKTU — przelosowane hunterem.
-  for (const seed of [3, 13, 42, 7, 11, 77]) {
+  // Seed 1 dołożony po Batchu 37 (azorius +Palace Familiar +Village Bell-Ringer),
+  // seed 4 po Batchu 37 (azorius +Ojutai's Breath) — przelosowane hunterem.
+  for (const seed of [4, 1, 3, 13, 42, 7, 11, 77]) {
     const session = makeSession(seed);
     const { modalTexts, log } = playCollectingModals(session);
     for (let i = 0; i < log.length; i += 1) {

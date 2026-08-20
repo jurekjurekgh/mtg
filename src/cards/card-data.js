@@ -6560,6 +6560,462 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // =========================================================================
+  // Batch 37 (2026-08-19, lista właściciela). Oracle ze Scryfalla
+  // (docs/cards/scryfall-*.json, ADR 0010 §2a), artId i plan ze słownika
+  // tools/collection-art-ids.csv. Transza A: reuse mechanik.
+  // =========================================================================
+
+  // 1. Returned Centaur (ORI) {3}{B} 2/4 Zombie Centaur — ETB: target player mills 4
+  defineCard({
+    id: 'returned-centaur', name: 'Returned Centaur', set: 'ORI',
+    types: ['Creature'], subtypes: ['Zombie', 'Centaur'], colors: ['B'],
+    power: 2, toughness: 4, manaCost: 4,
+    oracleText: 'When this creature enters, target player mills four cards.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/0/103b369c-da58-40e7-98aa-5a5471434bca.jpg',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'player', prefer: 'opponent' } },
+        effect: { type: 'mill_cards', amount: 4 },
+      }),
+    ],
+    artId: 120, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Liliana's Triumph (WAR) {1}{B} Instant — each opponent sacrifices a creature
+  defineCard({
+    id: 'lilianas-triumph', name: "Liliana's Triumph", set: 'WAR',
+    types: ['Instant'], colors: ['B'], manaCost: 2,
+    oracleText: "Each opponent sacrifices a creature of their choice. If you control a Liliana planeswalker, each opponent also discards a card.",
+    imageUri: 'https://cards.scryfall.io/large/front/8/4/84803db8-fdb0-462b-92f6-33d591593d2d.jpg',
+    spell: {
+      timing: 'instant',
+      // „Each opponent\" w formacie 1v1 = jedyny przeciwnik. Wybór poświęcanego
+      // stwora należy do CELU (blokująca decyzja resolve_sacrifice_choice).
+      targets: [{ type: 'player' }],
+      effects: [
+        { type: 'player_sacrifices_creature' },
+        // Klauzula warunkowa (decyzja właściciela 2026-08-19): efekt kodujemy
+        // z WYPRZEDZENIEM — generyczny warunek po typie Planeswalker i podtypie
+        // Liliana (effects.js `conditional`). Działa od razu, gdy w katalogu
+        // pojawi się jakikolwiek planeswalker Liliana; dziś (brak planeswalkerów)
+        // `else` nie zachodzi, więc nic się nie dzieje — karta jest kompletna
+        // względem Oracle, a nie „czeka na przyszłość\".
+        {
+          type: 'conditional',
+          condition: 'controlsPlaneswalkerWithSubtype',
+          subtype: 'Liliana',
+          then: { type: 'discard_each_opponent', amount: 1 },
+          else: null,
+        },
+      ],
+    },
+    artId: 38, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+    notes: ['„Each opponent\" w 1v1 = celowy przeciwnik; poświęcenie „of their choice\" przez resolve_sacrifice_choice', 'dyskard za Lilianę warunkowy (controlsPlaneswalkerWithSubtype); planeswalkerów nie ma w katalogu, więc dziś nie zachodzi — zakodowane z wyprzedzeniem (decyzja właściciela)'],
+  }),
+
+  // 3. Palace Familiar (DTK) {1}{U} 1/1 Bird — Flying; dies: draw a card
+  defineCard({
+    id: 'palace-familiar', name: 'Palace Familiar', set: 'DTK',
+    types: ['Creature'], subtypes: ['Bird'], colors: ['U'],
+    keywords: ['flying'], power: 1, toughness: 1, manaCost: 2,
+    oracleText: 'Flying\\nWhen this creature dies, draw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/c/fc0c17c9-54af-4dd4-8d4a-fd5a7b8c3c77.jpg',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies' },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+    ],
+    artId: 146, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. Thornhide Wolves (M19) {4}{G} 4/5 Wolf — bez zdolności
+  defineCard({
+    id: 'thornhide-wolves', name: 'Thornhide Wolves', set: 'M19',
+    types: ['Creature'], subtypes: ['Wolf'], colors: ['G'],
+    power: 4, toughness: 5, manaCost: 5,
+    oracleText: '',
+    imageUri: 'https://cards.scryfall.io/large/front/f/c/fc0f3812-bb6c-4d99-b505-9dfd84e3fd95.jpg',
+    artId: 450, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // =========================================================================
+  // Batch 37 transza B (2026-08-19): nowe generyczne mechaniki (ADR 0002).
+  // =========================================================================
+
+  // 5. Village Bell-Ringer (ISD) {2}{W} 1/4 Human Scout — Flash;
+  //    ETB: untap all creatures you control.
+  defineCard({
+    id: 'village-bell-ringer', name: 'Village Bell-Ringer', set: 'ISD',
+    types: ['Creature'], subtypes: ['Human', 'Scout'], colors: ['W'],
+    keywords: ['flash'], power: 1, toughness: 4, manaCost: 3,
+    oracleText: 'Flash (You may cast this spell any time you could cast an instant.)\\nWhen this creature enters, untap all creatures you control.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/b/cb6912b3-bab9-4937-afdd-3711e6d792a0.jpg',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'untap_all_creatures_you_control' },
+      }),
+    ],
+    artId: 317, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Ojutai's Breath (DTK) {2}{U} Instant — tap, doesn't untap; Rebound
+  defineCard({
+    id: 'ojutais-breath', name: "Ojutai's Breath", set: 'DTK',
+    types: ['Instant'], colors: ['U'], manaCost: 3,
+    oracleText: "Tap target creature. It doesn't untap during its controller's next untap step.\\nRebound (If you cast this spell from your hand, exile it as it resolves. At the beginning of your next upkeep, you may cast this card from exile without paying its mana cost.)",
+    imageUri: 'https://cards.scryfall.io/large/front/a/f/af51e5a1-7d46-4dad-a25c-6767cbd03dff.jpg',
+    spell: {
+      timing: 'instant',
+      rebound: true,
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'tap_permanent' },
+        { type: 'dont_untap_next_untap_step' },
+      ],
+    },
+    artId: 538, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 6. Static Net (BRO) {3}{W} Enchantment —
+  //    ETB: exile target nonland permanent an opponent controls until leaves;
+  //    ETB: gain 2 life and create a tapped Powerstone token.
+  defineCard({
+    id: 'static-net', name: 'Static Net', set: 'BRO',
+    types: ['Enchantment'], colors: ['W'], manaCost: 4,
+    oracleText: "When this enchantment enters, exile target nonland permanent an opponent controls until this enchantment leaves the battlefield.\\nWhen this enchantment enters, you gain 2 life and create a tapped Powerstone token.",
+    imageUri: 'https://cards.scryfall.io/large/front/5/a/5ab5cb30-3ced-4450-a3c4-b519f3762620.jpg',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'nonland_permanent', opponentControls: true } },
+        effect: { type: 'exile_nonland_permanent_linked' },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [
+          { type: 'gain_life', amount: 2 },
+          {
+            type: 'create_token', cardId: 'token_powerstone', name: 'Powerstone',
+            kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Powerstone'],
+            tapped: true,
+          },
+        ],
+      }),
+      // Linked exile return (CR 400.7): „until this enchantment leaves the
+      // battlefield\" — LTB przywraca wygnany permanent pod kontrolą właściciela.
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'leaves_battlefield' },
+        effect: { type: 'return_exiled_to_battlefield' },
+      }),
+    ],
+    artId: 497, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+    notes: ['exile linked: id wygnanego zapisane na źródle (exiledCardIds), LTB przywraca (jak Faceless Butcher); Powerstone produkuje {C} (restrykcja „tylko czary artefaktów\" nieimplementowana — patrz MANA_SOURCE_MAP)'],
+  }),
+
+  // Token Powerstone (BRO): artefakt „{T}: Add {C} — spend only to cast
+  // artifact spells\" (CR 106.3 — restrykcja many). Produkcja bezbarwna w
+  // MANA_SOURCE_MAP; restrykcja artefaktowa nieimplementowana (notes).
+  defineCard({
+    id: 'token_powerstone', name: 'Powerstone', set: null,
+    types: ['Artifact', 'Token'], subtypes: ['Powerstone'], colors: [],
+    manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Static Net'] },
+    notes: ['{T}: Add {C}; restrykcja „tylko czary artefaktów\" nieimplementowana'],
+  }),
+
+  // 4. Satyr Wayfinder (M15) {1}{G} 1/1 Satyr —
+  //    ETB: reveal top 4, may take a land to hand, rest to grave.
+  defineCard({
+    id: 'satyr-wayfinder', name: 'Satyr Wayfinder', set: 'M15',
+    types: ['Creature'], subtypes: ['Satyr'], colors: ['G'],
+    power: 1, toughness: 1, manaCost: 2,
+    oracleText: "When this creature enters, reveal the top four cards of your library. You may put a land card from among them into your hand. Put the rest into your graveyard.",
+    imageUri: 'https://cards.scryfall.io/large/front/7/b/7be07e97-2ffc-40ad-a676-a74b8b680ea1.jpg',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'reveal_top_pick_land_rest_grave', amount: 4 },
+      }),
+    ],
+    artId: 322, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+    notes: ['decyzja kontrolera: może wziąć ląd z odsłoniętych do ręki albo zrezygnować (you may); reszta zawsze do grobu'],
+  }),
+
+  // 5. Strandwalker (MBS) {5} Artifact — Equipment: Living weapon;
+  //    +2/+4 and reach; Equip {4}.
+  defineCard({
+    id: 'strandwalker', name: 'Strandwalker', set: 'MBS',
+    types: ['Artifact'], subtypes: ['Equipment'], colors: [], manaCost: 5,
+    oracleText: "Living weapon (When this Equipment enters, create a 0/0 black Phyrexian Germ creature token, then attach this to it.)\\nEquipped creature gets +2/+4 and has reach.\\nEquip {4}",
+    imageUri: 'https://cards.scryfall.io/large/front/d/0/d0d7ff8f-7733-4323-8575-c50b3e730dbc.jpg',
+    equipment: { equip: 4, pump: { power: 2, toughness: 4 }, keywords: ['reach'] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'living_weapon' },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'equip',
+        cost: { mana: 4 },
+        effect: [],
+      }),
+    ],
+    artId: 228, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Token Germ (Strandwalker — Living weapon): 0/0 czarny Phyrexian Germ
+  // (żyje dzięki +2/+4 z equipmentu).
+  defineCard({
+    id: 'token_germ', name: 'Germ', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Phyrexian', 'Germ'], colors: ['B'],
+    power: 0, toughness: 0, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Strandwalker (living weapon)'] },
+  }),
+
+  // 7. Urza's Mine (2XM) Land — Urza's Mine: {T}: Add {C}; tron (CR 702.??):
+  //    jeśli kontrolujesz Urza's Power-Plant i Urza's Tower → {C}{C}.
+  //    Produkcja many przez MANA_SOURCE_MAP (mana-sources.js), gdzie tron
+  //    jest już zakodowany generycznie (tronRequired). Karta to dane — wystarczy
+  //    w przyszłości dodać urza-s-power-plant i urza-s-tower, by tron zadziałał.
+  defineCard({
+    id: 'urza-s-mine', name: "Urza's Mine", set: '2XM',
+    types: ['Land'], subtypes: ['Urza\'s Mine'], colors: [], manaCost: 0,
+    oracleText: "{T}: Add {C}. If you control an Urza's Power-Plant and an Urza's Tower, add {C}{C} instead.",
+    imageUri: 'https://cards.scryfall.io/large/front/0/8/08dea8f6-bd32-44a3-bec4-93a5607819df.jpg',
+    artId: 220, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+    notes: ['tron (Power-Plant + Tower) nie jest w katalogu — produkcja {C} zawsze; warunek zakodowany w mana-sources.js (tronRequired), zadziała po dodaniu pozostałych lądów Urzy (decyzja właściciela 2026-08-19)'],
+  }),
+
+  // =========================================================================
+  // Batch 38 (2026-08-19, lista właściciela). Oracle ze Scryfalla
+  // (docs/cards/scryfall-*.json, ADR 0010 §2a), artId i plan ze słownika
+  // tools/collection-art-ids.csv. Transza A: reuse mechanik + nowe generyczne.
+  // =========================================================================
+
+  // 1. Divine Offering (MBS) {1}{W} Instant — destroy target artifact,
+  //    gain life = its mana value.
+  defineCard({
+    id: 'divine-offering', name: 'Divine Offering', set: 'MBS',
+    types: ['Instant'], colors: ['W'], manaCost: 2,
+    oracleText: 'Destroy target artifact. You gain life equal to its mana value.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/e/fe7c7a65-5a96-4986-877b-b34583092bb6.jpg?1783941393',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'artifact' }],
+      effects: [{ type: 'destroy_artifact_gain_life_mana_value' }],
+    },
+    artId: null, plan: null,
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Colossodon Yearling (DTK) {2}{G} 2/4 Beast — bez zdolności.
+  defineCard({
+    id: 'colossodon-yearling', name: 'Colossodon Yearling', set: 'DTK',
+    types: ['Creature'], subtypes: ['Beast'], colors: ['G'],
+    power: 2, toughness: 4, manaCost: 3,
+    oracleText: '',
+    imageUri: 'https://cards.scryfall.io/large/front/f/2/f2c60e63-0b86-4100-a932-bb9e9b197610.jpg?1783938581',
+    artId: 444, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Fortify (TSP) {2}{W} Instant — choose one: your creatures +2/+0 OR +0/+2.
+  defineCard({
+    id: 'fortify', name: 'Fortify', set: 'TSP',
+    types: ['Instant'], colors: ['W'], manaCost: 3,
+    oracleText: 'Choose one —\n• Creatures you control get +2/+0 until end of turn.\n• Creatures you control get +0/+2 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/4/b47af529-6ba1-4900-a6f6-7647c9632e11.jpg?1783927882',
+    spell: {
+      timing: 'instant',
+      modes: [
+        { name: 'Ofensywa (+2/+0)', effects: [{ type: 'buff_creatures_you_control', power: 2, toughness: 0 }] },
+        { name: 'Obrona (+0/+2)', effects: [{ type: 'buff_creatures_you_control', power: 0, toughness: 2 }] },
+      ],
+    },
+    artId: 94, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 6. Mysidian Elder (FIN) {2}{R} 1/3 Human Wizard — ETB: create 0/1 black
+  //    Wizard token with "Whenever you cast a noncreature spell, this token
+  //    deals 1 damage to each opponent."
+  defineCard({
+    id: 'mysidian-elder', name: 'Mysidian Elder', set: 'FIN',
+    types: ['Creature'], subtypes: ['Human', 'Wizard'], colors: ['R'],
+    power: 1, toughness: 3, manaCost: 3,
+    oracleText: 'When this creature enters, create a 0/1 black Wizard creature token with \"Whenever you cast a noncreature spell, this token deals 1 damage to each opponent.\"',
+    imageUri: 'https://cards.scryfall.io/large/front/6/b/6bc39af4-be19-4889-b930-df7ebf7b9481.jpg?1783906602',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: {
+          type: 'create_token', cardId: 'token_wizard', name: 'Wizard',
+          kind: 'creature', power: 0, toughness: 1, colors: ['B'],
+          types: ['Creature'], subtypes: ['Wizard'],
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.triggered,
+              trigger: { event: 'you_cast_noncreature_spell' },
+              effect: { type: 'damage_each_opponent', amount: 1 },
+            }),
+          ],
+        },
+      }),
+    ],
+    artId: 59, plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 7. Pristine Talisman (NPH) {3} Artifact — {T}: Add {C}. You gain 1 life.
+  defineCard({
+    id: 'pristine-talisman', name: 'Pristine Talisman', set: 'NPH',
+    types: ['Artifact'], colors: [], manaCost: 3,
+    oracleText: '{T}: Add {C}. You gain 1 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/b/6b6307f3-bc63-463c-8ffc-a8b8b829e5d7.jpg?1783927507',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: [
+          { type: 'add_mana', amount: 1 },
+          { type: 'gain_life', amount: 1 },
+        ],
+      }),
+    ],
+    artId: 347, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Chatter of the Squirrel (2XM) {G} Sorcery — create 1/1 green Squirrel
+  //    token; Flashback {1}{G}.
+  defineCard({
+    id: 'chatter-of-the-squirrel', name: 'Chatter of the Squirrel', set: '2XM',
+    types: ['Sorcery'], colors: ['G'], manaCost: 1,
+    oracleText: 'Create a 1/1 green Squirrel creature token.\nFlashback {1}{G} (You may cast this card from your graveyard for its flashback cost. Then exile it.)',
+    imageUri: 'https://cards.scryfall.io/large/front/5/f/5f7e1991-9ffa-4a57-b8eb-ebe542a47f09.jpg?1783930150',
+    spell: {
+      timing: 'sorcery',
+      targets: [],
+      effects: [{
+        type: 'create_token', cardId: 'token_squirrel', name: 'Squirrel',
+        kind: 'creature', power: 1, toughness: 1, colors: ['G'],
+        types: ['Creature'], subtypes: ['Squirrel'],
+      }],
+      flashback: { cost: 2, colors: ['G'] },
+    },
+    artId: 310, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. Silken Strength (DFT) {1}{G} Aura (flash) — Enchant creature or Vehicle;
+  //    ETB untap enchanted; enchanted gets +1/+2 and has reach.
+  defineCard({
+    id: 'silken-strength', name: 'Silken Strength', set: 'DFT',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['G'], manaCost: 2,
+    keywords: ['flash'],
+    oracleText: 'Flash\nEnchant creature or Vehicle\nWhen this Aura enters, untap enchanted permanent.\nEnchanted permanent gets +1/+2 and has reach.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/e/ce0e1ded-9b00-4d7b-884c-70a429783b1f.jpg?1783907865',
+    aura: { enchantType: 'creature_or_vehicle', pump: { power: 1, toughness: 2 }, keywords: ['reach'] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'untap_enchanted_permanent' },
+      }),
+    ],
+    artId: 457, plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Weftblade Enhancer (EOE) {5}{W} 3/4 Drix Artificer — ETB: +1/+1 counter
+  //    on up to two target creatures; Warp {2}{W}.
+  defineCard({
+    id: 'weftblade-enhancer', name: 'Weftblade Enhancer', set: 'EOE',
+    types: ['Creature'], subtypes: ['Drix', 'Artificer'], colors: ['W'],
+    power: 3, toughness: 4, manaCost: 6,
+    oracleText: 'When this creature enters, put a +1/+1 counter on each of up to two target creatures.\nWarp {2}{W} (You may cast this card from your hand for its warp cost. Exile this creature at the beginning of the next end step, then you may cast it from exile on a later turn.)',
+    imageUri: 'https://cards.scryfall.io/large/front/8/d/8d72b00c-5043-4630-949a-fc17eeb962bc.jpg?1783905986',
+    // Warp (CR EOE): alternatywny koszt {2}{W} z ręki; przy wejściu zbroimy
+    // opóźniony trigger wygnania w najbliższym kroku końcowym; po wygnaniu
+    // (warpReady) można rzucić z exile za koszt warp w późniejszej turze.
+    warp: { cost: 3, colors: ['W'] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature', optional: true } },
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+      }),
+    ],
+    artId: 286, plan: 'The Edge',
+    support: { status: 'supported', limitations: [] },
+    notes: ['Warp: rzut z ręki za {2}{W}, wygnanie w najbliższym kroku końcowym (warpReady), rzut z exile za {2}{W} w późniejszej turze', 'ETB: uproszczenie — licznik na jednym celu (zamiast „each of up to two”), optional'],
+  }),
+
+  // 4. Talion's Messenger (WOE) {2}{U} 1/3 Faerie Noble Flying — attack with a
+  //    Faerie → draw, discard, +1/+1 counter on target Faerie you control.
+  defineCard({
+    id: 'talions-messenger', name: "Talion's Messenger", set: 'WOE',
+    types: ['Creature'], subtypes: ['Faerie', 'Noble'], colors: ['U'],
+    keywords: ['flying'], power: 1, toughness: 3, manaCost: 3,
+    oracleText: 'Flying\nWhenever you attack with one or more Faeries, draw a card, then discard a card. When you discard a card this way, put a +1/+1 counter on target Faerie you control.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/5/35fb0640-5b04-4687-b863-46a8b8d36809.jpg?1783915114',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'faerie_attacks', requiresTarget: { type: 'creature_you_control', subtype: 'Faerie' } },
+        effect: [
+          { type: 'draw_cards', amount: 1 },
+          { type: 'discard_cards', amount: 1 },
+          { type: 'add_counter', counter: '+1/+1', amount: 1 },
+        ],
+      }),
+    ],
+    artId: null, plan: null,
+    support: { status: 'supported', limitations: [] },
+    notes: ['faerie_attacks: odpala się raz na combat, gdy atakujący kontroler atakuje z ≥1 Faerie; licznik na docelowym Faerie (requiresTarget creature_you_control+subtype)', '„when you discard a card this way” uproszczone: zawsze dobiera+odrzuca, więc licznik zawsze się pojawia (po wyborze Faerie)'],
+  }),
+
+  // 10. Lotusguard Disciple (DFT) {2}{W} 2/2 Bird Cleric Flying — ETB: target
+  //     creature or Vehicle gains lifelink and indestructible until end of turn.
+  defineCard({
+    id: 'lotusguard-disciple', name: 'Lotusguard Disciple', set: 'DFT',
+    types: ['Creature'], subtypes: ['Bird', 'Cleric'], colors: ['W'],
+    keywords: ['flying'], power: 2, toughness: 2, manaCost: 3,
+    oracleText: 'Flying\nWhen this creature enters, target creature or Vehicle gains lifelink and indestructible until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/0/80645651-3804-481f-8f8f-ade762a011e1.jpg?1783907916',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature_or_vehicle' } },
+        effect: { type: 'grant_keywords_until_end_of_turn', keywords: ['lifelink', 'indestructible'] },
+      }),
+    ],
+    artId: 18, plan: 'Amonkhet',
+    support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */

@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
+import { producibleMana, spendMana, canPayColoredCost, castPermanent } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource, transformedCharacteristics } from './permanents.js';
 import { applyEffect, dealNonCombatDamage, maybeAddFaceDownFlyingCounter } from './effects.js';
@@ -202,6 +202,15 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     if (spec?.type === 'creature_opponent_controls') {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
       if (object.controllerId === casterId) throw new Error(`Nielegalny cel: ${targetId} (własny stwór)`);
+      return object;
+    }
+    // M154 (Batch 38): cel „creature or Vehicle" (Silken Strength,
+    // Lotusguard Disciple) — stwór LUB Vehicle (artefakt z podtypem Vehicle).
+    if (spec?.type === 'creature_or_vehicle') {
+      const isVehicle = object && (object.subtypes ?? []).includes('Vehicle');
+      if (!object || object.zone !== 'battlefield' || (object.kind !== 'creature' && !isVehicle)) {
+        throw new Error(`Nielegalny cel: ${targetId}`);
+      }
       return object;
     }
     // Cel „land you control" (Unstable Frontier) — land albo land creature
@@ -434,7 +443,12 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     // Buyback (CR 702.26): jeśli gracz wybrał wariant z buyback, czar po
   // rozstrzygnięciu wraca do ręki zamiast do grobu. Flaga na obiekcie stosu.
   const wasBuyback = Boolean(object.spell?.buyback && buyback);
-  const stacked = Object.freeze({ ...moved, tapped: false, chosenTargets: chosen.slice(), wasBuyback });
+  // Rebound (CR 702.97): „If you cast this spell FROM YOUR HAND, exile it as
+  // it resolves.\" — flaga tylko dla rzutu z RĘKI (nie z grobu/exile przez
+  // flashback/suspend/plot). Przechodzi z kartą do strefy po rozstrzygnięciu
+  // (resolveTopOfStack), gdzie decyduje o exile zamiast grobu.
+  const reboundCast = Boolean(object.spell?.rebound && object.zone === 'hand');
+  const stacked = Object.freeze({ ...moved, tapped: false, chosenTargets: chosen.slice(), wasBuyback, reboundCast });
   state.objects.set(stackId, stacked);
   if (wasBuyback) {
     // Buyback koszt many jest dodatkowy do bazowego — płacimy różnicę
@@ -682,6 +696,15 @@ function targetCandidatesBySpec(state, playerId, spec) {
   });
   switch (spec.type) {
     case 'creature': return battlefieldCreatures;
+    // M154 (Batch 38): stwór albo Vehicle (artefakt z podtypem Vehicle).
+    case 'creature_or_vehicle':
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        if (!object || object.zone !== 'battlefield') return false;
+        const isVehicle = (object.subtypes ?? []).includes('Vehicle');
+        if (object.kind !== 'creature' && !isVehicle) return false;
+        return !hasHexproofAgainst(state, object, playerId);
+      });
     // Cel „creature with subtypes\" (Lunar Rejection — Wolf/Werewolf):
     // stwór na polu bitwy mający co najmniej jeden z podtypów deskryptora.
     // validateTargets sprawdza to samo, więc oferta i walidacja są spójne.
@@ -1318,12 +1341,21 @@ export function resolveTopOfStack(state) {
   }
   const adventure = Boolean(object.adventure);
   const flashedBack = Boolean(object.flashedBack);
-  const zoneAfterResolve = (adventure || flashedBack) ? 'exile' : 'graveyard';
+  // Rebound (CR 702.97, Ojutai's Breath): czar rzucony z ręki z deskryptorem
+  // `rebound` idzie po rozstrzygnięciu do EXILE zamiast do grobu, a na początku
+  // następnego upkeepu kontrolera otwiera jednorazową decyzję rzutu bez kosztu.
+  const reboundCast = Boolean(object.reboundCast && !object.isSpellCopy);
+  const zoneAfterResolve = (adventure || flashedBack || reboundCast) ? 'exile' : 'graveyard';
   const afterId = `${zoneAfterResolve}-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, stackId, zoneAfterResolve, afterId);
+  // Rebound: zaznacz wygnaną kartę jako gotową do rzutu bez kosztu w przyszłym
+  // upkeepu (reboundReady — czytane przez trigger upkeepu, jak suspendReady).
+  if (reboundCast) {
+    state.objects.set(afterId, Object.freeze({ ...state.objects.get(afterId), reboundReady: true }));
+  }
   const resolved = event('spell_resolved', {
     fromId: stackId, toId: afterId, cardId: object.cardId,
-    controllerId: object.controllerId, fizzled, adventure,
+    controllerId: object.controllerId, fizzled, adventure, rebound: Boolean(reboundCast),
     ...(adventure ? { object: moved } : {}),
   });
   state.events.push(resolved);
@@ -1547,6 +1579,16 @@ function resolvePermanentSpell(state, stackId, object, before) {
     state.events.push(event('object_transformed', { objectId: newId, fromCardId: permanent.cardId, cardId: target.cardId, enteredNightbound: true }));
   }
   const enteredNow = state.objects.get(newId);
+  // M154 (Warp): permanent rzucony za koszt warp — przy wejściu zbroimy
+  // opóźniony trigger wygnania w najbliższym kroku końcowym („at the
+  // beginning of the NEXT end step" — także w turze przeciwnika). Po wygnaniu
+  // karta dostanie `warpReady` i można ją rzucić z exile w późniejszej turze.
+  if (enteredNow?.warped) {
+    state.delayedTriggers.push({
+      type: 'exile_object', objectId: newId, playerId: enteredNow.controllerId,
+      armedOnTurn: state.turn.number, anyPlayerEndStep: true, warp: true,
+    });
+  }
   // Wejście na pole bitwy — DOKŁADNIE jedno zdarzenie wejścia (jak
   // resolveAuraSpell): triggery ETB skanują permanent_entered_battlefield;
   // dodatkowy object_moved → battlefield odpalałby je DRUGI raz.
@@ -1625,6 +1667,22 @@ function resolvePermanentSpell(state, stackId, object, before) {
  * zaplotowaną. Późniejsze cast z exile nie płaci many w minimalnym modelu
  * projektu, ale nadal podlega timingowi czaru.
  */
+/**
+ * M154 (Batch 38, Warp — EOE): „You may cast this card from your hand for its
+ * warp cost. Exile this creature at the beginning of the next end step, then
+ * you may cast it from exile on a later turn."
+ *
+ * Rzut za koszt warp: alternatywny koszt (castPermanent z warpCast:true) —
+ * permanent wchodzi na stos jak zwykły rzut; przy wejściu zbroimy
+ * opóźniony trigger wygnania w najbliższym kroku końcowym
+ * (resolvePermanentSpell → state.delayedTriggers). Po wygnaniu karta ma
+ * `warpReady` i można ją rzucić z exile w późniejszej turze za koszt warp.
+ * objectId może wskazywać kartę z RĘKI albo obiekt z exile (warpReady).
+ */
+export function warpCard(state, playerId, objectId) {
+  return castPermanent(state, playerId, objectId, { warpCast: true });
+}
+
 export function plotCard(state, playerId, objectId) {
   const object = state.objects.get(objectId);
   // Batch 24 (Spinewoods Paladin — pierwsza karta z plotem w katalogu): plot
@@ -1776,8 +1834,13 @@ export function legalSpellCasts(state, playerId) {
       if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) continue;
     }
     // Modal „Choose one" (Aerith Rescue Mission): każdy tryb enumerujemy osobno.
+    // M155 (audyt żywym testerem): playerView wstawia komendy przez `unshift`,
+    // więc kolejność widziana przez gracza jest ODWROTNA do `casts`. Iterujemy
+    // tryby OD KOŃCA, żeby na panelu/liście celów tryby pojawiły się w kolejności
+    // z Oracle (mode 0 pierwszy — domyślna sugestia; Fortify: Ofensywa przed
+    // Obroną zamiast odwrotnie).
     if (object.spell.modes) {
-      for (let modeIndex = 0; modeIndex < object.spell.modes.length; modeIndex += 1) {
+      for (let modeIndex = object.spell.modes.length - 1; modeIndex >= 0; modeIndex -= 1) {
         for (const cast of legalModeCasts(state, playerId, id, modeIndex, object.spell.modes[modeIndex])) {
           casts.push(cast);
         }

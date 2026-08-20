@@ -36,6 +36,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   cast_permanent: 'Zagranie permanentu',
   plot_card: 'Plotowanie karty',
   suspend_card: 'Zawieszenie karty',
+  warp_card: 'Rzut za koszt warp',
   cast_spell: 'Rzucenie czaru',
   cast_cleave: 'Rzucenie z Cleave',
   activate_ability: 'Aktywacja zdolności',
@@ -56,6 +57,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_hand_creature: 'Położenie stwora z ręki',
   resolve_legend_choice: 'Prawo legend (który zostaje?)',
   resolve_trigger_target: 'Cel triggera (wybór)',
+  resolve_opponent_target: 'Wskaż cel obrażeń (wybór przeciwnika)',
   resolve_optional_trigger_choice: 'Efekt „you may"',
   resolve_enter_as_copy: 'Wejście jako kopia',
   resolve_destroy_equipment_choice: 'Zniszczenie equipmentu',
@@ -79,6 +81,10 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_reveal_order: 'Kolejność kart na wierzchu',
   resolve_discard_choice: 'Odrzucenie karty',
   resolve_sacrifice_choice: 'Poświęcenie stwora',
+  // M151 (audyt żywym testerem): brakująca etykieta wyciekała jako surowy
+  // identyfikator „resolve_exploit_choice" w panelu akcji (Silumgar Butcher —
+  // Exploit). Teraz czytelny polski opis.
+  resolve_exploit_choice: 'Exploit (wybór poświęcenia)',
   declare_attackers: 'Deklaracja atakujących',
   declare_blockers: 'Deklaracja blokujących',
   pass_priority: 'Pass priorytetu',
@@ -167,6 +173,7 @@ const TARGET_TYPE_LABELS = Object.freeze({
   other_nonland_permanent: 'inny permanent niebędący lądem',
   nonartifact_nonblack_creature: 'stwór niebędący artefaktem ani czarnym',
   creature_you_control: 'twój stwór', creature_opponent_controls: 'stwór przeciwnika',
+  creature_or_vehicle: 'stwór lub Vehicle',
   creature_with_subtypes: 'stwór z podtypem', creature_with_power_at_least: 'stwór o sile ≥',
   creature_card_in_graveyard: 'karta-stwór w grobie', creature_card_in_opponent_graveyard: 'karta-stwór w grobie przeciwnika',
   card_in_graveyard: 'karta w grobie', permanent_card_in_graveyard: 'karta-permanent w grobie',
@@ -260,7 +267,7 @@ export const OPTION_IGNORABLE_TYPES = Object.freeze([
 ]);
 
 const ACTION_RANK = Object.freeze({
-  resolve_mulligan_choice: -3, resolve_mulligan_bottom_choice: -3, resolve_backup: -2, resolve_scry: -1, resolve_surveil: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, suspend_card: 3, cast_permanent: 4, cast_spell: 5, cast_cleave: 5, activate_ability: 5,
+  resolve_mulligan_choice: -3, resolve_mulligan_bottom_choice: -3, resolve_backup: -2, resolve_scry: -1, resolve_surveil: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, suspend_card: 3, warp_card: 3, cast_permanent: 4, cast_spell: 5, cast_cleave: 5, activate_ability: 5,
   declare_attackers: 5, declare_blockers: 6, resolve_combat: 7, pass_priority: 8, concede: 9,
 });
 
@@ -299,6 +306,7 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_backup') return 'resolve_backup';
   if (command.type === 'resolve_sacrifice_choice') return 'resolve_sacrifice_choice';
   if (command.type === 'resolve_trigger_target') return 'resolve_trigger_target';
+  if (command.type === 'resolve_opponent_target') return 'resolve_opponent_target';
   if (command.type === 'resolve_search_choice') return 'resolve_search_choice';
   if (command.type === 'resolve_color_choice') return 'resolve_color_choice';
   if (command.type === 'resolve_fertile_thicket') return 'resolve_fertile_thicket';
@@ -347,6 +355,7 @@ function choiceRequestType(commands) {
   if (first.type === 'resolve_backup') return 'target';
   if (first.type === 'resolve_sacrifice_choice') return 'sacrifice';
   if (first.type === 'resolve_trigger_target') return 'target';
+  if (first.type === 'resolve_opponent_target') return 'target';
   if (first.type === 'resolve_search_choice') return 'target';
   if (first.type === 'resolve_color_choice') return 'command';
   if (first.type === 'resolve_fertile_thicket') return 'target';
@@ -768,6 +777,7 @@ function describeEffect(e) {
     damage_to_controller: () => `${damageCount(e.amount)} kontrolerowi`,
     destroy_if_least_power: () => 'zniszcz, jeśli cel ma najmniejszą moc na polu bitwy (lub remisuje)',
     destroy_permanent: () => 'zniszcz cel',
+    destroy_artifact_gain_life_mana_value: () => 'zniszcz artefakt; zyskujesz życie równe jego kosztowi many',
     set_base_pt_until_end_of_turn: () => `bazowe P/T ${e.power}/${e.toughness} do końca tury`,
     mill_from_bottom: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} od spodu biblioteki`,
     grant_abilities: () => 'nadaj zdolność do końca tury',
@@ -781,6 +791,7 @@ function describeEffect(e) {
     exile_opponent_creature: () => 'wygnij stwora przeciwnika',
     exile_own_land: () => 'wygnij własny ląd',
     exile_target_creature: () => 'wygnij stwora',
+    exile_nonland_permanent_linked: () => 'wygnij nie-lądowy permanent do odejścia',
     exile_return_transformed: () => 'wygnij, potem wróć przekształcone',
     explore: () => 'explore',
     investigate: () => 'investigate (stwórz token Clue)',
@@ -791,6 +802,7 @@ function describeEffect(e) {
     return_source_from_graveyard_to_hand: () => 'wróć z grobu na rękę',
     copy_creature: () => 'stań się kopią celu',
     job_select: () => 'job select (stwórz 1/1 Hero i przypnij)',
+    living_weapon: () => 'living weapon (stwórz 0/0 Germ i przypnij)',
     ferocious_draw_discard: () => 'ferocious: dobierz, potem odrzuć',
     fertile_thicket_reveal: () => 'odsłoń wierzch biblioteki',
     goad: () => 'goad (musi atakować)',
@@ -798,6 +810,7 @@ function describeEffect(e) {
     graveyard_creatures_to_library_top_choice: () => 'karty z grobu na wierzch biblioteki',
     index_look: () => 'zobacz wierzch biblioteki (Index)',
     look_top_put_one_hand_rest_grave: () => 'zobacz wierzch biblioteki, jedną do ręki, resztę do grobu',
+    reveal_top_pick_land_rest_grave: () => 'odsłoń wierzch, możesz wziąć ląd do ręki, resztę do grobu',
     epic_experiment: () => 'wygnaj wierzch biblioteki i rzuć czary bez kosztu',
     mill_both_players: () => `mieli po ${e.amount ?? 1} karcie z biblioteki każdy gracz`,
     mill_cards: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} (do grobu)`,
@@ -852,6 +865,8 @@ function describeEffect(e) {
     turn_face_up: () => 'obróć twarzą do góry',
     unearth_return: () => 'unearth (z grobu z haste, exile na końcu tury)',
     untap_permanent: () => 'odkręć',
+    untap_enchanted_permanent: () => 'odkręć zaczarowany permanent',
+    untap_all_creatures_you_control: () => 'odkręć wszystkie twoje stwory',
     venture_into_undercity: () => 'venture do lochu',
     // M122/#5 (Żywy Tester, ostrza vs wiedzmin seed 3005): panel akcji
     // świecił surowym slugiem „efekt (attach_equipment_to_source)".
@@ -1462,10 +1477,14 @@ export function commandLabel(cmd, session, view) {
     // M100/E12 (pytanie właściciela): własny morph nazwany ZE znacznikiem
     // „(Morph)" — sama nazwa sugerowałaby pełnego stwora, a to zakryte 2/2.
     // M127: brzmienie znacznika z jednego źródła (session.faceDownName).
+    // M155 (audyt żywym testerem): tokeny niosą jawną nazwę (object.name);
+    // cardId `token_*` jest poza rejestrem, więc session.nameOf zwracałby
+    // surowy id („token_squirrel").
+    const tokenName = object?.isToken ? (object.name ?? null) : null;
     const base = object
       ? (object.faceDown
         ? faceDownName(object.cardId != null ? session.nameOf(object.cardId) : null)
-        : session.nameOf(object.cardId))
+        : (tokenName || session.nameOf(object.cardId)))
       : session.nameOfObject(id);
     // E (2026-08-11): permanent na polu bitwy, który mogą mieć OBAJ gracze
     // (np. stwór na stole) — do nazwy w modalach wyboru dopisujemy kontrolera,
@@ -1526,11 +1545,32 @@ export function commandLabel(cmd, session, view) {
       const card = obj(cmd.objectId);
       return `Plotuj: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.plot?.cost != null ? manaCostHtml(`{${card.plot.cost}}`) : '?'})`;
     }
+    case 'warp_card': {
+      const card = obj(cmd.objectId);
+      const wc = card?.warp;
+      const remaining = wc ? Math.max(0, (wc.cost ?? 0) - (wc.colors ?? []).length) : 0;
+      const costStr = wc
+        ? `${(wc.colors ?? []).map((c) => `{${c}}`).join('')}${remaining > 0 ? `{${remaining}}` : ''}`
+        : null;
+      const cost = costStr != null ? manaCostHtml(costStr) : '?';
+      return `Rzuć za warp: ${nameOfObjectId(cmd.objectId)} (koszt ${cost})`;
+    }
     case 'suspend_card': {
       const card = obj(cmd.objectId);
-      const cost = card?.suspend?.cost != null ? manaCostHtml(`{${card.suspend.cost}}`) : '?';
-      const n = card?.suspend?.timeCounters ?? 4;
-      return `Zawieś: ${nameOfObjectId(cmd.objectId)} (koszt ${cost}, ${n} liczników czasu)`;
+      // M151 (audyt żywym testerem): etykieta pokazywała „koszt 1" zamiast
+      // koloru ({B}) — suspend.cost to LICZBA jednostek many, a suspend.colors
+      // narzuca, które z nich są kolorowymi pipami (Mindstab Suspend 4—{B} =
+      // 1 jednostka, czarna). Renderujemy pipy kolorów + pozostałą część
+      // generyczną (to samo kodowanie co koszt czaru, render.js:920).
+      const sc = card?.suspend;
+      const remaining = sc ? Math.max(0, (sc.cost ?? 0) - (sc.colors ?? []).length) : 0;
+      const costStr = sc
+        ? `${(sc.colors ?? []).map((c) => `{${c}}`).join('')}${remaining > 0 ? `{${remaining}}` : ''}`
+        : null;
+      const cost = costStr != null ? manaCostHtml(costStr) : '?';
+      const n = sc?.timeCounters ?? 4;
+      // M151: „4 liczników czasu" było złą odmianą (2–4 → „liczniki").
+      return `Zawieś: ${nameOfObjectId(cmd.objectId)} (koszt ${cost}, ${n} ${polishPluralCount(n, 'licznik', 'liczniki', 'liczników')} czasu)`;
     }
     case 'cast_permanent': {
       const card = obj(cmd.objectId);
@@ -1852,9 +1892,19 @@ export function commandLabel(cmd, session, view) {
       return `Mulligan — odłóż na spód (${n}): ${names}`;
     }
     case 'resolve_suspend_cast': {
+      // M151: rzut zawieszonego czaru z celami enumeruje osobną ofertę PER cel
+      // (suspendCastOffers), więc etykieta musi pokazać CEL — inaczej gracz
+      // widzi N identycznych „Rzuć zawieszone: X (bez kosztu many)\".
+      const susTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
       return cmd.cast
-        ? `Rzuć zawieszone: ${nameOfObjectId(cmd.cardId)} (bez kosztu many)`
+        ? `Rzuć zawieszone: ${nameOfObjectId(cmd.cardId)} (bez kosztu many)${susTargets ? ` → cel: ${susTargets}` : ''}`
         : 'Zostaw w wygnaniu (koniec zawieszenia)';
+    }
+    case 'resolve_rebound_cast': {
+      const rebTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
+      return cmd.cast
+        ? `Rzuć z odbiciem: ${nameOfObjectId(cmd.cardId)} (bez kosztu many)${rebTargets ? ` → cel: ${rebTargets}` : ''}`
+        : 'Zostaw w wygnaniu (koniec odbicia)';
     }
     case 'resolve_epic_choice': {
       // Epic Experiment — rzuć wygnany czar bez kosztu albo zakończ.
@@ -1864,6 +1914,20 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_look_top_choice': {
       // Gurmag Drowner — wybierz kartę z wierzchu do ręki.
       return `Weź do ręki: ${nameOfObjectId(cmd.cardId)}`;
+    }
+    case 'resolve_satyr_look_choice': {
+      // Satyr Wayfinder — wybierz ląd z odsłoniętych do ręki albo zrezygnuj.
+      if (cmd.pickId == null) return 'Nie bierz lądu (reszta do grobu)';
+      // M152 (audyt żywym testerem): karty odsłoniętej biblioteki są w
+      // PlayerView ukryte (hidden:true, bez cardId) — nameOfObjectId zwracał
+      // „?". Satyr Wayfinder odsłania WŁASNE karty (gracz je zna), więc nazwę
+      // bierzemy z pełnego stanu sesji (jak resolve_reveal_exile_hand /
+      // resolve_discard_choice).
+      const visible = obj(cmd.pickId);
+      if (!visible?.cardId && session?.nameOfObject) {
+        return `Weź ląd do ręki: ${escapeHtml(session.nameOfObject(cmd.pickId))}`;
+      }
+      return `Weź ląd do ręki: ${nameOfObjectId(cmd.pickId)}`;
     }
     case 'resolve_discard_choice': {
       // M109 (Nightsnare): „You may choose" — rezygnacja z wyboru.
@@ -2358,9 +2422,16 @@ export function renderMiniFace(el, session, objectId) {
  */
 export function renderHoverPreview(host, info, hoverMode = 'scryfall') {
   clear(host);
+  const key = String(hoverMode || 'scryfall').toLowerCase();
   const shape = hoverPreviewShape(hoverMode);
-  const face = buildFace(host, info, { size: 'lg' });
   const candidates = hoverImageSources(artOf(info), { hoverMode });
+  // M148 (uwaga właściciela, trzeci raz): w torach FOT/KON karta BEZ lokalnej
+  // ilustracji (basic land, token, karta specjalna — brak artId) ma po najechaniu
+  // NIE pokazywać NIC — dokładnie jak w legacy HTML. Wcześniej buildFace rysował
+  // syntetyczną twarz ZANIM sprawdzono kandydatów, więc zaślepka wyskakiwała.
+  // W torze scryfall fallback (syntetyczna twarz) zostaje — tam zawsze coś ma być.
+  if (!candidates.length && key !== 'scryfall') return host;
+  const face = buildFace(host, info, { size: 'lg' });
   if (!candidates.length) return host;
   const img = document.createElement('img');
   img.className = 'hover-img';
@@ -2529,7 +2600,7 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
  *   onCardClick: (objectId: string, cardId: string) => void,
  *   onStackClick?: (objectId: string, cardId: string) => void }} args
  */
-export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
+export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, onDayNightClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
   const view = session.view();
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) clear(els[key]);
@@ -2769,7 +2840,7 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   renderTurnHistory(els, session, els.turnHistory2?.checked ? 2 : 1);
 
   // --- Day/Night (M68) — globalny znacznik, jak loch -------------------
-  renderDayNight(els, session, view);
+  renderDayNight(els, session, view, { onClick: onDayNightClick, hover });
 
   // --- Loch Undercity (M24) -------------------------------------------
   renderUndercity(els, session, view, { onClick: onUndercityClick });
@@ -2786,7 +2857,7 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
  * z lochami — karta Day//Night (img ze Scryfall TVOW 21, front/back wg
  * designation) + status. Ukryty, gdy designation nie jest ustalone.
  */
-export function renderDayNight(els, session, view) {
+export function renderDayNight(els, session, view, { onClick = null, hover = null } = {}) {
   if (!els.daynight) return;
   const designation = view.dayNight ?? null;
   els.daynight.hidden = designation == null;
@@ -2798,6 +2869,24 @@ export function renderDayNight(els, session, view) {
   img.alt = DAY_NIGHT_TOKEN.name;
   img.loading = 'lazy';
   card.appendChild(img);
+  // M153/C (uwaga właściciela): karta specjalna Day/Night miała być
+  // klikalna i mieć hover (powiększona wersja), jak basic landy. Tapnięcie
+  // otwiera pełny ekran (openDayNightFullscreen), najechanie — powiększenie.
+  card.className = card.className ? `${card.className} clickable` : 'clickable';
+  card.addEventListener('click', (ev) => {
+    if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
+    if (onClick) onClick();
+  });
+  if (hover && hover.start) {
+    const info = {
+      name: DAY_NIGHT_TOKEN.name,
+      imageUri: designation === 'night' ? DAY_NIGHT_TOKEN.imageUriNight : DAY_NIGHT_TOKEN.imageUriDay,
+      artId: null, set: null, colors: [], kind: 'card', types: ['Card', 'Card'], faceDown: false,
+    };
+    card.addEventListener('mouseenter', (e) => hover.start(info, e));
+    card.addEventListener('mouseleave', hover.end);
+    if (hover.cycle) card.addEventListener('wheel', (e) => hover.cycle(info, e));
+  }
   const info = div(els.daynight, 'daynight-info');
   div(info, 'daynight-status', designation === 'night' ? 'Noc' : 'Dzień');
   div(info, 'daynight-note', designation === 'night'
@@ -2805,7 +2894,7 @@ export function renderDayNight(els, session, view) {
     : 'Wilkołaki daybound są na daybound stronach. Rzut czaru w turze gracza po wejściu daybounda robi noc.');
 }
 
-export function renderUndercity(els, session, view, { onClick = null } = {}) {
+export function renderUndercity(els, session, view, { onClick = null, hover = null } = {}) {
   if (!els.undercity) return;
   const progress = view.undercityProgress ?? {};
   const entered = Object.entries(progress).filter(([, room]) => room > 0);
@@ -2827,6 +2916,17 @@ export function renderUndercity(els, session, view, { onClick = null } = {}) {
     if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
     if (onClick) onClick();
   });
+  // M153/C: hover jak dla pozostałych kart — powiększony druk pod kursorem.
+  if (hover && hover.start) {
+    const hInfo = {
+      name: UNDERCITY_DUNGEON.name,
+      imageUri: UNDERCITY_DUNGEON.imageUri,
+      artId: null, set: null, colors: [], kind: 'card', types: ['Dungeon'], faceDown: false,
+    };
+    card.addEventListener('mouseenter', (e) => hover.start(hInfo, e));
+    card.addEventListener('mouseleave', hover.end);
+    if (hover.cycle) card.addEventListener('wheel', (e) => hover.cycle(hInfo, e));
+  }
   const info = div(els.undercity, 'undercity-info');
   div(info, 'undercity-init', view.initiativePlayerId != null
     ? `Inicjatywa: ${PLAYER_NAMES[view.initiativePlayerId] ?? view.initiativePlayerId}`

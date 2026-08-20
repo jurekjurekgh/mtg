@@ -18,6 +18,7 @@ import assert from 'node:assert/strict';
 import {
   detectBotBuffsMyCreatures,
   detectFalseNoEffect,
+  detectLogNoiseLeak,
   detectTruncatedCardText,
   runDetectors,
 } from '../tools/table-tester/detectors.mjs';
@@ -55,10 +56,13 @@ test('M138/detektor Z1: NIE zgłasza efektu SZKODLIWEGO w mój permanent (to pop
 
 // --- Z4: fałszywe „nic się nie wydarzyło” ---------------------------------
 
-test('M138/detektor Z4: łapie „zerowy wynik” obok widocznego skutku', () => {
+test('M138/detektor Z4: łapie „zerowy wynik” obok widocznego skutku TEGO SAMEGO źródła', () => {
+  // Prawdziwy L24 (naprawiony w M138): cichy skutek mutował stan BEZ zdarzenia,
+  // więc log mówił „zerowy wynik", a efekt (np. set_base_pt na źródle) zadziałał.
+  // Dowód musi dotyczyć TEGO SAMEGO źródła — inaczej to inny trigger w oknie.
   const lines = [
     '  [ROZGRYWKA]   • Voice of the Vermin — trigger bez efektu (nic się nie wydarzyło (zerowy wynik))',
-    '  [ROZGRYWKA]   • Giant Spider dostaje +2 liczniki',
+    '  [ROZGRYWKA]   • Voice of the Vermin dostaje +2 liczniki',
   ];
   const found = detectFalseNoEffect(lines);
   assert.equal(found.length, 1);
@@ -68,10 +72,37 @@ test('M138/detektor Z4: łapie „zerowy wynik” obok widocznego skutku', () =>
 test('M138/detektor Z4: działa też na SKLEJONYM ogonie logu (linia LOG: z ⏎)', () => {
   // Ten kształt dał realny transkrypt — bez rozwijania ⏎ detektor milczał.
   const lines = [
-    '  LOG: Giant Spider zadaje 3 obrażenia (Nieprzyjaciel) ⏎ Voice of the Vermin — trigger bez efektu (nic się nie wydarzyło (zerowy wynik)) ⏎ Servant of the Scale dostaje +1 licznik +1/+1 (razem 1)',
+    '  LOG: Voice of the Vermin — trigger bez efektu (nic się nie wydarzyło (zerowy wynik)) ⏎ Voice of the Vermin dostaje +2 liczniki',
   ];
   assert.equal(detectFalseNoEffect(lines).length, 1,
     'reguła M99: ten sam fakt musi być widoczny w obu kształtach logu');
+});
+
+// M151 (audyt żywym testerem): detektor mieszał DWA niezależne triggery
+// w jednym oknie (Veiled Ascension “zerowy wynik" + osobny pump Akrasan
+// Squire w tym samym kroku) i zgłaszał fałszywy alarm. Skutek jest
+// oddzielony innymi zdarzeniami — to NIE jest ten sam trigger.
+// M155 (audyt żywym testerem, Steelfin Whale): „zerowy wynik" jednego triggera
+// (odkręcenie i tak odkręconego) obok skutku INNEGO triggera (token Germ z
+// living weapon Strandwalkera) w sąsiedztwie to FAŁSZYWY ALARM — nie flagujemy.
+test('M138/detektor Z4 (M155): NIE zgłasza skutku INNEGO źródła w sąsiedztwie (Steelfin + Germ)', () => {
+  const lines = [
+    '  [ROZGRYWKA]   • Steelfin Whale — trigger bez efektu (nic się nie wydarzyło (zerowy wynik))',
+    '  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Germ (0/0)',
+  ];
+  assert.deepEqual(detectFalseNoEffect(lines), [],
+    'Germ (0/0) to skutek Strandwalkera, nie Steelfin Whale — nie flagujemy');
+});
+
+test('M138/detektor Z4 (M151): NIE zgłasza, gdy skutek należy do INNEGO triggera w tym samym oknie', () => {
+  const lines = [
+    '  [ROZGRYWKA]   • Veiled Ascension — trigger bez efektu (nic się nie wydarzyło (zerowy wynik))',
+    '  [ROZGRYWKA]   • Veiled Ascension zostaje rozstrzygnięty',
+    '  [ROZGRYWKA]   • Tura 7 — Nieprzyjaciel',
+    '  LOG: Wedgelight Rammer dostaje +1/+1 ⏎ Akrasan Squire — trigger (samotny atak)',
+  ];
+  assert.deepEqual(detectFalseNoEffect(lines), [],
+    'skutek nie jest następnym wpisem po “zerowy wynik" — to inny trigger (M151)');
 });
 
 test('M138/detektor Z4: NIE zgłasza uczciwego „brak legalnych celów”', () => {
@@ -81,6 +112,32 @@ test('M138/detektor Z4: NIE zgłasza uczciwego „brak legalnych celów”', () 
   ];
   assert.deepEqual(detectFalseNoEffect(lines), [],
     'trigger bez celów naprawdę nic nie robi — to poprawny komunikat');
+});
+
+// --- M151: przeciek szumu do logu gracza ----------------------------------
+test('M151/detektor: zgłasza „przygotowuje manę" w logu gracza (szum ma być wyciszony)', () => {
+  const lines = [
+    '  LOG: Nieprzyjaciel przygotowuje manę (Swamp) ⏎ Nieprzyjaciel przygotowuje manę (Forest) ⏎ Nieprzyjaciel zagrywa Swamp',
+  ];
+  const found = detectLogNoiseLeak(lines);
+  assert.equal(found.length, 1);
+  assert.equal(found[0].category, 'info');
+});
+
+test('M151/detektor: zgłasza przejście fazy „— faza/krok —" w logu gracza', () => {
+  const lines = [
+    '  LOG: — beginning/upkeep — ⏎ Nieprzyjaciel zagrywa Swamp',
+    '  LOG: — combat/declare_attackers —',
+  ];
+  const found = detectLogNoiseLeak(lines);
+  assert.equal(found.length, 2);
+});
+
+test('M151/detektor: NIE hałasuje na czystym logu (bez szumu)', () => {
+  const lines = [
+    '  LOG: Nieprzyjaciel zagrywa Swamp ⏎ Nieprzyjaciel rzuca Tumbleweed Rising',
+  ];
+  assert.deepEqual(detectLogNoiseLeak(lines), []);
 });
 
 // --- Z2/Z3/Z5/Z9/Z10: urwany opis karty -----------------------------------

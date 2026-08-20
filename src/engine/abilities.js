@@ -27,6 +27,23 @@ function playerSpeed(state, playerId) {
 }
 
 /**
+ * M150/C2: kolory many, które zdolność DODAJE (efekty `add_mana` z listą
+ * kolorów — Jeskai Devotee „{1}: Add {U}, {R}, or {W}”). W logu stołu opis
+ * aktywacji pokaże „dodanie many do puli ({U}, {R}, {W})” zamiast milczeć
+ * o kolorze (uwaga właściciela 2026-08-19).
+ */
+function collectManaColors(effects) {
+  const colors = [];
+  for (const effect of effects ?? []) {
+    if (effect?.type !== 'add_mana') continue;
+    for (const color of effect.colors ?? []) {
+      if (!colors.includes(color)) colors.push(color);
+    }
+  }
+  return colors;
+}
+
+/**
  * Warunek zdolności „Max speed" (Glitch Ghost Surveyor): zdolność można
  * aktywować dopiero przy speed 4. Wspólne dla oferty i walidacji.
  */
@@ -375,6 +392,11 @@ export function legalActivatedAbilities(state, playerId) {
       // Megamorph (obrócenie twarzą do góry) działa tylko, póki permanent
       // leży twarzą w dół; po obrocie zdolność wygasa.
       if ((ability.keyword === 'megamorph' || ability.keyword === 'morph') && !object.faceDown) continue;
+      // Craft (CR 702.9? — Lodestone Needle // Guidestone Compass): wymaga
+      // drugiej strony (transformTo). Kopia bez drugiej strony (enterAsCopy
+      // skopiował zdolność craft, ale transformTo jest warunkowe) nie ma czego
+      // przywrócić — nie oferujemy (no-op zamiast crasha, jak efekty.js).
+      if (ability.keyword === 'craft' && !object.transformTo) continue;
       // Craft wymaga innego artefaktu do wygnania (z battlefield lub graveyard).
       if (ability.keyword === 'craft') {
         const hasOtherArtifact = state.zones.battlefield.some((bfId) => {
@@ -623,6 +645,15 @@ export function legalActivatedAbilities(state, playerId) {
         // — Rustvine Cultivator; ewazja, którą cel już ma — Coralhelm Guide),
         // nic nie zmienia — chowany jak no-op equip (U9).
         if (abilityEffectIsNoOp(state, object, ability, target)) continue;
+        // M155 (audyt żywym testerem, Sterling Keykeeper): zdolność z kosztem
+        // {T} już TAPUJE źródło (object). Oferta, która celuje w SAME ŹRÓDŁO
+        // efektem tap_permanent („{2},{T}: tap target creature" na sobie),
+        // jest czystym no-opem — źródło jest już tapnięte przez koszt, więc
+        // efekt nic nie zmienia. Chowany (gracz zachowuje legalność wg CR 602,
+        // ale UI nie sugeruje bezsensownego tapnięcia własnego źródła).
+        if (ability.cost?.tap && target?.id === object?.id
+          && (Array.isArray(ability.effect) ? ability.effect : [ability.effect])
+            .some((e) => e?.type === 'tap_permanent')) continue;
         const xValue = ability.cost?.manaX && target ? (effectivePower(target, state) ?? 0) : undefined;
         const cost = xValue !== undefined ? xValue : (ability.cost?.mana ?? 0);
         if (cost > mana) continue;
@@ -1153,6 +1184,9 @@ export function performActivation(state, ctx) {
       // przy koszcie {X}{B} te liczby się różnią (X=2 → 3 many).
       xValue: cost.manaX ? (xValue ?? 0) : undefined,
       crewCreatureIds: crewCreaturesToTap ?? undefined,
+      // M153/A1: Station — id zatapianego INNEGO stwora (koszt tapOtherCreature),
+      // żeby log podał jego nazwę.
+      stationTappedCreatureId: otherCreatureToTap ?? undefined,
     });
   }
   for (const effect of effectList) applyEffect(state, effect, effectSource, effectTargets);
@@ -1160,10 +1194,13 @@ export function performActivation(state, ctx) {
   // (Sacrifice this — Panic Spellbomb: obiekt grobu ma nowe id, a log/UI
   // ma nadal podać nazwę karty). effectTypes = krótki opis „co robi
   // zdolność" dla logu stołu (zamiast „?\" po nazwach funkcji).
+  const manaColors = collectManaColors(effectList);
   const activated = event('ability_activated', {
     playerId, objectId, abilityIndex,
     cardId: effectSource.cardId ?? object.cardId,
     effectTypes: effectList.map((e) => e?.type).filter(Boolean),
+    // M150/C2: kolory wyprodukowanej many (Jeskai Devotee) w logu.
+    ...(manaColors.length ? { manaColors } : {}),
     // M73d (F): targets tylko dla zdolności z celami (spójnie z queue...).
     targets: (ability.targets?.length ? chosenTargets : []),
     // M115: X to WARTOŚĆ WYBRANA przez gracza, nie łączna zapłacona mana —
@@ -1171,6 +1208,8 @@ export function performActivation(state, ctx) {
       xValue: cost.manaX ? (xValue ?? 0) : undefined,
     // Crew (CR 701.36): zatapnięte stwory widoczne w logu.
     ...(crewCreaturesToTap ? { crewCreatureIds: [...crewCreaturesToTap] } : {}),
+    // M153/A1: Station — id zatapianego INNEGO stwora w logu.
+    ...(otherCreatureToTap ? { stationTappedCreatureId: otherCreatureToTap } : {}),
   });
   state.events.push(activated);
   return activated;
@@ -1180,7 +1219,13 @@ export function performActivation(state, ctx) {
 function isActivatedManaAbility(ability) {
   if ((ability.targets ?? []).length > 0) return false;
   const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
-  return effects.length > 0 && effects.every((e) => e?.type === 'add_mana');
+  // M154 (Batch 38, Pristine Talisman): „{T}: Add {C}. You gain 1 life." —
+  // zdolność many z dojazdem zysku życia. Mana abilities rozstrzygają się
+  // natychmiast bez stosu (CR 605.1a). Zysk życia dopuszczamy TYLKO jako
+  // rider obok add_mana (sam gain_life — Soulmender {T}: zyskaj 1 życia — to
+  // zwykła zdolność na stosie, nie mana ability).
+  return effects.length > 0 && effects.some((e) => e?.type === 'add_mana')
+    && effects.every((e) => e?.type === 'add_mana' || e?.type === 'gain_life');
 }
 
 /**
@@ -1191,7 +1236,7 @@ function isActivatedManaAbility(ability) {
  * się od razu. Tutaj: koszty są już zapłacone, kolejkujemy wpis na stos z LKI
  * źródła (CR 603.10), a efekty zastosuje resolveTopOfStack.
  */
-export function queueActivatedAbilityToStack(state, { playerId, objectId, abilityIndex, ability, effectSourceId, effectTargets, xValue, crewCreatureIds, eventExtra = {} }) {
+export function queueActivatedAbilityToStack(state, { playerId, objectId, abilityIndex, ability, effectSourceId, effectTargets, xValue, crewCreatureIds, stationTappedCreatureId = null, eventExtra = {} }) {
   const source = state.objects.get(effectSourceId) ?? state.objects.get(objectId) ?? {
     id: effectSourceId, controllerId: playerId, cardId: null, zone: 'none', kind: null,
   };
@@ -1217,9 +1262,12 @@ export function queueActivatedAbilityToStack(state, { playerId, objectId, abilit
   });
   state.objects.set(id, entry);
   state.zones.stack.push(id);
+  const stackManaColors = collectManaColors(Array.isArray(ability.effect) ? ability.effect : [ability.effect]);
   const activated = event('ability_activated', {
     playerId, objectId: effectSourceId, cardId: entry.cardId, abilityIndex,
     effectTypes: (Array.isArray(ability.effect) ? ability.effect : [ability.effect]).map((e) => e?.type).filter(Boolean),
+    // M150/C2: kolory wyprodukowanej many w logu.
+    ...(stackManaColors.length ? { manaColors: stackManaColors } : {}),
     // M73d (F): „targets" tylko gdy zdolność MA cele — bezcelowe aktywacje
     // (Soulmender, crew, Cellar Door) nie logują „→ cel: <źródło>" (audyt
     // żywym testerem). effectTargets dla bezcelowych to [objectId] — szum.
@@ -1227,6 +1275,10 @@ export function queueActivatedAbilityToStack(state, { playerId, objectId, abilit
     xValue: xValue ?? undefined,
     onStack: true,
     ...(crewCreatureIds ? { crewCreatureIds: [...crewCreatureIds] } : {}),
+    // M153/A1: Station tapuje INNEGO stwora (koszt tapOtherCreature) — jego id
+    // musi trafić do logu, żeby gracz wiedział, kogo bot zatapiał. Ten sam
+    // wzorzec co crewCreatureIds.
+    ...(stationTappedCreatureId ? { stationTappedCreatureId } : {}),
     ...eventExtra,
   });
   state.events.push(activated);

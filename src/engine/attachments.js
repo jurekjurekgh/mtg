@@ -110,6 +110,12 @@ export function isLegalAuraHost(attachment, host) {
     const isLand = host.kind === 'land' || (host.types ?? []).includes('Land');
     return host.kind === 'creature' || isLand;
   }
+  // M154 (Batch 38): „Enchant creature or Vehicle" (Silken Strength) —
+  // stwór LUB Vehicle (artefakt z podtypem Vehicle; przed crew to nie stwór).
+  if (enchantKind === 'creature_or_vehicle') {
+    const isVehicle = (host.subtypes ?? []).includes('Vehicle');
+    return host.kind === 'creature' || isVehicle;
+  }
   // Zwykła aura / bestow / equipment — wyłącznie stwory.
   return host.kind === 'creature';
 }

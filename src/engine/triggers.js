@@ -332,8 +332,12 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
   if (spec.type === 'creature_you_control') {
     return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
-      return object && object.zone === 'battlefield' && object.kind === 'creature'
-        && object.controllerId === sourceObject.controllerId;
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature'
+        || object.controllerId !== sourceObject.controllerId) return false;
+      // M154 (Batch 38, Talion's Messenger): cel może być zawężony do podtypu
+      // („target Faerie you control") — dane, nie warunek na nazwę karty.
+      if (spec.subtype && !(object.subtypes ?? []).includes(spec.subtype)) return false;
+      return true;
     });
   }
   if (spec.type === 'ally_creature_on_battlefield') {
@@ -362,6 +366,17 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       return object && object.zone === 'battlefield' && object.kind === 'creature'
         && object.controllerId !== sourceObject.controllerId
         && !hexproofBlocked(object);
+    });
+  }
+  // M154 (Batch 38, Lotusguard Disciple): cel „creature or Vehicle" —
+  // stwór LUB Vehicle (artefakt z podtypem Vehicle) na polu bitwy, bez hexproof.
+  if (spec.type === 'creature_or_vehicle') {
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      if (!object || object.zone !== 'battlefield') return false;
+      const isVehicle = (object.subtypes ?? []).includes('Vehicle');
+      if (object.kind !== 'creature' && !isVehicle) return false;
+      return !hexproofBlocked(object);
     });
   }
   if (spec.type === 'creature') {
@@ -444,11 +459,15 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
   // (stwór, artefakt, enchantment). Źródło triggera nie jest celem
   // własnym (żeby ETB Thistledown nie odpalał na siebie).
   if (spec.type === 'nonland_permanent') {
+    // „Target nonland permanent an opponent controls\" (Static Net) — domyślnie
+    // dowolny nie-ląd inny niż źródło; `opponentControls` zawęża do PRZECIWNIKA
+    // kontrolera źródła (spójne z creature_opponent_controls).
     return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
       if (!object || object.zone !== 'battlefield') return false;
       if (object.id === sourceObject.id) return false;
       if (hexproofBlocked(object)) return false;
+      if (spec.opponentControls && object.controllerId === sourceObject.controllerId) return false;
       const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
       return !isLand;
     });
@@ -682,6 +701,13 @@ function resolveDelayedTrigger(state, payload, events) {
     if (!object || object.zone !== 'battlefield') return false;
     const exileId = `exile-${state.objectSequence++}`;
     moveObjectDirectly(state, pending.objectId, 'exile', exileId);
+    // M154 (Warp): wygnana w końcowym kroku karta dostaje `warpReady`, więc
+    // można ją rzucić z exile w późniejszej turze za koszt warp (castPermanent
+    // warpCast). Zwykłe exile_object (Puppeteer Clique) nic nie dokleja.
+    if (pending.warp) {
+      const exiled = state.objects.get(exileId);
+      state.objects.set(exileId, Object.freeze({ ...exiled, warpReady: true, warped: false }));
+    }
     const fired = event('object_exiled', {
       objectId: exileId, fromId: pending.objectId, cardId: object.cardId,
       playerId: pending.playerId, delayed: true,
@@ -1871,6 +1897,24 @@ export function processTriggers(state, recentEvents) {
           }
         }
       }
+      // M154 (Batch 38, Talion's Messenger): „Whenever you attack with one or
+      // more Faeries” — tribe trigger jak bat_attacks, ale odpala się RAZ na
+      // combat, gdy aktywny gracz atakuje z ≥1 Faerie. Kontrolerem źródła
+      // jest aktywny gracz (ten, kto deklaruje atakujących).
+      {
+        const attackedWithFaerie = (ev.attackerIds ?? []).some((id) => {
+          const a = state.objects.get(id);
+          return a && a.zone === 'battlefield' && (a.subtypes ?? []).includes('Faerie');
+        });
+        if (attackedWithFaerie) {
+          for (const object of state.objects.values()) {
+            if (object.zone !== 'battlefield' || object.controllerId !== ev.playerId) continue;
+            for (const ability of effectiveAbilities(object)) {
+              if (ability?.trigger?.event === 'faerie_attacks') tryFire(state, ability, object, [], events);
+            }
+          }
+        }
+      }
       for (const attackerId of ev.attackerIds ?? []) {
         const attacker = state.objects.get(attackerId);
         if (!attacker || attacker.zone !== 'battlefield') continue;
@@ -2033,6 +2077,29 @@ export function processTriggers(state, recentEvents) {
             effect: [],
           }, card, [], events, { suspendObjectId: id });
         }
+      }
+      // Rebound (CR 702.97, Ojutai's Breath): „At the beginning of your next
+      // upkeep, you may cast this card from exile without paying its mana
+      // cost.\" — na początku upkeepu AKTYWNEGO gracza sprawdzamy, czy w exile
+      // leży karta z `reboundReady` (zaznaczona przy rozstrzygnięciu czaru
+      // rzuconego z ręki z deskryptorem `rebound`). Jeśli tak, otwieramy
+      // JEDNORAZOWĄ decyzję (pendingReboundCast): rzuć za darmo albo zostaw
+      // w exile na stałe (karta traci gotowość — rebound nie powtarza się).
+      for (const id of [...state.zones.exile]) {
+        const card = state.objects.get(id);
+        if (!card || !card.reboundReady || card.controllerId !== state.turn.activePlayerId) continue;
+        if (card.kind !== 'spell') continue;
+        if (state.pendingReboundCast) continue;
+        state.pendingReboundCast = {
+          playerId: state.turn.activePlayerId,
+          objectId: id,
+          cardId: card.cardId,
+          restorePriorityTo: state.turn.priorityPlayerId,
+        };
+        state.turn.priorityPlayerId = state.turn.activePlayerId;
+        state.events.push(event('rebound_ready_required', {
+          playerId: state.turn.activePlayerId, objectId: id, cardId: card.cardId,
+        }));
       }
     }
     // Po kroku dobierania (CR 714.3b: „after your draw step") każda Saga

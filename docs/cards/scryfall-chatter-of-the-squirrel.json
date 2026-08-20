@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Chatter+of+the+Squirrel&set=2xm",
+  "print": "Chatter of the Squirrel (2XM)",
+  "name": "Chatter of the Squirrel",
+  "mana_cost": "{G}",
+  "cmc": 1,
+  "type_line": "Sorcery",
+  "oracle_text": "Create a 1/1 green Squirrel creature token.\nFlashback {1}{G} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Flashback"
+  ],
+  "set": "2xm",
+  "set_name": "Double Masters",
+  "collector_number": "157",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/f/5f7e1991-9ffa-4a57-b8eb-ebe542a47f09.jpg?1783930150",
+    "normal": "https://cards.scryfall.io/normal/front/5/f/5f7e1991-9ffa-4a57-b8eb-ebe542a47f09.jpg?1783930150"
+  },
+  "pobrano": "2026-08-19"
+}

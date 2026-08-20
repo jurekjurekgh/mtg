@@ -727,7 +727,7 @@ export function detectBotUntapsMyPermanent(lines, myPermanentNames = new Set(), 
  * demaskuje. Działa na treści logu, nie na snapshotach (M99/M104) — te same
  * linie są w obu trybach.
  */
-export function detectFalseNoEffect(lines, { window: windowSize = 4 } = {}) {
+export function detectFalseNoEffect(lines, { window: windowSize = 1 } = {}) {
   const found = [];
   // Skutek widoczny w logu: zmiana P/T, licznik, keyword, tap/untap.
   const CHANGE = /zyskuje:|dostaje \+|traci [0-9]|staje się|zostaje odkręcon|zostaje zatapnion|licznik|\b[0-9]+\/[0-9]+\b/i;
@@ -748,10 +748,25 @@ export function detectFalseNoEffect(lines, { window: windowSize = 4 } = {}) {
     if (!/zerowy wynik/.test(entries[i])) continue;
     const source = /^([^—]+) —/.exec(entries[i]);
     const name = source ? source[1].trim() : null;
-    const near = entries.slice(Math.max(0, i - windowSize), i + windowSize + 1);
+    // M151 (audyt żywym testerem): OKNO POJEDYNCZE, tylko NAPRZÓD. Poprzednie
+    // ±4 mieszało DWA niezależne triggery w tym samym oknie (Veiled Ascension
+    // “zerowy wynik" + osobny pump Akrasan Squire) i produkowało fałszywe
+    // alarmy. Legalny przypadek L24 (efekt mutuje stan bez zdarzenia) ma
+    // skutek jako NASTĘPNY wpis zaraz po “zerowy wynik"; inny trigger wchodzi
+    // między nie innymi zdarzeniami, więc znikąd. Patrzymy wyłącznie na
+    // bezpośredniego następnika (i — dla sklejonych logów — poprzednika).
+    const from = Math.max(0, i - 1);
+    const to = Math.min(entries.length, i + 1 + windowSize);
+    const near = entries.slice(from, to);
+    // M155 (audyt żywym testerem): gdy ZNAMY źródło „zerowego wyniku"
+    // (np. „Steelfin Whale — trigger bez efektu"), dowód musi być zmianą
+    // DOTYCZĄCĄ TEGO SAMEGO źródła (nazwa w wpisie) — inaczej wzięlibyśmy
+    // niepowiązany skutek innego triggera w sąsiedztwie (Germ z living
+    // weapon przy „zerowym wyniku" Steelfin Whale — fałszywy alarm).
+    // Fallback na dowolny CHANGE tylko, gdy źródło nieznane (brak nazwy).
     const evidence = near.find((entry) => entry !== entries[i]
       && CHANGE.test(entry)
-      && (!name || entry.includes(name) || CHANGE.test(entry)));
+      && (name ? entry.includes(name) : CHANGE.test(entry)));
     if (!evidence) continue;
     const key = entries[i].slice(0, 80);
     if (seen.has(key)) continue;
@@ -818,6 +833,56 @@ export function detectTruncatedCardText(lines) {
   return found;
 }
 
+/**
+ * M151 (audyt żywym testerem) — PRZECIEK SZUMU DO LOGU GRACZA.
+ *
+ * TESTER_STOLU.md (oś 2) dokumentuje `mana_produced` i `step_advanced` jako
+ * wyciszone, a mimo to główny log gracza zalewały: 18× „Nieprzyjaciel
+ * przygotowuje manę (Swamp)" i 140× „— beginning/upkeep —" w jednej
+ * partii (root cause: apply/streamAutoEvents logowały describeEvent bez
+ * filtra). To strażnik nawrotu: jeśli szum znów trafi do logu gracza,
+ * detektor to zgłosi w dowolnej rozgrywce.
+ */
+export function detectLogNoiseLeak(lines) {
+  const found = [];
+  const stepPhase = /—\s*(beginning|untap|upkeep|draw|precombat|postcombat|combat|end|cleanup)\/[a-z_]+\s*—/;
+  for (const line of lines) {
+    if (!/(LOG:|\[ROZGRYWKA\]|\[modal)/.test(line)) continue;
+    if (/przygotowuje manę/.test(line)) {
+      push(found, 'info', 'Log gracza pokazuje szum „przygotowuje manę" (mana_produced ma być wyciszone)', line.trim());
+      continue;
+    }
+    if (stepPhase.test(line)) {
+      push(found, 'info', 'Log gracza pokazuje szum przejścia fazy (step_advanced ma być wyciszony)', line.trim());
+    }
+  }
+  return found;
+}
+
+/**
+ * M155 (audyt żywym testerem) — WYCIEK RAW ID TOKENU do UI.
+ *
+ * Tokeny niosą JAWNĄ nazwę w `object.name` (cardId to `token_*` poza
+ * rejestrem kart), ale niektóre ścieżki nazywania (nameOfObjectId / kafel)
+ * wołały `nameOf(cardId)` i pokazywały surowy identyfikator „token_squirrel"
+ * zamiast „Squirrel" — gracz widział w kaflach i celach nieczytelny slug
+ * (Batch 38: Chatter of the Squirrel, Mysidian Elder). To strażnik nawrotu:
+ * w dowolnej rozgrywce `token_<nazwa>` w kaflu pola/cele = utrata nazwy.
+ */
+export function detectTokenRawId(lines) {
+  const found = [];
+  const RAW = /(?:^|\| |: )(token_[a-z][a-z0-9_]*)/g;
+  for (const line of lines) {
+    if (!/POLA|\[modal|AKCJE:|cel:|zaczaruj|wyposaża/.test(line)) continue;
+    const match = RAW.exec(line);
+    if (!match) continue;
+    push(found, 'ui',
+      `Surowy identyfikator tokenu zamiast nazwy: „${match[1]}\"`,
+      line.trim());
+  }
+  return found;
+}
+
 export function runDetectors(lines, { actionRecords = [], windowRecords = null, profile = null, probeRecords = [], rejectionRecords = null, harmfulNames = new Set(), allCardNames = new Set(), myPermanentNames = new Set(), enemyPermanentNames = new Set() } = {}) {
   const all = [
     ...detectRawText(lines),
@@ -847,6 +912,9 @@ export function runDetectors(lines, { actionRecords = [], windowRecords = null, 
     ...detectBotUntapsMyPermanent(lines, myPermanentNames, enemyPermanentNames),
     ...detectFalseNoEffect(lines),
     ...detectTruncatedCardText(lines),
+    ...detectLogNoiseLeak(lines),
+    // M155 — wyciek raw id tokenu do kafli/celów (token_squirrel zamiast Squirrel).
+    ...detectTokenRawId(lines),
   ];
   // Deduplikacja: ten sam komunikat + dowód pojawia się raz.
   const seen = new Set();

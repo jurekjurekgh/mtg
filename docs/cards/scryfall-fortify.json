@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Fortify&set=tsp",
+  "print": "Fortify (TSP)",
+  "name": "Fortify",
+  "mana_cost": "{2}{W}",
+  "cmc": 3,
+  "type_line": "Instant",
+  "oracle_text": "Choose one —\n• Creatures you control get +2/+0 until end of turn.\n• Creatures you control get +0/+2 until end of turn.",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [],
+  "set": "tsp",
+  "set_name": "Time Spiral",
+  "collector_number": "18",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/4/b47af529-6ba1-4900-a6f6-7647c9632e11.jpg?1783927882",
+    "normal": "https://cards.scryfall.io/normal/front/b/4/b47af529-6ba1-4900-a6f6-7647c9632e11.jpg?1783927882"
+  },
+  "pobrano": "2026-08-19"
+}

@@ -50,6 +50,6 @@ test('zmiana strefy emituje zdarzenie i zachowuje instancję karty', () => {
   assert.deepEqual(playerView(state, 'p2').zones.battlefield[0], {
     id: 'o-bf-2', cardId: 'public-card', controllerId: 'p1', zone: 'battlefield', kind: 'card',
     power: null, toughness: null, powerModifier: 0, toughnessModifier: 0,
-    tapped: false, summoningSickness: false, damage: 0,
+    tapped: false, summoningSickness: false, damage: 0, manaCost: 0,
   });
 });

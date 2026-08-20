@@ -14,12 +14,13 @@ const PENDING_DECISION_FIELDS = Object.freeze([
   'pendingEnterAsCopy', 'pendingEpicExperiment', 'pendingExploits',
   'pendingExplore', 'pendingFertileThicket', 'pendingFoodChoice',
   'pendingHandCreature', 'pendingHandTopChoice', 'pendingIndex',
-  'pendingLandTypeChoice', 'pendingLookTopN', 'pendingModalTrigger',
+  'pendingLandTypeChoice', 'pendingLookTopN', 'pendingSatyrLook', 'pendingModalTrigger',
   'pendingMoonlitChoice', 'pendingMulliganBottom', 'pendingMulligans',
   'pendingOptionalDraw', 'pendingOptionalPay', 'pendingOptionalTrigger',
   'pendingPayOrSacrifice', 'pendingProliferate', 'pendingRedirectChoice',
   'pendingRevealExile', 'pendingRevealOrder', 'pendingSearchChoice',
-  'pendingSpellReturnToHand', 'pendingSpringbloom', 'pendingTriggerTargets',
+  'pendingSpellReturnToHand', 'pendingSpringbloom', 'pendingReboundCast',
+  'pendingTriggerTargets',
 ]);
 
 /** Serializacja odporna na Map/Set wewnątrz struktur decyzji. */

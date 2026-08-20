@@ -18,7 +18,7 @@ export function createCardInstance({ id, cardId, ownerId }) {
   return Object.freeze({ id, cardId, ownerId });
 }
 
-export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, entersWithCountersIf = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, exploit = null, treasureAltCost = null, cardName = null, name = null, isToken = false, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false }) {
+export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, entersWithCountersIf = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, exploit = null, treasureAltCost = null, cardName = null, name = null, isToken = false, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, rebound = null, reboundCast = false, reboundReady = false }) {
   if (!id || !instanceId || !cardId || !controllerId || !zone) {
     throw new TypeError('Obiekt gry wymaga id, instanceId, cardId, controllerId i zone');
   }
@@ -62,9 +62,18 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // + stan karty zawieszonej w exile (suspended, timeCounters) i gotowość
     // do rzutu bez kosztu po zdjęciu ostatniego licznika (suspendReady).
     suspend: suspend ? Object.freeze({ ...suspend }) : null,
+    warp: warp ? Object.freeze({ ...warp }) : null,
+    warpReady: Boolean(warpReady),
     suspended: Boolean(suspended),
     timeCounters: timeCounters ?? 0,
     suspendReady: Boolean(suspendReady),
+    // Rebound (CR 702.97, Ojutai's Breath): jeśli czar rzucony z RĘKI ma
+    // deskryptor `rebound`, po rozstrzygnięciu idzie do exile (reboundCast na
+    // obiekcie stosu — rzut z ręki), a na początku NASTĘPNEGO upkeepu kontrolera
+    // otwiera jednorazową decyzję rzutu bez kosztu z exile (reboundReady).
+    rebound: rebound ? Object.freeze({ ...rebound }) : null,
+    reboundCast: Boolean(reboundCast),
+    reboundReady: Boolean(reboundReady),
     entersWithCountersIf: entersWithCountersIf ? Object.freeze({ ...entersWithCountersIf }) : null,
     keywords: Object.freeze([...keywords]), subtypes: Object.freeze([...subtypes]),
     transformTo,

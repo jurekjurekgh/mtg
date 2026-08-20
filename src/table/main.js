@@ -17,7 +17,7 @@ import { shuffle } from '../engine/shuffle.js';
 import { createRng } from '../engine/rng.js';
 import { createGameState, execute, playerView } from '../engine/game-state.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
-import { createCardRegistry, UNDERCITY_DUNGEON } from '../cards/card-data.js';
+import { createCardRegistry, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, FACE_DOWN_LABEL } from './session.js';
 import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace } from './render.js';
@@ -510,6 +510,39 @@ function bootstrapTable() {
     fullscreenOpenedAt = Date.now();
   }
 
+  /**
+   * M153/C (uwaga właściciela): karta specjalna Day/Night na stole nie była
+   * klikalna (brak pełnego ekranu) i nie miała hovera. Tapnięcie miniatury
+   * otwiera pełnoekranowy druk wg bieżącej strony (Day/Night) — jak
+   * openUndercityFullscreen dla lochu.
+   */
+  function openDayNightFullscreen() {
+    if (!els.cardFullscreenBody) return;
+    hideModal('context-menu');
+    const designation = session?.view?.().dayNight ?? null;
+    const imageUri = designation === 'night' ? DAY_NIGHT_TOKEN.imageUriNight : DAY_NIGHT_TOKEN.imageUriDay;
+    const info = {
+      name: DAY_NIGHT_TOKEN.name,
+      colors: [],
+      kind: 'card',
+      types: ['Card', 'Card'],
+      subtypes: [],
+      keywords: [],
+      manaCost: null,
+      power: undefined, toughness: undefined,
+      livePower: undefined, liveToughness: undefined,
+      spell: null, abilities: [], morph: null,
+      set: null,
+      imageUri,
+      artId: null,
+      faceDown: false,
+    };
+    fullscreenContext = null; // brak objectId → bez karuzeli strefy
+    renderCardFullscreen(els.cardFullscreenBody, info, { positionText: null });
+    els.cardFullscreen.className = 'fullscreen active';
+    fullscreenOpenedAt = Date.now();
+  }
+
   /** Pomocnik: rodzaj karty z samych typów (gdy `details.kind` nie jest ustawiony). */
   function inferKindForCard(details) {
     const types = details.types ?? [];
@@ -837,6 +870,7 @@ function bootstrapTable() {
       // Bug C: tapnięcie nazwy karty na stosie — pełny ekran z jej tekstem.
       onStackClick: (objectId) => openCardFullscreen(objectId),
       onUndercityClick: () => openUndercityFullscreen(),
+      onDayNightClick: () => openDayNightFullscreen(),
       hoverMode: currentHoverMode,
       onHoverModeChange: (mode) => { currentHoverMode = mode; },
     });

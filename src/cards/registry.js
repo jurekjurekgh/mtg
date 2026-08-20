@@ -86,6 +86,11 @@ export function defineCard(data) {
       colors: Object.freeze([...(data.suspend.colors ?? [])]),
       timeCounters: data.suspend.timeCounters ?? 4,
     }) : null,
+    // Warp (EOE, Weftblade Enhancer): alternatywny koszt { cost, colors } z ręki.
+    warp: data.warp ? Object.freeze({
+      cost: data.warp.cost,
+      colors: Object.freeze([...(data.warp.colors ?? [])]),
+    }) : null,
     entersWithCounters: data.entersWithCounters ? Object.freeze({ ...data.entersWithCounters }) : null,
     // M108 (Somberwald Spider): liczniki wejścia WARUNKOWE (morbid, CR 614.1c).
     entersWithCountersIf: data.entersWithCountersIf ? Object.freeze({
@@ -297,6 +302,11 @@ function freezeSpell(spell) {
     // Buyback (CR 702.26): dodatkowy koszt — jeśli zapłacony, czar wraca
     // do ręki po rozstrzygnięciu zamiast do grobu.
     ...(spell.buyback ? { buyback: Object.freeze({ cost: spell.buyback.cost ?? 0, colors: Object.freeze([...(spell.buyback.colors ?? [])]) }) } : {}),
+    // Rebound (CR 702.97, Ojutai's Breath): czar rzucony z RĘKI po rozstrzygnięciu
+    // idzie do exile, a na początku następnego upkeepu kontrolera można go rzucić
+    // bez kosztu. Flaga na deskryptorze czaru — sprawdzana w castSpell (rzut
+    // z ręki) i resolveTopOfStack (exile zamiast grobu).
+    ...(spell.rebound ? { rebound: true } : {}),
     // Fireball (X-cost, any number of targets, divided damage): flaga
     // specjalnego rozstrzygania — registry wymaga niepustej listy efektów,
     // więc deskryptor niesie też minimalny efekt-zaslepkę (fireball_resolve).
