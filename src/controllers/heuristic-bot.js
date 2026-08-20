@@ -1069,6 +1069,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           // Dobranie kart z czaru to przewaga kartowa.
           if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') score += 6 * (effect.amount ?? 1);
+          // M155 (audyt żywym testerem, Ruinous Rampage): „deals N damage to
+          // each opponent\" (i lose_life każdego przeciwnika) nie miało wyceny
+          // w pętli czarów (było tylko w modalnym triggerze, linia 582). Bot
+          // porównywał więc ten tryb z „wygnaj artefakty\" na równi i wybierał
+          // tryb bezsensowny (wygnanie własnego Angel's Feather zamiast 3
+          // obrażeń przeciwnikowi). Reguła generyczna: wartość = 4×N (jak
+          // modalny trigger), dobicie = bonus.
+          if (effect.type === 'damage_each_opponent' || effect.type === 'lose_life_each_opponent') {
+            const amount = effect.amount ?? 1;
+            const foe = enemy(view);
+            score += (foe && amount >= (foe.life ?? 20)) ? 80 : 4 * amount;
+          }
           // M103/B (zgłoszenie właściciela): „cel nie może być blokowany"
           // (Enter the Enigma) — ewazja ma wartość WYŁĄCZNIE na własnym
           // atakującym; dana stworowi PRZECIWNIKA to realna strata (wróg
@@ -1109,6 +1121,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           } else if (isPumpEffect) {
             score -= 60; // wzmacnianie przeciwnika bez powodu jest błędem
           }
+          // M155 (audyt żywym testerem, Courage in Crisis): `add_counter` z
+          // POZYTYWNYM licznikiem statystyk (+1/+1 itp.) wzmacnia stwora.
+          // Brak wyceny = bot brał dowolny cel (pierwszy legalny = często
+          // stwór PRZECIWNIKA — buforował wroga, płacąc za jego korzyść).
+          // Reguła generyczna (ADR 0002): pozytywny licznik na WŁASNYM stworze
+          // = zysk, na stworze przeciwnika = strata (wzmacniamy wroga).
+          if (effect.type === 'add_counter') {
+            const counterName = effect.counter ?? '+1/+1';
+            const beneficial = counterName === '+1/+1' || counterName === '+1/+0'
+              || counterName === '+0/+1' || counterName === 'shield';
+            const amount = Math.max(1, effect.amount ?? 1);
+            if (beneficial && target) {
+              if (target.controllerId === view.playerId) {
+                score += 8 + 4 * amount;
+              } else if (target.kind === 'creature' || (target.types ?? []).includes('Creature')) {
+                score -= 90; // wzmacnianie stwora przeciwnika — mocna kara
+              }
+            }
+          }
         }
         return finish(score);
       }
@@ -1132,6 +1163,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const taps = Boolean(ability?.cost?.tap);
         const tapsCreature = Boolean(ability?.cost?.tapCreature);
         const effects = Array.isArray(ability?.effect) ? ability.effect : ability?.effect ? [ability.effect] : [];
+        const abilityEffectTypes = effects.map((e) => e?.type).filter(Boolean);
         // Patologia B1: aktywacja kosztem tapu we własnym untap zostawiłaby
         // stwora zatapianego całą turę (bot stał w miejscu i deck-outował).
         if (wastefulStep(view)) return finish(taps || tapsCreature ? -30 : -5);
@@ -1345,6 +1377,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // cenna tylko, gdy jest co zagrać. Liczy się BILANS: produkcja
             // minus koszt many zdolności (Wizard: 3 − 1 = +2).
             const hasPlayable = view.zones.hand.some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
+            // M155 (audyt żywym testerem, Pristine Talisman): zdolność many
+            // z riderem gain_life — tap NIGDY nie jest zmarnowany (daje
+            // życie), więc kara M128 („tapowanie na zapas") nie ma sensu.
+            const manaWithLifeRider = abilityEffectTypes.includes('gain_life');
             const net = (effect.amount ?? 0) - (ability?.cost?.mana ?? 0);
             // =================================================================
             // M128 — uwaga B właściciela (2026-08-17):
@@ -1390,15 +1426,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // hasPlayable: „coś w ręce istnieje” nie znaczy, że filtrowanie
             // many cokolwiek odblokowuje (bot nie modeluje kolorów liczbowej
             // puli). Zostawiamy jawnie ujemną, żeby nie remisowała z passem.
-            if (net <= 0) score -= hasPlayable ? 10 : 16;
+            if (net <= 0) score -= manaWithLifeRider ? 0 : (hasPlayable ? 10 : 16);
             // M128: „tapowanie na zapas" — produkcja, która niczego nie
             // odblokowuje, musi zejść PONIŻEJ passu (0), inaczej bazowe
             // `score = 2` za legalne zagranie i tak wygra z czekaniem.
             // Kara jest łagodniejsza, gdy w ręce coś czeka (mana bywa wtedy
             // krokiem do zagrania w tej samej turze przez kolejne aktywacje),
             // i ostra, gdy ręka nie ma czego zagrać w ogóle.
-            else if (!unlocksSomething) score -= hasPlayable ? 6 : 14;
+            else if (!unlocksSomething) score -= manaWithLifeRider ? 0 : (hasPlayable ? 6 : 14);
             if (tapsCreature) score -= 3;
+            // M155 (audyt żywym testerem, Pristine Talisman): z riderem
+            // gain_life dodajemy wartość darmowego życia (2 + ilość) — przy
+            // braku odblokowania czaru tap za leczenie wciąż wygrywa z passem.
+            if (!unlocksSomething && manaWithLifeRider) {
+              const lifeAmt = effects.find((e) => e?.type === 'gain_life')?.amount ?? 1;
+              score += 2 + (lifeAmt ?? 0);
+            }
+            // Poświęcenie źródła jako koszt (Treasure) jest jednorazowe —
+            // trzymamy token, dopóki mana nie jest realnie potrzebna.
+            if (ability?.cost?.sacrificeSelf && !unlocksSomething) score -= 6;
             // Poświęcenie źródła jako koszt (Treasure) jest jednorazowe —
             // trzymamy token, dopóki mana nie jest realnie potrzebna.
             if (ability?.cost?.sacrificeSelf && !unlocksSomething) score -= 6;
@@ -1527,8 +1573,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // wielkości blockerów. Bez tej informacji bot chował 2/2 przed 5/5
           // i tracił pewne obrażenia.
           const attackerImmuneThisTurn = damageFullyPrevented(view, object);
+          // M155 (audyt żywym testerem): stwór o MOCY 0 (np. token Wizard 0/1
+          // z Mysidian Elder) zadaje 0 obrażeń, a mimo to dostawał +3 za
+          // „otwartą presję" — bot atakował bezsensownym 0/1. Wyjątek: atak
+          // ma sens, gdy stwór ma drenaż z triggera ataku (Delta Bloodflies)
+          // albo ewazję, która realnie coś zmienia. Reguła generyczna (ADR
+          // 0002): 0 mocy = 0 obrażeń bojowych.
+          const dealsNoCombatDamage = (power ?? 0) <= 0 && drainOnAttack(id) === 0;
           if (attackerImmuneThisTurn) {
             perAttacker = power + 3;
+          } else if (dealsNoCombatDamage) {
+            // 0/1 w otwartego: 0 obrażeń bojowych, a stwór tapnięty i wystawiony
+            // na bloki — wartość NIE może zostać podratowana premią „otwartej
+            // presji" (+8), dlatego tak nisko (poniżej passu).
+            perAttacker = -12;
           } else if (blockers.length === 0) {
             perAttacker = power + 3; // otwarty — czysta presja
           } else if (toughness > strongestBlockerPower && power >= strongestBlockerToughness) {
