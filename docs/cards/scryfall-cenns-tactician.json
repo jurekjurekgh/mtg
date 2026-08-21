@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Cenn%27s%20Tactician&set=mor",
+  "print": "Cenn's Tactician (MOR)",
+  "name": "Cenn's Tactician",
+  "mana_cost": "{W}",
+  "cmc": 1.0,
+  "type_line": "Creature — Kithkin Soldier",
+  "oracle_text": "{W}, {T}: Put a +1/+1 counter on target Soldier creature.\nEach creature you control with a +1/+1 counter on it can block an additional creature each combat.",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [],
+  "set": "mor",
+  "collector_number": "5",
+  "rarity": "uncommon",
+  "pobrano": "2026-08-20",
+  "power": "1",
+  "toughness": "1",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/9/d998c949-4791-477f-ab8d-e625199623ad.jpg?1783942807",
+    "normal": "https://cards.scryfall.io/large/front/d/9/d998c949-4791-477f-ab8d-e625199623ad.jpg?1783942807"
+  }
+}

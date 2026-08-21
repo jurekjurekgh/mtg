@@ -552,7 +552,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent' || type === 'cast_adventure_creature') return 'permanent';
     if (type === 'cast_spell' || type === 'cast_cleave' || type === 'cast_adventure' || type === 'plot_card' || type === 'suspend_card' || type === 'warp_card' || type === 'draw_card') return 'spell';
-    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_satyr_look_choice' || type === 'resolve_epic_choice' || type === 'resolve_suspend_cast' || type === 'resolve_rebound_cast' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice' || type === 'resolve_copy_targets' || type === 'resolve_opponent_target') return 'ability';
+    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_satyr_look_choice' || type === 'resolve_epic_choice' || type === 'resolve_suspend_cast' || type === 'resolve_rebound_cast' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice' || type === 'resolve_copy_targets' || type === 'resolve_opponent_target' || type === 'resolve_damage_division') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
     return null;
@@ -725,6 +725,31 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         });
         const anyCreatureOnBoard = [...myCreatures(view), ...enemyCreatures(view)].length > 0;
         if (etbPingAndSelfPain && !anyCreatureOnBoard) score -= 80;
+        // M169/K (uwaga właściciela, Phyrexian Rager): ETB „you lose N life"
+        // poniżej progu życia to samookaleczenie — przy 2 życia bot schodził
+        // do 1 „przy okazji". Generycznie: skan triggerów wejścia pod kątem
+        // utraty życia/obrażeń kontrolera (scope controller / applyTo self /
+        // damage_to_controller). Poniżej progu — kara miażdżąca; powyżej —
+        // symboliczna (karta ma być grywalna przy zdrowym życiu).
+        let etbSelfDmg = 0;
+        for (const ability of def?.abilities ?? []) {
+          if (ability?.type !== 'triggered' || ability.trigger?.event !== 'enter_battlefield') continue;
+          const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+          for (const e of effs) {
+            if (e?.type === 'damage_to_controller') etbSelfDmg += e.amount ?? 0;
+            if (e?.type === 'lose_life' && (e.scope === 'controller' || e.applyTo === 'self')) etbSelfDmg += e.amount ?? 0;
+          }
+        }
+        if (etbSelfDmg > 0) {
+          const life = myLife(view);
+          // Twarde progi: zejście do <= 2 życia lub poniżej zera = odmowa
+          // (bazowe 70 za stwora nie może wygrać z ryzykiem); przy zdrowym
+          // życiu koszt symboliczny (karta pozostaje grywalna).
+          if (life - etbSelfDmg <= 0) return finish(-1000); // samobójstwo
+          if (life <= 5 && life - etbSelfDmg <= 2) return finish(-80);
+          else if (life <= 5) score -= 15 * etbSelfDmg;
+          else score -= 2 * etbSelfDmg;
+        }
         // Stwór, który wraca po śmierci (persist) albo reanimuje z grobu
         // przeciwnika, jest wart więcej niż same statystyki — deskryptory
         // generyczne (keyword/trigger), zero nazw kart.
@@ -922,7 +947,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Awe w swojej turze, po czym zaatakował w tę prewencję.
           if (effect.type === 'prevent_combat_damage_except_enchanted') {
             const myTurn = view.turn.activePlayerId === view.playerId;
-            if (myTurn) score -= 80;
+            // M167/F: kara musi przebić WSZYSTKO (baza + wycena scry przy
+            // pełnej bibliotece dawały remis z passem, a remis wybierał
+            // czar — bot rzucał fog we własnej turze).
+            if (myTurn) score -= 300;
             else score += attackingEnemyPower(view) > 0 ? 15 : -20;
           }
           // M109 (Spare from Evil): ochrona do końca tury to SZTUCZKA BOJOWA.
@@ -1038,6 +1066,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (millsSelf && !millsFoe) score -= 80;
             else if (millsSelf) score -= 50;
             else if (millsFoe) score += 20 + 3 * (effect.amount ?? 1);
+          }
+          // M162/B (uwaga właściciela): symetryczny mill (Ghoulcaller's Bell —
+          // „each player mills") — wycena WYŚCIGU bibliotek. Bez tej gałęzi
+          // efekt nie miał ŻADNEJ wyceny, więc aktywacja {T} warta bazowe +2
+          // wygrywała z passem i bot dzwonił CO TURĘ także przegrywając wyścig
+          // o karty (deck-out). Reguła: symetryczny mill opłaca się tylko
+          // PROWADZĄC w kartach. Liczniki bibliotek są w PlayerView (ADR 0017).
+          if (effect.type === 'mill_both_players') {
+            const n = effect.amount ?? 1;
+            const myLib = view.zones.library.filter((o) => o.controllerId === view.playerId).length;
+            const foeLib = view.zones.library.filter((o) => o.controllerId !== view.playerId).length;
+            if (myLib - n <= 0) score -= 120; // milduję własną ostatnią kartę — samobójstwo
+            else if (foeLib - n <= 0) score += 80; // przeciwnik dobiera z pustej = wygrana
+            else if (myLib <= foeLib) score -= 40; // nie prowadzę — dzwonienie szkodzi bardziej mnie
+            else score += 6 + Math.min(10, myLib - foeLib); // prowadzę: mały zysk rosnący z przewagą
           }
           // M149/D (uwaga właściciela): „target player sacrifices a creature"
           // (Grave Exchange, Liliana's Triumph) — cel to GRACZ. Gdy celujemy
@@ -1230,6 +1273,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Patologia B1: aktywacja kosztem tapu we własnym untap zostawiłaby
         // stwora zatapianego całą turę (bot stał w miejscu i deck-outował).
         if (wastefulStep(view)) return finish(taps || tapsCreature ? -30 : -5);
+        // M167/D (Apprentice Wizard): zdolność produkująca MANĘ bez niczego
+        // zagrawalnego w ręce to marnotrawstwo — mana wyparuje, a artefakt/
+        // stwór zostaje zatapowany (ta sama reguła co tap_for_mana, M127).
+        // Z10 (Batch 38): Pristine Talisman „{T}: add {C}, gain 1 life" —
+        // rider ŻYCIA ma wartość sam w sobie; kara tylko gdy mana jest
+        // JEDYNYM efektem zdolności.
+        const producesManaOnly = effects.length > 0 && effects.every((e) => e?.type === 'add_mana');
+        if (producesManaOnly) {
+          const hasPlayableInHand = view.zones.hand.some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
+          if (!hasPlayableInHand) return finish(taps || tapsCreature ? -30 : -5);
+        }
         // M106/Z8 (audyt stołu, CR 608.2b): jeżeli moja zdolność Z TEGO
         // SAMEGO źródła już czeka na stosie z tym samym celem, kolejna kopia
         // niemal zawsze fizzluje (pierwsza zabiera cel ze strefy). Bot
@@ -1395,6 +1449,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               const amount = effect.amount ?? 0;
               score += hitsSelf ? -30 - 2 * amount : 10 + 3 * amount;
             }
+          }
+          // M162/B (uwaga właściciela, Ghoulcaller's Bell): symetryczny mill
+          // bez celu („each player mills") — ta sama wycena wyścigu bibliotek
+          // co w gałęzi cast_spell (L41: bliźniacze gałęzie trzymamy razem).
+          if (effect.type === 'mill_both_players') {
+            const n = effect.amount ?? 1;
+            const myLib = view.zones.library.filter((o) => o.controllerId === view.playerId).length;
+            const foeLib = view.zones.library.filter((o) => o.controllerId !== view.playerId).length;
+            if (myLib - n <= 0) score -= 120; // milduję własną ostatnią kartę — samobójstwo
+            else if (foeLib - n <= 0) score += 80; // przeciwnik dobiera z pustej = wygrana
+            else if (myLib <= foeLib) score -= 40; // nie prowadzę — dzwonienie szkodzi bardziej mnie
+            else score += 6 + Math.min(10, myLib - foeLib); // prowadzę: mały zysk rosnący z przewagą
           }
           if (effect.type === 'station_counters') {
             // Station (Wedgelight Rammer / Warmaker Gunship): cenne tylko do
@@ -1638,6 +1704,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         const strongestBlockerPower = blockers.reduce((max, o) => Math.max(max, o.power ?? 0), 0);
         const strongestBlockerToughness = blockers.reduce((max, o) => Math.max(max, o.toughness ?? 0), 0);
+        // M167/I (uwaga właściciela): GANG dwóch blokerów — atakujący 2/4
+        // „przeżywa" najsilniejszego pojedynczego blokera (3/4? nie: 3 < 4),
+        // ale para 1/3 + 3/3 zabija go łącznymi obrażeniami. Suma top-2 mocy
+        // blokerów + najniższa wytrzymałość (czy atakujący COKOLWIEK zabije).
+        const blockerPowersDesc = blockers.map((o) => o.power ?? 0).sort((a, b) => b - a);
+        const gangPower = (blockerPowersDesc[0] ?? 0) + (blockerPowersDesc[1] ?? 0);
+        const weakestBlockerToughness = blockers.reduce((min, o) => Math.min(min, o.toughness ?? 0), Number.POSITIVE_INFINITY);
         const enemyLife = enemy(view)?.life ?? 0;
         let score = 0;
         for (const id of attackers) {
@@ -1674,6 +1747,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             perAttacker = power + 3; // otwarty — czysta presja
           } else if (toughness > strongestBlockerPower && power >= strongestBlockerToughness) {
             perAttacker = power + 3; // przeżyje I zabija blokera — realny zysk
+          } else if (blockers.length >= 2 && toughness <= gangPower && power < weakestBlockerToughness) {
+            // M167/I: ginie od GANGU blokerów i nie zabija ŻADNEGO — czysta
+            // strata stwora (2/4 w 1/3 + 3/3). Kara ponad wagę wyścigu.
+            perAttacker = -(toughness + 8);
           } else if (toughness > strongestBlockerPower) {
             // Przeżyje, ale NIE zabije blokera (2/3 vs 2/3): nic nie zyskuje,
             // a tapnięty atakujący nie zablokuje w następnej turze — netto
@@ -1698,7 +1775,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Presja: atak w otwartego, lethal i przewaga liczebna premiowane.
         if (blockers.length === 0 && attackers.length > 0) score += 8;
         const totalPower = attackers.reduce((sum, id) => sum + (objectOnBoard(view, id)?.power ?? 0), 0);
-        if (totalPower >= enemyLife && attackers.length > 0) score += 100;
+        // M169/J+L (uwaga właściciela): lethal musi przejść PRZEZ blokerów.
+        // Surowy totalPower premiował atak 6/7 w samotnego 7/10 (+100 za
+        // „lethal") i odwrotnie — karzełki chowane za blokery nie dopinały
+        // all-in. Blokerzy wchłaniają co najwyżej tyle obrażeń, ile wynosi
+        // suma ich wytrzymałości (każdy blokuje jednego atakującego);
+        // jeśli PO absorpcji zostaje >= życia wroga — atak wygrywa grę.
+        const blockerAbsorb = blockers.reduce((sum, o) => sum + (o.toughness ?? 0), 0);
+        const penetratingPower = Math.max(0, totalPower - blockerAbsorb);
+        if (attackers.length > 0 && penetratingPower >= enemyLife) score += 1000;
+        else if (totalPower >= enemyLife && blockers.length === 0) score += 100;
         // Zegar (B1): gramy o czas, gdy wróg jest blisko śmierci, może nas
         // zabić w następnej turze albo nasza biblioteka się kończy — wtedy
         // atakujemy nawet kosztem wymiany. (strażnik „> 0" odróżnia realną
@@ -1975,8 +2061,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const t2 = objectOnBoard(view, id);
             if (!t2) continue;
             const v2 = (t2.power ?? 0) * 2 + (t2.toughness ?? 0);
+            // M167/A (Voice of the Vermin): przyjazny buff celuje
+            // WSPÓŁATAKUJĄCEGO (atak trwa do końca tury — buff „on orbit").
+            const attackingNow2 = (view.combat?.attackers ?? []).includes(t2.id);
             score += (cmd.friendly
-              ? (t2.controllerId === view.playerId ? 30 + v2 : -20 - v2)
+              ? (t2.controllerId === view.playerId ? 30 + v2 + (attackingNow2 ? 25 : 0) : -20 - v2)
               : (t2.controllerId === view.playerId ? -20 - v2 : 30 + v2));
           }
           return finish(score);
@@ -1989,14 +2078,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           return finish(0);
         }
         const value = (target.power ?? 0) * 2 + (target.toughness ?? 0);
+        // M167/A: buff idzie na współatakującego, nie na stojącego.
+        const attackingNow = (view.combat?.attackers ?? []).includes(target.id);
         if (cmd.friendly) {
-          if (target.controllerId === view.playerId) return finish(30 + value);
+          if (target.controllerId === view.playerId) return finish(30 + value + (attackingNow ? 25 : 0));
           return finish(-20 - value);
         }
         if (target.controllerId === view.playerId) return finish(-20 - value);
         return finish(30 + value);
       }
       case 'resolve_optional_trigger_choice': {
+        // M167/B (Circle of the Land Druid): opcjonalny SELF-MILL tylko przy
+        // przewadze w wyścigu bibliotek (wzór Bella, M162/B) — przegrywając
+        // liczebnie, mill oneself przybliża własny deck-out.
+        if (cmd.fire && cmd.selfMill != null) {
+          const myLib = view.zones.library.filter((o) => o.controllerId === view.playerId).length;
+          const foeLib = view.zones.library.filter((o) => o.controllerId !== view.playerId).length;
+          if (myLib - cmd.selfMill <= 0) return finish(-60); // ostatnie karty — nigdy
+          return finish(myLib > foeLib ? 45 : -35);
+        }
         // „You may" bez celu (Angel's Feather — +1 życie): „tak" jak dotąd.
         return finish(cmd.fire ? 50 : 0);
       }
@@ -2037,6 +2137,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       case 'resolve_springbloom': {
         // Ramp: poświęcenie landa → 2 basic landy tapped (od M70 trigger żyje).
         return finish(cmd.sacrificeLandId != null ? 40 : 10);
+      }
+      case 'resolve_damage_division': {
+        // M166/D (Inferno Titan): kwoty na wrogie cele/gracza = zysk
+        // (twarza najcenniejsza), na własne = kara.
+        const pending = view.pendingDamageDivision;
+        const targetIds = pending?.targetIds ?? [];
+        let score = 0;
+        (cmd.amounts ?? []).forEach((amount, index) => {
+          const targetId = targetIds[index];
+          if (targetId == null) return;
+          const creature = (view.zones.battlefield ?? []).find((o) => o.id === targetId);
+          if (creature) {
+            const mine = creature.controllerId === view.playerId;
+            const lethal = amount >= (creature.toughness ?? 0) - (creature.damage ?? 0);
+            score += mine ? -8 * amount : 6 * amount + (lethal ? 12 : 0);
+          } else {
+            // Gracz: twarz przeciwnika najcenniejsza, własna — kara.
+            score += targetId === view.playerId ? -10 * amount : 10 * amount;
+          }
+        });
+        return finish(score);
       }
       case 'resolve_madness_cast': {
         // M158/Batch 39: rzut za koszt madness to niemal zawsze zysk (karta

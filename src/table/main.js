@@ -14,6 +14,7 @@
  */
 
 import { shuffle } from '../engine/shuffle.js';
+import { populateDeckSelects, combineDeckSources } from './deck-selects.js';
 import { createRng } from '../engine/rng.js';
 import { createGameState, execute, playerView } from '../engine/game-state.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
@@ -85,12 +86,6 @@ function runSelfTest() {
   el.appendChild(summary);
 }
 
-/** Nagłówek „# Nazwa talii" z treści pliku decks/*.txt (bez pełnego parsowania). */
-function deckTitle(text, fallback) {
-  const titleLine = text.split(/\r?\n/).find((row) => row.trim().startsWith('#'));
-  return titleLine ? titleLine.trim().slice(1).trim() : fallback;
-}
-
 /** Składa UI stołu i podpina je pod sesję gry. */
 function bootstrapTable() {
   // W bundle: build wstrzykuje `var REPO_DECKS` przed modułami (w node
@@ -98,7 +93,10 @@ function bootstrapTable() {
   const repoDecks = globalThis.REPO_DECKS ?? (typeof REPO_DECKS !== 'undefined' ? REPO_DECKS : {});
   const deckKeys = Object.keys(repoDecks).sort();
   const registry = createCardRegistry();
-  mountDeckBuilder({ registry, repoDecks });
+  // K1: rejestrujemy talie własne (import z pliku / biblioteka IndexedDB).
+  const importedDecks = new Map();
+  let windowAllDecks = { ...repoDecks };
+  mountDeckBuilder({ registry, repoDecks, onDeckImported: (name, text) => { importedDecks.set(name, text); rebuildDeckSelects(); } });
 
   const el = (id) => document.getElementById(id);
   const els = {
@@ -223,6 +221,43 @@ function bootstrapTable() {
   // przy NOWYM oknie, ale nie walczy z ręcznym zamknięciem w tym samym oknie.
   let lastActionsSignature = '';
   // Czas otwarcia pełnego ekranu karty (patrz openCardFullscreen).
+  // M167/E2: klik w nazwę karty w logu otwiera pełnoekranową ilustrację
+  // (span.log-card z data-card-id naszywają renderLog; jedna delegacja —
+  // podpięta RAZ po utworzeniu els).
+  if (els.log && !els.log.__logCardLinksWired) {
+    els.log.__logCardLinksWired = true;
+    els.log.addEventListener('click', (event) => {
+      const span = event.target?.closest?.('.log-card');
+      if (span?.dataset?.cardId) openCardFullscreenByCardId(span.dataset.cardId);
+    });
+  }
+
+  // K1 (decyzja właściciela): talie WŁASNE — import z pliku + biblioteka
+  // IndexedDB rejestrowane w selectach stołu jako „(własna)"; startGame
+  // czyta z POŁĄCZONEGO źródła (repo + własne).
+  function rebuildDeckSelects() {
+    const { decks, labelOf } = combineDeckSources(repoDecks, importedDecks);
+    windowAllDecks = decks;
+    populateDeckSelects([el('deck-human'), el('deck-bot')], decks, { labelOf });
+  }
+  mountDeckBuilder({
+    registry, repoDecks,
+    onDeckImported: (name, text) => { importedDecks.set(name, text); rebuildDeckSelects(); },
+  });
+  // Bootstrap: biblioteka IndexedDB (przeżywa reload przeglądarki) — każda
+  // zapisana talia od razu dostępna w grze, zanim właściciel ją opublikuje.
+  void (async () => {
+    try {
+      const { listDecks, deckStoreAvailable } = await import('./deck-store.js');
+      if (!deckStoreAvailable()) return;
+      for (const entry of await listDecks()) {
+        if (entry?.name && entry?.text) importedDecks.set(entry.name, entry.text);
+      }
+      if (importedDecks.size > 0) rebuildDeckSelects();
+    } catch { /* brak IndexedDB — tylko talie z repo */ }
+  })();
+  rebuildDeckSelects();
+
   let fullscreenOpenedAt = 0;
   // Czas ostatniego swipe'a po pełnym ekranie — syntetyczny `click` po
   // touchend nie może zamknąć warstwy ani być mylony z gestem przewinięcia.
@@ -265,7 +300,11 @@ function bootstrapTable() {
         : choiceView.pendingScry;
       renderLookWizard(els.choiceRequestBody, {
         kind: lookKind,
-        cards: pending.cards.map((card) => ({ id: card.id, name: session.nameOf(card.cardId) })),
+        // M167/C (uwaga właściciela): karty w wizardzie scry/surveil są
+        // KLIKALNE — cardId + handler pełnoekranowej ilustracji (jak nazwy
+        // stworów w wizardzie walki, M66/B/R).
+        cards: pending.cards.map((card) => ({ id: card.id, cardId: card.cardId, name: session.nameOf(card.cardId) })),
+        onOpenCard: (cardId) => openCardFullscreenByCardId(cardId),
         // M112: klucz sondy „oferta bez skutku" dla decyzji KOŃCZĄCEJ wizard
         // (wizard sam nie zna playerId ani typu komendy).
         // M136 (backlog): objęty także `index` — dotąd jedyny wizard tej
@@ -517,6 +556,25 @@ function bootstrapTable() {
    * otwiera pełnoekranowy druk wg bieżącej strony (Day/Night) — jak
    * openUndercityFullscreen dla lochu.
    */
+  // M169/M: karta Poison Token (panel trucizny) — pełny ekran; karta
+  // specjalna spoza rejestru (jak Day/Night i Undercity).
+  function openSpecialCardFullscreen(card) {
+    if (!els.cardFullscreenBody || !card) return;
+    hideModal('context-menu');
+    const info = {
+      name: card.name,
+      colors: [], kind: 'card', types: ['Card'], subtypes: [], keywords: [],
+      manaCost: null, power: undefined, toughness: undefined,
+      livePower: undefined, liveToughness: undefined,
+      spell: null, abilities: [], morph: null, set: null,
+      imageUri: card.imageUri, artId: null, faceDown: false,
+    };
+    fullscreenContext = null;
+    renderCardFullscreen(els.cardFullscreenBody, info, { positionText: null });
+    els.cardFullscreen.className = 'fullscreen active';
+    fullscreenOpenedAt = Date.now();
+  }
+
   function openDayNightFullscreen() {
     if (!els.cardFullscreenBody) return;
     hideModal('context-menu');
@@ -872,6 +930,8 @@ function bootstrapTable() {
       onStackClick: (objectId) => openCardFullscreen(objectId),
       onUndercityClick: () => openUndercityFullscreen(),
       onDayNightClick: () => openDayNightFullscreen(),
+      // M169/M: Poison Token w panelu trucizny — pełny ekran (karta specjalna).
+      onPoisonCardClick: (card) => openSpecialCardFullscreen(card),
       hoverMode: currentHoverMode,
       onHoverModeChange: (mode) => { currentHoverMode = mode; },
     });
@@ -1084,6 +1144,15 @@ function bootstrapTable() {
     // (Etherium Sculptor) i warunkowe z karty (Metalcraft) liczy silnik na
     // pełnym stanie — widok nie niesie zdolności permanentów.
     const opts = {};
+    // M168/C2: koszt activate_ability czytamy z deskryptora zdolności na
+    // PEŁNYM stanie (widok nie niesie abilities obiektów) — jak
+    // effectiveGeneric wyżej. Dalej wspólna ścieżka (warianty ≥2).
+    if (cmd.type === 'activate_ability' && Number.isInteger(cmd.abilityIndex)) {
+      const src = session.state?.objects?.get(cmd.objectId);
+      const ability = src?.abilities?.[cmd.abilityIndex];
+      if (ability?.cost && Number.isInteger(ability.cost.mana)) opts.ability = ability;
+      else return null; // zdolność bez kosztu many — bez kreatora
+    }
     const stateObject = session.state?.objects?.get(cmd.objectId);
     const parsed = stateObject ? parseManaCost(MANA_COSTS[stateObject.cardId] ?? null) : null;
     if (stateObject && parsed) {
@@ -1190,9 +1259,10 @@ function bootstrapTable() {
       if (!Number.isInteger(seed)) throw new Error('Ziarno musi być liczbą całkowitą');
       // Ta sama talia dla gracza i bota jest dozwolona (mirror match) —
       // egzemplarze obiektów mają prefiksy graczy, kolizji nie ma.
+      // K1: talie własne (custom:*) żyją obok repozytorium — jedno źródło.
       const decks = new Map([
-        [HUMAN_ID, parseDeckText(repoDecks[humanKey], registry).cardIds],
-        [BOT_ID, parseDeckText(repoDecks[botKey], registry).cardIds],
+        [HUMAN_ID, parseDeckText(windowAllDecks[humanKey] ?? repoDecks[humanKey], registry).cardIds],
+        [BOT_ID, parseDeckText(windowAllDecks[botKey] ?? repoDecks[botKey], registry).cardIds],
       ]);
       session = createSession({ seed, registry, decks, pauseOnBotMoves: true, ignoredOptionKeys });
       // Nowa gra unieważnia wstrzymany rzut kreatora many (E.3a): deskryptor
@@ -1240,15 +1310,11 @@ function bootstrapTable() {
 
   // --- Wybór talii -----------------------------------------------------
   if (deckKeys.length >= 2) {
-    for (const selectId of ['deck-human', 'deck-bot']) {
-      const select = el(selectId);
-      for (const key of deckKeys) {
-        const option = document.createElement('option');
-        option.value = key;
-        option.textContent = deckTitle(repoDecks[key], key);
-        select.appendChild(option);
-      }
-    }
+    // M162/A (uwaga właściciela): plik zapisany przez „Zapisz jako..."
+    // niesie opcje z poprzedniego uruchomienia w DOM — populacja jest
+    // IDEMPOTENTNA (czyści select przed wypełnieniem), więc lokalna
+    // kopia zapisana z przeglądarki nie dubluje talii.
+    populateDeckSelects([el('deck-human'), el('deck-bot')], repoDecks);
     const defaultHuman = deckKeys.includes('synthetic-aggro') ? 'synthetic-aggro' : deckKeys[0];
     const defaultBot = deckKeys.includes('synthetic-growth') ? 'synthetic-growth' : deckKeys.find((key) => key !== defaultHuman);
     el('deck-human').value = defaultHuman;

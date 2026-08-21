@@ -101,6 +101,12 @@ export function defineCard(data) {
     // M108 (Somberwald Spider): liczniki wejścia WARUNKOWE (morbid, CR 614.1c).
     entersWithCountersIf: data.entersWithCountersIf ? Object.freeze({
       morbid: Boolean(data.entersWithCountersIf.morbid),
+      // M166/C (Adamant, ELD — Locthwain Paladin): warunek kolorow many
+      // wydanej na rzut (breakdown z spendMana).
+      adamant: data.entersWithCountersIf.adamant ? Object.freeze({
+        color: data.entersWithCountersIf.adamant.color,
+        min: data.entersWithCountersIf.adamant.min ?? 3,
+      }) : null,
       counters: Object.freeze({ ...(data.entersWithCountersIf.counters ?? {}) }),
     }) : null,
     // Phyrexian mana (CR 118.9): {W/P} — alternatywa „1 mana albo 2 życia"

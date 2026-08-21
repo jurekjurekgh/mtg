@@ -65,6 +65,11 @@ export function consumeManaPool(player, amount, requirements) {
   const units = expandManaPool(player.manaPool);
   const n = units.length;
   const pipUsed = new Array(n).fill(false);
+  // M166/C (Adamant, CR 117.7/podpowiedź ELD): kolory MANY WYDANEJ —
+  // zwracamy zużyte JEDNOKOLOROWE jednostki (dwubarwne/trzybarwne są
+  // niejednoznaczne co do koloru i nie liczą się żadnej stronie).
+  // ZWROT zamiast pola na playerze — księgowanie tymczasowe nie może
+  // zostawiać śladu w stanie (sonda no-op vs koszt, klasa U9).
   if (requirements.length > 0) {
     const matchPips = (pos) => {
       if (pos >= requirements.length) return true;
@@ -95,12 +100,18 @@ export function consumeManaPool(player, amount, requirements) {
     toConsume -= 1;
   }
   const newPool = {};
+  const consumedColors = [];
   for (let i = 0; i < n; i += 1) {
-    if (consume[i]) continue;
+    if (consume[i]) {
+      // M166/C: zwracamy kolory wydanych jednostek (tylko jednoznaczne).
+      if (units[i].length === 1) consumedColors.push(units[i][0]);
+      continue;
+    }
     const key = manaUnitKey(units[i]);
     newPool[key] = (newPool[key] ?? 0) + 1;
   }
   player.manaPool = newPool;
+  return consumedColors;
 }
 
 export function spendMana(state, playerId, amount, requirements = []) {
@@ -182,13 +193,17 @@ export function spendMana(state, playerId, amount, requirements = []) {
   // Konsumpcja z kolorowej puli: pipy do pasujących jednostek, reszta (generic)
   // od bezbarwnych — MtG: każdy pip koloru opłacony maną tego koloru.
   // Przy koszcie 0 pomijamy konsumpcję (nic nie jest wydawane).
-  if (!payNothing) consumeManaPool(player, amount, requirements);
+  const consumedColors = payNothing ? [] : consumeManaPool(player, amount, requirements);
   player.mana -= amount;
+  // M166/C: kolory wydanej many (Adamant — „at least three <color> mana was
+  // spent to cast this spell"). Czytane przez castPermanent/castSpell
+  // NATYCHNIAST po spendMana (przed inną płatnością).
+  const spentColors = consumedColors;
   // Mana ze Skarba wydaje się w pierwszej kolejności (deterministycznie, ADR
   // 0005): Marut pyta, ILE many ze Skarba wydano na jego rzut.
   const treasure = Math.min(player.treasureMana ?? 0, amount);
   if (treasure > 0) player.treasureMana = (player.treasureMana ?? 0) - treasure;
-  state.lastManaSpend = { playerId, amount, treasure };
+  state.lastManaSpend = { playerId, amount, treasure, colors: spentColors };
   const e = event('mana_changed', { playerId, amount: -amount, total: player.mana, treasureSpent: treasure });
   state.events.push(e);
   return e;
@@ -410,11 +425,13 @@ export function treasureManaAvailable(state, playerId) {
 
 /**
  * M159/F2 (audyt PR #66, L48 oferta=walidacja): czy gracza STAĆ na rzut karty
- * za koszt madness. Lustro bramek płatności castPermanent(madnessCast:true):
- * redukcje generyczne, producibleMana, pipy karty (hasColorManaForObject)
- * i wymagania kolorowe kosztu madness. PlayerView oferuje resolve_madness_cast
- * { cast: true } wyłącznie, gdy ta funkcja zwraca true — inaczej oferta bez
- * skutku kończy się rejectem, a bot (cast=60 > odmowa=0) crashuje sesję.
+ * za koszt madness. Lustro bramek płatności castPermanent(madnessCast:true)/
+ * castMadnessSpell: redukcje generyczne, producibleMana i pipy KOSZTU
+ * MADNESS (M161/O2 — nie pipy karty; dla karty o innych kolorach kosztu
+ * madness niż bazowy to jedyna słuszna bramka). PlayerView oferuje
+ * resolve_madness_cast { cast: true } wyłącznie, gdy ta funkcja zwraca
+ * true — inaczej oferta bez skutku kończy się rejectem, a bot
+ * (cast=60 > odmowa=0) crashuje sesję.
  */
 export function canPayMadnessCost(state, playerId, object) {
   if (!object?.madness) return false;
@@ -422,7 +439,6 @@ export function canPayMadnessCost(state, playerId, object) {
   cost = reduceGenericCost(object.cardId, cost, costReductionForSpell(state, object) + conditionalCostReduction(state, object));
   const phyrexian = object.phyrexianManaCost ?? 0;
   if (producibleMana(state, playerId) < cost + phyrexian) return false;
-  if (!hasColorManaForObject(state, playerId, object, 0)) return false;
   const requirements = (object.madness.colors ?? []).map((color) => [color]);
   return hasColorRequirements(state, playerId, requirements);
 }
@@ -502,7 +518,24 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // Plot – rzut bez kosztu many (bez koloru) – pomijamy walidację kolorową
   // (jak legalSpellCasts dla zaplotowanych czarów). Koszt alternatywny ze
   // Skarbów walidujemy osobno niżej.
-  if (!plotted && !faceDown && !treasureAltCost && !hasColorManaForObject(state, playerId, object, phyrexianPayWithLife)) throw new Error('Brak kolorowego źródła many');
+  // M161/O2 (zasada właściciela 2026-08-20 — gotowość kodu na przyszłe karty):
+  // przy koszcie alternatywnym madness/warp bramka kolorów sprawdza pipy
+  // AKTYWNEGO kosztu alternatywnego, a nie pipy karty (dotąd
+  // hasColorManaForObject → coloredPipsOf(cardId)). Dla dzisiejszego katalogu
+  // tożsame (Revolutionist {5}{R} vs {3}{R}, Weftblade {5}{W} vs {2}{W}) —
+  // pierwsza karta o innych kolorach kosztu madness/warp przechodzi przez
+  // właściwą bramkę (obserwacja audytu PR #66).
+  const altCostColors = madnessCast
+    ? (object.madness?.colors ?? []).map((color) => [color])
+    : warpCast
+      ? (object.warp?.colors ?? []).map((color) => [color])
+      : null;
+  if (!plotted && !faceDown && !treasureAltCost) {
+    const colorGateOk = altCostColors
+      ? hasColorRequirements(state, playerId, altCostColors)
+      : hasColorManaForObject(state, playerId, object, phyrexianPayWithLife);
+    if (!colorGateOk) throw new Error('Brak kolorowego źródła many');
+  }
   // Phyrexian mana (CR 118.9): każdy symbol {W/P} można opłacić maną ({W})
   // albo 2 życiem — wybór NALEŻY DO GRACZA (parametr phyrexianPayWithLife
   // komendy cast_permanent; PlayerView wylicza wszystkie opłacalne warianty,
@@ -535,10 +568,10 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // obowiązują (root cause: face-down Monastery Flock wymagał {U} z powodu
   // pipów karty; cicha zła płatność w consumeManaPool to maskowała).
   // Plot – rzut bez kosztu many – nie ma też wymagań kolorowych (CR 702.136).
-  const requirements = (faceDown || plotted) ? [] : madnessCast
-    ? (object.madness?.colors ?? []).map((color) => [color])
-    : warpCast
-      ? (object.warp?.colors ?? []).map((color) => [color])
+  // M161/O2: przy madness/warp pipy AKTYWNEGO kosztu alternatywnego
+  // (altCostColors — ta sama lista co bramka kolorów wyżej).
+  const requirements = (faceDown || plotted) ? [] : altCostColors
+    ? altCostColors
     : treasureAltCost
       ? (treasureAltCost.colors ?? []).map((color) => [color])
       : [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips];
@@ -624,9 +657,15 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   const treasureSpent = totalMana > 0 && state.lastManaSpend?.playerId === playerId
     ? (state.lastManaSpend.treasure ?? 0)
     : 0;
+  // M166/C (Adamant): breakdown kolorów many wydanej na TEN rzut — idzie
+  // z obiektem stosu do permanentu (entersWithCountersIf.adamant czyta go
+  // przy wejściu, jak manaFromTreasureSpent dla Maruta).
+  const manaColorsSpent = totalMana > 0 && state.lastManaSpend?.playerId === playerId
+    ? Object.freeze([...(state.lastManaSpend.colors ?? [])])
+    : Object.freeze([]);
   consumePendingSpellDiscount(state, object);
   const stacked = Object.freeze({
-    ...moved, ...patch, wasCast: true, manaFromTreasureSpent: treasureSpent,
+    ...moved, ...patch, wasCast: true, manaFromTreasureSpent: treasureSpent, manaColorsSpent,
     // M154 (Warp): permanent rzucony za koszt warp — przy wejściu zbroimy
     // opóźniony trigger wygnania w końcowym kroku (resolvePermanentSpell).
     ...(warpCast ? { warped: true } : {}),
@@ -982,7 +1021,10 @@ export function playLand(state, playerId, objectId) {
   const placed = shouldEnterTapped ? Object.freeze({ ...moved, tapped: true }) : moved;
   state.objects.set(newId, placed);
   player.landPlays -= 1;
-  const e = event('land_played', { playerId, fromId: objectId, object: placed, entersTapped: Boolean(placed.entersTapped) });
+  // M168/A (uwaga właściciela, Idyllic Grange): entersTapped w zdarzeniu ma
+  // być WYNIKIEM (shouldEnterTapped), nie deskryptorem karty — Grange przy
+  // 3+ Plains wchodzi ODTAPIONY, a log mówił „wchodzi zatapnięty".
+  const e = event('land_played', { playerId, fromId: objectId, object: placed, entersTapped: Boolean(shouldEnterTapped) });
   state.events.push(e);
   return e;
 }

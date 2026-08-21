@@ -86,7 +86,8 @@ function installMiniDom() {
     'mana-wizard', 'mana-wizard-body', 'mana-wizard-close',
     // ADR 0012: kreator talii (bez localStorage, tekst + download).
     'deck-builder', 'deck-builder-name', 'deck-builder-plan', 'deck-builder-set', 'deck-builder-color',
-    'deck-builder-filter', 'deck-builder-card-list', 'deck-builder-summary', 'deck-builder-errors',
+    'deck-builder-filter', 'deck-builder-basic-lands', 'deck-builder-card-list', 'deck-builder-summary', 'deck-builder-errors',
+    'deck-builder-import', 'deck-builder-import-file', 'deck-builder-publish', 'deck-builder-publish-info',
     'deck-builder-output', 'deck-builder-copy',
     'deck-builder-download', 'deck-builder-status',
     // Batch 15: pasek narzędzi + biblioteka talii (IndexedDB).

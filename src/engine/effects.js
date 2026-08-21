@@ -466,6 +466,9 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
     source: sourceObject.id, target: targetId, amount: dealt, combat: false,
     sourceCardId: sourceObject.cardId ?? null,
     targetCardId: targetIsPlayer ? null : (targetObject?.cardId ?? null),
+    // M166/B (Enrage): LKI celu — trigger „is dealt damage" odpala również,
+    // gdy stwór zginął w SBA tej samej komendy (CR 603.10 looks-back).
+    ...(targetIsPlayer || !targetObject ? {} : { targetLki: Object.freeze({ ...targetObject }) }),
   }));
   if (dealt <= 0) return 0;
   if (effectiveKeywords(sourceObject, state).includes('infect')) {
@@ -1007,6 +1010,48 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       sourceId: sourceObject.id, cardId: sourceObject.cardId,
       numerator, denominator,
     }));
+    return;
+  }
+  if (effect.type === 'damage_divided') {
+    // M166/D (Inferno Titan, LTC): „deals 3 damage divided as you choose
+    // among one, two, or three targets". Cele wybrane w decyzji multi-target
+    // (M157/F4a); jeden cel = całość, więcej celów = kwoty wybiera kontroler
+    // w JEDNEJ komendzie (pendingDamageDivision + resolve_damage_division —
+    // kompozycje total na N części po ≥1, przestrzeń: 3=[3]|[2,1]|[1,1,1]).
+    const total = effect.amount ?? 3;
+    const chosen = (targets ?? []).filter((id) => id != null);
+    if (chosen.length === 0) return;
+    if (chosen.length === 1) {
+      dealNonCombatDamage(state, sourceObject, chosen[0], total);
+      return;
+    }
+    state.pendingDamageDivision = {
+      playerId: sourceObject.controllerId,
+      sourceId: sourceObject.id,
+      cardId: sourceObject.cardId,
+      targetIds: Object.freeze([...chosen]),
+      total,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = sourceObject.controllerId;
+    state.events.push(event('damage_division_required', {
+      playerId: sourceObject.controllerId, sourceId: sourceObject.id,
+      cardId: sourceObject.cardId, targetIds: [...chosen], total,
+    }));
+    return;
+  }
+  if (effect.type === 'opponents_lose_life_if_poison') {
+    // M166/B (Feed the Infection, Corrupted — ONE): „Each opponent who has
+    // three or more poison counters loses 3 life." Warunek rozstrzygany
+    // PER PRZECIWNIK na rozpatrywaniu efektu (poison jest w stanie gry —
+    // M157/F). Utrata życia, nie obrażenia (nie da się zapobiec).
+    const min = effect.min ?? 3;
+    const amount = effect.amount ?? 3;
+    for (const player of state.players) {
+      if (player.id === sourceObject.controllerId) continue;
+      if ((player.poison ?? 0) < min) continue;
+      changeLife(state, player.id, -amount);
+    }
     return;
   }
   if (effect.type === 'becomes_subtype_until_end_of_turn') {
@@ -1745,6 +1790,15 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // i podtypie PLANESWALKERA (ADR 0002: brak nazw kart). Działa od razu,
     // gdy w katalogu pojawi się jakikolwiek planeswalker o podtypie Liliana
     // (decyzja właściciela 2026-08-19 — kodujemy efekt z wyprzedzeniem).
+    // M166/C (Sarkhan's Rage, DTK): „If you control no Dragons" — negatywny
+    // warunek po podtypie STWORA (generyczny; ADR 0002).
+    if (effect.condition === 'controlsNoCreatureSubtype') {
+      const sub = effect.subtype;
+      holds = sub != null && ![...state.objects.values()].some((object) => object.zone === 'battlefield'
+        && object.controllerId === controllerId
+        && object.kind === 'creature'
+        && (object.subtypes ?? []).includes(sub));
+    }
     if (effect.condition === 'controlsPlaneswalkerWithSubtype') {
       const sub = effect.subtype;
       holds = sub != null && [...state.objects.values()].some((object) => object.zone === 'battlefield'
@@ -2264,15 +2318,22 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return seen.length > 0;
   }
   if (effect.type === 'take_initiative') {
-    // Inicjatywa (CR 725, Underdark Explorer): gracz obejmuje inicjatywę;
-    // jeśli nie miał jej wcześniej, natychmiast zagłębia się w Podziemia
-    // („Whenever you take the initiative … venture into Undercity").
+    // Inicjatywa (CR 725, Underdark Explorer): gracz obejmuje inicjatywę.
+    // „Take the initiative" zawsze zagłębia w Podziemia (wejście do pokoju 1
+    // albo awans do następnego pokoju — CR 725.4); nic się nie dzieje tylko
+    // wtedy, gdy gracz JUŻ ją posiada (wtedy to nie jest objęcie).
     const playerId = effect.playerId ?? sourceObject.controllerId;
     const previous = state.initiativePlayerId ?? null;
     state.initiativePlayerId = playerId;
-    const firstTime = previous !== playerId;
+    const changedHands = previous !== playerId;
+    // M163/B (uwaga właściciela): „po raz pierwszy" w komunikacie UI oznacza
+    // WEJŚCIE do Podziemi (gracz nie jest jeszcze w lochu), a NIE zmianę
+    // posiadacza — po utracie i odzyskaniu inicjatywy gracz nadal jest
+    // w lochu (venture awansuje pokój), więc komunikat nie może mówić
+    // „po raz pierwszy i zagłębia się w Podziemia".
+    const firstTime = changedHands && (state.undercityProgress[playerId] ?? 0) === 0;
     state.events.push(event('initiative_taken', { playerId, previousPlayerId: previous, firstTime }));
-    if (firstTime) ventureIntoUndercity(state, playerId);
+    if (changedHands) ventureIntoUndercity(state, playerId);
     return;
   }
   if (effect.type === 'venture_into_undercity') {

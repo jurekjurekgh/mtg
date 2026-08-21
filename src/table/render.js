@@ -73,6 +73,8 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_redirect_choice: 'Przekierowanie obrażeń',
   resolve_proliferate: 'Proliferate (licznik)',
   resolve_hand_top_choice: 'Karta z ręki na wierzch',
+  // M166/D (Inferno Titan).
+  resolve_damage_division: 'Podział obrażeń (kwoty)',
   resolve_land_type_choice: 'Wybór typu landa',
   resolve_pay_or_sacrifice: 'Zapłata albo poświęcenie',
   resolve_optional_pay_choice: 'Dobrowolna dopłata',
@@ -162,6 +164,8 @@ export function stepLabel(turn) {
 /** M73d (B): polskie nazwy typów celów (koniec surowych slugów w opisach). */
 const TARGET_TYPE_LABELS = Object.freeze({
   creature: 'stwór', player: 'gracz', any_target: 'dowolny cel',
+  // M166/B (Cacophodon — untap target permanent).
+  permanent: 'permanent',
   artifact: 'artefakt', artifact_or_creature: 'artefakt lub stwór',
   artifact_or_enchantment: 'artefakt lub enchantment',
   artifact_or_creature_or_enchantment: 'artefakt, stwór lub enchantment',
@@ -334,6 +338,12 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_enter_as_copy') return 'resolve_enter_as_copy';
   if (command.type === 'resolve_destroy_equipment_choice') return 'resolve_destroy_equipment_choice';
   if (command.type === 'resolve_discard_choice') return 'resolve_discard_choice';
+  // M163/A (uwaga właściciela): decyzje wielowariantowe bez klucza renderują
+  // się jako luźne przyciski z identycznymi etykietami (Exploit Butchera).
+  if (command.type === 'resolve_exploit_choice') return 'resolve_exploit_choice';
+  if (command.type === 'resolve_damage_division') return 'resolve_damage_division';
+  if (command.type === 'resolve_epic_choice') return 'resolve_epic_choice';
+  if (command.type === 'resolve_optional_draw') return 'resolve_optional_draw';
   if (command.type === 'resolve_hand_top_choice') return 'resolve_hand_top_choice';
   if (command.type === 'resolve_land_type_choice') return 'resolve_land_type_choice';
   if (command.type === 'resolve_pay_or_sacrifice') return 'resolve_pay_or_sacrifice';
@@ -556,6 +566,45 @@ function interchangeableKey(command, view) {
  *
  * @returns {Array<{command?: object, request?: object, first?: object, label?: string}>}
  */
+/**
+ * M167/E2 (uwaga właściciela): wypełnia wiersz logu tekstem, owijając NAZWY
+ * KART w klikalne <span class="log-card" data-card-id="…"> (pełnoekranowa
+ * ilustracja przez delegację w main.js). Dane logu pozostają czystym
+ * tekstem (przebieg tur dla AI bez znaczników); longest-name-first chroni
+ * przed dopasowaniem podnazw.
+ */
+export function appendLogLineWithCardLinks(line, text, cardIdByName) {
+  if (!cardIdByName || typeof text !== 'string' || !text) {
+    line.textContent = text;
+    return line;
+  }
+  const names = [...cardIdByName.keys()].filter((n) => text.includes(n))
+    .sort((a, b) => b.length - a.length);
+  let rest = text;
+  let guard = 0;
+  while (rest.length > 0 && guard < 200) {
+    guard += 1;
+    let bestAt = -1;
+    let bestName = null;
+    for (const name of names) {
+      const at = rest.indexOf(name);
+      if (at >= 0 && (bestAt < 0 || at < bestAt)) { bestAt = at; bestName = name; }
+    }
+    if (bestName == null) {
+      line.appendChild(document.createTextNode(rest));
+      break;
+    }
+    if (bestAt > 0) line.appendChild(document.createTextNode(rest.slice(0, bestAt)));
+    const cardSpan = document.createElement('span');
+    cardSpan.className = 'log-card';
+    cardSpan.textContent = bestName;
+    cardSpan.dataset.cardId = cardIdByName.get(bestName);
+    line.appendChild(cardSpan);
+    rest = rest.slice(bestAt + bestName.length);
+  }
+  return line;
+}
+
 export function buildActionEntries(commands, session, view) {
   const entries = buildChoiceRequestEntries(commands, view);
   const byKey = new Map();
@@ -615,6 +664,10 @@ const KEYWORD_LABELS = Object.freeze({
 });
 
 // A (2026-08-11): czytelne nazwy liczników pokazywanych na kartach na stole.
+// M164: cyfry rzymskie rozdziałów Sagi — wspólny słownik dla rulesText
+// (M159/Z4) i badge'u etapu na nakładce kafla (pytanie właściciela 2026-08-20).
+const SAGA_ROMAN = ['I', 'II', 'III', 'IV', 'V'];
+
 const COUNTER_LABELS = Object.freeze({
   '+1/+1': '+1/+1', '-1/-1': '-1/-1', oil: 'oil', charge: 'charge', lore: 'lore',
   // Diament cz.2: znaczniki-liczniki zdolności po polsku (było surowe
@@ -810,6 +863,10 @@ function describeEffect(e) {
     attach_self_to_target: () => 'przypnij ten sprzęt do wybranego stwora',
     regenerate: () => 'tarcza regeneracji (przetrwa zniszczenie do końca tury)',
     each_player_loses_life_fraction: () => 'każdy gracz traci część życia (zaokrąglone w górę)',
+    // M166/B (Batch 40, Feed the Infection — Corrupted).
+    opponents_lose_life_if_poison: () => 'każdy przeciwnik z licznikami poison traci życie',
+    // M166/D (Inferno Titan).
+    damage_divided: () => 'obrażenia dzielone między cele',
     becomes_subtype_until_end_of_turn: () => 'zmiana podtypu i utrata keyworda do końca tury',
     apply_to_each_target: () => 'ten sam efekt na każdym z celów',
     reveal_subtype_deal_damage: () => 'możesz ujawnić kartę z ręki — obrażenia przeciwnika',
@@ -1237,7 +1294,7 @@ export function rulesText(info) {
   // opis aury M100/E10 i M138/Z9). Opisujemy je z deskryptorów (ADR 0002).
   const sagaLine = info.saga?.chapters?.length
     ? `Saga — ${info.saga.chapters.map((chapter, index) => {
-      const roman = ['I', 'II', 'III', 'IV'][index] ?? String(index + 1);
+      const roman = SAGA_ROMAN[index] ?? String(index + 1);
       const chapterParts = (Array.isArray(chapter) ? chapter : [chapter])
         .filter((e) => e && typeof e.type === 'string').map(describeEffect).filter(Boolean).join(', ');
       return `${roman}: ${chapterParts || '?'}`;
@@ -1295,6 +1352,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_proliferate: 'Proliferate — cel licznika',
   resolve_discard_choice: 'Karta do odrzucenia',
   resolve_hand_top_choice: 'Karta z ręki na wierzch biblioteki',
+  resolve_damage_division: 'Podział obrażeń między cele',
   resolve_damage_target: 'Cel obrażeń',
   resolve_sacrifice_choice: 'Poświęcenie stwora',
   resolve_devour_choice: 'Devour — poświęcenie stwora',
@@ -1330,6 +1388,21 @@ function choiceSourceTitle(cmd, session, view) {
   }
   if (cmd?.type === 'resolve_modal_choice' && view?.pendingModalTrigger?.cardId) {
     return `${session.nameOf(view.pendingModalTrigger.cardId)} — wybór trybu`;
+  }
+  // M162/C (uwaga właściciela): Chittering Rats — źródło decyzji „karta z
+  // ręki na wierzch biblioteki" w tytule modala (sourceCardId z pendingu,
+  // wystawiony w playerView wyłącznie właścicielowi decyzji).
+  if (cmd?.type === 'resolve_hand_top_choice' && view?.pendingHandTopChoice?.sourceCardId) {
+    return `${session.nameOf(view.pendingHandTopChoice.sourceCardId)} — karta z ręki na wierzch biblioteki`;
+  }
+  // M163/A: Exploit (Silumgar Butcher) — tytuł grupy nazywa źródło decyzji
+  // (karta publiczna na polu bitwy; pendingExploit w widoku tylko właściciela).
+  if (cmd?.type === 'resolve_exploit_choice' && view?.pendingExploit?.sourceCardId) {
+    return `${session.nameOf(view.pendingExploit.sourceCardId)} — Exploit (poświęć stwora)`;
+  }
+  // M166/D: Inferno Titan — tytuł grupy nazywa źródło i łączną kwotę.
+  if (cmd?.type === 'resolve_damage_division' && view?.pendingDamageDivision?.sourceCardId) {
+    return `${session.nameOf(view.pendingDamageDivision.sourceCardId)} — podziel ${view.pendingDamageDivision.total} obrażeń`;
   }
   if (!cmd || cmd.objectId == null) return null;
   const zones = ['hand', 'battlefield', 'stack', 'graveyard', 'library'];
@@ -1823,6 +1896,38 @@ export function commandLabel(cmd, session, view) {
       if (cmd.done === true) return 'Devour: koniec poświęcania (wejście bez liczników)';
       return `Devour: poświęć ${nameOfObjectId(cmd.targetId)}`;
     }
+    case 'resolve_exploit_choice': {
+      // M163/A (uwaga właściciela): Exploit (Silumgar Butcher) renderował
+      // N identycznych „Exploit (wybór poświęcenia)" — bez treści i bez
+      // grupowania (case nie istniał). Etykieta nazywa POŚWIĘCANEGO stwora
+      // (własnego — jawnego w widoku wybierającego), wzorzec devour.
+      if (cmd.skip) return 'Exploit: nie poświęcaj (bez efektu „exploits")';
+      return `Exploit: poświęć ${nameOfObjectId(cmd.targetId)}`;
+    }
+    case 'resolve_color_choice': {
+      // M163/A: warianty koloru miały identyczne etykiety słownikowe.
+      const COLOR_LABELS = { W: 'Biały (W)', U: 'Niebieski (U)', B: 'Czarny (B)', R: 'Czerwony (R)', G: 'Zielony (G)' };
+      return `Kolor: ${COLOR_LABELS[cmd.color] ?? cmd.color}`;
+    }
+    case 'resolve_land_type_choice': {
+      // M163/A: warianty typu landa — j.w. (identyczne etykiety).
+      const LAND_LABELS = { Plains: 'Równina (Plains)', Island: 'Wyspa (Island)', Swamp: 'Bagna (Swamp)', Mountain: 'Góry (Mountain)', Forest: 'Las (Forest)' };
+      return `Typ landa: ${LAND_LABELS[cmd.landType] ?? cmd.landType}`;
+    }
+    case 'resolve_moonlit_choice': {
+      // M163/A: zamiana vs zwykły token — j.w.
+      return cmd.replace
+        ? 'Moonlit: zamiana — token kopii zaczarowanej karty'
+        : 'Moonlit: zwykły token (bez zamiany)';
+    }
+    case 'resolve_optional_draw': {
+      // M163/A: tak/nie dobioru — j.w.
+      return cmd.draw ? 'Dobierz kartę (you may)' : 'Nie dobieraj';
+    }
+    case 'resolve_optional_trigger_choice': {
+      // M163/A: tak/nie dobrowolnego efektu — j.w.
+      return cmd.fire ? 'Uruchom efekt dobrowolny (you may)' : 'Zrezygnuj z efektu';
+    }
     case 'resolve_endure_choice': {
       // Endure (Kin-Tree Nurturer): liczniki na źródle albo token Spirit.
       return cmd.mode === 'token'
@@ -1944,17 +2049,43 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_epic_choice': {
       // Epic Experiment — rzuć wygnany czar bez kosztu albo zakończ.
       if (cmd.done) return 'Epic Experiment: zakończ (reszta kart do grobu)';
-      return `Epic Experiment: rzuć bez kosztu — ${nameOfObjectId(cmd.cardId)}`;
+      // M163/A (klasa M151/suspend): oferta per legalny zestaw celów — bez
+      // celu w etykiecie warianty tej samej karty są nieodróżnialne.
+      const epicTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
+      return `Epic Experiment: rzuć bez kosztu — ${nameOfObjectId(cmd.cardId)}${epicTargets ? ` → cel: ${epicTargets}` : ''}`;
     }
     case 'resolve_look_top_choice': {
       // Gurmag Drowner — wybierz kartę z wierzchu do ręki.
       return `Weź do ręki: ${nameOfObjectId(cmd.cardId)}`;
     }
+    case 'resolve_hand_top_choice': {
+      // M162/C (uwaga właściciela): Chittering Rats u bota otwierał modal
+      // „Karta z ręki na wierzch (1 z 5)…" — ten case w ogóle nie istniał,
+      // więc etykieta spadała do słownikowej i choice-request numerował
+      // identyczne wpisy. Ręka WYBIERAJĄCEGO jest dla niego jawna (FoW),
+      // więc etykieta nazywa KARTĘ (wzorzec resolve_graveyard_top_choice).
+      return `Karta z ręki na wierzch biblioteki: ${nameOfObjectId(cmd.cardId)}`;
+    }
+    case 'resolve_damage_division': {
+      // M166/D (Inferno Titan): kwoty podziału — etykieta nazywa KAŻDY cel
+      // z kwotą (kolejność = targetIds z pendingu w widoku właściciela).
+      const pending = view?.pendingDamageDivision;
+      const targetIds = pending?.targetIds ?? [];
+      const parts = (cmd.amounts ?? []).map((amount, index) => {
+        const targetId = targetIds[index] ?? null;
+        return targetId == null ? `${amount}` : `${nameOfObjectId(targetId)}: ${amount}`;
+      });
+      return parts.length > 0 ? `Podziel obrażenia — ${parts.join(', ')}` : 'Podział obrażeń';
+    }
     case 'resolve_madness_cast': {
       // M159/F4 (audyt PR #66): oferta niesie objectId (karta w exile —
       // strefa publiczna) i cardId; etykieta ma NAZYWAĆ kartę, nie „?".
+      // M161/O1: instant/sorcery z madness enumeruje ofertę PER cel (jak
+      // suspend, M151) — etykieta nazywa cel, inaczej N wpisów wygląda
+      // identycznie.
+      const madTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
       return cmd.cast
-        ? `Rzuć za koszt madness: ${nameOfObjectId(cmd.objectId ?? cmd.cardId)}`
+        ? `Rzuć za koszt madness: ${nameOfObjectId(cmd.objectId ?? cmd.cardId)}${madTargets ? ` → cel: ${madTargets}` : ''}`
         : `Przełóż do cmentarza (rezygnacja z madness): ${nameOfObjectId(cmd.objectId ?? cmd.cardId)}`;
     }
     case 'resolve_reveal_choice': {
@@ -2193,6 +2324,15 @@ function cardInfo(session, object, combat = null) {
     attachedAura,
     attachedEquipment,
     keywords: keywordsNow,
+    // M168/B (uwaga właściciela): AKTYWNE zmiany na kafelu jako badge'e —
+    // granted keywords liczymy z EFEKTYWNYCH (statyki warunkowe jak Gray
+    // Slaad, granty do EOT, załączniki, anthemy) minus wydrukowane.
+    grantedKeywords: faceDown ? [] : (session.effectiveKeywordsOf
+      ? session.effectiveKeywordsOf(object).filter((kw) => !keywordsNow.includes(kw))
+      : []),
+    lostKeywordsUntilEOT: faceDown ? [] : [...(object.lostKeywordsUntilEOT ?? [])],
+    cantBlockNow: Boolean(object.cantBlock),
+    cantBeBlockedNow: Boolean(object.cantBeBlocked),
     manaCost: faceDown ? null : (details.manaCost ?? object.manaCost ?? null),
     power: object.power ?? details.power,
     toughness: object.toughness ?? details.toughness,
@@ -2360,7 +2500,9 @@ function buildFace(parent, info, { size = '', skipLiveState = false, textless = 
     }
     // A (2026-08-11): liczniki na karcie (np. „+1/+1 ×2", „oil ×3", „charge ×5").
     for (const [name, count] of Object.entries(info.counters ?? {})) {
-      if (count > 0) flags.push(`${COUNTER_LABELS[name] ?? name} ×${count}`);
+      // M165 (korekta właściciela): najpierw ILOŚĆ, potem co — „2x +1/+1"
+      // (było „+1/+1 ×2" — wyglądało jak działanie matematyczne).
+      if (count > 0) flags.push(`${count}x ${COUNTER_LABELS[name] ?? name}`);
     }
     if (flags.length) {
       const badges = div(face, 'fbadges');
@@ -2431,12 +2573,44 @@ export function buildStateOverlay(visual, info) {
     // z nazwą, wrogi jako „morph") — na stole żywy stan jest na nakładce.
     if (info.faceDown) flags.push(['morph', info.morphBadge ?? FACE_DOWN_LABEL]);
     if (info.goaded) flags.push(['goad', 'goad']);
+    // M168/B: AKTYWNE zmiany — badge tekstowy, póki efekt działa.
+    for (const kw of info.grantedKeywords ?? []) {
+      flags.push(['kw', `${KEYWORD_LABELS[kw] ?? kw}`]);
+    }
+    for (const kw of info.lostKeywordsUntilEOT ?? []) {
+      flags.push(['kw', `bez: ${KEYWORD_LABELS[kw] ?? kw}`]);
+    }
+    if (info.cantBlockNow) flags.push(['kw', 'nie może blokować']);
+    if (info.cantBeBlockedNow) flags.push(['kw', 'nie do zablokowania']);
+    {
+      const pMod = Number(info.powerMod ?? 0);
+      const tMod = Number(info.toughMod ?? 0);
+      if (pMod !== 0 || tMod !== 0) {
+        const sign = (n) => (n > 0 ? `+${n}` : `${n}`);
+        flags.push(['kw', `${sign(pMod)}/${sign(tMod)}`]);
+      }
+    }
     if (info.combatRole) flags.push(['combat', info.combatRole]);
     if (info.damage > 0) flags.push(['dmg', `−${info.damage}`]);
     if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push(['sick', 'choroba']);
     // A (2026-08-11): liczniki na nakładce ilustracji.
+    // M164: licznik `lore` Sagi pokazujemy WYŁĄCZNIE w badge etapu poniżej
+    // (bez dublowania „lore×N" + „Rozdział II (2/3)").
     for (const [name, count] of Object.entries(info.counters ?? {})) {
-      if (count > 0) flags.push(['counter', `${COUNTER_LABELS[name] ?? name}×${count}`]);
+      if (count > 0 && !(name === 'lore' && info.saga?.chapters?.length)) {
+        // M165: najpierw ILOŚĆ — „2x +1/+1" (korekta wizualna właściciela).
+        flags.push(['counter', `${count}x ${COUNTER_LABELS[name] ?? name}`]);
+      }
+    }
+    // M164 (pytanie właściciela 2026-08-20): ETAP Sagi jako badge tekstowy —
+    // analogia do aur/equipmentów/liczników. Dotąd jedynym znacznikiem postępu
+    // był generyczny licznik „lore×N"; badge nazywa AKTYWNY rozdział
+    // (licznik lore = numer rozdziału, CR 714.3).
+    if (info.saga?.chapters?.length) {
+      const total = info.saga.chapters.length;
+      const lore = info.counters?.lore ?? 0;
+      const roman = SAGA_ROMAN[lore - 1] ?? String(lore);
+      flags.push(['saga', lore > 0 ? `Rozdział ${roman} (${lore}/${total})` : `Saga — ${total} rozdz.`]);
     }
     // F (2026-08-11): przypięte aury/equipmenty na nakładce gospodarza.
     for (const att of info.attachments ?? []) {
@@ -2654,7 +2828,7 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
  *   onCardClick: (objectId: string, cardId: string) => void,
  *   onStackClick?: (objectId: string, cardId: string) => void }} args
  */
-export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, onDayNightClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
+export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, onDayNightClick = null, onPoisonCardClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
   const view = session.view();
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) clear(els[key]);
@@ -2872,7 +3046,14 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   const entries = [...session.log].reverse();
   for (const entry of entries) {
     const kind = entry.kind === 'event' && /^—.*—$/.test(entry.text) ? 'step' : entry.kind;
-    div(els.log, `log-${kind}`, entry.text);
+    const line = document.createElement('div');
+    line.className = `log-${kind}`;
+    // M167/E2 (uwaga właściciela): nazwy kart w logu są KLIKALNE — owijane
+    // w <span class="log-card" data-card-id="…">; klik otwiera pełnoekranową
+    // ilustrację (delegacja w main.js). Tekst logu pozostaje czystym
+    // tekstem w danych (przebieg tur dla AI bez znaczników).
+    appendLogLineWithCardLinks(line, entry.text, session.cardIdByName ?? null);
+    els.log.appendChild(line);
   }
 
   // --- Rozumowanie bota (B5) -------------------------------------------
@@ -2900,7 +3081,9 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   renderDayNight(els, session, view, { onClick: onDayNightClick, hover });
 
   // --- Liczniki trucizny (M157/F) — panel jak Undercity/Day/Night --------
-  renderPoisonPanel(els, view);
+  // M169/M: Poison Token klikalny — main przekazuje handler pełnego ekranu
+  // (karta specjalna spoza rejestru, jak Day/Night i Undercity).
+  renderPoisonPanel(els, view, { onOpenCard: onPoisonCardClick });
 
   // --- Loch Undercity (M24) -------------------------------------------
   renderUndercity(els, session, view, { onClick: onUndercityClick });
@@ -2925,13 +3108,19 @@ const POISON_COUNTER_CARD = Object.freeze({
   imageUri: 'https://cards.scryfall.io/large/front/8/a/8a9cb417-8709-4336-be36-2fb0cea31fe1.jpg?1783904328',
 });
 
-export function renderPoisonPanel(els, view) {
+export function renderPoisonPanel(els, view, { onOpenCard = null } = {}) {
   if (!els.poison) return;
   const any = (view.players ?? []).some((p) => (p.poison ?? 0) > 0);
   els.poison.hidden = !any;
   if (!any) return;
   clear(els.poison);
   const card = div(els.poison, 'poison-card');
+  // M169/M (uwaga właściciela): karta Poison Token KLIKALNA — pełny ekran
+  // jak każdy druk na stole (wzorzec Day/Night z M153/C).
+  if (onOpenCard) {
+    card.className = 'poison-card clickable';
+    card.addEventListener('click', () => onOpenCard(POISON_COUNTER_CARD));
+  }
   const img = document.createElement('img');
   img.src = POISON_COUNTER_CARD.imageUri;
   img.alt = POISON_COUNTER_CARD.name;

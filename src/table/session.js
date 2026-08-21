@@ -4,6 +4,7 @@ import { setupCardMatch } from '../cards/materialize.js';
 import { parseReplay, playReplay, replayFromState, serializeReplay } from '../engine/replay.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
 import { createHeuristicBot } from '../controllers/heuristic-bot.js';
+import { effectiveKeywords } from '../engine/permanents.js';
 import { probeCommandEffect } from './noop-probe.js';
 
 /**
@@ -258,6 +259,8 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   // card-data.js go nie widział, a w logu gracza świeciło „trigger (delayed)".
   delayed: 'opóźniony trigger',
   enchanted_permanent_tapped: 'zatapnięcie zaczarowanego permanentu',
+  // M166/B (Batch 40, Cacophodon): Enrage.
+  dealt_damage: 'otrzymanie obrażeń',
   you_cast_spell_targeting_permanent: 'rzucenie czaru celującego w permanent',
 });
 
@@ -938,6 +941,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         return `${whoN(e.playerId)} wykonuje Epic Experiment — wygnano ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki${exiled ? `: ${exiled}` : ''}`;
       }
       case 'epic_experiment_resolved': return `${whoN(e.playerId)} kończy Epic Experiment (${e.restToGrave} ${polishPlural(e.restToGrave, 'karta', 'karty', 'kart')} do grobu)`;
+      case 'damage_division_required': {
+        const names = (e.targetIds ?? []).map((id) => nameOfObject?.(id) ?? '?').join(', ');
+        return `${whoN(e.playerId)} dzieli ${e.total} obrażeń między: ${names}`;
+      }
+      case 'damage_division_resolved': {
+        const parts = (e.targetIds ?? []).map((id, i) => `${nameOfObject?.(id) ?? '?'}: ${e.amounts?.[i] ?? '?'}`);
+        return `${whoN(e.playerId)} dzieli obrażenia — ${parts.join(', ')}`;
+      }
       case 'initiative_taken': {
         const first = e.firstTime ? ' — obejmuje ją po raz pierwszy i zagłębia się w Podziemia' : '';
         return `${whoN(e.playerId)} obejmuje inicjatywę${first}`;
@@ -1286,6 +1297,9 @@ export function createSession(config) {
   const colorsById = new Map(registry.all().map((card) => [card.id, card.colors ?? []]));
   const log = []; // { kind: 'event'|'rejection'|'system', text }
   const sessionLog = (kind, text) => log.push({ kind, text });
+  // M167/E2: odwrócona mapa nazwa→cardId — render logu owija nazwy kart
+  // w klikalne znaczniki (pełnoekranowa ilustracja przez delegację w main).
+  const cardIdByName = new Map([...nameById.entries()].map(([id, name]) => [name, id]));
   // Ślad decyzji bota (B5, docs/BOT_ROADMAP.md): po każdym ruchu bota z jego
   // trace() zapisujemy najnowszy wpis — co wybrał, z jaką oceną i które
   // opcje brał pod uwagę. Bufor ograniczony (60), najnowsze na końcu.
@@ -1326,6 +1340,17 @@ export function createSession(config) {
    * istotna informacja), więc zostaje.
    */
   const MAIN_LOG_NOISE = new Set(['mana_produced', 'step_advanced']);
+  // M167/E (uwaga właściciela): nagłówki FAZ wracają do logu — po wyciszeniu
+  // step_advanced (M151) zniknęły całkiem, a są pomocne przy śledzeniu błędów.
+  // Kompromis szum/użyteczność: wpis TYLKO przy zmianie fazy (nie każdym
+  // kroku) — format zgodny z detekcją rodzaju 'step' w renderze (^—…—$).
+  let lastLoggedPhase = null;
+  const phaseHeaderFor = (e) => {
+    if (e.type !== 'step_advanced' || !e.phase) return null;
+    if (e.phase === lastLoggedPhase) return null;
+    lastLoggedPhase = e.phase;
+    return `— ${e.phase} —`;
+  };
   function recordTurnEvent(e) {
     if (e.type === 'turn_started') {
       turnHistory.push(currentTurn);
@@ -1420,7 +1445,9 @@ export function createSession(config) {
       suppressNextLibrarySearched = true;
     }
     return describeGameEvent(e, {
-      nameOf, nameOfObject,
+      nameOf, nameOfObject, cardIdByName,
+    // M168/B: efektywne keywordy obiektu (render kafla liczy badge'e grantów).
+    effectiveKeywordsOf: (object) => effectiveKeywords(object, state),
       isPlayer: (id) => state.players.some((player) => player.id === id),
       controllerOf: (objectId) => state.objects.get(objectId)?.controllerId ?? null,
     }, names);
@@ -1775,7 +1802,11 @@ export function createSession(config) {
     for (const e of events) {
       // M151: główny log gracza nie przyjmuje szumu (mana/fazy) — patrz
       // MAIN_LOG_NOISE. noteBotMove/recordTurnEvent mają własne bramki.
-      if (MAIN_LOG_NOISE.has(e.type)) { noteBotMove(e); recordTurnEvent(e); continue; }
+      if (MAIN_LOG_NOISE.has(e.type)) {
+        const header = phaseHeaderFor(e);
+        if (header) sessionLog('event', header);
+        noteBotMove(e); recordTurnEvent(e); continue;
+      }
       const text = describeEvent(e);
       if (text) sessionLog('event', text);
       noteBotMove(e);
@@ -1985,7 +2016,11 @@ export function createSession(config) {
       for (const e of result.events) {
         // M151: główny log gracza nie przyjmuje szumu (mana/fazy) — patrz
         // MAIN_LOG_NOISE; noteBotMove/recordTurnEvent mają własne bramki.
-        if (MAIN_LOG_NOISE.has(e.type)) { noteBotMove(e); recordTurnEvent(e); continue; }
+        if (MAIN_LOG_NOISE.has(e.type)) {
+          const header = phaseHeaderFor(e);
+          if (header) sessionLog('event', header);
+          noteBotMove(e); recordTurnEvent(e); continue;
+        }
         const text = describeEvent(e);
         if (text) sessionLog('event', text);
         // M100/E2 (symetria rozstrzygnięć): komenda CZŁOWIEKA też może

@@ -112,6 +112,12 @@ export function stateFingerprint(state) {
     })),
     pendingScry: state.pendingScry ? { playerId: state.pendingScry.playerId, objectIds: [...state.pendingScry.objectIds] } : null,
     pendingSurveil: state.pendingSurveil ? { playerId: state.pendingSurveil.playerId, objectIds: [...state.pendingSurveil.objectIds] } : null,
+    // M166/D: kwoty podziału obrażeń (Inferno Titan) — stan decyzji.
+    pendingDamageDivision: state.pendingDamageDivision ? {
+      playerId: state.pendingDamageDivision.playerId,
+      total: state.pendingDamageDivision.total,
+      targetIds: [...state.pendingDamageDivision.targetIds],
+    } : null,
     pendingSpell: state.pendingSpell ? { stackId: state.pendingSpell.stackId, effects: (state.pendingSpell.effects ?? []).length } : null,
     pendingClash: state.pendingClash ? {
       choices: [...state.pendingClash.choices],

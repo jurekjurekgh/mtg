@@ -7233,9 +7233,240 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: { type: 'return_card_from_graveyard_to_hand' },
       }),
     ],
-    artId: null, plan: null,
+    // M167/H: artId ze słownika kolekcji (tools/collection-art-ids.csv: 314MH2).
+    artId: 314, plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: [] },
     notes: ['Madness: odrzucenie trafia do exile z jednorazową decyzją rzutu za {3}{R} (timing ignorowany — CR 702.34a) albo przełożenia do grobu'],
+  }),
+
+  // =========================================================================
+  // Batch 40 (10 kart, lista właściciela 2026-08-20) — transza A: reuse.
+  // Dane Scryfall: docs/cards/scryfall-*.json (ADR 0010 §2a).
+  // =========================================================================
+
+  // 1. Blade-Blizzard Kitsune (NEO) {2}{W} 2/2 Fox Ninja — ninjutsu {3}{W}
+  //    + double strike (oba istnieją: Kappa Batch 1, double strike Batch 21).
+  defineCard({
+    id: 'blade-blizzard-kitsune', name: 'Blade-Blizzard Kitsune', set: 'NEO',
+    types: ['Creature'], subtypes: ['Fox', 'Ninja'], colors: ['W'],
+    keywords: ['double_strike'], power: 2, toughness: 2, manaCost: 3,
+    oracleText: 'Ninjutsu {3}{W} ({3}{W}, Return an unblocked attacker you control to hand: Put this card onto the battlefield from your hand tapped and attacking.)\nDouble strike',
+    imageUri: 'https://cards.scryfall.io/large/front/d/8/d8419d27-8c6e-4f38-98b4-60dd9a910c43.jpg?1783923926',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'ninjutsu',
+        cost: { mana: 4, colors: ['W'] },
+      }),
+    ],
+    artId: null, plan: 'Kamigawa',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Knockout Maneuver (TDM) {2}{G} Sorcery — licznik +1/+1 na swoim
+  //    stworze, POTEM zadaje obrażenia równe mocy (z licznikiem — efekty
+  //    sekwencyjne, damage_from_target_power czyta effectivePower) w stwora
+  //    przeciwnika (wzorzec Diplomatic Relations, Batch 38).
+  defineCard({
+    id: 'knockout-maneuver', name: 'Knockout Maneuver', set: 'TDM',
+    types: ['Sorcery'], colors: ['G'], manaCost: 3,
+    oracleText: 'Put a +1/+1 counter on target creature you control, then it deals damage equal to its power to target creature an opponent controls.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/d/9d218831-2a41-46a3-8e9d-93462cae5cab.jpg?1783907340',
+    spell: {
+      timing: 'sorcery',
+      // CR 608.2b: „then" — sekwencja: licznik najpierw (cel 0), obrażenia
+      // = moc PO liczniku (effectivePower czyta +1/+1 wliczone).
+      targets: [{ type: 'creature_you_control' }, { type: 'creature_opponent_controls' }],
+      effects: [
+        { type: 'add_counter', counter: '+1/+1', amount: 1, targetIndex: 0 },
+        { type: 'damage_from_target_power', sourceTargetIndex: 0, targetIndex: 1 },
+      ],
+    },
+    artId: null, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Krotiq Nestguard (TDM) {2}{G} 4/4 Insect — defender; {2}{G}: może
+  //    atakować w tej turze jakby nie miał defendera (lostKeywordsUntilEOT —
+  //    warstwa z Wishful Merfolk; cleanup końca tury przywraca).
+  defineCard({
+    id: 'krotiq-nestguard', name: 'Krotiq Nestguard', set: 'TDM',
+    types: ['Creature'], subtypes: ['Insect'], colors: ['G'],
+    keywords: ['defender'], power: 4, toughness: 4, manaCost: 3,
+    oracleText: 'Defender\n{2}{G}: This creature can attack this turn as though it didn\'t have defender.',
+    imageUri: 'https://cards.scryfall.io/large/front/a/5/a5d0a9fb-1068-478d-a78c-6fd77cc313f0.jpg?1783907339',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 3, colors: ['G'] },
+        // „attack as though it didn't have defender" = utrata defendera
+        // do końca tury (przenośnik generyczny becomes_subtype_until_end_of_
+        // turn bez nadpisywania podtypów — niesie wyłącznie losesKeywords).
+        effect: [{ type: 'becomes_subtype_until_end_of_turn', losesKeywords: ['defender'] }],
+      }),
+    ],
+    artId: null, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+    notes: ['aktywacja odsuwa defendera do końca tury (cleanup przywraca) — atak legalny po aktywacji, w następnej turze znów nie'],
+  }),
+
+  // ---- Batch 40 — transza B: nowe słowa kluczowe proste ----
+
+  // 4. Cacophodon (RIX) {3}{G} 2/5 Dinosaur — Enrage: gdy otrzyma obrażenia,
+  //    odkręć celowany permanent (NOWY trigger event 'dealt_damage';
+  //    untap_permanent istnieje — Twiddle, M146).
+  defineCard({
+    id: 'cacophodon', name: 'Cacophodon', set: 'RIX',
+    types: ['Creature'], subtypes: ['Dinosaur'], colors: ['G'],
+    power: 2, toughness: 5, manaCost: 4,
+    oracleText: 'Enrage — Whenever this creature is dealt damage, untap target permanent.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/5/351b213e-b23e-4287-947a-6bd81f1cf751.jpg?1783935290',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dealt_damage', requiresTarget: { type: 'permanent' } },
+        effect: { type: 'untap_permanent' },
+      }),
+    ],
+    artId: null, plan: 'Ixalan',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Feed the Infection (ONE) {3}{B} Sorcery — draw 3, lose 3; Corrupted:
+  //    każdy przeciwnik z >=3 poison traci 3 życia (NOWY efekt
+  //    opponents_lose_life_if_poison; poison w stanie gry od M157/F).
+  defineCard({
+    id: 'feed-the-infection', name: 'Feed the Infection', set: 'ONE',
+    types: ['Sorcery'], colors: ['B'], manaCost: 4,
+    oracleText: 'You draw three cards and you lose 3 life.\nCorrupted — Each opponent who has three or more poison counters loses 3 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/f/9f013a1a-d4b9-4380-9802-c299ee6c4492.jpg?1783918046',
+    spell: {
+      timing: 'sorcery',
+      targets: [],
+      effects: [
+        { type: 'draw_cards', amount: 3 },
+        // "you lose 3 life" — scope controller (lose_life domyślnie celuje przeciwników).
+        { type: 'lose_life', amount: 3, scope: 'controller' },
+        { type: 'opponents_lose_life_if_poison', min: 3, amount: 3 },
+      ],
+    },
+    artId: null, plan: 'Phyrexia',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 6. Mosquito Guard (MOR) {W} 1/1 Kithkin Soldier — first strike +
+  //    Reinforce 1—{1}{W} (NOWE słowo: zdolność z RĘKI, koszt mana + discard,
+  //    licznik +1/+1 na celu stworze; wzorzec cycling/channel + cele forecast).
+  defineCard({
+    id: 'mosquito-guard', name: 'Mosquito Guard', set: 'MOR',
+    types: ['Creature'], subtypes: ['Kithkin', 'Soldier'], colors: ['W'],
+    keywords: ['first_strike'], power: 1, toughness: 1, manaCost: 1,
+    oracleText: 'First strike\nReinforce 1—{1}{W} ({1}{W}, Discard this card: Put a +1/+1 counter on target creature.)',
+    imageUri: 'https://cards.scryfall.io/large/front/5/e/5e5bca35-5098-4100-815b-de141c82eb6a.jpg?1783942803',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, colors: ['W'] },
+        reinforce: { amount: 1 },
+        targets: [{ type: 'creature' }],
+        effect: [{ type: 'add_counter', counter: '+1/+1', amount: 1, targetIndex: 0 }],
+      }),
+    ],
+    artId: null, plan: 'Lorwyn',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // ---- Batch 40 — transza C: płatność/warunki ----
+
+  // 7. Locthwain Paladin (ELD) {3}{B} 3/2 Human Knight — menace + Adamant:
+  //    >=3 czarnej many wydanej na rzut -> ETB z +1/+1 (breakdown kolorów
+  //    many z spendMana; entersWithCountersIf.adamant).
+  defineCard({
+    id: 'locthwain-paladin', name: 'Locthwain Paladin', set: 'ELD',
+    types: ['Creature'], subtypes: ['Human', 'Knight'], colors: ['B'],
+    keywords: ['menace'], power: 3, toughness: 2, manaCost: 4,
+    oracleText: 'Menace (This creature can\'t be blocked except by two or more creatures.)\nAdamant — If at least three black mana was spent to cast this spell, this creature enters with a +1/+1 counter on it.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/a/da6f21a8-3dd0-42af-8a93-84f98968c781.jpg?1783932637',
+    entersWithCountersIf: { adamant: { color: 'B', min: 3 }, counters: { '+1/+1': 1 } },
+    artId: null, plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Sarkhan's Rage (DTK) {4}{R} Instant — 5 obrażeń w dowolny cel;
+  //    bez kontrolowanego Smoka 2 obrażenia w rzucającego (warunek
+  //    generyczny controlsNoCreatureSubtype + damage_to_controller).
+  defineCard({
+    id: 'sarkhans-rage', name: "Sarkhan's Rage", set: 'DTK',
+    types: ['Instant'], colors: ['R'], manaCost: 5,
+    oracleText: "Sarkhan's Rage deals 5 damage to any target. If you control no Dragons, Sarkhan's Rage deals 2 damage to you.",
+    imageUri: 'https://cards.scryfall.io/large/front/4/7/4787924f-3186-4e18-b53c-dd67c5f42220.jpg?1783938586',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'any_target' }],
+      effects: [
+        { type: 'damage', amount: 5 },
+        { type: 'conditional', condition: 'controlsNoCreatureSubtype', subtype: 'Dragon',
+          then: { type: 'damage_to_controller', amount: 2 } },
+      ],
+    },
+    artId: null, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. Inferno Titan (LTC) {4}{R}{R} 6/6 Giant — {R}: +1/+0 EOT; przy
+  //    wejściu i ataku: 3 obrażenia DZIELONE DOWOLNIE na 1-3 celów
+  //    (multi-target M157/F4a + NOWA decyzja kwot resolve_damage_division).
+  defineCard({
+    id: 'inferno-titan', name: 'Inferno Titan', set: 'LTC',
+    types: ['Creature'], subtypes: ['Giant'], colors: ['R'],
+    power: 6, toughness: 6, manaCost: 6,
+    oracleText: '{R}: This creature gets +1/+0 until end of turn.\nWhenever this creature enters or attacks, it deals 3 damage divided as you choose among one, two, or three targets.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/b/db61b57c-b870-41af-87b7-037ec52fe063.jpg?1783915930',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, colors: ['R'] },
+        effect: { type: 'pump', power: 1, toughness: 0 },
+      }),
+      // Jeden wiersz Oracle = dwa zdarzenia triggera (wejście + atak);
+      // behavior tożsamy z CR 603.2 (trigger „whenever enters or attacks").
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'any_target', count: 3, upTo: true } },
+        effect: { type: 'damage_divided', amount: 3 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks', requiresTarget: { type: 'any_target', count: 3, upTo: true } },
+        effect: { type: 'damage_divided', amount: 3 },
+      }),
+    ],
+    artId: null, plan: 'Śródziemie',
+    support: { status: 'supported', limitations: [] },
+    notes: ['podział obrażeń: cele (1-3) wybierane w decyzji multi-target, kwoty w JEDNEJ komendzie resolve_damage_division (kompozycje 3=[3]|[2,1]|[1,1,1])'],
+  }),
+
+  // 10. Cenn's Tactician (MOR) {W} 1/1 Kithkin Soldier — {W},{T}: licznik
+  //     +1/+1 na celu Soldierze; statyka: każdy stwór z licznikiem +1/+1
+  //     blokuje DODATKOWEGO stwora w każdym combacie (blockSlotsFor w
+  //     combat.js — walidacja i enumeracja).
+  defineCard({
+    id: 'cenns-tactician', name: "Cenn's Tactician", set: 'MOR',
+    types: ['Creature'], subtypes: ['Kithkin', 'Soldier'], colors: ['W'],
+    power: 1, toughness: 1, manaCost: 1,
+    oracleText: '{W}, {T}: Put a +1/+1 counter on target Soldier creature.\nEach creature you control with a +1/+1 counter on it can block an additional creature each combat.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/9/d998c949-4791-477f-ab8d-e625199623ad.jpg?1783942807',
+    abilities: [
+      createAbility({ type: ABILITY_TYPE.static, grantsExtraBlockWithCounter: '+1/+1' }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, colors: ['W'], tap: true },
+        targets: [{ type: 'creature_with_subtypes', subtypes: ['Soldier'] }],
+        effect: [{ type: 'add_counter', counter: '+1/+1', amount: 1, targetIndex: 0 }],
+      }),
+    ],
+    artId: null, plan: 'Lorwyn',
+    support: { status: 'supported', limitations: [] },
   }),
 
 ]);

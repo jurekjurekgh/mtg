@@ -275,6 +275,11 @@
   .cardvis .ovl-badge.dmg { background: rgba(185,28,28,.95); }
   .cardvis .ovl-badge.sick { background: rgba(180,83,9,.95); }
   .cardvis .ovl-badge.aura, .cardvis .ovl-badge.equip { background: rgba(29,78,216,.92); }
+  /* M164: etap Sagi (Rozdział II (2/3)) — fiolet, tożsamość Sag. */
+  .cardvis .ovl-badge.saga { background: rgba(109,40,217,.95); }
+  /* M167/E2: klikalne nazwy kart w logu (i M167/C w wizardzie scry/surveil). */
+  .log-card, .look-wizard-card-name { text-decoration: underline dotted; cursor: pointer; font-weight: 600; }
+  .log-card:active, .look-wizard-card-name:active { opacity: .6; }
   .cardvis .ovl-pt {
     align-self: flex-end; font-size: 12px; font-weight: 900; line-height: 1;
     padding: 2px 5px; border-radius: 5px; color: #fff; background: rgba(17,24,39,.9);
@@ -389,6 +394,21 @@
   }
   .deck-builder-errors { min-height: 1em; margin-bottom: 6px; }
   .deck-builder-error { color: var(--red); font-size: 12px; font-weight: 700; }
+  /* K1: informacje pomocnika publikacji. */
+  .deck-builder-publish-info { display: flex; flex-direction: column; gap: 4px; }
+  .deck-builder-publish-info a { color: var(--accent, #1d4ed8); font-weight: 700; }
+  /* K2: box szybkich landów podstawowych (wzorzec legacy). */
+  .deck-builder-basic-lands {
+    display: flex; flex-direction: column; gap: 4px; padding: 4px 6px;
+    border: 1px solid var(--border); border-radius: 8px; background: #fff;
+  }
+  .deck-builder-basic-lands-label { color: var(--muted); font-size: 11px; font-weight: 700; }
+  .deck-builder-basic-land-row {
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(0,0,0,.02); padding: 3px 8px; border-radius: 4px;
+    border: 1px solid var(--border); font-size: 13px;
+  }
+  .deck-builder-basic-land-name { font-weight: 700; }
   .deck-builder-card-list {
     max-height: 300px; overflow-y: auto; display: flex; flex-direction: column;
     gap: 4px; padding: 4px; border: 1px solid var(--border); border-radius: 8px;
@@ -874,7 +894,16 @@
         <div class="deck-builder-toolbar">
           <button id="deck-builder-add-filtered" type="button">Dodaj po 1 (z filtrów)</button>
           <button id="deck-builder-clear" type="button" class="ghost-btn">Wyczyść talię</button>
+          <!-- K1: import pliku talii (lokalnie/Pages) + pomocnik publikacji do decks/. -->
+          <button id="deck-builder-import" type="button" class="ghost-btn">Import z pliku…</button>
+          <input id="deck-builder-import-file" type="file" accept=".txt,text/plain" style="display:none">
+          <button id="deck-builder-publish" type="button" class="ghost-btn">Opublikuj na GitHub</button>
         </div>
+        <!-- K2 (uwaga właściciela): szybkie dodawanie landów podstawowych —
+             box nad listą kart, wzorzec legacy (card_viewer: SZYBKIE DODAWANIE
+             LĄDÓW PODSTAWOWYCH z przyciskami -/+). -->
+        <div id="deck-builder-publish-info" class="deck-builder-publish-info"></div>
+        <div id="deck-builder-basic-lands" class="deck-builder-basic-lands"></div>
         <div id="deck-builder-card-list" class="deck-builder-card-list"></div>
         <textarea id="deck-builder-output" class="deck-builder-output" readonly spellcheck="false"></textarea>
         <div class="deck-builder-library">

@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Blade-Blizzard%20Kitsune&set=neo",
+  "print": "Blade-Blizzard Kitsune (NEO)",
+  "name": "Blade-Blizzard Kitsune",
+  "mana_cost": "{2}{W}",
+  "cmc": 3.0,
+  "type_line": "Creature — Fox Ninja",
+  "oracle_text": "Ninjutsu {3}{W} ({3}{W}, Return an unblocked attacker you control to hand: Put this card onto the battlefield from your hand tapped and attacking.)\nDouble strike",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [
+    "Ninjutsu",
+    "Double strike"
+  ],
+  "set": "neo",
+  "collector_number": "5",
+  "rarity": "uncommon",
+  "pobrano": "2026-08-20",
+  "power": "2",
+  "toughness": "2",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/8/d8419d27-8c6e-4f38-98b4-60dd9a910c43.jpg?1783923926",
+    "normal": "https://cards.scryfall.io/large/front/d/8/d8419d27-8c6e-4f38-98b4-60dd9a910c43.jpg?1783923926"
+  }
+}

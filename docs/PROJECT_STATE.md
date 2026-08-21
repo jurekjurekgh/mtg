@@ -1,7 +1,279 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-20 (M159: audyt PR #66 + pętla jakości — madness timing, Saga-enchantment)
-- **Poprzednia:** 2026-08-20 (M158: Batch 39 komplet 10/10)
+- **Ostatnia aktualizacja:** 2026-08-20 (M162: uwagi właściciela A/B/C — talie „Zapisz jako...", Bell bota, modal Ratsów)
+- **Poprzednia:** 2026-08-20 (M161: audyt PR #67 + gotowość madness na czary — routing po kind)
+
+
+## M170 — Incubator: transform jednorazowy (rozszerzenie C z M168, 2026-08-21, PR #68)
+
+Testy: `test/m170-incubator-transform-once.test.js` (4). Commit e394aa3.
+
+Owner odtworzył zgłoszenie C: zdolność „{2}: Transform" (bez {T}) była
+oferowana ponownie, gdy aktywacja czekała na stosie → drugi klik płacił
+podwójnie i robił transform→re-transform. Fix generyczny (po typie
+efektu): oferta chowa zdolność (transformActivationPending), wykonanie
+odrzuca PRZED płatnością (L48). Pojedyncza aktywacja działa poprawnie
+(Phyrexian 0/0 + 2 liczniki).
+
+**Stan:** `test:all` **2589/2589**, build **52 moduły / 2208.3 kB**.
+
+## M169 — ostatnie uwagi właściciela J–N (2026-08-21, PR #68)
+
+Testy: `test/m169-uwagi-wlasciciela.test.js` (5, RED→GREEN). Commit f91da2c.
+
+- **J+L (lethal przez blokerów):** penetrating = totalPower − suma
+  wytrzymałości nietapniętych blokerów; ≥ życia wroga → +1000 (all-in);
+  surowy totalPower działa już tylko przy pustym stole. J: 18 vs 6 przy
+  absorpcji 8 → bot dobija. L: 6/7 w 7/10 → brak bonusu, kara chumpa.
+- **K (samookaleczenie ETB):** skan triggerów wejścia (lose_life scope
+  controller / applyTo self, damage_to_controller); życie po stracie ≤ 2
+  lub < 0 → twarda odmowa; niskie życie → kara 15N; zdrowe → 2N.
+- **M:** Poison Token klikalny (pełny ekran; wzorzec Day/Night M153/C).
+- **N (menace w fallback enumeracji):** ograniczony zestaw PAR (cap 8)
+  pod każdego atakującego z menace — greedy wcześniej „zużywał" blokerów
+  pod wcześniejszych atakujących i znikały z wizarda.
+
+**Stan:** `test:all` **2585/2585**, build **52 moduły / 2206.8 kB**.
+
+## M168 — uwagi właściciela z testów A–D + C2 (2026-08-21, PR #68)
+
+Testy: `test/m168-uwagi-wlasciciela.test.js` (9, RED→GREEN). Commit f28744b.
+
+- **A (Idyllic Grange):** land_played niosł entersTapped z deskryptora
+  zamiast WYNIKU warunku → log kłamał „wchodzi zatapiony". Emitowany
+  shouldEnterTapped.
+- **B (Gray Slaad i aktywne zmiany):** badge'e na kaflu póki efekt działa —
+  granted keywords (diff efektywnych vs wydrukowane; statyki warunkowe,
+  granty EOT, załączniki, anthemy — session.effectiveKeywordsOf),
+  „bez: X" (lostKeywordsUntilEOT), can't block/be blocked, modyfikatory P/T.
+- **C (Inkubator):** transform działa (owner potwierdził; testy regresyjne
+  w tym aktywacja w turze przeciwnika — Phyrexian 0/0 z licznikami).
+- **C2 (wizard many):** paymentDescriptorOf obsługuje activate_ability
+  (koszt z deskryptora zdolności; Incubator {2}, Compass {1}{T}, forecast);
+  bramka wariantów >=2 — jedyna droga płatności = bez wizarda; bez-many i
+  X poza kreatorem.
+- **D (Compass po craft):** NIE odtworzone w silniku — oferta jest w tej
+  samej fazie (test-guard D1; CR 302.6 artefakty bez choroby). Przyczyna
+  zgłoszenia: brak nietapniętej many (owner potwierdził).
+
+**Stan:** `test:all` **2580/2580**, build **52 moduły / 2202.1 kB**; CI
+success. Incident: 4. reset workspace w sesji (push odrzucony, commit
+7be4b93 na odbudowanej gałęzi) — odzyskano backup+reset+cherry-pick
+(konflikt session.js rozwiązany ręcznie).
+
+## M167 cz. 2 — Kreator Talii: K1 (talie własne), K2 (szybkie landy) (2026-08-21, PR #68)
+
+Testy: `test/m167-uwagi-wlasciciela.test.js` (17 łącznie). Commity:
+d3239d7 (K2), 14e8903 (K1).
+
+- **K1 (decyzja właściciela z ankiety — pełna propozycja):** talie własne
+  w trzech warstwach: (1) IndexedDB biblioteka kreatora, (2) pliki .txt
+  — „Import z pliku…" (upload do kreatora + selectów, zapis do
+  biblioteki, działa na Pages i file://), (3) repo `decks/*.txt` jako
+  źródło prawdy „wbudowanych" — pomocnik „Opublikuj na GitHub" kopiuje
+  treść + link do `github.com/…/new/main?filename=decks/<slug>.txt`
+  (Pages nie może pisać do repo — ADR 0011; jedno ręczne wrzucenie,
+  resztę robi CI). Selekt: sufiks „(własna)" (combineDeckSources,
+  klucze custom:); startGame czyta ze źródła połączonego; boot ładuje
+  bibliotekę IndexedDB.
+- **K2:** box „SZYBKIE DODAWANIE LĄDÓW PODSTAWOWYCH" nad listą kart
+  kreatora (5 landów, przyciski −/+ — wzorzec legacy card_viewer).
+
+**Stan:** `test:all` **2571/2571**, build **52 moduły / 2198.9 kB**.
+
+## M167 — uwagi właściciela z testów A–I (2026-08-21, PR #68)
+
+Plan: `docs/plans/PLAN_2026-08-21-m167-uwagi-wlasciciela-a-i.md`.
+Testy: `test/m167-uwagi-wlasciciela.test.js` (13, RED→GREEN). Commity:
+566eac1 (engine+boty), f9b734a (UI).
+
+- **G (root cause):** tracker landfall skanował tylko
+  permanent_entered_battlefield; play_land emituje WYŁĄCZNIE land_played
+  → landEnteredThisTurn puste po zwykłym zagranieniu lądu (martwe
+  WSZYSTKIE warunki landfall, nie tylko Mysteries of the Deep).
+- **A:** przyjazny cel triggera +25 gdy ATAKUJE (Voice of the Vermin
+  buffuje współatakującego). **B:** oferta opcjonalnego triggera niesie
+  selfMill; wycena wyścigu bibliotek (Circle of the Land Druid).
+  **D:** zdolność add_mana-only bez niczego zagrawalnego = kara
+  (Apprentice Wizard; rider życia wolny — Z10). **F:** fog we własnej
+  turze -300 (remis ze scry wybierał czar). **I:** gang top-2 blockerów
+  — atakujący ginący bez wymiany karany (2/4 w 1/3+3/3).
+- **H:** Revolutionist artId 314 (słownik kolekcji 314MH2); strażnik
+  307→308.
+- **E:** nagłówki FAZ wracają do logu (raz na zmianę fazy — kompromis
+  po wyciszeniu M151). **C:** karty w wizardzie scry/surveil klikalne
+  (pełnoekranowa ilustracja). **E2:** nazwy kart w logu klikalne
+  (span.log-card + delegacja; tekst AI bez znaczników).
+
+**Stan:** `node tools/run-tests.mjs all` = **2567/2567**, build
+**52 moduły / 2189.0 kB**; progi benchmarku bez regresji.
+
+## M166 (skrót) — Batch 40 KOMPLET 10/10## M166 — Batch 40: 10 kart (lista właściciela 2026-08-20, PR #68) — KOMPLET (dokończony w transzach D-E)
+
+Plan: `docs/plans/PLAN_2026-08-20-m166-batch-40-kart.md` (kontynuacja:
+transze D-E). Testy: `test/batch40-kart.test.js` (9, RED→GREEN).
+Dane Scryfall ×10 (ADR 0010 §2a, printy wg setów właściciela).
+
+- **Transza A (14cf91a + 30c8729):** Kitsune (ninjutsu+double strike),
+  Knockout Maneuver (licznik→obrażenia=moc), Krotiq Nestguard (defender
+  odsuwany do EOT). Nauczki: strażnik M33+ wymaga talii w TYM samym
+  commicie; nowe karty → WYŁĄCZNIE tokens/ostrza/graveyard (green/azorius/
+  red/black mają zamrożone seedy — 5 testów); pipeline npm test|grep
+  maskuje status (14cf91a poszedł czerwony, naprawiony natychmiast).
+- **Transza B (9fb54af):** NOWE: Enrage (event 'dealt_damage' + LKI
+  CR 603.10: targetLki w damage_dealt, sourceLki w pendingach triggerów,
+  walidacje czytają objects.get ?? LKI), Corrupted
+  (opponents_lose_life_if_poison), Reinforce (zdolność z ręki: discard
+  jako koszt + cel — wzorzec cycling/forecast). Etykiety M122/M126 +
+  HANDLED_TRIGGER_EVENTS uzupełnione.
+- **Transza C (455aedd):** NOWE: Adamant (kolory many wydanej — zwrót
+  z consumeManaPool do lastManaSpend.colors, manaColorsSpent na obiekcie
+  stosu, entersWithCountersIf.adamant; registry normalizuje adamant —
+  klasa L21), controlsNoCreatureSubtype (negatywny warunek podtypowy) +
+  damage_to_controller = pełny Sarkhan's Rage.
+- **Transza D (425b696):** NOWE: efekt damage_divided + decyzja kwot
+  resolve_damage_division (kompozycje total na N części; oferty per
+  kompozycja — bez własnego wizarda), rozdzielone wzorce
+  wielocelowości triggerów (each-of raz na cel vs divided-among raz
+  z całą listą), pełne warstwy (COMMAND_TYPES/EVENT_TYPES/pending/
+  bramki/render/boty/log/fingerprint/HOSTILE). Karta: {R} pump +
+  enters/attacks. Fix: 2 bramki ofert (play_land/cast) z załamaniem
+  linii omijały globalną podmianę — crash benchmarku wyłapany
+  test:all przed pushem.
+- **Transza E (b6a5dfe):** NOWE: statyka grantsExtraBlockWithCounter +
+  blockSlotsFor — deklaracja bloków ze slotami (usedBlockers mapa;
+  enumeracja z drugą rundą blokera); cel Soldier przez istniejący
+  creature_with_subtypes. **BATCH 40 KOMPLET 10/10.**
+
+**Stan końcowy:** `node tools/run-tests.mjs all` = **2554/2554**,
+build **52 moduły / 2180.6 kB**; CI zielone na obu transzach.
+
+**Stan po fixie CI (16b5104):** `node tools/run-tests.mjs all` =
+**2547/2547** (fast+slow, dokładnie jak CI; CI: success). Incydent:
+3 commity (9fb54af…c335f29) miały czerwone CI — bot-benchmark padał
+„illegal_ability:Reinforce aktywuje się z ręki" (oferta zdolności
+z POLA BITWY nie pomijała reinforce — klasa L48; fast tier lokalnie
+zielony, bo benchmark jest w slow). Nauczka: zmiany zdolności z ręki =
+test:all przed pushem. Przy okazji: drugi reset workspace w sesji
+(ENVIRONMENT §2) — odzyskano backup-gałązką + reset + cherry-pick.
+
+**Pozostały D (Inferno Titan — decyzja podziału obrażeń „as you
+  choose") i E (Cenn's Tactician — statyka bloku dodatkowego).**
+
+## M164 — etap Sagi jako badge tekstowy (2026-08-20, PR #68)
+
+Pytanie właściciela: jak oznaczony jest etap Sagi na karcie? Stan przed:
+generyczny licznik „lore×N" + lista rozdziałów w rulesText (M159/Z4), bez
+badge'a AKTYWNEGO rozdziału. Fix (buildStateOverlay): badge
+„Rozdział II (2/3)" (lore = numer rozdziału, CR 714.3), dedup licznika
+lore na Sadze, SAGA_ROMAN wspólny dla rulesText i badge, CSS
+.ovl-badge.saga (fiolet). Testy: `test/m164-saga-etap-badge.test.js` (6).
+
+## M163 — uwagi właściciela z testów A/B (2026-08-20, PR #68)
+
+Plan: `docs/plans/PLAN_2026-08-20-m163-uwagi-wlasciciela-ab.md`.
+Testy: `test/m163-uwagi-wlasciciela.test.js` (5, RED→GREEN 5/5).
+
+- **A (Exploit Butchera — powtórka klasy M162/C + brak grupowania):**
+  resolve_exploit_choice bez case'a w commandLabel i bez klucza
+  choiceRequestGroupKey → N identycznych „Exploit (wybór poświęcenia)".
+  Etykieta nazywa poświęcanego stwora + skip; JEDNA grupa z tytułem
+  (pendingExploit.sourceCardId w playerView, tylko właściciel — wzorzec
+  M162/C). Przegląd systematyczny COMMAND_TYPES × label × groupKey (zlecenie
+  właściciela): ta sama klasa w color/land_type/moonlit/optional_draw/
+  optional_trigger_choice (identyczne etykiety) i epic (cel w etykiecie —
+  klasa M151 — + grupowanie) — wszystkie naprawione. **Strażnik A3**
+  (skan źródła render.js): każdy typ komendy ma etykietę (case albo
+  świadomy allowlist), każda decyzja resolve_* ma klucz grupowania (albo
+  świadomy allowlist) — nowy typ decyzji bez nich czerwieni test
+  z instrukcją (sygnał klasy L52).
+- **B (inicjatywa):** po ODZYSKANIU inicjatywy komunikat „obejmuje ją
+  po raz pierwszy i zagłębia się w Podziemia" był nieprawdziwy (gracz
+  nadal w lochu, pokój 3). Root cause: firstTime = „zmiana posiadacza";
+  poprawnie = „wejście do Podziemi teraz" (undercityProgress == 0).
+  Mechanika venture bez zmian (awans pokoju przy każdym objęciu, CR 725.4).
+
+**Stan (M163+M164):** `npm test` **2527/2527** (fast), `test:slow` **9/9**,
+build **52 moduły / 2147.1 kB**.
+
+## M162 — uwagi właściciela z testów A/B/C (2026-08-20, PR #68)
+
+Plan: `docs/plans/PLAN_2026-08-20-m162-uwagi-wlasciciela-abc.md`.
+`test/m162-uwagi-wlasciciela.test.js` (7 testów, RED→GREEN 5/7).
+
+- **A (zdublowane talie): NAPRAWIONE.** Odpowiedź właściciela: duble tylko
+  w wersji desktopowej — HTML ściągnięty „Zapisz jako..." i otwierany
+  lokalnie (fragment HTML pokazał selecty z już wstrzykniętymi opcjami).
+  Root cause: „Zapisz jako..." serializuje DOM po uruchomieniu skryptu,
+  a populacja selectów NIE była idempotentna — ponowne uruchomienie
+  dokładało drugi komplet. Fix: src/table/deck-selects.js
+  (populateDeckSelects czyści select przed wypełnieniem; deckTitle
+  przeniesiony z main.js). Weryfikacja: testy A1/A2 + jsdom end-to-end
+  (serialize → ponowne uruchomienie → 12 unikalnych opcji, wcześniej 24).
+- **B (Ghoulcaller's Bell):** mill_both_players bez wyceny → {T} warte
+  bazowe +2 wygrywało z passem i bot dzwonił co turę także przegrywając
+  wyścig o karty. Wycena wyścigu bibliotek w OBU gałęziach (cast_spell +
+  activate_ability, L41): ostatnia własna karta −120; przeciwnik do zera
+  +80; nie prowadzę −40; prowadzę +6..+16.
+- **C (Chittering Rats):** modal resolve_hand_top_choice bez nazw kart
+  („(1 z 5)") — brak case'a w commandLabel. Etykieta nazywa KARTĘ z ręki
+  wybierającego (ręka dla niego jawna — FoW), playerView wystawia
+  pendingHandTopChoice.sourceCardId TYLKO właścicielowi decyzji
+  (precedens pendingTriggerTarget), tytuł modala nazywa źródło. Przegląd
+  pozostałych resolve_*: jedyny brak — reszta nazywa kartę/cel albo opisuje
+  skutek (explore/discover/food).
+- **Incident środowiskowy:** workspace zresetowany w trakcie sesji
+  (ENVIRONMENT §2 — drugi raz w projekcie); historia odtworzona z origin
+  + cherry-pick; nic nie przepadło (wszystkie commity wypchnięte przed
+  resetem).
+
+**Stan:** `npm test` **2516/2516** (fast), `test:slow` **9/9**, build
+**52 moduły / 2142.5 kB**.
+
+## M161 — audyt PR #67 + gotowość madness na czary (2026-08-20, PR #68)
+
+Sesja wg ADR 0020; zlecenie właściciela: zasada **„nie zostawiamy
+nieobsłużonych ścieżek zależnych od przyszłych kart — kod mechaniki
+gotowy, ścieżka martwa dziś zasygnalizowana"** (reguła trwała: L52).
+Audyt PR #67 (squash `015f715`): raport `docs/audits/AUDYT_PR67_2026-08-20.md`
+— F1–F4/Z1–Z5/M160 zweryfikowane poprawne (M160/A weryfikacją mutacyjną),
+znalezisko **D1** (praca M160 nie istniała w PROJECT_STATE — backfill poniżej),
+obserwacje **O1/O2** = temat zadania.
+
+**Implementacja (RED→GREEN, `test/m161-madness-spell-path.test.js`, 11 testów,
+10 czerwonych przed):**
+1. **O1 routing po kind** — `resolve_madness_cast`: instant/sorcery z madness
+   → nowa `spells.castMadnessSpell` (wzorzec suspend/rebound: cele/tryby,
+   stos, timing ignorowany CR 702.34e; koszt madness PŁACONY z redukcjami).
+   Oferta playerView per legalny zestaw celów i per tryb (`epicCastOffers`);
+   czary z additionalCost/xCost poza zakresem — brak oferty + jawny reject.
+   Etykieta UI nazywa cel (wzorzec M151). Materialize: gałąź spell zachowuje
+   deskryptor `madness` (klasa Z5/L21).
+2. **O2 bramka kolorów kosztu alternatywnego** — `castPermanent` przy
+   madnessCast/warpCast sprawdza pipy AKTYWNEGO kosztu
+   (`altCostColors`), nie pipy karty; `canPayMadnessCost` bez redundantnej
+   bramki pipów karty. Dla katalogu zachowanie tożsame (Revolutionist,
+   Weftblade).
+3. **Sygnał** — strażnik katalogu (S9): czerwienieje przy pierwszej karcie
+   instant/sorcery z madness w katalogu, z instrukją w komunikacie
+   (ścieżka gotowa — S1–S4; dopisać testy kartowe, ew. rozszerzyć zakres).
+
+**Stan:** `npm test` **2507/2507** (fast), `test:slow` 9/9, build
+**51 modułów / 2137.5 kB**. Katalog bez zmian (ADR 0001/0022 — ścieżka
+martwa dla katalogu, żywa w testach syntetycznych).
+
+## M160 — uwagi właściciela z testów (2026-08-20, PR #67; backfill M161/D1)
+
+Backfill: praca wykonana w PR #67, ale nieopisana w PROJECT_STATE (luka
+dokumentacyjna znaleziona w audycie PR #67 — D1):
+- **A (Selhoff Occultist, CR 603.10a):** jednoczesne zgony (jeden przebieg
+  SBA — walka, masowe -X/-X) niosą `simultaneousIds`; triggery
+  `any_creature_dies` współzgony stworów patrzą wstecz i odpalają
+  (weryfikacja mutacyjna w audycie PR #67). Tokeny: fallback na LKI
+  zdarzenia śmierci (CR 704.5e). `test/m160-uwagi-wlasciciela.test.js` (5).
+- **B1/B2 (Seismic Monstrosaur):** `sacrificeLandId` w kluczu grupowania
+  panelu akcji i w etykiecie („poświęć: <ląd>") — warianty per ląd
+  rozróżnialne; pola generyczne komendy (ADR 0002).
 
 ## M159 — audyt PR #66 + pętla jakości (2026-08-20, PR #67)
 
@@ -128,13 +400,13 @@ rebound (Ojutai's Breath), Satyr Wayfinder, Static Net (linked exile +
 Powerstone), living weapon (Strandwalker), creature_or_vehicle ×4 ścieżki,
 craft no-op (M155), Z5/Z8, FoW (manaCost/name/suspend w widoku — jawne),
 dane kart vs Scryfall (strażniki L23/L26 zielone), oba boty obsługują nowe
-decyzje (L48), wyceny większości nowych efektów (L50).
+decyzje (L48), wyceny większości nowych efektów (L52).
 
 **Naprawione (RED→GREEN, `test/bot-pr65-audit-fixes.test.js`):**
 1. **F1** — `triggerTargetEffectFriendly` nie znał `grant_keywords_until_end_of_turn`
    → bot obdarowywał lifelink+indestructible najlepszego stwora PRZECIWNIKA
    (Lotusguard, Batch 38). Fix: gałąź grant_keywords + zbiór
-   HOSTILE_GRANTED_KEYWORDS. Piąte powtórzenie klasy L50.
+   HOSTILE_GRANTED_KEYWORDS. Piąte powtórzenie klasy L52.
 2. **F2** — `destroy_artifact_gain_life_mana_value` bez wyceny → bot rzucał
    Divine Offering we WŁASNY artefakt-źródło many. Fix: wpisy w tabelach bota
    (HOSTILE_PERMANENT_EFFECTS, REMOVAL_EFFECTS, HOSTILE_TRIGGER_TARGET_EFFECTS).
@@ -149,7 +421,7 @@ implementacja wielocelowego triggera ETB.
 
 **Pętla jakości (etap 5, ADR 0021):** sonda inwentaryzacji typów efektów
 w kontekstach celowanych (card-data vs wyceny bota) — 2 kolejne wystąpienia
-klasy L50: **Q1** Withstand (prewencja any_target bez wyceny → bot chronił
+klasy L52: **Q1** Withstand (prewencja any_target bez wyceny → bot chronił
 stwora PRZECIWNIKA), **Q2** Servant of the Scale (transfer liczników
 nieprzyjazny → liczniki do najsłabszego własnego). Fixy + **strażnik
 klasyfikacji celów triggerów** (`triggerEffectIsHostile` w game-state,
@@ -284,7 +556,7 @@ Raport: `docs/audits/AUDYT_2026-08-18-m146-zywy-tester.md`.
 4. **Nowy detektor** `detectBotUntapsMyPermanent` (klasa „bot odkręca TWÓJ
    permanent"), zweryfikowany dwustronnie.
 
-Lekcja **L50** (nowy typ efektu = sprawdź wycenę w heuristic-bocie, obie
+Lekcja **L52** (nowy typ efektu = sprawdź wycenę w heuristic-bocie, obie
 ścieżki: czary i zdolności).
 
 **Stan:** `npm run test:all` **2310/2310**, build 51 / 1958.4 kB, benchmark
