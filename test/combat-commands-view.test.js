@@ -47,6 +47,7 @@ test('resolve_combat jest oferowany aktywnemu atakującemu, a pass jest wtedy za
   const state = combatState();
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['ready'] });
   execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} });
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const view = playerView(state, 'p1');
   const resolve = view.legalCommands.filter((c) => c.type === 'resolve_combat');
   assert.equal(resolve.length, 1);
@@ -62,6 +63,7 @@ test('po komendach combat pass kontynuuje automat od end_of_combat bez cofania',
   const state = combatState();
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['ready'] });
   execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { ready: ['b1'] } });
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.equal(state.turn.step, 'end_of_combat');
   assert.equal(state.turn.stepIndex, 8);

@@ -252,6 +252,7 @@ test('Ember Beast: nie może atakować ani blokować sam', () => {
   const blockAlone = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { beast: ['beast2'] } });
   assert.ok(!blockAlone.ok, 'samotny blok odrzucony');
   const blockPair = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { beast: ['beast2', 'blockbuddy'] } });
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(blockPair.ok, blockPair.events[0]?.reason);
 });
 
@@ -517,6 +518,7 @@ test('Disa the Restless: combat damage → token Tarmogoyf z dynamicznym P/T', (
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const combat = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.ok(combat.ok, combat.events[0]?.reason);
   passBoth(state); // T6: combat damage trigger Disy ze stosu
@@ -543,6 +545,7 @@ test('True Conviction: token Tarmogoyf też ma double strike i lifelink', () => 
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);
   passBoth(state); // T6: combat damage trigger Disy ze stosu
   const token = [...state.objects.values()].find((o) => o.cardId === 'token_tarmogoyf' && o.zone === 'battlefield');

@@ -71,6 +71,7 @@ test('B1: trample przydziela lethal bez uwzględniania tarcz prewencji (CR 510.1
   state.damageShields = [{ targetId: 'blk', remaining: 2, sourceCardId: 'withstand' }];
   assert.equal(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['att'] }).ok, true);
   assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { att: ['blk'] } }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const events = resolveCombatWithAssignment(state, 'p1', 'p2');
   // Lethal = 3 (ignorując tarczę): przydział 3 na blokera, tarcza zjada 2,
   // 1 doszło; nadmiar trample = 2 na gracza (poprzednio: przydział 1 + 4 na gracza).
@@ -95,6 +96,7 @@ test('B1b: filtr „prevent all damage" nie zmniejsza wymogu lethal przy trample
   state.preventDamageThisTurn = [{ typesInclude: ['Creature'], isCreature: true }];
   assert.equal(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['att'] }).ok, true);
   assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { att: ['blk'] } }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const events = resolveCombatWithAssignment(state, 'p1', 'p2');
   // Lethal = 3 MUSI zostać przydzielone blokerowi (nawet w pełni zapobiegnięte),
   // zanim cokolwiek pójdzie na gracza — gracz dostaje 2, nie 5.
@@ -118,6 +120,7 @@ test('B2: damage_dealt blokera niesie kwotę ZADANĄ (po prewencji), lifelink od
   state.damageShields = [{ targetId: 'att', remaining: 3, sourceCardId: 'withstand' }];
   assert.equal(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['att'] }).ok, true);
   assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { att: ['blk'] } }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const result = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.equal(result.ok, true, JSON.stringify(result.events));
   assert.equal(state.objects.get('att').damage, 1, 'atakujący ma 1 obrażenie');

@@ -818,6 +818,7 @@ test('T16: 5/5 vs dwóch 3/3 — obrażenia ROZDZIELONE (3+2), drugi bloker prze
   addCombatCreature(state, 'b2', 'p2', 3, 3);
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['b1', 'b2'] } }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   resolveCombatWithAssignment(state, 'p1', 'p2');
   // b1: 3 obrażeń (lethal) → ginie; b2: 2 obrażenia → żyje.
   assert.ok(![...state.objects.values()].some((o) => o.id === 'b1' && o.zone === 'battlefield'), 'b1 ginie');
@@ -835,6 +836,7 @@ test('T16: trample — nadmiar po lethal wszystkich blokerów przechodzi na grac
   addCombatCreature(state, 'b2', 'p2', 3, 3);
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['b1', 'b2'] } }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   resolveCombatWithAssignment(state, 'p1', 'p2');
   assert.equal(state.players.find((p) => p.id === 'p2').life, 19, 'nadmiar 1 przechodzi (7 - 3 - 3)');
 });
@@ -846,6 +848,7 @@ test('T16: deathtouch — 1 obrażeń na blokera (lethal = 1), reszta przepada b
   addCombatCreature(state, 'b2', 'p2', 2, 2);
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['b1', 'b2'] } }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   resolveCombatWithAssignment(state, 'p1', 'p2');
   // Obaj blokujący giną (deathtouch przy 1 obrażeniach); gracz nietknięty.
   assert.ok(![...state.objects.values()].some((o) => (o.id === 'b1' || o.id === 'b2') && o.zone === 'battlefield'));

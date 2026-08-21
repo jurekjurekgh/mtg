@@ -94,6 +94,9 @@ test('pełna tura przechodzi wszystkie kroki przez legalCommands', () => {
 
   doFor(state, 'p2', 'declare_blockers');
   assert.equal(state.turn.step, 'combat_damage');
+  // M172/C (CR 509.4): po deklaracji bloków OBROŃCA ma okno odpowiedzi —
+  // pasuje, a dopiero atakujący rozstrzyga obrażenia.
+  doFor(state, 'p2', 'pass_priority');
   doFor(state, 'p1', 'resolve_combat');
   assert.equal(state.turn.step, 'end_of_combat');
 
@@ -146,6 +149,7 @@ test('pełna tura jest odtwarzalna z zapisu komend', () => {
   passRound(state);
   doFor(state, 'p1', 'declare_attackers');
   doFor(state, 'p2', 'declare_blockers');
+  doFor(state, 'p2', 'pass_priority'); // M172/C: okno obrońcy po blokach
   doFor(state, 'p1', 'resolve_combat');
   passRound(state);
   passRound(state);

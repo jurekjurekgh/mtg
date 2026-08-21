@@ -3539,7 +3539,11 @@ export function execute(state, input) {
     // Żaden pass nie może ominąć rozstrzygnięcia obrażeń combat — ALE tylko
     // przy PUSTYM stosie: instant/trigger w oknie combat_damage musi się
     // rozstrzygnąć passami (T6), zanim obrażenia zostaną zadane.
-    if (state.turn.step === 'combat_damage' && state.combat && state.zones.stack.length === 0) return reject('combat_unresolved');
+    // M172/C (CR 509.4): pojedynczy pass (obrońca → atakujący) jest legalny —
+    // odrzucamy dopiero pass DOMYKAJĄCY pełną rundę (pominąłby obrażenia;
+    // atakujący ma wtedy jedyną drogę turową: resolve_combat).
+    if (state.turn.step === 'combat_damage' && state.combat && state.zones.stack.length === 0
+      && state.turn.passes + 1 >= state.players.length) return reject('combat_unresolved');
     const current = state.players.findIndex((p) => p.id === state.turn.priorityPlayerId);
     const next = state.players[(current + 1) % state.players.length].id;
     state.turn.passes += 1;
@@ -3886,7 +3890,13 @@ export function execute(state, input) {
     if (state.zones.stack.length > 0) return reject('stack_not_empty');
     try {
       const e = declareBlockers(state, cmd.playerId, cmd.assignments ?? {});
-      state.turn = jumpToStep(state.turn, 'combat_damage', state.turn.activePlayerId);
+      // M172/C (uwaga właściciela, CR 509.4): po deklaracji bloków gracze
+      // dostają OKNO ODPOWIEDZI, zanim padną obrażenia — priorytet najpierw
+      // dla OBROŃCY (on właśnie zamknął deklaracje i chce reagować:
+      // Dawntreader Elk, pumpy, prewencje). Dotąd priorytet szedł od razu
+      // do atakującego, który natychmiast brał resolve_combat — obrońca
+      // nie miał ŻADNEGO okna między blokami a obrażeniami.
+      state.turn = jumpToStep(state.turn, 'combat_damage', cmd.playerId);
       const step = event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step });
       state.events.push(step);
       return accepted(state, cmd, { ok: true, events: [e, step] });
@@ -4152,10 +4162,12 @@ export function playerView(state, playerId) {
     // oferujemy wyłącznie posiadaczowi priorytetu.
     legalCommands.push(command('concede', playerId));
     const hasPriority = state.turn.priorityPlayerId === playerId;
-    // Pass jest niedostępny, gdy trwa nierozstrzygnięty krok obrażeń combat —
-    // jedyna droga dalej to resolve_combat (albo koncesja). Oczekujący scry
-    // albo backup blokuje pass u wszystkich (patrz resolve_* poniżej).
-    const blockedByCombat = state.turn.step === 'combat_damage' && state.combat && state.zones.stack.length === 0;
+    // Pass jest niedostępny, gdy DOMYKAŁBY rundę w nierozstrzygniętym kroku
+    // obrażeń combat — jedyna droga dalej to wtedy resolve_combat (albo
+    // koncesja). M172/C (CR 509.4, L48 oferta=walidacja): pojedynczy pass
+    // (okno odpowiedzi obrońcy po deklaracji bloków) jest oferowany.
+    const blockedByCombat = state.turn.step === 'combat_damage' && state.combat && state.zones.stack.length === 0
+      && state.turn.passes + 1 >= state.players.length;
     if (hasPriority && !blockedByCombat && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
       && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingSuspendCast && !state.pendingReboundCast && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingDamageDivision) legalCommands.push(command('pass_priority', playerId));
   }

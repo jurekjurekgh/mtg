@@ -629,6 +629,7 @@ test('Ethersworn Shieldmage: prewencja chroni przed deathtouch (brak znacznika)'
   jumpStep(state, 'p1', 'combat', 'declare_attackers', 5);
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: [attacker.id] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { [attacker.id]: ['ac'] } }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);
   const ac = state.objects.get('ac');
   assert.ok(ac && ac.zone === 'battlefield', 'Artefaktowy bloker przeżył');

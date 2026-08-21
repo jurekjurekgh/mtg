@@ -217,6 +217,7 @@ test('Relic Robber: combat damage do gracza → TEN gracz dostaje Goblin Constru
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['rr'] }).ok);
   const noBlocks = playerView(state, 'p2').legalCommands.find((c) => c.type === 'declare_blockers');
   execute(state, noBlocks);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach
   const r = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.ok(r.ok, r.events?.[0]?.reason);
   resolveStack(state);
@@ -253,6 +254,7 @@ test('Flurry of Wings: X tokenów Bird Soldier = liczba atakujących', () => {
   // p2 bez bloków (declare_blockers), potem p1 ma priorytet w combat_damage
   const nb = playerView(state, 'p2').legalCommands.find((c) => c.type === 'declare_blockers');
   execute(state, nb);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach
   // p1 rzuca Flurry w odpowiedzi na atak (instant — z priorytetem po blokach)
   addRealCard(state, 'flurry', 'flurry-of-wings', 'p1', 'hand');
   addMana(state, 'p1', 3, { colors: ['G', 'W', 'U'] });

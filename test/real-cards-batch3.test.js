@@ -410,6 +410,7 @@ test('bestow: Kappa może wygnąć załączoną aurę (dla predykatu wciąż jes
   state.turn.activePlayerId = 'p2';
   execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['kappa'] });
   execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: {} });
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const result = execute(state, { type: 'resolve_combat', playerId: 'p2', defendingPlayerId: 'p1' });
   assert.equal(result.ok, true, result.events[0]?.reason);
   // Temat 2: „you may ... exile target artifact or enchantment" — kontroler
@@ -482,6 +483,7 @@ test('Leafcrown Dryad: reach pozwala blokować latającego atakującego', () => 
 test('Leafcrown Dryad: stwór bez reach/flying dalej NIE może blokować latającego', () => {
   const state = combatWithFlyingAttacker();
   const illegal = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { flyer: ['groundling'] } });
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.equal(illegal.ok, false);
   assert.match(illegal.events[0].reason, /illegal_blockers/);
   // …a jako kontrolka ten sam stan z Dryadem przechodzi (poprzedni test).
@@ -495,6 +497,7 @@ test('Kappa Tech-Wrecker: trigger „artifact or enchantment" wygania Dryada (en
   state.turn.activePlayerId = 'p1';
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['kappa'] });
   execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} });
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const result = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.equal(result.ok, true, result.events[0]?.reason);
   assert.ok(result.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'combat_damage_to_player'), 'brak triggera Kap-py');
@@ -513,6 +516,7 @@ test('Kappa Tech-Wrecker: predykat nie sięga po stwora bez typu Artifact/Enchan
   state.turn.activePlayerId = 'p1';
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['kappa'] });
   execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} });
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const result = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.equal(result.ok, true);
   assert.ok(!result.events.some((e) => e.type === 'object_moved' && e.toZone === 'exile'), 'zwykły stwór nie może być celem Kap-py');

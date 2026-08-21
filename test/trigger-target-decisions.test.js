@@ -175,6 +175,7 @@ test('Kappa Tech-Wrecker: „you may\" — odmowa nie zdejmuje licznika, wybór 
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['kappa'] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);
   // Decyzja: cel (artefakt p2) albo odmowa.
   assert.equal(state.pendingTriggerTargets.length, 1);
@@ -193,6 +194,7 @@ test('Kappa Tech-Wrecker: „you may\" — odmowa nie zdejmuje licznika, wybór 
   state2.turn = jumpToStep(state2.turn, 'declare_attackers', 'p1');
   assert.ok(execute(state2, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['kappa'] }).ok);
   assert.ok(execute(state2, { type: 'declare_blockers', playerId: 'p2', assignments: {} }).ok);
+  execute(state2, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(execute(state2, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);
   assert.ok(execute(state2, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'art' }).ok);
   resolveStack(state2); // T6: rozstrzygnij trigger ze stosu

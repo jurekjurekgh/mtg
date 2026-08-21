@@ -32,6 +32,19 @@
   o tej nazwie), widok go wystawia, warstwy nazw (kafel, cele, log)
   pokazują „Nazwa (kopia N)".
 
+### Dodatkowe zgłoszenia w trakcie sesji (czat)
+
+- **E (Inferno Titan — UX przydziału):** zamiast enumeracji kombinacji
+  celów (33 opcje) — MODAL z listą kandydatów i stepperami +/− obrażeń
+  (jak przydział obrażeń po walce); suma musi równać się total (3);
+  cele = kandydaci z kwotą > 0 (to realizuje „among one, two, or three").
+  UI skleja dwie komendy silnika: resolve_trigger_target { targetIds }
+  → resolve_damage_division { amounts } (announce Z6 otwiera kwoty
+  natychmiast po wyborze celów).
+- **F (okno atakującego po blokach):** pokryte implementacją C — po
+  passie obrońcy atakujący ma priorytet i normalne akcje przed
+  resolve_combat (test C2).
+
 ## Etapy (osobne, samodzielnie zielone commity)
 
 - [ ] Etap 0: plan (ten plik) + push.
@@ -44,6 +57,8 @@
       z pól `cantBeBlocked`/`cantBlock` w widoku; testy RED→GREEN.
 - [ ] Etap D: numeracja kopii (`copyNumber` w silniku, „(kopia N)"
       w warstwach nazw); testy RED→GREEN.
+- [ ] Etap E: modal przydziału obrażeń multi-target (steppery, suma=total),
+      panel bez enumeracji kombinacji; testy UI.
 - [ ] Zamknięcie: `test:all` + build, dokumentacja (PROJECT_STATE,
       handoff, opis PR).
 

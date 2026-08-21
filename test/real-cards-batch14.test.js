@@ -547,6 +547,7 @@ test('Deathtouch: creature with deathtouch destroys any creature it damages in c
   state.turn.priorityPlayerId = 'p1';
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['dt-attacker'] });
   execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { 'dt-attacker': ['dt-blocker'] } });
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   // Blocker should be destroyed despite 5 toughness
   const blockerObj = state.objects.get('dt-blocker');

@@ -598,6 +598,7 @@ test('first strike: atakujący z FS zabija blokera, sam nie ponosi obrażeń', (
   addSimpleCreature(state, 'blk', 'p2', 2, 2);
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['fs'] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { fs: ['blk'] } }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const resolved = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.equal(state.objects.get('fs').zone, 'battlefield', 'atakujący z first strike przeżywa');
   assert.equal(state.objects.get('fs').damage, 0, 'bloker bez first strike nie odpowiada');
@@ -614,6 +615,7 @@ test('first strike: bloker z FS odpowiada pierwszy i zabija zwykłego atakujące
   addSimpleCreature(state, 'blk', 'p2', 2, 2, ['first_strike']);
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['blk'] } }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);
   assert.equal(deadInGraveyard(state, 'highland-game'), true, 'atakujący bez FS ginie od first strike blockera');
   assert.equal(state.objects.get('blk').zone, 'battlefield', 'bloker z FS przeżywa (atakujący nie zdążył)');
@@ -628,6 +630,7 @@ test('first strike nie zmienia walki bez stwora z FS (regresja)', () => {
   addSimpleCreature(state, 'blk', 'p2', 2, 2);
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['blk'] } }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);
   assert.equal(deadInGraveyard(state, 'highland-game'), true, 'atakujący ginie');
   const survivors = state.zones.battlefield.filter((id) => state.objects.get(id).kind === 'creature');

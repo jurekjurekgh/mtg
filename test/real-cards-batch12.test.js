@@ -197,6 +197,7 @@ test('Hysterical Blindness: stwór o ujemnej mocy zadaje 0 obrażeń w combat', 
   state.turn = jumpToStep({ ...initialTurn('p2') }, 'declare_attackers', 'p2');
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['att'] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: {} }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const result = execute(state, { type: 'resolve_combat', playerId: 'p2', defendingPlayerId: 'p1' });
   assert.equal(result.ok, true, JSON.stringify(result.events));
   // Regresja (CR 510.1): ujemna moc zadaje 0 obrażeń, nie ujemne — p1 nic nie traci.

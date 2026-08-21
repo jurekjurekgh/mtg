@@ -36,6 +36,7 @@ test('resolve przy śmierci zablokowanego atakującego i trafieniu drugim przech
   const state = setupCombat();
   assert.equal(execute(state, { type: 'declare_attackers', playerId: 'att', attackerIds: ['a-small', 'a-big'] }).ok, true);
   assert.equal(execute(state, { type: 'declare_blockers', playerId: 'def', assignments: { 'a-small': ['d-wall'] } }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'def' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const result = execute(state, { type: 'resolve_combat', playerId: 'att', defendingPlayerId: 'def' });
   assert.equal(result.ok, true, JSON.stringify(result.events));
   // a-small zginął od blokera; d-wall przeżył; gracz def stracił 3 życia.
@@ -50,6 +51,7 @@ test('znikający blocker nadal blokuje atakującego i bez trample nie zadaje obr
   const state = setupCombat();
   assert.equal(execute(state, { type: 'declare_attackers', playerId: 'att', attackerIds: ['a-big'] }).ok, true);
   assert.equal(execute(state, { type: 'declare_blockers', playerId: 'def', assignments: { 'a-big': ['d-wall'] } }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'def' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   // Simulujemy legalny efekt usuwający blockera po deklaracji bloków,
   // przed rozstrzygnięciem obrażeń.
   moveObjectDirectly(state, 'd-wall', 'graveyard', 'grave-wall');
@@ -66,6 +68,7 @@ test('znikający blocker pozwala trample przejść do gracza, ale zachowuje stat
   state.objects.set('a-big', Object.freeze({ ...attacker, keywords: ['trample'] }));
   assert.equal(execute(state, { type: 'declare_attackers', playerId: 'att', attackerIds: ['a-big'] }).ok, true);
   assert.equal(execute(state, { type: 'declare_blockers', playerId: 'def', assignments: { 'a-big': ['d-wall'] } }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'def' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   moveObjectDirectly(state, 'd-wall', 'graveyard', 'grave-wall');
   const result = execute(state, { type: 'resolve_combat', playerId: 'att', defendingPlayerId: 'def' });
   assert.equal(result.ok, true, JSON.stringify(result.events));
@@ -77,6 +80,7 @@ test('śmiertelne trafienie niezablokowanym kończy grę po pełnym rozliczeniu 
   state.players.find((p) => p.id === 'def').life = 3;
   assert.equal(execute(state, { type: 'declare_attackers', playerId: 'att', attackerIds: ['a-big'] }).ok, true);
   assert.equal(execute(state, { type: 'declare_blockers', playerId: 'def', assignments: {} }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'def' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const result = execute(state, { type: 'resolve_combat', playerId: 'att', defendingPlayerId: 'def' });
   assert.equal(result.ok, true, JSON.stringify(result.events));
   assert.equal(state.status, 'finished');
