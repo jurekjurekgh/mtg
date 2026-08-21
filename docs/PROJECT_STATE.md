@@ -4,6 +4,19 @@
 - **Poprzednia:** 2026-08-20 (M161: audyt PR #67 + gotowość madness na czary — routing po kind)
 
 
+## M170 — Incubator: transform jednorazowy (rozszerzenie C z M168, 2026-08-21, PR #68)
+
+Testy: `test/m170-incubator-transform-once.test.js` (4). Commit e394aa3.
+
+Owner odtworzył zgłoszenie C: zdolność „{2}: Transform" (bez {T}) była
+oferowana ponownie, gdy aktywacja czekała na stosie → drugi klik płacił
+podwójnie i robił transform→re-transform. Fix generyczny (po typie
+efektu): oferta chowa zdolność (transformActivationPending), wykonanie
+odrzuca PRZED płatnością (L48). Pojedyncza aktywacja działa poprawnie
+(Phyrexian 0/0 + 2 liczniki).
+
+**Stan:** `test:all` **2589/2589**, build **52 moduły / 2208.3 kB**.
+
 ## M169 — ostatnie uwagi właściciela J–N (2026-08-21, PR #68)
 
 Testy: `test/m169-uwagi-wlasciciela.test.js` (5, RED→GREEN). Commit f91da2c.
