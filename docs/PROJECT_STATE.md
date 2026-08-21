@@ -4,6 +4,32 @@
 - **Poprzednia:** 2026-08-20 (M161: audyt PR #67 + gotowość madness na czary — routing po kind)
 
 
+## M168 — uwagi właściciela z testów A–D + C2 (2026-08-21, PR #68)
+
+Testy: `test/m168-uwagi-wlasciciela.test.js` (9, RED→GREEN). Commit f28744b.
+
+- **A (Idyllic Grange):** land_played niosł entersTapped z deskryptora
+  zamiast WYNIKU warunku → log kłamał „wchodzi zatapiony". Emitowany
+  shouldEnterTapped.
+- **B (Gray Slaad i aktywne zmiany):** badge'e na kaflu póki efekt działa —
+  granted keywords (diff efektywnych vs wydrukowane; statyki warunkowe,
+  granty EOT, załączniki, anthemy — session.effectiveKeywordsOf),
+  „bez: X" (lostKeywordsUntilEOT), can't block/be blocked, modyfikatory P/T.
+- **C (Inkubator):** transform działa (owner potwierdził; testy regresyjne
+  w tym aktywacja w turze przeciwnika — Phyrexian 0/0 z licznikami).
+- **C2 (wizard many):** paymentDescriptorOf obsługuje activate_ability
+  (koszt z deskryptora zdolności; Incubator {2}, Compass {1}{T}, forecast);
+  bramka wariantów >=2 — jedyna droga płatności = bez wizarda; bez-many i
+  X poza kreatorem.
+- **D (Compass po craft):** NIE odtworzone w silniku — oferta jest w tej
+  samej fazie (test-guard D1; CR 302.6 artefakty bez choroby). Przyczyna
+  zgłoszenia: brak nietapniętej many (owner potwierdził).
+
+**Stan:** `test:all` **2580/2580**, build **52 moduły / 2202.1 kB**; CI
+success. Incident: 4. reset workspace w sesji (push odrzucony, commit
+7be4b93 na odbudowanej gałęzi) — odzyskano backup+reset+cherry-pick
+(konflikt session.js rozwiązany ręcznie).
+
 ## M167 cz. 2 — Kreator Talii: K1 (talie własne), K2 (szybkie landy) (2026-08-21, PR #68)
 
 Testy: `test/m167-uwagi-wlasciciela.test.js` (17 łącznie). Commity:
