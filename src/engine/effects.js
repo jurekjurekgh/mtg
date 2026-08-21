@@ -1012,6 +1012,34 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }));
     return;
   }
+  if (effect.type === 'damage_divided') {
+    // M166/D (Inferno Titan, LTC): „deals 3 damage divided as you choose
+    // among one, two, or three targets". Cele wybrane w decyzji multi-target
+    // (M157/F4a); jeden cel = całość, więcej celów = kwoty wybiera kontroler
+    // w JEDNEJ komendzie (pendingDamageDivision + resolve_damage_division —
+    // kompozycje total na N części po ≥1, przestrzeń: 3=[3]|[2,1]|[1,1,1]).
+    const total = effect.amount ?? 3;
+    const chosen = (targets ?? []).filter((id) => id != null);
+    if (chosen.length === 0) return;
+    if (chosen.length === 1) {
+      dealNonCombatDamage(state, sourceObject, chosen[0], total);
+      return;
+    }
+    state.pendingDamageDivision = {
+      playerId: sourceObject.controllerId,
+      sourceId: sourceObject.id,
+      cardId: sourceObject.cardId,
+      targetIds: Object.freeze([...chosen]),
+      total,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = sourceObject.controllerId;
+    state.events.push(event('damage_division_required', {
+      playerId: sourceObject.controllerId, sourceId: sourceObject.id,
+      cardId: sourceObject.cardId, targetIds: [...chosen], total,
+    }));
+    return;
+  }
   if (effect.type === 'opponents_lose_life_if_poison') {
     // M166/B (Feed the Infection, Corrupted — ONE): „Each opponent who has
     // three or more poison counters loses 3 life." Warunek rozstrzygany

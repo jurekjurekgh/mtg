@@ -73,6 +73,8 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_redirect_choice: 'Przekierowanie obrażeń',
   resolve_proliferate: 'Proliferate (licznik)',
   resolve_hand_top_choice: 'Karta z ręki na wierzch',
+  // M166/D (Inferno Titan).
+  resolve_damage_division: 'Podział obrażeń (kwoty)',
   resolve_land_type_choice: 'Wybór typu landa',
   resolve_pay_or_sacrifice: 'Zapłata albo poświęcenie',
   resolve_optional_pay_choice: 'Dobrowolna dopłata',
@@ -339,6 +341,7 @@ function choiceRequestGroupKey(command) {
   // M163/A (uwaga właściciela): decyzje wielowariantowe bez klucza renderują
   // się jako luźne przyciski z identycznymi etykietami (Exploit Butchera).
   if (command.type === 'resolve_exploit_choice') return 'resolve_exploit_choice';
+  if (command.type === 'resolve_damage_division') return 'resolve_damage_division';
   if (command.type === 'resolve_epic_choice') return 'resolve_epic_choice';
   if (command.type === 'resolve_optional_draw') return 'resolve_optional_draw';
   if (command.type === 'resolve_hand_top_choice') return 'resolve_hand_top_choice';
@@ -823,6 +826,8 @@ function describeEffect(e) {
     each_player_loses_life_fraction: () => 'każdy gracz traci część życia (zaokrąglone w górę)',
     // M166/B (Batch 40, Feed the Infection — Corrupted).
     opponents_lose_life_if_poison: () => 'każdy przeciwnik z licznikami poison traci życie',
+    // M166/D (Inferno Titan).
+    damage_divided: () => 'obrażenia dzielone między cele',
     becomes_subtype_until_end_of_turn: () => 'zmiana podtypu i utrata keyworda do końca tury',
     apply_to_each_target: () => 'ten sam efekt na każdym z celów',
     reveal_subtype_deal_damage: () => 'możesz ujawnić kartę z ręki — obrażenia przeciwnika',
@@ -1308,6 +1313,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_proliferate: 'Proliferate — cel licznika',
   resolve_discard_choice: 'Karta do odrzucenia',
   resolve_hand_top_choice: 'Karta z ręki na wierzch biblioteki',
+  resolve_damage_division: 'Podział obrażeń między cele',
   resolve_damage_target: 'Cel obrażeń',
   resolve_sacrifice_choice: 'Poświęcenie stwora',
   resolve_devour_choice: 'Devour — poświęcenie stwora',
@@ -1354,6 +1360,10 @@ function choiceSourceTitle(cmd, session, view) {
   // (karta publiczna na polu bitwy; pendingExploit w widoku tylko właściciela).
   if (cmd?.type === 'resolve_exploit_choice' && view?.pendingExploit?.sourceCardId) {
     return `${session.nameOf(view.pendingExploit.sourceCardId)} — Exploit (poświęć stwora)`;
+  }
+  // M166/D: Inferno Titan — tytuł grupy nazywa źródło i łączną kwotę.
+  if (cmd?.type === 'resolve_damage_division' && view?.pendingDamageDivision?.sourceCardId) {
+    return `${session.nameOf(view.pendingDamageDivision.sourceCardId)} — podziel ${view.pendingDamageDivision.total} obrażeń`;
   }
   if (!cmd || cmd.objectId == null) return null;
   const zones = ['hand', 'battlefield', 'stack', 'graveyard', 'library'];
@@ -2016,6 +2026,17 @@ export function commandLabel(cmd, session, view) {
       // identyczne wpisy. Ręka WYBIERAJĄCEGO jest dla niego jawna (FoW),
       // więc etykieta nazywa KARTĘ (wzorzec resolve_graveyard_top_choice).
       return `Karta z ręki na wierzch biblioteki: ${nameOfObjectId(cmd.cardId)}`;
+    }
+    case 'resolve_damage_division': {
+      // M166/D (Inferno Titan): kwoty podziału — etykieta nazywa KAŻDY cel
+      // z kwotą (kolejność = targetIds z pendingu w widoku właściciela).
+      const pending = view?.pendingDamageDivision;
+      const targetIds = pending?.targetIds ?? [];
+      const parts = (cmd.amounts ?? []).map((amount, index) => {
+        const targetId = targetIds[index] ?? null;
+        return targetId == null ? `${amount}` : `${nameOfObjectId(targetId)}: ${amount}`;
+      });
+      return parts.length > 0 ? `Podziel obrażenia — ${parts.join(', ')}` : 'Podział obrażeń';
     }
     case 'resolve_madness_cast': {
       // M159/F4 (audyt PR #66): oferta niesie objectId (karta w exile —

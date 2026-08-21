@@ -7412,6 +7412,39 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // 9. Inferno Titan (LTC) {4}{R}{R} 6/6 Giant — {R}: +1/+0 EOT; przy
+  //    wejściu i ataku: 3 obrażenia DZIELONE DOWOLNIE na 1-3 celów
+  //    (multi-target M157/F4a + NOWA decyzja kwot resolve_damage_division).
+  defineCard({
+    id: 'inferno-titan', name: 'Inferno Titan', set: 'LTC',
+    types: ['Creature'], subtypes: ['Giant'], colors: ['R'],
+    power: 6, toughness: 6, manaCost: 6,
+    oracleText: '{R}: This creature gets +1/+0 until end of turn.\nWhenever this creature enters or attacks, it deals 3 damage divided as you choose among one, two, or three targets.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/b/db61b57c-b870-41af-87b7-037ec52fe063.jpg?1783915930',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, colors: ['R'] },
+        effect: { type: 'pump', power: 1, toughness: 0 },
+      }),
+      // Jeden wiersz Oracle = dwa zdarzenia triggera (wejście + atak);
+      // behavior tożsamy z CR 603.2 (trigger „whenever enters or attacks").
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'any_target', count: 3, upTo: true } },
+        effect: { type: 'damage_divided', amount: 3 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks', requiresTarget: { type: 'any_target', count: 3, upTo: true } },
+        effect: { type: 'damage_divided', amount: 3 },
+      }),
+    ],
+    artId: null, plan: 'Śródziemie',
+    support: { status: 'supported', limitations: [] },
+    notes: ['podział obrażeń: cele (1-3) wybierane w decyzji multi-target, kwoty w JEDNEJ komendzie resolve_damage_division (kompozycje 3=[3]|[2,1]|[1,1,1])'],
+  }),
+
 ]);
 
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */

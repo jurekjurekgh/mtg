@@ -654,8 +654,18 @@ function applyTriggerEffects(state, ability, source, targets, context = {}) {
   const spec = ability?.trigger?.requiresTarget;
   const multi = Number.isInteger(spec?.count) && spec.count > 1;
   if (multi && targets.length > 0) {
+    // M166/D (Inferno Titan, ADR 0002): DWA różne wzorce wielocelowości:
+    // „on EACH of up to N target..." (Weftblade) = efekt RAZ NA CEL;
+    // „divided as you choose among one, two or three targets" (Titan)
+    // = JEDNO aplikowanie z CAŁĄ listą celów + decyzja kwot. Rozróżnienie
+    // po typie efektu (damage_divided), nie po nazwie karty.
+    const effects = toEffectList(ability);
+    if (effects.length === 1 && effects[0]?.type === 'damage_divided') {
+      applyEffect(state, effects[0], source, targets, context);
+      return state.events.slice(before);
+    }
     for (const targetId of targets) {
-      for (const effect of toEffectList(ability)) {
+      for (const effect of effects) {
         applyEffect(state, effect, source, [targetId], context);
       }
     }

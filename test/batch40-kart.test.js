@@ -291,3 +291,114 @@ test("C2: Sarkhan's Rage — 5 w cel; bez Smoka +2 w siebie, ze Smokiem nic", ()
   assert.equal(s2.players.find((pl) => pl.id === 'p2').life, life2 - 5,
     'kontrola Smoka = tylko 5 obrazen w cel (bez odbicia)');
 });
+
+// ---- Transza D: Inferno Titan — podział obrażeń -------------------------------
+
+/** Rzuca Inferno Titana (ETB otwiera multi-target + ewentualny podział kwot). */
+function castTitan(state) {
+  putCard(state, 'titan', 'inferno-titan', 'p1', 'hand');
+  addMana(state, 'p1', 6, { colors: ['R'] });
+  const cast = playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_permanent' && c.objectId === 'titan');
+  assert.ok(cast, 'oferta rzutu Titana');
+  assert.ok(execute(state, cast).ok);
+}
+
+test('D1: ETB z DWOMA celami — decyzja kwot (2+1), obrażenia według wyboru', () => {
+  const state = game('p1');
+  putCard(state, 'foe1', 'highland-game', 'p2', 'battlefield'); // 2/1
+  putCard(state, 'foe2', 'segmented-krotiq', 'p2', 'battlefield'); // 6/5
+  castTitan(state);
+  // 1) Multi-target (M157/F4a): wybieramy dwa cele w JEDNEJ komendzie.
+  let multi = null;
+  for (let i = 0; i < 12; i += 1) {
+    const pending = state.pendingTriggerTargets?.[0];
+    if (pending) { multi = pending; break; }
+    if (state.zones.stack.length > 0) {
+      assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
+      continue;
+    }
+    break;
+  }
+  assert.ok(multi, 'decyzja multi-target otwarta');
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetIds: ['foe1', 'foe2'] }).ok);
+  // 2) Trigger na stosie → rozstrzygnięcie → decyzja KWOT.
+  for (let i = 0; i < 12; i += 1) {
+    if (state.pendingDamageDivision) break;
+    if (state.zones.stack.length > 0) {
+      assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
+      continue;
+    }
+    break;
+  }
+  assert.ok(state.pendingDamageDivision, 'decyzja podziału kwot otwarta (2 cele)');
+  const view = playerView(state, 'p1');
+  const offers = view.legalCommands.filter((c) => c.type === 'resolve_damage_division');
+  assert.equal(offers.length, 2, 'kompozycje [1,2] i [2,1] — dokładnie dwie oferty');
+  const chosen = offers.find((c) => JSON.stringify(c.amounts) === JSON.stringify([2, 1]));
+  assert.ok(chosen, 'oferta 2+1 dostępna');
+  const done = execute(state, chosen);
+  assert.ok(done.ok, `podział zaakceptowany: ${done.events?.[0]?.reason}`);
+  // 2 obrażenia zabijają 2/1; 1 obrażenie na 6/5 zostaje.
+  assert.ok([...state.objects.values()].some((o) => o.cardId === 'highland-game' && o.zone === 'graveyard'), '2/1 zabite (2 obrażenia)');
+  const big = state.objects.get('foe2');
+  assert.equal(big.damage, 1, '6/5 otrzymało dokładnie 1');
+});
+
+test('D2: ETB z JEDNYM celem — całe 3 bez decyzji kwot', () => {
+  const state = game('p1');
+  putCard(state, 'foe1', 'segmented-krotiq', 'p2', 'battlefield'); // 6/5
+  castTitan(state);
+  for (let i = 0; i < 12; i += 1) {
+    const pending = state.pendingTriggerTargets?.[0];
+    if (pending) {
+      assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetIds: ['foe1'] }).ok);
+      continue;
+    }
+    if (state.pendingDamageDivision) break;
+    if (state.zones.stack.length > 0) {
+      assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
+      continue;
+    }
+    break;
+  }
+  assert.ok(!state.pendingDamageDivision, 'jeden cel = bez decyzji kwot (całe 3)');
+  assert.equal(state.objects.get('foe1').damage, 3, '3 obrażenia na jedyny cel');
+});
+
+test('D3: {R}: +1/+0 do końca tury (aktywowana, bez oncePerTurn)', () => {
+  const state = game('p1');
+  putCard(state, 'titan', 'inferno-titan', 'p1', 'battlefield');
+  addMana(state, 'p1', 2, { colors: ['R'] });
+  const activate = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'activate_ability' && c.objectId === 'titan');
+  assert.ok(activate, 'oferta {R}: +1/+0');
+  assert.ok(execute(state, activate).ok);
+  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  const titan = [...state.objects.values()].find((o) => o.cardId === 'inferno-titan' && o.zone === 'battlefield');
+  assert.equal(titan.powerModifier, 1, '+1/+0 do końca tury');
+});
+
+test('D4: trigger przy ATAKU — dzieli obrażenia (scenariusz walki)', () => {
+  const state = game('p1');
+  const titan = putCard(state, 'titan', 'inferno-titan', 'p1', 'battlefield');
+  state.objects.set('titan', Object.freeze({ ...titan, summoningSickness: false }));
+  putCard(state, 'foe1', 'highland-game', 'p2', 'battlefield');
+  putCard(state, 'foe2', 'highland-game', 'p2', 'battlefield');
+  state.turn = { ...state.turn, phase: 'combat', step: 'declare_attackers', activePlayerId: 'p1', priorityPlayerId: 'p1' };
+  assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['titan'] }).ok);
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetIds: ['foe1', 'foe2'] }).ok);
+  for (let i = 0; i < 12; i += 1) {
+    if (state.pendingDamageDivision) break;
+    if (state.zones.stack.length > 0) {
+      assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
+      continue;
+    }
+    break;
+  }
+  assert.ok(state.pendingDamageDivision, 'decyzja kwot po ataku');
+  const done = execute(state, { type: 'resolve_damage_division', playerId: 'p1', amounts: [2, 1] });
+  assert.ok(done.ok, 'podział po ataku zaakceptowany');
+  const dead = [...state.objects.values()].filter((o) => o.cardId === 'highland-game' && o.zone === 'graveyard');
+  assert.ok(dead.length >= 1, 'jeden 2/1 zabity (2 obrażenia z podziału)');
+});

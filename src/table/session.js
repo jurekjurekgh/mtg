@@ -940,6 +940,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         return `${whoN(e.playerId)} wykonuje Epic Experiment — wygnano ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki${exiled ? `: ${exiled}` : ''}`;
       }
       case 'epic_experiment_resolved': return `${whoN(e.playerId)} kończy Epic Experiment (${e.restToGrave} ${polishPlural(e.restToGrave, 'karta', 'karty', 'kart')} do grobu)`;
+      case 'damage_division_required': {
+        const names = (e.targetIds ?? []).map((id) => nameOfObject?.(id) ?? '?').join(', ');
+        return `${whoN(e.playerId)} dzieli ${e.total} obrażeń między: ${names}`;
+      }
+      case 'damage_division_resolved': {
+        const parts = (e.targetIds ?? []).map((id, i) => `${nameOfObject?.(id) ?? '?'}: ${e.amounts?.[i] ?? '?'}`);
+        return `${whoN(e.playerId)} dzieli obrażenia — ${parts.join(', ')}`;
+      }
       case 'initiative_taken': {
         const first = e.firstTime ? ' — obejmuje ją po raz pierwszy i zagłębia się w Podziemia' : '';
         return `${whoN(e.playerId)} obejmuje inicjatywę${first}`;
