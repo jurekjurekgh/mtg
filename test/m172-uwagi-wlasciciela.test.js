@@ -10,6 +10,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { processTriggers } from '../src/engine/triggers.js';
 import { describeGameEvent } from '../src/table/session.js';
+import { commandLabel } from '../src/table/render.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -167,5 +168,48 @@ test('B2b: utrata keyworda do EOT (Krotiq) jest w WIDOKU (badge „bez: defender
   const entry = playerView(state, 'p2').zones.battlefield.find((o) => o.id === 'krotiq');
   assert.ok((entry?.lostKeywordsUntilEOT ?? []).includes('defender'),
     'WIDOK niesie lostKeywordsUntilEOT (badge „bez: obrońca")');
+});
+
+// ---- D: kopie rozróżnialne na stole -----------------------------------------
+
+test('D1: token-kopia dostaje copyNumber (1, 2, ...) i widok go niesie', () => {
+  const state = game('p1');
+  // Cogwork Assembler + artefakt do skopiowania.
+  putCard(state, 'asm', 'cogwork-assembler', 'p1', 'battlefield', { summoningSickness: false });
+  putCard(state, 'art', 'brawlers-plate', 'p1', 'battlefield');
+  const copyOnce = () => {
+    addMana(state, 'p1', 7, { colors: [] });
+    const activate = playerView(state, 'p1').legalCommands
+      .find((c) => c.type === 'activate_ability' && c.objectId === 'asm' && c.targets?.[0] === 'art');
+    assert.ok(activate, 'oferta kopiowania artefaktu');
+    assert.ok(execute(state, activate).ok);
+    for (let i = 0; i < 12 && state.zones.stack.length > 0; i += 1) {
+      assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
+    }
+  };
+  copyOnce();
+  copyOnce();
+  const copies = [...state.objects.values()]
+    .filter((o) => o.isToken && o.zone === 'battlefield' && o.name === "Brawler's Plate")
+    .sort((a, b) => (a.copyNumber ?? 0) - (b.copyNumber ?? 0));
+  assert.equal(copies.length, 2, 'dwie kopie na stole');
+  assert.deepEqual(copies.map((o) => o.copyNumber), [1, 2], 'numery kopii 1 i 2');
+  const entries = playerView(state, 'p2').zones.battlefield.filter((o) => o.copyNumber);
+  assert.deepEqual(entries.map((o) => o.copyNumber).sort(), [1, 2], 'widok niesie copyNumber (publiczny)');
+});
+
+test('D2: etykieta celu nazywa kopię „Nazwa (kopia N)" (commandLabel)', () => {
+  const fakeView = {
+    playerId: 'p1',
+    players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }],
+    zones: {
+      hand: [], stack: [], graveyard: [], library: [], exile: [],
+      battlefield: [{ id: 't1', isToken: true, name: "Brawler's Plate", copyNumber: 1, controllerId: 'p2', zone: 'battlefield' }],
+    },
+  };
+  const fakeSession = { nameOf: (id) => id ?? '?', nameOfObject: () => '?', faceDownName: () => 'morph' };
+  const label = commandLabel({ type: 'cast_spell', objectId: 'x', targets: ['t1'] }, fakeSession, fakeView);
+  // Nazwa w etykiecie jest HTML-escapowana (apostrof -> &#39;).
+  assert.match(String(label), /Plate \(kopia 1\)/, `etykieta celu z numerem kopii: ${label}`);
 });
 

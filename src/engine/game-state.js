@@ -4040,6 +4040,9 @@ export function playerView(state, playerId) {
           // Przekazujemy nazwę, żeby kafle i cele pokazywały „Squirrel" zamiast
           // „token_squirrel".
           ...(object.isToken ? { name: object.name } : {}),
+          // M172/D: numer kopii (publiczny) — warstwy nazw dopisują
+          // „(kopia N)" przy celach, blokach i na kaflu.
+          ...(object.copyNumber ? { copyNumber: object.copyNumber } : {}),
           controllerId: object.controllerId, zone: object.zone,
           kind: object.kind,
           power: effectivePower(object, state), toughness: effectiveToughness(object, state),

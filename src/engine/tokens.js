@@ -26,7 +26,22 @@ export function createToken({ name = 'Token', kind = 'creature', power = 1, toug
  * land creature — walczy jako stwór, a dzięki types ['Land','Creature'] może
  * też być tapnięty na manę).
  */
-export function createBattlefieldToken(state, controllerId, { cardId, name, kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [], keywords = [], abilities = [], cantBlock = false, transformTo = null, station = null, saga = null, tapped = false }) {
+/**
+ * M172/D (uwaga właściciela): kolejny wolny numer kopii dla nazwy —
+ * token-kopia wyświetla się jako „Nazwa (kopia N)", żeby dało się ją
+ * odróżnić od oryginału przy wyborze celów i bloków. Numer po ŻYWYCH
+ * kopiach tej nazwy na polu bitwy (deterministycznie, ADR 0005).
+ */
+export function nextCopyNumber(state, name) {
+  let max = 0;
+  for (const id of state.zones.battlefield) {
+    const object = state.objects.get(id);
+    if (object?.copyNumber > 0 && object.name === name) max = Math.max(max, object.copyNumber);
+  }
+  return max + 1;
+}
+
+export function createBattlefieldToken(state, controllerId, { cardId, name, kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [], keywords = [], abilities = [], cantBlock = false, transformTo = null, station = null, saga = null, tapped = false, copyNumber = null }) {
   if (!state || !state.players.some((p) => p.id === controllerId)) throw new Error('Nieznany kontroler tokenu');
   if (!cardId || !name) throw new TypeError('Token wymaga cardId i nazwy');
   // Token niebędący stworem (np. Treasure — artefakt) nie ma statystyk:
@@ -53,6 +68,9 @@ export function createBattlefieldToken(state, controllerId, { cardId, name, kind
   });
   const token = Object.freeze({
     ...base, name, summoningSickness: true,
+    // M172/D: numer kopii (tylko tokeny-kopie) — warstwy nazw pokazują
+    // „Nazwa (kopia N)".
+    ...(copyNumber ? { copyNumber } : {}),
     // Static Net (BRO): „create a tapped Powerstone token\" — token WCHODZI
     // na pole bitwy zatapniętny (enters tapped), co nie jest „becomes tapped\"
     // (CR 701.21a — brak zdarzenia object_tapped jest poprawny). L24/C.

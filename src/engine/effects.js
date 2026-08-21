@@ -6,7 +6,7 @@ import { spendMana, addMana } from './resources.js';
 import { getSourceForObject } from './mana-sources.js';
 import { moveObjectDirectly, singleTargetOfStackEntry } from './objects.js';
 import { tryRegenerate } from './state-based.js';
-import { createBattlefieldToken } from './tokens.js';
+import { createBattlefieldToken, nextCopyNumber } from './tokens.js';
 
 import { effectiveProtectionFromColors } from './attachments.js';
 import { shuffle } from './shuffle.js';
@@ -806,8 +806,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // zostawał trwałym stworem, którego karta nigdy nim nie była.
     // `originalBeforeAnimation` trzyma stan sprzed animacji (permanents.js).
     const copyBase = src.originalBeforeAnimation ?? src;
+    // M172/D: kopia dostaje kolejny numer wśród żywych kopii tej nazwy —
+    // stół pokazuje „Nazwa (kopia N)" (rozróżnialne cele/bloki).
+    const copyName = src.cardName ?? src.cardId ?? 'Copy';
     const token = createBattlefieldToken(state, ctrl, {
-      cardId: src.cardId, name: src.cardName ?? src.cardId ?? 'Copy',
+      cardId: src.cardId, name: copyName,
+      copyNumber: nextCopyNumber(state, copyName),
       kind: (copyBase.kind ?? src.kind) === 'creature' ? 'creature' : 'artifact',
       power: copyBase.power ?? null, toughness: copyBase.toughness ?? null,
       colors: [...(src.colors ?? [])], types: [...(copyBase.types ?? src.types ?? [])],

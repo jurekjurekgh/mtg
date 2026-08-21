@@ -1593,7 +1593,10 @@ export function commandLabel(cmd, session, view) {
     // M155 (audyt żywym testerem): tokeny niosą jawną nazwę (object.name);
     // cardId `token_*` jest poza rejestrem, więc session.nameOf zwracałby
     // surowy id („token_squirrel").
-    const tokenName = object?.isToken ? (object.name ?? null) : null;
+    // M172/D: token-kopia z numerem — „Nazwa (kopia N)" w etykietach celów.
+    const tokenName = object?.isToken && object.name != null
+      ? (object.copyNumber ? `${object.name} (kopia ${object.copyNumber})` : object.name)
+      : null;
     const base = object
       ? (object.faceDown
         ? faceDownName(object.cardId != null ? session.nameOf(object.cardId) : null)
@@ -2315,7 +2318,8 @@ function cardInfo(session, object, combat = null) {
     // — własny z nazwą i znacznikiem (E12), wrogi bezimienny (FoW, CR 708.2).
     name: faceDown
       ? (ownFaceDown ? session.nameOf(object.cardId) : 'Face-down creature')
-      : (object.name || session.nameOf(cardId)),
+      // M172/D: kafel kopii pokazuje „Nazwa (kopia N)" — rozróżnialna od oryginału.
+      : (object.name ? (object.copyNumber ? `${object.name} (kopia ${object.copyNumber})` : object.name) : session.nameOf(cardId)),
     // M127 (uwaga A): znacznik z jednego źródła — „zakryty (Morph)" dla
     // własnego permanentu, sama nazwa mechaniki dla cudzego (FoW).
     morphBadge: faceDown ? (ownFaceDown ? `zakryty (${FACE_DOWN_LABEL})` : FACE_DOWN_LABEL) : null,

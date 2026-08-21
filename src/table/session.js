@@ -1436,7 +1436,10 @@ export function createSession(config) {
     // M155 (audyt żywym testerem): tokeny niosą JAWNĄ nazwę w `object.name`
     // (cardId `token_*` poza rejestrem → nameOf zwracałby „token_squirrel").
     // Nazwa tokenu z pola obiektu, nie z mapy rejestru kart.
-    if (object.isToken && object.name != null) return object.name;
+    if (object.isToken && object.name != null) {
+      // M172/D: token-kopia z numerem — „Nazwa (kopia N)".
+      return object.copyNumber ? `${object.name} (kopia ${object.copyNumber})` : object.name;
+    }
     return nameOf(object.cardId);
   }
 
