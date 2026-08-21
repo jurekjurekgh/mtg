@@ -38,12 +38,12 @@
 
 ## Etapy (każdy zielony: test:all + build)
 
-- [ ] **1. T-engine:** G (tracker land_played), H (artId 314).
-- [ ] **2. T-bot:** A, B, D, F, I + benchmark regresji (test:all zawiera
+- [x] **1. T-engine (566eac1):** G (tracker land_played), H (artId 314).
+- [x] **2. T-bot (566eac1):** A, B, D, F, I + benchmark regresji (test:all zawiera
   próbkę; progi pilnują regresji).
-- [ ] **3. T-UI:** E (nagłówki faz), C (klikalne karty w modaliach
+- [x] **3. T-UI (f9b734a):** E (nagłówki faz), C (klikalne karty w modaliach
   scry/surveil/look), E2 (klikalne nazwy w logu).
-- [ ] **4.** Dokumentacja (PROJECT_STATE, handoff, opis PR).
+- [x] **4.** Dokumentacja (PROJECT_STATE, handoff, opis PR).
 
 ## Ryzyka
 
@@ -55,3 +55,16 @@
   render HTML od tekstu AI.
 - B: adnotacja oferty w engine (jak cmd.friendly z M150) — generycznie
   po deskryptorze efektu, nie po nazwie karty.
+
+## Podsumowanie wykonania
+
+- T-engine + T-bot (566eac1): G (tracker landfall liczy land_played —
+  root cause wszystkich martwych warunków landfall), H (artId 314),
+  A (buff na współatakującego +25), B (selfMill w ofercie + wyścig
+  bibliotek), D (add_mana-only kara, rider życia wolny — Z10),
+  F (kara fog -300), I (gang top-2 blockerów).
+- T-UI (f9b734a): E (nagłówki faz przy zmianie fazy), C (klikalne karty
+  w wizardzie), E2 (klikalne nazwy w logu, delegacja, czysty tekst AI).
+- Stan: test:all 2567/2567, build 52 moduły / 2189.0 kB. Push z audytem
+  ls-remote (nauczka: 566eac1 początkowo nie wszedł — ciche odrzucenie
+  pusha; właściciel zauważył na GitHubie).

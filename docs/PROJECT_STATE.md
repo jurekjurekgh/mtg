@@ -3,7 +3,35 @@
 - **Ostatnia aktualizacja:** 2026-08-20 (M162: uwagi właściciela A/B/C — talie „Zapisz jako...", Bell bota, modal Ratsów)
 - **Poprzednia:** 2026-08-20 (M161: audyt PR #67 + gotowość madness na czary — routing po kind)
 
-## M166 — Batch 40: 10 kart (lista właściciela 2026-08-20, PR #68) — W TOKU, 8/10
+
+## M167 — uwagi właściciela z testów A–I (2026-08-21, PR #68)
+
+Plan: `docs/plans/PLAN_2026-08-21-m167-uwagi-wlasciciela-a-i.md`.
+Testy: `test/m167-uwagi-wlasciciela.test.js` (13, RED→GREEN). Commity:
+566eac1 (engine+boty), f9b734a (UI).
+
+- **G (root cause):** tracker landfall skanował tylko
+  permanent_entered_battlefield; play_land emituje WYŁĄCZNIE land_played
+  → landEnteredThisTurn puste po zwykłym zagranieniu lądu (martwe
+  WSZYSTKIE warunki landfall, nie tylko Mysteries of the Deep).
+- **A:** przyjazny cel triggera +25 gdy ATAKUJE (Voice of the Vermin
+  buffuje współatakującego). **B:** oferta opcjonalnego triggera niesie
+  selfMill; wycena wyścigu bibliotek (Circle of the Land Druid).
+  **D:** zdolność add_mana-only bez niczego zagrawalnego = kara
+  (Apprentice Wizard; rider życia wolny — Z10). **F:** fog we własnej
+  turze -300 (remis ze scry wybierał czar). **I:** gang top-2 blockerów
+  — atakujący ginący bez wymiany karany (2/4 w 1/3+3/3).
+- **H:** Revolutionist artId 314 (słownik kolekcji 314MH2); strażnik
+  307→308.
+- **E:** nagłówki FAZ wracają do logu (raz na zmianę fazy — kompromis
+  po wyciszeniu M151). **C:** karty w wizardzie scry/surveil klikalne
+  (pełnoekranowa ilustracja). **E2:** nazwy kart w logu klikalne
+  (span.log-card + delegacja; tekst AI bez znaczników).
+
+**Stan:** `node tools/run-tests.mjs all` = **2567/2567**, build
+**52 moduły / 2189.0 kB**; progi benchmarku bez regresji.
+
+## M166 (skrót) — Batch 40 KOMPLET 10/10## M166 — Batch 40: 10 kart (lista właściciela 2026-08-20, PR #68) — KOMPLET (dokończony w transzach D-E)
 
 Plan: `docs/plans/PLAN_2026-08-20-m166-batch-40-kart.md` (kontynuacja:
 transze D-E). Testy: `test/batch40-kart.test.js` (9, RED→GREEN).
