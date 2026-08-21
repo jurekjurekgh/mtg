@@ -1,7 +1,38 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-21 (M171: audyt PR #68 + N1 Adamant/wielokolorowe + pętla jakości Z1–Z5)
-- **Poprzednia:** 2026-08-20 (M162: uwagi właściciela A/B/C — talie „Zapisz jako...", Bell bota, modal Ratsów)
+- **Ostatnia aktualizacja:** 2026-08-21 (M172: uwagi właściciela A–F — panel Gracz/Bot, okno po blokach CR 509.4, rozdziały Sagi, badge, kopie, wizard podziału obrażeń)
+- **Poprzednia:** 2026-08-21 (M171: audyt PR #68 + N1 Adamant/wielokolorowe + pętla jakości Z1–Z6)
+
+
+## M172 — uwagi właściciela z testów A–F (2026-08-21, PR #69)
+
+Plan: `docs/plans/PLAN_2026-08-21-m172-uwagi-wlasciciela-a-d.md`.
+Testy: `test/m172-uwagi-wlasciciela.test.js` (11, RED→GREEN).
+
+- **A (8b9d81e):** panel górny + baner końca gry — „Gracz"/„Bot" zamiast
+  „Ty"/„On" (zakres zawężony przez właściciela do panelu; log bez zmian).
+- **C+F (4d7037d):** okno odpowiedzi po deklaracji bloków (CR 509.4) —
+  root cause: declare_blockers dawał priorytet atakującemu, który od razu
+  brał resolve_combat (Dawntreader Elk bez okna). Teraz priorytet po
+  blokach dla OBROŃCY, po jego passie dla atakującego (F); pass nie
+  domyka rundy (combat_unresolved); oferta = walidacja (L48). ~30 plików
+  testów w przepływie CR.
+- **B+B2 (609b1d6):** rozdziały Sagi nazywają się tytułami z Oracle
+  (saga.chapterNames; „Shiva… — Mesmerize: nie może być blokowany (cel)");
+  fix L47 (identity.js gubił chapterNames). Widok battlefield niesie
+  cantBlock/cantBeBlocked/lostKeywordsUntilEOT — badge'e m168 liczyły
+  z pól, których playerView nie wysyłał (klasa L1/ADR 0017).
+- **D (bf3a481):** token-kopia „Nazwa (kopia N)" — copyNumber w silniku
+  (nextCopyNumber po żywych kopiach), widok publiczny, kafel + etykiety
+  celów + log.
+- **E (30ec7db):** wizard podziału obrażeń multi-target (Inferno Titan) —
+  kandydaci ze stepperami, suma = total, cele = kwota > 0 („among one,
+  two, or three targets"); skleja resolve_trigger_target +
+  resolve_damage_division (announce Z6); panel bez „(33 opcje)"; tester
+  obsługuje wizard (L12).
+
+**Stan:** `test:all` **2613/2613**, build **52 moduły / 2226.0 kB**,
+benchmark regresji bota 9/9 (nowy przepływ walki).
 
 
 ## M171 — audyt PR #68 + pętla jakości (2026-08-21, PR #69)

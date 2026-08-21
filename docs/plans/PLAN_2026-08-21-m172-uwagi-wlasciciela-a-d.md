@@ -47,20 +47,28 @@
 
 ## Etapy (osobne, samodzielnie zielone commity)
 
-- [ ] Etap 0: plan (ten plik) + push.
+- [x] Etap 0: plan (79dcadf).
 - [x] Etap A: panel górny + baner końca gry — Gracz/Bot (log bez zmian);
       testy table-ui zaktualizowane.
-- [ ] Etap C: okno priorytetu obrońcy po blokach (CR 509.4) + testy
-      RED→GREEN (Dawntreader Elk aktywowalny po deklaracji bloku);
-      benchmark regresji bota po zmianie przepływu walki.
-- [ ] Etap B+B2: etykiety rozdziałów Sagi w decyzji celu + badge
-      z pól `cantBeBlocked`/`cantBlock` w widoku; testy RED→GREEN.
-- [ ] Etap D: numeracja kopii (`copyNumber` w silniku, „(kopia N)"
-      w warstwach nazw); testy RED→GREEN.
-- [ ] Etap E: modal przydziału obrażeń multi-target (steppery, suma=total),
-      panel bez enumeracji kombinacji; testy UI.
-- [ ] Zamknięcie: `test:all` + build, dokumentacja (PROJECT_STATE,
-      handoff, opis PR).
+- [x] Etap C+F: okno odpowiedzi po blokach (CR 509.4) — priorytet dla
+      obrońcy, potem atakującego; pass nie domyka rundy; oferta=walidacja
+      (L48). Testy C1–C3 RED→GREEN; ~30 plików testów w przepływie CR;
+      benchmark 9/9; żywa partia bez STOP (4d7037d).
+- [x] Etap B+B2: saga.chapterNames (Mesmerize/Cold Snap) w danych,
+      pending/zdarzenie/modal/log nazywają rozdział; fix L47 w identity.js
+      (saga gubiła chapterNames); widok battlefield niesie cantBlock/
+      cantBeBlocked/lostKeywordsUntilEOT (klasa L1/ADR 0017 — badge'e
+      m168 liczyły z pól, których widok nie wysyłał). Testy B1/B2/B2b
+      (609b1d6).
+- [x] Etap D: copyNumber (nextCopyNumber po żywych kopiach nazwy);
+      widok + kafel + etykiety celów + log „Nazwa (kopia N)". Testy D1/D2
+      (bf3a481).
+- [x] Etap E: renderDamageDivisionWizard (steppery, suma=total, cele =
+      kwota>0, maks. 3), main skleja resolve_trigger_target +
+      resolve_damage_division; panel „X — podziel N obrażenia między cele";
+      tester obsługuje wizard (L12). Testy E1–E3 (30ec7db).
+- [x] Zamknięcie: `test:all` 2613/2613, build 52 moduły / 2226.0 kB,
+      dokumentacja + opis PR.
 
 ## Ryzyka / pułapki
 
@@ -73,4 +81,9 @@
 
 ## Podsumowanie wykonania
 
-(uzupełniane na końcu zadania)
+Wszystkie zgłoszenia właściciela (A, B, B2, C, D, E, F) wdrożone w 6
+commitach (8b9d81e, 4d7037d, 609b1d6, bf3a481, 30ec7db + plan 79dcadf).
+Nowe testy: `test/m172-uwagi-wlasciciela.test.js` (11) + aktualizacje
+table-ui i ~30 plików walki do przepływu CR 509.4. Stan końcowy:
+`test:all` **2613/2613**, build **52 moduły / 2226.0 kB**, benchmark
+regresji bota 9/9, żywe partie bez STOP i zgłoszeń detektorów.
