@@ -29,7 +29,17 @@ Dane Scryfall ×10 (ADR 0010 §2a, printy wg setów właściciela).
 - **Pozostały D (Inferno Titan — decyzja podziału obrażeń „as you
   choose") i E (Cenn's Tactician — statyka bloku dodatkowego).**
 
-**Stan:** `npm test` **2538/2538** (fast), build **52 moduły / 2166.6 kB**.
+**Stan po fixie CI (16b5104):** `node tools/run-tests.mjs all` =
+**2547/2547** (fast+slow, dokładnie jak CI; CI: success). Incydent:
+3 commity (9fb54af…c335f29) miały czerwone CI — bot-benchmark padał
+„illegal_ability:Reinforce aktywuje się z ręki" (oferta zdolności
+z POLA BITWY nie pomijała reinforce — klasa L48; fast tier lokalnie
+zielony, bo benchmark jest w slow). Nauczka: zmiany zdolności z ręki =
+test:all przed pushem. Przy okazji: drugi reset workspace w sesji
+(ENVIRONMENT §2) — odzyskano backup-gałązką + reset + cherry-pick.
+
+**Pozostały D (Inferno Titan — decyzja podziału obrażeń „as you
+  choose") i E (Cenn's Tactician — statyka bloku dodatkowego).**
 
 ## M164 — etap Sagi jako badge tekstowy (2026-08-20, PR #68)
 
