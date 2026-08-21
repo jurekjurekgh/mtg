@@ -206,6 +206,17 @@ export function declareBlockers(state, playerId, assignments) {
     if (hasKeyword(state, attacker, 'flying') && ids.some(cantBlockFlyer)) {
       throw new Error('Atakującego z lataniem blokują tylko stwory z lataniem lub zasięgiem');
     }
+    // Intimidate (CR 702.13, M174/D): blokować mogą wyłącznie artefaktowe
+    // stwory i/lub stwory dzielące kolor z atakującym (walidacja = canBlock).
+    if (hasKeyword(state, attacker, 'intimidate')) {
+      for (const blocker of ids) {
+        const blockerIsArtifact = (blocker.types ?? []).includes('Artifact');
+        const sharesColor = (blocker.colors ?? []).some((c) => (attacker.colors ?? []).includes(c));
+        if (!blockerIsArtifact && !sharesColor) {
+          throw new Error('Intimidate: blokują tylko artefaktowe stwory albo stwory o wspólnym kolorze');
+        }
+      }
+    }
     // Menace (CR 702.110): atakującego z menace nie może blokować pojedynczy
     // stwór — tylko dwóch lub więcej (albo nikt).
     if (hasKeyword(state, attacker, 'menace') && ids.length === 1) {
@@ -836,6 +847,14 @@ function canBlock(state, attacker, blocker) {
   const landwalkSub = attackerLandwalkSubtype(state, attacker);
   if (landwalkSub && controlsLandWithSubtype(state, blocker.controllerId, landwalkSub)) return false;
   if (attacker.cantBeBlocked) return false;
+  // Intimidate (CR 702.13, M174/D — Predator's Gambit): atakujący może być
+  // blokowany wyłącznie przez ARTEFAKTOWE stwory i/lub stwory dzielące
+  // z nim kolor.
+  if (hasKeyword(state, attacker, 'intimidate')) {
+    const blockerIsArtifact = (blocker.types ?? []).includes('Artifact');
+    const sharesColor = (blocker.colors ?? []).some((c) => (attacker.colors ?? []).includes(c));
+    if (!blockerIsArtifact && !sharesColor) return false;
+  }
   if (hasKeyword(state, attacker, 'flying') && !hasKeyword(state, blocker, 'flying') && !hasKeyword(state, blocker, 'reach')) return false;
   // Protection (CR 702.16a): atakujący z ochroną przed kolorem NIE MOŻE
   // być blokowany przez stwory tego koloru. Sprawdzamy ochronę ATAKUJĄCEGO

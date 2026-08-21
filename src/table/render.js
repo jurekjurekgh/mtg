@@ -650,6 +650,7 @@ const ABILITY_KEYWORD_LABELS = Object.freeze({
 });
 
 const KEYWORD_LABELS = Object.freeze({
+  intimidate: 'zastraszenie (blok: artefakty/wspólny kolor)',
   flying: 'Latanie', vigilance: 'Czujność', transform: 'Transform', reach: 'Zasięg',
   haste: 'Pośpiech', menace: 'Postrach', lifelink: 'Dotykanie życia', deathtouch: 'Dotykanie śmierci',
   trample: 'Zadeptywanie', first_strike: 'Pierwsze uderzenie', hexproof: 'Hexproof (niecelowalność)',
@@ -1277,6 +1278,15 @@ export function rulesText(info) {
       // słowo nie padało ani razu. Ten sam bug co M100/E10 (pusty opis aury),
       // tylko dla przeciwnego znaku efektu.
       (aura.losesKeywords ?? []).length ? `stwór traci: ${aura.losesKeywords.map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : '',
+      // M174/D (Predator's Gambit): warunkowe keywordy aury — opis warunku
+      // po deskryptorze (dziś: brak innych stworów kontrolera).
+      ...(aura.conditionalKeywords ?? []).map((ck) => {
+        const kws = (ck.keywords ?? []).map((k) => KEYWORD_LABELS[k] ?? k).join(', ');
+        const cond = ck.condition?.controlsNoOtherCreatures ? 'gdy kontroler nie ma innych stworów'
+          : ck.condition?.activePlayerIsController === true ? 'w turze kontrolera'
+          : ck.condition?.activePlayerIsController === false ? 'poza turą kontrolera' : 'warunkowo';
+        return `${kws} (${cond})`;
+      }),
       // M138 (znalezisko #11, złapane już przez NOWY detektor w audycie
       // kontrolnym): pozostałe deskryptory aury też są treścią karty. Moonlit
       // Meditation miała kafel „Enchantment — Aura” i nic więcej, mimo że

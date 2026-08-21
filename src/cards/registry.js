@@ -178,6 +178,12 @@ export function defineCard(data) {
         ? { replaceTokenCreation: Object.freeze({ ...data.aura.replaceTokenCreation }) }
         : {}),
       ...(data.aura.keepOwnAttachmentsOnProtection ? { keepOwnAttachmentsOnProtection: true } : {}),
+      // M174/D (Predator's Gambit, klasa L47): warunkowe keywordy aury —
+      // ta sama zdolność co equipment (Hunter's Blowgun), gubiona przy
+      // ręcznym przepisywaniu deskryptora.
+      ...(data.aura.conditionalKeywords?.length
+        ? { conditionalKeywords: Object.freeze(data.aura.conditionalKeywords.map((ck) => Object.freeze({ condition: Object.freeze({ ...ck.condition }), keywords: Object.freeze([...ck.keywords]) }))) }
+        : {}),
     }) : null,
     // Equipment (CR 702.6): { equip: koszt, pump, keywords } — załączony daje
     // nosicielowi pump/keywordy (Cloak of the Bat: flying, haste; equip {2}).

@@ -7,6 +7,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
+import { effectivePower, effectiveToughness, effectiveKeywords } from '../src/engine/permanents.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -285,5 +286,120 @@ test('B3 (L4/L48): Skullcairn bez drugiego czarnego źródła — brak oferty i 
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'cairn', abilityIndex: 0, targets: ['p2'] });
   assert.equal(r.ok, false, 'komenda odrzucona');
   assert.equal(state.objects.get('cairn').tapped, false, 'ląd NIE został tapnięty przy odrzuceniu');
+});
+
+// ---- Transza D: triggery bojowe + intimidate ---------------------------------
+
+test('D1: Burning-Yard Trainer — ETB buffuje INNEGO Rycerza (+2/+2, trample+haste EOT)', () => {
+  const state = game('p1');
+  putCard(state, 'knight', 'locthwain-paladin', 'p1', 'battlefield'); // Human Knight
+  putCard(state, 'elk', 'highland-game', 'p1', 'battlefield'); // nie-Knight
+  putCard(state, 'trainer', 'burning-yard-trainer', 'p1', 'hand');
+  addMana(state, 'p1', 5, { colors: ['R'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'trainer');
+  assert.ok(cast, 'oferta rzutu');
+  assert.ok(execute(state, cast).ok);
+  for (let i = 0; i < 12 && !state.pendingTriggerTargets?.[0]; i += 1) {
+    if (state.zones.stack.length > 0) {
+      assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
+    } else break;
+  }
+  const pending = state.pendingTriggerTargets?.[0];
+  assert.ok(pending, 'decyzja celu triggera');
+  assert.deepEqual(pending.candidates, ['knight'], 'kandydat TYLKO inny Rycerz (nie Elk, nie sam Trainer)');
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'knight' }).ok);
+  assert.ok(resolveStack(state));
+  const knight = state.objects.get('knight');
+  // Buff „until end of turn" żyje w warstwie EOT — czytamy wartości efektywne.
+  assert.equal(effectivePower(knight, state), 5, 'Paladyn 3/2 z +2/+2 = 5 mocy');
+  assert.equal(effectiveToughness(knight, state), 4, '…i 4 wytrzymałości');
+  const kws = effectiveKeywords(knight, state);
+  assert.ok(kws.includes('trample') && kws.includes('haste'), 'grant trample+haste');
+});
+
+test('D2: Downwind Ambusher — modal ETB: tryb destroy TYLKO dla rannego stwora wroga', () => {
+  const state = game('p1');
+  const hurt = putCard(state, 'hurt', 'segmented-krotiq', 'p2', 'battlefield');
+  state.objects.set('hurt', Object.freeze({ ...hurt, damagedThisTurn: true, damage: 2 }));
+  putCard(state, 'fresh', 'highland-game', 'p2', 'battlefield');
+  putCard(state, 'skunk', 'downwind-ambusher', 'p1', 'hand');
+  addMana(state, 'p1', 4, { colors: ['B'] });
+  assert.ok(execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'skunk')).ok);
+  for (let i = 0; i < 12 && !state.pendingModalTrigger; i += 1) {
+    if (state.zones.stack.length > 0) {
+      assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
+    } else break;
+  }
+  assert.ok(state.pendingModalTrigger, 'modalna decyzja ETB');
+  const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_modal_choice');
+  const destroyOffers = offers.filter((c) => c.modeIndex === 1);
+  assert.deepEqual(destroyOffers.map((c) => c.targetId), ['hurt'],
+    'tryb destroy tylko na RANIONEGO stwora wroga');
+  assert.ok(execute(state, { type: 'resolve_modal_choice', playerId: 'p1', modeIndex: 1, targetId: 'hurt' }).ok);
+  assert.notEqual(state.objects.get('hurt')?.zone, 'battlefield', 'ranny stwór zniszczony');
+});
+
+test('D2b: Downwind Ambusher — tryb −1/−1 dobija 1/1 wroga (SBA)', () => {
+  const state = game('p1');
+  putCard(state, 'small', 'mosquito-guard', 'p2', 'battlefield'); // 1/1
+  putCard(state, 'skunk', 'downwind-ambusher', 'p1', 'hand');
+  addMana(state, 'p1', 4, { colors: ['B'] });
+  assert.ok(execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'skunk')).ok);
+  for (let i = 0; i < 12 && !state.pendingModalTrigger; i += 1) {
+    if (state.zones.stack.length > 0) {
+      assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
+    } else break;
+  }
+  assert.ok(execute(state, { type: 'resolve_modal_choice', playerId: 'p1', modeIndex: 0, targetId: 'small' }).ok);
+  assert.notEqual(state.objects.get('small')?.zone, 'battlefield', '1/1 z −1/−1 ginie (SBA)');
+});
+
+test("D3: Predator's Gambit — +2/+1 i intimidate TYLKO bez innych stworów (CR 702.13)", () => {
+  const state = game('p1');
+  putCard(state, 'host', 'highland-game', 'p1', 'battlefield', { summoningSickness: false }); // G 2/2
+  putCard(state, 'aura', 'predators-gambit', 'p1', 'hand');
+  addMana(state, 'p1', 1, { colors: ['B'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => (c.type === 'cast_permanent' || c.type === 'cast_spell') && c.objectId === 'aura' && c.targets?.[0] === 'host');
+  assert.ok(cast, 'rzut aury na stwora');
+  assert.ok(execute(state, cast).ok);
+  assert.ok(resolveStack(state));
+  const host = state.objects.get('host');
+  // highland-game to 2/1 — z aurą +2/+1 daje 4/2.
+  assert.equal(effectivePower(host, state), 4, '+2 mocy');
+  assert.equal(effectiveToughness(host, state), 2, '+1 wytrzymałości');
+  assert.ok(effectiveKeywords(host, state).includes('intimidate'), 'intimidate przy braku innych stworów');
+  // Drugi stwór kontrolera → intimidate ZNIKA (warunek ciągły).
+  putCard(state, 'buddy', 'highland-game', 'p1', 'battlefield');
+  assert.ok(!effectiveKeywords(state.objects.get('host'), state).includes('intimidate'),
+    'intimidate wygasa przy innym stworze');
+});
+
+test('D3b: intimidate w walce — blokuje tylko artefaktowy stwór albo wspólny kolor', () => {
+  const state = game('p1');
+  // Atakujący: zielony stwór z aurą (intimidate aktywny — jedyny stwór p1).
+  putCard(state, 'host', 'highland-game', 'p1', 'battlefield', { summoningSickness: false });
+  putCard(state, 'aura', 'predators-gambit', 'p1', 'hand');
+  addMana(state, 'p1', 1, { colors: ['B'] });
+  assert.ok(execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => (c.type === 'cast_permanent' || c.type === 'cast_spell') && c.objectId === 'aura' && c.targets?.[0] === 'host')).ok);
+  assert.ok(resolveStack(state));
+  // Obrońca p2: biały stwór (bez koloru wspólnego), zielony stwór, artefaktowy stwór.
+  putCard(state, 'white', 'mosquito-guard', 'p2', 'battlefield', { summoningSickness: false }); // W
+  putCard(state, 'green', 'highland-game', 'p2', 'battlefield', { summoningSickness: false }); // G (wspólny)
+  addObject(state, {
+    id: 'artcrt', instanceId: 'i-artcrt', cardId: 'x-artcrt', controllerId: 'p2', ownerId: 'p2',
+    zone: 'battlefield', kind: 'creature', power: 1, toughness: 1, manaCost: 1,
+    types: ['Artifact', 'Creature'], subtypes: [], colors: [], abilities: [], summoningSickness: false,
+  });
+  state.turn = { ...state.turn, phase: 'combat', step: 'declare_attackers', activePlayerId: 'p1', priorityPlayerId: 'p1' };
+  assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['host'] }).ok);
+  const badBlock = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { host: ['white'] } });
+  assert.equal(badBlock.ok, false, 'biały stwór bez wspólnego koloru NIE blokuje (intimidate)');
+  const greenBlock = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { host: ['green'] } });
+  assert.ok(greenBlock.ok, 'stwór o wspólnym kolorze blokuje');
 });
 

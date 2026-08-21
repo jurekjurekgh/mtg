@@ -325,4 +325,7 @@ export const MANA_COSTS = {
   "horizon-spellbomb": "{1}",
   "toll-of-the-invasion": "{2}{B}",
   "terminal-agony": "{2}{B}{R}",
+  "burning-yard-trainer": "{4}{R}",
+  "downwind-ambusher": "{3}{B}",
+  "predators-gambit": "{B}",
 };

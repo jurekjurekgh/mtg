@@ -127,6 +127,10 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
         ? { replaceTokenCreation: Object.freeze({ ...aura.replaceTokenCreation }) }
         : {}),
       ...(aura.keepOwnAttachmentsOnProtection ? { keepOwnAttachmentsOnProtection: true } : {}),
+      // M174/D (klasa L47): warunkowe keywordy aury (Predator's Gambit).
+      ...(aura.conditionalKeywords?.length
+        ? { conditionalKeywords: Object.freeze(aura.conditionalKeywords.map((ck) => Object.freeze({ condition: Object.freeze({ ...ck.condition }), keywords: Object.freeze([...ck.keywords]) }))) }
+        : {}),
     }) : null,
     // Equipment (CR 301.5/702.6): permanent-artefakt ze zdolnością equip;
     // załączony daje zaczarowanemu nosicielowi pump/keywordy, a po utracie

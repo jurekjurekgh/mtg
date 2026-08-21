@@ -7628,6 +7628,87 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['madness: odrzucenie trafia do exile z decyzją rzutu za {B}{R} (timing ignorowany — CR 702.34e, także sorcery poza main fazą); cel wybierany przy rzucie'],
   }),
 
+// ---- Batch 41 — transza D: triggery bojowe + intimidate ----
+
+  // 7. Burning-Yard Trainer (ELD) {4}{R} 3/3 Human Knight — trample+haste;
+  //    ETB: INNY celowany Rycerz pod twoją kontrolą +2/+2 + trample+haste
+  //    do końca tury (spec creature_you_control + notSelf + subtype — M154).
+  defineCard({
+    id: 'burning-yard-trainer', name: 'Burning-Yard Trainer', set: 'ELD',
+    types: ['Creature'], subtypes: ['Human', 'Knight'], colors: ['R'],
+    keywords: ['trample', 'haste'], power: 3, toughness: 3, manaCost: 5,
+    oracleText: 'Trample, haste\nWhen this creature enters, another target Knight you control gets +2/+2 and gains trample and haste until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/7/17755d1b-3a56-4362-a534-85b35ceb1802.jpg?1783932628',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          requiresTarget: { type: 'creature_you_control', notSelf: true, subtype: 'Knight' },
+        },
+        effect: [
+          { type: 'buff_creature_until_end_of_turn', power: 2, toughness: 2 },
+          { type: 'grant_keywords_until_end_of_turn', keywords: ['trample', 'haste'] },
+        ],
+      }),
+    ],
+    artId: 209, plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Downwind Ambusher (BLB) {3}{B} 4/2 Skunk Assassin — Flash; ETB modal:
+  //    −1/−1 na stworze wroga ALBO destroy stwora wroga ranionego w tej turze
+  //    (modal trigger z celami per tryb — wzorzec Inspiring Bard).
+  defineCard({
+    id: 'downwind-ambusher', name: 'Downwind Ambusher', set: 'BLB',
+    types: ['Creature'], subtypes: ['Skunk', 'Assassin'], colors: ['B'],
+    keywords: ['flash'], power: 4, toughness: 2, manaCost: 4,
+    oracleText: 'Flash\nWhen this creature enters, choose one —\n\u2022 Target creature an opponent controls gets -1/-1 until end of turn.\n\u2022 Destroy target creature an opponent controls that was dealt damage this turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/5/55cfd628-933a-4d3d-b2e5-70bc86960d1c.jpg?1783910835',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          modes: [
+            {
+              name: 'Osłabienie',
+              targets: [{ type: 'creature_opponent_controls' }],
+              effects: [{ type: 'buff_creature_until_end_of_turn', power: -1, toughness: -1 }],
+            },
+            {
+              name: 'Dobicie rannego',
+              targets: [{ type: 'creature_opponent_damaged_this_turn' }],
+              effects: [{ type: 'destroy_permanent' }],
+            },
+          ],
+        },
+        effect: [],
+      }),
+    ],
+    artId: 451, plan: 'Bloomburrow',
+    support: { status: 'supported', limitations: [] },
+    notes: ['tryb bez legalnego celu nie jest oferowany (jak modalny czar \u201echoose one\u201d)'],
+  }),
+
+  // 9. Predator\'s Gambit (AVR) {B} Aura — +2/+1; intimidate PÓKI kontroler
+  //    nie ma innych stworów (conditionalKeywords — wzorzec Hunter\'s
+  //    Blowgun; intimidate w canBlock: artefakty/wspólny kolor, CR 702.13).
+  defineCard({
+    id: 'predators-gambit', name: "Predator's Gambit", set: 'AVR',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['B'], manaCost: 1,
+    oracleText: 'Enchant creature\nEnchanted creature gets +2/+1.\nEnchanted creature has intimidate as long as its controller controls no other creatures. (It can\'t be blocked except by artifact creatures and/or creatures that share a color with it.)',
+    imageUri: 'https://cards.scryfall.io/large/front/8/8/88810a96-d5f8-4030-93f1-e2ad0d480317.jpg?1783940692',
+    aura: {
+      pump: { power: 2, toughness: 1 },
+      conditionalKeywords: [
+        { condition: { controlsNoOtherCreatures: true }, keywords: ['intimidate'] },
+      ],
+    },
+    artId: 159, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 /**

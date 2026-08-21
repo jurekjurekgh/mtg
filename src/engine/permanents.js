@@ -378,6 +378,12 @@ function attachmentBonuses(state, object) {
         active = state.turn.activePlayerId === object.controllerId;
       } else if (cond.activePlayerIsController === false) {
         active = state.turn.activePlayerId !== object.controllerId;
+      } else if (cond.controlsNoOtherCreatures === true) {
+        // M174/D (Predator's Gambit): „as long as its controller controls
+        // no other creatures" — poza samym nosicielem.
+        active = ![...state.objects.values()].some((other) => other.zone === 'battlefield'
+          && other.controllerId === object.controllerId
+          && other.kind === 'creature' && other.id !== object.id);
       }
       if (active) bonus.keywords.push(...ck.keywords);
     }
