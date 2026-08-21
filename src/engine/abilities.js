@@ -392,6 +392,11 @@ export function legalActivatedAbilities(state, playerId) {
       // pola bitwy i execute odrzucał „Channel aktywuje się z ręki" (regresja
       // benchmarku B0 po dodaniu Greater Tanuki do talii green).
       if (ability.channel) continue;
+      // M166/B fix (regresja benchmarku CI): Reinforce (CR 702.29a, Mosquito
+      // Guard) — jak channel/cycling: zdolność karty w RĘCE; na polu bitwy
+      // jest martwa. Bez pominięcia bot dostawał ofertę z pola bitwy i
+      // execute odrzucał „Reinforce aktywuje się z ręki" (crash sesji).
+      if (ability.reinforce) continue;
       // Megamorph (obrócenie twarzą do góry) działa tylko, póki permanent
       // leży twarzą w dół; po obrocie zdolność wygasa.
       if ((ability.keyword === 'megamorph' || ability.keyword === 'morph') && !object.faceDown) continue;
