@@ -1700,8 +1700,12 @@ function resolvePermanentSpell(state, stackId, object, before) {
     // obiektu stosu (manaColorsSpent z spendMana).
     let holds = rule.morbid ? Boolean(state.creatureDiedThisTurn) : false;
     if (!holds && rule.adamant) {
+      // M171/N1: wpis jednoznaczny (1 znak) liczy się, gdy jest tym kolorem;
+      // wildcard (>1 znaku — jednostka wielokolorowa, CR 106.7: kolor wybrał
+      // gracz przy produkcji) liczy się, gdy zawiera kolor adamant.
       const spent = permanent.manaColorsSpent ?? [];
-      holds = spent.filter((color) => color === rule.adamant.color).length >= (rule.adamant.min ?? 3);
+      holds = spent.filter((color) => color === rule.adamant.color
+        || (color.length > 1 && color.includes(rule.adamant.color))).length >= (rule.adamant.min ?? 3);
     }
     if (holds) {
       for (const [name, amount] of Object.entries(rule.counters ?? {})) addCounter(state, newId, name, amount);

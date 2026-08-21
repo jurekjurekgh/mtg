@@ -1499,11 +1499,10 @@ export function processTriggers(state, recentEvents) {
     }
     // M166/B (Enrage, RIX — Cacophodon): „Whenever this creature is dealt
     // damage" — dowolne obrażenia STWORA (combat i niecombat; amount > 0,
-    // CR 119.3 — w pełni zapobiegnięte nie odpala). Obiekt szukany po id
-    // ze zdarzenia; jeśli zginął w tej samej komendzie, odczyt LKI nie jest
-    // jeszcze prowadzony w payloadzie damage_dealt (uproszczenie jak przy
-    // Curiosity — patrz komentarz wyżej); trigger działa dla stwora, który
-    // obrażenia PRZEŻYŁ (2/5 Cacophodon w typowym scenariuszu).
+    // CR 119.3 — w pełni zapobiegnięte nie odpala). Obiekt po id ze
+    // zdarzenia ALBO targetLki (CR 603.10 looks-back — stwór zginął w SBA
+    // tej samej komendy); komentarz zaktualizowany w M171 (audyt PR #68,
+    // U1 — kod niżej CZYTA ev.targetLki, stara wersja notki temu przeczyła).
     if (ev.type === 'damage_dealt' && ev.amount > 0 && !isPlayerId(state, ev.target)) {
       // Obiekt na polu bitwy ALBO LKI ze zdarzenia (stwór zginął w SBA tej
       // samej komendy — trigger „looks back", CR 603.10). Zdolności czytamy

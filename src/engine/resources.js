@@ -65,11 +65,17 @@ export function consumeManaPool(player, amount, requirements) {
   const units = expandManaPool(player.manaPool);
   const n = units.length;
   const pipUsed = new Array(n).fill(false);
-  // M166/C (Adamant, CR 117.7/podpowiedź ELD): kolory MANY WYDANEJ —
-  // zwracamy zużyte JEDNOKOLOROWE jednostki (dwubarwne/trzybarwne są
-  // niejednoznaczne co do koloru i nie liczą się żadnej stronie).
+  // M166/C (Adamant) + M171/N1 (audyt PR #68): kolory MANY WYDANEJ.
+  // Jednostka dopasowana do PIPA została wydana w kolorze pipa (przecięcie
+  // profilu jednostki z wymaganiem); jednostka WIELOKOLOROWA wydana na
+  // generic to wildcard (CR 106.7 — kolor „dowolnej" many wybiera gracz
+  // przy produkcji; silnik odracza wybór, więc wildcard = kolor mógł być
+  // dowolny z profilu). Wpisy wielokolorowe kodujemy stringiem >1 znaku.
   // ZWROT zamiast pola na playerze — księgowanie tymczasowe nie może
   // zostawiać śladu w stanie (sonda no-op vs koszt, klasa U9).
+  // M171/N1: przypisanie jednostka -> pozycja wymagania (kolor wydany
+  // na pip = przecięcie profilu jednostki z tym wymaganiem).
+  const pipAssignment = new Array(n).fill(-1);
   if (requirements.length > 0) {
     const matchPips = (pos) => {
       if (pos >= requirements.length) return true;
@@ -77,8 +83,10 @@ export function consumeManaPool(player, amount, requirements) {
         if (pipUsed[i]) continue;
         if (requirements[pos].some((c) => units[i].includes(c))) {
           pipUsed[i] = true;
+          pipAssignment[i] = pos;
           if (matchPips(pos + 1)) return true;
           pipUsed[i] = false;
+          pipAssignment[i] = -1;
         }
       }
       return false;
@@ -103,8 +111,14 @@ export function consumeManaPool(player, amount, requirements) {
   const consumedColors = [];
   for (let i = 0; i < n; i += 1) {
     if (consume[i]) {
-      // M166/C: zwracamy kolory wydanych jednostek (tylko jednoznaczne).
-      if (units[i].length === 1) consumedColors.push(units[i][0]);
+      // M171/N1: pip — kolor wydany to przecięcie z wymaganiem; generic —
+      // mono jednoznacznie, wielokolorowa jako wildcard (string >1 znaku).
+      if (pipAssignment[i] >= 0) {
+        const overlap = units[i].filter((c) => requirements[pipAssignment[i]].includes(c));
+        if (overlap.length >= 1) consumedColors.push(overlap.join(''));
+      } else if (units[i].length >= 1) {
+        consumedColors.push(units[i].join(''));
+      }
       continue;
     }
     const key = manaUnitKey(units[i]);
