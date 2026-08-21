@@ -135,7 +135,7 @@ export function lookWizardKindOf(request, view) {
  * kolejności (klikane od góry). Po ostatnim kroku wywołuje onComplete:
  * surveil → { millIds, topOrder }, scry → { bottomIds }.
  */
-export function renderLookWizard(host, { kind, cards, onComplete, onCancel, probeKeyFor = null }) {
+export function renderLookWizard(host, { kind, cards, onComplete, onCancel, probeKeyFor = null, onOpenCard = null }) {
   const list = Array.isArray(cards) ? cards.slice() : [];
   const labels = kind === 'surveil'
     ? { intro: `Surveil ${list.length} — obejrzane karty:`, toBad: 'Na cmentarz', toGood: 'Na wierzch biblioteki', badMark: '→ cmentarz', goodMark: '→ wierzch' }
@@ -155,7 +155,19 @@ export function renderLookWizard(host, { kind, cards, onComplete, onCancel, prob
     list.forEach((card, index) => {
       const mark = decisions.get(card.id);
       const suffix = mark === 'bad' ? ` ${labels.badMark}` : mark === 'top' ? ` ${labels.goodMark}` : '';
-      choiceNode(looked, 'div', 'look-wizard-card', `\n${index + 1}. ${card.name}${suffix}`);
+      // M167/C: nazwa karty w liście jest KLIKALNA (pełnoekranowa ilustracja)
+      // — gracz nie pamięta z nazwy, co karta robi.
+      const row = choiceNode(looked, 'div', 'look-wizard-card', `\n${index + 1}. `);
+      if (onOpenCard && card.cardId) {
+        const nameSpan = choiceNode(row, 'span', 'look-wizard-card-name log-card', card.name);
+        nameSpan.dataset.cardId = card.cardId;
+        nameSpan.addEventListener('click', () => onOpenCard(card.cardId));
+      } else {
+        // Bez handleru pełnoekranu (np. stare wywołania/testy): nazwa jako
+        // zwykły span tekstowy — bez createTextNode (mini-harnesy UI).
+        choiceNode(row, 'span', '', card.name ?? '');
+      }
+      if (suffix) choiceNode(row, 'span', '', suffix);
     });
   };
   const renderCancel = () => {

@@ -218,6 +218,17 @@ function bootstrapTable() {
   // przy NOWYM oknie, ale nie walczy z ręcznym zamknięciem w tym samym oknie.
   let lastActionsSignature = '';
   // Czas otwarcia pełnego ekranu karty (patrz openCardFullscreen).
+  // M167/E2: klik w nazwę karty w logu otwiera pełnoekranową ilustrację
+  // (span.log-card z data-card-id naszywają renderLog; jedna delegacja —
+  // podpięta RAZ po utworzeniu els).
+  if (els.log && !els.log.__logCardLinksWired) {
+    els.log.__logCardLinksWired = true;
+    els.log.addEventListener('click', (event) => {
+      const span = event.target?.closest?.('.log-card');
+      if (span?.dataset?.cardId) openCardFullscreenByCardId(span.dataset.cardId);
+    });
+  }
+
   let fullscreenOpenedAt = 0;
   // Czas ostatniego swipe'a po pełnym ekranie — syntetyczny `click` po
   // touchend nie może zamknąć warstwy ani być mylony z gestem przewinięcia.
@@ -260,7 +271,11 @@ function bootstrapTable() {
         : choiceView.pendingScry;
       renderLookWizard(els.choiceRequestBody, {
         kind: lookKind,
-        cards: pending.cards.map((card) => ({ id: card.id, name: session.nameOf(card.cardId) })),
+        // M167/C (uwaga właściciela): karty w wizardzie scry/surveil są
+        // KLIKALNE — cardId + handler pełnoekranowej ilustracji (jak nazwy
+        // stworów w wizardzie walki, M66/B/R).
+        cards: pending.cards.map((card) => ({ id: card.id, cardId: card.cardId, name: session.nameOf(card.cardId) })),
+        onOpenCard: (cardId) => openCardFullscreenByCardId(cardId),
         // M112: klucz sondy „oferta bez skutku" dla decyzji KOŃCZĄCEJ wizard
         // (wizard sam nie zna playerId ani typu komendy).
         // M136 (backlog): objęty także `index` — dotąd jedyny wizard tej

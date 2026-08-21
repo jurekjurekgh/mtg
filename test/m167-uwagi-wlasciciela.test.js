@@ -170,3 +170,85 @@ test('I1: bot NIE wysyła 2/4 w gang 1/3 + 3/3 (ginie bez wymiany)', () => {
   assert.ok(!(chosen.attackerIds ?? []).includes('atk24'),
     '2/4 nie atakuje w 1/3 + 3/3 (gang 4 obrażeń zabija, 2 mocy nie zabija niczego)');
 });
+
+// ---- T-UI: E (nagłówki faz), E2 (klikalne nazwy), C (klikalne karty) -----------
+
+import { appendLogLineWithCardLinks } from '../src/table/render.js';
+import { renderLookWizard } from '../src/table/choice-request.js';
+
+class UiEl {
+  constructor(tag) { this.tagName = tag; this.children = []; this.className = ''; this.dataset = {}; this.text = ''; this.listeners = {}; }
+  set textContent(v) { this.text = String(v); this.children = []; }
+  get textContent() { return this.text + this.children.map((c) => c.textContent).join(''); }
+  appendChild(child) { this.children.push(child); return child; }
+  addEventListener(type, fn) { (this.listeners[type] ??= []).push(fn); }
+  click() { for (const fn of this.listeners.click ?? []) fn({}); }
+}
+globalThis.document = { createElement: (tag) => new UiEl(tag), createTextNode: (text) => ({ isText: true, text: String(text), get textContent() { return this.text; } }) };
+
+test('E2a: nazwy kart w wierszu logu owijane w klikalne spany (data-card-id)', () => {
+  const cardIdByName = new Map([['Highland Game', 'highland-game'], ['Brute Force', 'brute-force']]);
+  const line = appendLogLineWithCardLinks(new UiEl('div'), 'Bot rzucił Brute Force w Highland Game i przepuścił.', cardIdByName);
+  const spans = line.children.filter((c) => c.className === 'log-card');
+  assert.equal(spans.length, 2, 'dwie nazwy = dwa spany');
+  assert.equal(spans[0].dataset.cardId, 'brute-force');
+  assert.equal(spans[0].textContent, 'Brute Force');
+  assert.equal(spans[1].dataset.cardId, 'highland-game');
+  assert.equal(line.textContent, 'Bot rzucił Brute Force w Highland Game i przepuścił.', 'tekst wiersza bez zmian treściowych');
+});
+
+test('E2b: bez mapy — czysty tekst (przebieg dla AI bez znaczników)', () => {
+  const line = appendLogLineWithCardLinks(new UiEl('div'), 'Dowolny tekst z Highland Game', null);
+  assert.equal(line.textContent, 'Dowolny tekst z Highland Game');
+  assert.equal(line.children.filter((c) => c.className === 'log-card').length, 0);
+});
+
+test('Ca: wizard scry/surveil — karty klikalne (cardId + handler)', () => {
+  const opened = [];
+  const host = new UiEl('div');
+  renderLookWizard(host, {
+    kind: 'scry',
+    cards: [{ id: 'o1', cardId: 'curate', name: 'Curate' }, { id: 'o2', cardId: 'brute-force', name: 'Brute Force' }],
+    onComplete: () => {},
+    onCancel: () => {},
+    onOpenCard: (cardId) => opened.push(cardId),
+  });
+  const all = (node) => [node, ...node.children.flatMap((c) => all(c))];
+  const findNamed = (root, name) => all(root).find((c) => c.textContent === name && String(c.className).includes('log-card'));
+  const curate = findNamed(host, 'Curate');
+  assert.ok(curate, 'nazwa Curate jako klikalny span');
+  assert.equal(curate.dataset.cardId, 'curate');
+  curate.click();
+  assert.deepEqual(opened, ['curate'], 'klik otwiera ilustrację karty');
+  const brute = findNamed(host, 'Brute Force');
+  assert.ok(brute, 'nazwa Brute Force jako klikalny span');
+  brute.click();
+  assert.deepEqual(opened, ['curate', 'brute-force']);
+});
+
+test('Ea: nagłówki faz wracają do logu — raz na zmianę fazy', async () => {
+  const fs = await import('node:fs');
+  const { HUMAN_ID, BOT_ID, createSession } = await import('../src/table/session.js');
+  const { parseDeckText } = await import('../src/cards/deck-text.js');
+  const decks = new Map([
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/green.txt', 'utf8'), REGISTRY).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), REGISTRY).cardIds],
+  ]);
+  const session = createSession({ seed: 3, registry: REGISTRY, decks });
+  // Keep ręki startowej, potem przewijamy passami przez kilka kroków/faz.
+  const keep = session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice');
+  if (keep) session.apply(keep);
+  for (let i = 0; i < 40; i += 1) {
+    const view = session.view();
+    const pass = view.legalCommands.find((c) => c.type === 'pass_priority');
+    if (!pass) break;
+    session.apply(pass);
+    const headers = session.log.filter((e) => /^— .+ —$/.test(e.text));
+    if (headers.length >= 2) break;
+  }
+  const headers = session.log.filter((e) => /^— .+ —$/.test(e.text));
+  assert.ok(headers.length >= 2, `nagłówki faz w logu (>=2), a jest: ${headers.length}`);
+  // Bez szumu kroków: każdy nagłówek to inna faza (brak duplikatów pod rząd).
+  const phases = headers.map((h) => h.text);
+  assert.ok(new Set(phases).size >= 2, 'różne fazy w nagłówkach');
+});

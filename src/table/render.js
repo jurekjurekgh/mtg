@@ -566,6 +566,45 @@ function interchangeableKey(command, view) {
  *
  * @returns {Array<{command?: object, request?: object, first?: object, label?: string}>}
  */
+/**
+ * M167/E2 (uwaga właściciela): wypełnia wiersz logu tekstem, owijając NAZWY
+ * KART w klikalne <span class="log-card" data-card-id="…"> (pełnoekranowa
+ * ilustracja przez delegację w main.js). Dane logu pozostają czystym
+ * tekstem (przebieg tur dla AI bez znaczników); longest-name-first chroni
+ * przed dopasowaniem podnazw.
+ */
+export function appendLogLineWithCardLinks(line, text, cardIdByName) {
+  if (!cardIdByName || typeof text !== 'string' || !text) {
+    line.textContent = text;
+    return line;
+  }
+  const names = [...cardIdByName.keys()].filter((n) => text.includes(n))
+    .sort((a, b) => b.length - a.length);
+  let rest = text;
+  let guard = 0;
+  while (rest.length > 0 && guard < 200) {
+    guard += 1;
+    let bestAt = -1;
+    let bestName = null;
+    for (const name of names) {
+      const at = rest.indexOf(name);
+      if (at >= 0 && (bestAt < 0 || at < bestAt)) { bestAt = at; bestName = name; }
+    }
+    if (bestName == null) {
+      line.appendChild(document.createTextNode(rest));
+      break;
+    }
+    if (bestAt > 0) line.appendChild(document.createTextNode(rest.slice(0, bestAt)));
+    const cardSpan = document.createElement('span');
+    cardSpan.className = 'log-card';
+    cardSpan.textContent = bestName;
+    cardSpan.dataset.cardId = cardIdByName.get(bestName);
+    line.appendChild(cardSpan);
+    rest = rest.slice(bestAt + bestName.length);
+  }
+  return line;
+}
+
 export function buildActionEntries(commands, session, view) {
   const entries = buildChoiceRequestEntries(commands, view);
   const byKey = new Map();
@@ -2981,7 +3020,14 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   const entries = [...session.log].reverse();
   for (const entry of entries) {
     const kind = entry.kind === 'event' && /^—.*—$/.test(entry.text) ? 'step' : entry.kind;
-    div(els.log, `log-${kind}`, entry.text);
+    const line = document.createElement('div');
+    line.className = `log-${kind}`;
+    // M167/E2 (uwaga właściciela): nazwy kart w logu są KLIKALNE — owijane
+    // w <span class="log-card" data-card-id="…">; klik otwiera pełnoekranową
+    // ilustrację (delegacja w main.js). Tekst logu pozostaje czystym
+    // tekstem w danych (przebieg tur dla AI bez znaczników).
+    appendLogLineWithCardLinks(line, entry.text, session.cardIdByName ?? null);
+    els.log.appendChild(line);
   }
 
   // --- Rozumowanie bota (B5) -------------------------------------------
