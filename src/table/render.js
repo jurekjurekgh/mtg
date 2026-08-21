@@ -2828,7 +2828,7 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
  *   onCardClick: (objectId: string, cardId: string) => void,
  *   onStackClick?: (objectId: string, cardId: string) => void }} args
  */
-export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, onDayNightClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
+export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, onDayNightClick = null, onPoisonCardClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
   const view = session.view();
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) clear(els[key]);
@@ -3081,7 +3081,9 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   renderDayNight(els, session, view, { onClick: onDayNightClick, hover });
 
   // --- Liczniki trucizny (M157/F) — panel jak Undercity/Day/Night --------
-  renderPoisonPanel(els, view);
+  // M169/M: Poison Token klikalny — main przekazuje handler pełnego ekranu
+  // (karta specjalna spoza rejestru, jak Day/Night i Undercity).
+  renderPoisonPanel(els, view, { onOpenCard: onPoisonCardClick });
 
   // --- Loch Undercity (M24) -------------------------------------------
   renderUndercity(els, session, view, { onClick: onUndercityClick });
@@ -3106,13 +3108,19 @@ const POISON_COUNTER_CARD = Object.freeze({
   imageUri: 'https://cards.scryfall.io/large/front/8/a/8a9cb417-8709-4336-be36-2fb0cea31fe1.jpg?1783904328',
 });
 
-export function renderPoisonPanel(els, view) {
+export function renderPoisonPanel(els, view, { onOpenCard = null } = {}) {
   if (!els.poison) return;
   const any = (view.players ?? []).some((p) => (p.poison ?? 0) > 0);
   els.poison.hidden = !any;
   if (!any) return;
   clear(els.poison);
   const card = div(els.poison, 'poison-card');
+  // M169/M (uwaga właściciela): karta Poison Token KLIKALNA — pełny ekran
+  // jak każdy druk na stole (wzorzec Day/Night z M153/C).
+  if (onOpenCard) {
+    card.className = 'poison-card clickable';
+    card.addEventListener('click', () => onOpenCard(POISON_COUNTER_CARD));
+  }
   const img = document.createElement('img');
   img.src = POISON_COUNTER_CARD.imageUri;
   img.alt = POISON_COUNTER_CARD.name;

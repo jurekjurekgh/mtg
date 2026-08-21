@@ -725,6 +725,31 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         });
         const anyCreatureOnBoard = [...myCreatures(view), ...enemyCreatures(view)].length > 0;
         if (etbPingAndSelfPain && !anyCreatureOnBoard) score -= 80;
+        // M169/K (uwaga właściciela, Phyrexian Rager): ETB „you lose N life"
+        // poniżej progu życia to samookaleczenie — przy 2 życia bot schodził
+        // do 1 „przy okazji". Generycznie: skan triggerów wejścia pod kątem
+        // utraty życia/obrażeń kontrolera (scope controller / applyTo self /
+        // damage_to_controller). Poniżej progu — kara miażdżąca; powyżej —
+        // symboliczna (karta ma być grywalna przy zdrowym życiu).
+        let etbSelfDmg = 0;
+        for (const ability of def?.abilities ?? []) {
+          if (ability?.type !== 'triggered' || ability.trigger?.event !== 'enter_battlefield') continue;
+          const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+          for (const e of effs) {
+            if (e?.type === 'damage_to_controller') etbSelfDmg += e.amount ?? 0;
+            if (e?.type === 'lose_life' && (e.scope === 'controller' || e.applyTo === 'self')) etbSelfDmg += e.amount ?? 0;
+          }
+        }
+        if (etbSelfDmg > 0) {
+          const life = myLife(view);
+          // Twarde progi: zejście do <= 2 życia lub poniżej zera = odmowa
+          // (bazowe 70 za stwora nie może wygrać z ryzykiem); przy zdrowym
+          // życiu koszt symboliczny (karta pozostaje grywalna).
+          if (life - etbSelfDmg <= 0) return finish(-1000); // samobójstwo
+          if (life <= 5 && life - etbSelfDmg <= 2) return finish(-80);
+          else if (life <= 5) score -= 15 * etbSelfDmg;
+          else score -= 2 * etbSelfDmg;
+        }
         // Stwór, który wraca po śmierci (persist) albo reanimuje z grobu
         // przeciwnika, jest wart więcej niż same statystyki — deskryptory
         // generyczne (keyword/trigger), zero nazw kart.
@@ -1750,7 +1775,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Presja: atak w otwartego, lethal i przewaga liczebna premiowane.
         if (blockers.length === 0 && attackers.length > 0) score += 8;
         const totalPower = attackers.reduce((sum, id) => sum + (objectOnBoard(view, id)?.power ?? 0), 0);
-        if (totalPower >= enemyLife && attackers.length > 0) score += 100;
+        // M169/J+L (uwaga właściciela): lethal musi przejść PRZEZ blokerów.
+        // Surowy totalPower premiował atak 6/7 w samotnego 7/10 (+100 za
+        // „lethal") i odwrotnie — karzełki chowane za blokery nie dopinały
+        // all-in. Blokerzy wchłaniają co najwyżej tyle obrażeń, ile wynosi
+        // suma ich wytrzymałości (każdy blokuje jednego atakującego);
+        // jeśli PO absorpcji zostaje >= życia wroga — atak wygrywa grę.
+        const blockerAbsorb = blockers.reduce((sum, o) => sum + (o.toughness ?? 0), 0);
+        const penetratingPower = Math.max(0, totalPower - blockerAbsorb);
+        if (attackers.length > 0 && penetratingPower >= enemyLife) score += 1000;
+        else if (totalPower >= enemyLife && blockers.length === 0) score += 100;
         // Zegar (B1): gramy o czas, gdy wróg jest blisko śmierci, może nas
         // zabić w następnej turze albo nasza biblioteka się kończy — wtedy
         // atakujemy nawet kosztem wymiany. (strażnik „> 0" odróżnia realną

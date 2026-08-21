@@ -556,6 +556,25 @@ function bootstrapTable() {
    * otwiera pełnoekranowy druk wg bieżącej strony (Day/Night) — jak
    * openUndercityFullscreen dla lochu.
    */
+  // M169/M: karta Poison Token (panel trucizny) — pełny ekran; karta
+  // specjalna spoza rejestru (jak Day/Night i Undercity).
+  function openSpecialCardFullscreen(card) {
+    if (!els.cardFullscreenBody || !card) return;
+    hideModal('context-menu');
+    const info = {
+      name: card.name,
+      colors: [], kind: 'card', types: ['Card'], subtypes: [], keywords: [],
+      manaCost: null, power: undefined, toughness: undefined,
+      livePower: undefined, liveToughness: undefined,
+      spell: null, abilities: [], morph: null, set: null,
+      imageUri: card.imageUri, artId: null, faceDown: false,
+    };
+    fullscreenContext = null;
+    renderCardFullscreen(els.cardFullscreenBody, info, { positionText: null });
+    els.cardFullscreen.className = 'fullscreen active';
+    fullscreenOpenedAt = Date.now();
+  }
+
   function openDayNightFullscreen() {
     if (!els.cardFullscreenBody) return;
     hideModal('context-menu');
@@ -911,6 +930,8 @@ function bootstrapTable() {
       onStackClick: (objectId) => openCardFullscreen(objectId),
       onUndercityClick: () => openUndercityFullscreen(),
       onDayNightClick: () => openDayNightFullscreen(),
+      // M169/M: Poison Token w panelu trucizny — pełny ekran (karta specjalna).
+      onPoisonCardClick: (card) => openSpecialCardFullscreen(card),
       hoverMode: currentHoverMode,
       onHoverModeChange: (mode) => { currentHoverMode = mode; },
     });

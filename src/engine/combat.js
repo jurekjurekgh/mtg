@@ -941,5 +941,24 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
     greedy[attackerId] = chosen;
   }
   if (Object.keys(greedy).length > 0) options.push(greedy);
+  // M169/N (uwaga właściciela, Gray Slaad z menace): fallback (enumeracja
+  // ponad cap) proponował pojedyncze bloki TYLKO dla atakujących bez menace
+  // i jedną skombinowaną opcję greedy — każdemu blokerowi przypisanym w greedy
+  // pod WCZEŚNIEJSZEGO atakującego. Blokujący „zużyty" w greedy znikał z
+  // kandydatów atakującego z menace w wizardzie (kandydaci = suma ofert).
+  // Dokładamy ograniczony zestaw PAR pod KAŻDEGO atakującego z menace, żeby
+  // pełna pula blokerów była widoczna i wybieralna (silnik i tak waliduje).
+  for (const attackerId of attackers) {
+    const attacker = state.objects.get(attackerId);
+    if (!attacker || !hasKeyword(state, attacker, 'menace')) continue;
+    const pool = blockers.filter((id) => canBlock(state, attacker, state.objects.get(id)));
+    let addedPairs = 0;
+    for (let i = 0; i < pool.length && addedPairs < 8; i += 1) {
+      for (let j = i + 1; j < pool.length && addedPairs < 8; j += 1) {
+        options.push({ [attackerId]: [pool[i], pool[j]] });
+        addedPairs += 1;
+      }
+    }
+  }
   return options;
 }
