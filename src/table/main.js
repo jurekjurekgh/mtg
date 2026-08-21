@@ -14,7 +14,7 @@
  */
 
 import { shuffle } from '../engine/shuffle.js';
-import { populateDeckSelects } from './deck-selects.js';
+import { populateDeckSelects, combineDeckSources } from './deck-selects.js';
 import { createRng } from '../engine/rng.js';
 import { createGameState, execute, playerView } from '../engine/game-state.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
@@ -93,7 +93,10 @@ function bootstrapTable() {
   const repoDecks = globalThis.REPO_DECKS ?? (typeof REPO_DECKS !== 'undefined' ? REPO_DECKS : {});
   const deckKeys = Object.keys(repoDecks).sort();
   const registry = createCardRegistry();
-  mountDeckBuilder({ registry, repoDecks });
+  // K1: rejestrujemy talie własne (import z pliku / biblioteka IndexedDB).
+  const importedDecks = new Map();
+  let windowAllDecks = { ...repoDecks };
+  mountDeckBuilder({ registry, repoDecks, onDeckImported: (name, text) => { importedDecks.set(name, text); rebuildDeckSelects(); } });
 
   const el = (id) => document.getElementById(id);
   const els = {
@@ -228,6 +231,32 @@ function bootstrapTable() {
       if (span?.dataset?.cardId) openCardFullscreenByCardId(span.dataset.cardId);
     });
   }
+
+  // K1 (decyzja właściciela): talie WŁASNE — import z pliku + biblioteka
+  // IndexedDB rejestrowane w selectach stołu jako „(własna)"; startGame
+  // czyta z POŁĄCZONEGO źródła (repo + własne).
+  function rebuildDeckSelects() {
+    const { decks, labelOf } = combineDeckSources(repoDecks, importedDecks);
+    windowAllDecks = decks;
+    populateDeckSelects([el('deck-human'), el('deck-bot')], decks, { labelOf });
+  }
+  mountDeckBuilder({
+    registry, repoDecks,
+    onDeckImported: (name, text) => { importedDecks.set(name, text); rebuildDeckSelects(); },
+  });
+  // Bootstrap: biblioteka IndexedDB (przeżywa reload przeglądarki) — każda
+  // zapisana talia od razu dostępna w grze, zanim właściciel ją opublikuje.
+  void (async () => {
+    try {
+      const { listDecks, deckStoreAvailable } = await import('./deck-store.js');
+      if (!deckStoreAvailable()) return;
+      for (const entry of await listDecks()) {
+        if (entry?.name && entry?.text) importedDecks.set(entry.name, entry.text);
+      }
+      if (importedDecks.size > 0) rebuildDeckSelects();
+    } catch { /* brak IndexedDB — tylko talie z repo */ }
+  })();
+  rebuildDeckSelects();
 
   let fullscreenOpenedAt = 0;
   // Czas ostatniego swipe'a po pełnym ekranie — syntetyczny `click` po
@@ -1200,9 +1229,10 @@ function bootstrapTable() {
       if (!Number.isInteger(seed)) throw new Error('Ziarno musi być liczbą całkowitą');
       // Ta sama talia dla gracza i bota jest dozwolona (mirror match) —
       // egzemplarze obiektów mają prefiksy graczy, kolizji nie ma.
+      // K1: talie własne (custom:*) żyją obok repozytorium — jedno źródło.
       const decks = new Map([
-        [HUMAN_ID, parseDeckText(repoDecks[humanKey], registry).cardIds],
-        [BOT_ID, parseDeckText(repoDecks[botKey], registry).cardIds],
+        [HUMAN_ID, parseDeckText(windowAllDecks[humanKey] ?? repoDecks[humanKey], registry).cardIds],
+        [BOT_ID, parseDeckText(windowAllDecks[botKey] ?? repoDecks[botKey], registry).cardIds],
       ]);
       session = createSession({ seed, registry, decks, pauseOnBotMoves: true, ignoredOptionKeys });
       // Nowa gra unieważnia wstrzymany rzut kreatora many (E.3a): deskryptor

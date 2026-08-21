@@ -307,3 +307,72 @@ test('K2: box pięciu landów podstawowych z -/+ nad listą kart kreatora', asyn
     globalThis.document = prevDocument;
   }
 });
+
+// ---- K1: talie własne — import, selekty z „(własna)", publish helper ----------
+
+import { populateDeckSelects, combineDeckSources, deckTitle } from '../src/table/deck-selects.js';
+import { parseDeckText } from '../src/cards/deck-text.js';
+
+test('K1a: combineDeckSources — klucze custom: + etykieta „(własna)"', () => {
+  const repo = { red: '# Red — singleton' };
+  const own = new Map([['Moje Elfy', '# Moje Elfy — singleton']]);
+  const { decks, labelOf } = combineDeckSources(repo, own);
+  assert.ok(decks['custom:Moje Elfy'], 'talia własna pod kluczem custom:');
+  assert.ok(decks.red, 'talia repo nietykana');
+  assert.equal(labelOf('red', decks.red), 'Red — singleton', 'bez sufiksu dla repo');
+  assert.equal(labelOf('custom:Moje Elfy', decks['custom:Moje Elfy']), 'Moje Elfy — singleton (własna)', 'sufiks (własna)');
+});
+
+test('K1b: selekty z labelOf niosą sufiks; idempotentne', () => {
+  class SelEl {
+    constructor() { this.children = []; this.value = ''; }
+    appendChild(c) { this.children.push(c); return c; }
+    replaceChildren() { this.children = []; }
+    get options() { return this.children; }
+  }
+  class OptEl { constructor() { this.value = ''; this.textContent = ''; } }
+  const prev = globalThis.document;
+  globalThis.document = { createElement: (tag) => (tag === 'option' ? new OptEl() : new SelEl()) };
+  try {
+    const { decks, labelOf } = combineDeckSources({ red: '# Red' }, new Map([['Moje Elfy', '# Moje Elfy']]));
+    const sel = new SelEl();
+    const keys = populateDeckSelects([sel, null], decks, { labelOf });
+    assert.deepEqual(keys, ['custom:Moje Elfy', 'red'], 'sortowanie kluczy łączone');
+    const labels = sel.options.map((o) => o.textContent);
+    assert.ok(labels.some((l) => l.endsWith('(własna)')), 'sufiks w selekcie');
+    populateDeckSelects([sel], decks, { labelOf });
+    assert.equal(sel.options.length, 2, 'idempotencja po ponownym renderze');
+  } finally {
+    globalThis.document = prev;
+  }
+});
+
+test('K1c: importText ładuje talię do kreatora i woła onDeckImported', async () => {
+  const { mountDeckBuilder } = await import('../src/table/deck-builder.js');
+  class El {
+    constructor(tag) { this.tagName = tag; this.children = []; this.className = ''; this.text = ''; this.value = ''; this.disabled = false; this.listeners = {}; }
+    set textContent(v) { this.text = String(v); this.children = []; }
+    get textContent() { return this.text + this.children.map((c) => c.textContent).join(''); }
+    appendChild(c) { this.children.push(c); return c; }
+    addEventListener(type, fn) { (this.listeners[type] ??= []).push(fn); }
+    descendants() { return this.children.flatMap((c) => [c, ...c.descendants()]); }
+  }
+  const byId = new Map();
+  for (const id of ['deck-builder','deck-builder-name','deck-builder-plan','deck-builder-set','deck-builder-color','deck-builder-filter','deck-builder-card-list','deck-builder-basic-lands','deck-builder-summary','deck-builder-errors','deck-builder-output','deck-builder-copy','deck-builder-download','deck-builder-status','deck-builder-add-filtered','deck-builder-clear','deck-builder-library-select','deck-builder-load','deck-builder-save','deck-builder-save-as','deck-builder-delete']) byId.set(id, new El('div'));
+  const prevDocument = globalThis.document;
+  globalThis.document = { createElement: (t) => new El(t), getElementById: (id) => byId.get(id) ?? null, body: new El('body') };
+  try {
+    const imported = [];
+    const api = mountDeckBuilder({ registry: REGISTRY, repoDecks: {}, onDeckImported: (name, text) => imported.push({ name, text }) });
+    assert.ok(api?.importText, 'API kreatora eksponuje importText');
+    const deckText = '# Moje Elfy\n4x Highland Game\n16x Forest';
+    await api.importText(deckText);
+    assert.equal(imported.length, 1, 'onDeckImported wywołany raz');
+    assert.equal(imported[0].name, 'Moje Elfy', 'nazwa z nagłówka #');
+    assert.equal(byId.get('deck-builder-name').value, 'Moje Elfy', 'kreator przyjął nazwę');
+    const parsed = parseDeckText(imported[0].text, REGISTRY);
+    assert.equal(parsed.cardIds.length, 20, '20 kart po imporcie');
+  } finally {
+    globalThis.document = prevDocument;
+  }
+});

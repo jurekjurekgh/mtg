@@ -23,7 +23,7 @@ export function deckTitle(text, fallback) {
  * po jednym na klucz, posortowane. Zwraca użyte klucze (dla wyznaczenia
  * wartości domyślnych przez wywołującego).
  */
-export function populateDeckSelects(selects, repoDecks) {
+export function populateDeckSelects(selects, repoDecks, { labelOf = null } = {}) {
   const keys = Object.keys(repoDecks).sort();
   for (const select of selects ?? []) {
     if (!select) continue;
@@ -35,9 +35,25 @@ export function populateDeckSelects(selects, repoDecks) {
     for (const key of keys) {
       const option = globalThis.document.createElement('option');
       option.value = key;
-      option.textContent = deckTitle(repoDecks[key], key);
+      option.textContent = labelOf ? labelOf(key, repoDecks[key]) : deckTitle(repoDecks[key], key);
       select.appendChild(option);
     }
   }
   return keys;
+}
+
+/**
+ * K1 (decyzja właściciela 2026-08-21): talie WŁASNE. Źródła:
+ * (1) repo decks/*.txt (wbudowane, przez CI/Pages), (2) import z pliku
+ * w danej przeglądarce ( IndexedDB). Klucze importowane mają prefiks
+ * 'custom:', etykieta z sufiksem „(własna)". Zwraca połączoną mapę
+ * tekstów talii (dla startGame) i etykiety (dla selectów).
+ */
+export function combineDeckSources(repoDecks, importedDecks) {
+  const combined = { ...(repoDecks ?? {}) };
+  for (const [name, text] of (importedDecks ?? new Map())) {
+    combined[`custom:${name}`] = text;
+  }
+  const labelOf = (key, text) => `${deckTitle(text, key)}${key.startsWith('custom:') ? ' (własna)' : ''}`;
+  return { decks: combined, labelOf };
 }

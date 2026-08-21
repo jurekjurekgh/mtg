@@ -394,6 +394,9 @@
   }
   .deck-builder-errors { min-height: 1em; margin-bottom: 6px; }
   .deck-builder-error { color: var(--red); font-size: 12px; font-weight: 700; }
+  /* K1: informacje pomocnika publikacji. */
+  .deck-builder-publish-info { display: flex; flex-direction: column; gap: 4px; }
+  .deck-builder-publish-info a { color: var(--accent, #1d4ed8); font-weight: 700; }
   /* K2: box szybkich landów podstawowych (wzorzec legacy). */
   .deck-builder-basic-lands {
     display: flex; flex-direction: column; gap: 4px; padding: 4px 6px;
@@ -891,10 +894,15 @@
         <div class="deck-builder-toolbar">
           <button id="deck-builder-add-filtered" type="button">Dodaj po 1 (z filtrów)</button>
           <button id="deck-builder-clear" type="button" class="ghost-btn">Wyczyść talię</button>
+          <!-- K1: import pliku talii (lokalnie/Pages) + pomocnik publikacji do decks/. -->
+          <button id="deck-builder-import" type="button" class="ghost-btn">Import z pliku…</button>
+          <input id="deck-builder-import-file" type="file" accept=".txt,text/plain" style="display:none">
+          <button id="deck-builder-publish" type="button" class="ghost-btn">Opublikuj na GitHub</button>
         </div>
         <!-- K2 (uwaga właściciela): szybkie dodawanie landów podstawowych —
              box nad listą kart, wzorzec legacy (card_viewer: SZYBKIE DODAWANIE
              LĄDÓW PODSTAWOWYCH z przyciskami -/+). -->
+        <div id="deck-builder-publish-info" class="deck-builder-publish-info"></div>
         <div id="deck-builder-basic-lands" class="deck-builder-basic-lands"></div>
         <div id="deck-builder-card-list" class="deck-builder-card-list"></div>
         <textarea id="deck-builder-output" class="deck-builder-output" readonly spellcheck="false"></textarea>
