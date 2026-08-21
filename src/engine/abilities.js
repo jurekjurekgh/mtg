@@ -400,6 +400,13 @@ export function legalActivatedAbilities(state, playerId) {
       // więc land-źródło z kosztem {T} nie może dać many na własną aktywację,
       // np. Prismari Campus „{4}, {T}: Scry 1").
       const mana = manaForActivation(state, playerId, object, ability, baseMana);
+      // M174/B (Immersturm Skullcairn, L48 oferta=walidacja): źródło many
+      // tapowane KOSZTEM zdolności nie zapłaci jej pipów kolorowych —
+      // bramka kolorów liczy się z jego wykluczeniem (ilość already w
+      // manaForActivation; bez tego bot brał ofertę i execute odrzucał
+      // „Brak kolorowej many").
+      const colorExcludeId = (ability.cost?.tap && !object.tapped
+        && (object.kind === 'land' || (object.types ?? []).includes('Land'))) ? id : null;
       // „Activate only once each turn\" (Snarling Wolf): po aktywacji zdolność
       // znika z legalnych akcji do końca tury (stan resetowany przy zmianie tury).
       if (ability.oncePerTurn && state.abilityActivatedThisTurn?.[`${id}:${index}`]) continue;
@@ -493,7 +500,7 @@ export function legalActivatedAbilities(state, playerId) {
         });
         if (candidates.length === 0) continue;
         if ((ability.cost?.mana ?? 0) > mana) continue;
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
         for (const tapId of candidates) {
           out.push({ objectId: id, abilityIndex: index, ability, tapCreatureId: tapId });
         }
@@ -510,7 +517,7 @@ export function legalActivatedAbilities(state, playerId) {
         });
         if (candidates.length === 0) continue;
         if ((ability.cost?.mana ?? 0) > mana) continue;
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
         for (const tapId of candidates) {
           out.push({ objectId: id, abilityIndex: index, ability, tapOtherCreatureId: tapId });
         }
@@ -527,7 +534,7 @@ export function legalActivatedAbilities(state, playerId) {
         });
         if (lands.length === 0) continue;
         if ((ability.cost?.mana ?? 0) > mana) continue;
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
         for (const landId of lands) {
           out.push({ objectId: id, abilityIndex: index, ability, sacrificeLandId: landId });
         }
@@ -581,7 +588,7 @@ export function legalActivatedAbilities(state, playerId) {
       if (targetSpec.length === 1 && targetSpec[0].type === 'land_you_control') {
         // Cel „land you control": wszystkie własne landy (także land creatures).
         if ((ability.cost?.mana ?? 0) > mana) continue;
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
         for (const targetId of state.zones.battlefield) {
           const target = state.objects.get(targetId);
           const isLand = target && (target.kind === 'land' || (target.types ?? []).includes('Land'));
@@ -603,7 +610,7 @@ export function legalActivatedAbilities(state, playerId) {
         const fixed = ability.cost.mana ?? 0;
         const life = state.players.find((entry) => entry.id === playerId)?.life ?? 0;
         const maxX = Math.min(Math.max(0, mana - fixed), life, 20);
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
         for (let x = 1; x <= maxX; x += 1) {
           out.push({ objectId: id, abilityIndex: index, ability, xValue: x });
         }
@@ -616,7 +623,7 @@ export function legalActivatedAbilities(state, playerId) {
         if (abilityEffectIsNoOp(state, object, ability, object)) continue;
         const effManaNoTarget = effectiveAbilityManaCost(state, playerId, ability, object);
         if (effManaNoTarget > mana) continue;
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
         out.push({ objectId: id, abilityIndex: index, ability });
         continue;
       }
@@ -674,7 +681,7 @@ export function legalActivatedAbilities(state, playerId) {
             if (ownCreatureTarget && target.controllerId !== playerId) return false;
             return true;
           });
-      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
       for (const targetId of candidates) {
         const target = state.objects.get(targetId);
         // M103/A2 + M104: wariant, po którym cel zostaje w tym samym stanie
@@ -1128,6 +1135,21 @@ export function performActivation(state, ctx) {
   }
   if (tapBlockedBySummoningSickness(state, object, ability)) {
     throw new Error('Choroba przywołania: stwór bez haste nie aktywuje {T} w turze wejścia');
+  }
+  // M174/B (klasa L4 — odrzucona komenda nie może mutować stanu): pipy
+  // kolorowe walidujemy PRZED płatnością tap/sacrifice. Bez tego nielegalna
+  // aktywacja najpierw tapowała źródło, a dopiero spendMana odrzucał —
+  // permanent zostawał tapnięty mimo rejected (Immersturm Skullcairn,
+  // {1}{B}{R}{R} z jedynym czarnym źródłem = samym sobą).
+  {
+    const preReqs = colorRequirementsOf(ability.cost);
+    if (preReqs.length > 0 && (ability.cost?.mana ?? 0) > 0) {
+      const preExcludeId = cost.tap && !object.tapped
+        && (object.kind === 'land' || (object.types ?? []).includes('Land')) ? objectId : null;
+      if (!canPayColoredCost(state, playerId, preReqs, preExcludeId)) {
+        throw new Error('Brak kolorowej many');
+      }
+    }
   }
   if (cost.tap) {
     tapObject(state, objectId, playerId);

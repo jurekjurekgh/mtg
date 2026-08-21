@@ -322,10 +322,15 @@ export function untappedLandManaSources(state, playerId) {
  * poświęcenia) — ich wydatek jest nieodwracalną decyzją strategiczną, więc
  * zostaje w rękach gracza (aktywacja przez activate_ability jak dotąd).
  */
-export function producibleMana(state, playerId) {
+export function producibleMana(state, playerId, excludeSourceId = null) {
+  // M174/B (Immersturm Skullcairn, klasa L48): koszt zdolności z {T}
+  // WŁASNEGO źródła many — źródło tapnięte kosztem nie zapłaci już many,
+  // więc oferta liczy zdolność BEZ niego (excludeSourceId); płatność i tak
+  // je pomija (jest tapnięte przed spendMana).
   const player = state.players.find((entry) => entry.id === playerId);
   let fromLands = 0;
   for (const land of untappedLandManaSources(state, playerId)) {
+    if (excludeSourceId != null && land.id === excludeSourceId) continue;
     const grant = grantManaOnLand(state, land.id);
     fromLands += grant > 0 ? grant : 1;
   }
@@ -355,12 +360,14 @@ export function producibleMana(state, playerId) {
  * pipa" — wtedy oferta (backtracking) mówi TAK, a płatność pada
  * (Island + Plains+Embrace vs {U}{G}).
  */
-export function planGrantManaColors(state, playerId, requirements) {
+export function planGrantManaColors(state, playerId, requirements, excludeSourceId = null) {
   const player = state.players.find((entry) => entry.id === playerId);
   if (!player) return null;
   const units = expandManaPool(player.manaPool);
   const grantLands = [];
   for (const obj of untappedLandManaSources(state, playerId)) {
+    // M174/B (L48): źródło tapowane kosztem zdolności nie płaci jej pipów.
+    if (excludeSourceId != null && obj.id === excludeSourceId) continue;
     const grant = grantManaOnLand(state, obj.id);
     if (grant > 0) grantLands.push({ id: obj.id, grant });
     else {
@@ -388,14 +395,15 @@ export function planGrantManaColors(state, playerId, requirements) {
   return grantLands.map((g, i) => ({ id: g.id, color: assignment[i], grant: g.grant }));
 }
 
-export function canPayColoredCost(state, playerId, requirements) {
+export function canPayColoredCost(state, playerId, requirements, excludeSourceId = null) {
   // MtG-castability KOLORÓW: czy pip(y) kolorowe da się dopasować do dostępnych
   // jednostek many (kolorowa pula + NIETAPNIĘTE źródła — da się tapnąć). Sprawd-
   // zane PRZED tapnięciem (do rzutu trzeba źródeł, których można UŻYĆ). AMOUNT
   // (efektywny koszt vs producibleMana) jest sprawdzany OSOBNO na ścieżkach
   // rzutów — tu rozłączamy kolor od sumy (m.in. Metalcraft/Sculptor redukują
-  // generic, więc nie liczymy go tu).
-  return planGrantManaColors(state, playerId, requirements) !== null;
+  // generic, więc nie liczymy go tu). excludeSourceId — patrz producibleMana
+  // (koszt z {T} własnego źródła many, M174/B).
+  return planGrantManaColors(state, playerId, requirements, excludeSourceId) !== null;
 }
 
 /** Czy JAWNA lista pipów kolorów da się pokryć (pula + nietapnięte źródła). */

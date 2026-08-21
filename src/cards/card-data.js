@@ -7604,6 +7604,30 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; statystyki rosną przez amass'] },
   }),
 
+// ---- Batch 41 — transza C: pierwszy CZAR z madness ----
+
+  // 6. Terminal Agony (MH2) {2}{B}{R} Sorcery — „Destroy target creature.
+  //    Madness {B}{R}." PIERWSZA karta czarowa z madness w katalogu —
+  //    ścieżka castMadnessSpell (M161/O1) dostaje realny przypadek:
+  //    discard → exile (madnessReady) → decyzja rzutu za {B}{R} z celem
+  //    (oferta per cel — playerView) albo grób. Zakres castMadnessSpell:
+  //    bez additionalCost/X/modes — Terminal Agony mieści się w całości.
+  defineCard({
+    id: 'terminal-agony', name: 'Terminal Agony', set: 'MH2',
+    types: ['Sorcery'], colors: ['B', 'R'], manaCost: 4,
+    oracleText: 'Destroy target creature.\nMadness {B}{R} (If you discard this card, discard it into exile. When you do, cast it for its madness cost or put it into your graveyard.)',
+    imageUri: 'https://cards.scryfall.io/large/front/3/1/314e94ad-0e12-48bb-aae1-2c842943114a.jpg?1783926810',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature' }],
+      effects: [{ type: 'destroy_permanent' }],
+    },
+    madness: { cost: 2, colors: ['B', 'R'] },
+    artId: 534, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['madness: odrzucenie trafia do exile z decyzją rzutu za {B}{R} (timing ignorowany — CR 702.34e, także sorcery poza main fazą); cel wybierany przy rzucie'],
+  }),
+
 ]);
 
 /**

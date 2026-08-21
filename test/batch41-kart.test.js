@@ -211,3 +211,79 @@ test('B2b: Toll — sama ręka LĄDÓW = nikt nic nie odrzuca (Oracle), amass dz
     'amass mimo braku odrzucenia');
 });
 
+// ---- Transza C: Terminal Agony — pierwszy CZAR z madness (CR 702.34) ---------
+
+function discardAgony(state) {
+  putCard(state, 'agony', 'terminal-agony', 'p1', 'hand');
+  state.pendingDiscardChoice = {
+    playerId: 'p1', count: 1, handIds: ['agony'], purpose: 'effect',
+    sourceCardId: null, restorePriorityTo: 'p1',
+  };
+  assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'agony' }).ok);
+  const exiled = [...state.objects.values()].find((o) => o.cardId === 'terminal-agony' && o.zone === 'exile');
+  assert.ok(exiled, 'karta w exile (CR 702.34a)');
+  assert.equal(exiled.madnessReady, true, 'gotowość madness');
+  assert.ok(state.pendingMadnessCast, 'decyzja madness otwarta');
+  return exiled;
+}
+
+test('C1: Terminal Agony — discard→exile→rzut za {B}{R} z CELEM niszczy stwora', () => {
+  const state = game('p1');
+  putCard(state, 'foe', 'highland-game', 'p2');
+  discardAgony(state);
+  addMana(state, 'p1', 2, { colors: ['B', 'R'] });
+  // Oferta rzutu jest PER CEL (czar z celem — nie ślepa komenda).
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'resolve_madness_cast' && c.cast && c.targets?.[0] === 'foe');
+  assert.ok(cast, 'oferta rzutu madness z celem');
+  assert.ok(execute(state, cast).ok);
+  assert.equal(state.players.find((pl) => pl.id === 'p1').mana, 0, 'wydano {B}{R} (koszt madness, nie {2}{B}{R})');
+  assert.ok(resolveStack(state));
+  assert.notEqual(state.objects.get('foe')?.zone, 'battlefield', 'cel zniszczony');
+  assert.ok([...state.objects.values()].some((o) => o.cardId === 'terminal-agony' && o.zone === 'graveyard'),
+    'czar po rozstrzygnięciu w grobie');
+});
+
+test('C2: Terminal Agony — sorcery z madness rzucany POZA main fazą (CR 702.34e)', () => {
+  const state = game('p1');
+  putCard(state, 'foe', 'highland-game', 'p2');
+  state.turn = { ...state.turn, phase: 'combat', step: 'declare_attackers' };
+  discardAgony(state);
+  addMana(state, 'p1', 2, { colors: ['B', 'R'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'resolve_madness_cast' && c.cast && c.targets?.[0] === 'foe');
+  assert.ok(cast, 'timing sorcery IGNOROWANY przy rzucie madness');
+  assert.ok(execute(state, cast).ok);
+  assert.ok(resolveStack(state));
+  assert.notEqual(state.objects.get('foe')?.zone, 'battlefield');
+});
+
+test('C3: Terminal Agony — odmowa albo brak celu = karta do grobu', () => {
+  // Brak celu (pusty stół): jedyna oferta to rezygnacja.
+  const state = game('p1');
+  discardAgony(state);
+  addMana(state, 'p1', 2, { colors: ['B', 'R'] });
+  const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_madness_cast');
+  assert.ok(offers.every((c) => !c.cast), 'bez legalnego celu brak oferty rzutu (L48)');
+  assert.ok(execute(state, offers[0]).ok);
+  assert.ok([...state.objects.values()].some((o) => o.cardId === 'terminal-agony' && o.zone === 'graveyard'),
+    'odmowa → grób (CR 702.34)');
+});
+
+test('B3 (L4/L48): Skullcairn bez drugiego czarnego źródła — brak oferty i CZYSTE odrzucenie', () => {
+  const state = game('p1');
+  putCard(state, 'cairn', 'immersturm-skullcairn', 'p1', 'battlefield', { summoningSickness: false });
+  // Mana: 2x Mountain + 1x Forest — pip {B} pokrywa TYLKO sam Skullcairn,
+  // który tapuje się kosztem: zdolność nieopłacalna.
+  putCard(state, 'm1', 'basic-mountain', 'p1', 'battlefield');
+  putCard(state, 'm2', 'basic-mountain', 'p1', 'battlefield');
+  putCard(state, 'f1', 'basic-forest', 'p1', 'battlefield');
+  const offer = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'activate_ability' && c.objectId === 'cairn');
+  assert.equal(offer, undefined, 'oferta wykluczona (źródło {B} tapowane kosztem — L48)');
+  // Ręczna nielegalna komenda: odrzucona BEZ mutacji stanu (L4).
+  const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'cairn', abilityIndex: 0, targets: ['p2'] });
+  assert.equal(r.ok, false, 'komenda odrzucona');
+  assert.equal(state.objects.get('cairn').tapped, false, 'ląd NIE został tapnięty przy odrzuceniu');
+});
+
