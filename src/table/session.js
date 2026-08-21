@@ -4,6 +4,7 @@ import { setupCardMatch } from '../cards/materialize.js';
 import { parseReplay, playReplay, replayFromState, serializeReplay } from '../engine/replay.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
 import { createHeuristicBot } from '../controllers/heuristic-bot.js';
+import { effectiveKeywords } from '../engine/permanents.js';
 import { probeCommandEffect } from './noop-probe.js';
 
 /**
@@ -1445,6 +1446,8 @@ export function createSession(config) {
     }
     return describeGameEvent(e, {
       nameOf, nameOfObject, cardIdByName,
+    // M168/B: efektywne keywordy obiektu (render kafla liczy badge'e grantów).
+    effectiveKeywordsOf: (object) => effectiveKeywords(object, state),
       isPlayer: (id) => state.players.some((player) => player.id === id),
       controllerOf: (objectId) => state.objects.get(objectId)?.controllerId ?? null,
     }, names);

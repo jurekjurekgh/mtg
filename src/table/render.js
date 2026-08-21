@@ -2324,6 +2324,15 @@ function cardInfo(session, object, combat = null) {
     attachedAura,
     attachedEquipment,
     keywords: keywordsNow,
+    // M168/B (uwaga właściciela): AKTYWNE zmiany na kafelu jako badge'e —
+    // granted keywords liczymy z EFEKTYWNYCH (statyki warunkowe jak Gray
+    // Slaad, granty do EOT, załączniki, anthemy) minus wydrukowane.
+    grantedKeywords: faceDown ? [] : (session.effectiveKeywordsOf
+      ? session.effectiveKeywordsOf(object).filter((kw) => !keywordsNow.includes(kw))
+      : []),
+    lostKeywordsUntilEOT: faceDown ? [] : [...(object.lostKeywordsUntilEOT ?? [])],
+    cantBlockNow: Boolean(object.cantBlock),
+    cantBeBlockedNow: Boolean(object.cantBeBlocked),
     manaCost: faceDown ? null : (details.manaCost ?? object.manaCost ?? null),
     power: object.power ?? details.power,
     toughness: object.toughness ?? details.toughness,
@@ -2564,6 +2573,23 @@ export function buildStateOverlay(visual, info) {
     // z nazwą, wrogi jako „morph") — na stole żywy stan jest na nakładce.
     if (info.faceDown) flags.push(['morph', info.morphBadge ?? FACE_DOWN_LABEL]);
     if (info.goaded) flags.push(['goad', 'goad']);
+    // M168/B: AKTYWNE zmiany — badge tekstowy, póki efekt działa.
+    for (const kw of info.grantedKeywords ?? []) {
+      flags.push(['kw', `${KEYWORD_LABELS[kw] ?? kw}`]);
+    }
+    for (const kw of info.lostKeywordsUntilEOT ?? []) {
+      flags.push(['kw', `bez: ${KEYWORD_LABELS[kw] ?? kw}`]);
+    }
+    if (info.cantBlockNow) flags.push(['kw', 'nie może blokować']);
+    if (info.cantBeBlockedNow) flags.push(['kw', 'nie do zablokowania']);
+    {
+      const pMod = Number(info.powerMod ?? 0);
+      const tMod = Number(info.toughMod ?? 0);
+      if (pMod !== 0 || tMod !== 0) {
+        const sign = (n) => (n > 0 ? `+${n}` : `${n}`);
+        flags.push(['kw', `${sign(pMod)}/${sign(tMod)}`]);
+      }
+    }
     if (info.combatRole) flags.push(['combat', info.combatRole]);
     if (info.damage > 0) flags.push(['dmg', `−${info.damage}`]);
     if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push(['sick', 'choroba']);

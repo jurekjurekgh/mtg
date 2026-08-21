@@ -165,7 +165,26 @@ function buildDescriptor(object, totalNeeded, requirements, costStr, effectiveGe
  * czyta go z session.state.
  */
 export function paymentDescriptorOf(cmd, view, opts = {}) {
-  if (!cmd || !WIZARD_CAST_TYPES.has(cmd.type)) return null;
+  if (!cmd) return null;
+  // M168/C2 (uwaga właściciela): KAŻDA płatność z wyborem — także
+  // activate_ability (Incubator {2}, Guidestone Compass {1}, forecast
+  // Piercing Rays). Koszt z deskryptora zdolności (main przekazuje go
+  // w opts.ability, bo widok nie niesie abilities obiektów). xValue
+  // zostaje poza kreatorem (koszt zmienny).
+  if (cmd.type === 'activate_ability') {
+    const ability = opts.ability ?? null;
+    const manaCost = ability?.cost?.mana;
+    if (!Number.isInteger(manaCost) || manaCost <= 0) return null;
+    if (cmd.xValue != null) return null;
+    const allCards = Object.values(view?.zones ?? {}).flat();
+    const object = allCards.find((o) => o.id === cmd.objectId);
+    if (!object) return null;
+    const requirements = (ability.cost?.colors ?? []).map((color) => [color]);
+    const generic = Math.max(0, manaCost - requirements.length);
+    const costStr = `{${generic}}${(ability.cost?.colors ?? []).map((c) => `{${c}}`).join('')}`;
+    return buildDescriptor(object, manaCost, requirements, costStr, generic);
+  }
+  if (!WIZARD_CAST_TYPES.has(cmd.type)) return null;
   const allCards = Object.values(view?.zones ?? {}).flat();
   const object = allCards.find((o) => o.id === cmd.objectId);
   if (!object) return null;

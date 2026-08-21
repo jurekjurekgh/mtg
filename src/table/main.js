@@ -1123,6 +1123,15 @@ function bootstrapTable() {
     // (Etherium Sculptor) i warunkowe z karty (Metalcraft) liczy silnik na
     // pełnym stanie — widok nie niesie zdolności permanentów.
     const opts = {};
+    // M168/C2: koszt activate_ability czytamy z deskryptora zdolności na
+    // PEŁNYM stanie (widok nie niesie abilities obiektów) — jak
+    // effectiveGeneric wyżej. Dalej wspólna ścieżka (warianty ≥2).
+    if (cmd.type === 'activate_ability' && Number.isInteger(cmd.abilityIndex)) {
+      const src = session.state?.objects?.get(cmd.objectId);
+      const ability = src?.abilities?.[cmd.abilityIndex];
+      if (ability?.cost && Number.isInteger(ability.cost.mana)) opts.ability = ability;
+      else return null; // zdolność bez kosztu many — bez kreatora
+    }
     const stateObject = session.state?.objects?.get(cmd.objectId);
     const parsed = stateObject ? parseManaCost(MANA_COSTS[stateObject.cardId] ?? null) : null;
     if (stateObject && parsed) {
