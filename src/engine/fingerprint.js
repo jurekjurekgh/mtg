@@ -117,6 +117,8 @@ export function stateFingerprint(state) {
       playerId: state.pendingDamageDivision.playerId,
       total: state.pendingDamageDivision.total,
       targetIds: [...state.pendingDamageDivision.targetIds],
+      // M171/Z6: deklaracja przy umieszczaniu na stosie (CR 603.3d).
+      announceStackId: state.pendingDamageDivision.announceStackId ?? null,
     } : null,
     pendingSpell: state.pendingSpell ? { stackId: state.pendingSpell.stackId, effects: (state.pendingSpell.effects ?? []).length } : null,
     pendingClash: state.pendingClash ? {

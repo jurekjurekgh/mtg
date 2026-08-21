@@ -728,6 +728,8 @@ export function queueTriggerToStack(state, ability, source, targets, events, ext
   });
   state.events.push(fired);
   events.push(fired);
+  // M171/Z6: wywołujący (announce podziału obrażeń) potrzebuje id wpisu.
+  return entry;
   return entry;
 }
 
@@ -949,7 +951,10 @@ export function resolveTriggerEntry(state, entry) {
   // Cele: efekty same pomijają cele, które przestały być legalne
   // (CR 608.2b — applyEffect sprawdza strefę przy każdej akcji).
   const beforeEffects = state.events.length;
-  applyTriggerEffects(state, payload.ability, source, payload.targets ?? [], payload.extra ?? {});
+  // M171/Z6 (CR 603.3d): kwoty podziału obrażeń zadeklarowane przy
+  // umieszczaniu na stosie jadą w kontekście do applyEffect.
+  applyTriggerEffects(state, payload.ability, source, payload.targets ?? [],
+    payload.damageDivision ? { ...(payload.extra ?? {}), damageDivision: payload.damageDivision } : (payload.extra ?? {}));
   // M106/Z2 (decyzja właściciela 2026-08-16): trigger, który rozstrzygnął się
   // BEZ ŻADNEGO skutku (Undead Servant przy pustym grobie — 0 Zombie, Jyoti
   // bez rzutów commandera — 0 tokenów), ma to powiedzieć wprost. Dotąd gracz

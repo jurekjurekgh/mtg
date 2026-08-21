@@ -1025,29 +1025,24 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       dealNonCombatDamage(state, sourceObject, chosen[0], total);
       return;
     }
-    // M171/Z4 (audyt Żywym Testerem, L6): cel może zginąć od obrażeń w TEJ
-    // samej komendzie — zdarzenia niosą cardId celów (LKI), inaczej log
-    // pokazuje „?: 1" po śmierci celu.
-    const targetCardIds = chosen.map((id) => state.objects.get(id)?.cardId ?? null);
-    // M171/Z4b: token nie ma cardId — jego LKI to name (warstwa opisu używa
-    // go, gdy obiekt zniknął, a cardId brak).
-    const targetNames = chosen.map((id) => state.objects.get(id)?.name ?? null);
-    state.pendingDamageDivision = {
-      playerId: sourceObject.controllerId,
-      sourceId: sourceObject.id,
-      cardId: sourceObject.cardId,
-      targetIds: Object.freeze([...chosen]),
-      targetCardIds: Object.freeze([...targetCardIds]),
-      targetNames: Object.freeze([...targetNames]),
-      total,
-      restorePriorityTo: state.turn.priorityPlayerId,
-    };
-    state.turn.priorityPlayerId = sourceObject.controllerId;
-    state.events.push(event('damage_division_required', {
-      playerId: sourceObject.controllerId, sourceId: sourceObject.id,
-      cardId: sourceObject.cardId, targetIds: [...chosen], targetCardIds: [...targetCardIds],
-      targetNames: [...targetNames], total,
-    }));
+    // M171/Z6 (CR 603.3d/601.2d): kwoty ZADEKLAROWANE przy umieszczaniu na
+    // stosie jadą w context.damageDivision (announce w resolve_trigger_target,
+    // zapis na wpisie stosu). Cel nielegalny przy rozstrzyganiu nie dostaje
+    // nic — bez realokacji (CR 608.2b). Brak deklaracji przy >=2 celach =
+    // producent ominął ścieżkę announce (pierwszy CZAR z damage_divided —
+    // strażnik w test/m171-damage-division-announce.test.js) — jawny błąd
+    // zamiast cichej ścieżki niezgodnej z CR (L52).
+    const declared = Array.isArray(context.damageDivision) ? context.damageDivision : null;
+    if (!declared || declared.length !== chosen.length) {
+      throw new Error('damage_divided: podział niezadeklarowany przy umieszczaniu na stosie (CR 601.2d/603.3d)');
+    }
+    for (let i = 0; i < chosen.length; i += 1) {
+      const targetId = chosen[i];
+      const isPlayer = state.players.some((pl) => pl.id === targetId);
+      const stillLegal = isPlayer || (state.objects.get(targetId)?.zone === 'battlefield');
+      if (!stillLegal) continue; // CR 608.2b: kwota przepada.
+      dealNonCombatDamage(state, sourceObject, targetId, declared[i]);
+    }
     return;
   }
   if (effect.type === 'opponents_lose_life_if_poison') {

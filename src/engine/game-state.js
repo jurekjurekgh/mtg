@@ -1738,14 +1738,16 @@ export function execute(state, input) {
     if (amounts.reduce((a, b) => a + b, 0) !== pending.total) return reject('illegal_damage_division');
     const before = state.events.length;
     state.pendingDamageDivision = null;
-    const source = state.objects.get(pending.sourceId)
-      ?? { id: pending.sourceId, controllerId: pending.playerId, cardId: pending.cardId, zone: 'none', kind: null };
-    for (let i = 0; i < pending.targetIds.length; i += 1) {
-      const targetId = pending.targetIds[i];
-      const isPlayer = state.players.some((pl) => pl.id === targetId);
-      const stillLegal = isPlayer || (state.objects.get(targetId)?.zone === 'battlefield');
-      if (!stillLegal) continue; // CR 608.2b: nielegalny cel — nic nie otrzymuje.
-      dealNonCombatDamage(state, source, targetId, amounts[i]);
+    // M171/Z6 (CR 603.3d): deklaracja kwot przy umieszczaniu na stosie —
+    // kwoty zapisują się na wpisie triggera; obrażenia zada rozstrzygnięcie
+    // (applyEffect czyta context.damageDivision; cel nielegalny w chwili
+    // rozstrzygania nie dostaje nic i nie ma realokacji — CR 608.2b).
+    const announceEntry = pending.announceStackId ? state.objects.get(pending.announceStackId) : null;
+    if (announceEntry?.triggerEntry) {
+      state.objects.set(pending.announceStackId, Object.freeze({
+        ...announceEntry,
+        triggerEntry: Object.freeze({ ...announceEntry.triggerEntry, damageDivision: Object.freeze([...amounts]) }),
+      }));
     }
     state.events.push(event('damage_division_resolved', {
       playerId: pending.playerId, sourceId: pending.sourceId, cardId: pending.cardId,
@@ -2674,8 +2676,35 @@ export function execute(state, input) {
         && ['battlefield', 'graveyard', 'exile'].includes(srcM.zone)
         && triggerConditionHolds(state, pending.ability, srcM, pending.extra ?? {}));
       if (srcLegalM && chosenList.length > 0) {
-        queueTriggerToStack(state, pending.ability, srcM,
+        const stackEntryM = queueTriggerToStack(state, pending.ability, srcM,
           [...pending.fixedTargetIds, ...chosenList], [], pending.extra ?? {});
+        // M171/Z6 (CR 603.3d + 601.2d „divided as you choose"): podział
+        // obrażeń OGŁASZA SIĘ przy umieszczaniu na stosie — decyzja kwot
+        // otwiera się TERAZ (przed oknem odpowiedzi), a kwoty zapisują się
+        // na wpisie stosu. Dotąd kwoty wybierano przy rozstrzyganiu —
+        // kontroler znał odpowiedź przeciwnika przed deklaracją, a zabity
+        // cel pozwalał na realokację (obie rzeczy sprzeczne z CR).
+        const divEffectsM = Array.isArray(pending.ability?.effect) ? pending.ability.effect : [pending.ability?.effect];
+        if (chosenList.length >= 2 && divEffectsM.length === 1 && divEffectsM[0]?.type === 'damage_divided') {
+          const totalM = divEffectsM[0].amount ?? 3;
+          state.pendingDamageDivision = {
+            playerId: pending.playerId,
+            sourceId: pending.sourceId,
+            cardId: pending.cardId,
+            targetIds: Object.freeze([...chosenList]),
+            targetCardIds: Object.freeze(chosenList.map((id) => state.objects.get(id)?.cardId ?? null)),
+            targetNames: Object.freeze(chosenList.map((id) => state.objects.get(id)?.name ?? null)),
+            total: totalM,
+            announceStackId: stackEntryM.id,
+            restorePriorityTo: pending.restorePriorityTo ?? state.turn.priorityPlayerId,
+          };
+          state.events.push(event('damage_division_required', {
+            playerId: pending.playerId, sourceId: pending.sourceId,
+            cardId: pending.cardId, targetIds: [...chosenList],
+            targetCardIds: [...state.pendingDamageDivision.targetCardIds],
+            targetNames: [...state.pendingDamageDivision.targetNames], total: totalM,
+          }));
+        }
       }
       state.events.push(event('trigger_target_resolved', {
         playerId: pending.playerId, sourceId: pending.sourceId, cardId: pending.cardId,
@@ -2683,7 +2712,11 @@ export function execute(state, input) {
         noEffect: !srcLegalM || chosenList.length === 0,
         remaining: state.pendingTriggerTargets.length,
       }));
-      if (state.pendingTriggerTargets.length > 0) {
+      if (state.pendingDamageDivision) {
+        // M171/Z6: deklaracja kwot to część umieszczania na stosie —
+        // priorytet zostaje u ogłaszającego do podania kwot.
+        state.turn.priorityPlayerId = state.pendingDamageDivision.playerId;
+      } else if (state.pendingTriggerTargets.length > 0) {
         state.turn.priorityPlayerId = state.pendingTriggerTargets[0].playerId;
       } else if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
         state.turn.priorityPlayerId = pending.restorePriorityTo;

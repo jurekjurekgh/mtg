@@ -31,9 +31,17 @@ zgodny z ADR 0002, Batch 40 zgodny z Oracle, 3 mutacje próbki czerwienieją).
 - **U2 (obserwacja):** epicCastOffers na ścieżce EPIC nie filtruje
   additionalCost — pilnować przy pierwszym epic-czarze z kosztem
   dodatkowym w tej samej talii.
+- **Z6 (oś CR pętli jakości; testy `m171-damage-division-announce` ×3):**
+  „divided as you choose" — podział OGŁASZA SIĘ przy umieszczaniu na
+  stosie (CR 601.2d/603.3d), nie przy rozstrzyganiu. Dotąd kwoty wybierano
+  PO oknie odpowiedzi (przewaga informacyjna) z możliwością realokacji po
+  śmierci celu. Teraz: announce w resolve_trigger_target (kwoty na wpisie
+  stosu), applyEffect czyta context.damageDivision, cel nielegalny traci
+  kwotę (CR 608.2b); czar z damage_divided = jawny reject + strażnik
+  katalogu (L52). Testy D1/D4 batch40 zaktualizowane do przepływu CR.
 
-**Stan:** `test:all` **2599/2599**, build **52 moduły / 2211.4 kB**,
-benchmark regresji bota 9/9 (po zmianie wyceny Z3).
+**Stan:** `test:all` **2602/2602**, build **52 moduły / 2213.9 kB**,
+benchmark regresji bota 9/9 (po Z3 i Z6).
 
 
 ## M170 — Incubator: transform jednorazowy (rozszerzenie C z M168, 2026-08-21, PR #68)

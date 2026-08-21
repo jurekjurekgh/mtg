@@ -69,5 +69,10 @@
   EPIC — pilnować przy pierwszym takim zestawieniu talii).
 - **Etap 3:** pętla jakości — 5 znalezisk Z1–Z5 naprawionych + 2 detektory
   + 2 strażniki (2647f7b). Transkrypty w `tools/table-tester/audyt-m171/`.
-- **Stan końcowy:** `test:all` **2599/2599**, build **52 moduły /
-  2211.4 kB**, benchmark regresji bota 9/9 (po zmianie wyceny Z3).
+- **Etap 3 cd. (oś b — CR):** Z6 — „divided as you choose" deklarowany
+  przy umieszczaniu na stosie (CR 601.2d/603.3d), bez realokacji po
+  śmierci celu (CR 608.2b); testy `m171-damage-division-announce` (3,
+  RED→GREEN) + strażnik czaru z damage_divided (L52); D1/D4 batch40
+  zaktualizowane do przepływu CR.
+- **Stan końcowy:** `test:all` **2602/2602**, build **52 moduły /
+  2213.9 kB**, benchmark regresji bota 9/9 (po zmianach Z3 i Z6).
