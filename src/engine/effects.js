@@ -3829,7 +3829,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       return o && o.kind !== 'land' && !(o.types ?? []).includes('Land');
     });
     const declineAmount = effect.declineAmount ?? 2;
+    // M174/B (Toll of the Invasion, WAR): „You choose a nonland card from
+    // it. That player discards that card." — wybór OBOWIĄZKOWY (bez opcji
+    // rezygnacji); brak kart nieladowych = nikt nic nie odrzuca (Oracle),
+    // a nie kara declineAmount (to wariant Nightsnare „If you don't").
+    const mandatory = effect.mandatory === true;
     const restorePriorityTo = state.turn.priorityPlayerId;
+    if (nonland.length === 0 && mandatory) return;
     if (nonland.length === 0) {
       // „If you don't" bez możliwości wyboru: od razu odrzucenie N kart
       // przez właściciela ręki (bez pustej oferty dla rzucającego).
@@ -3851,8 +3857,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       chooserId: sourceObject.controllerId,
       count: 1,
       handIds: nonland,
-      allowDecline: true,
-      declineAmount,
+      allowDecline: !mandatory,
+      ...(mandatory ? {} : { declineAmount }),
       purpose: 'effect',
       sourceCardId: sourceObject.cardId ?? null,
       restorePriorityTo,
@@ -3860,7 +3866,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.turn.priorityPlayerId = sourceObject.controllerId;
     state.events.push(event('discard_choice_required', {
       playerId: targetId, chooserId: sourceObject.controllerId, count: 1,
-      cardIds: [...nonland], allowDecline: true, declineAmount,
+      cardIds: [...nonland], allowDecline: !mandatory,
+      ...(mandatory ? {} : { declineAmount }),
       purpose: 'effect', sourceCardId: sourceObject.cardId ?? null,
     }));
     return true;

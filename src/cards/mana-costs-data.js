@@ -323,4 +323,5 @@ export const MANA_COSTS = {
   "spin-out": "{1}{B}{B}",
   "stall-out": "{1}{U}",
   "horizon-spellbomb": "{1}",
+  "toll-of-the-invasion": "{2}{B}",
 };

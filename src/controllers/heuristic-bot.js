@@ -1095,6 +1095,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               }
             }
           }
+          // M174/B (Toll of the Invasion — strażnik L51): amass buduje WŁASNĄ
+          // Armię niezależnie od celu czaru — stały zysk (token/licznik).
+          if (effect.type === 'amass') {
+            score += 6 + 3 * (effect.amount ?? 1);
+          }
           // M162/B (uwaga właściciela): symetryczny mill (Ghoulcaller's Bell —
           // „each player mills") — wycena WYŚCIGU bibliotek. Bez tej gałęzi
           // efekt nie miał ŻADNEJ wyceny, więc aktywacja {T} warta bazowe +2

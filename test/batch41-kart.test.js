@@ -132,3 +132,82 @@ test('A3: Horizon Spellbomb — sac→szukaj basic land do RĘKI; dies→opcjona
   const inHand = state.zones.hand.some((id) => state.objects.get(id)?.cardId === 'basic-forest');
   assert.ok(inHand, 'basic land trafia DO RĘKI (nie na pole)');
 });
+
+// ---- Transza B ----------------------------------------------------------------
+
+test('B1: Immersturm Skullcairn — {1}{B}{R}{R},{T},sac: 3 dmg w gracza + jego discard', () => {
+  const state = game('p1');
+  putCard(state, 'cairn', 'immersturm-skullcairn', 'p1', 'battlefield', { summoningSickness: false });
+  putCard(state, 'oppcard1', 'highland-game', 'p2', 'hand');
+  putCard(state, 'oppcard2', 'basic-swamp', 'p2', 'hand');
+  addMana(state, 'p1', 4, { colors: ['B', 'R', 'R', 'R'] });
+  const lifeBefore = state.players.find((p) => p.id === 'p2').life;
+  const act = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'activate_ability' && c.objectId === 'cairn' && c.targets?.[0] === 'p2');
+  assert.ok(act, 'oferta aktywacji w gracza p2 (sorcery-speed, main)');
+  assert.ok(execute(state, act).ok);
+  assert.ok(resolveStack(state));
+  assert.equal(state.players.find((p) => p.id === 'p2').life, lifeBefore - 3, '3 obrażenia w gracza');
+  assert.notEqual(state.objects.get('cairn')?.zone, 'battlefield', 'ląd poświęcony (koszt)');
+  // Odrzucający (p2) wybiera SWOJĄ kartę.
+  assert.ok(state.pendingDiscardChoice, 'decyzja odrzucenia u celu');
+  assert.equal(state.pendingDiscardChoice.playerId, 'p2', 'odrzuca trafiony gracz');
+  const discard = playerView(state, 'p2').legalCommands
+    .find((c) => c.type === 'resolve_discard_choice' && c.cardId != null);
+  assert.ok(discard, 'oferta wyboru karty do odrzucenia');
+  assert.ok(execute(state, discard).ok);
+  const handAfter = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === 'p2').length;
+  assert.equal(handAfter, 1, 'po odrzuceniu 1 karta w ręce p2');
+});
+
+test('B1b: Immersturm Skullcairn — wchodzi zatapiony i dodaje {B}', () => {
+  const def = REGISTRY.get('immersturm-skullcairn');
+  assert.equal(def.entersTapped, true, 'enters tapped');
+  assert.deepEqual(def.colors, ['B'], 'produkuje {B}');
+  assert.deepEqual(def.types, ['Land']);
+});
+
+test('B2: Toll of the Invasion — reveal + OBOWIĄZKOWY wybór nonland + amass Zombies 1', () => {
+  const state = game('p1');
+  putCard(state, 'toll', 'toll-of-the-invasion', 'p1', 'hand');
+  putCard(state, 'oppland', 'basic-swamp', 'p2', 'hand');
+  putCard(state, 'oppcrt', 'highland-game', 'p2', 'hand');
+  addMana(state, 'p1', 3, { colors: ['B'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'toll' && c.targets?.[0] === 'p2');
+  assert.ok(cast, 'oferta rzutu w przeciwnika');
+  assert.ok(execute(state, cast).ok);
+  resolveStack(state);
+  // Wybór należy do RZUCAJĄCEGO (chooser p1), tylko karty NIELĄDOWE, bez rezygnacji.
+  assert.ok(state.pendingDiscardChoice, 'decyzja wyboru z odsłoniętej ręki');
+  assert.equal(state.pendingDiscardChoice.chooserId, 'p1', 'wybiera rzucający');
+  assert.equal(state.pendingDiscardChoice.allowDecline, false, 'wybór obowiązkowy (bez rezygnacji)');
+  assert.deepEqual(state.pendingDiscardChoice.handIds, ['oppcrt'], 'tylko karta nieladowa');
+  const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_discard_choice');
+  assert.ok(offers.every((c) => c.cardId != null), 'brak oferty rezygnacji (mandatory)');
+  assert.ok(execute(state, offers[0]).ok);
+  assert.ok([...state.objects.values()].some((o) => o.cardId === 'highland-game' && o.zone === 'graveyard'),
+    'wybrana karta odrzucona');
+  // Amass Zombies 1: token Zombie Army 0/0 + licznik +1/+1.
+  const army = [...state.objects.values()].find((o) => o.isToken && (o.subtypes ?? []).includes('Army'));
+  assert.ok(army, 'token Zombie Army powstał');
+  assert.ok((army.subtypes ?? []).includes('Zombie'), 'Armia jest Zombie');
+  assert.equal((army.counters ?? {})['+1/+1'], 1, 'licznik +1/+1 z amass 1');
+});
+
+test('B2b: Toll — sama ręka LĄDÓW = nikt nic nie odrzuca (Oracle), amass działa', () => {
+  const state = game('p1');
+  putCard(state, 'toll', 'toll-of-the-invasion', 'p1', 'hand');
+  putCard(state, 'oppland', 'basic-swamp', 'p2', 'hand');
+  addMana(state, 'p1', 3, { colors: ['B'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'toll' && c.targets?.[0] === 'p2');
+  assert.ok(execute(state, cast).ok);
+  resolveStack(state);
+  assert.ok(!state.pendingDiscardChoice, 'bez decyzji (brak nonland — mandatory nie karze za brak)');
+  const handAfter = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === 'p2').length;
+  assert.equal(handAfter, 1, 'ląd zostaje w ręce');
+  assert.ok([...state.objects.values()].some((o) => o.isToken && (o.subtypes ?? []).includes('Army')),
+    'amass mimo braku odrzucenia');
+});
+

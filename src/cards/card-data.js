@@ -7546,6 +7546,64 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+// ---- Batch 41 — transza B: discard/amass ----
+
+  // 4. Immersturm Skullcairn (KHM) — Land: wchodzi zatapiony; {T}: {B};
+  //    {1}{B}{R}{R},{T},sac (sorcery): 3 obrażenia w GRACZA + ten gracz
+  //    odrzuca kartę (discard_cards applyTo target — wzorzec Mindstab).
+  defineCard({
+    id: 'immersturm-skullcairn', name: 'Immersturm Skullcairn', set: 'KHM',
+    types: ['Land'], colors: ['B'], entersTapped: true,
+    oracleText: 'This land enters tapped.\n{T}: Add {B}.\n{1}{B}{R}{R}, {T}, Sacrifice this land: It deals 3 damage to target player. That player discards a card. Activate only as a sorcery.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/2/12ed97de-736d-43d8-977b-308ac54f88f4.jpg?1783928173',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        timing: 'sorcery',
+        cost: { mana: 4, colors: ['B', 'R', 'R'], tap: true, sacrificeSelf: true },
+        targets: [{ type: 'player' }],
+        effect: [
+          { type: 'damage', amount: 3 },
+          { type: 'discard_cards', amount: 1, applyTo: 'target' },
+        ],
+      }),
+    ],
+    artId: 224, plan: 'Kaldheim',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Toll of the Invasion (WAR) {2}{B} Sorcery — odsłoń rękę wroga,
+  //    rzucający WYBIERA nonland (obowiązkowo — mandatory), odrzucenie;
+  //    Amass Zombies 1 (token Zombie Army — pierwszy amass „Zombies").
+  defineCard({
+    id: 'toll-of-the-invasion', name: 'Toll of the Invasion', set: 'WAR',
+    types: ['Sorcery'], colors: ['B'], manaCost: 3,
+    oracleText: 'Target opponent reveals their hand. You choose a nonland card from it. That player discards that card.\nAmass Zombies 1. (Put a +1/+1 counter on an Army you control. It\'s also a Zombie. If you don\'t control an Army, create a 0/0 black Zombie Army creature token first.)',
+    imageUri: 'https://cards.scryfall.io/large/front/4/4/4471c2a5-aa2c-47e2-8238-1eb366c8adc9.jpg?1783933438',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'opponent' }],
+      effects: [
+        { type: 'reveal_hand_choose_discard', mandatory: true },
+        {
+          type: 'amass', amount: 1, subtype: 'Zombie', name: 'Zombie Army',
+          cardId: 'token_zombie_army', colors: ['B'],
+        },
+      ],
+    },
+    artId: 9, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Token Zombie Army (TWAR 10) — amass Zombies (Toll of the Invasion).
+  defineCard({
+    id: 'token_zombie_army', name: 'Zombie Army', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Zombie', 'Army'], colors: ['B'],
+    power: 0, toughness: 0, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/1/2/12742d1f-eb2e-4262-88e2-403c9ae6c431.jpg?1783933351',  // twar
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; statystyki rosną przez amass'] },
+  }),
+
 ]);
 
 /**
