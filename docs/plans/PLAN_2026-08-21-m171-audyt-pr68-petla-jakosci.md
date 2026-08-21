@@ -30,21 +30,27 @@
 
 ### Etap 2 — audyt PR #68 (ADR 0020 B / 0016)
 
-- [ ] Przegląd zmian engine (spells/abilities/effects/game-state/combat/
-      triggers/resources/fingerprint) — zgodność z CR, ADR 0002 (zero
-      przypadków po nazwie/ID karty w core).
-- [ ] Weryfikacja kart Batch 40 wobec plików Scryfall (Oracle 1:1,
-      ADR 0022 — pełny Oracle albo unsupported).
-- [ ] Kontrola testów RED→GREEN (weryfikacja mutacyjna próbki).
-- [ ] Wynik: `docs/audits/AUDYT_PR68_2026-08-21.md` + wpis w opisie PR;
-      znaleziska naprawiane od razu (osobne, samodzielnie zielone commity).
+- [x] Przegląd zmian engine — zgodność z CR, ADR 0002 (zero przypadków
+      po nazwie/ID karty w core). ✓
+- [x] Weryfikacja kart Batch 40 wobec plików Scryfall (Oracle 1:1). ✓
+- [x] Weryfikacja mutacyjna próbki (M170 gate, adamant, landfall — 3×RED). ✓
+- [x] Wynik: `docs/audits/AUDYT_PR68_2026-08-21.md` (commit d4dd7b2);
+      znalezisko N1 naprawione osobnym commitem a88d596 (test RED→GREEN
+      `test/m171-adamant-multicolor-mana.test.js`, 3).
 
 ### Etap 3 — pętla jakości (ADR 0021 pkt 4)
 
-- [ ] (a) audyt Żywym Testerem z perspektywy gracza (build + `npm i` w
-      `tools/table-tester`; osie z `TESTER_STOLU.md`), naprawy u root cause.
-- [ ] (b) nowy detektor na każdą klasę błędu znalezioną ręcznie (L27).
-- [ ] (c) bez nowego batcha kart (karty tylko od właściciela).
+- [x] (a) audyt Żywym Testerem: 8 partii (tokens/ostrza/graveyard —
+      talie z kartami Batch 40 po obu stronach; profile greedy/impatient/
+      aggressive). Naprawy u root cause: Z1 (odmiana + DRUGA_OSOBA),
+      Z3 (cel-gracz w wielocelowej wycenie triggera — bot dzielił obrażenia
+      we własną twarz, klasa L50), Z4/Z4b (LKI celów w zdarzeniach podziału
+      — bez „?" po śmierci celu; tokeny przez name), Z5 (tester appendował
+      przebiegi do jednego pliku — klasa L33). Commit 2647f7b.
+- [x] (b) detektory: detectThirdPersonAboutHuman + PLACEHOLDER „?:";
+      weryfikacja wsteczna (archiwalne g2 = 2 zgłoszenia, audyt-m159 = 0)
+      + strażnik czasowników w teście (L29/L31) + strażnik flush (L33).
+- [x] (c) bez nowego batcha kart. ✓
 
 ## Ryzyka / pułapki
 
@@ -55,4 +61,13 @@
 
 ## Podsumowanie wykonania
 
-(uzupełniane na końcu zadania)
+- **Etap 0–1:** PR #69 (421e8fb), baseline zgodny (2580 fast / 52 moduły).
+- **Etap 2:** audyt PR #68 POZYTYWNY (d4dd7b2); znalezisko N1 (Adamant nie
+  liczył jednostek wielokolorowych — Skarb płacący pip {B}; CR 106.7)
+  naprawione u root cause w a88d596; obserwacje U1 (komentarz Enrage —
+  poprawiony), U2 (epicCastOffers bez filtra additionalCost na ścieżce
+  EPIC — pilnować przy pierwszym takim zestawieniu talii).
+- **Etap 3:** pętla jakości — 5 znalezisk Z1–Z5 naprawionych + 2 detektory
+  + 2 strażniki (2647f7b). Transkrypty w `tools/table-tester/audyt-m171/`.
+- **Stan końcowy:** `test:all` **2599/2599**, build **52 moduły /
+  2211.4 kB**, benchmark regresji bota 9/9 (po zmianie wyceny Z3).

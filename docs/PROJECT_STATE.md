@@ -1,7 +1,39 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-20 (M162: uwagi właściciela A/B/C — talie „Zapisz jako...", Bell bota, modal Ratsów)
-- **Poprzednia:** 2026-08-20 (M161: audyt PR #67 + gotowość madness na czary — routing po kind)
+- **Ostatnia aktualizacja:** 2026-08-21 (M171: audyt PR #68 + N1 Adamant/wielokolorowe + pętla jakości Z1–Z5)
+- **Poprzednia:** 2026-08-20 (M162: uwagi właściciela A/B/C — talie „Zapisz jako...", Bell bota, modal Ratsów)
+
+
+## M171 — audyt PR #68 + pętla jakości (2026-08-21, PR #69)
+
+Plan: `docs/plans/PLAN_2026-08-21-m171-audyt-pr68-petla-jakosci.md`.
+Audyt: `docs/audits/AUDYT_PR68_2026-08-21.md` (wynik POZYTYWNY; engine
+zgodny z ADR 0002, Batch 40 zgodny z Oracle, 3 mutacje próbki czerwienieją).
+
+- **N1 (a88d596, testy `m171-adamant-multicolor-mana` ×3):** Adamant nie
+  liczył jednostek WIELOKOLOROWYCH many — Skarb (dowolny kolor) płacący
+  pip {B} to wg CR 106.7 czarna mana (kolor wybiera gracz przy produkcji);
+  osiągalne w graveyard.txt (Fake Your Own Death + Locthwain Paladin).
+  Fix: przypisania pipów śledzone w backtrackingu consumeManaPool (kolor
+  wydany = przecięcie jednostki z wymaganiem), generic-wielokolorowe jako
+  wildcard; adamant honoruje wildcardy.
+- **Pętla jakości (2647f7b, testy `m171-petla-jakosci` ×7):** 8 partii
+  Żywego Testera (talie z Batch 40 po obu stronach). Z1: „dzieli 3
+  obrażeń" → dmgCount; czasowniki dzieli/zawiesza/zdejmuje w DRUGA_OSOBA
+  + strażnik kompletności (L29/L31). Z3: cel-GRACZ w wielocelowym
+  resolve_trigger_target pomijany w wycenie (klasa L50) — bot dzielił
+  obrażenia Inferno Titana we WŁASNĄ twarz; wycena twarzy w obu gałęziach
+  (friendly odwraca). Z4/Z4b: zdarzenia podziału obrażeń niosą LKI celów
+  (targetCardIds + targetNames dla tokenów) — log bez „?: 1". Z5: tester
+  appendował przebiegi do jednego transkryptu (klasa L33 — fałszywa
+  hipoteza o niedziałającym fixie) → writeFileSync + strażnik. Detektory:
+  detectThirdPersonAboutHuman, PLACEHOLDER łapie „?:".
+- **U2 (obserwacja):** epicCastOffers na ścieżce EPIC nie filtruje
+  additionalCost — pilnować przy pierwszym epic-czarze z kosztem
+  dodatkowym w tej samej talii.
+
+**Stan:** `test:all` **2599/2599**, build **52 moduły / 2211.4 kB**,
+benchmark regresji bota 9/9 (po zmianie wyceny Z3).
 
 
 ## M170 — Incubator: transform jednorazowy (rozszerzenie C z M168, 2026-08-21, PR #68)
