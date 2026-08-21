@@ -7472,6 +7472,80 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+// =========================================================================
+  // Batch 41 (10 kart, lista właściciela 2026-08-21) — transza A: reuse.
+  // Dane Scryfall: docs/cards/scryfall-*.json (ADR 0010 §2a).
+  // =========================================================================
+
+  // 1. Spin Out (DFT) {1}{B}{B} Instant — „Destroy target creature or
+  //    Vehicle." (cel creature_or_vehicle — M154; destroy_permanent).
+  defineCard({
+    id: 'spin-out', name: 'Spin Out', set: 'DFT',
+    types: ['Instant'], colors: ['B'], manaCost: 3,
+    oracleText: 'Destroy target creature or Vehicle.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/e/be722ac5-e8c4-4180-aed0-7c28895afc0d.jpg?1783907889',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature_or_vehicle' }],
+      effects: [{ type: 'destroy_permanent' }],
+    },
+    artId: 119, plan: 'Muraganda',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Stall Out (DFT) {1}{U} Sorcery — tap + 3 liczniki stun na stworze
+  //    lub Vehicle; Cycling {2} (wszystko reuse: stun M?, cycling generic).
+  defineCard({
+    id: 'stall-out', name: 'Stall Out', set: 'DFT',
+    types: ['Sorcery'], colors: ['U'], manaCost: 2,
+    oracleText: 'Tap target creature or Vehicle, then put three stun counters on it. (If a permanent with a stun counter would become untapped, remove one from it instead.)\nCycling {2} ({2}, Discard this card: Draw a card.)',
+    imageUri: 'https://cards.scryfall.io/large/front/4/e/4ea0e0d3-833f-4353-b648-57b0b657cc1c.jpg?1783907902',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature_or_vehicle' }],
+      // CR 608.2c „then": najpierw tap, potem liczniki — oba na tym samym celu.
+      effects: [
+        { type: 'tap_permanent', targetIndex: 0 },
+        { type: 'add_counter', counter: 'stun', amount: 3, targetIndex: 0 },
+      ],
+    },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'cycling',
+        cost: { mana: 2 },
+        cycling: { drawCards: 1 },
+        effect: [],
+      }),
+    ],
+    artId: 61, plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Horizon Spellbomb (SOM) {1} Artifact — bliźniak Panic Spellbomba
+  //    (ten sam cykl SOM): {2},{T},sac: szukaj basic land DO RĘKI;
+  //    dies: „you may pay {G} → draw" (trigger dies + payMana/payColors).
+  defineCard({
+    id: 'horizon-spellbomb', name: 'Horizon Spellbomb', set: 'SOM',
+    types: ['Artifact'], colors: [], manaCost: 1,
+    oracleText: '{2}, {T}, Sacrifice this artifact: Search your library for a basic land card, reveal it, put it into your hand, then shuffle.\nWhen this artifact is put into a graveyard from the battlefield, you may pay {G}. If you do, draw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/d/9d93378e-1de2-4954-9458-dd3306f2996e.jpg?1783941707',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, tap: true, sacrificeSelf: true },
+        effect: [{ type: 'search_library_to_hand', qualifier: { types: ['Basic', 'Land'] } }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies', payMana: 1, payColors: ['G'] },
+        effect: [{ type: 'draw_cards', amount: 1 }],
+      }),
+    ],
+    artId: 230, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 /**

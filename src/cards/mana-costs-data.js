@@ -320,4 +320,7 @@ export const MANA_COSTS = {
   "sarkhans-rage": "{4}{R}",
   "inferno-titan": "{4}{R}{R}",
   "cenns-tactician": "{W}",
+  "spin-out": "{1}{B}{B}",
+  "stall-out": "{1}{U}",
+  "horizon-spellbomb": "{1}",
 };
