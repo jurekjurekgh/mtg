@@ -252,3 +252,58 @@ test('Ea: nagłówki faz wracają do logu — raz na zmianę fazy', async () => 
   const phases = headers.map((h) => h.text);
   assert.ok(new Set(phases).size >= 2, 'różne fazy w nagłówkach');
 });
+
+// ---- K2: szybkie dodawanie landów podstawowych w kreatorze ---------------------
+
+test('K2: box pięciu landów podstawowych z -/+ nad listą kart kreatora', async () => {
+  const { mountDeckBuilder } = await import('../src/table/deck-builder.js');
+
+  class El {
+    constructor(tag) { this.tagName = tag; this.children = []; this.className = ''; this.text = ''; this.value = ''; this.disabled = false; this.listeners = {}; this.dataset = {}; }
+    set textContent(v) { this.text = String(v); this.children = []; }
+    get textContent() { return this.text + this.children.map((c) => c.textContent).join(''); }
+    appendChild(child) { this.children.push(child); return child; }
+    addEventListener(type, fn) { (this.listeners[type] ??= []).push(fn); }
+    click() { for (const fn of this.listeners.click ?? []) fn({}); }
+    descendants() { return this.children.flatMap((c) => [c, ...c.descendants()]); }
+  }
+  const byId = new Map();
+  const ids = ['deck-builder', 'deck-builder-name', 'deck-builder-plan', 'deck-builder-set', 'deck-builder-color',
+    'deck-builder-filter', 'deck-builder-card-list', 'deck-builder-basic-lands', 'deck-builder-summary',
+    'deck-builder-errors', 'deck-builder-output', 'deck-builder-copy', 'deck-builder-download', 'deck-builder-status',
+    'deck-builder-add-filtered', 'deck-builder-clear', 'deck-builder-library-select', 'deck-builder-load',
+    'deck-builder-save', 'deck-builder-save-as', 'deck-builder-delete'];
+  for (const id of ids) byId.set(id, new El('div'));
+  const prevDocument = globalThis.document;
+  globalThis.document = {
+    createElement: (tag) => new El(tag),
+    getElementById: (id) => byId.get(id) ?? null,
+    body: new El('body'),
+  };
+  try {
+    const mounted = mountDeckBuilder({ registry: REGISTRY, repoDecks: {} });
+    assert.ok(mounted, 'kreator zamontowany');
+    const lands = byId.get('deck-builder-basic-lands');
+    const rows = lands.children.filter((c) => String(c.className).includes('deck-builder-basic-land-row'));
+    assert.equal(rows.length, 5, 'pięć landów podstawowych w boxie');
+    const names = rows.map((r) => r.children[0].textContent);
+    assert.deepEqual(names, ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest'], 'kolejność jak w legacy');
+    // + 2× Forest, + 1× Island, − 1× Forest — liczniki w boxie odświeżone
+    // (tekst talii pojawia się po spełnieniu minimum 15 nielandów — to
+    // osobna walidacja; tu testujemy szybkie dodawanie).
+    const freshRows = () => lands.children.filter((c) => String(c.className).includes('deck-builder-basic-land-row'));
+    const countOf = (row) => row.descendants().find((c) => String(c.className).includes('deck-card-count'))?.textContent;
+    const plusOf = (row) => row.descendants().filter((c) => c.textContent === '+')[0];
+    const minusOf = (row) => row.descendants().filter((c) => c.textContent === '−')[0];
+    plusOf(freshRows()[4]).click();
+    plusOf(freshRows()[4]).click();
+    plusOf(freshRows()[1]).click();
+    assert.equal(countOf(freshRows()[4]), '2', 'licznik Forest = 2');
+    assert.equal(countOf(freshRows()[1]), '1', 'licznik Island = 1');
+    minusOf(freshRows()[4]).click();
+    assert.equal(countOf(freshRows()[4]), '1', 'po −: licznik Forest = 1');
+    assert.equal(countOf(freshRows()[1]), '1', 'Island bez zmian');
+  } finally {
+    globalThis.document = prevDocument;
+  }
+});

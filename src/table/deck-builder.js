@@ -79,6 +79,9 @@ export function mountDeckBuilder({ registry, repoDecks = {} }) {
     color: document.getElementById('deck-builder-color'),
     filter: document.getElementById('deck-builder-filter'),
     cards: document.getElementById('deck-builder-card-list'),
+    // K2: opcjonalny kontener szybkich landów (nieobecny w starych stubach
+    // testów — render pomija, gdy brak).
+    basicLands: document.getElementById('deck-builder-basic-lands'),
     summary: document.getElementById('deck-builder-summary'),
     errors: document.getElementById('deck-builder-errors'),
     output: document.getElementById('deck-builder-output'),
@@ -93,7 +96,8 @@ export function mountDeckBuilder({ registry, repoDecks = {} }) {
     saveAs: document.getElementById('deck-builder-save-as'),
     deleteBtn: document.getElementById('deck-builder-delete'),
   };
-  if (Object.values(refs).some((element) => !element)) return null;
+  const requiredRefs = Object.fromEntries(Object.entries(refs).filter(([key]) => key !== 'basicLands'));
+  if (Object.values(requiredRefs).some((element) => !element)) return null;
 
   const allCards = deckBuilderCards(registry);
   const repoDeckNames = Object.keys(repoDecks).sort((a, b) => a.localeCompare(b, 'pl'));
@@ -186,6 +190,51 @@ export function mountDeckBuilder({ registry, repoDecks = {} }) {
     }
   }
 
+  /**
+   * K2 (uwaga właściciela): SZYBKIE DODAWANIE LĄDÓW PODSTAWOWYCH — box
+   * nad listą kart z pięcioma landami i przyciskami −/+ (wzorzec legacy
+   * card_viewer). Te same wywołania add/removeCardToDeck co wiersze listy
+   * (jedna walidacja — landy podstawowe bez limitu 4 kopii).
+   */
+  function renderBasicLands(snapshot) {
+    if (!refs.basicLands) return;
+    clearBuilderElement(refs.basicLands);
+    node(refs.basicLands, 'div', 'deck-builder-basic-lands-label', 'SZYBKIE DODAWANIE LĄDÓW PODSTAWOWYCH:');
+    const BASIC_IDS = ['basic-plains', 'basic-island', 'basic-swamp', 'basic-mountain', 'basic-forest'];
+    for (const id of BASIC_IDS) {
+      const card = registry.get(id);
+      if (!card) continue;
+      const count = snapshot.counts.get(id) ?? 0;
+      const row = node(refs.basicLands, 'div', 'deck-builder-basic-land-row');
+      node(row, 'span', 'deck-builder-basic-land-name', card.name);
+      const controls = node(row, 'div', 'deck-card-controls');
+      const minus = node(controls, 'button', 'ghost-btn deck-card-minus', '−');
+      minus.type = 'button';
+      minus.disabled = count === 0;
+      minus.setAttribute?.('aria-label', `Usuń ${card.name}`);
+      minus.addEventListener('click', () => {
+        const result = removeCardFromDeck(state.cardIds, id, registry);
+        state.cardIds = result.cardIds;
+        state.lastError = result.ok ? null : result.error;
+        render();
+      });
+      node(controls, 'span', 'deck-card-count', String(count));
+      const plus = node(controls, 'button', 'ghost-btn deck-card-plus', '+');
+      plus.type = 'button';
+      plus.setAttribute?.('aria-label', `Dodaj ${card.name}`);
+      plus.addEventListener('click', () => {
+        const result = addCardToDeck(state.cardIds, id, registry);
+        if (result.ok) {
+          state.cardIds = result.cardIds;
+          state.lastError = null;
+        } else {
+          state.lastError = result.error;
+        }
+        render();
+      });
+    }
+  }
+
   function render() {
     const snapshot = currentSnapshot();
     const stats = deckStatistics(state.cardIds, registry);
@@ -194,6 +243,7 @@ export function mountDeckBuilder({ registry, repoDecks = {} }) {
     refs.copy.disabled = !snapshot.text;
     refs.download.disabled = !snapshot.text;
     renderErrors(snapshot);
+    renderBasicLands(snapshot);
     renderCards();
   }
 
