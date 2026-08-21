@@ -4,6 +4,24 @@
 - **Poprzednia:** 2026-08-20 (M161: audyt PR #67 + gotowość madness na czary — routing po kind)
 
 
+## M169 — ostatnie uwagi właściciela J–N (2026-08-21, PR #68)
+
+Testy: `test/m169-uwagi-wlasciciela.test.js` (5, RED→GREEN). Commit f91da2c.
+
+- **J+L (lethal przez blokerów):** penetrating = totalPower − suma
+  wytrzymałości nietapniętych blokerów; ≥ życia wroga → +1000 (all-in);
+  surowy totalPower działa już tylko przy pustym stole. J: 18 vs 6 przy
+  absorpcji 8 → bot dobija. L: 6/7 w 7/10 → brak bonusu, kara chumpa.
+- **K (samookaleczenie ETB):** skan triggerów wejścia (lose_life scope
+  controller / applyTo self, damage_to_controller); życie po stracie ≤ 2
+  lub < 0 → twarda odmowa; niskie życie → kara 15N; zdrowe → 2N.
+- **M:** Poison Token klikalny (pełny ekran; wzorzec Day/Night M153/C).
+- **N (menace w fallback enumeracji):** ograniczony zestaw PAR (cap 8)
+  pod każdego atakującego z menace — greedy wcześniej „zużywał" blokerów
+  pod wcześniejszych atakujących i znikały z wizarda.
+
+**Stan:** `test:all` **2585/2585**, build **52 moduły / 2206.8 kB**.
+
 ## M168 — uwagi właściciela z testów A–D + C2 (2026-08-21, PR #68)
 
 Testy: `test/m168-uwagi-wlasciciela.test.js` (9, RED→GREEN). Commit f28744b.
