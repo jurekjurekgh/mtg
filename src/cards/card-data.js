@@ -7445,6 +7445,29 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['podział obrażeń: cele (1-3) wybierane w decyzji multi-target, kwoty w JEDNEJ komendzie resolve_damage_division (kompozycje 3=[3]|[2,1]|[1,1,1])'],
   }),
 
+  // 10. Cenn's Tactician (MOR) {W} 1/1 Kithkin Soldier — {W},{T}: licznik
+  //     +1/+1 na celu Soldierze; statyka: każdy stwór z licznikiem +1/+1
+  //     blokuje DODATKOWEGO stwora w każdym combacie (blockSlotsFor w
+  //     combat.js — walidacja i enumeracja).
+  defineCard({
+    id: 'cenns-tactician', name: "Cenn's Tactician", set: 'MOR',
+    types: ['Creature'], subtypes: ['Kithkin', 'Soldier'], colors: ['W'],
+    power: 1, toughness: 1, manaCost: 1,
+    oracleText: '{W}, {T}: Put a +1/+1 counter on target Soldier creature.\nEach creature you control with a +1/+1 counter on it can block an additional creature each combat.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/9/d998c949-4791-477f-ab8d-e625199623ad.jpg?1783942807',
+    abilities: [
+      createAbility({ type: ABILITY_TYPE.static, grantsExtraBlockWithCounter: '+1/+1' }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, colors: ['W'], tap: true },
+        targets: [{ type: 'creature_with_subtypes', subtypes: ['Soldier'] }],
+        effect: [{ type: 'add_counter', counter: '+1/+1', amount: 1, targetIndex: 0 }],
+      }),
+    ],
+    artId: null, plan: 'Lorwyn',
+    support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */

@@ -402,3 +402,90 @@ test('D4: trigger przy ATAKU — dzieli obrażenia (scenariusz walki)', () => {
   const dead = [...state.objects.values()].filter((o) => o.cardId === 'highland-game' && o.zone === 'graveyard');
   assert.ok(dead.length >= 1, 'jeden 2/1 zabity (2 obrażenia z podziału)');
 });
+
+// ---- Transza E: Cenn's Tactician — blok dodatkowy ------------------------------
+
+function blockersStep(state, defenderId = 'p1') {
+  state.turn = { ...state.turn, phase: 'combat', step: 'declare_blockers', activePlayerId: 'p2', priorityPlayerId: defenderId };
+}
+
+test("E1: {W},{T}: licznik +1/+1 na celu Soldierze", () => {
+  const state = game('p1');
+  putCard(state, 'tact', 'cenns-tactician', 'p1', 'battlefield');
+  putCard(state, 'guard', 'mosquito-guard', 'p1', 'battlefield'); // Kithkin Soldier
+  putCard(state, 'elk', 'highland-game', 'p1', 'battlefield'); // Elk — NIE Soldier
+  addMana(state, 'p1', 1, { colors: ['W'] });
+  const commands = playerView(state, 'p1').legalCommands
+    .filter((c) => c.type === 'activate_ability' && c.objectId === 'tact');
+  assert.ok(commands.length > 0, 'oferta aktywacji');
+  assert.ok(commands.every((c) => c.targets?.[0] !== 'elk'), 'cel tylko Soldier (Elk odfiltrowany)');
+  const chosen = commands.find((c) => c.targets?.[0] === 'guard');
+  assert.ok(chosen, 'cel = Mosquito Guard (Kithkin Soldier)');
+  assert.ok(execute(state, chosen).ok);
+  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  assert.equal((state.objects.get('guard').counters ?? {})['+1/+1'], 1, 'licznik na Soldierzie');
+  assert.equal(state.objects.get('tact').tapped, true, 'Tactician zatapowany (koszt {T})');
+});
+
+test("E2: stwór z +1/+1 blokuje DODATKOWEGO stwora (statyka Tacticiana)", () => {
+  const state = game('p1');
+  putCard(state, 'tact', 'cenns-tactician', 'p1', 'battlefield');
+  const guard = putCard(state, 'guard', 'mosquito-guard', 'p1', 'battlefield');
+  state.objects.set('guard', Object.freeze({ ...guard, counters: { '+1/+1': 1 }, summoningSickness: false }));
+  putCard(state, 'a1', 'highland-game', 'p2', 'battlefield');
+  putCard(state, 'a2', 'highland-game', 'p2', 'battlefield');
+  state.turn = { ...state.turn, phase: 'combat', step: 'declare_attackers', activePlayerId: 'p2', priorityPlayerId: 'p2' };
+  assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['a1', 'a2'] }).ok);
+  blockersStep(state);
+  // Podwójny blok: guard blokuje OBU atakujących — legalny ze statyką.
+  const done = execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: { a1: ['guard'], a2: ['guard'] } });
+  assert.ok(done.ok, `guard z +1/+1 blokuje dwóch (statyka), a było: ${done.events?.[0]?.reason}`);
+  const combat = state.combat;
+  assert.deepEqual([...combat.blockers.get('a1')], ['guard'], 'przypisany do a1');
+  assert.deepEqual([...combat.blockers.get('a2')], ['guard'], 'przypisany do a2');
+
+  // Bez statyki (bez Tacticiana na stole): ten sam podwójny blok ODRZUCONY.
+  const s2 = game('p1');
+  const guard2 = putCard(s2, 'guard', 'mosquito-guard', 'p2', 'battlefield');
+  s2.objects.set('guard', Object.freeze({ ...guard2, counters: { '+1/+1': 1 }, summoningSickness: false }));
+  putCard(s2, 'a1', 'highland-game', 'p1', 'battlefield');
+  putCard(s2, 'a2', 'highland-game', 'p1', 'battlefield');
+  s2.turn = { ...s2.turn, phase: 'combat', step: 'declare_attackers', activePlayerId: 'p1', priorityPlayerId: 'p1' };
+  execute(s2, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['a1', 'a2'] });
+  s2.turn = { ...s2.turn, phase: 'combat', step: 'declare_blockers', activePlayerId: 'p1', priorityPlayerId: 'p2' };
+  const rejected = execute(s2, { type: 'declare_blockers', playerId: 'p2', assignments: { a1: ['guard'], a2: ['guard'] } });
+  assert.ok(!rejected.ok, 'bez statyki podwójny blok nielegalny (użyty więcej niż raz)');
+});
+
+test('E3: stwór BEZ licznika +1/+1 blokuje nadal tylko raz; enumeracja oferuje podwójny blok', () => {
+  const state = game('p1');
+  putCard(state, 'tact', 'cenns-tactician', 'p1', 'battlefield');
+  const guard = putCard(state, 'guard', 'mosquito-guard', 'p1', 'battlefield');
+  state.objects.set('guard', Object.freeze({ ...guard, counters: { '+1/+1': 1 }, summoningSickness: false }));
+  putCard(state, 'plain', 'segmented-krotiq', 'p1', 'battlefield'); // bez licznika
+  state.objects.set('plain', Object.freeze({ ...state.objects.get('plain'), summoningSickness: false }));
+  putCard(state, 'a1', 'highland-game', 'p2', 'battlefield');
+  putCard(state, 'a2', 'highland-game', 'p2', 'battlefield');
+  state.turn = { ...state.turn, phase: 'combat', step: 'declare_attackers', activePlayerId: 'p2', priorityPlayerId: 'p2' };
+  execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['a1', 'a2'] });
+  blockersStep(state);
+  // Enumeracja (oferta = walidacja, L48): opcja podwójnego bloku guardem istnieje.
+  const view = playerView(state, 'p1');
+  const doubleBlock = view.legalCommands.find((c) => c.type === 'declare_blockers'
+    && (c.assignments?.a1 ?? []).includes('guard') && (c.assignments?.a2 ?? []).includes('guard'));
+  assert.ok(doubleBlock, 'oferta podwójnego bloku w legalCommands');
+  assert.ok(execute(state, doubleBlock).ok, 'ofertowany podwójny blok przechodzi execute');
+  // Stwór bez licznika: podwójny blok ODRZUCONY mimo statyki na stole.
+  const s2 = game('p1');
+  putCard(s2, 'tact', 'cenns-tactician', 'p1', 'battlefield');
+  const plain = putCard(s2, 'plain', 'segmented-krotiq', 'p1', 'battlefield');
+  s2.objects.set('plain', Object.freeze({ ...plain, summoningSickness: false }));
+  putCard(s2, 'a1', 'highland-game', 'p2', 'battlefield');
+  putCard(s2, 'a2', 'highland-game', 'p2', 'battlefield');
+  s2.turn = { ...s2.turn, phase: 'combat', step: 'declare_attackers', activePlayerId: 'p2', priorityPlayerId: 'p2' };
+  execute(s2, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['a1', 'a2'] });
+  s2.turn = { ...s2.turn, phase: 'combat', step: 'declare_blockers', activePlayerId: 'p2', priorityPlayerId: 'p1' };
+  const rejected = execute(s2, { type: 'declare_blockers', playerId: 'p1', assignments: { a1: ['plain'], a2: ['plain'] } });
+  assert.ok(!rejected.ok, 'bez licznika +1/+1 podwójny blok nadal nielegalny');
+});

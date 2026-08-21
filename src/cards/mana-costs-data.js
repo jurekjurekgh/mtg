@@ -319,4 +319,5 @@ export const MANA_COSTS = {
   "locthwain-paladin": "{3}{B}",
   "sarkhans-rage": "{4}{R}",
   "inferno-titan": "{4}{R}{R}",
+  "cenns-tactician": "{W}",
 };

@@ -169,7 +169,7 @@ export function declareBlockers(state, playerId, assignments) {
   if (!state.combat) throw new Error('Brak deklaracji atakujących');
   if (state.combat.attackingPlayerId === playerId) throw new Error('Atakujący gracz nie deklaruje blokujących');
   const blockers = new Map();
-  const usedBlockers = new Set();
+  const usedBlockers = new Map(); // M166/E: licznik slotów bloku (id -> użyte)
   for (const [attackerId, blockerIds] of Object.entries(assignments)) {
     if (!state.combat.attackers.includes(attackerId)) throw new Error('Blokowanie nieistniejącego atakującego');
     const attacker = getCreature(state, attackerId);
@@ -229,8 +229,13 @@ export function declareBlockers(state, playerId, assignments) {
         throw new Error('Chroniony stwór nie może być blokowany przez stwora o tej jakości');
       }
     }
-    if (ids.some((object) => usedBlockers.has(object.id))) throw new Error('Blocker jest użyty więcej niż raz');
-    for (const object of ids) usedBlockers.add(object.id);
+    // M166/E: blokujący z „can block an additional creature" (statyka
+    // Cenn's Tactician) może zostać przypisany do drugiego atakującego.
+    for (const object of ids) {
+      const used = usedBlockers.get(object.id) ?? 0;
+      if (used >= blockSlotsFor(state, object)) throw new Error('Blocker jest użyty więcej niż raz');
+      usedBlockers.set(object.id, used + 1);
+    }
     blockers.set(attackerId, blockerIds.slice());
   }
   // M67 (Guildsworn Prowler): „if it wasn't blocking" — zadeklarowani blokerzy
@@ -708,6 +713,26 @@ function boundedSubsets(ids, cap) {
 }
 
 /** Wszystkie zbiory atakujących, które gracz może teraz legalnie zadeklarować. */
+/**
+ * M166/E (Cenn's Tactician, MOR): „Each creature you control with a +1/+1
+ * counter on it can block an additional creature each combat." Ile razy
+ * dany blokujący może zostać przypisany (1 zwykle; 2 gdy kontroler ma
+ * statykę grantsExtraBlockWithCounter, a stwór ma ten licznik).
+ */
+export function blockSlotsFor(state, blocker) {
+  if (!blocker) return 1;
+  let slots = 1;
+  for (const object of state.zones.battlefield) {
+    const source = state.objects.get(object);
+    if (!source || source.controllerId !== blocker.controllerId) continue;
+    for (const ability of effectiveAbilities(source)) {
+      if (ability?.type !== 'static' || !ability.grantsExtraBlockWithCounter) continue;
+      if ((blocker.counters ?? {})[ability.grantsExtraBlockWithCounter] > 0) slots += 1;
+    }
+  }
+  return slots;
+}
+
 export function legalAttackerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
   const legal = [];
   for (const id of state.zones.battlefield) {
@@ -844,7 +869,14 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
   }
   if ((attackers.length + 1) ** blockers.length <= cap) {
     const all = [{}];
-    for (const blockerId of blockers) {
+    // M166/E: blokujący z dodatkowym slotem przetwarzany jest drugi raz
+    // (przypisanie do INNEGO atakującego); duplikat w tej samej liście
+    // odcina warunek includes poniżej.
+    const rounds = blockers.flatMap((id) => {
+      const slots = blockSlotsFor(state, state.objects.get(id));
+      return Array.from({ length: Math.min(slots, 2) }, () => id);
+    });
+    for (const blockerId of rounds) {
       const blocker = state.objects.get(blockerId);
       // „Can't block this turn\" (Panic Spellbomb): stwór z cantBlock
       // nie może blokować w tym combacie.
@@ -856,6 +888,7 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
         for (const attackerId of attackers) {
           const attacker = state.objects.get(attackerId);
           if (!canBlock(state, attacker, blocker)) continue;
+          if ((assignment[attackerId] ?? []).includes(blockerId)) continue; // M166/E: bez duplikatu u tego samego atakującego
           const candidate = { ...assignment, [attackerId]: [...(assignment[attackerId] ?? []), blockerId] };
           // Menace: przypisanie dokładnie jednego blokującego jest nielegalne
           // — takiej kombinacji nie wolno ani zaoferować, ani rozbudowywać

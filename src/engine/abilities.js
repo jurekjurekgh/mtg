@@ -76,7 +76,7 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   return base;
 }
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, forecast = false, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, landwalk = null, onNthResolve = null }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, landwalk = null, onNthResolve = null }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -150,6 +150,10 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // M166/B (Reinforce, CR 702.29a): zdolność karty w RĘCE — koszt mana +
     // odrzucenie karty; efekt: liczniki +1/+1 na celu stworze.
     reinforce: reinforce ? Object.freeze({ ...reinforce }) : null,
+    // M166/E (Cenn's Tactician): statyka „Each creature you control with
+    // a +1/+1 counter on it can block an additional creature each combat"
+    // — licznik uprawniający do dodatkowego slotu bloku.
+    grantsExtraBlockWithCounter,
     // Forecast (CR 702.94, Piercing Rays): „[koszt], Reveal this card from
     // your hand: [efekt]. Activate only during your upkeep and only once each
     // turn." Zdolność aktywowana z RĘKI; karta zostaje w ręce (ujawniona).
