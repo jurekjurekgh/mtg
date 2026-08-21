@@ -214,6 +214,25 @@ function colorRequirementsOf(cost) {
  * zdolności z {T} w koszcie. Dotyczy WSZYSTKICH zdolności — także many
  * (land creature, Apprentice Wizard). Artefakty/enchantmenty nie są stworami.
  */
+
+/**
+ * M170/C (uwaga właściciela, Incubator): zdolność „{N}: Transform this
+ * permanent" jest JEDNORAZOWA — jeśli jej aktywacja CZEKA już na stosie,
+ * ponowna aktywacja (możliwa płatnościowo, bo koszt nie zawiera {T}) robi
+ * transform→re-transform i gracz płaci podwójnie za zero efektu. Oferta
+ * chowa zdolność, a aktywacja ją odrzuca — spójnie (L48).
+ */
+function transformActivationPending(state, objectId) {
+  return state.zones.stack.some((stackId) => {
+    const entry = state.objects.get(stackId);
+    const activated = entry?.activatedEntry;
+    if (!activated || entry.kind !== 'activated') return false;
+    if (activated.objectId !== objectId) return false;
+    const effects = Array.isArray(activated.ability?.effect) ? activated.ability.effect : [activated.ability?.effect];
+    return effects.length === 1 && effects[0]?.type === 'transform';
+  });
+}
+
 function tapBlockedBySummoningSickness(state, object, ability) {
   if (!ability?.cost?.tap) return false;
   const isCreature = object.kind === 'creature' || (object.types ?? []).includes('Creature');
@@ -387,6 +406,12 @@ export function legalActivatedAbilities(state, playerId) {
       if (ability.timing === 'sorcery' && !sorcerySpeed) continue;
       // Ninjutsu działa wyłącznie z ręki — na polu bitwy nie ma czego aktywować.
       if (ability.keyword === 'ninjutsu') continue;
+      // M170/C: transform już czeka na stosie — druga aktywacja to
+      // transform→re-transform i podwójna płatność bez efektu.
+      {
+        const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+        if (effs.length === 1 && effs[0]?.type === 'transform' && transformActivationPending(state, id)) continue;
+      }
       // Cycling również działa wyłącznie z ręki (CR 702.28a) — na polu bitwy
       // ta zdolność jest martwa; oferowanie jej kończy się odrzuceniem legalnej
       // z pozoru komendy (execute krzyczy „Cycling aktywuje się z ręki").
@@ -856,6 +881,14 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     if (!sorcerySpeed) throw new Error('Zdolność tylko w swoją fazę main przy pustym stosie');
   }
 
+  // M170/C: transform one-shot — odrzuca przed płatnością, gdy aktywacja
+  // tego samego źródła czeka już na stosie (spójnie z ofertą, L48).
+  {
+    const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+    if (effs.length === 1 && effs[0]?.type === 'transform' && transformActivationPending(state, objectId)) {
+      throw new Error('Transform już czeka na stosie');
+    }
+  }
   if (ability.keyword === 'ninjutsu') {
     return activateNinjutsu(state, playerId, object, abilityIndex, ability, attackerId);
   }
