@@ -31,6 +31,12 @@
   nie przekracza potrzeb; koszt {T} stwora zdolnego do walki liczy się
   jako strata poza postcombat main.
 
+- **E (Death-Hood Cobra, dopisane w trakcie):** bot aktywował grant
+  „reach until EOT" zaraz po wystawieniu (mana w cleanup). Reguła
+  właściciela: reach = obrona przed zadeklarowanym atakiem z flying;
+  deathtouch/first strike itp. = trick starcia PO deklaracjach
+  (atakuje/blokuje) — wycena grantów zawężona do właściwych okien.
+
 ## Etapy
 
 - [ ] Plan + push (ADR 0020).
@@ -42,6 +48,8 @@
 - [ ] D: wycena add_counter w activate_ability (konsument/zapas/timing);
       test anty-spam + anty-over-fix (produkcja gdy zapas pusty i jest
       konsument); benchmark regresji.
+- [ ] E: wycena grant_keywords_until_end_of_turn per okno walki
+      (reach/trick starcia/evasion); testy RED→GREEN.
 - [ ] Zamknięcie: test:all + build + dokumentacja + opis PR.
 
 ## Ryzyka

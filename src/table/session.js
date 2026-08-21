@@ -1,6 +1,7 @@
 import { execute, playerView } from '../engine/game-state.js';
 import { makeSimulate } from '../engine/lookahead.js';
 import { setupCardMatch } from '../cards/materialize.js';
+import { TOKEN_IMAGES } from '../cards/card-data.js';
 import { parseReplay, playReplay, replayFromState, serializeReplay } from '../engine/replay.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
 import { createHeuristicBot } from '../controllers/heuristic-bot.js';
@@ -1962,7 +1963,12 @@ export function createSession(config) {
       return colorsById.get(cardId) ?? [];
     },
     cardDetails(cardId) {
-      return registry.get(cardId) ?? null;
+      const card = registry.get(cardId);
+      if (card) return card;
+      // M173/B: tokeny (cardId token_*) nie są kartami rejestru — kafel
+      // i pełny ekran dostają druk Scryfalla z mapy TOKEN_IMAGES.
+      const tokenImage = TOKEN_IMAGES[cardId];
+      return tokenImage ? { imageUri: tokenImage } : null;
     },
     abilitiesOf(cardId) {
       const card = registry.get(cardId);

@@ -26,6 +26,10 @@ import { normalizeHeuristicWeights } from './heuristic-weights.js';
  * - blokowanie świadome ceny: nie chumpuje cennymi atakującymi bez presji.
  */
 
+// M173/D: liczniki-keywordy (deathtouch, flying...) traktujemy jak
+// statystyczne — dają trwałą zdolność, nie zasób do konsumpcji.
+const KEYWORD_COUNTERS = new Set(['deathtouch', 'flying', 'first_strike', 'double_strike', 'lifelink', 'trample', 'vigilance', 'menace', 'reach', 'haste', 'hexproof', 'indestructible']);
+
 const NEVER = Number.NEGATIVE_INFINITY;
 
 /**
@@ -781,14 +785,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       case 'cast_spell':
       case 'cast_cleave':
       case 'cast_escape':
-      case 'cast_flashback': {
+      case 'cast_flashback':
+      case 'cast_adventure': {
         // M103/D: Escape/Flashback grają kartę z GROBU — handCard jej nie
         // widzi, a bez deskryptora czar dostawał 60 pkt „na ślepo" (bot
         // mielił samego siebie i wyganiał własne karty za darmo w wycenie).
         const card = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
         // Strefy „jawne" widoku (grób, wygnanie) potrafią nieść tylko id+cardId
         // — deskryptor czaru bierzemy wtedy wprost z rejestru (ADR 0002).
-        const spell = card?.spell ?? (card?.cardId ? cardDef(card.cardId)?.spell : undefined);
+        // M173/A (Gray Slaad): PRZYGODA to czar z deskryptora adventure —
+        // dotąd cast_adventure w ogóle nie trafiał do tej gałęzi (bez wyceny
+        // efektów bot nigdy nie wybierał przygody — klasa L50).
+        const spell = cmd.type === 'cast_adventure'
+          ? (card?.adventure?.spell ?? (card?.cardId ? cardDef(card.cardId)?.adventure?.spell : undefined))
+          : (card?.spell ?? (card?.cardId ? cardDef(card.cardId)?.spell : undefined));
         if (!spell) return finish(60);
         const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
         // M111: czar MODALNY trzyma treść w `spell.modes[i].effects`, a górne
@@ -1066,6 +1076,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (millsSelf && !millsFoe) score -= 80;
             else if (millsSelf) score -= 50;
             else if (millsFoe) score += 20 + 3 * (effect.amount ?? 1);
+            // M173/A (Gray Slaad — Entropic Decay „Mill four cards"): mill
+            // BEZ celu mieli WŁASNĄ bibliotekę. Wartość zależy od synergii
+            // grobu (deskryptory zależne od liczby kart w grobie — np.
+            // minCreatureCardsInGraveyard, ADR 0002) i wyścigu bibliotek.
+            else if (playerTargets.length === 0) {
+              const n = effect.amount ?? 1;
+              const myLib = view.zones.library.filter((o) => o.controllerId === view.playerId).length;
+              if (myLib - n <= 0) score -= 120; // deck-out — nigdy
+              else {
+                const ownCardIds = [
+                  ...view.zones.battlefield.filter((o) => o.controllerId === view.playerId),
+                  ...view.zones.hand.filter((o) => o.controllerId === view.playerId),
+                ].map((o) => o.cardId).filter(Boolean);
+                const graveSynergy = ownCardIds.some((cid) => (cardDef(cid)?.abilities ?? [])
+                  .some((a) => a?.condition?.minCreatureCardsInGraveyard != null));
+                score += graveSynergy ? 18 : -25;
+              }
+            }
           }
           // M162/B (uwaga właściciela): symetryczny mill (Ghoulcaller's Bell —
           // „each player mills") — wycena WYŚCIGU bibliotek. Bez tej gałęzi
@@ -1395,18 +1423,43 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               if (fresh.length === 0) {
                 score -= 10; // duplikat keywordu: zero zmiany w grze
               } else {
-                const combatStep = ['declare_attackers', 'declare_blockers', 'combat_damage'].includes(view.turn.step);
-                // Evasion/agresja liczy się w NASZYM ataku, obronne — w cudzym.
-                const offensive = fresh.filter((k) => ['trample', 'flying', 'menace', 'haste', 'double_strike', 'first_strike', 'lifelink', 'deathtouch'].includes(k));
-                let value = 2 * offensive.length + (fresh.length - offensive.length);
-                if (offensive.length > 0) {
-                  // Zadeptywanie/latanie na stworze, który dziś NIE atakuje,
-                  // nic nie wnosi (wygasa w cleanup — patologia z M96).
-                  if (myTurn(view) && canAttackNow(recipient)) value += 2 + (recipient.power ?? 0);
-                  else if (!myTurn(view) && view.turn.step === 'declare_blockers') value += 1;
-                  else value -= 6;
+                // M173/E (uwaga właściciela, Death-Hood Cobra): grant „until
+                // EOT" to TRICK BOJOWY — wartość ma wyłącznie we WŁAŚCIWYM
+                // oknie walki, poza nim mana wyparowuje w cleanup (bot
+                // aktywował reach zaraz po wystawieniu Cobry i kończył turę).
+                const combat = view.combat ?? null;
+                const attacking = Boolean(combat?.attackers?.includes(recipient.id));
+                const blocking = Object.values(combat?.blockers ?? {}).some((ids) => (ids ?? []).includes(recipient.id));
+                const enemyAttackDeclared = Boolean(combat) && combat.attackingPlayerId !== view.playerId;
+                const enemyFlyerAttacks = enemyAttackDeclared && (combat.attackers ?? []).some((id) => {
+                  const attacker = objectOnBoard(view, id);
+                  return attacker && (attacker.keywords ?? []).includes('flying');
+                });
+                let value = 0;
+                for (const kw of fresh) {
+                  if (kw === 'reach') {
+                    // OBRONNY: sens tylko, gdy nadlatuje atak z flying,
+                    // a stwór może jeszcze zablokować (przed deklaracją
+                    // bloków, nietapnięty).
+                    value += (enemyFlyerAttacks && !recipient.tapped
+                      && view.turn.step === 'declare_blockers' && !blocking) ? 8 : -10;
+                  } else if (['deathtouch', 'first_strike', 'double_strike', 'lifelink', 'indestructible'].includes(kw)) {
+                    // TRICK STARCIA: dopiero gdy stwór FAKTYCZNIE bierze
+                    // udział w walce (po deklaracjach: atakuje albo blokuje).
+                    value += (attacking || blocking) ? (kw === 'deathtouch' ? 8 : 4) : -10;
+                  } else if (['trample', 'flying', 'menace', 'haste'].includes(kw)) {
+                    // EVASION/AGRESJA: nasz atak — zadeklarowany atakujący
+                    // albo tuż przed deklaracją (odblokowuje atak). Postcombat
+                    // main i cudza tura = strata (wygasa w cleanup).
+                    if (attacking) value += 2 + (recipient.power ?? 0);
+                    else if (myTurn(view) && canAttackNow(recipient)
+                      && ['precombat_main', 'combat'].includes(view.turn.phase)) value += 2 + (recipient.power ?? 0);
+                    else value -= 10;
+                  } else {
+                    // Pozostałe (vigilance, hexproof...): tylko w oknach walki.
+                    value += ['declare_attackers', 'declare_blockers', 'combat_damage'].includes(view.turn.step) ? 1 : -8;
+                  }
                 }
-                if (!combatStep && !myTurn(view)) value -= 4;
                 score += value;
               }
             }
@@ -1461,6 +1514,38 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             else if (foeLib - n <= 0) score += 80; // przeciwnik dobiera z pustej = wygrana
             else if (myLib <= foeLib) score -= 40; // nie prowadzę — dzwonienie szkodzi bardziej mnie
             else score += 6 + Math.min(10, myLib - foeLib); // prowadzę: mały zysk rosnący z przewagą
+          }
+          // M173/D (uwaga właściciela, Rustvine Cultivator): add_counter nie
+          // miał wyceny w ścieżce zdolności (klasa L50) — bot tapował się CO
+          // TURĘ na licznik oil (nawet w upkeepie) i nigdy go nie konsumował.
+          // Liczniki STATYSTYCZNE: jak w ścieżce czarów (własny +, wrogi −).
+          // Liczniki ZASOBOWE (oil itd.): wartość tylko, gdy INNA zdolność
+          // źródła je konsumuje (cost.removeCounter) i zapas < potrzeb;
+          // uzupełnianie po walce (postcombat), nie kosztem ataku/bloku.
+          if (effect.type === 'add_counter') {
+            const counterName = effect.counter ?? '+1/+1';
+            const statCounter = ['+1/+1', '+1/+0', '+0/+1', 'shield'].includes(counterName)
+              || KEYWORD_COUNTERS.has(counterName);
+            const tgt = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : source;
+            const amount = Math.max(1, effect.amount ?? 1);
+            if (statCounter) {
+              if (tgt?.controllerId === view.playerId) score += 8 + 4 * amount;
+              else score -= 90;
+            } else if (counterName !== 'charge') { // charge wycenia station_counters
+              const consumers = (source?.cardId ? (cardDef(source.cardId)?.abilities ?? []) : [])
+                .filter((a) => a?.cost?.removeCounter?.name === counterName);
+              const need = consumers.length > 0
+                ? Math.max(...consumers.map((a) => a.cost.removeCounter.amount ?? 1))
+                : 0;
+              const current = (tgt?.counters ?? {})[counterName] ?? 0;
+              if (need === 0 || current >= need) {
+                score -= 25; // nikt nie konsumuje / zapas pełny — tap za nic
+              } else {
+                const ownPostcombat = view.turn.activePlayerId === view.playerId
+                  && view.turn.phase === 'postcombat_main';
+                score += ownPostcombat ? 6 : -8; // uzupełnij zapas PO walce
+              }
+            }
           }
           if (effect.type === 'station_counters') {
             // Station (Wedgelight Rammer / Warmaker Gunship): cenne tylko do

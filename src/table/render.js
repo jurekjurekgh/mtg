@@ -1783,8 +1783,16 @@ export function commandLabel(cmd, session, view) {
     }
     case 'cast_adventure': {
       const card = obj(cmd.objectId);
-      const adv = card?.adventure ?? {};
-      const advCost = manaCostHtml(`${adv.cost != null ? `{${adv.cost}}` : ''}${(adv.colors ?? []).map((c) => `{${c}}`).join('')}`);
+      // M173/A: deskryptor przygody z obiektu widoku ALBO rejestru (obiekt
+      // w exile po rzucie przygody niesie tylko id+cardId).
+      const adv = card?.adventure ?? (card?.cardId ? session.cardDetails(card.cardId)?.adventure : null) ?? {};
+      // adv.cost to PEŁNA wartość many (mana value) — część generyczna to
+      // cost − liczba pipów ({1}{B} dla cost 2 + ['B'], nie {2}{B}).
+      const advPips = adv.colors ?? [];
+      const advGeneric = adv.cost != null ? Math.max(0, adv.cost - advPips.length) : null;
+      const advCost = adv.cost != null
+        ? manaCostHtml(`${advGeneric > 0 || advPips.length === 0 ? `{${advGeneric}}` : ''}${advPips.map((c) => `{${c}}`).join('')}`)
+        : '?';
       return `Przygoda: ${nameOfObjectId(cmd.objectId)} (koszt ${advCost})`;
     }
     case 'cast_adventure_creature': {
@@ -2359,6 +2367,11 @@ function cardInfo(session, object, combat = null) {
     lostKeywordsUntilEOT: faceDown ? [] : [...(object.lostKeywordsUntilEOT ?? [])],
     cantBlockNow: Boolean(object.cantBlock),
     cantBeBlockedNow: Boolean(object.cantBeBlocked),
+    // M173/C: czasowe stany z widoku (saddle/untap-lock/kontrola/regeneracja).
+    saddledNow: Boolean(object.saddled),
+    untapLockedNow: Boolean(object.untapLocked || object.dontUntapNextUntapStep),
+    tempControlNow: Boolean(object.tempControlUntilEOT),
+    cantRegenerateNow: Boolean(object.cantBeRegeneratedThisTurn),
     manaCost: faceDown ? null : (details.manaCost ?? object.manaCost ?? null),
     power: object.power ?? details.power,
     toughness: object.toughness ?? details.toughness,
@@ -2608,6 +2621,12 @@ export function buildStateOverlay(visual, info) {
     }
     if (info.cantBlockNow) flags.push(['kw', 'nie może blokować']);
     if (info.cantBeBlockedNow) flags.push(['kw', 'nie do zablokowania']);
+    // M173/C: pozostałe czasowe stany z efektów — audyt na wniosek
+    // właściciela (Panic Spellbomb — klasa objęta już przez cantBlockNow).
+    if (info.saddledNow) flags.push(['kw', 'osiodłany']);
+    if (info.untapLockedNow) flags.push(['kw', 'nie odtapuje się']);
+    if (info.tempControlNow) flags.push(['kw', 'kontrola do końca tury']);
+    if (info.cantRegenerateNow) flags.push(['kw', 'bez regeneracji']);
     {
       const pMod = Number(info.powerMod ?? 0);
       const tMod = Number(info.toughMod ?? 0);

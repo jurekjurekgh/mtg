@@ -7474,6 +7474,17 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
 
 ]);
 
+/**
+ * M173/B (uwaga właściciela): druki Scryfalla dla TOKENÓW. Tokeny mają
+ * cardId `token_*` spoza rejestru kart, więc kafel nie znajdował żadnej
+ * ilustracji. Adresy WYŁĄCZNIE z API Scryfalla (L26 — bez zgadywania UUID);
+ * kolejne tokeny uzupełniamy tą samą mapą.
+ */
+export const TOKEN_IMAGES = Object.freeze({
+  // Squirrel 1/1 G (TMSH 14) — api.scryfall.com/cards/fd0474f3-682d-4c6d-b902-84f3250aa269
+  token_squirrel: 'https://cards.scryfall.io/large/front/f/d/fd0474f3-682d-4c6d-b902-84f3250aa269.jpg?1783902800',
+});
+
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */
 export function createCardRegistry() {
   return createRegistry([...REAL_CARDS, ...VIRTUAL_BASIC_LANDS]);

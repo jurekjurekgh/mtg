@@ -4019,6 +4019,10 @@ export function playerView(state, playerId) {
           bestow: object.bestow ?? null, morph: object.morph ?? null,
           plot: object.plot ?? null, aura: object.aura ?? null, equipment: object.equipment ?? null,
           backup: object.backup ?? null,
+          // M173/A (uwaga właściciela, Gray Slaad): deskryptor PRZYGODY to
+          // publiczny Oracle — bez niego etykieta „Przygoda: … (koszt )"
+          // była pusta, a bot nie znał treści czaru przygody (klasa L1).
+          adventure: object.adventure ?? null,
           // M151: deskryptor suspend (koszt zawieszenia + liczniki czasu) — tak
           // jak `plot`, żeby etykieta akcji „Zawieś:" pokazała koszt (nie „?")
           // i poprawną odmianę liczby liczników. Suspend to publiczny Oracle.
@@ -4090,6 +4094,14 @@ export function playerView(state, playerId) {
         if (object.cantBlock === true) entry.cantBlock = true;
         if (object.cantBeBlocked === true) entry.cantBeBlocked = true;
         if (object.lostKeywordsUntilEOT?.length) entry.lostKeywordsUntilEOT = [...object.lostKeywordsUntilEOT];
+        // M173/C (uwaga właściciela — audyt WSZYSTKICH czasowych flag):
+        // każdy widoczny skutek efektu ma być badge'em na kaflu; te pola
+        // istniały tylko w stanie (klasa L1/ADR 0017).
+        if (object.saddled === true) entry.saddled = true;
+        if ((object.untapLockedBy ?? []).length > 0) entry.untapLocked = true; // pusta tablica = brak blokady
+        if (object.dontUntapNextUntapStep) entry.dontUntapNextUntapStep = true;
+        if (object.tempControlUntilTurn != null) entry.tempControlUntilEOT = true;
+        if ((state.cantBeRegeneratedThisTurn ?? []).includes(object.id)) entry.cantBeRegeneratedThisTurn = true;
         // M91 (uwaga A2): kto atakuje, to informacja PUBLICZNA (obaj gracze
         // widzą deklarację ataku). Bez tego pola kontroler nie mógł ocenić
         // realnego zagrożenia w tej turze — np. czy warto rzucić „fog"
