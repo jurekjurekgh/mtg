@@ -4,6 +4,26 @@
 - **Poprzednia:** 2026-08-20 (M161: audyt PR #67 + gotowość madness na czary — routing po kind)
 
 
+## M167 cz. 2 — Kreator Talii: K1 (talie własne), K2 (szybkie landy) (2026-08-21, PR #68)
+
+Testy: `test/m167-uwagi-wlasciciela.test.js` (17 łącznie). Commity:
+d3239d7 (K2), 14e8903 (K1).
+
+- **K1 (decyzja właściciela z ankiety — pełna propozycja):** talie własne
+  w trzech warstwach: (1) IndexedDB biblioteka kreatora, (2) pliki .txt
+  — „Import z pliku…" (upload do kreatora + selectów, zapis do
+  biblioteki, działa na Pages i file://), (3) repo `decks/*.txt` jako
+  źródło prawdy „wbudowanych" — pomocnik „Opublikuj na GitHub" kopiuje
+  treść + link do `github.com/…/new/main?filename=decks/<slug>.txt`
+  (Pages nie może pisać do repo — ADR 0011; jedno ręczne wrzucenie,
+  resztę robi CI). Selekt: sufiks „(własna)" (combineDeckSources,
+  klucze custom:); startGame czyta ze źródła połączonego; boot ładuje
+  bibliotekę IndexedDB.
+- **K2:** box „SZYBKIE DODAWANIE LĄDÓW PODSTAWOWYCH" nad listą kart
+  kreatora (5 landów, przyciski −/+ — wzorzec legacy card_viewer).
+
+**Stan:** `test:all` **2571/2571**, build **52 moduły / 2198.9 kB**.
+
 ## M167 — uwagi właściciela z testów A–I (2026-08-21, PR #68)
 
 Plan: `docs/plans/PLAN_2026-08-21-m167-uwagi-wlasciciela-a-i.md`.
