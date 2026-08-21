@@ -1749,7 +1749,10 @@ export function execute(state, input) {
     }
     state.events.push(event('damage_division_resolved', {
       playerId: pending.playerId, sourceId: pending.sourceId, cardId: pending.cardId,
-      targetIds: [...pending.targetIds], amounts: [...amounts],
+      // M171/Z4 (L6): cardId celów z pendingu (LKI) — cel mógł zginąć wyżej.
+      targetIds: [...pending.targetIds], targetCardIds: [...(pending.targetCardIds ?? [])],
+      targetNames: [...(pending.targetNames ?? [])],
+      amounts: [...amounts],
     }));
     if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;

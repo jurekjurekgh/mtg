@@ -2059,7 +2059,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           let score = 0;
           for (const id of cmd.targetIds) {
             const t2 = objectOnBoard(view, id);
-            if (!t2) continue;
+            if (!t2) {
+              // M171/Z3 (audyt Żywym Testerem, klasa L50): cel-GRACZ w
+              // wariancie wielocelowym był pomijany (0 pkt) — kombinacje
+              // remisowały i bot dzielił obrażenia Tytana we WŁASNĄ twarz.
+              // Ta sama polityka co w gałęzi jednocelowej (świadoma friendly).
+              if (id === view.playerId) score += cmd.friendly ? 25 : -40;
+              else if (id === enemy(view)?.id) score += cmd.friendly ? -40 : 25;
+              continue;
+            }
             const v2 = (t2.power ?? 0) * 2 + (t2.toughness ?? 0);
             // M167/A (Voice of the Vermin): przyjazny buff celuje
             // WSPÓŁATAKUJĄCEGO (atak trwa do końca tury — buff „on orbit").
@@ -2072,9 +2080,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         const target = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
         if (!target) {
+          // M171/Z3: gałąź bliźniacza z wielocelową (L41) — friendly odwraca.
           const playerId = cmd.targetId;
-          if (playerId === view.playerId) return finish(-40);
-          if (playerId && playerId === enemy(view)?.id) return finish(25);
+          if (playerId === view.playerId) return finish(cmd.friendly ? 25 : -40);
+          if (playerId && playerId === enemy(view)?.id) return finish(cmd.friendly ? -40 : 25);
           return finish(0);
         }
         const value = (target.power ?? 0) * 2 + (target.toughness ?? 0);

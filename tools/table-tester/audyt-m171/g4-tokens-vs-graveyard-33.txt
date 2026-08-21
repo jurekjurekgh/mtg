@@ -1,0 +1,354 @@
+== NOWA PARTIA: gracz=tokens vs bot=graveyard, seed=33, profil=aggressive, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1TyTy: 20 ż.On: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island (1 z 2)  ||  Zagraj ląd: Plains  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3 | Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Hobble · 3 · Enchantment — Aura · zaczarowany nie może atakować · zaczarowany nie może blokować · Gdy wejdzie na pole bitwy: dobierz 1 kartę.
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Angel of the Dawn, Soulmender, Island, Plains, Krotiq Nestguard, Hobble, Island ⏎ Nowa partia (seed 33). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Island (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+
+--- krok 3 | T. 3TyTy: 20 ż.On: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Plains (1 z 2)  ||  Zagraj ląd: Island  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3 | Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Hobble · 3 · Enchantment — Aura · zaczarowany nie może atakować · zaczarowany nie może blokować · Gdy wejdzie na pole bitwy: dobierz 1 kartę.
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Angel of the Dawn, Soulmender, Island, Plains, Krotiq Nestguard, Hobble, Island ⏎ Nowa partia (seed 33). Powodzenia!
+  >> Zagraj ląd: Plains (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Zagraj: Soulmender (koszt W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Soulmender
+  [ROZGRYWKA]   • Soulmender wchodzi na pole bitwy
+  [ROZGRYWKA]   • Soulmender zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+
+--- krok 6 | T. 4OnTy: 20 ż.On: 20 ż.Główna 1Stos — Ghoulcaller's Bell ---
+  STOS: Ghoulcaller's Bell (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3 | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Hobble · 3 · Enchantment — Aura · zaczarowany nie może atakować · zaczarowany nie może blokować · Gdy wejdzie na pole bitwy: dobierz 1 kartę.
+  MOJE POLA: Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · choroba · 1/1 | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Angel of the Dawn, Soulmender, Island, Plains, Krotiq Nestguard, Hobble, Island ⏎ Nowa partia (seed 33). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Ghoulcaller's Bell
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ghoulcaller's Bell wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ghoulcaller's Bell zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  >> Aktywuj: Soulmender (Ty) (koszt T) — zyskaj 1 życie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Soulmender — zdobycie życia
+  [ROZGRYWKA]   • Ty: życie 20 → 21
+  [ROZGRYWKA]   • Ty: zdolność Soulmender rozstrzygnięta
+
+--- krok 9 | T. 5TyTy: 21 ż.On: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3 | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Hobble · 3 · Enchantment — Aura · zaczarowany nie może atakować · zaczarowany nie może blokować · Gdy wejdzie na pole bitwy: dobierz 1 kartę. | Garruk's Companion · 2 · Creature — Beast · Zadeptywanie · 3/2
+  MOJE POLA: Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Angel of the Dawn, Soulmender, Island, Plains, Krotiq Nestguard, Hobble, Island ⏎ Nowa partia (seed 33). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Garruk's Companion
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Dalej (pass)
+
+--- krok 12 | T. 5TyTy: 21 ż.On: 20 ż.Główna 2 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj aurę: Hobble (koszt 2W) → zaczaruj Soulmender (Ty)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3 | Island · Basic Land — Island · T: dodaj 1 manę | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Hobble · 3 · Enchantment — Aura · zaczarowany nie może atakować · zaczarowany nie może blokować · Gdy wejdzie na pole bitwy: dobierz 1 kartę. | Garruk's Companion · 2 · Creature — Beast · Zadeptywanie · 3/2
+  MOJE POLA: Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Angel of the Dawn, Soulmender, Island, Plains, Krotiq Nestguard, Hobble, Island ⏎ Nowa partia (seed 33). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Gray Slaad
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Gray Slaad wchodzi na pole bitwy
+  [ROZGRYWKA]   • Gray Slaad zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 7 — Ty
+
+--- krok 15 | T. 7TyTy: 21 ż.On: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Soulmender (Ty) (koszt T) — zyskaj 1 życie  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3 | Island · Basic Land — Island · T: dodaj 1 manę | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Hobble · 3 · Enchantment — Aura · zaczarowany nie może atakować · zaczarowany nie może blokować · Gdy wejdzie na pole bitwy: dobierz 1 kartę. | Garruk's Companion · 2 · Creature — Beast · Zadeptywanie · 3/2
+  MOJE POLA: Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Gray Slaad · 3 · Creature — Frog Horror · Postrach Dotykanie śmierci · przy 4+ stworach w grobie · choroba · 4/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Angel of the Dawn, Soulmender, Island, Plains, Krotiq Nestguard, Hobble, Island ⏎ Nowa partia (seed 33). Powodzenia!
+  >> Aktywuj: Soulmender (Ty) (koszt T) — zyskaj 1 życie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Soulmender — zdobycie życia
+  [ROZGRYWKA]   • Ty: życie 21 → 22
+  [ROZGRYWKA]   • Ty: zdolność Soulmender rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Cacophodon
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+
+--- krok 18 | T. 7TyTy: 22 ż.On: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Aura: Hobble (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Hobble · 3 · Enchantment — Aura · zaczarowany nie może atakować · zaczarowany nie może blokować · Gdy wejdzie na pole bitwy: dobierz 1 kartę. | Garruk's Companion · 2 · Creature — Beast · Zadeptywanie · 3/2 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5
+  MOJE POLA: Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Gray Slaad · 3 · Creature — Frog Horror · Postrach Dotykanie śmierci · przy 4+ stworach w grobie · choroba · 4/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Angel of the Dawn, Soulmender, Island, Plains, Krotiq Nestguard, Hobble, Island ⏎ Nowa partia (seed 33). Powodzenia!
+  >> Aura: Hobble (2 opcje)
+  [modal choice] Aura: Hobble Zagraj aurę: Hobble (koszt 2W) → zaczaruj Gray Slaad (Nieprzyjaciel) Zagraj aurę: Hobble (koszt 2W) → zaczaruj Soulmender (Ty)
+  [modal choice]   ▶ Zagraj aurę: Hobble (koszt 2W) → zaczaruj Gray Slaad (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Hobble (koszt 2W) → zaczaruj Soulmender (Ty)
+  [kreator many] Płatność 2W — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: WTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 4
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Hobble → cel: Gray Slaad
+  [ROZGRYWKA]   • Hobble zaczarowuje Gray Slaad
+  [ROZGRYWKA]   • Hobble wchodzi na pole bitwy
+  [ROZGRYWKA]   • Hobble — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Moonlit Meditation
+  [ROZGRYWKA]   • Hobble — trigger się rozstrzyga
+
+--- krok 21 | T. 8OnTy: 22 ż.On: 20 ż.DobieranieStos — Village Rites ---
+  STOS: Village Rites (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Garruk's Companion · 2 · Creature — Beast · Zadeptywanie · 3/2 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Moonlit Meditation · 3 · Enchantment — Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz)
+  MOJE POLA: Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Angel of the Dawn, Soulmender, Island, Plains, Krotiq Nestguard, Hobble, Island ⏎ Nowa partia (seed 33). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Village Rites
+  [ROZGRYWKA]   • Hobble trafia do grobu (aura bez legalnego gospodarza)
+  [ROZGRYWKA]   • Gray Slaad zostaje poświęcony
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Village Rites zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Nefarious Imp
+
+--- krok 24 | T. 9TyTy: 22 ż.On: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Soulmender (Ty) (koszt T) — zyskaj 1 życie  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Garruk's Companion · 2 · Creature — Beast · Zadeptywanie · 3/2 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Moonlit Meditation · 3 · Enchantment — Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz)
+  MOJE POLA: Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · choroba · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Angel of the Dawn, Soulmender, Island, Plains, Krotiq Nestguard, Hobble, Island ⏎ Nowa partia (seed 33). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nefarious Imp wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nefarious Imp zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 9 — Ty
+  >> Aktywuj: Soulmender (Ty) (koszt T) — zyskaj 1 życie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Soulmender — zdobycie życia
+  [ROZGRYWKA]   • Ty: życie 22 → 23
+  [ROZGRYWKA]   • Ty: zdolność Soulmender rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Flurry of Wings
+
+--- krok 27 | T. 9TyTy: 23 ż.On: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj aurę: Moonlit Meditation (koszt 2U) → zaczaruj Soulmender (Ty)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Garruk's Companion · 2 · Creature — Beast · Zadeptywanie · 3/2 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Moonlit Meditation · 3 · Enchantment — Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) | Flurry of Wings · 3 · Instant · Stwórz 1/1 Bird Soldier (za każdego atakującego stwora)
+  MOJE POLA: Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · choroba · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Angel of the Dawn, Soulmender, Island, Plains, Krotiq Nestguard, Hobble, Island ⏎ Nowa partia (seed 33). Powodzenia!
+  >> Zagraj aurę: Moonlit Meditation (koszt 2U) → zaczaruj Soulmender (Ty)
+  [kreator many] Płatność 2U — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: UTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 4
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Rzucasz Moonlit Meditation → cel: Soulmender
+  [ROZGRYWKA]   • Moonlit Meditation zaczarowuje Soulmender
+  [ROZGRYWKA]   • Moonlit Meditation wchodzi na pole bitwy
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+
+--- krok 30 | T. 10OnTy: 23 ż.On: 20 ż.Główna 1Stos — Disa the Restless ---
+  STOS: Disa the Restless (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Garruk's Companion · 2 · Creature — Beast · Zadeptywanie · 3/2 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Flurry of Wings · 3 · Instant · Stwórz 1/1 Bird Soldier (za każdego atakującego stwora)
+  MOJE POLA: Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · zaczarowana: Moonlit Meditation · 1/1 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Soulmender | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Angel of the Dawn, Soulmender, Island, Plains, Krotiq Nestguard, Hobble, Island ⏎ Nowa partia (seed 33). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Disa the Restless
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Disa the Restless wchodzi na pole bitwy
+  [ROZGRYWKA]   • Disa the Restless zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Nefarious Imp
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Nefarious Imp zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 23 → 21
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Disa the Restless — trigger (obrażenia bojowe zadane graczowi)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Tarmogoyf (3/4)
+  [ROZGRYWKA]   • Tarmogoyf wchodzi na pole bitwy
+  [ROZGRYWKA]   • Disa the Restless — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 11 — Ty
+
+--- krok 33 | T. 11TyTy: 21 ż.On: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Soulmender (Ty) (koszt T) — zyskaj 1 życie  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Garruk's Companion · 2 · Creature — Beast · Zadeptywanie · 3/2 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Flurry of Wings · 3 · Instant · Stwórz 1/1 Bird Soldier (za każdego atakującego stwora)
+  MOJE POLA: Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · zaczarowana: Moonlit Meditation · 1/1 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Soulmender | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Disa the Restless · 5 · Legendary Creature — Human Scout · Gdy karta trafia do grobu spoza pola bitwy: karta z grobu na pole bitwy. · Gdy jeden z twoich stworów zada obrażenia bojowe graczowi: stwórz token Tarmogoyf. · choroba · 5/6 | Tarmogoyf · 0 · Creature — Lhurgoyf · liczba typów kart w grobach/liczba typów kart w grobach +1 · choroba · 3/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Angel of the Dawn, Soulmender, Island, Plains, Krotiq Nestguard, Hobble, Island ⏎ Nowa partia (seed 33). Powodzenia!
+  >> Aktywuj: Soulmender (Ty) (koszt T) — zyskaj 1 życie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Soulmender — zdobycie życia
+  [ROZGRYWKA]   • Ty: życie 21 → 22
+  [ROZGRYWKA]   • Ty: zdolność Soulmender rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Rustwing Falcon
+  >> Zagraj: Rustwing Falcon (koszt W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Rustwing Falcon
+  [ROZGRYWKA]   • Rustwing Falcon wchodzi na pole bitwy
+  [ROZGRYWKA]   • Rustwing Falcon zostaje rozstrzygnięty
+
+--- krok 36 | T. 12OnTy: 22 ż.On: 20 ż.UpkeepStos — Carrion Call ---
+  STOS: Carrion Call (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Garruk's Companion · 2 · Creature — Beast · Zadeptywanie · 3/2 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Flurry of Wings · 3 · Instant · Stwórz 1/1 Bird Soldier (za każdego atakującego stwora)
+  MOJE POLA: Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · zaczarowana: Moonlit Meditation · 1/1 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Soulmender | Rustwing Falcon · 1 · Creature — Bird · Latanie · choroba · 1/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Disa the Restless · 5 · Legendary Creature — Human Scout · Gdy karta trafia do grobu spoza pola bitwy: karta z grobu na pole bitwy. · Gdy jeden z twoich stworów zada obrażenia bojowe graczowi: stwórz token Tarmogoyf. · 5/6 | Tarmogoyf · 0 · Creature — Lhurgoyf · liczba typów kart w grobach/liczba typów kart w grobach +1 · 3/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Angel of the Dawn, Soulmender, Island, Plains, Krotiq Nestguard, Hobble, Island ⏎ Nowa partia (seed 33). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Carrion Call
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Phyrexian Insect (1/1)
+  [ROZGRYWKA]   • Phyrexian Insect wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Phyrexian Insect (1/1)
+  [ROZGRYWKA]   • Phyrexian Insect wchodzi na pole bitwy
+  [ROZGRYWKA]   • Carrion Call zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Bone Splinters → cel: Rustwing Falcon
+  [ROZGRYWKA]   • Phyrexian Insect zostaje poświęcony
+  [ROZGRYWKA]   • token Phyrexian Insect przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rustwing Falcon zostaje zniszczony
+  [ROZGRYWKA]   • Bone Splinters zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Nefarious Imp, Disa the Restless, Tarmogoyf
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Nefarious Imp zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 22 → 20
+  [ROZGRYWKA]   • Disa the Restless zadaje 5 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 15
+  [ROZGRYWKA]   • Tarmogoyf zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 15 → 11
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Disa the Restless — trigger (obrażenia bojowe zadane graczowi)
+
+--- krok 39 | T. 13TyTy: 11 ż.On: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Soulmender (Ty) (koszt T) — zyskaj 1 życie  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Garruk's Companion · 2 · Creature — Beast · Zadeptywanie · 3/2 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Flurry of Wings · 3 · Instant · Stwórz 1/1 Bird Soldier (za każdego atakującego stwora)
+  MOJE POLA: Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · zaczarowana: Moonlit Meditation · 1/1 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Soulmender | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Disa the Restless · 5 · Legendary Creature — Human Scout · Gdy karta trafia do grobu spoza pola bitwy: karta z grobu na pole bitwy. · Gdy jeden z twoich stworów zada obrażenia bojowe graczowi: stwórz token Tarmogoyf. · 5/6 | Tarmogoyf · 0 · Creature — Lhurgoyf · liczba typów kart w grobach/liczba typów kart w grobach +1 · 4/5 | Phyrexian Insect · 0 · Creature — Phyrexian Insect · Infect · choroba · 1/1 | Tarmogoyf · 0 · Creature — Lhurgoyf · liczba typów kart w grobach/liczba typów kart w grobach +1 · choroba · 4/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Angel of the Dawn, Soulmender, Island, Plains, Krotiq Nestguard, Hobble, Island ⏎ Nowa partia (seed 33). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Tarmogoyf (4/5)
+  [ROZGRYWKA]   • Tarmogoyf wchodzi na pole bitwy
+  [ROZGRYWKA]   • Disa the Restless — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Aktywuj: Soulmender (Ty) (koszt T) — zyskaj 1 życie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Soulmender — zdobycie życia
+  [ROZGRYWKA]   • Ty: życie 11 → 12
+  [ROZGRYWKA]   • Ty: zdolność Soulmender rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Carrion Call
+
+--- krok 42 | T. 14OnTy: 12 ż.On: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Garruk's Companion · 2 · Creature — Beast · Zadeptywanie · 3/2 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Flurry of Wings · 3 · Instant · Stwórz 1/1 Bird Soldier (za każdego atakującego stwora) | Carrion Call · 4 · Instant · Stwórz ×2 1/1 Phyrexian Insect
+  MOJE POLA: Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · zaczarowana: Moonlit Meditation · 1/1 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Soulmender | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Disa the Restless · 5 · Legendary Creature — Human Scout · Gdy karta trafia do grobu spoza pola bitwy: karta z grobu na pole bitwy. · Gdy jeden z twoich stworów zada obrażenia bojowe graczowi: stwórz token Tarmogoyf. · 5/6 | Tarmogoyf · 0 · Creature — Lhurgoyf · liczba typów kart w grobach/liczba typów kart w grobach +1 · 4/5 ×2 | Phyrexian Insect · 0 · Creature — Phyrexian Insect · Infect · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Angel of the Dawn, Soulmender, Island, Plains, Krotiq Nestguard, Hobble, Island ⏎ Nowa partia (seed 33). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Feed the Infection
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 17
+  [ROZGRYWKA]   • Feed the Infection zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Cellar Door
+
+--- krok 45 | Koniec partii — wygrywa On ---
+  STOS: Trigger: Disa the Restless (obrażenia bojowe zadane graczowi)
+  AKCJE: (brak)
+  RĘKA: Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Garruk's Companion · 2 · Creature — Beast · Zadeptywanie · 3/2 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Flurry of Wings · 3 · Instant · Stwórz 1/1 Bird Soldier (za każdego atakującego stwora) | Carrion Call · 4 · Instant · Stwórz ×2 1/1 Phyrexian Insect
+  MOJE POLA: Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · zaczarowana: Moonlit Meditation · 1/1 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Soulmender | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Disa the Restless · 5 · Legendary Creature — Human Scout · Gdy karta trafia do grobu spoza pola bitwy: karta z grobu na pole bitwy. · Gdy jeden z twoich stworów zada obrażenia bojowe graczowi: stwórz token Tarmogoyf. · 5/6 | Tarmogoyf · 0 · Creature — Lhurgoyf · liczba typów kart w grobach/liczba typów kart w grobach +1 · 4/5 ×2 | Phyrexian Insect · 0 · Creature — Phyrexian Insect · Infect · 1/1 | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Angel of the Dawn, Soulmender, Island, Plains, Krotiq Nestguard, Hobble, Island ⏎ Nowa partia (seed 33). Powodzenia!
+== KONIEC PARTII == Koniec partii — wygrywa On
+
+--- krok 46 | Koniec partii — wygrywa On ---
+  STOS: Trigger: Disa the Restless (obrażenia bojowe zadane graczowi)
+  AKCJE: (brak)
+  RĘKA: Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Garruk's Companion · 2 · Creature — Beast · Zadeptywanie · 3/2 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Flurry of Wings · 3 · Instant · Stwórz 1/1 Bird Soldier (za każdego atakującego stwora) | Carrion Call · 4 · Instant · Stwórz ×2 1/1 Phyrexian Insect
+  MOJE POLA: Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · zaczarowana: Moonlit Meditation · 1/1 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Soulmender | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Disa the Restless · 5 · Legendary Creature — Human Scout · Gdy karta trafia do grobu spoza pola bitwy: karta z grobu na pole bitwy. · Gdy jeden z twoich stworów zada obrażenia bojowe graczowi: stwórz token Tarmogoyf. · 5/6 | Tarmogoyf · 0 · Creature — Lhurgoyf · liczba typów kart w grobach/liczba typów kart w grobach +1 · 4/5 ×2 | Phyrexian Insect · 0 · Creature — Phyrexian Insect · Infect · 1/1 | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Angel of the Dawn, Soulmender, Island, Plains, Krotiq Nestguard, Hobble, Island ⏎ Nowa partia (seed 33). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 12, kliknięte: 13, modale: 2, sondy noop: 30 (panel 28, modal 2)
+== DETEKTORY: brak zgłoszeń ==

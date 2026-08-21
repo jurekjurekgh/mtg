@@ -187,7 +187,11 @@ export async function runTableGame({
   };
   const lines = [];
   const logL = (s) => { lines.push(s); log?.(s); };
-  const flush = () => fs.appendFileSync(out, lines.join('\n') + '\n', 'utf8');
+  // M171/Z5 (klasa L33): appendFileSync DOKLEJAŁ nowy przebieg do starego
+  // pliku przy tym samym --out — transkrypt zawierał dwa przebiegi naraz
+  // (stare linie sprzed fixu + nowe po nim) i wygenerował fałszywą hipotezę
+  // o „niedziałającym fixie". Transkrypt = JEDEN przebieg.
+  const flush = () => fs.writeFileSync(out, lines.join('\n') + '\n', 'utf8');
 
   // --- M97: deterministyczna losowość polityki (ADR 0005 — bez Math.random) --
   let rngState = (policySeed >>> 0) || 1;

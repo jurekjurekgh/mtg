@@ -349,6 +349,7 @@ const DRUGA_OSOBA = Object.freeze({
   aktywuje: 'aktywujesz', bierze: 'bierzesz', dobiera: 'dobierasz',
   kieruje: 'kierujesz', kopiuje: 'kopiujesz', korzysta: 'korzystasz',
   kładzie: 'kładziesz', kończy: 'kończysz', mieli: 'mielisz',
+  dzieli: 'dzielisz',
   mulliganuje: 'mulliganujesz', może: 'możesz', niszczy: 'niszczysz',
   obejmuje: 'obejmujesz', odkłada: 'odkładasz', odrzuca: 'odrzucasz',
   odsłania: 'odsłaniasz', ogląda: 'oglądasz', otrzymuje: 'otrzymujesz',
@@ -360,7 +361,8 @@ const DRUGA_OSOBA = Object.freeze({
   wskazuje: 'wskazujesz', wybiera: 'wybierasz', wygrywa: 'wygrywasz',
   wykonuje: 'wykonujesz',
   wzmacnia: 'wzmacniasz', zagłębia: 'zagłębiasz', zagrywa: 'zagrywasz',
-  zatrzymuje: 'zatrzymujesz', znajduje: 'znajdujesz', zostawia: 'zostawiasz',
+  zatrzymuje: 'zatrzymujesz', zawiesza: 'zawieszasz', zdejmuje: 'zdejmujesz',
+  znajduje: 'znajdujesz', zostawia: 'zostawiasz',
   zwiększa: 'zwiększasz',
 });
 
@@ -942,11 +944,23 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       }
       case 'epic_experiment_resolved': return `${whoN(e.playerId)} kończy Epic Experiment (${e.restToGrave} ${polishPlural(e.restToGrave, 'karta', 'karty', 'kart')} do grobu)`;
       case 'damage_division_required': {
-        const names = (e.targetIds ?? []).map((id) => nameOfObject?.(id) ?? '?').join(', ');
-        return `${whoN(e.playerId)} dzieli ${e.total} obrażeń między: ${names}`;
+        // M171/Z4 (L6): objectOrLki — cel mógł już zniknąć ze stanu; token
+        // bez cardId ma LKI w targetNames (Z4b).
+        const divTargetName = (id, i) => {
+          const viaLki = objectOrLki(id, e.targetCardIds?.[i]);
+          return viaLki !== '?' ? viaLki : (e.targetNames?.[i] ?? '?');
+        };
+        const names = (e.targetIds ?? []).map(divTargetName).join(', ');
+        return `${whoN(e.playerId)} dzieli ${dmgCount(e.total)} między: ${names}`;
       }
       case 'damage_division_resolved': {
-        const parts = (e.targetIds ?? []).map((id, i) => `${nameOfObject?.(id) ?? '?'}: ${e.amounts?.[i] ?? '?'}`);
+        // M171/Z4 (L6): cel ginie od obrażeń tej samej komendy — LKI cardId
+        // (karta) albo name (token) ze zdarzenia zamiast „?".
+        const divTargetName = (id, i) => {
+          const viaLki = objectOrLki(id, e.targetCardIds?.[i]);
+          return viaLki !== '?' ? viaLki : (e.targetNames?.[i] ?? '?');
+        };
+        const parts = (e.targetIds ?? []).map((id, i) => `${divTargetName(id, i)}: ${e.amounts?.[i] ?? '?'}`);
         return `${whoN(e.playerId)} dzieli obrażenia — ${parts.join(', ')}`;
       }
       case 'initiative_taken': {

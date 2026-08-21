@@ -1,0 +1,440 @@
+== NOWA PARTIA: gracz=tokens vs bot=ostrza, seed=11, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1TyTy: 20 ż.On: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Island · Basic Land — Island · T: dodaj 1 manę | True Conviction · 6 · Enchantment · inne twoje stwory: Podwójne uderzenie Dotykanie życia | Carrion Call · 4 · Instant · Stwórz ×2 1/1 Phyrexian Insect | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · 1/1 | Gather the Townsfolk · 2 · Sorcery · Stwórz ×2 1/1 Human (5 przy życiu ≤ 5)
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, True Conviction, Carrion Call, Krotiq Nestguard, Cacophodon, Snarling Wolf, Gather the Townsfolk ⏎ Nowa partia (seed 11). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+
+--- krok 3 | T. 3TyTy: 20 ż.On: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: True Conviction · 6 · Enchantment · inne twoje stwory: Podwójne uderzenie Dotykanie życia | Carrion Call · 4 · Instant · Stwórz ×2 1/1 Phyrexian Insect | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · 1/1 | Gather the Townsfolk · 2 · Sorcery · Stwórz ×2 1/1 Human (5 przy życiu ≤ 5) | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, True Conviction, Carrion Call, Krotiq Nestguard, Cacophodon, Snarling Wolf, Gather the Townsfolk ⏎ Nowa partia (seed 11). Powodzenia!
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+
+--- krok 6 | T. 5TyTy: 20 ż.On: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Snarling Wolf (koszt G)  ||  Zagraj: Krotiq Nestguard (koszt 2G)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: True Conviction · 6 · Enchantment · inne twoje stwory: Podwójne uderzenie Dotykanie życia | Carrion Call · 4 · Instant · Stwórz ×2 1/1 Phyrexian Insect | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · 1/1 | Gather the Townsfolk · 2 · Sorcery · Stwórz ×2 1/1 Human (5 przy życiu ≤ 5)
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, True Conviction, Carrion Call, Krotiq Nestguard, Cacophodon, Snarling Wolf, Gather the Townsfolk ⏎ Nowa partia (seed 11). Powodzenia!
+  >> Zagraj: Snarling Wolf (koszt G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Snarling Wolf
+  [ROZGRYWKA]   • Snarling Wolf wchodzi na pole bitwy
+  [ROZGRYWKA]   • Snarling Wolf zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Warmaker Gunship
+
+--- krok 9 | T. 6OnTy: 20 ż.On: 20 ż.Główna 1Stos — Warmaker Gunship ---
+  STOS: Trigger: Warmaker Gunship (wejście na pole bitwy)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: True Conviction · 6 · Enchantment · inne twoje stwory: Podwójne uderzenie Dotykanie życia | Carrion Call · 4 · Instant · Stwórz ×2 1/1 Phyrexian Insect | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Gather the Townsfolk · 2 · Sorcery · Stwórz ×2 1/1 Human (5 przy życiu ≤ 5)
+  MOJE POLA: Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · choroba · 1/1 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, True Conviction, Carrion Call, Krotiq Nestguard, Cacophodon, Snarling Wolf, Gather the Townsfolk ⏎ Nowa partia (seed 11). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Warmaker Gunship wchodzi na pole bitwy
+  [ROZGRYWKA]   • Warmaker Gunship zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Warmaker Gunship — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Warmaker Gunship — cel: Snarling Wolf
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Warmaker Gunship zadaje 1 obrażenie (Snarling Wolf)
+  [ROZGRYWKA]   • Warmaker Gunship — trigger się rozstrzyga
+  [ROZGRYWKA]   • Snarling Wolf ginie
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Raise the Alarm
+  >> Zagraj: Krotiq Nestguard (koszt 2G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Krotiq Nestguard
+  [ROZGRYWKA]   • Krotiq Nestguard wchodzi na pole bitwy
+  [ROZGRYWKA]   • Krotiq Nestguard zostaje rozstrzygnięty
+
+--- krok 12 | T. 8OnTy: 20 ż.On: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: True Conviction · 6 · Enchantment · inne twoje stwory: Podwójne uderzenie Dotykanie życia | Carrion Call · 4 · Instant · Stwórz ×2 1/1 Phyrexian Insect | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Gather the Townsfolk · 2 · Sorcery · Stwórz ×2 1/1 Human (5 przy życiu ≤ 5) | Raise the Alarm · 2 · Instant · Stwórz ×2 1/1 Soldier
+  MOJE POLA: Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · choroba · 4/4 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×4 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, True Conviction, Carrion Call, Krotiq Nestguard, Cacophodon, Snarling Wolf, Gather the Townsfolk ⏎ Nowa partia (seed 11). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Ember Beast
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ember Beast wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ember Beast zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 2
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Warmaker Gunship — liczniki charge ze Station (tapuje: Ember Beast)
+
+--- krok 15 | T. 9TyTy: 20 ż.On: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Krotiq Nestguard (Ty) (koszt 2G) — zmiana podtypu i utrata keyworda do końca tury  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: True Conviction · 6 · Enchantment · inne twoje stwory: Podwójne uderzenie Dotykanie życia | Carrion Call · 4 · Instant · Stwórz ×2 1/1 Phyrexian Insect | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Gather the Townsfolk · 2 · Sorcery · Stwórz ×2 1/1 Human (5 przy życiu ≤ 5) | Raise the Alarm · 2 · Instant · Stwórz ×2 1/1 Soldier
+  MOJE POLA: Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×4 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 3x charge | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · choroba · 3/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, True Conviction, Carrion Call, Krotiq Nestguard, Cacophodon, Snarling Wolf, Gather the Townsfolk ⏎ Nowa partia (seed 11). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Warmaker Gunship dostaje +3 liczniki charge (razem 3)
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Warmaker Gunship rozstrzygnięta
+  [ROZGRYWKA]   • Tura 9 — Ty
+  >> Aktywuj: Krotiq Nestguard (Ty) (koszt 2G) — zmiana podtypu i utrata keyworda do końca tury
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Krotiq Nestguard
+  [ROZGRYWKA]   • Krotiq Nestguard staje się Insect do końca tury (traci defender)
+  [ROZGRYWKA]   • Ty: zdolność Krotiq Nestguard rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Captain's Call
+
+--- krok 18 | T. 9TyTy: 20 ż.On: 20 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: True Conviction · 6 · Enchantment · inne twoje stwory: Podwójne uderzenie Dotykanie życia | Carrion Call · 4 · Instant · Stwórz ×2 1/1 Phyrexian Insect | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Gather the Townsfolk · 2 · Sorcery · Stwórz ×2 1/1 Human (5 przy życiu ≤ 5) | Raise the Alarm · 2 · Instant · Stwórz ×2 1/1 Soldier | Captain's Call · 4 · Sorcery · Stwórz ×3 1/1 Soldier
+  MOJE POLA: Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×4 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 3x charge | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · choroba · 3/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, True Conviction, Carrion Call, Krotiq Nestguard, Cacophodon, Snarling Wolf, Gather the Townsfolk ⏎ Nowa partia (seed 11). Powodzenia!
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Krotiq Nestguard
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Krotiq Nestguard zadaje 4 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 16
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Sarkhan's Rage → cel: Krotiq Nestguard
+
+--- krok 21 | T. 10OnTy: 20 ż.On: 14 ż.Główna 2Stos — Warmaker Gunship ---
+  STOS: Warmaker Gunship (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: True Conviction · 6 · Enchantment · inne twoje stwory: Podwójne uderzenie Dotykanie życia | Carrion Call · 4 · Instant · Stwórz ×2 1/1 Phyrexian Insect | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Gather the Townsfolk · 2 · Sorcery · Stwórz ×2 1/1 Human (5 przy życiu ≤ 5) | Raise the Alarm · 2 · Instant · Stwórz ×2 1/1 Soldier | Captain's Call · 4 · Sorcery · Stwórz ×3 1/1 Soldier
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×5 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 3x charge | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, True Conviction, Carrion Call, Krotiq Nestguard, Cacophodon, Snarling Wolf, Gather the Townsfolk ⏎ Nowa partia (seed 11). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Sarkhan's Rage zadaje 5 obrażeń (Krotiq Nestguard)
+  [ROZGRYWKA]   • Sarkhan's Rage zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 16 → 14
+  [ROZGRYWKA]   • Sarkhan's Rage zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Krotiq Nestguard ginie
+  [ROZGRYWKA]   • Faza: Główna 2
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Warmaker Gunship — liczniki charge ze Station (tapuje: Ember Beast)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Warmaker Gunship dostaje +3 liczniki charge (razem 6)
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Warmaker Gunship rozstrzygnięta
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Howl of the Night Pack
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+
+--- krok 24 | T. 12OnTy: 20 ż.On: 14 ż.Główna 1Stos — Inferno Titan ---
+  STOS: Inferno Titan (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: True Conviction · 6 · Enchantment · inne twoje stwory: Podwójne uderzenie Dotykanie życia | Carrion Call · 4 · Instant · Stwórz ×2 1/1 Phyrexian Insect | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Gather the Townsfolk · 2 · Sorcery · Stwórz ×2 1/1 Human (5 przy życiu ≤ 5) | Raise the Alarm · 2 · Instant · Stwórz ×2 1/1 Soldier | Captain's Call · 4 · Sorcery · Stwórz ×3 1/1 Soldier | Howl of the Night Pack · 7 · Sorcery · Stwórz 2/2 Wolf (za każdy land tego podtypu)
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×6 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 6x charge · 4/3 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, True Conviction, Carrion Call, Krotiq Nestguard, Cacophodon, Snarling Wolf, Gather the Townsfolk ⏎ Nowa partia (seed 11). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Inferno Titan
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Inferno Titan wchodzi na pole bitwy
+  [ROZGRYWKA]   • Inferno Titan zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Inferno Titan — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Inferno Titan — cel: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Inferno Titan zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 17
+  [ROZGRYWKA]   • Inferno Titan — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Warmaker Gunship, Ember Beast
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Warmaker Gunship zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 13
+  [ROZGRYWKA]   • Ember Beast zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 10
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+
+--- krok 27 | T. 13TyTy: 10 ż.On: 14 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Plains  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: True Conviction · 6 · Enchantment · inne twoje stwory: Podwójne uderzenie Dotykanie życia | Carrion Call · 4 · Instant · Stwórz ×2 1/1 Phyrexian Insect | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Gather the Townsfolk · 2 · Sorcery · Stwórz ×2 1/1 Human (5 przy życiu ≤ 5) | Raise the Alarm · 2 · Instant · Stwórz ×2 1/1 Soldier | Captain's Call · 4 · Sorcery · Stwórz ×3 1/1 Soldier | Howl of the Night Pack · 7 · Sorcery · Stwórz 2/2 Wolf (za każdy land tego podtypu) | Plains · Basic Land — Plains · T: dodaj 1 manę
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×6 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 6x charge · 4/3 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · choroba · 6/6
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, True Conviction, Carrion Call, Krotiq Nestguard, Cacophodon, Snarling Wolf, Gather the Townsfolk ⏎ Nowa partia (seed 11). Powodzenia!
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Rzuć: Captain's Call (koszt 3W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Captain's Call
+  [ROZGRYWKA]   • Ty tworzysz token Soldier (1/1)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ty tworzysz token Soldier (1/1)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ty tworzysz token Soldier (1/1)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Captain's Call zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+
+--- krok 30 | T. 14OnTy: 10 ż.On: 14 ż.Główna 1Stos — Frontline War-Rager ---
+  STOS: Frontline War-Rager (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: True Conviction · 6 · Enchantment · inne twoje stwory: Podwójne uderzenie Dotykanie życia | Carrion Call · 4 · Instant · Stwórz ×2 1/1 Phyrexian Insect | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Gather the Townsfolk · 2 · Sorcery · Stwórz ×2 1/1 Human (5 przy życiu ≤ 5) | Raise the Alarm · 2 · Instant · Stwórz ×2 1/1 Soldier | Howl of the Night Pack · 7 · Sorcery · Stwórz 2/2 Wolf (za każdy land tego podtypu)
+  MOJE POLA: Soldier · 0 · Creature — Soldier · choroba · 1/1 ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×7 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 6x charge · 4/3 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · 6/6
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, True Conviction, Carrion Call, Krotiq Nestguard, Cacophodon, Snarling Wolf, Gather the Townsfolk ⏎ Nowa partia (seed 11). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Frontline War-Rager
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Frontline War-Rager wchodzi na pole bitwy
+  [ROZGRYWKA]   • Frontline War-Rager zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Goblin Battle Jester
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Goblin Battle Jester wchodzi na pole bitwy
+  [ROZGRYWKA]   • Goblin Battle Jester zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Warmaker Gunship, Ember Beast, Inferno Titan
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Inferno Titan — wybierz cel triggera (wymagany)
+
+--- krok 33 | T. 14OnTy: 10 ż.On: 14 ż.Walka / BlokStos — Inferno Titan ---
+  STOS: Trigger: Inferno Titan (atak)
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: True Conviction · 6 · Enchantment · inne twoje stwory: Podwójne uderzenie Dotykanie życia | Carrion Call · 4 · Instant · Stwórz ×2 1/1 Phyrexian Insect | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Gather the Townsfolk · 2 · Sorcery · Stwórz ×2 1/1 Human (5 przy życiu ≤ 5) | Raise the Alarm · 2 · Instant · Stwórz ×2 1/1 Soldier | Howl of the Night Pack · 7 · Sorcery · Stwórz 2/2 Wolf (za każdy land tego podtypu)
+  MOJE POLA: Soldier · 0 · Creature — Soldier · choroba · 1/1 ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×7 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · atakuje — niezablokowany · 6x charge · 4/3 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · atakuje — niezablokowany · 3/4 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · atakuje — niezablokowany · 6/6 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · choroba · 2/3 | Goblin Battle Jester · 4 · Creature — Goblin · Gdy rzucisz czar: nie może blokować. · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, True Conviction, Carrion Call, Krotiq Nestguard, Cacophodon, Snarling Wolf, Gather the Townsfolk ⏎ Nowa partia (seed 11). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Inferno Titan — trigger (atak)
+  [ROZGRYWKA]   • Inferno Titan — cel: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dzieli 3 obrażenia między: Ty, Soldier, Soldier
+  [ROZGRYWKA]   • Inferno Titan — trigger się rozstrzyga
+  [ROZGRYWKA]   • Inferno Titan zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 10 → 9
+  [ROZGRYWKA]   • Inferno Titan zadaje 1 obrażenie (Soldier)
+  [ROZGRYWKA]   • Inferno Titan zadaje 1 obrażenie (Soldier)
+  [ROZGRYWKA]   • Nieprzyjaciel dzieli obrażenia — Ty: 1, Soldier: 1, Soldier: 1
+  [ROZGRYWKA]   • Soldier ginie
+  [ROZGRYWKA]   • Soldier ginie
+  [ROZGRYWKA]   • token Soldier przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA]   • token Soldier przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  >> Wybierz: Deklaracja blokujących (3 opcje)
+  [combat wizard] blokuję 1 stworami: Soldier (1/1)
+  [combat wizard] Zatwierdź bloki
+
+--- krok 36 | T. 14OnTy: 2 ż.On: 14 ż.Walka / Koniec walki ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: True Conviction · 6 · Enchantment · inne twoje stwory: Podwójne uderzenie Dotykanie życia | Carrion Call · 4 · Instant · Stwórz ×2 1/1 Phyrexian Insect | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Gather the Townsfolk · 2 · Sorcery · Stwórz ×2 1/1 Human (5 przy życiu ≤ 5) | Raise the Alarm · 2 · Instant · Stwórz ×2 1/1 Soldier | Howl of the Night Pack · 7 · Sorcery · Stwórz 2/2 Wolf (za każdy land tego podtypu)
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×7 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 6x charge · 4/3 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · −1 · 6/6 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · choroba · 2/3 | Goblin Battle Jester · 4 · Creature — Goblin · Gdy rzucisz czar: nie może blokować. · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, True Conviction, Carrion Call, Krotiq Nestguard, Cacophodon, Snarling Wolf, Gather the Townsfolk ⏎ Nowa partia (seed 11). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Soldier blokuje Inferno Titan
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Warmaker Gunship zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 9 → 5
+  [ROZGRYWKA]   • Ember Beast zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 5 → 2
+  [ROZGRYWKA]   • Inferno Titan zadaje 6 obrażeń (Soldier)
+  [ROZGRYWKA]   • Soldier zadaje 1 obrażenie (Inferno Titan)
+  [ROZGRYWKA]   • Soldier ginie
+  [ROZGRYWKA]   • token Soldier przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Frontline War-Rager — trigger (krok końca tury)
+  [ROZGRYWKA]   • Frontline War-Rager dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Frontline War-Rager — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 15 — Ty
+  >> Rzuć: Raise the Alarm (koszt 1W)
+  [kreator many] Płatność 1W — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: WTapnij: Island (U)Tapnij: Island (U)Tapnij:  — źródła: 4
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+
+--- krok 39 | T. 15TyTy: 2 ż.On: 14 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: True Conviction · 6 · Enchantment · inne twoje stwory: Podwójne uderzenie Dotykanie życia | Carrion Call · 4 · Instant · Stwórz ×2 1/1 Phyrexian Insect | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Gather the Townsfolk · 2 · Sorcery · Stwórz ×2 1/1 Human (5 przy życiu ≤ 5) | Howl of the Night Pack · 7 · Sorcery · Stwórz 2/2 Wolf (za każdy land tego podtypu)
+  MOJE POLA: Soldier · 0 · Creature — Soldier · choroba · 1/1 ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×7 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 6x charge · 4/3 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · 6/6 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · choroba · 1x +1/+1 · 3/4 | Goblin Battle Jester · 4 · Creature — Goblin · Gdy rzucisz czar: nie może blokować. · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, True Conviction, Carrion Call, Krotiq Nestguard, Cacophodon, Snarling Wolf, Gather the Townsfolk ⏎ Nowa partia (seed 11). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Raise the Alarm
+  [ROZGRYWKA]   • Ty tworzysz token Soldier (1/1)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ty tworzysz token Soldier (1/1)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Raise the Alarm zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+
+--- krok 42 | T. 15TyTy: 2 ż.On: 14 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Rzuć: Gather the Townsfolk (koszt 1W)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: True Conviction · 6 · Enchantment · inne twoje stwory: Podwójne uderzenie Dotykanie życia | Carrion Call · 4 · Instant · Stwórz ×2 1/1 Phyrexian Insect | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Gather the Townsfolk · 2 · Sorcery · Stwórz ×2 1/1 Human (5 przy życiu ≤ 5) | Howl of the Night Pack · 7 · Sorcery · Stwórz 2/2 Wolf (za każdy land tego podtypu)
+  MOJE POLA: Soldier · 0 · Creature — Soldier · choroba · 1/1 ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×7 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 6x charge · 4/3 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · 6/6 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · choroba · 1x +1/+1 · 3/4 | Goblin Battle Jester · 4 · Creature — Goblin · Gdy rzucisz czar: nie może blokować. · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, True Conviction, Carrion Call, Krotiq Nestguard, Cacophodon, Snarling Wolf, Gather the Townsfolk ⏎ Nowa partia (seed 11). Powodzenia!
+  >> Rzuć: Gather the Townsfolk (koszt 1W)
+  [kreator many] Płatność 1W — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: WTapnij: Island (U)Tapnij: Forest (G)Tapnij:  — źródła: 3
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Gather the Townsfolk
+  [ROZGRYWKA]   • Ty tworzysz token Human (1/1)
+  [ROZGRYWKA]   • Human wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ty tworzysz token Human (1/1)
+  [ROZGRYWKA]   • Human wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ty tworzysz token Human (1/1)
+  [ROZGRYWKA]   • Human wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ty tworzysz token Human (1/1)
+  [ROZGRYWKA]   • Human wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ty tworzysz token Human (1/1)
+  [ROZGRYWKA]   • Human wchodzi na pole bitwy
+  [ROZGRYWKA]   • Gather the Townsfolk zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Shiv's Embrace → cel: Inferno Titan
+  [ROZGRYWKA]   • Goblin Battle Jester — wybierz cel triggera (wymagany)
+
+--- krok 45 | T. 16OnTy: 2 ż.On: 14 ż.Główna 1Stos — Goblin Battle Jester ---
+  STOS: Shiv's Embrace (rzuca: Nieprzyjaciel) → cel: Inferno Titan | Trigger: Goblin Battle Jester (rzucenie czaru)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: True Conviction · 6 · Enchantment · inne twoje stwory: Podwójne uderzenie Dotykanie życia | Carrion Call · 4 · Instant · Stwórz ×2 1/1 Phyrexian Insect | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Howl of the Night Pack · 7 · Sorcery · Stwórz 2/2 Wolf (za każdy land tego podtypu)
+  MOJE POLA: Soldier · 0 · Creature — Soldier · choroba · 1/1 ×2 | Human · 0 · Creature — Human · choroba · 1/1 ×5 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×7 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 6x charge · 4/3 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · 6/6 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 1x +1/+1 · 3/4 | Goblin Battle Jester · 4 · Creature — Goblin · Gdy rzucisz czar: nie może blokować. · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, True Conviction, Carrion Call, Krotiq Nestguard, Cacophodon, Snarling Wolf, Gather the Townsfolk ⏎ Nowa partia (seed 11). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Goblin Battle Jester — trigger (rzucenie czaru)
+  [ROZGRYWKA]   • Goblin Battle Jester — cel: Soldier
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Goblin Battle Jester — trigger się rozstrzyga
+  [ROZGRYWKA]   • Shiv's Embrace zaczarowuje Inferno Titan
+  [ROZGRYWKA]   • Shiv's Embrace wchodzi na pole bitwy
+  [ROZGRYWKA]   • Faza: Początek walki
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Shiv's Embrace
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Shiv's Embrace
+
+--- krok 48 | T. 16OnTy: 2 ż.On: 14 ż.Walka / Początek walkiStos — Shiv's Embrace ---
+  STOS: Shiv's Embrace (rzuca: Nieprzyjaciel) | Shiv's Embrace (rzuca: Nieprzyjaciel) | Shiv's Embrace (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: True Conviction · 6 · Enchantment · inne twoje stwory: Podwójne uderzenie Dotykanie życia | Carrion Call · 4 · Instant · Stwórz ×2 1/1 Phyrexian Insect | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Howl of the Night Pack · 7 · Sorcery · Stwórz 2/2 Wolf (za każdy land tego podtypu)
+  MOJE POLA: Soldier · 0 · Creature — Soldier · choroba · 1/1 ×2 | Human · 0 · Creature — Human · choroba · 1/1 ×5 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×7 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 6x charge · 4/3 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Inferno Titan · 6 · Creature — Giant · Latanie · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · zaczarowana: Shiv's Embrace · 8/8 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 1x +1/+1 · 3/4 | Goblin Battle Jester · 4 · Creature — Goblin · Gdy rzucisz czar: nie może blokować. · 2/2 | Shiv's Embrace · 4 · Enchantment Aura · stwór: +2/+2 · stwór ma: Latanie · {R}: +1/+0 do końca tury · aura → Inferno Titan
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, True Conviction, Carrion Call, Krotiq Nestguard, Cacophodon, Snarling Wolf, Gather the Townsfolk ⏎ Nowa partia (seed 11). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Shiv's Embrace
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Inferno Titan dostaje +1/+0
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Shiv's Embrace rozstrzygnięta
+  [ROZGRYWKA]   • Inferno Titan dostaje +2/+0
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Shiv's Embrace rozstrzygnięta
+  [ROZGRYWKA]   • Inferno Titan dostaje +3/+0
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Shiv's Embrace rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Warmaker Gunship, Ember Beast, Inferno Titan, Frontline War-Rager, Goblin Battle Jester
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Inferno Titan — wybierz cel triggera (wymagany)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Inferno Titan — trigger (atak)
+  [ROZGRYWKA]   • Inferno Titan — cel: Ty
+
+--- krok 51 | T. 16OnTy: 1 ż.On: 14 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: True Conviction · 6 · Enchantment · inne twoje stwory: Podwójne uderzenie Dotykanie życia | Carrion Call · 4 · Instant · Stwórz ×2 1/1 Phyrexian Insect | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Howl of the Night Pack · 7 · Sorcery · Stwórz 2/2 Wolf (za każdy land tego podtypu)
+  MOJE POLA: Soldier · 0 · Creature — Soldier · choroba · 1/1 | Human · 0 · Creature — Human · choroba · 1/1 ×5 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×7 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · atakuje — niezablokowany · 6x charge · 4/3 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · atakuje — niezablokowany · −1 · 3/4 | Inferno Titan · 6 · Creature — Giant · Latanie · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · +3/0 · atakuje — niezablokowany · zaczarowana: Shiv's Embrace · 11/8 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · atakuje — niezablokowany · 1x +1/+1 · 3/4 | Goblin Battle Jester · 4 · Creature — Goblin · Gdy rzucisz czar: nie może blokować. · atakuje — niezablokowany · 2/2 | Shiv's Embrace · 4 · Enchantment Aura · stwór: +2/+2 · stwór ma: Latanie · {R}: +1/+0 do końca tury · aura → Inferno Titan
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, True Conviction, Carrion Call, Krotiq Nestguard, Cacophodon, Snarling Wolf, Gather the Townsfolk ⏎ Nowa partia (seed 11). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dzieli 3 obrażenia między: Ty, Ember Beast, Soldier
+  [ROZGRYWKA]   • Inferno Titan — trigger się rozstrzyga
+  [ROZGRYWKA]   • Inferno Titan zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 2 → 1
+  [ROZGRYWKA]   • Inferno Titan zadaje 1 obrażenie (Ember Beast)
+  [ROZGRYWKA]   • Inferno Titan zadaje 1 obrażenie (Soldier)
+  [ROZGRYWKA]   • Nieprzyjaciel dzieli obrażenia — Ty: 1, Ember Beast: 1, Soldier: 1
+  [ROZGRYWKA]   • Soldier ginie
+  [ROZGRYWKA]   • token Soldier przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  >> Wybierz: Deklaracja blokujących (19 opcji)
+  [combat wizard] blokuję 1 stworami: Human (1/1)
+  [combat wizard] Zatwierdź bloki
+== KONIEC PARTII == Koniec partii — wygrywa On
+
+--- krok 54 | Koniec partii — wygrywa On ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: True Conviction · 6 · Enchantment · inne twoje stwory: Podwójne uderzenie Dotykanie życia | Carrion Call · 4 · Instant · Stwórz ×2 1/1 Phyrexian Insect | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Howl of the Night Pack · 7 · Sorcery · Stwórz 2/2 Wolf (za każdy land tego podtypu)
+  MOJE POLA: Soldier · 0 · Creature — Soldier · choroba · 1/1 | Human · 0 · Creature — Human · choroba · 1/1 ×4 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×7 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 6x charge · 4/3 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · −1 · 3/4 | Inferno Titan · 6 · Creature — Giant · Latanie · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · +3/0 · zaczarowana: Shiv's Embrace · 11/8 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 1x +1/+1 · 3/4 | Goblin Battle Jester · 4 · Creature — Goblin · Gdy rzucisz czar: nie może blokować. · −1 · 2/2 | Shiv's Embrace · 4 · Enchantment Aura · stwór: +2/+2 · stwór ma: Latanie · {R}: +1/+0 do końca tury · aura → Inferno Titan
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, True Conviction, Carrion Call, Krotiq Nestguard, Cacophodon, Snarling Wolf, Gather the Townsfolk ⏎ Nowa partia (seed 11). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 16, kliknięte: 14, modale: 1, sondy noop: 37 (panel 33, modal 4)
+== DETEKTORY: brak zgłoszeń ==

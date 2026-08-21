@@ -1,0 +1,533 @@
+== NOWA PARTIA: gracz=graveyard vs bot=tokens, seed=23, profil=impatient, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1TyTy: 20 ż.On: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Swamp (1 z 3)  ||  Zagraj ląd: Forest  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Swamp, Nefarious Imp, Canonized in Blood, Puppeteer Clique, Swamp ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Zagraj ląd: Swamp (1 z 3)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  >> ▶ Wznów grę bota
+  >> Zagraj ląd: Swamp (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+
+--- krok 3 | T. 3TyTy: 20 ż.On: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Cellar Door (koszt 2)  ||  Zagraj: Canonized in Blood (koszt 1B)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Swamp, Nefarious Imp, Canonized in Blood, Puppeteer Clique, Swamp ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Zagraj: Canonized in Blood (koszt 1B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Canonized in Blood
+  [ROZGRYWKA]   • Canonized in Blood wchodzi na pole bitwy
+  [ROZGRYWKA]   • Canonized in Blood zostaje rozstrzygnięty
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Human (1/1)
+  [ROZGRYWKA]   • Human wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Human (1/1)
+  [ROZGRYWKA]   • Human wchodzi na pole bitwy
+  [ROZGRYWKA]   • Gather the Townsfolk zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forever Young
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+
+--- krok 6 | T. 5TyTy: 20 ż.On: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Cellar Door (koszt 2)  ||  Zagraj: Nefarious Imp (koszt 2B)  ||  Rzuć: Forever Young (koszt 1B)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Forest · Basic Land — Forest · T: dodaj 1 manę | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Forever Young · 2 · Sorcery · karty z grobu na wierzch biblioteki + dobierz 1 kartę
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Human · 0 · Creature — Human · choroba · 1/1 ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Swamp, Nefarious Imp, Canonized in Blood, Puppeteer Clique, Swamp ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Zagraj: Nefarious Imp (koszt 2B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Nefarious Imp
+  [ROZGRYWKA]   • Nefarious Imp wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nefarious Imp zostaje rozstrzygnięty
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Blade-Blizzard Kitsune wchodzi na pole bitwy
+  [ROZGRYWKA]   • Blade-Blizzard Kitsune zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Human, Human
+  >> Wybierz: Deklaracja blokujących (3 opcje)
+  [combat wizard] blokuję 1 stworami: Nefarious Imp (2/1)
+  [combat wizard] Zatwierdź bloki
+
+--- krok 9 | T. 6OnTy: 19 ż.On: 20 ż.Walka / Koniec walki ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Forest · Basic Land — Forest · T: dodaj 1 manę | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Forever Young · 2 · Sorcery · karty z grobu na wierzch biblioteki + dobierz 1 kartę
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Swamp, Nefarious Imp, Canonized in Blood, Puppeteer Clique, Swamp ⏎ Nowa partia (seed 23). Powodzenia!
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Gorger Wurm
+  >> Zagraj: Cellar Door (koszt 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Cellar Door
+  [ROZGRYWKA]   • Cellar Door wchodzi na pole bitwy
+  [ROZGRYWKA]   • Cellar Door zostaje rozstrzygnięty
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Forest
+
+--- krok 12 | T. 7TyTy: 19 ż.On: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Rzuć: Forever Young (koszt 1B)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Forever Young · 2 · Sorcery · karty z grobu na wierzch biblioteki + dobierz 1 kartę | Gorger Wurm · 5 · Creature — Wurm · 5/5
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Swamp, Nefarious Imp, Canonized in Blood, Puppeteer Clique, Swamp ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Rzuć: Forever Young (koszt 1B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Forever Young
+  [ROZGRYWKA]   • Wybierasz karty-stwory z grobu na wierzch biblioteki (Forever Young) — do wyboru 1
+  >> Wybierz: Karta z grobu na wierzch biblioteki (2 opcje)
+  [modal choice] Wybierz: Karta z grobu na wierzch biblioteki Koniec przenoszenia na wierzch biblioteki Na wierzch biblioteki: Nefarious Imp
+  [modal choice]   ▶ Koniec przenoszenia na wierzch biblioteki
+  [modal choice]     Na wierzch biblioteki: Nefarious Imp
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Soulmender wchodzi na pole bitwy
+  [ROZGRYWKA]   • Soulmender zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Human, Blade-Blizzard Kitsune
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Blade-Blizzard Kitsune zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 19 → 17
+  [ROZGRYWKA]   • Human zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 16
+  [ROZGRYWKA]   • Blade-Blizzard Kitsune zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 14
+  [ROZGRYWKA]   • Tura 9 — Ty
+
+--- krok 15 | T. 9TyTy: 14 ż.On: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cel zdolności: Cellar Door (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Gorger Wurm · 5 · Creature — Wurm · 5/5 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2 | Elemental · 0 · Creature — Elemental · choroba · 2/2 | Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · choroba · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Swamp, Nefarious Imp, Canonized in Blood, Puppeteer Clique, Swamp ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Cel zdolności: Cellar Door (2 opcje)
+  [modal choice] Cel zdolności: Cellar Door Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Nieprzyjaciel Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Ty
+  [modal choice]   ▶ Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Nieprzyjaciel
+  [modal choice]     Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Ty
+  [kreator many] Płatność 3 — tapuj źródła po jednympozostało 3 manyTapnij: Swamp (B)Tapnij: Swamp (B)Tapnij: Swamp (B)Tapnij: Forest (G) — źródła: 4
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Swamp (B)
+  >> ▶ Wznów grę bota
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+
+--- krok 18 | T. 10OnTy: 14 ż.On: 20 ż.Główna 1Stos — Captain's Call ---
+  STOS: Captain's Call (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Gorger Wurm · 5 · Creature — Wurm · 5/5 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Zombie · 0 · Creature — Zombie · choroba · 2/2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×4 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2 | Elemental · 0 · Creature — Elemental · 2/2 | Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Swamp, Nefarious Imp, Canonized in Blood, Puppeteer Clique, Swamp ⏎ Nowa partia (seed 23). Powodzenia!
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Soulmender — zdobycie życia
+  >> Wybierz: Deklaracja blokujących (3 opcje)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 21
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Soulmender rozstrzygnięta
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Soldier (1/1)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Soldier (1/1)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Soldier (1/1)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Captain's Call zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Blade-Blizzard Kitsune, Elemental
+  [combat wizard] blokuję 1 stworami: Zombie (2/2)
+  [combat wizard] Zatwierdź bloki
+  >> ▶ Wznów grę bota
+
+--- krok 21 | T. 11TyTy: 10 ż.On: 21 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cel zdolności: Cellar Door (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Gorger Wurm · 5 · Creature — Wurm · 5/5 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×4 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2 | Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Soldier · 0 · Creature — Soldier · choroba · 1/1 ×3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Swamp, Nefarious Imp, Canonized in Blood, Puppeteer Clique, Swamp ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Cel zdolności: Cellar Door (2 opcje)
+  [modal choice] Cel zdolności: Cellar Door Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Nieprzyjaciel Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Ty
+  [modal choice]   ▶ Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Nieprzyjaciel
+  [modal choice]     Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Ty
+  [kreator many] Płatność 3 — tapuj źródła po jednympozostało 3 manyTapnij: Swamp (B)Tapnij: Swamp (B)Tapnij: Swamp (B)Tapnij: Forest (G) — źródła: 5
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Swamp (B)
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Emerald Oryx
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Carrion Call
+
+--- krok 24 | T. 12OnTy: 10 ż.On: 21 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Gorger Wurm · 5 · Creature — Wurm · 5/5 | Emerald Oryx · 4 · Creature — Antelope · 2/3
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Zombie · 0 · Creature — Zombie · choroba · 2/2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×4 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2 | Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Soldier · 0 · Creature — Soldier · 1/1 ×3 | Phyrexian Insect · 0 · Creature — Phyrexian Insect · Infect · choroba · 1/1 ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Swamp, Nefarious Imp, Canonized in Blood, Puppeteer Clique, Swamp ⏎ Nowa partia (seed 23). Powodzenia!
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Soulmender — zdobycie życia
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 21 → 22
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Soulmender rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Blade-Blizzard Kitsune
+  [combat wizard] blokuję 1 stworami: Zombie (2/2)
+  [combat wizard] Zatwierdź bloki
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 13 — Ty
+
+--- krok 27 | T. 13TyTy: 10 ż.On: 22 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cel zdolności: Cellar Door (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Gorger Wurm · 5 · Creature — Wurm · 5/5 | Emerald Oryx · 4 · Creature — Antelope · 2/3
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×4 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2 | Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Soldier · 0 · Creature — Soldier · 1/1 ×3 | Phyrexian Insect · 0 · Creature — Phyrexian Insect · Infect · choroba · 1/1 ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Swamp, Nefarious Imp, Canonized in Blood, Puppeteer Clique, Swamp ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Cel zdolności: Cellar Door (2 opcje)
+  [modal choice] Cel zdolności: Cellar Door Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Nieprzyjaciel Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Ty
+  [modal choice]   ▶ Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Nieprzyjaciel
+  [modal choice]     Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Ty
+  [kreator many] Płatność 3 — tapuj źródła po jednympozostało 3 manyTapnij: Swamp (B)Tapnij: Swamp (B)Tapnij: Swamp (B)Tapnij: Forest (G) — źródła: 6
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Swamp (B)
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+
+--- krok 30 | T. 13TyTy: 10 ż.On: 22 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Emerald Oryx (koszt 3G)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Gorger Wurm · 5 · Creature — Wurm · 5/5 | Emerald Oryx · 4 · Creature — Antelope · 2/3
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×5 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2 | Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Soldier · 0 · Creature — Soldier · 1/1 ×3 | Phyrexian Insect · 0 · Creature — Phyrexian Insect · Infect · choroba · 1/1 ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Swamp, Nefarious Imp, Canonized in Blood, Puppeteer Clique, Swamp ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Zagraj: Emerald Oryx (koszt 3G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Emerald Oryx
+  [ROZGRYWKA]   • Emerald Oryx wchodzi na pole bitwy
+  [ROZGRYWKA]   • Emerald Oryx zostaje rozstrzygnięty
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Soulmender — zdobycie życia
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Death-Hood Cobra — nadanie słów kluczowych do końca tury
+
+--- krok 33 | T. 15TyTy: 10 ż.On: 23 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cel zdolności: Cellar Door (2 opcje)  ||  Aktywuj: Canonized in Blood (Ty) (koszt 5BB, poświęć) — stwórz token Vampire Demon  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Gorger Wurm · 5 · Creature — Wurm · 5/5
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Emerald Oryx · 4 · Creature — Antelope · 2/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×5 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2 | Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Soldier · 0 · Creature — Soldier · 1/1 ×3 | Phyrexian Insect · 0 · Creature — Phyrexian Insect · Infect · 1/1 ×2 | Death-Hood Cobra · 2 · Creature — Phyrexian Snake · {1}, {G}: zdobądź Zasięg do końca tury · {1}, {G}: zdobądź Dotykanie śmierci do końca tury · choroba · 2/2 | Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · choroba · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Swamp, Nefarious Imp, Canonized in Blood, Puppeteer Clique, Swamp ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Aktywuj: Canonized in Blood (Ty) (koszt 5BB, poświęć) — stwórz token Vampire Demon
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Canonized in Blood
+  [ROZGRYWKA]   • Ty tworzysz token Vampire Demon (4/3)
+  [ROZGRYWKA]   • Vampire Demon wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ty: zdolność Canonized in Blood rozstrzygnięta
+  >> ▶ Wznów grę bota
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+
+--- krok 36 | T. 15TyTy: 10 ż.On: 23 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Gorger Wurm · 5 · Creature — Wurm · 5/5
+  MOJE POLA: Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Emerald Oryx · 4 · Creature — Antelope · 2/3 | Vampire Demon · 0 · Creature — Vampire Demon · Latanie · choroba · 4/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×5 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2 | Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Soldier · 0 · Creature — Soldier · 1/1 ×3 | Phyrexian Insect · 0 · Creature — Phyrexian Insect · Infect · 1/1 ×2 | Death-Hood Cobra · 2 · Creature — Phyrexian Snake · {1}, {G}: zdobądź Zasięg do końca tury · {1}, {G}: zdobądź Dotykanie śmierci do końca tury · choroba · 2/2 | Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · choroba · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Swamp, Nefarious Imp, Canonized in Blood, Puppeteer Clique, Swamp ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil impatient)
+  [combat wizard] Zatwierdź atak
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Death-Hood Cobra — nadanie słów kluczowych do końca tury
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Cenn's Tactician — licznik na celu → cel: Cenn's Tactician
+
+--- krok 39 | T. 17TyTy: 10 ż.On: 22 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cel zdolności: Cellar Door (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Gorger Wurm · 5 · Creature — Wurm · 5/5
+  MOJE POLA: Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Emerald Oryx · 4 · Creature — Antelope · 2/3 | Vampire Demon · 0 · Creature — Vampire Demon · Latanie · 4/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×5 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2 | Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Soldier · 0 · Creature — Soldier · 1/1 ×3 | Phyrexian Insect · 0 · Creature — Phyrexian Insect · Infect · 1/1 ×2 | Death-Hood Cobra · 2 · Creature — Phyrexian Snake · {1}, {G}: zdobądź Zasięg do końca tury · {1}, {G}: zdobądź Dotykanie śmierci do końca tury · 2/2 | Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 1x +1/+1 · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Swamp, Nefarious Imp, Canonized in Blood, Puppeteer Clique, Swamp ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Cel zdolności: Cellar Door (2 opcje)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Cenn's Tactician dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Cenn's Tactician rozstrzygnięta
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 21 → 22
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Soulmender rozstrzygnięta
+  [ROZGRYWKA]   • Death-Hood Cobra zyskuje: dotykanie śmierci
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Death-Hood Cobra rozstrzygnięta
+  [ROZGRYWKA]   • Death-Hood Cobra zyskuje: dotykanie śmierci
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Death-Hood Cobra rozstrzygnięta
+  [ROZGRYWKA]   • Tura 17 — Ty
+  [modal choice] Cel zdolności: Cellar Door Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Nieprzyjaciel Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Ty
+  [modal choice]   ▶ Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Nieprzyjaciel
+  [modal choice]     Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Ty
+  [kreator many] Płatność 3 — tapuj źródła po jednympozostało 3 manyTapnij: Swamp (B)Tapnij: Swamp (B)Tapnij: Swamp (B)Tapnij: Forest (G) — źródła: 8
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Swamp (B)
+  >> ▶ Wznów grę bota
+  >> Zagraj: Gorger Wurm (koszt 3RG)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Gorger Wurm
+  [ROZGRYWKA]   • Gorger Wurm wchodzi na pole bitwy
+  [ROZGRYWKA]   • Gorger Wurm zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Devour (Gorger Wurm): możesz poświęcać inne swoje stwory (po 1× +1/+1 za każdego)
+  [ROZGRYWKA]   • Gorger Wurm — trigger (wejście na pole bitwy)
+
+--- krok 42 | T. 17TyTy: 10 ż.On: 22 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Wybierz: Poświęcenie (3 opcje)
+  RĘKA: Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1
+  MOJE POLA: Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Emerald Oryx · 4 · Creature — Antelope · 2/3 | Vampire Demon · 0 · Creature — Vampire Demon · Latanie · 4/3 | Gorger Wurm · 5 · Creature — Wurm · choroba · 5/5 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×5 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2 | Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Soldier · 0 · Creature — Soldier · 1/1 ×3 | Phyrexian Insect · 0 · Creature — Phyrexian Insect · Infect · 1/1 ×2 | Death-Hood Cobra · 2 · Creature — Phyrexian Snake · {1}, {G}: zdobądź Zasięg do końca tury · {1}, {G}: zdobądź Dotykanie śmierci do końca tury · 2/2 | Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 1x +1/+1 · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Swamp, Nefarious Imp, Canonized in Blood, Puppeteer Clique, Swamp ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Wybierz: Poświęcenie (3 opcje)
+  [modal choice] Wybierz: Poświęcenie Devour: koniec poświęcania (wejście bez liczników) Devour: poświęć Vampire Demon (Ty) Devour: poświęć Emerald Oryx (Ty)
+  [modal choice]   ▶ Devour: koniec poświęcania (wejście bez liczników)
+  [modal choice]     Devour: poświęć Vampire Demon (Ty)
+  [modal choice]     Devour: poświęć Emerald Oryx (Ty)
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil impatient)
+  [combat wizard] Zatwierdź atak
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Soulmender — zdobycie życia
+
+--- krok 45 | T. 18OnTy: 10 ż.On: 16 ż.Główna 1Stos — Cenn's Tactician ---
+  STOS: Krotiq Nestguard (rzuca: Nieprzyjaciel) | Soulmender (rzuca: Nieprzyjaciel) | Cenn's Tactician (rzuca: Nieprzyjaciel) → cel: Cenn's Tactician
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1
+  MOJE POLA: Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Emerald Oryx · 4 · Creature — Antelope · 2/3 | Vampire Demon · 0 · Creature — Vampire Demon · Latanie · 4/3 | Gorger Wurm · 5 · Creature — Wurm · choroba · 5/5 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×5 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2 | Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Soldier · 0 · Creature — Soldier · 1/1 ×3 | Phyrexian Insect · 0 · Creature — Phyrexian Insect · Infect · 1/1 ×2 | Death-Hood Cobra · 2 · Creature — Phyrexian Snake · {1}, {G}: zdobądź Zasięg do końca tury · {1}, {G}: zdobądź Dotykanie śmierci do końca tury · 2/2 | Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 1x +1/+1 · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Swamp, Nefarious Imp, Canonized in Blood, Puppeteer Clique, Swamp ⏎ Nowa partia (seed 23). Powodzenia!
+  >> ▶ Wznów grę bota
+  >> Cel zdolności: Cellar Door (2 opcje)
+  [modal choice] Cel zdolności: Cellar Door Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Nieprzyjaciel Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Ty
+  [modal choice]   ▶ Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Nieprzyjaciel
+  [modal choice]     Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Ty
+  [kreator many] Płatność 3 — tapuj źródła po jednympozostało 3 manyTapnij: Swamp (B)Tapnij: Swamp (B)Tapnij: Swamp (B)Tapnij: Forest (G) — źródła: 8
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Swamp (B)
+  >> ▶ Wznów grę bota
+
+--- krok 48 | T. 19TyTy: 10 ż.On: 17 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Locthwain Paladin (koszt 3B)  ||  Zagraj: Ainok Artillerist (koszt 2G)  ||  Zagraj: Puppeteer Clique (koszt 3BB)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Locthwain Paladin · 4 · Creature — Human Knight · Postrach · 3/2
+  MOJE POLA: Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Emerald Oryx · 4 · Creature — Antelope · 2/3 | Vampire Demon · 0 · Creature — Vampire Demon · Latanie · 4/3 | Gorger Wurm · 5 · Creature — Wurm · 5/5 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×5 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2 | Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Soldier · 0 · Creature — Soldier · 1/1 ×3 | Phyrexian Insect · 0 · Creature — Phyrexian Insect · Infect · 1/1 ×2 | Death-Hood Cobra · 2 · Creature — Phyrexian Snake · {1}, {G}: zdobądź Zasięg do końca tury · {1}, {G}: zdobądź Dotykanie śmierci do końca tury · 2/2 | Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 2x +1/+1 · 3/3 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · choroba · 4/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Swamp, Nefarious Imp, Canonized in Blood, Puppeteer Clique, Swamp ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Zagraj: Puppeteer Clique (koszt 3BB)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Puppeteer Clique
+  [ROZGRYWKA]   • Puppeteer Clique wchodzi na pole bitwy
+  [ROZGRYWKA]   • Puppeteer Clique zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Puppeteer Clique — wybierz cel triggera (wymagany)
+  >> Puppeteer Clique — cel triggera (2 opcje)
+  [modal choice] Puppeteer Clique — cel triggera Puppeteer Clique — cel triggera: Cacophodon Puppeteer Clique — cel triggera: Snarling Wolf
+  [modal choice]   ▶ Puppeteer Clique — cel triggera: Cacophodon
+  [modal choice]     Puppeteer Clique — cel triggera: Snarling Wolf
+  >> ▶ Wznów grę bota
+
+--- krok 51 | T. 19TyTy: 10 ż.On: 17 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (16 opcji)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Locthwain Paladin · 4 · Creature — Human Knight · Postrach · 3/2
+  MOJE POLA: Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Emerald Oryx · 4 · Creature — Antelope · 2/3 | Vampire Demon · 0 · Creature — Vampire Demon · Latanie · 4/3 | Gorger Wurm · 5 · Creature — Wurm · 5/5 | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · choroba · 3/2 | Cacophodon · 4 · Creature — Dinosaur · Pośpiech · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×5 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2 | Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Soldier · 0 · Creature — Soldier · 1/1 ×3 | Phyrexian Insect · 0 · Creature — Phyrexian Insect · Infect · 1/1 ×2 | Death-Hood Cobra · 2 · Creature — Phyrexian Snake · {1}, {G}: zdobądź Zasięg do końca tury · {1}, {G}: zdobądź Dotykanie śmierci do końca tury · 2/2 | Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 2x +1/+1 · 3/3 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · choroba · 4/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Swamp, Nefarious Imp, Canonized in Blood, Puppeteer Clique, Swamp ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Wybierz: Deklaracja atakujących (16 opcji)
+  [combat wizard] atakuję 4 z 4 stworów (profil impatient)
+  [combat wizard] Zatwierdź atak
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Cacophodon zostaje wygnany (opóźniony trigger)
+  [ROZGRYWKA]   • Cacophodon — trigger się rozstrzyga (opóźniony)
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Death-Hood Cobra — nadanie słów kluczowych do końca tury
+
+--- krok 54 | T. 20OnTy: 10 ż.On: 9 ż.Główna 1Stos — Death-Hood Cobra ---
+  STOS: Death-Hood Cobra (rzuca: Nieprzyjaciel) | Death-Hood Cobra (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Locthwain Paladin · 4 · Creature — Human Knight · Postrach · 3/2
+  MOJE POLA: Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Emerald Oryx · 4 · Creature — Antelope · 2/3 | Vampire Demon · 0 · Creature — Vampire Demon · Latanie · 4/3 | Gorger Wurm · 5 · Creature — Wurm · 1x -1/-1 · 4/4 | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · choroba · 3/2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×5 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Human · 0 · Creature — Human · 1/1 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2 | Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Soldier · 0 · Creature — Soldier · 1/1 ×3 | Phyrexian Insect · 0 · Creature — Phyrexian Insect · Infect · 1/1 | Death-Hood Cobra · 2 · Creature — Phyrexian Snake · {1}, {G}: zdobądź Zasięg do końca tury · {1}, {G}: zdobądź Dotykanie śmierci do końca tury · 2/2 | Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 2x +1/+1 · 3/3 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Swamp, Nefarious Imp, Canonized in Blood, Puppeteer Clique, Swamp ⏎ Nowa partia (seed 23). Powodzenia!
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Cenn's Tactician — licznik na celu → cel: Cenn's Tactician
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Cenn's Tactician dostaje +1 licznik +1/+1 (razem 3)
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Cenn's Tactician rozstrzygnięta
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 9 → 10
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Soulmender rozstrzygnięta
+  [ROZGRYWKA]   • Death-Hood Cobra zyskuje: dotykanie śmierci
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Death-Hood Cobra rozstrzygnięta
+  [ROZGRYWKA]   • Death-Hood Cobra zyskuje: dotykanie śmierci
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Death-Hood Cobra rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Death-Hood Cobra
+  [combat wizard] blokuję 1 stworami: Puppeteer Clique (3/2)
+  [combat wizard] Zatwierdź bloki
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Puppeteer Clique dostaje +1 licznik -1/-1 (razem 1)
+  [ROZGRYWKA]   • Ty: Puppeteer Clique — cmentarz → pole bitwy
+  [ROZGRYWKA]   • Puppeteer Clique — trigger się rozstrzyga
+  [ROZGRYWKA]   • Puppeteer Clique — wybierz cel triggera (wymagany)
+
+--- krok 57 | T. 20OnTy: 10 ż.On: 10 ż.Walka / Koniec walki ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Puppeteer Clique — cel triggera (2 opcje)
+  RĘKA: Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Locthwain Paladin · 4 · Creature — Human Knight · Postrach · 3/2
+  MOJE POLA: Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Emerald Oryx · 4 · Creature — Antelope · 2/3 | Vampire Demon · 0 · Creature — Vampire Demon · Latanie · 4/3 | Gorger Wurm · 5 · Creature — Wurm · 1x -1/-1 · 4/4 | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · choroba · 1x -1/-1 · 2/1 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×5 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Human · 0 · Creature — Human · 1/1 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2 | Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Soldier · 0 · Creature — Soldier · 1/1 ×3 | Phyrexian Insect · 0 · Creature — Phyrexian Insect · Infect · 1/1 | Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 3x +1/+1 · 4/4 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Swamp, Nefarious Imp, Canonized in Blood, Puppeteer Clique, Swamp ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Puppeteer Clique — cel triggera (2 opcje)
+  [modal choice] Puppeteer Clique — cel triggera Puppeteer Clique — cel triggera: Death-Hood Cobra Puppeteer Clique — cel triggera: Snarling Wolf
+  [modal choice]   ▶ Puppeteer Clique — cel triggera: Death-Hood Cobra
+  [modal choice]     Puppeteer Clique — cel triggera: Snarling Wolf
+  >> Aktywuj: Death-Hood Cobra (Ty) (koszt 1G) — zdobądź Zasięg do końca tury
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Puppeteer Clique — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Puppeteer Clique — cel: Death-Hood Cobra
+  [ROZGRYWKA]   • Ty: Death-Hood Cobra — cmentarz → pole bitwy
+  [ROZGRYWKA]   • Death-Hood Cobra przechodzi pod kontrolę gracza Ty
+  [ROZGRYWKA]   • Puppeteer Clique — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 21 — Ty
+  >> Cel zdolności: Cellar Door (2 opcje)
+  [modal choice] Cel zdolności: Cellar Door Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Nieprzyjaciel Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Ty
+  [modal choice]   ▶ Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Nieprzyjaciel
+  [modal choice]     Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Ty
+  [kreator many] Płatność 3 — tapuj źródła po jednympozostało 3 manyTapnij: Swamp (B)Tapnij: Swamp (B)Tapnij: Swamp (B)Tapnij: Forest (G) — źródła: 8
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Swamp (B)
+
+--- krok 60 | T. 21TyTy: 10 ż.On: 10 ż.UpkeepStos — Cellar Door ---
+  STOS: Cellar Door (rzuca: Ty) → cel: Nieprzyjaciel
+  AKCJE: Aktywuj: Death-Hood Cobra (Ty) (koszt 1G) — zdobądź Dotykanie śmierci do końca tury  ||  Aktywuj: Death-Hood Cobra (Ty) (koszt 1G) — zdobądź Zasięg do końca tury  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Locthwain Paladin · 4 · Creature — Human Knight · Postrach · 3/2
+  MOJE POLA: Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Emerald Oryx · 4 · Creature — Antelope · 2/3 | Vampire Demon · 0 · Creature — Vampire Demon · Latanie · 4/3 | Gorger Wurm · 5 · Creature — Wurm · 1x -1/-1 · 4/4 | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 1x -1/-1 · 2/1 | Death-Hood Cobra · 2 · Creature — Phyrexian Snake · Pośpiech · {1}, {G}: zdobądź Zasięg do końca tury · {1}, {G}: zdobądź Dotykanie śmierci do końca tury · 2/2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×5 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Human · 0 · Creature — Human · 1/1 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2 | Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Soldier · 0 · Creature — Soldier · 1/1 ×3 | Phyrexian Insect · 0 · Creature — Phyrexian Insect · Infect · 1/1 | Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 3x +1/+1 · 4/4 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Swamp, Nefarious Imp, Canonized in Blood, Puppeteer Clique, Swamp ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Aktywuj: Death-Hood Cobra (Ty) (koszt 1G) — zdobądź Zasięg do końca tury
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Cellar Door → cel: Nieprzyjaciel
+  >> Aktywuj: Death-Hood Cobra (Ty) (koszt 1G) — zdobądź Dotykanie śmierci do końca tury
+  [kreator many] Płatność 1G — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: GTapnij: Forest (G)Tapnij: Swamp (B)Tapnij: F — źródła: 5
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Swamp (B)
+  >> Aktywuj: Death-Hood Cobra (Ty) (koszt 1G) — zdobądź Zasięg do końca tury
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Death-Hood Cobra — nadanie słów kluczowych do końca tury
+
+--- krok 63 | T. 21TyTy: 10 ż.On: 10 ż.UpkeepStos — Death-Hood Cobra ---
+  STOS: Cellar Door (rzuca: Ty) → cel: Nieprzyjaciel | Death-Hood Cobra (rzuca: Ty)
+  AKCJE: Aktywuj: Death-Hood Cobra (Ty) (koszt 1G) — zdobądź Dotykanie śmierci do końca tury  ||  Aktywuj: Death-Hood Cobra (Ty) (koszt 1G) — zdobądź Zasięg do końca tury  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Locthwain Paladin · 4 · Creature — Human Knight · Postrach · 3/2
+  MOJE POLA: Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Emerald Oryx · 4 · Creature — Antelope · 2/3 | Vampire Demon · 0 · Creature — Vampire Demon · Latanie · 4/3 | Gorger Wurm · 5 · Creature — Wurm · 1x -1/-1 · 4/4 | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 1x -1/-1 · 2/1 | Death-Hood Cobra · 2 · Creature — Phyrexian Snake · Pośpiech · {1}, {G}: zdobądź Zasięg do końca tury · {1}, {G}: zdobądź Dotykanie śmierci do końca tury · 2/2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×5 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Human · 0 · Creature — Human · 1/1 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2 | Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Soldier · 0 · Creature — Soldier · 1/1 ×3 | Phyrexian Insect · 0 · Creature — Phyrexian Insect · Infect · 1/1 | Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 3x +1/+1 · 4/4 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Swamp, Nefarious Imp, Canonized in Blood, Puppeteer Clique, Swamp ⏎ Nowa partia (seed 23). Powodzenia!
+  [kreator many] Płatność 1G — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: GTapnij: Forest (G)Tapnij: Swamp (B)Tapnij: M — źródła: 3
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Swamp (B)
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Death-Hood Cobra zyskuje: dotykanie śmierci
+  [ROZGRYWKA]   • Ty: zdolność Death-Hood Cobra rozstrzygnięta
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Disa the Restless
+  >> Wybierz: Deklaracja atakujących (32 opcje)
+  [combat wizard] atakuję 5 z 5 stworów (profil impatient)
+  [combat wizard] Zatwierdź atak
+
+--- krok 66 | Koniec partii — wygrywa Ty ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Locthwain Paladin · 4 · Creature — Human Knight · Postrach · 3/2 | Disa the Restless · 5 · Legendary Creature — Human Scout · Gdy karta trafia do grobu spoza pola bitwy: karta z grobu na pole bitwy. · Gdy jeden z twoich stworów zada obrażenia bojowe graczowi: stwórz token Tarmogoyf. · 5/6
+  MOJE POLA: Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Emerald Oryx · 4 · Creature — Antelope · 2/3 | Vampire Demon · 0 · Creature — Vampire Demon · Latanie · 4/3 | Gorger Wurm · 5 · Creature — Wurm · 1x -1/-1 · 4/4 | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 1x -1/-1 · 2/1 | Zombie · 0 · Creature — Zombie · choroba · 2/2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×5 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Human · 0 · Creature — Human · 1/1 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2 | Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Soldier · 0 · Creature — Soldier · 1/1 ×3 | Phyrexian Insect · 0 · Creature — Phyrexian Insect · Infect · 1/1 | Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 3x +1/+1 · 4/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Swamp, Nefarious Imp, Canonized in Blood, Puppeteer Clique, Swamp ⏎ Nowa partia (seed 23). Powodzenia!
+== KONIEC PARTII == Koniec partii — wygrywa Ty
+
+--- krok 67 | Koniec partii — wygrywa Ty ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Locthwain Paladin · 4 · Creature — Human Knight · Postrach · 3/2 | Disa the Restless · 5 · Legendary Creature — Human Scout · Gdy karta trafia do grobu spoza pola bitwy: karta z grobu na pole bitwy. · Gdy jeden z twoich stworów zada obrażenia bojowe graczowi: stwórz token Tarmogoyf. · 5/6
+  MOJE POLA: Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Emerald Oryx · 4 · Creature — Antelope · 2/3 | Vampire Demon · 0 · Creature — Vampire Demon · Latanie · 4/3 | Gorger Wurm · 5 · Creature — Wurm · 1x -1/-1 · 4/4 | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 1x -1/-1 · 2/1 | Zombie · 0 · Creature — Zombie · choroba · 2/2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×5 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Human · 0 · Creature — Human · 1/1 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2 | Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Soldier · 0 · Creature — Soldier · 1/1 ×3 | Phyrexian Insect · 0 · Creature — Phyrexian Insect · Infect · 1/1 | Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 3x +1/+1 · 4/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Swamp, Nefarious Imp, Canonized in Blood, Puppeteer Clique, Swamp ⏎ Nowa partia (seed 23). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 26, kliknięte: 29, modale: 5, sondy noop: 98 (panel 74, modal 24)
+== DETEKTORY: brak zgłoszeń ==

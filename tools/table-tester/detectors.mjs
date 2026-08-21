@@ -20,7 +20,8 @@
 /** Surowe identyfikatory, które nigdy nie powinny trafić do oczu gracza. */
 const RAW_IDENTIFIER = /\b(battlefield|graveyard|library|exile|stack|hand)\s*→|→\s*(battlefield|graveyard|library|exile|stack|hand)\b/;
 const SNAKE_CASE_EVENT = /\b[a-z]+(_[a-z]+){2,}\b/;
-const PLACEHOLDER = /(^|[\s:(])\?($|[\s),.])|undefined|NaN|\[object |null\b/;
+// M171/Z4: „?:" (nazwa celu zastąpiona znakiem zapytania przed kwotą).
+const PLACEHOLDER = /(^|[\s:(])\?($|[\s:),.])|undefined|NaN|\[object |null\b/;
 
 /** Ile razy ta sama akcja bota w jednej turze jest już podejrzana. */
 const REPEAT_THRESHOLD = 4;
@@ -552,6 +553,34 @@ export function detectPolishPluralErrors(lines) {
   return found;
 }
 
+/**
+ * M171 (audyt pętli jakości) — OPIS O CZŁOWIEKU W 3. OSOBIE.
+ * Warstwa odmiany (odmienNaDrugaOsobe) zamienia „Ty <czasownik>" na 2. osobę
+ * TYLKO dla czasowników ze słownika DRUGA_OSOBA. Nowy opis z nowym
+ * czasownikiem (M166/D: „Ty dzieli 3 obrażeń…") przechodzi bez odmiany —
+ * gracz czyta o sobie w 3. osobie. Wykrywamy wpisy zaczynające się od
+ * „Ty <słowo>", gdzie słowo nie wygląda na 2. osobę (nie kończy się na
+ * „sz") — czasownik 2. osoby l.poj. w tych opisach zawsze tak się kończy
+ * (dzielisz, masz, dobierasz). „Ty nie <czasownik>" sprawdza słowo po „nie".
+ */
+export function detectThirdPersonAboutHuman(lines) {
+  const found = [];
+  const ENTRY = /(?:^|\| |• |LOG: )Ty (nie )?([a-ząćęłńóśźż]+)/u;
+  for (const line of lines) {
+    if (!/\[ROZGRYWKA\]|LOG:|\[modal choice\]/.test(line)) continue;
+    const match = ENTRY.exec(line);
+    if (!match) continue;
+    const word = match[2];
+    if (word.endsWith('sz')) continue;
+    // Przejrzane konteksty nie-czasownikowe (podmiot złożony / dopełniacz).
+    if (word === 'i') continue;
+    push(found, 'info',
+      `Opis o graczu w 3. osobie: „Ty ${match[1] ?? ''}${word}…" — czasownik bez wpisu w DRUGA_OSOBA (session.js)`,
+      line);
+  }
+  return found;
+}
+
 function escapeRe(text) {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -904,6 +933,8 @@ export function runDetectors(lines, { actionRecords = [], windowRecords = null, 
     // M119 (audyt żywym testerem) — klasy błędów, które przeszły przez
     // komplet dotychczasowych detektorów bez jednego zgłoszenia.
     ...detectPolishPluralErrors(lines),
+    // M171 — opis o graczu w 3. osobie (czasownik spoza DRUGA_OSOBA).
+    ...detectThirdPersonAboutHuman(lines),
     ...detectIndistinguishableOptions(lines),
     // M138 (audyt „wcielam się w gracza”) — trzy klasy, które przeszły przez
     // komplet dotychczasowych detektorów: 22 partie dały ZERO zgłoszeń, a

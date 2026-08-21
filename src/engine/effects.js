@@ -1025,18 +1025,28 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       dealNonCombatDamage(state, sourceObject, chosen[0], total);
       return;
     }
+    // M171/Z4 (audyt Żywym Testerem, L6): cel może zginąć od obrażeń w TEJ
+    // samej komendzie — zdarzenia niosą cardId celów (LKI), inaczej log
+    // pokazuje „?: 1" po śmierci celu.
+    const targetCardIds = chosen.map((id) => state.objects.get(id)?.cardId ?? null);
+    // M171/Z4b: token nie ma cardId — jego LKI to name (warstwa opisu używa
+    // go, gdy obiekt zniknął, a cardId brak).
+    const targetNames = chosen.map((id) => state.objects.get(id)?.name ?? null);
     state.pendingDamageDivision = {
       playerId: sourceObject.controllerId,
       sourceId: sourceObject.id,
       cardId: sourceObject.cardId,
       targetIds: Object.freeze([...chosen]),
+      targetCardIds: Object.freeze([...targetCardIds]),
+      targetNames: Object.freeze([...targetNames]),
       total,
       restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.turn.priorityPlayerId = sourceObject.controllerId;
     state.events.push(event('damage_division_required', {
       playerId: sourceObject.controllerId, sourceId: sourceObject.id,
-      cardId: sourceObject.cardId, targetIds: [...chosen], total,
+      cardId: sourceObject.cardId, targetIds: [...chosen], targetCardIds: [...targetCardIds],
+      targetNames: [...targetNames], total,
     }));
     return;
   }
