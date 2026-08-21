@@ -31,7 +31,7 @@ import { parseManaCost } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
-import { lookWizardKindOf, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard } from './choice-request.js';
+import { lookWizardKindOf, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard } from './choice-request.js';
 import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions } from './render.js';
 
 function runEngineSmoke() {
@@ -343,6 +343,37 @@ function bootstrapTable() {
         onComplete: (built) => {
           hideModal('choice-request');
           play(built);
+        },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+    // M172/E (uwaga właściciela): podział obrażeń między cele (Inferno
+    // Titan) — jeden wizard z kwotami zamiast enumeracji kombinacji celów.
+    // Zatwierdzenie skleja DWIE komendy silnika: wybór celów
+    // (resolve_trigger_target) i kwoty (resolve_damage_division — announce
+    // otwiera je natychmiast, CR 601.2d/603.3d); pojedynczy cel dostaje
+    // całość bez drugiej komendy.
+    if (request.type === 'damage_division') {
+      const pt = choiceView.pendingTriggerTarget;
+      if (!pt || pt.playerId !== choiceView.playerId || !(pt.divisionTotal > 0)) {
+        hideModal('choice-request');
+        play(request.options[0]);
+        return;
+      }
+      renderDamageDivisionWizard(els.choiceRequestBody, {
+        view: choiceView, session,
+        candidateIds: pt.candidateIds, total: pt.divisionTotal,
+        maxTargets: pt.maxTargets ?? 3,
+        sourceName: pt.cardId ? session.nameOf(pt.cardId) : null,
+        onOpenCard: (objectId) => openCardFullscreen(objectId),
+        onComplete: ({ targetIds, amounts }) => {
+          hideModal('choice-request');
+          play({ type: 'resolve_trigger_target', playerId: pt.playerId, targetIds });
+          if (targetIds.length >= 2 && session.view().pendingDamageDivision) {
+            play({ type: 'resolve_damage_division', playerId: pt.playerId, amounts });
+          }
         },
         onCancel: () => hideModal('choice-request'),
       });

@@ -5426,6 +5426,15 @@ export function playerView(state, playerId) {
         effectType: ((Array.isArray(head.ability?.effect) ? head.ability.effect[0]?.type : head.ability?.effect?.type) ?? null)
           ?? head.extra?.chapterEffectType ?? null,
         chapterName: head.extra?.chapterName ?? null,
+        // M172/E (uwaga właściciela): decyzja multi-target z podziałem
+        // obrażeń — UI buduje z tego JEDEN wizard (kandydaci + kwoty),
+        // zamiast pokazywać enumerację kombinacji celów.
+        ...(() => {
+          const eff = Array.isArray(head.ability?.effect) ? head.ability.effect[0] : head.ability?.effect;
+          const spec = head.ability?.trigger?.requiresTarget;
+          if (eff?.type !== 'damage_divided' || !(Number.isInteger(spec?.count) && spec.count > 1)) return {};
+          return { divisionTotal: eff.amount ?? 3, maxTargets: spec.count };
+        })(),
       }) : null;
     })(),
     pendingDamageTarget: pendingDamageTargetView, pendingRevealOrder: pendingRevealOrderView,

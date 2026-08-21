@@ -527,9 +527,13 @@ function buildChoiceRequestEntries(commands, view) {
       return { command: real, alsoOffer: entry.group.commands[declineIndex] };
     }
     const first = entry.group.commands[0];
+    // M172/E: multi-target z podziałem obrażeń (Inferno Titan) — zamiast
+    // enumeracji kombinacji celów jeden wizard kwot (jak przydział po walce).
+    const divisionWizard = first.type === 'resolve_trigger_target'
+      && view?.pendingTriggerTarget?.divisionTotal > 0;
     const request = choiceRequest({
       id: `choice-${view.turn.number}-${view.turn.step}-${entry.group.index}-${entry.group.key}`,
-      type: choiceRequestType(entry.group.commands),
+      type: divisionWizard ? 'damage_division' : choiceRequestType(entry.group.commands),
       options: entry.group.commands,
     });
     return { request, first };
@@ -1323,6 +1327,8 @@ const CHOICE_GROUP_TYPE_DESCRIPTORS = Object.freeze({
   declare_attackers: 'Deklaracja atakujących',
   declare_blockers: 'Deklaracja blokujących',
   damage_assignment: 'Rozdzielenie obrażeń bojowych',
+  // M172/E: wizard podziału obrażeń między cele (Inferno Titan).
+  damage_division: 'Podział obrażeń między cele',
   scry: 'Scry — co odłożyć na spód?',
   surveil: 'Surveil — karty do grobu',
   index: 'Index — kolejność na wierzchu biblioteki',
@@ -1477,6 +1483,13 @@ export function choiceGroupTitle(request, session, view) {
 }
 
 export function choiceGroupLabel(request, session, view) {
+  // M172/E: wizard podziału obrażeń — liczba enumerowanych kombinacji to
+  // szum („(33 opcje)"); wpis panelu opisuje CZYNNOŚĆ, nie licznik ofert.
+  if (request?.type === 'damage_division') {
+    const total = view?.pendingTriggerTarget?.divisionTotal;
+    const src = view?.pendingTriggerTarget?.cardId ? session.nameOf(view.pendingTriggerTarget.cardId) : null;
+    return `${src ? `${src} — ` : ''}podziel ${total ?? '?'} ${total === 1 ? 'obrażenie' : (total >= 2 && total <= 4 ? 'obrażenia' : 'obrażeń')} między cele`;
+  }
   const count = (request?.options ?? []).length;
   return `${choiceGroupTitle(request, session, view)} (${optionsCountLabel(count)})`;
 }

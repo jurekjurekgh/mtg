@@ -213,3 +213,108 @@ test('D2: etykieta celu nazywa kopię „Nazwa (kopia N)" (commandLabel)', () =>
   assert.match(String(label), /Plate \(kopia 1\)/, `etykieta celu z numerem kopii: ${label}`);
 });
 
+// ---- E: wizard podziału obrażeń zamiast enumeracji kombinacji ---------------
+
+test('E1: widok decyzji Titana niesie divisionTotal i maxTargets (dane wizarda)', () => {
+  const state = game('p1');
+  putCard(state, 'foe1', 'highland-game', 'p2');
+  putCard(state, 'titan', 'inferno-titan', 'p1', 'hand');
+  addMana(state, 'p1', 6, { colors: ['R'] });
+  const cast = playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_permanent' && c.objectId === 'titan');
+  assert.ok(execute(state, cast).ok);
+  for (let i = 0; i < 12 && !state.pendingTriggerTargets?.[0]; i += 1) {
+    if (state.zones.stack.length > 0) {
+      assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
+    } else break;
+  }
+  const pt = playerView(state, 'p1').pendingTriggerTarget;
+  assert.equal(pt?.divisionTotal, 3, 'total podziału (3 obrażenia)');
+  assert.equal(pt?.maxTargets, 3, 'maksymalnie 3 cele');
+  assert.ok((pt?.candidateIds ?? []).length >= 2, 'kandydaci (stwór wroga + twarze)');
+});
+
+test('E2: wizard podziału — suma musi wynosić total; cele = kandydaci z kwotą > 0', async () => {
+  const { renderDamageDivisionWizard } = await import('../src/table/choice-request.js');
+  class MiniEl {
+    constructor(tag) { this.tagName = tag; this.children = []; this.listeners = {}; this.className = ''; this.text = ''; this.dataset = {}; this.disabled = false; }
+    set textContent(v) { this.text = String(v); this.children = []; }
+    get textContent() { return this.text + this.children.map((c) => c.textContent).join(''); }
+    set innerHTML(v) { this.text = String(v).replace(/<[^>]*>/g, ''); this.children = []; }
+    get innerHTML() { return this.textContent; }
+    appendChild(c) { this.children.push(c); return c; }
+    replaceChildren(...n) { this.children = n.flat(); }
+    addEventListener(t, l) { (this.listeners[t] ??= []).push(l); }
+    click() { for (const l of this.listeners.click ?? []) l({}); }
+    classList = { toggle: () => {} };
+  }
+  globalThis.document = globalThis.document ?? {};
+  const oldCreate = globalThis.document.createElement;
+  globalThis.document.createElement = (tag) => new MiniEl(tag);
+  try {
+    const host = new MiniEl('div');
+    const view = {
+      players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }],
+      zones: { battlefield: [{ id: 'c1', cardId: 'highland-game', controllerId: 'p2' }], hand: [], stack: [], graveyard: [], library: [] },
+    };
+    const session = { nameOf: (id) => id, nameOfObject: (id) => id, faceDownName: () => 'morph' };
+    let result = null;
+    renderDamageDivisionWizard(host, {
+      view, session, candidateIds: ['c1', 'p2'], total: 3, maxTargets: 3,
+      onComplete: (r) => { result = r; }, onCancel: () => {},
+    });
+    const walk = (node, acc = []) => { for (const c of node.children ?? []) { acc.push(c); walk(c, acc); } return acc; };
+    const all = walk(host);
+    const confirm = all.find((el) => String(el.className).includes('damage-division-confirm'));
+    const pluses = all.filter((el) => String(el.className).includes('damage-wizard-plus'));
+    assert.ok(confirm && pluses.length === 2, 'wizard: przycisk zatwierdź + 2 steppery');
+    assert.equal(confirm.disabled, true, 'suma 0 != 3 — zatwierdzenie zablokowane');
+    // 2 obrażenia w stwora, 1 w twarz gracza.
+    pluses[0].click(); pluses[0].click(); pluses[1].click();
+    assert.equal(confirm.disabled, false, 'suma 3/3 — zatwierdzenie aktywne');
+    // Czwarty klik ponad total nie przechodzi.
+    pluses[1].click();
+    const counts = all.filter((el) => String(el.className).includes('damage-wizard-count'));
+    assert.deepEqual(counts.map((c) => c.text), ['2', '1'], 'nadmiar ponad total odrzucony');
+    confirm.click();
+    assert.deepEqual(result, { targetIds: ['c1', 'p2'], amounts: [2, 1] },
+      'cele = kandydaci z kwotą > 0, kwoty w tej samej kolejności');
+  } finally {
+    if (oldCreate) globalThis.document.createElement = oldCreate;
+  }
+});
+
+test('E3: wizard pozwala oddać CAŁOŚĆ jednemu celowi („among one... targets")', async () => {
+  const { renderDamageDivisionWizard } = await import('../src/table/choice-request.js');
+  class MiniEl {
+    constructor(tag) { this.tagName = tag; this.children = []; this.listeners = {}; this.className = ''; this.text = ''; this.dataset = {}; this.disabled = false; }
+    set textContent(v) { this.text = String(v); this.children = []; }
+    get textContent() { return this.text + this.children.map((c) => c.textContent).join(''); }
+    appendChild(c) { this.children.push(c); return c; }
+    addEventListener(t, l) { (this.listeners[t] ??= []).push(l); }
+    click() { for (const l of this.listeners.click ?? []) l({}); }
+    classList = { toggle: () => {} };
+  }
+  const oldCreate = globalThis.document?.createElement;
+  globalThis.document.createElement = (tag) => new MiniEl(tag);
+  try {
+    const host = new MiniEl('div');
+    const view = { players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }], zones: { battlefield: [], hand: [], stack: [], graveyard: [], library: [] } };
+    const session = { nameOf: (id) => id, nameOfObject: (id) => id, faceDownName: () => 'morph' };
+    let result = null;
+    renderDamageDivisionWizard(host, {
+      view, session, candidateIds: ['p1', 'p2'], total: 3, maxTargets: 3,
+      onComplete: (r) => { result = r; }, onCancel: () => {},
+    });
+    const walk = (node, acc = []) => { for (const c of node.children ?? []) { acc.push(c); walk(c, acc); } return acc; };
+    const all = walk(host);
+    const confirm = all.find((el) => String(el.className).includes('damage-division-confirm'));
+    const pluses = all.filter((el) => String(el.className).includes('damage-wizard-plus'));
+    pluses[1].click(); pluses[1].click(); pluses[1].click(); // 3 we wrogą twarz
+    assert.equal(confirm.disabled, false);
+    confirm.click();
+    assert.deepEqual(result, { targetIds: ['p2'], amounts: [3] }, 'jeden cel z całością (bez drugiej komendy kwot)');
+  } finally {
+    if (oldCreate) globalThis.document.createElement = oldCreate;
+  }
+});
+
