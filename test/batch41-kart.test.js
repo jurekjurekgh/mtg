@@ -403,3 +403,67 @@ test('D3b: intimidate w walce — blokuje tylko artefaktowy stwór albo wspólny
   assert.ok(greenBlock.ok, 'stwór o wspólnym kolorze blokuje');
 });
 
+// ---- Transza E: Halo Forager — darmowy rzut z grobu za {X} -------------------
+
+function castForager(state) {
+  putCard(state, 'forager', 'halo-forager', 'p1', 'hand');
+  addMana(state, 'p1', 3, { colors: ['U', 'B', 'B'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'forager');
+  assert.ok(cast, 'oferta rzutu Foragera');
+  assert.ok(execute(state, cast).ok);
+  for (let i = 0; i < 12 && !state.pendingGraveFreeCast; i += 1) {
+    if (state.zones.stack.length > 0) {
+      assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
+    } else break;
+  }
+  assert.ok(state.pendingGraveFreeCast, 'decyzja „pay {X} → cast z grobu" otwarta');
+}
+
+test('E1: Forager — rzut instanta z GROBU PRZECIWNIKA za {X}=MV; po rozstrzygnięciu EXILE', () => {
+  const state = game('p1');
+  // Instant w grobie PRZECIWNIKA (spin-out MV 3, cel: stwór/Vehicle).
+  putCard(state, 'gspin', 'spin-out', 'p2', 'graveyard');
+  putCard(state, 'foe', 'segmented-krotiq', 'p2', 'battlefield');
+  castForager(state);
+  addMana(state, 'p1', 3, { colors: [] }); // {X}=3 (generic)
+  const offer = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'resolve_grave_free_cast' && c.objectId === 'gspin' && c.targets?.[0] === 'foe');
+  assert.ok(offer, 'oferta rzutu z grobu wroga z celem');
+  assert.equal(offer.xValue, 3, 'X = mana value karty');
+  assert.ok(execute(state, offer).ok);
+  const onStack = [...state.objects.values()].find((o) => o.cardId === 'spin-out' && o.zone === 'stack');
+  assert.equal(onStack?.controllerId, 'p1', 'czar pod kontrolą kontrolera Foragera');
+  assert.ok(resolveStack(state));
+  assert.notEqual(state.objects.get('foe')?.zone, 'battlefield', 'cel zniszczony');
+  const after = [...state.objects.values()].find((o) => o.cardId === 'spin-out' && o.zone !== 'battlefield');
+  assert.equal(after?.zone, 'exile', 'zamiast do grobu — WYGNANY (Oracle)');
+});
+
+test('E2: Forager — rezygnacja nic nie kosztuje; oferty tylko w budżecie {X}', () => {
+  const state = game('p1');
+  putCard(state, 'gspin', 'spin-out', 'p1', 'graveyard'); // MV 3
+  castForager(state);
+  // Zero many po rzucie Foragera: MV 3 poza budżetem — brak oferty rzutu.
+  const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_grave_free_cast');
+  assert.ok(offers.some((c) => c.decline), 'rezygnacja zawsze dostępna');
+  assert.ok(!offers.some((c) => c.objectId === 'gspin'), 'karta poza budżetem {X} nie jest oferowana (L48)');
+  const manaBefore = state.players.find((pl) => pl.id === 'p1').mana;
+  assert.ok(execute(state, offers.find((c) => c.decline)).ok);
+  assert.equal(state.players.find((pl) => pl.id === 'p1').mana, manaBefore, 'rezygnacja bez płatności');
+  assert.ok(!state.pendingGraveFreeCast, 'decyzja zamknięta');
+});
+
+test('E3: Forager — czar z kosztem dodatkowym poza zakresem (jawnie nie oferowany)', () => {
+  const state = game('p1');
+  putCard(state, 'grites', 'village-rites', 'p1', 'graveyard'); // additionalCost: sacrifice
+  putCard(state, 'own', 'highland-game', 'p1', 'battlefield');
+  castForager(state);
+  addMana(state, 'p1', 1, { colors: [] });
+  const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_grave_free_cast');
+  assert.ok(!offers.some((c) => c.objectId === 'grites'), 'additionalCost poza zakresem — brak oferty');
+  // Ręczna komenda = jawny reject (nie ciche obejście — L52).
+  const r = execute(state, { type: 'resolve_grave_free_cast', playerId: 'p1', objectId: 'grites', targets: ['own'] });
+  assert.equal(r.ok, false, 'jawny reject poza zakresem');
+});
+

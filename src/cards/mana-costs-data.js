@@ -328,4 +328,5 @@ export const MANA_COSTS = {
   "burning-yard-trainer": "{4}{R}",
   "downwind-ambusher": "{3}{B}",
   "predators-gambit": "{B}",
+  "halo-forager": "{1}{U}{B}",
 };

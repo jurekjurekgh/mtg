@@ -120,6 +120,8 @@ export function stateFingerprint(state) {
       // M171/Z6: deklaracja przy umieszczaniu na stosie (CR 603.3d).
       announceStackId: state.pendingDamageDivision.announceStackId ?? null,
     } : null,
+    // M174/E: darmowy rzut z grobu (Halo Forager) — stan decyzji.
+    pendingGraveFreeCast: state.pendingGraveFreeCast ? { playerId: state.pendingGraveFreeCast.playerId } : null,
     pendingSpell: state.pendingSpell ? { stackId: state.pendingSpell.stackId, effects: (state.pendingSpell.effects ?? []).length } : null,
     pendingClash: state.pendingClash ? {
       choices: [...state.pendingClash.choices],

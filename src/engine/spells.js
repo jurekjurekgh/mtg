@@ -1431,7 +1431,9 @@ export function resolveTopOfStack(state) {
   // `rebound` idzie po rozstrzygnięciu do EXILE zamiast do grobu, a na początku
   // następnego upkeepu kontrolera otwiera jednorazową decyzję rzutu bez kosztu.
   const reboundCast = Boolean(object.reboundCast && !object.isSpellCopy);
-  const zoneAfterResolve = (adventure || flashedBack || reboundCast) ? 'exile' : 'graveyard';
+  // M174/E (Halo Forager): exileInsteadOfGraveyard — „If that spell would
+  // be put into a graveyard, exile it instead" (dotyczy też fizzle niżej).
+  const zoneAfterResolve = (adventure || flashedBack || reboundCast || object.exileInsteadOfGraveyard) ? 'exile' : 'graveyard';
   const afterId = `${zoneAfterResolve}-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, stackId, zoneAfterResolve, afterId);
   // Rebound: zaznacz wygnaną kartę jako gotową do rzutu bez kosztu w przyszłym
@@ -1535,7 +1537,7 @@ export function finishPendingSpell(state, stackId, remainingEffects) {
     return state.events.slice(before);
   }
   const flashedBack = Boolean(object.flashedBack);
-  const zoneAfter = flashedBack ? 'exile' : 'graveyard';
+  const zoneAfter = (flashedBack || object.exileInsteadOfGraveyard) ? 'exile' : 'graveyard';
   const afterId = `${zoneAfter}-${state.objectSequence++}`;
   moveObjectDirectly(state, stackId, zoneAfter, afterId);
   const resolved = event('spell_resolved', { fromId: stackId, toId: afterId, cardId: object.cardId, controllerId: object.controllerId, fizzled: false, flashedBack });

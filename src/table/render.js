@@ -57,6 +57,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_hand_creature: 'Położenie stwora z ręki',
   resolve_legend_choice: 'Prawo legend (który zostaje?)',
   resolve_trigger_target: 'Cel triggera (wybór)',
+  resolve_grave_free_cast: 'Darmowy rzut z grobu (zapłać {X})',
   resolve_opponent_target: 'Wskaż cel obrażeń (wybór przeciwnika)',
   resolve_optional_trigger_choice: 'Efekt „you may"',
   resolve_enter_as_copy: 'Wejście jako kopia',
@@ -314,6 +315,7 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_backup') return 'resolve_backup';
   if (command.type === 'resolve_sacrifice_choice') return 'resolve_sacrifice_choice';
   if (command.type === 'resolve_trigger_target') return 'resolve_trigger_target';
+  if (command.type === 'resolve_grave_free_cast') return 'resolve_grave_free_cast';
   if (command.type === 'resolve_opponent_target') return 'resolve_opponent_target';
   if (command.type === 'resolve_search_choice') return 'resolve_search_choice';
   if (command.type === 'resolve_color_choice') return 'resolve_color_choice';
@@ -791,6 +793,7 @@ function describeEffect(e) {
     surveil: () => `surveil ${e.amount ?? 1}`,
     clash: () => 'clash',
     take_initiative: () => 'obejmij inicjatywę',
+    pay_x_cast_from_graveyard: () => 'możesz zapłacić {X} i rzucić instant/sorcery o MV X z dowolnego grobu za darmo (potem wygnanie)',
     draw_cards: () => `dobierz ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')}`,
     lose_life: () => `utrata ${e.amount ?? 1} życia`,
     pay_mana: () => `zapłać ${e.amount} many`,
@@ -1359,6 +1362,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_springbloom: 'Springbloom Druid — land do poświęcenia',
   resolve_backup: 'Backup — który stwór dostaje liczniki?',
   resolve_trigger_target: 'Cel wyzwalonej zdolności',
+  resolve_grave_free_cast: 'Rzut z grobu za {X} (Halo Forager)',
   resolve_delirium_target: 'Delirium — cel obrażeń',
   resolve_mentor_target: 'Mentor — kto dostaje licznik?',
   resolve_graveyard_top_choice: 'Karta z grobu na wierzch biblioteki',
@@ -2119,6 +2123,13 @@ export function commandLabel(cmd, session, view) {
         return targetId == null ? `${amount}` : `${nameOfObjectId(targetId)}: ${amount}`;
       });
       return parts.length > 0 ? `Podziel obrażenia — ${parts.join(', ')}` : 'Podział obrażeń';
+    }
+    case 'resolve_grave_free_cast': {
+      // M174/E: oferta nazywa kartę, koszt X i cele — inaczej N wpisów
+      // wygląda identycznie (L29).
+      if (cmd.decline || cmd.objectId == null) return 'Zrezygnuj (nie płać {X})';
+      const gfcTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
+      return `Rzuć z grobu za {${cmd.xValue ?? '?'}}: ${cmd.cardId ? escapeHtml(session.nameOf(cmd.cardId)) : nameOfObjectId(cmd.objectId)}${gfcTargets ? ` → cel: ${gfcTargets}` : ''}`;
     }
     case 'resolve_madness_cast': {
       // M159/F4 (audyt PR #66): oferta niesie objectId (karta w exile —

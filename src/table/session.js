@@ -944,6 +944,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         return `${whoN(e.playerId)} wykonuje Epic Experiment — wygnano ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki${exiled ? `: ${exiled}` : ''}`;
       }
       case 'epic_experiment_resolved': return `${whoN(e.playerId)} kończy Epic Experiment (${e.restToGrave} ${polishPlural(e.restToGrave, 'karta', 'karty', 'kart')} do grobu)`;
+      case 'grave_free_cast_required':
+        return `${whoN(e.playerId)} może zapłacić {X} i rzucić instant/sorcery o MV X z dowolnego grobu (${nameOf(e.sourceCardId)})`;
+      case 'grave_free_cast_resolved':
+        return e.declined
+          ? `${whoN(e.playerId)} rezygnuje z rzutu z grobu (${nameOf(e.sourceCardId)})`
+          : `${whoN(e.playerId)} płaci {${e.xPaid}} i rzuca ${nameOf(e.cardId)} z grobu za darmo (po rozstrzygnięciu: wygnanie)`;
       case 'damage_division_required': {
         // M171/Z4 (L6): objectOrLki — cel mógł już zniknąć ze stanu; token
         // bez cardId ma LKI w targetNames (Z4b).

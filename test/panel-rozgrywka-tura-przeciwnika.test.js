@@ -155,11 +155,11 @@ test('M101/D: trigger jako JEDYNY obiekt na stosie też raportuje swój skutek',
   // Sprawdzamy, że w partii z takimi triggerami panel widzi ich rozstrzygnięcia.
   // Seed 1 po Batchu 36 (azorius +Survivor of Korlis) — przelosowane hunterem.
   // Seed 3 po Batchu 37 (azorius +Ojutai's Breath +Static Net, graveyard +Emerald Oryx) — przelosowane hunterem.
-  // Seed 35 po Batchu 41 (graveyard +7 kart +Skullcairn +2 Islands) — przelosowane hunterem (2 opóźnione).
-  const { shown, log } = playCollectingPanel(makeSession(35));
+  // Seed 60 po Batchu 41 KOMPLET (graveyard +8 kart +Skullcairn +2 Islands +Forager) — hunter (2 opóźnione).
+  const { shown, log } = playCollectingPanel(makeSession(60));
   const panel = shown.join('\n');
   const opoznione = log.filter((l) => /trigger się rozstrzyga \(opóźniony\)/.test(l));
-  assert.ok(opoznione.length > 0, 'seed 35 miał zawierać opóźnione triggery — zmienił się przebieg partii');
+  assert.ok(opoznione.length > 0, 'seed 60 miał zawierać opóźnione triggery — zmienił się przebieg partii');
   for (const line of opoznione) {
     assert.ok(panel.includes(line), `opóźniony trigger poza panelem: „${line}"`);
   }

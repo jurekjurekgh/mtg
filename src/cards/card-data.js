@@ -7709,6 +7709,32 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+// ---- Batch 41 — transza E: Halo Forager ----
+
+  // 10. Halo Forager (MOM) {1}{U}{B} 3/1 Faerie Rogue — Flying; ETB:
+  //     „you may pay {X} → cast target instant or sorcery card with mana
+  //     value X from a graveyard without paying its mana cost; if it would
+  //     be put into a graveyard, exile it instead." Model decyzji: jedna
+  //     komenda (karta = X + cele) albo rezygnacja — wzorzec madness/Epic;
+  //     zakres jak castMadnessSpell (bez additionalCost/X/fireball).
+  defineCard({
+    id: 'halo-forager', name: 'Halo Forager', set: 'MOM',
+    types: ['Creature'], subtypes: ['Faerie', 'Rogue'], colors: ['U', 'B'],
+    keywords: ['flying'], power: 3, toughness: 1, manaCost: 3,
+    oracleText: 'Flying\nWhen this creature enters, you may pay {X}. When you do, you may cast target instant or sorcery card with mana value X from a graveyard without paying its mana cost. If that spell would be put into a graveyard, exile it instead.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/d/edb5f0cc-c826-4e7b-882c-63f6e51fa932.jpg?1783916950',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'pay_x_cast_from_graveyard' }],
+      }),
+    ],
+    artId: 35, plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+    notes: ['decyzja rzutu liczona żywo (dowolny grób, MV = X, budżet many); czar poza zakresem (koszt dodatkowy/X) nie jest oferowany'],
+  }),
+
 ]);
 
 /**

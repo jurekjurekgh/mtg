@@ -1518,6 +1518,24 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       entersTapped: false,
     });
   }
+  // M174/E (Halo Forager, MOM): „you may pay {X}. When you do, you may cast
+  // target instant or sorcery card with mana value X from a graveyard
+  // without paying its mana cost. If that spell would be put into a
+  // graveyard, exile it instead." Model: JEDNA decyzja (wybór karty = X i
+  // rzut; rezygnacja = nic) — wzorzec pendingMadnessCast/Epic; kandydaci
+  // liczeni ŻYWO w playerView (dowolny grób, MV == X, w zakresie epicCastOffers).
+  if (effect.type === 'pay_x_cast_from_graveyard') {
+    state.pendingGraveFreeCast = {
+      playerId: sourceObject.controllerId,
+      sourceCardId: sourceObject.cardId ?? null,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = sourceObject.controllerId;
+    state.events.push(event('grave_free_cast_required', {
+      playerId: sourceObject.controllerId, sourceCardId: sourceObject.cardId ?? null,
+    }));
+    return true;
+  }
   if (effect.type === 'amass') {
     // Amass N: wybierz istniejącą Army kontrolera albo utwórz 0/0 Army,
     // następnie połóż N liczników +1/+1. Deskryptor nie zna nazwy karty.
