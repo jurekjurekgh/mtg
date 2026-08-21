@@ -21,12 +21,12 @@
 
 ### Etap 0 — PR na starcie (ADR 0020 A)
 
-- [ ] Commit roadmapy + push gałęzi + `gh pr create`.
+- [x] Commit roadmapy + push gałęzi + `gh pr create` — PR #69, commit 421e8fb.
 
 ### Etap 1 — baseline
 
-- [ ] `npm test` zielony na gałęzi sesji.
-- [ ] `npm run build` zgodny z PROJECT_STATE (52 moduły / 2208.3 kB).
+- [x] `npm test` zielony na gałęzi sesji (2580/2580 fast).
+- [x] `npm run build` zgodny z PROJECT_STATE (52 moduły / 2208.3 kB).
 
 ### Etap 2 — audyt PR #68 (ADR 0020 B / 0016)
 
