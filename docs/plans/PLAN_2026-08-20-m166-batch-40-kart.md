@@ -90,3 +90,25 @@ Pozostały DWIE najcięższe:
 Dane Scryfall obu kart są w docs/cards/ (inferno-titan, cenns-tactician).
 Reguła talii: tokens.txt (Cenn's Tactician {W} — Plains są); Inferno Titan
 {4}{R}{R} → ostrza.txt (Mountain) — NIE red.txt (zamrożone seedy).
+
+## Doprecyzowany projekt transzy D (Inferno Titan) — kontynuacja
+
+Dwustopniowa decyzja, pełne Oracle, minimalny nowy kod:
+
+1. **{R}: +1/+0 EOT** — reuse: aktywowana bez oncePerTurn (wzorzec Knight
+   of the Skyward Eye), effect [{type:'pump', power:1, toughness:0}].
+2. **Trigger „enters or attacks"** — DWA triggery (enter_battlefield +
+   attacks; jeden Oracle-tekst = dwa zdarzenia, behavior tożsamy),
+   każdy z requiresTarget {type:'any_target', count:3, upTo:true} —
+   istniejąca maszyneria multi-target M157/F4a (targetIds w JEDNEJ
+   komendzie, game-state ~2600).
+3. **Podział kwot** — NOWE: efekt 'damage_divided' {amount:3}: przy 1 celu
+   całość; przy >1 otwiera pendingDamageDivision {playerId, sourceId,
+   cardId, targetIds, total, restorePriorityTo}; komenda
+   resolve_damage_division {amounts[]} — walidacja: każdy cel ≥1,
+   suma = total, komplet celów. ENUMERACJA ofert = kompozycje liczby 3
+   na ≤3 części (3/[2,1]/[1,1,1]) — malutka, bez własnego wizarda.
+   Do zrobienia: COMMAND_TYPES, firstPendingDecision + pass-gate +
+   playerView, etykieta+grupowanie (strażnik A3!), oba boty (heurystyka:
+   podział równomierny/największy gracz — deterministycznie), fingerprint,
+   cleanup. Talia: ostrza.txt.
