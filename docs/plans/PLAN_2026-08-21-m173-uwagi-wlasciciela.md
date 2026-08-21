@@ -39,18 +39,24 @@
 
 ## Etapy
 
-- [ ] Plan + push (ADR 0020).
-- [ ] A: widok ręki z `adventure`; etykieta {1}{B}; wycena mill_cards
-      (wyścig bibliotek + synergia grobu po deskryptorach); testy.
-- [ ] B: TOKEN_IMAGES + Squirrel (+ dostępne tokeny talii); testy.
-- [ ] C: pola widoku + badge'e (saddled/untap-lock/temp-control/
-      no-regeneration); testy RED→GREEN.
-- [ ] D: wycena add_counter w activate_ability (konsument/zapas/timing);
-      test anty-spam + anty-over-fix (produkcja gdy zapas pusty i jest
-      konsument); benchmark regresji.
-- [ ] E: wycena grant_keywords_until_end_of_turn per okno walki
-      (reach/trick starcia/evasion); testy RED→GREEN.
-- [ ] Zamknięcie: test:all + build + dokumentacja + opis PR.
+- [x] Plan + push (ce72e06).
+- [x] A: widok ręki z `adventure` (L1); etykieta {1}{B}; cast_adventure
+      w gałęzi wyceny czarów + self-mill (wyścig bibliotek + synergia
+      grobu po minCreatureCardsInGraveyard). Testy A1–A3.
+- [x] B: TOKEN_IMAGES (druki Scryfall dla token_*) + Squirrel (TMSH 14,
+      z API — L26); session.cardDetails z fallbackiem. Test B1. Kolejne
+      tokeny uzupełniamy tą samą mapą wg zgłoszeń.
+- [x] C: widok + badge dla saddled / untap-lock / dontUntapNext /
+      kontroli do EOT / „bez regeneracji". Pułapka: untapLockedBy to
+      domyślnie PUSTA tablica (truthy) — warunek na length. Testy C1/C2.
+- [x] D: add_counter w ścieżce activate_ability — liczniki zasobowe
+      tylko pod konsumenta (cost.removeCounter), zapas < potrzeb,
+      po walce; testy D1–D3 (anty-spam/anty-over-fix/upkeep).
+- [x] E: granty „until EOT" per okno walki — reach przy obronie przed
+      atakiem z flying; deathtouch/first strike/lifelink po deklaracjach
+      w starciu; evasion przy własnym ataku. Testy E1–E3.
+- [x] Zamknięcie: test:all 2625/2625, build 52 moduły / 2234.3 kB,
+      bot-benchmark 9/9.
 
 ## Ryzyka
 
@@ -62,4 +68,12 @@
 
 ## Podsumowanie wykonania
 
-(uzupełniane na końcu zadania)
+A–E wdrożone w dc66238 (plan ce72e06); testy
+`test/m173-uwagi-wlasciciela.test.js` (12). Odpowiedź na pytanie A:
+Adventure JEST w silniku (cast_adventure → efekty czaru → exile →
+cast_adventure_creature za koszt karty; testy batch11) — brakowało
+deskryptora w widoku ręki (pusta etykieta kosztu) i wyceny u bota.
+Incident: reset workspace w trakcie (5. w projekcie) — odzyskanie wg
+ENVIRONMENT §2 (commit-snapshot d016352 → checkout drzewa na FETCH_HEAD).
+Stan: `test:all` **2625/2625**, build **52 moduły / 2234.3 kB**,
+benchmark bota 9/9.

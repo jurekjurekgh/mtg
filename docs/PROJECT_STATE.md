@@ -1,7 +1,41 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-21 (M172: uwagi właściciela A–F — panel Gracz/Bot, okno po blokach CR 509.4, rozdziały Sagi, badge, kopie, wizard podziału obrażeń)
-- **Poprzednia:** 2026-08-21 (M171: audyt PR #68 + N1 Adamant/wielokolorowe + pętla jakości Z1–Z6)
+- **Ostatnia aktualizacja:** 2026-08-21 (M173: uwagi właściciela — Gray Slaad/Adventure, TOKEN_IMAGES, badge czasowych flag, Rustvine, Death-Hood Cobra)
+- **Poprzednia:** 2026-08-21 (M172: uwagi właściciela A–F)
+
+
+## M173 — uwagi właściciela, transza 2 (2026-08-21, PR #69)
+
+Plan: `docs/plans/PLAN_2026-08-21-m173-uwagi-wlasciciela.md`. Testy:
+`test/m173-uwagi-wlasciciela.test.js` (12). Commit dc66238.
+
+- **A (Gray Slaad):** Adventure JEST zaimplementowane (cast_adventure →
+  mill 4 → exile → cast_adventure_creature); brakowało: deskryptora
+  `adventure` w widoku RĘKI (etykieta „koszt )" — klasa L1/ADR 0017),
+  poprawnego generic w etykiecie ({1}{B}) i wyceny bota (cast_adventure
+  w gałęzi czarów + self-mill: wyścig bibliotek + synergia grobu po
+  deskryptorach).
+- **B:** `TOKEN_IMAGES` — druki Scryfall dla tokenów (cardId `token_*`
+  poza rejestrem = brak ilustracji); Squirrel (TMSH) z API (L26);
+  `session.cardDetails` z fallbackiem tokenowym.
+- **C:** badge czasowych flag: saddled, untap-lock (blokada + „nie
+  odkręca się w następnym untapie"), kontrola do końca tury, „bez
+  regeneracji" — pola były tylko w stanie (klasa L1). Pułapka:
+  `untapLockedBy` domyślnie pusta tablica (truthy!).
+- **D (Rustvine):** add_counter bez wyceny w ścieżce activate (klasa
+  L50) — bot tapował się co turę na oil. Teraz: licznik zasobowy tylko
+  pod konsumenta (cost.removeCounter tej samej nazwy), zapas < potrzeb,
+  uzupełnianie po walce.
+- **E (Death-Hood Cobra):** granty „until EOT" wyłącznie we właściwym
+  oknie walki (reach = obrona przed flying po deklaracji ataku;
+  deathtouch/first strike = starcie po deklaracjach; evasion = własny
+  atak) — poza oknem kara.
+
+Incident: 5. reset workspace projektu (świeży klon w trakcie sesji) —
+odzyskany wg ENVIRONMENT §2 (snapshot-commit → checkout drzewa).
+
+**Stan:** `test:all` **2625/2625**, build **52 moduły / 2234.3 kB**,
+benchmark regresji bota 9/9.
 
 
 ## M172 — uwagi właściciela z testów A–F (2026-08-21, PR #69)
