@@ -2873,7 +2873,10 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   if (view.status !== 'active') {
     const winner = view.players.find((p) => p.id === view.winnerId);
     // CR 104.4b: remis nie ma zwycięzcy — bez tego baner pokazywał „wygrywa: ?".
-    const outcome = view.isDraw ? 'REMIS (obaj gracze przegrali jednocześnie)' : `wygrywa: ${winner?.name ?? '?'}`;
+    // M172/A: informacja „kto wygrał" używa nazw panelu (Gracz/Bot) —
+    // „wygrywa: Ty" to zła odmiana (decyzja właściciela).
+    const winnerLabel = winner?.name === 'Ty' ? 'Gracz' : winner?.name === 'Nieprzyjaciel' ? 'Bot' : (winner?.name ?? '?');
+    const outcome = view.isDraw ? 'REMIS (obaj gracze przegrali jednocześnie)' : `wygrywa: ${winnerLabel}`;
     div(els.banner, 'gameover', `Koniec gry — ${outcome} (seed ${session.state.seed})`);
   }
 

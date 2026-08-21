@@ -7,13 +7,10 @@
 
 ## Rozpoznanie (root cause)
 
-- **A:** panel górny pokazuje „Ty"/„On"; log używa PLAYER_NAMES
-  (`Ty`/`Nieprzyjaciel`) + warstwy `odmienNaDrugaOsobe` (słownik DRUGA_OSOBA,
-  klasa L29 — każdy nowy czasownik to dziura). Decyzja właściciela:
-  Ty→Gracz, On/Nieprzyjaciel→Bot ⇒ wszystko w 3. osobie, warstwa odmiany
-  do usunięcia. Zasięg: ~45 plików testów (mechaniczne `Nieprzyjaciel`→`Bot`),
-  13 plików z formami 2. osoby, detektor `detectThirdPersonAboutHuman`
-  (obsolete), tester (`extract`/`detectors` — wzorce „Ty ").
+- **A (doprecyzowane przez właściciela w czacie):** zmiana DOTYCZY WYŁĄCZNIE
+  panelu informacyjnego na górze strony (wskaźnik tury, życie, zwycięzca) —
+  tam „Ty"→„Gracz", „On"→„Bot" (+ baner „Koniec gry — wygrywa:", ta sama
+  klasa informacji). Log, modale i warstwa odmiany 2. osoby BEZ zmian.
 - **B:** `queueSagaChapter` buduje ability z `effect: []` → widok
   `pendingTriggerTarget.effectType` = null → tytuł „<karta> — cel triggera".
   Fix: dane rozdziałów dostają `chapterNames` (Oracle: Mesmerize/Cold Snap),
@@ -38,8 +35,8 @@
 ## Etapy (osobne, samodzielnie zielone commity)
 
 - [ ] Etap 0: plan (ten plik) + push.
-- [ ] Etap A: nazwy Gracz/Bot + usunięcie warstwy 2. osoby + aktualizacja
-      testów i testera. Kryterium: `npm test` + build zielone.
+- [x] Etap A: panel górny + baner końca gry — Gracz/Bot (log bez zmian);
+      testy table-ui zaktualizowane.
 - [ ] Etap C: okno priorytetu obrońcy po blokach (CR 509.4) + testy
       RED→GREEN (Dawntreader Elk aktywowalny po deklaracji bloku);
       benchmark regresji bota po zmianie przepływu walki.
@@ -52,8 +49,6 @@
 
 ## Ryzyka / pułapki
 
-- A dotyka ~50 plików testów — commit po pełnym `npm test`, nie wycinku
-  (L25: zmiana treści logu psuje odległe asercje).
 - C zmienia przepływ walki — sprawdzić boty (benchmark regresji) i Żywego
   Testera (auto-pass obrońcy bez akcji), testy scenariuszowe walki.
 - D: `name` obiektu bywa używany przez reguły (legend rule?) — numer

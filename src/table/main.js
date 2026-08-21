@@ -828,6 +828,13 @@ function bootstrapTable() {
     postcombat_main: 'Główna 2', end: 'Koniec', cleanup: 'Sprzątanie',
   };
 
+  /** M172/A: nazwy graczy WYŁĄCZNIE dla panelu górnego (Gracz/Bot). */
+  function panelPlayerName(name) {
+    if (name === 'Ty') return 'Gracz';
+    if (name === 'Nieprzyjaciel') return 'Bot';
+    return name ?? null;
+  }
+
   /** Aktualizuje stały wskaźnik „Tura N, <gracz>, <faza>" (lewy górny róg). */
   function updateTurnIndicator() {
     const el = document.getElementById('turn-indicator');
@@ -839,7 +846,10 @@ function bootstrapTable() {
       // M73c (audyt żywym testerem): po zakończeniu pokazujemy zwycięzcę —
       // samo „Koniec partii" zmuszało do czytania logu.
       const winner = (view.players ?? []).find((p) => p.id === view.winnerId);
-      const winnerName = winner?.name === 'Nieprzyjaciel' ? 'On' : (winner?.name ?? null);
+      // M172/A (decyzja właściciela): w PANELU GÓRNYM gracze nazywają się
+      // „Gracz" i „Bot" — 3. osoba bez problemów odmiany („wygrywa Ty").
+      // Log i modale zachowują dotychczasowe nazwy (Ty/Nieprzyjaciel).
+      const winnerName = panelPlayerName(winner?.name) ?? null;
       // CR 104.4b: remis (winnerId null + isDraw) — inaczej gracz widział samo
       // „Koniec partii" i nie wiedział, jak się skończyła.
       if (view.isDraw) el.textContent = 'Koniec partii — REMIS';
@@ -848,13 +858,13 @@ function bootstrapTable() {
     }
     const who = (view.players ?? []).find((p) => p.id === view.turn.activePlayerId);
     // Uwaga A (2026-08-11): krótkie etykiety, żeby panel mieścił się na
-    // telefonie — „T.", „ż.", „On" zamiast „Nieprzyjaciel", faza bez
-    // „beginning" (sama nazwa kroku). Przy braku miejsca CSS łamie wiersz.
+    // telefonie — „T.", „ż."; M172/A: „Gracz"/„Bot" zamiast „Ty"/„On"
+    // (odmiana 3. osoby). Przy braku miejsca CSS łamie wiersz.
     const phaseLabel = PHASE_LABELS[view.turn.phase] ?? view.turn.phase;
     const stepLabel = (view.turn.step && view.turn.step !== view.turn.phase && PHASE_LABELS[view.turn.step])
       ? PHASE_LABELS[view.turn.step] : '';
     const phaseText = [phaseLabel, stepLabel].filter(Boolean).join(' / ') || '—';
-    const whoName = who?.name === 'Nieprzyjaciel' ? 'On' : (who?.name ?? view.turn.activePlayerId);
+    const whoName = panelPlayerName(who?.name) ?? view.turn.activePlayerId;
     el.className = 'turn-indicator';
     el.textContent = '';
     const span = (cls, text) => {
@@ -868,8 +878,8 @@ function bootstrapTable() {
     // C2 (2026-08-11): życie swoje i przeciwnika w górnym panelu.
     const me = view.players.find((p) => p.id === view.playerId);
     const foe = view.players.find((p) => p.id !== view.playerId);
-    if (me) span('ti-life', `Ty: ${me.life} ż.`);
-    if (foe) span('ti-life foe', `On: ${foe.life} ż.`);
+    if (me) span('ti-life', `Gracz: ${me.life} ż.`);
+    if (foe) span('ti-life foe', `Bot: ${foe.life} ż.`);
     span('ti-phase', phaseText);
     // C (2026-08-11): gdy na stosie jest czar/zdolność (w tym rozstrzygana),
     // panel górny pokazuje „Stos — <nazwa wierzchniej karty>" — gracz wie,

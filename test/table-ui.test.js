@@ -229,7 +229,7 @@ test('gracz klika się przez całą partię do baneru końca gry', () => {
     assert.ok(button, `brak akcji dla gracza przy kliku ${i}: ${textOf(dom.get('actions'))}`);
     button.click();
   }
-  assert.match(textOf(dom.get('banner')), /Koniec gry — wygrywa: (Ty|Bot)/, `brak baneru końca gry: ${textOf(dom.get('banner'))}`);
+  assert.match(textOf(dom.get('banner')), /Koniec gry — wygrywa: (Gracz|Bot)/, `brak baneru końca gry: ${textOf(dom.get('banner'))}`);
   assert.match(textOf(log), /Tura gracza/, 'log nie opisuje tur');
   assert.ok(botPauses > 0, 'partia z botem powinna mieć pauzy po istotnych zagraniach bota');
   assert.ok(!textOf(dom.get('table-note')), textOf(dom.get('table-note')));
@@ -715,8 +715,9 @@ test('renderUndercity: karta lochu jest klikalna i wywołuje onUndercityClick (p
 test('C2 (2026-08-11): wskaźnik tury pokazuje życie swoje i przeciwnika', () => {
   restart('7');
   const text = textOf(dom.get('turn-indicator'));
-  assert.match(text, /Ty: \d+ ż\./, `brak życia gracza w wskaźniku: ${text}`);
-  assert.match(text, /On: \d+ ż\./, `brak życia przeciwnika w wskaźniku: ${text}`);
+  // M172/A: panel górny nazywa graczy „Gracz"/„Bot" (decyzja właściciela).
+  assert.match(text, /Gracz: \d+ ż\./, `brak życia gracza w wskaźniku: ${text}`);
+  assert.match(text, /Bot: \d+ ż\./, `brak życia przeciwnika w wskaźniku: ${text}`);
 });
 
 test('B (2026-08-11): etykieta aktywacji nie dubluje kosztu zdolności', async () => {
@@ -1002,7 +1003,7 @@ test('M73c/5: po zakończeniu partii wskaźnik pokazuje zwycięzcę', () => {
     concede.click();
     const ind = textOf(dom.get('turn-indicator'));
     assert.match(ind, /Koniec partii — wygrywa/, `wskaźnik pokazuje zwycięzcę: ${ind}`);
-    assert.match(ind, /On|Ty/, `wskaźnik wskazuje gracza: ${ind}`);
+    assert.match(ind, /Bot|Gracz/, `wskaźnik wskazuje gracza (M172/A): ${ind}`);
   } finally {
     globalThis.window.confirm = oldConfirm;
   }
