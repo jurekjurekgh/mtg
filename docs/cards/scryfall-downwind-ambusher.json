@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Downwind%20Ambusher&set=blb",
+  "print": "Downwind Ambusher (BLB)",
+  "name": "Downwind Ambusher",
+  "mana_cost": "{3}{B}",
+  "cmc": 4.0,
+  "type_line": "Creature — Skunk Assassin",
+  "oracle_text": "Flash\nWhen this creature enters, choose one —\n• Target creature an opponent controls gets -1/-1 until end of turn.\n• Destroy target creature an opponent controls that was dealt damage this turn.",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [
+    "Flash"
+  ],
+  "set": "blb",
+  "collector_number": "92",
+  "rarity": "uncommon",
+  "pobrano": "2026-08-21",
+  "power": "4",
+  "toughness": "2",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/5/55cfd628-933a-4d3d-b2e5-70bc86960d1c.jpg?1783910835",
+    "normal": "https://cards.scryfall.io/large/front/5/5/55cfd628-933a-4d3d-b2e5-70bc86960d1c.jpg?1783910835"
+  }
+}

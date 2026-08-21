@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Horizon%20Spellbomb&set=som",
+  "print": "Horizon Spellbomb (SOM)",
+  "name": "Horizon Spellbomb",
+  "mana_cost": "{1}",
+  "cmc": 1.0,
+  "type_line": "Artifact",
+  "oracle_text": "{2}, {T}, Sacrifice this artifact: Search your library for a basic land card, reveal it, put it into your hand, then shuffle.\nWhen this artifact is put into a graveyard from the battlefield, you may pay {G}. If you do, draw a card.",
+  "colors": [],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [],
+  "set": "som",
+  "collector_number": "165",
+  "rarity": "common",
+  "pobrano": "2026-08-21",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/9/d/9d93378e-1de2-4954-9458-dd3306f2996e.jpg?1783941707",
+    "normal": "https://cards.scryfall.io/large/front/9/d/9d93378e-1de2-4954-9458-dd3306f2996e.jpg?1783941707"
+  }
+}

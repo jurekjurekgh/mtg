@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Stall%20Out&set=dft",
+  "print": "Stall Out (DFT)",
+  "name": "Stall Out",
+  "mana_cost": "{1}{U}",
+  "cmc": 2.0,
+  "type_line": "Sorcery",
+  "oracle_text": "Tap target creature or Vehicle, then put three stun counters on it. (If a permanent with a stun counter would become untapped, remove one from it instead.)\nCycling {2} ({2}, Discard this card: Draw a card.)",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Cycling"
+  ],
+  "set": "dft",
+  "collector_number": "66",
+  "rarity": "common",
+  "pobrano": "2026-08-21",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/4/e/4ea0e0d3-833f-4353-b648-57b0b657cc1c.jpg?1783907902",
+    "normal": "https://cards.scryfall.io/large/front/4/e/4ea0e0d3-833f-4353-b648-57b0b657cc1c.jpg?1783907902"
+  }
+}
