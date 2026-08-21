@@ -1058,7 +1058,11 @@ function accepted(state, cmd, result) {
       && e.object?.kind === 'creature') state.creatureDiedThisTurn = true;
     // Landfall: land wszedł pod kontrolę gracza w tej turze (zdarzenie
     // wejścia na pole bitwy z kind land — jak creatureDiedThisTurn).
-    if (e.type === 'permanent_entered_battlefield' && e.object?.kind === 'land' && e.object?.controllerId) {
+    // M167/G (uwaga właściciela, Mysteries of the Deep): ścieżka play_land
+    // emituje WYŁĄCZNIE land_played (bez permanent_entered_battlefield),
+    // więc tracker nie widział NAJCZĘSTSZEGO wejścia lądu — wszystkie
+    // warunki landEnteredThisTurn były martwe po zwykłym zagranieniu lądu.
+    if ((e.type === 'permanent_entered_battlefield' || e.type === 'land_played') && e.object?.kind === 'land' && e.object?.controllerId) {
       const ctrl = e.object.controllerId;
       state.landEnteredThisTurn = {
         ...(state.landEnteredThisTurn ?? {}),
@@ -4490,7 +4494,18 @@ export function playerView(state, playerId) {
     // tak/nie — boty „tak" (pierwsza oferta = dotychczasowe zachowanie).
     // PRZED celami triggerów — bramka execute dla optional trigger jest
     // wcześniejsza (inaczej oferowany trigger target byłby odrzucany).
-    legalCommands.unshift(command('resolve_optional_trigger_choice', playerId, { fire: true }));
+    // M167/B (uwaga właściciela): opcjonalny SELF-MILL (Circle of the Land
+    // Druid, „you may mill four") — oferta niesie adnotację selfMill z
+    // deskryptora efektu (generycznie, ADR 0002), żeby bot wyceniał WYŚCIG
+    // BIBLIOTEK zamiast brać fire bezmyślnie (wzorzec cmd.friendly z M150).
+    const optionalAbility = state.pendingOptionalTrigger?.ability ?? null;
+    const effs = Array.isArray(optionalAbility?.effect) ? optionalAbility.effect
+      : (optionalAbility?.effect ? [optionalAbility.effect] : []);
+    const selfMillEffect = effs.find((e) => e?.type === 'mill_cards' && !e.targetPlayerId && !e.applyTo);
+    legalCommands.unshift(command('resolve_optional_trigger_choice', playerId, {
+      fire: true,
+      ...(selfMillEffect ? { selfMill: selfMillEffect.amount ?? 0 } : {}),
+    }));
     legalCommands.unshift(command('resolve_optional_trigger_choice', playerId, { fire: false }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeEnterAsCopy) {
     // Enter as copy: najsilniejszy Ally pierwszy (boty / istniejący test),

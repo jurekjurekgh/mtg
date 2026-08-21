@@ -922,7 +922,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Awe w swojej turze, po czym zaatakował w tę prewencję.
           if (effect.type === 'prevent_combat_damage_except_enchanted') {
             const myTurn = view.turn.activePlayerId === view.playerId;
-            if (myTurn) score -= 80;
+            // M167/F: kara musi przebić WSZYSTKO (baza + wycena scry przy
+            // pełnej bibliotece dawały remis z passem, a remis wybierał
+            // czar — bot rzucał fog we własnej turze).
+            if (myTurn) score -= 300;
             else score += attackingEnemyPower(view) > 0 ? 15 : -20;
           }
           // M109 (Spare from Evil): ochrona do końca tury to SZTUCZKA BOJOWA.
@@ -1245,6 +1248,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Patologia B1: aktywacja kosztem tapu we własnym untap zostawiłaby
         // stwora zatapianego całą turę (bot stał w miejscu i deck-outował).
         if (wastefulStep(view)) return finish(taps || tapsCreature ? -30 : -5);
+        // M167/D (Apprentice Wizard): zdolność produkująca MANĘ bez niczego
+        // zagrawalnego w ręce to marnotrawstwo — mana wyparuje, a artefakt/
+        // stwór zostaje zatapowany (ta sama reguła co tap_for_mana, M127).
+        // Z10 (Batch 38): Pristine Talisman „{T}: add {C}, gain 1 life" —
+        // rider ŻYCIA ma wartość sam w sobie; kara tylko gdy mana jest
+        // JEDYNYM efektem zdolności.
+        const producesManaOnly = effects.length > 0 && effects.every((e) => e?.type === 'add_mana');
+        if (producesManaOnly) {
+          const hasPlayableInHand = view.zones.hand.some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
+          if (!hasPlayableInHand) return finish(taps || tapsCreature ? -30 : -5);
+        }
         // M106/Z8 (audyt stołu, CR 608.2b): jeżeli moja zdolność Z TEGO
         // SAMEGO źródła już czeka na stosie z tym samym celem, kolejna kopia
         // niemal zawsze fizzluje (pierwsza zabiera cel ze strefy). Bot
@@ -1665,6 +1679,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         const strongestBlockerPower = blockers.reduce((max, o) => Math.max(max, o.power ?? 0), 0);
         const strongestBlockerToughness = blockers.reduce((max, o) => Math.max(max, o.toughness ?? 0), 0);
+        // M167/I (uwaga właściciela): GANG dwóch blokerów — atakujący 2/4
+        // „przeżywa" najsilniejszego pojedynczego blokera (3/4? nie: 3 < 4),
+        // ale para 1/3 + 3/3 zabija go łącznymi obrażeniami. Suma top-2 mocy
+        // blokerów + najniższa wytrzymałość (czy atakujący COKOLWIEK zabije).
+        const blockerPowersDesc = blockers.map((o) => o.power ?? 0).sort((a, b) => b - a);
+        const gangPower = (blockerPowersDesc[0] ?? 0) + (blockerPowersDesc[1] ?? 0);
+        const weakestBlockerToughness = blockers.reduce((min, o) => Math.min(min, o.toughness ?? 0), Number.POSITIVE_INFINITY);
         const enemyLife = enemy(view)?.life ?? 0;
         let score = 0;
         for (const id of attackers) {
@@ -1701,6 +1722,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             perAttacker = power + 3; // otwarty — czysta presja
           } else if (toughness > strongestBlockerPower && power >= strongestBlockerToughness) {
             perAttacker = power + 3; // przeżyje I zabija blokera — realny zysk
+          } else if (blockers.length >= 2 && toughness <= gangPower && power < weakestBlockerToughness) {
+            // M167/I: ginie od GANGU blokerów i nie zabija ŻADNEGO — czysta
+            // strata stwora (2/4 w 1/3 + 3/3). Kara ponad wagę wyścigu.
+            perAttacker = -(toughness + 8);
           } else if (toughness > strongestBlockerPower) {
             // Przeżyje, ale NIE zabije blokera (2/3 vs 2/3): nic nie zyskuje,
             // a tapnięty atakujący nie zablokuje w następnej turze — netto
@@ -2002,8 +2027,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const t2 = objectOnBoard(view, id);
             if (!t2) continue;
             const v2 = (t2.power ?? 0) * 2 + (t2.toughness ?? 0);
+            // M167/A (Voice of the Vermin): przyjazny buff celuje
+            // WSPÓŁATAKUJĄCEGO (atak trwa do końca tury — buff „on orbit").
+            const attackingNow2 = (view.combat?.attackers ?? []).includes(t2.id);
             score += (cmd.friendly
-              ? (t2.controllerId === view.playerId ? 30 + v2 : -20 - v2)
+              ? (t2.controllerId === view.playerId ? 30 + v2 + (attackingNow2 ? 25 : 0) : -20 - v2)
               : (t2.controllerId === view.playerId ? -20 - v2 : 30 + v2));
           }
           return finish(score);
@@ -2016,14 +2044,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           return finish(0);
         }
         const value = (target.power ?? 0) * 2 + (target.toughness ?? 0);
+        // M167/A: buff idzie na współatakującego, nie na stojącego.
+        const attackingNow = (view.combat?.attackers ?? []).includes(target.id);
         if (cmd.friendly) {
-          if (target.controllerId === view.playerId) return finish(30 + value);
+          if (target.controllerId === view.playerId) return finish(30 + value + (attackingNow ? 25 : 0));
           return finish(-20 - value);
         }
         if (target.controllerId === view.playerId) return finish(-20 - value);
         return finish(30 + value);
       }
       case 'resolve_optional_trigger_choice': {
+        // M167/B (Circle of the Land Druid): opcjonalny SELF-MILL tylko przy
+        // przewadze w wyścigu bibliotek (wzór Bella, M162/B) — przegrywając
+        // liczebnie, mill oneself przybliża własny deck-out.
+        if (cmd.fire && cmd.selfMill != null) {
+          const myLib = view.zones.library.filter((o) => o.controllerId === view.playerId).length;
+          const foeLib = view.zones.library.filter((o) => o.controllerId !== view.playerId).length;
+          if (myLib - cmd.selfMill <= 0) return finish(-60); // ostatnie karty — nigdy
+          return finish(myLib > foeLib ? 45 : -35);
+        }
         // „You may" bez celu (Angel's Feather — +1 życie): „tak" jak dotąd.
         return finish(cmd.fire ? 50 : 0);
       }

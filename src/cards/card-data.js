@@ -7233,7 +7233,8 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: { type: 'return_card_from_graveyard_to_hand' },
       }),
     ],
-    artId: null, plan: null,
+    // M167/H: artId ze słownika kolekcji (tools/collection-art-ids.csv: 314MH2).
+    artId: 314, plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: [] },
     notes: ['Madness: odrzucenie trafia do exile z jednorazową decyzją rzutu za {3}{R} (timing ignorowany — CR 702.34a) albo przełożenia do grobu'],
   }),
