@@ -8,6 +8,8 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
+import { processTriggers } from '../src/engine/triggers.js';
+import { describeGameEvent } from '../src/table/session.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -98,3 +100,72 @@ test('C3: instant obrońcy w oknie po blokach rozstrzyga się PRZED obrażeniami
   // 2/2 atakujący vs 5/5 bloker: atakujący ginie, Elk przeżywa.
   assert.equal(state.objects.get('elk')?.zone, 'battlefield', 'wzmocniony Elk przeżywa walkę');
 });
+
+// ---- B/B2: rozdziały Sagi + badge czasowych ograniczeń ----------------------
+
+/** Shiva na polu bitwy (tylna strona DFC — jak w trigger-target-decisions). */
+function addShiva(state, id, controllerId = 'p1') {
+  const def = REGISTRY.get('shiva-warden-of-ice');
+  const data = gameObjectDataOf(def);
+  addObject(state, {
+    id, instanceId: `i-${id}`, cardId: 'shiva-warden-of-ice', controllerId, ownerId: controllerId,
+    zone: 'battlefield', kind: data.kind, power: data.power, toughness: data.toughness,
+    manaCost: data.manaCost, abilities: data.abilities ?? [], keywords: def.keywords ?? [],
+    subtypes: def.subtypes ?? [], types: def.types ?? [], colors: data.colors ?? [],
+    saga: data.saga ?? null,
+  });
+  return state.objects.get(id);
+}
+
+test('B1: decyzja celu rozdziału Sagi niesie TYTUŁ rozdziału i typ efektu', () => {
+  const state = game('p1');
+  putCard(state, 'ally', 'highland-game', 'p1', 'battlefield', { summoningSickness: false });
+  const shiva = addShiva(state, 'shiva', 'p1');
+  // Realna ścieżka wejścia Sagi: ETB -> licznik lore -> rozdział I.
+  processTriggers(state, [{ type: 'permanent_entered_battlefield', object: shiva }]);
+  assert.ok(state.pendingTriggerTargets.length > 0, 'rozdział I kolejkuje decyzję celu');
+  const view = playerView(state, 'p1');
+  assert.equal(view.pendingTriggerTarget?.chapterName, 'Mesmerize', 'tytuł rozdziału z Oracle');
+  assert.equal(view.pendingTriggerTarget?.effectType, 'cant_be_blocked', 'typ efektu rozdziału (extra)');
+  const required = state.events.findLast((e) => e.type === 'trigger_target_required');
+  assert.equal(required?.chapterName, 'Mesmerize', 'zdarzenie niesie tytuł rozdziału');
+  const text = describeGameEvent(required, {
+    nameOf: (id) => (id === 'shiva-warden-of-ice' ? 'Shiva, Warden of Ice' : '?'),
+    nameOfObject: () => '?',
+    isPlayer: (id) => id === 'p1' || id === 'p2',
+    controllerOf: () => null,
+  });
+  assert.match(text, /Mesmerize/, `log nazywa rozdział: ${text}`);
+});
+
+test('B2: cel Mesmerize ma w WIDOKU cantBeBlocked (badge „nie do zablokowania")', () => {
+  const state = game('p1');
+  putCard(state, 'ally', 'highland-game', 'p1', 'battlefield', { summoningSickness: false });
+  const shiva = addShiva(state, 'shiva', 'p1');
+  processTriggers(state, [{ type: 'permanent_entered_battlefield', object: shiva }]);
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'ally' }).ok);
+  for (let i = 0; i < 12 && state.zones.stack.length > 0; i += 1) {
+    assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
+  }
+  assert.equal(state.objects.get('ally').cantBeBlocked, true, 'stan: cel nie może być blokowany');
+  const entry = playerView(state, 'p2').zones.battlefield.find((o) => o.id === 'ally');
+  assert.equal(entry?.cantBeBlocked, true,
+    'WIDOK niesie cantBeBlocked (klasa L1/ADR 0017 — render liczy badge z widoku, nie ze stanu)');
+});
+
+test('B2b: utrata keyworda do EOT (Krotiq) jest w WIDOKU (badge „bez: defender")', () => {
+  const state = game('p1');
+  putCard(state, 'krotiq', 'krotiq-nestguard', 'p1', 'battlefield', { summoningSickness: false });
+  addMana(state, 'p1', 3, { colors: ['G'] });
+  const activate = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'activate_ability' && c.objectId === 'krotiq');
+  assert.ok(activate, 'oferta {2}{G}: atak mimo defendera');
+  assert.ok(execute(state, activate).ok);
+  for (let i = 0; i < 12 && state.zones.stack.length > 0; i += 1) {
+    assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
+  }
+  const entry = playerView(state, 'p2').zones.battlefield.find((o) => o.id === 'krotiq');
+  assert.ok((entry?.lostKeywordsUntilEOT ?? []).includes('defender'),
+    'WIDOK niesie lostKeywordsUntilEOT (badge „bez: obrońca")');
+});
+

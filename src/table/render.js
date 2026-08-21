@@ -1384,7 +1384,16 @@ function choiceSourceTitle(cmd, session, view) {
   // go wywołała. Komendy resolve_* nie niosą objectId — źródło czytamy
   // z oczekujących decyzji w widoku (publiczna informacja stołowa).
   if (cmd?.type === 'resolve_trigger_target' && view?.pendingTriggerTarget?.cardId) {
-    return `${session.nameOf(view.pendingTriggerTarget.cardId)} — cel triggera`;
+    const pt = view.pendingTriggerTarget;
+    const base = session.nameOf(pt.cardId);
+    // M172/B (uwaga właściciela): rozdział Sagi przedstawia się TYTUŁEM
+    // z Oracle i opisem efektu — „Shiva… — Mesmerize: nie może być
+    // blokowany (cel)" zamiast generycznego „cel triggera".
+    if (pt.chapterName) {
+      const label = describeEffect({ type: pt.effectType });
+      return label ? `${base} — ${pt.chapterName}: ${label} (cel)` : `${base} — ${pt.chapterName}: cel triggera`;
+    }
+    return `${base} — cel triggera`;
   }
   if (cmd?.type === 'resolve_modal_choice' && view?.pendingModalTrigger?.cardId) {
     return `${session.nameOf(view.pendingModalTrigger.cardId)} — wybór trybu`;

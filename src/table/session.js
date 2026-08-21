@@ -1083,7 +1083,9 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
           ? 'inny permanent do zwrotu na rękę'
           : (e.effectType === 'cant_be_blocked' ? 'stwora, który nie może być blokowany'
             : 'cel triggera');
-        return `${nameOf(e.cardId)} — wybierz ${hint} (${e.allowNone ? 'można odmówić' : 'wymagany'})`;
+        // M172/B: rozdział Sagi nazywa się tytułem z Oracle (Mesmerize).
+        const chapter = e.chapterName ? ` — ${e.chapterName}` : '';
+        return `${nameOf(e.cardId)}${chapter} — wybierz ${hint} (${e.allowNone ? 'można odmówić' : 'wymagany'})`;
       }
       case 'trigger_resolved': {
         // M106/Z2: powód „braku efektu" jest treścią dla gracza — inaczej

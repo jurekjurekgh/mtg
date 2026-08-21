@@ -4079,6 +4079,14 @@ export function playerView(state, playerId) {
         }
         if (object.faceDown) entry.faceDown = true;
         if (object.goaded === true) entry.goaded = true;
+        // M172/B2 (uwaga właściciela, klasa L1/ADR 0017): AKTYWNE zmiany
+        // czasowe są informacją publiczną (skutki rozstrzygniętych efektów),
+        // a render liczy z nich badge'e („nie może blokować", „nie do
+        // zablokowania", „bez: X") — bez tych pól kafel milczał, choć
+        // renderer miał gotową obsługę (m168).
+        if (object.cantBlock === true) entry.cantBlock = true;
+        if (object.cantBeBlocked === true) entry.cantBeBlocked = true;
+        if (object.lostKeywordsUntilEOT?.length) entry.lostKeywordsUntilEOT = [...object.lostKeywordsUntilEOT];
         // M91 (uwaga A2): kto atakuje, to informacja PUBLICZNA (obaj gracze
         // widzą deklarację ataku). Bez tego pola kontroler nie mógł ocenić
         // realnego zagrożenia w tej turze — np. czy warto rzucić „fog"
@@ -5410,7 +5418,11 @@ export function playerView(state, playerId) {
       return head ? Object.freeze({
         playerId: head.playerId, sourceId: head.sourceId, cardId: head.cardId ?? null,
         allowNone: Boolean(head.allowNone), candidateIds: [...(head.candidates ?? [])],
-        effectType: (Array.isArray(head.ability?.effect) ? head.ability.effect[0]?.type : head.ability?.effect?.type) ?? null,
+        // M172/B: rozdział Sagi ma effect: [] — typ efektu z extra; tytuł
+        // rozdziału (Mesmerize/Cold Snap) dla modala wyboru celu.
+        effectType: ((Array.isArray(head.ability?.effect) ? head.ability.effect[0]?.type : head.ability?.effect?.type) ?? null)
+          ?? head.extra?.chapterEffectType ?? null,
+        chapterName: head.extra?.chapterName ?? null,
       }) : null;
     })(),
     pendingDamageTarget: pendingDamageTargetView, pendingRevealOrder: pendingRevealOrderView,

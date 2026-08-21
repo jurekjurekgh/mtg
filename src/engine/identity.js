@@ -203,7 +203,9 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     isToken,
     // Saga (CR 714, Shiva Warden of Ice): deskryptor rozdziałów; liczniki lore
     // wzbudzają kolejne rozdziały (wejście = I; po komponencie draw = dalsze).
-    saga: saga ? Object.freeze({ chapters: saga.chapters }) : null,
+    // M172/B (klasa L47 — ręczne przepisywanie deskryptora gubi nowe pola):
+    // saga niesie też chapterNames (tytuły rozdziałów z Oracle).
+    saga: saga ? Object.freeze({ chapters: saga.chapters, chapterNames: saga.chapterNames ?? null }) : null,
     // Station (EOE Spacecraft, Wedgelight Rammer): artefakt ze „ukrytym\"
     // stworem — przy >= threshold liczników charge obiekt JEST stworem
     // (pola kind przepina counters.js po każdej zmianie liczników).

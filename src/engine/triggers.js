@@ -571,7 +571,14 @@ function queueSagaChapter(state, sagaObject, chapterNumber, events) {
     trigger: { event: 'saga_chapter', requiresTarget: targetSpec },
     effect: [],
   };
-  queueTargetDecision(state, ability, sagaObject, candidates, false, [], events, { sagaChapter: chapterNumber }, targetSpec);
+  // M172/B (uwaga właściciela): decyzja celu rozdziału niesie TYTUŁ rozdziału
+  // (saga.chapterNames z Oracle — „Mesmerize") i typ celowanego efektu —
+  // modal i log opisują, CO robi trigger, zamiast generycznego „cel triggera".
+  queueTargetDecision(state, ability, sagaObject, candidates, false, [], events, {
+    sagaChapter: chapterNumber,
+    chapterName: sagaObject.saga?.chapterNames?.[chapterNumber - 1] ?? null,
+    chapterEffectType: effects[targetEffectIndex].type ?? null,
+  }, targetSpec);
 }
 
 /**
@@ -1046,10 +1053,15 @@ function queueTargetDecision(state, ability, source, candidates, allowNone, fixe
     restorePriorityTo: state.turn.priorityPlayerId,
   });
   state.turn.priorityPlayerId = controllerId;
-  const effectType = (Array.isArray(ability?.effect) ? ability.effect[0]?.type : ability?.effect?.type) ?? null;
+  // M172/B: rozdział Sagi ma effect: [] (efekty wykonuje fireSagaChapter) —
+  // typ efektu dla etykiet bierzemy wtedy z extra.chapterEffectType.
+  const effectType = ((Array.isArray(ability?.effect) ? ability.effect[0]?.type : ability?.effect?.type) ?? null)
+    ?? extra?.chapterEffectType ?? null;
   const required = event('trigger_target_required', {
     playerId: controllerId, sourceId: source.id, cardId: source.cardId,
     candidateIds: [...candidates], allowNone: Boolean(allowNone), effectType,
+    // M172/B: tytuł rozdziału Sagi (log/modal) — null poza Sagami.
+    ...(extra?.chapterName ? { chapterName: extra.chapterName } : {}),
   });
   state.events.push(required);
   events.push(required);

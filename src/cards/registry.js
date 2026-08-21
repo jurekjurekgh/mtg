@@ -251,6 +251,8 @@ export function defineCard(data) {
     // (enter = rozdział I; po komponencie draw = kolejne). Po rozdziale
     // ostatnim Saga jest poświęcana (CR 714.4), chyba że sama zniknęła.
     saga: data.saga ? Object.freeze({
+      // M172/B: tytuły rozdziałów (Oracle) — etykiety decyzji celu i logu.
+      chapterNames: data.saga.chapterNames ? Object.freeze([...data.saga.chapterNames]) : null,
       chapters: Object.freeze(data.saga.chapters.map((chapter) => Object.freeze(
         (chapter ?? []).map((effect) => Object.freeze({ ...effect })),
       ))),

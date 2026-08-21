@@ -2070,6 +2070,9 @@ export const REAL_CARDS = Object.freeze([
     power: 4, toughness: 5, manaCost: 3,
     transformTo: 'jill-shivas-dominant',
     saga: {
+      // M172/B (uwaga właściciela): tytuły rozdziałów z Oracle — decyzja
+      // celu i log nazywają rozdział („Mesmerize"), nie generyczny trigger.
+      chapterNames: ['Mesmerize', 'Mesmerize', 'Cold Snap'],
       chapters: [
                 // I, II — Mesmerize: "Target creature can't be blocked this turn."
         // Temat 2 dla Sag: cel wybiera KONTROLER Sagi (resolve_trigger_target)
