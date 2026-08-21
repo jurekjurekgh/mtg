@@ -34,12 +34,12 @@ pobrano z `set=ltc`; Mosquito Guard MOR (nie DDF) i Sarkhan's Rage DTK
   Feed the Infection (corrupted), Mosquito Guard (reinforce).
 - [x] **3. Transza C (płatność/warunki):** 455aedd — Adamant (kolory wydanej many przez zwrot consumeManaPool — bez śladu w stanie, sonda U9), controlsNoCreatureSubtype. Locthwain Paladin (adamant —
   kolory wydanej many), Sarkhan's Rage (controlsNoSubtype).
-- [ ] **4. Transza D (decyzja podziału):** Inferno Titan (damage divided
+- [x] **4. Transza D (decyzja podziału):** 425b696 — damage_divided + resolve_damage_division (kompozycje); rozdzielone wzorce each-of vs divided-among w applyTriggerEffects; fix bramek ofert play_land/cast (załamania linii). Inferno Titan (damage divided
   as you choose — pending + komenda + COMMAND_TYPES + boty + render +
   strażnik A3: etykieta/grupowanie nowej decyzji!).
-- [ ] **5. Transza E (combat model):** Cenn's Tactician (block additional
+- [x] **5. Transza E (combat model):** b6a5dfe — blockSlotsFor + usedBlockers jako mapa slotów + enumeracja z drugą rundą; cel Soldier przez creature_with_subtypes. Cenn's Tactician (block additional
   — legalBlockerOptions/validate + wycena bota + render informacji).
-- [ ] **6.** Catalog-coverage zielony (auto), testy batcha
+- [x] **6.** Catalog-coverage zielony (auto), testy batcha
   `test/batch40-kart.test.js`, wyceny botów dla nowych efektów (L50),
   PROJECT_STATE/handoff, opis PR.
 
@@ -112,3 +112,13 @@ Dwustopniowa decyzja, pełne Oracle, minimalny nowy kod:
    playerView, etykieta+grupowanie (strażnik A3!), oba boty (heurystyka:
    podział równomierny/największy gracz — deterministycznie), fingerprint,
    cleanup. Talia: ostrza.txt.
+
+## Podsumowanie wykonania (Batch 40 KOMPLET 10/10)
+
+- Transze A-E w commitach 14cf91a…b6a5dfe (każda zielona: test:all + build;
+  incydenty CI naprawione przed przejściem dalej).
+- Nowe mechaniki generyczne: Enrage z pełnym LKI (CR 603.10), Corrupted,
+  Reinforce, Adamant, controlsNoCreatureSubtype, damage_divided (kwoty),
+  grantsExtraBlockWithCounter (model bloków), defender-override (reuse).
+  Strażniki klas (M122/M126/A3/HANDLED_TRIGGER_EVENTS/L23/L26) zielone.
+- Stan końcowy: test:all 2554/2554, build 52 moduły / 2180.6 kB.

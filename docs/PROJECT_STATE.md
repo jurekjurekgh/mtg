@@ -26,8 +26,22 @@ Dane Scryfall ×10 (ADR 0010 §2a, printy wg setów właściciela).
   stosu, entersWithCountersIf.adamant; registry normalizuje adamant —
   klasa L21), controlsNoCreatureSubtype (negatywny warunek podtypowy) +
   damage_to_controller = pełny Sarkhan's Rage.
-- **Pozostały D (Inferno Titan — decyzja podziału obrażeń „as you
-  choose") i E (Cenn's Tactician — statyka bloku dodatkowego).**
+- **Transza D (425b696):** NOWE: efekt damage_divided + decyzja kwot
+  resolve_damage_division (kompozycje total na N części; oferty per
+  kompozycja — bez własnego wizarda), rozdzielone wzorce
+  wielocelowości triggerów (each-of raz na cel vs divided-among raz
+  z całą listą), pełne warstwy (COMMAND_TYPES/EVENT_TYPES/pending/
+  bramki/render/boty/log/fingerprint/HOSTILE). Karta: {R} pump +
+  enters/attacks. Fix: 2 bramki ofert (play_land/cast) z załamaniem
+  linii omijały globalną podmianę — crash benchmarku wyłapany
+  test:all przed pushem.
+- **Transza E (b6a5dfe):** NOWE: statyka grantsExtraBlockWithCounter +
+  blockSlotsFor — deklaracja bloków ze slotami (usedBlockers mapa;
+  enumeracja z drugą rundą blokera); cel Soldier przez istniejący
+  creature_with_subtypes. **BATCH 40 KOMPLET 10/10.**
+
+**Stan końcowy:** `node tools/run-tests.mjs all` = **2554/2554**,
+build **52 moduły / 2180.6 kB**; CI zielone na obu transzach.
 
 **Stan po fixie CI (16b5104):** `node tools/run-tests.mjs all` =
 **2547/2547** (fast+slow, dokładnie jak CI; CI: success). Incydent:
