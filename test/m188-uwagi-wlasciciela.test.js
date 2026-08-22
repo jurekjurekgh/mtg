@@ -12,6 +12,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { effectivePower } from '../src/engine/permanents.js';
 import { buildStateOverlay, cardInfo } from '../src/table/render.js';
+import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 import { BOT_ID, HUMAN_ID, createSession, describeGameEvent } from '../src/table/session.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 import fs from 'node:fs';
@@ -207,4 +208,99 @@ test('M188/B3: STRAŻNIK — nameOf zna KAŻDY token tworzony przez karty katalo
   const raw = [...tokenIds].filter((id) => session.nameOf(id) === id);
   assert.deepEqual(raw, [],
     `każdy token ma czytelną nazwę — bez wpisu log pokaże surowe id: ${JSON.stringify(raw)}`);
+});
+
+// ---- C: bot nie atakuje 2/2 w nietapnięte 1/5 ----------------------------
+// Zgłoszenie właściciela: „Bot atakuje mnie kreaturą 2/2 mimo, że mam na
+// stole nietapniętą kreaturę 1/5. To bez sensu bo jedynym efektem jest to,
+// że jego kreatura robi się zatapowana."
+// Wycena gałęzi „przeżyje, NIE zabije" dawała −2, ale premia wyścigu
+// (+8/+20) ją przebijała — klasa L3 (kara musi przebić premię) i L54
+// (kara mierzona względem BAZY, nie w oderwaniu).
+
+function attackScenario({ defenderLife = 20, botLife = 20 } = {}) {
+  // Bot to p2 (aktywny, atakuje); p1 to broniący się gracz-człowiek.
+  // Uwaga: „racing" w bocie włącza się m.in. gdy życie OBROŃCY <= 10.
+  const state = createGameState({ seed: 188, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p2');
+  state.turn.activePlayerId = 'p2';
+  state.turn.priorityPlayerId = 'p2';
+  state.players = state.players.map((p) => ({
+    ...p, life: p.id === 'p1' ? defenderLife : botLife,
+  }));
+  // Bot (p2): Highland Game 2/1? — potrzebujemy 2/2; używamy Alaborn Trooper
+  // (2/2 vigilance nie zmienia wyceny ataku, liczy się P/T i blokerzy).
+  putCard(state, 'atk', 'hill-giant', 'p2', 'battlefield', { summoningSickness: false });
+  state.objects.set('atk', Object.freeze({ ...state.objects.get('atk'), power: 2, toughness: 2 }));
+  // Gracz (p1): ściana 1/5 — nietapnięta, może blokować.
+  putCard(state, 'wall', 'giant-spider', 'p1', 'battlefield', { summoningSickness: false });
+  state.objects.set('wall', Object.freeze({ ...state.objects.get('wall'), power: 1, toughness: 5, keywords: [] }));
+  return state;
+}
+
+test('M188/C: bot NIE atakuje 2/2 w nietapniętą ścianę 1/5 (atak jałowy)', () => {
+  const state = attackScenario();
+  const view = playerView(state, 'p2');
+  const attack = view.legalCommands.find((c) => c.type === 'declare_attackers'
+    && (c.attackerIds ?? []).includes('atk'));
+  assert.ok(attack, 'oferta ataku istnieje (jest legalna wg CR)');
+  const chosen = createHeuristicBot({ seed: 4 }).chooseCommand(view);
+  const attacksWithIt = chosen.type === 'declare_attackers'
+    && (chosen.attackerIds ?? []).includes('atk');
+  assert.ok(!attacksWithIt,
+    `atak nie zada obrażeń i nikogo nie zabije — tylko tapuje stwora (bot wybrał: ${JSON.stringify(chosen)})`);
+});
+
+test('M188/C2: także w WYŚCIGU (racing) jałowy atak zostaje odrzucony', () => {
+  // Życie obrońcy <= 10 włącza premię wyścigu (+8/+20), która PRZEBIJAŁA karę
+  // −2 za jałowy atak: score wychodził 6 (a przy 5 życia nawet 18) przy passie
+  // 0 — dokładnie sytuacja ze zgłoszenia właściciela.
+  const state = attackScenario({ defenderLife: 8 });
+  const view = playerView(state, 'p2');
+  const chosen = createHeuristicBot({ seed: 4 }).chooseCommand(view);
+  const attacksWithIt = chosen.type === 'declare_attackers'
+    && (chosen.attackerIds ?? []).includes('atk');
+  assert.ok(!attacksWithIt,
+    `premia wyścigu nie może ratować ataku bez skutku (bot wybrał: ${JSON.stringify(chosen)})`);
+});
+
+test('M188/C3: atak, który ZABIJA blokera, nadal jest wybierany (kontrola)', () => {
+  const state = attackScenario();
+  // Ścianę zamieniamy na 1/2 — atakujący 2/2 ją zabija i przeżywa.
+  state.objects.set('wall', Object.freeze({ ...state.objects.get('wall'), power: 1, toughness: 2 }));
+  const view = playerView(state, 'p2');
+  const chosen = createHeuristicBot({ seed: 4 }).chooseCommand(view);
+  assert.ok(chosen.type === 'declare_attackers' && (chosen.attackerIds ?? []).includes('atk'),
+    `realny zysk (zabija blokera, przeżywa) — atak ma sens (bot wybrał: ${JSON.stringify(chosen)})`);
+});
+
+test('M188/C4: atak w PUSTĄ planszę nadal jest wybierany (kontrola presji)', () => {
+  const state = attackScenario();
+  state.zones.battlefield = state.zones.battlefield.filter((id) => id !== 'wall');
+  state.objects.delete('wall');
+  const view = playerView(state, 'p2');
+  const chosen = createHeuristicBot({ seed: 4 }).chooseCommand(view);
+  assert.ok(chosen.type === 'declare_attackers' && (chosen.attackerIds ?? []).includes('atk'),
+    `bez blokerów atak to czysta presja (bot wybrał: ${JSON.stringify(chosen)})`);
+});
+
+test('M188/C5: przy 5 życiach obrońcy jałowy atak też odrzucony (premia +20)', () => {
+  const state = attackScenario({ defenderLife: 5 });
+  const view = playerView(state, 'p2');
+  const chosen = createHeuristicBot({ seed: 4 }).chooseCommand(view);
+  const attacksWithIt = chosen.type === 'declare_attackers'
+    && (chosen.attackerIds ?? []).includes('atk');
+  assert.ok(!attacksWithIt,
+    `2/2 nie przebije ściany 1/5 nawet przy 5 życiach — 0 obrażeń (bot wybrał: ${JSON.stringify(chosen)})`);
+});
+
+test('M188/C6: przy śmiertelnym ataku (lethal przez blokera) atak zostaje', () => {
+  // Kontrola anty-over-fix: gdy obrażenia PRZEBIJAJĄ blokera i kończą grę,
+  // atak musi zostać wybrany mimo „nie zabija blokera".
+  const state = attackScenario({ defenderLife: 1 });
+  state.objects.set('wall', Object.freeze({ ...state.objects.get('wall'), power: 1, toughness: 1 }));
+  const view = playerView(state, 'p2');
+  const chosen = createHeuristicBot({ seed: 4 }).chooseCommand(view);
+  assert.ok(chosen.type === 'declare_attackers' && (chosen.attackerIds ?? []).includes('atk'),
+    `lethal ma pierwszeństwo (bot wybrał: ${JSON.stringify(chosen)})`);
 });

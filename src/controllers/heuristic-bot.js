@@ -1967,6 +1967,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const weakestBlockerToughness = blockers.reduce((min, o) => Math.min(min, o.toughness ?? 0), Number.POSITIVE_INFINITY);
         const enemyLife = enemy(view)?.life ?? 0;
         let score = 0;
+        // M188/C (uwaga właściciela): ilu atakujących nie osiąga NICZEGO —
+        // nie zada obrażeń (obrońca ma czym zablokować bez straty) i nie
+        // zabije blokera. Taki atak tylko tapuje własnego stwora.
+        let futileAttackers = 0;
         for (const id of attackers) {
           const object = objectOnBoard(view, id);
           if (!object) continue;
@@ -2010,6 +2014,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // a tapnięty atakujący nie zablokuje w następnej turze — netto
             // strata, poniżej passu (uwaga właściciela z testów).
             perAttacker = -2;
+            // M188/C: ten atak jest JAŁOWY — obrońca zablokuje bez straty,
+            // więc nie przejdą obrażenia ani nie zginie żaden bloker.
+            futileAttackers += 1;
           } else if (power >= strongestBlockerToughness) {
             perAttacker = power - 1; // wymiana: obrażenia + usunięcie blockerów
           } else {
@@ -2047,7 +2054,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const racing = enemyLife <= 10
           || enemyBoardPower(view) >= myLife(view)
           || (libraryExists && myLibraryCount(view) <= 4);
-        if (racing && attackers.length > 0) {
+        // M188/C (uwaga właściciela: „bot atakuje 2/2 mimo mojej 1/5 —
+        // jedynym efektem jest tapnięcie jego stwora"): atak, w którym ŻADEN
+        // atakujący nic nie osiąga, nie może być ratowany premią wyścigu.
+        // Klasa L3: kara −2 istniała, ale premia (+8/+20) ją przebijała, więc
+        // była martwa. Zgodnie z L3 POMIJAMY premię zamiast dokładać karę —
+        // presja bez obrażeń nie jest presją. Lethal (penetratingPower) jest
+        // wyżej i nie przechodzi przez tę gałąź, bo wtedy atak nie jest jałowy.
+        const wholeAttackFutile = attackers.length > 0 && futileAttackers === attackers.length;
+        if (racing && attackers.length > 0 && !wholeAttackFutile) {
           score += totalPower >= enemyLife - 5 ? 20 : 8;
           if (libraryExists && myLibraryCount(view) <= 2) score += 15;
         }
