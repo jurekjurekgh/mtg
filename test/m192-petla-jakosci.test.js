@@ -185,3 +185,33 @@ test('M192/Z3: opis efektu podaje LICZBĘ kart, nie literalne „X"', async () =
   assert.ok(!/\bX kart/.test(text),
     `Saga zna liczbę (amount: 3) — „X" to placeholder z kodu: ${JSON.stringify(text)}`);
 });
+
+// ---- Z4: kafel ladu dublowal zdolnosc many -------------------------------
+// Znalezisko weryfikacji M193 w Zywym Testerze (warhammer vs mirrodin s11):
+// „Dismal Backwater · Land · Gdy wejdzie…: zyskaj 1 zycie. · {T}: dodaj
+// 1 mane niebieska lub czarna · T: dodaj 1 mane" — ta sama zdolnosc dwa razy,
+// za drugim razem z BLEDNYM kolorem (bezbarwna). Zrodlo: landLine dopisywany
+// BEZWARUNKOWO kazdemu ladowi. Dotad maskowal brak deskryptorow (M193/A),
+// teraz jest nadmiarowy i wprowadza w blad.
+
+test('M192/Z4: kafel lądu z własną zdolnością many NIE dubluje jej opisu', async () => {
+  const { rulesText } = await import('../src/table/render.js');
+  const { createCardRegistry: reg } = await import('../src/cards/card-data.js');
+  const card = reg().get('dismal-backwater');
+  const text = rulesText({ ...card, kind: 'land', abilities: card.abilities ?? [], controllerId: 'human' });
+  const manaMentions = (text.match(/dodaj \d+ manę/g) ?? []).length;
+  assert.equal(manaMentions, 1,
+    `zdolność many ma być opisana RAZ (Oracle: „{T}: Add {U} or {B}"): ${JSON.stringify(text)}`);
+  assert.match(text, /niebieską lub czarną/, 'i to z właściwymi kolorami');
+});
+
+test('M192/Z4: podstawowy ląd BEZ deskryptora nadal opisuje produkcję many', async () => {
+  // Kontrola anty-over-fix: basicki nie maja zdolnosci w danych (produkcja
+  // wynika z podtypu, CR 305.6) — dla nich linia „T: dodaj 1 manę" jest
+  // JEDYNYM opisem i musi zostac.
+  const { rulesText } = await import('../src/table/render.js');
+  const { createCardRegistry: reg } = await import('../src/cards/card-data.js');
+  const card = reg().get('basic-island');
+  const text = rulesText({ ...card, kind: 'land', abilities: card.abilities ?? [], controllerId: 'human' });
+  assert.match(text, /dodaj 1 manę/, `basic musi opisywać produkcję: ${JSON.stringify(text)}`);
+});

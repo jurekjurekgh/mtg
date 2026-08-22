@@ -1391,7 +1391,18 @@ export function rulesText(info) {
       aura.protection ? `zaczarowany ma ochronę przed ${protectionQualityLabel(aura.protection)}` : '',
     ].filter(Boolean).join(' · ')
     : '';
-  const landLine = info.kind === 'land' ? 'T: dodaj 1 manę' : '';
+  // M192/Z4 (weryfikacja M193 Zywym Testerem): produkcja many ladu opisywana
+  // RAZ. Ta linia to opis produkcji IMPLIKOWANEJ — basicki nie maja zdolnosci
+  // w danych, ich mana wynika z podtypu (CR 305.6). Land, ktory NIESIE wlasna
+  // zdolnosc many (Dismal Backwater „{T}: Add {U} or {B}"), ma juz jej opis
+  // w abilityLine — dopisek dublowal go i klamal o kolorze („dodaj 1 mane"
+  // zamiast „niebieska lub czarna").
+  const hasOwnManaAbility = (info.abilities ?? []).some((a) => {
+    if (a?.type !== 'activated') return false;
+    const effects = Array.isArray(a.effect) ? a.effect : [a.effect];
+    return effects.some((e) => e?.type === 'add_mana');
+  });
+  const landLine = info.kind === 'land' && !hasOwnManaAbility ? 'T: dodaj 1 manę' : '';
   // M159/Z4 (Żywy Tester g6): Saga w ręce/na stole renderowała się BEZ
   // treści („Invasion of the Giants · 2 · Enchantment — Saga” i nic) —
   // rozdziały są całą treścią karty dla gracza (ta sama rodzina co pusty

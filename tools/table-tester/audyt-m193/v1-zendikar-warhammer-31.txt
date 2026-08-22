@@ -1,0 +1,369 @@
+== NOWA PARTIA: gracz=zendikar vs bot=warhammer, seed=31, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Healer of the Glade
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Zagraj: Coralhelm Guide (koszt 1U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Coralhelm Guide
+  [ROZGRYWKA]   • Coralhelm Guide wchodzi na pole bitwy
+  [ROZGRYWKA]   • Coralhelm Guide zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje cycling: Unearth
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unearth rozstrzygnięta
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Scion Summoner
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Coralhelm Guide
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Coralhelm Guide zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 18
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Relic Robber
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Coralhelm Guide
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Coralhelm Guide zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 18 → 16
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Terminal Agony → cel: Coralhelm Guide
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Coralhelm Guide zostaje zniszczony
+  [ROZGRYWKA]   • Terminal Agony zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Zagraj: Scion Summoner (koszt 2G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Scion Summoner
+  [ROZGRYWKA]   • Scion Summoner wchodzi na pole bitwy
+  [ROZGRYWKA]   • Scion Summoner zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Scion Summoner — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty tworzysz token Eldrazi Scion (1/1)
+  [ROZGRYWKA]   • Eldrazi Scion wchodzi na pole bitwy
+  [ROZGRYWKA]   • Scion Summoner — trigger się rozstrzyga
+  >> Aktywuj: Eldrazi Scion (Ty) (koszt: poświęć) — dodaj 1 manę bezbarwną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Eldrazi Scion — dodanie many do puli
+  [ROZGRYWKA]   • Eldrazi Scion zostaje poświęcony
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Rupture Spire (wchodzi zatapnięty)
+  [ROZGRYWKA]   • Rupture Spire — zapłać {1} albo ją poświęć (wybór gracza)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rupture Spire zostaje poświęcony
+  [ROZGRYWKA]   • Nieprzyjaciel poświęca Rupture Spire
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Fireball → cel: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Fireball zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 17
+  [ROZGRYWKA]   • Fireball zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Rzuć: Might of the Masses (koszt G) → cel: Scion Summoner (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Might of the Masses → cel: Scion Summoner
+  [ROZGRYWKA]   • Might of the Masses zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Fertile Thicket
+  >> Zagraj ląd: Fertile Thicket
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Fertile Thicket (wchodzi zatapnięty)
+  [ROZGRYWKA]   • Fertile Thicket — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Fertile Thicket: odsłaniasz 5 kart z wierzchu biblioteki (bazowych landów: 1)
+  [ROZGRYWKA]   • Fertile Thicket — trigger się rozstrzyga
+  >> Wybierz: Fertile Thicket — wierzch biblioteki (3 opcje)
+  [modal choice] Wybierz: Fertile Thicket — wierzch biblioteki Fertile Thicket — Mountain na wierzch biblioteki Fertile Thicket — basic land na wierzch biblioteki Fertile Thicket — odłóż wszystko na spód (bez landa)
+  [modal choice]   ▶ Fertile Thicket — Mountain na wierzch biblioteki
+  [modal choice]     Fertile Thicket — basic land na wierzch biblioteki
+  [modal choice]     Fertile Thicket — odłóż wszystko na spód (bez landa)
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Scion Summoner
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Scion Summoner zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 16 → 13
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Hill Giant
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Hill Giant wchodzi na pole bitwy
+  [ROZGRYWKA]   • Hill Giant zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Aktywuj: Fertile Thicket (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Fertile Thicket — dodanie 1 many zielonej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Zagraj: Relic Robber (koszt 2R)
+  [kreator many] Płatność 2R — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: RTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 4
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Relic Robber
+  [ROZGRYWKA]   • Relic Robber wchodzi na pole bitwy
+  [ROZGRYWKA]   • Relic Robber zostaje rozstrzygnięty
+  >> Zagraj: Healer of the Glade (koszt G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Healer of the Glade
+  [ROZGRYWKA]   • Healer of the Glade wchodzi na pole bitwy
+  [ROZGRYWKA]   • Healer of the Glade zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Healer of the Glade — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: życie 17 → 20
+  [ROZGRYWKA]   • Healer of the Glade — trigger się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Scion Summoner, Relic Robber
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Hill Giant blokuje Relic Robber
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Scion Summoner zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 13 → 11
+  [ROZGRYWKA]   • Relic Robber zadaje 2 obrażenia (Hill Giant)
+  [ROZGRYWKA]   • Hill Giant zadaje 3 obrażenia (Relic Robber)
+  [ROZGRYWKA]   • Relic Robber ginie
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Revolutionist
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Revolutionist wchodzi na pole bitwy
+  [ROZGRYWKA]   • Revolutionist zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Revolutionist — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Revolutionist — cel: Unearth
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: Unearth — cmentarz → ręka
+  [ROZGRYWKA]   • Revolutionist — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Hill Giant
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Healer of the Glade (1/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Healer of the Glade blokuje Hill Giant
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Hill Giant zadaje 3 obrażenia (Healer of the Glade)
+  [ROZGRYWKA]   • Healer of the Glade zadaje 1 obrażenie (Hill Giant)
+  [ROZGRYWKA]   • Healer of the Glade ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 15 — Ty
+  >> Aktywuj: Fertile Thicket (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Fertile Thicket — dodanie 1 many zielonej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Roiling Regrowth
+  >> Rzuć: Roiling Regrowth (koszt 2G)
+  [kreator many] Płatność 2G — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: GTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 4
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Roiling Regrowth
+  [ROZGRYWKA]   • Springbloom Druid: możesz poświęcić land
+  [ROZGRYWKA]   • Roiling Regrowth zostaje rozstrzygnięty
+  >> Wybierz: Springbloom Druid — land do poświęcenia (5 opcji)
+  [modal choice] Wybierz: Springbloom Druid — land do poświęcenia Poświęć land: Mountain Poświęć land: Fertile Thicket Poświęć land: Forest Poświęć land: Plains Poświęć land: Island
+  [modal choice]   ▶ Poświęć land: Mountain
+  [modal choice]     Poświęć land: Fertile Thicket
+  [modal choice]     Poświęć land: Forest
+  [modal choice]     Poświęć land: Plains
+  [modal choice]     Poświęć land: Island
+  >> Wybierz: Szukanie w bibliotece (5 opcji)
+  [modal choice] Wybierz: Szukanie w bibliotece Szukanie — nie znajduj karty (rezygnuję) Szukanie: Plains Szukanie: Island Szukanie: Forest Szukanie: Mountain
+  [modal choice]     Szukanie — nie znajduj karty (rezygnuję)
+  [modal choice]   ▶ Szukanie: Plains
+  [modal choice]     Szukanie: Island
+  [modal choice]     Szukanie: Forest
+  [modal choice]     Szukanie: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odsłaniasz Plains
+  [ROZGRYWKA]   • Ty: Plains — biblioteka → pole bitwy
+  [ROZGRYWKA]   • Plains wchodzi na pole bitwy
+  >> Wybierz: Szukanie w bibliotece (4 opcje)
+  [modal choice] Wybierz: Szukanie w bibliotece Szukanie — nie znajduj karty (rezygnuję) Szukanie: Island Szukanie: Forest Szukanie: Mountain
+  [modal choice]     Szukanie — nie znajduj karty (rezygnuję)
+  [modal choice]   ▶ Szukanie: Island
+  [modal choice]     Szukanie: Forest
+  [modal choice]     Szukanie: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odsłaniasz Island
+  [ROZGRYWKA]   • Ty: Island — biblioteka → pole bitwy
+  [ROZGRYWKA]   • Island wchodzi na pole bitwy
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Scion Summoner
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Revolutionist blokuje Scion Summoner
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Scion Summoner zadaje 2 obrażenia (Revolutionist)
+  [ROZGRYWKA]   • Revolutionist zadaje 3 obrażenia (Scion Summoner)
+  [ROZGRYWKA]   • Scion Summoner ginie
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Goblin Battle Jester
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje cycling: Unearth
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unearth rozstrzygnięta
+  [ROZGRYWKA]   • Goblin Battle Jester wchodzi na pole bitwy
+  [ROZGRYWKA]   • Goblin Battle Jester zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Hill Giant, Revolutionist
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Hill Giant zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 17
+  [ROZGRYWKA]   • Revolutionist zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 14
+  [ROZGRYWKA]   • Tura 17 — Ty
+  >> Aktywuj: Fertile Thicket (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Fertile Thicket — dodanie 1 many zielonej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca You're Confronted by Robbers — tryb: Wezwanie pomocy
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Soldier (1/1)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Soldier (1/1)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Soldier (1/1)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • You're Confronted by Robbers — tryb: Wezwanie pomocy zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Omenspeaker
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Omenspeaker wchodzi na pole bitwy
+  [ROZGRYWKA]   • Omenspeaker zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Omenspeaker — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel wykonuje scry (patrzy na 2 karty)
+  [ROZGRYWKA]   • Omenspeaker — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel kończy scry — zostawia na wierzchu biblioteki
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Hill Giant, Revolutionist, Goblin Battle Jester
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Hill Giant zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 11
+  [ROZGRYWKA]   • Revolutionist zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 8
+  [ROZGRYWKA]   • Goblin Battle Jester zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 8 → 6
+  [ROZGRYWKA]   • Tura 19 — Ty
+  >> Aktywuj: Fertile Thicket (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Fertile Thicket — dodanie 1 many zielonej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Kor Cartographer
+  >> Zagraj: Kor Cartographer (koszt 3W)
+  [kreator many] Płatność 3W — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: WTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 6
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Kor Cartographer
+  [ROZGRYWKA]   • Kor Cartographer wchodzi na pole bitwy
+  [ROZGRYWKA]   • Kor Cartographer zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Kor Cartographer — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Przeszukujesz bibliotekę (bez trafienia) i tasuje
+  [ROZGRYWKA]   • Kor Cartographer — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Fledgling Imp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Fledgling Imp wchodzi na pole bitwy
+  [ROZGRYWKA]   • Fledgling Imp zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Index
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel wykonuje Index (patrzy na 5 kart)
+  [ROZGRYWKA]   • Nieprzyjaciel kończy Index — przestawia karty na wierzchu biblioteki
+  [ROZGRYWKA]   • Index zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Hill Giant, Revolutionist, Goblin Battle Jester, Soldier, Soldier, Soldier, Omenspeaker
+  >> Wybierz: Deklaracja blokujących (8 opcji)
+  [combat wizard] blokuję 1 stworami: Kor Cartographer (2/2)
+  [combat wizard] Zatwierdź bloki
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 69 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · 2/2 | Skyclave Geopede · 3 · Creature — Insect · Zadeptywanie · Landfall — gdy land wchodzi pod twoją kontrolą: +2/+2 do końca tury. · 3/1 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · 3/2
+  MOJE POLA: Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · −1 · choroba · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×5 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Hill Giant · 4 · Creature — Giant · 3/3 | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3 | Goblin Battle Jester · 4 · Creature — Goblin · Gdy rzucisz czar: nie może blokować. · 2/2 | Soldier · 0 · Creature — Soldier · 1/1 ×3 | Omenspeaker · 2 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: scry 2. · −2 · 1/3 | Fledgling Imp · 3 · Creature — Imp · {B}, odrzuć kartę: zdobądź Latanie do końca tury · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Plains, Island, Battle-Rattle Shaman, Skyclave Geopede, Might of the Masses, Coralhelm Guide, Kazuul's Toll Collector ⏎ Nowa partia (seed 31). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 26, kliknięte: 27, modale: 4, sondy noop: 70 (panel 58, modal 12)
+== DETEKTORY: brak zgłoszeń ==
