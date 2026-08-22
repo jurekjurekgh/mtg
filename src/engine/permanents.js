@@ -460,6 +460,30 @@ export function effectivePower(object, state = null) {
     + untilEndOfTurnBonuses(state, object).power;
 }
 
+/**
+ * M188/A (uwaga właściciela): bonus P/T pochodzący z efektów CIĄGŁYCH,
+ * których nie widać w polach obiektu — statyki warunkowe (CR 604.3, Evangel
+ * of Synthesis: „as long as you've drawn two or more cards"), załączniki,
+ * anthemy i buffy „do końca tury". Kafel pokazuje go jako badge.
+ *
+ * Świadomie POMIJAMY `powerModifier`/`toughnessModifier` i liczniki +1/+1:
+ * mają na kaflu własne badge („+2/+2", „2x +1/+1"), więc wliczenie ich tutaj
+ * pokazałoby graczowi ten sam bonus dwa razy. Klasa M175/A3 — badge liczony
+ * jako różnica po stronie renderu zawsze wychodził zerowy, bo widok wysyła
+ * wartości EFEKTYWNE; różnicę musi policzyć warstwa, która zna składniki.
+ */
+export function grantedStatBonus(object, state = null) {
+  if (!object || object.power === null) return { power: 0, toughness: 0 };
+  const attachment = attachmentBonuses(state, object);
+  const statics = staticBonuses(state, object);
+  const anthem = anthemBonuses(state, object);
+  const untilEot = untilEndOfTurnBonuses(state, object);
+  return {
+    power: attachment.power + statics.power + anthem.power + untilEot.power,
+    toughness: attachment.toughness + statics.toughness + anthem.toughness + untilEot.toughness,
+  };
+}
+
 export function effectiveToughness(object, state = null) {
   if (object.toughness === null) return null;
   const base = object.faceDown ? 2 : (object.tempBasePT?.toughness ?? object.toughness);

@@ -2474,6 +2474,10 @@ export function cardInfo(session, object, combat = null) {
     // − keywordsNow" była zawsze pusta, bo widok wysyła keywordy EFEKTYWNE
     // (obie strony zawierały grant) i badge nigdy się nie pokazywał.
     grantedKeywords: faceDown ? [] : [...(object.grantedKeywords ?? [])],
+    // M188/A: nadane P/T z efektów ciągłych (statyka warunkowa, aura, anthem,
+    // buff do EOT) — widok liczy je jawnie, bo `powerModifier` ich nie niesie.
+    grantedPower: faceDown ? 0 : Number(object.grantedPower ?? 0),
+    grantedToughness: faceDown ? 0 : Number(object.grantedToughness ?? 0),
     lostKeywordsUntilEOT: faceDown ? [] : [...(object.lostKeywordsUntilEOT ?? [])],
     cantBlockNow: Boolean(object.cantBlock || object.cantBlockPrinted),
     cantBeBlockedNow: Boolean(object.cantBeBlocked),
@@ -2741,11 +2745,23 @@ export function buildStateOverlay(visual, info) {
     if (info.tempControlNow) flags.push(['kw', 'kontrola do końca tury']);
     if (info.cantRegenerateNow) flags.push(['kw', 'bez regeneracji']);
     {
+      const sign = (n) => (n > 0 ? `+${n}` : `${n}`);
       const pMod = Number(info.powerMod ?? 0);
       const tMod = Number(info.toughMod ?? 0);
       if (pMod !== 0 || tMod !== 0) {
-        const sign = (n) => (n > 0 ? `+${n}` : `${n}`);
         flags.push(['kw', `${sign(pMod)}/${sign(tMod)}`]);
+      }
+      // M188/A (uwaga właściciela): bonus z efektu CIĄGŁEGO (Evangel of
+      // Synthesis „+1/+0 i menace", aura, anthem) ma osobny badge — nie
+      // siedzi w powerModifier, więc bez tego kafel milczał o połowie
+      // działającej zdolności (menace było widać, +1/+0 już nie).
+      const gPow = Number(info.grantedPower ?? 0);
+      const gTou = Number(info.grantedToughness ?? 0);
+      if (gPow !== 0 || gTou !== 0) {
+        // Zapis jak w Oracle („gets +1/+0"): zero też z jawnym znakiem,
+        // żeby badge czytało się jak tekst karty, a nie jak ułamek „+1/0".
+        const signed = (n) => (n < 0 ? `${n}` : `+${n}`);
+        flags.push(['kw', `${signed(gPow)}/${signed(gTou)}`]);
       }
     }
     if (info.combatRole) flags.push(['combat', info.combatRole]);

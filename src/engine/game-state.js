@@ -20,7 +20,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, legalEscapeCasts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell } from './spells.js';
 import { legalActivatedAbilities, activateAbility, performActivation } from './abilities.js';
-import { deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, transformedCharacteristics, untapObject } from './permanents.js';
+import { deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, untapObject } from './permanents.js';
 import { addCounter } from './counters.js';
 import { runStateBasedActions } from './state-based.js';
 import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds } from './triggers.js';
@@ -4377,6 +4377,16 @@ export function playerView(state, playerId) {
         // bez rejestru); dla zakrytego widza lista już jest samymi grantami.
         const grantedKeywords = keywords.filter((keyword) => !(object.keywords ?? []).includes(keyword));
         if (grantedKeywords.length) entry.grantedKeywords = [...grantedKeywords];
+        // M188/A (uwaga właściciela, Evangel of Synthesis): NADANE P/T
+        // z efektów ciągłych (statyka warunkowa, aura/equipment, anthem,
+        // buff do końca tury) jawnie w widoku — kafel liczył badge z
+        // `powerModifier`, którego statyka read-time nie ustawia, więc
+        // „+1/+0 i menace" pokazywało tylko menace. Klasa M175/A3 dla P/T.
+        if (object.power !== null && object.kind === 'creature' && !hiddenFromViewer) {
+          const granted = grantedStatBonus(object, state);
+          if (granted.power !== 0) entry.grantedPower = granted.power;
+          if (granted.toughness !== 0) entry.grantedToughness = granted.toughness;
+        }
         if (object.subtypes?.length && !hiddenFromViewer) entry.subtypes = [...object.subtypes];
         // M92 (audyt PlayerView): LINIA TYPÓW permanentu na polu bitwy jest
         // informacją publiczną (widnieje na karcie), a widok jej nie niósł —
