@@ -384,9 +384,16 @@ export function odmienNaDrugaOsobe(text, humanName = PLAYER_NAMES[HUMAN_ID]) {
   });
 }
 
-export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
+/**
+ * M176 (uwaga właściciela 2026-08-22): sekcja „Przebieg tur (dla AI)” ma
+ * opisywać OBU graczy w 3. osobie („Czarodziejka zagrywa…”, „Nieprzyjaciel
+ * zagrywa…”) — opcja `drugaOsoba: false` wyłącza odmianę zdań o człowieku
+ * (główny log stołu zostaje w 2. osobie — M101/C bez zmian).
+ */
+export function describeGameEvent(e, helpers, names = PLAYER_NAMES, { drugaOsoba = true } = {}) {
   const opis = describeGameEventRaw(e, helpers, names);
-  return typeof opis === 'string' ? odmienNaDrugaOsobe(opis, names[HUMAN_ID]) : opis;
+  if (typeof opis !== 'string') return opis;
+  return drugaOsoba ? odmienNaDrugaOsobe(opis, names[HUMAN_ID]) : opis;
 }
 
 function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
@@ -1391,7 +1398,8 @@ export function createSession(config) {
       return;
     }
     if (TURN_NOISE.has(e.type)) return;
-    const text = describeEvent(e, TURN_NAMES);
+    // M176: przebieg tur w 3. osobie dla OBU graczy (Czarodziejka/Nieprzyjaciel).
+    const text = describeEvent(e, TURN_NAMES, { drugaOsoba: false });
     if (!text) return;
     currentTurn.lines.push(text);
   }
@@ -1468,7 +1476,7 @@ export function createSession(config) {
 
 
 /** Opis zdarzenia przez modułowego czytelnika (wstrzyknięte nazwy stanu). */
-  function describeEvent(e, names = PLAYER_NAMES) {
+  function describeEvent(e, names = PLAYER_NAMES, options = {}) {
     // Uwaga A (2026-08-12): tłumimy natychmiastowy library_searched po
     // search_choice_resolved — search_choice_resolved już opisuje wynik
     // („znajduje kartę i tasuje bibliotekę"). library_searched z innych ścieżek
@@ -1486,7 +1494,7 @@ export function createSession(config) {
     effectiveKeywordsOf: (object) => effectiveKeywords(object, state),
       isPlayer: (id) => state.players.some((player) => player.id === id),
       controllerOf: (objectId) => state.objects.get(objectId)?.controllerId ?? null,
-    }, names);
+    }, names, options);
   }
 
   /**
