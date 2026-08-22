@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Doomed+Dissenter&set=vow",
+  "print": "Doomed Dissenter (VOW)",
+  "name": "Doomed Dissenter",
+  "mana_cost": "{1}{B}",
+  "cmc": 2.0,
+  "type_line": "Creature — Human",
+  "oracle_text": "When this creature dies, create a 2/2 black Zombie creature token.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [],
+  "set": "vow",
+  "collector_number": "106",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/7/f7c0cf16-81ea-45e3-99cc-4424d59bb44b.jpg?1783924866"
+  },
+  "pobrano": "2026-08-22"
+}

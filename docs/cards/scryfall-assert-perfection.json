@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Assert+Perfection",
+  "print": "Assert Perfection (ECL)",
+  "name": "Assert Perfection",
+  "mana_cost": "{1}{G}",
+  "cmc": 2.0,
+  "type_line": "Sorcery",
+  "oracle_text": "Target creature you control gets +1/+0 until end of turn. It deals damage equal to its power to up to one target creature an opponent controls.",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [],
+  "set": "ecl",
+  "collector_number": "164",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/9/6995b308-5582-4ca1-ab10-a536d5ca0a6d.jpg?1783904435"
+  },
+  "pobrano": "2026-08-22"
+}
