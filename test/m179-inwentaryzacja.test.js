@@ -6,7 +6,8 @@ import { createGameState, addObject, execute, playerView } from '../src/engine/g
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
-import { producibleMana, untappedFreeManaSources } from '../src/engine/resources.js';
+import { addMana, producibleMana, untappedFreeManaSources } from '../src/engine/resources.js';
+import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -78,4 +79,77 @@ test('D3b: pip kolorowy pokrywa nielandowe źródło (Scorned Villager → {G})'
   assert.ok(cast, 'oferta: {G} z Villagera + generic z Island');
   assert.ok(execute(state, cast).ok, 'płatność przechodzi');
   assert.equal(state.objects.get('villager').tapped, true, 'Villager tapnięty na pipa {G}');
+});
+
+// ---- A1: triki bojowe — czary rzucane we właściwym oknie walki ---------------
+
+function sick(state, id, value) {
+  state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: value }));
+}
+
+test('A1a: bot NIE rzuca instant-trika (Awaken the Bear) we własnej main — czeka na walkę', () => {
+  const state = game('p2');
+  putCard(state, 'bear-spell', 'awaken-the-bear', 'p2', 'hand');
+  putCard(state, 'me', 'highland-game', 'p2');
+  sick(state, 'me', false);
+  addMana(state, 'p2', 3, { colors: ['G'] });
+  const view = playerView(state, 'p2');
+  assert.ok(view.legalCommands.some((c) => c.type === 'cast_spell' && c.objectId === 'bear-spell'), 'oferta istnieje');
+  const chosen = createHeuristicBot({ seed: 1 }).chooseCommand(view);
+  assert.ok(!(chosen.type === 'cast_spell' && chosen.objectId === 'bear-spell'),
+    `trik w main = strata okna (wybrał: ${chosen.type})`);
+});
+
+test('A1b: bot RZUCA instant-trik na WŁASNEGO zadeklarowanego atakującego (pump+trample)', () => {
+  const state = game('p2');
+  putCard(state, 'bear-spell', 'awaken-the-bear', 'p2', 'hand');
+  putCard(state, 'me', 'highland-game', 'p2');
+  sick(state, 'me', false);
+  addMana(state, 'p2', 3, { colors: ['G'] });
+  state.turn = { ...state.turn, phase: 'combat', step: 'declare_attackers', activePlayerId: 'p2', priorityPlayerId: 'p2' };
+  assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['me'] }).ok);
+  state.turn.priorityPlayerId = 'p2';
+  const view = playerView(state, 'p2');
+  const cast = view.legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'bear-spell' && c.targets?.[0] === 'me');
+  assert.ok(cast, 'oferta trika w walce');
+  const chosen = createHeuristicBot({ seed: 1 }).chooseCommand(view);
+  assert.ok(chosen.type === 'cast_spell' && chosen.objectId === 'bear-spell' && chosen.targets?.[0] === 'me',
+    `trik na atakującym = właściwe okno (wybrał: ${JSON.stringify(chosen)})`);
+});
+
+// ---- C: sorcery-triki — Główna 1 przed atakiem, nie postcombat ----------------
+
+const SORCERY_PUMP = Object.freeze({
+  timing: 'sorcery',
+  targets: [{ type: 'creature' }],
+  effects: [{ type: 'pump', power: 3, toughness: 1 }],
+});
+
+test('C1: sorcery-pump rzucany w Głównej 1, gdy stwór może zaatakować', () => {
+  const state = game('p2');
+  putCard(state, 'sorc', 'titans-strength', 'p2', 'hand', { spell: SORCERY_PUMP });
+  putCard(state, 'me', 'highland-game', 'p2');
+  sick(state, 'me', false);
+  addMana(state, 'p2', 1, { colors: ['R'] });
+  state.turn = { ...state.turn, phase: 'precombat_main', step: 'main' };
+  const view = playerView(state, 'p2');
+  const cast = view.legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'sorc' && c.targets?.[0] === 'me');
+  assert.ok(cast, 'oferta sorcery-pumpa w Głównej 1');
+  const chosen = createHeuristicBot({ seed: 1 }).chooseCommand(view);
+  assert.ok(chosen.type === 'cast_spell' && chosen.objectId === 'sorc',
+    `sorcery nie poczeka na combat — Główna 1 przed atakiem to jego okno (wybrał: ${chosen.type})`);
+});
+
+test('C2: sorcery-pump NIE rzucany w Głównej 2 (efekt wyparuje w cleanup)', () => {
+  const state = game('p2');
+  putCard(state, 'sorc', 'titans-strength', 'p2', 'hand', { spell: SORCERY_PUMP });
+  putCard(state, 'me', 'highland-game', 'p2');
+  sick(state, 'me', false);
+  addMana(state, 'p2', 1, { colors: ['R'] });
+  state.turn = { ...state.turn, phase: 'postcombat_main', step: 'main' };
+  const view = playerView(state, 'p2');
+  assert.ok(view.legalCommands.some((c) => c.type === 'cast_spell' && c.objectId === 'sorc'), 'oferta istnieje');
+  const chosen = createHeuristicBot({ seed: 1 }).chooseCommand(view);
+  assert.ok(!(chosen.type === 'cast_spell' && chosen.objectId === 'sorc'),
+    `pump w Głównej 2 nie zdąży pomóc (wybrał: ${chosen.type})`);
 });

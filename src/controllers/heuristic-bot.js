@@ -568,6 +568,46 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return null;
   };
 
+  /**
+   * M179/A1 (zlecenie właściciela): wartość grantu keywordów-do-EOT dla
+   * WŁASNEGO stwora we właściwym oknie walki — WSPÓLNE dla zdolności
+   * aktywowanych (M173/E) i CZARÓW-trików (dotąd czary grantujące keywordy
+   * nie miały tej wyceny wcale).
+   */
+  function keywordGrantWindowValue(view, recipient, fresh) {
+    const combat = view.combat ?? null;
+    const attacking = Boolean(combat?.attackers?.includes(recipient.id));
+    const blocking = Object.values(combat?.blockers ?? {}).some((ids) => (ids ?? []).includes(recipient.id));
+    const enemyAttackDeclared = Boolean(combat) && combat.attackingPlayerId !== view.playerId;
+    const enemyFlyerAttacks = enemyAttackDeclared && (combat.attackers ?? []).some((id) => {
+      const attacker = objectOnBoard(view, id);
+      return attacker && (attacker.keywords ?? []).includes('flying');
+    });
+    let value = 0;
+    for (const kw of fresh) {
+      if (kw === 'reach') {
+        // OBRONNY: sens tylko, gdy nadlatuje atak z flying, a stwór może
+        // jeszcze zablokować (przed deklaracją bloków, nietapnięty).
+        value += (enemyFlyerAttacks && !recipient.tapped
+          && view.turn.step === 'declare_blockers' && !blocking) ? 8 : -10;
+      } else if (['deathtouch', 'first_strike', 'double_strike', 'lifelink', 'indestructible'].includes(kw)) {
+        // TRICK STARCIA: dopiero gdy stwór FAKTYCZNIE bierze udział w walce.
+        value += (attacking || blocking) ? (kw === 'deathtouch' ? 8 : 4) : -10;
+      } else if (['trample', 'flying', 'menace', 'haste'].includes(kw)) {
+        // EVASION/AGRESJA: nasz atak — zadeklarowany atakujący albo tuż
+        // przed deklaracją. Postcombat main i cudza tura = strata.
+        if (attacking) value += 2 + (recipient.power ?? 0);
+        else if (myTurn(view) && canAttackNow(recipient)
+          && ['precombat_main', 'combat'].includes(view.turn.phase)) value += 2 + (recipient.power ?? 0);
+        else value -= 10;
+      } else {
+        // Pozostałe (vigilance, hexproof...): tylko w oknach walki.
+        value += ['declare_attackers', 'declare_blockers', 'combat_damage'].includes(view.turn.step) ? 1 : -8;
+      }
+    }
+    return value;
+  }
+
   function weightedScore(commandType, score) {
     if (!Number.isFinite(score)) return score;
     const family = commandFamily(commandType);
@@ -1261,10 +1301,45 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (inCombat) trick = 18;
             else if (!myTurnNow) trick = 12;
             else if (['upkeep', 'draw', 'end', 'cleanup'].includes(view.turn.step)) trick = -60;
-            else trick = -20;
+            else if (card?.spell?.timing === 'sorcery') {
+              // M179/C (zlecenie właściciela): SORCERY nie poczeka na combat
+              // — jedyne sensowne okno to GŁÓWNA 1 przed własnym atakiem;
+              // postcombat = strata klasy „upkeep” (efekt wyparuje w cleanup,
+              // a następnego okna dla sorcery w tej turze nie będzie).
+              trick = (view.turn.phase === 'precombat_main' && canAttackNow(target)) ? 10 : -75;
+            } else {
+              // M179/A1: kara we własnej main musi PRZEBIĆ bazową wartość
+              // czaru (~50–65, zależnie od karty) — przy −20 bot i tak rzucał
+              // trik w Głównej 1 zamiast poczekać na deklaracje walki
+              // (właściwe okno instantów — zlecenie A1 właściciela).
+              trick = -75;
+            }
             score += trick + (target.power ?? 0);
           } else if (isPumpEffect) {
             score -= 60; // wzmacnianie przeciwnika bez powodu jest błędem
+          }
+          // M179/A1 (zlecenie właściciela): grant keywordów z CZARU — ta sama
+          // logika okien walki co przy zdolnościach (M173/E). Dotąd czary
+          // grantujące keywordy nie miały wyceny okna wcale (liczył się tylko
+          // towarzyszący pump), więc czyste granty szły w pierwszy legalny cel.
+          if (effect.type === 'grant_keywords_until_end_of_turn') {
+            const recipient = target ?? null;
+            const grantedKw = effect.keywords ?? [];
+            if (recipient && recipient.controllerId !== view.playerId) {
+              score -= 12 + 2 * (recipient.power ?? 0);
+            } else if (recipient) {
+              const alreadyHasKw = new Set(recipient.keywords ?? []);
+              const freshKw = grantedKw.filter((k) => !alreadyHasKw.has(k));
+              if (freshKw.length === 0) {
+                score -= 10; // duplikat keywordu: zero zmiany w grze
+              } else if (card?.spell?.timing === 'sorcery') {
+                // M179/C: sorcery-grant — jedyne okno to Główna 1 przed atakiem.
+                score += (myTurn(view) && view.turn.phase === 'precombat_main' && canAttackNow(recipient))
+                  ? 4 + 2 * freshKw.length : -40;
+              } else {
+                score += keywordGrantWindowValue(view, recipient, freshKw);
+              }
+            }
           }
           // M155 (audyt żywym testerem, Courage in Crisis): `add_counter` z
           // POZYTYWNYM licznikiem statystyk (+1/+1 itp.) wzmacnia stwora.
@@ -1444,44 +1519,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               if (fresh.length === 0) {
                 score -= 10; // duplikat keywordu (na stworze albo na stosie): zero zmiany w grze
               } else {
-                // M173/E (uwaga właściciela, Death-Hood Cobra): grant „until
-                // EOT" to TRICK BOJOWY — wartość ma wyłącznie we WŁAŚCIWYM
-                // oknie walki, poza nim mana wyparowuje w cleanup (bot
-                // aktywował reach zaraz po wystawieniu Cobry i kończył turę).
-                const combat = view.combat ?? null;
-                const attacking = Boolean(combat?.attackers?.includes(recipient.id));
-                const blocking = Object.values(combat?.blockers ?? {}).some((ids) => (ids ?? []).includes(recipient.id));
-                const enemyAttackDeclared = Boolean(combat) && combat.attackingPlayerId !== view.playerId;
-                const enemyFlyerAttacks = enemyAttackDeclared && (combat.attackers ?? []).some((id) => {
-                  const attacker = objectOnBoard(view, id);
-                  return attacker && (attacker.keywords ?? []).includes('flying');
-                });
-                let value = 0;
-                for (const kw of fresh) {
-                  if (kw === 'reach') {
-                    // OBRONNY: sens tylko, gdy nadlatuje atak z flying,
-                    // a stwór może jeszcze zablokować (przed deklaracją
-                    // bloków, nietapnięty).
-                    value += (enemyFlyerAttacks && !recipient.tapped
-                      && view.turn.step === 'declare_blockers' && !blocking) ? 8 : -10;
-                  } else if (['deathtouch', 'first_strike', 'double_strike', 'lifelink', 'indestructible'].includes(kw)) {
-                    // TRICK STARCIA: dopiero gdy stwór FAKTYCZNIE bierze
-                    // udział w walce (po deklaracjach: atakuje albo blokuje).
-                    value += (attacking || blocking) ? (kw === 'deathtouch' ? 8 : 4) : -10;
-                  } else if (['trample', 'flying', 'menace', 'haste'].includes(kw)) {
-                    // EVASION/AGRESJA: nasz atak — zadeklarowany atakujący
-                    // albo tuż przed deklaracją (odblokowuje atak). Postcombat
-                    // main i cudza tura = strata (wygasa w cleanup).
-                    if (attacking) value += 2 + (recipient.power ?? 0);
-                    else if (myTurn(view) && canAttackNow(recipient)
-                      && ['precombat_main', 'combat'].includes(view.turn.phase)) value += 2 + (recipient.power ?? 0);
-                    else value -= 10;
-                  } else {
-                    // Pozostałe (vigilance, hexproof...): tylko w oknach walki.
-                    value += ['declare_attackers', 'declare_blockers', 'combat_damage'].includes(view.turn.step) ? 1 : -8;
-                  }
-                }
-                score += value;
+                // M173/E: grant „until EOT" to TRICK BOJOWY — wspólna wycena
+                // okien walki (M179/A1: helper dzielony z gałęzią czarów).
+                score += keywordGrantWindowValue(view, recipient, fresh);
               }
             }
           }
