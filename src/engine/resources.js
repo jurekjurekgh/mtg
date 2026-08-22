@@ -175,6 +175,16 @@ export function spendMana(state, playerId, amount, requirements = []) {
       tapLandForMana(state, playerId, source.id, { grantColor: plannedGrant });
       covered = matchColorRequirements(expandManaPool(player.manaPool), requirements);
     }
+    // M179/D: pipy niedomknięte landami pokrywają nielandowe źródła
+    // czystej many (kolor efektu, np. Scorned Villager → {G}).
+    if (!covered) {
+      for (const entry of untappedFreeManaSources(state, playerId)) {
+        if (covered) break;
+        if (!entry.colors.some((c) => reqColors.has(c))) continue;
+        tapFreeManaSource(state, playerId, entry);
+        covered = matchColorRequirements(expandManaPool(player.manaPool), requirements);
+      }
+    }
     // Obrona w głąb: canPayColoredCost gwarantuje pokrycie, więc ten throw
     // jest nieosiągalny — ale NIGDY nie płacimy pipa maną innego koloru.
     if (!covered) throw new Error('Brak kolorowej many');
@@ -202,6 +212,12 @@ export function spendMana(state, playerId, amount, requirements = []) {
       const srcColors = getSourceForObject(source)?.colors ?? [];
       const grantColor = grant > 0 ? (need ?? srcColors[0] ?? 'G') : null;
       tapLandForMana(state, playerId, source.id, { grantColor });
+    }
+    // M179/D: landy nie starczyły — dopłacamy z nielandowych źródeł
+    // czystej many (producibleMana je liczy, więc oferta = płatność, L48).
+    for (const entry of untappedFreeManaSources(state, playerId)) {
+      if ((player.mana ?? 0) >= amount) break;
+      tapFreeManaSource(state, playerId, entry);
     }
   }
   // Konsumpcja z kolorowej puli: pipy do pasujących jednostek, reszta (generic)
@@ -322,6 +338,55 @@ export function untappedLandManaSources(state, playerId) {
  * poświęcenia) — ich wydatek jest nieodwracalną decyzją strategiczną, więc
  * zostaje w rękach gracza (aktywacja przez activate_ability jak dotąd).
  */
+/**
+ * M179/D (zlecenie właściciela): nielandowe źródła CZYSTEJ many — permanent
+ * z aktywowaną zdolnością o koszcie SAMEGO {T} i efekcie SAMEGO add_mana
+ * (Scorned Villager, Seer's Lantern). Liczą się do producibleMana i są
+ * auto-tapowane w płatności (L48: oferta = płatność). Świadomie POZA:
+ * źródła z kosztem many (Apprentice Wizard, Jeskai Devotee), z kosztem
+ * dodatkowym (Dragonbrood's Relic — tapCreature) i ze skutkami ubocznymi
+ * (Pristine Talisman — życie): ich użycie to decyzja strategiczna gracza
+ * (ręczna aktywacja jak dotąd). Stwór z chorobą przywołania nie użyje
+ * {T} (CR 302.6).
+ */
+export function untappedFreeManaSources(state, playerId, excludeSourceId = null) {
+  const out = [];
+  for (const id of state.zones.battlefield) {
+    const object = state.objects.get(id);
+    if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId || object.tapped) continue;
+    if (excludeSourceId != null && object.id === excludeSourceId) continue;
+    const isLandSource = object.kind === 'land' || (object.types ?? []).includes('Land');
+    if (isLandSource) continue; // landy liczy untappedLandManaSources
+    for (const ability of object.abilities ?? []) {
+      if (ability?.type !== 'activated') continue;
+      const cost = ability.cost ?? {};
+      const costKeys = Object.keys(cost).filter((key) => cost[key]);
+      if (!(cost.tap === true && costKeys.length === 1)) continue;
+      const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+      if (effects.length !== 1 || effects[0]?.type !== 'add_mana') continue;
+      const isCreature = object.kind === 'creature' || (object.types ?? []).includes('Creature');
+      if (isCreature && object.summoningSickness && !effectiveKeywords(object, state).includes('haste')) continue;
+      const src = getSourceForObject(object);
+      out.push({ object, amount: effects[0].amount ?? 1, colors: effects[0].colors ?? src?.colors ?? [] });
+      break;
+    }
+  }
+  return out;
+}
+
+/** M179/D: auto-tap nielandowego źródła czystej many (zdolność many — bez stosu, CR 605.3). */
+export function tapFreeManaSource(state, playerId, entry) {
+  const object = state.objects.get(entry.object.id);
+  if (!object || object.zone !== 'battlefield' || object.tapped) throw new Error('Nielegalne źródło many (auto-tap)');
+  state.objects.set(object.id, Object.freeze({ ...object, tapped: true }));
+  const tappedEvent = event('object_tapped', { objectId: object.id, playerId, forMana: true });
+  state.events.push(tappedEvent);
+  const mana = addMana(state, playerId, entry.amount, { colors: entry.colors });
+  const produced = event('mana_produced', { playerId, source: object.id, amount: entry.amount, colors: [...entry.colors] });
+  state.events.push(produced);
+  return [tappedEvent, mana, produced];
+}
+
 export function producibleMana(state, playerId, excludeSourceId = null) {
   // M174/B (Immersturm Skullcairn, klasa L48): koszt zdolności z {T}
   // WŁASNEGO źródła many — źródło tapnięte kosztem nie zapłaci już many,
@@ -334,7 +399,10 @@ export function producibleMana(state, playerId, excludeSourceId = null) {
     const grant = grantManaOnLand(state, land.id);
     fromLands += grant > 0 ? grant : 1;
   }
-  return (player?.mana ?? 0) + fromLands;
+  // M179/D: nielandowe źródła czystej many liczą się do oferty rzutów.
+  let fromFree = 0;
+  for (const entry of untappedFreeManaSources(state, playerId, excludeSourceId)) fromFree += entry.amount;
+  return (player?.mana ?? 0) + fromLands + fromFree;
 }
 
 /**
@@ -374,6 +442,10 @@ export function planGrantManaColors(state, playerId, requirements, excludeSource
       const src = getSourceForObject(obj);
       units.push(src?.colors ?? []);
     }
+  }
+  // M179/D: jednostki z nielandowych źródeł czystej many (kolor efektu).
+  for (const entry of untappedFreeManaSources(state, playerId, excludeSourceId)) {
+    for (let i = 0; i < entry.amount; i += 1) units.push([...entry.colors]);
   }
   if (grantLands.length === 0) {
     return matchColorRequirements(units, requirements) ? [] : null;
