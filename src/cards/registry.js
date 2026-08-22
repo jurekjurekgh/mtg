@@ -243,6 +243,8 @@ export function defineCard(data) {
     endure: data.endure ?? null,
     // Toxic N (CR 702.180) — wartość liczbowa keyworda (Batch 45).
     toxic: data.toxic ?? null,
+    // Batch 46 (Bone Shredder): koszt echa (CR 702.29).
+    echo: data.echo ?? null,
     // Exploit (CR 702.110, Silumgar Butcher): flaga ETB — opcjonalne
     // poświęcenie przy wejściu (resolve_exploit_choice), potem trigger „exploits".
     exploit: data.exploit ? Object.freeze({}) : null,

@@ -189,6 +189,8 @@ export function createGameState({ seed, players }) {
     pendingRoomTargets: [],
     // M190/B: wybór ścieżki w lochu (CR 309.4) — blokująca decyzja gracza.
     pendingUndercityRoute: null,
+    // M191/Batch 46 (fabricate, CR 702.122): wybór licznik ALBO tokeny.
+    pendingFabricate: null,
     // Batch 22: oczekująca decyzja proliferate (CR 701.27, Courage in
     // Crisis). Gracz wybiera DOWOLNĄ liczbę permanentów i/lub graczy
     // (z licznikami) — każdy dostaje po +1 do każdego typu licznika
@@ -506,7 +508,7 @@ export const ADD_OBJECT_FIELDS = Object.freeze([
   'manaCost', 'spell', 'abilities', 'morph', 'plot', 'plotted', 'entersWithCounters',
   'entersWithCountersIf', 'keywords', 'subtypes', 'transformTo', 'types', 'entersTapped',
   'entersTappedCondition', 'bestow', 'aura', 'equipment', 'backup', 'colors',
-  'phyrexianManaCost', 'enchantPlayer', 'saga', 'station', 'ownerId', 'devour', 'endure', 'toxic',
+  'phyrexianManaCost', 'enchantPlayer', 'saga', 'station', 'ownerId', 'devour', 'endure', 'toxic', 'echo',
   'exploit', 'treasureAltCost', 'cardName', 'name', 'bloodthirst', 'additionalCost',
   'kicker', 'costReduction', 'adventure', 'buyback', 'protectionFromColors',
   'plottedAtTurn', 'enterAsCopy', 'suspend', 'suspended', 'timeCounters', 'suspendReady',
@@ -573,14 +575,16 @@ function assertAddObjectContract(config) {
 
 export function addObject(state, config) {
   assertAddObjectContract(config);
-  const { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false } = config;
+  const { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false } = config;
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, toxic, exploit, treasureAltCost, cardName, name, bloodthirst, additionalCost, kicker, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, toxic, echo, exploit, treasureAltCost, cardName, name, bloodthirst, additionalCost, kicker, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady });
   const placed = zone === 'battlefield'
-    ? Object.freeze({ ...object, enteredOnTurn: state.turn.number })
+    // Batch 46 (Bone Shredder): permanent z echem wchodzi z nieopłaconym echem
+    // — pierwszy WŁASNY upkeep po wejściu zapyta o zapłatę (CR 702.29).
+    ? Object.freeze({ ...object, enteredOnTurn: state.turn.number, ...(object.echo != null ? { echoUnpaid: true } : {}) })
     : object;
   state.objects.set(id, placed);
   state.zones[zone].push(id);
@@ -1010,6 +1014,7 @@ function firstPendingDecisionPlayerId(state) {
   if (state.pendingBackups.length > 0) return state.pendingBackups[0].playerId;
   if (state.pendingClash) return state.pendingClash.choices[0];
   if (state.pendingUndercityRoute) return state.pendingUndercityRoute.playerId;
+  if (state.pendingFabricate) return state.pendingFabricate.playerId;
   if (state.pendingRoomTargets.length > 0) return state.pendingRoomTargets[0].playerId;
   if (state.pendingSearchChoice) return state.pendingSearchChoice.playerId;
   if (state.pendingPayOrSacrifice) return state.pendingPayOrSacrifice.playerId;
@@ -2339,6 +2344,39 @@ export function execute(state, input) {
   // „Leads to: Forge, Lost Well". Decyzja blokuje grę jak każda inna;
   // po wejściu do pokoju wykonuje się jego efekt (może otworzyć kolejną
   // decyzję — cel pokoju — więc priorytet oddajemy dopiero, gdy jej nie ma).
+  // Batch 46 (Glint-Sleeve Artisan) — FABRICATE N (CR 702.122): kontroler
+  // wybiera N liczników +1/+1 na stworze ALBO N tokenów Servo 1/1.
+  if (state.pendingFabricate) {
+    const pending = state.pendingFabricate;
+    if (cmd.type !== 'resolve_fabricate') return reject('fabricate_unresolved');
+    if (cmd.playerId !== pending.playerId) return reject('fabricate_not_your_decision');
+    if (cmd.mode !== 'counters' && cmd.mode !== 'tokens') return reject('illegal_fabricate_mode');
+    const before = state.events.length;
+    state.pendingFabricate = null;
+    const host = state.objects.get(pending.sourceId);
+    const hostAlive = Boolean(host && host.zone === 'battlefield');
+    if (cmd.mode === 'counters' && hostAlive) {
+      addCounter(state, pending.sourceId, '+1/+1', pending.amount);
+    } else {
+      // Wariant tokenów (także gdy stwór odszedł — liczniki nie mają na czym
+      // usiąść, ale tokeny powstają: CR 702.122a).
+      for (let i = 0; i < pending.amount; i += 1) {
+        createBattlefieldToken(state, pending.playerId, {
+          cardId: 'token_servo', name: 'Servo', kind: 'creature',
+          power: 1, toughness: 1, colors: [],
+          types: ['Artifact', 'Creature'], subtypes: ['Servo'],
+        });
+      }
+    }
+    state.events.push(event('fabricate_resolved', {
+      playerId: pending.playerId, sourceId: pending.sourceId, cardId: pending.cardId,
+      mode: cmd.mode === 'counters' && hostAlive ? 'counters' : 'tokens', amount: pending.amount,
+    }));
+    if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+  }
   if (state.pendingUndercityRoute) {
     const pending = state.pendingUndercityRoute;
     if (cmd.type !== 'resolve_undercity_route') return reject('undercity_route_unresolved');
@@ -4580,6 +4618,7 @@ export function playerView(state, playerId) {
     && state.pendingRoomTargets[0].playerId === playerId && headRoomCandidates.length > 0;
   const activeUndercityRoute = state.pendingUndercityRoute
     && state.pendingUndercityRoute.playerId === playerId;
+  const activeFabricate = state.pendingFabricate && state.pendingFabricate.playerId === playerId;
   const activeSearchChoice = state.pendingSearchChoice && state.pendingSearchChoice.playerId === playerId;
   const activePayOrSacrifice = state.pendingPayOrSacrifice && state.pendingPayOrSacrifice.playerId === playerId;
   const activeOptionalPay = state.pendingOptionalPay && state.pendingOptionalPay.playerId === playerId;
@@ -4841,6 +4880,10 @@ export function playerView(state, playerId) {
     // dla swojej odsłoniętej karty.
     legalCommands.unshift(command('resolve_clash_choice', playerId, { putOnBottom: true }));
     legalCommands.unshift(command('resolve_clash_choice', playerId, {}));
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeFabricate) {
+    // Fabricate: dwa warianty (CR 702.122). Kolejność deterministyczna.
+    legalCommands.unshift(command('resolve_fabricate', playerId, { mode: 'tokens' }));
+    legalCommands.unshift(command('resolve_fabricate', playerId, { mode: 'counters' }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeUndercityRoute) {
     // M190/B: wybór ścieżki lochu — kolejność ofert deterministyczna (ADR 0005),
     // taka jak w Oracle („Leads to: Forge, Lost Well").

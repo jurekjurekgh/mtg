@@ -376,4 +376,6 @@ export const MANA_COSTS = {
   "bring-low": "{3}{R}",
   "cathartic-reunion": "{1}{R}",
   "guildscorn-ward": "{W}",
+  "glint-sleeve-artisan": "{2}{W}",
+  "bone-shredder": "{2}{B}",
 };

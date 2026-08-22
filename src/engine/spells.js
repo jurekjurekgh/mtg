@@ -122,6 +122,15 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     }
     if (spec?.type === 'creature') {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
+      // Batch 46 (Bone Shredder): „nonartifact, nonblack creature" — te same
+      // filtry, co w ofercie/enumeracji triggerów (L48: jeden filtr, dwie
+      // ścieżki nie mogą się rozjechać).
+      if (spec.notArtifact && (object.kind === 'artifact' || (object.types ?? []).includes('Artifact'))) {
+        throw new Error(`Nielegalny cel: ${targetId} (artefakt)`);
+      }
+      if (Array.isArray(spec.notColors) && spec.notColors.some((color) => (object.colors ?? []).includes(color))) {
+        throw new Error(`Nielegalny cel: ${targetId} (wykluczony kolor)`);
+      }
       return object;
     }
     // Cel „artifact" (Shatter, CR 701.7): artefakt na polu bitwy (kind artifact

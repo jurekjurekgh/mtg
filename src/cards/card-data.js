@@ -8797,6 +8797,47 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['„multicolored" = źródło o dwóch lub więcej kolorach (CR 105.4); ochrona znika natychmiast po odpięciu aury'],
   }),
 
+  // 6. Glint-Sleeve Artisan (2XM) — {2}{W} 2/2: Fabricate 1 (CR 702.122).
+  //    NOWE: wybór kontrolera przy ETB — licznik +1/+1 ALBO token Servo.
+  defineCard({
+    id: 'glint-sleeve-artisan', name: 'Glint-Sleeve Artisan', set: '2XM',
+    types: ['Creature'], subtypes: ['Dwarf', 'Artificer'], colors: ['W'],
+    power: 2, toughness: 2, manaCost: 3, keywords: ['fabricate'],
+    oracleText: 'Fabricate 1 (When this creature enters, put a +1/+1 counter on it or create a 1/1 colorless Servo artifact creature token.)',
+    imageUri: 'https://cards.scryfall.io/large/front/1/c/1c2fd5ac-963b-49ea-bd72-d0958ef8eb3e.jpg?1783930215',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'fabricate', amount: 1 }],
+      }),
+    ],
+    artId: 189, plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+    notes: ['wybór (licznik albo token) należy do kontrolera — blokująca decyzja resolve_fabricate'],
+  }),
+
+  // 7. Bone Shredder (MH2) — {2}{B} 1/1 flying: ETB destroy target
+  //    nonartifact, nonblack creature; Echo {2}{B} (CR 702.29).
+  defineCard({
+    id: 'bone-shredder', name: 'Bone Shredder', set: 'MH2',
+    types: ['Creature'], subtypes: ['Phyrexian', 'Minion'], colors: ['B'],
+    power: 1, toughness: 1, manaCost: 3, keywords: ['flying', 'echo'],
+    echo: 3,
+    oracleText: 'Flying\nEcho {2}{B} (At the beginning of your upkeep, if this came under your control since the beginning of your last upkeep, sacrifice it unless you pay its echo cost.)\nWhen this creature enters, destroy target nonartifact, nonblack creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/3/63d0b5f0-ed45-4b30-9c24-1c12011e3513.jpg?1783926787',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature', notArtifact: true, notColors: ['B'] } },
+        effect: [{ type: 'destroy_permanent' }],
+      }),
+    ],
+    artId: 326, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+    notes: ['echo płaci się w PIERWSZYM własnym upkeepie po wejściu (CR 702.29); bez many na opłatę stwór jest poświęcany'],
+  }),
+
 ]);
 
 /**

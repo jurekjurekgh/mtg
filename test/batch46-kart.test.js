@@ -231,3 +231,146 @@ test('B46/5b: odpięcie aury natychmiast znosi ochronę (kontrola)', () => {
   assert.equal(isProtectedFromSource(state, state.objects.get('host'), multi), false,
     'ochrona liczona przy odczycie — bez aury znika');
 });
+
+// ---- Transza 3: keywordy (fabricate, echo) -------------------------------
+
+test('B46/6: Glint-Sleeve Artisan — fabricate 1: licznik ALBO token Servo', () => {
+  const state = game('p1');
+  putCard(state, 'art', 'glint-sleeve-artisan', 'p1', 'hand');
+  addMana(state, 'p1', 3, { colors: ['W', 'W', 'W'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'art');
+  assert.ok(cast, 'oferta rzutu');
+  assert.ok(execute(state, cast).ok);
+  resolveStack(state);
+  const offers = playerView(state, 'p1').legalCommands
+    .filter((c) => c.type === 'resolve_fabricate');
+  assert.equal(offers.length, 2, 'dokładnie dwa warianty: licznik albo token');
+  assert.ok(offers.some((c) => c.mode === 'counters'), 'wariant „+1/+1"');
+  assert.ok(offers.some((c) => c.mode === 'tokens'), 'wariant „token Servo"');
+});
+
+test('B46/6b: fabricate — wariant liczników daje +1/+1 na stworze', () => {
+  const state = game('p1');
+  putCard(state, 'art', 'glint-sleeve-artisan', 'p1', 'hand');
+  addMana(state, 'p1', 3, { colors: ['W', 'W', 'W'] });
+  execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'art'));
+  resolveStack(state);
+  const counters = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'resolve_fabricate' && c.mode === 'counters');
+  assert.ok(execute(state, counters).ok);
+  const artisan = [...state.objects.values()]
+    .find((o) => o.cardId === 'glint-sleeve-artisan' && o.zone === 'battlefield');
+  assert.equal(artisan.counters?.['+1/+1'], 1, 'jeden licznik +1/+1');
+  assert.equal(effectivePower(artisan, state), 3, '2/2 + licznik = 3/3');
+});
+
+test('B46/6c: fabricate — wariant tokenów tworzy 1/1 Servo (artefaktowy stwór)', () => {
+  const state = game('p1');
+  putCard(state, 'art', 'glint-sleeve-artisan', 'p1', 'hand');
+  addMana(state, 'p1', 3, { colors: ['W', 'W', 'W'] });
+  execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'art'));
+  resolveStack(state);
+  const tokens = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'resolve_fabricate' && c.mode === 'tokens');
+  assert.ok(execute(state, tokens).ok);
+  const servo = [...state.objects.values()].find((o) => o.cardId === 'token_servo');
+  assert.ok(servo, 'token Servo powstał');
+  assert.equal(servo.power, 1);
+  assert.equal(servo.toughness, 1);
+  assert.ok((servo.types ?? []).includes('Artifact'), 'artefaktowy stwór');
+  const artisan = [...state.objects.values()]
+    .find((o) => o.cardId === 'glint-sleeve-artisan' && o.zone === 'battlefield');
+  assert.ok(!artisan.counters?.['+1/+1'], 'bez licznika przy wariancie tokenu');
+});
+
+test('B46/7: Bone Shredder — ETB niszczy stwora nieartefaktowego i nieczarnego', () => {
+  const state = game('p1');
+  putCard(state, 'shredder', 'bone-shredder', 'p1', 'hand');
+  putCard(state, 'green', 'highland-game', 'p2');       // zielony 2/1 — legalny cel
+  addMana(state, 'p1', 3, { colors: ['B', 'B', 'B'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'shredder');
+  assert.ok(cast, 'oferta rzutu');
+  assert.ok(execute(state, cast).ok);
+  resolveStack(state);
+  const pick = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'resolve_trigger_target' && c.targetId === 'green');
+  if (pick) assert.ok(execute(state, pick).ok);
+  resolveStack(state);
+  const target = state.objects.get('green');
+  assert.ok(!target || target.zone === 'graveyard', 'zielony stwór zniszczony');
+});
+
+test('B46/7b: Bone Shredder — CZARNY stwór nie jest legalnym celem (L48)', () => {
+  const state = game('p1');
+  putCard(state, 'shredder', 'bone-shredder', 'p1', 'hand');
+  putCard(state, 'black', 'dread-warlock', 'p2');       // czarny
+  addMana(state, 'p1', 3, { colors: ['B', 'B', 'B'] });
+  execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'shredder'));
+  resolveStack(state);
+  const offers = playerView(state, 'p1').legalCommands
+    .filter((c) => c.type === 'resolve_trigger_target');
+  assert.ok(!offers.some((c) => c.targetId === 'black'),
+    'czarny stwór poza ofertą („nonblack" — CR 702.16 nie dotyczy, to filtr celu)');
+});
+
+test('B46/7c: Bone Shredder — echo: w swoim upkeepie płacisz albo poświęcasz', () => {
+  const state = game('p1');
+  putCard(state, 'shredder', 'bone-shredder', 'p1');
+  // Bez źródeł many silnik POŚWIĘCA od razu (nie ma czym zapłacić) — dajemy
+  // lądy, żeby sprawdzić samą DECYZJĘ „zapłać albo poświęć".
+  for (let i = 0; i < 4; i += 1) putCard(state, `sw${i}`, 'basic-swamp', 'p1');
+  // Stwór wszedł w tej turze — echo odpala się w jego pierwszym upkeepie.
+  state.objects.set('shredder', Object.freeze({
+    ...state.objects.get('shredder'), enteredOnTurn: state.turn.number, echoUnpaid: true,
+  }));
+  state.turn = jumpToStep(state.turn, 'upkeep', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  const events = [{ type: 'step_advanced', step: 'upkeep', playerId: 'p1' }];
+  processTriggers(state, events);
+  resolveStack(state);
+  assert.ok(state.pendingPayOrSacrifice,
+    'echo pyta: zapłać {2}{B} albo poświęć (CR 702.29)');
+  assert.equal(state.pendingPayOrSacrifice.amount, 3, 'koszt echa = {2}{B} (3 many)');
+});
+
+test('B46/7d: echo — bez many stwór jest POŚWIĘCANY (CR 702.29)', () => {
+  const state = game('p1');
+  putCard(state, 'shredder', 'bone-shredder', 'p1');   // brak źródeł many
+  state.objects.set('shredder', Object.freeze({
+    ...state.objects.get('shredder'), enteredOnTurn: state.turn.number, echoUnpaid: true,
+  }));
+  state.turn = jumpToStep(state.turn, 'upkeep', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  processTriggers(state, [{ type: 'step_advanced', step: 'upkeep', playerId: 'p1' }]);
+  const shredder = state.objects.get('shredder');
+  assert.ok(!shredder || shredder.zone !== 'battlefield', 'nieopłacone echo = poświęcenie');
+});
+
+test('B46/7e: echo płaci się RAZ — w kolejnym upkeepie nie pyta ponownie', () => {
+  const state = game('p1');
+  putCard(state, 'shredder', 'bone-shredder', 'p1');
+  for (let i = 0; i < 4; i += 1) putCard(state, `sw${i}`, 'basic-swamp', 'p1');
+  state.objects.set('shredder', Object.freeze({
+    ...state.objects.get('shredder'), enteredOnTurn: state.turn.number, echoUnpaid: true,
+  }));
+  state.turn = jumpToStep(state.turn, 'upkeep', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  processTriggers(state, [{ type: 'step_advanced', step: 'upkeep', playerId: 'p1' }]);
+  assert.ok(state.pendingPayOrSacrifice, 'pierwszy upkeep: decyzja');
+  const pay = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'resolve_pay_or_sacrifice' && c.pay === true);
+  assert.ok(pay, 'oferta zapłaty');
+  assert.ok(execute(state, pay).ok);
+  // Kolejny upkeep — echo już opłacone, brak nowej decyzji.
+  processTriggers(state, [{ type: 'step_advanced', step: 'upkeep', playerId: 'p1' }]);
+  assert.ok(!state.pendingPayOrSacrifice, 'echo płaci się dokładnie raz');
+  assert.equal(state.objects.get('shredder').zone, 'battlefield', 'stwór zostaje');
+});

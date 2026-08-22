@@ -400,6 +400,11 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       const object = state.objects.get(objectId);
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
       if (spec.notSelf && object.id === sourceObject.id) return false;
+      // Batch 46 (Bone Shredder): „destroy target nonartifact, nonblack
+      // creature" — filtry wykluczające po typie i kolorze. Deskryptorowo
+      // (ADR 0002); ta sama lista napędza ofertę i walidację (L48).
+      if (spec.notArtifact && (object.kind === 'artifact' || (object.types ?? []).includes('Artifact'))) return false;
+      if (Array.isArray(spec.notColors) && spec.notColors.some((color) => (object.colors ?? []).includes(color))) return false;
       if (hexproofBlocked(object)) return false;
       return true;
     });
@@ -1029,7 +1034,16 @@ function applyTriggerEffectsWereNoOp(state, ability, targets, source) {
  * poświęcenie następuje wyłącznie, gdy zapłacić się nie da.
  */
 function firePayOrSacrifice(state, ability, source, events) {
-  const amount = ability.trigger?.payMana ?? 0;
+  return queuePayOrSacrifice(state, source, ability.trigger?.payMana ?? 0, events, ability.trigger?.event);
+}
+
+/**
+ * Wspólna procedura „zapłać {N} albo poświęć" (CR 601.2h/702.1): Rupture Spire
+ * (trigger ETB) i ECHO (CR 702.29, Bone Shredder — pierwszy własny upkeep po
+ * wejściu). Wydzielona w Batchu 46, żeby obie ścieżki miały JEDNĄ regułę
+ * płatności i te same zdarzenia (L41).
+ */
+function queuePayOrSacrifice(state, source, amount, events, triggerEvent = 'echo') {
   const controllerId = source.controllerId;
   // Temat 7 (Rupture Spire, CR 601.2h/702.1): „sacrifice it unless you pay
   // {1}" — wybór należy do KONTROLERA. Gdy płatność jest możliwa (pula +
@@ -1041,7 +1055,7 @@ function firePayOrSacrifice(state, ability, source, events) {
     const before = state.events.length;
     applyEffect(state, { type: 'sacrifice_permanent' }, source, []);
     const e = event('ability_triggered', {
-      objectId: source.id, cardId: source.cardId, trigger: ability.trigger?.event,
+      objectId: source.id, cardId: source.cardId, trigger: triggerEvent,
       sacrificed: true, autoSacrificed: true,
     });
     state.events.push(e);
@@ -2253,6 +2267,22 @@ export function processTriggers(state, recentEvents) {
           if (!cond.eachUpkeep && !otherPlayersUpkeep && object.controllerId !== state.turn.activePlayerId) continue;
           tryFire(state, ability, object, [], events);
         }
+      }
+    }
+    // Batch 46 (Bone Shredder) — ECHO (CR 702.29): „At the beginning of your
+    // upkeep, if this came under your control since the beginning of your
+    // last upkeep, sacrifice it unless you pay its echo cost." Znacznik
+    // `echoUnpaid` stawia wejście na pole bitwy; pierwszy WŁASNY upkeep po
+    // wejściu pyta o zapłatę (ta sama decyzja co Rupture Spire —
+    // pendingPayOrSacrifice), a po rozstrzygnięciu znacznik gaśnie, więc
+    // echo płaci się dokładnie raz.
+    if (ev.type === 'step_advanced' && ev.step === 'upkeep') {
+      for (const object of [...state.objects.values()]) {
+        if (object.zone !== 'battlefield' || !object.echoUnpaid) continue;
+        if (object.controllerId !== state.turn.activePlayerId) continue;
+        const cost = object.echo ?? 0;
+        state.objects.set(object.id, Object.freeze({ ...object, echoUnpaid: false }));
+        queuePayOrSacrifice(state, object, cost, events);
       }
     }
     // Suspend (CR 702.62a): „At the beginning of your upkeep, if this card is

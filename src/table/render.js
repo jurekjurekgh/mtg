@@ -333,6 +333,7 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_clash_choice') return 'resolve_clash_choice';
   if (command.type === 'resolve_room_target') return 'resolve_room_target';
   if (command.type === 'resolve_undercity_route') return 'resolve_undercity_route';
+  if (command.type === 'resolve_fabricate') return 'resolve_fabricate';
   if (command.type === 'resolve_backup') return 'resolve_backup';
   if (command.type === 'resolve_sacrifice_choice') return 'resolve_sacrifice_choice';
   if (command.type === 'resolve_trigger_target') return 'resolve_trigger_target';
@@ -392,6 +393,7 @@ function choiceRequestType(commands) {
   if (first.type === 'resolve_clash_choice') return 'clash';
   if (first.type === 'resolve_room_target') return 'room-target';
   if (first.type === 'resolve_undercity_route') return 'undercity-route';
+  if (first.type === 'resolve_fabricate') return 'fabricate';
   if (first.type === 'resolve_backup') return 'target';
   if (first.type === 'resolve_sacrifice_choice') return 'sacrifice';
   if (first.type === 'resolve_trigger_target') return 'target';
@@ -679,6 +681,8 @@ const ABILITY_KEYWORD_LABELS = Object.freeze({
 export const KEYWORD_LABELS = Object.freeze({
   intimidate: 'zastraszenie (blok: artefakty/wspólny kolor)',
   toxic: 'Toksyczny (combat damage graczowi = poison)',
+  echo: 'Echo (w pierwszym swoim upkeepie zapłać koszt echa albo poświęć)',
+  fabricate: 'Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo)',
   flying: 'Latanie', vigilance: 'Czujność', transform: 'Transform', reach: 'Zasięg',
   haste: 'Pośpiech', menace: 'Postrach', lifelink: 'Dotykanie życia', deathtouch: 'Dotykanie śmierci',
   trample: 'Zadeptywanie', first_strike: 'Pierwsze uderzenie', hexproof: 'Hexproof (niecelowalność)',
@@ -840,6 +844,7 @@ function describeEffect(e) {
     // pięć kolorów = „dowolnego koloru" (CR: „add one mana of any color"),
     // brak listy = mana bezbarwna ({C}), konkretna lista = te kolory.
     add_mana: () => manaEffectLabel(e),
+    fabricate: () => `fabricate ${e.amount ?? 1} (liczniki +1/+1 albo tokeny Servo)`,
     add_flying_counter_to_face_down_you_control: () => 'połóż licznik flying na zakrytych stworach',
     amass: () => 'amass (stwórz/rozrośnij Armię)',
     animate_linked: () => 'animuj do końca tury',
@@ -2018,6 +2023,11 @@ export function commandLabel(cmd, session, view) {
     // gracz wchodzi (Oracle „Leads to: Forge, Lost Well").
     case 'resolve_undercity_route':
       return `Podziemia — idź do: ${escapeHtml(String(cmd.roomName ?? ''))}`;
+    // Batch 46 (fabricate, CR 702.122): dwa warianty wyboru kontrolera.
+    case 'resolve_fabricate':
+      return cmd.mode === 'counters'
+        ? 'Fabricate: liczniki +1/+1 na tym stworze'
+        : 'Fabricate: tokeny Servo 1/1';
     case 'resolve_room_target': {
       // Wybór celu pokoju lochu (M24): etykieta pokazuje pokój i kandydata.
       const pending = view.pendingRoomTarget;

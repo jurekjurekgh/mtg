@@ -711,6 +711,32 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     for (const objectId of hit) dealNonCombatDamage(state, sourceObject, objectId, amount);
     return;
   }
+  // Batch 46 (Glint-Sleeve Artisan) — FABRICATE N (CR 702.122): „When this
+  // creature enters, put N +1/+1 counters on it OR create N 1/1 colorless
+  // Servo artifact creature tokens." Wybór należy do KONTROLERA, więc jest
+  // blokującą decyzją (jak amass/endure), a nie deterministycznym efektem.
+  if (effect.type === 'fabricate') {
+    const amount = effect.amount ?? 1;
+    const controllerId = sourceObject.controllerId;
+    const source = state.objects.get(sourceObject.id);
+    // Stwór mógł opuścić pole bitwy, zanim trigger się rozstrzygnął — wtedy
+    // liczniki nie mają na czym usiąść, ale tokeny powstają normalnie
+    // (CR 702.122a: wybór nadal należy do gracza).
+    state.pendingFabricate = {
+      playerId: controllerId,
+      sourceId: sourceObject.id,
+      cardId: sourceObject.cardId ?? null,
+      amount,
+      hostOnBattlefield: Boolean(source && source.zone === 'battlefield'),
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('fabricate_choice_required', {
+      playerId: controllerId, sourceId: sourceObject.id,
+      cardId: sourceObject.cardId ?? null, amount,
+    }));
+    return true; // decyzja blokuje dalsze efekty
+  }
   if (effect.type === 'fight') {
     // Batch 45 (Malamet Battle Glyph, CR 701.12): dwa stwory-cele zadają
     // sobie NAWZAJEM obrażenia równe swojej mocy. Obie moce liczone PRZED

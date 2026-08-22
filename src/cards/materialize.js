@@ -48,6 +48,8 @@ export function gameObjectDataOf(card) {
     if (card.endure != null) data.endure = card.endure;
     // Toxic (CR 702.180): wartość na obiekcie gry (combat czyta source.toxic).
     if (card.toxic != null) data.toxic = card.toxic;
+    // Batch 46 (Bone Shredder): echo — koszt musi dojść na obiekt gry (L21).
+    if (card.echo != null) data.echo = card.echo;
     // Exploit (CR 702.110, Silumgar Butcher): ETB z opcjonalnym poświęceniem
     // (resolve_exploit_choice); po poświęceniu trigger „exploits".
     if (card.exploit) data.exploit = card.exploit;

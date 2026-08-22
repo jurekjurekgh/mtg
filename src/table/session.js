@@ -352,6 +352,8 @@ export function zoneLabel(zone) {
  */
 export const KEYWORD_EVENT_LABELS = Object.freeze({
   toxic: 'toksyczny (combat damage graczowi = poison)',
+  echo: 'echo (zapłać w swoim upkeepie albo poświęć)',
+  fabricate: 'fabricate (liczniki +1/+1 albo tokeny Servo)',
   haste: 'pośpiech', flying: 'latanie', trample: 'zadeptywanie', reach: 'zasięg',
   vigilance: 'czujność', menace: 'postrach', lifelink: 'dotykanie życia',
   deathtouch: 'dotykanie śmierci', first_strike: 'pierwsze uderzenie',
@@ -1047,6 +1049,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         const first = e.firstTime ? ' — obejmuje ją po raz pierwszy i zagłębia się w Podziemia' : '';
         return `${whoN(e.playerId)} obejmuje inicjatywę${first}`;
       }
+      case 'fabricate_choice_required':
+        return `${whoN(e.playerId)} wybiera fabricate ${e.amount ?? 1}: liczniki +1/+1 albo tokeny Servo`;
+      case 'fabricate_resolved':
+        return e.mode === 'counters'
+          ? `${nameOf(e.cardId)} — fabricate: ${e.amount ?? 1}× licznik +1/+1`
+          : `${nameOf(e.cardId)} — fabricate: ${e.amount ?? 1}× token Servo`;
       case 'ventured_into_undercity': return `${whoN(e.playerId)} zagłębia się w Podziemiach (pokój ${e.room}/${e.total}: ${e.roomName})`;
       // M190/B: loch ma rozgałęzienia (Oracle „Leads to: …") — gracz wybiera
       // ścieżkę, więc log musi pokazać i pytanie, i podjętą decyzję.
