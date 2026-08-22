@@ -10,6 +10,7 @@ import { clearStatModifiers } from '../src/engine/permanents.js';
 import { legalBlockerOptions } from '../src/engine/combat.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { applyEffect } from '../src/engine/effects.js';
+import { addMana } from '../src/engine/resources.js';
 import { processTriggers } from '../src/engine/triggers.js';
 
 const REGISTRY = createCardRegistry();
@@ -117,4 +118,38 @@ test('M187/N1e: Crawling Chorus — Mite z realnego triggera dies przeżywa clea
   const after = state.objects.get(token.id);
   assert.equal(after.cantBlock, true, 'Mite nadal nie może blokować');
   assert.equal(after.toxic, 1, 'toxic 1 nietknięte (kontrola: cleanup nie rusza wydrukowanych cech)');
+});
+
+// ---- N2: luka pokrycia z weryfikacji mutacyjnej (ADR 0020 B) --------------
+// Frightful Delusion ma TRZY gałęzie: zapłata, odmowa i AUTO-KONTRA bez many
+// na opłatę. Testy B44/13 pokrywały dwie pierwsze — mutacja `canPay = true`
+// (silnik zawsze pyta o opłatę, także gracza bez many) NIE czerwieniła pakietu,
+// więc gałąź bez many nie miała strażnika (L13: mutacja mierzy test, nie kod).
+test('M187/N2: counter_spell_unless_pays — bez many na opłatę czar kontrowany BEZ decyzji', () => {
+  const state = game('p2');
+  putCard(state, 'their-spell', 'fleeting-distraction', 'p2', 'hand');
+  putCard(state, 'their-target', 'highland-game', 'p1');
+  putCard(state, 'their-extra', 'alaborn-trooper', 'p2', 'hand');
+  // BEZ źródła many u p2 — nie ma z czego zapłacić {1}.
+  putCard(state, 'fd', 'frightful-delusion', 'p1', 'hand');
+  addMana(state, 'p2', 1, { colors: ['U'] });
+  addMana(state, 'p1', 3, { colors: ['U'] });
+  const cast = playerView(state, 'p2').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'their-spell');
+  assert.ok(cast, 'przeciwnik rzuca czar');
+  assert.ok(execute(state, { ...cast, targets: ['their-target'] }).ok);
+  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p2' }).ok);
+  const stackId = state.zones.stack[state.zones.stack.length - 1];
+  const counterCast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'fd');
+  assert.ok(counterCast, 'oferta kontrczaru');
+  assert.ok(execute(state, { ...counterCast, targets: [stackId] }).ok);
+  for (let i = 0; i < 6 && state.zones.stack.length > 0 && !state.pendingDiscardChoice; i += 1) {
+    execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  }
+  assert.ok(!state.pendingCounterPay,
+    'gracz bez many nie dostaje pustej decyzji „zapłać\" (mutacja canPay=true czerwieni ten test)');
+  assert.ok(state.events.some((e) => e.type === 'spell_countered'),
+    'czar skontrowany od razu (CR 601.2h — nie ma z czego zapłacić)');
+  assert.ok(state.pendingDiscardChoice, '„That player discards a card\" nadal następuje');
 });
