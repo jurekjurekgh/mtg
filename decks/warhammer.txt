@@ -7,6 +7,7 @@
 1x Index
 1x Squire's Lightblade
 1x Tome Scour
+1x Unearth
 1x Cellar Door
 1x Goblin Piker
 1x Omenspeaker
@@ -26,5 +27,5 @@
 1x Revolutionist
 2x Plains
 2x Island
-2x Swamp
+3x Swamp
 6x Mountain

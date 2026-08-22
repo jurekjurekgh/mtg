@@ -218,6 +218,8 @@ const targetTypeLabel = (spec) => {
   if (type === 'creature_with_subtypes' && spec.subtypes?.length) return `stwór z podtypem ${spec.subtypes.join(' lub ')}`;
   if (type === 'creature_with_power_at_least' && spec.min != null) return `stwór o sile ≥ ${spec.min}`;
   if (type === 'creature_with_keyword' && spec.keyword) return `stwór ze słowem kluczowym ${KEYWORD_LABELS[spec.keyword] ?? spec.keyword}`;
+  // Batch 45 (Unearth): „creature card with mana value 3 or less".
+  if (type === 'creature_card_in_graveyard' && spec.maxManaValue != null) return `karta-stwór w grobie o koszcie ≤ ${spec.maxManaValue}`;
   return base;
 };
 

@@ -8422,6 +8422,156 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['kontroler celu decyduje (resolve_counter_pay_choice): zapłać {1} — czar zostaje; nie płać — skontrowany; NIEZALEŻNIE od decyzji odrzuca potem kartę (wybór odrzucanej — CR 701.18); bez many na {1} decyzji nie ma'],
   }),
 
+  // =========================================================================
+  // Batch 45 (10 kart, 2026-08-22) — lista właściciela (M185)
+  // Call the Mountain Chocobo, Patron of the Arts, Pain for All, Assert
+  // Perfection, Ivy Lane Denizen, Malamet Battle Glyph, Unearth, Ghost
+  // Warden, Crawling Chorus, Doomed Dissenter. Oracle: docs/cards/.
+  // =========================================================================
+
+  // ---- Batch 45 — transza A: istniejące mechaniki ----
+
+  // 1. Ghost Warden (GPT) — „{T}: Target creature gets +1/+1 until end of turn."
+  defineCard({
+    id: 'ghost-warden', name: 'Ghost Warden', set: 'GPT',
+    types: ['Creature'], subtypes: ['Spirit'], colors: ['W'],
+    power: 1, toughness: 1, manaCost: 2,
+    oracleText: '{T}: Target creature gets +1/+1 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/3/4304abfe-3c81-4053-a398-574cfac613a7.jpg?1783943530',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        targets: [{ type: 'creature' }],
+        effect: { type: 'pump', power: 1, toughness: 1 },
+      }),
+    ],
+    artId: 264, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Doomed Dissenter (VOW) — dies → token Zombie 2/2.
+  defineCard({
+    id: 'doomed-dissenter', name: 'Doomed Dissenter', set: 'VOW',
+    types: ['Creature'], subtypes: ['Human'], colors: ['B'],
+    power: 1, toughness: 1, manaCost: 2,
+    oracleText: 'When this creature dies, create a 2/2 black Zombie creature token.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/7/f7c0cf16-81ea-45e3-99cc-4424d59bb44b.jpg?1783924866',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies' },
+        effect: [{
+          type: 'create_token', cardId: 'token_zombie', name: 'Zombie',
+          kind: 'creature', power: 2, toughness: 2, colors: ['B'],
+          types: ['Creature'], subtypes: ['Zombie'],
+        }],
+      }),
+    ],
+    artId: 376, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Patron of the Arts (CLB) — „When this creature enters OR dies,
+  //    create a Treasure token" — dwa triggery z tym samym efektem.
+  defineCard({
+    id: 'patron-of-the-arts', name: 'Patron of the Arts', set: 'CLB',
+    types: ['Creature'], subtypes: ['Dragon', 'Noble'], colors: ['R'],
+    power: 3, toughness: 1, manaCost: 3,
+    oracleText: 'When this creature enters or dies, create a Treasure token. (It\'s an artifact with "{T}, Sacrifice this token: Add one mana of any color.")',
+    imageUri: 'https://cards.scryfall.io/large/front/1/0/10b2b8ca-7433-4bfe-abab-e19128e46a1d.jpg?1783922732',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{
+          type: 'create_token', cardId: 'token_treasure', name: 'Treasure',
+          kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Treasure'],
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.activated,
+              cost: { tap: true, sacrificeSelf: true },
+              effect: { type: 'add_mana', amount: 1, fromTreasure: true },
+            }),
+          ],
+        }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies' },
+        effect: [{
+          type: 'create_token', cardId: 'token_treasure', name: 'Treasure',
+          kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Treasure'],
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.activated,
+              cost: { tap: true, sacrificeSelf: true },
+              effect: { type: 'add_mana', amount: 1, fromTreasure: true },
+            }),
+          ],
+        }],
+      }),
+    ],
+    artId: 339, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. Unearth (MH1) — return creature mv≤3 z grobu na pole; Cycling {2}.
+  defineCard({
+    id: 'unearth', name: 'Unearth', set: 'MH1',
+    types: ['Sorcery'], colors: ['B'], manaCost: 1,
+    oracleText: 'Return target creature card with mana value 3 or less from your graveyard to the battlefield.\nCycling {2} ({2}, Discard this card: Draw a card.)',
+    imageUri: 'https://cards.scryfall.io/large/front/b/6/b62abd0c-ec3e-45d7-989d-da269812aeef.jpg?1783933118',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature_card_in_graveyard', maxManaValue: 3 }],
+      effects: [{ type: 'return_permanent_from_graveyard' }],
+    },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'cycling',
+        cost: { mana: 2 },
+        cycling: { drawCards: 1 },
+        effect: [],
+      }),
+    ],
+    artId: 395, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Call the Mountain Chocobo (FIN) — tutor Mountain do ręki + token
+  //    Bird 2/2 z landfallowym +1/+0; Flashback {5}{R}.
+  defineCard({
+    id: 'call-the-mountain-chocobo', name: 'Call the Mountain Chocobo', set: 'FIN',
+    types: ['Sorcery'], colors: ['R'], manaCost: 4,
+    oracleText: 'Search your library for a Mountain card, reveal it, put it into your hand, then shuffle. Create a 2/2 green Bird creature token with "Whenever a land you control enters, this token gets +1/+0 until end of turn."\nFlashback {5}{R} (You may cast this card from your graveyard for its flashback cost. Then exile it.)',
+    imageUri: 'https://cards.scryfall.io/large/front/b/2/b2e1986c-2852-4843-bdc4-eddb727ba3d4.jpg?1783906607',
+    spell: {
+      timing: 'sorcery',
+      targets: [],
+      effects: [
+        { type: 'search_library_to_hand', qualifier: { subtypes: ['Mountain'] } },
+        {
+          type: 'create_token', cardId: 'token_bird_chocobo', name: 'Bird',
+          kind: 'creature', power: 2, toughness: 2, colors: ['G'],
+          types: ['Creature'], subtypes: ['Bird'],
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.triggered,
+              trigger: { event: 'land_entered_under_your_control' },
+              effect: [{ type: 'pump', power: 1, toughness: 0 }],
+            }),
+          ],
+        },
+      ],
+      flashback: { cost: 6, colors: ['R'] },
+    },
+    artId: 319, plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['token Bird pumpuje SAM SIEBIE przy wejściu landa kontrolera (landfall — trigger bez celu pumpuje źródło)'],
+  }),
+
 ]);
 
 /**

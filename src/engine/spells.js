@@ -241,6 +241,9 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     // Cel „creature card from your graveyard" (Grave Exchange) — stwór-karta
     // w grobie rzucającego.
     if (spec?.type === 'creature_card_in_graveyard') {
+      if (spec.maxManaValue != null && (object?.manaCost ?? 0) > spec.maxManaValue) {
+        throw new Error(`Nielegalny cel: ${targetId} (mana value > ${spec.maxManaValue})`);
+      }
       if (object && object.zone === 'graveyard' && object.kind === 'creature'
         && object.controllerId === casterId) return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
@@ -878,6 +881,9 @@ function targetCandidatesBySpec(state, playerId, spec) {
     case 'creature_card_in_graveyard': {
       return state.zones.graveyard.filter((objectId) => {
         const object = state.objects.get(objectId);
+        // Batch 45 (Unearth): „with mana value 3 or less" — filtr maxManaValue
+        // spójny w OFERCIE i WALIDACJI (pułapka M82).
+        if (spec?.maxManaValue != null && (object?.manaCost ?? 0) > spec.maxManaValue) return false;
         return object?.zone === 'graveyard' && object.kind === 'creature' && object.controllerId === playerId;
       });
     }

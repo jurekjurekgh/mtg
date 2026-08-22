@@ -36,9 +36,9 @@ test('M178: talia Innistrad streszcza się przewidywalnie (kolory i landy)', () 
   const registry = createCardRegistry();
   const deck = parseDeckText(fs.readFileSync('decks/innistrad.txt', 'utf8'), registry);
   const summary = summarizeDeck(deck.cardIds, registry);
-  assert.equal(summary.spells, 34, '34 wspierane karty planu Innistrad (Batch 44: +Farbog Explorer +Frightful Delusion)');
-  assert.equal(summary.lands, 17, 'ceil(34/2) = 17 landów');
-  assert.equal(summary.total, 51);
+  assert.equal(summary.spells, 35, '35 wspieranych kart planu Innistrad (Batch 45: +Doomed Dissenter)');
+  assert.equal(summary.lands, 18, 'ceil(35/2) = 18 landów');
+  assert.equal(summary.total, 53);
 });
 
 test('M178 (ADR 0023): każda wspierana karta jest w DOKŁADNIE jednej talii', () => {

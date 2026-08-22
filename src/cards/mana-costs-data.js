@@ -361,4 +361,9 @@ export const MANA_COSTS = {
   "heap-gate": "",
   "angels-herald": "{W}",
   "frightful-delusion": "{2}{U}",
+  "ghost-warden": "{1}{W}",
+  "doomed-dissenter": "{1}{B}",
+  "patron-of-the-arts": "{2}{R}",
+  "unearth": "{B}",
+  "call-the-mountain-chocobo": "{3}{R}",
 };

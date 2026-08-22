@@ -8,6 +8,7 @@
 1x Predator's Gambit
 1x Snarling Wolf
 1x Curse of the Pierced Heart
+1x Doomed Dissenter
 1x Gather the Townsfolk
 1x Grounded
 1x Lunar Rejection
@@ -36,6 +37,6 @@
 1x Grave Exchange
 3x Plains
 6x Island
-2x Swamp
+3x Swamp
 2x Mountain
 4x Forest

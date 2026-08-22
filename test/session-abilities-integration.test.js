@@ -64,7 +64,8 @@ test('pełna partia z użyciem zdolności i tokenów przechodzi przez protokół
   // M178 (talie per plan, tarkir vs warhammer) — hunter: 1, 5, 6, 9…
   // Seed 2 po Batchu 44 A (tarkir +Descendant of Storms, warhammer +Hill
   // Giant +Dismal Backwater) — hunter (kolejne: 3, 6, 7, 9, 10).
-  const session = createSession({ seed: 2, registry, decks });
+  // Seed 1 po Batchu 45 A (warhammer +Unearth) — hunter (kolejne: 3, 4, 5).
+  const session = createSession({ seed: 1, registry, decks });
   playOut(session);
   assert.equal(session.state.status, 'finished', 'partia nie doszła do rozstrzygnięcia');
   assert.ok(
@@ -87,7 +88,8 @@ test('log tłumaczy zdolności i tokeny na polski bez wycieku surowych typów', 
   // M178 (talie per plan, tarkir vs warhammer) — hunter: 1, 5, 6, 9…
   // Seed 2 po Batchu 44 A (tarkir +Descendant of Storms, warhammer +Hill
   // Giant +Dismal Backwater) — hunter (kolejne: 3, 6, 7, 9, 10).
-  const session = createSession({ seed: 2, registry, decks });
+  // Seed 1 po Batchu 45 A (warhammer +Unearth) — hunter (kolejne: 3, 4, 5).
+  const session = createSession({ seed: 1, registry, decks });
   playOut(session);
   assert.ok(
     session.log.some((e) => e.text.includes('aktywuje zdolność')),
