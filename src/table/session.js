@@ -323,6 +323,13 @@ export function triggerEventLabel(event, sourceController) {
  * pokazywał graczowi surowe identyfikatory z engine — „Segmented Krotiq —
  * library → hand". Reszta UI jest po polsku, więc to był przeciek techniczny.
  */
+/**
+ * M192/Z1: strefy UKRYTE przed przeciwnikiem (CR 400.2). Ruch karty MIEDZY
+ * nimi jest dla obserwatora bezimienny — widzi, ze cos sie przesunelo, ale
+ * nie co. Grob, wygnanie i pole bitwy sa jawne, wiec ich nie ma na liscie.
+ */
+export const HIDDEN_ZONES = Object.freeze(new Set(['hand', 'library']));
+
 export const ZONE_LABELS = Object.freeze({
   battlefield: 'pole bitwy',
   hand: 'ręka',
@@ -1905,8 +1912,26 @@ export function createSession(config) {
       // strefy karty (object_moved) ma być pokazana w modalu ruchu bota,
       // choć do logu nie trafia (decyzja o gadatliwości logu zostaje).
       if (!BOT_PAUSE_EVENTS.has(e.type)) return;
-      const movedName = nameOf(e.object?.cardId ?? state.objects.get(e.fromId)?.cardId);
-      text = `${who(e.object?.controllerId)}: ${movedName} — ${zoneLabel(e.fromZone)} → ${zoneLabel(e.toZone)}`;
+      // M192/Z1 (audyt zywym testerem, CR 400.2): ta galaz opisuje ruch karty
+      // wlasnym tekstem, bo `object_moved` jest szumem LOGU. M123 zalatalo
+      // tylko MINIATURKE (`cardId`) — nazwa w TEKSCIE nie miala zadnej bramki
+      // mgly wojny, wiec modal wypisywal wprost karty, ktore przeciwnik
+      // ogladal prywatnie (Rediscover the Way: „Krumar Initiate — biblioteka
+      // → reka", „Mountain — biblioteka → biblioteka" = pelny podglad decyzji).
+      //
+      // Regula generyczna, nie latka na jedna kartę: gdy karta PRZECIWNIKA
+      // wedruje miedzy strefami UKRYTYMI (reka, biblioteka), gracz ma prawo
+      // wiedziec, ZE ruch nastapil, ale nie CO to za karta. Ruch z/do strefy
+      // jawnej (pole bitwy, grob, wygnanie) nazywamy dalej — tam informacja
+      // jest publiczna. Jawne odsloniecie (`revealed`) tez nazywamy.
+      const movedController = e.object?.controllerId ?? state.objects.get(e.fromId)?.controllerId;
+      const hidden = movedController != null && movedController !== HUMAN_ID
+        && HIDDEN_ZONES.has(e.fromZone) && HIDDEN_ZONES.has(e.toZone)
+        && e.revealed !== true;
+      const movedName = hidden
+        ? 'karta'
+        : nameOf(e.object?.cardId ?? state.objects.get(e.fromId)?.cardId);
+      text = `${who(movedController)}: ${movedName} — ${zoneLabel(e.fromZone)} → ${zoneLabel(e.toZone)}`;
     } else {
       text = describeEvent(e);
       if (!text) return;

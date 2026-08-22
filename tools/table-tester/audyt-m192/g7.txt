@@ -1,0 +1,443 @@
+== NOWA PARTIA: gracz=worek-dziki vs bot=forgotten-realms, seed=5, profil=explorer, policy-seed=11, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Forest
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Cycling: Stall Out (koszt 2) → dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz cycling: Stall Out
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Ty: zdolność Stall Out rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Seismic Monstrosaur
+  >> Cycling: Seismic Monstrosaur (koszt 2) → szukaj: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz cycling: Seismic Monstrosaur
+  [ROZGRYWKA]   • Szukasz karty w bibliotece (Seismic Monstrosaur) — wybiera, którą wziąć do ręki albo rezygnuje
+  >> Szukanie: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odsłaniasz Mountain
+  [ROZGRYWKA]   • Ty: Mountain — biblioteka → ręka
+  [ROZGRYWKA]   • Aktywujesz cycling: Seismic Monstrosaur
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Thieves' Tools
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Thieves' Tools wchodzi na pole bitwy
+  [ROZGRYWKA]   • Thieves' Tools zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Thieves' Tools — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Treasure
+  [ROZGRYWKA]   • Treasure wchodzi na pole bitwy
+  [ROZGRYWKA]   • Thieves' Tools — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Treasure — dodanie many do puli
+  [ROZGRYWKA]   • Treasure zostaje poświęcony
+  [ROZGRYWKA]   • token Treasure przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Scorch Spitter
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Scorch Spitter wchodzi na pole bitwy
+  [ROZGRYWKA]   • Scorch Spitter zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Zagraj: Emissary Escort (koszt 1U)
+  [kreator many] Płatność 1U — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: UTapnij: Forest (G)Tapnij: Plains (W)Tapnij:  — źródła: 4
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Emissary Escort
+  [ROZGRYWKA]   • Emissary Escort wchodzi na pole bitwy
+  [ROZGRYWKA]   • Emissary Escort zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Your Temple Is Under Attack — tryb: Zawrzyj pakt → cel: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Weftblade Enhancer
+  [ROZGRYWKA]   • Your Temple Is Under Attack — tryb: Zawrzyj pakt zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Manor Gate (wchodzi zatapnięty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 9 — Ty
+  >> Rzuć: Diplomatic Relations (koszt 2G) → cel: Emissary Escort (Ty), Scorch Spitter (Nieprzyjaciel)
+  [kreator many] Płatność 2G — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: GTapnij: Forest (G)Tapnij: Plains (W)Tapnij:  — źródła: 4
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Diplomatic Relations → cel: Emissary Escort, Scorch Spitter
+  [ROZGRYWKA]   • Emissary Escort zyskuje: czujność
+  [ROZGRYWKA]   • Emissary Escort zadaje 1 obrażenie (Scorch Spitter)
+  [ROZGRYWKA]   • Diplomatic Relations zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Scorch Spitter ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Welder Automaton
+  >> Zagraj ląd: Mountain (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Zagraj: Welder Automaton (koszt 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Welder Automaton
+  [ROZGRYWKA]   • Welder Automaton wchodzi na pole bitwy
+  [ROZGRYWKA]   • Welder Automaton zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Emissary Escort
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Emissary Escort zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 17
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Angel of the Dawn
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Angel of the Dawn wchodzi na pole bitwy
+  [ROZGRYWKA]   • Angel of the Dawn zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Angel of the Dawn — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • twoje stwory (1 stwór): +1/+1 i czujność do końca tury
+  [ROZGRYWKA]   • Angel of the Dawn — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Aktywuj: Welder Automaton (Ty) (koszt 3R) — 1 obrażenie każdemu przeciwnikowi
+  [kreator many] Płatność 3R — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: RTapnij: Forest (G)Tapnij: Plains (W)Tapnij:  — źródła: 5
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Welder Automaton
+  [ROZGRYWKA]   • Welder Automaton zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 17 → 16
+  [ROZGRYWKA]   • Ty: zdolność Welder Automaton rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Glitch Ghost Surveyor
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 1 z 2 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Emissary Escort
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Angel of the Dawn blokuje Emissary Escort
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Emissary Escort zadaje 2 obrażenia (Angel of the Dawn)
+  [ROZGRYWKA]   • Angel of the Dawn zadaje 3 obrażenia (Emissary Escort)
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Nefarious Imp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Manor Gate — dodanie many do puli
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nefarious Imp wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nefarious Imp zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Patron of the Arts
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Patron of the Arts wchodzi na pole bitwy
+  [ROZGRYWKA]   • Patron of the Arts zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Patron of the Arts — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Treasure
+  [ROZGRYWKA]   • Treasure wchodzi na pole bitwy
+  [ROZGRYWKA]   • Patron of the Arts — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Treasure — dodanie many do puli
+  [ROZGRYWKA]   • Treasure zostaje poświęcony
+  [ROZGRYWKA]   • token Treasure przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Angel of the Dawn
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Angel of the Dawn zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 17
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Aktywuj: Welder Automaton (Ty) (koszt 3R) — 1 obrażenie każdemu przeciwnikowi
+  [kreator many] Płatność 3R — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: RTapnij: Forest (G)Tapnij: Plains (W)Tapnij:  — źródła: 6
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Welder Automaton
+  [ROZGRYWKA]   • Welder Automaton zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 16 → 15
+  [ROZGRYWKA]   • Ty: zdolność Welder Automaton rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Fathom Fleet Cutthroat
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Cel czaru: Malamet Battle Glyph (6 opcji)
+  [modal choice] Cel czaru: Malamet Battle Glyph Rzuć: Malamet Battle Glyph (koszt G) → cel: Welder Automaton (Ty), Patron of the Arts (Nieprzyjaciel) Rzuć: Malamet Battle Glyph (koszt G) → cel: Welder Automaton (Ty), Nefarious Imp (Nieprzyjaciel) Rzuć: Malamet Battle Glyph (koszt G) → cel: Welder Automaton (Ty), Angel of the Dawn (Nieprzyjaciel) Rzuć: Malamet Battle Glyph (koszt G) → cel: Emissary Escort (Ty), Patron of the Arts (Nieprzyjaciel) Rzuć: Malamet Battle Glyph (koszt G) → cel: Emissary Escort (Ty), Nefarious Imp (Nieprzyjaciel) Rzuć: Malamet Battle Glyph (koszt G) → cel: Emissary Escort (Ty), Angel of the Dawn (Nieprzyjaciel)
+  [modal choice]   ▶ Rzuć: Malamet Battle Glyph (koszt G) → cel: Welder Automaton (Ty), Patron of the Arts (Nieprzyjaciel)
+  [modal choice]     Rzuć: Malamet Battle Glyph (koszt G) → cel: Welder Automaton (Ty), Nefarious Imp (Nieprzyjaciel)
+  [modal choice]     Rzuć: Malamet Battle Glyph (koszt G) → cel: Welder Automaton (Ty), Angel of the Dawn (Nieprzyjaciel)
+  [modal choice]     Rzuć: Malamet Battle Glyph (koszt G) → cel: Emissary Escort (Ty), Patron of the Arts (Nieprzyjaciel)
+  [modal choice]     Rzuć: Malamet Battle Glyph (koszt G) → cel: Emissary Escort (Ty), Nefarious Imp (Nieprzyjaciel)
+  [modal choice]     Rzuć: Malamet Battle Glyph (koszt G) → cel: Emissary Escort (Ty), Angel of the Dawn (Nieprzyjaciel)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Malamet Battle Glyph → cel: Welder Automaton, Patron of the Arts
+  [ROZGRYWKA]   • Welder Automaton zadaje 2 obrażenia (Patron of the Arts)
+  [ROZGRYWKA]   • Patron of the Arts zadaje 3 obrażenia (Welder Automaton)
+  [ROZGRYWKA]   • Malamet Battle Glyph zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Welder Automaton ginie
+  [ROZGRYWKA]   • Patron of the Arts ginie
+  [ROZGRYWKA]   • Patron of the Arts — trigger (śmierć stwora)
+  [ROZGRYWKA]   • Nefarious Imp — trigger (odejście permanentów (Nieprzyjaciel) z pola bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel wykonuje scry (patrzy na 1 kartę)
+  [ROZGRYWKA]   • Nefarious Imp — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel kończy scry — zostawia na wierzchu biblioteki
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Treasure
+  [ROZGRYWKA]   • Treasure wchodzi na pole bitwy
+  [ROZGRYWKA]   • Patron of the Arts — trigger się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Treasure — dodanie many do puli
+  [ROZGRYWKA]   • Treasure zostaje poświęcony
+  [ROZGRYWKA]   • token Treasure przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Emissary Escort
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Gray Slaad
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Manor Gate — dodanie many do puli
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Gray Slaad wchodzi na pole bitwy
+  [ROZGRYWKA]   • Gray Slaad zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje Equip: Thieves' Tools → cel: Gray Slaad
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Thieves' Tools wyposaża Gray Slaad
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Angel of the Dawn, Nefarious Imp
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Angel of the Dawn zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 14
+  [ROZGRYWKA]   • Nefarious Imp zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 12
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj: Glitch Ghost Surveyor (koszt 2U)
+  [kreator many] Płatność 2U — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: UTapnij: Forest (G)Tapnij: Plains (W)Tapnij:  — źródła: 7
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Glitch Ghost Surveyor
+  [ROZGRYWKA]   • Glitch Ghost Surveyor wchodzi na pole bitwy
+  [ROZGRYWKA]   • Glitch Ghost Surveyor zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Glitch Ghost Surveyor — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zwiększasz prędkość (speed: 1)
+  [ROZGRYWKA]   • Glitch Ghost Surveyor — trigger się rozstrzyga
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Emissary Escort
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Gray Slaad blokuje Emissary Escort
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Gray Slaad zadaje 4 obrażenia (Emissary Escort)
+  [ROZGRYWKA]   • Emissary Escort ginie
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Silvanus's Invoker
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Silvanus's Invoker wchodzi na pole bitwy
+  [ROZGRYWKA]   • Silvanus's Invoker zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Angel of the Dawn, Nefarious Imp, Gray Slaad
+  >> Wybierz: Deklaracja blokujących (4 opcje)
+  [combat wizard] blokuję 1 stworami: Glitch Ghost Surveyor (2/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Glitch Ghost Surveyor blokuje Gray Slaad
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Angel of the Dawn zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 12 → 9
+  [ROZGRYWKA]   • Nefarious Imp zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 9 → 7
+  [ROZGRYWKA]   • Gray Slaad zadaje 4 obrażenia (Glitch Ghost Surveyor)
+  [ROZGRYWKA]   • Glitch Ghost Surveyor zadaje 2 obrażenia (Gray Slaad)
+  [ROZGRYWKA]   • Gray Slaad ginie
+  [ROZGRYWKA]   • Glitch Ghost Surveyor ginie
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Nefarious Imp — trigger (odejście permanentów (Nieprzyjaciel) z pola bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel wykonuje scry (patrzy na 1 kartę)
+  [ROZGRYWKA]   • Nefarious Imp — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel kończy scry — odkłada na spód biblioteki (1/1)
+  [ROZGRYWKA]   • Faza: Główna 2
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje Equip: Thieves' Tools → cel: Silvanus's Invoker
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Thieves' Tools wyposaża Silvanus's Invoker
+  [ROZGRYWKA]   • Tura 17 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Glint-Sleeve Artisan
+  >> Zagraj: Glint-Sleeve Artisan (koszt 2W)
+  [kreator many] Płatność 2W — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: WTapnij: Forest (G)Tapnij: Plains (W)Tapnij:  — źródła: 8
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Glint-Sleeve Artisan
+  [ROZGRYWKA]   • Glint-Sleeve Artisan wchodzi na pole bitwy
+  [ROZGRYWKA]   • Glint-Sleeve Artisan zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Glint-Sleeve Artisan — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Wybierasz fabricate 1: liczniki +1/+1 albo tokeny Servo
+  [ROZGRYWKA]   • Glint-Sleeve Artisan — trigger się rozstrzyga
+  >> Wybierz: Wariant (2 opcje)
+  [modal choice] Wybierz: Wariant Fabricate: liczniki +1/+1 na tym stworze Fabricate: tokeny Servo 1/1
+  [modal choice]   ▶ Fabricate: liczniki +1/+1 na tym stworze
+  [modal choice]     Fabricate: tokeny Servo 1/1
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Glint-Sleeve Artisan dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Stirring Bard
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Stirring Bard wchodzi na pole bitwy
+  [ROZGRYWKA]   • Stirring Bard zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Stirring Bard — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Stirring Bard — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Plains
+  [ROZGRYWKA]   • Nieprzyjaciel: Plains — biblioteka → ręka
+  [ROZGRYWKA]   • Nieprzyjaciel znajduje Plains i tasuje bibliotekę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Angel of the Dawn, Silvanus's Invoker
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Angel of the Dawn zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 7 → 4
+  [ROZGRYWKA]   • Silvanus's Invoker zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 4 → 1
+  [ROZGRYWKA]   • Tura 19 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Skilled Animator
+  >> Zagraj: Skilled Animator (koszt 2U)
+  [kreator many] Płatność 2U — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: UTapnij: Forest (G)Tapnij: Plains (W)Tapnij:  — źródła: 8
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Skilled Animator
+  [ROZGRYWKA]   • Skilled Animator wchodzi na pole bitwy
+  [ROZGRYWKA]   • Skilled Animator zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Skilled Animator — trigger bez efektu (brak legalnych celów)
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Glint-Sleeve Artisan
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Stirring Bard blokuje Glint-Sleeve Artisan
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Glint-Sleeve Artisan zadaje 3 obrażenia (Stirring Bard)
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera drogę: Secret Entrance → Forge
+  [ROZGRYWKA]   • Nieprzyjaciel zagłębia się w Podziemiach (pokój 2/9: Forge)
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera cel pokoju Forge
+  [ROZGRYWKA]   • Angel of the Dawn dostaje +2 liczniki +1/+1 (razem 2)
+  [ROZGRYWKA]   • Nieprzyjaciel wskazuje Angel of the Dawn (pokój Forge)
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Heap Gate
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Greatsword of Tyr
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Stirring Bard — nadanie do końca tury: postrach, pośpiech → cel: Angel of the Dawn
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Heap Gate
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Treasure
+  [ROZGRYWKA]   • Treasure wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Heap Gate rozstrzygnięta
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Treasure — dodanie many do puli
+  [ROZGRYWKA]   • Treasure zostaje poświęcony
+  [ROZGRYWKA]   • token Treasure przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Curate
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel wykonuje surveil (patrzy na 2 karty)
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Swamp do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel kończy surveil — 1 karta idzie do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Curate zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Angel of the Dawn zyskuje: postrach, pośpiech
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Stirring Bard rozstrzygnięta
+  [ROZGRYWKA]   • Greatsword of Tyr wchodzi na pole bitwy
+  [ROZGRYWKA]   • Greatsword of Tyr zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Cloak of the Bat
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 83 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Weftblade Enhancer · 6 · Creature — Drix Artificer · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · 3/4 | Fathom Fleet Cutthroat · 4 · Creature — Human Pirate · Gdy wejdzie na pole bitwy: zniszcz cel. · 3/3
+  MOJE POLA: Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 1x +1/+1 · 3/3 | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · choroba · 1/3 | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę bezbarwną · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Heap Gate · Land — Gate · {T}: dodaj 1 manę bezbarwną · {1}, {T}: dodaj 1 manę dowolnego koloru · {1}, {T}, tapnij inny nietapnięty permanent (Gate): stwórz token Treasure · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. · wyposaża → Silvanus's Invoker | Angel of the Dawn · 5 · Creature — Angel · Latanie Postrach Pośpiech · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · Postrach · Pośpiech · 2x +1/+1 · 5/5 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Silvanus's Invoker · 3 · Creature — Dragon Druid · {8}: cel: twój ląd — odkręć + stanie się stworem do końca tury · wyposażona: Thieves' Tools · 3/2 | Stirring Bard · 4 · Creature — Dragon Bard · Obrońca · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · {T}: cel: stwór — zdobądź Postrach, Pośpiech do końca tury · 0/4 | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap.
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Plains, Canonized in Blood, Stall Out, Diplomatic Relations, Malamet Battle Glyph, Emissary Escort, Forest ⏎ Nowa partia (seed 5). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 23, kliknięte: 23, modale: 3, sondy noop: 69 (panel 55, modal 14)
+== DETEKTORY: brak zgłoszeń ==

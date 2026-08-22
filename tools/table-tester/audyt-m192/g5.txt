@@ -1,0 +1,351 @@
+== NOWA PARTIA: gracz=tarkir vs bot=forgotten-realms, seed=31, profil=defensive, policy-seed=7, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Gurmag Drowner
+  [ROZGRYWKA]   • Dobierasz: Knockout Maneuver
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Trade Route Envoy
+  [ROZGRYWKA]   • Dobierasz: Silumgar Butcher
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Palace Familiar
+  >> Wybierz: Karty na spód biblioteki (mulligan) (7 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (1): Gurmag Drowner Mulligan — odłóż na spód (1): Knockout Maneuver Mulligan — odłóż na spód (1): Mountain Mulligan — odłóż na spód (1): Trade Route Envoy Mulligan — odłóż na spód (1): Silumgar Butcher Mulligan — odłóż na spód (1): Forest Mulligan — odłóż na spód (1): Palace Familiar
+  [modal choice]   ▶ Mulligan — odłóż na spód (1): Gurmag Drowner
+  [modal choice]     Mulligan — odłóż na spód (1): Knockout Maneuver
+  [modal choice]     Mulligan — odłóż na spód (1): Mountain
+  [modal choice]     Mulligan — odłóż na spód (1): Trade Route Envoy
+  [modal choice]     Mulligan — odłóż na spód (1): Silumgar Butcher
+  [modal choice]     Mulligan — odłóż na spód (1): Forest
+  [modal choice]     Mulligan — odłóż na spód (1): Palace Familiar
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Rush of Battle
+  [ROZGRYWKA]   • Dobierasz: Palace Familiar
+  [ROZGRYWKA]   • Dobierasz: Force Away
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Awaken the Bear
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Wybierz: Karty na spód biblioteki (mulligan) (21 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (2): Rush of Battle, Palace Familiar Mulligan — odłóż na spód (2): Rush of Battle, Force Away Mulligan — odłóż na spód (2): Rush of Battle, Mountain Mulligan — odłóż na spód (2): Rush of Battle, Swamp Mulligan — odłóż na spód (2): Rush of Battle, Awaken the Bear Mulligan — odłóż na spód (2): Rush of Battle, Forest Mulligan — odłóż na spód (2): Palace Familiar, Force Away Mulligan — odłóż na spód (2): Palace Familiar, Mountain Mulligan — odłóż na spód (2): Palace Familiar, Swamp Mulligan — odłóż na spód (2): Palace Familiar, Awaken the Bear Mulligan — odłóż na spód (2): Palace Familiar, Forest Mulligan — odłóż na spód (2): Force Away, Mountain Mulligan — odłóż na spód (2): Force Away, Swamp Mulligan — odłóż na spód (2): Force Away, Awaken the Bear Mulligan — odłóż na spód (2): Force Away, Forest Mulligan — odłóż na spód (2): Mountain, Swamp Mulligan — odłóż na spód (2): Mountain, Awaken the Bear Mulligan — odłóż na spód (2): Mountain, Forest Mulligan — odłóż na spód (2): Swamp, Awaken the Bear Mulligan — odłóż na spód (2): Swamp, Forest Mulligan — odłóż na spód (2): Awaken the Bear, Forest
+  [modal choice]   ▶ Mulligan — odłóż na spód (2): Rush of Battle, Palace Familiar
+  [modal choice]     Mulligan — odłóż na spód (2): Rush of Battle, Force Away
+  [modal choice]     Mulligan — odłóż na spód (2): Rush of Battle, Mountain
+  [modal choice]     Mulligan — odłóż na spód (2): Rush of Battle, Swamp
+  [modal choice]     Mulligan — odłóż na spód (2): Rush of Battle, Awaken the Bear
+  [modal choice]     Mulligan — odłóż na spód (2): Rush of Battle, Forest
+  [modal choice]     Mulligan — odłóż na spód (2): Palace Familiar, Force Away
+  [modal choice]     Mulligan — odłóż na spód (2): Palace Familiar, Mountain
+  [modal choice]     Mulligan — odłóż na spód (2): Palace Familiar, Swamp
+  [modal choice]     Mulligan — odłóż na spód (2): Palace Familiar, Awaken the Bear
+  [modal choice]     Mulligan — odłóż na spód (2): Palace Familiar, Forest
+  [modal choice]     Mulligan — odłóż na spód (2): Force Away, Mountain
+  [modal choice]     Mulligan — odłóż na spód (2): Force Away, Swamp
+  [modal choice]     Mulligan — odłóż na spód (2): Force Away, Awaken the Bear
+  [modal choice]     Mulligan — odłóż na spód (2): Force Away, Forest
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Swamp
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Awaken the Bear
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Forest
+  [modal choice]     Mulligan — odłóż na spód (2): Swamp, Awaken the Bear
+  [modal choice]     Mulligan — odłóż na spód (2): Swamp, Forest
+  [modal choice]     Mulligan — odłóż na spód (2): Awaken the Bear, Forest
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Ainok Tracker
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Gurmag Drowner
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Krumar Initiate
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Ojutai's Breath
+  >> Wybierz: Karty na spód biblioteki (mulligan) (32 opcje)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (3): Ainok Tracker, Forest, Gurmag Drowner Mulligan — odłóż na spód (3): Ainok Tracker, Forest, Swamp Mulligan — odłóż na spód (3): Ainok Tracker, Forest, Krumar Initiate Mulligan — odłóż na spód (3): Ainok Tracker, Forest, Mountain Mulligan — odłóż na spód (3): Ainok Tracker, Forest, Ojutai's Breath Mulligan — odłóż na spód (3): Ainok Tracker, Gurmag Drowner, Swamp Mulligan — odłóż na spód (3): Ainok Tracker, Gurmag Drowner, Krumar Initiate Mulligan — odłóż na spód (3): Ainok Tracker, Gurmag Drowner, Mountain Mulligan — odłóż na spód (3): Ainok Tracker, Gurmag Drowner, Ojutai's Breath Mulligan — odłóż na spód (3): Ainok Tracker, Swamp, Krumar Initiate Mulligan — odłóż na spód (3): Ainok Tracker, Swamp, Mountain Mulligan — odłóż na spód (3): Ainok Tracker, Swamp, Ojutai's Breath Mulligan — odłóż na spód (3): Ainok Tracker, Krumar Initiate, Mountain Mulligan — odłóż na spód (3): Ainok Tracker, Krumar Initiate, Ojutai's Breath Mulligan — odłóż na spód (3): Ainok Tracker, Mountain, Ojutai's Breath Mulligan — odłóż na spód (3): Forest, Gurmag Drowner, Swamp Mulligan — odłóż na spód (3): Forest, Gurmag Drowner, Krumar Initiate Mulligan — odłóż na spód (3): Forest, Gurmag Drowner, Mountain Mulligan — odłóż na spód (3): Forest, Gurmag Drowner, Ojutai's Breath Mulligan — odłóż na spód (3): Forest, Swamp, Krumar Initiate Mulligan — odłóż na spód (3): Forest, Swamp, Mountain Mulligan — odłóż na spód (3): Forest, Swamp, Ojutai's Breath Mulligan — odłóż na spód (3): Forest, Krumar Initiate, Mountain Mulligan — odłóż na spód (3): Forest, Krumar Initiate, Ojutai's Breath Mulligan — odłóż na spód (3): Forest, Mountain, Ojutai's Breath Mulligan — odłóż na spód (3): Gurmag Drowner, Swamp, Krumar Initiate Mulligan — odłóż na spód (3): Gurmag Drowner, Swamp, Mountain Mulligan — odłóż na spód (3): Gurmag Drowner, Swamp, Ojutai's Breath Mulligan — odłóż na spód (3): Gurmag Drowner, Krumar Initiate, Mountain Mulligan — odłóż na spód (3): Gurmag Drowner, Krumar Initiate, Ojutai's Breath Mulligan — odłóż na spód (3): Gurmag Drowner, Mountain, Ojutai's Breath Mulligan — odłóż na spód (3): Swamp, Krumar Initiate, Mountain
+  [modal choice]   ▶ Mulligan — odłóż na spód (3): Ainok Tracker, Forest, Gurmag Drowner
+  [modal choice]     Mulligan — odłóż na spód (3): Ainok Tracker, Forest, Swamp
+  [modal choice]     Mulligan — odłóż na spód (3): Ainok Tracker, Forest, Krumar Initiate
+  [modal choice]     Mulligan — odłóż na spód (3): Ainok Tracker, Forest, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Ainok Tracker, Forest, Ojutai's Breath
+  [modal choice]     Mulligan — odłóż na spód (3): Ainok Tracker, Gurmag Drowner, Swamp
+  [modal choice]     Mulligan — odłóż na spód (3): Ainok Tracker, Gurmag Drowner, Krumar Initiate
+  [modal choice]     Mulligan — odłóż na spód (3): Ainok Tracker, Gurmag Drowner, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Ainok Tracker, Gurmag Drowner, Ojutai's Breath
+  [modal choice]     Mulligan — odłóż na spód (3): Ainok Tracker, Swamp, Krumar Initiate
+  [modal choice]     Mulligan — odłóż na spód (3): Ainok Tracker, Swamp, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Ainok Tracker, Swamp, Ojutai's Breath
+  [modal choice]     Mulligan — odłóż na spód (3): Ainok Tracker, Krumar Initiate, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Ainok Tracker, Krumar Initiate, Ojutai's Breath
+  [modal choice]     Mulligan — odłóż na spód (3): Ainok Tracker, Mountain, Ojutai's Breath
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Gurmag Drowner, Swamp
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Gurmag Drowner, Krumar Initiate
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Gurmag Drowner, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Gurmag Drowner, Ojutai's Breath
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Swamp, Krumar Initiate
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Swamp, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Swamp, Ojutai's Breath
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Krumar Initiate, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Krumar Initiate, Ojutai's Breath
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Mountain, Ojutai's Breath
+  [modal choice]     Mulligan — odłóż na spód (3): Gurmag Drowner, Swamp, Krumar Initiate
+  [modal choice]     Mulligan — odłóż na spód (3): Gurmag Drowner, Swamp, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Gurmag Drowner, Swamp, Ojutai's Breath
+  [modal choice]     Mulligan — odłóż na spód (3): Gurmag Drowner, Krumar Initiate, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Gurmag Drowner, Krumar Initiate, Ojutai's Breath
+  [modal choice]     Mulligan — odłóż na spód (3): Gurmag Drowner, Mountain, Ojutai's Breath
+  [modal choice]     Mulligan — odłóż na spód (3): Swamp, Krumar Initiate, Mountain
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Descendant of Storms
+  [ROZGRYWKA]   • Dobierasz: Sarkhan's Rage
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Dragonbroods' Relic
+  [ROZGRYWKA]   • Dobierasz: Silumgar Butcher
+  [ROZGRYWKA]   • Dobierasz: Jeskai Windscout
+  >> Wybierz: Karty na spód biblioteki (mulligan) (32 opcje)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (4): Descendant of Storms, Sarkhan's Rage, Island, Forest Mulligan — odłóż na spód (4): Descendant of Storms, Sarkhan's Rage, Island, Dragonbroods' Relic Mulligan — odłóż na spód (4): Descendant of Storms, Sarkhan's Rage, Island, Silumgar Butcher Mulligan — odłóż na spód (4): Descendant of Storms, Sarkhan's Rage, Island, Jeskai Windscout Mulligan — odłóż na spód (4): Descendant of Storms, Sarkhan's Rage, Forest, Dragonbroods' Relic Mulligan — odłóż na spód (4): Descendant of Storms, Sarkhan's Rage, Forest, Silumgar Butcher Mulligan — odłóż na spód (4): Descendant of Storms, Sarkhan's Rage, Forest, Jeskai Windscout Mulligan — odłóż na spód (4): Descendant of Storms, Sarkhan's Rage, Dragonbroods' Relic, Silumgar Butcher Mulligan — odłóż na spód (4): Descendant of Storms, Sarkhan's Rage, Dragonbroods' Relic, Jeskai Windscout Mulligan — odłóż na spód (4): Descendant of Storms, Sarkhan's Rage, Silumgar Butcher, Jeskai Windscout Mulligan — odłóż na spód (4): Descendant of Storms, Island, Forest, Dragonbroods' Relic Mulligan — odłóż na spód (4): Descendant of Storms, Island, Forest, Silumgar Butcher Mulligan — odłóż na spód (4): Descendant of Storms, Island, Forest, Jeskai Windscout Mulligan — odłóż na spód (4): Descendant of Storms, Island, Dragonbroods' Relic, Silumgar Butcher Mulligan — odłóż na spód (4): Descendant of Storms, Island, Dragonbroods' Relic, Jeskai Windscout Mulligan — odłóż na spód (4): Descendant of Storms, Island, Silumgar Butcher, Jeskai Windscout Mulligan — odłóż na spód (4): Descendant of Storms, Forest, Dragonbroods' Relic, Silumgar Butcher Mulligan — odłóż na spód (4): Descendant of Storms, Forest, Dragonbroods' Relic, Jeskai Windscout Mulligan — odłóż na spód (4): Descendant of Storms, Forest, Silumgar Butcher, Jeskai Windscout Mulligan — odłóż na spód (4): Descendant of Storms, Dragonbroods' Relic, Silumgar Butcher, Jeskai Windscout Mulligan — odłóż na spód (4): Sarkhan's Rage, Island, Forest, Dragonbroods' Relic Mulligan — odłóż na spód (4): Sarkhan's Rage, Island, Forest, Silumgar Butcher Mulligan — odłóż na spód (4): Sarkhan's Rage, Island, Forest, Jeskai Windscout Mulligan — odłóż na spód (4): Sarkhan's Rage, Island, Dragonbroods' Relic, Silumgar Butcher Mulligan — odłóż na spód (4): Sarkhan's Rage, Island, Dragonbroods' Relic, Jeskai Windscout Mulligan — odłóż na spód (4): Sarkhan's Rage, Island, Silumgar Butcher, Jeskai Windscout Mulligan — odłóż na spód (4): Sarkhan's Rage, Forest, Dragonbroods' Relic, Silumgar Butcher Mulligan — odłóż na spód (4): Sarkhan's Rage, Forest, Dragonbroods' Relic, Jeskai Windscout Mulligan — odłóż na spód (4): Sarkhan's Rage, Forest, Silumgar Butcher, Jeskai Windscout Mulligan — odłóż na spód (4): Sarkhan's Rage, Dragonbroods' Relic, Silumgar Butcher, Jeskai Windscout Mulligan — odłóż na spód (4): Island, Forest, Dragonbroods' Relic, Silumgar Butcher Mulligan — odłóż na spód (4): Island, Forest, Dragonbroods' Relic, Jeskai Windscout
+  [modal choice]   ▶ Mulligan — odłóż na spód (4): Descendant of Storms, Sarkhan's Rage, Island, Forest
+  [modal choice]     Mulligan — odłóż na spód (4): Descendant of Storms, Sarkhan's Rage, Island, Dragonbroods' Relic
+  [modal choice]     Mulligan — odłóż na spód (4): Descendant of Storms, Sarkhan's Rage, Island, Silumgar Butcher
+  [modal choice]     Mulligan — odłóż na spód (4): Descendant of Storms, Sarkhan's Rage, Island, Jeskai Windscout
+  [modal choice]     Mulligan — odłóż na spód (4): Descendant of Storms, Sarkhan's Rage, Forest, Dragonbroods' Relic
+  [modal choice]     Mulligan — odłóż na spód (4): Descendant of Storms, Sarkhan's Rage, Forest, Silumgar Butcher
+  [modal choice]     Mulligan — odłóż na spód (4): Descendant of Storms, Sarkhan's Rage, Forest, Jeskai Windscout
+  [modal choice]     Mulligan — odłóż na spód (4): Descendant of Storms, Sarkhan's Rage, Dragonbroods' Relic, Silumgar Butcher
+  [modal choice]     Mulligan — odłóż na spód (4): Descendant of Storms, Sarkhan's Rage, Dragonbroods' Relic, Jeskai Windscout
+  [modal choice]     Mulligan — odłóż na spód (4): Descendant of Storms, Sarkhan's Rage, Silumgar Butcher, Jeskai Windscout
+  [modal choice]     Mulligan — odłóż na spód (4): Descendant of Storms, Island, Forest, Dragonbroods' Relic
+  [modal choice]     Mulligan — odłóż na spód (4): Descendant of Storms, Island, Forest, Silumgar Butcher
+  [modal choice]     Mulligan — odłóż na spód (4): Descendant of Storms, Island, Forest, Jeskai Windscout
+  [modal choice]     Mulligan — odłóż na spód (4): Descendant of Storms, Island, Dragonbroods' Relic, Silumgar Butcher
+  [modal choice]     Mulligan — odłóż na spód (4): Descendant of Storms, Island, Dragonbroods' Relic, Jeskai Windscout
+  [modal choice]     Mulligan — odłóż na spód (4): Descendant of Storms, Island, Silumgar Butcher, Jeskai Windscout
+  [modal choice]     Mulligan — odłóż na spód (4): Descendant of Storms, Forest, Dragonbroods' Relic, Silumgar Butcher
+  [modal choice]     Mulligan — odłóż na spód (4): Descendant of Storms, Forest, Dragonbroods' Relic, Jeskai Windscout
+  [modal choice]     Mulligan — odłóż na spód (4): Descendant of Storms, Forest, Silumgar Butcher, Jeskai Windscout
+  [modal choice]     Mulligan — odłóż na spód (4): Descendant of Storms, Dragonbroods' Relic, Silumgar Butcher, Jeskai Windscout
+  [modal choice]     Mulligan — odłóż na spód (4): Sarkhan's Rage, Island, Forest, Dragonbroods' Relic
+  [modal choice]     Mulligan — odłóż na spód (4): Sarkhan's Rage, Island, Forest, Silumgar Butcher
+  [modal choice]     Mulligan — odłóż na spód (4): Sarkhan's Rage, Island, Forest, Jeskai Windscout
+  [modal choice]     Mulligan — odłóż na spód (4): Sarkhan's Rage, Island, Dragonbroods' Relic, Silumgar Butcher
+  [modal choice]     Mulligan — odłóż na spód (4): Sarkhan's Rage, Island, Dragonbroods' Relic, Jeskai Windscout
+  [modal choice]     Mulligan — odłóż na spód (4): Sarkhan's Rage, Island, Silumgar Butcher, Jeskai Windscout
+  [modal choice]     Mulligan — odłóż na spód (4): Sarkhan's Rage, Forest, Dragonbroods' Relic, Silumgar Butcher
+  [modal choice]     Mulligan — odłóż na spód (4): Sarkhan's Rage, Forest, Dragonbroods' Relic, Jeskai Windscout
+  [modal choice]     Mulligan — odłóż na spód (4): Sarkhan's Rage, Forest, Silumgar Butcher, Jeskai Windscout
+  [modal choice]     Mulligan — odłóż na spód (4): Sarkhan's Rage, Dragonbroods' Relic, Silumgar Butcher, Jeskai Windscout
+  [modal choice]     Mulligan — odłóż na spód (4): Island, Forest, Dragonbroods' Relic, Silumgar Butcher
+  [modal choice]     Mulligan — odłóż na spód (4): Island, Forest, Dragonbroods' Relic, Jeskai Windscout
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Vow of Wildness
+  [ROZGRYWKA]   • Dobierasz: Ojutai's Breath
+  [ROZGRYWKA]   • Dobierasz: Knockout Maneuver
+  [ROZGRYWKA]   • Dobierasz: Rakshasa Vizier
+  [ROZGRYWKA]   • Dobierasz: Krotiq Nestguard
+  [ROZGRYWKA]   • Dobierasz: Kin-Tree Nurturer
+  [ROZGRYWKA]   • Dobierasz: Ainok Tracker
+  >> Wybierz: Karty na spód biblioteki (mulligan) (21 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (5): Vow of Wildness, Ojutai's Breath, Knockout Maneuver, Rakshasa Vizier, Krotiq Nestguard Mulligan — odłóż na spód (5): Vow of Wildness, Ojutai's Breath, Knockout Maneuver, Rakshasa Vizier, Kin-Tree Nurturer Mulligan — odłóż na spód (5): Vow of Wildness, Ojutai's Breath, Knockout Maneuver, Rakshasa Vizier, Ainok Tracker Mulligan — odłóż na spód (5): Vow of Wildness, Ojutai's Breath, Knockout Maneuver, Krotiq Nestguard, Kin-Tree Nurturer Mulligan — odłóż na spód (5): Vow of Wildness, Ojutai's Breath, Knockout Maneuver, Krotiq Nestguard, Ainok Tracker Mulligan — odłóż na spód (5): Vow of Wildness, Ojutai's Breath, Knockout Maneuver, Kin-Tree Nurturer, Ainok Tracker Mulligan — odłóż na spód (5): Vow of Wildness, Ojutai's Breath, Rakshasa Vizier, Krotiq Nestguard, Kin-Tree Nurturer Mulligan — odłóż na spód (5): Vow of Wildness, Ojutai's Breath, Rakshasa Vizier, Krotiq Nestguard, Ainok Tracker Mulligan — odłóż na spód (5): Vow of Wildness, Ojutai's Breath, Rakshasa Vizier, Kin-Tree Nurturer, Ainok Tracker Mulligan — odłóż na spód (5): Vow of Wildness, Ojutai's Breath, Krotiq Nestguard, Kin-Tree Nurturer, Ainok Tracker Mulligan — odłóż na spód (5): Vow of Wildness, Knockout Maneuver, Rakshasa Vizier, Krotiq Nestguard, Kin-Tree Nurturer Mulligan — odłóż na spód (5): Vow of Wildness, Knockout Maneuver, Rakshasa Vizier, Krotiq Nestguard, Ainok Tracker Mulligan — odłóż na spód (5): Vow of Wildness, Knockout Maneuver, Rakshasa Vizier, Kin-Tree Nurturer, Ainok Tracker Mulligan — odłóż na spód (5): Vow of Wildness, Knockout Maneuver, Krotiq Nestguard, Kin-Tree Nurturer, Ainok Tracker Mulligan — odłóż na spód (5): Vow of Wildness, Rakshasa Vizier, Krotiq Nestguard, Kin-Tree Nurturer, Ainok Tracker Mulligan — odłóż na spód (5): Ojutai's Breath, Knockout Maneuver, Rakshasa Vizier, Krotiq Nestguard, Kin-Tree Nurturer Mulligan — odłóż na spód (5): Ojutai's Breath, Knockout Maneuver, Rakshasa Vizier, Krotiq Nestguard, Ainok Tracker Mulligan — odłóż na spód (5): Ojutai's Breath, Knockout Maneuver, Rakshasa Vizier, Kin-Tree Nurturer, Ainok Tracker Mulligan — odłóż na spód (5): Ojutai's Breath, Knockout Maneuver, Krotiq Nestguard, Kin-Tree Nurturer, Ainok Tracker Mulligan — odłóż na spód (5): Ojutai's Breath, Rakshasa Vizier, Krotiq Nestguard, Kin-Tree Nurturer, Ainok Tracker Mulligan — odłóż na spód (5): Knockout Maneuver, Rakshasa Vizier, Krotiq Nestguard, Kin-Tree Nurturer, Ainok Tracker
+  [modal choice]   ▶ Mulligan — odłóż na spód (5): Vow of Wildness, Ojutai's Breath, Knockout Maneuver, Rakshasa Vizier, Krotiq Nestguard
+  [modal choice]     Mulligan — odłóż na spód (5): Vow of Wildness, Ojutai's Breath, Knockout Maneuver, Rakshasa Vizier, Kin-Tree Nurturer
+  [modal choice]     Mulligan — odłóż na spód (5): Vow of Wildness, Ojutai's Breath, Knockout Maneuver, Rakshasa Vizier, Ainok Tracker
+  [modal choice]     Mulligan — odłóż na spód (5): Vow of Wildness, Ojutai's Breath, Knockout Maneuver, Krotiq Nestguard, Kin-Tree Nurturer
+  [modal choice]     Mulligan — odłóż na spód (5): Vow of Wildness, Ojutai's Breath, Knockout Maneuver, Krotiq Nestguard, Ainok Tracker
+  [modal choice]     Mulligan — odłóż na spód (5): Vow of Wildness, Ojutai's Breath, Knockout Maneuver, Kin-Tree Nurturer, Ainok Tracker
+  [modal choice]     Mulligan — odłóż na spód (5): Vow of Wildness, Ojutai's Breath, Rakshasa Vizier, Krotiq Nestguard, Kin-Tree Nurturer
+  [modal choice]     Mulligan — odłóż na spód (5): Vow of Wildness, Ojutai's Breath, Rakshasa Vizier, Krotiq Nestguard, Ainok Tracker
+  [modal choice]     Mulligan — odłóż na spód (5): Vow of Wildness, Ojutai's Breath, Rakshasa Vizier, Kin-Tree Nurturer, Ainok Tracker
+  [modal choice]     Mulligan — odłóż na spód (5): Vow of Wildness, Ojutai's Breath, Krotiq Nestguard, Kin-Tree Nurturer, Ainok Tracker
+  [modal choice]     Mulligan — odłóż na spód (5): Vow of Wildness, Knockout Maneuver, Rakshasa Vizier, Krotiq Nestguard, Kin-Tree Nurturer
+  [modal choice]     Mulligan — odłóż na spód (5): Vow of Wildness, Knockout Maneuver, Rakshasa Vizier, Krotiq Nestguard, Ainok Tracker
+  [modal choice]     Mulligan — odłóż na spód (5): Vow of Wildness, Knockout Maneuver, Rakshasa Vizier, Kin-Tree Nurturer, Ainok Tracker
+  [modal choice]     Mulligan — odłóż na spód (5): Vow of Wildness, Knockout Maneuver, Krotiq Nestguard, Kin-Tree Nurturer, Ainok Tracker
+  [modal choice]     Mulligan — odłóż na spód (5): Vow of Wildness, Rakshasa Vizier, Krotiq Nestguard, Kin-Tree Nurturer, Ainok Tracker
+  [modal choice]     Mulligan — odłóż na spód (5): Ojutai's Breath, Knockout Maneuver, Rakshasa Vizier, Krotiq Nestguard, Kin-Tree Nurturer
+  [modal choice]     Mulligan — odłóż na spód (5): Ojutai's Breath, Knockout Maneuver, Rakshasa Vizier, Krotiq Nestguard, Ainok Tracker
+  [modal choice]     Mulligan — odłóż na spód (5): Ojutai's Breath, Knockout Maneuver, Rakshasa Vizier, Kin-Tree Nurturer, Ainok Tracker
+  [modal choice]     Mulligan — odłóż na spód (5): Ojutai's Breath, Knockout Maneuver, Krotiq Nestguard, Kin-Tree Nurturer, Ainok Tracker
+  [modal choice]     Mulligan — odłóż na spód (5): Ojutai's Breath, Rakshasa Vizier, Krotiq Nestguard, Kin-Tree Nurturer, Ainok Tracker
+  [modal choice]     Mulligan — odłóż na spód (5): Knockout Maneuver, Rakshasa Vizier, Krotiq Nestguard, Kin-Tree Nurturer, Ainok Tracker
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Knockout Maneuver
+  [ROZGRYWKA]   • Dobierasz: Monastery Flock
+  [ROZGRYWKA]   • Dobierasz: Highland Game
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Woolly Loxodon
+  [ROZGRYWKA]   • Dobierasz: Rush of Battle
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Wybierz: Karty na spód biblioteki (mulligan) (7 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (6): Knockout Maneuver, Monastery Flock, Highland Game, Forest, Woolly Loxodon, Rush of Battle Mulligan — odłóż na spód (6): Knockout Maneuver, Monastery Flock, Highland Game, Forest, Woolly Loxodon, Plains Mulligan — odłóż na spód (6): Knockout Maneuver, Monastery Flock, Highland Game, Forest, Rush of Battle, Plains Mulligan — odłóż na spód (6): Knockout Maneuver, Monastery Flock, Highland Game, Woolly Loxodon, Rush of Battle, Plains Mulligan — odłóż na spód (6): Knockout Maneuver, Monastery Flock, Forest, Woolly Loxodon, Rush of Battle, Plains Mulligan — odłóż na spód (6): Knockout Maneuver, Highland Game, Forest, Woolly Loxodon, Rush of Battle, Plains Mulligan — odłóż na spód (6): Monastery Flock, Highland Game, Forest, Woolly Loxodon, Rush of Battle, Plains
+  [modal choice]   ▶ Mulligan — odłóż na spód (6): Knockout Maneuver, Monastery Flock, Highland Game, Forest, Woolly Loxodon, Rush of Battle
+  [modal choice]     Mulligan — odłóż na spód (6): Knockout Maneuver, Monastery Flock, Highland Game, Forest, Woolly Loxodon, Plains
+  [modal choice]     Mulligan — odłóż na spód (6): Knockout Maneuver, Monastery Flock, Highland Game, Forest, Rush of Battle, Plains
+  [modal choice]     Mulligan — odłóż na spód (6): Knockout Maneuver, Monastery Flock, Highland Game, Woolly Loxodon, Rush of Battle, Plains
+  [modal choice]     Mulligan — odłóż na spód (6): Knockout Maneuver, Monastery Flock, Forest, Woolly Loxodon, Rush of Battle, Plains
+  [modal choice]     Mulligan — odłóż na spód (6): Knockout Maneuver, Highland Game, Forest, Woolly Loxodon, Rush of Battle, Plains
+  [modal choice]     Mulligan — odłóż na spód (6): Monastery Flock, Highland Game, Forest, Woolly Loxodon, Rush of Battle, Plains
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Dragonbroods' Relic
+  [ROZGRYWKA]   • Dobierasz: Force Away
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Krumar Initiate
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Monastery Flock
+  >> Mulligan — odłóż na spód (7): Dragonbroods' Relic, Force Away, Forest, Krumar Initiate, Mountain, Forest, Mona
+  >> Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Krotiq Nestguard
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Rush of Battle
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Heap Gate
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Gurmag Drowner
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Gray Slaad
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Heap Gate — dodanie many do puli
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Gray Slaad wchodzi na pole bitwy
+  [ROZGRYWKA]   • Gray Slaad zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Descendant of Storms
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Lurking Green Dragon
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Lurking Green Dragon wchodzi na pole bitwy
+  [ROZGRYWKA]   • Lurking Green Dragon zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Gray Slaad
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Gray Slaad zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 16
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Vow of Wildness
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Nefarious Imp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nefarious Imp wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nefarious Imp zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Gray Slaad
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Gray Slaad zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 12
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Guildsworn Prowler
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Guildsworn Prowler wchodzi na pole bitwy
+  [ROZGRYWKA]   • Guildsworn Prowler zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Stirring Bard
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Stirring Bard wchodzi na pole bitwy
+  [ROZGRYWKA]   • Stirring Bard zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Stirring Bard — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Stirring Bard — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Swamp
+  [ROZGRYWKA]   • Nieprzyjaciel: Swamp — biblioteka → ręka
+  [ROZGRYWKA]   • Nieprzyjaciel znajduje Swamp i tasuje bibliotekę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Gray Slaad, Nefarious Imp
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Gray Slaad zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 12 → 8
+  [ROZGRYWKA]   • Nefarious Imp zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 8 → 6
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Highland Game
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera drogę: Secret Entrance → Forge
+  [ROZGRYWKA]   • Nieprzyjaciel zagłębia się w Podziemiach (pokój 2/9: Forge)
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera cel pokoju Forge
+  [ROZGRYWKA]   • Lurking Green Dragon dostaje +2 liczniki +1/+1 (razem 2)
+  [ROZGRYWKA]   • Nieprzyjaciel wskazuje Lurking Green Dragon (pokój Forge)
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Marut
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Stirring Bard — nadanie do końca tury: postrach, pośpiech → cel: Lurking Green Dragon
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 45 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Rush of Battle · 4 · Sorcery · +2/+1 dla twoich stworów do końca tury + +0/+0 dla twoich stworów do końca tury | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · 2/4 | Descendant of Storms · 1 · Creature — Human Soldier · Gdy atakuje: zapłać 2 many, endure X (liczniki +1/+1 albo token Spirit). · 2/1 | Vow of Wildness · 3 · Enchantment — Aura · stwór: +3/+3 · stwór ma: Zadeptywanie · zaczarowany nie może atakować ciebie | Highland Game · 2 · Creature — Elk · Gdy ta karta umrze: zyskaj 2 życia. · 2/1
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Heap Gate · Land — Gate · {T}: dodaj 1 manę bezbarwną · {1}, {T}: dodaj 1 manę dowolnego koloru · {1}, {T}, tapnij inny nietapnięty permanent (Gate): stwórz token Treasure · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Gray Slaad · 3 · Creature — Frog Horror · Postrach Dotykanie śmierci · przy 4+ stworach w grobie · 4/1 | Lurking Green Dragon · 4 · Creature — Dragon · Latanie Postrach Pośpiech · atakuje tylko, gdy obrońca ma latanie · Postrach · Pośpiech · 2x +1/+1 · 6/6 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Guildsworn Prowler · 2 · Creature — Tiefling Rogue Assassin · Dotykanie śmierci · Gdy ta karta umrze: dobierz 1 kartę. · 2/1 | Stirring Bard · 4 · Creature — Dragon Bard · Obrońca · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · {T}: cel: stwór — zdobądź Postrach, Pośpiech do końca tury · 0/4 | Marut · 8 · Artifact Creature — Construct · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Treasure (za wydaną manę ze Skarbów). · choroba · 7/7
+  LOG: Dobierasz: Knockout Maneuver ⏎ Dobierasz: Gurmag Drowner ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Highland Game, Impact Tremors, Forest, Furious Forebear, Ainok Tracker, Island, Forest ⏎ Nowa partia (seed 31). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 7, kliknięte: 15, modale: 2, sondy noop: 33 (panel 20, modal 13)
+== DETEKTORY: brak zgłoszeń ==

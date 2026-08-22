@@ -1,0 +1,293 @@
+== NOWA PARTIA: gracz=mirrodin vs bot=ravnica, seed=13, profil=explorer, policy-seed=2, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Island (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Steelfin Whale
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Spread the Sickness
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Chronic Flooding → cel: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Chronic Flooding zaczarowuje Island
+  [ROZGRYWKA]   • Chronic Flooding wchodzi na pole bitwy
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Chained Throatseeker
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Veiled Ascension
+  [ROZGRYWKA]   • Chronic Flooding — trigger (zatapnięcie zaczarowanego permanentu)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Forest do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Island do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Severed Strands do grobu
+  [ROZGRYWKA]   • Chronic Flooding — trigger się rozstrzyga
+  [ROZGRYWKA]   • Veiled Ascension wchodzi na pole bitwy
+  [ROZGRYWKA]   • Veiled Ascension zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Veiled Ascension — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Veiled Ascension — trigger bez efektu (nie było czego wykonać)
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Trigon of Corruption
+  >> Zagraj: Trigon of Corruption (koszt 4)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Trigon of Corruption
+  [ROZGRYWKA]   • Trigon of Corruption wchodzi na pole bitwy
+  [ROZGRYWKA]   • Trigon of Corruption dostaje +3 liczniki charge (razem 3)
+  [ROZGRYWKA]   • Trigon of Corruption zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Veiled Ascension — skorzystać z efektu „you may"? (wybór gracza)
+  [ROZGRYWKA]   • Veiled Ascension — trigger (krok upkeep)
+  [ROZGRYWKA]   • Nieprzyjaciel korzysta z efektu „you may" (Veiled Ascension)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Expose to Daylight → cel: Trigon of Corruption
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Trigon of Corruption zostaje zniszczony
+  [ROZGRYWKA]   • Nieprzyjaciel wykonuje scry (patrzy na 1 kartę)
+  [ROZGRYWKA]   • Nieprzyjaciel kończy scry — zostawia na wierzchu biblioteki
+  [ROZGRYWKA]   • Expose to Daylight zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Morph dostaje +1 licznik flying (razem 1)
+  [ROZGRYWKA]   • Morph wchodzi na pole bitwy
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Exterminator Magmarch
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Veiled Ascension — skorzystać z efektu „you may"? (wybór gracza)
+  [ROZGRYWKA]   • Veiled Ascension — trigger (krok upkeep)
+  [ROZGRYWKA]   • Nieprzyjaciel korzysta z efektu „you may" (Veiled Ascension)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Withstand → cel: Morph
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Withstand zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Morph dostaje +1 licznik flying (razem 1)
+  [ROZGRYWKA]   • Morph wchodzi na pole bitwy
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Morph
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Morph zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 18
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Pristine Talisman
+  >> Zagraj: Pristine Talisman (koszt 3)
+  [kreator many] Płatność 3 — tapuj źródła po jednympozostało 3 manyTapnij: Island (U)Tapnij: Plains (W)Tapnij: Swamp (B)Tapnij: Island ( — źródła: 4
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Swamp (B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Pristine Talisman
+  [ROZGRYWKA]   • Pristine Talisman wchodzi na pole bitwy
+  [ROZGRYWKA]   • Pristine Talisman zostaje rozstrzygnięty
+  >> Aktywuj: Pristine Talisman (Ty) (koszt T) — dodaj 1 manę bezbarwną + zyskaj 1 życie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Pristine Talisman — dodanie many do puli, zdobycie życia
+  [ROZGRYWKA]   • Ty: życie 18 → 19
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Veiled Ascension — skorzystać z efektu „you may"? (wybór gracza)
+  [ROZGRYWKA]   • Veiled Ascension — trigger (krok upkeep)
+  [ROZGRYWKA]   • Nieprzyjaciel korzysta z efektu „you may" (Veiled Ascension)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Morph dostaje +1 licznik flying (razem 1)
+  [ROZGRYWKA]   • Morph wchodzi na pole bitwy
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Ivy Lane Denizen
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ivy Lane Denizen wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ivy Lane Denizen zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Morph, Morph
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Morph zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 19 → 17
+  [ROZGRYWKA]   • Morph zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 15
+  [ROZGRYWKA]   • Tura 15 — Ty
+  >> Aktywuj: Pristine Talisman (Ty) (koszt T) — dodaj 1 manę bezbarwną + zyskaj 1 życie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Pristine Talisman — dodanie many do puli, zdobycie życia
+  [ROZGRYWKA]   • Ty: życie 15 → 16
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Turn the Tide
+  >> Rzuć: Turn the Tide (koszt 1U)
+  [kreator many] Płatność 1U — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: UTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 4
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Turn the Tide
+  [ROZGRYWKA]   • stwory przeciwnika (4 stwory): -2/-0 do końca tury
+  [ROZGRYWKA]   • Turn the Tide zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Veiled Ascension — skorzystać z efektu „you may"? (wybór gracza)
+  [ROZGRYWKA]   • Veiled Ascension — trigger (krok upkeep)
+  [ROZGRYWKA]   • Nieprzyjaciel korzysta z efektu „you may" (Veiled Ascension)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Morph dostaje +1 licznik flying (razem 1)
+  [ROZGRYWKA]   • Morph wchodzi na pole bitwy
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Selesnya Charm — tryb: Rycerz
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Knight (2/2)
+  [ROZGRYWKA]   • Knight wchodzi na pole bitwy
+  [ROZGRYWKA]   • Selesnya Charm — tryb: Rycerz zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Trestle Troll
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Trestle Troll wchodzi na pole bitwy
+  [ROZGRYWKA]   • Trestle Troll zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Ivy Lane Denizen — trigger (wejście innego stworzenia)
+  [ROZGRYWKA]   • Ivy Lane Denizen — cel: Ivy Lane Denizen
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ivy Lane Denizen dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Ivy Lane Denizen — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Morph, Morph, Morph, Ivy Lane Denizen
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Morph zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 14
+  [ROZGRYWKA]   • Morph zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 12
+  [ROZGRYWKA]   • Morph zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 12 → 10
+  [ROZGRYWKA]   • Ivy Lane Denizen zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 10 → 7
+  [ROZGRYWKA]   • Tura 17 — Ty
+  >> Aktywuj: Pristine Talisman (Ty) (koszt T) — dodaj 1 manę bezbarwną + zyskaj 1 życie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Pristine Talisman — dodanie many do puli, zdobycie życia
+  [ROZGRYWKA]   • Ty: życie 7 → 8
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Rustvine Cultivator
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Wybierasz, którą kartę odrzucić przy limicie ręki
+  >> Wybierz: Karta do odrzucenia (8 opcji)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Rustvine Cultivator Odrzuć: Carapace Forger Odrzuć: Shatter Odrzuć: Exterminator Magmarch Odrzuć: Carrion Call Odrzuć: Spread the Sickness Odrzuć: Chained Throatseeker Odrzuć: Steelfin Whale
+  [modal choice]   ▶ Odrzuć: Rustvine Cultivator
+  [modal choice]     Odrzuć: Carapace Forger
+  [modal choice]     Odrzuć: Shatter
+  [modal choice]     Odrzuć: Exterminator Magmarch
+  [modal choice]     Odrzuć: Carrion Call
+  [modal choice]     Odrzuć: Spread the Sickness
+  [modal choice]     Odrzuć: Chained Throatseeker
+  [modal choice]     Odrzuć: Steelfin Whale
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odrzucasz Rustvine Cultivator
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Veiled Ascension — skorzystać z efektu „you may"? (wybór gracza)
+  [ROZGRYWKA]   • Veiled Ascension — trigger (krok upkeep)
+  [ROZGRYWKA]   • Nieprzyjaciel korzysta z efektu „you may" (Veiled Ascension)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Morph dostaje +1 licznik flying (razem 1)
+  [ROZGRYWKA]   • Morph wchodzi na pole bitwy
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Epic Experiment
+  [ROZGRYWKA]   • Chronic Flooding — trigger (zatapnięcie zaczarowanego permanentu)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Guildscorn Ward do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Azorius Justiciar do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Ember Beast do grobu
+  [ROZGRYWKA]   • Chronic Flooding — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Ghost Warden
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Courage in Crisis
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Toll of the Invasion
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Sagittars' Volley
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Tenth District Veteran
+  [ROZGRYWKA]   • Nieprzyjaciel wykonuje Epic Experiment — wygnano 5 kart z wierzchu biblioteki: Ghost Warden, Courage in Crisis, Toll of the Invasion, Sagittars' Volley, Tenth District Veteran
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Sagittars' Volley → cel: Morph
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Toll of the Invasion → cel: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Courage in Crisis → cel: Morph
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: Ghost Warden — wygnanie → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel: Tenth District Veteran — wygnanie → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel kończy Epic Experiment (2 karty do grobu)
+  [ROZGRYWKA]   • Epic Experiment zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Morph dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Morph dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Nieprzyjaciel wykonuje proliferate — wskazuje permanenty/graczy z licznikami
+  [ROZGRYWKA]   • Morph dostaje +1 licznik flying (razem 2)
+  [ROZGRYWKA]   • Morph dostaje +1 licznik flying (razem 2)
+  [ROZGRYWKA]   • Morph dostaje +1 licznik flying (razem 2)
+  [ROZGRYWKA]   • Ivy Lane Denizen dostaje +1 licznik +1/+1 (razem 2)
+  [ROZGRYWKA]   • Morph dostaje +1 licznik flying (razem 2)
+  [ROZGRYWKA]   • Morph dostaje +1 licznik flying (razem 2)
+  [ROZGRYWKA]   • Morph dostaje +1 licznik +1/+1 (razem 2)
+  [ROZGRYWKA]   • Proliferate: 7 celów dostaje dodatkowe liczniki
+  [ROZGRYWKA]   • Courage in Crisis zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Odrzucasz Carapace Forger
+  [ROZGRYWKA]   • Odrzucasz kartę z ręki
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Zombie Army (0/0)
+  [ROZGRYWKA]   • Zombie Army wchodzi na pole bitwy
+  [ROZGRYWKA]   • Zombie Army dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Toll of the Invasion zostaje rozstrzygnięty
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 44 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Shatter · 2 · Instant · zniszcz cel · cel: artefakt | Carrion Call · 4 · Instant · Stwórz ×2 1/1 Phyrexian Insect | Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · 3/4 | Spread the Sickness · 5 · Sorcery · zniszcz cel + proliferate · cel: stwór | Chained Throatseeker · 6 · Creature — Phyrexian Horror · Infect · 5/5 | Exterminator Magmarch · 4 · Artifact Creature — Phyrexian Construct · Trigger wymaga drugiego przeciwnika — nieaktywny w grze 1v1 · {1}, {B}: tarcza regeneracji (przetrwa zniszczenie do końca tury) · 5/3
+  MOJE POLA: Pristine Talisman · 3 · Artifact · {T}: dodaj 1 manę bezbarwną + zyskaj 1 życie | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Chronic Flooding · 2 · Enchantment Aura · Trigger zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Island | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Face-down creature · Creature · Morph · 2x Latanie · 2/2 ×4 | Ivy Lane Denizen · 4 · Creature — Elf Warrior · Gdy inny zielony stwór pod twoją kontrolą wchodzi na pole bitwy: połóż licznik +1/+1. · 2x +1/+1 · 4/5 | Knight · 0 · Creature — Knight · Czujność · 2/2 | Trestle Troll · 3 · Creature — Troll · Obrońca Zasięg · {1}, {B}, {G}: Regeneruj tego stwora (następne zniszczenie zostaje odwrócone) · 1/4 | Zombie Army · 0 · Creature — Zombie Army · choroba · 1x +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Shatter, Island, Carrion Call, Swamp, Carapace Forger, Plains, Island ⏎ Nowa partia (seed 13). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 11, kliknięte: 12, modale: 2, sondy noop: 25 (panel 23, modal 2)
+== DETEKTORY: brak zgłoszeń ==
