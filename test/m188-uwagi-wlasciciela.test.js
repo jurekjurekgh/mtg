@@ -11,7 +11,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { effectivePower } from '../src/engine/permanents.js';
-import { buildStateOverlay, cardInfo } from '../src/table/render.js';
+import { buildStateOverlay, cardInfo, renderTurnHistory } from '../src/table/render.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 import { BOT_ID, HUMAN_ID, createSession, describeGameEvent } from '../src/table/session.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
@@ -303,4 +303,73 @@ test('M188/C6: przy śmiertelnym ataku (lethal przez blokera) atak zostaje', () 
   const chosen = createHeuristicBot({ seed: 4 }).chooseCommand(view);
   assert.ok(chosen.type === 'declare_attackers' && (chosen.attackerIds ?? []).includes('atk'),
     `lethal ma pierwszeństwo (bot wybrał: ${JSON.stringify(chosen)})`);
+});
+
+// ---- K: „Przebieg tur (dla AI)" — select ze WSZYSTKIMI turami ------------
+// Zlecenie właściciela: zamiast przełącznika „1 / 2 ostatnie tury" ma być
+// lista wyboru ze wszystkimi turami od początku gry; wybrana tura się
+// pokazuje i można ją skopiować. Dwie tury naraz są niepotrzebne.
+
+function sessionWithTurns() {
+  const session = tableSession();
+  // Rozgrywamy kilka tur automatycznie (sesja sama przewija okna bota).
+  for (let i = 0; i < 240 && session.view().turn.number < 6; i += 1) {
+    const view = session.view();
+    if (view.winnerId) break;
+    const cmd = view.legalCommands.find((c) => c.type === 'draw_card')
+      ?? view.legalCommands.find((c) => c.type === 'play_land')
+      ?? view.legalCommands.find((c) => c.type === 'pass_priority')
+      ?? view.legalCommands[0];
+    if (!cmd) break;
+    session.apply(cmd);
+  }
+  return session;
+}
+
+test('M188/K: sesja wystawia listę WSZYSTKICH ukończonych tur', () => {
+  const session = sessionWithTurns();
+  const turns = session.turnHistoryEntries();
+  assert.ok(Array.isArray(turns), 'turnHistoryEntries zwraca listę');
+  assert.ok(turns.length >= 2, `co najmniej dwie ukończone tury (jest ${turns.length})`);
+  for (const entry of turns) {
+    assert.equal(typeof entry.number, 'number', 'wpis niesie numer tury');
+    assert.ok(typeof entry.label === 'string' && entry.label.length > 0,
+      `wpis ma etykietę do selecta: ${JSON.stringify(entry)}`);
+    assert.ok(entry.label.includes(String(entry.number)), 'etykieta zawiera numer tury');
+  }
+  const numbers = turns.map((t) => t.number);
+  assert.deepEqual([...numbers].sort((a, b) => a - b), numbers, 'tury rosnąco (od początku gry)');
+});
+
+test('M188/K2: można pobrać tekst DOWOLNEJ tury po numerze', () => {
+  const session = sessionWithTurns();
+  const turns = session.turnHistoryEntries();
+  const first = turns[0];
+  const text = session.turnHistoryTextFor(first.number);
+  assert.ok(text.includes(`Tura ${first.number}`),
+    `tekst dotyczy wybranej tury: ${JSON.stringify(text.slice(0, 80))}`);
+  const last = turns[turns.length - 1];
+  const lastText = session.turnHistoryTextFor(last.number);
+  assert.ok(lastText.includes(`Tura ${last.number}`), 'ostatnia tura też dostępna');
+  if (turns.length > 1) {
+    assert.notEqual(text, lastText, 'różne tury dają różny tekst');
+    assert.ok(!text.includes(`Tura ${last.number} `), 'tekst zawiera TYLKO wybraną turę');
+  }
+  assert.equal(session.turnHistoryTextFor(9999), '', 'nieistniejąca tura → pusty tekst');
+});
+
+test('M188/K3: render buduje select z turami i pokazuje wybraną', () => {
+  const session = sessionWithTurns();
+  const turns = session.turnHistoryEntries();
+  const select = new MiniEl('select');
+  const box = new MiniEl('pre');
+  const els = { turnHistory: box, turnHistorySelect: select, turnHistoryCount: new MiniEl('span') };
+  renderTurnHistory(els, session, turns[0].number);
+  assert.equal(select.children.length, turns.length,
+    `select ma opcję dla każdej tury (${select.children.length} vs ${turns.length})`);
+  assert.ok(box.textContent.includes(`Tura ${turns[0].number}`),
+    `panel pokazuje wybraną turę: ${JSON.stringify(box.textContent.slice(0, 60))}`);
+  const other = turns[turns.length - 1];
+  renderTurnHistory(els, session, other.number);
+  assert.ok(box.textContent.includes(`Tura ${other.number}`), 'zmiana wyboru zmienia treść');
 });

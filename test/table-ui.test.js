@@ -73,7 +73,7 @@ function installMiniDom() {
     'actions-drawer', 'actions-drawer-close', 'actions-fab', 'actions-fab-count',
     'bot-reasoning', 'bot-reasoning-count',
     // M25: sekcja „Przebieg tur (dla AI)" — tekst, licznik, przełącznik i kopiowanie.
-    'turn-history', 'turn-history-count', 'turn-history-copy', 'turn-history-1', 'turn-history-2',
+    'turn-history', 'turn-history-count', 'turn-history-copy', 'turn-history-select',
     // M24: loch Undercity — karta specjalna na stole z zaznaczeniem pokoju.
     'daynight',
     'undercity',

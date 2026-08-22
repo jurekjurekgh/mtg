@@ -21,7 +21,7 @@ import { stateFingerprint } from '../engine/fingerprint.js';
 import { createCardRegistry, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, FACE_DOWN_LABEL } from './session.js';
-import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace } from './render.js';
+import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory } from './render.js';
 import { installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, countPaymentVariants, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
 import { effectiveSpellManaCost } from '../engine/spells.js';
@@ -116,8 +116,7 @@ function bootstrapTable() {
     turnHistory: el('turn-history'),
     turnHistoryCount: el('turn-history-count'),
     turnHistoryCopy: el('turn-history-copy'),
-    turnHistory1: el('turn-history-1'),
-    turnHistory2: el('turn-history-2'),
+    turnHistorySelect: el('turn-history-select'),
     daynight: el('daynight'),
     poison: el('poison'),
     undercity: el('undercity'),
@@ -139,15 +138,16 @@ function bootstrapTable() {
   };
   const statusNote = el('table-note');
 
-  // Sekcja „Przebieg tur (dla AI)" (M25): przełącznik 1/2 ostatnich tur
-  // odświeża panel, a guzik kopiuje gotowy blok do schowka.
-  for (const radio of [els.turnHistory1, els.turnHistory2]) {
-    radio?.addEventListener('change', () => rerender());
-  }
+  // Sekcja „Przebieg tur (dla AI)" (M25; M188/K — zlecenie właściciela):
+  // lista WSZYSTKICH ukończonych tur; wybór pokazuje turę, guzik kopiuje
+  // dokładnie tę wybraną.
+  els.turnHistorySelect?.addEventListener('change', () => rerender());
   els.turnHistoryCopy?.addEventListener('click', () => {
     if (!session) return;
-    const count = els.turnHistory2?.checked ? 2 : 1;
-    const text = typeof session.turnHistoryText === 'function' ? session.turnHistoryText(count) : '';
+    const turn = selectedTurnHistory(els);
+    const text = turn != null && typeof session.turnHistoryTextFor === 'function'
+      ? session.turnHistoryTextFor(turn)
+      : '';
     if (!text) return;
     copyTextToClipboard(text, els.turnHistoryCopy);
   });

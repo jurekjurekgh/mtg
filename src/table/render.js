@@ -3252,7 +3252,7 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   }
 
   // --- Przebieg tur (dla AI) (M25) ------------------------------------
-  renderTurnHistory(els, session, els.turnHistory2?.checked ? 2 : 1);
+  renderTurnHistory(els, session, selectedTurnHistory(els));
 
   // --- Day/Night (M68) — globalny znacznik, jak loch -------------------
   renderDayNight(els, session, view, { onClick: onDayNightClick, hover });
@@ -3406,14 +3406,47 @@ export function renderUndercity(els, session, view, { onClick = null, hover = nu
  * gotowy tekst do skopiowania modelowi AI. Imiona: Czarodziejka / Nieprzyjaciel
  * (decyzja właściciela 2026-08-03). Licznik pokazuje liczbę ukończonych tur.
  */
-export function renderTurnHistory(els, session, count = 1) {
+/** Numer tury wybrany w selekcie „Przebieg tur" (null = brak wyboru). */
+export function selectedTurnHistory(els) {
+  const raw = els?.turnHistorySelect?.value;
+  const parsed = Number.parseInt(raw ?? '', 10);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function renderTurnHistory(els, session, selectedTurn = null) {
   if (!els.turnHistory) return;
-  const records = session.turnHistory ?? [];
+  // M188/K (zlecenie właściciela): lista WSZYSTKICH tur w <select> zamiast
+  // przełącznika „1 albo 2 ostatnie tury" — wybrana tura pokazuje się w
+  // panelu i to ją kopiuje przycisk.
+  const entries = typeof session.turnHistoryEntries === 'function'
+    ? session.turnHistoryEntries()
+    : [];
   if (els.turnHistoryCount) {
-    els.turnHistoryCount.textContent = records.length ? String(records.length) : '';
+    els.turnHistoryCount.textContent = entries.length ? String(entries.length) : '';
   }
-  const text = typeof session.turnHistoryText === 'function'
-    ? session.turnHistoryText(count)
+  // Domyślnie ostatnia ukończona tura (najczęstszy przypadek użycia).
+  const fallback = entries.length ? entries[entries.length - 1].number : null;
+  const wanted = entries.some((entry) => entry.number === selectedTurn) ? selectedTurn : fallback;
+  const select = els.turnHistorySelect;
+  if (select) {
+    // Odbudowa listy tylko przy zmianie zestawu tur — inaczej każdy render
+    // resetowałby rozwinięty select pod palcem gracza.
+    const signature = entries.map((entry) => entry.number).join(',');
+    if (select.dataset?.turns !== signature) {
+      if (select.dataset) select.dataset.turns = signature;
+      clear(select);
+      for (const entry of entries) {
+        const option = document.createElement('option');
+        option.value = String(entry.number);
+        option.textContent = entry.label;
+        select.appendChild(option);
+      }
+    }
+    select.disabled = entries.length === 0;
+    if (wanted != null) select.value = String(wanted);
+  }
+  const text = wanted != null && typeof session.turnHistoryTextFor === 'function'
+    ? session.turnHistoryTextFor(wanted)
     : '';
   els.turnHistory.textContent = text || 'Brak ukończonych tur — rozegraj przynajmniej jedną pełną turę, a pojawi się tu jej przebieg.';
 }

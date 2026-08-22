@@ -1469,23 +1469,52 @@ export function createSession(config) {
     currentTurn.lines.push(text);
   }
   /** Formatuje N ostatnich pełnych tur (1 albo 2) do tekstu dla AI. */
-  function turnHistoryText(count = 1) {
-    // Po zakończeniu partii ostatnia, przerwana tura też jest pełna.
+  /**
+   * M188/K (zlecenie właściciela): lista WSZYSTKICH ukończonych tur do
+   * selecta — „wybieram dowolną turę i ona się pokazuje". Wcześniej panel
+   * umiał pokazać tylko 1 albo 2 OSTATNIE tury, więc wcześniejsze przebiegi
+   * były nieosiągalne, mimo że sesja trzyma je w komplecie.
+   */
+  function turnHistoryEntries() {
+    flushFinishedTurn();
+    return turnHistory.map((record) => ({
+      number: record.number,
+      activePlayerId: record.activePlayerId,
+      label: `Tura ${record.number} — ${TURN_NAMES[record.activePlayerId] ?? record.activePlayerId}`,
+    }));
+  }
+
+  /** Tekst JEDNEJ, wskazanej tury (pusty, gdy takiej tury nie ma). */
+  function turnHistoryTextFor(turnNumber) {
+    flushFinishedTurn();
+    const record = turnHistory.find((entry) => entry.number === turnNumber);
+    if (!record) return '';
+    return formatTurnRecord(record);
+  }
+
+  /** Wspólny format bloku tury (używany przez oba wejścia). */
+  function formatTurnRecord(record) {
+    const whoName = TURN_NAMES[record.activePlayerId] ?? record.activePlayerId;
+    const header = `**Tura ${record.number} — ${whoName}**`;
+    const lines = record.lines.length > 0
+      ? record.lines.map((line) => `• ${line}`)
+      : ['• (nic znaczącego)'];
+    return [header, ...lines].join('\n');
+  }
+
+  /** Po końcu partii ostatnia (przerwana) tura też jest pełna — domknij ją. */
+  function flushFinishedTurn() {
     if (state.status === 'finished' && currentTurn.lines.length > 0) {
       turnHistory.push(currentTurn);
       currentTurn = { number: state.turn.number, activePlayerId: state.turn.activePlayerId, lines: [] };
     }
+  }
+
+  function turnHistoryText(count = 1) {
+    flushFinishedTurn();
     const records = turnHistory.slice(-Math.max(1, Math.min(2, count)));
     if (records.length === 0) return '';
-    const blocks = records.map((record) => {
-      const whoName = TURN_NAMES[record.activePlayerId] ?? record.activePlayerId;
-      const header = `**Tura ${record.number} — ${whoName}**`;
-      const lines = record.lines.length > 0
-        ? record.lines.map((line) => `• ${line}`)
-        : ['• (nic znaczącego)'];
-      return [header, ...lines].join('\n');
-    });
-    return blocks.join('\n\n');
+    return records.map(formatTurnRecord).join('\n\n');
   }
   const captureBotReasoning = () => {
     const last = bot.trace?.().at(-1);
@@ -2091,6 +2120,8 @@ export function createSession(config) {
     turnHistory,
     /** Tekst N ostatnich pełnych tur (1–2) dla AI — imiona Czarodziejka/Nieprzyjaciel. */
     turnHistoryText,
+    turnHistoryEntries,
+    turnHistoryTextFor,
     exportReplayText() {
       return serializeReplay(replayFromState(state));
     },
