@@ -17,6 +17,7 @@
 1x Armored Skaab
 1x Chill of the Grave
 1x Civilized Scholar
+1x Farbog Explorer
 1x Hysterical Blindness
 1x Midnight Guard
 1x Selhoff Occultist
@@ -33,7 +34,7 @@
 1x Wolfkin Bond
 1x Grave Exchange
 3x Plains
-5x Island
+6x Island
 2x Swamp
 2x Mountain
 4x Forest

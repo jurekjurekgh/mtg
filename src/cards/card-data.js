@@ -8191,6 +8191,107 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
   }),
 
+  // =========================================================================
+  // Batch 44 (10 kart, 2026-08-22) — lista właściciela (M183)
+  // Dismal Backwater, Descendant of Storms, Frightful Delusion, Hill Giant,
+  // Angel's Herald, Heap Gate, Thieves' Tools, Farbog Explorer, Blanchwood
+  // Prowler, Glaring Aegis. Dane Oracle: docs/cards/scryfall-*.json.
+  // =========================================================================
+
+  // ---- Batch 44 — transza A: istniejące mechaniki ----
+
+  // 1. Hill Giant (7ED) — vanilla 3/3.
+  defineCard({
+    id: 'hill-giant', name: 'Hill Giant', set: '7ED',
+    types: ['Creature'], subtypes: ['Giant'], colors: ['R'],
+    power: 3, toughness: 3, manaCost: 4, oracleText: '',
+    imageUri: 'https://cards.scryfall.io/large/front/e/7/e7ea1719-2bed-46f4-bb14-e3a4c87ce50a.jpg?1783945460',
+    artId: 258, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Farbog Explorer (AVR) — swampwalk (wzorzec Emerald Oryx, CR 702.33).
+  defineCard({
+    id: 'farbog-explorer', name: 'Farbog Explorer', set: 'AVR',
+    types: ['Creature'], subtypes: ['Human', 'Scout'], colors: ['W'],
+    power: 2, toughness: 3, manaCost: 3,
+    oracleText: "Swampwalk (This creature can't be blocked as long as defending player controls a Swamp.)",
+    imageUri: 'https://cards.scryfall.io/large/front/4/8/489c6a2f-38b4-4ff9-95f7-431384480ed9.jpg?1783940735',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        landwalk: { subtype: 'Swamp' },
+      }),
+    ],
+    artId: 299, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Dismal Backwater (M20) — dual land: wchodzi tapnięty, ETB +1 życia,
+  //    {T}: Add {U} or {B}.
+  defineCard({
+    id: 'dismal-backwater', name: 'Dismal Backwater', set: 'M20',
+    types: ['Land'], colors: [], entersTapped: true,
+    oracleText: 'This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {U} or {B}.',
+    imageUri: 'https://cards.scryfall.io/large/front/a/5/a5ff247f-82d1-4b79-9ac0-1471a1f0f58b.jpg?1783932937',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'gain_life', amount: 1 }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['U', 'B'] },
+      }),
+    ],
+    artId: 197, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. Glaring Aegis (M20) — aura +1/+3; ETB: tapnij stwora przeciwnika.
+  defineCard({
+    id: 'glaring-aegis', name: 'Glaring Aegis', set: 'M20',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['W'], manaCost: 1,
+    oracleText: 'Enchant creature\nWhen this Aura enters, tap target creature an opponent controls.\nEnchanted creature gets +1/+3.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/a/daa83dc2-4ec0-4e4f-8bfd-4f6d6df06a2d.jpg?1783933028',
+    aura: { pump: { power: 1, toughness: 3 } },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature_opponent_controls' } },
+        effect: [{ type: 'tap_permanent' }],
+      }),
+    ],
+    artId: 337, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Descendant of Storms (TDM) — „Whenever this creature attacks, you may
+  //    pay {1}{W}. If you do, it endures 1." — opcjonalna płatność triggera
+  //    (wzorzec Zoraline) + endure (wzorzec Krumar Initiate, CR 702.174).
+  defineCard({
+    id: 'descendant-of-storms', name: 'Descendant of Storms', set: 'TDM',
+    types: ['Creature'], subtypes: ['Human', 'Soldier'], colors: ['W'],
+    power: 2, toughness: 1, manaCost: 1,
+    oracleText: 'Whenever this creature attacks, you may pay {1}{W}. If you do, it endures 1. (Put a +1/+1 counter on it or create a 1/1 white Spirit creature token.)',
+    imageUri: 'https://cards.scryfall.io/large/front/f/6/f632be90-9e7f-41f8-a52e-a2952354d730.jpg?1783907415',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks', payMana: 2, payColors: ['W'] },
+        effect: [
+          { type: 'pay_mana', amount: 2 },
+          { type: 'endure_x', amount: 1 },
+        ],
+      }),
+    ],
+    artId: 240, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+    notes: ['płatność {1}{W} to decyzja gracza przy triggerze (resolve_optional_pay_choice); endure 1 = wybór: licznik +1/+1 albo token Spirit 1/1'],
+  }),
+
 ]);
 
 /**

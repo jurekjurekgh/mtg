@@ -1,5 +1,6 @@
 # Warhammer Fantasy
 
+1x Dismal Backwater
 1x Rupture Spire
 1x Brute Force
 1x Fireball
@@ -16,6 +17,7 @@
 1x Ramroller
 1x Goblin Battle Jester
 1x Gorehorn Minotaurs
+1x Hill Giant
 1x Irontread Crusher
 1x Terminal Agony
 1x Wrap in Flames
@@ -25,4 +27,4 @@
 2x Plains
 2x Island
 2x Swamp
-5x Mountain
+6x Mountain

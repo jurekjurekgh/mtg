@@ -159,10 +159,12 @@ test('M101/D: trigger jako JEDYNY obiekt na stosie też raportuje swój skutek',
   // Seed 38 po Batchu 42 transze A–C (graveyard +Mauler/Vizier/Final Parting +1 Island) — hunter (2 opóźnione).
   // M178 (talie per plan): opóźnione triggery daje para innistrad vs alara
   // (Plague Reaver) — hunter 1..60, seed 7 (5 opóźnionych).
-  const { shown, log } = playCollectingPanel(makeSession(7, 'alara.txt'));
+  // Seed 2 po Batchu 44 A (innistrad +Farbog Explorer +1 land) — hunter
+  // (5 opóźnionych; kolejne trafienia: 3, 4, 9, 10, 12).
+  const { shown, log } = playCollectingPanel(makeSession(2, 'alara.txt'));
   const panel = shown.join('\n');
   const opoznione = log.filter((l) => /trigger się rozstrzyga \(opóźniony\)/.test(l));
-  assert.ok(opoznione.length > 0, 'seed 7 miał zawierać opóźnione triggery — zmienił się przebieg partii');
+  assert.ok(opoznione.length > 0, 'seed 2 miał zawierać opóźnione triggery — zmienił się przebieg partii');
   for (const line of opoznione) {
     assert.ok(panel.includes(line), `opóźniony trigger poza panelem: „${line}"`);
   }

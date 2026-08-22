@@ -104,7 +104,7 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // doda kartę bez odświeżenia słownika, ten test od razu to wskaże.
   const registry = createCardRegistry();
   const withArt = registry.all().filter((card) => card.artId != null);
-  assert.equal(withArt.length, 340, 'dokładnie 340 wpisów ma artId (Batche 1–42 + tyły DFC + Batch 43 KOMPLET)');
+  assert.equal(withArt.length, 345, 'dokładnie 345 wpisów ma artId (Batche 1–43 + tyły DFC + Batch 44 transza A)');
   const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   for (const card of withArt) {
     const entries = byName.get(card.name.toLowerCase()) ?? [];

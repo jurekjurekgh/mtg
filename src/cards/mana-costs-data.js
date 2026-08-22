@@ -351,4 +351,9 @@ export const MANA_COSTS = {
   "sea-gods-scorn": "{4}{U}{U}",
   "balamb-garden-seed-academy": "",
   "balamb-garden-airborne": "",
+  "hill-giant": "{3}{R}",
+  "farbog-explorer": "{2}{W}",
+  "dismal-backwater": "",
+  "glaring-aegis": "{W}",
+  "descendant-of-storms": "{W}",
 };
