@@ -1,7 +1,30 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-22 (M182: Batch 43 — 10 kart właściciela, w tym 2 DFC)
-- **Poprzednia:** 2026-08-22 (M181: AUTO-AWANS planu z worka przy 15+ kartach — ADR 0023 §2/§4)
+- **Ostatnia aktualizacja:** 2026-08-22 (M183: Batch 44 — 10 kart; PIERWSZY realny auto-awans M181: talia theros)
+- **Poprzednia:** 2026-08-22 (M182: Batch 43 — 10 kart właściciela, w tym 2 DFC)
+
+
+## M183 — Batch 44: 10 kart właściciela (2026-08-22, PR #69)
+
+Plan: `docs/plans/PLAN_2026-08-22-m183-batch44.md`. Karty: Hill Giant
+(vanilla), Farbog Explorer (swampwalk), Dismal Backwater (dual land ETB +1),
+Glaring Aegis (aura +1/+3 + ETB tap), Descendant of Storms (attacks →
+opłata {1}{W} → endure 1), Blanchwood Prowler (NOWE: `counterIfNone` w
+reveal_top_pick_land_rest_grave — mill 3, land do ręki ALBO +1/+1),
+Thieves' Tools (NOWE: `equipment.cantBeBlockedMaxPower` — nosiciel o mocy
+≤3 nieblokowalny; ETB Treasure), Heap Gate (NOWY koszt `tapUntappedSubtype:
+'Gate'` — płatność PRZED spendMana, producibleMana z tablicą wykluczeń),
+Angel's Herald (NOWY koszt `sacrificeCreaturesByColors: [G,W,U]` + search
+qualifier `name` — fail to find CR 701.19b), Frightful Delusion (NOWY efekt
+`counter_spell_unless_pays` — pendingCounterPay + resolve_counter_pay_choice,
+decyzja kontrolera celu, potem discard; auto-kontra bez many na opłatę).
+**PIERWSZY realny auto-awans M181: Theros dobił do 15 kart (Glaring Aegis)
+i wyszedł z worka-legend jako talia `theros` — 15 talii.** Strażnik artId
+340→350; testy batch44-kart (13); seedy: panel-rozgrywka 7→2→8,
+session-abilities 1→2, bot-spell-resolution M99 5→4 (huntery).
+
+**Stan:** `test:all` **2731/2731**, build **52 moduły / 2362.4 kB**,
+benchmark regresji bota w progach (BENCH_DECKS, progi 0.78/0.60).
 
 
 ## M182 — Batch 43: 10 kart właściciela (2026-08-22, PR #69)
