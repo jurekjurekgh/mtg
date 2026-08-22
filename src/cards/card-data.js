@@ -8055,6 +8055,89 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['Escape: czar z grobu za koszt escape + wygnanie 3 innych kart z grobu; po rozstrzygnięciu wraca do grobu'],
   }),
 
+  // ---- Batch 43 — transza B: drobne rozszerzenia silnika ----
+
+  // 6. Severed Strands (GRN) — dodatkowy koszt sacrifice a creature (wzorzec
+  //    Village Rites); zysk życia = wytrzymałość poświęconego (NOWE:
+  //    sacrificedToughness na obiekcie stosu + amountFromSacrificedToughness).
+  defineCard({
+    id: 'severed-strands', name: 'Severed Strands', set: 'GRN',
+    types: ['Sorcery'], colors: ['B'], manaCost: 2,
+    oracleText: 'As an additional cost to cast this spell, sacrifice a creature.\nYou gain life equal to the sacrificed creature\'s toughness. Destroy target creature an opponent controls.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/c/bce654d6-fcf1-40a8-8bdb-5c37e561f7dc.jpg?1783934171',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature_opponent_controls' }],
+      additionalCost: { sacrificeCreature: true },
+      effects: [
+        { type: 'gain_life', amountFromSacrificedToughness: true },
+        { type: 'destroy_permanent' },
+      ],
+    },
+    artId: 41, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+    notes: ['zysk życia = wytrzymałość poświęconego stwora (LKI z chwili płatności kosztu); przy nielegalnym celu w rozstrzygnięciu czar fizzluje w całości (CR 608.2b) — bez zysku życia'],
+  }),
+
+  // 7. Rush of Battle (KTK) — masowy buff +2/+1 dla wszystkich + lifelink
+  //    TYLKO dla Warriorów (NOWE: filtr subtype w buff_creatures_you_control).
+  defineCard({
+    id: 'rush-of-battle', name: 'Rush of Battle', set: 'KTK',
+    types: ['Sorcery'], colors: ['W'], manaCost: 4,
+    oracleText: 'Creatures you control get +2/+1 until end of turn. Warrior creatures you control gain lifelink until end of turn. (Damage dealt by those Warriors also causes their controller to gain that much life.)',
+    imageUri: 'https://cards.scryfall.io/large/front/0/d/0d47d8aa-59c8-4e2c-bb48-328ae924dbb3.jpg?1783939093',
+    spell: {
+      timing: 'sorcery',
+      targets: [],
+      effects: [
+        { type: 'buff_creatures_you_control', power: 2, toughness: 1 },
+        { type: 'buff_creatures_you_control', keywords: ['lifelink'], subtype: 'Warrior' },
+      ],
+    },
+    artId: 74, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Forced Landing (WAR) — cel: stwór z lataniem; na SPÓD biblioteki
+  //    właściciela (NOWY efekt bounce_to_library_bottom; token → przestaje
+  //    istnieć, CR 111.7).
+  defineCard({
+    id: 'forced-landing', name: 'Forced Landing', set: 'WAR',
+    types: ['Instant'], colors: ['G'], manaCost: 2,
+    oracleText: 'Put target creature with flying on the bottom of its owner\'s library.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/c/5cb319a7-564c-4748-82cf-c26ab110c32c.jpg?1783933414',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature_with_keyword', keyword: 'flying' }],
+      effects: [{ type: 'bounce_to_library_bottom' }],
+    },
+    artId: 108, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. Sea God's Scorn (THB) — „Return up to three target creatures and/or
+  //    enchantments to their owners' hands" (variableTargets z NOWYM `type`:
+  //    creature_or_enchantment; bounce per cel przez apply_to_each_target).
+  defineCard({
+    id: 'sea-gods-scorn', name: "Sea God's Scorn", set: 'THB',
+    types: ['Sorcery'], colors: ['U'], manaCost: 6,
+    oracleText: 'Return up to three target creatures and/or enchantments to their owners\' hands.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/5/9504dc26-f5d8-4b9d-9eb1-51a12b893beb.jpg?1783931579',
+    spell: {
+      timing: 'sorcery',
+      modes: [{
+        name: 'Wzgarda boga mórz',
+        variableTargets: { max: 3, min: 0, type: 'creature_or_enchantment' },
+        effects: [{
+          type: 'apply_to_each_target',
+          effects: [{ type: 'bounce_permanent' }],
+        }],
+      }],
+    },
+    artId: 121, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 /**

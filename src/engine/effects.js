@@ -1395,12 +1395,18 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Wpis niesie więc listę objectIds; stwór, który wejdzie później, buffa
     // NIE dostaje (M101/B2 — wcześniej wpis był bezlistowy i łapał wszystko,
     // co pojawiło się do końca tury).
+    // Batch 43 (Rush of Battle): „Warrior creatures you control gain lifelink"
+    // — opcjonalny filtr `subtype` zawęża zbiór (ustalany przy rozstrzygnięciu,
+    // CR 611.2c — jak cała lista objectIds).
+    const buffIds = affectedCreatureIds(state, sourceObject.controllerId, false)
+      .filter((id) => !effect.subtype
+        || (state.objects.get(id)?.subtypes ?? []).includes(effect.subtype));
     state.untilEndOfTurnBuffs = [
       ...(state.untilEndOfTurnBuffs ?? []),
       Object.freeze({
         controllerId: sourceObject.controllerId,
         opponent: false,
-        objectIds: Object.freeze(affectedCreatureIds(state, sourceObject.controllerId, false)),
+        objectIds: Object.freeze(buffIds),
         power: effect.power ?? 0,
         toughness: effect.toughness ?? 0,
         keywords: Object.freeze([...(effect.keywords ?? [])]),
@@ -1814,8 +1820,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'gain_life') {
-    if (!Number.isInteger(effect.amount) || effect.amount < 0) throw new RangeError('Zysk życia musi być nieujemny');
-    changeLife(state, sourceObject.controllerId, effect.amount);
+    // Batch 43 (Severed Strands): „You gain life equal to the sacrificed
+    // creature's toughness" — kwota z LKI poświęconego stwora (koszt rzutu),
+    // niesiona na obiekcie stosu przez castSpell (sacrificedToughness).
+    const amount = effect.amountFromSacrificedToughness
+      ? Math.max(0, sourceObject.sacrificedToughness ?? 0)
+      : effect.amount;
+    if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Zysk życia musi być nieujemny');
+    changeLife(state, sourceObject.controllerId, amount);
     return;
   }
   // Mournful Zombie (APC): „{W}, {T}: Target player gains 1 life." — zysk
@@ -3149,6 +3161,39 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.events.push(event('object_moved', {
       fromId: targetId, object: inOwnersLibrary, fromZone: 'battlefield', toZone: 'library',
       toTop: true, bounced: true, toOwner: true,
+    }));
+    return;
+  }
+  if (effect.type === 'bounce_to_library_bottom') {
+    // Batch 43 (Forced Landing): „Put target creature with flying on the
+    // bottom of its owner's library." — lustro bounce_to_library_top, ale na
+    // SPÓD (ostatni element strefy). Token poza polem bitwy przestaje istnieć
+    // (CR 111.7) — kasujemy go OD RAZU zamiast wkładać do biblioteki (wzorzec
+    // resolve_library_placement z M177: SBA sprzątałoby go dopiero po fakcie,
+    // a w bibliotece zdążyłby zaburzyć pending scry/surveil).
+    const targetId = targets[0];
+    if (targetId == null) return; // „up to one" bez celu — brak efektu
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') return; // cel zniknął (CR 608.2b)
+    if (object.isToken) {
+      state.objects.delete(targetId);
+      state.zones.battlefield = state.zones.battlefield.filter((id) => id !== targetId);
+      state.events.push(event('token_ceased_to_exist', {
+        objectId: targetId, cardId: object.cardId, name: object.name,
+        controllerId: object.controllerId, zone: 'library',
+      }));
+      return;
+    }
+    const ownerId = object.ownerId ?? object.controllerId;
+    const libId = `library-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'library', libId);
+    const inOwnersLibrary = Object.freeze({ ...moved, controllerId: ownerId });
+    state.objects.set(libId, inOwnersLibrary);
+    // Spód biblioteki = OSTATNI element w strefie (top = pierwszy).
+    state.zones.library = [...state.zones.library.filter((id) => id !== libId), libId];
+    state.events.push(event('object_moved', {
+      fromId: targetId, object: inOwnersLibrary, fromZone: 'battlefield', toZone: 'library',
+      toBottom: true, bounced: true, toOwner: true,
     }));
     return;
   }

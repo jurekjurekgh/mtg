@@ -345,4 +345,8 @@ export const MANA_COSTS = {
   "dire-strain-brawler": "{4}{G}",
   "dispellers-capsule": "{W}",
   "sleep-of-the-dead": "{U}",
+  "severed-strands": "{1}{B}",
+  "rush-of-battle": "{3}{W}",
+  "forced-landing": "{1}{G}",
+  "sea-gods-scorn": "{4}{U}{U}",
 };

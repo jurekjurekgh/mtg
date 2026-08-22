@@ -439,6 +439,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     ['exile_all', 40],
     ['bounce_permanent', 70],
     ['bounce_to_library_top', 70],
+    // Batch 43 (Forced Landing): odesłanie na SPÓD biblioteki jest mocniejsze
+    // od wierzchu (właściciel nie dobierze karty od razu) — 75.
+    ['bounce_to_library_bottom', 75],
     // M177/D (Vanish from Sight): odesłanie na wierzch/spód biblioteki
     // właściciela — tempo-removal jak bounce_to_library_top.
     ['owner_library_top_or_bottom', 70],
@@ -1047,6 +1050,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             'destroy_artifact_gain_life_mana_value',
             'exile_permanent', 'exile_target_creature',
             'bounce_permanent', 'bounce_to_library_top',
+            'bounce_to_library_bottom',
           ]);
           if (REMOVAL_EFFECTS.has(effect.type) && target) {
             // M92: „destroy" w cel z aktywną tarczą regeneracji tylko ją

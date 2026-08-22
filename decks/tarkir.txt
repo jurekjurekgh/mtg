@@ -21,6 +21,7 @@
 1x Ojutai's Breath
 1x Vow of Wildness
 1x Gurmag Drowner
+1x Rush of Battle
 1x Trade Route Envoy
 1x Rakshasa Vizier
 1x Sarkhan's Rage
@@ -28,7 +29,7 @@
 1x Vandalize
 1x Ainok Tracker
 1x Woolly Loxodon
-1x Plains
+2x Plains
 3x Island
 2x Swamp
 2x Mountain
