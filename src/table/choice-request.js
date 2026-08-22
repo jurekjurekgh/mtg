@@ -323,7 +323,11 @@ function creaturePT(view, id) {
 /** Czy stwór ma statyczną zdolność (np. cantAttackAlone) wg widoku. */
 function viewCreatureHasStatic(view, id, field) {
   const object = (view.zones.battlefield ?? []).find((o) => o.id === id);
-  return Boolean(object && (object.abilities ?? []).some((a) => a.type === 'static' && a[field] === true));
+  // M186/Z1: widok niesie flagę JAWNIE (entry.cantAttackAlone/cantBlockAlone)
+  // — wcześniej czytaliśmy entry.abilities, których playerView nie wysyła
+  // (martwa walidacja); fallback po abilities zostaje dla starych widoków.
+  return Boolean(object && (object[field] === true
+    || (object.abilities ?? []).some((a) => a.type === 'static' && a[field] === true)));
 }
 
 /**
