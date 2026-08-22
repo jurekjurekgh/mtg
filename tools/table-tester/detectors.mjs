@@ -415,8 +415,24 @@ export function detectGroupWithoutTick(actionRecords) {
   // pokoju Undercity, któremu ptaszek się NIE należy) — dlatego bare „Cel"
   // wymaga, by NIE szło po nim słowo (negative lookahead).
   const IGNORABLE_GROUP = /^(Cel czaru|Cel zdolności|Bestow|Aura|Wybierz: (Cel czaru|Cel zdolności|Cel(?! \p{L})|Wariant|Tryb|Wartość X))/iu;
+  // M189/Z3 (transkrypt audyt-m187/g13): pod „Wybierz: Cel" kryją się też
+  // OBOWIĄZKOWE decyzje narzucone przez kartę (Cuombajj Witches —
+  // `resolve_opponent_target`, CR 601.2c: cel wskazuje przeciwnik ZANIM
+  // aktywacja zapłaci koszty). Gracz nie może ich wyciszyć, bo musi
+  // odpowiedzieć — ptaszek by je zamroził. Rozpoznajemy je po treści opcji,
+  // bo etykieta grupy jest wspólna z celami czarów (klasa L12: fałszywy
+  // alarm naprawiamy w TESTERZE, nie w produkcie).
+  // Rozpoznajemy po TYPIE KOMENDY (data-option-key), bo etykieta grupy jest
+  // wspólna; `resolve_*` to decyzje, na które gracz MUSI odpowiedzieć.
+  // commandOptionKey to JSON komendy ({"type":"resolve_opponent_target",...}),
+  // więc typu szukamy w treści klucza, nie na jego początku.
+  const MANDATORY_COMMAND = /"type"\s*:\s*"resolve_/;
+  const MANDATORY_TEXT = /Wskaż cel obrażeń|Wybór przeciwnika|cel pokoju/i;
   for (const rec of actionRecords ?? []) {
     if (!IGNORABLE_GROUP.test(rec.label)) continue;
+    const optionText = Array.isArray(rec.options) ? rec.options.join(' ') : String(rec.options ?? '');
+    if (MANDATORY_COMMAND.test(String(rec.commandKey ?? ''))) continue;
+    if (MANDATORY_TEXT.test(optionText) || MANDATORY_TEXT.test(rec.label)) continue;
     if (rec.hasTick) continue;
     push(found, 'ui', 'Grupa wariantów czaru/zdolności bez ptaszka wyciszenia', rec.label);
   }

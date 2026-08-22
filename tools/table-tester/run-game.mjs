@@ -208,7 +208,7 @@ export async function runTableGame({
   const seenActions = new Set();     // etykiety akcji (bez wartości zmiennych)
   const clickedActions = new Set();
   const seenModals = new Set();
-  const actionRecords = [];          // { label, hasTick } — dla detektora osi 3
+  const actionRecords = [];          // { label, hasTick, commandKey } — detektor osi 3
   // M99: panel akcji w KAŻDYM kroku — detektor martwego okna (Forever Young)
   // nie może zależeć od snapshotów, bo `--quiet` je wyłącza.
   const windowRecords = [];          // { actions: string[], gameOver: boolean }
@@ -256,7 +256,14 @@ export async function runTableGame({
       const label = normalize(t);
       if (!seenActions.has(label)) {
         seenActions.add(label);
-        actionRecords.push({ label: t.trim(), hasTick: Boolean(tick) });
+        // M189/Z3: rekord niesie TYP KOMENDY z `data-option-key` — etykieta
+        // („Wybierz: Cel (7 opcji)") nie odróżnia wyciszalnego celu czaru od
+        // OBOWIĄZKOWEJ decyzji narzuconej przez kartę (Cuombajj Witches:
+        // `resolve_opponent_target`), a detektor osi 3 musi je rozdzielić.
+        // Opcje grupy nie są w DOM przycisku (modal buduje je po kliknięciu),
+        // więc źródłem prawdy jest klucz komendy, nie tekst.
+        const optionKey = b.dataset?.optionKey ?? b.getAttribute?.('data-option-key') ?? '';
+        actionRecords.push({ label: t.trim(), hasTick: Boolean(tick), commandKey: String(optionKey) });
       }
       if (tick && !tick.checked && tickRate > 0 && rnd() < tickRate) {
         tick.click();

@@ -35,6 +35,26 @@ test('detectRawText: łapie surowy identyfikator zdarzenia (snake_case)', () => 
 // przeszedł przez detektor, bo SNAKE_CASE_EVENT wymaga DWÓCH podkreślników,
 // a identyfikatory tokenów mają jeden („token_wizard", „token_squirrel").
 // Klasa L27/L40: „0 zgłoszeń" znaczyło „nie mam takiej reguły".
+// M189/Z3 (transkrypt audyt-m187/g13): „Wybierz: Cel (7 opcji)" pochodziło
+// z Cuombajj Witches — `resolve_opponent_target`, czyli OBOWIĄZKOWEJ decyzji
+// wskazania celu (CR 601.2c). Ptaszek wyciszenia się jej nie należy (gracz
+// musi wskazać cel), a detektor zgłaszał brak ptaszka. Klasa L12: fałszywy
+// alarm narzędzia, nie błąd produktu — poprawiamy TESTER.
+test('detectGroupWithoutTick: obowiązkowa decyzja „Wskaż cel obrażeń" to NIE zgłoszenie', () => {
+  const found = detectGroupWithoutTick([
+    { label: 'Wybierz: Cel (7 opcji)', hasTick: false, commandKey: '{"type":"resolve_opponent_target","targetId":"orc-army"}' },
+  ]);
+  assert.deepEqual(found, [],
+    `wybór celu narzucony przez kartę przeciwnika nie jest wyciszalny: ${JSON.stringify(found)}`);
+});
+
+test('detectGroupWithoutTick: grupa CELU CZARU bez ptaszka nadal zgłaszana (kontrola)', () => {
+  const found = detectGroupWithoutTick([
+    { label: 'Wybierz: Cel czaru (3 opcje)', hasTick: false, commandKey: '{"type":"cast_spell","objectId":"shatter"}' },
+  ]);
+  assert.equal(found.length, 1, 'realny brak ptaszka nadal łapany (M98)');
+});
+
 test('detectRawText: łapie surowy identyfikator TOKENU (jedno podkreślenie)', () => {
   const found = detectRawText([
     '  [ROZGRYWKA]   • token_wizard — trigger (rzucenie czaru niebędącego stworem)',
