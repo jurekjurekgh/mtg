@@ -135,12 +135,30 @@ function passBoth(state, first) {
 
 /** Ustawia inicjatywę p1 i wchodzi w upkeep przez rundę passów — odpalają się
  *  triggery kroku (venture do następnego pokoju Undercity). */
-function ventureToNextRoom(state, roomBefore) {
+function ventureToNextRoom(state, roomBefore, wantedRoomName = null) {
   state.initiativePlayerId = 'p1';
   state.undercityProgress = { p1: roomBefore };
   state.turn = jumpToStep(state.turn, 'untap', 'p1');
   passBoth(state); // untap -> upkeep (venture + triggery upkeep)
+  // M190/B: loch jest GRAFEM (Oracle „Leads to: …") — przy rozgałęzieniu
+  // gracz wybiera ścieżkę. Testy pokoi wskazują konkretny pokój po nazwie;
+  // bez wskazania bierzemy pierwszą ofertę (kolejność jak w Oracle).
+  if (state.pendingUndercityRoute) {
+    const offers = playerView(state, 'p1').legalCommands
+      .filter((c) => c.type === 'resolve_undercity_route');
+    const chosen = (wantedRoomName && offers.find((c) => c.roomName === wantedRoomName)) || offers[0];
+    assert.ok(chosen, `oferta wyboru drogi (${wantedRoomName ?? 'pierwsza'})`);
+    const result = execute(state, chosen);
+    assert.ok(result.ok, JSON.stringify(result.events?.[0]));
+  }
   return state.undercityProgress.p1 ?? 0;
+}
+
+/** Numer pokoju lochu po nazwie (testy opisują POKÓJ, nie indeks trasy). */
+function roomNo(name) {
+  const index = UNDERCITY_ROOMS.findIndex((room) => room.name === name);
+  assert.ok(index >= 0, `pokój ${name} istnieje`);
+  return index + 1;
 }
 
 /** Rozstrzyga oczekujący wybór celu pokoju lochu (M24 — decyzja gracza). */
@@ -259,8 +277,10 @@ test('loch: Lost Well daje scry 2 (blokująca decyzja)', () => {
   const state = mainPhase(game());
   addLibraryCard(state, 'lib1', 'basic-forest');
   addLibraryCard(state, 'lib2', 'goblin-piker');
-  const room = ventureToNextRoom(state, 2); // pokój 3 — Lost Well
-  assert.equal(room, 3);
+  // M190/B: loch jest grafem — do Lost Well wchodzi się z Secret Entrance
+  // (Oracle „Leads to: Forge, Lost Well"), a nie „pokojem numer 3".
+  const room = ventureToNextRoom(state, roomNo('Secret Entrance'), 'Lost Well');
+  assert.equal(room, roomNo('Lost Well'));
   assert.ok(state.pendingScry, 'Lost Well: scry czeka na decyzję');
   assert.equal(state.pendingScry.playerId, 'p1');
   assert.equal(state.pendingScry.objectIds.length, 2);
@@ -270,8 +290,8 @@ test('loch: Lost Well daje scry 2 (blokująca decyzja)', () => {
 
 test('loch: Trap! — gracz WYBIERA docelowego gracza (5 życia)', () => {
   const state = mainPhase(game());
-  const room = ventureToNextRoom(state, 3); // pokój 4 — Trap!
-  assert.equal(room, 4);
+  const room = ventureToNextRoom(state, roomNo('Forge'), 'Trap!'); // Forge → Trap!
+  assert.equal(room, roomNo('Trap!'));
   assert.ok(state.pendingRoomTargets.length === 1, 'Trap! kolejkuje wybór celu');
   assert.equal(state.pendingRoomTargets[0].kind, 'player');
   assert.deepEqual([...state.pendingRoomTargets[0].candidateIds].sort(), ['p1', 'p2'].sort(), 'legalni obaj gracze');
@@ -285,8 +305,8 @@ test('loch: Arena — gracz WYBIERA, którego stwora goaduje (musi atakować)', 
   const state = mainPhase(game());
   addSimpleCreature(state, 'own', 'p1', 1, 1);
   addSimpleCreature(state, 'enemy', 'p2', 4, 4);
-  const room = ventureToNextRoom(state, 4); // pokój 5 — Arena
-  assert.equal(room, 5);
+  const room = ventureToNextRoom(state, roomNo('Forge'), 'Arena'); // Forge → Arena
+  assert.equal(room, roomNo('Arena'));
   assert.ok(state.pendingRoomTargets.length === 1, 'Arena kolejkuje wybór celu');
   assert.equal(state.pendingRoomTargets[0].effectType, 'goad');
   // Gracz goaduje stwora wroga.
@@ -299,7 +319,7 @@ test('loch: Arena — gracz WYBIERA, którego stwora goaduje (musi atakować)', 
 test('loch: nielegalny cel pokoju jest odrzucany', () => {
   const state = mainPhase(game());
   addSimpleCreature(state, 'own', 'p1', 1, 1);
-  ventureToNextRoom(state, 1); // pokój 2 — Forge
+  ventureToNextRoom(state, roomNo('Secret Entrance'), 'Forge'); // Secret Entrance → Forge
   assert.ok(state.pendingRoomTargets.length === 1);
   const bad = execute(state, { type: 'resolve_room_target', playerId: 'p1', targetId: 'nieistniejący' });
   assert.equal(bad.ok, false, 'cel spoza listy legalnych odrzucony');
@@ -311,17 +331,17 @@ test('loch: nielegalny cel pokoju jest odrzucany', () => {
 test('loch: Stash tworzy Treasure, Archives dobiera, Catacombs tworzy Skeleton', () => {
   // Stash (pokój 6)
   const state = mainPhase(game());
-  assert.equal(ventureToNextRoom(state, 5), 6);
+  assert.equal(ventureToNextRoom(state, roomNo('Lost Well'), 'Stash'), roomNo('Stash'));
   assert.ok(byCard(state, 'token_treasure'), 'Stash: token Treasure');
   // Archives (pokój 7)
   const state2 = mainPhase(game());
   addLibraryCard(state2, 'lib1', 'basic-forest');
   const handBefore = state2.zones.hand.length;
-  assert.equal(ventureToNextRoom(state2, 6), 7);
+  assert.equal(ventureToNextRoom(state2, roomNo('Trap!'), 'Archives'), roomNo('Archives'));
   assert.equal(state2.zones.hand.length, handBefore + 1, 'Archives: dobranie');
   // Catacombs (pokój 8)
   const state3 = mainPhase(game());
-  assert.equal(ventureToNextRoom(state3, 7), 8);
+  assert.equal(ventureToNextRoom(state3, roomNo('Arena'), 'Catacombs'), roomNo('Catacombs'));
   const skeleton = byCard(state3, 'token_skeleton');
   assert.ok(skeleton, 'Catacombs: token Skeleton');
   assert.equal(skeleton.power, 4);
@@ -335,8 +355,8 @@ test('loch: Throne of the Dead Three — gracz WYBIERA stwora z odsłoniętych (
   addLibraryCard(state, 'lib2', 'armored-skaab');
   addLibraryCard(state, 'lib3', 'basic-forest');
   addLibraryCard(state, 'lib4', 'basic-island');
-  const room = ventureToNextRoom(state, 8); // pokój 9 — Throne
-  assert.equal(room, 9);
+  const room = ventureToNextRoom(state, roomNo('Archives')); // Archives → Throne (jedyna droga)
+  assert.equal(room, roomNo('Throne of the Dead Three'));
   // Odsłonięcie jest jawne, a wybór stwora to decyzja gracza.
   assert.ok(state.events.filter((event) => event.type === 'card_revealed' && event.revealTop).length >= 4, 'odsłonięcie wierzchnich kart');
   assert.ok(state.pendingRoomTargets.length === 1, 'Throne kolejkuje wybór stwora');
@@ -367,21 +387,21 @@ test('loch: Throne bez stworów wśród odsłoniętych tylko tasuje (bez wyboru)
   const state = mainPhase(game());
   addLibraryCard(state, 'lib1', 'basic-forest');
   addLibraryCard(state, 'lib2', 'basic-island');
-  const room = ventureToNextRoom(state, 8); // pokój 9 — Throne
-  assert.equal(room, 9);
+  const room = ventureToNextRoom(state, roomNo('Archives')); // Archives → Throne (jedyna droga)
+  assert.equal(room, roomNo('Throne of the Dead Three'));
   assert.equal(state.pendingRoomTargets.length, 0, 'brak stwora wśród odsłoniętych = brak wyboru');
   assert.ok(state.events.some((event) => event.type === 'library_searched' && event.shuffled));
 });
 
 test('loch: po Throne (pokój 9) dalsze venture nic nie robi', () => {
   const state = mainPhase(game());
-  const room = ventureToNextRoom(state, 9);
+  const room = ventureToNextRoom(state, roomNo('Throne of the Dead Three'));
   assert.equal(room, 9, 'koniec lochu — brak postępu');
 });
 
 test('loch: sekwencja pokoi jest jawna w PlayerView (karta na stole)', () => {
   const state = mainPhase(game());
-  ventureToNextRoom(state, 1); // pokój 2
+  ventureToNextRoom(state, roomNo('Secret Entrance'), 'Forge');
   const view = playerView(state, 'p1');
   assert.equal(view.initiativePlayerId, 'p1');
   assert.equal(view.undercityProgress.p1, 2);

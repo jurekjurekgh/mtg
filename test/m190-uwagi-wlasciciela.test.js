@@ -10,7 +10,10 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { commandLabel } from '../src/table/render.js';
+import { manaSourcesOf } from '../src/table/mana-wizard.js';
 import { describeGameEvent } from '../src/table/session.js';
+import { UNDERCITY_ROOMS, ventureIntoUndercityForTest } from '../src/engine/effects.js';
+import { createHeuristicBot, UNDERCITY_ROOM_LINKS as HEURISTIC_UNDERCITY_LINKS } from '../src/controllers/heuristic-bot.js';
 
 const REGISTRY = createCardRegistry();
 const HELPERS = {
@@ -121,4 +124,142 @@ test('M190/A2c: REALNA aktywacja Heap Gate — log bez listy pięciu symboli', (
   assert.ok(!line.includes('{W}, {U}, {B}, {R}, {G}'),
     `log nie wymienia pięciu symboli: ${JSON.stringify(line)}`);
   assert.match(line, /1 mana dowolnego koloru/, `log mówi wprost: ${JSON.stringify(line)}`);
+});
+
+// ---- B: Undercity to GRAF pokoi, nie lista 1..9 --------------------------
+// Zgłoszenie właściciela: „Rozpocząłem eksplorację od Secret Entrance.
+// W kolejnej turze przeniosło mnie do pokoju 2 Forge. To tak nie działa.
+// Powinienem wybrać ścieżkę — albo Forge, albo Lost Well."
+// Oracle (Scryfall tclb/20): każdy pokój ma klauzulę „(Leads to: …)".
+
+function venture(state, playerId = 'p1') {
+  const before = state.events.length;
+  ventureIntoUndercityForTest(state, playerId);
+  return state.events.slice(before);
+}
+
+test('M190/B1: mapa przejść lochu zgadza się z Oracle (tclb/20)', () => {
+  // Jedno źródło prawdy: dane, nie rozsypane warunki (ADR 0002/0010).
+  const byName = new Map(UNDERCITY_ROOMS.map((room) => [room.name, room]));
+  const expected = {
+    'Secret Entrance': ['Forge', 'Lost Well'],
+    Forge: ['Trap!', 'Arena'],
+    'Lost Well': ['Arena', 'Stash'],
+    'Trap!': ['Archives'],
+    Arena: ['Archives', 'Catacombs'],
+    Stash: ['Catacombs'],
+    Archives: ['Throne of the Dead Three'],
+    Catacombs: ['Throne of the Dead Three'],
+    'Throne of the Dead Three': [],
+  };
+  for (const [name, leadsTo] of Object.entries(expected)) {
+    const room = byName.get(name);
+    assert.ok(room, `pokój ${name} istnieje`);
+    assert.deepEqual(room.leadsTo ?? [], leadsTo, `ścieżki z „${name}"`);
+  }
+});
+
+test('M190/B2: pierwsze venture wchodzi do Secret Entrance (bez wyboru)', () => {
+  const state = game('p1');
+  venture(state, 'p1');
+  assert.equal(state.undercityProgress.p1, 1, 'gracz w pokoju 1');
+  assert.ok(!state.pendingUndercityRoute, 'wejście do lochu nie wymaga wyboru trasy');
+});
+
+test('M190/B3: drugie venture PYTA o ścieżkę (Forge albo Lost Well)', () => {
+  const state = game('p1');
+  venture(state, 'p1');
+  // Domykamy ewentualną decyzję pokoju 1 (Secret Entrance — szukanie landu).
+  for (let i = 0; i < 6 && (state.pendingSearchChoice || state.pendingRoomTargets?.length); i += 1) {
+    const cmd = playerView(state, 'p1').legalCommands.find((c) => c.type.startsWith('resolve_'));
+    if (!cmd) break;
+    execute(state, cmd);
+  }
+  venture(state, 'p1');
+  assert.ok(state.pendingUndercityRoute, 'gracz wybiera następny pokój (CR 309.4)');
+  const choices = state.pendingUndercityRoute.candidates.map((c) => c.name).sort();
+  assert.deepEqual(choices, ['Forge', 'Lost Well'], 'obie ścieżki z Secret Entrance');
+  assert.equal(state.undercityProgress.p1, 1, 'postęp NIE przesuwa się przed decyzją');
+});
+
+test('M190/B4: wybór „Lost Well" prowadzi do pokoju 3, nie do Forge', () => {
+  const state = game('p1');
+  venture(state, 'p1');
+  for (let i = 0; i < 6 && (state.pendingSearchChoice || state.pendingRoomTargets?.length); i += 1) {
+    const cmd = playerView(state, 'p1').legalCommands.find((c) => c.type.startsWith('resolve_'));
+    if (!cmd) break;
+    execute(state, cmd);
+  }
+  venture(state, 'p1');
+  const lostWell = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'resolve_undercity_route' && c.roomName === 'Lost Well');
+  assert.ok(lostWell, 'oferta wyboru „Lost Well"');
+  assert.ok(execute(state, lostWell).ok);
+  assert.equal(UNDERCITY_ROOMS[state.undercityProgress.p1 - 1].name, 'Lost Well',
+    'gracz trafia tam, gdzie wybrał');
+});
+
+test('M190/B5: pokój z JEDNĄ ścieżką nie pyta (Trap! → Archives)', () => {
+  const state = game('p1');
+  // Ustawiamy gracza w Trap! (pokój 4) — jedyne wyjście to Archives.
+  state.undercityProgress = { p1: 4 };
+  venture(state, 'p1');
+  assert.ok(!state.pendingUndercityRoute, 'jedna opcja = bez pytania (jak przy innych decyzjach)');
+  assert.equal(UNDERCITY_ROOMS[state.undercityProgress.p1 - 1].name, 'Archives',
+    'automatyczne przejście jedyną ścieżką');
+});
+
+test('M190/B6: loch kończy się na Throne — dalsze venture nic nie robi', () => {
+  const state = game('p1');
+  const throneIndex = UNDERCITY_ROOMS.findIndex((r) => r.name === 'Throne of the Dead Three') + 1;
+  state.undercityProgress = { p1: throneIndex };
+  const events = venture(state, 'p1');
+  assert.equal(state.undercityProgress.p1, throneIndex, 'postęp bez zmian');
+  assert.ok(!state.pendingUndercityRoute, 'brak decyzji po ukończeniu lochu');
+  assert.deepEqual(events.filter((e) => e.type === 'ventured_into_undercity'), [],
+    'żadnego wejścia do pokoju');
+});
+
+test('M190/B7: ścieżka NIE prowadzi przez wszystkie 9 pokoi (dowód na graf)', () => {
+  // Najkrótsza trasa wg Oracle: Secret Entrance → Forge → Trap! → Archives
+  // → Throne = 5 pokoi. Stara implementacja (current + 1) przechodziła 9.
+  const state = game('p1');
+  let visited = 0;
+  for (let i = 0; i < 12; i += 1) {
+    const beforeRoom = state.undercityProgress.p1 ?? 0;
+    venture(state, 'p1');
+    // Rozstrzygamy decyzje (trasa + ewentualny cel pokoju).
+    for (let j = 0; j < 8; j += 1) {
+      const cmd = playerView(state, 'p1').legalCommands.find((c) => c.type.startsWith('resolve_'));
+      if (!cmd) break;
+      execute(state, cmd);
+    }
+    if ((state.undercityProgress.p1 ?? 0) === beforeRoom) break;
+    visited += 1;
+    if (UNDERCITY_ROOMS[state.undercityProgress.p1 - 1].name === 'Throne of the Dead Three') break;
+  }
+  assert.ok(visited >= 4 && visited <= 6,
+    `loch przechodzi się w 4–6 pokojach, nie w 9 (przeszedł ${visited})`);
+});
+
+test('M190/B8: bot wycenia ścieżki (nie bierze ślepo pierwszej oferty)', () => {
+  const state = game('p2');
+  state.undercityProgress = { p2: UNDERCITY_ROOMS.findIndex((r) => r.name === 'Forge') + 1 };
+  ventureIntoUndercityForTest(state, 'p2');
+  assert.ok(state.pendingUndercityRoute, 'wybór drogi z Forge (Trap! albo Arena)');
+  const view = playerView(state, 'p2');
+  const chosen = createHeuristicBot({ seed: 3 }).chooseCommand(view);
+  assert.equal(chosen.type, 'resolve_undercity_route');
+  assert.equal(chosen.roomName, 'Trap!',
+    `5 życia w przeciwnika bije goad (bot wybrał: ${JSON.stringify(chosen.roomName)})`);
+});
+
+test('M190/B9: mapa dróg bota zgadza się z danymi silnika (jedno źródło prawdy)', () => {
+  // Kontroler ma własną kopię do wyceny (ADR 0004 — bot czyta widok, nie stan);
+  // strażnik pilnuje, żeby kopie się nie rozjechały (L41).
+  const botLinks = HEURISTIC_UNDERCITY_LINKS;
+  for (const room of UNDERCITY_ROOMS) {
+    assert.deepEqual(botLinks[room.name] ?? [], [...(room.leadsTo ?? [])],
+      `drogi z „${room.name}" identyczne w silniku i w bocie`);
+  }
 });

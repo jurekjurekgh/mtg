@@ -160,6 +160,23 @@ function allEffectsInertNow(view, effects, cmd) {
   return list.every((effect) => effectIsInertNow(view, effect, cmd));
 }
 
+/**
+ * M190/B: mapa dróg lochu (Oracle tclb/20) — kontroler nie importuje silnika
+ * (ADR 0004: bot dostaje widok), więc trzyma własną, jawną kopię do WYCENY.
+ * Zgodność z silnikiem pilnuje test m190 (jedno źródło prawdy = dane pokoi).
+ */
+export const UNDERCITY_ROOM_LINKS = Object.freeze({
+  'Secret Entrance': ['Forge', 'Lost Well'],
+  Forge: ['Trap!', 'Arena'],
+  'Lost Well': ['Arena', 'Stash'],
+  'Trap!': ['Archives'],
+  Arena: ['Archives', 'Catacombs'],
+  Stash: ['Catacombs'],
+  Archives: ['Throne of the Dead Three'],
+  Catacombs: ['Throne of the Dead Three'],
+  'Throne of the Dead Three': [],
+});
+
 export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null, weights = undefined, registry: registryOverride = undefined }) {
   if (!Number.isInteger(seed)) throw new TypeError('Bot wymaga całkowitego seeda');
   if (typeof randomness !== 'number' || randomness < 0 || randomness > 1) throw new RangeError('randomness ma być w [0, 1]');
@@ -636,7 +653,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent' || type === 'cast_adventure_creature') return 'permanent';
     if (type === 'cast_spell' || type === 'cast_cleave' || type === 'cast_adventure' || type === 'plot_card' || type === 'suspend_card' || type === 'warp_card' || type === 'draw_card') return 'spell';
-    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_library_placement' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_counter_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_satyr_look_choice' || type === 'resolve_epic_choice' || type === 'resolve_suspend_cast' || type === 'resolve_rebound_cast' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice' || type === 'resolve_copy_targets' || type === 'resolve_opponent_target' || type === 'resolve_damage_division' || type === 'resolve_grave_free_cast') return 'ability';
+    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_undercity_route' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_library_placement' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_counter_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_satyr_look_choice' || type === 'resolve_epic_choice' || type === 'resolve_suspend_cast' || type === 'resolve_rebound_cast' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice' || type === 'resolve_copy_targets' || type === 'resolve_opponent_target' || type === 'resolve_damage_division' || type === 'resolve_grave_free_cast') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
     return null;
@@ -2232,6 +2249,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Na spód odkładamy dokładnie wtedy, gdy karty nie chcemy dobrać.
         if (cmd.putOnBottom) return finish(20 - keep);
         return finish(20 + keep);
+      }
+      // M190/B: wybór ŚCIEŻKI w lochu (Oracle „Leads to: …"). Bez wyceny
+      // wszystkie warianty remisują i bot bierze pierwszą ofertę (klasa L50).
+      // Wartość pokoju = jego realny wpływ na partię; przy równych wartościach
+      // preferujemy krótszą drogę do Throne (najsilniejszy pokój końcowy).
+      case 'resolve_undercity_route': {
+        const ROOM_VALUE = {
+          'Trap!': 34,            // 5 życia w przeciwnika
+          Catacombs: 30,          // 4/1 menace
+          Forge: 22,              // 2× +1/+1
+          Archives: 18,           // dobranie karty
+          Arena: 14,              // goad (sytuacyjny)
+          Stash: 12,              // Treasure
+          'Lost Well': 8,         // scry 2
+          'Throne of the Dead Three': 40,
+        };
+        const base = ROOM_VALUE[cmd.roomName] ?? 10;
+        // Krótsza droga do końca lochu jest warta premii: Trap!/Archives
+        // domykają trasę szybciej niż pętla przez Arenę i Catacombs.
+        const room = (cmd.room ?? 0) - 1;
+        const leadsTo = UNDERCITY_ROOM_LINKS[cmd.roomName] ?? [];
+        const closesFast = leadsTo.includes('Throne of the Dead Three') ? 6 : 0;
+        return finish(base + closesFast + (room >= 0 ? 0 : 0));
       }
       case 'resolve_room_target': {
         // Wybór celu pokoju lochu (M24): Trap! → przeciwnik; Throne →

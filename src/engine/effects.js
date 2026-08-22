@@ -26,15 +26,15 @@ import { attachEquipmentToCreature } from './attachments.js';
  */
 export const UNDERCITY_ROOMS = Object.freeze([
   // 1. Secret Entrance — szukaj Basic Land do ręki, tasuj.
-  Object.freeze({ name: 'Secret Entrance', effects: Object.freeze([Object.freeze({ type: 'search_library_to_hand', qualifier: { types: ['Basic', 'Land'] } })]) }),
+  Object.freeze({ name: 'Secret Entrance', effects: Object.freeze([Object.freeze({ type: 'search_library_to_hand', qualifier: { types: ['Basic', 'Land'] } })]), leadsTo: Object.freeze(['Forge', 'Lost Well']) }),
   // 2. Forge — dwa liczniki +1/+1 na docelowym stworze (wybór celu).
-  Object.freeze({ name: 'Forge', effects: Object.freeze([Object.freeze({ type: 'add_counter', counter: '+1/+1', amount: 2, target: 'creature' })]) }),
+  Object.freeze({ name: 'Forge', effects: Object.freeze([Object.freeze({ type: 'add_counter', counter: '+1/+1', amount: 2, target: 'creature' })]), leadsTo: Object.freeze(['Trap!', 'Arena']) }),
   // 3. Lost Well — scry 2 (blokująca decyzja gracza).
-  Object.freeze({ name: 'Lost Well', effects: Object.freeze([Object.freeze({ type: 'scry', amount: 2 })]) }),
+  Object.freeze({ name: 'Lost Well', effects: Object.freeze([Object.freeze({ type: 'scry', amount: 2 })]), leadsTo: Object.freeze(['Arena', 'Stash']) }),
   // 4. Trap! — docelowy gracz traci 5 życia (wybór celu).
-  Object.freeze({ name: 'Trap!', effects: Object.freeze([Object.freeze({ type: 'lose_life', amount: 5, target: 'player' })]) }),
+  Object.freeze({ name: 'Trap!', effects: Object.freeze([Object.freeze({ type: 'lose_life', amount: 5, target: 'player' })]), leadsTo: Object.freeze(['Archives']) }),
   // 5. Arena — goad docelowego stwora (musi atakować do końca tury; wybór celu).
-  Object.freeze({ name: 'Arena', effects: Object.freeze([Object.freeze({ type: 'goad', target: 'creature' })]) }),
+  Object.freeze({ name: 'Arena', effects: Object.freeze([Object.freeze({ type: 'goad', target: 'creature' })]), leadsTo: Object.freeze(['Archives', 'Catacombs']) }),
   // 6. Stash — token Treasure (ze zdolnością „{T}, Sacrifice: Add one mana
   //    of any color\", jak każdy Skarb w MtG; mana oznaczona fromTreasure —
   //    Marut, Batch 16. Deskryptor pisany z ręki: effects.js nie importuje
@@ -49,14 +49,14 @@ export const UNDERCITY_ROOMS = Object.freeze([
       trigger: null, targets: null, cycling: null, condition: null, pump: null,
       keywords: null, oncePerTurn: false, mustAttack: false,
     })],
-  })]) }),
+  })]), leadsTo: Object.freeze(['Catacombs']) }),
   // 7. Archives — dobierz kartę.
-  Object.freeze({ name: 'Archives', effects: Object.freeze([Object.freeze({ type: 'draw_cards', amount: 1 })]) }),
+  Object.freeze({ name: 'Archives', effects: Object.freeze([Object.freeze({ type: 'draw_cards', amount: 1 })]), leadsTo: Object.freeze(['Throne of the Dead Three']) }),
   // 8. Catacombs — 4/1 czarny Skeleton z menace.
-  Object.freeze({ name: 'Catacombs', effects: Object.freeze([Object.freeze({ type: 'create_token', cardId: 'token_skeleton', name: 'Skeleton', kind: 'creature', power: 4, toughness: 1, colors: ['B'], types: ['Creature'], subtypes: ['Skeleton'], keywords: ['menace'] })]) }),
+  Object.freeze({ name: 'Catacombs', effects: Object.freeze([Object.freeze({ type: 'create_token', cardId: 'token_skeleton', name: 'Skeleton', kind: 'creature', power: 4, toughness: 1, colors: ['B'], types: ['Creature'], subtypes: ['Skeleton'], keywords: ['menace'] })]), leadsTo: Object.freeze(['Throne of the Dead Three']) }),
   // 9. Throne of the Dead Three — odsłoń 10 kart, połóż STWORA SPOŚRÓD NICH
   //    (wybór celu) z 3× +1/+1 i hexproof do twojej następnej tury, tasuj.
-  Object.freeze({ name: 'Throne of the Dead Three', effects: Object.freeze([Object.freeze({ type: 'reveal_top_put_creature', amount: 10, counters: '+1/+1', countersAmount: 3, hexproofUntilNextTurn: true })]) }),
+  Object.freeze({ name: 'Throne of the Dead Three', effects: Object.freeze([Object.freeze({ type: 'reveal_top_put_creature', amount: 10, counters: '+1/+1', countersAmount: 3, hexproofUntilNextTurn: true })]), leadsTo: Object.freeze([]) }),
 ]);
 
 /** Wirtualne źródło efektów lochu (nie jest obiektem w strefie — jak emblem). */
@@ -246,16 +246,73 @@ function executeRoomEffect(state, roomIndex, playerId) {
  * Po Throne of the Dead Three loch się kończy i dalsze venture nic nie robi.
  * Postęp jest jawny (event + stan w PlayerView) — kartę lochu renderuje stół.
  */
-function ventureIntoUndercity(state, playerId) {
-  const current = state.undercityProgress[playerId] ?? 0;
-  if (current >= UNDERCITY_ROOMS.length) return;
-  const room = current + 1;
+function roomIndexByName(name) {
+  return UNDERCITY_ROOMS.findIndex((room) => room.name === name) + 1;
+}
+
+/** Czy pokój jest ostatni (brak dalszych ścieżek — „Throne of the Dead Three")? */
+function isFinalRoom(roomIndex) {
+  return (UNDERCITY_ROOMS[roomIndex - 1]?.leadsTo ?? []).length === 0;
+}
+
+/** Wchodzi do WSKAZANEGO pokoju: postęp, zdarzenie i efekt pokoju. */
+function enterUndercityRoom(state, playerId, room) {
   state.undercityProgress = { ...state.undercityProgress, [playerId]: room };
   state.events.push(event('ventured_into_undercity', {
     playerId, room, roomName: UNDERCITY_ROOMS[room - 1].name, total: UNDERCITY_ROOMS.length,
-    last: room === UNDERCITY_ROOMS.length,
+    last: isFinalRoom(room),
   }));
   executeRoomEffect(state, room, playerId);
+}
+
+export function ventureIntoUndercityForTest(state, playerId) {
+  return ventureIntoUndercity(state, playerId);
+}
+
+/**
+ * M190/B (zgłoszenie właściciela): Undercity to GRAF, nie lista 1..9.
+ * Oracle (Scryfall tclb/20) daje przy każdym pokoju klauzulę „(Leads to: …)",
+ * a CR 309.4 mówi, że gracz wybiera następny pokój spośród wskazanych
+ * strzałkami. Wcześniej silnik robił `current + 1`, czyli jedną sztywną
+ * trasę przez wszystkie dziewięć pokoi — gracza „przenosiło" do Forge bez
+ * pytania, a loch nigdy nie kończył się po 4–5 pokojach, jak powinien.
+ *
+ * Wybór jest blokującą decyzją (`pendingUndercityRoute`), jak każda inna
+ * decyzja gracza; przy JEDNEJ możliwej ścieżce nie pytamy (spójnie z resztą
+ * silnika — brak realnego wyboru nie zatrzymuje gry).
+ */
+function ventureIntoUndercity(state, playerId) {
+  const current = state.undercityProgress[playerId] ?? 0;
+  if (current === 0) {
+    enterUndercityRoom(state, playerId, 1);
+    return;
+  }
+  if (isFinalRoom(current)) return; // loch ukończony (CR 309.5)
+  const nextRooms = (UNDERCITY_ROOMS[current - 1]?.leadsTo ?? [])
+    .map((name) => ({ name, room: roomIndexByName(name) }))
+    .filter((entry) => entry.room > 0);
+  if (nextRooms.length === 0) return;
+  if (nextRooms.length === 1) {
+    enterUndercityRoom(state, playerId, nextRooms[0].room);
+    return;
+  }
+  state.pendingUndercityRoute = {
+    playerId,
+    fromRoom: current,
+    fromRoomName: UNDERCITY_ROOMS[current - 1].name,
+    candidates: nextRooms,
+    restorePriorityTo: state.turn.priorityPlayerId,
+  };
+  state.turn.priorityPlayerId = playerId;
+  state.events.push(event('undercity_route_required', {
+    playerId, fromRoom: current, fromRoomName: UNDERCITY_ROOMS[current - 1].name,
+    candidates: nextRooms.map((entry) => ({ room: entry.room, roomName: entry.name })),
+  }));
+}
+
+/** Domyka decyzję trasy — wywoływane przez komendę resolve_undercity_route. */
+export function enterChosenUndercityRoom(state, playerId, room) {
+  enterUndercityRoom(state, playerId, room);
 }
 
 /** Tasuje listę obiektów w exile i przenosi je na spód biblioteki właściciela. */

@@ -1048,6 +1048,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         return `${whoN(e.playerId)} obejmuje inicjatywę${first}`;
       }
       case 'ventured_into_undercity': return `${whoN(e.playerId)} zagłębia się w Podziemiach (pokój ${e.room}/${e.total}: ${e.roomName})`;
+      // M190/B: loch ma rozgałęzienia (Oracle „Leads to: …") — gracz wybiera
+      // ścieżkę, więc log musi pokazać i pytanie, i podjętą decyzję.
+      case 'undercity_route_required': {
+        const opts = (e.candidates ?? []).map((c) => c.roomName).join(' albo ');
+        return `${whoN(e.playerId)} wybiera dalszą drogę z pokoju ${e.fromRoomName}: ${opts}`;
+      }
+      case 'undercity_route_chosen':
+        return `${whoN(e.playerId)} wybiera drogę: ${e.fromRoomName} → ${e.roomName}`;
       case 'clash_resolved': {
         const mine = e.myManaValue ?? '—';
         const theirs = e.opponentManaValue ?? '—';

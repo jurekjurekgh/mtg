@@ -332,6 +332,7 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_damage_assignment') return 'resolve_damage_assignment';
   if (command.type === 'resolve_clash_choice') return 'resolve_clash_choice';
   if (command.type === 'resolve_room_target') return 'resolve_room_target';
+  if (command.type === 'resolve_undercity_route') return 'resolve_undercity_route';
   if (command.type === 'resolve_backup') return 'resolve_backup';
   if (command.type === 'resolve_sacrifice_choice') return 'resolve_sacrifice_choice';
   if (command.type === 'resolve_trigger_target') return 'resolve_trigger_target';
@@ -390,6 +391,7 @@ function choiceRequestType(commands) {
   if (first.type === 'resolve_damage_assignment') return 'damage_assignment';
   if (first.type === 'resolve_clash_choice') return 'clash';
   if (first.type === 'resolve_room_target') return 'room-target';
+  if (first.type === 'resolve_undercity_route') return 'undercity-route';
   if (first.type === 'resolve_backup') return 'target';
   if (first.type === 'resolve_sacrifice_choice') return 'sacrifice';
   if (first.type === 'resolve_trigger_target') return 'target';
@@ -1993,6 +1995,10 @@ export function commandLabel(cmd, session, view) {
         ? `Clash: ${what} na spód biblioteki`
         : `Clash: ${what} na wierzch biblioteki`;
     }
+    // M190/B: wybór ścieżki w lochu — etykieta nazywa POKÓJ, do którego
+    // gracz wchodzi (Oracle „Leads to: Forge, Lost Well").
+    case 'resolve_undercity_route':
+      return `Podziemia — idź do: ${escapeHtml(String(cmd.roomName ?? ''))}`;
     case 'resolve_room_target': {
       // Wybór celu pokoju lochu (M24): etykieta pokazuje pokój i kandydata.
       const pending = view.pendingRoomTarget;
@@ -3394,13 +3400,24 @@ export function renderUndercity(els, session, view, { onClick = null, hover = nu
   for (const [playerId, room] of entered) {
     const row = div(info, 'undercity-player');
     const playerName = PLAYER_NAMES[playerId] ?? playerId;
-    div(row, '', `${playerName} — pokój ${room}/${UNDERCITY_ROOMS.length}: ${UNDERCITY_ROOMS[room - 1]?.name ?? '?'}`);
+    // M190/B: loch jest GRAFEM (Oracle „Leads to: …"), więc „pokój 3/9" i
+    // chipy „done" po numerze kłamały — gracz nie przechodzi wszystkich
+    // dziewięciu pokoi, tylko jedną z tras. Pokazujemy AKTUALNY pokój
+    // i drogi, które z niego wychodzą.
+    const currentRoom = UNDERCITY_ROOMS[room - 1];
+    const leadsTo = currentRoom?.leadsTo ?? [];
+    div(row, '', `${playerName} — pokój: ${currentRoom?.name ?? '?'}`);
     const rooms = div(row, 'undercity-rooms');
     UNDERCITY_ROOMS.forEach((roomDef, index) => {
       const number = index + 1;
-      const stateClass = number === room ? ' current' : (number < room ? ' done' : '');
-      div(rooms, `undercity-room${stateClass}`, `${number}. ${roomDef.name}`);
+      const isCurrent = number === room;
+      const isNext = leadsTo.includes(roomDef.name);
+      const stateClass = isCurrent ? ' current' : (isNext ? ' next' : '');
+      div(rooms, `undercity-room${stateClass}`, roomDef.name);
     });
+    div(row, 'undercity-note', leadsTo.length > 0
+      ? `Dalsza droga: ${leadsTo.join(' albo ')}`
+      : 'Loch ukończony');
   }
   if (view.initiativePlayerId == null) {
     div(info, 'undercity-note', 'Inicjatywę obejmuje się combat damage na jej posiadacza albo efektem karty (np. Underdark Explorer).');

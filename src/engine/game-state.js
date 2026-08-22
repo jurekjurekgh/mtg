@@ -27,7 +27,7 @@ import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queu
 import { moveObjectDirectly } from './objects.js';
 import { detachAttachmentsFromHost } from './attachments.js';
 import { createBattlefieldToken } from './tokens.js';
-import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife } from './effects.js';
+import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom } from './effects.js';
 import { changeLife } from './players.js';
 import { shuffle } from './shuffle.js';
 import { applyRoomTargetChoice, applyEffect, drawPlayerCards } from './effects.js';
@@ -187,6 +187,8 @@ export function createGameState({ seed, players }) {
     // candidateIds, cards, restorePriorityTo }. Blokuje grę do
     // resolve_room_target (jak pendingBackups).
     pendingRoomTargets: [],
+    // M190/B: wybór ścieżki w lochu (CR 309.4) — blokująca decyzja gracza.
+    pendingUndercityRoute: null,
     // Batch 22: oczekująca decyzja proliferate (CR 701.27, Courage in
     // Crisis). Gracz wybiera DOWOLNĄ liczbę permanentów i/lub graczy
     // (z licznikami) — każdy dostaje po +1 do każdego typu licznika
@@ -1007,6 +1009,7 @@ function firstPendingDecisionPlayerId(state) {
   if (state.pendingColorChoice) return state.pendingColorChoice.playerId;
   if (state.pendingBackups.length > 0) return state.pendingBackups[0].playerId;
   if (state.pendingClash) return state.pendingClash.choices[0];
+  if (state.pendingUndercityRoute) return state.pendingUndercityRoute.playerId;
   if (state.pendingRoomTargets.length > 0) return state.pendingRoomTargets[0].playerId;
   if (state.pendingSearchChoice) return state.pendingSearchChoice.playerId;
   if (state.pendingPayOrSacrifice) return state.pendingPayOrSacrifice.playerId;
@@ -2330,6 +2333,30 @@ export function execute(state, input) {
   // prozedura z accepted()): pokój bez celu gaśnie jak czar bez legalnego
   // celu (CR 608.2b) i gra toczy się dalej.
   pruneDeadPendingDecisions(state);
+  // M190/B (zgłoszenie właściciela): wybór ŚCIEŻKI w lochu (CR 309.4) —
+  // „Leads to: Forge, Lost Well". Decyzja blokuje grę jak każda inna;
+  // po wejściu do pokoju wykonuje się jego efekt (może otworzyć kolejną
+  // decyzję — cel pokoju — więc priorytet oddajemy dopiero, gdy jej nie ma).
+  if (state.pendingUndercityRoute) {
+    const pending = state.pendingUndercityRoute;
+    if (cmd.type !== 'resolve_undercity_route') return reject('undercity_route_unresolved');
+    if (cmd.playerId !== pending.playerId) return reject('undercity_route_not_your_decision');
+    const chosen = pending.candidates.find((entry) => entry.room === cmd.room);
+    if (!chosen) return reject('illegal_undercity_route');
+    const before = state.events.length;
+    state.pendingUndercityRoute = null;
+    state.events.push(event('undercity_route_chosen', {
+      playerId: pending.playerId, fromRoom: pending.fromRoom, fromRoomName: pending.fromRoomName,
+      room: chosen.room, roomName: chosen.name,
+    }));
+    enterChosenUndercityRoom(state, pending.playerId, chosen.room);
+    if (state.pendingRoomTargets.length > 0) {
+      state.turn.priorityPlayerId = state.pendingRoomTargets[0].playerId;
+    } else if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+  }
   if (state.pendingRoomTargets.length > 0) {
     const pending = state.pendingRoomTargets[0];
     if (cmd.type !== 'resolve_room_target') return reject('room_target_unresolved');
@@ -4549,6 +4576,8 @@ export function playerView(state, playerId) {
     : [];
   const activeRoomTarget = state.pendingRoomTargets.length > 0
     && state.pendingRoomTargets[0].playerId === playerId && headRoomCandidates.length > 0;
+  const activeUndercityRoute = state.pendingUndercityRoute
+    && state.pendingUndercityRoute.playerId === playerId;
   const activeSearchChoice = state.pendingSearchChoice && state.pendingSearchChoice.playerId === playerId;
   const activePayOrSacrifice = state.pendingPayOrSacrifice && state.pendingPayOrSacrifice.playerId === playerId;
   const activeOptionalPay = state.pendingOptionalPay && state.pendingOptionalPay.playerId === playerId;
@@ -4810,6 +4839,14 @@ export function playerView(state, playerId) {
     // dla swojej odsłoniętej karty.
     legalCommands.unshift(command('resolve_clash_choice', playerId, { putOnBottom: true }));
     legalCommands.unshift(command('resolve_clash_choice', playerId, {}));
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeUndercityRoute) {
+    // M190/B: wybór ścieżki lochu — kolejność ofert deterministyczna (ADR 0005),
+    // taka jak w Oracle („Leads to: Forge, Lost Well").
+    for (const entry of [...state.pendingUndercityRoute.candidates].reverse()) {
+      legalCommands.unshift(command('resolve_undercity_route', playerId, {
+        room: entry.room, roomName: entry.name,
+      }));
+    }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeRoomTarget) {
     // Oczekujący wybór celu pokoju lochu (M24): właściciel decyzji wybiera
     // spośród celów legalnych w tej chwili (kandydat mógł zniknąć po

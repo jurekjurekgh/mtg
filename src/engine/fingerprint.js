@@ -142,6 +142,10 @@ export function stateFingerprint(state) {
     } : null,
     initiativePlayerId: state.initiativePlayerId ?? null,
     undercityProgress: { ...(state.undercityProgress ?? {}) },
+    // M190/B: oczekujący wybór trasy jest częścią stanu (determinizm replayów).
+    pendingUndercityRoute: state.pendingUndercityRoute
+      ? { playerId: state.pendingUndercityRoute.playerId, fromRoom: state.pendingUndercityRoute.fromRoom }
+      : null,
     descendedThisTurn: { ...(state.descendedThisTurn ?? {}) },
     abilityActivatedThisTurn: { ...(state.abilityActivatedThisTurn ?? {}) },
     delayedTriggers: (state.delayedTriggers ?? []).map((entry) => ({ ...entry })),

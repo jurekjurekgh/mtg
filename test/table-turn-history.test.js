@@ -153,7 +153,10 @@ test('renderUndercity: karta lochu z inicjatywą i zaznaczeniem pokoju gracza (M
   assert.equal(cardEl.children[0].alt, 'The Undercity');
   assert.match(cardEl.children[0].src, /tclb\/20/);
   assert.match(els.undercity.textContent, /Inicjatywa: Ty/, 'imię ze stołu (Ty/Bot), nie z sekcji AI');
-  assert.match(els.undercity.textContent, /pokój 2\/9: Forge/, 'zaznaczony bieżący pokój gracza');
+  // M190/B: loch to graf — panel pokazuje NAZWĘ pokoju i dostępne drogi
+  // („pokój 2/9" sugerowało liniowy przemarsz przez wszystkie dziewięć).
+  assert.match(els.undercity.textContent, /pokój: Forge/, 'zaznaczony bieżący pokój gracza');
+  assert.match(els.undercity.textContent, /Dalsza droga: Trap! albo Arena/, 'drogi z Forge wg Oracle');
   assert.match(els.undercity.textContent, /Secret Entrance/, 'chipy pokoi zawierają nazwy wszystkich pokoi');
   // Brak inicjatywy i postępu → panel ukryty.
   const els2 = { undercity: new MiniEl('div') };
