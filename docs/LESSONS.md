@@ -24,6 +24,31 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 
 ---
 
+## L54 (2026-08-22) — Kara wyceny bota musi być MIERZONA względem bazy; każda klasa zachowań dostaje whitelistę ze strażnikiem
+
+**Objaw (M179, inwentaryzacja właściciela):** „kara −20 za trik we własnej
+main” (M146) nie działała od początku — bazowa wartość rzutu czaru (~50–65)
+zjadała ją w całości i bot dalej rzucał triki w Głównej 1 zamiast w oknie
+walki. Ten sam wzorzec co L50/L51, ale głębiej: kara ISTNIAŁA, tylko była
+liczona w oderwaniu od sumy, do której wchodzi.
+
+**Reguły:**
+1. Każda kara/premia okna czasowego w wycenie musi być zwymiarowana względem
+   BAZY gałęzi (dla czarów ~50–65) — inaczej jest dekoracją. Test zachowania
+   („bot NIE rzuca X w oknie Y”) obowiązkowy, bo tylko on mierzy sumę.
+2. Timing czaru to CZĘŚĆ okna: sorcery nie poczeka na combat — jego jedyne
+   sensowne okno na trik to Główna 1 przed atakiem (M179/C), a kara za
+   instant w main ma wymuszać czekanie na deklaracje (M179/A1).
+3. Klasy zachowań bota trzymamy jako WHITELISTY z eksportem + strażnikiem
+   katalogowym (wzorzec L51): IDEMPOTENT_EOT_EFFECTS/STACKING_ACTIVATED_EFFECTS
+   (duble na stosie, M179/B), FRIENDLY_TARGET_EFFECTS + HOSTILE_* (klamry
+   celowania, M179/E), KEYWORD_LABELS/KEYWORD_EVENT_LABELS (etykiety grantów,
+   M179/A2). Nowy typ efektu bez przydziału = czerwony strażnik, nie cicha
+   dziura.
+4. Klamry celowania są SYMETRYCZNE i centralne: wrogi efekt we własny cel
+   (selfHarmPenalty) ORAZ przyjazny efekt we wroga (friendlyMisaimPenalty)
+   — w call-site'ach gałęzi czarów i zdolności, nie w każdej gałązce osobno.
+
 ## L53 (2026-08-22) — Test scenariuszowy na zamrożonym seedzie pełnej partii to dług odsetkowy
 
 Cztery testy etykiet w table-session miały po 10+ wpisów historii

@@ -1,6 +1,29 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-22 (M178: REWOLUCJA TALII — ADR 0023: 14 talii per plan, benchmark na stałej próbce jednoplanowych)
+- **Ostatnia aktualizacja:** 2026-08-22 (M179: inwentaryzacja trików/many/celów — whitelisty ze strażnikami, L54)
+- **Poprzednia:** 2026-08-22 (M178: REWOLUCJA TALII — ADR 0023)
+
+
+## M179 — inwentaryzacja trików, many i celów (2026-08-22, PR #69, zlecenie A–F)
+
+Plan: `docs/plans/PLAN_2026-08-22-m179-inwentaryzacja-trikow-many-celow.md`.
+Testy: `test/m179-inwentaryzacja.test.js` (15). Lekcja L54.
+
+- **A1+C (triki):** wspólna wycena okien walki dla zdolności I czarów
+  (keywordGrantWindowValue); kara za trik-instant we własnej main −75
+  (dotąd −20 — baza wyceny czaru ją zjadała, bot rzucał triki w Głównej 1);
+  sorcery-triki: jedyne okno Główna 1 przed atakiem (phase, nie step!).
+- **A2 (badge/log):** strażnik kompletności etykiet keywordów
+  (KEYWORD_LABELS + KEYWORD_EVENT_LABELS, deep-scan grantów katalogu).
+- **B (duble na stosie):** whitelisty IDEMPOTENT_EOT_EFFECTS /
+  STACKING_ACTIVATED_EFFECTS + kara dubla identycznej aktywacji; strażnik
+  wymusza klasyfikację każdego nowego typu efektu bez {T}.
+- **D (mana):** producibleMana/spendMana widzą nielandowe źródła CZYSTEJ
+  many ({T}-only, sam add_mana — Seer's Lantern, Scorned Villager);
+  auto-tap w płatności (L48). Źródła z kosztami/skutkami — ręcznie.
+- **E (cele):** friendlyMisaimPenalty — centralna symetryczna klamra
+  (przyjazne → tylko sojusznicy, wrogie → tylko wrogowie) w call-site'ach
+  selfHarmPenalty.
 - **Poprzednia:** 2026-08-22 (M176: przebieg tur w 3. osobie; M177: Batch 42 KOMPLET)
 
 

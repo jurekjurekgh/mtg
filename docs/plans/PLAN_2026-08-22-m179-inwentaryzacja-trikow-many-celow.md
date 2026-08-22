@@ -27,33 +27,47 @@
 
 ## Kroki
 
-- [ ] 1. Plan (ten plik) — commit.
-- [ ] 2. **D:** producibleMana/canPayColoredCost/planGrantManaColors/spendMana
+- [x] 1. Plan (ten plik) — commit.
+- [x] 2. **D:** producibleMana/canPayColoredCost/planGrantManaColors/spendMana
   liczą też nielandowe źródła many o koszcie SAMEGO {T} i efekcie SAMEGO
   add_mana (bez kosztów dodatkowych i skutków ubocznych; stwory z chorobą
   przywołania wykluczone); płatność auto-tapuje je po landach (L48:
   oferta=płatność). Źródła z kosztem many/skutkami (apprentice-wizard,
   pristine-talisman, jeskai-devotee, dragonbroods-relic) zostają ręczną
   aktywacją (jak dotąd). Testy RED→GREEN — commit.
-- [ ] 3. **A1+C:** wycena grant_keywords dla CZARÓW (wspólny helper okien
+- [x] 3. **A1+C:** wycena grant_keywords dla CZARÓW (wspólny helper okien
   walki z M173/E) + rozróżnienie timing sorcery w oknach pump/grant
   (sorcery: precombat main przed atakiem = bonus, postcombat = kara —
   „w następnym oknie już go nie rzucisz taniej”). Testy — commit.
-- [ ] 4. **A2:** strażnik kompletności etykiet keywordów: każdy keyword
+- [x] 4. **A2:** strażnik kompletności etykiet keywordów: każdy keyword
   występujący w grantach/conditionalKeywords katalogu ma wpis w
   KEYWORD_LABELS (render, badge) i KEYWORD_EVENT_LABELS (session, log);
   uzupełnienie braków. Test end-to-end badge dla keyworda z CZARU — commit.
-- [ ] 5. **B:** whitelist IDEMPOTENT_EOT_EFFECTS w heuristic-bocie +
+- [x] 5. **B:** whitelist IDEMPOTENT_EOT_EFFECTS w heuristic-bocie +
   generalizacja strażnika stosu z M175/A2 (identyczna aktywacja na stosie
   → kara, gdy WSZYSTKIE efekty idempotentne); strażnik-test: każdy typ
   efektu w aktywowanej zdolności bez {T} sklasyfikowany (idempotentny/
   kumulujący) — commit.
-- [ ] 6. **E:** centralna klamra celów w wycenie czarów/zdolności:
+- [x] 6. **E:** centralna klamra celów w wycenie czarów/zdolności:
   efekt PRZYJAZNY w cel wroga / WROGI w cel własny → twarda kara
   (jedno miejsce zamiast rozsianych); audyt klasyfikacji FRIENDLY — commit.
-- [ ] 7. **F:** LESSONS (aktualizacja L50/L51 o nowe strażniki albo nowa
+- [x] 7. **F:** LESSONS (aktualizacja L50/L51 o nowe strażniki albo nowa
   lekcja), PROJECT_STATE, opis PR, test:all + benchmark, push, CI.
 
 ## Wynik
 
-(uzupełnić po wykonaniu)
+- Commity: 8904f48 (plan), 758722d (D), deea47c (A1+C), 4f041bc (A2+B+E).
+- **D:** untappedFreeManaSources + auto-tap w spendMana — producibleMana
+  widzi Lantern/Villagera; anty-over-fixy M128 zaktualizowane (próg
+  osiągnięty ⇒ bot RZUCA czar wprost).
+- **A1+C:** keywordGrantWindowValue wspólny dla zdolności i czarów; kara
+  za trik-instant w main −75 (baza ~50–65 zjadała −20 — L54); sorcery:
+  okno = Główna 1 przed atakiem (kara −75 poza nim); test M149/A2
+  odwrócony zgodnie ze zleceniem.
+- **A2:** strażnik kompletności KEYWORD_LABELS/KEYWORD_EVENT_LABELS
+  (deep-scan grantów katalogu); intimidate uzupełniony w logu.
+- **B:** IDEMPOTENT_EOT_EFFECTS / STACKING_ACTIVATED_EFFECTS + kara dubla
+  identycznej aktywacji na stosie (źródło+zdolność+cele); strażnik B1.
+- **E:** friendlyMisaimPenalty — centralna symetryczna klamra celowania.
+- **F:** L54. Testy: test/m179-inwentaryzacja.test.js (15).
+- fast 2685/2685 · benchmark 9/9 (bez regresji po zmianach wyceny).
