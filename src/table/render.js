@@ -80,6 +80,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_library_placement: 'Wierzch czy spód biblioteki',
   resolve_pay_or_sacrifice: 'Zapłata albo poświęcenie',
   resolve_optional_pay_choice: 'Dobrowolna dopłata',
+  resolve_counter_pay_choice: 'Zapłać albo czar skontrowany',
   resolve_moonlit_choice: 'Moonlit (wybór efektu)',
   resolve_damage_target: 'Cel obrażeń',
   resolve_reveal_order: 'Kolejność kart na wierzchu',
@@ -355,6 +356,7 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_library_placement') return 'resolve_library_placement';
   if (command.type === 'resolve_pay_or_sacrifice') return 'resolve_pay_or_sacrifice';
   if (command.type === 'resolve_optional_pay_choice') return 'resolve_optional_pay_choice';
+  if (command.type === 'resolve_counter_pay_choice') return 'resolve_counter_pay_choice';
   if (command.type === 'resolve_moonlit_choice') return 'resolve_moonlit_choice';
   if (command.type === 'resolve_damage_target') return 'resolve_damage_target';
   if (command.type === 'resolve_reveal_order') return 'resolve_reveal_order';
@@ -836,6 +838,7 @@ function describeEffect(e) {
     cloak: () => 'cloak (wierzch biblioteki twarzą w dół jako 2/2)',
     control_to_owners_all_creatures: () => 'kontrola stworów wraca do właścicieli',
     counter_spell: () => 'skontruj czar',
+    counter_spell_unless_pays: (effect) => `skontruj czar, chyba że kontroler zapłaci {${effect?.amount ?? 1}}; ten gracz odrzuca kartę`,
     fireball_resolve: () => 'X obrażeń podzielone po równo między cele',
     craft_transform: () => 'craft — transform',
     damage_defending_player: () => `${damageCount(dynamicAmount(e.amount))} obrońcy`,
@@ -1410,6 +1413,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_library_placement: 'Wierzch czy spód biblioteki',
   resolve_pay_or_sacrifice: 'Zapłata albo poświęcenie',
   resolve_optional_pay_choice: 'Dobrowolna dopłata',
+  resolve_counter_pay_choice: 'Zapłać albo czar skontrowany',
   resolve_moonlit_choice: 'Moonlit — wybór efektu',
   resolve_reveal_order: 'Kolejność kart na wierzchu biblioteki',
 });
@@ -2052,6 +2056,14 @@ export function commandLabel(cmd, session, view) {
       const price = cmd.cost != null && cmd.cost > 0 ? manaCostHtml(`{${cmd.cost}}`) : null;
       if (cmd.pay) return `Zapłać${price ? ` ${price}` : ''}${source ? ` (zachowaj ${source})` : ''}`;
       return `Poświęć${source ? ` ${source}` : ' permanent'} (bez płacenia)`;
+    }
+    case 'resolve_counter_pay_choice': {
+      // Batch 44 (Frightful Delusion): zapłać {N}, żeby czar NIE został
+      // skontrowany — albo odpuść (czar do grobu). Obie opcje z ceną i celem.
+      const spell = cmd.targetId ? nameOfObjectId(cmd.targetId) : 'czar';
+      const price = cmd.cost != null && cmd.cost > 0 ? manaCostHtml(`{${cmd.cost}}`) : null;
+      if (cmd.pay) return `Zapłać${price ? ` ${price}` : ''} — ${spell} zostaje na stosie`;
+      return `Nie płać — ${spell} zostaje skontrowany`;
     }
     case 'resolve_food_choice': {
       // Insatiable Appetite: poświęć Food za większy buff albo nie.

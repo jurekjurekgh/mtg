@@ -360,4 +360,5 @@ export const MANA_COSTS = {
   "thieves-tools": "{1}{B}",
   "heap-gate": "",
   "angels-herald": "{W}",
+  "frightful-delusion": "{2}{U}",
 };

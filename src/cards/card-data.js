@@ -8404,6 +8404,24 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['Empyrial Archangel nie jest w katalogu — search legalnie „fails to find" (CR 701.19b: kryterium nazwy); zdolność w pełni wg Oracle, użyteczna po ewentualnym dodaniu anioła'],
   }),
 
+  // 10. Frightful Delusion (ISD) — „Counter target spell unless its
+  //     controller pays {1}. That player discards a card." (NOWY efekt
+  //     counter_spell_unless_pays: decyzja kontrolera celu + discard).
+  defineCard({
+    id: 'frightful-delusion', name: 'Frightful Delusion', set: 'ISD',
+    types: ['Instant'], colors: ['U'], manaCost: 3,
+    oracleText: 'Counter target spell unless its controller pays {1}. That player discards a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/8/38c9ba98-90b4-4c28-9eef-a4fe0913b921.jpg?1783940974',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'spell_on_stack' }],
+      effects: [{ type: 'counter_spell_unless_pays', amount: 1 }],
+    },
+    artId: 256, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+    notes: ['kontroler celu decyduje (resolve_counter_pay_choice): zapłać {1} — czar zostaje; nie płać — skontrowany; NIEZALEŻNIE od decyzji odrzuca potem kartę (wybór odrzucanej — CR 701.18); bez many na {1} decyzji nie ma'],
+  }),
+
 ]);
 
 /**

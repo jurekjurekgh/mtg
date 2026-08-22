@@ -16,7 +16,7 @@ const PENDING_DECISION_FIELDS = Object.freeze([
   'pendingHandCreature', 'pendingHandTopChoice', 'pendingIndex',
   'pendingLandTypeChoice', 'pendingLibraryPlacement', 'pendingLookTopN', 'pendingSatyrLook', 'pendingRevealChoice', 'pendingMadnessCast', 'pendingModalTrigger',
   'pendingMoonlitChoice', 'pendingMulliganBottom', 'pendingMulligans',
-  'pendingOptionalDraw', 'pendingOptionalPay', 'pendingOptionalTrigger',
+  'pendingOptionalDraw', 'pendingOptionalPay', 'pendingCounterPay', 'pendingOptionalTrigger',
   'pendingPayOrSacrifice', 'pendingProliferate', 'pendingRedirectChoice',
   'pendingRevealExile', 'pendingRevealOrder', 'pendingSearchChoice',
   'pendingSpellReturnToHand', 'pendingSpringbloom', 'pendingReboundCast',

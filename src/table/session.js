@@ -1109,6 +1109,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         return `${whoN(e.playerId)} rezygnuje z szukania i tasuje bibliotekę`;
       }
       case 'pay_or_sacrifice_required': return `${nameOfObject(e.sourceId)} — zapłać {${e.amount}} albo ją poświęć (wybór gracza)`;
+      case 'counter_pay_required': return `${nameOf(e.cardId)} zostanie skontrowany, chyba że kontroler zapłaci {${e.amount}}${e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : ''}`;
+      case 'counter_pay_resolved': return e.paid
+        ? `${nameOf(e.cardId)}: kontroler płaci — czar zostaje na stosie`
+        : `${nameOf(e.cardId)}: bez zapłaty — czar skontrowany`;
       case 'pay_or_sacrifice_resolved': return e.paid
         ? `${whoN(e.playerId)} płaci {${e.amount}} za ${nameOfObject(e.sourceId)}`
         : `${whoN(e.playerId)} poświęca ${nameOfObject(e.sourceId)}`;

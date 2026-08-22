@@ -2,7 +2,7 @@ import { event } from '../protocol/types.js';
 import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife } from './players.js';
-import { spendMana, addMana } from './resources.js';
+import { spendMana, addMana, producibleMana } from './resources.js';
 import { getSourceForObject } from './mana-sources.js';
 import { moveObjectDirectly, singleTargetOfStackEntry } from './objects.js';
 import { tryRegenerate } from './state-based.js';
@@ -2866,6 +2866,53 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       counteredByCardId: sourceObject.cardId,
     }));
     return;
+  }
+  if (effect.type === 'counter_spell_unless_pays') {
+    // Batch 44 (Frightful Delusion): „Counter target spell unless its
+    // controller pays {1}. That player discards a card." — decyzja należy do
+    // KONTROLERA celowanego czaru (blokująca, resolve_counter_pay_choice).
+    // Bez many na opłatę nie ma decyzji: czar skontrowany od razu, potem
+    // discard (wybór karty w pendingDiscardChoice — CR 701.18).
+    const targetId = targets[0];
+    if (targetId == null) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'stack') return; // cel zniknął (CR 608.2b)
+    const payerId = object.controllerId;
+    const amount = effect.amount ?? 1;
+    const canPay = producibleMana(state, payerId) >= amount;
+    if (!canPay) {
+      const graveId = `grave-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, targetId, 'graveyard', graveId);
+      state.events.push(event('spell_countered', {
+        fromId: targetId, toId: graveId, cardId: moved.cardId,
+        controllerId: moved.controllerId, counteredBy: sourceObject.id,
+        counteredByCardId: sourceObject.cardId,
+      }));
+      const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === payerId);
+      if (handIds.length === 0) return; // bez ręki — nic więcej
+      state.pendingDiscardChoice = {
+        playerId: payerId, count: 1, handIds, purpose: 'effect',
+        sourceCardId: sourceObject.cardId ?? null,
+        restorePriorityTo: state.turn.priorityPlayerId,
+      };
+      state.turn.priorityPlayerId = payerId;
+      state.events.push(event('discard_choice_required', {
+        playerId: payerId, count: 1, cardIds: [...handIds], purpose: 'effect',
+        sourceCardId: sourceObject.cardId ?? null,
+      }));
+      return true; // discard dokończy rozstrzyganie czaru-źródła
+    }
+    state.pendingCounterPay = {
+      playerId: payerId, targetId, amount,
+      sourceId: sourceObject.id, sourceCardId: sourceObject.cardId ?? null,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = payerId;
+    state.events.push(event('counter_pay_required', {
+      playerId: payerId, targetId, cardId: object.cardId, amount,
+      sourceCardId: sourceObject.cardId ?? null,
+    }));
+    return true; // decyzja blokuje dalsze efekty czaru
   }
   if (effect.type === 'player_sacrifices_creature') {
     // Grave Exchange (drugi cel): „Target player sacrifices a creature of
