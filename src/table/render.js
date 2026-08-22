@@ -284,6 +284,10 @@ export const OPTION_IGNORABLE_TYPES = Object.freeze([
   // M180/Z4 (Żywy Tester): grupa Halo Foragera („Wartość X”) wyciszalna —
   // wyciszona blokująca decyzja opcjonalna auto-wykonuje decline w advance().
   'resolve_grave_free_cast',
+  // M186/Z3 (Żywy Tester, ravnica vs innistrad s37): darmowe rzuty z Epic
+  // Experiment („you may cast”) — grupa z wariantem „zakończ” (done: true)
+  // jest wyciszalna jak Halo Forager.
+  'resolve_epic_choice',
 ]);
 
 const ACTION_RANK = Object.freeze({

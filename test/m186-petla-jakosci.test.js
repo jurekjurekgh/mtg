@@ -52,3 +52,17 @@ test('M186/Z2: etykieta Assert Perfection bez drugiego celu nie pokazuje pytajni
   assert.ok(!celPart.includes('?'), `bez pytajnika w części celów: ${label}`);
   assert.ok(celPart.includes('Highland Game'), 'nazwa pierwszego celu zostaje');
 });
+
+test('M186/Z3: grupa Epic Experiment jest wyciszalna, a „zakończ" (done) nie jest realną decyzją', async () => {
+  // Żywy Tester (g7 ravnica vs innistrad s37): darmowe rzuty z Epic
+  // Experiment („you may cast") to pętla OPCJONALNA z wariantem
+  // { done: true } — grupa musi być wyciszalna (OPTION_IGNORABLE_TYPES),
+  // a wyciszona decyzja auto-wykonuje „zakończ" (klasa M180/Z4 — Halo
+  // Forager). Strażnik źródłowy: lista + semantyka done w session.
+  const { OPTION_IGNORABLE_TYPES } = await import('../src/table/render.js');
+  assert.ok(OPTION_IGNORABLE_TYPES.includes('resolve_epic_choice'),
+    'resolve_epic_choice na liście wyciszalnych');
+  const sessionSrc = (await import('node:fs')).readFileSync('src/table/session.js', 'utf8');
+  assert.ok(/cmd\.done === true/.test(sessionSrc),
+    'session traktuje done: true jak rezygnację (auto-decline + hasMeaningfulDecision)');
+});

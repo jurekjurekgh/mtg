@@ -1,0 +1,408 @@
+== NOWA PARTIA: gracz=worek-mroczny vs bot=worek-dziki, seed=49, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Plains  ||  Zagraj ląd: Island (1 z 2)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Security Rhox · 4 · Creature — Rhino Warrior · 5/4 | Jill, Shiva's Dominant · 3 · Legendary Creature — Human Noble Warrior · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · {3}, {U}, {U}, {T}: wygnij, potem wróć przekształcone · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mysidian Elder · 3 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: stwórz token Wizard. · 1/3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Security Rhox, Jill, Shiva's Dominant, Island, Mysidian Elder, Island, Plains, Tellah, Great Sage ⏎ Nowa partia (seed 49). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Plains
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Immersturm Skullcairn
+
+--- krok 3 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Immersturm Skullcairn  ||  Zagraj ląd: Island (1 z 2)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Security Rhox · 4 · Creature — Rhino Warrior · 5/4 | Jill, Shiva's Dominant · 3 · Legendary Creature — Human Noble Warrior · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · {3}, {U}, {U}, {T}: wygnij, potem wróć przekształcone · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mysidian Elder · 3 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: stwórz token Wizard. · 1/3 | Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3 | Immersturm Skullcairn · Land · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę · T: dodaj 1 manę
+  MOJE POLA: Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Security Rhox, Jill, Shiva's Dominant, Island, Mysidian Elder, Island, Plains, Tellah, Great Sage ⏎ Nowa partia (seed 49). Powodzenia!
+  >> Zagraj ląd: Immersturm Skullcairn
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Immersturm Skullcairn (wchodzi zatapnięty)
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Fear of Abduction
+  >> Zagraj ląd: Island (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+
+--- krok 6 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Jill, Shiva's Dominant (koszt 2U)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Security Rhox · 4 · Creature — Rhino Warrior · 5/4 | Jill, Shiva's Dominant · 3 · Legendary Creature — Human Noble Warrior · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · {3}, {U}, {U}, {T}: wygnij, potem wróć przekształcone · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę | Mysidian Elder · 3 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: stwórz token Wizard. · 1/3 | Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3 | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5
+  MOJE POLA: Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Security Rhox, Jill, Shiva's Dominant, Island, Mysidian Elder, Island, Plains, Tellah, Great Sage ⏎ Nowa partia (seed 49). Powodzenia!
+  >> Zagraj: Jill, Shiva's Dominant (koszt 2U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Jill, Shiva's Dominant
+  [ROZGRYWKA]   • Jill, Shiva's Dominant wchodzi na pole bitwy
+  [ROZGRYWKA]   • Jill, Shiva's Dominant zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Jill, Shiva's Dominant — trigger bez efektu (brak legalnych celów)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Warmaker Gunship
+
+--- krok 9 | T. 6BotGracz: 20 ż.Bot: 20 ż.Główna 1Stos — Warmaker Gunship ---
+  STOS: Trigger: Warmaker Gunship (wejście na pole bitwy)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Security Rhox · 4 · Creature — Rhino Warrior · 5/4 | Island · Basic Land — Island · T: dodaj 1 manę | Mysidian Elder · 3 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: stwórz token Wizard. · 1/3 | Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3 | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5
+  MOJE POLA: Jill, Shiva's Dominant · 3 · Legendary Creature — Human Noble Warrior · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · {3}, {U}, {U}, {T}: wygnij, potem wróć przekształcone · choroba · 2/2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Security Rhox, Jill, Shiva's Dominant, Island, Mysidian Elder, Island, Plains, Tellah, Great Sage ⏎ Nowa partia (seed 49). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Warmaker Gunship wchodzi na pole bitwy
+  [ROZGRYWKA]   • Warmaker Gunship zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Warmaker Gunship — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Warmaker Gunship — cel: Jill, Shiva's Dominant
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Warmaker Gunship zadaje 1 obrażenie (Jill, Shiva's Dominant)
+  [ROZGRYWKA]   • Warmaker Gunship — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Raucous Carnival
+  >> Zagraj ląd: Raucous Carnival
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Raucous Carnival (wchodzi zatapnięty)
+
+--- krok 12 | T. 7GraczGracz: 20 ż.Bot: 20 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Security Rhox · 4 · Creature — Rhino Warrior · 5/4 | Island · Basic Land — Island · T: dodaj 1 manę | Mysidian Elder · 3 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: stwórz token Wizard. · 1/3 | Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3 | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5
+  MOJE POLA: Jill, Shiva's Dominant · 3 · Legendary Creature — Human Noble Warrior · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · {3}, {U}, {U}, {T}: wygnij, potem wróć przekształcone · 2/2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Raucous Carnival · Land · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Security Rhox, Jill, Shiva's Dominant, Island, Mysidian Elder, Island, Plains, Tellah, Great Sage ⏎ Nowa partia (seed 49). Powodzenia!
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Jill, Shiva's Dominant
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Jill, Shiva's Dominant zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 18
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Frontline War-Rager
+
+--- krok 15 | T. 8BotGracz: 20 ż.Bot: 18 ż.Główna 1Stos — Hunter's Blowgun ---
+  STOS: Hunter's Blowgun (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Security Rhox · 4 · Creature — Rhino Warrior · 5/4 | Island · Basic Land — Island · T: dodaj 1 manę | Mysidian Elder · 3 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: stwórz token Wizard. · 1/3 | Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3 | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5
+  MOJE POLA: Jill, Shiva's Dominant · 3 · Legendary Creature — Human Noble Warrior · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · {3}, {U}, {U}, {T}: wygnij, potem wróć przekształcone · 2/2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Raucous Carnival · Land · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · choroba · 2/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Security Rhox, Jill, Shiva's Dominant, Island, Mysidian Elder, Island, Plains, Tellah, Great Sage ⏎ Nowa partia (seed 49). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Frontline War-Rager wchodzi na pole bitwy
+  [ROZGRYWKA]   • Frontline War-Rager zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Hunter's Blowgun
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Hunter's Blowgun wchodzi na pole bitwy
+  [ROZGRYWKA]   • Hunter's Blowgun zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 2
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Warmaker Gunship — liczniki charge ze Station (tapuje: Frontline War-Rager)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Warmaker Gunship dostaje +2 liczniki charge (razem 2)
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Warmaker Gunship rozstrzygnięta
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Voice of the Vermin
+
+--- krok 18 | T. 9GraczGracz: 20 ż.Bot: 18 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island  ||  Zagraj: Mysidian Elder (koszt 2R)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Security Rhox · 4 · Creature — Rhino Warrior · 5/4 | Island · Basic Land — Island · T: dodaj 1 manę | Mysidian Elder · 3 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: stwórz token Wizard. · 1/3 | Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3 | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5 | Voice of the Vermin · 4 · Creature — Human Citizen · Gdy atakuje: bazowe P/T 4/4 do końca tury. · 2/2
+  MOJE POLA: Jill, Shiva's Dominant · 3 · Legendary Creature — Human Noble Warrior · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · {3}, {U}, {U}, {T}: wygnij, potem wróć przekształcone · 2/2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Raucous Carnival · Land · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 2x charge | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · choroba · 2/3 | Hunter's Blowgun · 1 · Artifact — Equipment · Equip {2} +1/+1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Security Rhox, Jill, Shiva's Dominant, Island, Mysidian Elder, Island, Plains, Tellah, Great Sage ⏎ Nowa partia (seed 49). Powodzenia!
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Zagraj: Tellah, Great Sage (koszt 3UR)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Tellah, Great Sage
+  [ROZGRYWKA]   • Tellah, Great Sage wchodzi na pole bitwy
+  [ROZGRYWKA]   • Tellah, Great Sage zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+
+--- krok 21 | T. 10BotGracz: 20 ż.Bot: 16 ż.Główna 1Stos — Cogwork Assembler ---
+  STOS: Cogwork Assembler (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Security Rhox · 4 · Creature — Rhino Warrior · 5/4 | Mysidian Elder · 3 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: stwórz token Wizard. · 1/3 | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5 | Voice of the Vermin · 4 · Creature — Human Citizen · Gdy atakuje: bazowe P/T 4/4 do końca tury. · 2/2
+  MOJE POLA: Jill, Shiva's Dominant · 3 · Legendary Creature — Human Noble Warrior · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · {3}, {U}, {U}, {T}: wygnij, potem wróć przekształcone · 2/2 | Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · choroba · 3/3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Raucous Carnival · Land · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 2x charge | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 2/3 | Hunter's Blowgun · 1 · Artifact — Equipment · Equip {2} +1/+1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Security Rhox, Jill, Shiva's Dominant, Island, Mysidian Elder, Island, Plains, Tellah, Great Sage ⏎ Nowa partia (seed 49). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Jill, Shiva's Dominant
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Jill, Shiva's Dominant zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 18 → 16
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Cogwork Assembler
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Cogwork Assembler wchodzi na pole bitwy
+  [ROZGRYWKA]   • Cogwork Assembler zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 2
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Warmaker Gunship — liczniki charge ze Station (tapuje: Cogwork Assembler)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Warmaker Gunship dostaje +2 liczniki charge (razem 4)
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Warmaker Gunship rozstrzygnięta
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Warmaker Gunship — liczniki charge ze Station (tapuje: Frontline War-Rager)
+
+--- krok 24 | T. 11GraczGracz: 20 ż.Bot: 16 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Security Rhox · 4 · Creature — Rhino Warrior · 5/4 | Mysidian Elder · 3 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: stwórz token Wizard. · 1/3 | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5 | Voice of the Vermin · 4 · Creature — Human Citizen · Gdy atakuje: bazowe P/T 4/4 do końca tury. · 2/2 | Hecteyes · 2 · Creature — Ooze Horror · Gdy wejdzie na pole bitwy: każdy przeciwnik odrzuca kartę. · 1/1
+  MOJE POLA: Jill, Shiva's Dominant · 3 · Legendary Creature — Human Noble Warrior · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · {3}, {U}, {U}, {T}: wygnij, potem wróć przekształcone · 2/2 | Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Raucous Carnival · Land · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · Latanie · 6x charge · 4/3 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 1x +1/+1 · 3/4 | Hunter's Blowgun · 1 · Artifact — Equipment · Equip {2} +1/+1 | Cogwork Assembler · 3 · Artifact Creature — Assembly-Worker · {7}: cel: artefakt — stwórz token-kopię artefaktu (haste, exile na koniec tury) · choroba · 2/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Security Rhox, Jill, Shiva's Dominant, Island, Mysidian Elder, Island, Plains, Tellah, Great Sage ⏎ Nowa partia (seed 49). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Warmaker Gunship dostaje +2 liczniki charge (razem 6)
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Warmaker Gunship rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Frontline War-Rager — trigger (krok końca tury)
+  [ROZGRYWKA]   • Frontline War-Rager dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Frontline War-Rager — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Hecteyes
+  >> Zagraj: Hecteyes (koszt 1B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Hecteyes
+  [ROZGRYWKA]   • Hecteyes wchodzi na pole bitwy
+  [ROZGRYWKA]   • Hecteyes zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Hecteyes — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera, którą kartę odrzucić efektem (Hecteyes)
+  [ROZGRYWKA]   • Hecteyes — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Tumbleweed Rising
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+
+--- krok 27 | T. 11GraczGracz: 20 ż.Bot: 16 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Mysidian Elder (koszt 2R)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Security Rhox · 4 · Creature — Rhino Warrior · 5/4 | Mysidian Elder · 3 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: stwórz token Wizard. · 1/3 | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5 | Voice of the Vermin · 4 · Creature — Human Citizen · Gdy atakuje: bazowe P/T 4/4 do końca tury. · 2/2
+  MOJE POLA: Jill, Shiva's Dominant · 3 · Legendary Creature — Human Noble Warrior · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · {3}, {U}, {U}, {T}: wygnij, potem wróć przekształcone · 2/2 | Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3 | Hecteyes · 2 · Creature — Ooze Horror · Gdy wejdzie na pole bitwy: każdy przeciwnik odrzuca kartę. · choroba · 1/1 | Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Raucous Carnival · Land · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · Latanie · 6x charge · 4/3 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 1x +1/+1 · 3/4 | Hunter's Blowgun · 1 · Artifact — Equipment · Equip {2} +1/+1 | Cogwork Assembler · 3 · Artifact Creature — Assembly-Worker · {7}: cel: artefakt — stwórz token-kopię artefaktu (haste, exile na koniec tury) · choroba · 2/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Security Rhox, Jill, Shiva's Dominant, Island, Mysidian Elder, Island, Plains, Tellah, Great Sage ⏎ Nowa partia (seed 49). Powodzenia!
+  >> Zagraj: Mysidian Elder (koszt 2R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Mysidian Elder
+  [ROZGRYWKA]   • Mysidian Elder wchodzi na pole bitwy
+  [ROZGRYWKA]   • Mysidian Elder zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Mysidian Elder — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty tworzysz token Wizard (0/1)
+  [ROZGRYWKA]   • Wizard wchodzi na pole bitwy
+  [ROZGRYWKA]   • Mysidian Elder — trigger się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+
+--- krok 30 | T. 12BotGracz: 20 ż.Bot: 13 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Security Rhox · 4 · Creature — Rhino Warrior · 5/4 | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5 | Voice of the Vermin · 4 · Creature — Human Citizen · Gdy atakuje: bazowe P/T 4/4 do końca tury. · 2/2
+  MOJE POLA: Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3 | Hecteyes · 2 · Creature — Ooze Horror · Gdy wejdzie na pole bitwy: każdy przeciwnik odrzuca kartę. · choroba · 1/1 | Mysidian Elder · 3 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: stwórz token Wizard. · choroba · 1/3 | Wizard · 0 · Creature — Wizard · choroba · 0/1 | Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Raucous Carnival · Land · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · Latanie · 6x charge · 4/3 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 1x +1/+1 · 3/4 | Hunter's Blowgun · 1 · Artifact — Equipment · Equip {2} +1/+1 | Cogwork Assembler · 3 · Artifact Creature — Assembly-Worker · {7}: cel: artefakt — stwórz token-kopię artefaktu (haste, exile na koniec tury) · 2/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Security Rhox, Jill, Shiva's Dominant, Island, Mysidian Elder, Island, Plains, Tellah, Great Sage ⏎ Nowa partia (seed 49). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Jill, Shiva's Dominant, Tellah, Great Sage
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Warmaker Gunship blokuje Jill, Shiva's Dominant
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Jill, Shiva's Dominant zadaje 2 obrażenia (Warmaker Gunship)
+  [ROZGRYWKA]   • Warmaker Gunship zadaje 4 obrażenia (Jill, Shiva's Dominant)
+  [ROZGRYWKA]   • Tellah, Great Sage zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 16 → 13
+  [ROZGRYWKA]   • Jill, Shiva's Dominant ginie
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Skilled Animator
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Skilled Animator wchodzi na pole bitwy
+  [ROZGRYWKA]   • Skilled Animator zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Skilled Animator — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Skilled Animator — cel: Hunter's Blowgun
+
+--- krok 33 | T. 12BotGracz: 20 ż.Bot: 13 ż.Główna 1Stos — Hunter's Blowgun ---
+  STOS: Hunter's Blowgun (rzuca: Nieprzyjaciel) → cel: Warmaker Gunship
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Security Rhox · 4 · Creature — Rhino Warrior · 5/4 | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5 | Voice of the Vermin · 4 · Creature — Human Citizen · Gdy atakuje: bazowe P/T 4/4 do końca tury. · 2/2
+  MOJE POLA: Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3 | Hecteyes · 2 · Creature — Ooze Horror · Gdy wejdzie na pole bitwy: każdy przeciwnik odrzuca kartę. · choroba · 1/1 | Mysidian Elder · 3 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: stwórz token Wizard. · choroba · 1/3 | Wizard · 0 · Creature — Wizard · choroba · 0/1 | Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Raucous Carnival · Land · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · Latanie · 6x charge · 4/3 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 1x +1/+1 · 3/4 | Hunter's Blowgun · 1 · Artifact Creature — Equipment · Equip {2} +1/+1 · 5/5 | Cogwork Assembler · 3 · Artifact Creature — Assembly-Worker · {7}: cel: artefakt — stwórz token-kopię artefaktu (haste, exile na koniec tury) · 2/3 | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · choroba · 1/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Security Rhox, Jill, Shiva's Dominant, Island, Mysidian Elder, Island, Plains, Tellah, Great Sage ⏎ Nowa partia (seed 49). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Skilled Animator — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje Equip: Hunter's Blowgun → cel: Warmaker Gunship
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Hunter's Blowgun wyposaża Warmaker Gunship
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Warmaker Gunship, Frontline War-Rager, Hunter's Blowgun
+  >> Wybierz: Deklaracja blokujących (7 opcji)
+  [combat wizard] blokuję 1 stworami: token_wizard (0/1)
+  [combat wizard] Zatwierdź bloki
+
+--- krok 36 | T. 12BotGracz: 12 ż.Bot: 13 ż.Walka / Koniec walki ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Security Rhox · 4 · Creature — Rhino Warrior · 5/4 | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5 | Voice of the Vermin · 4 · Creature — Human Citizen · Gdy atakuje: bazowe P/T 4/4 do końca tury. · 2/2
+  MOJE POLA: Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3 | Hecteyes · 2 · Creature — Ooze Horror · Gdy wejdzie na pole bitwy: każdy przeciwnik odrzuca kartę. · choroba · 1/1 | Mysidian Elder · 3 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: stwórz token Wizard. · choroba · 1/3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Raucous Carnival · Land · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Dotykanie śmierci Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · Dotykanie śmierci · Latanie · 6x charge · wyposażona: Hunter's Blowgun · 5/4 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 1x +1/+1 · 3/4 | Hunter's Blowgun · 1 · Artifact Creature — Equipment · Equip {2} +1/+1 · wyposaża → Warmaker Gunship · 5/5 | Cogwork Assembler · 3 · Artifact Creature — Assembly-Worker · {7}: cel: artefakt — stwórz token-kopię artefaktu (haste, exile na koniec tury) · 2/3 | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · choroba · 1/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Security Rhox, Jill, Shiva's Dominant, Island, Mysidian Elder, Island, Plains, Tellah, Great Sage ⏎ Nowa partia (seed 49). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Wizard blokuje Hunter's Blowgun
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Warmaker Gunship zadaje 5 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 15
+  [ROZGRYWKA]   • Frontline War-Rager zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 15 → 12
+  [ROZGRYWKA]   • Hunter's Blowgun zadaje 5 obrażeń (token_wizard)
+  [ROZGRYWKA]   • token_wizard ginie
+  [ROZGRYWKA]   • token Wizard przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Frontline War-Rager — trigger (krok końca tury)
+  [ROZGRYWKA]   • Frontline War-Rager dostaje +1 licznik +1/+1 (razem 2)
+  [ROZGRYWKA]   • Frontline War-Rager — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Enter the Enigma
+  >> Cel czaru: Enter the Enigma (8 opcji)
+  [modal choice] Cel czaru: Enter the Enigma Rzuć: Enter the Enigma (koszt U) → cel: Skilled Animator (Nieprzyjaciel) Rzuć: Enter the Enigma (koszt U) → cel: Mysidian Elder (Ty) Rzuć: Enter the Enigma (koszt U) → cel: Hecteyes (Ty) Rzuć: Enter the Enigma (koszt U) → cel: Cogwork Assembler (Nieprzyjaciel) Rzuć: Enter the Enigma (koszt U) → cel: Tellah, Great Sage (Ty) Rzuć: Enter the Enigma (koszt U) → cel: Hunter's Blowgun (Nieprzyjaciel) Rzuć: Enter the Enigma (koszt U) → cel: Frontline War-Rager (Nieprzyjaciel) Rzuć: Enter the Enigma (koszt U) → cel: Warmaker Gunship (Nieprzyjaciel)
+  [modal choice]   ▶ Rzuć: Enter the Enigma (koszt U) → cel: Skilled Animator (Nieprzyjaciel)
+  [modal choice]     Rzuć: Enter the Enigma (koszt U) → cel: Mysidian Elder (Ty)
+  [modal choice]     Rzuć: Enter the Enigma (koszt U) → cel: Hecteyes (Ty)
+  [modal choice]     Rzuć: Enter the Enigma (koszt U) → cel: Cogwork Assembler (Nieprzyjaciel)
+  [modal choice]     Rzuć: Enter the Enigma (koszt U) → cel: Tellah, Great Sage (Ty)
+  [modal choice]     Rzuć: Enter the Enigma (koszt U) → cel: Hunter's Blowgun (Nieprzyjaciel)
+  [modal choice]     Rzuć: Enter the Enigma (koszt U) → cel: Frontline War-Rager (Nieprzyjaciel)
+  [modal choice]     Rzuć: Enter the Enigma (koszt U) → cel: Warmaker Gunship (Nieprzyjaciel)
+
+--- krok 39 | T. 13GraczGracz: 12 ż.Bot: 13 ż.DobieranieStos — Enter the Enigma ---
+  STOS: Enter the Enigma (rzuca: Ty) → cel: Skilled Animator
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Security Rhox · 4 · Creature — Rhino Warrior · 5/4 | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5 | Voice of the Vermin · 4 · Creature — Human Citizen · Gdy atakuje: bazowe P/T 4/4 do końca tury. · 2/2
+  MOJE POLA: Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3 | Hecteyes · 2 · Creature — Ooze Horror · Gdy wejdzie na pole bitwy: każdy przeciwnik odrzuca kartę. · 1/1 | Mysidian Elder · 3 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: stwórz token Wizard. · 1/3 | Hero · 0 · Creature — Hero · choroba · 1/1 | Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Raucous Carnival · Land · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Zasięg Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · Zasięg · Latanie · 6x charge · wyposażona: Hunter's Blowgun · 5/4 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 2x +1/+1 · 4/5 | Hunter's Blowgun · 1 · Artifact Creature — Equipment · Equip {2} +1/+1 · wyposaża → Warmaker Gunship · 5/5 | Cogwork Assembler · 3 · Artifact Creature — Assembly-Worker · {7}: cel: artefakt — stwórz token-kopię artefaktu (haste, exile na koniec tury) · 2/3 | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · choroba · 1/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Security Rhox, Jill, Shiva's Dominant, Island, Mysidian Elder, Island, Plains, Tellah, Great Sage ⏎ Nowa partia (seed 49). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Enter the Enigma → cel: Skilled Animator
+  [ROZGRYWKA]   • Tellah, Great Sage — trigger (rzucenie czaru niebędącego stworem)
+  [ROZGRYWKA]   • Ty tworzysz token Hero (1/1)
+  [ROZGRYWKA]   • Hero wchodzi na pole bitwy
+  [ROZGRYWKA]   • Tellah, Great Sage — trigger się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Skilled Animator nie może być blokowany do końca tury
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Enter the Enigma zostaje rozstrzygnięty
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+
+--- krok 42 | T. 13GraczGracz: 12 ż.Bot: 13 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (8 opcji)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Security Rhox · 4 · Creature — Rhino Warrior · 5/4 | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5 | Voice of the Vermin · 4 · Creature — Human Citizen · Gdy atakuje: bazowe P/T 4/4 do końca tury. · 2/2
+  MOJE POLA: Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3 | Hecteyes · 2 · Creature — Ooze Horror · Gdy wejdzie na pole bitwy: każdy przeciwnik odrzuca kartę. · 1/1 | Mysidian Elder · 3 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: stwórz token Wizard. · 1/3 | Hero · 0 · Creature — Hero · choroba · 1/1 | Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Raucous Carnival · Land · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Zasięg Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · Zasięg · Latanie · 6x charge · wyposażona: Hunter's Blowgun · 5/4 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 2x +1/+1 · 4/5 | Hunter's Blowgun · 1 · Artifact Creature — Equipment · Equip {2} +1/+1 · wyposaża → Warmaker Gunship · 5/5 | Cogwork Assembler · 3 · Artifact Creature — Assembly-Worker · {7}: cel: artefakt — stwórz token-kopię artefaktu (haste, exile na koniec tury) · 2/3 | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · nie do zablokowania · choroba · 1/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Security Rhox, Jill, Shiva's Dominant, Island, Mysidian Elder, Island, Plains, Tellah, Great Sage ⏎ Nowa partia (seed 49). Powodzenia!
+  >> Wybierz: Deklaracja atakujących (8 opcji)
+  [combat wizard] atakuję 3 z 3 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Tellah, Great Sage, Hecteyes, Mysidian Elder
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Cogwork Assembler i Skilled Animator blokują Mysidian Elder
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Tellah, Great Sage zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 13 → 10
+  [ROZGRYWKA]   • Hecteyes zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 10 → 9
+  [ROZGRYWKA]   • Rozdzielasz obrażenia bojowe (trample albo wielu blokerów)
+  >> Wybierz: Rozdzielenie obrażeń bojowych (1 opcja)
+  [modal choice] Rozdziel obrażenia bojowe — przydziel moc atakujących blokującym:Mysidian Elder (moc 1)Cogwork Assembler (wytrz. 3, śmiertelne 3)−10+1↑↓Skilled Animator (wytrz. 3, śmiertelne 3)−10+1↑↓Zatwierdź przydziałDomyślnie (lethal-first)Zamknij (dokończysz później)
+  [modal choice]   ▶ Zatwierdź przydział
+  [modal choice]     Domyślnie (lethal-first)
+
+--- krok 45 | T. 14BotGracz: 12 ż.Bot: 9 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Security Rhox · 4 · Creature — Rhino Warrior · 5/4 | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5 | Voice of the Vermin · 4 · Creature — Human Citizen · Gdy atakuje: bazowe P/T 4/4 do końca tury. · 2/2
+  MOJE POLA: Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3 | Hecteyes · 2 · Creature — Ooze Horror · Gdy wejdzie na pole bitwy: każdy przeciwnik odrzuca kartę. · 1/1 | Hero · 0 · Creature — Hero · choroba · 1/1 | Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Raucous Carnival · Land · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Dotykanie śmierci Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · Dotykanie śmierci · Latanie · 6x charge · wyposażona: Hunter's Blowgun · 5/4 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 2x +1/+1 · 4/5 | Hunter's Blowgun · 1 · Artifact Creature — Equipment · Equip {2} +1/+1 · wyposaża → Warmaker Gunship · 5/5 | Cogwork Assembler · 3 · Artifact Creature — Assembly-Worker · {7}: cel: artefakt — stwórz token-kopię artefaktu (haste, exile na koniec tury) · 2/3 | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · 1/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Security Rhox, Jill, Shiva's Dominant, Island, Mysidian Elder, Island, Plains, Tellah, Great Sage ⏎ Nowa partia (seed 49). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Cogwork Assembler zadaje 2 obrażenia (Mysidian Elder)
+  [ROZGRYWKA]   • Skilled Animator zadaje 1 obrażenie (Mysidian Elder)
+  [ROZGRYWKA]   • Mysidian Elder ginie
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Moonlit Meditation → cel: Hunter's Blowgun
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Moonlit Meditation zaczarowuje Hunter's Blowgun
+  [ROZGRYWKA]   • Moonlit Meditation wchodzi na pole bitwy
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Warmaker Gunship, Frontline War-Rager, Hunter's Blowgun, Cogwork Assembler, Skilled Animator
+
+--- krok 48 | T. 14BotGracz: 12 ż.Bot: 9 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Deklaracja blokujących (5 opcji)
+  RĘKA: Security Rhox · 4 · Creature — Rhino Warrior · 5/4 | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5 | Voice of the Vermin · 4 · Creature — Human Citizen · Gdy atakuje: bazowe P/T 4/4 do końca tury. · 2/2
+  MOJE POLA: Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3 | Hecteyes · 2 · Creature — Ooze Horror · Gdy wejdzie na pole bitwy: każdy przeciwnik odrzuca kartę. · 1/1 | Hero · 0 · Creature — Hero · choroba · 1/1 | Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Raucous Carnival · Land · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Dotykanie śmierci Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · Dotykanie śmierci · Latanie · atakuje — niezablokowany · 6x charge · wyposażona: Hunter's Blowgun · 5/4 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · atakuje — niezablokowany · 2x +1/+1 · 4/5 | Hunter's Blowgun · 1 · Artifact Creature — Equipment · Equip {2} +1/+1 · wyposaża → Warmaker Gunship · atakuje — niezablokowany · zaczarowana: Moonlit Meditation · 5/5 | Cogwork Assembler · 3 · Artifact Creature — Assembly-Worker · {7}: cel: artefakt — stwórz token-kopię artefaktu (haste, exile na koniec tury) · atakuje — niezablokowany · 2/3 | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · atakuje — niezablokowany · 1/3 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Hunter's Blowgun
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Security Rhox, Jill, Shiva's Dominant, Island, Mysidian Elder, Island, Plains, Tellah, Great Sage ⏎ Nowa partia (seed 49). Powodzenia!
+  >> Wybierz: Deklaracja blokujących (5 opcji)
+  [combat wizard] blokuję 1 stworami: Hero (1/1)
+  [combat wizard] Zatwierdź bloki
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 50 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Security Rhox · 4 · Creature — Rhino Warrior · 5/4 | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5 | Voice of the Vermin · 4 · Creature — Human Citizen · Gdy atakuje: bazowe P/T 4/4 do końca tury. · 2/2
+  MOJE POLA: Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3 | Hecteyes · 2 · Creature — Ooze Horror · Gdy wejdzie na pole bitwy: każdy przeciwnik odrzuca kartę. · 1/1 | Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Raucous Carnival · Land · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Dotykanie śmierci Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · Dotykanie śmierci · Latanie · 6x charge · wyposażona: Hunter's Blowgun · 5/4 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 2x +1/+1 · 4/5 | Hunter's Blowgun · 1 · Artifact Creature — Equipment · Equip {2} +1/+1 · wyposaża → Warmaker Gunship · zaczarowana: Moonlit Meditation · 5/5 | Cogwork Assembler · 3 · Artifact Creature — Assembly-Worker · {7}: cel: artefakt — stwórz token-kopię artefaktu (haste, exile na koniec tury) · 2/3 | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · −1 · 1/3 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Hunter's Blowgun
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Security Rhox, Jill, Shiva's Dominant, Island, Mysidian Elder, Island, Plains, Tellah, Great Sage ⏎ Nowa partia (seed 49). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 18, kliknięte: 19, modale: 3, sondy noop: 56 (panel 39, modal 17)
+== DETEKTORY: brak zgłoszeń ==

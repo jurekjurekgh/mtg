@@ -1957,7 +1957,9 @@ export function createSession(config) {
       // pass nie jest oferowany (decyzja blokuje), więc auto-pass wykonuje
       // wariant rezygnacji (decline/skip) zamiast wywracać sesję wyjątkiem.
       if (!view.legalCommands.some((cmd) => cmd.type === 'pass_priority')) {
-        const resign = view.legalCommands.find((cmd) => cmd.decline === true || cmd.skip === true);
+        // M186/Z3: „zakończ” pętli opcjonalnej (Epic Experiment, devour)
+        // niesie done: true — to też czysta rezygnacja.
+        const resign = view.legalCommands.find((cmd) => cmd.decline === true || cmd.skip === true || cmd.done === true);
         if (resign) {
           const declined = execute(state, resign);
           if (!declined.ok) throw new Error(`Auto-decline odrzucony: ${declined.events[0]?.reason}`);
@@ -2001,7 +2003,7 @@ export function createSession(config) {
       // M180/Z4: czysta REZYGNACJA (decline/skip) nie jest realną decyzją —
       // gdy gracz wyciszył wszystkie warianty rzutu (Halo Forager), samotny
       // wariant „Zrezygnuj” nie może dalej zatrzymywać auto-passu.
-      if (cmd.decline === true || cmd.skip === true) return false;
+      if (cmd.decline === true || cmd.skip === true || cmd.done === true) return false;
       // Puste deklaracje ataku/bloków nie są decyzją (engine oferuje je
       // zawsze w kroku deklaracji — bez stworów to czysty pass).
       if (cmd.type === 'declare_attackers') return (cmd.attackerIds?.length ?? 0) > 0;
