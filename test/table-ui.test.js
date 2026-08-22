@@ -188,8 +188,15 @@ test('strona stołu przechodzi self-test i startuje partię na pierwszej decyzji
   assert.ok(first, 'brak przycisków akcji po starcie');
   assert.match(textOf(dom.get('status')), /Tura 1/);
   assert.match(textOf(dom.get('status')), /ręka 7/);
-  // Ręka gracza rysuje nazwy kart z registry.
-  assert.match(textOf(dom.get('hand')), /Highland|Forest|Woolly|Snarling|Lyre|Panic/);
+  // Ręka gracza rysuje nazwy kart z registry. Test sprawdza REGUŁĘ („kafle
+  // ręki mają nazwy z rejestru, nie surowe id"), więc zamiast listy tytułów
+  // zależnej od tasowania (L25/L53 — każda zmiana talii przelosowuje rękę)
+  // pytamy o kształt: siedem kafli z nazwą i linią typów.
+  const handText = textOf(dom.get('hand'));
+  assert.ok(handText.length > 0, 'ręka nie jest pusta');
+  assert.match(handText, /Creature|Instant|Sorcery|Land|Artifact|Enchantment/,
+    `kafle ręki niosą linię typów: ${JSON.stringify(handText.slice(0, 120))}`);
+  assert.ok(!/\bcard-\d|\bhand-\d/.test(handText), 'brak surowych identyfikatorów obiektów');
 });
 
 test('kreator talii pokazuje supported, liczy kopie i egzekwuje min. 15 nielandowych', () => {

@@ -123,6 +123,8 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
       // musi dojść z karty na obiekt gry, inaczej engine go nie zobaczy
       // (lekcja L21: pola spoza kontraktu giną po cichu).
       ...(aura.chooseColor ? { chooseColor: true } : {}),
+      // Batch 46 (Guildscorn Ward): ochrona po jakości — jak wyżej (L21).
+      ...(aura.protection ? { protection: Object.freeze({ ...aura.protection }) } : {}),
       ...(aura.replaceTokenCreation
         ? { replaceTokenCreation: Object.freeze({ ...aura.replaceTokenCreation }) }
         : {}),

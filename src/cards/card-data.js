@@ -8750,6 +8750,53 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['poświęcenie lądu jest OBOWIĄZKOWE (nie „you may") — bez lądu na polu bitwy czar nie robi nic'],
   }),
 
+  // 3. Bring Low (KTK) — {3}{R} instant: 3 obrażenia w stwora, ale 5, gdy cel
+  //    ma licznik +1/+1 (NOWE: warunkowa kwota obrażeń od stanu celu).
+  defineCard({
+    id: 'bring-low', name: 'Bring Low', set: 'KTK',
+    types: ['Instant'], colors: ['R'], manaCost: 4,
+    oracleText: 'Bring Low deals 3 damage to target creature. If that creature has a +1/+1 counter on it, Bring Low deals 5 damage to it instead.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/b/9ba5e7bf-2ad8-4061-937a-ef1e9b63da3d.jpg?1783939074',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [{ type: 'damage', amount: 3, amountIfTargetHasCounter: { counter: '+1/+1', amount: 5 } }],
+    },
+    artId: 389, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+    notes: ['kwota liczona przy ROZSTRZYGNIĘCIU (CR 608.2) — licznik dołożony w odpowiedzi podbija obrażenia do 5'],
+  }),
+
+  // 4. Cathartic Reunion (2XM) — {1}{R} sorcery: dodatkowy koszt „odrzuć dwie
+  //    karty" (CR 601.2h), potem dobierz trzy.
+  defineCard({
+    id: 'cathartic-reunion', name: 'Cathartic Reunion', set: '2XM',
+    types: ['Sorcery'], colors: ['R'], manaCost: 2,
+    oracleText: 'As an additional cost to cast this spell, discard two cards.\nDraw three cards.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/3/b36fa6f3-29e8-4788-bfcd-59576187c399.jpg?1783930169',
+    spell: {
+      timing: 'sorcery',
+      additionalCost: { discardCards: 2 },
+      effects: [{ type: 'draw_cards', amount: 3 }],
+    },
+    artId: 355, plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+    notes: ['odrzucenie DWÓCH kart to koszt (CR 601.2h): płacony przy rzucaniu, więc kontrczar nie zwraca kart'],
+  }),
+
+  // 5. Guildscorn Ward (GTC) — {W} aura: zaczarowany ma ochronę przed
+  //    WIELOKOLOROWYMI (CR 702.16e). NOWE: trwała ochrona po jakości na aurze.
+  defineCard({
+    id: 'guildscorn-ward', name: 'Guildscorn Ward', set: 'GTC',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['W'], manaCost: 1,
+    oracleText: 'Enchant creature\nEnchanted creature has protection from multicolored.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/9/89c5c496-0a3e-40e1-84ac-8ad3a9d8352b.jpg?1783940143',
+    aura: { enchant: 'creature', protection: { multicolored: true } },
+    artId: 301, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+    notes: ['„multicolored" = źródło o dwóch lub więcej kolorach (CR 105.4); ochrona znika natychmiast po odpięciu aury'],
+  }),
+
 ]);
 
 /**

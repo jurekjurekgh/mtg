@@ -373,4 +373,7 @@ export const MANA_COSTS = {
   "pain-for-all": "{2}{R}",
   "infectious-horror": "{3}{B}",
   "roiling-regrowth": "{2}{G}",
+  "bring-low": "{3}{R}",
+  "cathartic-reunion": "{1}{R}",
+  "guildscorn-ward": "{W}",
 };

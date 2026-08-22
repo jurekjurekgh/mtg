@@ -1,5 +1,6 @@
 # Ravnica
 
+1x Guildscorn Ward
 1x Boros Challenger
 1x Chronic Flooding
 1x Epic Experiment

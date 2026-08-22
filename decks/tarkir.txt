@@ -21,6 +21,7 @@
 1x Monastery Flock
 1x Ojutai's Breath
 1x Vow of Wildness
+1x Bring Low
 1x Gurmag Drowner
 1x Rush of Battle
 1x Trade Route Envoy
@@ -33,5 +34,5 @@
 2x Plains
 3x Island
 2x Swamp
-2x Mountain
+3x Mountain
 6x Forest

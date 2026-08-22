@@ -428,6 +428,12 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
       throw new Error('Za mało many na alternatywny koszt Lash of the Balrog');
     }
   }
+  // Batch 46 (Cathartic Reunion): koszt „discard two cards" — walidacja PRZED
+  // jakąkolwiek mutacją (CR 601.2h), jak przy poświęceniu wyżej.
+  const discardCost = object.spell.additionalCost?.discardCards ?? 0;
+  if (discardCost > 0 && countDiscardableFor(state, playerId, objectId) < discardCost) {
+    throw new Error('Za mało kart w ręce na dodatkowy koszt (discard)');
+  }
   // Kolorowa walidacja many (Sweet Oblivion: 2 Plains nie mogą rzucić U)
   // Plot – rzut bez kosztu many (bez koloru) – pomijamy walidację kolorową, jak w legalSpellCasts.
   // Suspend (CR 702.62): rzut po zdjęciu ostatniego licznika czasu — bez kosztu.
@@ -480,6 +486,26 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     // Buyback koszt many jest dodatkowy do bazowego — płacimy różnicę
     const bbCost = object.spell.buyback.cost ?? 0;
     if (bbCost > 0) spendMana(state, playerId, bbCost, []);
+  }
+  // Batch 46 (Cathartic Reunion): odrzucenie kart to KOSZT (CR 601.2h) —
+  // płacone przy rzucaniu, po umieszczeniu czaru na stosie (czar nie może
+  // odrzucić sam siebie). Wybór kart należy do gracza, więc kolejkujemy
+  // blokującą decyzję; kontrczar nie zwraca odrzuconych kart.
+  if (discardCost > 0) {
+    const handIds = state.zones.hand.filter((handId) => state.objects.get(handId)?.controllerId === playerId);
+    state.pendingDiscardChoice = {
+      playerId,
+      count: Math.min(discardCost, handIds.length),
+      handIds,
+      purpose: 'cost',
+      sourceCardId: object.cardId ?? null,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = playerId;
+    state.events.push(event('discard_choice_required', {
+      playerId, count: Math.min(discardCost, handIds.length), cardIds: [...handIds],
+      purpose: 'cost', sourceCardId: object.cardId ?? null,
+    }));
   }
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
@@ -1945,6 +1971,16 @@ function legalFireballCasts(state, playerId, objectId, object, manaAvailable) {
   return casts;
 }
 
+/**
+ * Ile kart gracz może odrzucić jako dodatkowy koszt rzutu (CR 601.2h) —
+ * ręka BEZ rzucanego czaru (sam czar opuszcza rękę wcześniej niż płacimy
+ * koszty, więc nie może się „odrzucić sam").
+ */
+export function countDiscardableFor(state, playerId, castObjectId) {
+  return state.zones.hand.filter((handId) => handId !== castObjectId
+    && state.objects.get(handId)?.controllerId === playerId).length;
+}
+
 export function legalSpellCasts(state, playerId) {
   const player = state.players.find((entry) => entry.id === playerId);
   const casts = [];
@@ -2042,6 +2078,12 @@ export function legalSpellCasts(state, playerId) {
     const payAltAvailable = Boolean(sacrificeCost && orPayMana != null
       && effectiveSpellManaCost(state, object) + orPayMana <= manaAvailable);
     if (sacrificeCost && sacrificePool.length === 0 && !payAltAvailable) continue;
+    // Batch 46 (Cathartic Reunion): „As an additional cost to cast this spell,
+    // discard two cards." Koszt trzeba móc ZAPŁACIĆ, żeby czar był rzucalny
+    // (CR 601.2h) — liczymy karty ręki BEZ samego czaru. Oferta i walidacja
+    // używają tego samego warunku (L48).
+    const discardCost = object.spell.additionalCost?.discardCards ?? 0;
+    if (discardCost > 0 && countDiscardableFor(state, playerId, id) < discardCost) continue;
     if (targetSpec.length === 0) {
       for (const sacId of sacrificePool) {
         const cast = { objectId: id, targets: [] };

@@ -168,6 +168,10 @@ export function defineCard(data) {
       ...(data.aura.enchantType ? { enchantType: data.aura.enchantType } : {}),
       ...(data.aura.grantMana ? { grantMana: Object.freeze({ ...data.aura.grantMana }) } : {}),
       ...(data.aura.chooseColor ? { chooseColor: true } : {}),
+      // Batch 46 (Guildscorn Ward): TRWAŁA ochrona przed JAKOŚCIĄ źródła
+      // (CR 702.16e — „protection from multicolored"). L21/L48: pole musi
+      // przejść CAŁY łańcuch karta → registry → obiekt gry, inaczej ginie.
+      ...(data.aura.protection ? { protection: Object.freeze({ ...data.aura.protection }) } : {}),
       // Efekt zastępczy tworzenia tokenów (CR 614 — Moonlit Meditation:
       // „The first time you would create one or more tokens each turn, you
       // may instead create that many tokens that are copies of enchanted

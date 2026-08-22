@@ -4,6 +4,7 @@
 1x Malamet Battle Glyph
 1x Merchant's Dockhand
 1x Canonized in Blood
+1x Cathartic Reunion
 1x Emissary Escort
 1x Fake Your Own Death
 1x Illvoi Operative
@@ -39,5 +40,5 @@
 2x Plains
 4x Island
 3x Swamp
-5x Mountain
+6x Mountain
 4x Forest

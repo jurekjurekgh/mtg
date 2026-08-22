@@ -676,6 +676,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (amount === 'artifacts_you_control') {
       amount = countArtifactsControlled(state, sourceObject.controllerId);
     }
+    // Batch 46 (Bring Low): „If that creature has a +1/+1 counter on it,
+    // deals 5 damage instead." Warunek sprawdzamy przy ROZSTRZYGNIĘCIU
+    // (CR 608.2) — licznik dołożony w oknie odpowiedzi podbija kwotę.
+    const bonus = effect.amountIfTargetHasCounter;
+    if (bonus && targetId != null) {
+      const target = state.objects.get(targetId);
+      if ((target?.counters?.[bonus.counter] ?? 0) > 0) amount = bonus.amount;
+    }
     dealNonCombatDamage(state, sourceObject, targetId, amount);
     return;
   }

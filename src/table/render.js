@@ -1370,6 +1370,10 @@ export function rulesText(info) {
         ? `pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu${aura.replaceTokenCreation.optional ? ' (możesz)' : ''}`
         : '',
       aura.grantMana ? `ląd: „T: dodaj ${aura.grantMana.amount ?? 2} many dowolnego koloru"` : '',
+      // Batch 46 (Guildscorn Ward): ochrona przed JAKOŚCIĄ źródła (CR 702.16).
+      // Opis generyczny po deskryptorze — nowa jakość dopisuje się tutaj,
+      // a strażnik M138/#11 pilnuje, żeby żadne pole aury nie zostało nieme.
+      aura.protection ? `zaczarowany ma ochronę przed ${protectionQualityLabel(aura.protection)}` : '',
     ].filter(Boolean).join(' · ')
     : '';
   const landLine = info.kind === 'land' ? 'T: dodaj 1 manę' : '';
@@ -1664,6 +1668,21 @@ function abilityFizzlesOnHand(ability, view) {
     const hand = (view?.zones?.hand ?? []).filter((o) => o?.controllerId === view.playerId);
     return !hand.some((card) => predicate(card));
   });
+}
+
+/** Opis JAKOŚCI ochrony (CR 702.16b–e) po deskryptorze — bez nazw kart. */
+export function protectionQualityLabel(quality) {
+  if (!quality) return 'wybranym źródłem';
+  const parts = [];
+  if (quality.multicolored) parts.push('wielokolorowymi');
+  if (Array.isArray(quality.colors) && quality.colors.length) {
+    parts.push(`kolorami: ${quality.colors.map((c) => `{${c}}`).join(', ')}`);
+  }
+  if (quality.subtype) parts.push(`źródłami o podtypie ${quality.subtype}`);
+  if (quality.notSubtype) parts.push(`źródłami spoza podtypu ${quality.notSubtype}`);
+  if (parts.length === 0 && quality.kind === 'creature') parts.push('stworami');
+  else if (quality.kind === 'creature') parts[parts.length - 1] += ' (stwory)';
+  return parts.length ? parts.join(' i ') : 'wybranym źródłem';
 }
 
 export function commandLabel(cmd, session, view) {
