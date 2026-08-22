@@ -903,6 +903,12 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
       if (!host || host.zone !== 'battlefield' || (host.kind !== 'creature' && !isLand)) {
         throw new Error('Celem czaru aury musi być stwór albo ląd');
       }
+    } else if (object.aura?.enchantType === 'creature_you_control') {
+      // Batch 45 (Pain for All): „Enchant creature you control" — host musi
+      // być stworem POD KONTROLĄ rzucającego (walidacja spójna z ofertą, M82).
+      if (!host || host.zone !== 'battlefield' || host.kind !== 'creature' || host.controllerId !== playerId) {
+        throw new Error('Celem czaru aury musi być własny stwór');
+      }
     } else if (object.aura?.enchantType === 'creature_or_vehicle') {
       // M154 (Batch 38): Silken Strength — „Enchant creature or Vehicle".
       const isVehicle = host && (host.subtypes ?? []).includes('Vehicle');
@@ -1031,6 +1037,17 @@ export function legalAuraCasts(state, playerId) {
         const isLand = target.kind === 'land' || (target.types ?? []).includes('Land');
         if ((target.kind === 'creature' || isLand) && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
           for (const bestow of options) out.push({ objectId: id, targetId, bestow });
+        }
+      }
+    } else if (object.aura?.enchantType === 'creature_you_control') {
+      // Batch 45 (Pain for All): „Enchant creature you control" — oferta
+      // tylko WŁASNYCH stworów (oferta = walidacja, pułapka M82).
+      for (const targetId of state.zones.battlefield) {
+        const target = state.objects.get(targetId);
+        if (target && target.zone === 'battlefield' && target.kind === 'creature'
+          && target.controllerId === playerId
+          && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
+          out.push({ objectId: id, targetId, bestow: false });
         }
       }
     } else if (object.aura?.enchantType === 'creature_or_vehicle') {

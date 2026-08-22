@@ -483,8 +483,9 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   }
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
-    targets: targetObjects.map((entry) => entry.id),
-    targetCardIds: targetObjects.map((entry) => entry.cardId), plotted: Boolean(object.plotted),
+    // Batch 45 (Assert Perfection): pozycja optional może być null.
+    targets: targetObjects.map((entry) => entry?.id ?? null),
+    targetCardIds: targetObjects.map((entry) => entry?.cardId ?? null), plotted: Boolean(object.plotted),
     // Mana wydana na ten rzut (publiczna) — progi triggerów „if four or more
     // mana was spent to cast that spell" (Tellah, Great Sage) czytają ją
     // z kontekstu zdarzenia.
@@ -756,8 +757,9 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
   state.objects.set(stackId, stacked);
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
-    targets: targetObjects.map((entry) => entry.id),
-    targetCardIds: targetObjects.map((entry) => entry.cardId), plotted: Boolean(object.plotted),
+    // Batch 45 (Assert Perfection): pozycja optional może być null.
+    targets: targetObjects.map((entry) => entry?.id ?? null),
+    targetCardIds: targetObjects.map((entry) => entry?.cardId ?? null), plotted: Boolean(object.plotted),
     manaSpent,
     colors: [...(object.colors ?? [])], cleaved: true,
   });
