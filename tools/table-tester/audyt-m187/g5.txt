@@ -1,0 +1,380 @@
+== NOWA PARTIA: gracz=forgotten-realms vs bot=zendikar, seed=57, profil=defensive, policy-seed=7, tick-rate=0.2 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Patron of the Arts
+  [ROZGRYWKA]   • Dobierasz: Thieves' Tools
+  [ROZGRYWKA]   • Dobierasz: Circle of the Land Druid
+  [ROZGRYWKA]   • Dobierasz: Cloak of the Bat
+  [ROZGRYWKA]   • Dobierasz: Lurking Green Dragon
+  [ROZGRYWKA]   • Dobierasz: Inspiring Bard
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Wybierz: Karty na spód biblioteki (mulligan) (7 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (1): Patron of the Arts Mulligan — odłóż na spód (1): Thieves' Tools Mulligan — odłóż na spód (1): Circle of the Land Druid Mulligan — odłóż na spód (1): Cloak of the Bat Mulligan — odłóż na spód (1): Lurking Green Dragon Mulligan — odłóż na spód (1): Inspiring Bard Mulligan — odłóż na spód (1): Plains
+  [modal choice]   ▶ Mulligan — odłóż na spód (1): Patron of the Arts
+  [modal choice]     Mulligan — odłóż na spód (1): Thieves' Tools
+  [modal choice]     Mulligan — odłóż na spód (1): Circle of the Land Druid
+  [modal choice]     Mulligan — odłóż na spód (1): Cloak of the Bat
+  [modal choice]     Mulligan — odłóż na spód (1): Lurking Green Dragon
+  [modal choice]     Mulligan — odłóż na spód (1): Inspiring Bard
+  [modal choice]     Mulligan — odłóż na spód (1): Plains
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Stirring Bard
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Greatsword of Tyr
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Silvanus's Invoker
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Wybierz: Karty na spód biblioteki (mulligan) (16 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (2): Stirring Bard, Island Mulligan — odłóż na spód (2): Stirring Bard, Swamp Mulligan — odłóż na spód (2): Stirring Bard, Greatsword of Tyr Mulligan — odłóż na spód (2): Stirring Bard, Plains Mulligan — odłóż na spód (2): Stirring Bard, Silvanus's Invoker Mulligan — odłóż na spód (2): Island, Swamp Mulligan — odłóż na spód (2): Island, Greatsword of Tyr Mulligan — odłóż na spód (2): Island, Plains Mulligan — odłóż na spód (2): Island, Silvanus's Invoker Mulligan — odłóż na spód (2): Swamp, Greatsword of Tyr Mulligan — odłóż na spód (2): Swamp, Plains Mulligan — odłóż na spód (2): Swamp, Silvanus's Invoker Mulligan — odłóż na spód (2): Swamp, Swamp Mulligan — odłóż na spód (2): Greatsword of Tyr, Plains Mulligan — odłóż na spód (2): Greatsword of Tyr, Silvanus's Invoker Mulligan — odłóż na spód (2): Plains, Silvanus's Invoker
+  [modal choice]   ▶ Mulligan — odłóż na spód (2): Stirring Bard, Island
+  [modal choice]     Mulligan — odłóż na spód (2): Stirring Bard, Swamp
+  [modal choice]     Mulligan — odłóż na spód (2): Stirring Bard, Greatsword of Tyr
+  [modal choice]     Mulligan — odłóż na spód (2): Stirring Bard, Plains
+  [modal choice]     Mulligan — odłóż na spód (2): Stirring Bard, Silvanus's Invoker
+  [modal choice]     Mulligan — odłóż na spód (2): Island, Swamp
+  [modal choice]     Mulligan — odłóż na spód (2): Island, Greatsword of Tyr
+  [modal choice]     Mulligan — odłóż na spód (2): Island, Plains
+  [modal choice]     Mulligan — odłóż na spód (2): Island, Silvanus's Invoker
+  [modal choice]     Mulligan — odłóż na spód (2): Swamp, Greatsword of Tyr
+  [modal choice]     Mulligan — odłóż na spód (2): Swamp, Plains
+  [modal choice]     Mulligan — odłóż na spód (2): Swamp, Silvanus's Invoker
+  [modal choice]     Mulligan — odłóż na spód (2): Swamp, Swamp
+  [modal choice]     Mulligan — odłóż na spód (2): Greatsword of Tyr, Plains
+  [modal choice]     Mulligan — odłóż na spód (2): Greatsword of Tyr, Silvanus's Invoker
+  [modal choice]     Mulligan — odłóż na spód (2): Plains, Silvanus's Invoker
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Your Temple Is Under Attack
+  [ROZGRYWKA]   • Dobierasz: Curate
+  [ROZGRYWKA]   • Dobierasz: Heap Gate
+  [ROZGRYWKA]   • Dobierasz: Inspiring Bard
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Wybierz: Karty na spód biblioteki (mulligan) (32 opcje)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (3): Forest, Mountain, Your Temple Is Under Attack Mulligan — odłóż na spód (3): Forest, Mountain, Curate Mulligan — odłóż na spód (3): Forest, Mountain, Heap Gate Mulligan — odłóż na spód (3): Forest, Mountain, Inspiring Bard Mulligan — odłóż na spód (3): Forest, Mountain, Swamp Mulligan — odłóż na spód (3): Forest, Your Temple Is Under Attack, Curate Mulligan — odłóż na spód (3): Forest, Your Temple Is Under Attack, Heap Gate Mulligan — odłóż na spód (3): Forest, Your Temple Is Under Attack, Inspiring Bard Mulligan — odłóż na spód (3): Forest, Your Temple Is Under Attack, Swamp Mulligan — odłóż na spód (3): Forest, Curate, Heap Gate Mulligan — odłóż na spód (3): Forest, Curate, Inspiring Bard Mulligan — odłóż na spód (3): Forest, Curate, Swamp Mulligan — odłóż na spód (3): Forest, Heap Gate, Inspiring Bard Mulligan — odłóż na spód (3): Forest, Heap Gate, Swamp Mulligan — odłóż na spód (3): Forest, Inspiring Bard, Swamp Mulligan — odłóż na spód (3): Mountain, Your Temple Is Under Attack, Curate Mulligan — odłóż na spód (3): Mountain, Your Temple Is Under Attack, Heap Gate Mulligan — odłóż na spód (3): Mountain, Your Temple Is Under Attack, Inspiring Bard Mulligan — odłóż na spód (3): Mountain, Your Temple Is Under Attack, Swamp Mulligan — odłóż na spód (3): Mountain, Curate, Heap Gate Mulligan — odłóż na spód (3): Mountain, Curate, Inspiring Bard Mulligan — odłóż na spód (3): Mountain, Curate, Swamp Mulligan — odłóż na spód (3): Mountain, Heap Gate, Inspiring Bard Mulligan — odłóż na spód (3): Mountain, Heap Gate, Swamp Mulligan — odłóż na spód (3): Mountain, Inspiring Bard, Swamp Mulligan — odłóż na spód (3): Your Temple Is Under Attack, Curate, Heap Gate Mulligan — odłóż na spód (3): Your Temple Is Under Attack, Curate, Inspiring Bard Mulligan — odłóż na spód (3): Your Temple Is Under Attack, Curate, Swamp Mulligan — odłóż na spód (3): Your Temple Is Under Attack, Heap Gate, Inspiring Bard Mulligan — odłóż na spód (3): Your Temple Is Under Attack, Heap Gate, Swamp Mulligan — odłóż na spód (3): Your Temple Is Under Attack, Inspiring Bard, Swamp Mulligan — odłóż na spód (3): Curate, Heap Gate, Inspiring Bard
+  [modal choice]   ▶ Mulligan — odłóż na spód (3): Forest, Mountain, Your Temple Is Under Attack
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Mountain, Curate
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Mountain, Heap Gate
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Mountain, Inspiring Bard
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Mountain, Swamp
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Your Temple Is Under Attack, Curate
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Your Temple Is Under Attack, Heap Gate
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Your Temple Is Under Attack, Inspiring Bard
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Your Temple Is Under Attack, Swamp
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Curate, Heap Gate
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Curate, Inspiring Bard
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Curate, Swamp
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Heap Gate, Inspiring Bard
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Heap Gate, Swamp
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Inspiring Bard, Swamp
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Your Temple Is Under Attack, Curate
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Your Temple Is Under Attack, Heap Gate
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Your Temple Is Under Attack, Inspiring Bard
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Your Temple Is Under Attack, Swamp
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Curate, Heap Gate
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Curate, Inspiring Bard
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Curate, Swamp
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Heap Gate, Inspiring Bard
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Heap Gate, Swamp
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Inspiring Bard, Swamp
+  [modal choice]     Mulligan — odłóż na spód (3): Your Temple Is Under Attack, Curate, Heap Gate
+  [modal choice]     Mulligan — odłóż na spód (3): Your Temple Is Under Attack, Curate, Inspiring Bard
+  [modal choice]     Mulligan — odłóż na spód (3): Your Temple Is Under Attack, Curate, Swamp
+  [modal choice]     Mulligan — odłóż na spód (3): Your Temple Is Under Attack, Heap Gate, Inspiring Bard
+  [modal choice]     Mulligan — odłóż na spód (3): Your Temple Is Under Attack, Heap Gate, Swamp
+  [modal choice]     Mulligan — odłóż na spód (3): Your Temple Is Under Attack, Inspiring Bard, Swamp
+  [modal choice]     Mulligan — odłóż na spód (3): Curate, Heap Gate, Inspiring Bard
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Heap Gate
+  [ROZGRYWKA]   • Dobierasz: Guildsworn Prowler
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Stirring Bard
+  [ROZGRYWKA]   • Dobierasz: Curate
+  [ROZGRYWKA]   • Dobierasz: Thieves' Tools
+  >> Wybierz: Karty na spód biblioteki (mulligan) (32 opcje)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (4): Swamp, Heap Gate, Guildsworn Prowler, Plains Mulligan — odłóż na spód (4): Swamp, Heap Gate, Guildsworn Prowler, Stirring Bard Mulligan — odłóż na spód (4): Swamp, Heap Gate, Guildsworn Prowler, Curate Mulligan — odłóż na spód (4): Swamp, Heap Gate, Guildsworn Prowler, Thieves' Tools Mulligan — odłóż na spód (4): Swamp, Heap Gate, Plains, Stirring Bard Mulligan — odłóż na spód (4): Swamp, Heap Gate, Plains, Curate Mulligan — odłóż na spód (4): Swamp, Heap Gate, Plains, Thieves' Tools Mulligan — odłóż na spód (4): Swamp, Heap Gate, Stirring Bard, Curate Mulligan — odłóż na spód (4): Swamp, Heap Gate, Stirring Bard, Thieves' Tools Mulligan — odłóż na spód (4): Swamp, Heap Gate, Curate, Thieves' Tools Mulligan — odłóż na spód (4): Swamp, Guildsworn Prowler, Plains, Stirring Bard Mulligan — odłóż na spód (4): Swamp, Guildsworn Prowler, Plains, Curate Mulligan — odłóż na spód (4): Swamp, Guildsworn Prowler, Plains, Thieves' Tools Mulligan — odłóż na spód (4): Swamp, Guildsworn Prowler, Stirring Bard, Curate Mulligan — odłóż na spód (4): Swamp, Guildsworn Prowler, Stirring Bard, Thieves' Tools Mulligan — odłóż na spód (4): Swamp, Guildsworn Prowler, Curate, Thieves' Tools Mulligan — odłóż na spód (4): Swamp, Plains, Stirring Bard, Curate Mulligan — odłóż na spód (4): Swamp, Plains, Stirring Bard, Thieves' Tools Mulligan — odłóż na spód (4): Swamp, Plains, Curate, Thieves' Tools Mulligan — odłóż na spód (4): Swamp, Stirring Bard, Curate, Thieves' Tools Mulligan — odłóż na spód (4): Heap Gate, Guildsworn Prowler, Plains, Stirring Bard Mulligan — odłóż na spód (4): Heap Gate, Guildsworn Prowler, Plains, Curate Mulligan — odłóż na spód (4): Heap Gate, Guildsworn Prowler, Plains, Thieves' Tools Mulligan — odłóż na spód (4): Heap Gate, Guildsworn Prowler, Stirring Bard, Curate Mulligan — odłóż na spód (4): Heap Gate, Guildsworn Prowler, Stirring Bard, Thieves' Tools Mulligan — odłóż na spód (4): Heap Gate, Guildsworn Prowler, Curate, Thieves' Tools Mulligan — odłóż na spód (4): Heap Gate, Plains, Stirring Bard, Curate Mulligan — odłóż na spód (4): Heap Gate, Plains, Stirring Bard, Thieves' Tools Mulligan — odłóż na spód (4): Heap Gate, Plains, Curate, Thieves' Tools Mulligan — odłóż na spód (4): Heap Gate, Stirring Bard, Curate, Thieves' Tools Mulligan — odłóż na spód (4): Guildsworn Prowler, Plains, Stirring Bard, Curate Mulligan — odłóż na spód (4): Guildsworn Prowler, Plains, Stirring Bard, Thieves' Tools
+  [modal choice]   ▶ Mulligan — odłóż na spód (4): Swamp, Heap Gate, Guildsworn Prowler, Plains
+  [modal choice]     Mulligan — odłóż na spód (4): Swamp, Heap Gate, Guildsworn Prowler, Stirring Bard
+  [modal choice]     Mulligan — odłóż na spód (4): Swamp, Heap Gate, Guildsworn Prowler, Curate
+  [modal choice]     Mulligan — odłóż na spód (4): Swamp, Heap Gate, Guildsworn Prowler, Thieves' Tools
+  [modal choice]     Mulligan — odłóż na spód (4): Swamp, Heap Gate, Plains, Stirring Bard
+  [modal choice]     Mulligan — odłóż na spód (4): Swamp, Heap Gate, Plains, Curate
+  [modal choice]     Mulligan — odłóż na spód (4): Swamp, Heap Gate, Plains, Thieves' Tools
+  [modal choice]     Mulligan — odłóż na spód (4): Swamp, Heap Gate, Stirring Bard, Curate
+  [modal choice]     Mulligan — odłóż na spód (4): Swamp, Heap Gate, Stirring Bard, Thieves' Tools
+  [modal choice]     Mulligan — odłóż na spód (4): Swamp, Heap Gate, Curate, Thieves' Tools
+  [modal choice]     Mulligan — odłóż na spód (4): Swamp, Guildsworn Prowler, Plains, Stirring Bard
+  [modal choice]     Mulligan — odłóż na spód (4): Swamp, Guildsworn Prowler, Plains, Curate
+  [modal choice]     Mulligan — odłóż na spód (4): Swamp, Guildsworn Prowler, Plains, Thieves' Tools
+  [modal choice]     Mulligan — odłóż na spód (4): Swamp, Guildsworn Prowler, Stirring Bard, Curate
+  [modal choice]     Mulligan — odłóż na spód (4): Swamp, Guildsworn Prowler, Stirring Bard, Thieves' Tools
+  [modal choice]     Mulligan — odłóż na spód (4): Swamp, Guildsworn Prowler, Curate, Thieves' Tools
+  [modal choice]     Mulligan — odłóż na spód (4): Swamp, Plains, Stirring Bard, Curate
+  [modal choice]     Mulligan — odłóż na spód (4): Swamp, Plains, Stirring Bard, Thieves' Tools
+  [modal choice]     Mulligan — odłóż na spód (4): Swamp, Plains, Curate, Thieves' Tools
+  [modal choice]     Mulligan — odłóż na spód (4): Swamp, Stirring Bard, Curate, Thieves' Tools
+  [modal choice]     Mulligan — odłóż na spód (4): Heap Gate, Guildsworn Prowler, Plains, Stirring Bard
+  [modal choice]     Mulligan — odłóż na spód (4): Heap Gate, Guildsworn Prowler, Plains, Curate
+  [modal choice]     Mulligan — odłóż na spód (4): Heap Gate, Guildsworn Prowler, Plains, Thieves' Tools
+  [modal choice]     Mulligan — odłóż na spód (4): Heap Gate, Guildsworn Prowler, Stirring Bard, Curate
+  [modal choice]     Mulligan — odłóż na spód (4): Heap Gate, Guildsworn Prowler, Stirring Bard, Thieves' Tools
+  [modal choice]     Mulligan — odłóż na spód (4): Heap Gate, Guildsworn Prowler, Curate, Thieves' Tools
+  [modal choice]     Mulligan — odłóż na spód (4): Heap Gate, Plains, Stirring Bard, Curate
+  [modal choice]     Mulligan — odłóż na spód (4): Heap Gate, Plains, Stirring Bard, Thieves' Tools
+  [modal choice]     Mulligan — odłóż na spód (4): Heap Gate, Plains, Curate, Thieves' Tools
+  [modal choice]     Mulligan — odłóż na spód (4): Heap Gate, Stirring Bard, Curate, Thieves' Tools
+  [modal choice]     Mulligan — odłóż na spód (4): Guildsworn Prowler, Plains, Stirring Bard, Curate
+  [modal choice]     Mulligan — odłóż na spód (4): Guildsworn Prowler, Plains, Stirring Bard, Thieves' Tools
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Thieves' Tools
+  [ROZGRYWKA]   • Dobierasz: Inspiring Bard
+  [ROZGRYWKA]   • Dobierasz: Marut
+  [ROZGRYWKA]   • Dobierasz: Nefarious Imp
+  [ROZGRYWKA]   • Dobierasz: Lurking Green Dragon
+  [ROZGRYWKA]   • Dobierasz: Greatsword of Tyr
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Wybierz: Karty na spód biblioteki (mulligan) (21 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (5): Thieves' Tools, Inspiring Bard, Marut, Nefarious Imp, Lurking Green Dragon Mulligan — odłóż na spód (5): Thieves' Tools, Inspiring Bard, Marut, Nefarious Imp, Greatsword of Tyr Mulligan — odłóż na spód (5): Thieves' Tools, Inspiring Bard, Marut, Nefarious Imp, Mountain Mulligan — odłóż na spód (5): Thieves' Tools, Inspiring Bard, Marut, Lurking Green Dragon, Greatsword of Tyr Mulligan — odłóż na spód (5): Thieves' Tools, Inspiring Bard, Marut, Lurking Green Dragon, Mountain Mulligan — odłóż na spód (5): Thieves' Tools, Inspiring Bard, Marut, Greatsword of Tyr, Mountain Mulligan — odłóż na spód (5): Thieves' Tools, Inspiring Bard, Nefarious Imp, Lurking Green Dragon, Greatsword of Tyr Mulligan — odłóż na spód (5): Thieves' Tools, Inspiring Bard, Nefarious Imp, Lurking Green Dragon, Mountain Mulligan — odłóż na spód (5): Thieves' Tools, Inspiring Bard, Nefarious Imp, Greatsword of Tyr, Mountain Mulligan — odłóż na spód (5): Thieves' Tools, Inspiring Bard, Lurking Green Dragon, Greatsword of Tyr, Mountain Mulligan — odłóż na spód (5): Thieves' Tools, Marut, Nefarious Imp, Lurking Green Dragon, Greatsword of Tyr Mulligan — odłóż na spód (5): Thieves' Tools, Marut, Nefarious Imp, Lurking Green Dragon, Mountain Mulligan — odłóż na spód (5): Thieves' Tools, Marut, Nefarious Imp, Greatsword of Tyr, Mountain Mulligan — odłóż na spód (5): Thieves' Tools, Marut, Lurking Green Dragon, Greatsword of Tyr, Mountain Mulligan — odłóż na spód (5): Thieves' Tools, Nefarious Imp, Lurking Green Dragon, Greatsword of Tyr, Mountain Mulligan — odłóż na spód (5): Inspiring Bard, Marut, Nefarious Imp, Lurking Green Dragon, Greatsword of Tyr Mulligan — odłóż na spód (5): Inspiring Bard, Marut, Nefarious Imp, Lurking Green Dragon, Mountain Mulligan — odłóż na spód (5): Inspiring Bard, Marut, Nefarious Imp, Greatsword of Tyr, Mountain Mulligan — odłóż na spód (5): Inspiring Bard, Marut, Lurking Green Dragon, Greatsword of Tyr, Mountain Mulligan — odłóż na spód (5): Inspiring Bard, Nefarious Imp, Lurking Green Dragon, Greatsword of Tyr, Mountain Mulligan — odłóż na spód (5): Marut, Nefarious Imp, Lurking Green Dragon, Greatsword of Tyr, Mountain
+  [modal choice]   ▶ Mulligan — odłóż na spód (5): Thieves' Tools, Inspiring Bard, Marut, Nefarious Imp, Lurking Green Dragon
+  [modal choice]     Mulligan — odłóż na spód (5): Thieves' Tools, Inspiring Bard, Marut, Nefarious Imp, Greatsword of Tyr
+  [modal choice]     Mulligan — odłóż na spód (5): Thieves' Tools, Inspiring Bard, Marut, Nefarious Imp, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Thieves' Tools, Inspiring Bard, Marut, Lurking Green Dragon, Greatsword of Tyr
+  [modal choice]     Mulligan — odłóż na spód (5): Thieves' Tools, Inspiring Bard, Marut, Lurking Green Dragon, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Thieves' Tools, Inspiring Bard, Marut, Greatsword of Tyr, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Thieves' Tools, Inspiring Bard, Nefarious Imp, Lurking Green Dragon, Greatsword of Tyr
+  [modal choice]     Mulligan — odłóż na spód (5): Thieves' Tools, Inspiring Bard, Nefarious Imp, Lurking Green Dragon, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Thieves' Tools, Inspiring Bard, Nefarious Imp, Greatsword of Tyr, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Thieves' Tools, Inspiring Bard, Lurking Green Dragon, Greatsword of Tyr, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Thieves' Tools, Marut, Nefarious Imp, Lurking Green Dragon, Greatsword of Tyr
+  [modal choice]     Mulligan — odłóż na spód (5): Thieves' Tools, Marut, Nefarious Imp, Lurking Green Dragon, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Thieves' Tools, Marut, Nefarious Imp, Greatsword of Tyr, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Thieves' Tools, Marut, Lurking Green Dragon, Greatsword of Tyr, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Thieves' Tools, Nefarious Imp, Lurking Green Dragon, Greatsword of Tyr, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Inspiring Bard, Marut, Nefarious Imp, Lurking Green Dragon, Greatsword of Tyr
+  [modal choice]     Mulligan — odłóż na spód (5): Inspiring Bard, Marut, Nefarious Imp, Lurking Green Dragon, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Inspiring Bard, Marut, Nefarious Imp, Greatsword of Tyr, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Inspiring Bard, Marut, Lurking Green Dragon, Greatsword of Tyr, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Inspiring Bard, Nefarious Imp, Lurking Green Dragon, Greatsword of Tyr, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Marut, Nefarious Imp, Lurking Green Dragon, Greatsword of Tyr, Mountain
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Nefarious Imp
+  [ROZGRYWKA]   • Dobierasz: Your Temple Is Under Attack
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Wybierz: Karty na spód biblioteki (mulligan) (5 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (6): Island, Nefarious Imp, Your Temple Is Under Attack, Swamp, Plains, Swamp Mulligan — odłóż na spód (6): Island, Nefarious Imp, Your Temple Is Under Attack, Swamp, Plains, Plains Mulligan — odłóż na spód (6): Island, Nefarious Imp, Swamp, Plains, Swamp, Plains Mulligan — odłóż na spód (6): Island, Your Temple Is Under Attack, Swamp, Plains, Swamp, Plains Mulligan — odłóż na spód (6): Nefarious Imp, Your Temple Is Under Attack, Swamp, Plains, Swamp, Plains
+  [modal choice]   ▶ Mulligan — odłóż na spód (6): Island, Nefarious Imp, Your Temple Is Under Attack, Swamp, Plains, Swamp
+  [modal choice]     Mulligan — odłóż na spód (6): Island, Nefarious Imp, Your Temple Is Under Attack, Swamp, Plains, Plains
+  [modal choice]     Mulligan — odłóż na spód (6): Island, Nefarious Imp, Swamp, Plains, Swamp, Plains
+  [modal choice]     Mulligan — odłóż na spód (6): Island, Your Temple Is Under Attack, Swamp, Plains, Swamp, Plains
+  [modal choice]     Mulligan — odłóż na spód (6): Nefarious Imp, Your Temple Is Under Attack, Swamp, Plains, Swamp, Plains
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Marut
+  [ROZGRYWKA]   • Dobierasz: Curate
+  [ROZGRYWKA]   • Dobierasz: Cloak of the Bat
+  [ROZGRYWKA]   • Dobierasz: Heap Gate
+  [ROZGRYWKA]   • Dobierasz: Gray Slaad
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Mulligan — odłóż na spód (7): Mountain, Marut, Curate, Cloak of the Bat, Heap Gate, Gray Slaad, Swamp
+  >> Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Guildsworn Prowler
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Kazuul's Toll Collector
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kazuul's Toll Collector wchodzi na pole bitwy
+  [ROZGRYWKA]   • Kazuul's Toll Collector zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Greatsword of Tyr
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Battle-Rattle Shaman
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Battle-Rattle Shaman wchodzi na pole bitwy
+  [ROZGRYWKA]   • Battle-Rattle Shaman zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Początek walki
+  [ROZGRYWKA]   • Battle-Rattle Shaman — wybierz cel triggera (można odmówić)
+  [ROZGRYWKA]   • Battle-Rattle Shaman — trigger (początek walki)
+  [ROZGRYWKA]   • Battle-Rattle Shaman — cel: Kazuul's Toll Collector
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kazuul's Toll Collector dostaje +2/+0
+  [ROZGRYWKA]   • Battle-Rattle Shaman — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Kazuul's Toll Collector
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Kazuul's Toll Collector zadaje 5 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 15
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  [ptaszek] wyciszam: Zagraj: Greatsword of Tyr (koszt 1W)
+  >> Zagraj: Greatsword of Tyr (koszt 1W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Greatsword of Tyr
+  [ROZGRYWKA]   • Greatsword of Tyr wchodzi na pole bitwy
+  [ROZGRYWKA]   • Greatsword of Tyr zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Początek walki
+  [ROZGRYWKA]   • Battle-Rattle Shaman — wybierz cel triggera (można odmówić)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Battle-Rattle Shaman — trigger (początek walki)
+  [ROZGRYWKA]   • Battle-Rattle Shaman — cel: Kazuul's Toll Collector
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Battle-Rattle Shaman — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Scion Summoner
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Scion Summoner wchodzi na pole bitwy
+  [ROZGRYWKA]   • Scion Summoner zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Scion Summoner — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Eldrazi Scion (1/1)
+  [ROZGRYWKA]   • Eldrazi Scion wchodzi na pole bitwy
+  [ROZGRYWKA]   • Scion Summoner — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Coralhelm Guide
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Eldrazi Scion — dodanie many do puli
+  [ROZGRYWKA]   • Eldrazi Scion zostaje poświęcony
+  [ROZGRYWKA]   • token Eldrazi Scion przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Coralhelm Guide wchodzi na pole bitwy
+  [ROZGRYWKA]   • Coralhelm Guide zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Początek walki
+  [ROZGRYWKA]   • Battle-Rattle Shaman — wybierz cel triggera (można odmówić)
+  [ROZGRYWKA]   • Battle-Rattle Shaman — trigger (początek walki)
+  [ROZGRYWKA]   • Battle-Rattle Shaman — cel: Kazuul's Toll Collector
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kazuul's Toll Collector dostaje +2/+0
+  [ROZGRYWKA]   • Battle-Rattle Shaman — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Kazuul's Toll Collector, Battle-Rattle Shaman
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Kazuul's Toll Collector zadaje 5 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 15 → 10
+  [ROZGRYWKA]   • Battle-Rattle Shaman zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 10 → 8
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Inspiring Bard
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Początek walki
+  [ROZGRYWKA]   • Battle-Rattle Shaman — wybierz cel triggera (można odmówić)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Battle-Rattle Shaman — trigger (początek walki)
+  [ROZGRYWKA]   • Battle-Rattle Shaman — cel: Kazuul's Toll Collector
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Battle-Rattle Shaman — trigger się rozstrzyga
+  >> Zagraj: Guildsworn Prowler (koszt 1B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Guildsworn Prowler
+  [ROZGRYWKA]   • Guildsworn Prowler wchodzi na pole bitwy
+  [ROZGRYWKA]   • Guildsworn Prowler zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Holdout Settlement
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Jwari Shapeshifter
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Jwari Shapeshifter wchodzi na pole bitwy
+  [ROZGRYWKA]   • Jwari Shapeshifter zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel kopiuje Coralhelm Guide przy wejściu
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Molten Nursery
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Molten Nursery wchodzi na pole bitwy
+  [ROZGRYWKA]   • Molten Nursery zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Początek walki
+  [ROZGRYWKA]   • Battle-Rattle Shaman — wybierz cel triggera (można odmówić)
+  [ROZGRYWKA]   • Battle-Rattle Shaman — trigger (początek walki)
+  [ROZGRYWKA]   • Battle-Rattle Shaman — cel: Kazuul's Toll Collector
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Might of the Masses → cel: Kazuul's Toll Collector
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kazuul's Toll Collector dostaje +5/+5
+  [ROZGRYWKA]   • Might of the Masses zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Kazuul's Toll Collector dostaje +7/+5
+  [ROZGRYWKA]   • Battle-Rattle Shaman — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Kazuul's Toll Collector, Battle-Rattle Shaman, Scion Summoner, Coralhelm Guide
+  >> Wybierz: Deklaracja blokujących (5 opcji)
+  [combat wizard] blokuję 1 stworami: Guildsworn Prowler (2/1)
+  [combat wizard] Zatwierdź bloki
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 53 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Inspiring Bard · 4 · Creature — Elf Bard · wybierz tryb: Inspiracja barda / Pieśń odpoczynku · 3/3
+  MOJE POLA: Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Holdout Settlement · Land · {T}, tapnij swojego stwora: dodaj manę · T: dodaj 1 manę | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · +7/+5 · 10/7 | Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · 2/2 | Scion Summoner · 3 · Creature — Eldrazi Drone · Gdy wejdzie na pole bitwy: stwórz token Eldrazi Scion. · 2/2 | Jwari Shapeshifter · 2 · Creature — Merfolk Scout Ally · choroba · 2/1 | Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie.
+  LOG: Dobierasz: Thieves' Tools ⏎ Dobierasz: Patron of the Arts ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Swamp, Underdark Explorer, Inspiring Bard, Guildsworn Prowler, Stirring Bard, Basilisk Gate ⏎ Nowa partia (seed 57). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 11, kliknięte: 20, modale: 2, sondy noop: 43 (panel 29, modal 14)
+== DETEKTORY: brak zgłoszeń ==

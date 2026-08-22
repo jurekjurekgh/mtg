@@ -73,3 +73,51 @@ Znaleziska naprawiam od razu, każde osobnym zielonym commitem
 ## Wynik
 
 (uzupełniany w trakcie sesji)
+
+---
+
+## M188 — uwagi właściciela z testów (A, B, C, K)
+
+Zlecenie w czacie (2026-08-22, po audycie PR #69). Rozpoznanie wykonane
+sondami headless PRZED kodowaniem; każda uwaga = osobny zielony commit
+z testem RED→GREEN.
+
+### A — Evangel of Synthesis bez badge'a +1/+0
+
+**Rozpoznanie:** silnik liczy POPRAWNIE (repro: 1 dobranie z draw stepu
++ 1 z ETB = `cardsDrawnThisTurn = 2` → `effectivePower = 3`, keyword
+`menace`; widok niesie `power: 3` i `grantedKeywords: ['menace']`).
+Brakuje wyłącznie BADGE'a `+1/+0`: kafel liczy go z `powerModifier`
+(licznikowy modyfikator „until EOT"), a statyka warunkowa (CR 604.3)
+jest read-time — modyfikator zostaje 0. Klasa M175/A3, ale dla P/T
+zamiast keywordów: badge nadanej mocy nie działał dla ŻADNEJ statyki
+warunkowej (Crew Captain, Esper Stormblade, Evangel…).
+
+- [ ] widok niesie różnicę „efektywne − wydrukowane" P/T jawnym polem
+- [ ] kafel pokazuje badge z tego pola (bez zmian dla liczników/pumpów)
+
+### B — surowe `token_squirrel` w logu Rozgrywki
+
+**Rozpoznanie:** `nameOfObject` obsługuje tokeny (`object.name`), ale gdy
+obiektu już nie ma (token zginął — CR 111.7 usuwa go ze stanu), opis
+spada do `nameOf(cardId)`, a `token_*` nie istnieje w rejestrze kart →
+zwracany jest surowy identyfikator.
+
+- [ ] `nameOf` tłumaczy `token_*` na czytelną nazwę („Squirrel")
+
+### C — bot atakuje 2/2 w nietapnięte 1/5
+
+**Rozpoznanie:** gałąź „przeżyje, NIE zabije" daje −2, ale premia
+`racing` (+8/+20) ją przebija → atak wychodzi na +6 przy passie 0.
+Dokładnie klasa L3 (kara musi przebić premię) i L54 (kara mierzona
+względem BAZY). Atak jałowy: 0 obrażeń, stwór tapnięty, nie zablokuje.
+
+- [ ] atak, który nie zada obrażeń ani nikogo nie zabije, nie może być
+      ratowany premią presji/wyścigu (pomiń premię, nie „dołóż karę")
+
+### K — „Przebieg tur (dla AI)": select zamiast 1/2 ostatnich tur
+
+Zlecenie: lista WSZYSTKICH tur od początku gry w `<select>`, wybór
+pokazuje jedną turę, przycisk kopiuje ją do schowka. Dwie naraz zbędne.
+
+- [ ] `<select>` z turami; render + kopiowanie wybranej tury
