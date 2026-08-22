@@ -235,6 +235,10 @@ export function describeSpellEffects(spell) {
       const label = mode.name ?? 'tryb';
       return inner ? `${label}: ${inner}` : label;
     });
+    // M184/Z1: czar z JEDNYM trybem (Sea God's Scorn — modes użyte
+    // technicznie dla variableTargets) to nie jest wybór — prefiks
+    // „wybierz jedno" wprowadzał w błąd; pokazujemy sam opis efektów.
+    if (spell.modes.length === 1) return modeBits[0] ?? '';
     return `wybierz jedno — ${modeBits.join(' / ')}`;
   }
   const parts = (spell.effects ?? []).map((effect) => {
@@ -890,7 +894,13 @@ function describeEffect(e) {
     // M166/D (Inferno Titan).
     damage_divided: () => 'obrażenia dzielone między cele',
     becomes_subtype_until_end_of_turn: () => 'zmiana podtypu i utrata keyworda do końca tury',
-    apply_to_each_target: () => 'ten sam efekt na każdym z celów',
+    // M184/Z1 (Żywy Tester): „ten sam efekt na każdym z celów" nie mówił,
+    // CO się stanie (Sea God's Scorn wyglądał na pustą kartę) — opisujemy
+    // efekty WEWNĘTRZNE rekurencyjnie.
+    apply_to_each_target: () => {
+      const inner = (e.effects ?? []).map((ie) => describeEffect(ie)).filter(Boolean).join(' + ');
+      return inner ? `${inner} (każdy z celów)` : 'ten sam efekt na każdym z celów';
+    },
     reveal_subtype_deal_damage: () => 'możesz ujawnić kartę z ręki — obrażenia przeciwnika',
     next_spell_discount: () => 'następny czar podtypu tańszy w tej turze',
     return_card_from_graveyard_to_hand: () => 'zwrot karty z grobu do ręki',
@@ -902,7 +912,13 @@ function describeEffect(e) {
     index_look: () => 'zobacz wierzch biblioteki (Index)',
     look_top_put_one_hand_rest_grave: () => 'zobacz wierzch biblioteki, jedną do ręki, resztę do grobu',
     look_top_put_one_hand_rest_bottom: () => 'zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki',
-    reveal_top_pick_land_rest_grave: () => 'odsłoń wierzch, możesz wziąć ląd do ręki, resztę do grobu',
+    // M184/Z2: opis niósł ani liczby kart, ani nagrody za odmowę
+    // (Blanchwood Prowler: licznik +1/+1) — gracz nie znał stawki decyzji.
+    reveal_top_pick_land_rest_grave: () => {
+      const n = e.amount ?? 4;
+      const base = `odsłoń ${n} ${polishPluralCount(n, 'kartę', 'karty', 'kart')} z wierzchu: możesz wziąć ląd do ręki, reszta do grobu`;
+      return e.counterIfNone ? `${base}; bez wzięcia lądu: licznik +1/+1` : base;
+    },
     epic_experiment: () => 'wygnaj wierzch biblioteki i rzuć czary bez kosztu',
     mill_both_players: () => `mieli po ${e.amount ?? 1} karcie z biblioteki każdy gracz`,
     mill_cards: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} (do grobu)`,
@@ -1280,7 +1296,7 @@ export function rulesText(info) {
   const plotLine = info.plot ? `Plot {${info.plot.cost ?? '?'}}: wygnaj z ręki, później rzuć bez kosztu` : '';
   const equip = info.equipment;
   const equipLine = equip
-    ? `Equip {${equip.equip ?? '?'}}${(equip.keywords ?? []).length ? ` — nosiciel: ${(equip.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : ''}${equip.pump ? ` ${signed(equip.pump.power ?? 0)}/${signed(equip.pump.toughness ?? 0)}` : ''}`
+    ? `Equip {${equip.equip ?? '?'}}${(equip.keywords ?? []).length ? ` — nosiciel: ${(equip.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : ''}${equip.pump ? ` ${signed(equip.pump.power ?? 0)}/${signed(equip.pump.toughness ?? 0)}` : ''}${equip.cantBeBlockedMaxPower != null ? ` — nosiciel o mocy ≤${equip.cantBeBlockedMaxPower} nie może być blokowany` : ''}`
     : '';
   const morphLine = info.morph && info.morph.megamorphCost != null
     ? `Megamorph {${info.morph.megamorphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt Megamorph (+1/+1)`
@@ -2189,7 +2205,13 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_satyr_look_choice': {
       // Satyr Wayfinder — wybierz ląd z odsłoniętych do ręki albo zrezygnuj.
-      if (cmd.pickId == null) return 'Nie bierz lądu (reszta do grobu)';
+      // M184/Z3: przy Blanchwood Prowler odmowa DAJE licznik +1/+1 —
+      // opcja musi to mówić (komenda niesie counterIfNone z pendingu).
+      if (cmd.pickId == null) {
+        return cmd.counterIfNone
+          ? 'Nie bierz lądu (reszta do grobu, stwór dostaje +1/+1)'
+          : 'Nie bierz lądu (reszta do grobu)';
+      }
       // M152 (audyt żywym testerem): karty odsłoniętej biblioteki są w
       // PlayerView ukryte (hidden:true, bez cardId) — nameOfObjectId zwracał
       // „?". Satyr Wayfinder odsłania WŁASNE karty (gracz je zna), więc nazwę

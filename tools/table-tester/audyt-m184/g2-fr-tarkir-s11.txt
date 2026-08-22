@@ -1,0 +1,415 @@
+== NOWA PARTIA: gracz=forgotten-realms vs bot=tarkir, seed=11, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Forest  ||  Zagraj ląd: Plains  ||  Zagraj ląd: Mountain  ||  Zagraj ląd: Basilisk Gate  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Plains · Basic Land — Plains · T: dodaj 1 manę | Marut · 8 · Artifact Creature — Construct · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Treasure (za wydaną manę ze Skarbów). · 7/7 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Basilisk Gate, Mountain, Greatsword of Tyr, Thieves' Tools, Plains, Marut, Forest ⏎ Nowa partia (seed 11). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Forest
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+
+--- krok 3 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island  ||  Zagraj ląd: Plains  ||  Zagraj ląd: Mountain  ||  Zagraj ląd: Basilisk Gate  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Plains · Basic Land — Plains · T: dodaj 1 manę | Marut · 8 · Artifact Creature — Construct · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Treasure (za wydaną manę ze Skarbów). · 7/7 | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Basilisk Gate, Mountain, Greatsword of Tyr, Thieves' Tools, Plains, Marut, Forest ⏎ Nowa partia (seed 11). Powodzenia!
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Curate
+  >> Rzuć: Curate (koszt 1U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Curate
+  [ROZGRYWKA]   • Wykonujesz surveil (patrzy na 2 karty: Swamp, Cloak of the Bat)
+
+--- krok 6 | T. 5GraczGracz: 20 ż.Bot: 20 ż.DobieranieStos — Curate ---
+  STOS: Curate (rzuca: Ty)
+  AKCJE: Wybierz: Surveil — karty do grobu (5 opcji)  ||  Poddaj partię
+  RĘKA: Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Plains · Basic Land — Plains · T: dodaj 1 manę | Marut · 8 · Artifact Creature — Construct · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Treasure (za wydaną manę ze Skarbów). · 7/7
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Basilisk Gate, Mountain, Greatsword of Tyr, Thieves' Tools, Plains, Marut, Forest ⏎ Nowa partia (seed 11). Powodzenia!
+  >> Wybierz: Surveil — karty do grobu (5 opcji)
+  [modal choice] Surveil 2 — obejrzane karty: 1. Swamp 2. Cloak of the BatKarta 1 z 2: SwampNa cmentarzNa wierzch bibliotekiZamknij (dokończysz później)
+  [modal choice]   ▶ Na cmentarz
+  [modal choice]     Na wierzch biblioteki
+  [modal choice] Surveil 2 — obejrzane karty: 1. Swamp → cmentarz 2. Cloak of the BatKarta 2 z 2: Cloak of the BatNa cmentarzNa wierzch bibliotekiZamknij (dokończysz później)
+  [modal choice]   ▶ Na cmentarz
+  [modal choice]     Na wierzch biblioteki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Mielisz Swamp do grobu
+  [ROZGRYWKA]   • Mielisz Cloak of the Bat do grobu
+  [ROZGRYWKA]   • Kończysz surveil — 2 karty idą do grobu
+  [ROZGRYWKA]   • Dobierasz: Circle of the Land Druid
+  [ROZGRYWKA]   • Curate zostaje rozstrzygnięty
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Plains
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+
+--- krok 9 | T. 6BotGracz: 20 ż.Bot: 20 ż.Główna 1Stos — Jeskai Windscout ---
+  STOS: Jeskai Windscout (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Marut · 8 · Artifact Creature — Construct · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Treasure (za wydaną manę ze Skarbów). · 7/7 | Circle of the Land Druid · 2 · Creature — Gnome Druid · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · Gdy ta karta umrze: wróć kartę z grobu na rękę. · 1/1
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Basilisk Gate, Mountain, Greatsword of Tyr, Thieves' Tools, Plains, Marut, Forest ⏎ Nowa partia (seed 11). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Jeskai Windscout
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Jeskai Windscout wchodzi na pole bitwy
+  [ROZGRYWKA]   • Jeskai Windscout zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Inspiring Bard
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+
+--- krok 12 | T. 7GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Inspiring Bard (koszt 3G)  ||  Zagraj: Circle of the Land Druid (koszt 1G)  ||  Zagraj: Greatsword of Tyr (koszt 1W)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Marut · 8 · Artifact Creature — Construct · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Treasure (za wydaną manę ze Skarbów). · 7/7 | Circle of the Land Druid · 2 · Creature — Gnome Druid · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · Gdy ta karta umrze: wróć kartę z grobu na rękę. · 1/1 | Inspiring Bard · 4 · Creature — Elf Bard · wybierz tryb: Inspiracja barda / Pieśń odpoczynku · 3/3
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · choroba · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Basilisk Gate, Mountain, Greatsword of Tyr, Thieves' Tools, Plains, Marut, Forest ⏎ Nowa partia (seed 11). Powodzenia!
+  >> Zagraj: Inspiring Bard (koszt 3G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Inspiring Bard
+  [ROZGRYWKA]   • Inspiring Bard wchodzi na pole bitwy
+  [ROZGRYWKA]   • Inspiring Bard zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Inspiring Bard — wybierz tryb zdolności triggerowanej
+  >> Inspiring Bard — wybór trybu (3 opcje)
+  [modal choice] Inspiring Bard — wybór trybu Inspiring Bard — Tryb: Inspiracja barda → cel: Inspiring Bard (Ty) Inspiring Bard — Tryb: Inspiracja barda → cel: Jeskai Windscout (Nieprzyjaciel) Inspiring Bard — Tryb: Pieśń odpoczynku
+  [modal choice]   ▶ Inspiring Bard — Tryb: Inspiracja barda → cel: Inspiring Bard (Ty)
+  [modal choice]     Inspiring Bard — Tryb: Inspiracja barda → cel: Jeskai Windscout (Nieprzyjaciel)
+  [modal choice]     Inspiring Bard — Tryb: Pieśń odpoczynku
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Inspiring Bard dostaje +2/+2
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+
+--- krok 15 | T. 8BotGracz: 20 ż.Bot: 20 ż.Główna 1Stos — Krotiq Nestguard ---
+  STOS: Krotiq Nestguard (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Marut · 8 · Artifact Creature — Construct · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Treasure (za wydaną manę ze Skarbów). · 7/7 | Circle of the Land Druid · 2 · Creature — Gnome Druid · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · Gdy ta karta umrze: wróć kartę z grobu na rękę. · 1/1
+  MOJE POLA: Inspiring Bard · 4 · Creature — Elf Bard · wybierz tryb: Inspiracja barda / Pieśń odpoczynku · choroba · 3/3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Basilisk Gate, Mountain, Greatsword of Tyr, Thieves' Tools, Plains, Marut, Forest ⏎ Nowa partia (seed 11). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Krotiq Nestguard
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Krotiq Nestguard wchodzi na pole bitwy
+  [ROZGRYWKA]   • Krotiq Nestguard zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Scorch Spitter
+  >> Zagraj ląd: Basilisk Gate
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Basilisk Gate
+
+--- krok 18 | T. 9GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Scorch Spitter (koszt R)  ||  Zagraj: Circle of the Land Druid (koszt 1G)  ||  Zagraj: Greatsword of Tyr (koszt 1W)  ||  Cel zdolności: Basilisk Gate (3 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Marut · 8 · Artifact Creature — Construct · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Treasure (za wydaną manę ze Skarbów). · 7/7 | Circle of the Land Druid · 2 · Creature — Gnome Druid · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · Gdy ta karta umrze: wróć kartę z grobu na rękę. · 1/1 | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1
+  MOJE POLA: Inspiring Bard · 4 · Creature — Elf Bard · wybierz tryb: Inspiracja barda / Pieśń odpoczynku · 3/3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · choroba · 4/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Basilisk Gate, Mountain, Greatsword of Tyr, Thieves' Tools, Plains, Marut, Forest ⏎ Nowa partia (seed 11). Powodzenia!
+  >> Zagraj: Scorch Spitter (koszt R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Scorch Spitter
+  [ROZGRYWKA]   • Scorch Spitter wchodzi na pole bitwy
+  [ROZGRYWKA]   • Scorch Spitter zostaje rozstrzygnięty
+  >> Zagraj: Circle of the Land Druid (koszt 1G)
+  [kreator many] Płatność 1G — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: GTapnij: Forest (G)Tapnij: Island (U)Tapnij:  — źródła: 4
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Circle of the Land Druid
+  [ROZGRYWKA]   • Circle of the Land Druid wchodzi na pole bitwy
+  [ROZGRYWKA]   • Circle of the Land Druid zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Circle of the Land Druid — skorzystać z efektu „you may"? (wybór gracza)
+
+--- krok 21 | T. 9GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Wybierz: Efekt dobrowolny („you may") (2 opcje)
+  RĘKA: Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Marut · 8 · Artifact Creature — Construct · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Treasure (za wydaną manę ze Skarbów). · 7/7
+  MOJE POLA: Inspiring Bard · 4 · Creature — Elf Bard · wybierz tryb: Inspiracja barda / Pieśń odpoczynku · 3/3 | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · choroba · 1/1 | Circle of the Land Druid · 2 · Creature — Gnome Druid · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · Gdy ta karta umrze: wróć kartę z grobu na rękę. · choroba · 1/1 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · choroba · 4/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Basilisk Gate, Mountain, Greatsword of Tyr, Thieves' Tools, Plains, Marut, Forest ⏎ Nowa partia (seed 11). Powodzenia!
+  >> Wybierz: Efekt dobrowolny („you may") (2 opcje)
+  [modal choice] Wybierz: Efekt dobrowolny („you may") Zrezygnuj z efektu Uruchom efekt dobrowolny (you may)
+  [modal choice]   ▶ Zrezygnuj z efektu
+  [modal choice]     Uruchom efekt dobrowolny (you may)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rezygnujesz z efektu „you may" (Circle of the Land Druid)
+  >> Zagraj: Greatsword of Tyr (koszt 1W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Greatsword of Tyr
+  [ROZGRYWKA]   • Greatsword of Tyr wchodzi na pole bitwy
+  [ROZGRYWKA]   • Greatsword of Tyr zostaje rozstrzygnięty
+
+--- krok 24 | T. 9GraczGracz: 20 ż.Bot: 20 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Marut · 8 · Artifact Creature — Construct · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Treasure (za wydaną manę ze Skarbów). · 7/7
+  MOJE POLA: Inspiring Bard · 4 · Creature — Elf Bard · wybierz tryb: Inspiracja barda / Pieśń odpoczynku · 3/3 | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · choroba · 1/1 | Circle of the Land Druid · 2 · Creature — Gnome Druid · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · Gdy ta karta umrze: wróć kartę z grobu na rękę. · choroba · 1/1 | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · choroba · 4/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Basilisk Gate, Mountain, Greatsword of Tyr, Thieves' Tools, Plains, Marut, Forest ⏎ Nowa partia (seed 11). Powodzenia!
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Inspiring Bard
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Krotiq Nestguard blokuje Inspiring Bard
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Inspiring Bard zadaje 3 obrażenia (Krotiq Nestguard)
+  [ROZGRYWKA]   • Krotiq Nestguard zadaje 4 obrażenia (Inspiring Bard)
+  [ROZGRYWKA]   • Inspiring Bard ginie
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Ainok Artillerist
+
+--- krok 27 | T. 10BotGracz: 20 ż.Bot: 20 ż.Główna 1Stos — Furious Forebear ---
+  STOS: Furious Forebear (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Marut · 8 · Artifact Creature — Construct · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Treasure (za wydaną manę ze Skarbów). · 7/7
+  MOJE POLA: Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · choroba · 1/1 | Circle of the Land Druid · 2 · Creature — Gnome Druid · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · Gdy ta karta umrze: wróć kartę z grobu na rękę. · choroba · 1/1 | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · choroba · 4/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Basilisk Gate, Mountain, Greatsword of Tyr, Thieves' Tools, Plains, Marut, Forest ⏎ Nowa partia (seed 11). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ainok Artillerist wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ainok Artillerist zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Furious Forebear
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Furious Forebear wchodzi na pole bitwy
+  [ROZGRYWKA]   • Furious Forebear zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Jeskai Windscout
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Jeskai Windscout zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 18
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Underdark Explorer
+  >> Cel zdolności: Basilisk Gate (6 opcji)
+  [modal choice] Cel zdolności: Basilisk Gate Aktywuj: Basilisk Gate (Ty) (koszt 2, T) — +X/+X, X = liczba kontrolowanych bram (Gate) → cel: Furious Forebear (Nieprzyjaciel) Aktywuj: Basilisk Gate (Ty) (koszt 2, T) — +X/+X, X = liczba kontrolowanych bram (Gate) → cel: Ainok Artillerist (Nieprzyjaciel) Aktywuj: Basilisk Gate (Ty) (koszt 2, T) — +X/+X, X = liczba kontrolowanych bram (Gate) → cel: Circle of the Land Druid (Ty) Aktywuj: Basilisk Gate (Ty) (koszt 2, T) — +X/+X, X = liczba kontrolowanych bram (Gate) → cel: Scorch Spitter (Ty) Aktywuj: Basilisk Gate (Ty) (koszt 2, T) — +X/+X, X = liczba kontrolowanych bram (Gate) → cel: Krotiq Nestguard (Nieprzyjaciel) Aktywuj: Basilisk Gate (Ty) (koszt 2, T) — +X/+X, X = liczba kontrolowanych bram (Gate) → cel: Jeskai Windscout (Nieprzyjaciel)
+  [modal choice]   ▶ Aktywuj: Basilisk Gate (Ty) (koszt 2, T) — +X/+X, X = liczba kontrolowanych bram (Gate) → cel: Furious Forebear (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Basilisk Gate (Ty) (koszt 2, T) — +X/+X, X = liczba kontrolowanych bram (Gate) → cel: Ainok Artillerist (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Basilisk Gate (Ty) (koszt 2, T) — +X/+X, X = liczba kontrolowanych bram (Gate) → cel: Circle of the Land Druid (Ty)
+  [modal choice]     Aktywuj: Basilisk Gate (Ty) (koszt 2, T) — +X/+X, X = liczba kontrolowanych bram (Gate) → cel: Scorch Spitter (Ty)
+  [modal choice]     Aktywuj: Basilisk Gate (Ty) (koszt 2, T) — +X/+X, X = liczba kontrolowanych bram (Gate) → cel: Krotiq Nestguard (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Basilisk Gate (Ty) (koszt 2, T) — +X/+X, X = liczba kontrolowanych bram (Gate) → cel: Jeskai Windscout (Nieprzyjaciel)
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Forest (G)Tapnij: Island (U)Tapnij: Plains (W)Tapnij: Mountai — źródła: 5
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+
+--- krok 30 | T. 11GraczGracz: 18 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wyposaż: Greatsword of Tyr (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Marut · 8 · Artifact Creature — Construct · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Treasure (za wydaną manę ze Skarbów). · 7/7 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · 5/3
+  MOJE POLA: Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1 | Circle of the Land Druid · 2 · Creature — Gnome Druid · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · Gdy ta karta umrze: wróć kartę z grobu na rękę. · 1/1 | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · choroba · 4/1 | Furious Forebear · 2 · Creature — Spirit Warrior · Gdy kontrolowany stwór umiera, a ta karta jest w grobie: zapłać {2} i wróć na rękę. · +1/+1 · choroba · 4/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Basilisk Gate, Mountain, Greatsword of Tyr, Thieves' Tools, Plains, Marut, Forest ⏎ Nowa partia (seed 11). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Aktywujesz zdolność: Basilisk Gate → cel: Furious Forebear
+  [ROZGRYWKA]   • Ty: zdolność Basilisk Gate rozstrzygnięta
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+
+--- krok 33 | T. 11GraczGracz: 18 ż.Bot: 19 ż.Walka / Koniec walki ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Circle of the Land Druid — cel triggera: Swamp
+  RĘKA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Marut · 8 · Artifact Creature — Construct · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Treasure (za wydaną manę ze Skarbów). · 7/7 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · 5/3
+  MOJE POLA: Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · −1 · 4/4 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · choroba · 4/1 | Furious Forebear · 2 · Creature — Spirit Warrior · Gdy kontrolowany stwór umiera, a ta karta jest w grobie: zapłać {2} i wróć na rękę. · +1/+1 · −1 · choroba · 4/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Basilisk Gate, Mountain, Greatsword of Tyr, Thieves' Tools, Plains, Marut, Forest ⏎ Nowa partia (seed 11). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Scorch Spitter, Circle of the Land Druid
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Scorch Spitter — trigger (atak)
+  [ROZGRYWKA]   • Scorch Spitter zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 19
+  [ROZGRYWKA]   • Scorch Spitter — trigger się rozstrzyga
+  [ROZGRYWKA]   • Krotiq Nestguard blokuje Circle of the Land Druid; Furious Forebear blokuje Scorch Spitter
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Scorch Spitter zadaje 1 obrażenie (Furious Forebear)
+  [ROZGRYWKA]   • Furious Forebear zadaje 4 obrażenia (Scorch Spitter)
+  [ROZGRYWKA]   • Circle of the Land Druid zadaje 1 obrażenie (Krotiq Nestguard)
+  [ROZGRYWKA]   • Krotiq Nestguard zadaje 4 obrażenia (Circle of the Land Druid)
+  [ROZGRYWKA]   • Scorch Spitter ginie
+  [ROZGRYWKA]   • Circle of the Land Druid ginie
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Circle of the Land Druid — wybierz cel triggera (wymagany)
+  >> Circle of the Land Druid — cel triggera: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Circle of the Land Druid — trigger (śmierć stwora)
+  [ROZGRYWKA]   • Circle of the Land Druid — cel: Swamp
+  [ROZGRYWKA]   • Ty: Swamp — cmentarz → ręka
+  [ROZGRYWKA]   • Circle of the Land Druid — trigger się rozstrzyga
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 2
+  [ROZGRYWKA]   • Zagrywasz Swamp
+
+--- krok 36 | T. 11GraczGracz: 18 ż.Bot: 19 ż.Główna 2 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Thieves' Tools (koszt 1B)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Marut · 8 · Artifact Creature — Construct · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Treasure (za wydaną manę ze Skarbów). · 7/7 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · 5/3
+  MOJE POLA: Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · −1 · 4/4 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · choroba · 4/1 | Furious Forebear · 2 · Creature — Spirit Warrior · Gdy kontrolowany stwór umiera, a ta karta jest w grobie: zapłać {2} i wróć na rękę. · +1/+1 · −1 · choroba · 4/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Basilisk Gate, Mountain, Greatsword of Tyr, Thieves' Tools, Plains, Marut, Forest ⏎ Nowa partia (seed 11). Powodzenia!
+  >> Zagraj: Thieves' Tools (koszt 1B)
+  [kreator many] Płatność 1B — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: BTapnij: Plains (W)Tapnij: Mountain (R)Tapnij — źródła: 3
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Thieves' Tools
+  [ROZGRYWKA]   • Thieves' Tools wchodzi na pole bitwy
+  [ROZGRYWKA]   • Thieves' Tools zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Thieves' Tools — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty tworzysz token Treasure
+  [ROZGRYWKA]   • Treasure wchodzi na pole bitwy
+  [ROZGRYWKA]   • Thieves' Tools — trigger się rozstrzyga
+
+--- krok 39 | T. 11GraczGracz: 18 ż.Bot: 19 ż.Główna 2 ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Treasure (Ty) —  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Marut · 8 · Artifact Creature — Construct · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Treasure (za wydaną manę ze Skarbów). · 7/7 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · 5/3
+  MOJE POLA: Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Treasure · 0 · Artifact — Treasure | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · −1 · 4/4 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · choroba · 4/1 | Furious Forebear · 2 · Creature — Spirit Warrior · Gdy kontrolowany stwór umiera, a ta karta jest w grobie: zapłać {2} i wróć na rękę. · +1/+1 · −1 · choroba · 4/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Basilisk Gate, Mountain, Greatsword of Tyr, Thieves' Tools, Plains, Marut, Forest ⏎ Nowa partia (seed 11). Powodzenia!
+  >> Aktywuj: Treasure (Ty) —
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Treasure — dodanie many do puli
+  [ROZGRYWKA]   • Treasure zostaje poświęcony
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Monastery Flock
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Krotiq Nestguard
+
+--- krok 42 | T. 13GraczGracz: 5 ż.Bot: 19 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Marut · 8 · Artifact Creature — Construct · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Treasure (za wydaną manę ze Skarbów). · 7/7 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · 5/3 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1
+  MOJE POLA: Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Furious Forebear · 2 · Creature — Spirit Warrior · Gdy kontrolowany stwór umiera, a ta karta jest w grobie: zapłać {2} i wróć na rękę. · 3/1 | Monastery Flock · 3 · Creature — Bird · Obrońca Latanie · Morph {1}: możesz zagrać twarzą w dół jako 2/2 za {3}, potem obrócić za koszt Morph · choroba · 0/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Basilisk Gate, Mountain, Greatsword of Tyr, Thieves' Tools, Plains, Marut, Forest ⏎ Nowa partia (seed 11). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Krotiq Nestguard rozstrzygnięta
+  [ROZGRYWKA]   • Monastery Flock wchodzi na pole bitwy
+  [ROZGRYWKA]   • Monastery Flock zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Jeskai Windscout, Krotiq Nestguard, Ainok Artillerist, Furious Forebear
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Jeskai Windscout zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 16
+  [ROZGRYWKA]   • Krotiq Nestguard zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 12
+  [ROZGRYWKA]   • Ainok Artillerist zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 12 → 8
+  [ROZGRYWKA]   • Furious Forebear zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 8 → 5
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Nefarious Imp
+  >> Zagraj: Nefarious Imp (koszt 2B)
+  [kreator many] Płatność 2B — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: BTapnij: Forest (G)Tapnij: Island (U)Tapnij:  — źródła: 6
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Nefarious Imp
+  [ROZGRYWKA]   • Nefarious Imp wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nefarious Imp zostaje rozstrzygnięty
+
+--- krok 45 | T. 13GraczGracz: 5 ż.Bot: 19 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Wyposaż: Greatsword of Tyr (Ty) → Nefarious Imp (Ty) (koszt 1)  ||  Cel zdolności: Basilisk Gate (6 opcji)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Marut · 8 · Artifact Creature — Construct · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Treasure (za wydaną manę ze Skarbów). · 7/7 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · 5/3
+  MOJE POLA: Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · choroba · 2/1 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Furious Forebear · 2 · Creature — Spirit Warrior · Gdy kontrolowany stwór umiera, a ta karta jest w grobie: zapłać {2} i wróć na rękę. · 3/1 | Monastery Flock · 3 · Creature — Bird · Obrońca Latanie · Morph {1}: możesz zagrać twarzą w dół jako 2/2 za {3}, potem obrócić za koszt Morph · choroba · 0/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Basilisk Gate, Mountain, Greatsword of Tyr, Thieves' Tools, Plains, Marut, Forest ⏎ Nowa partia (seed 11). Powodzenia!
+  >> Cel zdolności: Basilisk Gate (6 opcji)
+  [modal choice] Cel zdolności: Basilisk Gate Aktywuj: Basilisk Gate (Ty) (koszt 2, T) — +X/+X, X = liczba kontrolowanych bram (Gate) → cel: Nefarious Imp (Ty) Aktywuj: Basilisk Gate (Ty) (koszt 2, T) — +X/+X, X = liczba kontrolowanych bram (Gate) → cel: Monastery Flock (Nieprzyjaciel) Aktywuj: Basilisk Gate (Ty) (koszt 2, T) — +X/+X, X = liczba kontrolowanych bram (Gate) → cel: Furious Forebear (Nieprzyjaciel) Aktywuj: Basilisk Gate (Ty) (koszt 2, T) — +X/+X, X = liczba kontrolowanych bram (Gate) → cel: Ainok Artillerist (Nieprzyjaciel) Aktywuj: Basilisk Gate (Ty) (koszt 2, T) — +X/+X, X = liczba kontrolowanych bram (Gate) → cel: Krotiq Nestguard (Nieprzyjaciel) Aktywuj: Basilisk Gate (Ty) (koszt 2, T) — +X/+X, X = liczba kontrolowanych bram (Gate) → cel: Jeskai Windscout (Nieprzyjaciel)
+  [modal choice]   ▶ Aktywuj: Basilisk Gate (Ty) (koszt 2, T) — +X/+X, X = liczba kontrolowanych bram (Gate) → cel: Nefarious Imp (Ty)
+  [modal choice]     Aktywuj: Basilisk Gate (Ty) (koszt 2, T) — +X/+X, X = liczba kontrolowanych bram (Gate) → cel: Monastery Flock (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Basilisk Gate (Ty) (koszt 2, T) — +X/+X, X = liczba kontrolowanych bram (Gate) → cel: Furious Forebear (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Basilisk Gate (Ty) (koszt 2, T) — +X/+X, X = liczba kontrolowanych bram (Gate) → cel: Ainok Artillerist (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Basilisk Gate (Ty) (koszt 2, T) — +X/+X, X = liczba kontrolowanych bram (Gate) → cel: Krotiq Nestguard (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Basilisk Gate (Ty) (koszt 2, T) — +X/+X, X = liczba kontrolowanych bram (Gate) → cel: Jeskai Windscout (Nieprzyjaciel)
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Plains (W)Tapnij: Mountain (R)Tapnij: Basilisk Gate (bezbarwn — źródła: 3
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Basilisk Gate → cel: Nefarious Imp
+  [ROZGRYWKA]   • Ty: zdolność Basilisk Gate rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Sarkhan's Rage → cel: Nefarious Imp
+  [ROZGRYWKA]   • Jeskai Windscout — trigger (rzucenie czaru niebędącego stworem)
+
+--- krok 48 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Marut · 8 · Artifact Creature — Construct · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Treasure (za wydaną manę ze Skarbów). · 7/7 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · 5/3
+  MOJE POLA: Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · +1/+1 · 3/2 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Furious Forebear · 2 · Creature — Spirit Warrior · Gdy kontrolowany stwór umiera, a ta karta jest w grobie: zapłać {2} i wróć na rękę. · 3/1 | Monastery Flock · 3 · Creature — Bird · Obrońca Latanie · Morph {1}: możesz zagrać twarzą w dół jako 2/2 za {3}, potem obrócić za koszt Morph · 0/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Basilisk Gate, Mountain, Greatsword of Tyr, Thieves' Tools, Plains, Marut, Forest ⏎ Nowa partia (seed 11). Powodzenia!
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 49 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Marut · 8 · Artifact Creature — Construct · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Treasure (za wydaną manę ze Skarbów). · 7/7 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · 5/3
+  MOJE POLA: Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · +1/+1 · 3/2 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 4/4 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Furious Forebear · 2 · Creature — Spirit Warrior · Gdy kontrolowany stwór umiera, a ta karta jest w grobie: zapłać {2} i wróć na rękę. · 3/1 | Monastery Flock · 3 · Creature — Bird · Obrońca Latanie · Morph {1}: możesz zagrać twarzą w dół jako 2/2 za {3}, potem obrócić za koszt Morph · 0/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Basilisk Gate, Mountain, Greatsword of Tyr, Thieves' Tools, Plains, Marut, Forest ⏎ Nowa partia (seed 11). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 26, kliknięte: 27, modale: 6, sondy noop: 68 (panel 54, modal 14)
+== DETEKTORY: brak zgłoszeń ==

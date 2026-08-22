@@ -1,0 +1,680 @@
+== NOWA PARTIA: gracz=innistrad vs bot=forgotten-realms, seed=3, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Plains  ||  Zagraj ląd: Mountain  ||  Zagraj ląd: Forest  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Zagraj: Ghoulcaller's Bell (koszt 1)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Ghoulcaller's Bell
+  [ROZGRYWKA]   • Ghoulcaller's Bell wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ghoulcaller's Bell zostaje rozstrzygnięty
+
+--- krok 3 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Ghoulcaller's Bell (Ty) (koszt T) — mieli po 1 karcie z biblioteki każdy gracz  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  >> Aktywuj: Ghoulcaller's Bell (Ty) (koszt T) — mieli po 1 karcie z biblioteki każdy gracz
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghoulcaller's Bell
+  [ROZGRYWKA]   • Mielisz Dream Twist do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Circle of the Land Druid do grobu
+  [ROZGRYWKA]   • Ty: zdolność Ghoulcaller's Bell rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+
+--- krok 6 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Ghoulcaller's Bell (Ty) (koszt T) — mieli po 1 karcie z biblioteki każdy gracz  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  >> Aktywuj: Ghoulcaller's Bell (Ty) (koszt T) — mieli po 1 karcie z biblioteki każdy gracz
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghoulcaller's Bell
+  [ROZGRYWKA]   • Mielisz Thornhide Wolves do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Forest do grobu
+  [ROZGRYWKA]   • Ty: zdolność Ghoulcaller's Bell rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Predator's Gambit
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+
+--- krok 9 | T. 4BotGracz: 20 ż.Bot: 20 ż.Główna 1Stos — Thieves' Tools ---
+  STOS: Thieves' Tools (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Forest · Basic Land — Forest · T: dodaj 1 manę | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów)
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Thieves' Tools
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Thieves' Tools wchodzi na pole bitwy
+  [ROZGRYWKA]   • Thieves' Tools zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Thieves' Tools — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Treasure
+  [ROZGRYWKA]   • Treasure wchodzi na pole bitwy
+  [ROZGRYWKA]   • Thieves' Tools — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Treasure — dodanie many do puli
+  [ROZGRYWKA]   • Treasure zostaje poświęcony
+  [ROZGRYWKA]   • token Treasure przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+
+--- krok 12 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Ghoulcaller's Bell (Ty) (koszt T) — mieli po 1 karcie z biblioteki każdy gracz  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Forest · Basic Land — Forest · T: dodaj 1 manę | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów)
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure.
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  >> Aktywuj: Ghoulcaller's Bell (Ty) (koszt T) — mieli po 1 karcie z biblioteki każdy gracz
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghoulcaller's Bell
+  [ROZGRYWKA]   • Mielisz Snarling Wolf do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Angel of the Dawn do grobu
+  [ROZGRYWKA]   • Ty: zdolność Ghoulcaller's Bell rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+
+--- krok 15 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Midnight Guard (koszt 2W)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Forest · Basic Land — Forest · T: dodaj 1 manę | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów)
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure.
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  >> Zagraj: Midnight Guard (koszt 2W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Midnight Guard
+  [ROZGRYWKA]   • Midnight Guard wchodzi na pole bitwy
+  [ROZGRYWKA]   • Midnight Guard zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Cloak of the Bat
+
+--- krok 18 | T. 7GraczGracz: 20 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Ghoulcaller's Bell (Ty) (koszt T) — mieli po 1 karcie z biblioteki każdy gracz  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Forest · Basic Land — Forest · T: dodaj 1 manę | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów)
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Cloak of the Bat wchodzi na pole bitwy
+  [ROZGRYWKA]   • Cloak of the Bat zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 7 — Ty
+  >> Aktywuj: Ghoulcaller's Bell (Ty) (koszt T) — mieli po 1 karcie z biblioteki każdy gracz
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghoulcaller's Bell
+  [ROZGRYWKA]   • Mielisz Forest do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Nefarious Imp do grobu
+  [ROZGRYWKA]   • Ty: zdolność Ghoulcaller's Bell rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Makeshift Mauler
+
+--- krok 21 | T. 7GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Forest  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Forest · Basic Land — Forest · T: dodaj 1 manę | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Midnight Guard
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Midnight Guard zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 18
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+
+--- krok 24 | T. 8BotGracz: 20 ż.Bot: 18 ż.Główna 1Stos — Guildsworn Prowler ---
+  STOS: Guildsworn Prowler (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Guildsworn Prowler
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Guildsworn Prowler wchodzi na pole bitwy
+  [ROZGRYWKA]   • Guildsworn Prowler zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Midnight Guard — trigger (wejście innego stworzenia)
+  [ROZGRYWKA]   • Midnight Guard — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje Equip: Cloak of the Bat → cel: Guildsworn Prowler
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Cloak of the Bat wyposaża Guildsworn Prowler
+  [ROZGRYWKA]   • Tura 9 — Ty
+
+--- krok 27 | T. 9GraczGracz: 20 ż.Bot: 18 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Ghoulcaller's Bell (Ty) (koszt T) — mieli po 1 karcie z biblioteki każdy gracz  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Guildsworn Prowler | Guildsworn Prowler · 2 · Creature — Tiefling Rogue Assassin · Dotykanie śmierci Latanie Pośpiech · Gdy ta karta umrze: dobierz 1 kartę. · Latanie · Pośpiech · wyposażona: Cloak of the Bat · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  >> Aktywuj: Ghoulcaller's Bell (Ty) (koszt T) — mieli po 1 karcie z biblioteki każdy gracz
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghoulcaller's Bell
+  [ROZGRYWKA]   • Mielisz Spare from Evil do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Marut do grobu
+  [ROZGRYWKA]   • Ty: zdolność Ghoulcaller's Bell rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Hysterical Blindness
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+
+--- krok 30 | T. 10BotGracz: 20 ż.Bot: 16 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Hysterical Blindness · 3 · Instant · -4/+0 dla stworów przeciwnika do końca tury
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Guildsworn Prowler | Guildsworn Prowler · 2 · Creature — Tiefling Rogue Assassin · Dotykanie śmierci Latanie Pośpiech · Gdy ta karta umrze: dobierz 1 kartę. · Latanie · Pośpiech · wyposażona: Cloak of the Bat · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Midnight Guard
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Midnight Guard zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 18 → 16
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Underdark Explorer
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Underdark Explorer wchodzi na pole bitwy
+  [ROZGRYWKA]   • Underdark Explorer zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Underdark Explorer — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Midnight Guard — trigger (wejście innego stworzenia)
+  [ROZGRYWKA]   • Midnight Guard — trigger się rozstrzyga
+  [ROZGRYWKA]   • Underdark Explorer — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Mountain
+  [ROZGRYWKA]   • Nieprzyjaciel: Mountain — biblioteka → ręka
+  [ROZGRYWKA]   • Nieprzyjaciel znajduje Mountain i tasuje bibliotekę
+
+--- krok 33 | T. 11GraczGracz: 20 ż.Bot: 16 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Ghoulcaller's Bell (Ty) (koszt T) — mieli po 1 karcie z biblioteki każdy gracz  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Hysterical Blindness · 3 · Instant · -4/+0 dla stworów przeciwnika do końca tury
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Guildsworn Prowler | Guildsworn Prowler · 2 · Creature — Tiefling Rogue Assassin · Dotykanie śmierci Latanie Pośpiech · Gdy ta karta umrze: dobierz 1 kartę. · Latanie · Pośpiech · wyposażona: Cloak of the Bat · 2/1 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · choroba · 5/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Aktywuj: Ghoulcaller's Bell (Ty) (koszt T) — mieli po 1 karcie z biblioteki każdy gracz
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghoulcaller's Bell
+  [ROZGRYWKA]   • Mielisz Farbog Explorer do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Heap Gate do grobu
+  [ROZGRYWKA]   • Ty: zdolność Ghoulcaller's Bell rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+
+--- krok 36 | T. 11GraczGracz: 20 ż.Bot: 16 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Hysterical Blindness · 3 · Instant · -4/+0 dla stworów przeciwnika do końca tury | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Guildsworn Prowler | Guildsworn Prowler · 2 · Creature — Tiefling Rogue Assassin · Dotykanie śmierci Latanie Pośpiech · Gdy ta karta umrze: dobierz 1 kartę. · Latanie · Pośpiech · wyposażona: Cloak of the Bat · 2/1 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · choroba · 5/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Rzuć: Hysterical Blindness (koszt 2U)
+  [kreator many] Płatność 2U — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: UTapnij: Plains (W)Tapnij: Mountain (R)Tapnij — źródła: 5
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Hysterical Blindness
+  [ROZGRYWKA]   • stwory przeciwnika (2 stwory): -4/-0 do końca tury
+  [ROZGRYWKA]   • Hysterical Blindness zostaje rozstrzygnięty
+
+--- krok 39 | T. 11GraczGracz: 20 ż.Bot: 16 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Guildsworn Prowler | Guildsworn Prowler · 2 · Creature — Tiefling Rogue Assassin · Dotykanie śmierci Latanie Pośpiech · Gdy ta karta umrze: dobierz 1 kartę. · Latanie · Pośpiech · wyposażona: Cloak of the Bat · -2/1 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · choroba · 1/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Midnight Guard
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Guildsworn Prowler blokuje Midnight Guard
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Midnight Guard zadaje 2 obrażenia (Guildsworn Prowler)
+  [ROZGRYWKA]   • Guildsworn Prowler ginie
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Underdark Explorer dostaje +2 liczniki +1/+1 (razem 2)
+  [ROZGRYWKA]   • Nieprzyjaciel wskazuje Underdark Explorer (pokój Forge)
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Stirring Bard
+
+--- krok 42 | T. 12BotGracz: 20 ż.Bot: 16 ż.Główna 1Stos — Cloak of the Bat ---
+  STOS: Cloak of the Bat (rzuca: Nieprzyjaciel) → cel: Underdark Explorer
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · 2x +1/+1 · 7/5 | Stirring Bard · 4 · Creature — Dragon Bard · Obrońca · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · {T}: cel: stwór — zdobądź Postrach, Pośpiech do końca tury · choroba · 0/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Stirring Bard wchodzi na pole bitwy
+  [ROZGRYWKA]   • Stirring Bard zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Stirring Bard — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Midnight Guard — trigger (wejście innego stworzenia)
+  [ROZGRYWKA]   • Midnight Guard — trigger się rozstrzyga
+  [ROZGRYWKA]   • Stirring Bard — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje Equip: Cloak of the Bat → cel: Underdark Explorer
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Cloak of the Bat wyposaża Underdark Explorer
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Underdark Explorer
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Underdark Explorer zadaje 7 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 13
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Aktywuj: Ghoulcaller's Bell (Ty) (koszt T) — mieli po 1 karcie z biblioteki każdy gracz
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghoulcaller's Bell
+
+--- krok 45 | T. 13GraczGracz: 13 ż.Bot: 16 ż.UpkeepStos — Ghoulcaller's Bell ---
+  STOS: Ghoulcaller's Bell (rzuca: Ty)
+  AKCJE: Cel czaru (Cleave): Lunar Rejection (3 opcje)  ||  Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Underdark Explorer | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach Latanie Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Latanie · Pośpiech · 2x +1/+1 · wyposażona: Cloak of the Bat · 7/5 | Stirring Bard · 4 · Creature — Dragon Bard · Obrońca · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · {T}: cel: stwór — zdobądź Postrach, Pośpiech do końca tury · choroba · 0/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Mielisz Spectral Prison do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Forest do grobu
+  [ROZGRYWKA]   • Ty: zdolność Ghoulcaller's Bell rozstrzygnięta
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Dalej (pass)
+
+--- krok 48 | T. 13GraczGracz: 13 ż.Bot: 16 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island  ||  Zagraj: Makeshift Mauler (koszt 3U)  ||  Zagraj: Makeshift Mauler (koszt 3U)  ||  Zagraj: Makeshift Mauler (koszt 3U)  ||  Zagraj: Armored Skaab (koszt 2U)  ||  Cel czaru (Cleave): Lunar Rejection (3 opcje)  ||  Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Underdark Explorer | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach Latanie Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Latanie · Pośpiech · 2x +1/+1 · wyposażona: Cloak of the Bat · 7/5 | Stirring Bard · 4 · Creature — Dragon Bard · Obrońca · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · {T}: cel: stwór — zdobądź Postrach, Pośpiech do końca tury · choroba · 0/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Zagraj: Makeshift Mauler (koszt 3U)
+  [kreator many] Płatność 3U — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: UTapnij: Plains (W)Tapnij: Mountain (R)Tapnij — źródła: 6
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Makeshift Mauler
+  [ROZGRYWKA]   • Ty: Farbog Explorer — cmentarz → wygnanie
+
+--- krok 51 | T. 13GraczGracz: 13 ż.Bot: 16 ż.Główna 1Stos — Makeshift Mauler ---
+  STOS: Makeshift Mauler (rzuca: Ty)
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów)
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Underdark Explorer | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach Latanie Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Latanie · Pośpiech · 2x +1/+1 · wyposażona: Cloak of the Bat · 7/5 | Stirring Bard · 4 · Creature — Dragon Bard · Obrońca · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · {T}: cel: stwór — zdobądź Postrach, Pośpiech do końca tury · choroba · 0/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Makeshift Mauler wchodzi na pole bitwy
+  [ROZGRYWKA]   • Makeshift Mauler zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Midnight Guard — trigger (wejście innego stworzenia)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Midnight Guard — trigger bez efektu (nic się nie wydarzyło (zerowy wynik))
+  >> Dalej (pass)
+
+--- krok 54 | T. 13GraczGracz: 13 ż.Bot: 16 ż.Walka / Początek walki ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów)
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Makeshift Mauler · 4 · Creature — Zombie Horror · choroba · 4/5 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Underdark Explorer | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach Latanie Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Latanie · Pośpiech · 2x +1/+1 · wyposażona: Cloak of the Bat · 7/5 | Stirring Bard · 4 · Creature — Dragon Bard · Obrońca · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · {T}: cel: stwór — zdobądź Postrach, Pośpiech do końca tury · choroba · 0/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Midnight Guard
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Stirring Bard blokuje Midnight Guard
+
+--- krok 57 | T. 13GraczGracz: 13 ż.Bot: 16 ż.Walka / Obrażenia ---
+  STOS: Stos pusty
+  AKCJE: Rozstrzygnij obrażenia w walce  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów)
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · atakuje — blokują: Stirring Bard · 2/3 | Makeshift Mauler · 4 · Creature — Zombie Horror · choroba · 4/5 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Underdark Explorer | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach Latanie Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Latanie · Pośpiech · 2x +1/+1 · wyposażona: Cloak of the Bat · 7/5 | Stirring Bard · 4 · Creature — Dragon Bard · Obrońca · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · {T}: cel: stwór — zdobądź Postrach, Pośpiech do końca tury · blokuje: Midnight Guard · choroba · 0/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  >> Rozstrzygnij obrażenia w walce
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Midnight Guard zadaje 2 obrażenia (Stirring Bard)
+  >> Dalej (pass)
+  >> Dalej (pass)
+
+--- krok 60 | T. 13GraczGracz: 13 ż.Bot: 16 ż.Koniec ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów)
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Makeshift Mauler · 4 · Creature — Zombie Horror · choroba · 4/5 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Underdark Explorer | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach Latanie Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Latanie · Pośpiech · 2x +1/+1 · wyposażona: Cloak of the Bat · 7/5 | Stirring Bard · 4 · Creature — Dragon Bard · Obrońca · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · {T}: cel: stwór — zdobądź Postrach, Pośpiech do końca tury · −2 · choroba · 0/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel kończy scry — zostawia na wierzchu biblioteki
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Curate
+
+--- krok 63 | T. 14BotGracz: 13 ż.Bot: 16 ż.DobieranieStos — Curate ---
+  STOS: Curate (rzuca: Nieprzyjaciel)
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów)
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Makeshift Mauler · 4 · Creature — Zombie Horror · choroba · 4/5 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Underdark Explorer | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach Latanie Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Latanie · Pośpiech · 2x +1/+1 · wyposażona: Cloak of the Bat · 7/5 | Stirring Bard · 4 · Creature — Dragon Bard · Obrońca · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · {T}: cel: stwór — zdobądź Postrach, Pośpiech do końca tury · 0/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel wykonuje surveil (patrzy na 2 karty)
+  [ROZGRYWKA]   • Nieprzyjaciel kończy surveil — 0 kart idzie do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Curate zostaje rozstrzygnięty
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Basilisk Gate
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Gray Slaad
+
+--- krok 66 | T. 14BotGracz: 13 ż.Bot: 16 ż.Główna 1Stos — Stirring Bard ---
+  STOS: Gray Slaad (rzuca: Nieprzyjaciel) | Stirring Bard (rzuca: Nieprzyjaciel) → cel: Stirring Bard
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów)
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Makeshift Mauler · 4 · Creature — Zombie Horror · choroba · 4/5 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Underdark Explorer | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach Latanie Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Latanie · Pośpiech · 2x +1/+1 · wyposażona: Cloak of the Bat · 7/5 | Stirring Bard · 4 · Creature — Dragon Bard · Obrońca · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · {T}: cel: stwór — zdobądź Postrach, Pośpiech do końca tury · 0/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Stirring Bard — nadanie do końca tury: postrach, pośpiech → cel: Stirring Bard
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Stirring Bard zyskuje: postrach, pośpiech
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Stirring Bard rozstrzygnięta
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Gray Slaad wchodzi na pole bitwy
+  [ROZGRYWKA]   • Gray Slaad zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Midnight Guard — trigger (wejście innego stworzenia)
+
+--- krok 69 | T. 14BotGracz: 13 ż.Bot: 16 ż.Główna 1Stos — Midnight Guard ---
+  STOS: Trigger: Midnight Guard (wejście innego stworzenia)
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów)
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Makeshift Mauler · 4 · Creature — Zombie Horror · choroba · 4/5 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Underdark Explorer | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach Latanie Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Latanie · Pośpiech · 2x +1/+1 · wyposażona: Cloak of the Bat · 7/5 | Stirring Bard · 4 · Creature — Dragon Bard · Obrońca Postrach Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · {T}: cel: stwór — zdobądź Postrach, Pośpiech do końca tury · Postrach · Pośpiech · 0/4 | Gray Slaad · 3 · Creature — Frog Horror · Postrach Dotykanie śmierci · Postrach Dotykanie śmierci · przy 4+ stworach w grobie · Postrach · Dotykanie śmierci · choroba · 4/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Midnight Guard — trigger się rozstrzyga
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Underdark Explorer
+
+--- krok 72 | T. 14BotGracz: 13 ż.Bot: 16 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)  ||  Wybierz: Deklaracja blokujących (1 opcja)
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów)
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Makeshift Mauler · 4 · Creature — Zombie Horror · choroba · 4/5 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Underdark Explorer | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach Latanie Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Latanie · Pośpiech · atakuje — niezablokowany · 2x +1/+1 · wyposażona: Cloak of the Bat · 7/5 | Stirring Bard · 4 · Creature — Dragon Bard · Obrońca Postrach Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · {T}: cel: stwór — zdobądź Postrach, Pośpiech do końca tury · Postrach · Pośpiech · 0/4 | Gray Slaad · 3 · Creature — Frog Horror · Postrach Dotykanie śmierci · Postrach Dotykanie śmierci · przy 4+ stworach w grobie · Postrach · Dotykanie śmierci · choroba · 4/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  >> Wybierz: Deklaracja blokujących (1 opcja)
+  [modal choice] Wybierz blokujących (przełączniki przy każdym atakującym):Zatwierdź blokiBez blokówZamknij (dokończysz później)
+  [modal choice]   ▶ Zatwierdź bloki
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Underdark Explorer zadaje 7 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 6
+  >> Dalej (pass)
+
+--- krok 75 | T. 14BotGracz: 6 ż.Bot: 16 ż.Główna 2 ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów)
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Makeshift Mauler · 4 · Creature — Zombie Horror · choroba · 4/5 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Underdark Explorer | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach Latanie Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Latanie · Pośpiech · 2x +1/+1 · wyposażona: Cloak of the Bat · 7/5 | Stirring Bard · 4 · Creature — Dragon Bard · Obrońca Postrach Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · {T}: cel: stwór — zdobądź Postrach, Pośpiech do końca tury · Postrach · Pośpiech · 0/4 | Gray Slaad · 3 · Creature — Frog Horror · Postrach Dotykanie śmierci · Postrach Dotykanie śmierci · przy 4+ stworach w grobie · Postrach · Dotykanie śmierci · choroba · 4/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 15 — Ty
+
+--- krok 78 | T. 15GraczGracz: 6 ż.Bot: 16 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Ghoulcaller's Bell (Ty) (koszt T) — mieli po 1 karcie z biblioteki każdy gracz  ||  Cel czaru (Cleave): Lunar Rejection (5 opcji)  ||  Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów)
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Underdark Explorer | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach Latanie Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Latanie · Pośpiech · 2x +1/+1 · wyposażona: Cloak of the Bat · 7/5 | Stirring Bard · 4 · Creature — Dragon Bard · Obrońca · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · {T}: cel: stwór — zdobądź Postrach, Pośpiech do końca tury · 0/4 | Gray Slaad · 3 · Creature — Frog Horror · Postrach Dotykanie śmierci · Postrach Dotykanie śmierci · przy 4+ stworach w grobie · Postrach · Dotykanie śmierci · choroba · 4/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  >> Aktywuj: Ghoulcaller's Bell (Ty) (koszt T) — mieli po 1 karcie z biblioteki każdy gracz
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghoulcaller's Bell
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Mielisz Island do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Scorch Spitter do grobu
+  [ROZGRYWKA]   • Ty: zdolność Ghoulcaller's Bell rozstrzygnięta
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Murder of Crows
+
+--- krok 81 | T. 15GraczGracz: 6 ż.Bot: 16 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: Cel czaru (Cleave): Lunar Rejection (5 opcji)  ||  Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) | Murder of Crows · 5 · Creature — Bird · Latanie · Gdy jakiekolwiek stworzenie umrze: dobierz, potem odrzuć. · 4/4
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Underdark Explorer | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach Latanie Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Latanie · Pośpiech · 2x +1/+1 · wyposażona: Cloak of the Bat · 7/5 | Stirring Bard · 4 · Creature — Dragon Bard · Obrońca · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · {T}: cel: stwór — zdobądź Postrach, Pośpiech do końca tury · 0/4 | Gray Slaad · 3 · Creature — Frog Horror · Postrach Dotykanie śmierci · Postrach Dotykanie śmierci · przy 4+ stworach w grobie · Postrach · Dotykanie śmierci · choroba · 4/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  >> Dalej (pass)
+  >> Zagraj: Murder of Crows (koszt 3UU)
+  [kreator many] Płatność 3UU — tapuj źródła po jednympozostało 5 many · kolory do pokrycia: U, UTapnij: Plains (W)Tapnij: Mountain (R)Ta — źródła: 6
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Murder of Crows
+  [ROZGRYWKA]   • Murder of Crows wchodzi na pole bitwy
+  [ROZGRYWKA]   • Murder of Crows zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Midnight Guard — trigger (wejście innego stworzenia)
+
+--- krok 84 | T. 15GraczGracz: 6 ż.Bot: 16 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (4 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów)
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Murder of Crows · 5 · Creature — Bird · Latanie · Gdy jakiekolwiek stworzenie umrze: dobierz, potem odrzuć. · choroba · 4/4 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Underdark Explorer | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach Latanie Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Latanie · Pośpiech · 2x +1/+1 · wyposażona: Cloak of the Bat · 7/5 | Stirring Bard · 4 · Creature — Dragon Bard · Obrońca · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · {T}: cel: stwór — zdobądź Postrach, Pośpiech do końca tury · 0/4 | Gray Slaad · 3 · Creature — Frog Horror · Postrach Dotykanie śmierci · Postrach Dotykanie śmierci · przy 4+ stworach w grobie · Postrach · Dotykanie śmierci · choroba · 4/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Midnight Guard — trigger bez efektu (nic się nie wydarzyło (zerowy wynik))
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Midnight Guard, Makeshift Mauler
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Gray Slaad blokuje Midnight Guard
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Midnight Guard zadaje 2 obrażenia (Gray Slaad)
+  [ROZGRYWKA]   • Gray Slaad zadaje 4 obrażenia (Midnight Guard)
+  [ROZGRYWKA]   • Makeshift Mauler zadaje 4 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 16 → 12
+  [ROZGRYWKA]   • Midnight Guard ginie
+  [ROZGRYWKA]   • Gray Slaad ginie
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Obejmujesz inicjatywę — obejmuje ją po raz pierwszy i zagłębia się w Podziemia
+  [ROZGRYWKA]   • Zagłębiasz się w Podziemiach (pokój 1/9: Secret Entrance)
+  [ROZGRYWKA]   • Szukasz karty w bibliotece (undercity) — wybiera, którą wziąć do ręki albo rezygnuje
+  [ROZGRYWKA]   • Murder of Crows — skorzystać z efektu „you may"? (wybór gracza)
+  [ROZGRYWKA]   • Murder of Crows — skorzystać z efektu „you may"? (wybór gracza)
+
+--- krok 87 | T. 15GraczGracz: 6 ż.Bot: 12 ż.Walka / Koniec walki ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Wybierz: Szukanie w bibliotece (5 opcji)
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów)
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Murder of Crows · 5 · Creature — Bird · Latanie · Gdy jakiekolwiek stworzenie umrze: dobierz, potem odrzuć. · choroba · 4/4 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Underdark Explorer | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach Latanie Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Latanie · Pośpiech · 2x +1/+1 · wyposażona: Cloak of the Bat · 7/5 | Stirring Bard · 4 · Creature — Dragon Bard · Obrońca · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · {T}: cel: stwór — zdobądź Postrach, Pośpiech do końca tury · 0/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  >> Wybierz: Szukanie w bibliotece (5 opcji)
+  [modal choice] Wybierz: Szukanie w bibliotece Szukanie — nie znajduj karty (rezygnuję) Szukanie: Plains Szukanie: Forest Szukanie: Swamp Szukanie: Island
+  [modal choice]     Szukanie — nie znajduj karty (rezygnuję)
+  [modal choice]   ▶ Szukanie: Plains
+  [modal choice]     Szukanie: Forest
+  [modal choice]     Szukanie: Swamp
+  [modal choice]     Szukanie: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odsłaniasz Plains
+  [ROZGRYWKA]   • Ty: Plains — biblioteka → ręka
+  [ROZGRYWKA]   • Znajdujesz Plains i tasuje bibliotekę
+  >> Wybierz: Efekt dobrowolny („you may") (2 opcje)
+  [modal choice] Wybierz: Efekt dobrowolny („you may") Zrezygnuj z efektu Uruchom efekt dobrowolny (you may)
+  [modal choice]   ▶ Zrezygnuj z efektu
+  [modal choice]     Uruchom efekt dobrowolny (you may)
+
+--- krok 90 | T. 15GraczGracz: 6 ż.Bot: 12 ż.Główna 2 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Plains  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) | Plains · Basic Land — Plains · T: dodaj 1 manę
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Murder of Crows · 5 · Creature — Bird · Latanie · Gdy jakiekolwiek stworzenie umrze: dobierz, potem odrzuć. · choroba · 4/4 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Underdark Explorer | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach Latanie Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Latanie · Pośpiech · 2x +1/+1 · wyposażona: Cloak of the Bat · 7/5 | Stirring Bard · 4 · Creature — Dragon Bard · Obrońca · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · {T}: cel: stwór — zdobądź Postrach, Pośpiech do końca tury · 0/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rezygnujesz z efektu „you may" (Murder of Crows)
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Plains
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Greatsword of Tyr
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Stirring Bard — nadanie do końca tury: postrach, pośpiech → cel: Stirring Bard
+
+--- krok 93 | T. 16BotGracz: 6 ż.Bot: 12 ż.Główna 1Stos — Greatsword of Tyr ---
+  STOS: Greatsword of Tyr (rzuca: Nieprzyjaciel) → cel: Underdark Explorer
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów)
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Murder of Crows · 5 · Creature — Bird · Latanie · Gdy jakiekolwiek stworzenie umrze: dobierz, potem odrzuć. · choroba · 4/4 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Underdark Explorer | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach Latanie Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Latanie · Pośpiech · 2x +1/+1 · wyposażona: Cloak of the Bat · 7/5 | Stirring Bard · 4 · Creature — Dragon Bard · Obrońca Postrach Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · {T}: cel: stwór — zdobądź Postrach, Pośpiech do końca tury · Postrach · Pośpiech · 0/4 | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap.
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Stirring Bard zyskuje: postrach, pośpiech
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Stirring Bard rozstrzygnięta
+  [ROZGRYWKA]   • Greatsword of Tyr wchodzi na pole bitwy
+  [ROZGRYWKA]   • Greatsword of Tyr zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje Equip: Greatsword of Tyr → cel: Underdark Explorer
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Greatsword of Tyr wyposaża Underdark Explorer
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Underdark Explorer
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Greatsword of Tyr — wybierz cel triggera (można odmówić)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Greatsword of Tyr — trigger (atak wyposażonego stwora)
+  [ROZGRYWKA]   • Greatsword of Tyr — cel: Makeshift Mauler
+
+--- krok 96 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów)
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Murder of Crows · 5 · Creature — Bird · Latanie · Gdy jakiekolwiek stworzenie umrze: dobierz, potem odrzuć. · choroba · 4/4 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Underdark Explorer | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach Latanie Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Latanie · Pośpiech · 3x +1/+1 · wyposażona: Cloak of the Bat · wyposażona: Greatsword of Tyr · 8/6 | Stirring Bard · 4 · Creature — Dragon Bard · Obrońca Postrach Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · {T}: cel: stwór — zdobądź Postrach, Pośpiech do końca tury · Postrach · Pośpiech · 0/4 | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. · wyposaża → Underdark Explorer
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 97 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów)
+  MOJE POLA: Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Murder of Crows · 5 · Creature — Bird · Latanie · Gdy jakiekolwiek stworzenie umrze: dobierz, potem odrzuć. · choroba · 4/4 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Underdark Explorer | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach Latanie Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Latanie · Pośpiech · 3x +1/+1 · wyposażona: Cloak of the Bat · wyposażona: Greatsword of Tyr · 8/6 | Stirring Bard · 4 · Creature — Dragon Bard · Obrońca Postrach Pośpiech · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · {T}: cel: stwór — zdobądź Postrach, Pośpiech do końca tury · Postrach · Pośpiech · 0/4 | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. · wyposaża → Underdark Explorer
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Armored Skaab, Ghoulcaller's Bell, Lunar Rejection, Forest, Mountain, Plains, Midnight Guard ⏎ Nowa partia (seed 3). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 21, kliknięte: 21, modale: 4, sondy noop: 93 (panel 84, modal 9)
+== DETEKTORY: brak zgłoszeń ==

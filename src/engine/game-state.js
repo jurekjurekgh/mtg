@@ -5148,9 +5148,12 @@ export function playerView(state, playerId) {
     // Satyr Wayfinder: wybierz LĄD z odsłoniętych do ręki ALBO zrezygnuj
     // (pickId: null — „you may\"). Reszta i tak idzie do grobu.
     const pending = state.pendingSatyrLook;
-    legalCommands.unshift(command('resolve_satyr_look_choice', playerId, { pickId: null }));
+    // M184/Z3: Blanchwood Prowler — odmowa daje licznik +1/+1; komenda niesie
+    // flagę, żeby UI opisało stawkę decyzji.
+    const satyrExtra = pending.counterIfNoneSourceId ? { counterIfNone: true } : {};
+    legalCommands.unshift(command('resolve_satyr_look_choice', playerId, { pickId: null, ...satyrExtra }));
     for (const landId of pending.landIds) {
-      legalCommands.unshift(command('resolve_satyr_look_choice', playerId, { pickId: landId }));
+      legalCommands.unshift(command('resolve_satyr_look_choice', playerId, { pickId: landId, ...satyrExtra }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeRevealChoice) {
     // M158/Batch 39 (Invasion of the Giants II): „you may reveal a Giant
