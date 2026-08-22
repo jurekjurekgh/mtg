@@ -8924,6 +8924,58 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['rozdziały I i II mają identyczny efekt (Oracle „I, II —"); III działa do końca tury, w której Saga dobiła do trzeciego licznika'],
   }),
 
+  // =========================================================================
+  // Batch 47 (8 kart, 2026-08-23) — lista właściciela (M194)
+  // Caves of Chaos Adventurer, Curate (STX), Pyxis of Pandemonium, Divest,
+  // Negate (M15), Supernatural Stamina, Sequestered Stash, Enduring Sliver.
+  // Dane Oracle: docs/cards/scryfall-*.json (pobrane 2026-08-23).
+  //
+  // DWA WARIANTY TEJ SAMEJ KARTY (decyzja właściciela): Curate i Negate już
+  // były w katalogu w innych drukach. Właściciel nie zmienia tamtych kart —
+  // dokłada drugi egzemplarz z własnym artem i PLANEM, żeby trafił do innej
+  // talii. Reguły są identyczne (ten sam Oracle), różni się tylko druk.
+  // Pliki talii rozróżniają je sufiksem setu (M194/K1, deck-text.js).
+  // =========================================================================
+
+  // ---- Batch 47 — transza A: warianty druku (zero nowych mechanik) ----
+
+  // 1. Curate (STX) — drugi druk karty `curate` (BRO). Oracle identyczny:
+  //    „Surveil 2. Draw a card." Plan: Arcavios (art 65STX).
+  defineCard({
+    id: 'curate-stx', name: 'Curate', set: 'STX',
+    types: ['Instant'], colors: ['U'], manaCost: 2,
+    oracleText: 'Surveil 2. (Look at the top two cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order.)\nDraw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/2/f2a0e716-22b7-4a5e-9b7a-d4a806ee7427.jpg?1783927381',
+    spell: {
+      timing: 'instant',
+      targets: [],
+      effects: [
+        { type: 'surveil', amount: 2 },
+        { type: 'draw_cards', amount: 1 },
+      ],
+    },
+    artId: 65, plan: 'Arcavios',
+    support: { status: 'supported', limitations: [] },
+    notes: ['drugi druk karty Curate (obok BRO/Forgotten Realms) — te same reguły, inny art i plan; talie rozróżniają egzemplarze sufiksem setu'],
+  }),
+
+  // 2. Negate (M15) — drugi druk karty `negate` (M20). Oracle identyczny:
+  //    „Counter target noncreature spell." Plan: Warhammer Fantasy (art 76M15).
+  defineCard({
+    id: 'negate-m15', name: 'Negate', set: 'M15',
+    types: ['Instant'], colors: ['U'], manaCost: 2,
+    oracleText: 'Counter target noncreature spell.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/4/64a2ba6d-ada1-4f06-b135-37606b6588fc.jpg?1783939190',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'noncreature_spell_on_stack' }],
+      effects: [{ type: 'counter_spell' }],
+    },
+    artId: 76, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['drugi druk karty Negate (obok M20/Wiedźmin) — te same reguły, inny art i plan'],
+  }),
+
 ]);
 
 /**

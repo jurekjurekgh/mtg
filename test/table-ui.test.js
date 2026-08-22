@@ -171,7 +171,10 @@ globalThis.REPO_DECKS = {
   // Dwukolorowa talia pod kreator many (E.3a): 2 kolory lądów + tanie czary
   // z kolorowym wymaganiem (Curate {1}{U}) — gwarantuje niejednoznaczne
   // pokrycie kosztu (Wyspa+Wyspa+Równina, seed 1).
-  'many-wizard': '# Talia many-wizard\n\n26x Island\n6x Plains\n8x Curate\n',
+  // M194/K1 (Batch 47): katalog ma DWA egzemplarze Curate (BRO i STX), więc
+  // talia wskazuje DRUK — sama nazwa jest odtąd niejednoznaczna i parser
+  // odrzuca ją jawnym błędem, zamiast cicho brać pierwszy pasujący wpis.
+  'many-wizard': '# Talia many-wizard\n\n26x Island\n6x Plains\n8x Curate (BRO)\n',
 };
 await import('../src/table/main.js');
 

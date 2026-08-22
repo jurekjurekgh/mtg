@@ -10,6 +10,7 @@
 1x Unearth
 1x Cellar Door
 1x Goblin Piker
+1x Negate (M15)
 1x Omenspeaker
 1x Brawler's Plate
 1x Feedback
@@ -26,6 +27,6 @@
 1x Minotaur Abomination
 1x Revolutionist
 2x Plains
-2x Island
+3x Island
 3x Swamp
-6x Mountain
+5x Mountain

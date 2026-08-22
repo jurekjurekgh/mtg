@@ -30,9 +30,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createCardRegistry } from '../src/cards/card-data.js';
+import { parseDeckText } from '../src/cards/deck-text.js';
 
 const REGISTRY = createCardRegistry();
-const BY_NAME = new Map(REGISTRY.all().map((card) => [card.name.toLowerCase(), card]));
 
 /** Reguła właściciela: na każde 2 karty nielandowe co najmniej 1 ląd. */
 const MAX_NONLAND_PER_LAND = 2.0;
@@ -42,23 +42,28 @@ const MAX_LAND_SHARE = 0.55;
 
 const DECK_FILES = fs.readdirSync('decks').filter((name) => name.endsWith('.txt')).sort();
 
-/** Rozkład talii na karty nielandowe i lądy (po LINII TYPÓW, nie po nazwie). */
+/**
+ * Rozkład talii na karty nielandowe i lądy (po LINII TYPÓW, nie po nazwie).
+ *
+ * M194/K1 (Batch 47): plik talii czytamy WSPÓLNYM parserem (`parseDeckText`),
+ * a nie własnym mini-parserem po nazwie. Katalog ma od Batcha 47 dwa
+ * egzemplarze niektórych kart (Curate BRO/STX), więc linia niesie set —
+ * „1x Curate (BRO)". Prywatna kopia parsera tego nie rozumiała i raportowała
+ * kartę jako nieznaną (klasa L41: druga kopia tej samej reguły rozjeżdża się
+ * cicho, tu akurat głośno).
+ */
 function countDeck(file) {
   let nonland = 0;
   let lands = 0;
   const unknown = [];
-  for (const raw of fs.readFileSync(`decks/${file}`, 'utf8').split(/\r?\n/)) {
-    const line = raw.trim();
-    if (!line || line.startsWith('#')) continue;
-    const match = line.match(/^(\d+)x\s+(.+)$/);
-    if (!match) continue;
-    const count = Number(match[1]);
-    const card = BY_NAME.get(match[2].trim().toLowerCase());
-    if (!card) { unknown.push(match[2]); continue; }
+  const { cardIds } = parseDeckText(fs.readFileSync(`decks/${file}`, 'utf8'), REGISTRY);
+  for (const id of cardIds) {
+    const card = REGISTRY.get(id);
+    if (!card) { unknown.push(id); continue; }
     // Liczymy WSZYSTKIE lądy, także niepodstawowe (Great Furnace, Fertile
     // Thicket) — one też produkują manę, więc należą do manabazy.
-    if ((card.types ?? []).includes('Land')) lands += count;
-    else nonland += count;
+    if ((card.types ?? []).includes('Land')) lands += 1;
+    else nonland += 1;
   }
   return { nonland, lands, unknown };
 }
