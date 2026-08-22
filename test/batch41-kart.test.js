@@ -467,3 +467,19 @@ test('E3: Forager — czar z kosztem dodatkowym poza zakresem (jawnie nie oferow
   assert.equal(r.ok, false, 'jawny reject poza zakresem');
 });
 
+test('D2c (deadlock z B0): modalny ETB bez ŻADNEGO wybieralnego trybu nie wchodzi na stos', () => {
+  // Pusty stół wroga: oba tryby Ambushera wymagają celu — zdolność nie
+  // kolejkuje decyzji (CR 603.3b), gra biegnie dalej (bez „tylko kapituluj").
+  const state = game('p1');
+  putCard(state, 'skunk', 'downwind-ambusher', 'p1', 'hand');
+  addMana(state, 'p1', 4, { colors: ['B'] });
+  assert.ok(execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'skunk')).ok);
+  assert.ok(resolveStack(state), 'stos rozstrzygnięty bez decyzji');
+  assert.ok(!state.pendingModalTrigger, 'brak wiszącej decyzji modalnej');
+  assert.ok(state.events.some((e) => e.type === 'trigger_resolved' && e.noEffect && e.reason === 'no_targets'),
+    'trigger jawnie bez efektu (no_targets)');
+  const cmds = playerView(state, 'p1').legalCommands.map((c) => c.type);
+  assert.ok(cmds.includes('pass_priority'), 'gra biegnie dalej');
+});
+

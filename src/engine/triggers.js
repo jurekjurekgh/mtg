@@ -1188,6 +1188,25 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
   if (Array.isArray(trigger.modes) && trigger.modes.length > 0) {
     if (requiresCounter(ability, 'deathtouch') && !hasCounter(source, 'deathtouch')) return false;
     if (!canPayTrigger(state, source.controllerId, trigger)) return false;
+    // M174/E-fix (Downwind Ambusher, CR 603.3b): tryb wybiera się przy
+    // kładzeniu na stos — gdy KAŻDY tryb wymaga celu i żaden nie ma
+    // legalnego kandydata, zdolność nie wchodzi na stos (bez decyzji;
+    // wcześniej pendingModalTrigger bez ofert = deadlock „tylko kapituluj",
+    // wykryty benchmarkiem B0 — graveyard vs black, pusty stół wroga).
+    const anyModeAvailable = trigger.modes.some((mode) => {
+      const spec = mode.targets?.[0];
+      if (!spec) return true;
+      return triggerTargetCandidates(state, spec, source, extra ?? {}).length > 0;
+    });
+    if (!anyModeAvailable) {
+      const skipped = event('trigger_resolved', {
+        objectId: source.id, cardId: source.cardId,
+        trigger: trigger.event ?? null, noEffect: true, reason: 'no_targets',
+      });
+      state.events.push(skipped);
+      events.push(skipped);
+      return false;
+    }
     state.pendingModalTrigger = {
       playerId: source.controllerId,
       sourceId: source.id,

@@ -1429,6 +1429,28 @@ export function execute(state, input) {
     if (cmd.type !== 'resolve_modal_choice') return reject('modal_trigger_unresolved');
     if (cmd.playerId !== state.pendingModalTrigger.playerId) return reject('modal_trigger_not_your_decision');
     const pending = state.pendingModalTrigger;
+    // M174/E-fix: kandydaci trybów mogli zniknąć MIĘDZY kolejką a decyzją —
+    // skip legalny wyłącznie, gdy ŻADEN tryb nie jest już wybieralny
+    // (oferta=walidacja, L48; zwykłe tryby nadal obowiązkowe).
+    if (cmd.skip === true) {
+      const src = state.objects.get(pending.sourceId);
+      const anyAvailable = pending.modes.some((mode) => {
+        const spec = mode.targets?.[0];
+        if (!spec) return true;
+        return src ? triggerTargetCandidates(state, spec, src, pending.extra ?? {}).length > 0 : false;
+      });
+      if (anyAvailable) return reject('illegal_modal_choice');
+      const beforeSkip = state.events.length;
+      state.pendingModalTrigger = null;
+      if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+        state.turn.priorityPlayerId = pending.restorePriorityTo;
+      }
+      state.events.push(event('modal_trigger_resolved', {
+        playerId: cmd.playerId, sourceId: pending.sourceId,
+        cardId: pending.cardId ?? null, skipped: true,
+      }));
+      return accepted(state, cmd, { ok: true, events: state.events.slice(beforeSkip) });
+    }
     const modeIndex = cmd.modeIndex;
     if (!Number.isInteger(modeIndex) || modeIndex < 0 || modeIndex >= pending.modes.length) {
       return reject('illegal_modal_choice');
@@ -4511,6 +4533,7 @@ export function playerView(state, playerId) {
     // Modalny trigger upkeep (Etherwrought Page): gracz wybiera tryb.
     // Boty biorą pierwszą ofertę = tryb 0 (jak deklaracja karty).
     const pending = state.pendingModalTrigger;
+    const offersBefore = legalCommands.length;
     for (let modeIndex = pending.modes.length - 1; modeIndex >= 0; modeIndex -= 1) {
       const mode = pending.modes[modeIndex];
       const modeSpec = mode.targets?.[0];
@@ -4525,6 +4548,11 @@ export function playerView(state, playerId) {
       } else {
         legalCommands.unshift(command('resolve_modal_choice', playerId, { modeIndex }));
       }
+    }
+    // M174/E-fix (L48): kandydaci wszystkich trybów zniknęli po kolejce —
+    // jedyna legalna droga to skip (inaczej deadlock „tylko kapituluj").
+    if (legalCommands.length === offersBefore) {
+      legalCommands.unshift(command('resolve_modal_choice', playerId, { skip: true }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeDamageTarget) {
     // Stomping Slabs — obrażenia 7 do „any target" (gracz albo stwór).
