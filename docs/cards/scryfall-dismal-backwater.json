@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Dismal%20Backwater&set=m20",
+  "print": "Dismal Backwater (M20)",
+  "name": "Dismal Backwater",
+  "mana_cost": "",
+  "cmc": 0.0,
+  "type_line": "Land",
+  "oracle_text": "This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {U} or {B}.",
+  "colors": [],
+  "color_identity": [
+    "B",
+    "U"
+  ],
+  "keywords": [],
+  "set": "m20",
+  "collector_number": "245",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/a/5/a5ff247f-82d1-4b79-9ac0-1471a1f0f58b.jpg?1783932937"
+  },
+  "pobrano": "2026-08-22"
+}

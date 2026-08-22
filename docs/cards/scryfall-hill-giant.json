@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Hill%20Giant&set=7ed",
+  "print": "Hill Giant (7ED)",
+  "name": "Hill Giant",
+  "mana_cost": "{3}{R}",
+  "cmc": 4.0,
+  "type_line": "Creature — Giant",
+  "oracle_text": "",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [],
+  "set": "7ed",
+  "collector_number": "196",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/7/e7ea1719-2bed-46f4-bb14-e3a4c87ce50a.jpg?1783945460"
+  },
+  "pobrano": "2026-08-22"
+}

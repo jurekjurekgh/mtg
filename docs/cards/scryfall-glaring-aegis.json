@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Glaring%20Aegis&set=m20",
+  "print": "Glaring Aegis (M20)",
+  "name": "Glaring Aegis",
+  "mana_cost": "{W}",
+  "cmc": 1.0,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Enchant creature\nWhen this Aura enters, tap target creature an opponent controls.\nEnchanted creature gets +1/+3.",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [
+    "Enchant"
+  ],
+  "set": "m20",
+  "collector_number": "18",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/a/daa83dc2-4ec0-4e4f-8bfd-4f6d6df06a2d.jpg?1783933028"
+  },
+  "pobrano": "2026-08-22"
+}

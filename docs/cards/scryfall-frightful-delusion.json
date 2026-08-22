@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Frightful%20Delusion&set=isd",
+  "print": "Frightful Delusion (ISD)",
+  "name": "Frightful Delusion",
+  "mana_cost": "{2}{U}",
+  "cmc": 3.0,
+  "type_line": "Instant",
+  "oracle_text": "Counter target spell unless its controller pays {1}. That player discards a card.",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [],
+  "set": "isd",
+  "collector_number": "57",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/8/38c9ba98-90b4-4c28-9eef-a4fe0913b921.jpg?1783940974"
+  },
+  "pobrano": "2026-08-22"
+}

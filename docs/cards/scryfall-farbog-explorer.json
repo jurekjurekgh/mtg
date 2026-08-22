@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Farbog%20Explorer&set=avr",
+  "print": "Farbog Explorer (AVR)",
+  "name": "Farbog Explorer",
+  "mana_cost": "{2}{W}",
+  "cmc": 3.0,
+  "type_line": "Creature — Human Scout",
+  "oracle_text": "Swampwalk (This creature can't be blocked as long as defending player controls a Swamp.)",
+  "power": "2",
+  "toughness": "3",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [
+    "Landwalk",
+    "Swampwalk"
+  ],
+  "set": "avr",
+  "collector_number": "21",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/4/8/489c6a2f-38b4-4ff9-95f7-431384480ed9.jpg?1783940735"
+  },
+  "pobrano": "2026-08-22"
+}
