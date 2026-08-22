@@ -1,7 +1,48 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-22 (M188: uwagi właściciela A/B/C/K — badge nadanych P/T, nazwy tokenów, jałowy atak bota, select tur)
-- **Poprzednia:** 2026-08-22 (M187: audyt PR #69 — N1 „can't block" tokenu, N2 strażnik, Z1 dubel zdarzeń)
+- **Ostatnia aktualizacja:** 2026-08-22 (M189: uwagi L/M — sprzątanie UX artefaktu; dokończona pętla jakości Z2–Z4)
+- **Poprzednia:** 2026-08-22 (M188: uwagi właściciela A/B/C/K — badge nadanych P/T, nazwy tokenów, jałowy atak bota, select tur)
+
+
+## M189 — uwagi L/M + dokończenie pętli jakości (2026-08-22, PR #70)
+
+**Uwagi właściciela (UX artefaktu):**
+
+- **L (550bddd)** — sekcja „Test działania" usunięta z interfejsu; zostaje
+  stempel „Wersja artefaktu: YYYY-MM-DD **HH:MM**" (godziny wcześniej NIE
+  było — build wstawiał samą datę, więc dwóch buildów z jednego dnia nie
+  dało się odróżnić na telefonie). Kontener `#selftest` zostaje UKRYTY,
+  bo self-test jest bramką CI (`bundle-smoke`, `table-ui`) — usunięte
+  zostało UI, nie kontrola.
+- **M (550bddd)** — sekcja „Ustawienia i pomoc" usunięta w całości.
+  Zachowana AUTODETEKCJA trybu obrazów po protokole (http(s) → Scryfall,
+  plik → `./img/`), bo to jedyne realnie używane zachowanie usuniętego
+  przełącznika; bez niej karty straciłyby ilustracje.
+
+**Pętla jakości (13 partii + weryfikacje, `tools/table-tester/audyt-m187/`):**
+
+- **Z2 (2f3596d) + Z2e (d69ce69)** — „trigger bez efektu (nic się nie
+  wydarzyło (zerowy wynik))" dla LEGALNEGO no-opa. M106/Z2 wnioskował brak
+  efektu z BRAKU ZDARZEŃ, a tap już tapniętego / untap odkręconego
+  (CR 701.20b) też ich nie produkuje — gracz widział komunikat sugerujący
+  zgubioną zdolność (Glaring Aegis, Steelfin Whale, Thistledown Players).
+  Naprawa deskryptorowa: `STATE_IDEMPOTENT_EFFECTS` + fallback na ŹRÓDŁO
+  dla efektów bez jawnego celu; żargon „zerowy wynik" → „nie było czego
+  wykonać". Anty-over-fix: Undead Servant przy pustym grobie NADAL raportuje
+  brak efektu.
+- **Narzędzie (e07ccb3, 2bac13c, 0848139)** — trzy naprawy detektorów
+  (AGENTS.md: braki testera naprawia się w testerze): (a) `token_*`
+  przechodziło przez regułę snake_case (wymagała 2+ podkreśleń) —
+  weryfikacja wsteczna: archiwalny transkrypt 2 zgłoszenia, po naprawie
+  M188/B 0; (b) oś 3 zgłaszała OBOWIĄZKOWE decyzje (`resolve_opponent_target`
+  — Cuombajj Witches, CR 601.2c), którym ptaszek się nie należy; (c) oś
+  „noop" zgłaszała rozwiązany przypadek M102/U8, gdzie etykieta SAMA
+  ostrzega „UWAGA: czar fizzluje". Wszystkie trzy z kontrolą, że realne
+  przypadki nadal są łapane.
+
+**Stan:** `npm test` **2788/2788**, build **52 moduły / 2401.4 kB**,
+benchmark regresji **9/9**; końcowe przebiegi Żywego Testera: **0 zgłoszeń**.
+
 
 
 ## M188 — uwagi właściciela z testów: A, B, C, K (2026-08-22, PR #70)
