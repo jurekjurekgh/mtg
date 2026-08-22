@@ -1,0 +1,24 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Negate&set=m15",
+  "print": "Negate (M15)",
+  "name": "Negate",
+  "mana_cost": "{1}{U}",
+  "cmc": 2.0,
+  "type_line": "Instant",
+  "oracle_text": "Counter target noncreature spell.",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [],
+  "set": "m15",
+  "collector_number": "71",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/4/64a2ba6d-ada1-4f06-b135-37606b6588fc.jpg?1783939190"
+  },
+  "pobrano": "2026-08-23",
+  "uwaga": "druk M15 (artId 76M15) zastepuje druk M20 (461M20); plan zmieniony na Warhammer Fantasy decyzja wlasciciela (Batch 47)"
+}

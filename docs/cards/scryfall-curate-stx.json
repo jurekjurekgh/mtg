@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Curate&set=stx",
+  "print": "Curate (STX)",
+  "name": "Curate",
+  "mana_cost": "{1}{U}",
+  "cmc": 2.0,
+  "type_line": "Instant",
+  "oracle_text": "Surveil 2. (Look at the top two cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order.)\nDraw a card.",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Surveil"
+  ],
+  "set": "stx",
+  "collector_number": "40",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/2/f2a0e716-22b7-4a5e-9b7a-d4a806ee7427.jpg?1783927381"
+  },
+  "pobrano": "2026-08-23",
+  "uwaga": "druk STX (artId 65STX, plan Arcavios) zastepuje dotychczasowy druk BRO (302BRO, Forgotten Realms) — zlecenie wlasciciela Batch 47"
+}

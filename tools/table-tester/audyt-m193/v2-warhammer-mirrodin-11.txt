@@ -1,0 +1,409 @@
+== NOWA PARTIA: gracz=warhammer vs bot=mirrodin, seed=11, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Dismal Backwater
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Dismal Backwater (wchodzi zatapnięty)
+  [ROZGRYWKA]   • Dismal Backwater — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Ty: życie 20 → 21
+  [ROZGRYWKA]   • Dismal Backwater — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  >> Aktywuj: Dismal Backwater (Ty) (koszt T) — dodaj 1 manę niebieską lub czarną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Dismal Backwater — dodanie 1 many niebieskiej lub czarnej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Minotaur Abomination
+  >> Zagraj ląd: Rupture Spire
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Rupture Spire (wchodzi zatapnięty)
+  [ROZGRYWKA]   • Rupture Spire zostaje poświęcony
+  [ROZGRYWKA]   • Rupture Spire — trigger (wejście na pole bitwy): brak zapłaty, permanent poświęcony
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  >> Aktywuj: Dismal Backwater (Ty) (koszt T) — dodaj 1 manę niebieską lub czarną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Dismal Backwater — dodanie 1 many niebieskiej lub czarnej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Rzuć: Index (koszt U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Index
+  [ROZGRYWKA]   • Wykonujesz Index (patrzy na 5 kart: Mountain, Hobble, Ramroller, Mountain, Mountain)
+  >> Wybierz: Index — kolejność na wierzchu biblioteki (1 opcja)
+  [modal choice] Index 5 — karty na wierzchu biblioteki (ułóż w dowolnej kolejności): 1. Mountain 2. Hobble 3. Ramroller 4. Mountain 5. MountainUstaw nową kolejność od góry — wybieraj karty po kolei:1. na wierzchu: Mountain1. na wierzchu: Hobble1. na wierzchu: Ramroller1. na wierzchu: Mountain1. na wierzchu: MountainZamknij (dokończysz później)
+  [modal choice]   ▶ 1. na wierzchu: Mountain
+  [modal choice]     1. na wierzchu: Hobble
+  [modal choice]     1. na wierzchu: Ramroller
+  [modal choice]     1. na wierzchu: Mountain
+  [modal choice]     1. na wierzchu: Mountain
+  [modal choice] Index 5 — karty na wierzchu biblioteki (ułóż w dowolnej kolejności): 1. Mountain 2. Hobble 3. Ramroller 4. Mountain 5. MountainUstaw nową kolejność od góry — wybieraj karty po kolei:2. na wierzchu: Hobble2. na wierzchu: Ramroller2. na wierzchu: Mountain2. na wierzchu: MountainZamknij (dokończysz później)
+  [modal choice]   ▶ 2. na wierzchu: Hobble
+  [modal choice]     2. na wierzchu: Ramroller
+  [modal choice]     2. na wierzchu: Mountain
+  [modal choice]     2. na wierzchu: Mountain
+  [modal choice] Index 5 — karty na wierzchu biblioteki (ułóż w dowolnej kolejności): 1. Mountain 2. Hobble 3. Ramroller 4. Mountain 5. MountainUstaw nową kolejność od góry — wybieraj karty po kolei:3. na wierzchu: Ramroller3. na wierzchu: Mountain3. na wierzchu: MountainZamknij (dokończysz później)
+  [modal choice]   ▶ 3. na wierzchu: Ramroller
+  [modal choice]     3. na wierzchu: Mountain
+  [modal choice]     3. na wierzchu: Mountain
+  [modal choice] Index 5 — karty na wierzchu biblioteki (ułóż w dowolnej kolejności): 1. Mountain 2. Hobble 3. Ramroller 4. Mountain 5. MountainUstaw nową kolejność od góry — wybieraj karty po kolei:4. na wierzchu: Mountain4. na wierzchu: MountainZamknij (dokończysz później)
+  [modal choice]   ▶ 4. na wierzchu: Mountain
+  [modal choice]     4. na wierzchu: Mountain
+  [modal choice] Index 5 — karty na wierzchu biblioteki (ułóż w dowolnej kolejności): 1. Mountain 2. Hobble 3. Ramroller 4. Mountain 5. MountainUstaw nową kolejność od góry — wybieraj karty po kolei:5. na wierzchu: MountainZamknij (dokończysz później)
+  [modal choice]   ▶ 5. na wierzchu: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kończysz Index — kolejność na wierzchu (od góry): Mountain, Hobble, Ramroller, Mountain, Mountain
+  [ROZGRYWKA]   • Index zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Pristine Talisman
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Pristine Talisman wchodzi na pole bitwy
+  [ROZGRYWKA]   • Pristine Talisman zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Pristine Talisman — dodanie many do puli, zdobycie życia
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 21
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 7 — Ty
+  >> Aktywuj: Dismal Backwater (Ty) (koszt T) — dodaj 1 manę niebieską lub czarną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Dismal Backwater — dodanie 1 many niebieskiej lub czarnej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Cel czaru: Tome Scour (2 opcje)
+  [modal choice] Cel czaru: Tome Scour Rzuć: Tome Scour (koszt U) → cel: Nieprzyjaciel Rzuć: Tome Scour (koszt U) → cel: Ty
+  [modal choice]   ▶ Rzuć: Tome Scour (koszt U) → cel: Nieprzyjaciel
+  [modal choice]     Rzuć: Tome Scour (koszt U) → cel: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Tome Scour → cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Forest do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Forest do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Carrion Call do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Gloomfang Mauler do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli True Conviction do grobu
+  [ROZGRYWKA]   • Tome Scour zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Bladed Sentinel
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Pristine Talisman — dodanie many do puli, zdobycie życia
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 21 → 22
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Bladed Sentinel wchodzi na pole bitwy
+  [ROZGRYWKA]   • Bladed Sentinel zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 9 — Ty
+  >> Aktywuj: Dismal Backwater (Ty) (koszt T) — dodaj 1 manę niebieską lub czarną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Dismal Backwater — dodanie 1 many niebieskiej lub czarnej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Hobble
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Zagraj: Brawler's Plate (koszt 3)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Brawler's Plate
+  [ROZGRYWKA]   • Brawler's Plate wchodzi na pole bitwy
+  [ROZGRYWKA]   • Brawler's Plate zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Steel Sabotage — tryb: Odbicie → cel: Brawler's Plate
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: Brawler's Plate — pole bitwy → ręka
+  [ROZGRYWKA]   • Steel Sabotage — tryb: Odbicie zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Pristine Talisman — dodanie many do puli, zdobycie życia
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 22 → 23
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Strandwalker
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Strandwalker wchodzi na pole bitwy
+  [ROZGRYWKA]   • Strandwalker zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Strandwalker — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Germ (0/0)
+  [ROZGRYWKA]   • Germ wchodzi na pole bitwy
+  [ROZGRYWKA]   • Strandwalker zostaje załączony do Germ (bestow)
+  [ROZGRYWKA]   • Strandwalker — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Bladed Sentinel
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Bladed Sentinel zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 21 → 19
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Aktywuj: Dismal Backwater (Ty) (koszt T) — dodaj 1 manę niebieską lub czarną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Dismal Backwater — dodanie 1 many niebieskiej lub czarnej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Ramroller
+  >> Zagraj: Ramroller (koszt 3)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Ramroller
+  [ROZGRYWKA]   • Ramroller wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ramroller zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Shatter → cel: Ramroller
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Pristine Talisman — dodanie many do puli, zdobycie życia
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 23 → 24
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ramroller zostaje zniszczony
+  [ROZGRYWKA]   • Shatter zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Bladed Sentinel, Germ
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Bladed Sentinel — nadanie do końca tury: czujność
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Bladed Sentinel zyskuje: czujność
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Bladed Sentinel rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Bladed Sentinel zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 19 → 17
+  [ROZGRYWKA]   • Germ zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 15
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Aktywuj: Dismal Backwater (Ty) (koszt T) — dodaj 1 manę niebieską lub czarną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Dismal Backwater — dodanie 1 many niebieskiej lub czarnej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Zagraj: Brawler's Plate (koszt 3)
+  [kreator many] Płatność 3 — tapuj źródła po jednympozostało 3 manyTapnij: Island (U)Tapnij: Mountain (R)Tapnij: Swamp (B)Tapnij: Mounta — źródła: 4
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Swamp (B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Brawler's Plate
+  [ROZGRYWKA]   • Brawler's Plate wchodzi na pole bitwy
+  [ROZGRYWKA]   • Brawler's Plate zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Bladed Sentinel — nadanie do końca tury: czujność
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Bladed Sentinel zyskuje: czujność
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Bladed Sentinel rozstrzygnięta
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Bone Shredder
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Pristine Talisman — dodanie many do puli, zdobycie życia
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 24 → 25
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Bone Shredder wchodzi na pole bitwy
+  [ROZGRYWKA]   • Bone Shredder zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Bone Shredder — trigger bez efektu (brak legalnych celów)
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Bladed Sentinel, Germ
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Bladed Sentinel — nadanie do końca tury: czujność
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Bladed Sentinel zyskuje: czujność
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Bladed Sentinel rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Bladed Sentinel zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 15 → 13
+  [ROZGRYWKA]   • Germ zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 11
+  [ROZGRYWKA]   • Tura 15 — Ty
+  >> Aktywuj: Dismal Backwater (Ty) (koszt T) — dodaj 1 manę niebieską lub czarną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Dismal Backwater — dodanie 1 many niebieskiej lub czarnej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Bladed Sentinel — nadanie do końca tury: czujność
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Bladed Sentinel zyskuje: czujność
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Bladed Sentinel rozstrzygnięta
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Horizon Spellbomb
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Pristine Talisman — dodanie many do puli, zdobycie życia
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 25 → 26
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Horizon Spellbomb wchodzi na pole bitwy
+  [ROZGRYWKA]   • Horizon Spellbomb zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Horizon Spellbomb zostaje poświęcony
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Horizon Spellbomb
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Horizon Spellbomb rozstrzygnięta
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Mountain
+  [ROZGRYWKA]   • Nieprzyjaciel: karta — biblioteka → ręka
+  [ROZGRYWKA]   • Nieprzyjaciel znajduje Mountain i tasuje bibliotekę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Bladed Sentinel, Germ, Bone Shredder
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Bladed Sentinel — nadanie do końca tury: czujność
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Bladed Sentinel zyskuje: czujność
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Bladed Sentinel rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Bladed Sentinel zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 9
+  [ROZGRYWKA]   • Germ zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 9 → 7
+  [ROZGRYWKA]   • Bone Shredder zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 7 → 6
+  [ROZGRYWKA]   • Tura 17 — Ty
+  >> Aktywuj: Dismal Backwater (Ty) (koszt T) — dodaj 1 manę niebieską lub czarną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Dismal Backwater — dodanie 1 many niebieskiej lub czarnej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Cellar Door
+  >> Zagraj: Cellar Door (koszt 2)
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Island (U)Tapnij: Mountain (R)Tapnij: Swamp (B)Tapnij: Mounta — źródła: 5
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Cellar Door
+  [ROZGRYWKA]   • Cellar Door wchodzi na pole bitwy
+  [ROZGRYWKA]   • Cellar Door zostaje rozstrzygnięty
+  >> Cel zdolności: Cellar Door (2 opcje)
+  [modal choice] Cel zdolności: Cellar Door Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Nieprzyjaciel Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Ty
+  [modal choice]   ▶ Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Nieprzyjaciel
+  [modal choice]     Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Cellar Door → cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel: Necrosquito — biblioteka → cmentarz
+  [ROZGRYWKA]   • Ty tworzysz token Zombie (2/2)
+  [ROZGRYWKA]   • Zombie wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel mieli 1 kartę od spodu biblioteki
+  [ROZGRYWKA]   • Ty: zdolność Cellar Door rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Bladed Sentinel — nadanie do końca tury: czujność
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Bladed Sentinel zyskuje: czujność
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Bladed Sentinel rozstrzygnięta
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Steelfin Whale
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Pristine Talisman — dodanie many do puli, zdobycie życia
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 26 → 27
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Steelfin Whale wchodzi na pole bitwy
+  [ROZGRYWKA]   • Steelfin Whale zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Bladed Sentinel, Germ
+  >> Wybierz: Deklaracja blokujących (3 opcje)
+  [combat wizard] blokuję 1 stworami: Zombie (2/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zombie blokuje Germ
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Bladed Sentinel zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 6 → 4
+  [ROZGRYWKA]   • Germ zadaje 2 obrażenia (Zombie)
+  [ROZGRYWKA]   • Zombie zadaje 2 obrażenia (Germ)
+  [ROZGRYWKA]   • Zombie ginie
+  [ROZGRYWKA]   • token Zombie przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 19 — Ty
+  >> Aktywuj: Dismal Backwater (Ty) (koszt T) — dodaj 1 manę niebieską lub czarną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Dismal Backwater — dodanie 1 many niebieskiej lub czarnej do puli
+  >> Cel zdolności: Cellar Door (2 opcje)
+  [modal choice] Cel zdolności: Cellar Door Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Nieprzyjaciel Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Ty
+  [modal choice]   ▶ Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Nieprzyjaciel
+  [modal choice]     Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Ty
+  [kreator many] Płatność 3 — tapuj źródła po jednympozostało 2 manyTapnij: Island (U)Tapnij: Mountain (R)Tapnij: Swamp (B)Tapnij: Mounta — źródła: 5
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Cellar Door → cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel: Swamp — biblioteka → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel mieli 1 kartę od spodu biblioteki
+  [ROZGRYWKA]   • Ty: zdolność Cellar Door rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Goblin Piker
+  >> Zagraj: Goblin Piker (koszt 1R)
+  [kreator many] Płatność 1R — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: RTapnij: Swamp (B)Tapnij: Mountain (R)Tapnij: — źródła: 3
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Swamp (B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Goblin Piker
+  [ROZGRYWKA]   • Goblin Piker wchodzi na pole bitwy
+  [ROZGRYWKA]   • Goblin Piker zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Bladed Sentinel — nadanie do końca tury: czujność
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Bladed Sentinel zyskuje: czujność
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Bladed Sentinel rozstrzygnięta
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Awaken the Sleeper → cel: Goblin Piker
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Pristine Talisman — dodanie many do puli, zdobycie życia
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 27 → 28
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Goblin Piker przechodzi pod kontrolę gracza Nieprzyjaciel
+  [ROZGRYWKA]   • Goblin Piker zyskuje: pośpiech
+  [ROZGRYWKA]   • Awaken the Sleeper zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Bladed Sentinel, Germ, Bone Shredder, Steelfin Whale, Goblin Piker
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Bladed Sentinel — nadanie do końca tury: czujność
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 79 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Feedback · 3 · Enchantment — Aura · Na początku upkeep (gdy rzucono 2+ czary): 1 obrażenie kontrolerowi zaczarowanego. | Minotaur Abomination · 6 · Creature — Zombie Minotaur · 4/6 | Hobble · 3 · Enchantment — Aura · zaczarowany nie może atakować · zaczarowany nie może blokować · Gdy wejdzie na pole bitwy: dobierz 1 kartę.
+  MOJE POLA: Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj 1 manę niebieską lub czarną | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Pristine Talisman · 3 · Artifact · {T}: dodaj 1 manę bezbarwną + zyskaj 1 życie | Bladed Sentinel · 4 · Artifact Creature — Construct · Czujność · {W}: zdobądź Czujność do końca tury · Czujność · 2/4 | Strandwalker · 5 · Artifact — Equipment · Equip {4} — nosiciel: Zasięg +2/+4 · Gdy wejdzie na pole bitwy: living weapon (stwórz 0/0 Germ i przypnij). · wyposaża → Germ | Germ · 0 · Creature — Phyrexian Germ · Zasięg · Zasięg · +2/+4 · wyposażona: Strandwalker · 2/4 | Bone Shredder · 3 · Creature — Phyrexian Minion · Latanie Echo (w pierwszym swoim upkeepie zapłać koszt echa albo poświęć) · Gdy wejdzie na pole bitwy: zniszcz cel. · 1/1 | Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · 3/4 | Goblin Piker · 2 · Creature — Goblin Warrior · Pośpiech · Pośpiech · kontrola do końca tury · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Brawler's Plate, Tome Scour, Rupture Spire, Feedback, Index, Dismal Backwater ⏎ Nowa partia (seed 11). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 17, kliknięte: 22, modale: 4, sondy noop: 56 (panel 48, modal 8)
+== DETEKTORY: brak zgłoszeń ==

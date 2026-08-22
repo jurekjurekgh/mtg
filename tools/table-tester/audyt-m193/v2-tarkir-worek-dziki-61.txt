@@ -1,0 +1,410 @@
+== NOWA PARTIA: gracz=tarkir vs bot=worek-dziki, seed=61, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Fake Your Own Death
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Zagraj: Palace Familiar (koszt 1U)
+  [kreator many] Płatność 1U — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: UTapnij: Mountain (R)Tapnij: Forest (G)Tapnij — źródła: 3
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Palace Familiar
+  [ROZGRYWKA]   • Palace Familiar wchodzi na pole bitwy
+  [ROZGRYWKA]   • Palace Familiar zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Cathartic Reunion
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Tura 7 — Ty
+  >> Rzuć: Ojutai's Breath (koszt 2U) → cel: Palace Familiar (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Ojutai's Breath → cel: Palace Familiar
+  [ROZGRYWKA]   • Ojutai's Breath zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Monastery Flock
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 9 — Ty
+  >> Rzuć z odbiciem: Ojutai's Breath (bez kosztu many) → cel: Palace Familiar (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Ojutai's Breath → cel: Palace Familiar
+  [ROZGRYWKA]   • Ojutai's Breath zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Zagraj: Monastery Flock (koszt 2U)
+  [kreator many] Płatność 2U — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: UTapnij: Mountain (R)Tapnij: Forest (G)Tapnij — źródła: 5
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Monastery Flock
+  [ROZGRYWKA]   • Monastery Flock wchodzi na pole bitwy
+  [ROZGRYWKA]   • Monastery Flock zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Spin Out
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Impact Tremors
+  >> Zagraj: Impact Tremors (koszt 1R)
+  [kreator many] Płatność 1R — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: RTapnij: Mountain (R)Tapnij: Forest (G)Tapnij — źródła: 5
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Impact Tremors
+  [ROZGRYWKA]   • Impact Tremors wchodzi na pole bitwy
+  [ROZGRYWKA]   • Impact Tremors zostaje rozstrzygnięty
+  >> Aura: Vow of Wildness (2 opcje)
+  [modal choice] Aura: Vow of Wildness Zagraj aurę: Vow of Wildness (koszt 2G) → zaczaruj Monastery Flock (Ty) Zagraj aurę: Vow of Wildness (koszt 2G) → zaczaruj Palace Familiar (Ty)
+  [modal choice]   ▶ Zagraj aurę: Vow of Wildness (koszt 2G) → zaczaruj Monastery Flock (Ty)
+  [modal choice]     Zagraj aurę: Vow of Wildness (koszt 2G) → zaczaruj Palace Familiar (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Vow of Wildness → cel: Monastery Flock
+  [ROZGRYWKA]   • Vow of Wildness zaczarowuje Monastery Flock
+  [ROZGRYWKA]   • Vow of Wildness wchodzi na pole bitwy
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Highland Game
+  >> Zagraj: Highland Game (koszt 1G)
+  [kreator many] Płatność 1G — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: GTapnij: Mountain (R)Tapnij: Forest (G)Tapnij — źródła: 5
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Highland Game
+  [ROZGRYWKA]   • Highland Game wchodzi na pole bitwy
+  [ROZGRYWKA]   • Highland Game zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Impact Tremors — trigger (wejście stwora pod twoją kontrolą)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Impact Tremors zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 19
+  [ROZGRYWKA]   • Impact Tremors — trigger się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Palace Familiar
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Palace Familiar zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 19 → 18
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Moonlit Meditation
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Ainok Artillerist
+  >> Zagraj: Ainok Artillerist (koszt 2G)
+  [kreator many] Płatność 2G — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: GTapnij: Mountain (R)Tapnij: Forest (G)Tapnij — źródła: 5
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Ainok Artillerist
+  [ROZGRYWKA]   • Ainok Artillerist wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ainok Artillerist zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Impact Tremors — trigger (wejście stwora pod twoją kontrolą)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Impact Tremors zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 18 → 17
+  [ROZGRYWKA]   • Impact Tremors — trigger się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Palace Familiar, Highland Game
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Palace Familiar zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 17 → 16
+  [ROZGRYWKA]   • Highland Game zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 16 → 14
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Cacophodon
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Cacophodon wchodzi na pole bitwy
+  [ROZGRYWKA]   • Cacophodon zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 17 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Delta Bloodflies
+  >> Wybierz: Deklaracja atakujących (8 opcji)
+  [combat wizard] atakuję 3 z 3 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Palace Familiar, Highland Game, Ainok Artillerist
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Cacophodon blokuje Ainok Artillerist
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Palace Familiar zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 14 → 13
+  [ROZGRYWKA]   • Highland Game zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 13 → 11
+  [ROZGRYWKA]   • Ainok Artillerist zadaje 4 obrażenia (Cacophodon)
+  [ROZGRYWKA]   • Cacophodon zadaje 2 obrażenia (Ainok Artillerist)
+  [ROZGRYWKA]   • Ainok Artillerist ginie
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Cacophodon — wybierz cel triggera (wymagany)
+  [ROZGRYWKA]   • Cacophodon — trigger (otrzymanie obrażeń)
+  [ROZGRYWKA]   • Cacophodon — cel: Monastery Flock
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Cacophodon — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Diplomatic Relations → cel: Cacophodon, Highland Game
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Cacophodon dostaje +1/+0
+  [ROZGRYWKA]   • Cacophodon zyskuje: czujność
+  [ROZGRYWKA]   • Cacophodon zadaje 3 obrażenia (Highland Game)
+  [ROZGRYWKA]   • Diplomatic Relations zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Highland Game ginie
+  [ROZGRYWKA]   • Highland Game — trigger (śmierć stwora)
+  [ROZGRYWKA]   • Ty: życie 20 → 22
+  [ROZGRYWKA]   • Highland Game — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 19 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Bring Low
+  >> Cel czaru: Bring Low (3 opcje)
+  [modal choice] Cel czaru: Bring Low Rzuć: Bring Low (koszt 3R) → cel: Cacophodon (Nieprzyjaciel) Rzuć: Bring Low (koszt 3R) → cel: Monastery Flock (Ty) Rzuć: Bring Low (koszt 3R) → cel: Palace Familiar (Ty)
+  [modal choice]   ▶ Rzuć: Bring Low (koszt 3R) → cel: Cacophodon (Nieprzyjaciel)
+  [modal choice]     Rzuć: Bring Low (koszt 3R) → cel: Monastery Flock (Ty)
+  [modal choice]     Rzuć: Bring Low (koszt 3R) → cel: Palace Familiar (Ty)
+  [kreator many] Płatność 3R — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: RTapnij: Mountain (R)Tapnij: Forest (G)Tapnij — źródła: 5
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Bring Low → cel: Cacophodon
+  [ROZGRYWKA]   • Bring Low zadaje 3 obrażenia (Cacophodon)
+  [ROZGRYWKA]   • Bring Low zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Cacophodon — wybierz cel triggera (wymagany)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Cacophodon — trigger (otrzymanie obrażeń)
+  [ROZGRYWKA]   • Cacophodon — cel: Monastery Flock
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Cacophodon — trigger się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Palace Familiar
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Palace Familiar zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 11 → 10
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Silken Strength → cel: Cacophodon
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Silken Strength zaczarowuje Cacophodon
+  [ROZGRYWKA]   • Silken Strength wchodzi na pole bitwy
+  [ROZGRYWKA]   • Silken Strength — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Silken Strength — trigger bez efektu (nie było czego wykonać)
+  [ROZGRYWKA]   • Tura 21 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Zagraj: Delta Bloodflies (koszt 1B)
+  [kreator many] Płatność 1B — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: BTapnij: Mountain (R)Tapnij: Forest (G)Tapnij — źródła: 6
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Delta Bloodflies
+  [ROZGRYWKA]   • Delta Bloodflies wchodzi na pole bitwy
+  [ROZGRYWKA]   • Delta Bloodflies zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Impact Tremors — trigger (wejście stwora pod twoją kontrolą)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Impact Tremors zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 10 → 9
+  [ROZGRYWKA]   • Impact Tremors — trigger się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Palace Familiar
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Cacophodon blokuje Palace Familiar
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Palace Familiar zadaje 1 obrażenie (Cacophodon)
+  [ROZGRYWKA]   • Cacophodon zadaje 3 obrażenia (Palace Familiar)
+  [ROZGRYWKA]   • Palace Familiar ginie
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Cacophodon — wybierz cel triggera (wymagany)
+  [ROZGRYWKA]   • Palace Familiar — trigger (śmierć stwora)
+  [ROZGRYWKA]   • Cacophodon — trigger (otrzymanie obrażeń)
+  [ROZGRYWKA]   • Cacophodon — cel: Monastery Flock
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Cacophodon — trigger się rozstrzyga
+  [ROZGRYWKA]   • Dobierasz: Awaken the Bear
+  [ROZGRYWKA]   • Palace Familiar — trigger się rozstrzyga
+  >> Cel czaru: Awaken the Bear (3 opcje)
+  [modal choice] Cel czaru: Awaken the Bear Rzuć: Awaken the Bear (koszt 2G) → cel: Delta Bloodflies (Ty) Rzuć: Awaken the Bear (koszt 2G) → cel: Cacophodon (Nieprzyjaciel) Rzuć: Awaken the Bear (koszt 2G) → cel: Monastery Flock (Ty)
+  [modal choice]   ▶ Rzuć: Awaken the Bear (koszt 2G) → cel: Delta Bloodflies (Ty)
+  [modal choice]     Rzuć: Awaken the Bear (koszt 2G) → cel: Cacophodon (Nieprzyjaciel)
+  [modal choice]     Rzuć: Awaken the Bear (koszt 2G) → cel: Monastery Flock (Ty)
+  [kreator many] Płatność 2G — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: GTapnij: Forest (G)Tapnij: Island (U)Tapnij:  — źródła: 4
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Awaken the Bear → cel: Delta Bloodflies
+  [ROZGRYWKA]   • Delta Bloodflies zyskuje: zadeptywanie
+  [ROZGRYWKA]   • Awaken the Bear zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 22 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Wedgelight Rammer
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Wedgelight Rammer wchodzi na pole bitwy
+  [ROZGRYWKA]   • Wedgelight Rammer zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Wedgelight Rammer — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Robot (2/2)
+  [ROZGRYWKA]   • Robot wchodzi na pole bitwy
+  [ROZGRYWKA]   • Wedgelight Rammer — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 2
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Wedgelight Rammer — liczniki charge ze Station (tapuje: Robot)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Wedgelight Rammer dostaje +2 liczniki charge (razem 2)
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Wedgelight Rammer rozstrzygnięta
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Wedgelight Rammer — liczniki charge ze Station (tapuje: Cacophodon)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Wedgelight Rammer dostaje +3 liczniki charge (razem 5)
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Wedgelight Rammer rozstrzygnięta
+  [ROZGRYWKA]   • Tura 23 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Force Away
+  >> Cel czaru: Force Away (4 opcje)
+  [modal choice] Cel czaru: Force Away Rzuć: Force Away (koszt 1U) → cel: Robot (Nieprzyjaciel) Rzuć: Force Away (koszt 1U) → cel: Delta Bloodflies (Ty) Rzuć: Force Away (koszt 1U) → cel: Cacophodon (Nieprzyjaciel) Rzuć: Force Away (koszt 1U) → cel: Monastery Flock (Ty)
+  [modal choice]   ▶ Rzuć: Force Away (koszt 1U) → cel: Robot (Nieprzyjaciel)
+  [modal choice]     Rzuć: Force Away (koszt 1U) → cel: Delta Bloodflies (Ty)
+  [modal choice]     Rzuć: Force Away (koszt 1U) → cel: Cacophodon (Nieprzyjaciel)
+  [modal choice]     Rzuć: Force Away (koszt 1U) → cel: Monastery Flock (Ty)
+  [kreator many] Płatność 1U — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: UTapnij: Mountain (R)Tapnij: Forest (G)Tapnij — źródła: 6
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Force Away → cel: Robot
+  [ROZGRYWKA]   • Nieprzyjaciel: Robot — pole bitwy → ręka
+  [ROZGRYWKA]   • Force Away zostaje rozstrzygnięty
+  [ROZGRYWKA]   • token Robot przestaje istnieć (trafił do ręki — token istnieje tylko na polu bitwy)
+  >> Zagraj: Krumar Initiate (koszt 1B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Krumar Initiate
+  [ROZGRYWKA]   • Krumar Initiate wchodzi na pole bitwy
+  [ROZGRYWKA]   • Krumar Initiate zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Impact Tremors — trigger (wejście stwora pod twoją kontrolą)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Impact Tremors zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 9 → 8
+  [ROZGRYWKA]   • Impact Tremors — trigger się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Delta Bloodflies
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Delta Bloodflies zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 8 → 7
+  [ROZGRYWKA]   • Tura 24 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Bomat Bazaar Barge
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Bomat Bazaar Barge wchodzi na pole bitwy
+  [ROZGRYWKA]   • Bomat Bazaar Barge zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Bomat Bazaar Barge — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Bomat Bazaar Barge — załoga: Cacophodon
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Bomat Bazaar Barge rozstrzygnięta
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Bomat Bazaar Barge — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Hunter's Blowgun
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Hunter's Blowgun wchodzi na pole bitwy
+  [ROZGRYWKA]   • Hunter's Blowgun zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 2
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Wedgelight Rammer — liczniki charge ze Station (tapuje: Bomat Bazaar Barge)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Wedgelight Rammer dostaje +5 liczników charge (razem 10)
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Wedgelight Rammer rozstrzygnięta
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Bomat Bazaar Barge — załoga: Wedgelight Rammer
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Bomat Bazaar Barge rozstrzygnięta
+  [ROZGRYWKA]   • Tura 25 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Zagraj: Silumgar Butcher (koszt 4B)
+  [kreator many] Płatność 4B — tapuj źródła po jednympozostało 5 many · kolory do pokrycia: BTapnij: Mountain (R)Tapnij: Forest (G)Tapnij — źródła: 7
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Silumgar Butcher
+  [ROZGRYWKA]   • Silumgar Butcher wchodzi na pole bitwy
+  [ROZGRYWKA]   • Silumgar Butcher zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Exploit (Silumgar Butcher): możesz poświęcić swojego stwora
+  [ROZGRYWKA]   • Impact Tremors — trigger (wejście stwora pod twoją kontrolą)
+  [STOP] brak akcji w kroku 73 | T. 25GraczGracz: 22 ż.Bot: 7 ż.Główna 1Stos — Impact Tremors | akcje: Poddaj partię,Silumgar Butcher — Exploit (poświęć stwora) (4 opcje)
+
+== POKRYCIE UI == akcje widziane: 28, kliknięte: 27, modale: 5, sondy noop: 79 (panel 61, modal 18)
+== DETEKTORY: brak zgłoszeń ==

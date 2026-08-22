@@ -1,0 +1,24 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Sequestered%20Stash&set=kld",
+  "print": "Sequestered Stash (KLD)",
+  "name": "Sequestered Stash",
+  "mana_cost": "",
+  "cmc": 0.0,
+  "type_line": "Land",
+  "oracle_text": "{T}: Add {C}.\n{4}, {T}, Sacrifice this land: Mill five cards. Then you may put an artifact card from your graveyard on top of your library.",
+  "colors": [],
+  "color_identity": [],
+  "keywords": [
+    "Mill"
+  ],
+  "produced_mana": [
+    "C"
+  ],
+  "set": "kld",
+  "collector_number": "248",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/8/6/86a17084-bb96-4e81-bff0-005bd44a1fbd.jpg?1783937143"
+  },
+  "pobrano": "2026-08-23"
+}
