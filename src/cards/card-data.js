@@ -8705,6 +8705,51 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['źródłem obu porcji obrażeń jest ZACZAROWANY STWÓR (nie aura); utrata kontroli hosta zrzuca aurę (enchant creature you control — SBA)'],
   }),
 
+  // =========================================================================
+  // Batch 46 — 10 kart (2026-08-22, lista właściciela)
+  // Cathartic Reunion, Roiling Regrowth, Manor Gate, Bone Shredder,
+  // Infectious Horror, Guildscorn Ward, Gila Courser, Rediscover the Way,
+  // Bring Low, Glint-Sleeve Artisan.
+  // Dane Oracle: docs/cards/scryfall-* (pobrane 2026-08-22, ADR 0010 §2a).
+  // =========================================================================
+
+  // 1. Infectious Horror (CON) — {3}{B} 2/2: atak → każdy przeciwnik traci 2.
+  //    Mechanika w całości istniejąca (trigger attacks + lose_life scope).
+  defineCard({
+    id: 'infectious-horror', name: 'Infectious Horror', set: 'CON',
+    types: ['Creature'], subtypes: ['Zombie', 'Horror'], colors: ['B'],
+    power: 2, toughness: 2, manaCost: 4,
+    oracleText: 'Whenever this creature attacks, each opponent loses 2 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/b/bb460855-f09d-4460-9d3f-1bfcc7f3e626.jpg?1783942484',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks' },
+        effect: { type: 'lose_life', amount: 2, scope: 'each_opponent' },
+      }),
+    ],
+    artId: 320, plan: 'Alara',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Roiling Regrowth (ZNR) — {2}{G} instant: poświęć ląd, znajdź do dwóch
+  //    podstawowych lądów na pole bitwy TAPNIĘTE, potem tasuj. Efekt jak
+  //    Springbloom Druid (ETB), tu jako CZAR — poświęcenie jest OBOWIĄZKOWE
+  //    („Sacrifice a land.", nie „you may"), więc bez landa czar fizzluje.
+  defineCard({
+    id: 'roiling-regrowth', name: 'Roiling Regrowth', set: 'ZNR',
+    types: ['Instant'], colors: ['G'], manaCost: 3,
+    oracleText: 'Sacrifice a land. Search your library for up to two basic land cards, put them onto the battlefield tapped, then shuffle.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/a/fa259096-b24f-414c-af59-301bed4b4627.jpg?1783929332',
+    spell: {
+      timing: 'instant',
+      effects: [{ type: 'springbloom_sacrifice_search', mandatory: true }],
+    },
+    artId: 270, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+    notes: ['poświęcenie lądu jest OBOWIĄZKOWE (nie „you may") — bez lądu na polu bitwy czar nie robi nic'],
+  }),
+
 ]);
 
 /**

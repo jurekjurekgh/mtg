@@ -371,4 +371,6 @@ export const MANA_COSTS = {
   "assert-perfection": "{1}{G}",
   "crawling-chorus": "{W}",
   "pain-for-all": "{2}{R}",
+  "infectious-horror": "{3}{B}",
+  "roiling-regrowth": "{2}{G}",
 };

@@ -3931,6 +3931,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       controllerId,
       sourceId: sourceObject.id,
       landIds: lands,
+      // Batch 46 (Roiling Regrowth): „Sacrifice a land." jest OBOWIĄZKOWE,
+      // w odróżnieniu od Springbloom Druida („you may sacrifice a land").
+      // Bez tej flagi gracz dostawał opcję „nie poświęcaj" przy czarze,
+      // który jej nie ma (CR 601.2h — koszt/efekt obowiązkowy).
+      mandatory: Boolean(effect.mandatory),
     };
     state.events.push(event('springbloom_choice_required', { controllerId }));
     return;

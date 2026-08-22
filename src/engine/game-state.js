@@ -1614,7 +1614,9 @@ export function execute(state, input) {
     const pending = state.pendingSpringbloom;
     if (cmd.type !== 'resolve_springbloom') return reject('springbloom_unresolved');
     if (cmd.playerId !== pending.controllerId) return reject('springbloom_not_your_decision');
-    // Player can choose to not sacrifice (skip)
+    // Player can choose to not sacrifice (skip) — chyba że efekt jest
+    // OBOWIĄZKOWY (Roiling Regrowth: „Sacrifice a land.").
+    if (cmd.skip && pending.mandatory) return reject('springbloom_sacrifice_mandatory');
     if (cmd.skip) {
       state.pendingSpringbloom = null;
       state.events.push(event('springbloom_skipped', { controllerId: pending.controllerId }));
@@ -5332,7 +5334,8 @@ export function playerView(state, playerId) {
   } else if (state.status === 'active' && !blockedByOthersDecision && activeSpringbloom) {
     // Springbloom Druid (MH1): ETB sacrifice land → search 2 basic lands tapped.
     const pending = state.pendingSpringbloom;
-    legalCommands.unshift(command('resolve_springbloom', playerId, { skip: true })); // decline
+    // Rezygnacja tylko dla wariantu „you may" (Springbloom Druid).
+    if (!pending.mandatory) legalCommands.unshift(command('resolve_springbloom', playerId, { skip: true }));
     for (const landId of pending.landIds) {
       legalCommands.unshift(command('resolve_springbloom', playerId, { sacrificeLandId: landId }));
     }
