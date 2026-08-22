@@ -159,14 +159,76 @@ export function isAnyColorMana(colors) {
     && ALL_MANA_COLORS.every((color) => list.includes(color));
 }
 
+/**
+ * M193/A1 (uwaga właściciela, Dismal Backwater): NAZWY kolorów po polsku.
+ * Log pisał „dodanie many do puli ({U}, {B})" — żargon symboli, którego reszta
+ * stołu nie używa. Odmiana przymiotnika idzie za rzeczownikiem „mana" (rodzaj
+ * żeński, biernik): „1 manę niebieską", „2 many czarne".
+ */
+const MANA_COLOR_NAMES = Object.freeze({
+  W: { one: 'białą', many: 'białe' },
+  U: { one: 'niebieską', many: 'niebieskie' },
+  B: { one: 'czarną', many: 'czarne' },
+  R: { one: 'czerwoną', many: 'czerwone' },
+  G: { one: 'zieloną', many: 'zielone' },
+});
+
+/** Nazwy kolorów jako alternatywa: „niebieską lub czarną" (CR 106.1b). */
+function manaColorsLabel(colors, single) {
+  const named = colors
+    .map((color) => MANA_COLOR_NAMES[color]?.[single ? 'one' : 'many'])
+    .filter(Boolean);
+  // Nieznany symbol (hipotetyczny nowy kolor) — nie zgadujemy, wracamy do
+  // symboli, żeby opis nie zgubił informacji.
+  if (named.length !== colors.length) return colors.map((c) => `{${c}}`).join(', ');
+  if (named.length === 1) return named[0];
+  return `${named.slice(0, -1).join(', ')} lub ${named[named.length - 1]}`;
+}
+
+/**
+ * M193/A1: opis PRODUKCJI many do logu („dodanie …" wymaga dopełniacza:
+ * „dodanie 1 many niebieskiej", nie „…manę niebieską"). Trzymany obok
+ * manaEffectLabel, bo obie warstwy opisują ten sam deskryptor (L41).
+ */
+const MANA_COLOR_NAMES_GEN = Object.freeze({
+  W: 'białej', U: 'niebieskiej', B: 'czarnej', R: 'czerwonej', G: 'zielonej',
+});
+
+/** Dopełniacz liczby mnogiej: „2 many zielonych" (Moonscarred Werewolf). */
+const MANA_COLOR_NAMES_GEN_PL = Object.freeze({
+  W: 'białych', U: 'niebieskich', B: 'czarnych', R: 'czerwonych', G: 'zielonych',
+});
+
+export function manaProducedLabel(amount, colors) {
+  const single = amount === 1;
+  const count = `${amount} many`;
+  if (isAnyColorMana(colors)) return `dodanie ${count} dowolnego koloru do puli`;
+  if (!colors?.length) return `dodanie ${count} ${single ? 'bezbarwnej' : 'bezbarwnych'} do puli`;
+  // Liczba pojedyncza idzie w dopełniaczu („1 many zielonej"), mnoga w
+  // dopełniaczu liczby mnogiej („2 many zielonych") — CR nie reguluje polskiej
+  // fleksji, ale gracz czyta zdanie, nie tabelę.
+  const named = colors
+    .map((c) => (single ? MANA_COLOR_NAMES_GEN[c] : MANA_COLOR_NAMES_GEN_PL[c]))
+    .filter(Boolean);
+  if (named.length !== colors.length) {
+    return `dodanie ${count} do puli (${colors.map((c) => `{${c}}`).join(', ')})`;
+  }
+  const list = named.length === 1
+    ? named[0]
+    : `${named.slice(0, -1).join(', ')} lub ${named[named.length - 1]}`;
+  return `dodanie ${count} ${list} do puli`;
+}
+
 /** Opis efektu `add_mana`: bezbarwna / dowolnego koloru / konkretne kolory. */
 export function manaEffectLabel(effect) {
   const amount = effect?.amount ?? 1;
-  const count = amount === 1 ? '1 manę' : `${amount} many`;
+  const single = amount === 1;
+  const count = single ? '1 manę' : `${amount} many`;
   if (isAnyColorMana(effect?.colors)) return `dodaj ${count} dowolnego koloru`;
   const colors = effect?.colors ?? [];
   if (colors.length === 0) return `dodaj ${count} bezbarwną`;
-  return `dodaj ${count} (${colors.map((c) => `{${c}}`).join(', ')})`;
+  // M193/A1: „dodaj 1 manę niebieską lub czarną" zamiast „dodaj 1 manę ({U}, {B})".
+  return `dodaj ${count} ${manaColorsLabel(colors, single)}`;
 }
 
 /** Odmiana polska rzeczownika wg liczby: (1 → one, 2-4 → few, 5+ → many). */
@@ -782,6 +844,11 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
               const named = e.grantKeywords.map((k) => KEYWORD_EVENT_LABELS[k] ?? k).join(', ');
               return `nadanie do końca tury: ${named}`;
             }
+            // M193/A1: gdy zdarzenie niesie KOLORY many, pełny opis produkcji
+            // („dodanie 1 many niebieskiej lub czarnej do puli") powstaje niżej.
+            // Bez tego wyjątku log sklejał dwa opisy tego samego efektu:
+            // „… — dodanie many do puli — dodanie 1 many niebieskiej …".
+            if (type === 'add_mana' && e.manaColors?.length) return null;
             return ABILITY_EFFECT_LABELS[type];
           })
           .filter(Boolean)
@@ -794,17 +861,23 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         // a zdolność daje JEDNĄ manę dowolnego koloru. Pięć kolorów w
         // deskryptorze = „dowolny kolor" (CR 106.6) — mówimy to wprost;
         // konkretny zestaw (Jeskai Devotee: {U}/{R}/{W}) nadal wymieniamy.
-        const manaPart = (e.manaColors?.length)
-          ? (isAnyColorMana(e.manaColors)
-            ? ` (${e.manaAmount ?? 1} mana dowolnego koloru)`
-            : ` (${e.manaColors.map((color) => `{${color}}`).join(', ')})`)
+        // M193/A1 (uwaga właściciela, Dismal Backwater): także KONKRETNE
+        // kolory nazywamy po polsku — „dodanie 1 many niebieskiej lub czarnej
+        // do puli" zamiast „dodanie many do puli ({U}, {B})". Symbole to
+        // żargon; gracz czyta zdanie. Opis liczby+koloru bierzemy z tego
+        // samego miejsca co panel (L41), więc obie warstwy nie mogą się
+        // rozjechać.
+        const manaLabel = (e.manaColors?.length)
+          ? manaProducedLabel(e.manaAmount ?? 1, e.manaColors)
           : '';
+        const manaPart = manaLabel && desc ? `, ${manaLabel}` : '';
         // M153/A1: Station — nazwa zatapianego INNEGO stwora (koszt
         // tapOtherCreature), albo Morph, gdy zakryty (CR 708.2).
         const stationPart = e.stationTappedCreatureId
           ? ` (tapuje: ${nameOfObject(e.stationTappedCreatureId)})`
           : '';
-        return `${whoN(e.playerId)} aktywuje zdolność: ${sourceName}${desc ? ` — ${desc}` : ''}${manaPart}${xPart}${targets ? ` → cel: ${targets}` : ''}${crewPart}${stationPart}`;
+        const effectDesc = desc || manaLabel;
+        return `${whoN(e.playerId)} aktywuje zdolność: ${sourceName}${effectDesc ? ` — ${effectDesc}` : ''}${manaPart}${xPart}${targets ? ` → cel: ${targets}` : ''}${crewPart}${stationPart}`;
       }
       // D (2026-08-11): zdolność aktywowana rozstrzygnięta ze stosu.
       case 'ability_resolved': {

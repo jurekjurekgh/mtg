@@ -95,13 +95,18 @@ test('M190/A2: log mówi o JEDNEJ manie dowolnego koloru, nie o pięciu', () => 
     `opis mówi wprost o manie dowolnego koloru: ${JSON.stringify(line)}`);
 });
 
-test('M190/A2b: mana o wybranych kolorach nadal wymienia symbole (kontrola)', () => {
+test('M190/A2b: mana o wybranych kolorach nadal wymienia kolory (kontrola)', () => {
+  // M193/A1 zmienil KONTRAKT opisu: konkretne kolory nazywamy po polsku
+  // („niebieskiej, czerwonej lub bialej") zamiast symbolami („{U}, {R}, {W}").
+  // Intencja tego testu zostaje: zdolnosc o TRZECH kolorach nie moze byc
+  // opisana jak „dowolny kolor" (kontrola anty-over-fix dla M150/C2).
   const line = String(describeGameEvent({
     type: 'ability_activated', playerId: 'p1', cardId: 'jeskai-devotee',
     sourceId: 'dev', effectTypes: ['add_mana'], manaColors: ['U', 'R', 'W'], manaAmount: 1,
   }, HELPERS, NAMES));
-  assert.match(line, /\{U\}, \{R\}, \{W\}/,
+  assert.match(line, /niebieskiej, czerwonej lub białej/,
     `M150/C2 bez regresji — konkretne kolory nadal widoczne: ${JSON.stringify(line)}`);
+  assert.ok(!/dowolnego koloru/i.test(line), 'trzy kolory to nie „dowolny kolor"');
 });
 
 test('M190/A2c: REALNA aktywacja Heap Gate — log bez listy pięciu symboli', () => {
@@ -123,7 +128,7 @@ test('M190/A2c: REALNA aktywacja Heap Gate — log bez listy pięciu symboli', (
   const line = String(describeGameEvent(activated, HELPERS, NAMES));
   assert.ok(!line.includes('{W}, {U}, {B}, {R}, {G}'),
     `log nie wymienia pięciu symboli: ${JSON.stringify(line)}`);
-  assert.match(line, /1 mana dowolnego koloru/, `log mówi wprost: ${JSON.stringify(line)}`);
+  assert.match(line, /1 many dowolnego koloru/, `log mówi wprost: ${JSON.stringify(line)}`);
 });
 
 // ---- B: Undercity to GRAF pokoi, nie lista 1..9 --------------------------

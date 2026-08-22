@@ -1373,7 +1373,9 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         cost: { tap: true },
-        effect: { type: 'add_mana', amount: 1 },
+        // M193/A: kolor WPROST z Oracle („{T}: Add {G}") — dotad kolor znala
+        // wylacznie reczna mapa MANA_SOURCE_MAP, a deskryptor milczal.
+        effect: { type: 'add_mana', amount: 1, colors: ['G'] },
       }),
       createAbility({
         type: ABILITY_TYPE.triggered,
@@ -1399,7 +1401,8 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         cost: { tap: true },
-        effect: { type: 'add_mana', amount: 2 },
+        // M193/A: Oracle „{T}: Add {G}{G}" — dwie many ZIELONE (kolor z danych).
+        effect: { type: 'add_mana', amount: 2, colors: ['G'] },
       }),
       createAbility({
         type: ABILITY_TYPE.triggered,
@@ -4162,6 +4165,14 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         type: ABILITY_TYPE.triggered,
         trigger: { event: 'enter_battlefield' },
         effect: [{ type: 'fertile_thicket_reveal' }],
+      }),
+      // M193/A: Oracle „{T}: Add {G}" — zdolnosci many NIE BYLO w danych ani
+      // w MANA_SOURCE_MAP, wiec land byl zrodlem bezbarwnym: dokladnie objaw
+      // ze zgloszenia wlasciciela (pip {G} nie do oplacenia).
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['G'] },
       }),
     ],
     artId: 273, plan: 'Zendikar',
@@ -8851,7 +8862,10 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         cost: { tap: true },
-        effect: { type: 'add_mana', amount: 1 },
+        // M193/A: Oracle „{T}: Add {G} or one mana of the chosen color" —
+        // baza {G} w deskryptorze; wybrany kolor doklada getSourceForObject
+        // z pola `chosenColor` obiektu gry (ustawianego przy wejsciu).
+        effect: { type: 'add_mana', amount: 1, colors: ['G'] },
       }),
     ],
     artId: 217, plan: 'Forgotten Realms',

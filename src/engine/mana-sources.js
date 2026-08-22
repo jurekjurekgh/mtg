@@ -64,6 +64,67 @@ export function getManaSourceInfo(cardId) {
 }
 
 /**
+ * M193/A (zgloszenie wlasciciela, Dismal Backwater): kolory many, ktore obiekt
+ * produkuje ZA SAMO {T}, odczytane z DESKRYPTOROW jego zdolnosci.
+ *
+ * Root cause zgloszenia: kolory zrodel many mialy DWA zrodla prawdy — dane
+ * karty (`{ type: 'add_mana', colors: [...] }`, wprost z Oracle) i reczna mapa
+ * MANA_SOURCE_MAP ponizej. Silnik czytal wylacznie mape, wiec kazda karta,
+ * ktorej autor do niej nie dopisal, po cichu produkowala mane BEZBARWNA:
+ * koszty generyczne dzialaly, a pipy kolorowe nie mialy z czego byc oplacone
+ * i oferta rzutu w ogole nie powstawala (klasa L14/L41 — dwie kopie tej samej
+ * reguly rozjezdzaja sie w ciszy). Dotknelo to Dismal Backwater ({U}/{B}),
+ * Balamb Garden ({G}/{U}) i Heap Gate.
+ *
+ * Warunek kosztu jest istotny: liczymy WYLACZNIE zdolnosci o koszcie samego
+ * {T} (albo bezkosztowe), bo tylko takich uzywa auto-tap platnosci. Zdolnosc
+ * z kosztem many (Heap Gate „{1},{T}: Add one mana of any color") nie moze
+ * podnosic kolorow dostepnych „od reki" — inaczej silnik zaoferowalby czar,
+ * ktorego nie da sie oplacic (odwrotny bug tej samej klasy, L48).
+ */
+export function manaAbilityColors(gameObject) {
+  const colors = [];
+  let found = false;
+  for (const ability of gameObject?.abilities ?? []) {
+    if (ability?.type !== 'activated') continue;
+    const cost = ability.cost ?? {};
+    // Koszt musi byc pusty albo skladac sie z samego {T} — kazdy dodatkowy
+    // skladnik (mana, poswiecenie, tapniecie innego permanentu) czyni
+    // produkcje warunkowa, a wiec niedostepna dla auto-tapu.
+    const extraCostKeys = Object.keys(cost).filter((key) => key !== 'tap' && cost[key]);
+    if (extraCostKeys.length > 0) continue;
+    const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+    for (const effect of effects) {
+      if (effect?.type !== 'add_mana') continue;
+      found = true;
+      for (const color of effect.colors ?? []) if (!colors.includes(color)) colors.push(color);
+    }
+  }
+  return found ? colors : null;
+}
+
+/**
+ * M193/A: ILE many produkuje zdolnosc o koszcie samego {T} (Moonscarred
+ * Werewolf: „{T}: Add {G}{G}" → 2). Czytane z tego samego deskryptora co
+ * kolory, zeby ilosc i kolor nie mogly sie rozjechac.
+ */
+export function manaAbilityAmount(gameObject) {
+  let total = null;
+  for (const ability of gameObject?.abilities ?? []) {
+    if (ability?.type !== 'activated') continue;
+    const cost = ability.cost ?? {};
+    const extraCostKeys = Object.keys(cost).filter((key) => key !== 'tap' && cost[key]);
+    if (extraCostKeys.length > 0) continue;
+    const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+    for (const effect of effects) {
+      if (effect?.type !== 'add_mana') continue;
+      total = Math.max(total ?? 0, effect.amount ?? 1);
+    }
+  }
+  return total;
+}
+
+/**
  * Kolory podstawowych typów landów (CR 305.6): Plains → {W}, Island → {U},
  * Swamp → {B}, Mountain → {R}, Forest → {G}. Kolor produkcji lądu wynika
  * z jego PODTYPÓW podstawowych — także tymczasowo nadanych (typeGrant,
@@ -93,6 +154,21 @@ export function getSourceForObject(gameObject, state = null) {
     if (subtypeColors.length > 0) {
       return { id: gameObject.id, cardId, colors: subtypeColors, amount: 1 };
     }
+  }
+  // M193/A: DESKRYPTOR zdolnosci karty ma pierwszenstwo przed reczna mapa —
+  // to dane wprost z Oracle, wiec nie da sie ich zapomniec przy nowej karcie.
+  // Mapa zostaje dla kart BEZ zdolnosci many w danych (produkcja implikowana:
+  // basicki, Great Furnace „{T}: Add {R}" jako caly tekst karty) oraz dla
+  // przypadkow, ktorych deskryptor nie wyraza (tron Urzy, Holdout Settlement).
+  const abilityColors = manaAbilityColors(gameObject);
+  if (abilityColors) {
+    const amount = manaAbilityAmount(gameObject) ?? 1;
+    // Kolor wybrany przy wejsciu (Manor Gate: „or one mana of the chosen
+    // color") dokladamy tak samo jak w galezi mapy.
+    const colors = gameObject.chosenColor
+      ? [...new Set([...abilityColors, gameObject.chosenColor])]
+      : abilityColors;
+    return { id: gameObject.id, cardId, colors, amount };
   }
   // Batch 46 (Manor Gate): „{T}: Add {G} or one mana of the chosen color."
   // Kolor wybrany przy wejściu (chosenColor) DOKŁADA się do kolorów bazowych

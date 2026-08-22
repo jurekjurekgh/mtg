@@ -15,10 +15,12 @@ test('C2: log aktywacji add_mana pokazuje kolory many (Jeskai Devotee)', () => {
     effectTypes: ['add_mana'], manaColors: ['U', 'R', 'W'],
   };
   const text = describeGameEvent(e, helpers, NAMES);
-  assert.match(text, /dodanie many do puli/);
-  assert.match(text, /\{U\}/);
-  assert.match(text, /\{R\}/);
-  assert.match(text, /\{W\}/);
+  // M193/A1 (uwaga wlasciciela): kolory nazywamy po polsku — symbole {U}/{R}/{W}
+  // to zargon. Intencja testu (log NIE milczy o kolorze) bez zmian.
+  assert.match(text, /dodanie/);
+  assert.match(text, /niebieskiej/);
+  assert.match(text, /czerwonej/);
+  assert.match(text, /białej/);
   // helper testowy zwraca surowe cardId (małymi literami) — w sesji nameOf
   // poda „Jeskai Devotee\"; tu wystarczy, że nazwa źródła się pojawia.
   assert.match(text, /jeskai-devotee/);
@@ -32,4 +34,6 @@ test('C2: aktywacja bez kolorów many nie dodaje szumu do logu', () => {
   const text = describeGameEvent(e, helpers, NAMES);
   assert.match(text, /dodanie many do puli/);
   assert.doesNotMatch(text, /\{U\}|\{R\}|\{W\}|\{B\}|\{G\}/);
+  // Zrodlo bez kolorow (Seer's Lantern, „{T}: Add {C}") — bez nazw kolorow.
+  assert.doesNotMatch(text, /niebiesk|czerwon|biał|czarn|zielon/);
 });
