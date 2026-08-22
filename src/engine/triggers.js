@@ -980,7 +980,7 @@ export function resolveTriggerEntry(state, entry) {
   // docelowy, raportujemy jako zwykłe rozstrzygnięcie.
   const producedNothing = state.events.length === beforeEffects;
   const noOpByState = producedNothing
-    && applyTriggerEffectsWereNoOp(state, payload.ability, payload.targets ?? []);
+    && applyTriggerEffectsWereNoOp(state, payload.ability, payload.targets ?? [], source);
   const resolved = event('trigger_resolved', {
     objectId: entry.id, cardId: entry.cardId,
     trigger: payload.ability?.trigger?.event ?? null,
@@ -1002,14 +1002,16 @@ const STATE_IDEMPOTENT_EFFECTS = Object.freeze({
   untap_permanent: (object) => object?.tapped === false,
 });
 
-function applyTriggerEffectsWereNoOp(state, ability, targets) {
+function applyTriggerEffectsWereNoOp(state, ability, targets, source) {
   const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
   const relevant = effects.filter(Boolean);
   if (relevant.length === 0) return false;
   return relevant.every((effect) => {
     const predicate = STATE_IDEMPOTENT_EFFECTS[effect.type];
     if (!predicate) return false;
-    const targetId = targets[effect.targetIndex ?? 0];
+    // Efekt bez jawnego celu działa na ŹRÓDŁO (Steelfin Whale, Midnight
+    // Guard: „untap this creature") — tak samo jak w applyEffect.
+    const targetId = targets[effect.targetIndex ?? 0] ?? source?.id ?? null;
     const target = targetId != null ? state.objects.get(targetId) : null;
     return Boolean(target && target.zone === 'battlefield' && predicate(target));
   });

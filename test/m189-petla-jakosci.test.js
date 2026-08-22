@@ -103,3 +103,28 @@ test('Z2d: opis „no_result" nie sugeruje błędu, tylko brak zmiany stanu', ()
   assert.ok(!line.includes('zerowy wynik'),
     `komunikat po polsku, bez żargonu implementacji: ${JSON.stringify(line)}`);
 });
+
+test('Z2e: untap WŁASNEGO źródła, które jest już odkręcone, to też no-op', () => {
+  // Transkrypt audyt-m187/g8: Steelfin Whale („whenever an artifact you
+  // control enters, untap this creature") stał odkręcony, a każdy wchodzący
+  // artefakt produkował „trigger bez efektu". Efekt bez jawnego celu działa
+  // na ŹRÓDŁO — pierwsza wersja naprawy czytała wyłącznie `targets`.
+  const state = game('p2');
+  putCard(state, 'whale', 'steelfin-whale', 'p2', 'battlefield', {});
+  putCard(state, 'art', 'bladed-sentinel', 'p2', 'hand');
+  addMana(state, 'p2', 6, { colors: ['U', 'U', 'U', 'U', 'U', 'U'] });
+  const cast = playerView(state, 'p2').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'art');
+  assert.ok(cast, 'oferta rzutu artefaktu');
+  assert.ok(execute(state, cast).ok);
+  for (let i = 0; i < 20 && state.zones.stack.length > 0; i += 1) {
+    const pid = state.turn.priorityPlayerId;
+    const choice = playerView(state, pid).legalCommands.find((c) => c.type.startsWith('resolve_'));
+    execute(state, choice ?? { type: 'pass_priority', playerId: pid });
+  }
+  const resolved = state.events.filter((e) => e.type === 'trigger_resolved'
+    && e.cardId === 'steelfin-whale');
+  assert.ok(resolved.length > 0, 'trigger wieloryba się rozstrzygnął');
+  assert.deepEqual(resolved.filter((e) => e.noEffect).map((e) => e.reason), [],
+    'odkręcony stwór + untap = legalny no-op, nie „brak efektu\"');
+});
