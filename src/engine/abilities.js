@@ -44,6 +44,20 @@ function collectManaColors(effects) {
 }
 
 /**
+ * M190/A2 (uwaga właściciela, Heap Gate): ILE many produkuje zdolność.
+ * Bez tego log nie odróżniał „1 mana dowolnego koloru" od pięciu — warstwa
+ * opisu musi dostać dane, których sama nie odtworzy (L6).
+ */
+function collectManaAmount(effects) {
+  let total = 0;
+  for (const effect of effects ?? []) {
+    if (effect?.type !== 'add_mana') continue;
+    total += effect.amount ?? 1;
+  }
+  return total;
+}
+
+/**
  * M175/A1 (uwaga wlasciciela, Death-Hood Cobra): keywordy nadawane przez
  * zdolnosc — do zdarzenia `ability_activated`, zeby log stolu nazwal KONKRET
  * („nadanie do konca tury: zasieg"), a nie ogolnik „nadanie slow kluczowych".
@@ -1491,7 +1505,7 @@ export function performActivation(state, ctx) {
     keyword: ability.keyword ?? null,
     effectTypes: effectList.map((e) => e?.type).filter(Boolean),
     // M150/C2: kolory wyprodukowanej many (Jeskai Devotee) w logu.
-    ...(manaColors.length ? { manaColors } : {}),
+    ...(manaColors.length ? { manaColors, manaAmount: collectManaAmount(effectList) } : {}),
     // M175/A1: konkretne keywordy grantu — log nazywa je po polsku.
     ...(grantKeywords.length ? { grantKeywords } : {}),
     // M73d (F): targets tylko dla zdolności z celami (spójnie z queue...).

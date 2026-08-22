@@ -144,6 +144,31 @@ function defaultBotFactory(seed, ctx) {
  * zdarzeń-dubletów (pomijanych w logu) albo surowy typ, gdy brak opisu —
  * KAŻDY nowy typ zdarzenia powinien dostać case (uwagi A/D 2026-08-10).
  */
+/**
+ * M190/A+A2 (uwagi właściciela, Heap Gate). Pięć kolorów w deskryptorze
+ * `add_mana` to „add one mana of any color" (CR 106.6), a nie pięć różnych
+ * many. Rozpoznanie i opis trzymamy w JEDNYM miejscu — używa ich etykieta
+ * oferty w panelu (render.js) i log stołu (L41: dwie kopie tej samej reguły
+ * rozjeżdżają się cicho).
+ */
+export const ALL_MANA_COLORS = Object.freeze(['W', 'U', 'B', 'R', 'G']);
+
+export function isAnyColorMana(colors) {
+  const list = colors ?? [];
+  return list.length === ALL_MANA_COLORS.length
+    && ALL_MANA_COLORS.every((color) => list.includes(color));
+}
+
+/** Opis efektu `add_mana`: bezbarwna / dowolnego koloru / konkretne kolory. */
+export function manaEffectLabel(effect) {
+  const amount = effect?.amount ?? 1;
+  const count = amount === 1 ? '1 manę' : `${amount} many`;
+  if (isAnyColorMana(effect?.colors)) return `dodaj ${count} dowolnego koloru`;
+  const colors = effect?.colors ?? [];
+  if (colors.length === 0) return `dodaj ${count} bezbarwną`;
+  return `dodaj ${count} (${colors.map((c) => `{${c}}`).join(', ')})`;
+}
+
 /** Odmiana polska rzeczownika wg liczby: (1 → one, 2-4 → few, 5+ → many). */
 function polishPlural(n, one, few, many) {
     const mod10 = n % 10;
@@ -755,8 +780,15 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         // M150/C2: zdolność dodająca manę (Jeskai Devotee „{1}: Add {U}, {R},
         // or {W}\") loguje też, JAKĄ manę produkuje — „dodanie many do puli
         // ({U}, {R}, {W})” zamiast milczeć o kolorze (uwaga właściciela).
+        // M190/A2 (uwaga właściciela, Heap Gate): lista PIĘCIU symboli
+        // („{W}, {U}, {B}, {R}, {G}") czytała się jak pięć dodanych many,
+        // a zdolność daje JEDNĄ manę dowolnego koloru. Pięć kolorów w
+        // deskryptorze = „dowolny kolor" (CR 106.6) — mówimy to wprost;
+        // konkretny zestaw (Jeskai Devotee: {U}/{R}/{W}) nadal wymieniamy.
         const manaPart = (e.manaColors?.length)
-          ? ` (${e.manaColors.map((color) => `{${color}}`).join(', ')})`
+          ? (isAnyColorMana(e.manaColors)
+            ? ` (${e.manaAmount ?? 1} mana dowolnego koloru)`
+            : ` (${e.manaColors.map((color) => `{${color}}`).join(', ')})`)
           : '';
         // M153/A1: Station — nazwa zatapianego INNEGO stwora (koszt
         // tapOtherCreature), albo Morph, gdy zakryty (CR 708.2).

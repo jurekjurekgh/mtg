@@ -8,6 +8,7 @@ import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import {
   PLAYER_NAMES, HUMAN_ID, commandOptionKey, TRIGGER_EVENT_LABELS,
   FACE_DOWN_LABEL, faceDownName,
+  manaEffectLabel,
 } from './session.js';
 import { escapeHtml, manaCostHtml } from './mana-icons.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
@@ -831,7 +832,12 @@ function describeEffect(e) {
     sacrifice_permanent: () => 'poświęć ten permanent',
     grant_keywords_until_end_of_turn: () => `zdobądź ${(e.keywords ?? []).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')} do końca tury`,
     // M73c: pełna mapa pozostałych typów — koniec „efekt." i surowych slugów.
-    add_mana: () => 'dodaj manę',
+    // M190/A (uwaga właściciela, Heap Gate): obie zdolności many miały
+    // identyczny opis („dodaj manę"), więc w panelu różniły się wyłącznie
+    // kosztem. Deskryptor niesie `colors` — opisujemy go wprost:
+    // pięć kolorów = „dowolnego koloru" (CR: „add one mana of any color"),
+    // brak listy = mana bezbarwna ({C}), konkretna lista = te kolory.
+    add_mana: () => manaEffectLabel(e),
     add_flying_counter_to_face_down_you_control: () => 'połóż licznik flying na zakrytych stworach',
     amass: () => 'amass (stwórz/rozrośnij Armię)',
     animate_linked: () => 'animuj do końca tury',
