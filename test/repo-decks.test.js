@@ -36,9 +36,9 @@ test('M178: talia Innistrad streszcza się przewidywalnie (kolory i landy)', () 
   const registry = createCardRegistry();
   const deck = parseDeckText(fs.readFileSync('decks/innistrad.txt', 'utf8'), registry);
   const summary = summarizeDeck(deck.cardIds, registry);
-  assert.equal(summary.spells, 31, '31 wspieranych kart planu Innistrad');
-  assert.equal(summary.lands, 16, 'ceil(31/2) = 16 landów');
-  assert.equal(summary.total, 47);
+  assert.equal(summary.spells, 32, '32 wspierane karty planu Innistrad (Batch 43: Tireless Hauler)');
+  assert.equal(summary.lands, 16, 'ceil(32/2) = 16 landów');
+  assert.equal(summary.total, 48);
 });
 
 test('M178 (ADR 0023): każda wspierana karta jest w DOKŁADNIE jednej talii', () => {

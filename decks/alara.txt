@@ -3,6 +3,7 @@
 1x Unstable Frontier
 1x Akrasan Squire
 1x Bone Splinters
+1x Dispeller's Capsule
 1x Wretched Banquet
 1x Esper Stormblade
 1x Etherium Sculptor
@@ -19,7 +20,7 @@
 1x Gorger Wurm
 1x Fiery Fall
 3x Plains
-2x Island
+3x Island
 2x Swamp
 1x Mountain
 1x Forest

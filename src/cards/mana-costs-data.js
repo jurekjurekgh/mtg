@@ -339,4 +339,10 @@ export const MANA_COSTS = {
   "downwind-ambusher": "{3}{B}",
   "predators-gambit": "{B}",
   "halo-forager": "{1}{U}{B}",
+  "greenwood-sentinel": "{1}{G}",
+  "fleeting-distraction": "{U}",
+  "tireless-hauler": "{4}{G}",
+  "dire-strain-brawler": "{4}{G}",
+  "dispellers-capsule": "{W}",
+  "sleep-of-the-dead": "{U}",
 };

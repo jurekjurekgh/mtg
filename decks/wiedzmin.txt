@@ -1,6 +1,7 @@
 # Wiedźmin
 
 1x Curiosity
+1x Fleeting Distraction
 1x Floodhound
 1x Twiddle
 1x Village Rites
@@ -20,6 +21,6 @@
 1x Nightsnare
 1x Segmented Krotiq
 1x Howl of the Night Pack
-4x Island
+5x Island
 3x Swamp
 3x Forest

@@ -1,29 +1,59 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Tireless%20Hauler&set=mid",
-  "print": "Tireless Hauler // Dire-Strain Brawler (MID)",
+  "source": "https://api.scryfall.com/cards/named?exact=Tireless+Hauler&set=mid",
+  "print": "mid",
   "name": "Tireless Hauler // Dire-Strain Brawler",
-  "mana_cost": "{4}{G} // (brak)",
-  "cmc": 5.0,
+  "mana_cost": "{4}{G}",
+  "cmc": 5,
   "type_line": "Creature — Human Werewolf // Creature — Werewolf",
-  "oracle_text": "FRONT (Tireless Hauler, 4/5): Vigilance\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)\n\nBACK (Dire-Strain Brawler, 6/6): Vigilance\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)",
   "colors": [
     "G"
   ],
-  "color_identity": [
-    "G"
-  ],
+  "set": "mid",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/e/3e96f9a6-c215-42b1-aa02-8e6143fe5bd7.jpg?1783925578",
+    "back": "https://cards.scryfall.io/large/back/3/e/3e96f9a6-c215-42b1-aa02-8e6143fe5bd7.jpg?1783925578"
+  },
+  "pobrano": "2026-08-22",
+  "layout": "transform",
   "keywords": [
     "Vigilance",
     "Transform",
     "Daybound",
     "Nightbound"
   ],
-  "set": "mid",
+  "card_faces": [
+    {
+      "name": "Tireless Hauler",
+      "mana_cost": "{4}{G}",
+      "type_line": "Creature — Human Werewolf",
+      "oracle_text": "Vigilance\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)",
+      "power": "4",
+      "toughness": "5",
+      "colors": [
+        "G"
+      ],
+      "image_uris": {
+        "large": "https://cards.scryfall.io/large/front/3/e/3e96f9a6-c215-42b1-aa02-8e6143fe5bd7.jpg?1783925578",
+        "normal": "https://cards.scryfall.io/normal/front/3/e/3e96f9a6-c215-42b1-aa02-8e6143fe5bd7.jpg?1783925578"
+      }
+    },
+    {
+      "name": "Dire-Strain Brawler",
+      "mana_cost": "",
+      "type_line": "Creature — Werewolf",
+      "oracle_text": "Vigilance\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)",
+      "power": "6",
+      "toughness": "6",
+      "colors": [
+        "G"
+      ],
+      "image_uris": {
+        "large": "https://cards.scryfall.io/large/back/3/e/3e96f9a6-c215-42b1-aa02-8e6143fe5bd7.jpg?1783925578",
+        "normal": "https://cards.scryfall.io/normal/back/3/e/3e96f9a6-c215-42b1-aa02-8e6143fe5bd7.jpg?1783925578"
+      }
+    }
+  ],
   "collector_number": "203",
   "rarity": "common",
-  "image_uris": {
-    "front_large": "https://cards.scryfall.io/large/front/3/e/3e96f9a6-c215-42b1-aa02-8e6143fe5bd7.jpg?1783925578",
-    "back_large": "https://cards.scryfall.io/large/back/3/e/3e96f9a6-c215-42b1-aa02-8e6143fe5bd7.jpg?1783925578"
-  },
-  "pobrano": "2026-08-22"
+  "artist": "Forrest Imel"
 }

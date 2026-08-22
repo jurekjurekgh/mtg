@@ -7949,6 +7949,112 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // =========================================================================
+  // Batch 43 (10 kart, 2026-08-22) — lista właściciela (M182)
+  // Sleep of the Dead, Severed Strands, Rush of Battle, Dispeller's Capsule,
+  // Fleeting Distraction, Forced Landing, Tireless Hauler (DFC), Sea God's
+  // Scorn, Balamb Garden SeeD Academy (DFC land→vehicle), Greenwood Sentinel.
+  // Dane Oracle: docs/cards/scryfall-*.json; artId ze słownika kolekcji
+  // (tylne strony DFC mają WŁASNE wpisy: Dire-Strain Brawler 118,
+  // Balamb Garden Airborne 153).
+  // =========================================================================
+
+  // ---- Batch 43 — transza A: istniejące mechaniki ----
+
+  // 1. Greenwood Sentinel (M20) — 2/2 vigilance (french vanilla).
+  defineCard({
+    id: 'greenwood-sentinel', name: 'Greenwood Sentinel', set: 'M20',
+    types: ['Creature'], subtypes: ['Elf', 'Scout'], colors: ['G'],
+    power: 2, toughness: 2, manaCost: 2, keywords: ['vigilance'],
+    oracleText: 'Vigilance (Attacking doesn\'t cause this creature to tap.)',
+    imageUri: 'https://cards.scryfall.io/large/front/e/9/e9a1a70d-c146-453e-84c4-71cae4e0afaa.jpg?1783932966',
+    artId: 169, plan: 'Śródziemie',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Fleeting Distraction (FDN) — cantrip: cel −1/−0 do końca tury + dobierz.
+  defineCard({
+    id: 'fleeting-distraction', name: 'Fleeting Distraction', set: 'FDN',
+    types: ['Instant'], colors: ['U'], manaCost: 1,
+    oracleText: 'Target creature gets -1/-0 until end of turn.\nDraw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/0/c0b86a7b-4912-43a7-ab89-c3432385baa1.jpg?1783909081',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'pump', power: -1, toughness: 0 },
+        { type: 'draw_cards', amount: 1 },
+      ],
+    },
+    artId: 98, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Tireless Hauler // Dire-Strain Brawler (MID) — wilkołak
+  //    daybound/nightbound (wzorzec Ballista Watcher, M68/CR 708.9).
+  defineCard({
+    id: 'tireless-hauler', name: 'Tireless Hauler', set: 'MID',
+    types: ['Creature'], subtypes: ['Human', 'Werewolf'], colors: ['G'],
+    power: 4, toughness: 5, manaCost: 5, keywords: ['vigilance', 'daybound'],
+    oracleText: 'Vigilance\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)',
+    imageUri: 'https://cards.scryfall.io/large/front/3/e/3e96f9a6-c215-42b1-aa02-8e6143fe5bd7.jpg?1783925578',
+    transformTo: 'dire-strain-brawler',
+    artId: 117, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'dire-strain-brawler', name: 'Dire-Strain Brawler', set: 'MID',
+    types: ['Creature'], subtypes: ['Werewolf'], colors: ['G'],
+    power: 6, toughness: 6, manaCost: 5, keywords: ['vigilance', 'nightbound'],
+    oracleText: 'Vigilance\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)',
+    imageUri: 'https://cards.scryfall.io/large/back/3/e/3e96f9a6-c215-42b1-aa02-8e6143fe5bd7.jpg?1783925578',
+    transformTo: 'tireless-hauler',
+    artId: 118, plan: 'Innistrad',
+    support: { status: 'limited', limitations: ['tylna strona daybound/nightbound — nie można umieścić w talii'] },
+  }),
+
+  // 4. Dispeller's Capsule (ALA) — artefakt {W}; „{2}{W}, {T}, Sacrifice:
+  //    Destroy target artifact or enchantment."
+  defineCard({
+    id: 'dispellers-capsule', name: "Dispeller's Capsule", set: 'ALA',
+    types: ['Artifact'], colors: ['W'], manaCost: 1,
+    oracleText: '{2}{W}, {T}, Sacrifice this artifact: Destroy target artifact or enchantment.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/3/d3cf0771-10d6-427a-b4e5-3e1d4db14667.jpg?1783942584',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 3, colors: ['W'], tap: true, sacrificeSelf: true },
+        targets: [{ type: 'artifact_or_enchantment' }],
+        effect: { type: 'destroy_permanent' },
+      }),
+    ],
+    artId: 93, plan: 'Alara',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Sleep of the Dead (THB) — tap + jednorazowa blokada odkręcenia
+  //    (dont_untap_next_untap_step, wzorzec Wavecrash Triton); Escape
+  //    {2}{U} + wygnaj 3 inne karty z grobu (wzorzec Sweet Oblivion).
+  defineCard({
+    id: 'sleep-of-the-dead', name: 'Sleep of the Dead', set: 'THB',
+    types: ['Sorcery'], colors: ['U'], manaCost: 1,
+    oracleText: 'Tap target creature. It doesn\'t untap during its controller\'s next untap step.\nEscape—{2}{U}, Exile three other cards from your graveyard. (You may cast this card from your graveyard for its escape cost.)',
+    imageUri: 'https://cards.scryfall.io/large/front/4/0/4007572b-a6c8-4a56-b1a7-ff099189c9c0.jpg?1783931579',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'tap_permanent' },
+        { type: 'dont_untap_next_untap_step' },
+      ],
+      // Escape (CR 702.138): rzuć z grobu za {2}{U} + wygnaj 3 inne karty z grobu.
+      escape: { cost: 3, exileCount: 3 },
+    },
+    artId: 11, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+    notes: ['Escape: czar z grobu za koszt escape + wygnanie 3 innych kart z grobu; po rozstrzygnięciu wraca do grobu'],
+  }),
+
 ]);
 
 /**

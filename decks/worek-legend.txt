@@ -5,12 +5,14 @@
 1x Lab Rats
 1x Lash of the Balrog
 1x Rustwing Falcon
+1x Sleep of the Dead
 1x Soulmender
 1x Titan's Strength
 1x Angel's Feather
 1x Anthem of Champions
 1x Cuombajj Witches
 1x Garruk's Companion
+1x Greenwood Sentinel
 1x Raise the Alarm
 1x Satyr Wayfinder
 1x Setessan Skirmisher
@@ -32,7 +34,7 @@
 1x Inferno Titan
 1x Sifter Wurm
 3x Plains
-2x Island
+3x Island
 3x Swamp
 2x Mountain
 6x Forest
