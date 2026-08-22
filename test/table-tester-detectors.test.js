@@ -35,6 +35,32 @@ test('detectRawText: łapie surowy identyfikator zdarzenia (snake_case)', () => 
 // przeszedł przez detektor, bo SNAKE_CASE_EVENT wymaga DWÓCH podkreślników,
 // a identyfikatory tokenów mają jeden („token_wizard", „token_squirrel").
 // Klasa L27/L40: „0 zgłoszeń" znaczyło „nie mam takiej reguły".
+// M189/Z4 (transkrypt audyt-m187/v-b): detektor „noop" zgłaszał ofertę
+// Bone Splinters celującą we własnego stwora poświęcanego jako koszt — ale
+// to przypadek M102/U8, ROZWIĄZANY świadomie: wariant jest legalny (CR
+// 601.2c), spychany na koniec listy i etykieta SAMA ostrzega „UWAGA: czar
+// fizzluje". Zgłaszanie go co przebieg to szum, który przykrywa realne
+// znaleziska (L12: odróżniaj artefakt narzędzia od błędu produktu).
+test('detectNoopOffers: oferta z JAWNYM ostrzeżeniem o fizzlu to nie zgłoszenie', () => {
+  const found = detectNoEffectOffers([{
+    applied: true,
+    source: 'modal',
+    label: 'Rzuć: Bone Splinters (koszt B) → cel: Esper Stormblade (Ty) — poświęć Esper Stormblade (Ty) — UWAGA: czar fizzluje (cel poświęcony jako koszt)',
+    probe: { ok: true, changed: true, fizzle: true },
+  }]);
+  assert.deepEqual(found, [], `ostrzeżona oferta nie jest zgłoszeniem: ${JSON.stringify(found)}`);
+});
+
+test('detectNoopOffers: fizzle BEZ ostrzeżenia nadal zgłaszany (kontrola)', () => {
+  const found = detectNoEffectOffers([{
+    applied: true,
+    source: 'panel',
+    label: 'Rzuć: Shatter → cel: Bladed Sentinel',
+    probe: { ok: true, changed: true, fizzle: true },
+  }]);
+  assert.equal(found.length, 1, 'realny fizzle bez ostrzeżenia nadal łapany');
+});
+
 // M189/Z3 (transkrypt audyt-m187/g13): „Wybierz: Cel (7 opcji)" pochodziło
 // z Cuombajj Witches — `resolve_opponent_target`, czyli OBOWIĄZKOWEJ decyzji
 // wskazania celu (CR 601.2c). Ptaszek wyciszenia się jej nie należy (gracz

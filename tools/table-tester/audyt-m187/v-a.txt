@@ -1,0 +1,622 @@
+== NOWA PARTIA: gracz=theros vs bot=ravnica, seed=91, profil=defensive, policy-seed=17, tick-rate=0.25 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Anthem of Champions
+  [ROZGRYWKA]   • Dobierasz: Returned Centaur
+  [ROZGRYWKA]   • Dobierasz: Sleep of the Dead
+  [ROZGRYWKA]   • Dobierasz: Sea God's Scorn
+  [ROZGRYWKA]   • Dobierasz: Breaching Hippocamp
+  [ROZGRYWKA]   • Dobierasz: Glaring Aegis
+  [ROZGRYWKA]   • Dobierasz: Feral Invocation
+  >> Wybierz: Karty na spód biblioteki (mulligan) (7 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (1): Anthem of Champions Mulligan — odłóż na spód (1): Returned Centaur Mulligan — odłóż na spód (1): Sleep of the Dead Mulligan — odłóż na spód (1): Sea God's Scorn Mulligan — odłóż na spód (1): Breaching Hippocamp Mulligan — odłóż na spód (1): Glaring Aegis Mulligan — odłóż na spód (1): Feral Invocation
+  [modal choice]   ▶ Mulligan — odłóż na spód (1): Anthem of Champions
+  [modal choice]     Mulligan — odłóż na spód (1): Returned Centaur
+  [modal choice]     Mulligan — odłóż na spód (1): Sleep of the Dead
+  [modal choice]     Mulligan — odłóż na spód (1): Sea God's Scorn
+  [modal choice]     Mulligan — odłóż na spód (1): Breaching Hippocamp
+  [modal choice]     Mulligan — odłóż na spód (1): Glaring Aegis
+  [modal choice]     Mulligan — odłóż na spód (1): Feral Invocation
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Satyr Wayfinder
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Anthem of Champions
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Setessan Skirmisher
+  [ROZGRYWKA]   • Dobierasz: Returned Centaur
+  >> Wybierz: Karty na spód biblioteki (mulligan) (21 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (2): Satyr Wayfinder, Island Mulligan — odłóż na spód (2): Satyr Wayfinder, Mountain Mulligan — odłóż na spód (2): Satyr Wayfinder, Anthem of Champions Mulligan — odłóż na spód (2): Satyr Wayfinder, Swamp Mulligan — odłóż na spód (2): Satyr Wayfinder, Setessan Skirmisher Mulligan — odłóż na spód (2): Satyr Wayfinder, Returned Centaur Mulligan — odłóż na spód (2): Island, Mountain Mulligan — odłóż na spód (2): Island, Anthem of Champions Mulligan — odłóż na spód (2): Island, Swamp Mulligan — odłóż na spód (2): Island, Setessan Skirmisher Mulligan — odłóż na spód (2): Island, Returned Centaur Mulligan — odłóż na spód (2): Mountain, Anthem of Champions Mulligan — odłóż na spód (2): Mountain, Swamp Mulligan — odłóż na spód (2): Mountain, Setessan Skirmisher Mulligan — odłóż na spód (2): Mountain, Returned Centaur Mulligan — odłóż na spód (2): Anthem of Champions, Swamp Mulligan — odłóż na spód (2): Anthem of Champions, Setessan Skirmisher Mulligan — odłóż na spód (2): Anthem of Champions, Returned Centaur Mulligan — odłóż na spód (2): Swamp, Setessan Skirmisher Mulligan — odłóż na spód (2): Swamp, Returned Centaur Mulligan — odłóż na spód (2): Setessan Skirmisher, Returned Centaur
+  [modal choice]   ▶ Mulligan — odłóż na spód (2): Satyr Wayfinder, Island
+  [modal choice]     Mulligan — odłóż na spód (2): Satyr Wayfinder, Mountain
+  [modal choice]     Mulligan — odłóż na spód (2): Satyr Wayfinder, Anthem of Champions
+  [modal choice]     Mulligan — odłóż na spód (2): Satyr Wayfinder, Swamp
+  [modal choice]     Mulligan — odłóż na spód (2): Satyr Wayfinder, Setessan Skirmisher
+  [modal choice]     Mulligan — odłóż na spód (2): Satyr Wayfinder, Returned Centaur
+  [modal choice]     Mulligan — odłóż na spód (2): Island, Mountain
+  [modal choice]     Mulligan — odłóż na spód (2): Island, Anthem of Champions
+  [modal choice]     Mulligan — odłóż na spód (2): Island, Swamp
+  [modal choice]     Mulligan — odłóż na spód (2): Island, Setessan Skirmisher
+  [modal choice]     Mulligan — odłóż na spód (2): Island, Returned Centaur
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Anthem of Champions
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Swamp
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Setessan Skirmisher
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Returned Centaur
+  [modal choice]     Mulligan — odłóż na spód (2): Anthem of Champions, Swamp
+  [modal choice]     Mulligan — odłóż na spód (2): Anthem of Champions, Setessan Skirmisher
+  [modal choice]     Mulligan — odłóż na spód (2): Anthem of Champions, Returned Centaur
+  [modal choice]     Mulligan — odłóż na spód (2): Swamp, Setessan Skirmisher
+  [modal choice]     Mulligan — odłóż na spód (2): Swamp, Returned Centaur
+  [modal choice]     Mulligan — odłóż na spód (2): Setessan Skirmisher, Returned Centaur
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Setessan Skirmisher
+  [ROZGRYWKA]   • Dobierasz: Returned Centaur
+  [ROZGRYWKA]   • Dobierasz: Wavecrash Triton
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Feral Invocation
+  [ROZGRYWKA]   • Dobierasz: Inspire Awe
+  >> Wybierz: Karty na spód biblioteki (mulligan) (32 opcje)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (3): Mountain, Setessan Skirmisher, Returned Centaur Mulligan — odłóż na spód (3): Mountain, Setessan Skirmisher, Wavecrash Triton Mulligan — odłóż na spód (3): Mountain, Setessan Skirmisher, Forest Mulligan — odłóż na spód (3): Mountain, Setessan Skirmisher, Feral Invocation Mulligan — odłóż na spód (3): Mountain, Setessan Skirmisher, Inspire Awe Mulligan — odłóż na spód (3): Mountain, Returned Centaur, Wavecrash Triton Mulligan — odłóż na spód (3): Mountain, Returned Centaur, Forest Mulligan — odłóż na spód (3): Mountain, Returned Centaur, Feral Invocation Mulligan — odłóż na spód (3): Mountain, Returned Centaur, Inspire Awe Mulligan — odłóż na spód (3): Mountain, Wavecrash Triton, Forest Mulligan — odłóż na spód (3): Mountain, Wavecrash Triton, Feral Invocation Mulligan — odłóż na spód (3): Mountain, Wavecrash Triton, Inspire Awe Mulligan — odłóż na spód (3): Mountain, Forest, Feral Invocation Mulligan — odłóż na spód (3): Mountain, Forest, Inspire Awe Mulligan — odłóż na spód (3): Mountain, Feral Invocation, Inspire Awe Mulligan — odłóż na spód (3): Setessan Skirmisher, Returned Centaur, Wavecrash Triton Mulligan — odłóż na spód (3): Setessan Skirmisher, Returned Centaur, Forest Mulligan — odłóż na spód (3): Setessan Skirmisher, Returned Centaur, Feral Invocation Mulligan — odłóż na spód (3): Setessan Skirmisher, Returned Centaur, Inspire Awe Mulligan — odłóż na spód (3): Setessan Skirmisher, Wavecrash Triton, Forest Mulligan — odłóż na spód (3): Setessan Skirmisher, Wavecrash Triton, Feral Invocation Mulligan — odłóż na spód (3): Setessan Skirmisher, Wavecrash Triton, Inspire Awe Mulligan — odłóż na spód (3): Setessan Skirmisher, Forest, Feral Invocation Mulligan — odłóż na spód (3): Setessan Skirmisher, Forest, Inspire Awe Mulligan — odłóż na spód (3): Setessan Skirmisher, Feral Invocation, Inspire Awe Mulligan — odłóż na spód (3): Returned Centaur, Wavecrash Triton, Forest Mulligan — odłóż na spód (3): Returned Centaur, Wavecrash Triton, Feral Invocation Mulligan — odłóż na spód (3): Returned Centaur, Wavecrash Triton, Inspire Awe Mulligan — odłóż na spód (3): Returned Centaur, Forest, Feral Invocation Mulligan — odłóż na spód (3): Returned Centaur, Forest, Inspire Awe Mulligan — odłóż na spód (3): Returned Centaur, Feral Invocation, Inspire Awe Mulligan — odłóż na spód (3): Wavecrash Triton, Forest, Feral Invocation
+  [modal choice]   ▶ Mulligan — odłóż na spód (3): Mountain, Setessan Skirmisher, Returned Centaur
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Setessan Skirmisher, Wavecrash Triton
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Setessan Skirmisher, Forest
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Setessan Skirmisher, Feral Invocation
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Setessan Skirmisher, Inspire Awe
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Returned Centaur, Wavecrash Triton
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Returned Centaur, Forest
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Returned Centaur, Feral Invocation
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Returned Centaur, Inspire Awe
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Wavecrash Triton, Forest
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Wavecrash Triton, Feral Invocation
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Wavecrash Triton, Inspire Awe
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Forest, Feral Invocation
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Forest, Inspire Awe
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Feral Invocation, Inspire Awe
+  [modal choice]     Mulligan — odłóż na spód (3): Setessan Skirmisher, Returned Centaur, Wavecrash Triton
+  [modal choice]     Mulligan — odłóż na spód (3): Setessan Skirmisher, Returned Centaur, Forest
+  [modal choice]     Mulligan — odłóż na spód (3): Setessan Skirmisher, Returned Centaur, Feral Invocation
+  [modal choice]     Mulligan — odłóż na spód (3): Setessan Skirmisher, Returned Centaur, Inspire Awe
+  [modal choice]     Mulligan — odłóż na spód (3): Setessan Skirmisher, Wavecrash Triton, Forest
+  [modal choice]     Mulligan — odłóż na spód (3): Setessan Skirmisher, Wavecrash Triton, Feral Invocation
+  [modal choice]     Mulligan — odłóż na spód (3): Setessan Skirmisher, Wavecrash Triton, Inspire Awe
+  [modal choice]     Mulligan — odłóż na spód (3): Setessan Skirmisher, Forest, Feral Invocation
+  [modal choice]     Mulligan — odłóż na spód (3): Setessan Skirmisher, Forest, Inspire Awe
+  [modal choice]     Mulligan — odłóż na spód (3): Setessan Skirmisher, Feral Invocation, Inspire Awe
+  [modal choice]     Mulligan — odłóż na spód (3): Returned Centaur, Wavecrash Triton, Forest
+  [modal choice]     Mulligan — odłóż na spód (3): Returned Centaur, Wavecrash Triton, Feral Invocation
+  [modal choice]     Mulligan — odłóż na spód (3): Returned Centaur, Wavecrash Triton, Inspire Awe
+  [modal choice]     Mulligan — odłóż na spód (3): Returned Centaur, Forest, Feral Invocation
+  [modal choice]     Mulligan — odłóż na spód (3): Returned Centaur, Forest, Inspire Awe
+  [modal choice]     Mulligan — odłóż na spód (3): Returned Centaur, Feral Invocation, Inspire Awe
+  [modal choice]     Mulligan — odłóż na spód (3): Wavecrash Triton, Forest, Feral Invocation
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Entrancing Lyre
+  [ROZGRYWKA]   • Dobierasz: Returned Centaur
+  [ROZGRYWKA]   • Dobierasz: Satyr Wayfinder
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Titan's Strength
+  [ROZGRYWKA]   • Dobierasz: Feral Invocation
+  [ROZGRYWKA]   • Dobierasz: Breaching Hippocamp
+  >> Wybierz: Karty na spód biblioteki (mulligan) (32 opcje)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (4): Entrancing Lyre, Returned Centaur, Satyr Wayfinder, Island Mulligan — odłóż na spód (4): Entrancing Lyre, Returned Centaur, Satyr Wayfinder, Titan's Strength Mulligan — odłóż na spód (4): Entrancing Lyre, Returned Centaur, Satyr Wayfinder, Feral Invocation Mulligan — odłóż na spód (4): Entrancing Lyre, Returned Centaur, Satyr Wayfinder, Breaching Hippocamp Mulligan — odłóż na spód (4): Entrancing Lyre, Returned Centaur, Island, Titan's Strength Mulligan — odłóż na spód (4): Entrancing Lyre, Returned Centaur, Island, Feral Invocation Mulligan — odłóż na spód (4): Entrancing Lyre, Returned Centaur, Island, Breaching Hippocamp Mulligan — odłóż na spód (4): Entrancing Lyre, Returned Centaur, Titan's Strength, Feral Invocation Mulligan — odłóż na spód (4): Entrancing Lyre, Returned Centaur, Titan's Strength, Breaching Hippocamp Mulligan — odłóż na spód (4): Entrancing Lyre, Returned Centaur, Feral Invocation, Breaching Hippocamp Mulligan — odłóż na spód (4): Entrancing Lyre, Satyr Wayfinder, Island, Titan's Strength Mulligan — odłóż na spód (4): Entrancing Lyre, Satyr Wayfinder, Island, Feral Invocation Mulligan — odłóż na spód (4): Entrancing Lyre, Satyr Wayfinder, Island, Breaching Hippocamp Mulligan — odłóż na spód (4): Entrancing Lyre, Satyr Wayfinder, Titan's Strength, Feral Invocation Mulligan — odłóż na spód (4): Entrancing Lyre, Satyr Wayfinder, Titan's Strength, Breaching Hippocamp Mulligan — odłóż na spód (4): Entrancing Lyre, Satyr Wayfinder, Feral Invocation, Breaching Hippocamp Mulligan — odłóż na spód (4): Entrancing Lyre, Island, Titan's Strength, Feral Invocation Mulligan — odłóż na spód (4): Entrancing Lyre, Island, Titan's Strength, Breaching Hippocamp Mulligan — odłóż na spód (4): Entrancing Lyre, Island, Feral Invocation, Breaching Hippocamp Mulligan — odłóż na spód (4): Entrancing Lyre, Titan's Strength, Feral Invocation, Breaching Hippocamp Mulligan — odłóż na spód (4): Returned Centaur, Satyr Wayfinder, Island, Titan's Strength Mulligan — odłóż na spód (4): Returned Centaur, Satyr Wayfinder, Island, Feral Invocation Mulligan — odłóż na spód (4): Returned Centaur, Satyr Wayfinder, Island, Breaching Hippocamp Mulligan — odłóż na spód (4): Returned Centaur, Satyr Wayfinder, Titan's Strength, Feral Invocation Mulligan — odłóż na spód (4): Returned Centaur, Satyr Wayfinder, Titan's Strength, Breaching Hippocamp Mulligan — odłóż na spód (4): Returned Centaur, Satyr Wayfinder, Feral Invocation, Breaching Hippocamp Mulligan — odłóż na spód (4): Returned Centaur, Island, Titan's Strength, Feral Invocation Mulligan — odłóż na spód (4): Returned Centaur, Island, Titan's Strength, Breaching Hippocamp Mulligan — odłóż na spód (4): Returned Centaur, Island, Feral Invocation, Breaching Hippocamp Mulligan — odłóż na spód (4): Returned Centaur, Titan's Strength, Feral Invocation, Breaching Hippocamp Mulligan — odłóż na spód (4): Satyr Wayfinder, Island, Titan's Strength, Feral Invocation Mulligan — odłóż na spód (4): Satyr Wayfinder, Island, Titan's Strength, Breaching Hippocamp
+  [modal choice]   ▶ Mulligan — odłóż na spód (4): Entrancing Lyre, Returned Centaur, Satyr Wayfinder, Island
+  [modal choice]     Mulligan — odłóż na spód (4): Entrancing Lyre, Returned Centaur, Satyr Wayfinder, Titan's Strength
+  [modal choice]     Mulligan — odłóż na spód (4): Entrancing Lyre, Returned Centaur, Satyr Wayfinder, Feral Invocation
+  [modal choice]     Mulligan — odłóż na spód (4): Entrancing Lyre, Returned Centaur, Satyr Wayfinder, Breaching Hippocamp
+  [modal choice]     Mulligan — odłóż na spód (4): Entrancing Lyre, Returned Centaur, Island, Titan's Strength
+  [modal choice]     Mulligan — odłóż na spód (4): Entrancing Lyre, Returned Centaur, Island, Feral Invocation
+  [modal choice]     Mulligan — odłóż na spód (4): Entrancing Lyre, Returned Centaur, Island, Breaching Hippocamp
+  [modal choice]     Mulligan — odłóż na spód (4): Entrancing Lyre, Returned Centaur, Titan's Strength, Feral Invocation
+  [modal choice]     Mulligan — odłóż na spód (4): Entrancing Lyre, Returned Centaur, Titan's Strength, Breaching Hippocamp
+  [modal choice]     Mulligan — odłóż na spód (4): Entrancing Lyre, Returned Centaur, Feral Invocation, Breaching Hippocamp
+  [modal choice]     Mulligan — odłóż na spód (4): Entrancing Lyre, Satyr Wayfinder, Island, Titan's Strength
+  [modal choice]     Mulligan — odłóż na spód (4): Entrancing Lyre, Satyr Wayfinder, Island, Feral Invocation
+  [modal choice]     Mulligan — odłóż na spód (4): Entrancing Lyre, Satyr Wayfinder, Island, Breaching Hippocamp
+  [modal choice]     Mulligan — odłóż na spód (4): Entrancing Lyre, Satyr Wayfinder, Titan's Strength, Feral Invocation
+  [modal choice]     Mulligan — odłóż na spód (4): Entrancing Lyre, Satyr Wayfinder, Titan's Strength, Breaching Hippocamp
+  [modal choice]     Mulligan — odłóż na spód (4): Entrancing Lyre, Satyr Wayfinder, Feral Invocation, Breaching Hippocamp
+  [modal choice]     Mulligan — odłóż na spód (4): Entrancing Lyre, Island, Titan's Strength, Feral Invocation
+  [modal choice]     Mulligan — odłóż na spód (4): Entrancing Lyre, Island, Titan's Strength, Breaching Hippocamp
+  [modal choice]     Mulligan — odłóż na spód (4): Entrancing Lyre, Island, Feral Invocation, Breaching Hippocamp
+  [modal choice]     Mulligan — odłóż na spód (4): Entrancing Lyre, Titan's Strength, Feral Invocation, Breaching Hippocamp
+  [modal choice]     Mulligan — odłóż na spód (4): Returned Centaur, Satyr Wayfinder, Island, Titan's Strength
+  [modal choice]     Mulligan — odłóż na spód (4): Returned Centaur, Satyr Wayfinder, Island, Feral Invocation
+  [modal choice]     Mulligan — odłóż na spód (4): Returned Centaur, Satyr Wayfinder, Island, Breaching Hippocamp
+  [modal choice]     Mulligan — odłóż na spód (4): Returned Centaur, Satyr Wayfinder, Titan's Strength, Feral Invocation
+  [modal choice]     Mulligan — odłóż na spód (4): Returned Centaur, Satyr Wayfinder, Titan's Strength, Breaching Hippocamp
+  [modal choice]     Mulligan — odłóż na spód (4): Returned Centaur, Satyr Wayfinder, Feral Invocation, Breaching Hippocamp
+  [modal choice]     Mulligan — odłóż na spód (4): Returned Centaur, Island, Titan's Strength, Feral Invocation
+  [modal choice]     Mulligan — odłóż na spód (4): Returned Centaur, Island, Titan's Strength, Breaching Hippocamp
+  [modal choice]     Mulligan — odłóż na spód (4): Returned Centaur, Island, Feral Invocation, Breaching Hippocamp
+  [modal choice]     Mulligan — odłóż na spód (4): Returned Centaur, Titan's Strength, Feral Invocation, Breaching Hippocamp
+  [modal choice]     Mulligan — odłóż na spód (4): Satyr Wayfinder, Island, Titan's Strength, Feral Invocation
+  [modal choice]     Mulligan — odłóż na spód (4): Satyr Wayfinder, Island, Titan's Strength, Breaching Hippocamp
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Sweet Oblivion
+  [ROZGRYWKA]   • Dobierasz: Inspire Awe
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Wavecrash Triton
+  [ROZGRYWKA]   • Dobierasz: Sea God's Scorn
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Wybierz: Karty na spód biblioteki (mulligan) (16 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (5): Sweet Oblivion, Inspire Awe, Island, Island, Wavecrash Triton Mulligan — odłóż na spód (5): Sweet Oblivion, Inspire Awe, Island, Island, Sea God's Scorn Mulligan — odłóż na spód (5): Sweet Oblivion, Inspire Awe, Island, Island, Plains Mulligan — odłóż na spód (5): Sweet Oblivion, Inspire Awe, Island, Wavecrash Triton, Sea God's Scorn Mulligan — odłóż na spód (5): Sweet Oblivion, Inspire Awe, Island, Wavecrash Triton, Plains Mulligan — odłóż na spód (5): Sweet Oblivion, Inspire Awe, Island, Sea God's Scorn, Plains Mulligan — odłóż na spód (5): Sweet Oblivion, Inspire Awe, Wavecrash Triton, Sea God's Scorn, Plains Mulligan — odłóż na spód (5): Sweet Oblivion, Island, Island, Wavecrash Triton, Sea God's Scorn Mulligan — odłóż na spód (5): Sweet Oblivion, Island, Island, Wavecrash Triton, Plains Mulligan — odłóż na spód (5): Sweet Oblivion, Island, Island, Sea God's Scorn, Plains Mulligan — odłóż na spód (5): Sweet Oblivion, Island, Wavecrash Triton, Sea God's Scorn, Plains Mulligan — odłóż na spód (5): Inspire Awe, Island, Island, Wavecrash Triton, Sea God's Scorn Mulligan — odłóż na spód (5): Inspire Awe, Island, Island, Wavecrash Triton, Plains Mulligan — odłóż na spód (5): Inspire Awe, Island, Island, Sea God's Scorn, Plains Mulligan — odłóż na spód (5): Inspire Awe, Island, Wavecrash Triton, Sea God's Scorn, Plains Mulligan — odłóż na spód (5): Island, Island, Wavecrash Triton, Sea God's Scorn, Plains
+  [modal choice]   ▶ Mulligan — odłóż na spód (5): Sweet Oblivion, Inspire Awe, Island, Island, Wavecrash Triton
+  [modal choice]     Mulligan — odłóż na spód (5): Sweet Oblivion, Inspire Awe, Island, Island, Sea God's Scorn
+  [modal choice]     Mulligan — odłóż na spód (5): Sweet Oblivion, Inspire Awe, Island, Island, Plains
+  [modal choice]     Mulligan — odłóż na spód (5): Sweet Oblivion, Inspire Awe, Island, Wavecrash Triton, Sea God's Scorn
+  [modal choice]     Mulligan — odłóż na spód (5): Sweet Oblivion, Inspire Awe, Island, Wavecrash Triton, Plains
+  [modal choice]     Mulligan — odłóż na spód (5): Sweet Oblivion, Inspire Awe, Island, Sea God's Scorn, Plains
+  [modal choice]     Mulligan — odłóż na spód (5): Sweet Oblivion, Inspire Awe, Wavecrash Triton, Sea God's Scorn, Plains
+  [modal choice]     Mulligan — odłóż na spód (5): Sweet Oblivion, Island, Island, Wavecrash Triton, Sea God's Scorn
+  [modal choice]     Mulligan — odłóż na spód (5): Sweet Oblivion, Island, Island, Wavecrash Triton, Plains
+  [modal choice]     Mulligan — odłóż na spód (5): Sweet Oblivion, Island, Island, Sea God's Scorn, Plains
+  [modal choice]     Mulligan — odłóż na spód (5): Sweet Oblivion, Island, Wavecrash Triton, Sea God's Scorn, Plains
+  [modal choice]     Mulligan — odłóż na spód (5): Inspire Awe, Island, Island, Wavecrash Triton, Sea God's Scorn
+  [modal choice]     Mulligan — odłóż na spód (5): Inspire Awe, Island, Island, Wavecrash Triton, Plains
+  [modal choice]     Mulligan — odłóż na spód (5): Inspire Awe, Island, Island, Sea God's Scorn, Plains
+  [modal choice]     Mulligan — odłóż na spód (5): Inspire Awe, Island, Wavecrash Triton, Sea God's Scorn, Plains
+  [modal choice]     Mulligan — odłóż na spód (5): Island, Island, Wavecrash Triton, Sea God's Scorn, Plains
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Setessan Skirmisher
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Breaching Hippocamp
+  [ROZGRYWKA]   • Dobierasz: Satyr Wayfinder
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Wybierz: Karty na spód biblioteki (mulligan) (6 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (6): Setessan Skirmisher, Plains, Forest, Island, Breaching Hippocamp, Satyr Wayfinder Mulligan — odłóż na spód (6): Setessan Skirmisher, Plains, Forest, Island, Breaching Hippocamp, Island Mulligan — odłóż na spód (6): Setessan Skirmisher, Plains, Forest, Island, Satyr Wayfinder, Island Mulligan — odłóż na spód (6): Setessan Skirmisher, Plains, Island, Breaching Hippocamp, Satyr Wayfinder, Island Mulligan — odłóż na spód (6): Setessan Skirmisher, Forest, Island, Breaching Hippocamp, Satyr Wayfinder, Island Mulligan — odłóż na spód (6): Plains, Forest, Island, Breaching Hippocamp, Satyr Wayfinder, Island
+  [modal choice]   ▶ Mulligan — odłóż na spód (6): Setessan Skirmisher, Plains, Forest, Island, Breaching Hippocamp, Satyr Wayfinder
+  [modal choice]     Mulligan — odłóż na spód (6): Setessan Skirmisher, Plains, Forest, Island, Breaching Hippocamp, Island
+  [modal choice]     Mulligan — odłóż na spód (6): Setessan Skirmisher, Plains, Forest, Island, Satyr Wayfinder, Island
+  [modal choice]     Mulligan — odłóż na spód (6): Setessan Skirmisher, Plains, Island, Breaching Hippocamp, Satyr Wayfinder, Island
+  [modal choice]     Mulligan — odłóż na spód (6): Setessan Skirmisher, Forest, Island, Breaching Hippocamp, Satyr Wayfinder, Island
+  [modal choice]     Mulligan — odłóż na spód (6): Plains, Forest, Island, Breaching Hippocamp, Satyr Wayfinder, Island
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Returned Centaur
+  [ROZGRYWKA]   • Dobierasz: Inspire Awe
+  [ROZGRYWKA]   • Dobierasz: Sweet Oblivion
+  [ROZGRYWKA]   • Dobierasz: Wavecrash Triton
+  [ROZGRYWKA]   • Dobierasz: Feral Invocation
+  >> Mulligan — odłóż na spód (7): Plains, Forest, Returned Centaur, Inspire Awe, Sweet Oblivion, Wavecrash Triton,
+  >> Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Glaring Aegis
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Chronic Flooding → cel: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Chronic Flooding zaczarowuje Island
+  [ROZGRYWKA]   • Chronic Flooding wchodzi na pole bitwy
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Entrancing Lyre
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Satyr Wayfinder
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Setessan Skirmisher
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Severed Strands
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  [ptaszek] wyciszam: Zagraj: Satyr Wayfinder (koszt 1G)
+  >> Zagraj: Setessan Skirmisher (koszt 1G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Setessan Skirmisher
+  [ROZGRYWKA]   • Setessan Skirmisher wchodzi na pole bitwy
+  [ROZGRYWKA]   • Setessan Skirmisher zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Liliana's Triumph → cel: Ty
+  >> Poświęć: Setessan Skirmisher (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Setessan Skirmisher zostaje poświęcony
+  [ROZGRYWKA]   • Liliana's Triumph zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Dalej (pass)
+  >> Zagraj: Satyr Wayfinder (koszt 1G)
+  [kreator many] Płatność 1G — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: GTapnij: Swamp (B)Tapnij: Forest (G)Tapnij: I — źródła: 3
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Swamp (B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 2
+  [ROZGRYWKA]   • Zagrywasz Satyr Wayfinder
+  [ROZGRYWKA]   • Satyr Wayfinder wchodzi na pole bitwy
+  [ROZGRYWKA]   • Satyr Wayfinder zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Satyr Wayfinder — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odsłaniasz 4 karty z wierzchu biblioteki (Island, Sea God's Scorn, Mountain, Titan's Strength) — może wziąć ląd do ręki
+  [ROZGRYWKA]   • Satyr Wayfinder — trigger się rozstrzyga
+  >> Weź ląd do ręki: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: Mountain — biblioteka → ręka
+  [ROZGRYWKA]   • Ty: Island — biblioteka → cmentarz
+  [ROZGRYWKA]   • Ty: Sea God's Scorn — biblioteka → cmentarz
+  [ROZGRYWKA]   • Ty: Titan's Strength — biblioteka → cmentarz
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Toll of the Invasion → cel: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odrzucasz Glaring Aegis
+  [ROZGRYWKA]   • Odrzucasz kartę z ręki
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Zombie Army (0/0)
+  [ROZGRYWKA]   • Zombie Army wchodzi na pole bitwy
+  [ROZGRYWKA]   • Zombie Army dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Toll of the Invasion zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 17 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Breaching Hippocamp
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  [ptaszek] wyciszam: Zagraj: Entrancing Lyre (koszt 3)
+  >> Dalej (pass)
+  [ptaszek] wyciszam: Zagraj: Breaching Hippocamp (koszt 3U)
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 0 z 1 stworów (profil defensive)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Ghost Warden
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ghost Warden wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ghost Warden zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Zombie Army
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Zombie Army zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 19
+  [ROZGRYWKA]   • Tura 19 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Sleep of the Dead
+  >> Zagraj: Breaching Hippocamp (koszt 3U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Breaching Hippocamp
+  [ROZGRYWKA]   • Breaching Hippocamp wchodzi na pole bitwy
+  [ROZGRYWKA]   • Breaching Hippocamp zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Breaching Hippocamp — wybierz cel triggera (wymagany)
+  >> Breaching Hippocamp — cel triggera: Satyr Wayfinder (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Breaching Hippocamp — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Breaching Hippocamp — cel: Satyr Wayfinder
+  [ROZGRYWKA]   • Breaching Hippocamp — trigger się rozstrzyga
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Początek walki
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Ghost Warden — zmiana statystyk celu → cel: Ghost Warden
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ghost Warden dostaje +1/+1
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Ghost Warden rozstrzygnięta
+  [ROZGRYWKA]   • Tura 21 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Rage of Purphoros
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 22 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Selesnya Charm — tryb: Rycerz
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Knight (2/2)
+  [ROZGRYWKA]   • Knight wchodzi na pole bitwy
+  [ROZGRYWKA]   • Selesnya Charm — tryb: Rycerz zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Początek walki
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Ghost Warden — zmiana statystyk celu → cel: Knight
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Knight dostaje +1/+1
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Ghost Warden rozstrzygnięta
+  [ROZGRYWKA]   • Tura 23 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Anthem of Champions
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 0 z 2 stworów (profil defensive)
+  [combat wizard] Zatwierdź atak
+  [ptaszek] wyciszam: Cel czaru: Sleep of the Dead (5 opcji)
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Mountain do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Withstand do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Forest do grobu
+  [ROZGRYWKA]   • Chronic Flooding — trigger się rozstrzyga
+  [ROZGRYWKA]   • Ivy Lane Denizen wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ivy Lane Denizen zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Początek walki
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Ghost Warden — zmiana statystyk celu → cel: Ivy Lane Denizen
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ivy Lane Denizen dostaje +1/+1
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Ghost Warden rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Knight
+  >> Wybierz: Deklaracja blokujących (4 opcje)
+  [combat wizard] blokuję 2 stworami: Satyr Wayfinder (1/1)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Satyr Wayfinder i Breaching Hippocamp blokują Knight
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Nieprzyjaciel rozdziela obrażenia bojowe (trample albo wielu blokerów)
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Knight zadaje 1 obrażenie (Satyr Wayfinder)
+  [ROZGRYWKA]   • Knight zadaje 1 obrażenie (Breaching Hippocamp)
+  [ROZGRYWKA]   • Satyr Wayfinder zadaje 1 obrażenie (Knight)
+  [ROZGRYWKA]   • Breaching Hippocamp zadaje 3 obrażenia (Knight)
+  [ROZGRYWKA]   • Satyr Wayfinder ginie
+  [ROZGRYWKA]   • Knight ginie
+  [ROZGRYWKA]   • token Knight przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 25 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ptaszek] wyciszam: Cel czaru: Sleep of the Dead (4 opcje)
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 0 z 1 stworów (profil defensive)
+  [combat wizard] Zatwierdź atak
+  [ptaszek] wyciszam: Cel czaru: Rage of Purphoros (4 opcje)
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ivy Lane Denizen dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Zombie Army dostaje +1 licznik +1/+1 (razem 2)
+  [ROZGRYWKA]   • Ivy Lane Denizen dostaje +1 licznik +1/+1 (razem 2)
+  [ROZGRYWKA]   • Proliferate: 2 cele dostaje dodatkowe liczniki
+  [ROZGRYWKA]   • Courage in Crisis zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Początek walki
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Ghost Warden — zmiana statystyk celu → cel: Ghost Warden
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ghost Warden dostaje +1/+1
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Ghost Warden rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Zombie Army, Ivy Lane Denizen
+  >> Wybierz: Deklaracja blokujących (3 opcje)
+  [combat wizard] blokuję 1 stworami: Breaching Hippocamp (3/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Breaching Hippocamp blokuje Ivy Lane Denizen
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Zombie Army zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 19 → 17
+  [ROZGRYWKA]   • Ivy Lane Denizen zadaje 4 obrażenia (Breaching Hippocamp)
+  [ROZGRYWKA]   • Breaching Hippocamp zadaje 3 obrażenia (Ivy Lane Denizen)
+  [ROZGRYWKA]   • Breaching Hippocamp ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 27 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Zagraj: Anthem of Champions (koszt GW)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Anthem of Champions
+  [ROZGRYWKA]   • Anthem of Champions wchodzi na pole bitwy
+  [ROZGRYWKA]   • Anthem of Champions zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Expose to Daylight → cel: Anthem of Champions
+  [ROZGRYWKA]   • Chronic Flooding — trigger (zatapnięcie zaczarowanego permanentu)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Sagittars' Volley do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Trostani Discordant do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Plains do grobu
+  [ROZGRYWKA]   • Chronic Flooding — trigger się rozstrzyga
+  [ROZGRYWKA]   • Anthem of Champions zostaje zniszczony
+  [ROZGRYWKA]   • Nieprzyjaciel wykonuje scry (patrzy na 1 kartę)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel kończy scry — odkłada na spód biblioteki (1/1)
+  [ROZGRYWKA]   • Expose to Daylight zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 28 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Trestle Troll
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Trestle Troll wchodzi na pole bitwy
+  [ROZGRYWKA]   • Trestle Troll zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Ivy Lane Denizen — trigger (wejście innego stworzenia)
+  [ROZGRYWKA]   • Ivy Lane Denizen — cel: Ivy Lane Denizen
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ivy Lane Denizen dostaje +1 licznik +1/+1 (razem 3)
+  [ROZGRYWKA]   • Ivy Lane Denizen — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Początek walki
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Ghost Warden — zmiana statystyk celu → cel: Trestle Troll
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Trestle Troll dostaje +1/+1
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Ghost Warden rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Zombie Army, Ivy Lane Denizen
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Zombie Army zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 15
+  [ROZGRYWKA]   • Ivy Lane Denizen zadaje 5 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 15 → 10
+  [ROZGRYWKA]   • Tura 29 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Zagraj: Entrancing Lyre (koszt 3)
+  [kreator many] Płatność 3 — tapuj źródła po jednympozostało 3 manyTapnij: Swamp (B)Tapnij: Forest (G)Tapnij: Island (U)Tapnij: Mountain — źródła: 7
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Entrancing Lyre
+  [ROZGRYWKA]   • Entrancing Lyre wchodzi na pole bitwy
+  [ROZGRYWKA]   • Entrancing Lyre zostaje rozstrzygnięty
+  >> Dalej (pass)
+  >> Cel zdolności: Entrancing Lyre (11 opcji)
+  [modal choice] Cel zdolności: Entrancing Lyre Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=4) → cel: Trestle Troll (Nieprzyjaciel) Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=4) → cel: Ghost Warden (Nieprzyjaciel) Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=4) → cel: Zombie Army (Nieprzyjaciel) Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=3) → cel: Trestle Troll (Nieprzyjaciel) Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=3) → cel: Ghost Warden (Nieprzyjaciel) Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=3) → cel: Zombie Army (Nieprzyjaciel) Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=2) → cel: Trestle Troll (Nieprzyjaciel) Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=2) → cel: Ghost Warden (Nieprzyjaciel) Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=2) → cel: Zombie Army (Nieprzyjaciel) Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=1) → cel: Trestle Troll (Nieprzyjaciel) Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=1) → cel: Ghost Warden (Nieprzyjaciel)
+  [modal choice]   ▶ Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=4) → cel: Trestle Troll (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=4) → cel: Ghost Warden (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=4) → cel: Zombie Army (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=3) → cel: Trestle Troll (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=3) → cel: Ghost Warden (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=3) → cel: Zombie Army (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=2) → cel: Trestle Troll (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=2) → cel: Ghost Warden (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=2) → cel: Zombie Army (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=1) → cel: Trestle Troll (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=1) → cel: Ghost Warden (Nieprzyjaciel)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Początek walki
+  [ROZGRYWKA]   • Aktywujesz zdolność: Entrancing Lyre — cel nie odtapuje podczas następnego untap kontrolera (X=4) → cel: Trestle Troll
+  [ROZGRYWKA]   • Ty: zdolność Entrancing Lyre rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 30 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Azorius Justiciar
+  [ROZGRYWKA]   • Chronic Flooding — trigger (zatapnięcie zaczarowanego permanentu)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Island do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Veiled Ascension do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Tenth District Veteran do grobu
+  [ROZGRYWKA]   • Chronic Flooding — trigger się rozstrzyga
+  [ROZGRYWKA]   • Azorius Justiciar wchodzi na pole bitwy
+  [ROZGRYWKA]   • Azorius Justiciar zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Azorius Justiciar — trigger bez efektu (brak legalnych celów)
+  [ROZGRYWKA]   • Faza: Początek walki
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Ghost Warden — zmiana statystyk celu → cel: Azorius Justiciar
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Azorius Justiciar dostaje +1/+1
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Ghost Warden rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Zombie Army, Ivy Lane Denizen
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Zombie Army zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 10 → 8
+  [ROZGRYWKA]   • Ivy Lane Denizen zadaje 5 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 8 → 3
+  [ROZGRYWKA]   • Tura 31 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Returned Centaur
+  [ptaszek] wyciszam: Cel czaru: Rage of Purphoros (5 opcji)
+  >> Zagraj: Returned Centaur (koszt 3B)
+  [kreator many] Płatność 3B — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: BTapnij: Swamp (B)Tapnij: Forest (G)Tapnij: I — źródła: 7
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Returned Centaur
+  [ROZGRYWKA]   • Returned Centaur wchodzi na pole bitwy
+  [ROZGRYWKA]   • Returned Centaur zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Returned Centaur — wybierz cel triggera (wymagany)
+  >> Returned Centaur — cel triggera (2 opcje)
+  [modal choice] Returned Centaur — cel triggera Returned Centaur — cel triggera: Nieprzyjaciel Returned Centaur — cel triggera: Ty
+  [modal choice]   ▶ Returned Centaur — cel triggera: Nieprzyjaciel
+  [modal choice]     Returned Centaur — cel triggera: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Returned Centaur — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Returned Centaur — cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Forest do grobu
+  [ROZGRYWKA]   • Returned Centaur — trigger się rozstrzyga
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 32 — Nieprzyjaciel
+== KONIEC PARTII == Koniec partii — wygrywa Gracz
+
+--- krok 99 | Koniec partii — wygrywa Gracz ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Sleep of the Dead · 1 · Sorcery · tap + nie odkręca się w następnym untap step · cel: stwór | Rage of Purphoros · 5 · Sorcery · Obrażenia 4 + nie może być regenerowany + scry 1 · cel: stwór
+  MOJE POLA: Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · choroba · 2/4 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Chronic Flooding · 2 · Enchantment Aura · Trigger zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Island | Zombie Army · 0 · Creature — Zombie Army · 2x +1/+1 · 2/2 | Ghost Warden · 2 · Creature — Spirit · {T}: cel: stwór — +1/+1 do końca tury · 1/1 | Ivy Lane Denizen · 4 · Creature — Elf Warrior · Gdy inny zielony stwór pod twoją kontrolą wchodzi na pole bitwy: połóż licznik +1/+1. · 3x +1/+1 · 5/6 | Trestle Troll · 3 · Creature — Troll · Obrońca Zasięg · {1}, {B}, {G}: Regeneruj tego stwora (następne zniszczenie zostaje odwrócone) · nie odtapuje się · 1/4 | Azorius Justiciar · 4 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: detain — do twojej następnej tury cel nie atakuje, nie blokuje i nie aktywuje zdolności. · 2/2
+  LOG: Dobierasz: Returned Centaur ⏎ Dobierasz: Anthem of Champions ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Breaching Hippocamp, Island, Sleep of the Dead, Anthem of Champions, Swamp, Inspire Awe, Wavecrash Triton ⏎ Nowa partia (seed 91). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 30, kliknięte: 36, modale: 4, sondy noop: 118 (panel 87, modal 31)
+== DETEKTORY: brak zgłoszeń ==

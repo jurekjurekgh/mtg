@@ -30,6 +30,9 @@ const PLACEHOLDER = /(^|[\s:(])\?($|[\s:),.])|undefined|NaN|\[object |null\b/;
 /** Ile razy ta sama akcja bota w jednej turze jest już podejrzana. */
 const REPEAT_THRESHOLD = 4;
 
+/** Etykieta, która sama uprzedza gracza o fizzlu (M102/U8) — nie zgłaszamy. */
+const WARNED_FIZZLE = /UWAGA:\s*czar fizzluje/i;
+
 function push(out, category, message, evidence) {
   out.push({ category, message, evidence: String(evidence ?? '').slice(0, 160) });
 }
@@ -489,6 +492,12 @@ export function detectNoEffectOffers(probeRecords) {
       continue;
     }
     if (probe.fizzle) {
+      // M189/Z4 (transkrypt audyt-m187/v-b): wariant „czar celuje w stwora
+      // poświęcanego jako własny koszt" (Bone Splinters) to ROZWIĄZANY
+      // przypadek M102/U8 — jest legalny (CR 601.2c), zepchnięty na koniec
+      // listy, a etykieta SAMA ostrzega gracza. Zgłaszanie go w każdym
+      // przebiegu to szum przykrywający realne znaleziska (L12).
+      if (WARNED_FIZZLE.test(label)) continue;
       push(found, 'noop', `Oferta pewną stratą${where} — fizzle już przy pasywnym przeciwniku`, label);
       continue;
     }
