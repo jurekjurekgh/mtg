@@ -8323,6 +8323,17 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/c/3/c3bf4ee1-b6a8-4a69-adab-6839c1786cc9.jpg?1783922750',
     equipment: { equip: 2, cantBeBlockedMaxPower: 3 },
     abilities: [
+      // M190/C (zgłoszenie właściciela): bez tej zdolności sprzęt był
+      // NIEGRYWALNY — deskryptor `equipment` opisuje skutek założenia, ale
+      // samą aktywację „Equip {2}" (CR 702.6) enumeruje dopiero zdolność
+      // z keyword: 'equip'. Batch 44 jej nie dopisał, więc Thieves' Tools
+      // leżało na stole bez żadnej oferty. Strażnik: test M190/C2.
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'equip',
+        cost: { mana: 2 },
+        effect: [],
+      }),
       createAbility({
         type: ABILITY_TYPE.triggered,
         trigger: { event: 'enter_battlefield' },
