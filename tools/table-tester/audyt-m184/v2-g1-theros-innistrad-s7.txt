@@ -1,0 +1,942 @@
+== NOWA PARTIA: gracz=theros vs bot=innistrad, seed=7, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island (1 z 2)  ||  Zagraj ląd: Swamp  ||  Zagraj ląd: Forest  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Sweet Oblivion · 2 · Sorcery · mieli 4 karty (do grobu) · cel: gracz | Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 2/4
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Island (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Blazing Torch
+
+--- krok 3 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Sweet Oblivion · 2 · Sorcery · mieli 4 karty (do grobu) · cel: gracz | Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 2/4 | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Blazing Torch · 1 · Artifact — Equipment · Equip {1}
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Blazing Torch wchodzi na pole bitwy
+  [ROZGRYWKA]   • Blazing Torch zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Titan's Strength
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Cel czaru: Sweet Oblivion (2 opcje)
+  [modal choice] Cel czaru: Sweet Oblivion Rzuć: Sweet Oblivion (koszt 1U) → cel: Nieprzyjaciel Rzuć: Sweet Oblivion (koszt 1U) → cel: Ty
+  [modal choice]   ▶ Rzuć: Sweet Oblivion (koszt 1U) → cel: Nieprzyjaciel
+  [modal choice]     Rzuć: Sweet Oblivion (koszt 1U) → cel: Ty
+
+--- krok 6 | T. 4BotGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 2/4 | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Blazing Torch · 1 · Artifact — Equipment · Equip {1}
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Sweet Oblivion → cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Mountain do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Mark of the Vampire do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Mountain do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Forest do grobu
+  [ROZGRYWKA]   • Sweet Oblivion zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Inspire Awe
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+
+--- krok 9 | T. 6BotGracz: 20 ż.Bot: 20 ż.Główna 1Stos — Civilized Scholar ---
+  STOS: Civilized Scholar (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Forest · Basic Land — Forest · T: dodaj 1 manę | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 2/4 | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór | Inspire Awe · 4 · Instant · prewencja obrażeń bojowych (poza zaczarowanymi i enchantment-creatures) + scry 2
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Blazing Torch · 1 · Artifact — Equipment · Equip {1}
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Civilized Scholar
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Civilized Scholar wchodzi na pole bitwy
+  [ROZGRYWKA]   • Civilized Scholar zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Setessan Skirmisher
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+
+--- krok 12 | T. 7GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Setessan Skirmisher (koszt 1G)  ||  Zagraj: Returned Centaur (koszt 3B)  ||  Zagraj: Satyr Wayfinder (koszt 1G)  ||  Rzuć: Inspire Awe (koszt 3G)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 2/4 | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór | Inspire Awe · 4 · Instant · prewencja obrażeń bojowych (poza zaczarowanymi i enchantment-creatures) + scry 2 | Setessan Skirmisher · 2 · Creature — Human Warrior · Konstelacja — gdy twój enchantment wchodzi: +1/+1 do końca tury. · 2/1
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · choroba · 0/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Rzuć: Inspire Awe (koszt 3G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Inspire Awe
+  [ROZGRYWKA]   • Inspire Awe: obrażenia zadawane chronionym obiektom będą niwelowane do końca tury
+  [ROZGRYWKA]   • Wykonujesz scry (patrzy na 2 karty: Sea God's Scorn, Forest)
+  >> Wybierz: Scry — co odłożyć na spód? (5 opcji)
+  [modal choice] Scry 2 — obejrzane karty: 1. Sea God's Scorn 2. ForestKarta 1 z 2: Sea God's ScornNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [modal choice] Scry 2 — obejrzane karty: 1. Sea God's Scorn → spód 2. ForestKarta 2 z 2: ForestNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kończysz scry — na spód (2/2): Sea God's Scorn, Forest
+  [ROZGRYWKA]   • Inspire Awe zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+
+--- krok 15 | T. 8BotGracz: 20 ż.Bot: 20 ż.Główna 1Stos — Blazing Torch ---
+  STOS: Blazing Torch (rzuca: Nieprzyjaciel) → cel: Civilized Scholar
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 2/4 | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór | Setessan Skirmisher · 2 · Creature — Human Warrior · Konstelacja — gdy twój enchantment wchodzi: +1/+1 do końca tury. · 2/1
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje Equip: Blazing Torch → cel: Civilized Scholar
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Civilized Scholar
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Civilized Scholar rozstrzygnięta
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Plains
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Blazing Torch wyposaża Civilized Scholar
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+
+--- krok 18 | T. 9GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Plains  ||  Zagraj: Setessan Skirmisher (koszt 1G)  ||  Zagraj: Returned Centaur (koszt 3B)  ||  Zagraj: Satyr Wayfinder (koszt 1G)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 2/4 | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór | Setessan Skirmisher · 2 · Creature — Human Warrior · Konstelacja — gdy twój enchantment wchodzi: +1/+1 do końca tury. · 2/1 | Plains · Basic Land — Plains · T: dodaj 1 manę
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Blazing Torch · 1 · Artifact — Equipment · Equip {1} · wyposaża → Civilized Scholar | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · wyposażona: Blazing Torch · 0/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Zagraj: Setessan Skirmisher (koszt 1G)
+  [kreator many] Płatność 1G — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: GTapnij: Island (U)Tapnij: Swamp (B)Tapnij: I — źródła: 5
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Setessan Skirmisher
+  [ROZGRYWKA]   • Setessan Skirmisher wchodzi na pole bitwy
+  [ROZGRYWKA]   • Setessan Skirmisher zostaje rozstrzygnięty
+
+--- krok 21 | T. 10BotGracz: 20 ż.Bot: 20 ż.DobieranieStos — Chill of the Grave ---
+  STOS: Chill of the Grave (rzuca: Nieprzyjaciel) → cel: Setessan Skirmisher
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 2/4 | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór
+  MOJE POLA: Setessan Skirmisher · 2 · Creature — Human Warrior · Konstelacja — gdy twój enchantment wchodzi: +1/+1 do końca tury. · choroba · 2/1 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Blazing Torch · 1 · Artifact — Equipment · Equip {1} · wyposaża → Civilized Scholar | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · wyposażona: Blazing Torch · 0/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Chill of the Grave → cel: Setessan Skirmisher
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Setessan Skirmisher nie odkręca się w następnym kroku odkręcania
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Chill of the Grave zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Blazing Torch zostaje poświęcony
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Blazing Torch — obrażenia w cel → cel: Setessan Skirmisher
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Blazing Torch zadaje 2 obrażenia (Setessan Skirmisher)
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Blazing Torch rozstrzygnięta
+  [ROZGRYWKA]   • Setessan Skirmisher ginie
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Breaching Hippocamp
+
+--- krok 24 | T. 11GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Breaching Hippocamp (koszt 3U)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 2/4 | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór | Breaching Hippocamp · 4 · Creature — Horse Fish · Flash (błysk) · Gdy wejdzie na pole bitwy: odkręć. · 3/2
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Zagraj: Breaching Hippocamp (koszt 3U)
+  [kreator many] Płatność 3U — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: UTapnij: Island (U)Tapnij: Swamp (B)Tapnij: I — źródła: 5
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Breaching Hippocamp
+  [ROZGRYWKA]   • Breaching Hippocamp wchodzi na pole bitwy
+  [ROZGRYWKA]   • Breaching Hippocamp zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Breaching Hippocamp — trigger bez efektu (brak legalnych celów)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Snarling Wolf
+
+--- krok 27 | T. 12BotGracz: 20 ż.Bot: 20 ż.Główna 1Stos — Civilized Scholar ---
+  STOS: Snarling Wolf (rzuca: Nieprzyjaciel) | Civilized Scholar (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 2/4 | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór
+  MOJE POLA: Breaching Hippocamp · 4 · Creature — Horse Fish · Flash (błysk) · Gdy wejdzie na pole bitwy: odkręć. · choroba · 3/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Civilized Scholar
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Civilized Scholar rozstrzygnięta
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Grounded
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Snarling Wolf wchodzi na pole bitwy
+  [ROZGRYWKA]   • Snarling Wolf zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Początek walki
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Hysterical Blindness
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • stwory przeciwnika (1 stwór): -4/-0 do końca tury
+  [ROZGRYWKA]   • Hysterical Blindness zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Feral Invocation
+
+--- krok 30 | T. 13GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: Aura: Feral Invocation (3 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 2/4 | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór | Feral Invocation · 3 · Enchantment — Aura · Flash (błysk) · stwór: +2/+2
+  MOJE POLA: Breaching Hippocamp · 4 · Creature — Horse Fish · Flash (błysk) · Gdy wejdzie na pole bitwy: odkręć. · 3/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1 | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · choroba · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Aura: Feral Invocation (3 opcje)
+  [modal choice] Aura: Feral Invocation Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Snarling Wolf (Nieprzyjaciel) Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Breaching Hippocamp (Ty) Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Civilized Scholar (Nieprzyjaciel)
+  [modal choice]   ▶ Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Snarling Wolf (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Breaching Hippocamp (Ty)
+  [modal choice]     Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Civilized Scholar (Nieprzyjaciel)
+  [kreator many] Płatność 2G — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: GTapnij: Island (U)Tapnij: Swamp (B)Tapnij: I — źródła: 5
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Swamp (B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Feral Invocation → cel: Snarling Wolf
+  [ROZGRYWKA]   • Feral Invocation zaczarowuje Snarling Wolf
+  [ROZGRYWKA]   • Feral Invocation wchodzi na pole bitwy
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+
+--- krok 33 | T. 14BotGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 2/4 | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Breaching Hippocamp
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Snarling Wolf blokuje Breaching Hippocamp
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Breaching Hippocamp zadaje 3 obrażenia (Snarling Wolf)
+  [ROZGRYWKA]   • Snarling Wolf zadaje 3 obrażenia (Breaching Hippocamp)
+  [ROZGRYWKA]   • Breaching Hippocamp ginie
+  [ROZGRYWKA]   • Snarling Wolf ginie
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Thornhide Wolves
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Civilized Scholar
+
+--- krok 36 | T. 15GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 2/4 | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór | Anthem of Champions · 2 · Enchantment · twoje stwory: +1
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1 | Thornhide Wolves · 5 · Creature — Wolf · choroba · 4/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Civilized Scholar rozstrzygnięta
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Frightful Delusion
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Thornhide Wolves wchodzi na pole bitwy
+  [ROZGRYWKA]   • Thornhide Wolves zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Anthem of Champions
+  >> Zagraj: Anthem of Champions (koszt GW)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Anthem of Champions
+  [ROZGRYWKA]   • Anthem of Champions wchodzi na pole bitwy
+  [ROZGRYWKA]   • Anthem of Champions zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+
+--- krok 39 | T. 16BotGracz: 20 ż.Bot: 20 ż.Główna 1Stos — Wolfkin Bond ---
+  STOS: Wolfkin Bond (rzuca: Nieprzyjaciel) → cel: Thornhide Wolves
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 2/4 | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór
+  MOJE POLA: Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1 | Thornhide Wolves · 5 · Creature — Wolf · 4/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Wolfkin Bond → cel: Thornhide Wolves
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Civilized Scholar
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Civilized Scholar rozstrzygnięta
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Spare from Evil
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Wolfkin Bond zaczarowuje Thornhide Wolves
+  [ROZGRYWKA]   • Wolfkin Bond wchodzi na pole bitwy
+  [ROZGRYWKA]   • Wolfkin Bond — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Wolf (2/2)
+  [ROZGRYWKA]   • Wolf wchodzi na pole bitwy
+  [ROZGRYWKA]   • Wolfkin Bond — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Thornhide Wolves
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Thornhide Wolves zadaje 6 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 14
+  [ROZGRYWKA]   • Tura 17 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+
+--- krok 42 | T. 17GraczGracz: 14 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island  ||  Zagraj: Returned Centaur (koszt 3B)  ||  Zagraj: Satyr Wayfinder (koszt 1G)  ||  Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Ucieczka (Escape) — karty do wygnania (2 opcje)
+  RĘKA: Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 2/4 | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1 | Thornhide Wolves · 5 · Creature — Wolf · zaczarowana: Wolfkin Bond · 6/7 | Wolfkin Bond · 5 · Enchantment Aura · stwór: +2/+2 · Gdy wejdzie na pole bitwy: stwórz token Wolf. · aura → Thornhide Wolves | Wolf · 0 · Creature — Wolf · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Zagraj: Returned Centaur (koszt 3B)
+  [kreator many] Płatność 3B — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: BTapnij: Island (U)Tapnij: Swamp (B)Tapnij: I — źródła: 6
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Returned Centaur
+  [ROZGRYWKA]   • Returned Centaur wchodzi na pole bitwy
+  [ROZGRYWKA]   • Returned Centaur zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Returned Centaur — wybierz cel triggera (wymagany)
+
+--- krok 45 | T. 17GraczGracz: 14 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Returned Centaur — cel triggera (2 opcje)
+  RĘKA: Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór
+  MOJE POLA: Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · choroba · 3/5 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1 | Thornhide Wolves · 5 · Creature — Wolf · zaczarowana: Wolfkin Bond · 6/7 | Wolfkin Bond · 5 · Enchantment Aura · stwór: +2/+2 · Gdy wejdzie na pole bitwy: stwórz token Wolf. · aura → Thornhide Wolves | Wolf · 0 · Creature — Wolf · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Returned Centaur — cel triggera (2 opcje)
+  [modal choice] Returned Centaur — cel triggera Returned Centaur — cel triggera: Nieprzyjaciel Returned Centaur — cel triggera: Ty
+  [modal choice]   ▶ Returned Centaur — cel triggera: Nieprzyjaciel
+  [modal choice]     Returned Centaur — cel triggera: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Returned Centaur — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Returned Centaur — cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Island do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Scorned Villager do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Forest do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Murder of Crows do grobu
+  [ROZGRYWKA]   • Returned Centaur — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Makeshift Mauler
+  [ROZGRYWKA]   • Nieprzyjaciel: Murder of Crows — cmentarz → wygnanie
+
+--- krok 48 | T. 18BotGracz: 14 ż.Bot: 20 ż.Główna 1Stos — Civilized Scholar ---
+  STOS: Makeshift Mauler (rzuca: Nieprzyjaciel) | Civilized Scholar (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór
+  MOJE POLA: Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · choroba · 3/5 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1 | Thornhide Wolves · 5 · Creature — Wolf · zaczarowana: Wolfkin Bond · 6/7 | Wolfkin Bond · 5 · Enchantment Aura · stwór: +2/+2 · Gdy wejdzie na pole bitwy: stwórz token Wolf. · aura → Thornhide Wolves | Wolf · 0 · Creature — Wolf · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Civilized Scholar
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Civilized Scholar rozstrzygnięta
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Spectral Prison
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Makeshift Mauler wchodzi na pole bitwy
+  [ROZGRYWKA]   • Makeshift Mauler zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Thornhide Wolves
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Returned Centaur (3/5)
+  [combat wizard] Zatwierdź bloki
+
+--- krok 51 | T. 18BotGracz: 14 ż.Bot: 20 ż.Walka / Koniec walki ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór
+  MOJE POLA: Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1 | Thornhide Wolves · 5 · Creature — Wolf · −3 · zaczarowana: Wolfkin Bond · 6/7 | Wolfkin Bond · 5 · Enchantment Aura · stwór: +2/+2 · Gdy wejdzie na pole bitwy: stwórz token Wolf. · aura → Thornhide Wolves | Wolf · 0 · Creature — Wolf · 2/2 | Makeshift Mauler · 4 · Creature — Zombie Horror · choroba · 4/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Returned Centaur blokuje Thornhide Wolves
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Thornhide Wolves zadaje 6 obrażeń (Returned Centaur)
+  [ROZGRYWKA]   • Returned Centaur zadaje 3 obrażenia (Thornhide Wolves)
+  [ROZGRYWKA]   • Returned Centaur ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 19 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Entrancing Lyre
+  >> Zagraj: Entrancing Lyre (koszt 3)
+  [kreator many] Płatność 3 — tapuj źródła po jednympozostało 3 manyTapnij: Island (U)Tapnij: Swamp (B)Tapnij: Island (U)Tapnij: Forest ( — źródła: 6
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Island (U)
+
+--- krok 54 | T. 19GraczGracz: 14 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Zagraj: Satyr Wayfinder (koszt 1G)  ||  Cel zdolności: Entrancing Lyre (5 opcji)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór
+  MOJE POLA: Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1 | Thornhide Wolves · 5 · Creature — Wolf · zaczarowana: Wolfkin Bond · 6/7 | Wolfkin Bond · 5 · Enchantment Aura · stwór: +2/+2 · Gdy wejdzie na pole bitwy: stwórz token Wolf. · aura → Thornhide Wolves | Wolf · 0 · Creature — Wolf · 2/2 | Makeshift Mauler · 4 · Creature — Zombie Horror · choroba · 4/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Entrancing Lyre
+  [ROZGRYWKA]   • Entrancing Lyre wchodzi na pole bitwy
+  [ROZGRYWKA]   • Entrancing Lyre zostaje rozstrzygnięty
+  >> Zagraj: Satyr Wayfinder (koszt 1G)
+  [kreator many] Płatność 1G — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: GTapnij: Forest (G)Tapnij: Plains (W)Tapnij:  — źródła: 3
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Satyr Wayfinder
+
+--- krok 57 | T. 19GraczGracz: 14 ż.Bot: 20 ż.Główna 1Stos — Satyr Wayfinder ---
+  STOS: Satyr Wayfinder (rzuca: Ty)
+  AKCJE: Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=1) → cel: Civilized Scholar (Nieprzyjaciel)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór
+  MOJE POLA: Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1 | Thornhide Wolves · 5 · Creature — Wolf · zaczarowana: Wolfkin Bond · 6/7 | Wolfkin Bond · 5 · Enchantment Aura · stwór: +2/+2 · Gdy wejdzie na pole bitwy: stwórz token Wolf. · aura → Thornhide Wolves | Wolf · 0 · Creature — Wolf · 2/2 | Makeshift Mauler · 4 · Creature — Zombie Horror · choroba · 4/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=1) → cel: Ci
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Entrancing Lyre — cel nie odtapuje podczas następnego untap kontrolera (X=1) → cel: Civilized Scholar
+  [ROZGRYWKA]   • Ty: zdolność Entrancing Lyre rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Satyr Wayfinder wchodzi na pole bitwy
+  [ROZGRYWKA]   • Satyr Wayfinder zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Satyr Wayfinder — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odsłaniasz 4 karty z wierzchu biblioteki (Wavecrash Triton, Rage of Purphoros, Mountain, Sleep of the Dead) — może wziąć ląd do ręki
+  [ROZGRYWKA]   • Satyr Wayfinder — trigger się rozstrzyga
+
+--- krok 60 | T. 19GraczGracz: 14 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Weź ląd do ręki: Mountain  ||  Nie bierz lądu (reszta do grobu)
+  RĘKA: Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór
+  MOJE POLA: Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · choroba · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · nie odtapuje się · 0/1 | Thornhide Wolves · 5 · Creature — Wolf · zaczarowana: Wolfkin Bond · 6/7 | Wolfkin Bond · 5 · Enchantment Aura · stwór: +2/+2 · Gdy wejdzie na pole bitwy: stwórz token Wolf. · aura → Thornhide Wolves | Wolf · 0 · Creature — Wolf · 2/2 | Makeshift Mauler · 4 · Creature — Zombie Horror · choroba · 4/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Weź ląd do ręki: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: Mountain — biblioteka → ręka
+  [ROZGRYWKA]   • Ty: Wavecrash Triton — biblioteka → cmentarz
+  [ROZGRYWKA]   • Ty: Rage of Purphoros — biblioteka → cmentarz
+  [ROZGRYWKA]   • Ty: Sleep of the Dead — biblioteka → cmentarz
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Cel czaru: Titan's Strength (5 opcji)
+  [modal choice] Cel czaru: Titan's Strength Rzuć: Titan's Strength (koszt R) → cel: Satyr Wayfinder (Ty) Rzuć: Titan's Strength (koszt R) → cel: Makeshift Mauler (Nieprzyjaciel) Rzuć: Titan's Strength (koszt R) → cel: Wolf (Nieprzyjaciel) Rzuć: Titan's Strength (koszt R) → cel: Thornhide Wolves (Nieprzyjaciel) Rzuć: Titan's Strength (koszt R) → cel: Civilized Scholar (Nieprzyjaciel)
+  [modal choice]   ▶ Rzuć: Titan's Strength (koszt R) → cel: Satyr Wayfinder (Ty)
+  [modal choice]     Rzuć: Titan's Strength (koszt R) → cel: Makeshift Mauler (Nieprzyjaciel)
+  [modal choice]     Rzuć: Titan's Strength (koszt R) → cel: Wolf (Nieprzyjaciel)
+  [modal choice]     Rzuć: Titan's Strength (koszt R) → cel: Thornhide Wolves (Nieprzyjaciel)
+  [modal choice]     Rzuć: Titan's Strength (koszt R) → cel: Civilized Scholar (Nieprzyjaciel)
+
+--- krok 63 | T. 19GraczGracz: 14 ż.Bot: 20 ż.Główna 1Stos — Titan's Strength ---
+  STOS: Titan's Strength (rzuca: Ty) → cel: Satyr Wayfinder
+  AKCJE: Wybierz: Scry — co odłożyć na spód? (2 opcje)  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · +3/+1 · choroba · 5/3 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · nie odtapuje się · 0/1 | Thornhide Wolves · 5 · Creature — Wolf · zaczarowana: Wolfkin Bond · 6/7 | Wolfkin Bond · 5 · Enchantment Aura · stwór: +2/+2 · Gdy wejdzie na pole bitwy: stwórz token Wolf. · aura → Thornhide Wolves | Wolf · 0 · Creature — Wolf · 2/2 | Makeshift Mauler · 4 · Creature — Zombie Horror · choroba · 4/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Titan's Strength → cel: Satyr Wayfinder
+  [ROZGRYWKA]   • Wykonujesz scry (patrzy na 1 kartę: Glaring Aegis)
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [modal choice] Scry 1 — obejrzane karty: 1. Glaring AegisKarta 1 z 1: Glaring AegisNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kończysz scry — na spód (1/1): Glaring Aegis
+  [ROZGRYWKA]   • Titan's Strength zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Somberwald Spider
+
+--- krok 66 | T. 20BotGracz: 14 ż.Bot: 20 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Deklaracja blokujących (4 opcje)
+  RĘKA: (pusta)
+  MOJE POLA: Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · choroba · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · nie odtapuje się · 0/1 | Thornhide Wolves · 5 · Creature — Wolf · atakuje — niezablokowany · zaczarowana: Wolfkin Bond · 6/7 | Wolfkin Bond · 5 · Enchantment Aura · stwór: +2/+2 · Gdy wejdzie na pole bitwy: stwórz token Wolf. · aura → Thornhide Wolves | Wolf · 0 · Creature — Wolf · atakuje — niezablokowany · 2/2 | Makeshift Mauler · 4 · Creature — Zombie Horror · atakuje — niezablokowany · 4/5 | Somberwald Spider · 5 · Creature — Spider · Zasięg · choroba · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Somberwald Spider wchodzi na pole bitwy
+  [ROZGRYWKA]   • Somberwald Spider zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Thornhide Wolves, Wolf, Makeshift Mauler
+  >> Wybierz: Deklaracja blokujących (4 opcje)
+  [combat wizard] blokuję 1 stworami: Satyr Wayfinder (2/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Satyr Wayfinder blokuje Makeshift Mauler
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Thornhide Wolves zadaje 6 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 8
+  [ROZGRYWKA]   • Wolf zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 8 → 6
+  [ROZGRYWKA]   • Makeshift Mauler zadaje 4 obrażenia (Satyr Wayfinder)
+  [ROZGRYWKA]   • Satyr Wayfinder zadaje 2 obrażenia (Makeshift Mauler)
+  [ROZGRYWKA]   • Satyr Wayfinder ginie
+
+--- krok 69 | T. 21GraczGracz: 6 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Sea God's Scorn · 6 · Sorcery · Wzgarda boga mórz: wróć na rękę właściciela (każdy z celów)
+  MOJE POLA: Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · nie odtapuje się · 0/1 | Thornhide Wolves · 5 · Creature — Wolf · zaczarowana: Wolfkin Bond · 6/7 | Wolfkin Bond · 5 · Enchantment Aura · stwór: +2/+2 · Gdy wejdzie na pole bitwy: stwórz token Wolf. · aura → Thornhide Wolves | Wolf · 0 · Creature — Wolf · 2/2 | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Somberwald Spider · 5 · Creature — Spider · Zasięg · choroba · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 21 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Sea God's Scorn
+  >> Wybierz: Ucieczka (Escape) — karty do wygnania (160 opcji)
+  [modal choice] Wybierz: Ucieczka (Escape) — karty do wygnania Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Wavecrash Triton, Titan's Strength (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Wavecrash Triton, Rage of Purphoros (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Satyr Wayfinder (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Titan's Strength (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Rage of Purphoros (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Wavecrash Triton (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Satyr Wayfinder (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Titan's Strength (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Rage of Purphoros (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Wavecrash Triton (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Returned Centaur (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Satyr Wayfinder (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Titan's Strength (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Rage of Purphoros (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Wavecrash Triton (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Returned Centaur (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Feral Invocation (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Satyr Wayfinder (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Titan's Strength (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Rage of Purphoros (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Wavecrash Triton (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Returned Centaur (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Feral Invocation (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Breaching Hippocamp (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Satyr Wayfinder (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Titan's Strength (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Rage of Purphoros (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Wavecrash Triton (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Returned Centaur (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Feral Invocation (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Breaching Hippocamp (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Setessan Skirmisher (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Wavecrash Triton, Titan's Strength (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Wavecrash Triton, Rage of Purphoros (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Satyr Wayfinder (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Titan's Strength (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Rage of Purphoros (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Wavecrash Triton (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Satyr Wayfinder (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Titan's Strength (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Rage of Purphoros (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Wavecrash Triton (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Returned Centaur (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Satyr Wayfinder (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Titan's Strength (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Rage of Purphoros (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Wavecrash Triton (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Returned Centaur (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Feral Invocation (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Satyr Wayfinder (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Titan's Strength (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Rage of Purphoros (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Wavecrash Triton (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Returned Centaur (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Feral Invocation (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Breaching Hippocamp (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Satyr Wayfinder (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Titan's Strength (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Rage of Purphoros (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Wavecrash Triton (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Returned Centaur (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Feral Invocation (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Breaching Hippocamp (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Setessan Skirmisher (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Wavecrash Triton, Titan's Strength (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Wavecrash Triton, Rage of Purphoros (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Satyr Wayfinder (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Titan's Strength (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Rage of Purphoros (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Wavecrash Triton (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Satyr Wayfinder (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Titan's Strength (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Rage of Purphoros (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Wavecrash Triton (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Returned Centaur (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Satyr Wayfinder (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Titan's Strength (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Rage of Purphoros (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Wavecrash Triton (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Returned Centaur (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Feral Invocation (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Satyr Wayfinder (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Titan's Strength (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Rage of Purphoros (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Wavecrash Triton (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Returned Centaur (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Feral Invocation (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Breaching Hippocamp (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Satyr Wayfinder (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Titan's Strength (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Rage of Purphoros (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Wavecrash Triton (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Returned Centaur (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Feral Invocation (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Breaching Hippocamp (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Setessan Skirmisher (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Wavecrash Triton, Titan's Strength (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Wavecrash Triton, Rage of Purphoros (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Satyr Wayfinder (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Titan's Strength (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Rage of Purphoros (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Wavecrash Triton (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Satyr Wayfinder (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Titan's Strength (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Rage of Purphoros (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Wavecrash Triton (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Returned Centaur (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Satyr Wayfinder (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Titan's Strength (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Rage of Purphoros (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Wavecrash Triton (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Returned Centaur (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Feral Invocation (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Satyr Wayfinder (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Titan's Strength (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Rage of Purphoros (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Wavecrash Triton (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Returned Centaur (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Feral Invocation (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Breaching Hippocamp (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Satyr Wayfinder (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Titan's Strength (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Rage of Purphoros (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Wavecrash Triton (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Returned Centaur (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Feral Invocation (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Breaching Hippocamp (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Setessan Skirmisher (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Wavecrash Triton, Titan's Strength (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Wavecrash Triton, Rage of Purphoros (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Satyr Wayfinder (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Titan's Strength (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Rage of Purphoros (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Wavecrash Triton (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Satyr Wayfinder (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Titan's Strength (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Rage of Purphoros (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Wavecrash Triton (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Returned Centaur (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Satyr Wayfinder (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Titan's Strength (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Rage of Purphoros (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Wavecrash Triton (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Returned Centaur (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Feral Invocation (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Satyr Wayfinder (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Titan's Strength (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Rage of Purphoros (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Wavecrash Triton (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Returned Centaur (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Feral Invocation (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Breaching Hippocamp (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Satyr Wayfinder (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Titan's Strength (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Rage of Purphoros (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Wavecrash Triton (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Returned Centaur (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Feral Invocation (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Breaching Hippocamp (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Setessan Skirmisher (5 z 5)
+  [modal choice]   ▶ Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Wavecrash Triton, Titan's Strength (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Wavecrash Triton, Rage of Purphoros (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Satyr Wayfinder (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Titan's Strength (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Rage of Purphoros (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Wavecrash Triton (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Satyr Wayfinder (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Titan's Strength (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Rage of Purphoros (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Wavecrash Triton (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Returned Centaur (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Satyr Wayfinder (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Titan's Strength (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Rage of Purphoros (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Wavecrash Triton (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Returned Centaur (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Feral Invocation (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Satyr Wayfinder (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Titan's Strength (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Rage of Purphoros (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Wavecrash Triton (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Returned Centaur (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Feral Invocation (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Breaching Hippocamp (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Satyr Wayfinder (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Titan's Strength (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Rage of Purphoros (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Wavecrash Triton (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Returned Centaur (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Feral Invocation (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Breaching Hippocamp (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Setessan Skirmisher (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Wavecrash Triton, Titan's Strength (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Wavecrash Triton, Rage of Purphoros (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Satyr Wayfinder (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Titan's Strength (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Rage of Purphoros (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Wavecrash Triton (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Satyr Wayfinder (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Titan's Strength (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Rage of Purphoros (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Wavecrash Triton (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Returned Centaur (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Satyr Wayfinder (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Titan's Strength (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Rage of Purphoros (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Wavecrash Triton (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Returned Centaur (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Feral Invocation (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Satyr Wayfinder (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Titan's Strength (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Rage of Purphoros (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Wavecrash Triton (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Returned Centaur (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Feral Invocation (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Breaching Hippocamp (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Satyr Wayfinder (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Titan's Strength (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Rage of Purphoros (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Wavecrash Triton (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Returned Centaur (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Feral Invocation (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Breaching Hippocamp (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Setessan Skirmisher (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Wavecrash Triton, Titan's Strength (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Wavecrash Triton, Rage of Purphoros (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Satyr Wayfinder (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Titan's Strength (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Rage of Purphoros (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Wavecrash Triton (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Satyr Wayfinder (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Titan's Strength (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Rage of Purphoros (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Wavecrash Triton (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Returned Centaur (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Satyr Wayfinder (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Titan's Strength (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Rage of Purphoros (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Wavecrash Triton (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Returned Centaur (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Feral Invocation (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Satyr Wayfinder (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Titan's Strength (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Rage of Purphoros (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Wavecrash Triton (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Returned Centaur (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Feral Invocation (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Breaching Hippocamp (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Satyr Wayfinder (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Titan's Strength (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Rage of Purphoros (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Wavecrash Triton (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Returned Centaur (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Feral Invocation (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Breaching Hippocamp (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Setessan Skirmisher (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Wavecrash Triton, Titan's Strength (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Wavecrash Triton, Rage of Purphoros (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Satyr Wayfinder (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Titan's Strength (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Rage of Purphoros (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Wavecrash Triton (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Satyr Wayfinder (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Titan's Strength (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Rage of Purphoros (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Wavecrash Triton (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Returned Centaur (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Satyr Wayfinder (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Titan's Strength (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Rage of Purphoros (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Wavecrash Triton (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Returned Centaur (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Feral Invocation (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Satyr Wayfinder (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Titan's Strength (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Rage of Purphoros (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Wavecrash Triton (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Returned Centaur (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Feral Invocation (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Breaching Hippocamp (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Satyr Wayfinder (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Titan's Strength (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Rage of Purphoros (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Wavecrash Triton (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Returned Centaur (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Feral Invocation (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Breaching Hippocamp (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Setessan Skirmisher (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Wavecrash Triton, Titan's Strength (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Wavecrash Triton, Rage of Purphoros (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Satyr Wayfinder (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Titan's Strength (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Rage of Purphoros (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Returned Centaur, Wavecrash Triton (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Satyr Wayfinder (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Titan's Strength (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Rage of Purphoros (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Wavecrash Triton (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Feral Invocation, Returned Centaur (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Satyr Wayfinder (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Titan's Strength (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Rage of Purphoros (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Wavecrash Triton (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Returned Centaur (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Breaching Hippocamp, Feral Invocation (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Satyr Wayfinder (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Titan's Strength (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Rage of Purphoros (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Wavecrash Triton (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Returned Centaur (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Feral Invocation (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Setessan Skirmisher, Breaching Hippocamp (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Satyr Wayfinder (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Titan's Strength (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Rage of Purphoros (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Wavecrash Triton (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Returned Centaur (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Feral Invocation (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Breaching Hippocamp (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Sweet Oblivion, Inspire Awe, Setessan Skirmisher (5 z 5)
+  [kreator many] Płatność Escape (3) — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: UTapnij: Island (U)Tapnij: Swamp (B)T — źródła: 7
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Rzucasz Sleep of the Dead → cel: Somberwald Spider
+  [ROZGRYWKA]   • Ty: Sweet Oblivion — cmentarz → wygnanie
+  [ROZGRYWKA]   • Ty: Wavecrash Triton — cmentarz → wygnanie
+  [ROZGRYWKA]   • Ty: Titan's Strength — cmentarz → wygnanie
+  [ROZGRYWKA]   • Sleep of the Dead zostaje rozstrzygnięty
+
+--- krok 72 | T. 21GraczGracz: 6 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Ucieczka (Escape) — karty do wygnania (160 opcji)
+  RĘKA: Sea God's Scorn · 6 · Sorcery · Wzgarda boga mórz: wróć na rękę właściciela (każdy z celów)
+  MOJE POLA: Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · nie odtapuje się · 0/1 | Thornhide Wolves · 5 · Creature — Wolf · zaczarowana: Wolfkin Bond · 6/7 | Wolfkin Bond · 5 · Enchantment Aura · stwór: +2/+2 · Gdy wejdzie na pole bitwy: stwórz token Wolf. · aura → Thornhide Wolves | Wolf · 0 · Creature — Wolf · 2/2 | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Somberwald Spider · 5 · Creature — Spider · Zasięg · nie odtapuje się · choroba · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Wybierz: Ucieczka (Escape) — karty do wygnania (160 opcji)
+  [modal choice] Wybierz: Ucieczka (Escape) — karty do wygnania Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Feral Invocation, Returned Centaur, Rage of Purphoros (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Rage of Purphoros, Satyr Wayfinder (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Returned Centaur, Satyr Wayfinder (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Returned Centaur, Rage of Purphoros (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Satyr Wayfinder (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Rage of Purphoros (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Returned Centaur (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Rage of Purphoros, Satyr Wayfinder (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Returned Centaur, Satyr Wayfinder (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Returned Centaur, Rage of Purphoros (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Satyr Wayfinder (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Rage of Purphoros (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Returned Centaur (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Satyr Wayfinder (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Rage of Purphoros (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Returned Centaur (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Feral Invocation (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Rage of Purphoros, Satyr Wayfinder (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Returned Centaur, Satyr Wayfinder (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Returned Centaur, Rage of Purphoros (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Satyr Wayfinder (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Rage of Purphoros (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Returned Centaur (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Satyr Wayfinder (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Rage of Purphoros (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Returned Centaur (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Feral Invocation (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Satyr Wayfinder (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Rage of Purphoros (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Returned Centaur (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Feral Invocation (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Breaching Hippocamp (1 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Feral Invocation, Returned Centaur, Rage of Purphoros (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Rage of Purphoros, Satyr Wayfinder (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Returned Centaur, Satyr Wayfinder (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Returned Centaur, Rage of Purphoros (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Satyr Wayfinder (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Rage of Purphoros (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Returned Centaur (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Rage of Purphoros, Satyr Wayfinder (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Returned Centaur, Satyr Wayfinder (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Returned Centaur, Rage of Purphoros (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Satyr Wayfinder (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Rage of Purphoros (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Returned Centaur (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Satyr Wayfinder (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Rage of Purphoros (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Returned Centaur (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Feral Invocation (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Rage of Purphoros, Satyr Wayfinder (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Returned Centaur, Satyr Wayfinder (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Returned Centaur, Rage of Purphoros (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Satyr Wayfinder (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Rage of Purphoros (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Returned Centaur (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Satyr Wayfinder (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Rage of Purphoros (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Returned Centaur (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Feral Invocation (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Satyr Wayfinder (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Rage of Purphoros (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Returned Centaur (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Feral Invocation (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Breaching Hippocamp (2 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Feral Invocation, Returned Centaur, Rage of Purphoros (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Rage of Purphoros, Satyr Wayfinder (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Returned Centaur, Satyr Wayfinder (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Returned Centaur, Rage of Purphoros (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Satyr Wayfinder (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Rage of Purphoros (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Returned Centaur (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Rage of Purphoros, Satyr Wayfinder (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Returned Centaur, Satyr Wayfinder (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Returned Centaur, Rage of Purphoros (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Satyr Wayfinder (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Rage of Purphoros (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Returned Centaur (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Satyr Wayfinder (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Rage of Purphoros (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Returned Centaur (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Feral Invocation (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Rage of Purphoros, Satyr Wayfinder (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Returned Centaur, Satyr Wayfinder (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Returned Centaur, Rage of Purphoros (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Satyr Wayfinder (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Rage of Purphoros (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Returned Centaur (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Satyr Wayfinder (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Rage of Purphoros (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Returned Centaur (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Feral Invocation (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Satyr Wayfinder (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Rage of Purphoros (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Returned Centaur (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Feral Invocation (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Breaching Hippocamp (3 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Feral Invocation, Returned Centaur, Rage of Purphoros (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Rage of Purphoros, Satyr Wayfinder (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Returned Centaur, Satyr Wayfinder (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Returned Centaur, Rage of Purphoros (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Satyr Wayfinder (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Rage of Purphoros (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Returned Centaur (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Rage of Purphoros, Satyr Wayfinder (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Returned Centaur, Satyr Wayfinder (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Returned Centaur, Rage of Purphoros (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Satyr Wayfinder (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Rage of Purphoros (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Returned Centaur (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Satyr Wayfinder (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Rage of Purphoros (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Returned Centaur (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Feral Invocation (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Rage of Purphoros, Satyr Wayfinder (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Returned Centaur, Satyr Wayfinder (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Returned Centaur, Rage of Purphoros (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Satyr Wayfinder (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Rage of Purphoros (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Returned Centaur (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Satyr Wayfinder (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Rage of Purphoros (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Returned Centaur (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Feral Invocation (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Satyr Wayfinder (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Rage of Purphoros (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Returned Centaur (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Feral Invocation (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Breaching Hippocamp (4 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Feral Invocation, Returned Centaur, Rage of Purphoros (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Rage of Purphoros, Satyr Wayfinder (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Returned Centaur, Satyr Wayfinder (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Returned Centaur, Rage of Purphoros (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Satyr Wayfinder (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Rage of Purphoros (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Returned Centaur (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Rage of Purphoros, Satyr Wayfinder (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Returned Centaur, Satyr Wayfinder (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Returned Centaur, Rage of Purphoros (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Satyr Wayfinder (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Rage of Purphoros (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Returned Centaur (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Satyr Wayfinder (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Rage of Purphoros (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Returned Centaur (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Feral Invocation (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Rage of Purphoros, Satyr Wayfinder (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Returned Centaur, Satyr Wayfinder (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Returned Centaur, Rage of Purphoros (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Satyr Wayfinder (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Rage of Purphoros (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Returned Centaur (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Satyr Wayfinder (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Rage of Purphoros (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Returned Centaur (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Feral Invocation (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Satyr Wayfinder (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Rage of Purphoros (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Returned Centaur (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Feral Invocation (5 z 5) Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Breaching Hippocamp (5 z 5)
+  [modal choice]   ▶ Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Feral Invocation, Returned Centaur, Rage of Purphoros (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Rage of Purphoros, Satyr Wayfinder (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Returned Centaur, Satyr Wayfinder (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Returned Centaur, Rage of Purphoros (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Satyr Wayfinder (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Rage of Purphoros (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Returned Centaur (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Rage of Purphoros, Satyr Wayfinder (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Returned Centaur, Satyr Wayfinder (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Returned Centaur, Rage of Purphoros (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Satyr Wayfinder (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Rage of Purphoros (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Returned Centaur (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Satyr Wayfinder (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Rage of Purphoros (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Returned Centaur (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Feral Invocation (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Rage of Purphoros, Satyr Wayfinder (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Returned Centaur, Satyr Wayfinder (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Returned Centaur, Rage of Purphoros (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Satyr Wayfinder (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Rage of Purphoros (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Returned Centaur (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Satyr Wayfinder (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Rage of Purphoros (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Returned Centaur (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Feral Invocation (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Satyr Wayfinder (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Rage of Purphoros (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Returned Centaur (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Feral Invocation (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Breaching Hippocamp (1 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Feral Invocation, Returned Centaur, Rage of Purphoros (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Rage of Purphoros, Satyr Wayfinder (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Returned Centaur, Satyr Wayfinder (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Returned Centaur, Rage of Purphoros (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Satyr Wayfinder (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Rage of Purphoros (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Returned Centaur (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Rage of Purphoros, Satyr Wayfinder (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Returned Centaur, Satyr Wayfinder (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Returned Centaur, Rage of Purphoros (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Satyr Wayfinder (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Rage of Purphoros (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Returned Centaur (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Satyr Wayfinder (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Rage of Purphoros (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Returned Centaur (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Feral Invocation (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Rage of Purphoros, Satyr Wayfinder (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Returned Centaur, Satyr Wayfinder (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Returned Centaur, Rage of Purphoros (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Satyr Wayfinder (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Rage of Purphoros (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Returned Centaur (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Satyr Wayfinder (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Rage of Purphoros (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Returned Centaur (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Feral Invocation (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Satyr Wayfinder (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Rage of Purphoros (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Returned Centaur (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Feral Invocation (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Breaching Hippocamp (2 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Feral Invocation, Returned Centaur, Rage of Purphoros (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Rage of Purphoros, Satyr Wayfinder (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Returned Centaur, Satyr Wayfinder (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Returned Centaur, Rage of Purphoros (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Satyr Wayfinder (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Rage of Purphoros (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Returned Centaur (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Rage of Purphoros, Satyr Wayfinder (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Returned Centaur, Satyr Wayfinder (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Returned Centaur, Rage of Purphoros (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Satyr Wayfinder (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Rage of Purphoros (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Returned Centaur (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Satyr Wayfinder (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Rage of Purphoros (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Returned Centaur (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Feral Invocation (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Rage of Purphoros, Satyr Wayfinder (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Returned Centaur, Satyr Wayfinder (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Returned Centaur, Rage of Purphoros (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Satyr Wayfinder (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Rage of Purphoros (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Returned Centaur (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Satyr Wayfinder (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Rage of Purphoros (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Returned Centaur (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Feral Invocation (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Satyr Wayfinder (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Rage of Purphoros (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Returned Centaur (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Feral Invocation (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Breaching Hippocamp (3 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Feral Invocation, Returned Centaur, Rage of Purphoros (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Rage of Purphoros, Satyr Wayfinder (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Returned Centaur, Satyr Wayfinder (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Returned Centaur, Rage of Purphoros (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Satyr Wayfinder (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Rage of Purphoros (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Returned Centaur (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Rage of Purphoros, Satyr Wayfinder (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Returned Centaur, Satyr Wayfinder (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Returned Centaur, Rage of Purphoros (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Satyr Wayfinder (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Rage of Purphoros (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Returned Centaur (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Satyr Wayfinder (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Rage of Purphoros (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Returned Centaur (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Feral Invocation (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Rage of Purphoros, Satyr Wayfinder (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Returned Centaur, Satyr Wayfinder (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Returned Centaur, Rage of Purphoros (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Satyr Wayfinder (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Rage of Purphoros (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Returned Centaur (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Satyr Wayfinder (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Rage of Purphoros (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Returned Centaur (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Feral Invocation (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Satyr Wayfinder (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Rage of Purphoros (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Returned Centaur (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Feral Invocation (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Breaching Hippocamp (4 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Feral Invocation, Returned Centaur, Rage of Purphoros (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Rage of Purphoros, Satyr Wayfinder (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Returned Centaur, Satyr Wayfinder (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Returned Centaur, Rage of Purphoros (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Satyr Wayfinder (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Rage of Purphoros (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Breaching Hippocamp, Feral Invocation, Returned Centaur (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Rage of Purphoros, Satyr Wayfinder (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Returned Centaur, Satyr Wayfinder (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Returned Centaur, Rage of Purphoros (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Satyr Wayfinder (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Rage of Purphoros (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Feral Invocation, Returned Centaur (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Satyr Wayfinder (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Rage of Purphoros (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Returned Centaur (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Setessan Skirmisher, Breaching Hippocamp, Feral Invocation (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Rage of Purphoros, Satyr Wayfinder (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Returned Centaur, Satyr Wayfinder (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Returned Centaur, Rage of Purphoros (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Satyr Wayfinder (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Rage of Purphoros (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Feral Invocation, Returned Centaur (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Satyr Wayfinder (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Rage of Purphoros (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Returned Centaur (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Breaching Hippocamp, Feral Invocation (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Satyr Wayfinder (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Rage of Purphoros (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Returned Centaur (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Feral Invocation (5 z 5)
+  [modal choice]     Ucieczka: Sleep of the Dead (koszt 3) — wygnaj: Inspire Awe, Setessan Skirmisher, Breaching Hippocamp (5 z 5)
+  [kreator many] Płatność Escape (3) — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: UTapnij: Forest (G)Tapnij: Plains (W) — źródła: 4
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Sleep of the Dead → cel: Somberwald Spider
+  [ROZGRYWKA]   • Ty: Feral Invocation — cmentarz → wygnanie
+  [ROZGRYWKA]   • Ty: Returned Centaur — cmentarz → wygnanie
+  [ROZGRYWKA]   • Ty: Rage of Purphoros — cmentarz → wygnanie
+  [ROZGRYWKA]   • Sleep of the Dead zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 22 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Caravan Vigil
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Island
+  [ROZGRYWKA]   • Nieprzyjaciel: Island — biblioteka → ręka
+  [ROZGRYWKA]   • Nieprzyjaciel znajduje Island i tasuje bibliotekę
+  [ROZGRYWKA]   • Caravan Vigil zostaje rozstrzygnięty
+
+--- krok 75 | T. 22BotGracz: 6 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Sea God's Scorn · 6 · Sorcery · Wzgarda boga mórz: wróć na rękę właściciela (każdy z celów)
+  MOJE POLA: Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×4 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · nie odtapuje się · 0/1 | Thornhide Wolves · 5 · Creature — Wolf · zaczarowana: Wolfkin Bond · 6/7 | Wolfkin Bond · 5 · Enchantment Aura · stwór: +2/+2 · Gdy wejdzie na pole bitwy: stwórz token Wolf. · aura → Thornhide Wolves | Wolf · 0 · Creature — Wolf · 2/2 | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 77 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Sea God's Scorn · 6 · Sorcery · Wzgarda boga mórz: wróć na rękę właściciela (każdy z celów)
+  MOJE POLA: Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×4 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · nie odtapuje się · 0/1 | Thornhide Wolves · 5 · Creature — Wolf · zaczarowana: Wolfkin Bond · 6/7 | Wolfkin Bond · 5 · Enchantment Aura · stwór: +2/+2 · Gdy wejdzie na pole bitwy: stwórz token Wolf. · aura → Thornhide Wolves | Wolf · 0 · Creature — Wolf · 2/2 | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Satyr Wayfinder, Forest, Island, Swamp, Returned Centaur, Island ⏎ Nowa partia (seed 7). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 30, kliknięte: 33, modale: 9, sondy noop: 402 (panel 62, modal 340)
+== DETEKTORY: brak zgłoszeń ==

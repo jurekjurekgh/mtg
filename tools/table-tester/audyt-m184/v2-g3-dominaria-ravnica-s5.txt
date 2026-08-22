@@ -1,0 +1,1031 @@
+== NOWA PARTIA: gracz=dominaria vs bot=ravnica, seed=5, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Plains  ||  Zagraj ląd: Swamp  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Expunge · 3 · Instant · nie może być regenerowany + zniszcz cel · cel: stwór niebędący artefaktem ani czarnym · Cycling {2} → dobierz kartę | Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Fortify · 3 · Instant · wybierz jedno — Ofensywa (+2/+0): +2/+0 dla twoich stworów do końca tury / Obrona (+0/+2): +0/+2 dla twoich stworów do końca tury | Plains · Basic Land — Plains · T: dodaj 1 manę
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Plains
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+
+--- krok 3 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Swamp (1 z 2)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Expunge · 3 · Instant · nie może być regenerowany + zniszcz cel · cel: stwór niebędący artefaktem ani czarnym · Cycling {2} → dobierz kartę | Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Fortify · 3 · Instant · wybierz jedno — Ofensywa (+2/+0): +2/+0 dla twoich stworów do końca tury / Obrona (+0/+2): +0/+2 dla twoich stworów do końca tury
+  MOJE POLA: Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Zagraj ląd: Swamp (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Dalej (pass)
+  >> Dalej (pass)
+
+--- krok 6 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (1 opcja)  ||  Cycling: Expunge (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Expunge · 3 · Instant · nie może być regenerowany + zniszcz cel · cel: stwór niebędący artefaktem ani czarnym · Cycling {2} → dobierz kartę | Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Fortify · 3 · Instant · wybierz jedno — Ofensywa (+2/+0): +2/+0 dla twoich stworów do końca tury / Obrona (+0/+2): +0/+2 dla twoich stworów do końca tury
+  MOJE POLA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Wybierz: Deklaracja atakujących (1 opcja)
+  [modal choice] Wybierz atakujących (zaznacz stwory, które mają atakować):Zatwierdź atakBez atakuZamknij (dokończysz później)
+  [modal choice]   ▶ Zatwierdź atak
+  >> Rozstrzygnij obrażenia w walce
+  >> Dalej (pass)
+
+--- krok 9 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Główna 2 ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Expunge (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Expunge · 3 · Instant · nie może być regenerowany + zniszcz cel · cel: stwór niebędący artefaktem ani czarnym · Cycling {2} → dobierz kartę | Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Fortify · 3 · Instant · wybierz jedno — Ofensywa (+2/+0): +2/+0 dla twoich stworów do końca tury / Obrona (+0/+2): +0/+2 dla twoich stworów do końca tury
+  MOJE POLA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+
+--- krok 12 | T. 4BotGracz: 20 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Expunge (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Expunge · 3 · Instant · nie może być regenerowany + zniszcz cel · cel: stwór niebędący artefaktem ani czarnym · Cycling {2} → dobierz kartę | Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Fortify · 3 · Instant · wybierz jedno — Ofensywa (+2/+0): +2/+0 dla twoich stworów do końca tury / Obrona (+0/+2): +0/+2 dla twoich stworów do końca tury
+  MOJE POLA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  >> Dalej (pass)
+
+--- krok 15 | T. 4BotGracz: 20 ż.Bot: 20 ż.Walka / Początek walki ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Expunge (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Expunge · 3 · Instant · nie może być regenerowany + zniszcz cel · cel: stwór niebędący artefaktem ani czarnym · Cycling {2} → dobierz kartę | Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Fortify · 3 · Instant · wybierz jedno — Ofensywa (+2/+0): +2/+0 dla twoich stworów do końca tury / Obrona (+0/+2): +0/+2 dla twoich stworów do końca tury
+  MOJE POLA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja blokujących (1 opcja)
+  [modal choice] Wybierz blokujących (przełączniki przy każdym atakującym):Zatwierdź blokiBez blokówZamknij (dokończysz później)
+  [modal choice]   ▶ Zatwierdź bloki
+  >> Dalej (pass)
+
+--- krok 18 | T. 4BotGracz: 20 ż.Bot: 20 ż.Walka / Koniec walki ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Expunge (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Expunge · 3 · Instant · nie może być regenerowany + zniszcz cel · cel: stwór niebędący artefaktem ani czarnym · Cycling {2} → dobierz kartę | Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Fortify · 3 · Instant · wybierz jedno — Ofensywa (+2/+0): +2/+0 dla twoich stworów do końca tury / Obrona (+0/+2): +0/+2 dla twoich stworów do końca tury
+  MOJE POLA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+
+--- krok 21 | T. 4BotGracz: 20 ż.Bot: 20 ż.Sprzątanie ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Expunge (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Expunge · 3 · Instant · nie może być regenerowany + zniszcz cel · cel: stwór niebędący artefaktem ani czarnym · Cycling {2} → dobierz kartę | Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Fortify · 3 · Instant · wybierz jedno — Ofensywa (+2/+0): +2/+0 dla twoich stworów do końca tury / Obrona (+0/+2): +0/+2 dla twoich stworów do końca tury
+  MOJE POLA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Final Parting
+  >> Dalej (pass)
+
+--- krok 24 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Swamp  ||  Cycling: Expunge (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Expunge · 3 · Instant · nie może być regenerowany + zniszcz cel · cel: stwór niebędący artefaktem ani czarnym · Cycling {2} → dobierz kartę | Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Fortify · 3 · Instant · wybierz jedno — Ofensywa (+2/+0): +2/+0 dla twoich stworów do końca tury / Obrona (+0/+2): +0/+2 dla twoich stworów do końca tury | Final Parting · 5 · Sorcery · przeszukaj bibliotekę: jedna karta do ręki, druga do grobu, potem tasowanie
+  MOJE POLA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Rzuć: Fortify — Ofensywa (+2/+0) (koszt 2W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Fortify — tryb: Ofensywa (+2/+0)
+  [ROZGRYWKA]   • Fortify — tryb: Ofensywa (+2/+0) zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 7 — Ty
+
+--- krok 27 | T. 7GraczGracz: 20 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Expunge (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Expunge · 3 · Instant · nie może być regenerowany + zniszcz cel · cel: stwór niebędący artefaktem ani czarnym · Cycling {2} → dobierz kartę | Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Final Parting · 5 · Sorcery · przeszukaj bibliotekę: jedna karta do ręki, druga do grobu, potem tasowanie
+  MOJE POLA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Giant Spider
+  >> Dalej (pass)
+  >> Dalej (pass)
+
+--- krok 30 | T. 7GraczGracz: 20 ż.Bot: 20 ż.Walka / Początek walki ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Expunge (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Expunge · 3 · Instant · nie może być regenerowany + zniszcz cel · cel: stwór niebędący artefaktem ani czarnym · Cycling {2} → dobierz kartę | Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Final Parting · 5 · Sorcery · przeszukaj bibliotekę: jedna karta do ręki, druga do grobu, potem tasowanie | Giant Spider · 4 · Creature — Spider · Zasięg · 2/4
+  MOJE POLA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (1 opcja)
+  [modal choice] Wybierz atakujących (zaznacz stwory, które mają atakować):Zatwierdź atakBez atakuZamknij (dokończysz później)
+  [modal choice]   ▶ Zatwierdź atak
+  >> Rozstrzygnij obrażenia w walce
+
+--- krok 33 | T. 7GraczGracz: 20 ż.Bot: 20 ż.Walka / Koniec walki ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Expunge (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Expunge · 3 · Instant · nie może być regenerowany + zniszcz cel · cel: stwór niebędący artefaktem ani czarnym · Cycling {2} → dobierz kartę | Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Final Parting · 5 · Sorcery · przeszukaj bibliotekę: jedna karta do ręki, druga do grobu, potem tasowanie | Giant Spider · 4 · Creature — Spider · Zasięg · 2/4
+  MOJE POLA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+
+--- krok 36 | T. 7GraczGracz: 20 ż.Bot: 20 ż.Sprzątanie ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Expunge (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Expunge · 3 · Instant · nie może być regenerowany + zniszcz cel · cel: stwór niebędący artefaktem ani czarnym · Cycling {2} → dobierz kartę | Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Final Parting · 5 · Sorcery · przeszukaj bibliotekę: jedna karta do ręki, druga do grobu, potem tasowanie | Giant Spider · 4 · Creature — Spider · Zasięg · 2/4
+  MOJE POLA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+
+--- krok 39 | T. 8BotGracz: 20 ż.Bot: 20 ż.Główna 1Stos — Tenth District Veteran ---
+  STOS: Tenth District Veteran (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Expunge · 3 · Instant · nie może być regenerowany + zniszcz cel · cel: stwór niebędący artefaktem ani czarnym · Cycling {2} → dobierz kartę | Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Final Parting · 5 · Sorcery · przeszukaj bibliotekę: jedna karta do ręki, druga do grobu, potem tasowanie | Giant Spider · 4 · Creature — Spider · Zasięg · 2/4
+  MOJE POLA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Tenth District Veteran
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tenth District Veteran wchodzi na pole bitwy
+  [ROZGRYWKA]   • Tenth District Veteran zostaje rozstrzygnięty
+  >> Rzuć: Expunge (koszt 2B) → cel: Tenth District Veteran (Nieprzyjaciel)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Expunge → cel: Tenth District Veteran
+  [ROZGRYWKA]   • Tenth District Veteran nie może być regenerowany do końca tury
+  [ROZGRYWKA]   • Tenth District Veteran zostaje zniszczony
+  [ROZGRYWKA]   • Expunge zostaje rozstrzygnięty
+
+--- krok 42 | T. 9GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Final Parting · 5 · Sorcery · przeszukaj bibliotekę: jedna karta do ręki, druga do grobu, potem tasowanie | Giant Spider · 4 · Creature — Spider · Zasięg · 2/4 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz
+  MOJE POLA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mindstab
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+
+--- krok 45 | T. 10BotGracz: 20 ż.Bot: 20 ż.Główna 1Stos — Trestle Troll ---
+  STOS: Trestle Troll (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Final Parting · 5 · Sorcery · przeszukaj bibliotekę: jedna karta do ręki, druga do grobu, potem tasowanie | Giant Spider · 4 · Creature — Spider · Zasięg · 2/4 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz
+  MOJE POLA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Trestle Troll
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Trestle Troll wchodzi na pole bitwy
+  [ROZGRYWKA]   • Trestle Troll zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Alaborn Trooper
+  >> Zagraj: Alaborn Trooper (koszt 2W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Alaborn Trooper
+  [ROZGRYWKA]   • Alaborn Trooper wchodzi na pole bitwy
+  [ROZGRYWKA]   • Alaborn Trooper zostaje rozstrzygnięty
+
+--- krok 48 | T. 12BotGracz: 20 ż.Bot: 20 ż.DobieranieStos — Courage in Crisis ---
+  STOS: Courage in Crisis (rzuca: Nieprzyjaciel) → cel: Trestle Troll
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Final Parting · 5 · Sorcery · przeszukaj bibliotekę: jedna karta do ręki, druga do grobu, potem tasowanie | Giant Spider · 4 · Creature — Spider · Zasięg · 2/4 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz
+  MOJE POLA: Alaborn Trooper · 3 · Creature — Human Soldier · choroba · 2/3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Trestle Troll · 3 · Creature — Troll · Obrońca Zasięg · {1}, {B}, {G}: Regeneruj tego stwora (następne zniszczenie zostaje odwrócone) · 1/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Courage in Crisis → cel: Trestle Troll
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Trestle Troll dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Trestle Troll dostaje +1 licznik +1/+1 (razem 2)
+  [ROZGRYWKA]   • Proliferate: 1 cel dostaje dodatkowe liczniki
+  [ROZGRYWKA]   • Courage in Crisis zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Chatter of the Squirrel
+  >> Dalej (pass)
+
+--- krok 51 | T. 13GraczGracz: 20 ż.Bot: 20 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Final Parting · 5 · Sorcery · przeszukaj bibliotekę: jedna karta do ręki, druga do grobu, potem tasowanie | Giant Spider · 4 · Creature — Spider · Zasięg · 2/4 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz | Chatter of the Squirrel · 1 · Sorcery · Stwórz 1/1 Squirrel
+  MOJE POLA: Alaborn Trooper · 3 · Creature — Human Soldier · 2/3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Trestle Troll · 3 · Creature — Troll · Obrońca Zasięg · {1}, {B}, {G}: Regeneruj tego stwora (następne zniszczenie zostaje odwrócone) · 2x +1/+1 · 3/6
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Alaborn Trooper
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Trestle Troll blokuje Alaborn Trooper
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Alaborn Trooper zadaje 2 obrażenia (Trestle Troll)
+  [ROZGRYWKA]   • Trestle Troll zadaje 3 obrażenia (Alaborn Trooper)
+  [ROZGRYWKA]   • Alaborn Trooper ginie
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Trestle Troll — tarcza regeneracji (następne zniszczenie w tej turze)
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Trestle Troll
+
+--- krok 54 | T. 15GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Final Parting · 5 · Sorcery · przeszukaj bibliotekę: jedna karta do ręki, druga do grobu, potem tasowanie | Giant Spider · 4 · Creature — Spider · Zasięg · 2/4 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz | Chatter of the Squirrel · 1 · Sorcery · Stwórz 1/1 Squirrel | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  MOJE POLA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Trestle Troll · 3 · Creature — Troll · Obrońca Zasięg · {1}, {B}, {G}: Regeneruj tego stwora (następne zniszczenie zostaje odwrócone) · 2x +1/+1 · 3/6
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Trestle Troll rozstrzygnięta
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Zagraj: Static Net (koszt 3W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Static Net
+  [ROZGRYWKA]   • Static Net wchodzi na pole bitwy
+  [ROZGRYWKA]   • Static Net zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Static Net — wybierz cel triggera (wymagany)
+  [ROZGRYWKA]   • Static Net — trigger (wejście na pole bitwy)
+
+--- krok 57 | T. 15GraczGracz: 20 ż.Bot: 20 ż.Główna 1Stos — Static Net ---
+  STOS: Trigger: Static Net (wejście na pole bitwy)
+  AKCJE: Poddaj partię  ||  Static Net — cel triggera: Trestle Troll (Nieprzyjaciel)
+  RĘKA: Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Final Parting · 5 · Sorcery · przeszukaj bibliotekę: jedna karta do ręki, druga do grobu, potem tasowanie | Giant Spider · 4 · Creature — Spider · Zasięg · 2/4 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz | Chatter of the Squirrel · 1 · Sorcery · Stwórz 1/1 Squirrel
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Trestle Troll · 3 · Creature — Troll · Obrońca Zasięg · {1}, {B}, {G}: Regeneruj tego stwora (następne zniszczenie zostaje odwrócone) · 2x +1/+1 · 3/6
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Static Net — cel triggera: Trestle Troll (Nieprzyjaciel)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Static Net — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Static Net — cel: Trestle Troll
+  [ROZGRYWKA]   • Nieprzyjaciel: Trestle Troll — pole bitwy → wygnanie
+  [ROZGRYWKA]   • Static Net — trigger się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: życie 20 → 22
+  [ROZGRYWKA]   • Ty tworzysz token Powerstone
+  [ROZGRYWKA]   • Powerstone wchodzi na pole bitwy
+  [ROZGRYWKA]   • Static Net — trigger się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Expose to Daylight → cel: Powerstone
+
+--- krok 60 | T. 17GraczGracz: 22 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Final Parting · 5 · Sorcery · przeszukaj bibliotekę: jedna karta do ręki, druga do grobu, potem tasowanie | Giant Spider · 4 · Creature — Spider · Zasięg · 2/4 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz | Chatter of the Squirrel · 1 · Sorcery · Stwórz 1/1 Squirrel | Phyrexian Rager · 3 · Creature — Phyrexian Horror · Gdy wejdzie na pole bitwy: dobierz 1 kartę, utrata 1 życia. · 2/2
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Powerstone zostaje zniszczony
+  [ROZGRYWKA]   • Nieprzyjaciel wykonuje scry (patrzy na 1 kartę)
+  [ROZGRYWKA]   • Nieprzyjaciel kończy scry — zostawia na wierzchu biblioteki
+  [ROZGRYWKA]   • Expose to Daylight zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 17 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Phyrexian Rager
+  >> Zagraj: Phyrexian Rager (koszt 2B)
+  [kreator many] Płatność 2B — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: BTapnij: Plains (W)Tapnij: Swamp (B)Tapnij: S — źródła: 4
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Swamp (B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Phyrexian Rager
+  [ROZGRYWKA]   • Phyrexian Rager wchodzi na pole bitwy
+  [ROZGRYWKA]   • Phyrexian Rager zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Phyrexian Rager — trigger (wejście na pole bitwy)
+
+--- krok 63 | T. 17GraczGracz: 21 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Zagraj ląd: Forest  ||  Zawieś: Mindstab (koszt B, 4 liczniki czasu)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Final Parting · 5 · Sorcery · przeszukaj bibliotekę: jedna karta do ręki, druga do grobu, potem tasowanie | Giant Spider · 4 · Creature — Spider · Zasięg · 2/4 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz | Chatter of the Squirrel · 1 · Sorcery · Stwórz 1/1 Squirrel | Forest · Basic Land — Forest · T: dodaj 1 manę
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Phyrexian Rager · 3 · Creature — Phyrexian Horror · Gdy wejdzie na pole bitwy: dobierz 1 kartę, utrata 1 życia. · choroba · 2/2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Ty: życie 22 → 21
+  [ROZGRYWKA]   • Phyrexian Rager — trigger się rozstrzyga
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Rzuć: Chatter of the Squirrel (koszt G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Chatter of the Squirrel
+  [ROZGRYWKA]   • Ty tworzysz token Squirrel (1/1)
+  [ROZGRYWKA]   • Squirrel wchodzi na pole bitwy
+  [ROZGRYWKA]   • Chatter of the Squirrel zostaje rozstrzygnięty
+
+--- krok 66 | T. 17GraczGracz: 21 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zawieś: Mindstab (koszt B, 4 liczniki czasu)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Final Parting · 5 · Sorcery · przeszukaj bibliotekę: jedna karta do ręki, druga do grobu, potem tasowanie | Giant Spider · 4 · Creature — Spider · Zasięg · 2/4 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Phyrexian Rager · 3 · Creature — Phyrexian Horror · Gdy wejdzie na pole bitwy: dobierz 1 kartę, utrata 1 życia. · choroba · 2/2 | Squirrel · 0 · Creature — Squirrel · choroba · 1/1 | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Trostani Discordant
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Trostani Discordant wchodzi na pole bitwy
+  [ROZGRYWKA]   • Trostani Discordant zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Trostani Discordant — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Soldier (2/2)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Soldier (2/2)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Trostani Discordant — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Trostani Discordant — trigger (krok końca tury)
+  [ROZGRYWKA]   • Trostani Discordant — trigger bez efektu (nic się nie wydarzyło (zerowy wynik))
+  [ROZGRYWKA]   • Tura 19 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Dreams of Steel and Oil
+
+--- krok 69 | T. 19GraczGracz: 21 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zawieś: Mindstab (koszt B, 4 liczniki czasu)  ||  Zagraj: Giant Spider (koszt 3G)  ||  Rzuć: Dreams of Steel and Oil (koszt B) → cel: Nieprzyjaciel  ||  Rzuć: Final Parting (koszt 3BB)  ||  Dalej (pass)  ||  Poddaj partię  ||  Flashback: Chatter of the Squirrel (koszt 2)
+  RĘKA: Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Final Parting · 5 · Sorcery · przeszukaj bibliotekę: jedna karta do ręki, druga do grobu, potem tasowanie | Giant Spider · 4 · Creature — Spider · Zasięg · 2/4 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz | Dreams of Steel and Oil · 1 · Sorcery · odsłoń rękę, wybierz do wygnania · cel: gracz
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Phyrexian Rager · 3 · Creature — Phyrexian Horror · Gdy wejdzie na pole bitwy: dobierz 1 kartę, utrata 1 życia. · 2/2 | Squirrel · 0 · Creature — Squirrel · 1/1 | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · choroba · 1/4 | Soldier · 0 · Creature — Soldier · Dotykanie życia · choroba · 2/2 ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Rzuć: Dreams of Steel and Oil (koszt B) → cel: Nieprzyjaciel
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Rzucasz Dreams of Steel and Oil → cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Dreams of Steel and Oil: oglądasz rękę i grób gracza Nieprzyjaciel i wybiera kartę do wygnania
+  >> Dreams of Steel and Oil — wygnaj z ręki: Azorius Justiciar
+  >> Dreams of Steel and Oil — wygnaj z grobu: Tenth District Veteran
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Azorius Justiciar zostaje wygnany
+  [ROZGRYWKA]   • Tenth District Veteran zostaje wygnany
+  [ROZGRYWKA]   • Dreams of Steel and Oil zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Dreams of Steel and Oil zostaje rozstrzygnięty
+
+--- krok 72 | T. 19GraczGracz: 21 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zawieś: Mindstab (koszt B, 4 liczniki czasu)  ||  Zagraj: Giant Spider (koszt 3G)  ||  Dalej (pass)  ||  Poddaj partię  ||  Flashback: Chatter of the Squirrel (koszt 2)
+  RĘKA: Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Final Parting · 5 · Sorcery · przeszukaj bibliotekę: jedna karta do ręki, druga do grobu, potem tasowanie | Giant Spider · 4 · Creature — Spider · Zasięg · 2/4 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Phyrexian Rager · 3 · Creature — Phyrexian Horror · Gdy wejdzie na pole bitwy: dobierz 1 kartę, utrata 1 życia. · 2/2 | Squirrel · 0 · Creature — Squirrel · 1/1 | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · choroba · 1/4 | Soldier · 0 · Creature — Soldier · Dotykanie życia · choroba · 2/2 ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Zagraj: Giant Spider (koszt 3G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Giant Spider
+  [ROZGRYWKA]   • Giant Spider wchodzi na pole bitwy
+  [ROZGRYWKA]   • Giant Spider zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Phyrexian Rager, Squirrel
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Soldier blokuje Squirrel; Soldier blokuje Phyrexian Rager
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Phyrexian Rager zadaje 2 obrażenia (Soldier)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 22
+  [ROZGRYWKA]   • Soldier zadaje 2 obrażenia (Phyrexian Rager)
+  [ROZGRYWKA]   • token_squirrel zadaje 1 obrażenie (Soldier)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 22 → 24
+  [ROZGRYWKA]   • Soldier zadaje 2 obrażenia (token_squirrel)
+  [ROZGRYWKA]   • Phyrexian Rager ginie
+  [ROZGRYWKA]   • token_squirrel ginie
+  [ROZGRYWKA]   • Soldier ginie
+  [ROZGRYWKA]   • token Squirrel przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA]   • token Soldier przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+
+--- krok 75 | T. 20BotGracz: 21 ż.Bot: 24 ż.Główna 1Stos — Severed Strands ---
+  STOS: Severed Strands (rzuca: Nieprzyjaciel) → cel: Giant Spider
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Final Parting · 5 · Sorcery · przeszukaj bibliotekę: jedna karta do ręki, druga do grobu, potem tasowanie | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Giant Spider · 4 · Creature — Spider · Zasięg · choroba · 2/4 | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Severed Strands → cel: Giant Spider
+  [ROZGRYWKA]   • Soldier zostaje poświęcony
+  [ROZGRYWKA]   • token Soldier przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 24 → 26
+  [ROZGRYWKA]   • Giant Spider zostaje zniszczony
+  [ROZGRYWKA]   • Severed Strands zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Trostani Discordant
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Trostani Discordant zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 21 → 20
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Trostani Discordant — trigger (krok końca tury)
+  [ROZGRYWKA]   • Trostani Discordant — trigger bez efektu (nic się nie wydarzyło (zerowy wynik))
+  [ROZGRYWKA]   • Tura 21 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Blanchwood Prowler
+  >> Rzuć: Final Parting (koszt 3BB)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Rzucasz Final Parting
+  [ROZGRYWKA]   • Szukasz karty w bibliotece (Final Parting) — wybiera, którą wziąć do ręki albo rezygnuje
+
+--- krok 78 | T. 21GraczGracz: 20 ż.Bot: 26 ż.Główna 1Stos — Final Parting ---
+  STOS: Final Parting (rzuca: Ty)
+  AKCJE: Poddaj partię  ||  Wybierz: Szukanie w bibliotece (20 opcji)
+  RĘKA: Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz | Blanchwood Prowler · 2 · Creature — Elemental · Gdy wejdzie na pole bitwy: odsłoń 3 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu; bez wzięcia lądu: licznik +1/+1. · 1/1
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Wybierz: Szukanie w bibliotece (20 opcji)
+  [modal choice] Wybierz: Szukanie w bibliotece Szukanie: Plains Szukanie: Willbender Szukanie: Disa the Restless Szukanie: Survivor of Korlis Szukanie: Undead Servant Szukanie: Dragon Arch Szukanie: Faceless Butcher Szukanie: Island Szukanie: Reassembling Skeleton Szukanie: Academy Journeymage Szukanie: Shiv's Embrace Szukanie: Urza's Mine Szukanie: Mournful Zombie Szukanie: Mountain Szukanie: Altar of the Goyf Szukanie: Serra's Embrace Szukanie: Evangel of Synthesis Szukanie: Forest Szukanie: Simian Simulacrum Szukanie: Swamp
+  [modal choice]   ▶ Szukanie: Plains
+  [modal choice]     Szukanie: Willbender
+  [modal choice]     Szukanie: Disa the Restless
+  [modal choice]     Szukanie: Survivor of Korlis
+  [modal choice]     Szukanie: Undead Servant
+  [modal choice]     Szukanie: Dragon Arch
+  [modal choice]     Szukanie: Faceless Butcher
+  [modal choice]     Szukanie: Island
+  [modal choice]     Szukanie: Reassembling Skeleton
+  [modal choice]     Szukanie: Academy Journeymage
+  [modal choice]     Szukanie: Shiv's Embrace
+  [modal choice]     Szukanie: Urza's Mine
+  [modal choice]     Szukanie: Mournful Zombie
+  [modal choice]     Szukanie: Mountain
+  [modal choice]     Szukanie: Altar of the Goyf
+  [modal choice]     Szukanie: Serra's Embrace
+  [modal choice]     Szukanie: Evangel of Synthesis
+  [modal choice]     Szukanie: Forest
+  [modal choice]     Szukanie: Simian Simulacrum
+  [modal choice]     Szukanie: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odsłaniasz Plains
+  [ROZGRYWKA]   • Ty: Plains — biblioteka → ręka
+  >> Wybierz: Szukanie w bibliotece (19 opcji)
+  [modal choice] Wybierz: Szukanie w bibliotece Szukanie: Willbender Szukanie: Undead Servant Szukanie: Evangel of Synthesis Szukanie: Simian Simulacrum Szukanie: Survivor of Korlis Szukanie: Academy Journeymage Szukanie: Disa the Restless Szukanie: Mournful Zombie Szukanie: Serra's Embrace Szukanie: Dragon Arch Szukanie: Altar of the Goyf Szukanie: Island Szukanie: Urza's Mine Szukanie: Shiv's Embrace Szukanie: Swamp Szukanie: Reassembling Skeleton Szukanie: Mountain Szukanie: Faceless Butcher Szukanie: Forest
+  [modal choice]   ▶ Szukanie: Willbender
+  [modal choice]     Szukanie: Undead Servant
+  [modal choice]     Szukanie: Evangel of Synthesis
+  [modal choice]     Szukanie: Simian Simulacrum
+  [modal choice]     Szukanie: Survivor of Korlis
+  [modal choice]     Szukanie: Academy Journeymage
+  [modal choice]     Szukanie: Disa the Restless
+  [modal choice]     Szukanie: Mournful Zombie
+  [modal choice]     Szukanie: Serra's Embrace
+  [modal choice]     Szukanie: Dragon Arch
+  [modal choice]     Szukanie: Altar of the Goyf
+  [modal choice]     Szukanie: Island
+  [modal choice]     Szukanie: Urza's Mine
+  [modal choice]     Szukanie: Shiv's Embrace
+  [modal choice]     Szukanie: Swamp
+  [modal choice]     Szukanie: Reassembling Skeleton
+  [modal choice]     Szukanie: Mountain
+  [modal choice]     Szukanie: Faceless Butcher
+  [modal choice]     Szukanie: Forest
+
+--- krok 81 | T. 21GraczGracz: 20 ż.Bot: 26 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Plains  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz | Blanchwood Prowler · 2 · Creature — Elemental · Gdy wejdzie na pole bitwy: odsłoń 3 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu; bez wzięcia lądu: licznik +1/+1. · 1/1 | Plains · Basic Land — Plains · T: dodaj 1 manę
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odsłaniasz Willbender
+  [ROZGRYWKA]   • Ty: Willbender — biblioteka → cmentarz
+  [ROZGRYWKA]   • Final Parting zostaje rozstrzygnięty
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Plains
+  [ROZGRYWKA]   • Tura 22 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Selesnya Charm — tryb: Rycerz
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Knight (3/3)
+  [ROZGRYWKA]   • Knight wchodzi na pole bitwy
+  [ROZGRYWKA]   • Selesnya Charm — tryb: Rycerz zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Trostani Discordant
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Trostani Discordant zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 19
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Trostani Discordant — trigger (krok końca tury)
+  [ROZGRYWKA]   • Trostani Discordant — trigger bez efektu (nic się nie wydarzyło (zerowy wynik))
+  [ROZGRYWKA]   • Tura 23 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Faceless Butcher
+
+--- krok 84 | T. 23GraczGracz: 19 ż.Bot: 26 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zawieś: Mindstab (koszt B, 4 liczniki czasu)  ||  Zagraj: Faceless Butcher (koszt 2BB)  ||  Zagraj: Blanchwood Prowler (koszt 1G)  ||  Cel czaru: Mindstab (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię  ||  Flashback: Chatter of the Squirrel (koszt 2)
+  RĘKA: Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz | Blanchwood Prowler · 2 · Creature — Elemental · Gdy wejdzie na pole bitwy: odsłoń 3 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu; bez wzięcia lądu: licznik +1/+1. · 1/1 | Faceless Butcher · 4 · Creature — Nightmare Horror · Gdy wejdzie na pole bitwy: wygnij stwora. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/3
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4 | Knight · 0 · Creature — Knight · Czujność · choroba · 3/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Zagraj: Faceless Butcher (koszt 2BB)
+  [kreator many] Płatność 2BB — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: B, BTapnij: Plains (W)Tapnij: Swamp (B)Tapni — źródła: 6
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Swamp (B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Faceless Butcher
+  [ROZGRYWKA]   • Faceless Butcher wchodzi na pole bitwy
+  [ROZGRYWKA]   • Faceless Butcher zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faceless Butcher — wybierz cel triggera (wymagany)
+  >> Faceless Butcher — cel triggera (2 opcje)
+  [modal choice] Faceless Butcher — cel triggera Faceless Butcher — cel triggera: Trostani Discordant (Nieprzyjaciel) Faceless Butcher — cel triggera: Knight (Nieprzyjaciel)
+  [modal choice]   ▶ Faceless Butcher — cel triggera: Trostani Discordant (Nieprzyjaciel)
+  [modal choice]     Faceless Butcher — cel triggera: Knight (Nieprzyjaciel)
+
+--- krok 87 | T. 23GraczGracz: 19 ż.Bot: 26 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Zagraj: Blanchwood Prowler (koszt 1G)  ||  Dalej (pass)  ||  Poddaj partię  ||  Flashback: Chatter of the Squirrel (koszt 2)
+  RĘKA: Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz | Blanchwood Prowler · 2 · Creature — Elemental · Gdy wejdzie na pole bitwy: odsłoń 3 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu; bez wzięcia lądu: licznik +1/+1. · 1/1
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Faceless Butcher · 4 · Creature — Nightmare Horror · Gdy wejdzie na pole bitwy: wygnij stwora. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · choroba · 2/3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Knight · 0 · Creature — Knight · Czujność · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faceless Butcher — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Faceless Butcher — cel: Trostani Discordant
+  [ROZGRYWKA]   • Nieprzyjaciel: Trostani Discordant — pole bitwy → wygnanie
+  [ROZGRYWKA]   • Faceless Butcher — trigger się rozstrzyga
+  >> Zagraj: Blanchwood Prowler (koszt 1G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Blanchwood Prowler
+  [ROZGRYWKA]   • Blanchwood Prowler wchodzi na pole bitwy
+  [ROZGRYWKA]   • Blanchwood Prowler zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Blanchwood Prowler — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odsłaniasz 3 karty z wierzchu biblioteki (Mournful Zombie, Island, Altar of the Goyf) — może wziąć ląd do ręki
+  [ROZGRYWKA]   • Blanchwood Prowler — trigger się rozstrzyga
+
+--- krok 90 | T. 23GraczGracz: 19 ż.Bot: 26 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Weź ląd do ręki: Island  ||  Nie bierz lądu (reszta do grobu, stwór dostaje +1/+1)
+  RĘKA: Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Faceless Butcher · 4 · Creature — Nightmare Horror · Gdy wejdzie na pole bitwy: wygnij stwora. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · choroba · 2/3 | Blanchwood Prowler · 2 · Creature — Elemental · Gdy wejdzie na pole bitwy: odsłoń 3 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu; bez wzięcia lądu: licznik +1/+1. · choroba · 1/1 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Knight · 0 · Creature — Knight · Czujność · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Weź ląd do ręki: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: Island — biblioteka → ręka
+  [ROZGRYWKA]   • Ty: Mournful Zombie — biblioteka → cmentarz
+  [ROZGRYWKA]   • Ty: Altar of the Goyf — biblioteka → cmentarz
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 24 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Ember Beast
+
+--- krok 93 | T. 25GraczGracz: 19 ż.Bot: 26 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz | Simian Simulacrum · 3 · Artifact Creature — Ape · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · {2}, {G}, {G}: unearth (z grobu z haste, exile na końcu tury) · 2/1
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Faceless Butcher · 4 · Creature — Nightmare Horror · Gdy wejdzie na pole bitwy: wygnij stwora. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/3 | Blanchwood Prowler · 2 · Creature — Elemental · Gdy wejdzie na pole bitwy: odsłoń 3 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu; bez wzięcia lądu: licznik +1/+1. · 1/1 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Knight · 0 · Creature — Knight · Czujność · 2/2 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · choroba · 3/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ember Beast wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ember Beast zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 25 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Simian Simulacrum
+  >> Zagraj: Simian Simulacrum (koszt 3)
+  [kreator many] Płatność 3 — tapuj źródła po jednympozostało 3 manyTapnij: Plains (W)Tapnij: Swamp (B)Tapnij: Swamp (B)Tapnij: Swamp (B) — źródła: 7
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Swamp (B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Simian Simulacrum
+  [ROZGRYWKA]   • Simian Simulacrum wchodzi na pole bitwy
+  [ROZGRYWKA]   • Simian Simulacrum zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Simian Simulacrum — wybierz cel triggera (wymagany)
+
+--- krok 96 | T. 25GraczGracz: 19 ż.Bot: 26 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Simian Simulacrum — cel triggera (3 opcje)
+  RĘKA: Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Faceless Butcher · 4 · Creature — Nightmare Horror · Gdy wejdzie na pole bitwy: wygnij stwora. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/3 | Blanchwood Prowler · 2 · Creature — Elemental · Gdy wejdzie na pole bitwy: odsłoń 3 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu; bez wzięcia lądu: licznik +1/+1. · 1/1 | Simian Simulacrum · 3 · Artifact Creature — Ape · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · {2}, {G}, {G}: unearth (z grobu z haste, exile na końcu tury) · choroba · 2/1 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Knight · 0 · Creature — Knight · Czujność · 2/2 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · choroba · 3/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Simian Simulacrum — cel triggera (3 opcje)
+  [modal choice] Simian Simulacrum — cel triggera Simian Simulacrum — cel triggera: Faceless Butcher (Ty) Simian Simulacrum — cel triggera: Blanchwood Prowler (Ty) Simian Simulacrum — cel triggera: Simian Simulacrum (Ty)
+  [modal choice]   ▶ Simian Simulacrum — cel triggera: Faceless Butcher (Ty)
+  [modal choice]     Simian Simulacrum — cel triggera: Blanchwood Prowler (Ty)
+  [modal choice]     Simian Simulacrum — cel triggera: Simian Simulacrum (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Simian Simulacrum — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Simian Simulacrum — cel: Faceless Butcher
+  [ROZGRYWKA]   • Faceless Butcher dostaje +2 liczniki +1/+1 (razem 2)
+  [ROZGRYWKA]   • Simian Simulacrum — trigger się rozstrzyga
+  >> Zagraj: Wormfang Newt (koszt 1U)
+  [kreator many] Płatność 1U — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: UTapnij: Swamp (B)Tapnij: Forest (G)Tapnij: P — źródła: 4
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Swamp (B)
+
+--- krok 99 | T. 25GraczGracz: 19 ż.Bot: 26 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię  ||  Wormfang Newt — cel triggera (7 opcji)
+  RĘKA: Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Faceless Butcher · 4 · Creature — Nightmare Horror · Gdy wejdzie na pole bitwy: wygnij stwora. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2x +1/+1 · 4/5 | Blanchwood Prowler · 2 · Creature — Elemental · Gdy wejdzie na pole bitwy: odsłoń 3 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu; bez wzięcia lądu: licznik +1/+1. · 1/1 | Simian Simulacrum · 3 · Artifact Creature — Ape · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · {2}, {G}, {G}: unearth (z grobu z haste, exile na końcu tury) · choroba · 2/1 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · choroba · 2/2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Knight · 0 · Creature — Knight · Czujność · 2/2 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · choroba · 3/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Wormfang Newt
+  [ROZGRYWKA]   • Wormfang Newt wchodzi na pole bitwy
+  [ROZGRYWKA]   • Wormfang Newt zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Wormfang Newt — wybierz cel triggera (wymagany)
+  >> Wormfang Newt — cel triggera (7 opcji)
+  [modal choice] Wormfang Newt — cel triggera Wormfang Newt — cel triggera: Plains (Ty) (1 z 2) Wormfang Newt — cel triggera: Swamp (Ty) (1 z 3) Wormfang Newt — cel triggera: Swamp (Ty) (2 z 3) Wormfang Newt — cel triggera: Swamp (Ty) (3 z 3) Wormfang Newt — cel triggera: Forest (Ty) Wormfang Newt — cel triggera: Plains (Ty) (2 z 2) Wormfang Newt — cel triggera: Island (Ty)
+  [modal choice]   ▶ Wormfang Newt — cel triggera: Plains (Ty) (1 z 2)
+  [modal choice]     Wormfang Newt — cel triggera: Swamp (Ty) (1 z 3)
+  [modal choice]     Wormfang Newt — cel triggera: Swamp (Ty) (2 z 3)
+  [modal choice]     Wormfang Newt — cel triggera: Swamp (Ty) (3 z 3)
+  [modal choice]     Wormfang Newt — cel triggera: Forest (Ty)
+  [modal choice]     Wormfang Newt — cel triggera: Plains (Ty) (2 z 2)
+  [modal choice]     Wormfang Newt — cel triggera: Island (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Wormfang Newt — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Wormfang Newt — cel: Plains
+  [ROZGRYWKA]   • Ty: Plains — pole bitwy → wygnanie
+  [ROZGRYWKA]   • Wormfang Newt — trigger się rozstrzyga
+
+--- krok 102 | T. 25GraczGracz: 19 ż.Bot: 26 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Flashback: Chatter of the Squirrel (koszt 2)
+  RĘKA: Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Faceless Butcher · 4 · Creature — Nightmare Horror · Gdy wejdzie na pole bitwy: wygnij stwora. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2x +1/+1 · 4/5 | Blanchwood Prowler · 2 · Creature — Elemental · Gdy wejdzie na pole bitwy: odsłoń 3 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu; bez wzięcia lądu: licznik +1/+1. · 1/1 | Simian Simulacrum · 3 · Artifact Creature — Ape · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · {2}, {G}, {G}: unearth (z grobu z haste, exile na końcu tury) · choroba · 2/1 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · choroba · 2/2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Knight · 0 · Creature — Knight · Czujność · 2/2 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · choroba · 3/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Faceless Butcher, Blanchwood Prowler
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Knight i Ember Beast blokują Faceless Butcher
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Rozdzielasz obrażenia bojowe (trample albo wielu blokerów)
+
+--- krok 105 | T. 25GraczGracz: 19 ż.Bot: 26 ż.Walka / Koniec walki ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Wybierz: Rozdzielenie obrażeń bojowych (1 opcja)
+  RĘKA: Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Faceless Butcher · 4 · Creature — Nightmare Horror · Gdy wejdzie na pole bitwy: wygnij stwora. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · atakuje — blokują: Knight, Ember Beast · 2x +1/+1 · 4/5 | Blanchwood Prowler · 2 · Creature — Elemental · Gdy wejdzie na pole bitwy: odsłoń 3 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu; bez wzięcia lądu: licznik +1/+1. · atakuje — niezablokowany · 1/1 | Simian Simulacrum · 3 · Artifact Creature — Ape · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · {2}, {G}, {G}: unearth (z grobu z haste, exile na końcu tury) · choroba · 2/1 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · choroba · 2/2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Knight · 0 · Creature — Knight · Czujność · blokuje: Faceless Butcher · 2/2 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · blokuje: Faceless Butcher · choroba · 3/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Wybierz: Rozdzielenie obrażeń bojowych (1 opcja)
+  [modal choice] Rozdziel obrażenia bojowe — przydziel moc atakujących blokującym:Faceless Butcher (moc 4)Knight (wytrz. 2, śmiertelne 2)−10+1↑↓Ember Beast (wytrz. 4, śmiertelne 4)−10+1↑↓Zatwierdź przydziałDomyślnie (lethal-first)Zamknij (dokończysz później)
+  [modal choice]   ▶ Zatwierdź przydział
+  [modal choice]     Domyślnie (lethal-first)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Knight zadaje 2 obrażenia (Faceless Butcher)
+  [ROZGRYWKA]   • Ember Beast zadaje 3 obrażenia (Faceless Butcher)
+  [ROZGRYWKA]   • Blanchwood Prowler zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 26 → 25
+  [ROZGRYWKA]   • Faceless Butcher ginie
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Faceless Butcher — trigger (opuszczenie pola bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel: Trostani Discordant — wygnanie → pole bitwy
+  [ROZGRYWKA]   • Trostani Discordant przechodzi pod kontrolę gracza Nieprzyjaciel
+  [ROZGRYWKA]   • Faceless Butcher — trigger się rozstrzyga
+  [ROZGRYWKA]   • Trostani Discordant — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Soldier (2/2)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Soldier (2/2)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Trostani Discordant — trigger się rozstrzyga
+
+--- krok 108 | T. 25GraczGracz: 19 ż.Bot: 25 ż.Główna 2 ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Flashback: Chatter of the Squirrel (koszt 2)
+  RĘKA: Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Blanchwood Prowler · 2 · Creature — Elemental · Gdy wejdzie na pole bitwy: odsłoń 3 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu; bez wzięcia lądu: licznik +1/+1. · 1/1 | Simian Simulacrum · 3 · Artifact Creature — Ape · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · {2}, {G}, {G}: unearth (z grobu z haste, exile na końcu tury) · choroba · 2/1 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · choroba · 2/2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Knight · 0 · Creature — Knight · Czujność · 3/3 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · choroba · 4/5 | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · choroba · 1/4 | Soldier · 0 · Creature — Soldier · Dotykanie życia · choroba · 2/2 ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 26 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Liliana's Triumph → cel: Ty
+  >> Wybierz: Poświęcenie (3 opcje)
+  [modal choice] Wybierz: Poświęcenie Poświęć: Wormfang Newt (Ty) Poświęć: Simian Simulacrum (Ty) Poświęć: Blanchwood Prowler (Ty)
+  [modal choice]   ▶ Poświęć: Wormfang Newt (Ty)
+  [modal choice]     Poświęć: Simian Simulacrum (Ty)
+  [modal choice]     Poświęć: Blanchwood Prowler (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Wormfang Newt zostaje poświęcony
+  [ROZGRYWKA]   • Liliana's Triumph zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Wormfang Newt — trigger (opuszczenie pola bitwy)
+  [ROZGRYWKA]   • Ty: Plains — wygnanie → pole bitwy
+  [ROZGRYWKA]   • Plains przechodzi pod kontrolę gracza Ty
+  [ROZGRYWKA]   • Wormfang Newt — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Epic Experiment
+
+--- krok 111 | T. 26BotGracz: 19 ż.Bot: 25 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Blanchwood Prowler · 2 · Creature — Elemental · Gdy wejdzie na pole bitwy: odsłoń 3 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu; bez wzięcia lądu: licznik +1/+1. · 1/1 | Simian Simulacrum · 3 · Artifact Creature — Ape · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · {2}, {G}, {G}: unearth (z grobu z haste, exile na końcu tury) · choroba · 2/1 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Knight · 0 · Creature — Knight · Czujność · 3/3 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 4/5 | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4 | Soldier · 0 · Creature — Soldier · Dotykanie życia · 2/2 ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Plains
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Plains
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Forest
+  [ROZGRYWKA]   • Nieprzyjaciel wykonuje Epic Experiment — wygnano 3 karty z wierzchu biblioteki: Plains, Plains, Forest
+  [ROZGRYWKA]   • Nieprzyjaciel: Plains — wygnanie → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel: Plains — wygnanie → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel: Forest — wygnanie → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel kończy Epic Experiment (3 karty do grobu)
+  [ROZGRYWKA]   • Epic Experiment zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Knight, Ember Beast, Trostani Discordant, Soldier, Soldier
+  >> Wybierz: Deklaracja blokujących (6 opcji)
+  [combat wizard] blokuję 1 stworami: Simian Simulacrum (2/1)
+  [combat wizard] Zatwierdź bloki
+
+--- krok 114 | T. 26BotGracz: 9 ż.Bot: 29 ż.Walka / Koniec walki ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Blanchwood Prowler · 2 · Creature — Elemental · Gdy wejdzie na pole bitwy: odsłoń 3 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu; bez wzięcia lądu: licznik +1/+1. · 1/1 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Knight · 0 · Creature — Knight · Czujność · 3/3 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 4/5 | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4 | Soldier · 0 · Creature — Soldier · Dotykanie życia · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Simian Simulacrum blokuje Soldier
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Knight zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 19 → 16
+  [ROZGRYWKA]   • Ember Beast zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 12
+  [ROZGRYWKA]   • Trostani Discordant zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 12 → 11
+  [ROZGRYWKA]   • Soldier zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 9
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 25 → 27
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 27 → 29
+  [ROZGRYWKA]   • Soldier zadaje 2 obrażenia (Simian Simulacrum)
+  [ROZGRYWKA]   • Simian Simulacrum zadaje 2 obrażenia (Soldier)
+  [ROZGRYWKA]   • Simian Simulacrum ginie
+  [ROZGRYWKA]   • Soldier ginie
+  [ROZGRYWKA]   • token Soldier przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Trostani Discordant — trigger (krok końca tury)
+  [ROZGRYWKA]   • Trostani Discordant — trigger bez efektu (nic się nie wydarzyło (zerowy wynik))
+  [ROZGRYWKA]   • Tura 27 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+
+--- krok 117 | T. 27GraczGracz: 9 ż.Bot: 29 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zawieś: Mindstab (koszt B, 4 liczniki czasu)  ||  Zagraj: Goblin Picker (koszt 1R)  ||  Cel czaru: Mindstab (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię  ||  Flashback: Chatter of the Squirrel (koszt 2)
+  RĘKA: Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · 2/2 | Mindstab · 6 · Sorcery · odrzuć 3 karty · cel: gracz
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Blanchwood Prowler · 2 · Creature — Elemental · Gdy wejdzie na pole bitwy: odsłoń 3 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu; bez wzięcia lądu: licznik +1/+1. · 1/1 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Knight · 0 · Creature — Knight · Czujność · 3/3 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 4/5 | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4 | Soldier · 0 · Creature — Soldier · Dotykanie życia · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Zagraj: Goblin Picker (koszt 1R)
+  [kreator many] Płatność 1R — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: RTapnij: Swamp (B)Tapnij: Swamp (B)Tapnij: Sw — źródła: 8
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Swamp (B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Goblin Picker
+  [ROZGRYWKA]   • Goblin Picker wchodzi na pole bitwy
+  [ROZGRYWKA]   • Goblin Picker zostaje rozstrzygnięty
+  >> Cel czaru: Mindstab (2 opcje)
+  [modal choice] Cel czaru: Mindstab Rzuć: Mindstab (koszt 5B) → cel: Nieprzyjaciel Rzuć: Mindstab (koszt 5B) → cel: Ty
+  [modal choice]   ▶ Rzuć: Mindstab (koszt 5B) → cel: Nieprzyjaciel
+  [modal choice]     Rzuć: Mindstab (koszt 5B) → cel: Ty
+
+--- krok 120 | T. 27GraczGracz: 9 ż.Bot: 29 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Blanchwood Prowler · 2 · Creature — Elemental · Gdy wejdzie na pole bitwy: odsłoń 3 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu; bez wzięcia lądu: licznik +1/+1. · 1/1 | Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · choroba · 2/2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Knight · 0 · Creature — Knight · Czujność · 3/3 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 4/5 | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4 | Soldier · 0 · Creature — Soldier · Dotykanie życia · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Mindstab → cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera, którą kartę odrzucić efektem (Mindstab)
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Forced Landing
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera, którą kartę odrzucić efektem (Mindstab)
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Sagittars' Volley
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Mindstab zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Blanchwood Prowler
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Knight blokuje Blanchwood Prowler
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Blanchwood Prowler zadaje 1 obrażenie (Knight)
+  [ROZGRYWKA]   • Knight zadaje 3 obrażenia (Blanchwood Prowler)
+  [ROZGRYWKA]   • Blanchwood Prowler ginie
+  [ROZGRYWKA]   • Tura 28 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Chronic Flooding → cel: Mountain
+
+--- krok 123 | T. 28BotGracz: 9 ż.Bot: 29 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Deklaracja blokujących (4 opcje)
+  RĘKA: (pusta)
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Goblin Picker · 2 · Creature — Goblin · {R}, {T}, odrzuć kartę: dobierz 1 kartę · choroba · 2/2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Knight · 0 · Creature — Knight · Czujność · atakuje — niezablokowany · 3/3 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · atakuje — niezablokowany · 4/5 | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4 | Soldier · 0 · Creature — Soldier · Dotykanie życia · atakuje — niezablokowany · 2/2 | Chronic Flooding · 2 · Enchantment Aura · Trigger zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Mountain
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Chronic Flooding zaczarowuje Mountain
+  [ROZGRYWKA]   • Chronic Flooding wchodzi na pole bitwy
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Knight, Ember Beast, Soldier
+  >> Wybierz: Deklaracja blokujących (4 opcje)
+  [combat wizard] blokuję 1 stworami: Goblin Picker (2/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Goblin Picker blokuje Soldier
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Knight zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 9 → 6
+  [ROZGRYWKA]   • Ember Beast zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 6 → 2
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 29 → 31
+  [ROZGRYWKA]   • Soldier zadaje 2 obrażenia (Goblin Picker)
+  [ROZGRYWKA]   • Goblin Picker zadaje 2 obrażenia (Soldier)
+  [ROZGRYWKA]   • Soldier ginie
+  [ROZGRYWKA]   • Goblin Picker ginie
+  [ROZGRYWKA]   • token Soldier przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+
+--- krok 126 | T. 29GraczGracz: 2 ż.Bot: 31 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Evangel of Synthesis · 2 · Creature — Phyrexian Human Cleric · Gdy wejdzie na pole bitwy: dobierz 1 kartę, odrzuć 1 kartę. · +1/+0 · Postrach · przy 2+ dobranych kartach · 2/3
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Knight · 0 · Creature — Knight · Czujność · 3/3 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 4/5 | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4 | Chronic Flooding · 2 · Enchantment Aura · Trigger zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Mountain
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Trostani Discordant — trigger (krok końca tury)
+  [ROZGRYWKA]   • Trostani Discordant — trigger bez efektu (nic się nie wydarzyło (zerowy wynik))
+  [ROZGRYWKA]   • Tura 29 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Evangel of Synthesis
+  >> Zagraj: Evangel of Synthesis (koszt UB)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Evangel of Synthesis
+  [ROZGRYWKA]   • Evangel of Synthesis wchodzi na pole bitwy
+  [ROZGRYWKA]   • Evangel of Synthesis zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Evangel of Synthesis — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Urza's Mine
+  [ROZGRYWKA]   • Wybierasz, którą kartę odrzucić efektem (Evangel of Synthesis)
+  [ROZGRYWKA]   • Evangel of Synthesis — trigger się rozstrzyga
+
+--- krok 129 | T. 29GraczGracz: 2 ż.Bot: 31 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Odrzuć: Urza's Mine
+  RĘKA: Urza's Mine · Land — Urza's Mine · T: dodaj 1 manę
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Evangel of Synthesis · 2 · Creature — Phyrexian Human Cleric · Postrach · Gdy wejdzie na pole bitwy: dobierz 1 kartę, odrzuć 1 kartę. · +1/+0 · Postrach · przy 2+ dobranych kartach · Postrach · choroba · 3/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Knight · 0 · Creature — Knight · Czujność · 3/3 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 4/5 | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4 | Chronic Flooding · 2 · Enchantment Aura · Trigger zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Mountain
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Odrzuć: Urza's Mine
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odrzucasz Urza's Mine
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 30 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Toll of the Invasion → cel: Ty
+
+--- krok 132 | T. 30BotGracz: 2 ż.Bot: 31 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Deklaracja blokujących (3 opcje)
+  RĘKA: (pusta)
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Evangel of Synthesis · 2 · Creature — Phyrexian Human Cleric · Gdy wejdzie na pole bitwy: dobierz 1 kartę, odrzuć 1 kartę. · +1/+0 · Postrach · przy 2+ dobranych kartach · choroba · 2/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Knight · 0 · Creature — Knight · Czujność · atakuje — niezablokowany · 3/3 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · atakuje — niezablokowany · 4/5 | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4 | Chronic Flooding · 2 · Enchantment Aura · Trigger zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Mountain | Zombie Army · 0 · Creature — Zombie Army · choroba · 1x +1/+1 · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Zombie Army (1/1)
+  [ROZGRYWKA]   • Zombie Army wchodzi na pole bitwy
+  [ROZGRYWKA]   • Zombie Army dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Toll of the Invasion zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Knight, Ember Beast
+  >> Wybierz: Deklaracja blokujących (3 opcje)
+  [combat wizard] blokuję 1 stworami: Evangel of Synthesis (2/3)
+  [combat wizard] Zatwierdź bloki
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 135 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: (pusta)
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Knight · 0 · Creature — Knight · Czujność · 3/3 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · −2 · 4/5 | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4 | Chronic Flooding · 2 · Enchantment Aura · Trigger zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Mountain | Zombie Army · 0 · Creature — Zombie Army · choroba · 1x +1/+1 · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Static Net, Swamp, Expunge, Goblin Picker, Wormfang Newt, Fortify, Plains ⏎ Nowa partia (seed 5). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 47, kliknięte: 52, modale: 11, sondy noop: 170 (panel 138, modal 32)
+== DETEKTORY: brak zgłoszeń ==

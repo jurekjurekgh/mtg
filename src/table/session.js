@@ -1113,9 +1113,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       case 'counter_pay_resolved': return e.paid
         ? `${nameOf(e.cardId)}: kontroler płaci — czar zostaje na stosie`
         : `${nameOf(e.cardId)}: bez zapłaty — czar skontrowany`;
-      case 'pay_or_sacrifice_resolved': return e.paid
-        ? `${whoN(e.playerId)} płaci {${e.amount}} za ${nameOfObject(e.sourceId)}`
-        : `${whoN(e.playerId)} poświęca ${nameOfObject(e.sourceId)}`;
+      case 'pay_or_sacrifice_resolved': {
+        // M184/Z5: przy poświęceniu obiekt już zmienił id (grób) — nazwa
+        // z cardId (LKI), fallback na nameOfObject dla starych zdarzeń.
+        const co = e.cardId ? nameOf(e.cardId) : nameOfObject(e.sourceId);
+        return e.paid
+          ? `${whoN(e.playerId)} płaci {${e.amount}} za ${co}`
+          : `${whoN(e.playerId)} poświęca ${co}`;
+      }
       case 'optional_pay_required': {
         const parts = [];
         if (e.payMana) parts.push(`{${e.payMana}}`);

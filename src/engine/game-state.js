@@ -2464,14 +2464,17 @@ export function execute(state, input) {
     if (cmd.pay && source && source.zone === 'battlefield') {
       applyEffect(state, { type: 'pay_mana', amount: pending.amount }, source, []);
       state.events.push(event('pay_or_sacrifice_resolved', {
-        playerId: pending.playerId, sourceId: pending.sourceId, paid: true, amount: pending.amount,
+        // M184/Z5 (LKI, klasa spell_countered): nazwa po cardId — przy
+        // poświęceniu obiekt zmienia id (grób) i nameOfObject widzi „?".
+        playerId: pending.playerId, sourceId: pending.sourceId, cardId: source?.cardId ?? null,
+        paid: true, amount: pending.amount,
       }));
     } else {
       if (source && source.zone === 'battlefield') {
         applyEffect(state, { type: 'sacrifice_permanent' }, source, []);
       }
       state.events.push(event('pay_or_sacrifice_resolved', {
-        playerId: pending.playerId, sourceId: pending.sourceId, paid: false,
+        playerId: pending.playerId, sourceId: pending.sourceId, cardId: source?.cardId ?? null, paid: false,
       }));
     }
     const resolvedEvents = state.events.slice(before);

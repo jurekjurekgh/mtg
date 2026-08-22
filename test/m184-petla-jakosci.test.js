@@ -99,3 +99,19 @@ test('M184/Z4: opis Thieves Tools mowi o nieblokowalnosci nosiciela o mocy <=3',
   const text = infoTextOf('thieves-tools');
   assert.ok(text.includes('nie może być blokowany'), `próg nieblokowalności w opisie: ${text}`);
 });
+
+test('M184/Z5: poświęcenie z pay-or-sacrifice nazywa kartę (nie „?")', () => {
+  // Rupture Spire (g9-alara-warhammer-s23): „Nieprzyjaciel poświęca ?" —
+  // obiekt po poświęceniu ma NOWE id w grobie, więc opis musi iść po cardId
+  // (LKI — wzorzec spell_countered/counteredByCardId).
+  const state = game('p1');
+  putCard(state, 'spire', 'rupture-spire', 'p1', 'battlefield');
+  state.pendingPayOrSacrifice = {
+    playerId: 'p1', sourceId: 'spire', amount: 1,
+    restorePriorityTo: 'p1',
+  };
+  const r = execute(state, { type: 'resolve_pay_or_sacrifice', playerId: 'p1', pay: false });
+  assert.ok(r.ok, 'poświęcenie przechodzi');
+  const ev = state.events.findLast((e) => e.type === 'pay_or_sacrifice_resolved');
+  assert.equal(ev.cardId, 'rupture-spire', 'zdarzenie niesie cardId (LKI)');
+});
