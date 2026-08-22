@@ -1353,6 +1353,27 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
  *   humanId?: string, botFactory?: (seed: number) => object,
  *   pauseOnBotMoves?: boolean }} config
  */
+/**
+ * Nazwy tokenów z katalogu: skan deskryptorów kart w poszukiwaniu par
+ * `{ cardId: 'token_*', name }` (create_token, tokeny z triggerów, tokeny
+ * tworzone przez inne tokeny). Generyczny — nowa karta z nowym tokenem
+ * dostaje nazwę bez zmiany kodu (ADR 0002).
+ */
+export function collectTokenNames(registry) {
+  const out = new Map();
+  const visit = (node) => {
+    if (!node || typeof node !== 'object') return;
+    if (Array.isArray(node)) { for (const item of node) visit(item); return; }
+    if (typeof node.cardId === 'string' && node.cardId.startsWith('token_')
+      && typeof node.name === 'string' && node.name.length > 0 && !out.has(node.cardId)) {
+      out.set(node.cardId, node.name);
+    }
+    for (const value of Object.values(node)) visit(value);
+  };
+  for (const card of registry.all()) visit(card);
+  return out;
+}
+
 export function createSession(config) {
   const { seed, registry, decks } = config;
   // Feature 2026-08-11: opcje wyciszone przez gracza (ptaszek w panelu akcji)
@@ -1367,6 +1388,17 @@ export function createSession(config) {
   const names = Object.entries(PLAYER_NAMES).map(([id, name]) => ({ id, name }));
   let state = setupCardMatch({ seed, players: names, decks, registry });
   const nameById = new Map(registry.all().map((card) => [card.id, card.name]));
+  // M188/B (uwaga właściciela): tokeny mają cardId `token_*`, którego NIE MA
+  // w rejestrze kart — nameOf zwracał więc surowy identyfikator i log pisał
+  // „token_squirrel zadaje 1 obrażenie", „token_squirrel ginie". Nazwa
+  // obiektu żywego szła z `object.name` (nameOfObject), ale token po śmierci
+  // znika ze stanu (CR 111.7), więc opis miał do dyspozycji tylko cardId.
+  // Mapę budujemy GENERYCZNIE ze wszystkich deskryptorów tworzących tokeny
+  // w katalogu (ADR 0002 — bez ręcznej listy nazw); strażnik w testach
+  // pilnuje, żeby każdy nowy token miał nazwę.
+  for (const [cardId, name] of collectTokenNames(registry)) {
+    if (!nameById.has(cardId)) nameById.set(cardId, name);
+  }
   const colorsById = new Map(registry.all().map((card) => [card.id, card.colors ?? []]));
   const log = []; // { kind: 'event'|'rejection'|'system', text }
   const sessionLog = (kind, text) => log.push({ kind, text });

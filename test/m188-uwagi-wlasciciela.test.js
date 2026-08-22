@@ -12,8 +12,20 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { effectivePower } from '../src/engine/permanents.js';
 import { buildStateOverlay, cardInfo } from '../src/table/render.js';
+import { BOT_ID, HUMAN_ID, createSession, describeGameEvent } from '../src/table/session.js';
+import { parseDeckText } from '../src/cards/deck-text.js';
+import fs from 'node:fs';
 
 const REGISTRY = createCardRegistry();
+
+/** Sesja stołu na taliach jednoplanowych (ADR 0023 §5) — do warstwy opisu. */
+function tableSession() {
+  const decks = new Map([
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), REGISTRY).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer.txt', 'utf8'), REGISTRY).cardIds],
+  ]);
+  return createSession({ seed: 3, registry: REGISTRY, decks });
+}
 
 function game(playerId = 'p1') {
   const state = createGameState({ seed: 42, players: [{ id: 'p1' }, { id: 'p2' }] });
@@ -137,4 +149,62 @@ test('M188/A5: bez warunku kafel nie pokazuje badge\'a mocy (kontrola)', () => {
   const badges = badgesOf(cardInfo(SESSION_MOCK, entry, null));
   assert.ok(!badges.some((b) => b.includes('+1/+0')),
     `brak badge'a przy niespełnionym warunku (badge: ${JSON.stringify(badges)})`);
+});
+
+// ---- B: log nie pokazuje surowego „token_squirrel\" ----------------------
+// Zgłoszenie właściciela z Rozgrywki:
+//   „token_squirrel zadaje 1 obrażenie (Ethersworn Shieldmage)\"
+//   „token_squirrel ginie\"
+// nameOfObject zna nazwę z `object.name`, ale gdy token zginął (CR 111.7 —
+// token poza polem bitwy przestaje istnieć, obiekt znika ze stanu), opis
+// spada do nameOf(cardId), a `token_*` nie ma wpisu w rejestrze kart.
+
+test('M188/B: nameOf tłumaczy cardId tokenu na czytelną nazwę', () => {
+  const session = tableSession();
+  assert.equal(session.nameOf('token_squirrel'), 'Squirrel',
+    'token z definicji karty ma nazwę, nie surowy identyfikator');
+  assert.equal(session.nameOf('token_phyrexian_mite'), 'Phyrexian Mite', 'nazwa wieloczłonowa');
+  assert.equal(session.nameOf('token_treasure'), 'Treasure', 'token nietworzony przez stwora');
+  assert.equal(session.nameOf('highland-game'), 'Highland Game', 'zwykłe karty bez zmian');
+});
+
+test('M188/B2: opis zdarzeń o martwym tokenie nie pokazuje token_*', () => {
+  const session = tableSession();
+  const helpers = {
+    nameOf: session.nameOf,
+    // Token zginął — obiektu nie ma już w stanie (CR 111.7), więc warstwa
+    // opisu ma tylko cardId ze zdarzenia.
+    nameOfObject: () => '?',
+  };
+  const names = { p1: 'Ty', p2: 'Nieprzyjaciel' };
+  const damage = describeGameEvent(
+    { type: 'damage_dealt', source: 'gone-1', target: 'p1', amount: 1, sourceCardId: 'token_squirrel' },
+    helpers, names,
+  );
+  const died = describeGameEvent(
+    { type: 'object_died', objectId: 'gone-1', cardId: 'token_squirrel', controllerId: 'p2' },
+    helpers, names,
+  );
+  for (const line of [damage, died]) {
+    if (line == null) continue;
+    assert.ok(!String(line).includes('token_'),
+      `opis bez surowego identyfikatora tokenu: ${JSON.stringify(line)}`);
+  }
+});
+
+// ---- B3: STRAŻNIK — każdy token z katalogu ma nazwę -----------------------
+test('M188/B3: STRAŻNIK — nameOf zna KAŻDY token tworzony przez karty katalogu', () => {
+  const session = tableSession();
+  const tokenIds = new Set();
+  const scan = (node) => {
+    if (!node || typeof node !== 'object') return;
+    if (Array.isArray(node)) { for (const item of node) scan(item); return; }
+    if (typeof node.cardId === 'string' && node.cardId.startsWith('token_')) tokenIds.add(node.cardId);
+    for (const value of Object.values(node)) scan(value);
+  };
+  for (const card of REGISTRY.all()) scan(card);
+  assert.ok(tokenIds.size >= 20, `sonda znalazła tokeny w katalogu (${tokenIds.size})`);
+  const raw = [...tokenIds].filter((id) => session.nameOf(id) === id);
+  assert.deepEqual(raw, [],
+    `każdy token ma czytelną nazwę — bez wpisu log pokaże surowe id: ${JSON.stringify(raw)}`);
 });
