@@ -27,7 +27,7 @@ import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queu
 import { moveObjectDirectly } from './objects.js';
 import { detachAttachmentsFromHost } from './attachments.js';
 import { createBattlefieldToken } from './tokens.js';
-import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches } from './effects.js';
+import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife } from './effects.js';
 import { changeLife } from './players.js';
 import { shuffle } from './shuffle.js';
 import { applyRoomTargetChoice, applyEffect, drawPlayerCards } from './effects.js';
@@ -1263,6 +1263,11 @@ export function execute(state, input) {
       state.turn.priorityPlayerId = scry.restorePriorityTo;
     }
     state.pendingScry = null;
+    // M177/C (Sifter Wurm): „scry 3, THEN reveal the top card… gain life” —
+    // reveal dopiero po ułożeniu biblioteki decyzją gracza.
+    if (scry.revealTopGainLife) {
+      revealTopGainLife(state, scry.playerId, scry.revealTopGainLife.sourceCardId ?? null);
+    }
     // M100/E4: cardIds decyzji — opis nazywa tylko stronie decydującej (FoW).
     const cardIdOf = (id) => state.objects.get(id)?.cardId;
     state.events.push(event('scry_resolved', {
@@ -2320,13 +2325,21 @@ export function execute(state, input) {
     const matches = (object) => librarySearchMatches(object, pending.qualifier ?? {}, pending.playerId);
     const before = state.events.length;
     let foundCardId = null;
+    // M177/C (Final Parting): szukanie bez kryterium jakości jest OBOWIĄZKOWE
+    // (CR 701.19c — fail to find tylko przy ograniczonym kryterium).
+    if (cmd.found == null && pending.mandatory
+      && state.zones.library.some((id) => matches(state.objects.get(id)))) {
+      return reject('search_mandatory');
+    }
     if (cmd.found != null) {
       const chosen = state.objects.get(cmd.found);
       if (!chosen || !matches(chosen)) return reject('illegal_search_choice');
       foundCardId = chosen.cardId;
       const chosenDest = cmd.destination ?? pending.destination;
-      const destZone = chosenDest === 'battlefield' ? 'battlefield' : 'hand';
-      const newId = `${destZone === 'battlefield' ? 'permanent' : 'hand'}-${state.objectSequence++}`;
+      // M177/C (Final Parting): destination 'graveyard' — druga karta idzie
+      // do grobu (chain po karcie do ręki).
+      const destZone = chosenDest === 'battlefield' ? 'battlefield' : chosenDest === 'graveyard' ? 'graveyard' : 'hand';
+      const newId = `${destZone === 'battlefield' ? 'permanent' : destZone === 'graveyard' ? 'grave' : 'hand'}-${state.objectSequence++}`;
       const moved = moveObjectDirectly(state, cmd.found, destZone, newId);
       const placed = destZone === 'battlefield'
         ? Object.freeze({ ...moved, tapped: Boolean(pending.entersTapped || moved.entersTapped) })
@@ -2383,6 +2396,7 @@ export function execute(state, input) {
         qualifier: pending.chain.qualifier ?? pending.qualifier,
         destination: pending.chain.destination ?? pending.destination,
         entersTapped: Boolean(pending.chain.entersTapped),
+        mandatory: Boolean(pending.chain.mandatory),
         chain: pending.chain.remaining > 1 ? { ...pending.chain, remaining: pending.chain.remaining - 1 } : null,
       });
       if (queued) {
@@ -4643,7 +4657,10 @@ export function playerView(state, playerId) {
         legalCommands.unshift(command('resolve_search_choice', playerId, { found: targetId, destination: dest }));
       }
     }
-    legalCommands.unshift(command('resolve_search_choice', playerId, { found: null }));
+    // M177/C: szukanie obowiązkowe (bez kryterium) nie oferuje rezygnacji.
+    if (!state.pendingSearchChoice.mandatory) {
+      legalCommands.unshift(command('resolve_search_choice', playerId, { found: null }));
+    }
   } else if (state.status === 'active' && !blockedByOthersDecision && activePayOrSacrifice) {
     // „Sacrifice it unless you pay {N}" (Rupture Spire, Temat 7): wybór
     // kontrolera — zapłać albo poświęć. Boty płacą (pierwsza oferta).

@@ -7830,6 +7830,45 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+
+// ---- Batch 42 — transza C ----
+
+  // 6. Sifter Wurm (HOU) {5}{G}{G} 7/7 Wurm — Trample; ETB: scry 3, POTEM
+  //    reveal wierzchu + życie równe mana value (thenRevealTopGainLife na
+  //    pendingScry — reveal po decyzji gracza, CR 608.2).
+  defineCard({
+    id: 'sifter-wurm', name: 'Sifter Wurm', set: 'HOU',
+    types: ['Creature'], subtypes: ['Wurm'], colors: ['G'],
+    power: 7, toughness: 7, manaCost: 7, keywords: ['trample'],
+    oracleText: "Trample\nWhen this creature enters, scry 3, then reveal the top card of your library. You gain life equal to that card's mana value.",
+    imageUri: 'https://cards.scryfall.io/large/front/5/d/5dbaf7e3-e2fc-4399-aa83-c13df43008a0.jpg?1783936012',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'scry', amount: 3, thenRevealTopGainLife: true },
+      }),
+    ],
+    artId: 183, plan: 'Amonkhet',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 7. Final Parting (DOM) {3}{B}{B} Sorcery — przeszukaj bibliotekę po DWIE
+  //    karty: jedna do ręki, druga do grobu; potem tasowanie. Wyszukiwanie
+  //    bez kryterium = OBOWIĄZKOWE (CR 701.19c — bez fail to find).
+  defineCard({
+    id: 'final-parting', name: 'Final Parting', set: 'DOM',
+    types: ['Sorcery'], colors: ['B'], manaCost: 5,
+    oracleText: 'Search your library for two cards. Put one into your hand and the other into your graveyard. Then shuffle.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/e/de8803f6-9efa-4323-b8c5-29bdd5a48f9a.jpg?1783935009',
+    spell: {
+      timing: 'sorcery',
+      effects: [{ type: 'search_library_two_cards_hand_and_grave' }],
+    },
+    artId: 111, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 /**

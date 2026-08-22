@@ -802,6 +802,7 @@ function describeEffect(e) {
     return_permanent_from_graveyard: () => `wróć nonland permanent z grobu${e.finalityCounter ? ' z finality' : ''}`,
     transform: () => 'transform (obróć kartę)',
     scry: () => `scry ${e.amount ?? 1}`,
+    search_library_two_cards_hand_and_grave: () => 'przeszukaj bibliotekę: jedna karta do ręki, druga do grobu, potem tasowanie',
     sacrifice_permanent: () => 'poświęć ten permanent',
     grant_keywords_until_end_of_turn: () => `zdobądź ${(e.keywords ?? []).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')} do końca tury`,
     // M73c: pełna mapa pozostałych typów — koniec „efekt." i surowych slugów.

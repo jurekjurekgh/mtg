@@ -206,3 +206,68 @@ test('B4: Rakshasa — kwota z kontekstu (amountFromContext) dla wielu kart', ()
   applyEffect(state, ability.effect, vizier, [], { exiledCount: 3 });
   assert.equal(state.objects.get('vizier').counters?.['+1/+1'], 3, '3 karty = 3 liczniki');
 });
+
+// ---- Transza C ----------------------------------------------------------------
+
+test('C1: Sifter Wurm — ETB scry 3, po decyzji reveal wierzchu i życie = MV', () => {
+  const state = game('p1');
+  putCard(state, 'wurm', 'sifter-wurm', 'p1', 'hand');
+  // Biblioteka p1: wierzch po scry będzie znany — ułóż 3 karty.
+  putCard(state, 'lib1', 'gorger-wurm', 'p1', 'library');   // MV 5
+  putCard(state, 'lib2', 'highland-game', 'p1', 'library'); // MV 2
+  putCard(state, 'lib3', 'basic-forest', 'p1', 'library'); // MV 0
+  addMana(state, 'p1', 7, { colors: ['G'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'wurm');
+  assert.ok(cast, 'oferta rzutu');
+  assert.ok(execute(state, cast).ok);
+  assert.ok(resolveStack(state), 'stwór wchodzi, trigger ETB na stosie/rozstrzyga');
+  assert.ok(state.pendingScry, 'scry 3 blokuje');
+  assert.equal(state.pendingScry.playerId, 'p1');
+  assert.ok(state.pendingScry.revealTopGainLife, 'flaga then-reveal na pendingScry');
+  const lifeBefore = state.players.find((pl) => pl.id === 'p1').life;
+  // Decyzja: wszystko zostaje na wierzchu w kolejności lib1 (MV 5) na górze.
+  assert.ok(execute(state, {
+    type: 'resolve_scry', playerId: 'p1', bottomIds: [],
+    topOrder: state.pendingScry.objectIds,
+  }).ok);
+  const lifeAfter = state.players.find((pl) => pl.id === 'p1').life;
+  assert.equal(lifeAfter - lifeBefore, 5, 'życie = mana value odsłoniętej karty (Gorger Wurm MV 5)');
+  assert.ok(state.events.some((e) => e.type === 'card_revealed' && e.fromLibraryTop), 'reveal wierzchu w zdarzeniach');
+});
+
+test('C2: Final Parting — dwa OBOWIĄZKOWE wybory: ręka, potem grób', () => {
+  const state = game('p1');
+  putCard(state, 'fp', 'final-parting', 'p1', 'hand');
+  putCard(state, 'lib1', 'gorger-wurm', 'p1', 'library');
+  putCard(state, 'lib2', 'highland-game', 'p1', 'library');
+  putCard(state, 'lib3', 'basic-forest', 'p1', 'library');
+  addMana(state, 'p1', 5, { colors: ['B'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'fp');
+  assert.ok(cast, 'oferta rzutu');
+  assert.ok(execute(state, cast).ok);
+  resolveStack(state);
+  assert.ok(state.pendingSearchChoice, 'pierwsza decyzja szukania');
+  assert.equal(state.pendingSearchChoice.destination, 'hand');
+  assert.equal(state.pendingSearchChoice.mandatory, true, 'bez kryterium = obowiązkowe');
+  const offers1 = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_search_choice');
+  assert.ok(offers1.length > 0, 'są oferty wyboru');
+  assert.ok(!offers1.some((c) => c.found == null), 'BEZ oferty rezygnacji (CR 701.19c)');
+  const declined = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: null });
+  assert.equal(declined.ok, false, 'decline odrzucony (search_mandatory)');
+  // Wybór 1: Gorger Wurm do ręki.
+  assert.ok(execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'lib1' }).ok);
+  const inHand = [...state.objects.values()].find((o) => o.cardId === 'gorger-wurm');
+  assert.equal(inHand.zone, 'hand', 'pierwsza karta w ręce');
+  // Wybór 2 (łańcuch): destination graveyard, też obowiązkowy.
+  assert.ok(state.pendingSearchChoice, 'druga decyzja (łańcuch)');
+  assert.equal(state.pendingSearchChoice.destination, 'graveyard');
+  assert.equal(state.pendingSearchChoice.mandatory, true);
+  const pick2 = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_search_choice' && c.found != null);
+  assert.ok(pick2, 'oferta drugiego wyboru');
+  assert.ok(execute(state, pick2).ok);
+  const chosen2 = [...state.objects.values()].find((o) => o.id === pick2.found || (o.zone === 'graveyard' && o.controllerId === 'p1'));
+  assert.equal(chosen2.zone, 'graveyard', 'druga karta w grobie');
+  assert.equal(state.pendingSearchChoice, null, 'decyzje domknięte');
+});

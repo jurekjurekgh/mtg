@@ -498,6 +498,22 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
  * tasuje (szukanie z pustym/niepasującym zbiorem to samo „search... shuffle").
  */
 /** Czy karta z biblioteki pasuje do kwalifikatora szukania (types/subtypes/kind/minMV). */
+/**
+ * M177/C (Sifter Wurm): reveal wierzchu biblioteki + życie równe mana value
+ * odsłoniętej karty. Wspólne dla ścieżki natychmiastowej (scry bez blokady)
+ * i po resolve_scry (game-state).
+ */
+export function revealTopGainLife(state, playerId, sourceCardId = null) {
+  const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
+  if (!topId) return;
+  const top = state.objects.get(topId);
+  state.events.push(event('card_revealed', {
+    playerId, objectId: topId, cardId: top.cardId, fromLibraryTop: true, sourceCardId,
+  }));
+  const gained = top.manaCost ?? 0;
+  if (gained > 0) changeLife(state, playerId, gained);
+}
+
 export function librarySearchMatches(object, qualifier, ownerId) {
   if (!object || object.controllerId !== ownerId || object.zone !== 'library') return false;
   const typeMatch = (qualifier.types ?? []).length === 0
@@ -510,7 +526,7 @@ export function librarySearchMatches(object, qualifier, ownerId) {
   return typeMatch && subtypeMatch && kindMatch && mvOk;
 }
 
-export function queueSearchChoice(state, sourceObject, { qualifier, destination, entersTapped, destinations = null, chain = null, emitter = null }) {
+export function queueSearchChoice(state, sourceObject, { qualifier, destination, entersTapped, destinations = null, chain = null, emitter = null, mandatory = false }) {
   const ownerId = sourceObject.controllerId;
   const matches = (object) => librarySearchMatches(object, qualifier, ownerId);
   const candidateIds = state.zones.library.filter((id) => matches(state.objects.get(id)));
@@ -544,6 +560,9 @@ export function queueSearchChoice(state, sourceObject, { qualifier, destination,
     // Emiter decyzji pośredniej z aktywacji (cycling/channel): po wyborze
     // handler resolve_search_choice emituje ability_activated (jak cycling).
     emitter: emitter ? { ...emitter } : null,
+    // M177/C (Final Parting, CR 701.19c): szukanie BEZ kryterium jakości
+    // nie może „fail to find” — przy kandydatach decline nie jest oferowany.
+    mandatory: Boolean(mandatory),
   };
   state.turn.priorityPlayerId = ownerId;
   state.events.push(event('search_choice_required', {
@@ -1519,6 +1538,19 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       entersTapped: false,
     });
   }
+  if (effect.type === 'search_library_two_cards_hand_and_grave') {
+    // Final Parting (DOM): „Search your library for two cards. Put one into
+    // your hand and the other into your graveyard. Then shuffle.” — dwa
+    // OBOWIĄZKOWE wybory (bez kryterium = bez fail to find): najpierw karta
+    // do ręki, potem łańcuchem (jak Springbloom) karta do grobu.
+    return queueSearchChoice(state, sourceObject, {
+      qualifier: {},
+      destination: 'hand',
+      entersTapped: false,
+      mandatory: true,
+      chain: { remaining: 1, destination: 'graveyard', qualifier: {}, mandatory: true },
+    });
+  }
   if (effect.type === 'search_library_to_hand') {
     // „You may search your library for a card with qualifier, reveal it, put
     // it into your hand, then shuffle" (Pilgrim's Eye; loch — Secret
@@ -2334,6 +2366,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'scry') {
+    // M177/C (Sifter Wurm): „scry 3, THEN reveal the top card of your
+    // library. You gain life equal to that card's mana value” — reveal
+    // dzieje się PO decyzji scry (flaga na pendingScry, konsumowana w
+    // resolve_scry); bez blokady (pusta biblioteka) — od razu.
     // Scry N (CR 701.18, minimalny wymiar — pierwsza karta to Prismari Campus):
     // patrzymy na N wierzchnich kart własnej biblioteki; decyzję o spodzie
     // podejmuje gracz osobną komendą resolve_scry (patrz game-state.js).
@@ -2353,6 +2389,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       playerId: ownerId, amount: seen.length,
       cardIds: seen.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
     }));
+    if (effect.thenRevealTopGainLife) {
+      if (seen.length > 0) state.pendingScry.revealTopGainLife = { sourceCardId: sourceObject.cardId ?? null };
+      else revealTopGainLife(state, ownerId, sourceObject.cardId ?? null);
+    }
     // Zwracamy true, gdy decyzja zablokowała bieg gry — rozstrzyganie czaru
     // (resolveTopOfStack) musi wtedy wstrzymać dalsze efekty do resolve_*.
     return seen.length > 0;

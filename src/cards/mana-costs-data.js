@@ -327,6 +327,8 @@ export const MANA_COSTS = {
   "agate-assault": "{2}{R}",
   "makeshift-mauler": "{3}{U}",
   "rakshasa-vizier": "{2}{B}{G}{U}",
+  "sifter-wurm": "{5}{G}{G}",
+  "final-parting": "{3}{B}{B}",
   "horizon-spellbomb": "{1}",
   "toll-of-the-invasion": "{2}{B}",
   "terminal-agony": "{2}{B}{R}",
