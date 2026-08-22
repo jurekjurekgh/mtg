@@ -35,6 +35,18 @@ test('detectRawText: łapie surowy identyfikator zdarzenia (snake_case)', () => 
 // przeszedł przez detektor, bo SNAKE_CASE_EVENT wymaga DWÓCH podkreślników,
 // a identyfikatory tokenów mają jeden („token_wizard", „token_squirrel").
 // Klasa L27/L40: „0 zgłoszeń" znaczyło „nie mam takiej reguły".
+// M190/A: po zmianie etykiety („dodaj 1 manę dowolnego koloru") wzorzec
+// wyciszający zdolności many przestał pasować i sonda zgłaszała je jako
+// „oferty bez skutku" (mana w puli nie wchodzi do fingerprintu — L12).
+test('detectNoEffectOffers: zdolność many z LICZBĄ w etykiecie jest wyciszona', () => {
+  const found = detectNoEffectOffers([{
+    applied: true, source: 'panel',
+    label: 'Aktywuj: Heap Gate (Ty) (koszt 1, T) — dodaj 1 manę dowolnego koloru',
+    probe: { ok: true, changed: false },
+  }]);
+  assert.deepEqual(found, [], `zdolność many to nie „oferta bez skutku": ${JSON.stringify(found)}`);
+});
+
 // M189/Z4 (transkrypt audyt-m187/v-b): detektor „noop" zgłaszał ofertę
 // Bone Splinters celującą we własnego stwora poświęcanego jako koszt — ale
 // to przypadek M102/U8, ROZWIĄZANY świadomie: wariant jest legalny (CR

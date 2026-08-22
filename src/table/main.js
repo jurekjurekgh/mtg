@@ -1150,7 +1150,7 @@ function bootstrapTable() {
    * pola bitwy ich nie niesie. Źródła nie-lądowe pochodzą z legalCommands
    * (gwarancja legalności/timingu/opłacalności w danej chwili).
    */
-  function manaSourcesForPlayer() {
+  function manaSourcesForPlayer(excludeSourceId = null) {
     const view = session.view();
     const abilityInfo = (objectId, abilityIndex) => {
       const obj = session.state?.objects?.get(objectId);
@@ -1167,13 +1167,26 @@ function bootstrapTable() {
         isLand: obj.kind === 'land' || (obj.types ?? []).includes('Land'),
       };
     };
-    return manaSourcesOf(view, HUMAN_ID, abilityInfo);
+    return manaSourcesOf(view, HUMAN_ID, abilityInfo, { excludeSourceId });
   }
 
   /**
    * Deskryptor kreatora dla komendy rzutu albo null (bez kreatora).
    * Kreator tylko dla człowieka przy realnym wyborze źródeł (≥2 warianty).
    */
+  /**
+   * M190/D (zgłoszenie właściciela, Basilisk Gate): id źródła, którego NIE
+   * wolno użyć do zapłaty, bo aktywacja i tak je tapuje jako koszt
+   * (CR 602.2a). Dotyczy wyłącznie zdolności z `cost.tap` — zdolność bez
+   * tapnięcia (Heap Gate {1}: …) może być finansowana z własnej many.
+   */
+  function selfTapExclusionFor(cmd) {
+    if (cmd?.type !== 'activate_ability' || !Number.isInteger(cmd.abilityIndex)) return null;
+    const source = session.state?.objects?.get(cmd.objectId);
+    const ability = source?.abilities?.[cmd.abilityIndex];
+    return ability?.cost?.tap ? cmd.objectId : null;
+  }
+
   function manaWizardFor(cmd) {
     const view = session.view();
     // Kreator płaci koszt EFEKTYWNY (CR 601.2f): obniżki z permanentów
@@ -1203,7 +1216,7 @@ function bootstrapTable() {
     const descriptor = paymentDescriptorOf(cmd, view, opts);
     if (!descriptor) return null;
     const pool = (view.players ?? []).find((p) => p.id === HUMAN_ID)?.mana ?? 0;
-    const sources = manaSourcesForPlayer();
+    const sources = manaSourcesForPlayer(selfTapExclusionFor(cmd));
     const variants = countPaymentVariants(sources, pool, descriptor.totalNeeded, descriptor.requirements);
     if (variants < 2) return null;
     return { ...descriptor, cmd };
@@ -1240,7 +1253,7 @@ function bootstrapTable() {
   function refreshManaWizard() {
     if (!manaWizardDescriptor || !els.manaWizardBody || !session) return;
     const view = session.view();
-    const sources = manaSourcesForPlayer();
+    const sources = manaSourcesForPlayer(selfTapExclusionFor(manaWizardDescriptor.cmd));
     // Kolorowa pula (cz. 8): pokrycie kolorów z jednostek many W PULI gracza
     // (odzwierciedlają tapnięte źródła). main.js czyta pulę z pełnego stanu sesji.
     const humanPlayer = session.state?.players?.find((pl) => pl.id === HUMAN_ID);

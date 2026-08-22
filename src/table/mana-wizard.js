@@ -84,8 +84,18 @@ function isManaAbility(ability) {
  * amount, manaCost, isLand} dla zdolności many albo null. main.js dostarcza
  * ją z session.state; bez niej lista obejmuje tylko lądy (zachowanie wstecz).
  */
-export function manaSourcesOf(view, playerId, abilityInfo) {
-  const land = untappedLandSourcesOf(view, playerId);
+export function manaSourcesOf(view, playerId, abilityInfo, { excludeSourceId = null } = {}) {
+  // M190/D (zgłoszenie właściciela, Basilisk Gate): gdy płacimy za zdolność,
+  // której KOSZTEM jest tapnięcie źródła ({2}, {T}: …), to samo źródło nie
+  // może sfinansować tej płatności — aktywacja i tak je tapuje (CR 602.2a),
+  // więc mana nigdy nie powstanie. Wizard oferował ten wariant, gracz klikał,
+  // tracił manę i zdolność „fizzlowała". Silnik znał już tę regułę
+  // (producibleMana z excludeSourceId, M174/E) — brakowało jej w UI (L48:
+  // oferta i walidacja muszą używać tego samego filtra).
+  const excluded = excludeSourceId == null
+    ? null
+    : new Set(Array.isArray(excludeSourceId) ? excludeSourceId : [excludeSourceId]);
+  const land = untappedLandSourcesOf(view, playerId).filter((s) => !excluded?.has(s.id));
   const sources = land.map((s) => ({
     id: s.id, cardId: s.cardId, colors: s.colors, amount: s.amount ?? 1,
     kind: 'land',
@@ -96,6 +106,7 @@ export function manaSourcesOf(view, playerId, abilityInfo) {
   for (const cmd of view?.legalCommands ?? []) {
     if (cmd.type !== 'activate_ability') continue;
     if (cmd.objectId == null || cmd.abilityIndex == null) continue;
+    if (excluded?.has(cmd.objectId)) continue;
     if ((cmd.targets ?? []).length > 0) continue; // zdolności many nie mają celu
     if (seen.has(cmd.objectId)) continue;
     const info = abilityInfo(cmd.objectId, cmd.abilityIndex);

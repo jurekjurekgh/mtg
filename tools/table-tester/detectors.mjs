@@ -466,7 +466,11 @@ export function detectNoEffectOffers(probeRecords) {
   const found = [];
   // Produkcja many to realny efekt, który nie zostawia śladu w fingerprint
   // (pula many jest poza nim) — tapnięcie źródła wyglądałoby jak „sam koszt".
-  const MANA_ABILITY = /dodaj man|dodaje man|produkcj[aę] many|mana z/i;
+  // M190/A: etykieta zdolności many niesie teraz LICZBĘ („dodaj 1 manę
+  // dowolnego koloru"), więc wzorzec „dodaj man" przestał pasować i sonda
+  // zaczęła zgłaszać zdolności many jako „oferty bez skutku" (mana w puli
+  // nie jest częścią fingerprintu — to znany, świadomy artefakt pomiaru).
+  const MANA_ABILITY = /dodaj\s+(\d+\s+)?man|dodaje\s+(\d+\s+)?man|produkcj[aę] many|mana z/i;
   // Pass/concede/wznowienie z definicji nie są „ofertami skutku" — mostek
   // sesji je odfiltrowuje, ale detektor ma własną bramkę (obrona w głąb).
   const PASS_LABEL = /^Dalej\b|^Wznów grę bota|Poddaj/;
