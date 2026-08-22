@@ -2336,7 +2336,9 @@ function combatRoleOf(object, combat, session) {
   return null;
 }
 
-function cardInfo(session, object, combat = null) {
+// M175/A3: eksport dla testów pełnej ścieżki badge (m168 testował TYLKO
+// buildStateOverlay z ręcznie zbudowanym `info` i przeoczył martwą różnicę).
+export function cardInfo(session, object, combat = null) {
   const cardId = object.cardId;
   const faceDown = Boolean(object.faceDown);
   // M100/E12 (pytanie właściciela): WŁASNY zakryty permanent pokazuje
@@ -2379,12 +2381,12 @@ function cardInfo(session, object, combat = null) {
     attachedAura,
     attachedEquipment,
     keywords: keywordsNow,
-    // M168/B (uwaga właściciela): AKTYWNE zmiany na kafelu jako badge'e —
-    // granted keywords liczymy z EFEKTYWNYCH (statyki warunkowe jak Gray
-    // Slaad, granty do EOT, załączniki, anthemy) minus wydrukowane.
-    grantedKeywords: faceDown ? [] : (session.effectiveKeywordsOf
-      ? session.effectiveKeywordsOf(object).filter((kw) => !keywordsNow.includes(kw))
-      : []),
+    // M168/B (uwaga właściciela): AKTYWNE zmiany na kafelu jako badge'e.
+    // M175/A3: nadane keywordy jedzie JAWNIE z playerView (`grantedKeywords`
+    // = efektywne − wydrukowane ze stanu) — stara różnica „effectiveKeywordsOf
+    // − keywordsNow" była zawsze pusta, bo widok wysyła keywordy EFEKTYWNE
+    // (obie strony zawierały grant) i badge nigdy się nie pokazywał.
+    grantedKeywords: faceDown ? [] : [...(object.grantedKeywords ?? [])],
     lostKeywordsUntilEOT: faceDown ? [] : [...(object.lostKeywordsUntilEOT ?? [])],
     cantBlockNow: Boolean(object.cantBlock),
     cantBeBlockedNow: Boolean(object.cantBeBlocked),

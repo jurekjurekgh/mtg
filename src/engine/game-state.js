@@ -4184,6 +4184,15 @@ export function playerView(state, playerId) {
           ? effectiveKeywords(object, state).filter((keyword) => !(object.keywords ?? []).includes(keyword))
           : effectiveKeywords(object, state);
         if (keywords.length) entry.keywords = keywords;
+        // M175/A3 (uwaga właściciela, Death-Hood Cobra): NADANE keywordy
+        // (granty do EOT, załączniki, anthemy, statyki warunkowe) jawnie w
+        // widoku — render liczył je jako „efektywne − entry.keywords", a obie
+        // strony już zawierały grant, więc badge na kaflu NIGDY nie działał
+        // (test m168/B budował info ręcznie, z pominięciem cardInfo).
+        // Wydrukowane = object.keywords ze STANU (działa dla tokenów i kopii
+        // bez rejestru); dla zakrytego widza lista już jest samymi grantami.
+        const grantedKeywords = keywords.filter((keyword) => !(object.keywords ?? []).includes(keyword));
+        if (grantedKeywords.length) entry.grantedKeywords = [...grantedKeywords];
         if (object.subtypes?.length && !hiddenFromViewer) entry.subtypes = [...object.subtypes];
         // M92 (audyt PlayerView): LINIA TYPÓW permanentu na polu bitwy jest
         // informacją publiczną (widnieje na karcie), a widok jej nie niósł —
