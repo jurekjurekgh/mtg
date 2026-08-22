@@ -1263,7 +1263,16 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   if (trigger.event === 'card_put_into_graveyard_from_nonbattlefield') return `Gdy karta trafia do grobu spoza pola bitwy: ${parts}.`;
   if (trigger.event === 'cards_exiled_from_your_graveyard') return `Ilekroć karty trafiają na wygnanie z twojego grobu: ${parts}.`;
   if (trigger.event === 'spell_targets_this_creature') return `Gdy czar celuje w tę kartę: ${parts}.`;
-  if (trigger.event === 'another_creature_enters') return `Gdy inny stwór wchodzi na pole bitwy: ${parts}.`;
+  if (trigger.event === 'another_creature_enters') {
+    // M186/Z4 (Żywy Tester, g7): Ivy Lane Denizen — filtry triggera
+    // (youControl, colorsInclude) muszą być w opisie, inaczej kafel obiecuje
+    // trigger od KAŻDEGO stwora (Oracle: „another green creature you control").
+    const colorNames = { W: 'biały', U: 'niebieski', B: 'czarny', R: 'czerwony', G: 'zielony' };
+    const colorPart = trigger.colorsInclude?.length
+      ? ` ${trigger.colorsInclude.map((c) => colorNames[c] ?? c).join('/')}` : '';
+    const controlPart = trigger.youControl ? ' pod twoją kontrolą' : '';
+    return `Gdy inny${colorPart} stwór${controlPart} wchodzi na pole bitwy: ${parts}.`;
+  }
   // M100/E10 (P7 — Żywy Tester h08/h13): mentor ma efekt [] (obsługiwany
   // przez wizard resolve_mentor_target) — bez zdania efektu wychodziło
   // „Gdy ten stwór atakuje jako mentor: ." (fallback niżej był nieosiągalny).

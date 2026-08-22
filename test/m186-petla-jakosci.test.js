@@ -66,3 +66,19 @@ test('M186/Z3: grupa Epic Experiment jest wyciszalna, a „zakończ" (done) nie 
   assert.ok(/cmd\.done === true/.test(sessionSrc),
     'session traktuje done: true jak rezygnację (auto-decline + hasMeaningfulDecision)');
 });
+
+test('M186/Z4: opis triggera Ivy Lane Denizen niesie filtry (zielony, pod twoją kontrolą)', async () => {
+  // Żywy Tester (g7): kafel mówił „Gdy inny stwór wchodzi..." — obiecywał
+  // trigger od KAŻDEGO stwora, a Oracle filtruje kolor i kontrolę.
+  const { cardInfo, rulesText } = await import('../src/table/render.js');
+  const MOCK = {
+    nameOf: (id) => REGISTRY.get(id)?.name ?? String(id),
+    nameOfObject: (id) => String(id),
+    cardDetails: (id) => REGISTRY.get(id) ?? null,
+    colorsOf: (id) => REGISTRY.get(id)?.colors ?? [],
+    view: () => ({ zones: { battlefield: [] } }),
+  };
+  const text = rulesText(cardInfo(MOCK, { cardId: 'ivy-lane-denizen', id: 'x' }));
+  assert.ok(text.includes('zielony'), `filtr koloru w opisie: ${text}`);
+  assert.ok(text.includes('pod twoją kontrolą'), `filtr kontroli w opisie: ${text}`);
+});
