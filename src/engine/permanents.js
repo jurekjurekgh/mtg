@@ -329,6 +329,23 @@ function anthemBonuses(state, object) {
  * odczycie względem kolorów gospodarza. Liczone przy każdym odczycie —
  * odłączenie aury znosi ograniczenie natychmiast (bez cleanupu).
  */
+/**
+ * Czy stwór ma zakaz blokowania (CR 509.1a) — JEDNO miejsce prawdy dla
+ * wszystkich ścieżek (enumeracja ofert, walidacja komendy, widok, boty).
+ *
+ * Dwa różne źródła zakazu, wcześniej sklejone w jednym polu `cantBlock`
+ * (klasa L14 — jedna instrukcja, dwie zasady):
+ *  - `cantBlockPrinted` — cecha WYDRUKOWANA na obiekcie („This token can't
+ *    block\" — Phyrexian Mite, Goblin Construct); trwała, cleanup jej nie
+ *    zdejmuje;
+ *  - `cantBlock` — efekt „can't block this turn\" (Panic Spellbomb);
+ *    wygasa w cleanup (CR 514.2).
+ * Ograniczenia z załączników liczy attachmentRestrictions (read-time).
+ */
+export function creatureCantBlock(object) {
+  return Boolean(object?.cantBlockPrinted || object?.cantBlock);
+}
+
 export function attachmentRestrictions(state, object) {
   const restrictions = { cantAttack: false, cantBlock: false };
   if (!state || object.zone !== 'battlefield' || object.kind !== 'creature') return restrictions;
@@ -811,14 +828,20 @@ export function clearStatModifiers(state) {
       || (current.keywordGrants ?? []).length > 0
       || (current.abilityGrants ?? []).length > 0
       || current.typeGrant != null
-      || current.cantBlock === true
+      // Wydrukowane „can't block\" (token) nie jest brudem do sprzątnięcia —
+      // bez tego wyłączenia cleanup przepisywałby token w każdej turze.
+      || (current.cantBlock === true && current.cantBlockPrinted !== true)
       || current.cantBeBlocked === true;
     if (dirty) {
       replaceObject(state, current, {
         powerModifier: 0, toughnessModifier: 0, keywordGrants: [],
         abilityGrants: [], typeGrant: null,
-        // „Can't block this turn\" (Panic Spellbomb) — cleanup zdejmuje.
-        cantBlock: false, cantBeBlocked: false,
+        // „Can't block this turn\" (Panic Spellbomb) — cleanup zdejmuje
+        // EFEKT (CR 514.2). Cecha WYDRUKOWANA („This token can't block\" —
+        // Phyrexian Mite, Goblin Construct) jest trwała: znacznik
+        // `cantBlockPrinted` przeżywa cleanup, a `cantBlock` pozostaje z nim
+        // zgodne, żeby każdy odczyt (widok, boty, walka) widział ten sam stan.
+        cantBlock: Boolean(current.cantBlockPrinted), cantBeBlocked: false,
         saddled: false, tempBasePT: null, damagedThisTurn: false, abilityResolvedThisTurn: 0,
       });
     }

@@ -76,7 +76,13 @@ export function createBattlefieldToken(state, controllerId, { cardId, name, kind
     // (CR 701.21a — brak zdarzenia object_tapped jest poprawny). L24/C.
     ...(tapped ? { tapped: true } : {}),
     enteredOnTurn: state.turn.number,
-    ...(cantBlock ? { cantBlock: true } : {}),
+    // „This token can't block\" (Phyrexian Mite, Goblin Construct) to cecha
+    // WYDRUKOWANA na tokenie, a nie efekt „until end of turn\" — cleanup
+    // (CR 514.2) zdejmuje wyłącznie te drugie. Pole `cantBlock` niesie oba
+    // znaczenia naraz (klasa L14: jedna instrukcja, dwie zasady), więc token
+    // dostaje DODATKOWO trwały znacznik `cantBlockPrinted`, którego cleanup
+    // nie rusza. Odczyt idzie przez creatureCantBlock() (permanents.js).
+    ...(cantBlock ? { cantBlock: true, cantBlockPrinted: true } : {}),
     ...(toxic != null ? { toxic } : {}),
     // CR 707.8a: token-kopia permanentu dwustronnego jest tokenem
     // dwustronnym — niesie deskryptor drugiej strony i może się przemienić
