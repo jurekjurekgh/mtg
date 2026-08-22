@@ -1,8 +1,31 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-22 (M181: AUTO-AWANS planu z worka przy 15+ kartach — generator + strażniki, ADR 0023 §2/§4)
-- **Poprzednia:** 2026-08-22 (M180: pętla jakości Żywym Testerem — 0 zgłoszeń po naprawach)
+- **Ostatnia aktualizacja:** 2026-08-22 (M182: Batch 43 — 10 kart właściciela, w tym 2 DFC)
+- **Poprzednia:** 2026-08-22 (M181: AUTO-AWANS planu z worka przy 15+ kartach — ADR 0023 §2/§4)
 
+
+## M182 — Batch 43: 10 kart właściciela (2026-08-22, PR #69)
+
+Plan: `docs/plans/PLAN_2026-08-22-m182-batch43.md`. Karty: Sleep of the Dead
+(escape {2}{U}+3, tap + dont_untap), Severed Strands (NOWE:
+`sacrificedToughness` na obiekcie stosu + `gain_life` z
+`amountFromSacrificedToughness` — zysk życia = wytrzymałość poświęconego),
+Rush of Battle (NOWE: filtr `subtype` w `buff_creatures_you_control` —
+lifelink tylko Warriors), Dispeller's Capsule (activated {2}{W},{T},sac →
+destroy artifact/enchantment), Fleeting Distraction (−1/−0 + draw), Forced
+Landing (NOWY efekt `bounce_to_library_bottom`; token → ceased CR 111.7;
+bot 75, opis PL), Tireless Hauler // Dire-Strain Brawler (daybound/nightbound
+wzorzec Ballista), Sea God's Scorn (NOWE: `variableTargets.type` —
+`creature_or_enchantment`, do 3 celów bounce), Balamb Garden SeeD Academy //
+Airborne (DFC land Town → Legendary Vehicle 5/4; NOWE:
+`costReduction.perOtherSubtype` w effectiveAbilityManaCost), Greenwood
+Sentinel (2/2 vigilance). Talie przeliczone generatorem (innistrad 32,
+ravnica/tarkir/alara/wiedzmin/worek-legend/worek-mroczny +1); strażnik artId
+328→340 (tyły DFC mają WŁASNE artId w CSV: Brawler 118, Airborne 153);
+seed M99 3→5 (hunter po zmianie talii tarkir). Testy: batch43-kart (13).
+
+**Stan:** `test:all` **2717/2717**, build **52 moduły / 2332.7 kB**,
+benchmark regresji bota w progach (BENCH_DECKS, 0.78/0.60).
 
 ## M181 — auto-awans planów z worków (2026-08-22, PR #69)
 
