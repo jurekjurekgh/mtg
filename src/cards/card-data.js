@@ -6837,6 +6837,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       effects: [{ type: 'destroy_artifact_gain_life_mana_value' }],
     },
     artId: null, plan: null,
+    plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -7006,6 +7007,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
     ],
     artId: null, plan: null,
+    plan: 'Eldraine',
     support: { status: 'supported', limitations: [] },
     notes: ['faerie_attacks: odpala się raz na combat, gdy atakujący kontroler atakuje z ≥1 Faerie; licznik na docelowym Faerie (requiresTarget creature_you_control+subtype)', '„when you discard a card this way” uproszczone: zawsze dobiera+odrzuca, więc licznik zawsze się pojawia (po wyborze Faerie)'],
   }),
@@ -7045,6 +7047,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
     ],
     artId: null, plan: null,
+    plan: 'Wiedźmin',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -7062,6 +7065,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
     ],
     artId: null, plan: null,
+    plan: 'Alara',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -7078,6 +7082,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
     ],
     artId: null, plan: null,
+    plan: 'Theros',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -7104,6 +7109,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
     ],
     artId: null, plan: null,
+    plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -7130,6 +7136,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
     ],
     artId: null, plan: null,
+    plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
     notes: ['trigger kopiowania wymaga DRUGIEGO przeciwnika — w 1v1 nigdy się nie odpala (fakt formatu, jak brak command zone); {1}{B}: Regenerate = tarcza regeneracji do końca tury (CR 701.12)'],
   }),
@@ -7147,6 +7154,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
     ],
     artId: null, plan: null,
+    plan: 'Ixalan',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -7163,6 +7171,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
     ],
     artId: null, plan: null,
+    plan: 'Wiedźmin',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -7187,6 +7196,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }],
     },
     artId: null, plan: null,
+    plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -7210,6 +7220,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       ],
     },
     artId: null, plan: null,
+    plan: 'Kaldheim',
     support: { status: 'supported', limitations: [] },
     notes: ['II: planeswalker-cel nie istnieje w 1v1 — obrażenia idą w przeciwnika', 'III: zadziała od razu po dodaniu pierwszej karty z podtypem Giant'],
   }),
