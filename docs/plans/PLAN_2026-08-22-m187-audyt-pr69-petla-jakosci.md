@@ -147,3 +147,49 @@ pokazuje jedną turę, przycisk kopiuje ją do schowka. Dwie naraz zbędne.
 `npm test` **2772/2772** · build **52 moduły / 2400.5 kB** ·
 benchmark regresji **9/9**, pomiar szybki **85.6%** (575/672) ·
 Żywy Tester po zmianach: 0 zgłoszeń.
+
+---
+
+## M190 — uwagi właściciela: Heap Gate (A/A2) + rozgałęzienia lochu (B)
+
+### A/A2 — Heap Gate: dwie zdolności many nie do odróżnienia
+
+Panel pokazuje „(koszt 1, T) — dodaj manę" i „(koszt T) — dodaj manę";
+log po aktywacji: „dodanie many do puli ({W}, {U}, {B}, {R}, {G})", co
+sugeruje PIĘĆ many zamiast jednej dowolnego koloru.
+
+Root cause: `add_mana` ma jedną etykietę bez względu na `colors`, a log
+wypisuje listę dostępnych kolorów jako listę wyprodukowanej many.
+Reguła generyczna (ADR 0002): opis czyta deskryptor efektu — 5 kolorów =
+„dowolny kolor", brak `colors` = mana bezbarwna, jeden kolor = ten kolor.
+
+- [ ] etykieta oferty rozróżnia warianty (any color / bezbarwna / konkretny)
+- [ ] log mówi „1 mana dowolnego koloru" zamiast listy pięciu symboli
+
+### B — Undercity: loch to GRAF, nie lista
+
+Zgłoszenie: po Secret Entrance gra sama przenosi do pokoju 2 (Forge),
+a wg Oracle gracz WYBIERA ścieżkę. Dane ze Scryfalla (tclb/20):
+
+```
+Secret Entrance → Forge, Lost Well
+Forge → Trap!, Arena
+Lost Well → Arena, Stash
+Trap! → Archives
+Arena → Archives, Catacombs
+Stash → Catacombs
+Archives → Throne of the Dead Three
+Catacombs → Throne of the Dead Three
+Throne of the Dead Three (koniec)
+```
+
+Obecnie `ventureIntoUndercity` robi `current + 1` — czyli JEDNĄ ścieżkę
+1→2→3…→9, co jest niezgodne z CR 309.4 (gracz wybiera następny pokój
+spośród wskazanych strzałkami) i pomija fakt, że loch kończy się po
+4–5 pokojach, nie po 9.
+
+- [ ] mapa przejść w danych (jedno źródło prawdy, z Oracle)
+- [ ] wybór następnego pokoju jako blokująca decyzja gracza
+      (jeden kandydat = bez pytania, jak przy innych decyzjach)
+- [ ] bot wybiera sensownie (nie pierwszą ofertę z listy)
+- [ ] widok/render: aktualny pokój + dostępne ścieżki
