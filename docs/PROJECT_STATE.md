@@ -1,6 +1,18 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-22 (M180: pętla jakości Żywym Testerem — Batch 41/42 + nowe talie, 5 klas napraw, weryfikacja 0 zgłoszeń)
+- **Ostatnia aktualizacja:** 2026-08-22 (M181: AUTO-AWANS planu z worka przy 15+ kartach — generator + strażniki, ADR 0023 §2/§4)
+- **Poprzednia:** 2026-08-22 (M180: pętla jakości Żywym Testerem — 0 zgłoszeń po naprawach)
+
+
+## M181 — auto-awans planów z worków (2026-08-22, PR #69)
+
+Plan: `docs/plans/PLAN_2026-08-22-m181-auto-awans-planow-z-workow.md`.
+Generator talii sam wyjmuje plan z worka, gdy ten dobije do 15 kart
+(talia o slugu nazwy planu, przeliczone landy) — jedyny krok ręczny po
+batchu to `node tools/generate-plan-decks.mjs`. Worek poniżej 15 nielandów
+po awansie = czytelny błąd (przetasowanie worków to decyzja w mapie).
+Strażniki: test/m181-auto-awans (symulacja awansu na syntetycznym
+rejestrze) + komunikaty „pliki = generator” z komendą.
 - **Poprzednia:** 2026-08-22 (M179: inwentaryzacja trików/many/celów — whitelisty, L54)
 
 

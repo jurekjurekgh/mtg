@@ -20,11 +20,18 @@ po 10+ wpisów historii hunterów).
 2. **Plan z ≥15 kartami wspieranymi = własna talia jednoplanowa.** Mniejsze
    plany trafiają do jednego z 4 „worków” (baśnie/legendy/dzikie światy/
    mroczne światy — mapa w generatorze). Każda wspierana karta jest w
-   DOKŁADNIE jednej talii.
+   DOKŁADNIE jednej talii. **(M181)** Awans jest AUTOMATYCZNY: generator
+   sam wyjmuje plan z worka, gdy ten dobije do progu (talia o slugu nazwy
+   planu, landy przeliczone) — bez edycji map; wpis planu w mapie worka
+   staje się wtedy martwy (generator ostrzega, sprzątnięcie przy okazji).
 3. **Singleton** (1x poza basic landami); **landy = ceil(nielandów/2)**,
    kolory proporcjonalnie do pipów kosztów many (każdy używany kolor ≥1).
-4. **Worki są przejściowe:** gdy plan uzbiera 15+ kart, przechodzi z worka
-   do własnej talii (edycja mapy w generatorze + regeneracja).
+4. **Worki są przejściowe:** gdy plan uzbiera 15+ kart, generator przy
+   najbliższym uruchomieniu AUTOMATYCZNIE przenosi go do własnej talii
+   (M181; strażnik test/m181-auto-awans + „pliki = generator” w repo-decks
+   wymuszają regenerację). Jeśli worek spadłby po awansie poniżej 15
+   nielandów — generator zatrzymuje się czytelnym błędem: przetasowanie
+   planów między workami to Świadoma decyzja w mapie, nie automat.
 5. **Testy i benchmark korzystają WYŁĄCZNIE z talii jednoplanowych**
    (decyzja właściciela): konwersja worka nie może wymuszać przeróbek
    testów ani rekalibracji progów. Benchmark gra na STAŁEJ próbce
@@ -33,12 +40,12 @@ po 10+ wpisów historii hunterów).
 
 ## Procedura dla przyszłych batchów
 
-- Nowa karta → talia jej PLANU (jednoplanowa albo właściwy worek wg mapy
-  w generatorze); po dopisaniu karty do katalogu uruchom
-  `node tools/generate-plan-decks.mjs` (przelicza też landy).
+- Nowa karta → talia jej PLANU; po dopisaniu karty do katalogu uruchom
+  `node tools/generate-plan-decks.mjs` — to JEDYNY krok ręczny: generator
+  przelicza landy i sam awansuje plany, które dobiły do 15+ (M181).
 - Nowy plan → dopisz do `WOREK_DECKS` (motyw + najmniejsza talia); generator
-  wywróci się jawnym błędem, jeśli plan nie ma przydziału, a strażnik
-  progu przypilnuje, żeby plan z 15+ kartami dostał własną talię.
+  wywróci się jawnym błędem, jeśli plan nie ma przydziału. Plan z 15+
+  kartami można od razu pominąć w mapie — automat i tak da mu własną talię.
 - Zmiana talii jednoplanowej z próbki benchmarku może przesunąć wyniki —
   progi rekalibrujemy regułą „zmierzone −15 p.p., tylko w górę”
   (historia w nagłówku test/bot-benchmark.test.js).

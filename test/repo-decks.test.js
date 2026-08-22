@@ -68,9 +68,14 @@ test('M178 (ADR 0023): generator talii jest zgodny z plikami w decks/', () => {
   // tools/generate-plan-decks.mjs rozjedzie się z tym testem.
   const files = buildDecks();
   const onDisk = new Set(deckFiles.map((f) => f.replace(/\.txt$/, '')));
-  assert.deepEqual([...files.keys()].sort(), [...onDisk].sort(), 'zestaw talii = wyjście generatora');
+  // M181: po każdym batchu uruchom `node tools/generate-plan-decks.mjs` —
+  // generator sam AWANSUJE plan z worka przy 15+ kartach (nowa talia,
+  // przeliczone landy); ten strażnik wymusza regenerację.
+  assert.deepEqual([...files.keys()].sort(), [...onDisk].sort(),
+    'zestaw talii = wyjście generatora — uruchom: node tools/generate-plan-decks.mjs (auto-awans planów 15+, ADR 0023 §4)');
   for (const [file, text] of files) {
-    assert.equal(fs.readFileSync(`decks/${file}.txt`, 'utf8'), text, `decks/${file}.txt różni się od generatora`);
+    assert.equal(fs.readFileSync(`decks/${file}.txt`, 'utf8'), text,
+      `decks/${file}.txt różni się od generatora — uruchom: node tools/generate-plan-decks.mjs`);
   }
 });
 

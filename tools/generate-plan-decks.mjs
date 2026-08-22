@@ -18,6 +18,19 @@ import { writeDeckText } from '../src/cards/deck-text.js';
 
 const SINGLE_PLAN_MIN = 15;
 
+/**
+ * M181 (ADR 0023 §2/§4, zlecenie właściciela): slug pliku talii z nazwy
+ * planu — małe litery, bez diakrytyków, spacje/apostrofy → myślniki.
+ * Używany przy AUTOMATYCZNYM awansie planu z worka (≥15 kart = własna
+ * talia bez ręcznej edycji map).
+ */
+export function slugifyPlan(plan) {
+  const folded = String(plan)
+    .replaceAll('ł', 'l').replaceAll('Ł', 'L')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return folded.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
 /** Talie jednoplanowe: plan → (plik, nazwa). Wiedźmin wchłania Świat Wiedźmina. */
 export const SINGLE_PLAN_DECKS = Object.freeze({
   Innistrad: { file: 'innistrad', name: 'Innistrad' },
@@ -109,13 +122,28 @@ export function buildDecks(registry = createCardRegistry()) {
   // historycznie także realne karty batchów 24+ — nie nadaje się na filtr).
   const supported = registry.all().filter((c) => c.support?.status === 'supported'
     && !c.id.startsWith('basic-'));
+  // M181 (ADR 0023): najpierw liczymy karty per plan — próg decyduje
+  // o AUTOMATYCZNYM awansie planu z worka do własnej talii.
+  const perPlan = new Map();
+  for (const card of supported) perPlan.set(card.plan, (perPlan.get(card.plan) ?? 0) + 1);
+
   const decks = new Map(); // file -> { name, cards: [] }
+  const promoted = [];
   for (const card of supported) {
     const plan = card.plan;
     if (!plan) throw new Error(`Karta bez planu: ${card.id} — uzupełnij plan w card-data`);
     let file; let name;
     if (SINGLE_PLAN_DECKS[plan]) {
+      // Jawne nadpisania nazw/plików (np. wiedzmin ← Wiedźmin + Świat
+      // Wiedźmina) mają pierwszeństwo przed automatem.
       ({ file, name } = SINGLE_PLAN_DECKS[plan]);
+    } else if ((perPlan.get(plan) ?? 0) >= SINGLE_PLAN_MIN) {
+      // M181: AUTO-AWANS — plan dobił do progu, wychodzi z worka jako
+      // własna talia (nawet jeśli WOREK_DECKS wciąż go wymienia); wpis
+      // w mapie worka staje się martwy i można go sprzątnąć przy okazji.
+      file = slugifyPlan(plan);
+      name = plan;
+      if (!promoted.includes(plan)) promoted.push(plan);
     } else if (WOREK_DECKS[plan]) {
       file = WOREK_DECKS[plan];
       name = WOREK_NAMES[file];
@@ -125,12 +153,19 @@ export function buildDecks(registry = createCardRegistry()) {
     if (!decks.has(file)) decks.set(file, { name, cards: [] });
     decks.get(file).cards.push(card);
   }
-  // Sanity progu: plan z >= 15 kartami nie może siedzieć w worku.
-  const perPlan = new Map();
-  for (const card of supported) perPlan.set(card.plan, (perPlan.get(card.plan) ?? 0) + 1);
-  for (const [plan, count] of perPlan) {
-    if (count >= SINGLE_PLAN_MIN && !SINGLE_PLAN_DECKS[plan]) {
-      throw new Error(`Plan „${plan}” ma ${count} kart (>= ${SINGLE_PLAN_MIN}) — należy mu się własna talia (ADR 0023)`);
+  for (const plan of promoted) {
+    if (WOREK_DECKS[plan]) {
+      console.warn(`[generator] AUTO-AWANS: plan „${plan}” (${perPlan.get(plan)} kart) wychodzi z worka `
+        + `„${WOREK_DECKS[plan]}” do talii „${slugifyPlan(plan)}” (ADR 0023 §4) — wpis w WOREK_DECKS jest już martwy.`);
+    }
+  }
+  // Worek po awansach nie może spaść poniżej minimum walidatora — to
+  // sygnał do Świadomego przetasowania mapy WOREK_DECKS (nie automat).
+  for (const [file, { cards }] of decks) {
+    const nonland = cards.filter((card) => !(card.types ?? []).includes('Land')).length;
+    if (file.startsWith('worek') && nonland < SINGLE_PLAN_MIN) {
+      throw new Error(`Worek „${file}” ma po awansach tylko ${nonland} kart nielandowych `
+        + `(minimum ${SINGLE_PLAN_MIN}) — przetasuj plany w WOREK_DECKS (ADR 0023 §4).`);
     }
   }
   const files = new Map();
