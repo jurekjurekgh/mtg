@@ -2475,7 +2475,7 @@ export function cardInfo(session, object, combat = null) {
     // (obie strony zawierały grant) i badge nigdy się nie pokazywał.
     grantedKeywords: faceDown ? [] : [...(object.grantedKeywords ?? [])],
     lostKeywordsUntilEOT: faceDown ? [] : [...(object.lostKeywordsUntilEOT ?? [])],
-    cantBlockNow: Boolean(object.cantBlock),
+    cantBlockNow: Boolean(object.cantBlock || object.cantBlockPrinted),
     cantBeBlockedNow: Boolean(object.cantBeBlocked),
     // M173/C: czasowe stany z widoku (saddle/untap-lock/kontrola/regeneracja).
     saddledNow: Boolean(object.saddled),

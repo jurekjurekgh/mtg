@@ -20,7 +20,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, legalEscapeCasts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell } from './spells.js';
 import { legalActivatedAbilities, activateAbility, performActivation } from './abilities.js';
-import { deathZoneFor, clearMarkedDamage, clearStatModifiers, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, transformedCharacteristics, untapObject } from './permanents.js';
+import { deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, transformedCharacteristics, untapObject } from './permanents.js';
 import { addCounter } from './counters.js';
 import { runStateBasedActions } from './state-based.js';
 import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds } from './triggers.js';
@@ -2533,7 +2533,12 @@ export function execute(state, input) {
       if (state.pendingSpell) {
         const spellPending = state.pendingSpell;
         state.pendingSpell = null;
-        state.events.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
+        // M187/Z1: finishPendingSpell SAM dopisuje swoje zdarzenia do
+        // state.events i dodatkowo je ZWRACA (kontrakt „zwróć własny
+        // wycinek"). Dodatkowy push wstawiał je do stanu DRUGI raz, a że ta
+        // gałąź kończy się `state.events.slice(before)`, log pokazywał
+        // „… zostaje rozstrzygnięty" dwa razy. Wywołanie wystarczy.
+        finishPendingSpell(state, spellPending.stackId, spellPending.effects);
       }
       if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
         state.turn.priorityPlayerId = pending.restorePriorityTo;
@@ -2691,7 +2696,9 @@ export function execute(state, input) {
     if (state.pendingSpell) {
       const spellPending = state.pendingSpell;
       state.pendingSpell = null;
-      state.events.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
+      // M187/Z1 (jak wyżej): bez dodatkowego push — funkcja już dopisała
+      // zdarzenia do stanu, a zwrot służy call-site'om z LOKALNĄ tablicą.
+      finishPendingSpell(state, spellPending.stackId, spellPending.effects);
     }
     if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) state.turn.priorityPlayerId = pending.restorePriorityTo;
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
@@ -4389,7 +4396,7 @@ export function playerView(state, playerId) {
         // a render liczy z nich badge'e („nie może blokować", „nie do
         // zablokowania", „bez: X") — bez tych pól kafel milczał, choć
         // renderer miał gotową obsługę (m168).
-        if (object.cantBlock === true) entry.cantBlock = true;
+        if (creatureCantBlock(object)) entry.cantBlock = true;
         if (object.cantBeBlocked === true) entry.cantBeBlocked = true;
         // M186/Z1 (Żywy Tester, ravnica vs innistrad s9): „can't attack/block
         // alone" JAWNIE w widoku — wizard walki walidował po entry.abilities,
