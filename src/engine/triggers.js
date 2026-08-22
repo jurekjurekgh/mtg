@@ -1853,7 +1853,14 @@ export function processTriggers(state, recentEvents) {
         for (const ability of effectiveAbilities(source)) {
           const triggerEvent = ability?.trigger?.event;
           if (triggerEvent === 'another_creature_enters') {
-            if (entered.kind === 'creature' && source.id !== entered.id) {
+            // Batch 45 (Ivy Lane Denizen): deskryptor może zawężać trigger do
+            // stworów KONTROLERA źródła (youControl) i/lub koloru
+            // (colorsInclude) — Midnight Guard bez pól działa jak dotąd.
+            const tt = ability.trigger ?? {};
+            const controlOk = !tt.youControl || entered.controllerId === source.controllerId;
+            const colorOk = !tt.colorsInclude?.length
+              || (entered.colors ?? []).some((c) => tt.colorsInclude.includes(c));
+            if (entered.kind === 'creature' && source.id !== entered.id && controlOk && colorOk) {
               tryFire(state, ability, source, [], events);
             }
           } else if (triggerEvent === 'land_entered_under_your_control') {

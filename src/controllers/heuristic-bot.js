@@ -1118,6 +1118,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               score += 8 + 2 * power + (lethal ? 15 : 0);
             }
           }
+          // Batch 45 (Malamet Battle Glyph, CR 701.12): fight to wymiana —
+          // premia, gdy nasz stwór (slot A) zabija wroga; kara, gdy sam ginie.
+          if (effect.type === 'fight') {
+            const mine = objectOnBoard(view, cmd.targets?.[effect.targetIndexA ?? 0]);
+            const theirs = objectOnBoard(view, cmd.targets?.[effect.targetIndexB ?? 1]);
+            if (!mine || !theirs) score -= 40;
+            else {
+              const counterBonus = effects.some((e) => e.type === 'add_counter' && e.onlyIfTargetEnteredThisTurn) ? 1 : 0;
+              const myPower = (mine.power ?? 0) + counterBonus;
+              const myToughness = (mine.toughness ?? 0) + counterBonus;
+              const killsTheirs = myPower >= (theirs.toughness ?? 0) - (theirs.damage ?? 0);
+              const losesMine = (theirs.power ?? 0) >= myToughness - (mine.damage ?? 0);
+              score += (killsTheirs ? 25 + 2 * (theirs.power ?? 0) : 5) - (losesMine ? 20 : 0);
+            }
+          }
           if (effect.type === 'return_to_hand' && target && target.controllerId !== view.playerId) {
             score += 25 + (target.power ?? 0) * 2;
           }

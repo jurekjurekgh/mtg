@@ -1,6 +1,7 @@
 # Worek: Dzikie Światy
 
 1x Hunter's Blowgun
+1x Malamet Battle Glyph
 1x Merchant's Dockhand
 1x Canonized in Blood
 1x Emissary Escort
@@ -38,4 +39,4 @@
 4x Island
 3x Swamp
 5x Mountain
-3x Forest
+4x Forest

@@ -6,6 +6,7 @@
 1x Goldmeadow Nomad
 1x High Stride
 1x Mosquito Guard
+1x Assert Perfection
 1x Benevolent Blessing
 1x Deadly Recluse
 1x Forever Young
@@ -31,5 +32,5 @@
 3x Plains
 2x Island
 3x Swamp
-2x Mountain
+3x Mountain
 4x Forest

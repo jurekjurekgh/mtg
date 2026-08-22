@@ -366,4 +366,7 @@ export const MANA_COSTS = {
   "patron-of-the-arts": "{2}{R}",
   "unearth": "{B}",
   "call-the-mountain-chocobo": "{3}{R}",
+  "ivy-lane-denizen": "{3}{G}",
+  "malamet-battle-glyph": "{G}",
+  "assert-perfection": "{1}{G}",
 };

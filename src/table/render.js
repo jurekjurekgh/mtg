@@ -220,6 +220,10 @@ const targetTypeLabel = (spec) => {
   if (type === 'creature_with_keyword' && spec.keyword) return `stwór ze słowem kluczowym ${KEYWORD_LABELS[spec.keyword] ?? spec.keyword}`;
   // Batch 45 (Unearth): „creature card with mana value 3 or less".
   if (type === 'creature_card_in_graveyard' && spec.maxManaValue != null) return `karta-stwór w grobie o koszcie ≤ ${spec.maxManaValue}`;
+  // Batch 45 (Assert Perfection): „up to one target creature an opponent
+  // controls" — pozycja opcjonalna (jawnie: 'creature_opponent_controls').
+  if (type === 'creature_opponent_controls' && spec.optional) return `${base} (do jednego, opcjonalnie)`;
+  if (spec.optional) return `${base} (opcjonalnie)`;
   return base;
 };
 
@@ -985,6 +989,7 @@ function describeEffect(e) {
     attach_equipment_to_source: () => 'przyczep ekwipunek do tego stwora',
     damage_creatures_with_keyword: () => `${damageCount(e.amount ?? 1)} stworom z „${e.keyword ?? '?'}”`,
     damage_from_target_power: () => 'obrażenia równe mocy stwora',
+    fight: () => 'walka: stwory zadają sobie nawzajem obrażenia równe mocy',
     endure_x: () => 'endure X (liczniki +1/+1 albo token Spirit)',
     grant_protection_until_end_of_turn: () => 'ochrona do końca tury',
     incubate: () => `inkubuj ${e.amount ?? 1}`,

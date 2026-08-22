@@ -646,6 +646,24 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     for (const objectId of hit) dealNonCombatDamage(state, sourceObject, objectId, amount);
     return;
   }
+  if (effect.type === 'fight') {
+    // Batch 45 (Malamet Battle Glyph, CR 701.12): dwa stwory-cele zadają
+    // sobie NAWZAJEM obrażenia równe swojej mocy. Obie moce liczone PRZED
+    // zadaniem (jednoczesność — CR 701.12b); jeśli którykolwiek przestał
+    // być legalny, ŻADEN nie zadaje obrażeń (CR 701.12c).
+    const aId = targets[effect.targetIndexA ?? 0];
+    const bId = targets[effect.targetIndexB ?? 1];
+    if (aId == null || bId == null) return;
+    const a = state.objects.get(aId);
+    const b = state.objects.get(bId);
+    if (!a || a.zone !== 'battlefield' || a.kind !== 'creature') return;
+    if (!b || b.zone !== 'battlefield' || b.kind !== 'creature') return;
+    const powerA = Math.max(0, effectivePower(a, state) ?? 0);
+    const powerB = Math.max(0, effectivePower(b, state) ?? 0);
+    dealNonCombatDamage(state, a, bId, powerA);
+    dealNonCombatDamage(state, b, aId, powerB);
+    return;
+  }
   if (effect.type === 'damage_from_target_power') {
     const dealerId = targets[effect.sourceTargetIndex ?? 0];
     const victimId = targets[effect.targetIndex ?? 1];
@@ -1906,6 +1924,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // (T6 — okno odpowiedzi), sprawia, że efekt nic nie robi.
     const targetObj = state.objects.get(targetId);
     if (!targetObj || targetObj.zone !== 'battlefield') return;
+    // Batch 45 (Malamet Battle Glyph): „If the creature you control entered
+    // this turn, put a +1/+1 counter on it" — warunek na CELU, oceniany przy
+    // rozstrzygnięciu (CR 608.2); bez spełnienia licznika nie ma, ale dalsze
+    // efekty czaru (fight) i tak następują.
+    if (effect.onlyIfTargetEnteredThisTurn && targetObj.enteredOnTurn !== state.turn?.number) return;
     // M177/B (Rakshasa Vizier): liczba liczników z kontekstu zdarzenia
     // („that many +1/+1 counters” — tyle, ile kart wyszło z grobu).
     const counterAmount = effect.amountFromContext

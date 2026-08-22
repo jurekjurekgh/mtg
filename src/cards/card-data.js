@@ -8572,6 +8572,77 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['token Bird pumpuje SAM SIEBIE przy wejściu landa kontrolera (landfall — trigger bez celu pumpuje źródło)'],
   }),
 
+  // ---- Batch 45 — transza B: rozszerzenia silnika ----
+
+  // 6. Ivy Lane Denizen (CMR) — „Whenever another green creature you control
+  //    enters, put a +1/+1 counter on target creature" (filtry youControl +
+  //    colorsInclude na another_creature_enters).
+  defineCard({
+    id: 'ivy-lane-denizen', name: 'Ivy Lane Denizen', set: 'CMR',
+    types: ['Creature'], subtypes: ['Elf', 'Warrior'], colors: ['G'],
+    power: 2, toughness: 3, manaCost: 4,
+    oracleText: 'Whenever another green creature you control enters, put a +1/+1 counter on target creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/8/78bea375-8af3-4425-a418-bb5503e2dfb7.jpg?1783928792',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'another_creature_enters', youControl: true, colorsInclude: ['G'],
+          requiresTarget: { type: 'creature' },
+        },
+        effect: [{ type: 'add_counter', counter: '+1/+1', amount: 1 }],
+      }),
+    ],
+    artId: 460, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 7. Malamet Battle Glyph (LCI) — dwa cele; licznik, jeśli własny stwór
+  //    wszedł w tej turze; potem FIGHT (NOWY efekt, CR 701.12).
+  defineCard({
+    id: 'malamet-battle-glyph', name: 'Malamet Battle Glyph', set: 'LCI',
+    types: ['Sorcery'], colors: ['G'], manaCost: 1,
+    oracleText: 'Choose target creature you control and target creature you don\'t control. If the creature you control entered this turn, put a +1/+1 counter on it. Then those creatures fight each other.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/2/2259f959-ca97-4df9-8d50-0532090fb967.jpg?1783913743',
+    spell: {
+      timing: 'sorcery',
+      targets: [
+        { type: 'creature_you_control' },
+        { type: 'creature_opponent_controls' },
+      ],
+      effects: [
+        { type: 'add_counter', counter: '+1/+1', amount: 1, targetIndex: 0, onlyIfTargetEnteredThisTurn: true },
+        { type: 'fight', targetIndexA: 0, targetIndexB: 1 },
+      ],
+    },
+    artId: 215, plan: 'Ixalan',
+    support: { status: 'supported', limitations: [] },
+    notes: ['fight PO ewentualnym liczniku (kolejność Oracle); licznik tylko gdy własny cel wszedł w tej turze (enteredOnTurn)'],
+  }),
+
+  // 8. Assert Perfection (ECL) — bite: +1/+0 dla własnego stwora; obrażenia
+  //    równe jego mocy w „up to one" wrogiego stwora (NOWE: optional target).
+  defineCard({
+    id: 'assert-perfection', name: 'Assert Perfection', set: 'ECL',
+    types: ['Sorcery'], colors: ['G'], manaCost: 2,
+    oracleText: 'Target creature you control gets +1/+0 until end of turn. It deals damage equal to its power to up to one target creature an opponent controls.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/9/6995b308-5582-4ca1-ab10-a536d5ca0a6d.jpg?1783904435',
+    spell: {
+      timing: 'sorcery',
+      targets: [
+        { type: 'creature_you_control' },
+        { type: 'creature_opponent_controls', optional: true },
+      ],
+      effects: [
+        { type: 'pump', power: 1, toughness: 0 },
+        { type: 'damage_from_target_power', sourceTargetIndex: 0, targetIndex: 1 },
+      ],
+    },
+    artId: 366, plan: 'Lorwyn',
+    support: { status: 'supported', limitations: [] },
+    notes: ['„up to one target" — wariant bez drugiego celu jest legalny (pump bez ugryzienia); pump PRZED obrażeniami (kolejność Oracle — obrażenia liczą moc po +1/+0)'],
+  }),
+
 ]);
 
 /**

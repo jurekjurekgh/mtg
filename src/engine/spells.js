@@ -79,6 +79,9 @@ export function hasHexproofAgainst(state, object, casterId) {
 export function validateTargets(state, targetSpec, chosen, casterId, sourceColors = null, sourceObject = null) {
   return chosen.map((targetId, index) => {
     const spec = targetSpec[index];
+    // Batch 45 (Assert Perfection, CR 601.2c): „up to one target" — pozycja
+    // opcjonalna może zostać świadomie pusta (null) i to nie jest błąd.
+    if (targetId == null && spec?.optional) return null;
     const object = state.objects.get(targetId);
     // Hexproof (CR 702.11): cel-permanent przeciwnika z hexproof jest nielegalny
     // dla WSZYSTKICH typów celów obiektowych (stwór, artefakt, aura, land...).
@@ -2061,7 +2064,13 @@ export function legalSpellCasts(state, playerId) {
     }
     // Kandydaci dla każdej pozycji specyfikacji celów (iloczyn kartezjański —
     // czary wielocelowe jak Grave Exchange). Każdy typ jest generyczny.
-    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec, object));
+    // Batch 45 (Assert Perfection): pozycja celu z `optional: true` („up to
+    // one target") enumeruje też wariant BEZ celu (null) — czar rzucalny
+    // nawet przy braku kandydatów na tej pozycji.
+    const candidatePools = targetSpec.map((spec) => {
+      const pool = legalTargetCandidates(state, playerId, spec, object);
+      return spec?.optional ? [...pool, null] : pool;
+    });
     if (candidatePools.some((pool) => pool.length === 0)) continue;
     for (const combo of cartesian(candidatePools)) {
       for (const sacId of sacrificePool) {
@@ -2111,7 +2120,13 @@ export function legalCleaveCasts(state, playerId) {
       casts.push({ objectId: id, targets: [] });
       continue;
     }
-    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec, object));
+    // Batch 45 (Assert Perfection): pozycja celu z `optional: true` („up to
+    // one target") enumeruje też wariant BEZ celu (null) — czar rzucalny
+    // nawet przy braku kandydatów na tej pozycji.
+    const candidatePools = targetSpec.map((spec) => {
+      const pool = legalTargetCandidates(state, playerId, spec, object);
+      return spec?.optional ? [...pool, null] : pool;
+    });
     if (candidatePools.some((pool) => pool.length === 0)) continue;
     for (const combo of cartesian(candidatePools)) {
       casts.push({ objectId: id, targets: combo });
@@ -2340,7 +2355,13 @@ export function legalEscapeCasts(state, playerId) {
       for (const escapeExileIds of exileSubsets) casts.push({ objectId: id, targets: [], escapeExileIds });
       continue;
     }
-    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec, object));
+    // Batch 45 (Assert Perfection): pozycja celu z `optional: true` („up to
+    // one target") enumeruje też wariant BEZ celu (null) — czar rzucalny
+    // nawet przy braku kandydatów na tej pozycji.
+    const candidatePools = targetSpec.map((spec) => {
+      const pool = legalTargetCandidates(state, playerId, spec, object);
+      return spec?.optional ? [...pool, null] : pool;
+    });
     if (candidatePools.some((pool) => pool.length === 0)) continue;
     for (const combo of cartesian(candidatePools)) {
       for (const escapeExileIds of exileSubsets) casts.push({ objectId: id, targets: combo, escapeExileIds });
@@ -2428,7 +2449,13 @@ export function legalFlashbackCasts(state, playerId) {
       casts.push({ objectId: id, targets: [] });
       continue;
     }
-    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec, object));
+    // Batch 45 (Assert Perfection): pozycja celu z `optional: true` („up to
+    // one target") enumeruje też wariant BEZ celu (null) — czar rzucalny
+    // nawet przy braku kandydatów na tej pozycji.
+    const candidatePools = targetSpec.map((spec) => {
+      const pool = legalTargetCandidates(state, playerId, spec, object);
+      return spec?.optional ? [...pool, null] : pool;
+    });
     if (candidatePools.some((pool) => pool.length === 0)) continue;
     for (const combo of cartesian(candidatePools)) casts.push({ objectId: id, targets: combo });
   }
@@ -2502,7 +2529,13 @@ export function legalAdventureCasts(state, playerId) {
       casts.push({ objectId: id, targets: [] });
       continue;
     }
-    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec, object));
+    // Batch 45 (Assert Perfection): pozycja celu z `optional: true` („up to
+    // one target") enumeruje też wariant BEZ celu (null) — czar rzucalny
+    // nawet przy braku kandydatów na tej pozycji.
+    const candidatePools = targetSpec.map((spec) => {
+      const pool = legalTargetCandidates(state, playerId, spec, object);
+      return spec?.optional ? [...pool, null] : pool;
+    });
     if (candidatePools.some((pool) => pool.length === 0)) continue;
     for (const combo of cartesian(candidatePools)) casts.push({ objectId: id, targets: combo });
   }
