@@ -1,7 +1,24 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-22 (M185: Batch 45 — 10 kart; fight, toxic, optional targets, enchant creature you control)
-- **Poprzednia:** 2026-08-22 (M184: pętla jakości Żywym Testerem — Z1–Z5, 12 gier, 0 zgłoszeń po naprawach)
+- **Ostatnia aktualizacja:** 2026-08-22 (M186: pętla jakości Żywym Testerem po Batchu 45 — Z1–Z4; 9. reset workspace odzyskany)
+- **Poprzednia:** 2026-08-22 (M185: Batch 45 — 10 kart; fight, toxic, optional targets, enchant creature you control)
+
+
+## M186 — pętla jakości Żywym Testerem: Batch 45 (2026-08-22, PR #69)
+
+Plan: `docs/plans/PLAN_2026-08-22-m186-petla-jakosci-batch45.md`.
+12 zapisów w `tools/table-tester/audyt-m186/`; po drodze 9. RESET
+workspace (odzyskany: reset --mixed na origin, pliki z commitów,
+przestarzałe kopie working tree odrzucone). Naprawy: Z1 (martwa walidacja
+wizarda bloków — cantAttackAlone/cantBlockAlone JAWNIE w widoku, klasa
+L48/L1), Z2 (null celów optional bez „?" w etykietach + detektor
+game_over), Z3 (grupa Epic Experiment wyciszalna; done: true jak
+decline/skip — klasa M180/Z4), Z4 (opis another_creature_enters z
+filtrami kolor/kontrola — Ivy Lane Denizen). Weryfikacje v2/v3 = 0
+zgłoszeń. Testy: m186-petla-jakosci (4).
+
+**Stan:** `test:all` **2754/2754**, build **52 moduły / 2390.0 kB**,
+benchmark regresji bota w progach.
 
 
 ## M185 — Batch 45: 10 kart właściciela (2026-08-22, PR #69)
