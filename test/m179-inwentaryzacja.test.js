@@ -282,3 +282,23 @@ test('E2: bot NIE niszczy WŁASNEGO stwora (selfHarmPenalty — regresja central
   assert.ok(!(chosen.type === 'cast_spell' && chosen.objectId === 'spin'),
     `removal we własnego stwora (wybrał: ${JSON.stringify(chosen)})`);
 });
+
+// ---- Z1 (M180, regresja M179/D): własna mana źródła nie płaci jego zdolności ----
+
+test('Z1: Seer\'s Lantern — „{2},{T}: Scry” nie liczy WŁASNEJ many latarni (L48)', () => {
+  const state = game('p1');
+  putCard(state, 'lantern', 'seers-lantern', 'p1');
+  putCard(state, 'island', 'basic-island', 'p1');
+  putCard(state, 'lib', 'basic-forest', 'p1', 'library'); // scry ma na co patrzeć
+  // 1 land + latarnia = producibleMana 2, ale po tapnięciu latarni KOSZTEM
+  // została 1 mana — oferta scry ({2},{T}) byłaby kłamstwem.
+  const offers1 = playerView(state, 'p1').legalCommands
+    .filter((c) => c.type === 'activate_ability' && c.objectId === 'lantern' && c.abilityIndex === 1);
+  assert.equal(offers1.length, 0, 'bez 2 ZEWNĘTRZNYCH man brak oferty scry');
+  // Z drugim landem oferta wraca i PŁATNOŚĆ przechodzi (oferta = płatność).
+  putCard(state, 'island2', 'basic-island', 'p1');
+  const offer = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'activate_ability' && c.objectId === 'lantern' && c.abilityIndex === 1);
+  assert.ok(offer, 'oferta scry z 2 landami');
+  assert.ok(execute(state, offer).ok, 'płatność przechodzi (bez własnej many latarni)');
+});

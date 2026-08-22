@@ -1,6 +1,21 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-22 (M179: inwentaryzacja trików/many/celów — whitelisty ze strażnikami, L54)
+- **Ostatnia aktualizacja:** 2026-08-22 (M180: pętla jakości Żywym Testerem — Batch 41/42 + nowe talie, 5 klas napraw, weryfikacja 0 zgłoszeń)
+- **Poprzednia:** 2026-08-22 (M179: inwentaryzacja trików/many/celów — whitelisty, L54)
+
+
+## M180 — pętla jakości Żywym Testerem (2026-08-22, PR #69)
+
+Plan: `docs/plans/PLAN_2026-08-22-m180-petla-jakosci-zywy-tester.md`;
+transkrypty: `tools/table-tester/audyt-m180/` (7 partii g-*, 7 weryfikacji
+v3-* po naprawach = 0 zgłoszeń). Naprawy: Z1 — regresja M179/D (własna mana
+źródła w ofercie jego zdolności z {T}, klasa L48); Z2 — isToken jawnie
+w widoku („token_squirrel” w celach); Z3 — „dostaje” w DRUGA_OSOBA; Z4 —
+grupa Halo Foragera wyciszalna + auto-decline w advance(); Z5 — no-op
+oferty schowane (Krotiq powtórny, Dragon Arch bez celu; M126/#2
+zaktualizowany). Pułapki: tester gra na ZBUDOWANYM artefakcie (rebuild przed
+weryfikacją); pierwotny przebieg M180 przepadł w 8. resecie workspace —
+odtworzony z notatki właściciela (commituj często!).
 - **Poprzednia:** 2026-08-22 (M178: REWOLUCJA TALII — ADR 0023)
 
 

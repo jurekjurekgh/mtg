@@ -270,6 +270,9 @@ export function describeSpellEffects(spell) {
 export const OPTION_IGNORABLE_TYPES = Object.freeze([
   'cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape', 'cast_flashback',
   'cast_adventure', 'cast_adventure_creature', 'activate_ability', 'plot_card', 'suspend_card',
+  // M180/Z4 (Żywy Tester): grupa Halo Foragera („Wartość X”) wyciszalna —
+  // wyciszona blokująca decyzja opcjonalna auto-wykonuje decline w advance().
+  'resolve_grave_free_cast',
 ]);
 
 const ACTION_RANK = Object.freeze({
@@ -1633,7 +1636,10 @@ export function commandLabel(cmd, session, view) {
     // cardId `token_*` jest poza rejestrem, więc session.nameOf zwracałby
     // surowy id („token_squirrel").
     // M172/D: token-kopia z numerem — „Nazwa (kopia N)" w etykietach celów.
-    const tokenName = object?.isToken && object.name != null
+    // M180/Z2: obrona w głąb — token rozpoznajemy też po cardId `token_*`
+    // (gdyby któraś ścieżka widoku znowu zgubiła flagę isToken).
+    const looksLikeToken = object?.isToken || String(object?.cardId ?? '').startsWith('token_');
+    const tokenName = looksLikeToken && object?.name != null
       ? (object.copyNumber ? `${object.name} (kopia ${object.copyNumber})` : object.name)
       : null;
     const base = object

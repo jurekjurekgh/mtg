@@ -1,0 +1,349 @@
+== NOWA PARTIA: gracz=innistrad vs bot=worek-basni, seed=21, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Mountain  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Curse of the Pierced Heart · 2 · Enchantment — Aura Curse · Na początku upkeep (gdy rzucono 2+ czary): 1 obrażenie zaczarowanemu graczowi. | Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Selhoff Occultist · 3 · Creature — Human Rogue · Gdy jakiekolwiek stworzenie umrze: mieli 1 kartę (do grobu). · 2/3 | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curse of the Pierced Heart, Blazing Torch, Somberwald Spider, Mountain, Selhoff Occultist, Midnight Guard, Elgaud Inquisitor ⏎ Nowa partia (seed 21). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Zagraj: Blazing Torch (koszt 1)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Blazing Torch
+  [ROZGRYWKA]   • Blazing Torch wchodzi na pole bitwy
+  [ROZGRYWKA]   • Blazing Torch zostaje rozstrzygnięty
+
+--- krok 3 | T. 2BotGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Curse of the Pierced Heart · 2 · Enchantment — Aura Curse · Na początku upkeep (gdy rzucono 2+ czary): 1 obrażenie zaczarowanemu graczowi. | Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4 | Selhoff Occultist · 3 · Creature — Human Rogue · Gdy jakiekolwiek stworzenie umrze: mieli 1 kartę (do grobu). · 2/3 | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curse of the Pierced Heart, Blazing Torch, Somberwald Spider, Mountain, Selhoff Occultist, Midnight Guard, Elgaud Inquisitor ⏎ Nowa partia (seed 21). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Grizzled Outcasts
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+
+--- krok 6 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Curse of the Pierced Heart · 2 · Enchantment — Aura Curse · Na początku upkeep (gdy rzucono 2+ czary): 1 obrażenie zaczarowanemu graczowi. | Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4 | Selhoff Occultist · 3 · Creature — Human Rogue · Gdy jakiekolwiek stworzenie umrze: mieli 1 kartę (do grobu). · 2/3 | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2 | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). · 4/4 | Thornhide Wolves · 5 · Creature — Wolf · 4/5
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curse of the Pierced Heart, Blazing Torch, Somberwald Spider, Mountain, Selhoff Occultist, Midnight Guard, Elgaud Inquisitor ⏎ Nowa partia (seed 21). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Thornhide Wolves
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Soulbright Flamekin
+
+--- krok 9 | T. 7GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Curse of the Pierced Heart · 2 · Enchantment — Aura Curse · Na początku upkeep (gdy rzucono 2+ czary): 1 obrażenie zaczarowanemu graczowi. | Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4 | Selhoff Occultist · 3 · Creature — Human Rogue · Gdy jakiekolwiek stworzenie umrze: mieli 1 kartę (do grobu). · 2/3 | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2 | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). · 4/4 | Thornhide Wolves · 5 · Creature — Wolf · 4/5 | Grounded · 2 · Enchantment — Aura · stwór traci: Latanie
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Soulbright Flamekin · 2 · Creature — Elemental Shaman · {2}: cel: stwór — zdobądź Zadeptywanie do końca tury · choroba · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curse of the Pierced Heart, Blazing Torch, Somberwald Spider, Mountain, Selhoff Occultist, Midnight Guard, Elgaud Inquisitor ⏎ Nowa partia (seed 21). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Soulbright Flamekin wchodzi na pole bitwy
+  [ROZGRYWKA]   • Soulbright Flamekin zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Grounded
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Wybierasz, którą kartę odrzucić przy limicie ręki
+  >> Wybierz: Karta do odrzucenia (8 opcji)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Grounded Odrzuć: Curse of the Pierced Heart Odrzuć: Midnight Guard Odrzuć: Selhoff Occultist Odrzuć: Elgaud Inquisitor Odrzuć: Thornhide Wolves Odrzuć: Grizzled Outcasts Odrzuć: Somberwald Spider
+  [modal choice]   ▶ Odrzuć: Grounded
+  [modal choice]     Odrzuć: Curse of the Pierced Heart
+  [modal choice]     Odrzuć: Midnight Guard
+  [modal choice]     Odrzuć: Selhoff Occultist
+  [modal choice]     Odrzuć: Elgaud Inquisitor
+  [modal choice]     Odrzuć: Thornhide Wolves
+  [modal choice]     Odrzuć: Grizzled Outcasts
+  [modal choice]     Odrzuć: Somberwald Spider
+
+--- krok 12 | T. 8BotGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Curse of the Pierced Heart · 2 · Enchantment — Aura Curse · Na początku upkeep (gdy rzucono 2+ czary): 1 obrażenie zaczarowanemu graczowi. | Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4 | Selhoff Occultist · 3 · Creature — Human Rogue · Gdy jakiekolwiek stworzenie umrze: mieli 1 kartę (do grobu). · 2/3 | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2 | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). · 4/4 | Thornhide Wolves · 5 · Creature — Wolf · 4/5
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Soulbright Flamekin · 2 · Creature — Elemental Shaman · {2}: cel: stwór — zdobądź Zadeptywanie do końca tury · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curse of the Pierced Heart, Blazing Torch, Somberwald Spider, Mountain, Selhoff Occultist, Midnight Guard, Elgaud Inquisitor ⏎ Nowa partia (seed 21). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mystic Sanctuary (wchodzi zatapnięty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Soulbright Flamekin — nadanie do końca tury: zadeptywanie → cel: Soulbright Flamekin
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Soulbright Flamekin zyskuje: zadeptywanie
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Soulbright Flamekin rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Soulbright Flamekin
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Soulbright Flamekin zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 18
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mark of the Vampire
+
+--- krok 15 | T. 9GraczGracz: 18 ż.Bot: 20 ż.Sprzątanie ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Wybierz: Karta do odrzucenia (8 opcji)
+  RĘKA: Curse of the Pierced Heart · 2 · Enchantment — Aura Curse · Na początku upkeep (gdy rzucono 2+ czary): 1 obrażenie zaczarowanemu graczowi. | Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4 | Selhoff Occultist · 3 · Creature — Human Rogue · Gdy jakiekolwiek stworzenie umrze: mieli 1 kartę (do grobu). · 2/3 | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2 | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). · 4/4 | Thornhide Wolves · 5 · Creature — Wolf · 4/5 | Mark of the Vampire · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Dotykanie życia
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Soulbright Flamekin · 2 · Creature — Elemental Shaman · {2}: cel: stwór — zdobądź Zadeptywanie do końca tury · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curse of the Pierced Heart, Blazing Torch, Somberwald Spider, Mountain, Selhoff Occultist, Midnight Guard, Elgaud Inquisitor ⏎ Nowa partia (seed 21). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Wybierasz, którą kartę odrzucić przy limicie ręki
+  >> Wybierz: Karta do odrzucenia (8 opcji)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Curse of the Pierced Heart Odrzuć: Midnight Guard Odrzuć: Selhoff Occultist Odrzuć: Mark of the Vampire Odrzuć: Elgaud Inquisitor Odrzuć: Thornhide Wolves Odrzuć: Grizzled Outcasts Odrzuć: Somberwald Spider
+  [modal choice]   ▶ Odrzuć: Curse of the Pierced Heart
+  [modal choice]     Odrzuć: Midnight Guard
+  [modal choice]     Odrzuć: Selhoff Occultist
+  [modal choice]     Odrzuć: Mark of the Vampire
+  [modal choice]     Odrzuć: Elgaud Inquisitor
+  [modal choice]     Odrzuć: Thornhide Wolves
+  [modal choice]     Odrzuć: Grizzled Outcasts
+  [modal choice]     Odrzuć: Somberwald Spider
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Downwind Ambusher
+
+--- krok 18 | T. 10BotGracz: 18 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4 | Selhoff Occultist · 3 · Creature — Human Rogue · Gdy jakiekolwiek stworzenie umrze: mieli 1 kartę (do grobu). · 2/3 | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2 | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). · 4/4 | Thornhide Wolves · 5 · Creature — Wolf · 4/5 | Mark of the Vampire · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Dotykanie życia
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Soulbright Flamekin · 2 · Creature — Elemental Shaman · {2}: cel: stwór — zdobądź Zadeptywanie do końca tury · 2/1 | Downwind Ambusher · 4 · Creature — Skunk Assassin · Flash (błysk) · wybierz tryb: Osłabienie / Dobicie rannego · choroba · 4/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curse of the Pierced Heart, Blazing Torch, Somberwald Spider, Mountain, Selhoff Occultist, Midnight Guard, Elgaud Inquisitor ⏎ Nowa partia (seed 21). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Downwind Ambusher wchodzi na pole bitwy
+  [ROZGRYWKA]   • Downwind Ambusher zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Downwind Ambusher — trigger bez efektu (brak legalnych celów)
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Soulbright Flamekin
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Soulbright Flamekin zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 16
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+
+--- krok 21 | T. 12BotGracz: 16 ż.Bot: 20 ż.Główna 1Stos — Talion's Messenger ---
+  STOS: Talion's Messenger (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4 | Selhoff Occultist · 3 · Creature — Human Rogue · Gdy jakiekolwiek stworzenie umrze: mieli 1 kartę (do grobu). · 2/3 | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2 | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). · 4/4 | Thornhide Wolves · 5 · Creature — Wolf · 4/5 | Mark of the Vampire · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Dotykanie życia
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Soulbright Flamekin · 2 · Creature — Elemental Shaman · {2}: cel: stwór — zdobądź Zadeptywanie do końca tury · 2/1 | Downwind Ambusher · 4 · Creature — Skunk Assassin · Flash (błysk) · wybierz tryb: Osłabienie / Dobicie rannego · 4/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curse of the Pierced Heart, Blazing Torch, Somberwald Spider, Mountain, Selhoff Occultist, Midnight Guard, Elgaud Inquisitor ⏎ Nowa partia (seed 21). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Talion's Messenger
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Soulbright Flamekin — nadanie do końca tury: zadeptywanie → cel: Downwind Ambusher
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Downwind Ambusher zyskuje: zadeptywanie
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Soulbright Flamekin rozstrzygnięta
+  [ROZGRYWKA]   • Talion's Messenger wchodzi na pole bitwy
+  [ROZGRYWKA]   • Talion's Messenger zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Soulbright Flamekin, Downwind Ambusher
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Soulbright Flamekin zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 14
+  [ROZGRYWKA]   • Downwind Ambusher zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 10
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Gather the Townsfolk
+
+--- krok 24 | T. 13GraczGracz: 10 ż.Bot: 20 ż.Sprzątanie ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Wybierz: Karta do odrzucenia (8 opcji)
+  RĘKA: Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4 | Selhoff Occultist · 3 · Creature — Human Rogue · Gdy jakiekolwiek stworzenie umrze: mieli 1 kartę (do grobu). · 2/3 | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2 | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). · 4/4 | Thornhide Wolves · 5 · Creature — Wolf · 4/5 | Mark of the Vampire · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Dotykanie życia | Gather the Townsfolk · 2 · Sorcery · Stwórz ×2 1/1 Human (5 przy życiu ≤ 5)
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Soulbright Flamekin · 2 · Creature — Elemental Shaman · {2}: cel: stwór — zdobądź Zadeptywanie do końca tury · 2/1 | Downwind Ambusher · 4 · Creature — Skunk Assassin · Flash (błysk) · wybierz tryb: Osłabienie / Dobicie rannego · 4/2 | Talion's Messenger · 3 · Creature — Faerie Noble · Latanie · Trigger atak z Faerie: dobierz 1 kartę, odrzuć 1 kartę, połóż licznik +1/+1. · choroba · 1/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curse of the Pierced Heart, Blazing Torch, Somberwald Spider, Mountain, Selhoff Occultist, Midnight Guard, Elgaud Inquisitor ⏎ Nowa partia (seed 21). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Wybierasz, którą kartę odrzucić przy limicie ręki
+  >> Wybierz: Karta do odrzucenia (8 opcji)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Gather the Townsfolk Odrzuć: Midnight Guard Odrzuć: Selhoff Occultist Odrzuć: Mark of the Vampire Odrzuć: Elgaud Inquisitor Odrzuć: Thornhide Wolves Odrzuć: Grizzled Outcasts Odrzuć: Somberwald Spider
+  [modal choice]   ▶ Odrzuć: Gather the Townsfolk
+  [modal choice]     Odrzuć: Midnight Guard
+  [modal choice]     Odrzuć: Selhoff Occultist
+  [modal choice]     Odrzuć: Mark of the Vampire
+  [modal choice]     Odrzuć: Elgaud Inquisitor
+  [modal choice]     Odrzuć: Thornhide Wolves
+  [modal choice]     Odrzuć: Grizzled Outcasts
+  [modal choice]     Odrzuć: Somberwald Spider
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Locthwain Paladin
+
+--- krok 27 | T. 14BotGracz: 10 ż.Bot: 20 ż.Główna 1Stos — Soulbright Flamekin ---
+  STOS: Locthwain Paladin (rzuca: Nieprzyjaciel) | Soulbright Flamekin (rzuca: Nieprzyjaciel) → cel: Downwind Ambusher
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4 | Selhoff Occultist · 3 · Creature — Human Rogue · Gdy jakiekolwiek stworzenie umrze: mieli 1 kartę (do grobu). · 2/3 | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2 | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). · 4/4 | Thornhide Wolves · 5 · Creature — Wolf · 4/5 | Mark of the Vampire · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Dotykanie życia
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Soulbright Flamekin · 2 · Creature — Elemental Shaman · {2}: cel: stwór — zdobądź Zadeptywanie do końca tury · 2/1 | Downwind Ambusher · 4 · Creature — Skunk Assassin · Flash (błysk) · wybierz tryb: Osłabienie / Dobicie rannego · 4/2 | Talion's Messenger · 3 · Creature — Faerie Noble · Latanie · Trigger atak z Faerie: dobierz 1 kartę, odrzuć 1 kartę, połóż licznik +1/+1. · 1/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curse of the Pierced Heart, Blazing Torch, Somberwald Spider, Mountain, Selhoff Occultist, Midnight Guard, Elgaud Inquisitor ⏎ Nowa partia (seed 21). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Soulbright Flamekin — nadanie do końca tury: zadeptywanie → cel: Downwind Ambusher
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Downwind Ambusher zyskuje: zadeptywanie
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Soulbright Flamekin rozstrzygnięta
+  [ROZGRYWKA]   • Locthwain Paladin wchodzi na pole bitwy
+  [ROZGRYWKA]   • Locthwain Paladin zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Soulbright Flamekin, Downwind Ambusher, Talion's Messenger
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Talion's Messenger — wybierz cel triggera (wymagany)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Talion's Messenger — trigger (atak z Faerie)
+  [ROZGRYWKA]   • Talion's Messenger — cel: Talion's Messenger
+
+--- krok 30 | T. 15GraczGracz: 2 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4 | Selhoff Occultist · 3 · Creature — Human Rogue · Gdy jakiekolwiek stworzenie umrze: mieli 1 kartę (do grobu). · 2/3 | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2 | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). · 4/4 | Thornhide Wolves · 5 · Creature — Wolf · 4/5 | Mark of the Vampire · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Dotykanie życia | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Soulbright Flamekin · 2 · Creature — Elemental Shaman · {2}: cel: stwór — zdobądź Zadeptywanie do końca tury · 2/1 | Downwind Ambusher · 4 · Creature — Skunk Assassin · Flash (błysk) · wybierz tryb: Osłabienie / Dobicie rannego · 4/2 | Talion's Messenger · 3 · Creature — Faerie Noble · Latanie · Trigger atak z Faerie: dobierz 1 kartę, odrzuć 1 kartę, połóż licznik +1/+1. · 1x +1/+1 · 2/4 | Locthwain Paladin · 4 · Creature — Human Knight · Postrach · choroba · 3/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curse of the Pierced Heart, Blazing Torch, Somberwald Spider, Mountain, Selhoff Occultist, Midnight Guard, Elgaud Inquisitor ⏎ Nowa partia (seed 21). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera, którą kartę odrzucić efektem (Talion's Messenger)
+  [ROZGRYWKA]   • Talion's Messenger dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Talion's Messenger — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Benevolent Blessing
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Soulbright Flamekin zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 10 → 8
+  [ROZGRYWKA]   • Downwind Ambusher zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 8 → 4
+  [ROZGRYWKA]   • Talion's Messenger zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 4 → 2
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Ghoulcaller's Bell
+  >> Zagraj: Ghoulcaller's Bell (koszt 1)
+  [kreator many] Płatność 1 — tapuj źródła po jednympozostało 1 manyTapnij: Mountain (R)Tapnij: Island (U)Anuluj płatność — źródła: 2
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Ghoulcaller's Bell
+  [ROZGRYWKA]   • Ghoulcaller's Bell wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ghoulcaller's Bell zostaje rozstrzygnięty
+
+--- krok 33 | T. 15GraczGracz: 2 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Ghoulcaller's Bell (Ty) (koszt T) — mieli po 1 karcie z biblioteki każdy gracz  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4 | Selhoff Occultist · 3 · Creature — Human Rogue · Gdy jakiekolwiek stworzenie umrze: mieli 1 kartę (do grobu). · 2/3 | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2 | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). · 4/4 | Thornhide Wolves · 5 · Creature — Wolf · 4/5 | Mark of the Vampire · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Dotykanie życia
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Soulbright Flamekin · 2 · Creature — Elemental Shaman · {2}: cel: stwór — zdobądź Zadeptywanie do końca tury · 2/1 | Downwind Ambusher · 4 · Creature — Skunk Assassin · Flash (błysk) · wybierz tryb: Osłabienie / Dobicie rannego · 4/2 | Talion's Messenger · 3 · Creature — Faerie Noble · Latanie · Trigger atak z Faerie: dobierz 1 kartę, odrzuć 1 kartę, połóż licznik +1/+1. · 1x +1/+1 · 2/4 | Locthwain Paladin · 4 · Creature — Human Knight · Postrach · choroba · 3/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curse of the Pierced Heart, Blazing Torch, Somberwald Spider, Mountain, Selhoff Occultist, Midnight Guard, Elgaud Inquisitor ⏎ Nowa partia (seed 21). Powodzenia!
+  >> Aktywuj: Ghoulcaller's Bell (Ty) (koszt T) — mieli po 1 karcie z biblioteki każdy gracz
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghoulcaller's Bell
+  [ROZGRYWKA]   • Mielisz Chill of the Grave do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Kappa Tech-Wrecker do grobu
+  [ROZGRYWKA]   • Ty: zdolność Ghoulcaller's Bell rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Deadly Recluse
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Soulbright Flamekin — nadanie do końca tury: zadeptywanie → cel: Downwind Ambusher
+
+--- krok 36 | T. 16BotGracz: 2 ż.Bot: 20 ż.Główna 1Stos — Soulbright Flamekin ---
+  STOS: Deadly Recluse (rzuca: Nieprzyjaciel) | Soulbright Flamekin (rzuca: Nieprzyjaciel) → cel: Locthwain Paladin
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4 | Selhoff Occultist · 3 · Creature — Human Rogue · Gdy jakiekolwiek stworzenie umrze: mieli 1 kartę (do grobu). · 2/3 | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2 | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). · 4/4 | Thornhide Wolves · 5 · Creature — Wolf · 4/5 | Mark of the Vampire · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Dotykanie życia
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Soulbright Flamekin · 2 · Creature — Elemental Shaman · {2}: cel: stwór — zdobądź Zadeptywanie do końca tury · 2/1 | Downwind Ambusher · 4 · Creature — Skunk Assassin · Flash (błysk) Zadeptywanie · wybierz tryb: Osłabienie / Dobicie rannego · Zadeptywanie · 4/2 | Talion's Messenger · 3 · Creature — Faerie Noble · Latanie · Trigger atak z Faerie: dobierz 1 kartę, odrzuć 1 kartę, połóż licznik +1/+1. · 1x +1/+1 · 2/4 | Locthwain Paladin · 4 · Creature — Human Knight · Postrach · 3/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curse of the Pierced Heart, Blazing Torch, Somberwald Spider, Mountain, Selhoff Occultist, Midnight Guard, Elgaud Inquisitor ⏎ Nowa partia (seed 21). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Downwind Ambusher zyskuje: zadeptywanie
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Soulbright Flamekin rozstrzygnięta
+  [ROZGRYWKA]   • Nieprzyjaciel korzysta z efektu „you may" (Soulbright Flamekin)
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Soulbright Flamekin — nadanie do końca tury: zadeptywanie → cel: Locthwain Paladin
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Locthwain Paladin zyskuje: zadeptywanie
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Soulbright Flamekin rozstrzygnięta
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Soulbright Flamekin — nadanie do końca tury: zadeptywanie → cel: Talion's Messenger
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Talion's Messenger zyskuje: zadeptywanie
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Soulbright Flamekin rozstrzygnięta
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Soulbright Flamekin — nadanie do końca tury: zadeptywanie → cel: Soulbright Flamekin
+
+--- krok 39 | T. 16BotGracz: 2 ż.Bot: 20 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4 | Selhoff Occultist · 3 · Creature — Human Rogue · Gdy jakiekolwiek stworzenie umrze: mieli 1 kartę (do grobu). · 2/3 | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2 | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). · 4/4 | Thornhide Wolves · 5 · Creature — Wolf · 4/5 | Mark of the Vampire · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Dotykanie życia
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Soulbright Flamekin · 2 · Creature — Elemental Shaman · Zadeptywanie · {2}: cel: stwór — zdobądź Zadeptywanie do końca tury · Zadeptywanie · atakuje — niezablokowany · 2/1 | Downwind Ambusher · 4 · Creature — Skunk Assassin · Flash (błysk) Zadeptywanie · wybierz tryb: Osłabienie / Dobicie rannego · Zadeptywanie · atakuje — niezablokowany · 4/2 | Talion's Messenger · 3 · Creature — Faerie Noble · Latanie Zadeptywanie · Trigger atak z Faerie: dobierz 1 kartę, odrzuć 1 kartę, połóż licznik +1/+1. · Zadeptywanie · atakuje — niezablokowany · 1x +1/+1 · 2/4 | Locthwain Paladin · 4 · Creature — Human Knight · Postrach Zadeptywanie · Zadeptywanie · atakuje — niezablokowany · 3/2 | Deadly Recluse · 2 · Creature — Spider · Zasięg Dotykanie śmierci · choroba · 1/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curse of the Pierced Heart, Blazing Torch, Somberwald Spider, Mountain, Selhoff Occultist, Midnight Guard, Elgaud Inquisitor ⏎ Nowa partia (seed 21). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Soulbright Flamekin zyskuje: zadeptywanie
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Soulbright Flamekin rozstrzygnięta
+  [ROZGRYWKA]   • Deadly Recluse wchodzi na pole bitwy
+  [ROZGRYWKA]   • Deadly Recluse zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Soulbright Flamekin, Downwind Ambusher, Talion's Messenger, Locthwain Paladin
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Talion's Messenger — wybierz cel triggera (wymagany)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Talion's Messenger — trigger (atak z Faerie)
+  [ROZGRYWKA]   • Talion's Messenger — cel: Talion's Messenger
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 42 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4 | Selhoff Occultist · 3 · Creature — Human Rogue · Gdy jakiekolwiek stworzenie umrze: mieli 1 kartę (do grobu). · 2/3 | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2 | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). · 4/4 | Thornhide Wolves · 5 · Creature — Wolf · 4/5 | Mark of the Vampire · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Dotykanie życia
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Soulbright Flamekin · 2 · Creature — Elemental Shaman · Zadeptywanie · {2}: cel: stwór — zdobądź Zadeptywanie do końca tury · Zadeptywanie · 2/1 | Downwind Ambusher · 4 · Creature — Skunk Assassin · Flash (błysk) Zadeptywanie · wybierz tryb: Osłabienie / Dobicie rannego · Zadeptywanie · 4/2 | Talion's Messenger · 3 · Creature — Faerie Noble · Latanie Zadeptywanie · Trigger atak z Faerie: dobierz 1 kartę, odrzuć 1 kartę, połóż licznik +1/+1. · Zadeptywanie · 2x +1/+1 · 3/5 | Locthwain Paladin · 4 · Creature — Human Knight · Postrach Zadeptywanie · Zadeptywanie · 3/2 | Deadly Recluse · 2 · Creature — Spider · Zasięg Dotykanie śmierci · choroba · 1/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curse of the Pierced Heart, Blazing Torch, Somberwald Spider, Mountain, Selhoff Occultist, Midnight Guard, Elgaud Inquisitor ⏎ Nowa partia (seed 21). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 8, kliknięte: 11, modale: 4, sondy noop: 21 (panel 17, modal 4)
+== DETEKTORY: brak zgłoszeń ==

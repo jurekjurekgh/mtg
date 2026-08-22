@@ -4252,7 +4252,11 @@ export function playerView(state, playerId) {
           // rejestru, więc nameOf(cardId) zwraca surowy id „token_squirrel").
           // Przekazujemy nazwę, żeby kafle i cele pokazywały „Squirrel" zamiast
           // „token_squirrel".
-          ...(object.isToken ? { name: object.name } : {}),
+          // M180/Z2 (Żywy Tester): flaga isToken JAWNIE w widoku — render
+          // rozpoznawał tokeny po `object.isToken`, którego playerView nie
+          // wysyłał (tylko name) → etykiety celów wracały do surowego
+          // „token_squirrel” przez session.nameOf(cardId). Klasa L1/ADR 0017.
+          ...(object.isToken ? { isToken: true, name: object.name } : {}),
           // M172/D: numer kopii (publiczny) — warstwy nazw dopisują
           // „(kopia N)" przy celach, blokach i na kaflu.
           ...(object.copyNumber ? { copyNumber: object.copyNumber } : {}),

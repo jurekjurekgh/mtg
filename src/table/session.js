@@ -354,6 +354,8 @@ export const KEYWORD_EVENT_LABELS = Object.freeze({
  */
 const DRUGA_OSOBA = Object.freeze({
   aktywuje: 'aktywujesz', bierze: 'bierzesz', dobiera: 'dobierasz',
+  // M180/Z3 (Żywy Tester): „Ty dostaje +1 licznik poison” — brakowało odmiany.
+  dostaje: 'dostajesz',
   kieruje: 'kierujesz', kopiuje: 'kopiujesz', korzysta: 'korzystasz',
   kładzie: 'kładziesz', kończy: 'kończysz', mieli: 'mielisz',
   dzieli: 'dzielisz',
@@ -1937,6 +1939,18 @@ export function createSession(config) {
         streamAutoEvents(result.events);
         continue;
       }
+      // M180/Z4: blokująca decyzja OPCJONALNA z wyciszonymi wariantami —
+      // pass nie jest oferowany (decyzja blokuje), więc auto-pass wykonuje
+      // wariant rezygnacji (decline/skip) zamiast wywracać sesję wyjątkiem.
+      if (!view.legalCommands.some((cmd) => cmd.type === 'pass_priority')) {
+        const resign = view.legalCommands.find((cmd) => cmd.decline === true || cmd.skip === true);
+        if (resign) {
+          const declined = execute(state, resign);
+          if (!declined.ok) throw new Error(`Auto-decline odrzucony: ${declined.events[0]?.reason}`);
+          streamAutoEvents(declined.events);
+          continue;
+        }
+      }
       const pass = execute(state, { type: 'pass_priority', playerId: HUMAN_ID });
       if (!pass.ok) throw new Error(`Auto-pass odrzucony: ${pass.events[0]?.reason}`);
       // Uwaga E: auto-pass faz CZŁOWIEKA (koniec tury, cleanup) nie pauzuje —
@@ -1970,6 +1984,10 @@ export function createSession(config) {
       // w panelu akcji) — taka opcja nie przerywa auto-passu. Inne opcje
       // nadal przerywają; odznaczenie przywraca przerywanie.
       if (ignoredOptionKeys.has(commandOptionKey(cmd))) return false;
+      // M180/Z4: czysta REZYGNACJA (decline/skip) nie jest realną decyzją —
+      // gdy gracz wyciszył wszystkie warianty rzutu (Halo Forager), samotny
+      // wariant „Zrezygnuj” nie może dalej zatrzymywać auto-passu.
+      if (cmd.decline === true || cmd.skip === true) return false;
       // Puste deklaracje ataku/bloków nie są decyzją (engine oferuje je
       // zawsze w kroku deklaracji — bez stworów to czysty pass).
       if (cmd.type === 'declare_attackers') return (cmd.attackerIds?.length ?? 0) > 0;

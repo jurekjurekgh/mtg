@@ -210,8 +210,12 @@ export function isStatic(ability) { return ability?.type === ABILITY_TYPE.static
  * żeby oferowana komenda zawsze była akceptowana.
  */
 function manaForActivation(state, playerId, object, ability, baseMana = producibleMana(state, playerId)) {
-  const isLandManaSource = object.kind === 'land' || (object.types ?? []).includes('Land');
-  if (ability.cost?.tap && !object.tapped && isLandManaSource) return baseMana - 1;
+  // M180/Z1 (regresja M179/D, klasa L48): KAŻDE źródło many tapowane kosztem
+  // własnej zdolności nie zapłaci tej zdolności — po M179/D nielandowe
+  // źródła czystej many (Seer's Lantern) też liczą się w bazie, więc oferta
+  // „{2},{T}: Scry 1” widziała własną manę latarni, a płatność padała.
+  // producibleMana(excludeSourceId) wyklucza spójnie landy I źródła wolne.
+  if (ability.cost?.tap && !object.tapped) return producibleMana(state, playerId, object.id);
   return baseMana;
 }
 
@@ -307,6 +311,28 @@ function effectIsNoOpOnTarget(state, effect, target, source = null) {
     // kończyć mecze). Oferta chowana; execute nadal przyjmuje (CR 602.2b).
     case 'attach_equipment_to_source':
       return Boolean(target && target.attachedTo === source?.id);
+    // M180/Z5 (Żywy Tester, precedens M103/M104: no-op CHOWAMY, nie
+    // ostrzegamy): powtórna zmiana podtypu/utrata keywordów „do końca tury”
+    // (Krotiq Nestguard drugi raz w tej samej turze) niczego nie zmienia.
+    case 'becomes_subtype_until_end_of_turn': {
+      if (!target || target.zone !== 'battlefield') return false;
+      const losesCovered = (effect.losesKeywords ?? []).every((kw) => (target.lostKeywordsUntilEOT ?? []).includes(kw));
+      const subtypesCovered = !(Array.isArray(effect.subtypes) && effect.subtypes.length > 0)
+        || Boolean(target.subtypesBeforeOverride);
+      return losesCovered && subtypesCovered;
+    }
+    // M180/Z5: Dragon Arch bez wielokolorowego stwora w ręce — efekt
+    // rozstrzyga się w nic (auto-resolved bez kandydatów); oferta jest
+    // jałowym wydatkiem {2},{T}.
+    case 'put_multicolored_creature_from_hand': {
+      const ownerId = source?.controllerId ?? target?.controllerId ?? null;
+      if (ownerId == null) return false;
+      return !state.zones.hand.some((id) => {
+        const card = state.objects.get(id);
+        return card?.controllerId === ownerId && card.zone === 'hand' && card.kind === 'creature'
+          && (card.colors ?? []).length >= 2;
+      });
+    }
     default:
       return false;
   }
@@ -424,8 +450,9 @@ export function legalActivatedAbilities(state, playerId) {
       // bramka kolorów liczy się z jego wykluczeniem (ilość already w
       // manaForActivation; bez tego bot brał ofertę i execute odrzucał
       // „Brak kolorowej many").
-      const colorExcludeId = (ability.cost?.tap && !object.tapped
-        && (object.kind === 'land' || (object.types ?? []).includes('Land'))) ? id : null;
+      // M180/Z1: wykluczenie dotyczy KAŻDEGO źródła many z kosztem {T}
+      // (po M179/D także nielandowych — planGrantManaColors je zna).
+      const colorExcludeId = (ability.cost?.tap && !object.tapped) ? id : null;
       // „Activate only once each turn\" (Snarling Wolf): po aktywacji zdolność
       // znika z legalnych akcji do końca tury (stan resetowany przy zmianie tury).
       if (ability.oncePerTurn && state.abilityActivatedThisTurn?.[`${id}:${index}`]) continue;
@@ -1184,8 +1211,8 @@ export function performActivation(state, ctx) {
   {
     const preReqs = colorRequirementsOf(ability.cost);
     if (preReqs.length > 0 && (ability.cost?.mana ?? 0) > 0) {
-      const preExcludeId = cost.tap && !object.tapped
-        && (object.kind === 'land' || (object.types ?? []).includes('Land')) ? objectId : null;
+      // M180/Z1: jak w ofercie — każde źródło tapowane kosztem wykluczone.
+      const preExcludeId = cost.tap && !object.tapped ? objectId : null;
       if (!canPayColoredCost(state, playerId, preReqs, preExcludeId)) {
         throw new Error('Brak kolorowej many');
       }

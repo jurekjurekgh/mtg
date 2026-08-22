@@ -1,4 +1,5 @@
 import { choiceResponse } from '../protocol/types.js';
+import { OPTION_IGNORABLE_TYPES } from './render.js';
 import { commandOptionKey, FACE_DOWN_LABEL } from './session.js';
 
 function clearChoiceElement(element) {
@@ -46,10 +47,9 @@ export function renderChoiceRequest(host, request, { labelForOption, onResponse,
   // wyborze celu) ptaszek się nie pojawiał. Bez ptaszka Fake Your Own
   // Death (instant z wyborem celu) nie mógł być wyciszony i auto-pass
   // zatrzymywał się na nim, mimo że właściciel chciał go pominąć.
-  const IGNORABLE_IN_CHOICE = new Set([
-    'cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape', 'cast_flashback',
-    'cast_adventure', 'cast_adventure_creature', 'activate_ability', 'plot_card',
-  ]);
+  // M180/Z4: JEDNA lista typów wyciszalnych (render.OPTION_IGNORABLE_TYPES)
+  // dla panelu akcji I modala wyboru — w tym grupa Halo Foragera.
+  const IGNORABLE_IN_CHOICE = new Set(OPTION_IGNORABLE_TYPES);
   for (const option of request.options) {
     const button = choiceNode(options, 'button', 'action choice-request-option');
     button.type = 'button';
