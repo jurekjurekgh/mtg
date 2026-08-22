@@ -117,12 +117,13 @@ test('M99: skutek czaru bota (+X/+X) też trafia do modala, nie tylko do logu', 
   // (kolejne trafienia: 6, 7, 8, 10, 16).
   // Seed 4 po Batchu 44 B1 (dominaria +Blanchwood Prowler, tarkir
   // +Descendant of Storms) — hunter (kolejne: 12, 16, 17, 21).
-  // Seed 2 po Batchu 46 T1+T2 (tarkir +Bring Low, przeliczone landy) —
-  // hunter (kolejne trafienia: 7, 8, 10, 11, 16). Konwencja L25.
-  const session = makeSession(2);
+  // Seed 2 po Batchu 46 T1+T2 (tarkir +Bring Low, przeliczone landy) — hunter.
+  // Seed 10 po Batchu 46 KOMPLET (tarkir +Rediscover the Way, dominaria bez
+  // zmian) — hunter (kolejne: 11, 21, 25, 28, 36, 38). Konwencja L25.
+  const session = makeSession(10);
   const { modalTexts, log } = playCollectingModals(session);
   const pumpInLog = log.filter((t) => /dostaje \+\d+\/\+\d+/.test(t));
-  assert.ok(pumpInLog.length > 0, 'seed 2 miał produkować pump w logu');
+  assert.ok(pumpInLog.length > 0, 'seed 10 miał produkować pump w logu');
   const pumpInModal = modalTexts.filter((t) => /dostaje \+\d+\/\+\d+/.test(t));
   assert.ok(
     pumpInModal.length > 0,

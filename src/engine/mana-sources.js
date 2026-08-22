@@ -50,6 +50,9 @@ const MANA_SOURCE_MAP = Object.freeze({
   // cast artifact spells.\" Restrykcja artefaktowa nieimplementowana (engine
   // nie zna ograniczeń użycia many poza fromTreasure); produkuje bezbarwną {C}.
   'token_powerstone': { colors: [], amount: 1 },
+  // Batch 46 (Manor Gate, CLB): „{T}: Add {G} or one mana of the chosen
+  // color." Bazowo {G}; kolor wybrany przy wejściu dokłada getSourceForObject.
+  'manor-gate': { colors: ['G'], amount: 1 },
   'token_food': { colors: [], amount: 0 }, // nie daje many
   'token_robot': { colors: [], amount: 0 },
   'token_wolf': { colors: [], amount: 0 },
@@ -91,7 +94,14 @@ export function getSourceForObject(gameObject, state = null) {
       return { id: gameObject.id, cardId, colors: subtypeColors, amount: 1 };
     }
   }
+  // Batch 46 (Manor Gate): „{T}: Add {G} or one mana of the chosen color."
+  // Kolor wybrany przy wejściu (chosenColor) DOKŁADA się do kolorów bazowych
+  // z mapy — deskryptorowo, bez warunku po nazwie karty (ADR 0002).
   const info = getManaSourceInfo(cardId);
+  if (info && gameObject.chosenColor) {
+    const colors = [...new Set([...(info.colors ?? []), gameObject.chosenColor])];
+    return { id: gameObject.id, cardId, colors, amount: info.amount ?? 1 };
+  }
   if (info) {
     let amt = info.amount ?? 1;
     // Urza's tron: {T}: Add {C}{C} zamiast {C}, gdy kontrolujesz też

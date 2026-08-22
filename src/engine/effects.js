@@ -11,7 +11,7 @@ import { createBattlefieldToken, nextCopyNumber } from './tokens.js';
 import { effectiveProtectionFromColors } from './attachments.js';
 import { shuffle } from './shuffle.js';
 import { createGameObject } from './identity.js';
-import { attachEquipmentToCreature } from './attachments.js';
+import { attachEquipmentToCreature, detachAttachmentsFromHost } from './attachments.js';
 
 /**
  * Loch „Undercity" (komponent inicjatywy, CR 725; karta „Undercity //
@@ -715,6 +715,55 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // creature enters, put N +1/+1 counters on it OR create N 1/1 colorless
   // Servo artifact creature tokens." Wybór należy do KONTROLERA, więc jest
   // blokującą decyzją (jak amass/endure), a nie deterministycznym efektem.
+  // Batch 46 (Rediscover the Way III) — „Whenever you cast a noncreature
+  // spell THIS TURN, target creature you control gains double strike until
+  // end of turn." Rozdział nadaje ŹRÓDŁU (Sadze) zdolność wyzwalaną na czas
+  // tury — wykorzystujemy istniejący mechanizm grantAbilitiesUntilEndOfTurn,
+  // więc trigger znika razem z końcem tury bez osobnego sprzątania.
+  if (effect.type === 'grant_double_strike_on_noncreature_cast_this_turn') {
+    const source = state.objects.get(sourceObject.id);
+    if (!source || source.zone !== 'battlefield') return;
+    const granted = Object.freeze({
+      type: 'triggered',
+      trigger: Object.freeze({
+        event: 'you_cast_noncreature_spell',
+        requiresTarget: Object.freeze({ type: 'creature_you_control' }),
+      }),
+      effect: Object.freeze([Object.freeze({
+        type: 'grant_keywords_until_end_of_turn', keywords: Object.freeze(['double_strike']),
+      })]),
+    });
+    const grants = [...(source.abilityGrants ?? []), granted];
+    state.objects.set(source.id, Object.freeze({ ...source, abilityGrants: Object.freeze(grants) }));
+    state.events.push(event('keyword_granted', {
+      objectId: source.id, cardId: source.cardId,
+      keywords: ['double_strike'], delayed: true, untilEndOfTurn: true,
+    }));
+    return;
+  }
+  // Batch 46 (Gila Courser) — IMPULSE EXILE: „exile the top card of your
+  // library. Until the end of your next turn, you may play that card."
+  // Karta idzie do exile ze znacznikiem `playableUntilTurn` (numer TWOJEJ
+  // następnej tury); ofertę rzutu/zagrania z exile enumeruje spells.js,
+  // a znacznik wygasa sam — nie trzeba go sprzątać cleanupem.
+  if (effect.type === 'exile_top_playable_until_next_turn') {
+    const controllerId = sourceObject.controllerId;
+    const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === controllerId);
+    if (topId == null) return;
+    const card = state.objects.get(topId);
+    const exileId = `exile-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, topId, 'exile', exileId);
+    // „Until the end of your NEXT turn" — jeśli to twoja tura, chodzi o tę
+    // następną (numer + 2 przy dwóch graczach); poza swoją turą o najbliższą.
+    const isMyTurn = state.turn.activePlayerId === controllerId;
+    const playableUntilTurn = state.turn.number + (isMyTurn ? 2 : 1);
+    state.objects.set(exileId, Object.freeze({ ...moved, playableUntilTurn }));
+    state.events.push(event('object_exiled', {
+      fromId: topId, objectId: exileId, object: state.objects.get(exileId),
+      cardId: card?.cardId ?? null, playerId: controllerId, playableUntilTurn,
+    }));
+    return;
+  }
   if (effect.type === 'fabricate') {
     const amount = effect.amount ?? 1;
     const controllerId = sourceObject.controllerId;
@@ -3362,6 +3411,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return; // cel zniknął (CR 608.2b)
     if (object.isToken) {
+      // M191: przed skasowaniem tokena ODEPNIJ od niego aury/equipment —
+      // inaczej zostaje „wisząca" aura wskazująca nieistniejący obiekt
+      // (inwariant wywraca partię). Ta sama reguła co w SBA (CR 111.7).
+      detachAttachmentsFromHost(state, targetId);
       state.objects.delete(targetId);
       state.zones.battlefield = state.zones.battlefield.filter((id) => id !== targetId);
       state.events.push(event('token_ceased_to_exist', {

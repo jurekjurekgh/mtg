@@ -2,6 +2,7 @@
 
 1x Basilisk Gate
 1x Heap Gate
+1x Manor Gate
 1x Scorch Spitter
 1x Circle of the Land Druid
 1x Cloak of the Bat
@@ -24,4 +25,4 @@
 1x Island
 3x Swamp
 2x Mountain
-2x Forest
+3x Forest

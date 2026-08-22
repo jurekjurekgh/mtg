@@ -2013,7 +2013,16 @@ export function processTriggers(state, recentEvents) {
             if (!isNoncreatureCast) continue;
             // Kontekst rzutu: manaSpent ze zdarzenia (progi efektów Tellah,
             // Great Sage — „if four/eight or more mana was spent").
-            queueTriggerToStack(state, ability, source, [], events, { manaSpent: ev.manaSpent ?? 0 });
+            // Batch 46 (Rediscover the Way III): trigger prowess-podobny może
+            // WYMAGAĆ CELU („target creature you control gains double strike").
+            // queueTriggerToStack sam celów nie wybiera — wtedy idziemy przez
+            // tryFire, który otwiera decyzję wyboru celu (L48: jedna ścieżka
+            // dla triggerów z celem, niezależnie od zdarzenia).
+            if (ability.trigger?.requiresTarget) {
+              tryFire(state, ability, source, [], events, { manaSpent: ev.manaSpent ?? 0 });
+            } else {
+              queueTriggerToStack(state, ability, source, [], events, { manaSpent: ev.manaSpent ?? 0 });
+            }
           } else if (triggerEvent === 'you_cast_spell_targeting_permanent') {
             // Tiller of Flesh: „Whenever you cast a spell that targets one or
             // more permanents". Permanent = obiekt na BITWISKU (CR 110.1);

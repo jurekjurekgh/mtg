@@ -11,6 +11,11 @@ import { addCounter } from '../src/engine/counters.js';
 import { effectivePower, effectiveToughness, effectiveKeywords } from '../src/engine/permanents.js';
 import { processTriggers } from '../src/engine/triggers.js';
 import { isProtectedFromSource } from '../src/engine/attachments.js';
+import { getSourceForObject } from '../src/engine/mana-sources.js';
+import { applyEffect } from '../src/engine/effects.js';
+import { createBattlefieldToken } from '../src/engine/tokens.js';
+import { runStateBasedActions } from '../src/engine/state-based.js';
+import { assertStateInvariants } from '../src/engine/invariants.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -373,4 +378,158 @@ test('B46/7e: echo płaci się RAZ — w kolejnym upkeepie nie pyta ponownie', (
   processTriggers(state, [{ type: 'step_advanced', step: 'upkeep', playerId: 'p1' }]);
   assert.ok(!state.pendingPayOrSacrifice, 'echo płaci się dokładnie raz');
   assert.equal(state.objects.get('shredder').zone, 'battlefield', 'stwór zostaje');
+});
+
+// ---- Transza 4: karty złożone -------------------------------------------
+
+test('B46/8: Manor Gate — wchodzi tapnięty i pyta o kolor INNY NIŻ ZIELONY', () => {
+  const state = game('p1');
+  putCard(state, 'gate', 'manor-gate', 'p1', 'hand');
+  const play = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'play_land' && c.objectId === 'gate');
+  assert.ok(play, 'oferta zagrania lądu');
+  assert.ok(execute(state, play).ok);
+  const onBattlefield = state.zones.battlefield
+    .map((id) => state.objects.get(id)).find((o) => o?.cardId === 'manor-gate');
+  assert.ok(onBattlefield, 'land na polu bitwy (po zagraniu ma NOWE id)');
+  assert.equal(onBattlefield.tapped, true, 'wchodzi tapnięty');
+  assert.ok(state.pendingColorChoice, 'przy wejściu wybór koloru (CR 614.12)');
+  const colors = playerView(state, 'p1').legalCommands
+    .filter((c) => c.type === 'resolve_color_choice').map((c) => c.color).sort();
+  assert.deepEqual(colors, ['B', 'R', 'U', 'W'], 'zielony wykluczony przez Oracle');
+});
+
+test('B46/8b: Manor Gate — po wyborze produkuje {G} ORAZ wybrany kolor', () => {
+  const state = game('p1');
+  putCard(state, 'gate', 'manor-gate', 'p1', 'hand');
+  execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'play_land' && c.objectId === 'gate'));
+  const pickBlue = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'resolve_color_choice' && c.color === 'U');
+  assert.ok(pickBlue, 'można wybrać niebieski');
+  assert.ok(execute(state, pickBlue).ok);
+  const gate = state.zones.battlefield
+    .map((id) => state.objects.get(id)).find((o) => o?.cardId === 'manor-gate');
+  assert.equal(gate.chosenColor, 'U', 'wybór zapisany na permanencie');
+  const source = getSourceForObject(gate, state);
+  assert.deepEqual([...source.colors].sort(), ['G', 'U'], '{G} + wybrany kolor');
+});
+
+test('B46/9: Gila Courser — atak w stanie saddled wygania wierzch z prawem gry', () => {
+  const state = game('p1');
+  putCard(state, 'mount', 'gila-courser', 'p1', 'battlefield', {});
+  state.objects.set('mount', Object.freeze({
+    ...state.objects.get('mount'), summoningSickness: false, saddled: true,
+  }));
+  putCard(state, 'lib0', 'highland-game', 'p1', 'library');
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['mount'] }).ok);
+  resolveStack(state);
+  const exiled = state.zones.exile
+    .map((id) => state.objects.get(id))
+    .find((o) => o?.cardId === 'highland-game');
+  assert.ok(exiled, 'wierzch biblioteki wygnany');
+  assert.ok(exiled.playableUntilTurn > state.turn.number,
+    'karta grywalna do końca NASTĘPNEJ tury (impulse)');
+});
+
+test('B46/9b: Gila Courser — bez saddled trigger nie odpala (kontrola)', () => {
+  const state = game('p1');
+  putCard(state, 'mount', 'gila-courser', 'p1', 'battlefield', {});
+  state.objects.set('mount', Object.freeze({ ...state.objects.get('mount'), summoningSickness: false }));
+  putCard(state, 'lib0', 'highland-game', 'p1', 'library');
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['mount'] });
+  resolveStack(state);
+  assert.equal(state.zones.exile.length, 0, 'brak wygnania bez osiodłania');
+});
+
+test('B46/10: Rediscover the Way — rozdziały I i II robią to samo (look 3)', () => {
+  const def = REGISTRY.get('rediscover-the-way');
+  assert.ok(def.saga, 'karta jest Sagą');
+  assert.equal(def.saga.chapters.length, 3, 'trzy rozdziały');
+  assert.deepEqual(def.saga.chapters[0], def.saga.chapters[1],
+    'Oracle „I, II —" = identyczny efekt obu rozdziałów');
+  assert.equal(def.saga.chapters[0][0].type, 'look_top_put_one_hand_rest_bottom');
+  assert.equal(def.saga.chapters[0][0].amount, 3);
+});
+
+test('B46/10b: Rediscover III — po rozdziale czar niebędący stworem daje double strike', () => {
+  const state = game('p1');
+  putCard(state, 'saga', 'rediscover-the-way', 'p1', 'battlefield', {});
+  putCard(state, 'mine', 'highland-game', 'p1');
+  // III rozdział: nadaje Sadze trigger „whenever you cast a noncreature spell".
+  applyEffect(state, { type: 'grant_double_strike_on_noncreature_cast_this_turn' },
+    state.objects.get('saga'), []);
+  const saga = state.objects.get('saga');
+  assert.equal((saga.abilityGrants ?? []).length, 1, 'trigger nadany na czas tury');
+  assert.equal(saga.abilityGrants[0].trigger.event, 'you_cast_noncreature_spell');
+  // Rzucamy czar niebędący stworem — trigger celuje we własnego stwora.
+  putCard(state, 'bolt', 'bring-low', 'p1', 'hand');
+  putCard(state, 'foe', 'giant-spider', 'p2');
+  addMana(state, 'p1', 4, { colors: ['R', 'R', 'R', 'R'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'bolt');
+  assert.ok(cast, 'oferta rzutu czaru niebędącego stworem');
+  assert.ok(execute(state, cast).ok);
+  for (let i = 0; i < 10 && state.zones.stack.length > 0; i += 1) {
+    const pid = state.turn.priorityPlayerId;
+    const choice = playerView(state, pid).legalCommands.find((c) => c.type.startsWith('resolve_'));
+    execute(state, choice ?? { type: 'pass_priority', playerId: pid });
+  }
+  assert.ok(effectiveKeywords(state.objects.get('mine'), state).includes('double_strike'),
+    'stwór dostał double strike po rzuceniu czaru');
+});
+
+test('B46/R1: aura na TOKENIE nie zostaje „wisząca" po zniknięciu tokena', () => {
+  // Regresja znaleziona benchmarkiem po dodaniu Guildscorn Ward: token
+  // przestaje istnieć (CR 111.7), a przypięta aura wskazywała nieistniejący
+  // obiekt — inwariant wywracał całą partię.
+  const state = game('p1');
+  const token = createBattlefieldToken(state, 'p1', {
+    cardId: 'token_servo', name: 'Servo', kind: 'creature',
+    power: 1, toughness: 1, colors: [], types: ['Artifact', 'Creature'], subtypes: ['Servo'],
+  });
+  putCard(state, 'ward', 'guildscorn-ward', 'p1');
+  state.objects.set('ward', Object.freeze({ ...state.objects.get('ward'), attachedTo: token.id }));
+  // Token trafia poza pole bitwy → SBA go usuwa.
+  state.objects.set(token.id, Object.freeze({ ...state.objects.get(token.id), zone: 'graveyard' }));
+  state.zones.battlefield = state.zones.battlefield.filter((id) => id !== token.id);
+  state.zones.graveyard.push(token.id);
+  runStateBasedActions(state);
+  assert.ok(!state.objects.get(token.id), 'token przestał istnieć');
+  const ward = state.objects.get('ward');
+  if (ward) {
+    assert.ok(ward.attachedTo == null || state.objects.get(ward.attachedTo),
+      'aura nie wskazuje nieistniejącego gospodarza');
+  }
+  assert.doesNotThrow(() => assertStateInvariants(state), 'inwarianty stanu spełnione');
+});
+
+test('B46/R2: bounce tokena na spód biblioteki też odpina aurę (regresja z benchmarku)', () => {
+  // Prawdziwa ścieżka błędu z bot-benchmark: Forced Landing celuje w TOKEN
+  // (bounce_to_library_bottom kasuje go od razu — CR 111.7), a przypięta
+  // aura zostawała ze wskaźnikiem na nieistniejący obiekt.
+  const state = game('p1');
+  const token = createBattlefieldToken(state, 'p2', {
+    cardId: 'token_servo', name: 'Servo', kind: 'creature',
+    power: 1, toughness: 1, colors: [], types: ['Artifact', 'Creature'], subtypes: ['Servo'],
+  });
+  putCard(state, 'ward', 'guildscorn-ward', 'p1');
+  state.objects.set('ward', Object.freeze({
+    ...state.objects.get('ward'), attachedTo: token.id, kind: 'aura',
+  }));
+  const source = putCard(state, 'src', 'forced-landing', 'p1', 'stack', { kind: 'spell' });
+  applyEffect(state, { type: 'bounce_to_library_bottom' }, source, [token.id]);
+  assert.ok(!state.objects.get(token.id), 'token przestał istnieć');
+  const ward = state.objects.get('ward');
+  if (ward) {
+    assert.ok(ward.attachedTo == null || state.objects.get(ward.attachedTo),
+      'aura nie wskazuje nieistniejącego gospodarza');
+  }
+  assert.doesNotThrow(() => assertStateInvariants(state), 'inwarianty stanu spełnione');
 });

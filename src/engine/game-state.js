@@ -508,7 +508,7 @@ export const ADD_OBJECT_FIELDS = Object.freeze([
   'manaCost', 'spell', 'abilities', 'morph', 'plot', 'plotted', 'entersWithCounters',
   'entersWithCountersIf', 'keywords', 'subtypes', 'transformTo', 'types', 'entersTapped',
   'entersTappedCondition', 'bestow', 'aura', 'equipment', 'backup', 'colors',
-  'phyrexianManaCost', 'enchantPlayer', 'saga', 'station', 'ownerId', 'devour', 'endure', 'toxic', 'echo',
+  'phyrexianManaCost', 'enchantPlayer', 'saga', 'station', 'ownerId', 'devour', 'endure', 'toxic', 'echo', 'chooseColor',
   'exploit', 'treasureAltCost', 'cardName', 'name', 'bloodthirst', 'additionalCost',
   'kicker', 'costReduction', 'adventure', 'buyback', 'protectionFromColors',
   'plottedAtTurn', 'enterAsCopy', 'suspend', 'suspended', 'timeCounters', 'suspendReady',
@@ -575,12 +575,12 @@ function assertAddObjectContract(config) {
 
 export function addObject(state, config) {
   assertAddObjectContract(config);
-  const { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false } = config;
+  const { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false } = config;
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, toxic, echo, exploit, treasureAltCost, cardName, name, bloodthirst, additionalCost, kicker, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, toxic, echo, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, additionalCost, kicker, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady });
   const placed = zone === 'battlefield'
     // Batch 46 (Bone Shredder): permanent z echem wchodzi z nieopłaconym echem
     // — pierwszy WŁASNY upkeep po wejściu zapyta o zapłatę (CR 702.29).
@@ -1126,7 +1126,14 @@ function accepted(state, cmd, result) {
       // ZAŁĄCZNIKI (aury/equipment na tokenie), inaczej dangle
       // („załącznik wskazuje nieistniejącego gospodarza") łapany przez
       // inwarianty przy następnym ruchu obiektu.
-      if (token.zone === 'battlefield') detachAttachmentsFromHost(state, token.id);
+      // M191 (regresja ujawniona benchmarkiem po dodaniu Guildscorn Ward):
+      // warunek `token.zone === 'battlefield'` był MARTWY — ta pętla z
+      // definicji przetwarza tokeny POZA polem bitwy (filtr wyżej), więc
+      // odpięcie nigdy się nie wykonywało. Aura przypięta do tokena, który
+      // zniknął, zostawała ze wskaźnikiem na nieistniejący obiekt i
+      // wywracała partię na inwariancie. Odpinamy ZAWSZE (L44: komentarz
+      // opisywał zamiar, którego kod nie realizował).
+      detachAttachmentsFromHost(state, token.id);
       state.zones[token.zone] = (state.zones[token.zone] ?? []).filter((id) => id !== token.id);
       state.objects.delete(token.id);
     }
@@ -1561,14 +1568,24 @@ export function execute(state, input) {
     const COLORS = ['W', 'U', 'B', 'R', 'G'];
     if (!COLORS.includes(cmd.color)) return reject('illegal_color_choice');
     state.pendingColorChoice = null;
-    // Apply protection from chosen color to the aura object
-    const auraObj = state.objects.get(pending.auraId);
-    if (auraObj && auraObj.zone === 'battlefield') {
-      const updated = Object.freeze({ ...auraObj, aura: { ...auraObj.aura, chosenColor: cmd.color } });
-      state.objects.set(pending.auraId, updated);
+    // Batch 46 (Manor Gate): „As this land enters, choose a color other than
+    // green." Wybór zapisujemy na SAMYM permanencie (chosenColor), bo to nie
+    // aura — jego zdolność many czyta go przy produkcji. Wykluczone kolory
+    // pilnuje oferta (excludeColors) i walidacja poniżej.
+    if (Array.isArray(pending.excludeColors) && pending.excludeColors.includes(cmd.color)) {
+      return reject('illegal_color_choice');
+    }
+    const targetId = pending.auraId ?? pending.objectId;
+    const chosenOn = state.objects.get(targetId);
+    if (chosenOn && chosenOn.zone === 'battlefield') {
+      const updated = chosenOn.aura
+        ? Object.freeze({ ...chosenOn, aura: { ...chosenOn.aura, chosenColor: cmd.color } })
+        : Object.freeze({ ...chosenOn, chosenColor: cmd.color });
+      state.objects.set(targetId, updated);
     }
     state.events.push(event('color_choice_resolved', {
-      playerId: pending.playerId, color: cmd.color, auraId: pending.auraId,
+      playerId: pending.playerId, color: cmd.color, auraId: pending.auraId ?? null,
+      objectId: targetId, cardId: chosenOn?.cardId ?? null,
     }));
     return accepted(state, cmd, { ok: true, events: state.events.slice(state.events.length - 1) });
   }
@@ -4075,6 +4092,26 @@ export function execute(state, input) {
   if (cmd.type === 'play_land') {
     try {
       const e = playLand(state, cmd.playerId, cmd.objectId);
+      // Batch 46 (Manor Gate): „As this land enters, choose a color other
+      // than green." Wybór jest częścią wejścia (CR 614.12 — efekt
+      // zastępczy), więc kolejkujemy blokującą decyzję od razu po zagraniu.
+      // Land na polu bitwy ma NOWE id (moveObjectDirectly) — bierzemy je ze
+      // zdarzenia, nie z komendy (pułapka: stare id już nie istnieje).
+      const playedId = e?.object?.id ?? e?.objectId ?? cmd.objectId;
+      const played = state.objects.get(playedId);
+      if (played?.chooseColor) {
+        state.pendingColorChoice = {
+          playerId: cmd.playerId,
+          objectId: playedId,
+          excludeColors: [...(played.chooseColor.exclude ?? [])],
+        };
+        state.turn.priorityPlayerId = cmd.playerId;
+        state.events.push(event('color_choice_required', {
+          playerId: cmd.playerId, objectId: playedId, cardId: played.cardId,
+          excludeColors: [...(played.chooseColor.exclude ?? [])],
+        }));
+        return accepted(state, cmd, { ok: true, events: [e, state.events[state.events.length - 1]] });
+      }
       return accepted(state, cmd, { ok: true, events: [e] });
     } catch (error) {
       return reject(`illegal_land:${error.message}`);
@@ -5369,9 +5406,13 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('resolve_fertile_thicket', playerId, { chosenCardId: landId }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeColorChoice) {
-    // Benevolent Blessing: choose a color for protection
+    // Benevolent Blessing: choose a color for protection.
+    // Manor Gate (Batch 46): „choose a color other than green" — deskryptor
+    // niesie listę wykluczeń, więc oferta i walidacja są spójne (L48).
     const COLORS = ['W', 'U', 'B', 'R', 'G'];
+    const excluded = state.pendingColorChoice.excludeColors ?? [];
     for (const color of COLORS) {
+      if (excluded.includes(color)) continue;
       legalCommands.unshift(command('resolve_color_choice', playerId, { color }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeSpringbloom) {

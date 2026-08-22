@@ -18,6 +18,7 @@
 1x Cogwork Assembler
 1x Diplomatic Relations
 1x Frontline War-Rager
+1x Gila Courser
 1x Glint-Sleeve Artisan
 1x Glitch Ghost Surveyor
 1x Moonlit Meditation
@@ -38,7 +39,7 @@
 1x Spreading Insurrection
 1x Seismic Monstrosaur
 1x Weftblade Enhancer
-2x Plains
+3x Plains
 4x Island
 3x Swamp
 6x Mountain

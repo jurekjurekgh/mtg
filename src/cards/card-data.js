@@ -8838,6 +8838,78 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['echo płaci się w PIERWSZYM własnym upkeepie po wejściu (CR 702.29); bez many na opłatę stwór jest poświęcany'],
   }),
 
+  // 8. Manor Gate (CLB) — land Gate: wchodzi tapnięty, przy wejściu wybór
+  //    koloru INNEGO NIŻ ZIELONY; {T}: {G} albo mana wybranego koloru.
+  defineCard({
+    id: 'manor-gate', name: 'Manor Gate', set: 'CLB',
+    types: ['Land'], subtypes: ['Gate'], colors: [],
+    oracleText: 'This land enters tapped.\nAs this land enters, choose a color other than green.\n{T}: Add {G} or one mana of the chosen color.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/9/793d4978-9e00-453d-8dc2-6d51ad6c26b7.jpg?1783922657',
+    entersTapped: true,
+    chooseColor: { exclude: ['G'] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1 },
+      }),
+    ],
+    artId: 217, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+    notes: ['kolory produkcji: {G} + wybrany przy wejściu (deskryptor chooseColor.exclude pilnuje „other than green")'],
+  }),
+
+  // 9. Gila Courser (OTJ) — {2}{R} 4/2 Mount: atak w stanie saddled wygania
+  //    wierzch biblioteki z prawem zagrania do końca NASTĘPNEJ tury; Saddle 1.
+  defineCard({
+    id: 'gila-courser', name: 'Gila Courser', set: 'OTJ',
+    types: ['Creature'], subtypes: ['Lizard', 'Mount'], colors: ['R'],
+    power: 4, toughness: 2, manaCost: 3, keywords: ['saddle'],
+    oracleText: 'Whenever this creature attacks while saddled, exile the top card of your library. Until the end of your next turn, you may play that card.\nSaddle 1 (Tap any number of other creatures you control with total power 1 or more: This Mount becomes saddled until end of turn. Saddle only as a sorcery.)',
+    imageUri: 'https://cards.scryfall.io/large/front/f/5/f568803d-65c0-48d7-916f-671267a9e00e.jpg?1783911821',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks', condition: { saddled: true } },
+        effect: [{ type: 'exile_top_playable_until_next_turn' }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'saddle',
+        timing: 'sorcery',
+        cost: { saddlePower: 1 },
+        effect: { type: 'set_saddled' },
+      }),
+    ],
+    artId: 300, plan: 'Thunder Junction',
+    support: { status: 'supported', limitations: [] },
+    notes: ['wygnana karta jest grywalna z exile za PEŁNY koszt do końca twojej następnej tury (impulse)'],
+  }),
+
+  // 10. Rediscover the Way (TDM) — {U}{R}{W} Saga: I i II ten sam rozdział
+  //     (look 3, jedną do ręki, reszta na spód), III — double strike po
+  //     rzuceniu czaru niebędącego stworem w tej turze.
+  defineCard({
+    id: 'rediscover-the-way', name: 'Rediscover the Way', set: 'TDM',
+    types: ['Enchantment'], subtypes: ['Saga'], colors: ['U', 'R', 'W'], manaCost: 3,
+    oracleText: '(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI, II — Look at the top three cards of your library. Put one of them into your hand and the rest on the bottom of your library in any order.\nIII — Whenever you cast a noncreature spell this turn, target creature you control gains double strike until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/9/79d6decf-afd5-4e96-b87e-fd7ab7e3c068.jpg?1783907303',
+    saga: {
+      chapterNames: ['Rediscover the Way', 'Rediscover the Way', 'Rediscover the Way'],
+      chapters: [
+        // I — look 3, jedna do ręki, reszta na spód (ten sam efekt co II).
+        [{ type: 'look_top_put_one_hand_rest_bottom', amount: 3 }],
+        // II — identyczny rozdział (Oracle: „I, II —").
+        [{ type: 'look_top_put_one_hand_rest_bottom', amount: 3 }],
+        // III — opóźniony trigger na czar niebędący stworem w TEJ turze.
+        [{ type: 'grant_double_strike_on_noncreature_cast_this_turn' }],
+      ],
+    },
+    artId: 292, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+    notes: ['rozdziały I i II mają identyczny efekt (Oracle „I, II —"); III działa do końca tury, w której Saga dobiła do trzeciego licznika'],
+  }),
+
 ]);
 
 /**

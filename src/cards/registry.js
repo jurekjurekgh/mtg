@@ -245,6 +245,9 @@ export function defineCard(data) {
     toxic: data.toxic ?? null,
     // Batch 46 (Bone Shredder): koszt echa (CR 702.29).
     echo: data.echo ?? null,
+    // Batch 46 (Manor Gate): „as this enters, choose a color…" na PERMANENCIE
+    // (nie aurze) — { exclude: ['G'] } zawęża listę (CR 614.12).
+    chooseColor: data.chooseColor ? Object.freeze({ ...data.chooseColor }) : null,
     // Exploit (CR 702.110, Silumgar Butcher): flaga ETB — opcjonalne
     // poświęcenie przy wejściu (resolve_exploit_choice), potem trigger „exploits".
     exploit: data.exploit ? Object.freeze({}) : null,

@@ -43,8 +43,12 @@ function hasColorForObject(state, playerId, object) {
 
 function requireSpell(state, playerId, objectId, targets, cleaved) {
   const object = state.objects.get(objectId);
+  // Batch 46 (Gila Courser): karta wygnana „impulse" jest grywalna z exile
+  // do końca twojej następnej tury — za PEŁNY koszt (w odróżnieniu od plot).
+  const impulse = object?.zone === 'exile' && object.playableUntilTurn != null
+    && state.turn.number <= object.playableUntilTurn;
   const plotted = object?.zone === 'exile' && (object.plotted || object.suspendReady);
-  if (!object || object.controllerId !== playerId || (!['hand', 'exile'].includes(object.zone)) || object.kind !== 'spell' || (object.zone === 'exile' && !plotted)) {
+  if (!object || object.controllerId !== playerId || (!['hand', 'exile'].includes(object.zone)) || object.kind !== 'spell' || (object.zone === 'exile' && !plotted && !impulse)) {
     throw new Error('To nie jest rzucalny czar z ręki, zaplotowany albo gotowy z suspendu z exile');
   }
   if (!object.spell || !object.spell.effects?.length) throw new Error('Obiekt nie ma deskryptora czaru');

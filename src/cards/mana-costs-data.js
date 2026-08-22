@@ -378,4 +378,6 @@ export const MANA_COSTS = {
   "guildscorn-ward": "{W}",
   "glint-sleeve-artisan": "{2}{W}",
   "bone-shredder": "{2}{B}",
+  "gila-courser": "{2}{R}",
+  "rediscover-the-way": "{U}{R}{W}",
 };
