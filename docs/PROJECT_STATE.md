@@ -1,7 +1,26 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-22 (M175: uwagi właściciela do Death-Hood Cobra — log grantu, dubel bota, badge)
-- **Poprzednia:** 2026-08-21 (M174: Batch 41 KOMPLET 10/10 — m.in. pierwszy czar z madness, intimidate, free-cast z grobu)
+- **Ostatnia aktualizacja:** 2026-08-22 (M176: przebieg tur w 3. osobie; M177: Batch 42 KOMPLET — detain, shield, exile-z-grobu, tap X artefaktów)
+- **Poprzednia:** 2026-08-22 (M175: uwagi właściciela do Death-Hood Cobra — log grantu, dubel bota, badge)
+
+
+## M176/M177 — przebieg tur w 3. osobie + Batch 42 (2026-08-22, PR #69)
+
+- **M176 (1eb5707):** „Przebieg tur (dla AI)” opisuje OBU graczy w 3. osobie
+  („Czarodziejka zagrywa X”) — `describeGameEvent` z opcją
+  `{drugaOsoba:false}`; główny log stołu bez zmian (M101/C).
+- **M177 (e2a1ea5…c8c4dd5):** Batch 42 KOMPLET 10/10 —
+  plan `docs/plans/PLAN_2026-08-22-m177-batch-42-kart.md`, testy
+  `test/batch42-kart.test.js` (18). Talie: tokens +5 (+1 Plains +1 Island),
+  ostrza +1, graveyard +4 (+2 Islands). Nowe mechaniki: detain (CR 701.29),
+  `deathZoneFor`/exileIfDiesThisTurn (CR 614.6), koszt exile-z-grobu +
+  trigger `cards_exiled_from_your_graveyard`, scry-then-reveal, szukanie
+  obowiązkowe 2 kart (ręka+grób), decyzja właściciela wierzch/spód,
+  koszt tapXArtifacts + look-top-X-na-spód. Fixy: walidacja
+  nonland_permanent (L48), token→biblioteka = przestaje istnieć (CR 111.7).
+
+**Stan:** `test:all` **2675/2675**, build **52 moduły / 2303.3 kB**,
+bot-benchmark 9/9.
 
 
 ## M175 — uwagi właściciela: Death-Hood Cobra (A1–A3, PR #69)

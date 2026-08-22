@@ -46,14 +46,30 @@ Swooping Protector (SNC). Dane Oracle: `docs/cards/scryfall-*.json`
 
 ## Transze (commit po każdej, testy test/batch42-kart.test.js)
 
-- [ ] 0. Dane Scryfall + plan — commit.
-- [ ] A. Swooping Protector + You're Not Alone + Agate Assault (ostrza+tokens).
-- [ ] B. Makeshift Mauler + Rakshasa Vizier (graveyard, koszt zasila trigger).
-- [ ] C. Sifter Wurm + Final Parting.
-- [ ] D. Vanish from Sight (decyzja właściciela celu) + Swooping/regresje.
-- [ ] E. Azorius Justiciar (detain) + Merchant's Dockhand (tap X artefaktów).
-- [ ] F. Strażnik artId 328, PROJECT_STATE, opis PR, test:all, push, CI.
+- [x] 0. Dane Scryfall + plan — commit.
+- [x] A. Swooping Protector + You're Not Alone + Agate Assault (ostrza+tokens).
+- [x] B. Makeshift Mauler + Rakshasa Vizier (graveyard, koszt zasila trigger).
+- [x] C. Sifter Wurm + Final Parting.
+- [x] D. Vanish from Sight (decyzja właściciela celu) + Swooping/regresje.
+- [x] E. Azorius Justiciar (detain) + Merchant's Dockhand (tap X artefaktów).
+- [x] F. Strażnik artId 328, PROJECT_STATE, opis PR, test:all, push, CI.
 
 ## Wynik
 
-(uzupełnić po wykonaniu)
+KOMPLET 10/10. Commity: e2a1ea5 (plan+dane), 0bde360 (A), b7d8729 (B),
+ca452ca (C), a319c22 (D), c8c4dd5 (E). Testy `test/batch42-kart.test.js` (18).
+
+- Nowe mechaniki: znacznik `exileIfDiesThisTurn` + `deathZoneFor` (jedno
+  źródło prawdy dla 8 ścieżek śmierci), additionalCost
+  `exileCreatureFromGraveyard`, trigger `cards_exiled_from_your_graveyard`
+  (+`amountFromContext` w add_counter), rider `thenRevealTopGainLife` na scry,
+  szukanie `mandatory` + destination `graveyard` (Final Parting), decyzja
+  `pendingLibraryPlacement` (właściciel celu: wierzch/spód), DETAIN
+  (CR 701.29: atak/blok/aktywacje + wygasanie jak goad), koszt `tapXArtifacts`
+  + `look_top_put_one_hand_rest_bottom` (X z kosztu, reszta na spód).
+- Fixy L48: walidacja celu `nonland_permanent` (była tylko oferta);
+  CR 111.7: token odsyłany do biblioteki przestaje istnieć od razu
+  (złamany niezmiennik pendingSurveil, wykryty testem M101/D seed 13).
+- Przelosowany seed M101/D: 60→38 (L25). Strażnik artId 318→328.
+- `npm test` 2666/2666 · test:all **2675/2675** · build 52 moduły /
+  2303.3 kB · bot-benchmark 9/9.
