@@ -1,7 +1,70 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-22 (M186: pętla jakości Żywym Testerem po Batchu 45 — Z1–Z4; 9. reset workspace odzyskany)
-- **Poprzednia:** 2026-08-22 (M185: Batch 45 — 10 kart; fight, toxic, optional targets, enchant creature you control)
+- **Ostatnia aktualizacja:** 2026-08-22 (M188: uwagi właściciela A/B/C/K — badge nadanych P/T, nazwy tokenów, jałowy atak bota, select tur)
+- **Poprzednia:** 2026-08-22 (M187: audyt PR #69 — N1 „can't block" tokenu, N2 strażnik, Z1 dubel zdarzeń)
+
+
+## M188 — uwagi właściciela z testów: A, B, C, K (2026-08-22, PR #70)
+
+Zlecenie w czacie po audycie PR #69; rozpoznanie sondami headless PRZED
+kodowaniem (plan: `docs/plans/PLAN_2026-08-22-m187-audyt-pr69-petla-jakosci.md`).
+
+- **A (a8a0744) — badge nadanych P/T.** Evangel of Synthesis miał „+1/+0
+  i menace" po drugim dobraniu, a kafel pokazywał tylko menace. Silnik
+  liczył POPRAWNIE (3/3) — brakowało badge'a: liczono go z `powerModifier`,
+  którego statyka warunkowa (CR 604.3, read-time) nie ustawia. Klasa
+  M175/A3 dla P/T. Naprawa: `grantedStatBonus()` (statyki, aury/equipment,
+  anthemy, buffy EOT — BEZ liczników i pumpów, które mają własne badge)
+  → `grantedPower`/`grantedToughness` w playerView → badge „+1/+0".
+  Dotyczy każdej takiej karty, nie tylko Evangela.
+- **B (889cd00) — surowe `token_squirrel` w logu.** `nameOf` czytał mapę
+  z rejestru kart, a tokeny mają `cardId` spoza rejestru; żywy token miał
+  nazwę z `object.name`, ale po śmierci (CR 111.7) obiekt znika i zostaje
+  sam cardId. Naprawa generyczna: `collectTokenNames(registry)` skanuje
+  deskryptory katalogu. **Strażnik**: każdy z 29 tokenów ma nazwę.
+- **C (b0ca2d5) — bot atakował 2/2 w nietapnięte 1/5.** Kara −2 za jałowy
+  atak istniała, ale premia wyścigu (+8/+20) ją przebijała (score +6, przy
+  5 życiach +18; pass = 0) — klasa L3/L54. Naprawa wg L3: POMIJAMY premię
+  (`futileAttackers`), zamiast dokładać karę. Kontrole anty-over-fix:
+  zabija blokera / pusta plansza / lethal przez blokera — atak zostaje.
+  **Bot SILNIEJSZY: 80.1% vs aggro (było 75.3%), 91.1% vs random.**
+- **K (b8a8b49) — „Przebieg tur (dla AI)".** Przełącznik „1 albo 2 ostatnie
+  tury" zastąpiony `<select>` ze WSZYSTKIMI turami od początku gry; wybrana
+  tura wyświetla się i to ją kopiuje przycisk. Sesja: `turnHistoryEntries()`
+  + `turnHistoryTextFor(n)`; lista przebudowywana tylko przy zmianie
+  zestawu tur (nie zamyka się pod palcem), cel dotyku 36 px.
+
+**Stan:** `npm test` **2772/2772**, build **52 moduły / 2400.5 kB**,
+benchmark regresji **9/9** (szybki pomiar 85.6% — 575/672).
+
+
+## M187 — audyt PR #69 (M171–M186) + pętla jakości (2026-08-22, PR #70)
+
+Raport: `docs/audits/AUDYT_PR69_2026-08-22.md`. Wynik **POZYTYWNY** z jednym
+błędem regułowym i jedną luką pokrycia.
+
+- **N1 (413a0ac) — „can't block" tokenu ginęło po cleanupie.** Pole
+  `cantBlock` niosło DWIE zasady (klasa L14): efekt „can't block this turn"
+  (Panic Spellbomb, wygasa w cleanupie CR 514.2) i cechę WYDRUKOWANĄ na
+  tokenie (Phyrexian Mite z Crawling Chorus, Goblin Construct z Relic
+  Robber). Cleanup kasował obie → token po przełomie tury legalnie blokował
+  (oferta, walidacja, widok, badge). Bug żył od M69. Naprawa: trwały
+  `cantBlockPrinted` (jak `isToken` — L43) + centralny `creatureCantBlock()`;
+  podpięte wszystkie ścieżki (L41) łącznie z fingerprintem.
+- **N2 (429242d) — luka pokrycia.** `counter_spell_unless_pays` ma trzy
+  gałęzie; testy pokrywały dwie — mutacja `canPay = true` nie czerwieniła
+  pakietu (L13: mutacja mierzy TEST, nie kod). Dopisany strażnik.
+- **Z1 (3b702b5) — podwójne zdarzenia w logu** („Dreams of Steel and Oil
+  zostaje rozstrzygnięty" ×2; znalezione Żywym Testerem, repro headless).
+  `finishPendingSpell` sam dopisuje zdarzenia do `state.events` i je zwraca;
+  2 z 21 call-site'ów robiły dodatkowy `push` (klasa L41). Naprawione oba
+  + **strażnik** skanujący plik (L28/L51).
+- **Sprawdzone i poprawne:** ADR 0002 (zero przypadków po nazwie karty),
+  Oracle vs Scryfall maszynowo dla 366 kart, `limitations` wg ADR 0022,
+  talie == generator (ADR 0023), toxic/fight/optional/maxManaValue, FoW
+  52 pendingów. Mutacja „fight liczy moc PO obrażeniach" okazała się
+  RÓWNOWAŻNA (L15) — udokumentowane w raporcie.
+
 
 
 ## M186 — pętla jakości Żywym Testerem: Batch 45 (2026-08-22, PR #69)

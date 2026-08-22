@@ -24,6 +24,47 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 
 ---
 
+## L55 (2026-08-22) — Jedno pole na „cechę trwałą" i „efekt do końca tury" to bomba zegarowa; badge liczony z pola technicznego kłamie
+
+**Objaw (trzy niezależne trafienia w jednej sesji):**
+1. **M187/N1** — token Phyrexian Mite („This token can't block") zaczynał
+   legalnie blokować po pierwszym cleanupie: pole `cantBlock` niosło
+   jednocześnie EFEKT „can't block this turn" (Panic Spellbomb, ma wygasać —
+   CR 514.2) i cechę WYDRUKOWANĄ tokenu (trwałą). Cleanup kasował obie.
+   Bug żył od M69, a Batch 45 tylko dołożył mu drugą kartę.
+2. **M188/A** — Evangel of Synthesis pokazywał na kaflu „menace", ale nie
+   „+1/+0": badge liczono z `powerModifier`, a statyka warunkowa (CR 604.3)
+   jest read-time i tego pola nie ustawia. Dotyczyło KAŻDEJ statyki
+   warunkowej, aury, equipmentu i anthemu — nie jednej karty.
+3. **M188/B** — log pisał `token_squirrel`, bo `nameOf` czyta mapę zbudowaną
+   z rejestru KART, a token po śmierci (CR 111.7) nie ma już obiektu, więc
+   warstwa opisu miała wyłącznie `cardId` spoza rejestru.
+
+**Wspólna przyczyna:** to warianty L14 (dwie zasady w jednej instrukcji)
+i L21 (pole spoza kontraktu ginie po cichu). Warstwa prezentacji pytała
+o dane POCHODNE (pole techniczne: modyfikator, mapa rejestru), zamiast
+o fakt, który chce pokazać („czy ten stwór ma zakaz blokowania", „o ile
+efekty ciągłe podbijają P/T", „jak nazywa się ten obiekt").
+
+**Reguły:**
+1. Jeżeli jedno pole ma opisywać stan TRWAŁY i stan WYGASAJĄCY, rozdziel je
+   (`cantBlockPrinted` vs `cantBlock`) i daj JEDEN centralny odczyt
+   (`creatureCantBlock()`), którego używają wszystkie ścieżki: oferta,
+   walidacja, widok, render, fingerprint (L41 — trzy kopie rozjeżdżają się
+   cicho, a fingerprint pominięty psuje determinizm replayów).
+2. Badge/etykieta liczona jako różnica po stronie renderu jest martwa, gdy
+   widok wysyła wartości EFEKTYWNE (obie strony odejmowania już zawierają
+   bonus — M175/A3). Różnicę liczy warstwa, która zna SKŁADNIKI (silnik),
+   i wysyła ją jawnym polem.
+3. Nie wliczaj do „nadanego" bonusu tego, co ma już własny badge (liczniki
+   +1/+1, pumpy) — inaczej gracz zobaczy ten sam bonus dwa razy.
+4. Nazwy/obiekty potrzebne PO zniknięciu obiektu (token, LKI) muszą dać się
+   odtworzyć z danych trwałych — mapę buduj GENERYCZNIE ze skanu katalogu
+   (ADR 0002) i pilnuj strażnikiem „każdy token ma nazwę", a nie ręczną listą.
+5. Sygnał ostrzegawczy: jeżeli sonda pokazuje, że **silnik liczy dobrze,
+   a gracz i tak nie widzi skutku** — błąd jest w kontrakcie widoku
+   (ADR 0017), nie w regułach. Nie strój heurystyk wokół brakującej danej.
+
 ## L54 (2026-08-22) — Kara wyceny bota musi być MIERZONA względem bazy; każda klasa zachowań dostaje whitelistę ze strażnikiem
 
 **Objaw (M179, inwentaryzacja właściciela):** „kara −20 za trik we własnej

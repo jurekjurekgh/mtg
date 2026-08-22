@@ -93,8 +93,13 @@ jest read-time — modyfikator zostaje 0. Klasa M175/A3, ale dla P/T
 zamiast keywordów: badge nadanej mocy nie działał dla ŻADNEJ statyki
 warunkowej (Crew Captain, Esper Stormblade, Evangel…).
 
-- [ ] widok niesie różnicę „efektywne − wydrukowane" P/T jawnym polem
-- [ ] kafel pokazuje badge z tego pola (bez zmian dla liczników/pumpów)
+- [x] widok niesie różnicę „efektywne − wydrukowane" P/T jawnym polem
+- [x] kafel pokazuje badge z tego pola (bez zmian dla liczników/pumpów)
+- **Zrobione** (a8a0744): `grantedStatBonus()` w permanents.js +
+  `grantedPower`/`grantedToughness` w playerView + badge „+1/+0" na kaflu.
+  Naprawa obejmuje KAŻDĄ statykę warunkową, aurę, equipment i anthem —
+  nie tylko Evangela. Testy: 5 (w tym pełna ścieżka widok→cardInfo→kafel
+  i kontrole: brak warunku, licznik +1/+1 bez dubla).
 
 ### B — surowe `token_squirrel` w logu Rozgrywki
 
@@ -103,7 +108,11 @@ obiektu już nie ma (token zginął — CR 111.7 usuwa go ze stanu), opis
 spada do `nameOf(cardId)`, a `token_*` nie istnieje w rejestrze kart →
 zwracany jest surowy identyfikator.
 
-- [ ] `nameOf` tłumaczy `token_*` na czytelną nazwę („Squirrel")
+- [x] `nameOf` tłumaczy `token_*` na czytelną nazwę („Squirrel")
+- **Zrobione** (889cd00): `collectTokenNames(registry)` skanuje deskryptory
+  katalogu i uzupełnia mapę nazw sesji — generycznie (ADR 0002), bez
+  ręcznej listy. Testy: 3, w tym STRAŻNIK „każdy z 29 tokenów katalogu ma
+  nazwę" (nowy token bez nazwy = czerwony test przed merge).
 
 ### C — bot atakuje 2/2 w nietapnięte 1/5
 
@@ -112,12 +121,29 @@ zwracany jest surowy identyfikator.
 Dokładnie klasa L3 (kara musi przebić premię) i L54 (kara mierzona
 względem BAZY). Atak jałowy: 0 obrażeń, stwór tapnięty, nie zablokuje.
 
-- [ ] atak, który nie zada obrażeń ani nikogo nie zabije, nie może być
+- [x] atak, który nie zada obrażeń ani nikogo nie zabije, nie może być
       ratowany premią presji/wyścigu (pomiń premię, nie „dołóż karę")
+- **Zrobione** (b0ca2d5): licznik `futileAttackers`; gdy CAŁY atak jest
+  jałowy, premia wyścigu nie jest naliczana. Sonda potwierdziła zgłoszenie:
+  przy życiu obrońcy 8 score ataku = +6, przy 5 = +18, pass = 0.
+  Testy: 6 (2 odtwarzające + 4 kontrole anty-over-fix: zabija blokera,
+  pusta plansza, lethal przez blokera). **Benchmark: bot SILNIEJSZY** —
+  80.1% vs aggro (było 75.3%), 91.1% vs random.
 
 ### K — „Przebieg tur (dla AI)": select zamiast 1/2 ostatnich tur
 
 Zlecenie: lista WSZYSTKICH tur od początku gry w `<select>`, wybór
 pokazuje jedną turę, przycisk kopiuje ją do schowka. Dwie naraz zbędne.
 
-- [ ] `<select>` z turami; render + kopiowanie wybranej tury
+- [x] `<select>` z turami; render + kopiowanie wybranej tury
+- **Zrobione** (b8a8b49): `turnHistoryEntries()` + `turnHistoryTextFor(n)`
+  w sesji, `<select>` w renderze (lista przebudowywana tylko przy zmianie
+  zestawu tur — nie zamyka się pod palcem), HTML z celem dotyku 36 px,
+  kopiowanie wybranej tury. Testy: 3 nowe + zaktualizowane 2 opisujące
+  stare zachowanie (przełącznik 1/2 już nie istnieje).
+
+## Wynik M188
+
+`npm test` **2772/2772** · build **52 moduły / 2400.5 kB** ·
+benchmark regresji **9/9**, pomiar szybki **85.6%** (575/672) ·
+Żywy Tester po zmianach: 0 zgłoszeń.
