@@ -22,8 +22,8 @@ const REGISTRY = createCardRegistry();
 
 test('A: odkrycie morpha nazywa zdolność — log „aktywuje Morph: …"', () => {
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/green.txt', 'utf8'), REGISTRY).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), REGISTRY).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), REGISTRY).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer.txt', 'utf8'), REGISTRY).cardIds],
   ]);
   const session = createSession({ seed: 20, registry: REGISTRY, decks });
   const state = session.state;

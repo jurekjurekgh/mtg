@@ -197,7 +197,7 @@ test('Lurking Green Dragon: flying + cantAttackUnlessDefenderHasFlying', () => {
 // --- Deck validation ---------------------------------------------------------
 
 test('Batch 26: karty w taliach singleton', () => {
-  const deckFiles = ['green', 'black', 'red', 'azorius', 'innistrad', 'wiedzmin', 'graveyard', 'tokens', 'spellslinger'];
+  const deckFiles = ['tarkir', 'dominaria', 'warhammer', 'innistrad', 'wiedzmin', 'alara', 'ravnica', 'zendikar', 'mirrodin'];
   for (const name of deckFiles) {
     const path = `decks/${name}.txt`;
     if (!fs.existsSync(path)) continue;
@@ -209,12 +209,12 @@ test('Batch 26: karty w taliach singleton', () => {
 
 // --- Deterministic replay (smoke) --------------------------------------------
 
-test('Batch 26: partia na green vs red kończy się deterministycznie', () => {
-  const { decks } = buildDecks('green.txt', 'red.txt');
+test('Batch 26: partia na tarkir vs warhammer kończy się deterministycznie (M178)', () => {
+  const { decks } = buildDecks('tarkir.txt', 'warhammer.txt');
   const s1 = createSession({ seed: 42, registry, decks });
   playOut(s1);
   assert.ok(s1.state.status !== 'active', 'partia 1 nie zakończyła się');
-  const { decks: decks2 } = buildDecks('green.txt', 'red.txt');
+  const { decks: decks2 } = buildDecks('tarkir.txt', 'warhammer.txt');
   const s2 = createSession({ seed: 42, registry, decks: decks2 });
   playOut(s2);
   assert.ok(s2.state.status !== 'active', 'partia 2 nie zakończyła się');

@@ -24,8 +24,10 @@ import { parseDeckText } from '../src/cards/deck-text.js';
 function makeSession(seed) {
   const registry = createCardRegistry();
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/azorius.txt', 'utf8'), registry).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/black.txt', 'utf8'), registry).cardIds],
+    // M178 (talie per plan): Forgotten Realms ma i czar modalny (Your Temple
+    // Is Under Attack), i dobranie z efektu (Curate) — obie osie tego pliku.
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/forgotten-realms.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/dominaria.txt', 'utf8'), registry).cardIds],
   ]);
   return createSession({ registry, decks, seed, pauseOnBotMoves: true });
 }
@@ -91,7 +93,8 @@ test('M100/E2: rozstrzygnięcie czaru CZŁOWIEKA trafia do modala „Rozgrywka" 
 
 test('M100/E2: czar modalny CZŁOWIEKA pokazuje tryb także przy rozstrzygnięciu w modalu', () => {
   let checkedModal = 0;
-  for (const seed of [42, 7, 11, 77, 123, 202]) {
+  // M178: seedy przelosowane hunterem (FR vs dominaria).
+  for (const seed of [1, 2, 5, 9, 12]) {
     const session = makeSession(seed);
     const { modalTexts, log } = playCollectingModals(session);
     for (const line of log.filter((t) => /^Rzucasz .+ — tryb: .+/.test(t))) {
@@ -120,7 +123,8 @@ test('M100/E3: dobrana z EFEKTU karta człowieka trafia do modala (draw step zos
   // przestała produkować dobranie z EFEKTU — przelosowane hunterem.
   // Seed 1 dołożony po Batchu 37 (azorius +Palace Familiar +Village Bell-Ringer),
   // seed 4 po Batchu 37 (azorius +Ojutai's Breath) — przelosowane hunterem.
-  for (const seed of [4, 1, 3, 13, 42, 7, 11, 77]) {
+  // M178: seedy przelosowane hunterem (FR vs dominaria).
+  for (const seed of [1, 2, 4, 5, 7, 9]) {
     const session = makeSession(seed);
     const { modalTexts, log } = playCollectingModals(session);
     for (let i = 0; i < log.length; i += 1) {

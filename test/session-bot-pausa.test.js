@@ -32,8 +32,8 @@ const PAUSE_TYPES = new Set([
 function buildDecks() {
   const registry = createCardRegistry();
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/green.txt', 'utf8'), registry).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), registry).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer.txt', 'utf8'), registry).cardIds],
   ]);
   return { registry, decks };
 }
@@ -73,7 +73,8 @@ test('pauza po każdym istotnym zagraniu bota: rzut, ląd, zdolność, zmiana st
   const { registry, decks } = buildDecks();
   // Seed 2 po Batchu 36 E4 (red +Molten Nursery); seed 3 po Batchu 39 A
   // (green +Knight of the Skyward Eye +4 Plains) — przelosowane hunterem.
-  const session = createSession({ seed: 3, registry, decks, pauseOnBotMoves: true });
+  // M178 (talie per plan, tarkir vs warhammer) — hunter: 1, 4, 5, 6, 9…
+  const session = createSession({ seed: 1, registry, decks, pauseOnBotMoves: true });
   const visited = playOutAckingPauses(session);
   assert.equal(session.state.status, 'finished', 'partia nie doszła do końca');
   assert.ok(visited.length > 3, `za mało pauz w pełnej partii: ${visited.length}`);

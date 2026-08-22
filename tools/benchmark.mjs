@@ -73,8 +73,19 @@ export const BENCH_BOT_FACTORIES = Object.freeze({
  * służą progi w `test/bot-benchmark.test.js`. Zmiana, która poprawia wynik,
  * powinna podnieść progi (instrukcja w teście).
  */
+/**
+ * M178 (ADR 0023): STAŁA próbka talii benchmarku — WYŁĄCZNIE talie
+ * jednoplanowe (decyzja właściciela). Worki są przejściowe: gdy plan uzbiera
+ * 15+ kart, wychodzi z worka do własnej talii — benchmark NIE może zależeć
+ * od ich składu, inaczej każda taka konwersja wymusza rekalibrację progów.
+ * Zestaw dobrany różnorodnie kolorystycznie z 6 największych talii
+ * jednoplanowych; zmiana zestawu = rekalibracja progów w bot-benchmark.test.
+ */
+export const BENCH_DECKS = Object.freeze(['dominaria', 'innistrad', 'mirrodin', 'ravnica', 'tarkir', 'warhammer']);
+
 export const REGRESSION_CONFIG = Object.freeze({
   bots: ['aggro', 'heuristic', 'random'],
+  decks: BENCH_DECKS,
   pairs: [['heuristic', 'random'], ['heuristic', 'aggro']],
   // M132/M133: 4 seedy to ZA MAŁA próbka na próg regresji. Zmiana samych
   // TALII (dosypanie lądów wg reguły 2:1 — bot nietknięty) zbiła wynik
@@ -108,6 +119,7 @@ export const REGRESSION_CONFIG = Object.freeze({
  */
 export const QUICK_CONFIG = Object.freeze({
   bots: REGRESSION_CONFIG.bots,
+  decks: REGRESSION_CONFIG.decks,
   pairs: REGRESSION_CONFIG.pairs,
   seedsCount: REGRESSION_CONFIG.seedsCount,
   seedBase: REGRESSION_CONFIG.seedBase,

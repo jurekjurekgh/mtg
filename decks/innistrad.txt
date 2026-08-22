@@ -1,41 +1,38 @@
-# Innistrad — singleton (gotycki horror, 5 kolorów)
+# Innistrad
 
-1x Grizzled Outcasts
-1x Midnight Guard
-1x Gather the Townsfolk
-1x Armored Skaab
-1x Grave Exchange
-1x Hysterical Blindness
-1x Scorned Villager
-1x Curse of the Pierced Heart
-1x Snarling Wolf
-1x Spectral Prison
-1x Forge Devil
-1x Nefarious Imp
-1x Undead Servant
-1x Phyrexian Rager
-1x Puppeteer Clique
-1x Esper Stormblade
-1x Lunar Rejection
-1x Selhoff Occultist
-1x Reclusive Artificer
-1x Gorger Wurm
-1x Trostani Discordant
-1x Tellah, Great Sage
-1x Boros Challenger
-1x Etherwrought Page
-1x Dream Twist
-1x Nature's Embrace
-1x Ballista Watcher
-4x Plains
-4x Island
-3x Swamp
-3x Mountain
-3x Forest
-1x Somberwald Spider
-1x Murder of Crows
-1x Chill of the Grave
-1x Elgaud Inquisitor
-1x Wolfkin Bond
-1x Mark of the Vampire
 1x Blazing Torch
+1x Caravan Vigil
+1x Dream Twist
+1x Forge Devil
+1x Ghoulcaller's Bell
+1x Predator's Gambit
+1x Snarling Wolf
+1x Curse of the Pierced Heart
+1x Gather the Townsfolk
+1x Grounded
+1x Lunar Rejection
+1x Scorned Villager
+1x Spare from Evil
+1x Spectral Prison
+1x Armored Skaab
+1x Chill of the Grave
+1x Civilized Scholar
+1x Hysterical Blindness
+1x Midnight Guard
+1x Selhoff Occultist
+1x Village Bell-Ringer
+1x Ballista Watcher
+1x Elgaud Inquisitor
+1x Makeshift Mauler
+1x Mark of the Vampire
+1x Grizzled Outcasts
+1x Murder of Crows
+1x Somberwald Spider
+1x Thornhide Wolves
+1x Wolfkin Bond
+1x Grave Exchange
+3x Plains
+5x Island
+2x Swamp
+2x Mountain
+4x Forest

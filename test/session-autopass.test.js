@@ -365,8 +365,8 @@ test('D: decyzje człowieka NIE trafiają do modala „Rozgrywka" (botMoves)', (
   const { registry, decks } = (() => {
     const reg = createCardRegistry();
     const d = new Map([
-      [HUMAN_ID, parseDeckText(fs.readFileSync('decks/green.txt', 'utf8'), reg).cardIds],
-      [BOT_ID, parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), reg).cardIds],
+      [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), reg).cardIds],
+      [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer.txt', 'utf8'), reg).cardIds],
     ]);
     return { registry: reg, decks: d };
   })();

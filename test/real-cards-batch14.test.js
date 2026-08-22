@@ -161,10 +161,10 @@ test('Batch 14: wszystkie karty mają artId i status supported', () => {
   assert.ok(compass.artId && compass.imageUri, 'artId i imageUri pozostają');
 });
 
-test('Batch 14: talia green.txt przechodzi walidację', async () => {
+test('Batch 14: talia tarkir.txt przechodzi walidację (M178: talie per plan)', async () => {
   const { parseDeckText } = await import('../src/cards/deck-text.js');
   const { validateDeck } = await import('../src/cards/deck-validation.js');
-  const deckText = fs.readFileSync('decks/'+`green.txt`,'utf8');
+  const deckText = fs.readFileSync('decks/'+`tarkir.txt`,'utf8');
   const parsed = parseDeckText(deckText, REGISTRY);
   const result = validateDeck(parsed.cardIds, REGISTRY);
   assert.ok(result.valid, `Talia nieprawidłowa: ${result.errors.join(', ')}`);

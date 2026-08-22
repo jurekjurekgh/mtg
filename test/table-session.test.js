@@ -4,6 +4,11 @@ import fs from 'node:fs';
 import { BOT_ID, HUMAN_ID, createSession } from '../src/table/session.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
+import { createGameState, addObject, execute as engineExecute, playerView as enginePlayerView } from '../src/engine/game-state.js';
+import { jumpToStep } from '../src/engine/turn.js';
+import { addMana } from '../src/engine/resources.js';
+import { gameObjectDataOf } from '../src/cards/materialize.js';
+import { describeGameEvent } from '../src/table/session.js';
 import { stateFingerprint } from '../src/engine/fingerprint.js';
 
 /**
@@ -13,7 +18,7 @@ import { stateFingerprint } from '../src/engine/fingerprint.js';
  * w oknie z prawdziwą decyzją. Testy są headless — bez DOM-u.
  */
 
-function buildDecks(humanFile = 'green.txt', botFile = 'red.txt') {
+function buildDecks(humanFile = 'tarkir.txt', botFile = 'warhammer.txt') {
   const registry = createCardRegistry();
   const decks = new Map([
     [HUMAN_ID, parseDeckText(fs.readFileSync(`decks/${humanFile}`, 'utf8'), registry).cardIds],
@@ -153,7 +158,7 @@ test('sesje z tym samym seedem przebiegają identycznie (bez Math.random)', () =
 });
 
 test('partia z czarami przechodzi przez stos i event log to opisuje', () => {
-  const { registry, decks } = buildDecks('green.txt', 'red.txt');
+  const { registry, decks } = buildDecks('tarkir.txt', 'warhammer.txt');
   // Seed 4 po Batch 35 E3 (green +Trade Route Envoy, red bez zmian) —
   // przelosowane hunterem (kolejne trafienia: 17, 32).
   const session = createSession({ seed: 4, registry, decks });
@@ -173,22 +178,67 @@ function logEventTexts(session) {
   return session.log.filter((entry) => entry.kind === 'event').map((entry) => entry.text);
 }
 
+// M178 (rewolucja talii): te cztery testy etykiet były ZAMROŻONYMI SEEDAMI
+// pełnych partii i wymagały przelosowania po KAŻDEJ zmianie talii (10+ wpisów
+// historii hunterów powyżej każdego). Po przejściu na talie per plan (ADR
+// 0023) przepisane na DETERMINISTYCZNE scenariusze silnikowe: te same
+// zdarzenia engine przechodzą przez describeGameEvent (ten sam czytelnik,
+// którego używa sesja) — bez lososowania talii i seedów.
+
+function scenarioState(activeId = 'p1') {
+  const state = createGameState({ seed: 178, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', activeId);
+  state.turn.activePlayerId = activeId;
+  state.turn.priorityPlayerId = activeId;
+  return state;
+}
+
+function scenarioPut(state, registry, id, cardId, controllerId, zone = 'battlefield', patch = {}) {
+  const def = registry.get(cardId);
+  addObject(state, {
+    id, instanceId: `i-${id}`, cardId, controllerId, ownerId: controllerId, zone,
+    ...gameObjectDataOf(def), types: def.types ?? [], keywords: def.keywords ?? [],
+    subtypes: def.subtypes ?? [], spell: def.spell, ...patch,
+  });
+  return state.objects.get(id);
+}
+
+function scenarioTexts(state, registry) {
+  const helpers = {
+    nameOf: (id) => registry.get(id)?.name ?? String(id),
+    nameOfObject: (id) => {
+      const object = state.objects.get(id);
+      return object ? (registry.get(object.cardId)?.name ?? object.name ?? String(id)) : String(id);
+    },
+    isPlayer: (id) => state.players.some((player) => player.id === id),
+  };
+  return state.events.map((e) => describeGameEvent(e, helpers)).filter((t) => typeof t === 'string');
+}
+
+function scenarioResolve(state, max = 12) {
+  for (let i = 0; i < max && state.zones.stack.length > 0; i += 1) {
+    engineExecute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  }
+}
+
 test('log opisuje decyzję devour (Gorger Wurm) — wymaganie i poświęcenie', () => {
-  const { registry, decks } = buildDecks('green.txt', 'innistrad.txt');
-  // Seed 4 po Batchu 21 (zmiana talii green/innistrad — przelosowane hunterem).
-  // Seed 28 po dodaniu Batch 22/23 do talii green/innistrad (przelosowane hunterem).
-  // Seed 3 po Batchu 33 (innistrad +2 karty: Somberwald Spider, Murder of
-  // Crows) — poprzedni seed przestał odtwarzać scenariusz devour.
-  // Seed 16 po transzy 2 batcha 33 (green +2, innistrad +1) — przelosowane hunterem.
-  // Seed 28 po batchu 34 (green +1, innistrad +1) — przelosowane hunterem.
-  // Seed 81 po Batch 35 E2 (innistrad +Wolfkin Bond +Mark of the Vampire) —
-  // przelosowane hunterem (kolejne trafienia: 108, 166).
-  // Seed 1 po Batch 35 E3 (innistrad +Blazing Torch) — przelosowane hunterem.
-  // Seed 33 po M153 (zmiana strategii blokowania/Station bota zmieniła
-  // przebieg partii) — przelosowane hunterem.
-  const session = createSession({ seed: 33, registry, decks });
-  playOut(session);
-  const texts = logEventTexts(session);
+  const registry = createCardRegistry();
+  const state = scenarioState('p2');
+  scenarioPut(state, registry, 'gorger', 'gorger-wurm', 'p2', 'hand');
+  scenarioPut(state, registry, 'fodder', 'highland-game', 'p2');
+  addMana(state, 'p2', 7, { colors: ['R', 'G'] });
+  const cast = enginePlayerView(state, 'p2').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'gorger');
+  assert.ok(cast, 'oferta rzutu Gorger Wurm');
+  assert.ok(engineExecute(state, cast).ok);
+  scenarioResolve(state);
+  assert.ok(state.pendingDevours.length > 0, 'decyzja devour czeka');
+  assert.ok(engineExecute(state, { type: 'resolve_devour_choice', playerId: 'p2', targetId: 'fodder' }).ok);
+  // Po poświęceniu ostatniego kandydata decyzja domyka się sama.
+  if (state.pendingDevours.length > 0) {
+    assert.ok(engineExecute(state, { type: 'resolve_devour_choice', playerId: 'p2', done: true }).ok);
+  }
+  const texts = scenarioTexts(state, registry);
   assert.ok(texts.some((t) => /^Devour \(Gorger Wurm\): .* może poświęcać inne swoje stwory \(po 1× \+1\/\+1 za każdego\)$/.test(t)),
     `brak etykiety wymagania devour: ${texts.filter((t) => t.includes('Devour')).join(' | ')}`);
   assert.ok(texts.some((t) => /^Devour \(Gorger Wurm\): .+ poświęcony — 1× licznik \+1\/\+1 na źródle/.test(t)),
@@ -196,20 +246,18 @@ test('log opisuje decyzję devour (Gorger Wurm) — wymaganie i poświęcenie', 
 });
 
 test('log opisuje decyzję endure (Kin-Tree Nurturer) — wybór i tryb', () => {
-  const { registry, decks } = buildDecks('green.txt', 'black.txt');
-  // Seed 4 do Batch 28; po Batch 29 (black +4 karty) seed 4 przestał odtwarzać
-  // scenariusz → przelosowane hunterem na seed 31 (deterministyczny przebieg).
-  // Seed 2 po transzy 2 batcha 33, 9 po batchu 34, 5 po Krumar Initiate,
-  // 4 po Cuombajj Witches (black +1) — przelosowane hunterem.
-  // Seed 3 po M132 (dosypanie lądów wg reguły 2:1 — green +6, black +3):
-  // zmiana składu talii zmienia rozdanie, więc scenariusz trzeba przelosować.
-  // Seed 1 po Batch 35 E3 (black +Mindstab) — przelosowane hunterem.
-  // Seed 6 po Batchu 36 (green +Feral Invocation +Grizzled Leotau +1 Forest).
-  // Seed 1 po Batchu 36 E3 (black +Wretched Banquet +1 Swamp).
-  // Seed 8 po Batchu 39 B (black +Magmarch +Ravager +4 Mountain) — przelosowane hunterem.
-  const session = createSession({ seed: 8, registry, decks });
-  playOut(session);
-  const texts = logEventTexts(session);
+  const registry = createCardRegistry();
+  const state = scenarioState('p2');
+  scenarioPut(state, registry, 'nurturer', 'kin-tree-nurturer', 'p2', 'hand');
+  addMana(state, 'p2', 3, { colors: ['B'] });
+  const cast = enginePlayerView(state, 'p2').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'nurturer');
+  assert.ok(cast, 'oferta rzutu Kin-Tree Nurturer');
+  assert.ok(engineExecute(state, cast).ok);
+  scenarioResolve(state);
+  assert.ok(state.pendingEndures.length > 0, 'decyzja endure czeka');
+  assert.ok(engineExecute(state, { type: 'resolve_endure_choice', playerId: 'p2', mode: 'token' }).ok);
+  const texts = scenarioTexts(state, registry);
   assert.ok(texts.some((t) => /^Endure \(Kin-Tree Nurturer\): Nieprzyjaciel wybiera — 1× licznik \+1\/\+1 albo token Spirit 1\/1$/.test(t)),
     `brak etykiety wymagania endure: ${texts.filter((t) => t.includes('Endure')).join(' | ')}`);
   assert.ok(texts.some((t) => /^Endure \(Kin-Tree Nurturer\): Nieprzyjaciel wybiera (token Spirit 1\/1|1× licznik \+1\/\+1 na źródle)$/.test(t)),
@@ -217,50 +265,52 @@ test('log opisuje decyzję endure (Kin-Tree Nurturer) — wybór i tryb', () => 
 });
 
 test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora', () => {
-  const { registry, decks } = buildDecks('green.txt', 'red.txt');
-  // Seed 48 → 53 po Batch 29; po Batch 30 (red +2 karty) przelosowane na 14.
-  // Seed 38 po transzy 2 batcha 33 (green +2), 12 po dołożeniu Spreading
-  // Insurrection do talii red, 50 po M111 (bot wycenia tryby modalne, więc
-  // gra inaczej) — przelosowane hunterem.
-  // Seed 145 po batchu 34 (green +1) — scenariusz delirium jest rzadki,
-  // hunter przeszedł 200 seedów.
-  // Seed 22 po M122/#2: dedup ofert szukania w bibliotece zmienia liczbę
-  // legalnych komend w oknie, więc polityka testu wybiera inaczej i partia
-  // rozchodzi się od pierwszego szukania — przelosowane hunterem.
-  // Seed 112 po M132 (green +6 lądów, red +3) — scenariusz delirium jest
-  // rzadki, hunter przeszedł 400 seedów (kolejne trafienia: 136, 206).
-  // Seed 18 po Batch 35 E2 (red +Titan's Strength +1 Mountain) — przelosowane
-  // hunterem (kolejne trafienia: 81, 133).
-  // Seed 81 po Batch 35 E3 (green +Trade Route Envoy) — przelosowane hunterem.
-  // Seed 43 po Batchu 36 (green +Feral Invocation +Grizzled Leotau +1 Forest).
-  // Seed 48 po Batchu 36 E4 (red +Molten Nursery).
-  // Seed 9 po Batchu 39 A (green +Knight +4 Plains) — przelosowane hunterem.
-  // Seed 168 po Batchu 39 C (red +Wrap in Flames +1 Mountain) — hunter.
-  // Seed 87 — dokładna polityka tego pliku (hunter z chooseHumanCommand).
-  // Seed 26 po Batchu 37 (green +Satyr Wayfinder) — przelosowane hunterem.
-  // Seed 26; po M153 (zmiana strategii blokowania/Station) — przelosowane
-  // hunterem na 66; po Batch 38 (green/red zmieniły się) — na 319.
-  const session = createSession({ seed: 168, registry, decks });
-  playOut(session);
-  const texts = logEventTexts(session);
+  const registry = createCardRegistry();
+  const state = scenarioState('p1');
+  scenarioPut(state, registry, 'foba', 'fear-of-burning-alive', 'p1', 'hand');
+  // Delirium: 4 RÓŻNE typy kart we własnym grobie (CR 702.34 intervening-if).
+  scenarioPut(state, registry, 'g1', 'highland-game', 'p1', 'graveyard'); // creature
+  scenarioPut(state, registry, 'g2', 'bone-splinters', 'p1', 'graveyard'); // sorcery
+  scenarioPut(state, registry, 'g3', 'panic-spellbomb', 'p1', 'graveyard'); // artifact
+  scenarioPut(state, registry, 'g4', 'basic-mountain', 'p1', 'graveyard'); // land
+  scenarioPut(state, registry, 'victim', 'highland-game', 'p2');
+  addMana(state, 'p1', 6, { colors: ['R'] });
+  const cast = enginePlayerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'foba');
+  assert.ok(cast, 'oferta rzutu Fear of Burning Alive');
+  assert.ok(engineExecute(state, cast).ok);
+  scenarioResolve(state);
+  // ETB zadaje 4 niekombatowe obrażenia przeciwnikowi → trigger delirium
+  // kolejkuje wybór celu (stwór poszkodowanego gracza).
+  assert.ok(state.pendingDeliriumTargets.length > 0, 'decyzja celu delirium czeka');
+  assert.ok(engineExecute(state, { type: 'resolve_delirium_target', playerId: 'p1', targetId: 'victim' }).ok);
+  const texts = scenarioTexts(state, registry);
   assert.ok(texts.some((t) => /^Delirium \(Fear of Burning Alive\):.+otrzymuje 4 obrażenia$/.test(t)),
     `brak etykiety rozstrzygnięcia delirium: ${texts.filter((t) => t.includes('Delirium')).join(' | ')}`);
 });
 
 test('log opisuje wybór kart z grobu na wierzch biblioteki (Forever Young)', () => {
-  const { registry, decks } = buildDecks('green.txt', 'black.txt');
-  // Seed 2 po Batch 24, seed 5 po Batch 26, seed 4 po Batch 27,
-  // seed 12 po Batch 28; seed 2 po Batch 32; seed 4 po transzy 2 batcha 33;
-  // seed 11 po batchu 34, 5 po Krumar Initiate, 1 po Cuombajj Witches.
-  // Seed 14 po M132 (green +6 lądów, black +3) — przelosowane hunterem.
-  // Seed 1 po Batch 35 E3 (green +Trade Route Envoy) — przelosowane hunterem.
-  // Seed 3 po Batch 35 E3b (black +Mindstab) — przelosowane hunterem.
-  // Seed 12 po Batchu 36 E3 (black +Wretched Banquet +1 Swamp).
-  // Seed 6 po Batchu 37 transza A (green +Thornhide Wolves, black +Returned Centaur +Liliana's Triumph) — przelosowane hunterem.
-  // Seed 10 po Batchu 39 B (black +Magmarch +Ravager +4 Mountain) — przelosowane hunterem.
-  const session = createSession({ seed: 10, registry, decks });
-  playOut(session);
-  const texts = logEventTexts(session);
+  const registry = createCardRegistry();
+  const state = scenarioState('p2');
+  scenarioPut(state, registry, 'fy', 'forever-young', 'p2', 'hand');
+  scenarioPut(state, registry, 'dead1', 'highland-game', 'p2', 'graveyard');
+  scenarioPut(state, registry, 'dead2', 'gorger-wurm', 'p2', 'graveyard');
+  scenarioPut(state, registry, 'lib1', 'basic-swamp', 'p2', 'library');
+  addMana(state, 'p2', 2, { colors: ['B'] });
+  const cast = enginePlayerView(state, 'p2').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'fy');
+  assert.ok(cast, 'oferta rzutu Forever Young');
+  assert.ok(engineExecute(state, cast).ok);
+  scenarioResolve(state);
+  assert.ok(state.pendingGraveyardToTop, 'decyzja graveyard-top czeka');
+  const pick = enginePlayerView(state, 'p2').legalCommands
+    .find((c) => c.type === 'resolve_graveyard_top_choice' && c.targetId);
+  assert.ok(pick, 'oferta wyboru karty z grobu');
+  assert.ok(engineExecute(state, pick).ok);
+  if (state.pendingGraveyardToTop) {
+    assert.ok(engineExecute(state, { type: 'resolve_graveyard_top_choice', playerId: 'p2', done: true }).ok);
+  }
+  const texts = scenarioTexts(state, registry);
   assert.ok(texts.some((t) => /wybiera karty-stwory z grobu na wierzch biblioteki \(Forever Young\)/.test(t)),
     `brak etykiety wymagania graveyard-top: ${texts.filter((t) => t.includes('wierzch')).join(' | ')}`);
   assert.ok(texts.some((t) => /kończy wybieranie kart na wierzch biblioteki/.test(t))

@@ -18,8 +18,8 @@ import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 
 const registry = createCardRegistry();
 const deckLists = new Map([
-  ['p1', parseDeckText(fs.readFileSync('decks/green.txt', 'utf8'), registry).cardIds],
-  ['p2', parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), registry).cardIds],
+  ['p1', parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), registry).cardIds],
+  ['p2', parseDeckText(fs.readFileSync('decks/warhammer.txt', 'utf8'), registry).cardIds],
 ]);
 
 function createMatch(seed) {

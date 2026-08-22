@@ -310,7 +310,7 @@ test('Backup: każdy bot rozstrzyga decyzję akceptowalną komendą (kontrakt Pl
 // --- Swampcycling -----------------------------------------------------------
 
 test('Swampcycling: zapłać {2}, odrzuć Maulera, znajdź Swampa do ręki (reveal) i potasuj', () => {
-  const state = matchState('black', 11);
+  const state = matchState('mirrodin', 11);
   // Normalizacja ręki otwarcia: usuwamy trafione tam Swampy, żeby licznik
   // końcowy był przewidywalny niezależnie od rozdania.
   for (const id of [...state.zones.hand]) {
@@ -376,16 +376,22 @@ test('Swampcycling: zapłać {2}, odrzuć Maulera, znajdź Swampa do ręki (reve
 });
 
 test('Swampcycling: bez Swampa w bibliotece — tylko tasowanie, brak karty (fail to find)', () => {
-  const state = matchState('black', 12);
+  const state = matchState('mirrodin', 12);
   const swampIds = state.zones.library.filter((id) => state.objects.get(id)?.cardId === 'basic-swamp' && state.objects.get(id)?.controllerId === 'p1');
   state.zones.library = state.zones.library.filter((id) => !swampIds.includes(id));
   for (const id of swampIds) state.objects.delete(id);
-  const mauler = [...state.objects.values()].find((o) => o.controllerId === 'p1' && o.cardId === 'gloomfang-mauler' && o.zone === 'library');
-  const handId = `hand-${state.objectSequence++}`;
-  state.zones.library = state.zones.library.filter((id) => id !== mauler.id);
-  state.zones.hand.push(handId);
-  state.objects.delete(mauler.id);
-  state.objects.set(handId, Object.freeze({ ...mauler, id: handId, zone: 'hand' }));
+  // M178: Mauler mógł trafić do RĘKI w rozdaniu (nowa talia mirrodin) —
+  // normalizacja obsługuje obie strefy.
+  const mauler = [...state.objects.values()].find((o) => o.controllerId === 'p1' && o.cardId === 'gloomfang-mauler');
+  assert.ok(mauler, 'Gloomfang Mauler w talii');
+  let handId = mauler.id;
+  if (mauler.zone !== 'hand') {
+    handId = `hand-${state.objectSequence++}`;
+    state.zones.library = state.zones.library.filter((id) => id !== mauler.id);
+    state.zones.hand.push(handId);
+    state.objects.delete(mauler.id);
+    state.objects.set(handId, Object.freeze({ ...mauler, id: handId, zone: 'hand' }));
+  }
   addMana(state, 'p1', 2);
   const result = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: handId, abilityIndex: 0 });
   assert.ok(result.ok);

@@ -401,17 +401,17 @@ test('Force Away: bez ferocious (brak stwora 4+) — brak opcji draw', () => {
 
 // --- Determinism -------------------------------------------------------------
 
-test('Batch 27: partia na green vs red kończy się deterministycznie', () => {
+test('Batch 27: partia na tarkir vs warhammer kończy się deterministycznie (M178)', () => {
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/green.txt', 'utf8'), REGISTRY).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), REGISTRY).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), REGISTRY).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer.txt', 'utf8'), REGISTRY).cardIds],
   ]);
   const s1 = createSession({ seed: 42, registry: REGISTRY, decks });
   playOut(s1);
   assert.ok(s1.state.status !== 'active', 'partia 1 nie zakończona');
   const decks2 = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/green.txt', 'utf8'), REGISTRY).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), REGISTRY).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), REGISTRY).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer.txt', 'utf8'), REGISTRY).cardIds],
   ]);
   const s2 = createSession({ seed: 42, registry: REGISTRY, decks: decks2 });
   playOut(s2);

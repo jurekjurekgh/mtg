@@ -36,11 +36,11 @@ import { BOT_ID, HUMAN_ID, createSession } from '../src/table/session.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 
-function makeSession(seed) {
+function makeSession(seed, botDeck = 'dominaria.txt') {
   const registry = createCardRegistry();
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/azorius.txt', 'utf8'), registry).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/graveyard.txt', 'utf8'), registry).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/innistrad.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync(`decks/${botDeck}`, 'utf8'), registry).cardIds],
   ]);
   return createSession({ registry, decks, seed, pauseOnBotMoves: true });
 }
@@ -157,10 +157,12 @@ test('M101/D: trigger jako JEDYNY obiekt na stosie też raportuje swój skutek',
   // Seed 3 po Batchu 37 (azorius +Ojutai's Breath +Static Net, graveyard +Emerald Oryx) — przelosowane hunterem.
   // Seed 60 po Batchu 41 KOMPLET (graveyard +8 kart +Skullcairn +2 Islands +Forager) — hunter (2 opóźnione).
   // Seed 38 po Batchu 42 transze A–C (graveyard +Mauler/Vizier/Final Parting +1 Island) — hunter (2 opóźnione).
-  const { shown, log } = playCollectingPanel(makeSession(38));
+  // M178 (talie per plan): opóźnione triggery daje para innistrad vs alara
+  // (Plague Reaver) — hunter 1..60, seed 7 (5 opóźnionych).
+  const { shown, log } = playCollectingPanel(makeSession(7, 'alara.txt'));
   const panel = shown.join('\n');
   const opoznione = log.filter((l) => /trigger się rozstrzyga \(opóźniony\)/.test(l));
-  assert.ok(opoznione.length > 0, 'seed 38 miał zawierać opóźnione triggery — zmienił się przebieg partii');
+  assert.ok(opoznione.length > 0, 'seed 7 miał zawierać opóźnione triggery — zmienił się przebieg partii');
   for (const line of opoznione) {
     assert.ok(panel.includes(line), `opóźniony trigger poza panelem: „${line}"`);
   }

@@ -251,10 +251,10 @@ test('Batch 16: Shiva (tył DFC) i token Robot są limited (nie taliowalne)', ()
   assert.equal(REGISTRY.get('token_robot').support.status, 'limited');
 });
 
-test('Batch 16: rozbudowane talie black i red przechodzą walidację singleton', async () => {
+test('Batch 16: talie dominaria i warhammer przechodzą walidację singleton (M178)', async () => {
   const { parseDeckText } = await import('../src/cards/deck-text.js');
   const { validateDeck } = await import('../src/cards/deck-validation.js');
-  for (const file of ['black.txt', 'red.txt', 'azorius.txt', 'wiedzmin.txt']) {
+  for (const file of ['dominaria.txt', 'warhammer.txt', 'innistrad.txt', 'wiedzmin.txt']) {
     const parsed = parseDeckText(fs.readFileSync(`decks/${file}`, 'utf8'), REGISTRY);
     const result = validateDeck(parsed.cardIds, REGISTRY);
     assert.ok(result.valid, `Talia ${file} nieprawidłowa: ${(result.errors || []).join(', ')}`);

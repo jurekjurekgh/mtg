@@ -440,8 +440,8 @@ test('Warmaker Gunship: ETB zadaje obrażenia = liczba artefaktów kontrolera', 
 test('Batch 29: partia botów (black vs green) kończy się rozstrzygnięciem i jest deterministyczna', () => {
   const registry = createCardRegistry();
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/black.txt', 'utf8'), registry).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/green.txt', 'utf8'), registry).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/dominaria.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), registry).cardIds],
   ]);
   const play = (seed) => {
     const session = createSession({ seed, registry, decks });

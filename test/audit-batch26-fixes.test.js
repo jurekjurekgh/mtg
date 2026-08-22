@@ -334,8 +334,8 @@ test('C2: pełna partia — log walki bez „?" (nazwy po cardId, śmierć w SBA
   const fs = await import('node:fs');
   const { parseDeckText } = await import('../src/cards/deck-text.js');
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/green.txt', 'utf8'), REGISTRY).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), REGISTRY).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), REGISTRY).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer.txt', 'utf8'), REGISTRY).cardIds],
   ]);
   // Seed 3 po Batch 28 (zmiana talii green/red — przelosowane hunterem).
   const session = createSession({ seed: 3, registry: REGISTRY, decks });

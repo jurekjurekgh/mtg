@@ -201,9 +201,18 @@ import {
  * heuristic 62.1% vs aggro i 89.3% vs random, 0 niedokończonych.
  * Progi zostają (0.78 / 0.57, zasada „tylko w górę"): 62.1 → 0.471,
  * 89.3 → 0.743 — oba kandydaci poniżej obecnych progów.
+ *
+ * M178 (2026-08-22) — REWOLUCJA TALII (ADR 0023): benchmark przeszedł z
+ * pełnej macierzy decks/*.txt na STAŁĄ próbkę 6 talii JEDNOPLANOWYCH
+ * (BENCH_DECKS — dominaria/innistrad/mirrodin/ravnica/tarkir/warhammer;
+ * worki wykluczone: ich konwersja na talie jednoplanowe nie może ruszać
+ * progów). Pomiar na nowej próbce (672 mecze, ~80 s): heuristic 92.9%
+ * (312/336) vs random, 75.3% (253/336) vs aggro, 0 niedokończonych.
+ * Reguła „zmierzone −15 p.p., tylko w górę”: vs aggro 75.3 → 0.60
+ * (podniesiony z 0.57); vs random 92.9 → 0.779 — zostaje 0.78.
  */
 const MIN_WIN_RATE_VS_RANDOM = 0.78;
-const MIN_WIN_RATE_VS_AGGRO = 0.57;
+const MIN_WIN_RATE_VS_AGGRO = 0.60;
 
 function gamesWon(board, bot) {
   return board.wins[bot] ?? 0;
@@ -212,7 +221,7 @@ function gamesWon(board, bot) {
 test('harness jest deterministyczny: dwa przebiegi dają identyczny wynik', () => {
   const config = {
     bots: ['aggro', 'heuristic'],
-    decks: ['green', 'red'],
+    decks: ['tarkir', 'warhammer'],
     seedsCount: 2,
     seedBase: 11,
     maxCommands: 5000,
@@ -226,7 +235,7 @@ test('rejestr botów benchmarku pokrywa się z domyślną macierzą par', () => 
   assert.deepEqual(Object.keys(BENCH_BOT_FACTORIES).sort(), ['aggro', 'heuristic', 'random']);
   assert.deepEqual(defaultPairs(['heuristic', 'random'], false), [['heuristic', 'random']]);
   assert.deepEqual(defaultPairs(['heuristic', 'random'], true), [['heuristic', 'heuristic'], ['heuristic', 'random'], ['random', 'random']]);
-  assert.ok(listRepoDeckNames().includes('green'), 'harness powinien widzieć talie z decks/*.txt');
+  assert.ok(listRepoDeckNames().includes('tarkir'), 'harness powinien widzieć talie z decks/*.txt');
 });
 
 test('argumenty CLI: walidacja i odrzucanie nieznanych opcji', () => {
@@ -254,14 +263,20 @@ test('ADR 0018: QUICK_CONFIG to ta sama próbka co REGRESSION_CONFIG (porównywa
   assert.equal(QUICK_CONFIG.seedBase, REGRESSION_CONFIG.seedBase);
   assert.deepEqual(QUICK_CONFIG.pairs, REGRESSION_CONFIG.pairs);
   assert.deepEqual(QUICK_CONFIG.bots, REGRESSION_CONFIG.bots);
-  // Próbka szybka: 2 pary × 78 par talii × N seedów × 2 strony.
-  // M132/M133: N podniesione z 4 na 8 (4 seedy dawały ~7 p.p. rozrzutu, więc
-  // próg regresji mierzył szum losowania zamiast jakości bota) — 2496 meczów,
-  // ~8 minut. Liczymy REGUŁĘ, nie zamrożoną liczbę, żeby asercja nie pękała
-  // przy każdej świadomej zmianie próbki (plik jest w tierze `slow`).
-  const games = QUICK_CONFIG.pairs.length * 78 * QUICK_CONFIG.seedsCount * 2;
-  assert.equal(games, 2 * 78 * QUICK_CONFIG.seedsCount * 2);
+  // M178 (ADR 0023): próbka na STAŁYM zestawie talii JEDNOPLANOWYCH
+  // (BENCH_DECKS) — worki nie wchodzą do benchmarku, więc ich przyszła
+  // konwersja na talie jednoplanowe nie rusza progów. 6 talii = 21 par
+  // × 2 pary botów × 8 seedów × 2 strony = 672 mecze (szybciej niż 2496
+  // sprzed rewolucji talii).
+  assert.deepEqual(QUICK_CONFIG.decks, REGRESSION_CONFIG.decks);
+  const deckPairs = (QUICK_CONFIG.decks.length * (QUICK_CONFIG.decks.length + 1)) / 2;
+  const games = QUICK_CONFIG.pairs.length * deckPairs * QUICK_CONFIG.seedsCount * 2;
   assert.ok(games <= 3000, 'profil szybki ma zostać profilem szybkim (nie pełną macierzą)');
+  // Talie benchmarku istnieją i SĄ jednoplanowe (nie-worki).
+  for (const name of QUICK_CONFIG.decks) {
+    assert.ok(listRepoDeckNames().includes(name), `talia benchmarku ${name} istnieje`);
+    assert.ok(!name.startsWith('worek'), `talia benchmarku ${name} nie jest workiem (ADR 0023)`);
+  }
 });
 
 // Próbka regresji liczona RAZ na plik (~3 s) — testy poniżej dzielą wynik.
@@ -296,7 +311,7 @@ test('bot heurystyczny nie jest słabszy niż próg regresji vs aggro', () => {
 test('raport tekstowy zawiera macierz i wyniki par (smoke formatowania)', () => {
   const result = runBenchmark({
     bots: ['heuristic', 'random'],
-    decks: ['green', 'red'],
+    decks: ['tarkir', 'warhammer'],
     seedsCount: 1,
     seedBase: 5,
     maxCommands: 5000,
@@ -305,5 +320,5 @@ test('raport tekstowy zawiera macierz i wyniki par (smoke formatowania)', () => 
   assert.match(report, /Benchmark botów \(B0\)/);
   assert.match(report, /Macierz win-rate/);
   assert.match(report, /== heuristic vs random ==/);
-  assert.match(report, /green | red/);
+  assert.match(report, /tarkir | warhammer/);
 });
