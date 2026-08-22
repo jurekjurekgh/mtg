@@ -1,7 +1,28 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-21 (M174: Batch 41 KOMPLET 10/10 — m.in. pierwszy czar z madness, intimidate, free-cast z grobu)
-- **Poprzednia:** 2026-08-21 (M173: uwagi właściciela — Gray Slaad/Adventure, TOKEN_IMAGES, badge, Rustvine, Cobra)
+- **Ostatnia aktualizacja:** 2026-08-22 (M175: uwagi właściciela do Death-Hood Cobra — log grantu, dubel bota, badge)
+- **Poprzednia:** 2026-08-21 (M174: Batch 41 KOMPLET 10/10 — m.in. pierwszy czar z madness, intimidate, free-cast z grobu)
+
+
+## M175 — uwagi właściciela: Death-Hood Cobra (A1–A3, PR #69)
+
+Plan: `docs/plans/PLAN_2026-08-22-m175-death-hood-cobra-log-bot-badge.md`.
+Testy: `test/m175-uwagi-wlasciciela.test.js` (8).
+
+- **A1 (23467eb):** log aktywacji nazywa nadawany keyword —
+  `ability_activated.grantKeywords` z silnika, opis „nadanie do końca tury:
+  zasięg” zamiast ogólnika.
+- **A2 (5e9e24d):** bot nie dubluje grantu WISZĄCEGO na stosie — widok stosu
+  niesie `sourceId` aktywacji (ADR 0017); identyczna aktywacja na stosie
+  liczy się w wycenie jak posiadany keyword.
+- **A3 (5e4408f):** badge nadanych keywordów na kaflu NAPRAWIONY U ŹRÓDŁA —
+  playerView wysyła `grantedKeywords` (efektywne − wydrukowane ze stanu);
+  stara różnica w render była zawsze pusta (badge grantów, załączników
+  i statyk warunkowych, np. Gray Slaad, nigdy się nie pokazywał — test
+  m168/B omijał cardInfo; teraz pełna ścieżka pokryta testem).
+
+**Stan:** `test:all` **2654/2654**, build **52 moduły / 2267.9 kB**,
+bot-benchmark 9/9.
 
 
 ## M174 — Batch 41: 10 kart (lista właściciela 2026-08-21, PR #69) — KOMPLET

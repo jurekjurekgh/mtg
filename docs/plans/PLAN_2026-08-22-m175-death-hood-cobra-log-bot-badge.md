@@ -25,22 +25,32 @@ zasięgu pod rząd, ogólnikowy log, brak badge):
 
 ## Kroki
 
-- [ ] 1. Plan (ten plik) — commit.
-- [ ] 2. A1: `grantKeywords` na zdarzeniu `ability_activated` (obie emisje w
+- [x] 1. Plan (ten plik) — commit.
+- [x] 2. A1: `grantKeywords` na zdarzeniu `ability_activated` (obie emisje w
   abilities.js); session.js — opis aktywacji z konkretnymi keywordami
   („nadanie do końca tury: zasięg", słownik KEYWORD_EVENT_LABELS). Test
   RED→GREEN. Commit.
-- [ ] 3. A2: widok stosu eksponuje `sourceId` aktywowanej zdolności (informacja
+- [x] 3. A2: widok stosu eksponuje `sourceId` aktywowanej zdolności (informacja
   publiczna — ogłaszana przy kładzeniu na stos, ADR 0017); wycena grantu w
   heuristic-bot: identyczna aktywacja (sourceId+abilityIndex+kontroler) już na
   stosie ⇒ duplikat (kara jak za posiadany keyword). Test RED→GREEN. Commit.
-- [ ] 4. A3: playerView liczy `entry.grantedKeywords` = efektywne − wydrukowane
+- [x] 4. A3: playerView liczy `entry.grantedKeywords` = efektywne − wydrukowane
   (`object.keywords` ze STANU — działa też dla tokenów/kopii bez rejestru);
   render `cardInfo` czyta pole widoku zamiast martwej różnicy. Test RED→GREEN
   (widok + badge przez buildStateOverlay). Commit.
-- [ ] 5. `npm test` + build przy każdym commicie; na koniec aktualizacja
+- [x] 5. `npm test` + build przy każdym commicie; na koniec aktualizacja
   PROJECT_STATE + opis PR #69 (sekcja M175) + push + CI.
 
 ## Wynik
 
-(uzupełnić po wykonaniu)
+- Commity: 9e87c88 (plan), 23467eb (A1), 5e9e24d (A2), 5e4408f (A3).
+- A1: `ability_activated.grantKeywords` (obie emisje w abilities.js); log
+  „nadanie do końca tury: zasięg”.
+- A2: widok stosu z `sourceId`; wycena grantu w heuristic-bot traktuje
+  identyczną aktywację wiszącą na stosie jak posiadany keyword (kara −10).
+- A3: `entry.grantedKeywords` w playerView (efektywne − wydrukowane ze stanu);
+  cardInfo czyta pole widoku (stara różnica była ZAWSZE pusta — badge grantów
+  nigdy nie działał); przy okazji naprawia badge statyk warunkowych (Gray
+  Slaad) w realnym stole.
+- Testy: test/m175-uwagi-wlasciciela.test.js (8, RED→GREEN przez git stash).
+- `npm test` 2645/2645 · test:all 2654/2654 · build 52 moduły / 2267.9 kB.
