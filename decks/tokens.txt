@@ -21,7 +21,7 @@
 1x Selesnya Charm
 1x Flurry of Wings
 1x Instant Ramen
-7x Plains
+8x Plains
 5x Forest
 3x Island
 1x Blade-Blizzard Kitsune
@@ -32,3 +32,5 @@
 1x Cenn's Tactician
 1x Stall Out
 1x Horizon Spellbomb
+1x Swooping Protector
+1x You're Not Alone

@@ -105,6 +105,7 @@ export function stateFingerprint(state) {
     // Magmarch), a replay nie odróżniał stanów z tarczą i bez.
     regenerationShields: [...(state.regenerationShields ?? [])],
     cantBeRegeneratedThisTurn: [...(state.cantBeRegeneratedThisTurn ?? [])],
+    exileIfDiesThisTurn: [...(state.exileIfDiesThisTurn ?? [])],
     untilEndOfTurnProtections: (state.untilEndOfTurnProtections ?? []).map((g) => ({
       controllerId: g.controllerId,
       objectIds: Array.isArray(g.objectIds) ? [...g.objectIds] : null,

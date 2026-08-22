@@ -394,6 +394,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const HOSTILE_PERMANENT_EFFECTS = new Map([
     ['damage', 60],
     ['damage_from_target_power', 60],
+    // M177/A (Agate Assault): znacznik „exile zamiast śmierci” towarzyszy
+    // obrażeniom — wrogi dla celu (odcina grave-recursion), nigdy we własnych.
+    ['exile_if_dies_this_turn', 30],
     ['destroy_permanent', 90],
     ['destroy_if_least_power', 90],
     // M156/F2 (audyt PR #65, Divine Offering): niszczenie artefaktu z riderem

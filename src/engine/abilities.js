@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { effectiveKeywords, effectivePower, tapObject } from './permanents.js';
+import { deathZoneFor, effectiveKeywords, effectivePower, tapObject } from './permanents.js';
 import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { addCounter, removeCounter } from './counters.js';
@@ -1235,7 +1235,7 @@ export function performActivation(state, ctx) {
       || (land.kind !== 'land' && !(land.types ?? []).includes('Land'))) {
       throw new Error('Nielegalny land do poświęcenia (koszt)');
     }
-    const toZone = (land.counters ?? {}).finality > 0 ? 'exile' : 'graveyard';
+    const toZone = deathZoneFor(state, land);
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, sacrificeLandId, toZone, destId);
     state.events.push(event('permanent_sacrificed', {

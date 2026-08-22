@@ -769,7 +769,8 @@ function describeEffect(e) {
   // „efekt (undefined)" — pomijamy (audyt żywym testerem).
   if (!e || typeof e.type !== 'string' || e.type === '') return '';
   const generic = {
-    pump: () => `${signed(e.power ?? 0)}/${signed(e.toughness ?? 0)} do końca tury`,
+    pump: () => `${signed(e.power ?? 0)}/${signed(e.toughness ?? 0)} do końca tury${e.upgradeIfCreatures ? ` (${signed(e.upgradeIfCreatures.power ?? 0)}/${signed(e.upgradeIfCreatures.toughness ?? 0)} przy ${e.upgradeIfCreatures.min}+ stworach)` : ''}`,
+    exile_if_dies_this_turn: () => 'jeśli miałby umrzeć w tej turze, wygnaj go zamiast tego',
     create_token: () => {
       const count = Number.isFinite(e.amount) && e.amount > 1 ? `×${e.amount} ` : '';
       const dynamicNote = typeof e.amount === 'string' ? ` (${dynamicAmount(e.amount)})` : '';

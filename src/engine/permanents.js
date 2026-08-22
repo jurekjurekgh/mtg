@@ -878,6 +878,19 @@ export function goadUntilNextTurn(state, objectId, sourceControllerId) {
  * Nadaje stworowi keywordy „do końca tury" (np. backup, CR 702.165a) —
  * czyszczone w cleanup przez clearStatModifiers. Zwraca obiekt po zmianie.
  */
+/**
+ * M177/A (Agate Assault, CR 614.6): strefa śmierci permanentu — licznik
+ * finality (CR 122.1b) ALBO znacznik „if it would die this turn, exile it
+ * instead” (`state.exileIfDiesThisTurn`, czyszczony w cleanup) kierują
+ * obiekt do exile zamiast do grobu. Jedno źródło prawdy dla WSZYSTKICH
+ * ścieżek śmierci (SBA, destroy, sacrifice, legend rule).
+ */
+export function deathZoneFor(state, object) {
+  if (((object?.counters ?? {}).finality ?? 0) > 0) return 'exile';
+  if ((state.exileIfDiesThisTurn ?? []).includes(object?.id)) return 'exile';
+  return 'graveyard';
+}
+
 export function grantKeywordsUntilEndOfTurn(state, objectId, keywords, options = {}) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error('Tymczasowe keywordy można nadawać tylko stworowi na polu bitwy');

@@ -855,6 +855,9 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       // nagle atakował w turze wejścia bez śladu w logu i w modalu.
       // Wyciszamy WYŁĄCZNIE keywordy z backupu (opisuje je backup_resolved,
       // kolejna linia byłaby dubletem) — reszta trafia do gracza.
+      // M177/A (Agate Assault): znacznik „if it would die this turn, exile it”.
+      case 'exile_if_dies_marked':
+        return `${objectOrLki(e.objectId, e.cardId)}: jeśli umrze w tej turze, trafi na wygnanie zamiast do grobu`;
       case 'keyword_granted': {
         if (e.viaBackup) return null;
         const granted = (e.keywords ?? [])

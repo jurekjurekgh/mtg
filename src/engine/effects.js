@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
+import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
@@ -768,8 +768,19 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       if (v === 'card_types_in_all_graveyards') return allGraveyardsCardTypeCount(state);
       return v ?? fallback;
     };
-    const power = dynt(effect.power, 0);
-    const toughness = dynt(effect.toughness, 0);
+    let power = dynt(effect.power, 0);
+    let toughness = dynt(effect.toughness, 0);
+    // M177/A (You're Not Alone): „If you control three or more creatures,
+    // it gets +4/+4 instead” — warunek liczony przy ROZSTRZYGANIU (CR 608.2),
+    // bonus ZASTĘPUJE bazową kwotę („instead”), nie sumuje się.
+    if (effect.upgradeIfCreatures) {
+      const mine = [...state.objects.values()].filter((o) => o.zone === 'battlefield'
+        && o.kind === 'creature' && o.controllerId === sourceObject.controllerId).length;
+      if (mine >= (effect.upgradeIfCreatures.min ?? 0)) {
+        power = effect.upgradeIfCreatures.power ?? power;
+        toughness = effect.upgradeIfCreatures.toughness ?? toughness;
+      }
+    }
     modifyStats(state, targetId, { power, toughness });
     return;
   }
@@ -2082,6 +2093,20 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     return;
   }
+  if (effect.type === 'exile_if_dies_this_turn') {
+    // M177/A (Agate Assault): „If that creature would die this turn, exile it
+    // instead” — znacznik na id celu, konsumowany przez deathZoneFor we
+    // wszystkich ścieżkach śmierci; wygasa w cleanup (jak tarcze prewencji).
+    const targetId = targets[effect.targetIndex ?? 0];
+    if (targetId == null) return;
+    const marked = state.objects.get(targetId);
+    if (!marked || marked.zone !== 'battlefield') return;
+    if (!(state.exileIfDiesThisTurn ?? []).includes(targetId)) {
+      state.exileIfDiesThisTurn = [...(state.exileIfDiesThisTurn ?? []), targetId];
+    }
+    state.events.push(event('exile_if_dies_marked', { objectId: targetId, cardId: marked.cardId }));
+    return;
+  }
   if (effect.type === 'exile_permanent') {
     // „You may ... exile target ..." (Kappa Tech-Wrecker, Temat 2): przy
     // odrzuconym celu (null) efekt nie robi nic — jak tap_permanent „up to
@@ -2235,7 +2260,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Finality counter (CR 122.1b w pełnym wymiarze): „If this permanent would
     // die, exile it instead" — dotyczy KAŻDEJ przyczyny śmierci, także
     // zniszczenia efektem (wcześniej tylko zgony SBA).
-    const toZone = (object.counters ?? {}).finality > 0 ? 'exile' : 'graveyard';
+    const toZone = deathZoneFor(state, object);
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, targetId, toZone, destId);
     state.events.push(event('permanent_destroyed', {
@@ -2252,7 +2277,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (!object || object.zone !== 'battlefield') return;
     // Finality counter (CR 122.1b): poświęcenie też jest śmiercią — zamiast
     // grobu obiekt idzie do exile (wcześniej tylko zgony SBA).
-    const toZone = (object.counters ?? {}).finality > 0 ? 'exile' : 'graveyard';
+    const toZone = deathZoneFor(state, object);
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, object.id, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
@@ -3226,7 +3251,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     });
     for (const victimId of victims) {
       const victim = state.objects.get(victimId);
-      const toZone = (victim?.counters ?? {}).finality > 0 ? 'exile' : 'graveyard';
+      const toZone = deathZoneFor(state, victim);
       const destId = `${toZone}-${state.objectSequence++}`;
       const moved = moveObjectDirectly(state, victimId, toZone, destId);
       state.events.push(event('permanent_sacrificed', {

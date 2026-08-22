@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { producibleMana, spendMana, canPayColoredCost, castPermanent } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
-import { effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource, transformedCharacteristics } from './permanents.js';
+import { deathZoneFor, effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource, transformedCharacteristics } from './permanents.js';
 import { applyEffect, dealNonCombatDamage, maybeAddFaceDownFlyingCounter } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature, isLegalAuraHost, attachEquipmentToCreature } from './attachments.js';
@@ -432,7 +432,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     const sacObject = state.objects.get(sacrificeTargetId);
     // Finality (CR 122.1b): koszt poświęcenia to też śmierć — obiekt z finality
     // idzie do exile zamiast do grobu (spójnie z sacrifice_permanent).
-    const toZone = (sacObject.counters ?? {}).finality > 0 ? 'exile' : 'graveyard';
+    const toZone = deathZoneFor(state, sacObject);
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, sacrificeTargetId, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
@@ -718,7 +718,7 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
   state.spellsCastThisTurn += 1;
   if (sacrificeCost) {
     const sacObject = state.objects.get(sacrificeTargetId);
-    const toZone = (sacObject.counters ?? {}).finality > 0 ? 'exile' : 'graveyard';
+    const toZone = deathZoneFor(state, sacObject);
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, sacrificeTargetId, toZone, destId);
     state.events.push(event('permanent_sacrificed', {

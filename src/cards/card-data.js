@@ -7735,6 +7735,63 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['decyzja rzutu liczona żywo (dowolny grób, MV = X, budżet many); czar poza zakresem (koszt dodatkowy/X) nie jest oferowany'],
   }),
 
+
+// ---- Batch 42 — transza A ----
+
+  // 1. Swooping Protector (SNC) {3}{W} 2/1 Bird Citizen — Flash, Flying,
+  //    wchodzi z licznikiem shield (PEŁNY REUSE — wzorzec Voice of the
+  //    Vermin; shield przy damage/destroy już w silniku).
+  defineCard({
+    id: 'swooping-protector', name: 'Swooping Protector', set: 'SNC',
+    types: ['Creature'], subtypes: ['Bird', 'Citizen'], colors: ['W'],
+    power: 2, toughness: 1, manaCost: 4, keywords: ['flash', 'flying'],
+    entersWithCounters: { shield: 1 },
+    oracleText: 'Flash\nFlying\nThis creature enters with a shield counter on it. (If it would be dealt damage or destroyed, remove a shield counter from it instead.)',
+    imageUri: 'https://cards.scryfall.io/large/front/8/7/8713498f-a467-4a11-9de2-53a1bbd0b18b.jpg?1783923149',
+    artId: 379, plan: 'New Capenna',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. You're Not Alone (FIN) {W} Instant — +2/+2 EOT; przy 3+ własnych
+  //    stworach ZAMIAST tego +4/+4 (warunek przy rozstrzyganiu — CR 608.2).
+  defineCard({
+    id: 'youre-not-alone', name: "You're Not Alone", set: 'FIN',
+    types: ['Instant'], colors: ['W'], manaCost: 1,
+    oracleText: 'Target creature gets +2/+2 until end of turn. If you control three or more creatures, it gets +4/+4 until end of turn instead.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/8/1867b5cb-2bb0-4f49-b302-036fdffa2344.jpg?1783906640',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [{ type: 'pump', power: 2, toughness: 2, upgradeIfCreatures: { min: 3, power: 4, toughness: 4 } }],
+    },
+    artId: 29, plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Agate Assault (BLB) {2}{R} Sorcery — modal: 4 obrażenia w stwora
+  //    + „if it would die this turn, exile it instead” (nowy znacznik
+  //    exile_if_dies_this_turn → deathZoneFor) ALBO wygnanie artefaktu.
+  defineCard({
+    id: 'agate-assault', name: 'Agate Assault', set: 'BLB',
+    types: ['Sorcery'], colors: ['R'], manaCost: 3,
+    oracleText: 'Choose one —\n• Agate Assault deals 4 damage to target creature. If that creature would die this turn, exile it instead.\n• Exile target artifact.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/d/7dd9946b-515e-4e0d-9da2-711e126e9fa6.jpg?1783910826',
+    spell: {
+      timing: 'sorcery',
+      modes: [
+        { name: 'Obrażenia', targets: [{ type: 'creature' }],
+          effects: [
+            { type: 'exile_if_dies_this_turn' },
+            { type: 'damage', amount: 4 },
+          ] },
+        { name: 'Wygnanie artefaktu', targets: [{ type: 'artifact' }],
+          effects: [{ type: 'exile_permanent' }] },
+      ],
+    },
+    artId: 236, plan: 'Bloomburrow',
+    support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 /**

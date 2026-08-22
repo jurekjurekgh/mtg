@@ -20,7 +20,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, legalEscapeCasts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell } from './spells.js';
 import { legalActivatedAbilities, activateAbility, performActivation } from './abilities.js';
-import { clearMarkedDamage, clearStatModifiers, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, transformedCharacteristics, untapObject } from './permanents.js';
+import { deathZoneFor, clearMarkedDamage, clearStatModifiers, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, transformedCharacteristics, untapObject } from './permanents.js';
 import { addCounter } from './counters.js';
 import { runStateBasedActions } from './state-based.js';
 import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds } from './triggers.js';
@@ -425,6 +425,9 @@ export function createGameState({ seed, players }) {
     // (SBA) i destroy_permanent; czyszczona w cleanup razem z
     // regenerationShields.
     cantBeRegeneratedThisTurn: [],
+    // M177/A (Agate Assault): id permanentów „if it would die this turn,
+    // exile it instead” — czyszczone w cleanup.
+    exileIfDiesThisTurn: [],
     // Animacje z linkiem do źródła (Skilled Animator — „as long as this
     // creature remains on the battlefield"): wpisy { sourceId, targetId };
     // cofane przy odejściu źródła z pola bitwy (objects.js).
@@ -1601,7 +1604,7 @@ export function execute(state, input) {
     // Sacrifice the land
     const land = state.objects.get(landId);
     if (!land || land.zone !== 'battlefield') return reject('springbloom_land_missing');
-    const toZone = (land.counters ?? {}).finality > 0 ? 'exile' : 'graveyard';
+    const toZone = deathZoneFor(state, land);
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, landId, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
@@ -3625,7 +3628,7 @@ export function execute(state, input) {
       // Finality counter (CR 122.1b): śmierć z prawa legend też jest śmiercią
       // — obiekt z finality idzie do exile zamiast do grobu.
       const doomed = state.objects.get(objectId);
-      const toZone = (doomed?.counters ?? {}).finality > 0 ? 'exile' : 'graveyard';
+      const toZone = deathZoneFor(state, doomed);
       const moved = moveObjectDirectly(state, objectId, toZone, `${toZone}-${state.objectSequence++}`);
       buriedIds.push(objectId);
       buriedCardIds.push(moved.cardId);
@@ -3737,6 +3740,8 @@ export function execute(state, input) {
           // w cleanup razem z tarczami regeneracji (oba są efektami trwałymi
           // do końca tury).
           state.cantBeRegeneratedThisTurn = [];
+          // M177/A: znaczniki „exile zamiast śmierci” wygasają z końcem tury.
+          state.exileIfDiesThisTurn = [];
           // M158/Batch 39 (Invasion of the Giants III): rabat „this turn" wygasa.
           state.pendingSpellDiscounts = [];
           // CR 514.1 (limit ręki): w cleanup TYLKO AKTYWNY gracz odrzuca
