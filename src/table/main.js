@@ -175,16 +175,11 @@ function bootstrapTable() {
     else fallback();
   }
 
-  let currentImageMode = detectImageMode(typeof location !== 'undefined' ? location.protocol : 'file:');
-  const imageModeSelect = el('image-mode');
-  if (imageModeSelect) {
-    imageModeSelect.addEventListener('change', () => {
-      const val = imageModeSelect.value;
-      if (val === 'auto') currentImageMode = detectImageMode(typeof location !== 'undefined' ? location.protocol : 'file:');
-      else if (val === 'scryfall') currentImageMode = 'scryfall';
-      else if (val === 'local') currentImageMode = 'local';
-    });
-  }
+  // M189/M (uwaga właściciela): panel „Ustawienia i pomoc" usunięty, więc
+  // nie ma już ręcznego przełącznika źródła ilustracji. Zostaje zachowanie
+  // domyślne, które i tak było jedynym używanym: AUTODETEKCJA po protokole
+  // (adres http(s) → Scryfall, plik z dysku → lokalne ./img/ z fallbackiem).
+  const currentImageMode = detectImageMode(typeof location !== 'undefined' ? location.protocol : 'file:');
 
   // Tor podglądu hover (scryfall → FOT → KON) przełączany scrollem nad kartą,
   // jak w legacy HTML. Trzymany w pamięci sesji strony — bez localStorage.

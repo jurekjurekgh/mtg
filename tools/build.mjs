@@ -59,7 +59,14 @@ function build({ out }) {
     throw new Error('src/table/index.html nie zawiera znacznika <!--BUNDLE-->');
   }
 
-  const built = new Date().toISOString().slice(0, 10);
+  // M189/L (uwaga właściciela): stempel niesie datę I GODZINĘ publikacji —
+  // sama data nie odróżniała dwóch buildów z tego samego dnia, a to jedyny
+  // sposób, żeby na telefonie sprawdzić, czy otwarty artefakt jest aktualny.
+  // Czas lokalny strefy budującej, bez sekund („YYYY-MM-DD HH:MM").
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const built = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+    + ` ${pad(now.getHours())}:${pad(now.getMinutes())}`;
   const html = shell
     .replace('<!--BUNDLE-->', () => `<script>\n${fullCode}\n</script>`)
     .replace('<!--BUILT-->', () => built);

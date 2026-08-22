@@ -69,7 +69,7 @@ function installMiniDom() {
     'turn-indicator',
     'life-own', 'life-enemy', 'library-own', 'library-enemy',
     'library-menu-btn', 'library-menu-panel', 'library-preview', 'zone-inspector-close',
-    'replay-out', 'replay-summary', 'replay-download', 'replay-file', 'image-mode',
+    'replay-out', 'replay-summary', 'replay-download', 'replay-file',
     'actions-drawer', 'actions-drawer-close', 'actions-fab', 'actions-fab-count',
     'bot-reasoning', 'bot-reasoning-count',
     // M25: sekcja „Przebieg tur (dla AI)" — tekst, licznik, przełącznik i kopiowanie.

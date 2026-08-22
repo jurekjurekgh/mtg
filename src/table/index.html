@@ -562,9 +562,8 @@
   a { color: var(--blue); font-size: 13px; }
 
   /* --- Self-test --------------------------------------------------- */
-  .selftest-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-top: 10px; }
-  .selftest-card h2 { font-size: 12px; margin: 0 0 8px; color: var(--gold); text-transform: uppercase; letter-spacing: .5px; }
-  .selftest-card p { font-size: 12px; margin: 0 0 8px; color: var(--muted); }
+  /* M189/L: sam znacznik wersji zamiast całej sekcji „Test działania". */
+  .build-stamp { font-size: 11px; color: var(--muted-2); margin-top: 10px; text-align: right; }
   #selftest { font-size: 13px; }
   #selftest .ok { color: var(--ok); }
 
@@ -990,32 +989,15 @@
         </div>
       </div>
     </details>
-    <details class="panel">
-      <summary>Ustawienia i pomoc</summary>
-      <div class="panel-body">
-        <div class="row" style="margin-bottom:8px;">
-          <label for="image-mode" style="font-size:12px;">Źródło ilustracji: </label>
-          <select id="image-mode" style="max-width:300px;">
-            <option value="auto">Automatyczne (URL=Scryfall, Dysk=Lokalne)</option>
-            <option value="scryfall">Tylko Scryfall</option>
-            <option value="local">Preferuj lokalne (./img/)</option>
-          </select>
-        </div>
-        <p class="file-row" style="margin:4px 0 0;">
-          <strong>Jak uruchomić Wirtualny Stół:</strong><br><br>
-          1. <strong>Na urządzeniu mobilnym (lub z sieci):</strong> wejdź na adres GitHub Pages swojego repozytorium. Obrazy domyślnie pobierane są ze Scryfall.<br><br>
-          2. <strong>Lokalnie z pliku:</strong> pobierz plik <code>dist/mtg-table.html</code> (lub zbuduj przez <code>node tools/build.mjs</code>) i otwórz w przeglądarce. Silnik preferuje wtedy obrazy z folderu <code>./img/</code> (np. <code>img/set-slug.jpg</code>), a w razie ich braku - Scryfall. Tryb ten możesz wymusić przełącznikiem wyżej.
-        </p>
-      </div>
-    </details>
   </div>
 
-  <section class="selftest-card">
-    <h2>Test działania</h2>
-    <p>Jeśli poniżej widzisz zielony komunikat, cały łańcuch działa: moduły (łącznie z silnikiem reguł)
-       zostały sklejone w jeden plik i wykonują się w tej przeglądarce. Wersja z <!--BUILT-->.</p>
-    <div id="selftest">Sprawdzanie…</div>
-  </section>
+  <!-- M189/L (uwaga właściciela): sekcja „Test działania" zniknęła z UI —
+       zostaje sama data i godzina publikacji artefaktu. Kontener self-testu
+       pozostaje UKRYTY, bo bramki CI (test/bundle-smoke.test.js oraz
+       test/table-ui.test.js) używają go jako dowodu, że sklejony artefakt
+       naprawdę wykonuje silnik reguł w przeglądarce. -->
+  <div id="selftest" hidden></div>
+  <div class="build-stamp">Wersja artefaktu: <!--BUILT--></div>
 
   <div class="foot">M20 — Wirtualny Stół i kreator talii. Talie są wstrzykiwane z decks/ przy budowie, a kreator eksportuje ten sam tekst (ADR 0011/0012). Obrazy realnych kart pochodzą ze Scryfalla.</div>
 </div>
