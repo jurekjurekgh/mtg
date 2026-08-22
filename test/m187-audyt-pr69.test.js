@@ -12,6 +12,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { applyEffect } from '../src/engine/effects.js';
 import { addMana } from '../src/engine/resources.js';
 import { processTriggers } from '../src/engine/triggers.js';
+import { readFileSync } from 'node:fs';
 
 const REGISTRY = createCardRegistry();
 
@@ -152,4 +153,67 @@ test('M187/N2: counter_spell_unless_pays — bez many na opłatę czar kontrowan
   assert.ok(state.events.some((e) => e.type === 'spell_countered'),
     'czar skontrowany od razu (CR 601.2h — nie ma z czego zapłacić)');
   assert.ok(state.pendingDiscardChoice, '„That player discards a card\" nadal następuje');
+});
+
+// ---- Z1: podwojone zdarzenia w stanie po decyzji kończącej czar ----------
+// Żywy Tester (audyt-m187/g3, ravnica vs dominaria): log pokazywał
+// „Dreams of Steel and Oil zostaje rozstrzygnięty" DWA RAZY pod rząd.
+// Root cause: finishPendingSpell SAM dopisuje zdarzenia do state.events
+// i dodatkowo je ZWRACA (kontrakt „zwróć wycinek własnych zdarzeń"), a dwa
+// z 21 call-site'ów robiły jeszcze `state.events.push(...)` — te same
+// zdarzenia lądowały w stanie dwa razy (klasa L41: kopie tej samej logiki
+// rozjeżdżają się cicho). Pozostałe 19 używa lokalnej tablicy i jest OK.
+test('Z1: reveal_hand_choose_exile — czar rozstrzyga się RAZ (bez dubla w state.events)', () => {
+  const state = game('p1');
+  putCard(state, 'dreams', 'dreams-of-steel-and-oil', 'p1', 'hand');
+  putCard(state, 'victim', 'highland-game', 'p2', 'hand');
+  addMana(state, 'p1', 1, { colors: ['B'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'dreams');
+  assert.ok(cast, 'oferta rzutu');
+  assert.ok(execute(state, cast).ok);
+  for (let i = 0; i < 12 && state.zones.stack.length > 0; i += 1) {
+    const view = playerView(state, state.turn.priorityPlayerId);
+    const choice = view.legalCommands.find((c) => c.type.startsWith('resolve_'));
+    execute(state, choice ?? { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  }
+  const resolved = state.events.filter((e) => e.type === 'spell_resolved'
+    && e.cardId === 'dreams-of-steel-and-oil');
+  assert.equal(resolved.length, 1,
+    'dokładnie JEDNO zdarzenie spell_resolved (log nie powtarza komunikatu)');
+});
+
+test('Z1b: pay_or_sacrifice kończący czar też nie dubluje zdarzeń', () => {
+  // Druga poprawiona ścieżka (ten sam wzorzec) — kontrola przez brak duplikatu
+  // JAKIEGOKOLWIEK zdarzenia w strumieniu stanu po komendzie.
+  const state = game('p1');
+  putCard(state, 'dreams', 'dreams-of-steel-and-oil', 'p1', 'hand');
+  putCard(state, 'victim', 'alaborn-trooper', 'p2', 'hand');
+  addMana(state, 'p1', 1, { colors: ['B'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'dreams');
+  assert.ok(execute(state, cast).ok);
+  for (let i = 0; i < 12 && state.zones.stack.length > 0; i += 1) {
+    const view = playerView(state, state.turn.priorityPlayerId);
+    const choice = view.legalCommands.find((c) => c.type.startsWith('resolve_'));
+    execute(state, choice ?? { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  }
+  const exiled = state.events.filter((e) => e.type === 'reveal_exile_resolved');
+  assert.equal(exiled.length, 1, 'zdarzenie zamknięcia decyzji tylko raz');
+  const objectExiled = state.events.filter((e) => e.type === 'object_exiled');
+  assert.equal(objectExiled.length, new Set(objectExiled.map((e) => e.objectId)).size,
+    'brak zduplikowanych zdarzeń wygnania (te same objectId dwa razy)');
+});
+
+test('Z1c: STRAŻNIK — żaden call-site nie robi state.events.push(...finishPendingSpell)', () => {
+  // L28/L51: łatanie dwóch wystąpień zostawia dziurę na trzecie. Kontrakt:
+  // finishPendingSpell dopisuje zdarzenia do stanu SAMO, więc call-site albo
+  // zbiera zwrot do LOKALNEJ tablicy, albo ignoruje go — nigdy nie wpycha
+  // z powrotem do state.events.
+  const src = readFileSync(new URL('../src/engine/game-state.js', import.meta.url), 'utf8');
+  const offenders = src.split('\n')
+    .map((line, i) => ({ line: line.trim(), no: i + 1 }))
+    .filter(({ line }) => /state\.events\.push\(\s*\.\.\.finishPendingSpell/.test(line));
+  assert.deepEqual(offenders, [],
+    `finishPendingSpell nie może trafiać z powrotem do state.events: ${JSON.stringify(offenders)}`);
 });

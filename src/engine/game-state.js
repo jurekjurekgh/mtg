@@ -2533,7 +2533,12 @@ export function execute(state, input) {
       if (state.pendingSpell) {
         const spellPending = state.pendingSpell;
         state.pendingSpell = null;
-        state.events.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
+        // M187/Z1: finishPendingSpell SAM dopisuje swoje zdarzenia do
+        // state.events i dodatkowo je ZWRACA (kontrakt „zwróć własny
+        // wycinek"). Dodatkowy push wstawiał je do stanu DRUGI raz, a że ta
+        // gałąź kończy się `state.events.slice(before)`, log pokazywał
+        // „… zostaje rozstrzygnięty" dwa razy. Wywołanie wystarczy.
+        finishPendingSpell(state, spellPending.stackId, spellPending.effects);
       }
       if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
         state.turn.priorityPlayerId = pending.restorePriorityTo;
@@ -2691,7 +2696,9 @@ export function execute(state, input) {
     if (state.pendingSpell) {
       const spellPending = state.pendingSpell;
       state.pendingSpell = null;
-      state.events.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
+      // M187/Z1 (jak wyżej): bez dodatkowego push — funkcja już dopisała
+      // zdarzenia do stanu, a zwrot służy call-site'om z LOKALNĄ tablicą.
+      finishPendingSpell(state, spellPending.stackId, spellPending.effects);
     }
     if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) state.turn.priorityPlayerId = pending.restorePriorityTo;
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
