@@ -123,7 +123,7 @@ function defaultBotFactory(seed, ctx) {
     gain_life: 'zdobycie życia',
     grant_keywords_until_end_of_turn: 'nadanie słów kluczowych do końca tury',
     lock_untap: 'cel nie odtapuje podczas następnego untap kontrolera',
-    look_top_put_one_hand_rest_bottom: 'spojrzenie na X kart z wierzchu — jedna do ręki, reszta na spód',
+    look_top_put_one_hand_rest_bottom: 'spojrzenie na karty z wierzchu — jedna do ręki, reszta na spód',
     lose_life: 'cel traci życie',
     mill_cards: 'mielenie kart do grobu',
     prevent_damage_this_turn: 'niwelowanie obrażeń do końca tury',
@@ -1078,8 +1078,15 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       case 'look_top_resolved': {
         // M100/E4: wzięta karta to wiedza własna; reszta do grobu opisują
         // jawne zdarzenia przeniesienia (grób publiczny).
+        // M192/Z2 (pętla jakości): są DWA warianty resztki — grób (Gurmag
+        // Drowner) albo SPÓD biblioteki (Merchant's Dockhand, Rediscover the
+        // Way). Log twierdził „do grobu" w obu, czyli mylił gracza co do
+        // stanu jego biblioteki. Miejsce bierzemy ze zdarzenia (L6).
         const pickName = (e.playerId === HUMAN_ID && e.pickCardId) ? nameOf(e.pickCardId) : 'kartę';
-        return `${whoN(e.playerId)} bierze ${pickName} z wierzchu do ręki (reszta do grobu)`;
+        const restLabel = e.restTo === 'library_bottom'
+          ? 'reszta na spód biblioteki'
+          : 'reszta do grobu';
+        return `${whoN(e.playerId)} bierze ${pickName} z wierzchu do ręki (${restLabel})`;
       }
       case 'satyr_look_started': {
         if (e.cardIds?.length && e.playerId === HUMAN_ID) {

@@ -1745,7 +1745,16 @@ export function execute(state, input) {
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
-    state.events.push(event('look_top_resolved', { playerId: pending.playerId, count: pending.objectIds.length, pickId, pickCardId: movedHand.cardId }));
+    // M192/Z2 (petla jakosci): zdarzenie niesie MIEJSCE reszty kart.
+    // pendingLookTopN ma dwa warianty (grob — Gurmag Drowner; spod
+    // biblioteki — Merchant's Dockhand, Rediscover the Way), a bez tego
+    // pola warstwa opisu musiala zgadywac i zawsze mowila „do grobu",
+    // czyli log wprost klamal o stanie gry (L6: opis nie rekonstruuje
+    // stanu, dostaje go od silnika).
+    state.events.push(event('look_top_resolved', {
+      playerId: pending.playerId, count: pending.objectIds.length, pickId,
+      pickCardId: movedHand.cardId, restTo: pending.restTo ?? 'graveyard',
+    }));
     const resolved = state.events.slice(state.events.length - (rest.length + 2));
     return accepted(state, cmd, { ok: true, events: resolved });
   }

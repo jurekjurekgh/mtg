@@ -937,7 +937,15 @@ function describeEffect(e) {
     graveyard_creatures_to_library_top_choice: () => 'karty z grobu na wierzch biblioteki',
     index_look: () => 'zobacz wierzch biblioteki (Index)',
     look_top_put_one_hand_rest_grave: () => 'zobacz wierzch biblioteki, jedną do ręki, resztę do grobu',
-    look_top_put_one_hand_rest_bottom: () => 'zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki',
+    // M192/Z3 (petla jakosci): deskryptor NIESIE liczbe (Rediscover the Way:
+    // amount 3), a opis pokazywal literalne „X" — placeholder z kodu na
+    // kaflu karty. Gdy liczba pochodzi z kosztu ({X} Merchant's Dockhand),
+    // „X" jest poprawne, bo gracz wybiera ja przy aktywacji.
+    look_top_put_one_hand_rest_bottom: () => {
+      const n = e.amount === 'x' || e.amount == null ? 'X' : e.amount;
+      const noun = n === 'X' ? 'kart' : polishPluralCount(n, 'kartę', 'karty', 'kart');
+      return `zobacz ${n} ${noun} z wierzchu — jedna do ręki, reszta na spód biblioteki`;
+    },
     // M184/Z2: opis niósł ani liczby kart, ani nagrody za odmowę
     // (Blanchwood Prowler: licznik +1/+1) — gracz nie znał stawki decyzji.
     reveal_top_pick_land_rest_grave: () => {

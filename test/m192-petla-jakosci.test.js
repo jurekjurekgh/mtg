@@ -125,3 +125,63 @@ test('M192/Z1 (anty-over-fix): WLASNE ruchy gracza miedzy strefami ukrytymi sa n
   assert.deepEqual(anonymous.slice(0, 3).map((m) => m.text), [],
     'wlasna karta gracza musi byc nazwana takze w strefach ukrytych');
 });
+
+// ---- Z2: log twierdzil „reszta do grobu", gdy karty szly na SPOD ---------
+// Znalezisko petli jakosci: pendingLookTopN ma DWA warianty resztki — grob
+// (Gurmag Drowner) i spod biblioteki (Merchant's Dockhand, Rediscover the
+// Way). Zdarzenie `look_top_resolved` nie nioslo tej informacji, wiec opis
+// zawsze mowil „do grobu" — log wprost klamal o stanie gry (klasa L6/L14).
+
+test('M192/Z2: log mówi „na spód biblioteki", gdy reszta idzie na spód', async () => {
+  const { describeGameEvent } = await import('../src/table/session.js');
+  const helpers = { nameOf: (c) => c, nameOfObject: () => '?', isPlayer: (id) => id === 'human' };
+  const line = String(describeGameEvent({
+    type: 'look_top_resolved', playerId: 'human', count: 3,
+    pickId: 'x', pickCardId: 'mountain', restTo: 'library_bottom',
+  }, helpers, { human: 'Ty' }));
+  assert.match(line, /spód biblioteki/, `Merchant's Dockhand / Rediscover the Way: ${JSON.stringify(line)}`);
+  assert.doesNotMatch(line, /do grobu/, 'karty NIE trafiły do grobu');
+});
+
+test('M192/Z2: wariant grobowy (Gurmag Drowner) opisany bez zmian', async () => {
+  const { describeGameEvent } = await import('../src/table/session.js');
+  const helpers = { nameOf: (c) => c, nameOfObject: () => '?', isPlayer: (id) => id === 'human' };
+  const line = String(describeGameEvent({
+    type: 'look_top_resolved', playerId: 'human', count: 4,
+    pickId: 'x', pickCardId: 'bolt', restTo: 'graveyard',
+  }, helpers, { human: 'Ty' }));
+  assert.match(line, /do grobu/, `kontrola anty-over-fix: ${JSON.stringify(line)}`);
+});
+
+test('M192/Z2: SILNIK niesie miejsce reszty w zdarzeniu (nie zgadywanka opisu)', async () => {
+  // Warstwa opisu nie moze rekonstruowac stanu gry — informacje musi wyslac
+  // silnik (L6). Pelna sciezka: efekt -> pendingLookTopN -> resolve -> event.
+  const { createGameState, addObject, execute } = await import('../src/engine/game-state.js');
+  const { applyEffect } = await import('../src/engine/effects.js');
+  const state = createGameState({ seed: 192, players: [{ id: 'p1' }, { id: 'p2' }] });
+  for (let i = 0; i < 3; i += 1) {
+    addObject(state, { id: `lib${i}`, instanceId: `i${i}`, cardId: 'basic-mountain',
+      controllerId: 'p1', ownerId: 'p1', zone: 'library', kind: 'land' });
+  }
+  const source = { id: 'src', controllerId: 'p1', cardId: 'merchants-dockhand', zone: 'battlefield' };
+  applyEffect(state, { type: 'look_top_put_one_hand_rest_bottom', amount: 3 }, source, []);
+  assert.equal(state.pendingLookTopN?.restTo, 'library_bottom', 'silnik zna miejsce reszty');
+  const res = execute(state, { type: 'resolve_look_top_choice', playerId: 'p1', cardId: 'lib0' });
+  assert.ok(res.ok, `komenda przyjęta: ${JSON.stringify(res)}`);
+  const resolved = state.events.find((e) => e.type === 'look_top_resolved');
+  assert.equal(resolved?.restTo, 'library_bottom',
+    'zdarzenie MUSI nieść restTo — inaczej log zgaduje i kłamie');
+});
+
+// ---- Z3: opis efektu pokazywal literalne „X kart" -------------------------
+
+test('M192/Z3: opis efektu podaje LICZBĘ kart, nie literalne „X"', async () => {
+  const { rulesText } = await import('../src/table/render.js');
+  const { createCardRegistry: reg } = await import('../src/cards/card-data.js');
+  const card = reg().get('rediscover-the-way');
+  const text = rulesText({
+    ...card, abilities: card.abilities ?? [], controllerId: 'human',
+  });
+  assert.ok(!/\bX kart/.test(text),
+    `Saga zna liczbę (amount: 3) — „X" to placeholder z kodu: ${JSON.stringify(text)}`);
+});
