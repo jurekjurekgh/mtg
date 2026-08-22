@@ -57,6 +57,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_hand_creature: 'Położenie stwora z ręki',
   resolve_legend_choice: 'Prawo legend (który zostaje?)',
   resolve_trigger_target: 'Cel triggera (wybór)',
+  resolve_grave_free_cast: 'Darmowy rzut z grobu (zapłać {X})',
   resolve_opponent_target: 'Wskaż cel obrażeń (wybór przeciwnika)',
   resolve_optional_trigger_choice: 'Efekt „you may"',
   resolve_enter_as_copy: 'Wejście jako kopia',
@@ -76,8 +77,10 @@ const REASONING_ACTION_LABELS = Object.freeze({
   // M166/D (Inferno Titan).
   resolve_damage_division: 'Podział obrażeń (kwoty)',
   resolve_land_type_choice: 'Wybór typu landa',
+  resolve_library_placement: 'Wierzch czy spód biblioteki',
   resolve_pay_or_sacrifice: 'Zapłata albo poświęcenie',
   resolve_optional_pay_choice: 'Dobrowolna dopłata',
+  resolve_counter_pay_choice: 'Zapłać albo czar skontrowany',
   resolve_moonlit_choice: 'Moonlit (wybór efektu)',
   resolve_damage_target: 'Cel obrażeń',
   resolve_reveal_order: 'Kolejność kart na wierzchu',
@@ -215,6 +218,12 @@ const targetTypeLabel = (spec) => {
   if (type === 'creature_with_subtypes' && spec.subtypes?.length) return `stwór z podtypem ${spec.subtypes.join(' lub ')}`;
   if (type === 'creature_with_power_at_least' && spec.min != null) return `stwór o sile ≥ ${spec.min}`;
   if (type === 'creature_with_keyword' && spec.keyword) return `stwór ze słowem kluczowym ${KEYWORD_LABELS[spec.keyword] ?? spec.keyword}`;
+  // Batch 45 (Unearth): „creature card with mana value 3 or less".
+  if (type === 'creature_card_in_graveyard' && spec.maxManaValue != null) return `karta-stwór w grobie o koszcie ≤ ${spec.maxManaValue}`;
+  // Batch 45 (Assert Perfection): „up to one target creature an opponent
+  // controls" — pozycja opcjonalna (jawnie: 'creature_opponent_controls').
+  if (type === 'creature_opponent_controls' && spec.optional) return `${base} (do jednego, opcjonalnie)`;
+  if (spec.optional) return `${base} (opcjonalnie)`;
   return base;
 };
 
@@ -232,6 +241,10 @@ export function describeSpellEffects(spell) {
       const label = mode.name ?? 'tryb';
       return inner ? `${label}: ${inner}` : label;
     });
+    // M184/Z1: czar z JEDNYM trybem (Sea God's Scorn — modes użyte
+    // technicznie dla variableTargets) to nie jest wybór — prefiks
+    // „wybierz jedno" wprowadzał w błąd; pokazujemy sam opis efektów.
+    if (spell.modes.length === 1) return modeBits[0] ?? '';
     return `wybierz jedno — ${modeBits.join(' / ')}`;
   }
   const parts = (spell.effects ?? []).map((effect) => {
@@ -268,6 +281,13 @@ export function describeSpellEffects(spell) {
 export const OPTION_IGNORABLE_TYPES = Object.freeze([
   'cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape', 'cast_flashback',
   'cast_adventure', 'cast_adventure_creature', 'activate_ability', 'plot_card', 'suspend_card',
+  // M180/Z4 (Żywy Tester): grupa Halo Foragera („Wartość X”) wyciszalna —
+  // wyciszona blokująca decyzja opcjonalna auto-wykonuje decline w advance().
+  'resolve_grave_free_cast',
+  // M186/Z3 (Żywy Tester, ravnica vs innistrad s37): darmowe rzuty z Epic
+  // Experiment („you may cast”) — grupa z wariantem „zakończ” (done: true)
+  // jest wyciszalna jak Halo Forager.
+  'resolve_epic_choice',
 ]);
 
 const ACTION_RANK = Object.freeze({
@@ -314,6 +334,7 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_backup') return 'resolve_backup';
   if (command.type === 'resolve_sacrifice_choice') return 'resolve_sacrifice_choice';
   if (command.type === 'resolve_trigger_target') return 'resolve_trigger_target';
+  if (command.type === 'resolve_grave_free_cast') return 'resolve_grave_free_cast';
   if (command.type === 'resolve_opponent_target') return 'resolve_opponent_target';
   if (command.type === 'resolve_search_choice') return 'resolve_search_choice';
   if (command.type === 'resolve_color_choice') return 'resolve_color_choice';
@@ -346,8 +367,10 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_optional_draw') return 'resolve_optional_draw';
   if (command.type === 'resolve_hand_top_choice') return 'resolve_hand_top_choice';
   if (command.type === 'resolve_land_type_choice') return 'resolve_land_type_choice';
+  if (command.type === 'resolve_library_placement') return 'resolve_library_placement';
   if (command.type === 'resolve_pay_or_sacrifice') return 'resolve_pay_or_sacrifice';
   if (command.type === 'resolve_optional_pay_choice') return 'resolve_optional_pay_choice';
+  if (command.type === 'resolve_counter_pay_choice') return 'resolve_counter_pay_choice';
   if (command.type === 'resolve_moonlit_choice') return 'resolve_moonlit_choice';
   if (command.type === 'resolve_damage_target') return 'resolve_damage_target';
   if (command.type === 'resolve_reveal_order') return 'resolve_reveal_order';
@@ -395,6 +418,7 @@ function choiceRequestType(commands) {
   if (first.type === 'resolve_discard_choice') return 'target';
   if (first.type === 'resolve_hand_top_choice') return 'target';
   if (first.type === 'resolve_land_type_choice') return 'command';
+  if (first.type === 'resolve_library_placement') return 'command';
   if (first.type === 'resolve_pay_or_sacrifice') return 'command';
   if (first.type === 'resolve_optional_pay_choice') return 'command';
   if (first.type === 'resolve_moonlit_choice') return 'command';
@@ -527,9 +551,13 @@ function buildChoiceRequestEntries(commands, view) {
       return { command: real, alsoOffer: entry.group.commands[declineIndex] };
     }
     const first = entry.group.commands[0];
+    // M172/E: multi-target z podziałem obrażeń (Inferno Titan) — zamiast
+    // enumeracji kombinacji celów jeden wizard kwot (jak przydział po walce).
+    const divisionWizard = first.type === 'resolve_trigger_target'
+      && view?.pendingTriggerTarget?.divisionTotal > 0;
     const request = choiceRequest({
       id: `choice-${view.turn.number}-${view.turn.step}-${entry.group.index}-${entry.group.key}`,
-      type: choiceRequestType(entry.group.commands),
+      type: divisionWizard ? 'damage_division' : choiceRequestType(entry.group.commands),
       options: entry.group.commands,
     });
     return { request, first };
@@ -645,7 +673,9 @@ const ABILITY_KEYWORD_LABELS = Object.freeze({
   regenerate: 'Regeneruj tego stwora (następne zniszczenie zostaje odwrócone)',
 });
 
-const KEYWORD_LABELS = Object.freeze({
+export const KEYWORD_LABELS = Object.freeze({
+  intimidate: 'zastraszenie (blok: artefakty/wspólny kolor)',
+  toxic: 'Toksyczny (combat damage graczowi = poison)',
   flying: 'Latanie', vigilance: 'Czujność', transform: 'Transform', reach: 'Zasięg',
   haste: 'Pośpiech', menace: 'Postrach', lifelink: 'Dotykanie życia', deathtouch: 'Dotykanie śmierci',
   trample: 'Zadeptywanie', first_strike: 'Pierwsze uderzenie', hexproof: 'Hexproof (niecelowalność)',
@@ -762,7 +792,8 @@ function describeEffect(e) {
   // „efekt (undefined)" — pomijamy (audyt żywym testerem).
   if (!e || typeof e.type !== 'string' || e.type === '') return '';
   const generic = {
-    pump: () => `${signed(e.power ?? 0)}/${signed(e.toughness ?? 0)} do końca tury`,
+    pump: () => `${signed(e.power ?? 0)}/${signed(e.toughness ?? 0)} do końca tury${e.upgradeIfCreatures ? ` (${signed(e.upgradeIfCreatures.power ?? 0)}/${signed(e.upgradeIfCreatures.toughness ?? 0)} przy ${e.upgradeIfCreatures.min}+ stworach)` : ''}`,
+    exile_if_dies_this_turn: () => 'jeśli miałby umrzeć w tej turze, wygnaj go zamiast tego',
     create_token: () => {
       const count = Number.isFinite(e.amount) && e.amount > 1 ? `×${e.amount} ` : '';
       const dynamicNote = typeof e.amount === 'string' ? ` (${dynamicAmount(e.amount)})` : '';
@@ -786,6 +817,7 @@ function describeEffect(e) {
     surveil: () => `surveil ${e.amount ?? 1}`,
     clash: () => 'clash',
     take_initiative: () => 'obejmij inicjatywę',
+    pay_x_cast_from_graveyard: () => 'możesz zapłacić {X} i rzucić instant/sorcery o MV X z dowolnego grobu za darmo (potem wygnanie)',
     draw_cards: () => `dobierz ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')}`,
     lose_life: () => `utrata ${e.amount ?? 1} życia`,
     pay_mana: () => `zapłać ${e.amount} many`,
@@ -793,6 +825,9 @@ function describeEffect(e) {
     return_permanent_from_graveyard: () => `wróć nonland permanent z grobu${e.finalityCounter ? ' z finality' : ''}`,
     transform: () => 'transform (obróć kartę)',
     scry: () => `scry ${e.amount ?? 1}`,
+    search_library_two_cards_hand_and_grave: () => 'przeszukaj bibliotekę: jedna karta do ręki, druga do grobu, potem tasowanie',
+    owner_library_top_or_bottom: () => 'właściciel celu kładzie go na wierzch albo spód swojej biblioteki (jego wybór)',
+    detain: () => 'detain — do twojej następnej tury cel nie atakuje, nie blokuje i nie aktywuje zdolności',
     sacrifice_permanent: () => 'poświęć ten permanent',
     grant_keywords_until_end_of_turn: () => `zdobądź ${(e.keywords ?? []).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')} do końca tury`,
     // M73c: pełna mapa pozostałych typów — koniec „efekt." i surowych slugów.
@@ -807,6 +842,7 @@ function describeEffect(e) {
     become_basic_land_type: () => 'stań się podstawowym lądem',
     bounce_permanent: () => 'wróć na rękę właściciela',
     bounce_to_library_top: () => 'włóż na wierzch biblioteki właściciela',
+    bounce_to_library_bottom: () => 'włóż na spód biblioteki właściciela',
     buff_creatures_you_control: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla twoich stworów do końca tury`,
     buff_creature_until_end_of_turn: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} do końca tury`,
     buff_land_creatures: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla land creatures do końca tury`,
@@ -817,6 +853,7 @@ function describeEffect(e) {
     cloak: () => 'cloak (wierzch biblioteki twarzą w dół jako 2/2)',
     control_to_owners_all_creatures: () => 'kontrola stworów wraca do właścicieli',
     counter_spell: () => 'skontruj czar',
+    counter_spell_unless_pays: (effect) => `skontruj czar, chyba że kontroler zapłaci {${effect?.amount ?? 1}}; ten gracz odrzuca kartę`,
     fireball_resolve: () => 'X obrażeń podzielone po równo między cele',
     craft_transform: () => 'craft — transform',
     damage_defending_player: () => `${damageCount(dynamicAmount(e.amount))} obrońcy`,
@@ -868,7 +905,13 @@ function describeEffect(e) {
     // M166/D (Inferno Titan).
     damage_divided: () => 'obrażenia dzielone między cele',
     becomes_subtype_until_end_of_turn: () => 'zmiana podtypu i utrata keyworda do końca tury',
-    apply_to_each_target: () => 'ten sam efekt na każdym z celów',
+    // M184/Z1 (Żywy Tester): „ten sam efekt na każdym z celów" nie mówił,
+    // CO się stanie (Sea God's Scorn wyglądał na pustą kartę) — opisujemy
+    // efekty WEWNĘTRZNE rekurencyjnie.
+    apply_to_each_target: () => {
+      const inner = (e.effects ?? []).map((ie) => describeEffect(ie)).filter(Boolean).join(' + ');
+      return inner ? `${inner} (każdy z celów)` : 'ten sam efekt na każdym z celów';
+    },
     reveal_subtype_deal_damage: () => 'możesz ujawnić kartę z ręki — obrażenia przeciwnika',
     next_spell_discount: () => 'następny czar podtypu tańszy w tej turze',
     return_card_from_graveyard_to_hand: () => 'zwrot karty z grobu do ręki',
@@ -879,7 +922,14 @@ function describeEffect(e) {
     graveyard_creatures_to_library_top_choice: () => 'karty z grobu na wierzch biblioteki',
     index_look: () => 'zobacz wierzch biblioteki (Index)',
     look_top_put_one_hand_rest_grave: () => 'zobacz wierzch biblioteki, jedną do ręki, resztę do grobu',
-    reveal_top_pick_land_rest_grave: () => 'odsłoń wierzch, możesz wziąć ląd do ręki, resztę do grobu',
+    look_top_put_one_hand_rest_bottom: () => 'zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki',
+    // M184/Z2: opis niósł ani liczby kart, ani nagrody za odmowę
+    // (Blanchwood Prowler: licznik +1/+1) — gracz nie znał stawki decyzji.
+    reveal_top_pick_land_rest_grave: () => {
+      const n = e.amount ?? 4;
+      const base = `odsłoń ${n} ${polishPluralCount(n, 'kartę', 'karty', 'kart')} z wierzchu: możesz wziąć ląd do ręki, reszta do grobu`;
+      return e.counterIfNone ? `${base}; bez wzięcia lądu: licznik +1/+1` : base;
+    },
     epic_experiment: () => 'wygnaj wierzch biblioteki i rzuć czary bez kosztu',
     mill_both_players: () => `mieli po ${e.amount ?? 1} karcie z biblioteki każdy gracz`,
     mill_cards: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} (do grobu)`,
@@ -944,6 +994,8 @@ function describeEffect(e) {
     attach_equipment_to_source: () => 'przyczep ekwipunek do tego stwora',
     damage_creatures_with_keyword: () => `${damageCount(e.amount ?? 1)} stworom z „${e.keyword ?? '?'}”`,
     damage_from_target_power: () => 'obrażenia równe mocy stwora',
+    damage_from_enchanted_power: () => 'zaczarowany stwór zadaje obrażenia równe swojej mocy',
+    fight: () => 'walka: stwory zadają sobie nawzajem obrażenia równe mocy',
     endure_x: () => 'endure X (liczniki +1/+1 albo token Spirit)',
     grant_protection_until_end_of_turn: () => 'ochrona do końca tury',
     incubate: () => `inkubuj ${e.amount ?? 1}`,
@@ -976,7 +1028,13 @@ const NON_MANA_COST_LABELS = Object.freeze([
   ['tapOtherCreature', 'tapnij innego swojego stwora'],
   ['exileFromGraveyard', 'wygnaj tę kartę z grobu'],
   ['payLifeX', 'zapłać X życia'],
+  // M177/E (Merchant's Dockhand): koszt „Tap X untapped artifacts you control”.
+  ['tapXArtifacts', 'tapnij X swoich nietapniętych artefaktów'],
   ['crewPower', (n) => `załoga ${n}`],
+  // Batch 44 (Heap Gate): koszt „Tap an untapped Gate you control".
+  ['tapUntappedSubtype', (sub) => `tapnij inny nietapnięty permanent (${sub})`],
+  // Batch 44 (Angel's Herald): koszt „Sacrifice a green/white/blue creature".
+  ['sacrificeCreaturesByColors', (colors) => `poświęć stwory kolorów: ${(colors ?? []).join('/')}`],
   ['saddlePower', (n) => `saddle ${n}`],
   ['removeCounter', (c) => {
     const amount = c.amount ?? 1;
@@ -1203,8 +1261,18 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   if (trigger.event === 'enchanted_creature_damage_to_opponent') return `Gdy zaczarowany stwór zada obrażenia przeciwnikowi: ${parts}.`;
   if (trigger.event === 'any_combat_damage_to_player') return `Gdy ${mine ? 'jeden z twoich stworów' : 'stwór kontrolera'} zada obrażenia bojowe graczowi: ${parts}.`;
   if (trigger.event === 'card_put_into_graveyard_from_nonbattlefield') return `Gdy karta trafia do grobu spoza pola bitwy: ${parts}.`;
+  if (trigger.event === 'cards_exiled_from_your_graveyard') return `Ilekroć karty trafiają na wygnanie z twojego grobu: ${parts}.`;
   if (trigger.event === 'spell_targets_this_creature') return `Gdy czar celuje w tę kartę: ${parts}.`;
-  if (trigger.event === 'another_creature_enters') return `Gdy inny stwór wchodzi na pole bitwy: ${parts}.`;
+  if (trigger.event === 'another_creature_enters') {
+    // M186/Z4 (Żywy Tester, g7): Ivy Lane Denizen — filtry triggera
+    // (youControl, colorsInclude) muszą być w opisie, inaczej kafel obiecuje
+    // trigger od KAŻDEGO stwora (Oracle: „another green creature you control").
+    const colorNames = { W: 'biały', U: 'niebieski', B: 'czarny', R: 'czerwony', G: 'zielony' };
+    const colorPart = trigger.colorsInclude?.length
+      ? ` ${trigger.colorsInclude.map((c) => colorNames[c] ?? c).join('/')}` : '';
+    const controlPart = trigger.youControl ? ' pod twoją kontrolą' : '';
+    return `Gdy inny${colorPart} stwór${controlPart} wchodzi na pole bitwy: ${parts}.`;
+  }
   // M100/E10 (P7 — Żywy Tester h08/h13): mentor ma efekt [] (obsługiwany
   // przez wizard resolve_mentor_target) — bez zdania efektu wychodziło
   // „Gdy ten stwór atakuje jako mentor: ." (fallback niżej był nieosiągalny).
@@ -1250,7 +1318,7 @@ export function rulesText(info) {
   const plotLine = info.plot ? `Plot {${info.plot.cost ?? '?'}}: wygnaj z ręki, później rzuć bez kosztu` : '';
   const equip = info.equipment;
   const equipLine = equip
-    ? `Equip {${equip.equip ?? '?'}}${(equip.keywords ?? []).length ? ` — nosiciel: ${(equip.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : ''}${equip.pump ? ` ${signed(equip.pump.power ?? 0)}/${signed(equip.pump.toughness ?? 0)}` : ''}`
+    ? `Equip {${equip.equip ?? '?'}}${(equip.keywords ?? []).length ? ` — nosiciel: ${(equip.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : ''}${equip.pump ? ` ${signed(equip.pump.power ?? 0)}/${signed(equip.pump.toughness ?? 0)}` : ''}${equip.cantBeBlockedMaxPower != null ? ` — nosiciel o mocy ≤${equip.cantBeBlockedMaxPower} nie może być blokowany` : ''}`
     : '';
   const morphLine = info.morph && info.morph.megamorphCost != null
     ? `Megamorph {${info.morph.megamorphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt Megamorph (+1/+1)`
@@ -1273,6 +1341,15 @@ export function rulesText(info) {
       // słowo nie padało ani razu. Ten sam bug co M100/E10 (pusty opis aury),
       // tylko dla przeciwnego znaku efektu.
       (aura.losesKeywords ?? []).length ? `stwór traci: ${aura.losesKeywords.map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : '',
+      // M174/D (Predator's Gambit): warunkowe keywordy aury — opis warunku
+      // po deskryptorze (dziś: brak innych stworów kontrolera).
+      ...(aura.conditionalKeywords ?? []).map((ck) => {
+        const kws = (ck.keywords ?? []).map((k) => KEYWORD_LABELS[k] ?? k).join(', ');
+        const cond = ck.condition?.controlsNoOtherCreatures ? 'gdy kontroler nie ma innych stworów'
+          : ck.condition?.activePlayerIsController === true ? 'w turze kontrolera'
+          : ck.condition?.activePlayerIsController === false ? 'poza turą kontrolera' : 'warunkowo';
+        return `${kws} (${cond})`;
+      }),
       // M138 (znalezisko #11, złapane już przez NOWY detektor w audycie
       // kontrolnym): pozostałe deskryptory aury też są treścią karty. Moonlit
       // Meditation miała kafel „Enchantment — Aura” i nic więcej, mimo że
@@ -1323,6 +1400,8 @@ const CHOICE_GROUP_TYPE_DESCRIPTORS = Object.freeze({
   declare_attackers: 'Deklaracja atakujących',
   declare_blockers: 'Deklaracja blokujących',
   damage_assignment: 'Rozdzielenie obrażeń bojowych',
+  // M172/E: wizard podziału obrażeń między cele (Inferno Titan).
+  damage_division: 'Podział obrażeń między cele',
   scry: 'Scry — co odłożyć na spód?',
   surveil: 'Surveil — karty do grobu',
   index: 'Index — kolejność na wierzchu biblioteki',
@@ -1343,6 +1422,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_springbloom: 'Springbloom Druid — land do poświęcenia',
   resolve_backup: 'Backup — który stwór dostaje liczniki?',
   resolve_trigger_target: 'Cel wyzwalonej zdolności',
+  resolve_grave_free_cast: 'Rzut z grobu za {X} (Halo Forager)',
   resolve_delirium_target: 'Delirium — cel obrażeń',
   resolve_mentor_target: 'Mentor — kto dostaje licznik?',
   resolve_graveyard_top_choice: 'Karta z grobu na wierzch biblioteki',
@@ -1368,8 +1448,10 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_enter_as_copy: 'Wejście jako kopia — który Ally?',
   resolve_destroy_equipment_choice: 'Zniszczyć equipment?',
   resolve_land_type_choice: 'Typ landa',
+  resolve_library_placement: 'Wierzch czy spód biblioteki',
   resolve_pay_or_sacrifice: 'Zapłata albo poświęcenie',
   resolve_optional_pay_choice: 'Dobrowolna dopłata',
+  resolve_counter_pay_choice: 'Zapłać albo czar skontrowany',
   resolve_moonlit_choice: 'Moonlit — wybór efektu',
   resolve_reveal_order: 'Kolejność kart na wierzchu biblioteki',
 });
@@ -1384,7 +1466,16 @@ function choiceSourceTitle(cmd, session, view) {
   // go wywołała. Komendy resolve_* nie niosą objectId — źródło czytamy
   // z oczekujących decyzji w widoku (publiczna informacja stołowa).
   if (cmd?.type === 'resolve_trigger_target' && view?.pendingTriggerTarget?.cardId) {
-    return `${session.nameOf(view.pendingTriggerTarget.cardId)} — cel triggera`;
+    const pt = view.pendingTriggerTarget;
+    const base = session.nameOf(pt.cardId);
+    // M172/B (uwaga właściciela): rozdział Sagi przedstawia się TYTUŁEM
+    // z Oracle i opisem efektu — „Shiva… — Mesmerize: nie może być
+    // blokowany (cel)" zamiast generycznego „cel triggera".
+    if (pt.chapterName) {
+      const label = describeEffect({ type: pt.effectType });
+      return label ? `${base} — ${pt.chapterName}: ${label} (cel)` : `${base} — ${pt.chapterName}: cel triggera`;
+    }
+    return `${base} — cel triggera`;
   }
   if (cmd?.type === 'resolve_modal_choice' && view?.pendingModalTrigger?.cardId) {
     return `${session.nameOf(view.pendingModalTrigger.cardId)} — wybór trybu`;
@@ -1468,6 +1559,13 @@ export function choiceGroupTitle(request, session, view) {
 }
 
 export function choiceGroupLabel(request, session, view) {
+  // M172/E: wizard podziału obrażeń — liczba enumerowanych kombinacji to
+  // szum („(33 opcje)"); wpis panelu opisuje CZYNNOŚĆ, nie licznik ofert.
+  if (request?.type === 'damage_division') {
+    const total = view?.pendingTriggerTarget?.divisionTotal;
+    const src = view?.pendingTriggerTarget?.cardId ? session.nameOf(view.pendingTriggerTarget.cardId) : null;
+    return `${src ? `${src} — ` : ''}podziel ${total ?? '?'} ${total === 1 ? 'obrażenie' : (total >= 2 && total <= 4 ? 'obrażenia' : 'obrażeń')} między cele`;
+  }
   const count = (request?.options ?? []).length;
   return `${choiceGroupTitle(request, session, view)} (${optionsCountLabel(count)})`;
 }
@@ -1584,7 +1682,13 @@ export function commandLabel(cmd, session, view) {
     // M155 (audyt żywym testerem): tokeny niosą jawną nazwę (object.name);
     // cardId `token_*` jest poza rejestrem, więc session.nameOf zwracałby
     // surowy id („token_squirrel").
-    const tokenName = object?.isToken ? (object.name ?? null) : null;
+    // M172/D: token-kopia z numerem — „Nazwa (kopia N)" w etykietach celów.
+    // M180/Z2: obrona w głąb — token rozpoznajemy też po cardId `token_*`
+    // (gdyby któraś ścieżka widoku znowu zgubiła flagę isToken).
+    const looksLikeToken = object?.isToken || String(object?.cardId ?? '').startsWith('token_');
+    const tokenName = looksLikeToken && object?.name != null
+      ? (object.copyNumber ? `${object.name} (kopia ${object.copyNumber})` : object.name)
+      : null;
     const base = object
       ? (object.faceDown
         ? faceDownName(object.cardId != null ? session.nameOf(object.cardId) : null)
@@ -1705,7 +1809,9 @@ export function commandLabel(cmd, session, view) {
       return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)})`;
     }
     case 'cast_spell': {
-      const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
+      // M186/Z2 (Assert Perfection): pozycja „up to one target" bez celu to
+      // null — pomijamy ją w etykiecie zamiast pokazywać „?".
+      const targets = (cmd.targets ?? []).filter((id) => id != null).map((id) => nameOfObjectId(id)).join(', ');
       // Modal "Choose one" (M30 Aerith, Your Temple, Ruinous Rampage, You're
       // Confronted by Robbers): gdy komenda niesie modeIndex, a tryb ma
       // własną nazwę (spell.modes[modeIndex].name), doklej ją po nazwie karty,
@@ -1758,8 +1864,16 @@ export function commandLabel(cmd, session, view) {
     }
     case 'cast_adventure': {
       const card = obj(cmd.objectId);
-      const adv = card?.adventure ?? {};
-      const advCost = manaCostHtml(`${adv.cost != null ? `{${adv.cost}}` : ''}${(adv.colors ?? []).map((c) => `{${c}}`).join('')}`);
+      // M173/A: deskryptor przygody z obiektu widoku ALBO rejestru (obiekt
+      // w exile po rzucie przygody niesie tylko id+cardId).
+      const adv = card?.adventure ?? (card?.cardId ? session.cardDetails(card.cardId)?.adventure : null) ?? {};
+      // adv.cost to PEŁNA wartość many (mana value) — część generyczna to
+      // cost − liczba pipów ({1}{B} dla cost 2 + ['B'], nie {2}{B}).
+      const advPips = adv.colors ?? [];
+      const advGeneric = adv.cost != null ? Math.max(0, adv.cost - advPips.length) : null;
+      const advCost = adv.cost != null
+        ? manaCostHtml(`${advGeneric > 0 || advPips.length === 0 ? `{${advGeneric}}` : ''}${advPips.map((c) => `{${c}}`).join('')}`)
+        : '?';
       return `Przygoda: ${nameOfObjectId(cmd.objectId)} (koszt ${advCost})`;
     }
     case 'cast_adventure_creature': {
@@ -1909,6 +2023,12 @@ export function commandLabel(cmd, session, view) {
       const COLOR_LABELS = { W: 'Biały (W)', U: 'Niebieski (U)', B: 'Czarny (B)', R: 'Czerwony (R)', G: 'Zielony (G)' };
       return `Kolor: ${COLOR_LABELS[cmd.color] ?? cmd.color}`;
     }
+    case 'resolve_library_placement': {
+      // M177/D (Vanish from Sight): dwa warianty właściciela celu.
+      return cmd.placement === 'top'
+        ? 'Na WIERZCH twojej biblioteki (odzyskasz najbliższym dobraniem)'
+        : 'Na SPÓD twojej biblioteki';
+    }
     case 'resolve_land_type_choice': {
       // M163/A: warianty typu landa — j.w. (identyczne etykiety).
       const LAND_LABELS = { Plains: 'Równina (Plains)', Island: 'Wyspa (Island)', Swamp: 'Bagna (Swamp)', Mountain: 'Góry (Mountain)', Forest: 'Las (Forest)' };
@@ -1976,6 +2096,14 @@ export function commandLabel(cmd, session, view) {
       const price = cmd.cost != null && cmd.cost > 0 ? manaCostHtml(`{${cmd.cost}}`) : null;
       if (cmd.pay) return `Zapłać${price ? ` ${price}` : ''}${source ? ` (zachowaj ${source})` : ''}`;
       return `Poświęć${source ? ` ${source}` : ' permanent'} (bez płacenia)`;
+    }
+    case 'resolve_counter_pay_choice': {
+      // Batch 44 (Frightful Delusion): zapłać {N}, żeby czar NIE został
+      // skontrowany — albo odpuść (czar do grobu). Obie opcje z ceną i celem.
+      const spell = cmd.targetId ? nameOfObjectId(cmd.targetId) : 'czar';
+      const price = cmd.cost != null && cmd.cost > 0 ? manaCostHtml(`{${cmd.cost}}`) : null;
+      if (cmd.pay) return `Zapłać${price ? ` ${price}` : ''} — ${spell} zostaje na stosie`;
+      return `Nie płać — ${spell} zostaje skontrowany`;
     }
     case 'resolve_food_choice': {
       // Insatiable Appetite: poświęć Food za większy buff albo nie.
@@ -2077,6 +2205,13 @@ export function commandLabel(cmd, session, view) {
       });
       return parts.length > 0 ? `Podziel obrażenia — ${parts.join(', ')}` : 'Podział obrażeń';
     }
+    case 'resolve_grave_free_cast': {
+      // M174/E: oferta nazywa kartę, koszt X i cele — inaczej N wpisów
+      // wygląda identycznie (L29).
+      if (cmd.decline || cmd.objectId == null) return 'Zrezygnuj (nie płać {X})';
+      const gfcTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
+      return `Rzuć z grobu za {${cmd.xValue ?? '?'}}: ${cmd.cardId ? escapeHtml(session.nameOf(cmd.cardId)) : nameOfObjectId(cmd.objectId)}${gfcTargets ? ` → cel: ${gfcTargets}` : ''}`;
+    }
     case 'resolve_madness_cast': {
       // M159/F4 (audyt PR #66): oferta niesie objectId (karta w exile —
       // strefa publiczna) i cardId; etykieta ma NAZYWAĆ kartę, nie „?".
@@ -2094,7 +2229,13 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_satyr_look_choice': {
       // Satyr Wayfinder — wybierz ląd z odsłoniętych do ręki albo zrezygnuj.
-      if (cmd.pickId == null) return 'Nie bierz lądu (reszta do grobu)';
+      // M184/Z3: przy Blanchwood Prowler odmowa DAJE licznik +1/+1 —
+      // opcja musi to mówić (komenda niesie counterIfNone z pendingu).
+      if (cmd.pickId == null) {
+        return cmd.counterIfNone
+          ? 'Nie bierz lądu (reszta do grobu, stwór dostaje +1/+1)'
+          : 'Nie bierz lądu (reszta do grobu)';
+      }
       // M152 (audyt żywym testerem): karty odsłoniętej biblioteki są w
       // PlayerView ukryte (hidden:true, bez cardId) — nameOfObjectId zwracał
       // „?". Satyr Wayfinder odsłania WŁASNE karty (gracz je zna), więc nazwę
@@ -2282,7 +2423,9 @@ function combatRoleOf(object, combat, session) {
   return null;
 }
 
-function cardInfo(session, object, combat = null) {
+// M175/A3: eksport dla testów pełnej ścieżki badge (m168 testował TYLKO
+// buildStateOverlay z ręcznie zbudowanym `info` i przeoczył martwą różnicę).
+export function cardInfo(session, object, combat = null) {
   const cardId = object.cardId;
   const faceDown = Boolean(object.faceDown);
   // M100/E12 (pytanie właściciela): WŁASNY zakryty permanent pokazuje
@@ -2306,7 +2449,8 @@ function cardInfo(session, object, combat = null) {
     // — własny z nazwą i znacznikiem (E12), wrogi bezimienny (FoW, CR 708.2).
     name: faceDown
       ? (ownFaceDown ? session.nameOf(object.cardId) : 'Face-down creature')
-      : (object.name || session.nameOf(cardId)),
+      // M172/D: kafel kopii pokazuje „Nazwa (kopia N)" — rozróżnialna od oryginału.
+      : (object.name ? (object.copyNumber ? `${object.name} (kopia ${object.copyNumber})` : object.name) : session.nameOf(cardId)),
     // M127 (uwaga A): znacznik z jednego źródła — „zakryty (Morph)" dla
     // własnego permanentu, sama nazwa mechaniki dla cudzego (FoW).
     morphBadge: faceDown ? (ownFaceDown ? `zakryty (${FACE_DOWN_LABEL})` : FACE_DOWN_LABEL) : null,
@@ -2324,15 +2468,20 @@ function cardInfo(session, object, combat = null) {
     attachedAura,
     attachedEquipment,
     keywords: keywordsNow,
-    // M168/B (uwaga właściciela): AKTYWNE zmiany na kafelu jako badge'e —
-    // granted keywords liczymy z EFEKTYWNYCH (statyki warunkowe jak Gray
-    // Slaad, granty do EOT, załączniki, anthemy) minus wydrukowane.
-    grantedKeywords: faceDown ? [] : (session.effectiveKeywordsOf
-      ? session.effectiveKeywordsOf(object).filter((kw) => !keywordsNow.includes(kw))
-      : []),
+    // M168/B (uwaga właściciela): AKTYWNE zmiany na kafelu jako badge'e.
+    // M175/A3: nadane keywordy jedzie JAWNIE z playerView (`grantedKeywords`
+    // = efektywne − wydrukowane ze stanu) — stara różnica „effectiveKeywordsOf
+    // − keywordsNow" była zawsze pusta, bo widok wysyła keywordy EFEKTYWNE
+    // (obie strony zawierały grant) i badge nigdy się nie pokazywał.
+    grantedKeywords: faceDown ? [] : [...(object.grantedKeywords ?? [])],
     lostKeywordsUntilEOT: faceDown ? [] : [...(object.lostKeywordsUntilEOT ?? [])],
     cantBlockNow: Boolean(object.cantBlock),
     cantBeBlockedNow: Boolean(object.cantBeBlocked),
+    // M173/C: czasowe stany z widoku (saddle/untap-lock/kontrola/regeneracja).
+    saddledNow: Boolean(object.saddled),
+    untapLockedNow: Boolean(object.untapLocked || object.dontUntapNextUntapStep),
+    tempControlNow: Boolean(object.tempControlUntilEOT),
+    cantRegenerateNow: Boolean(object.cantBeRegeneratedThisTurn),
     manaCost: faceDown ? null : (details.manaCost ?? object.manaCost ?? null),
     power: object.power ?? details.power,
     toughness: object.toughness ?? details.toughness,
@@ -2348,6 +2497,7 @@ function cardInfo(session, object, combat = null) {
     // (playerView liczy effectiveKeywords — z grantami i załącznikami).
     summoningSickness: Boolean(object.summoningSickness) && !keywordsNow.includes('haste'),
     goaded: Boolean(object.goaded),
+    detained: Boolean(object.detained),
     damage: object.damage || 0,
     // A (2026-08-11): liczniki (np. +1/+1, oil, charge, lore) pokazane na karcie.
     counters: object.counters ?? {},
@@ -2573,6 +2723,8 @@ export function buildStateOverlay(visual, info) {
     // z nazwą, wrogi jako „morph") — na stole żywy stan jest na nakładce.
     if (info.faceDown) flags.push(['morph', info.morphBadge ?? FACE_DOWN_LABEL]);
     if (info.goaded) flags.push(['goad', 'goad']);
+    // M177/E (CR 701.29): detain — nie atakuje, nie blokuje, bez aktywacji.
+    if (info.detained) flags.push(['kw', 'zatrzymany (detain)']);
     // M168/B: AKTYWNE zmiany — badge tekstowy, póki efekt działa.
     for (const kw of info.grantedKeywords ?? []) {
       flags.push(['kw', `${KEYWORD_LABELS[kw] ?? kw}`]);
@@ -2582,6 +2734,12 @@ export function buildStateOverlay(visual, info) {
     }
     if (info.cantBlockNow) flags.push(['kw', 'nie może blokować']);
     if (info.cantBeBlockedNow) flags.push(['kw', 'nie do zablokowania']);
+    // M173/C: pozostałe czasowe stany z efektów — audyt na wniosek
+    // właściciela (Panic Spellbomb — klasa objęta już przez cantBlockNow).
+    if (info.saddledNow) flags.push(['kw', 'osiodłany']);
+    if (info.untapLockedNow) flags.push(['kw', 'nie odtapuje się']);
+    if (info.tempControlNow) flags.push(['kw', 'kontrola do końca tury']);
+    if (info.cantRegenerateNow) flags.push(['kw', 'bez regeneracji']);
     {
       const pMod = Number(info.powerMod ?? 0);
       const tMod = Number(info.toughMod ?? 0);
@@ -2873,7 +3031,10 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   if (view.status !== 'active') {
     const winner = view.players.find((p) => p.id === view.winnerId);
     // CR 104.4b: remis nie ma zwycięzcy — bez tego baner pokazywał „wygrywa: ?".
-    const outcome = view.isDraw ? 'REMIS (obaj gracze przegrali jednocześnie)' : `wygrywa: ${winner?.name ?? '?'}`;
+    // M172/A: informacja „kto wygrał" używa nazw panelu (Gracz/Bot) —
+    // „wygrywa: Ty" to zła odmiana (decyzja właściciela).
+    const winnerLabel = winner?.name === 'Ty' ? 'Gracz' : winner?.name === 'Nieprzyjaciel' ? 'Bot' : (winner?.name ?? '?');
+    const outcome = view.isDraw ? 'REMIS (obaj gracze przegrali jednocześnie)' : `wygrywa: ${winnerLabel}`;
     div(els.banner, 'gameover', `Koniec gry — ${outcome} (seed ${session.state.seed})`);
   }
 

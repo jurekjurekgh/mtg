@@ -174,6 +174,7 @@ test('Curiosity: zaczarowany stwór zadaje damage przeciwnikowi -> you may draw'
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['host'] }).ok);
   const nb = playerView(state, 'p2').legalCommands.find((c) => c.type === 'declare_blockers');
   execute(state, nb);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   // p1 resolve_combat -> niezablokowany host trafia p2
   const rc = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_combat');
   const r2 = execute(state, rc);
@@ -439,8 +440,8 @@ test('Warmaker Gunship: ETB zadaje obrażenia = liczba artefaktów kontrolera', 
 test('Batch 29: partia botów (black vs green) kończy się rozstrzygnięciem i jest deterministyczna', () => {
   const registry = createCardRegistry();
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/black.txt', 'utf8'), registry).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/green.txt', 'utf8'), registry).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/dominaria.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), registry).cardIds],
   ]);
   const play = (seed) => {
     const session = createSession({ seed, registry, decks });
@@ -589,6 +590,7 @@ test('Audyt B4: zakryty stwór z flying counterem może blokować flyera', () =>
   state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['att'] }).ok);
   const r = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { att: ['cloakfd'] } });
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(r.ok, 'zakryty z flying counterem blokuje flyera: ' + (r.events?.[0]?.reason ?? ''));
 });
 

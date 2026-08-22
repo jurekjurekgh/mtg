@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Vanish%20from%20Sight&set=dsk",
+  "print": "Vanish from Sight (DSK)",
+  "name": "Vanish from Sight",
+  "mana_cost": "{3}{U}",
+  "cmc": 4.0,
+  "type_line": "Instant",
+  "oracle_text": "Target nonland permanent's owner puts it on their choice of the top or bottom of their library. Surveil 1. (Look at the top card of your library. You may put it into your graveyard.)",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Surveil"
+  ],
+  "set": "dsk",
+  "collector_number": "82",
+  "rarity": "common",
+  "pobrano": "2026-08-22",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/2/5254988b-3113-42f7-b751-517ffb3b40f0.jpg?1783909486",
+    "normal": "https://cards.scryfall.io/large/front/5/2/5254988b-3113-42f7-b751-517ffb3b40f0.jpg?1783909486"
+  }
+}

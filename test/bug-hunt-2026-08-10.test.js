@@ -95,6 +95,7 @@ test('Sherlock 1b: Trestle Troll ma prawdziwy reach — może blokować latając
   const atk = execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['moogle'] });
   assert.ok(atk.ok, 'moogle atakuje: ' + (atk.events?.[0]?.reason ?? ''));
   const blk = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { moogle: ['troll'] } });
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(blk.ok, 'troll z reach blokuje latającego (CR 702.17): ' + (blk.events?.[0]?.reason ?? ''));
 });
 
@@ -110,6 +111,7 @@ test('Sherlock 1c: Deadly Recluse ma prawdziwy deathtouch — 1 punkt obrażeń 
   addRealCard(state, 'mauler', 'gloomfang-mauler', 'p2', 'battlefield');
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['recluse'] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { recluse: ['mauler'] } }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const r = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.ok(r.ok, r.events?.[0]?.reason ?? '');
   const maulerZone = state.objects.get('mauler')?.zone ?? 'moved';
@@ -130,6 +132,7 @@ test('Sherlock 1d: Goblin Deathraiders mają prawdziwy trample — nadmiar nad l
   addRealCard(state, 'bear', 'highland-game', 'p2', 'battlefield'); // 2/1
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['raiders'] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { raiders: ['bear'] } }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const lifeBefore = state.players.find((p) => p.id === 'p2').life;
   const r = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.ok(r.ok, r.events?.[0]?.reason ?? '');
@@ -175,7 +178,7 @@ const KNOWN_KEYWORDS = new Set([
   'flying', 'trample', 'vigilance', 'haste', 'first_strike', 'double_strike', 'daybound', 'nightbound', 'saddle',
   'lifelink', 'deathtouch', 'menace', 'hexproof', 'indestructible', 'reach',
   'defender', 'flash', 'persist', 'infect', 'changeling', 'morph', 'transform',
-  'level_up', 'exalted', 'station', 'devoid',
+  'level_up', 'exalted', 'station', 'devoid', 'toxic',
 ]);
 
 test('Sherlock strażnik: każdy keyword w registry to mały snake_case z listy obsługiwanych', () => {

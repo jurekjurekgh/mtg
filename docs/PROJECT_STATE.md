@@ -1,7 +1,364 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-20 (M162: uwagi właściciela A/B/C — talie „Zapisz jako...", Bell bota, modal Ratsów)
-- **Poprzednia:** 2026-08-20 (M161: audyt PR #67 + gotowość madness na czary — routing po kind)
+- **Ostatnia aktualizacja:** 2026-08-22 (M186: pętla jakości Żywym Testerem po Batchu 45 — Z1–Z4; 9. reset workspace odzyskany)
+- **Poprzednia:** 2026-08-22 (M185: Batch 45 — 10 kart; fight, toxic, optional targets, enchant creature you control)
+
+
+## M186 — pętla jakości Żywym Testerem: Batch 45 (2026-08-22, PR #69)
+
+Plan: `docs/plans/PLAN_2026-08-22-m186-petla-jakosci-batch45.md`.
+12 zapisów w `tools/table-tester/audyt-m186/`; po drodze 9. RESET
+workspace (odzyskany: reset --mixed na origin, pliki z commitów,
+przestarzałe kopie working tree odrzucone). Naprawy: Z1 (martwa walidacja
+wizarda bloków — cantAttackAlone/cantBlockAlone JAWNIE w widoku, klasa
+L48/L1), Z2 (null celów optional bez „?" w etykietach + detektor
+game_over), Z3 (grupa Epic Experiment wyciszalna; done: true jak
+decline/skip — klasa M180/Z4), Z4 (opis another_creature_enters z
+filtrami kolor/kontrola — Ivy Lane Denizen). Weryfikacje v2/v3 = 0
+zgłoszeń. Testy: m186-petla-jakosci (4).
+
+**Stan:** `test:all` **2754/2754**, build **52 moduły / 2390.0 kB**,
+benchmark regresji bota w progach.
+
+
+## M185 — Batch 45: 10 kart właściciela (2026-08-22, PR #69)
+
+Plan: `docs/plans/PLAN_2026-08-22-m185-batch45.md`. Karty: Ghost Warden
+({T}: +1/+1), Doomed Dissenter (dies→Zombie), Patron of the Arts
+(enters+dies→Treasure), Unearth (return mv≤3 z grobu — NOWE: maxManaValue
+w creature_card_in_graveyard, oferta+walidacja+etykieta; Cycling {2}),
+Call the Mountain Chocobo (tutor Mountain + token Bird z landfall +1/+0;
+Flashback {5}{R}), Ivy Lane Denizen (NOWE: filtry youControl/colorsInclude
+na another_creature_enters + requiresTarget), Malamet Battle Glyph (NOWY
+efekt `fight` CR 701.12 — moce liczone PRZED zadaniem; add_counter z
+onlyIfTargetEnteredThisTurn), Assert Perfection (NOWE: `optional: true`
+w spell.targets — „up to one target", enumeracja z null + null-safe
+eventy), Crawling Chorus (NOWY keyword `toxic N` CR 702.180 — pole przez
+cały łańcuch registry→identity→materialize→tokens→addObject, L48/L21;
+combat damage graczowi → N poison DODATKOWO; dies→Mite toxic 1 can't
+block), Pain for All (NOWE: aura `enchantType: creature_you_control`;
+ETB damage_from_enchanted_power w any_target z excludeAttachedHost; NOWY
+trigger `enchanted_creature_dealt_damage` na aurze → damage_each_opponent
+amountFrom damageAmount, źródłem HOST). Naprawa procesu: blok oferty aury
+wstawiony w castAuraSpell zamiast legalAuraCasts (ten sam pattern w dwóch
+funkcjach) — rozdzielone. Strażnik artId 350→360; testy batch45-kart (13);
+seed session-abilities 2→1.
+
+**Stan:** `test:all` **2750/2750**, build **52 moduły / 2387.8 kB**,
+benchmark regresji bota w progach.
+
+
+## M184 — pętla jakości Żywym Testerem: Batche 43–44 (2026-08-22, PR #69)
+
+Plan: `docs/plans/PLAN_2026-08-22-m184-petla-jakosci-batch43-44.md`.
+12 gier (theros/innistrad/forgotten-realms/tarkir/dominaria/ravnica/
+alara/wiedzmin/warhammer/worki), transkrypty w
+`tools/table-tester/audyt-m184/`. Zgłoszenia: Z1 (apply_to_each_target
+opisuje efekty wewnętrzne; single-mode bez „wybierz jedno" — Sea God's
+Scorn), Z2 (opis Blanchwood z amount i licznikiem), Z3 (opcja „Nie bierz
+lądu" ostrzega o +1/+1 — flaga counterIfNone w komendzie; Satyr bez
+zmian), Z4 (equipLine z cantBeBlockedMaxPower — Thieves' Tools), Z5
+(„poświęca ?" przy pay_or_sacrifice — zdarzenie niesie cardId, LKI).
+Weryfikacja: gry v2 = 0 zgłoszeń. Testy: m184-petla-jakosci (6).
+
+**Stan:** `test:all` **2737/2737**, build **52 moduły / 2364.4 kB**,
+benchmark regresji bota w progach.
+
+
+## M183 — Batch 44: 10 kart właściciela (2026-08-22, PR #69)
+
+Plan: `docs/plans/PLAN_2026-08-22-m183-batch44.md`. Karty: Hill Giant
+(vanilla), Farbog Explorer (swampwalk), Dismal Backwater (dual land ETB +1),
+Glaring Aegis (aura +1/+3 + ETB tap), Descendant of Storms (attacks →
+opłata {1}{W} → endure 1), Blanchwood Prowler (NOWE: `counterIfNone` w
+reveal_top_pick_land_rest_grave — mill 3, land do ręki ALBO +1/+1),
+Thieves' Tools (NOWE: `equipment.cantBeBlockedMaxPower` — nosiciel o mocy
+≤3 nieblokowalny; ETB Treasure), Heap Gate (NOWY koszt `tapUntappedSubtype:
+'Gate'` — płatność PRZED spendMana, producibleMana z tablicą wykluczeń),
+Angel's Herald (NOWY koszt `sacrificeCreaturesByColors: [G,W,U]` + search
+qualifier `name` — fail to find CR 701.19b), Frightful Delusion (NOWY efekt
+`counter_spell_unless_pays` — pendingCounterPay + resolve_counter_pay_choice,
+decyzja kontrolera celu, potem discard; auto-kontra bez many na opłatę).
+**PIERWSZY realny auto-awans M181: Theros dobił do 15 kart (Glaring Aegis)
+i wyszedł z worka-legend jako talia `theros` — 15 talii.** Strażnik artId
+340→350; testy batch44-kart (13); seedy: panel-rozgrywka 7→2→8,
+session-abilities 1→2, bot-spell-resolution M99 5→4 (huntery).
+
+**Stan:** `test:all` **2731/2731**, build **52 moduły / 2362.4 kB**,
+benchmark regresji bota w progach (BENCH_DECKS, progi 0.78/0.60).
+
+
+## M182 — Batch 43: 10 kart właściciela (2026-08-22, PR #69)
+
+Plan: `docs/plans/PLAN_2026-08-22-m182-batch43.md`. Karty: Sleep of the Dead
+(escape {2}{U}+3, tap + dont_untap), Severed Strands (NOWE:
+`sacrificedToughness` na obiekcie stosu + `gain_life` z
+`amountFromSacrificedToughness` — zysk życia = wytrzymałość poświęconego),
+Rush of Battle (NOWE: filtr `subtype` w `buff_creatures_you_control` —
+lifelink tylko Warriors), Dispeller's Capsule (activated {2}{W},{T},sac →
+destroy artifact/enchantment), Fleeting Distraction (−1/−0 + draw), Forced
+Landing (NOWY efekt `bounce_to_library_bottom`; token → ceased CR 111.7;
+bot 75, opis PL), Tireless Hauler // Dire-Strain Brawler (daybound/nightbound
+wzorzec Ballista), Sea God's Scorn (NOWE: `variableTargets.type` —
+`creature_or_enchantment`, do 3 celów bounce), Balamb Garden SeeD Academy //
+Airborne (DFC land Town → Legendary Vehicle 5/4; NOWE:
+`costReduction.perOtherSubtype` w effectiveAbilityManaCost), Greenwood
+Sentinel (2/2 vigilance). Talie przeliczone generatorem (innistrad 32,
+ravnica/tarkir/alara/wiedzmin/worek-legend/worek-mroczny +1); strażnik artId
+328→340 (tyły DFC mają WŁASNE artId w CSV: Brawler 118, Airborne 153);
+seed M99 3→5 (hunter po zmianie talii tarkir). Testy: batch43-kart (13).
+
+**Stan:** `test:all` **2717/2717**, build **52 moduły / 2332.7 kB**,
+benchmark regresji bota w progach (BENCH_DECKS, 0.78/0.60).
+
+## M181 — auto-awans planów z worków (2026-08-22, PR #69)
+
+Plan: `docs/plans/PLAN_2026-08-22-m181-auto-awans-planow-z-workow.md`.
+Generator talii sam wyjmuje plan z worka, gdy ten dobije do 15 kart
+(talia o slugu nazwy planu, przeliczone landy) — jedyny krok ręczny po
+batchu to `node tools/generate-plan-decks.mjs`. Worek poniżej 15 nielandów
+po awansie = czytelny błąd (przetasowanie worków to decyzja w mapie).
+Strażniki: test/m181-auto-awans (symulacja awansu na syntetycznym
+rejestrze) + komunikaty „pliki = generator” z komendą.
+- **Poprzednia:** 2026-08-22 (M179: inwentaryzacja trików/many/celów — whitelisty, L54)
+
+
+## M180 — pętla jakości Żywym Testerem (2026-08-22, PR #69)
+
+Plan: `docs/plans/PLAN_2026-08-22-m180-petla-jakosci-zywy-tester.md`;
+transkrypty: `tools/table-tester/audyt-m180/` (7 partii g-*, 7 weryfikacji
+v3-* po naprawach = 0 zgłoszeń). Naprawy: Z1 — regresja M179/D (własna mana
+źródła w ofercie jego zdolności z {T}, klasa L48); Z2 — isToken jawnie
+w widoku („token_squirrel” w celach); Z3 — „dostaje” w DRUGA_OSOBA; Z4 —
+grupa Halo Foragera wyciszalna + auto-decline w advance(); Z5 — no-op
+oferty schowane (Krotiq powtórny, Dragon Arch bez celu; M126/#2
+zaktualizowany). Pułapki: tester gra na ZBUDOWANYM artefakcie (rebuild przed
+weryfikacją); pierwotny przebieg M180 przepadł w 8. resecie workspace —
+odtworzony z notatki właściciela (commituj często!).
+- **Poprzednia:** 2026-08-22 (M178: REWOLUCJA TALII — ADR 0023)
+
+
+## M179 — inwentaryzacja trików, many i celów (2026-08-22, PR #69, zlecenie A–F)
+
+Plan: `docs/plans/PLAN_2026-08-22-m179-inwentaryzacja-trikow-many-celow.md`.
+Testy: `test/m179-inwentaryzacja.test.js` (15). Lekcja L54.
+
+- **A1+C (triki):** wspólna wycena okien walki dla zdolności I czarów
+  (keywordGrantWindowValue); kara za trik-instant we własnej main −75
+  (dotąd −20 — baza wyceny czaru ją zjadała, bot rzucał triki w Głównej 1);
+  sorcery-triki: jedyne okno Główna 1 przed atakiem (phase, nie step!).
+- **A2 (badge/log):** strażnik kompletności etykiet keywordów
+  (KEYWORD_LABELS + KEYWORD_EVENT_LABELS, deep-scan grantów katalogu).
+- **B (duble na stosie):** whitelisty IDEMPOTENT_EOT_EFFECTS /
+  STACKING_ACTIVATED_EFFECTS + kara dubla identycznej aktywacji; strażnik
+  wymusza klasyfikację każdego nowego typu efektu bez {T}.
+- **D (mana):** producibleMana/spendMana widzą nielandowe źródła CZYSTEJ
+  many ({T}-only, sam add_mana — Seer's Lantern, Scorned Villager);
+  auto-tap w płatności (L48). Źródła z kosztami/skutkami — ręcznie.
+- **E (cele):** friendlyMisaimPenalty — centralna symetryczna klamra
+  (przyjazne → tylko sojusznicy, wrogie → tylko wrogowie) w call-site'ach
+  selfHarmPenalty.
+- **Poprzednia:** 2026-08-22 (M176: przebieg tur w 3. osobie; M177: Batch 42 KOMPLET)
+
+
+## M178 — rewolucja talii (2026-08-22, PR #69, ADR 0023)
+
+Zlecenie właściciela. Plan: `docs/plans/PLAN_2026-08-22-m178-rewolucja-talii.md`.
+
+- **Talie z generatora** `tools/generate-plan-decks.mjs`: plan ≥15 kart =
+  własna talia (innistrad 31, tarkir 28, mirrodin 28, dominaria 27,
+  warhammer 22, wiedzmin 20, alara 18, forgotten-realms/zendikar/ravnica 17);
+  mniejsze plany w 4 workach (baśnie/legendy/dziki/mroczny — PRZEJŚCIOWE:
+  15+ kart = wyjście z worka). Singleton, landy ceil(nieland/2) wg pipów.
+  Każda wspierana karta w DOKŁADNIE jednej talii (strażnik repo-decks).
+- **Stare talie usunięte** (green/red/black/azorius/graveyard/tokens/ostrza/
+  innistrad/wiedzmin/sojusznicy/spellslinger/mechanicy) — nowe karty idą do
+  talii SWOJEGO planu (koniec praktyki „tylko tokens/ostrza/graveyard”).
+- **Benchmark na stałej próbce** BENCH_DECKS (6 talii JEDNOPLANOWYCH,
+  672 mecze ~80 s; było: pełna macierz 2496/~6 min). Pomiar: 92.9% vs
+  random / 75.3% vs aggro → próg vs aggro 0.57→0.60. Testy też wyłącznie
+  na taliach jednoplanowych (decyzja właściciela).
+- **Testy:** ~35 plików przepiętych; 4 testy etykiet table-session
+  przepisane na deterministyczne scenariusze silnikowe (L53 — koniec
+  recydywy hunterów); reszta seedów przelosowana hunterami.
+- Fix danych: 11 kart miało plan tylko w CSV kolekcji — uzupełnione w
+  card-data (bez tego generator nie obejmował ich taliami).
+- **Poprzednia:** 2026-08-22 (M175: uwagi właściciela do Death-Hood Cobra — log grantu, dubel bota, badge)
+
+
+## M176/M177 — przebieg tur w 3. osobie + Batch 42 (2026-08-22, PR #69)
+
+- **M176 (1eb5707):** „Przebieg tur (dla AI)” opisuje OBU graczy w 3. osobie
+  („Czarodziejka zagrywa X”) — `describeGameEvent` z opcją
+  `{drugaOsoba:false}`; główny log stołu bez zmian (M101/C).
+- **M177 (e2a1ea5…c8c4dd5):** Batch 42 KOMPLET 10/10 —
+  plan `docs/plans/PLAN_2026-08-22-m177-batch-42-kart.md`, testy
+  `test/batch42-kart.test.js` (18). Talie: tokens +5 (+1 Plains +1 Island),
+  ostrza +1, graveyard +4 (+2 Islands). Nowe mechaniki: detain (CR 701.29),
+  `deathZoneFor`/exileIfDiesThisTurn (CR 614.6), koszt exile-z-grobu +
+  trigger `cards_exiled_from_your_graveyard`, scry-then-reveal, szukanie
+  obowiązkowe 2 kart (ręka+grób), decyzja właściciela wierzch/spód,
+  koszt tapXArtifacts + look-top-X-na-spód. Fixy: walidacja
+  nonland_permanent (L48), token→biblioteka = przestaje istnieć (CR 111.7).
+
+**Stan:** `test:all` **2675/2675**, build **52 moduły / 2303.3 kB**,
+bot-benchmark 9/9.
+
+
+## M175 — uwagi właściciela: Death-Hood Cobra (A1–A3, PR #69)
+
+Plan: `docs/plans/PLAN_2026-08-22-m175-death-hood-cobra-log-bot-badge.md`.
+Testy: `test/m175-uwagi-wlasciciela.test.js` (8).
+
+- **A1 (23467eb):** log aktywacji nazywa nadawany keyword —
+  `ability_activated.grantKeywords` z silnika, opis „nadanie do końca tury:
+  zasięg” zamiast ogólnika.
+- **A2 (5e9e24d):** bot nie dubluje grantu WISZĄCEGO na stosie — widok stosu
+  niesie `sourceId` aktywacji (ADR 0017); identyczna aktywacja na stosie
+  liczy się w wycenie jak posiadany keyword.
+- **A3 (5e4408f):** badge nadanych keywordów na kaflu NAPRAWIONY U ŹRÓDŁA —
+  playerView wysyła `grantedKeywords` (efektywne − wydrukowane ze stanu);
+  stara różnica w render była zawsze pusta (badge grantów, załączników
+  i statyk warunkowych, np. Gray Slaad, nigdy się nie pokazywał — test
+  m168/B omijał cardInfo; teraz pełna ścieżka pokryta testem).
+
+**Stan:** `test:all` **2654/2654**, build **52 moduły / 2267.9 kB**,
+bot-benchmark 9/9.
+
+
+## M174 — Batch 41: 10 kart (lista właściciela 2026-08-21, PR #69) — KOMPLET
+
+Plan: `docs/plans/PLAN_2026-08-21-m174-batch-41-kart.md`. Testy:
+`test/batch41-kart.test.js` (21). Dane Scryfall ×10 + token Zombie Army.
+
+- **A (fc30ba2):** Spin Out, Stall Out, Horizon Spellbomb — pełny reuse.
+- **B (132931b):** Immersturm Skullcairn (damage+discard celu), Toll of
+  the Invasion (mandatory reveal-choose-discard + amass Zombies).
+- **C (98d6fcb):** Terminal Agony — PIERWSZY czar z madness (strażnik S9
+  skonsumowany; pełna ścieżka discard→exile→rzut za {B}{R} z celem).
+  Fixy L48/L4: koszt z {T} własnego źródła many (excludeSourceId) +
+  prewalidacja kolorów przed płatnością (odrzucenie bez mutacji).
+- **D (dbb0734):** Burning-Yard Trainer, Downwind Ambusher (modal ETB
+  z celami), Predator's Gambit — INTIMIDATE (CR 702.13) w canBlock
+  i declareBlockers; fix L47: conditionalKeywords AUR gubione w
+  registry/identity.
+- **E (31d86c0):** Halo Forager — NOWA mechanika pendingGraveFreeCast
+  („pay {X} → cast instant/sorcery MV=X z dowolnego grobu za darmo";
+  exileInsteadOfGraveyard po rozstrzygnięciu/fizzle; pełne warstwy).
+- **Fix z pełnego pakietu (867ab5e):** deadlock modalnego triggera
+  (CR 603.3b — bez wybieralnego trybu zdolność nie wchodzi na stos)
+  + pas skip w ofercie/walidacji (L48).
+
+Talie: tokens +2, ostrza +1, graveyard +7 kart +2 Islands (Forager
+{1}{U}{B}). Strażnik artId 308→318.
+
+**Stan:** `test:all` **2646/2646**, build **52 moduły / 2264.4 kB**,
+bot-benchmark 9/9.
+
+
+## M173 — uwagi właściciela, transza 2 (2026-08-21, PR #69)
+
+Plan: `docs/plans/PLAN_2026-08-21-m173-uwagi-wlasciciela.md`. Testy:
+`test/m173-uwagi-wlasciciela.test.js` (12). Commit dc66238.
+
+- **A (Gray Slaad):** Adventure JEST zaimplementowane (cast_adventure →
+  mill 4 → exile → cast_adventure_creature); brakowało: deskryptora
+  `adventure` w widoku RĘKI (etykieta „koszt )" — klasa L1/ADR 0017),
+  poprawnego generic w etykiecie ({1}{B}) i wyceny bota (cast_adventure
+  w gałęzi czarów + self-mill: wyścig bibliotek + synergia grobu po
+  deskryptorach).
+- **B:** `TOKEN_IMAGES` — druki Scryfall dla tokenów (cardId `token_*`
+  poza rejestrem = brak ilustracji); Squirrel (TMSH) z API (L26);
+  `session.cardDetails` z fallbackiem tokenowym.
+- **C:** badge czasowych flag: saddled, untap-lock (blokada + „nie
+  odkręca się w następnym untapie"), kontrola do końca tury, „bez
+  regeneracji" — pola były tylko w stanie (klasa L1). Pułapka:
+  `untapLockedBy` domyślnie pusta tablica (truthy!).
+- **D (Rustvine):** add_counter bez wyceny w ścieżce activate (klasa
+  L50) — bot tapował się co turę na oil. Teraz: licznik zasobowy tylko
+  pod konsumenta (cost.removeCounter tej samej nazwy), zapas < potrzeb,
+  uzupełnianie po walce.
+- **E (Death-Hood Cobra):** granty „until EOT" wyłącznie we właściwym
+  oknie walki (reach = obrona przed flying po deklaracji ataku;
+  deathtouch/first strike = starcie po deklaracjach; evasion = własny
+  atak) — poza oknem kara.
+
+Incident: 5. reset workspace projektu (świeży klon w trakcie sesji) —
+odzyskany wg ENVIRONMENT §2 (snapshot-commit → checkout drzewa).
+
+**Stan:** `test:all` **2625/2625**, build **52 moduły / 2234.3 kB**,
+benchmark regresji bota 9/9.
+
+
+## M172 — uwagi właściciela z testów A–F (2026-08-21, PR #69)
+
+Plan: `docs/plans/PLAN_2026-08-21-m172-uwagi-wlasciciela-a-d.md`.
+Testy: `test/m172-uwagi-wlasciciela.test.js` (11, RED→GREEN).
+
+- **A (8b9d81e):** panel górny + baner końca gry — „Gracz"/„Bot" zamiast
+  „Ty"/„On" (zakres zawężony przez właściciela do panelu; log bez zmian).
+- **C+F (4d7037d):** okno odpowiedzi po deklaracji bloków (CR 509.4) —
+  root cause: declare_blockers dawał priorytet atakującemu, który od razu
+  brał resolve_combat (Dawntreader Elk bez okna). Teraz priorytet po
+  blokach dla OBROŃCY, po jego passie dla atakującego (F); pass nie
+  domyka rundy (combat_unresolved); oferta = walidacja (L48). ~30 plików
+  testów w przepływie CR.
+- **B+B2 (609b1d6):** rozdziały Sagi nazywają się tytułami z Oracle
+  (saga.chapterNames; „Shiva… — Mesmerize: nie może być blokowany (cel)");
+  fix L47 (identity.js gubił chapterNames). Widok battlefield niesie
+  cantBlock/cantBeBlocked/lostKeywordsUntilEOT — badge'e m168 liczyły
+  z pól, których playerView nie wysyłał (klasa L1/ADR 0017).
+- **D (bf3a481):** token-kopia „Nazwa (kopia N)" — copyNumber w silniku
+  (nextCopyNumber po żywych kopiach), widok publiczny, kafel + etykiety
+  celów + log.
+- **E (30ec7db):** wizard podziału obrażeń multi-target (Inferno Titan) —
+  kandydaci ze stepperami, suma = total, cele = kwota > 0 („among one,
+  two, or three targets"); skleja resolve_trigger_target +
+  resolve_damage_division (announce Z6); panel bez „(33 opcje)"; tester
+  obsługuje wizard (L12).
+
+**Stan:** `test:all` **2613/2613**, build **52 moduły / 2226.0 kB**,
+benchmark regresji bota 9/9 (nowy przepływ walki).
+
+
+## M171 — audyt PR #68 + pętla jakości (2026-08-21, PR #69)
+
+Plan: `docs/plans/PLAN_2026-08-21-m171-audyt-pr68-petla-jakosci.md`.
+Audyt: `docs/audits/AUDYT_PR68_2026-08-21.md` (wynik POZYTYWNY; engine
+zgodny z ADR 0002, Batch 40 zgodny z Oracle, 3 mutacje próbki czerwienieją).
+
+- **N1 (a88d596, testy `m171-adamant-multicolor-mana` ×3):** Adamant nie
+  liczył jednostek WIELOKOLOROWYCH many — Skarb (dowolny kolor) płacący
+  pip {B} to wg CR 106.7 czarna mana (kolor wybiera gracz przy produkcji);
+  osiągalne w graveyard.txt (Fake Your Own Death + Locthwain Paladin).
+  Fix: przypisania pipów śledzone w backtrackingu consumeManaPool (kolor
+  wydany = przecięcie jednostki z wymaganiem), generic-wielokolorowe jako
+  wildcard; adamant honoruje wildcardy.
+- **Pętla jakości (2647f7b, testy `m171-petla-jakosci` ×7):** 8 partii
+  Żywego Testera (talie z Batch 40 po obu stronach). Z1: „dzieli 3
+  obrażeń" → dmgCount; czasowniki dzieli/zawiesza/zdejmuje w DRUGA_OSOBA
+  + strażnik kompletności (L29/L31). Z3: cel-GRACZ w wielocelowym
+  resolve_trigger_target pomijany w wycenie (klasa L50) — bot dzielił
+  obrażenia Inferno Titana we WŁASNĄ twarz; wycena twarzy w obu gałęziach
+  (friendly odwraca). Z4/Z4b: zdarzenia podziału obrażeń niosą LKI celów
+  (targetCardIds + targetNames dla tokenów) — log bez „?: 1". Z5: tester
+  appendował przebiegi do jednego transkryptu (klasa L33 — fałszywa
+  hipoteza o niedziałającym fixie) → writeFileSync + strażnik. Detektory:
+  detectThirdPersonAboutHuman, PLACEHOLDER łapie „?:".
+- **U2 (obserwacja):** epicCastOffers na ścieżce EPIC nie filtruje
+  additionalCost — pilnować przy pierwszym epic-czarze z kosztem
+  dodatkowym w tej samej talii.
+- **Z6 (oś CR pętli jakości; testy `m171-damage-division-announce` ×3):**
+  „divided as you choose" — podział OGŁASZA SIĘ przy umieszczaniu na
+  stosie (CR 601.2d/603.3d), nie przy rozstrzyganiu. Dotąd kwoty wybierano
+  PO oknie odpowiedzi (przewaga informacyjna) z możliwością realokacji po
+  śmierci celu. Teraz: announce w resolve_trigger_target (kwoty na wpisie
+  stosu), applyEffect czyta context.damageDivision, cel nielegalny traci
+  kwotę (CR 608.2b); czar z damage_divided = jawny reject + strażnik
+  katalogu (L52). Testy D1/D4 batch40 zaktualizowane do przepływu CR.
+
+**Stan:** `test:all` **2602/2602**, build **52 moduły / 2213.9 kB**,
+benchmark regresji bota 9/9 (po Z3 i Z6).
 
 
 ## M170 — Incubator: transform jednorazowy (rozszerzenie C z M168, 2026-08-21, PR #68)

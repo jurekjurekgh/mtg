@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Angel%27s%20Herald&set=ala",
+  "print": "Angel's Herald (ALA)",
+  "name": "Angel's Herald",
+  "mana_cost": "{W}",
+  "cmc": 1.0,
+  "type_line": "Creature — Human Cleric",
+  "oracle_text": "{2}{W}, {T}, Sacrifice a green creature, a white creature, and a blue creature: Search your library for a card named Empyrial Archangel, put it onto the battlefield, then shuffle.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [],
+  "set": "ala",
+  "collector_number": "2",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/6/36197ed0-4382-4de3-8359-73cb74edc78b.jpg?1783942584"
+  },
+  "pobrano": "2026-08-22"
+}

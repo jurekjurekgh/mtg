@@ -103,6 +103,7 @@ test('Highland Game: śmierć w walce daje kontrolerowi 2 życia', () => {
   state.turn.activePlayerId = 'p1';
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['elk'] });
   execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { elk: ['bear'] } });
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const result = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   // Highland Game (2/1) ginie od 2 obrażeń blokera; trigger daje +2 życia.
   assert.ok(result.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'dies'), 'brak zdarzenia triggera dies');
@@ -121,6 +122,7 @@ test('Highland Game: brak triggera, gdy stwór przeżyje', () => {
   state.turn.activePlayerId = 'p1';
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['elk'] });
   execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { elk: ['chump'] } });
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.equal(state.players.find((p) => p.id === 'p1').life, 20);
   assert.equal(state.objects.get('elk').zone, 'battlefield');

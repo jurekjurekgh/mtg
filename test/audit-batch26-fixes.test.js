@@ -193,6 +193,7 @@ function twoBlockersState(attackerPower = 5, extra = {}) {
   state.objects.set('b2', Object.freeze({ ...b2, power: 3, toughness: 3 }));
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['b1', 'b2'] } }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   return state;
 }
 
@@ -302,6 +303,7 @@ test('D1: 3/3 vs pojedynczy bloker 1/1 — atakujący zadaje 3 (pełna moc, CR 5
   modifyStats(state, 'att', { power: 1, toughness: 2 }); // 3/3
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['att'] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { att: ['blk'] } }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const r = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.ok(r.ok, r.events?.[0]?.reason);
   const dealt = r.events.filter((e) => e.type === 'damage_dealt' && e.source === 'att');
@@ -320,6 +322,7 @@ test('C1: deklaracje ataku/bloków niosą cardId w zdarzeniach (LKI dla logu)', 
   const evA = state.events.find((e) => e.type === 'attackers_declared');
   assert.deepEqual(evA.attackerCardIds, ['goblin-piker'], 'attackers_declared niesie cardIds');
   const rb = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { att: ['blk'] } });
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(rb.ok);
   const evB = state.events.find((e) => e.type === 'blockers_declared');
   assert.equal(evB.cards['att'], 'goblin-piker');
@@ -331,8 +334,8 @@ test('C2: pełna partia — log walki bez „?" (nazwy po cardId, śmierć w SBA
   const fs = await import('node:fs');
   const { parseDeckText } = await import('../src/cards/deck-text.js');
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/green.txt', 'utf8'), REGISTRY).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), REGISTRY).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), REGISTRY).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer.txt', 'utf8'), REGISTRY).cardIds],
   ]);
   // Seed 3 po Batch 28 (zmiana talii green/red — przelosowane hunterem).
   const session = createSession({ seed: 3, registry: REGISTRY, decks });
@@ -527,5 +530,6 @@ test('D3: face-down stwór nie blokuje atakującego z flying', () => {
   state.turn.priorityPlayerId = 'p1';
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['att'] }).ok);
   const r = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { att: ['blk'] } });
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.equal(r.ok, false, 'zakryty stwór bez flying nie blokuje flyera');
 });

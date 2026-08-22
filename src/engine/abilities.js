@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { effectiveKeywords, effectivePower, tapObject } from './permanents.js';
+import { deathZoneFor, effectiveKeywords, effectivePower, tapObject } from './permanents.js';
 import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { addCounter, removeCounter } from './counters.js';
@@ -44,6 +44,22 @@ function collectManaColors(effects) {
 }
 
 /**
+ * M175/A1 (uwaga wlasciciela, Death-Hood Cobra): keywordy nadawane przez
+ * zdolnosc — do zdarzenia `ability_activated`, zeby log stolu nazwal KONKRET
+ * („nadanie do konca tury: zasieg"), a nie ogolnik „nadanie slow kluczowych".
+ */
+function collectGrantKeywords(effects) {
+  const keywords = [];
+  for (const effect of effects ?? []) {
+    if (effect?.type !== 'grant_keywords_until_end_of_turn') continue;
+    for (const keyword of effect.keywords ?? []) {
+      if (!keywords.includes(keyword)) keywords.push(keyword);
+    }
+  }
+  return keywords;
+}
+
+/**
  * Warunek zdolności „Max speed" (Glitch Ghost Surveyor): zdolność można
  * aktywować dopiero przy speed 4. Wspólne dla oferty i walidacji.
  */
@@ -62,6 +78,21 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   const base = ability?.cost?.mana ?? 0;
   const reduction = ability?.costReduction;
   if (!reduction) return base;
+  // Batch 43 (Balamb Garden, SeeD Academy): „This ability costs {1} less to
+  // activate for each other Town you control" — redukcja za KAŻDY INNY
+  // permanent gracza z danym podtypem (samo źródło się nie liczy);
+  // część kolorowa kosztu nie podlega redukcji (CR 601.2f — jak perCounter).
+  if (reduction.perOtherSubtype) {
+    let count = 0;
+    for (const id of state.zones.battlefield) {
+      const obj = state.objects.get(id);
+      if (!obj || obj.zone !== 'battlefield' || obj.id === sourceObject?.id) continue;
+      if (obj.controllerId !== playerId) continue;
+      if ((obj.subtypes ?? []).includes(reduction.perOtherSubtype)) count += 1;
+    }
+    const colored = (ability.cost?.colors ?? []).length;
+    return Math.max(colored, base - count * (reduction.amount ?? 1));
+  }
   if (reduction.perCounter === '+1/+1') {
     let counters = 0;
     for (const id of state.zones.battlefield) {
@@ -194,8 +225,12 @@ export function isStatic(ability) { return ability?.type === ABILITY_TYPE.static
  * żeby oferowana komenda zawsze była akceptowana.
  */
 function manaForActivation(state, playerId, object, ability, baseMana = producibleMana(state, playerId)) {
-  const isLandManaSource = object.kind === 'land' || (object.types ?? []).includes('Land');
-  if (ability.cost?.tap && !object.tapped && isLandManaSource) return baseMana - 1;
+  // M180/Z1 (regresja M179/D, klasa L48): KAŻDE źródło many tapowane kosztem
+  // własnej zdolności nie zapłaci tej zdolności — po M179/D nielandowe
+  // źródła czystej many (Seer's Lantern) też liczą się w bazie, więc oferta
+  // „{2},{T}: Scry 1” widziała własną manę latarni, a płatność padała.
+  // producibleMana(excludeSourceId) wyklucza spójnie landy I źródła wolne.
+  if (ability.cost?.tap && !object.tapped) return producibleMana(state, playerId, object.id);
   return baseMana;
 }
 
@@ -291,6 +326,28 @@ function effectIsNoOpOnTarget(state, effect, target, source = null) {
     // kończyć mecze). Oferta chowana; execute nadal przyjmuje (CR 602.2b).
     case 'attach_equipment_to_source':
       return Boolean(target && target.attachedTo === source?.id);
+    // M180/Z5 (Żywy Tester, precedens M103/M104: no-op CHOWAMY, nie
+    // ostrzegamy): powtórna zmiana podtypu/utrata keywordów „do końca tury”
+    // (Krotiq Nestguard drugi raz w tej samej turze) niczego nie zmienia.
+    case 'becomes_subtype_until_end_of_turn': {
+      if (!target || target.zone !== 'battlefield') return false;
+      const losesCovered = (effect.losesKeywords ?? []).every((kw) => (target.lostKeywordsUntilEOT ?? []).includes(kw));
+      const subtypesCovered = !(Array.isArray(effect.subtypes) && effect.subtypes.length > 0)
+        || Boolean(target.subtypesBeforeOverride);
+      return losesCovered && subtypesCovered;
+    }
+    // M180/Z5: Dragon Arch bez wielokolorowego stwora w ręce — efekt
+    // rozstrzyga się w nic (auto-resolved bez kandydatów); oferta jest
+    // jałowym wydatkiem {2},{T}.
+    case 'put_multicolored_creature_from_hand': {
+      const ownerId = source?.controllerId ?? target?.controllerId ?? null;
+      if (ownerId == null) return false;
+      return !state.zones.hand.some((id) => {
+        const card = state.objects.get(id);
+        return card?.controllerId === ownerId && card.zone === 'hand' && card.kind === 'creature'
+          && (card.colors ?? []).length >= 2;
+      });
+    }
     default:
       return false;
   }
@@ -395,11 +452,22 @@ export function legalActivatedAbilities(state, playerId) {
       // graveyard") działa WYŁĄCZNIE z grobu — na polu bitwy nie jest oferowana
       // (oferta z grobu jest niżej; spójność oferty i walidacji).
       if (ability.fromGraveyard) continue;
+      // Detain (CR 701.29, M177/E): zdolności aktywowane zatrzymanego
+      // permanentu nie mogą być aktywowane (oferta i walidacja — L48).
+      if (object.detained) continue;
       // Mana dostępna na TĘ aktywację: koszt {T} wyklucza samo źródło z
       // auto-tapu (CR 601.2h — stała musi być odkręcona w chwili płatności,
       // więc land-źródło z kosztem {T} nie może dać many na własną aktywację,
       // np. Prismari Campus „{4}, {T}: Scry 1").
       const mana = manaForActivation(state, playerId, object, ability, baseMana);
+      // M174/B (Immersturm Skullcairn, L48 oferta=walidacja): źródło many
+      // tapowane KOSZTEM zdolności nie zapłaci jej pipów kolorowych —
+      // bramka kolorów liczy się z jego wykluczeniem (ilość already w
+      // manaForActivation; bez tego bot brał ofertę i execute odrzucał
+      // „Brak kolorowej many").
+      // M180/Z1: wykluczenie dotyczy KAŻDEGO źródła many z kosztem {T}
+      // (po M179/D także nielandowych — planGrantManaColors je zna).
+      const colorExcludeId = (ability.cost?.tap && !object.tapped) ? id : null;
       // „Activate only once each turn\" (Snarling Wolf): po aktywacji zdolność
       // znika z legalnych akcji do końca tury (stan resetowany przy zmianie tury).
       if (ability.oncePerTurn && state.abilityActivatedThisTurn?.[`${id}:${index}`]) continue;
@@ -493,9 +561,58 @@ export function legalActivatedAbilities(state, playerId) {
         });
         if (candidates.length === 0) continue;
         if ((ability.cost?.mana ?? 0) > mana) continue;
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
         for (const tapId of candidates) {
           out.push({ objectId: id, abilityIndex: index, ability, tapCreatureId: tapId });
+        }
+        continue;
+      }
+      // Batch 44 (Heap Gate): koszt „Tap an untapped Gate you control" —
+      // INNY nietapnięty permanent z podtypem z deskryptora (samo źródło
+      // jest już tapowane przez {T}, więc nie może pokryć tego kosztu).
+      if (ability.cost?.tapUntappedSubtype) {
+        const sub = ability.cost.tapUntappedSubtype;
+        const candidates = state.zones.battlefield.filter((objectId) => {
+          const candidate = state.objects.get(objectId);
+          return candidate?.controllerId === playerId && candidate.id !== id
+            && !candidate.tapped && (candidate.subtypes ?? []).includes(sub);
+        });
+        if (candidates.length === 0) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
+        for (const tapId of candidates) {
+          // Klasa Z1/M180: źródło ({T} w koszcie) ANI kandydat tapowany
+          // kosztem nie zapłacą many — oferta liczy manę BEZ obu
+          // (płatność tapuje je przed spendMana).
+          const manaWithout = producibleMana(state, playerId, ability.cost?.tap ? [id, tapId] : [tapId]);
+          if ((ability.cost?.mana ?? 0) > manaWithout) continue;
+          out.push({ objectId: id, abilityIndex: index, ability, tapPermanentCostId: tapId });
+        }
+        continue;
+      }
+      // Batch 44 (Angel's Herald): koszt „Sacrifice a green creature, a white
+      // creature, and a blue creature" — trzy RÓŻNE stwory, każdy koloru ze
+      // swojej pozycji deskryptora (stwór wielokolorowy pokrywa jedną).
+      if (ability.cost?.sacrificeCreaturesByColors) {
+        const colorsNeeded = ability.cost.sacrificeCreaturesByColors;
+        const perColor = colorsNeeded.map((color) => state.zones.battlefield.filter((objectId) => {
+          const candidate = state.objects.get(objectId);
+          return candidate?.controllerId === playerId && candidate.kind === 'creature'
+            && (candidate.colors ?? []).includes(color);
+        }));
+        if ((ability.cost?.mana ?? 0) > mana) continue;
+        if (ability.cost?.tap && object.tapped) continue;
+        if (ability.cost?.tap && tapBlockedBySummoningSickness(state, object, ability)) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
+        const combos = [];
+        for (const a of perColor[0] ?? []) {
+          for (const b of perColor[1] ?? []) {
+            for (const c of perColor[2] ?? []) {
+              if (a !== b && a !== c && b !== c) combos.push([a, b, c]);
+            }
+          }
+        }
+        for (const combo of combos.slice(0, 12)) {
+          out.push({ objectId: id, abilityIndex: index, ability, sacrificeCreatureIds: combo });
         }
         continue;
       }
@@ -510,7 +627,7 @@ export function legalActivatedAbilities(state, playerId) {
         });
         if (candidates.length === 0) continue;
         if ((ability.cost?.mana ?? 0) > mana) continue;
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
         for (const tapId of candidates) {
           out.push({ objectId: id, abilityIndex: index, ability, tapOtherCreatureId: tapId });
         }
@@ -527,7 +644,7 @@ export function legalActivatedAbilities(state, playerId) {
         });
         if (lands.length === 0) continue;
         if ((ability.cost?.mana ?? 0) > mana) continue;
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
         for (const landId of lands) {
           out.push({ objectId: id, abilityIndex: index, ability, sacrificeLandId: landId });
         }
@@ -581,7 +698,7 @@ export function legalActivatedAbilities(state, playerId) {
       if (targetSpec.length === 1 && targetSpec[0].type === 'land_you_control') {
         // Cel „land you control": wszystkie własne landy (także land creatures).
         if ((ability.cost?.mana ?? 0) > mana) continue;
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
         for (const targetId of state.zones.battlefield) {
           const target = state.objects.get(targetId);
           const isLand = target && (target.kind === 'land' || (target.types ?? []).includes('Land'));
@@ -599,11 +716,30 @@ export function legalActivatedAbilities(state, playerId) {
       // oferta ma jeden wariant bez xValue (i endure 0 = brak skutku). X
       // ogranicza dostępna mana po odjęciu stałej części kosztu ORAZ ŻYCIE
       // (CR 118.4: nie zapłacisz więcej życia, niż masz).
+      // M177/E (Merchant's Dockhand): „{3}{U}, {T}, Tap X untapped artifacts
+      // you control” — X = liczba INNYCH nietapniętych artefaktów wskazanych
+      // w komendzie; warianty X=1..N (pierwsze N w porządku pola bitwy —
+      // egzemplarze kosztu są z perspektywy zdolności równoważne).
+      if (targetSpec.length === 0 && ability.cost?.tapXArtifacts) {
+        if ((ability.cost?.mana ?? 0) > mana) continue;
+        if (ability.cost?.tap && object.tapped) continue;
+        if (ability.cost?.tap && tapBlockedBySummoningSickness(state, object, ability)) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
+        const artifactPool = state.zones.battlefield.filter((aid) => {
+          const cand = state.objects.get(aid);
+          return cand && cand.id !== id && cand.controllerId === playerId && !cand.tapped
+            && (cand.kind === 'artifact' || (cand.types ?? []).includes('Artifact'));
+        });
+        for (let x = 1; x <= artifactPool.length; x += 1) {
+          out.push({ objectId: id, abilityIndex: index, ability, xValue: x, tapArtifactIds: artifactPool.slice(0, x) });
+        }
+        continue;
+      }
       if (targetSpec.length === 0 && ability.cost?.manaX && ability.cost?.payLifeX) {
         const fixed = ability.cost.mana ?? 0;
         const life = state.players.find((entry) => entry.id === playerId)?.life ?? 0;
         const maxX = Math.min(Math.max(0, mana - fixed), life, 20);
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
         for (let x = 1; x <= maxX; x += 1) {
           out.push({ objectId: id, abilityIndex: index, ability, xValue: x });
         }
@@ -616,7 +752,7 @@ export function legalActivatedAbilities(state, playerId) {
         if (abilityEffectIsNoOp(state, object, ability, object)) continue;
         const effManaNoTarget = effectiveAbilityManaCost(state, playerId, ability, object);
         if (effManaNoTarget > mana) continue;
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
         out.push({ objectId: id, abilityIndex: index, ability });
         continue;
       }
@@ -674,7 +810,7 @@ export function legalActivatedAbilities(state, playerId) {
             if (ownCreatureTarget && target.controllerId !== playerId) return false;
             return true;
           });
-      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
       for (const targetId of candidates) {
         const target = state.objects.get(targetId);
         // M103/A2 + M104: wariant, po którym cel zostaje w tym samym stanie
@@ -861,7 +997,7 @@ export function legalActivatedAbilities(state, playerId) {
  * go na maszynowe odrzucenie. `attackerId` jest wymagany wyłącznie dla
  * Ninjutsu; `targets` i `xValue` dla zdolności celowanych/{X}.
  */
-export function activateAbility(state, playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, opponentTargetIdArg, grantedFromEquipmentArg) {
+export function activateAbility(state, playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, opponentTargetIdArg, grantedFromEquipmentArg, tapArtifactIdsArg, extraCostsArg) {
   const object = state.objects.get(objectId);
   if (!object || object.controllerId !== playerId) throw new Error('Nielegalny obiekt zdolności');
   // Zdolność NADANA nosicielowi przez przypięty sprzęt (Blazing Torch) żyje
@@ -922,6 +1058,8 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   } else if (object.zone !== 'battlefield') {
     throw new Error('Zdolność wymaga permanenta na polu bitwy');
   }
+  // Detain (CR 701.29, M177/E): walidacja niezależna od oferty (L48).
+  if (object.detained) throw new Error('Zatrzymany (detain) permanent nie aktywuje zdolności');
   // Morph/megamorph (CR 702.36/702.37): obrót twarzą do góry działa tylko,
   // póki permanent leży twarzą w dół — po obrocie zdolność wygasa. Walidacja
   // spójna z ofertą legalCommands (wcześniej lukę maskował throw w
@@ -1024,7 +1162,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     state.events.push(e);
     return e;
   }
-  return performActivation(state, { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, opponentTargetId: opponentTargetIdArg, grantedFromEquipment: grantedFromEquipmentArg ?? false });
+  return performActivation(state, { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, opponentTargetId: opponentTargetIdArg, grantedFromEquipment: grantedFromEquipmentArg ?? false, tapArtifactIds: tapArtifactIdsArg, tapPermanentCostId: extraCostsArg?.tapPermanentCostId, sacrificeCreatureIds: extraCostsArg?.sacrificeCreatureIds });
 }
 
 /**
@@ -1035,7 +1173,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
  * zdarzenie ability_activated (albo null).
  */
 export function performActivation(state, ctx) {
-  const { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId } = ctx;
+  const { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, tapArtifactIds } = ctx;
   const opponentTargetId = ctx.opponentTargetId;
   const object = state.objects.get(objectId);
   if (!object || object.controllerId !== playerId) throw new Error('Nielegalny obiekt zdolności');
@@ -1129,8 +1267,42 @@ export function performActivation(state, ctx) {
   if (tapBlockedBySummoningSickness(state, object, ability)) {
     throw new Error('Choroba przywołania: stwór bez haste nie aktywuje {T} w turze wejścia');
   }
+  // M174/B (klasa L4 — odrzucona komenda nie może mutować stanu): pipy
+  // kolorowe walidujemy PRZED płatnością tap/sacrifice. Bez tego nielegalna
+  // aktywacja najpierw tapowała źródło, a dopiero spendMana odrzucał —
+  // permanent zostawał tapnięty mimo rejected (Immersturm Skullcairn,
+  // {1}{B}{R}{R} z jedynym czarnym źródłem = samym sobą).
+  {
+    const preReqs = colorRequirementsOf(ability.cost);
+    if (preReqs.length > 0 && (ability.cost?.mana ?? 0) > 0) {
+      // M180/Z1: jak w ofercie — każde źródło tapowane kosztem wykluczone.
+      const preExcludeId = cost.tap && !object.tapped ? objectId : null;
+      if (!canPayColoredCost(state, playerId, preReqs, preExcludeId)) {
+        throw new Error('Brak kolorowej many');
+      }
+    }
+  }
+  // M177/E (Merchant's Dockhand): walidacja artefaktów do kosztu „Tap X”
+  // PRZED jakąkolwiek mutacją (CR 601.2h — odrzucona komenda nie tapuje).
+  let artifactsToTap = null;
+  if (cost.tapXArtifacts) {
+    const list = Array.isArray(tapArtifactIds) ? tapArtifactIds : [];
+    if (list.length === 0 || new Set(list).size !== list.length) throw new Error('Koszt Tap X artifacts wymaga niepustej listy różnych artefaktów');
+    for (const aid of list) {
+      const cand = state.objects.get(aid);
+      const isArtifact = cand && (cand.kind === 'artifact' || (cand.types ?? []).includes('Artifact'));
+      if (!cand || cand.zone !== 'battlefield' || cand.controllerId !== playerId || cand.tapped || !isArtifact || cand.id === objectId) {
+        throw new Error('Nielegalny artefakt w koszcie Tap X artifacts');
+      }
+    }
+    if ((xValue ?? list.length) !== list.length) throw new Error('X musi równać się liczbie tapowanych artefaktów');
+    artifactsToTap = list;
+  }
   if (cost.tap) {
     tapObject(state, objectId, playerId);
+  }
+  if (artifactsToTap) {
+    for (const aid of artifactsToTap) tapObject(state, aid, playerId);
   }
   // Koszt „{T}" zdolności NADANEJ nosicielowi (Blazing Torch): tapuje się
   // NOSICIEL (stwór ze sprzętem), nie sam sprzęt — zdolność ma nosiciel
@@ -1159,6 +1331,24 @@ export function performActivation(state, ctx) {
   // Koszt crew: tapujemy wybrane stwory (każdy osobny koszt, CR 701.36a).
   if (crewCreaturesToTap) {
     for (const crewId of crewCreaturesToTap) tapObject(state, crewId, playerId);
+  }
+  // Batch 44 (Heap Gate): koszt „Tap an untapped Gate you control" —
+  // tapnięcie INNEGO nietapniętego permanentu z podtypem. Płacimy PRZED
+  // spendMana: auto-tap many nie może zjeść permanentu wskazanego do kosztu
+  // (tapnięty Gate nie zostanie użyty jako źródło many — klasa Z1/M180).
+  if (cost.tapUntappedSubtype) {
+    const sub = cost.tapUntappedSubtype;
+    const chosenId = ctx.tapPermanentCostId ?? state.zones.battlefield.find((candidateId) => {
+      const candidate = state.objects.get(candidateId);
+      return candidate?.controllerId === playerId && candidate.id !== objectId
+        && !candidate.tapped && (candidate.subtypes ?? []).includes(sub);
+    });
+    const chosen = chosenId ? state.objects.get(chosenId) : null;
+    if (!chosen || chosen.controllerId !== playerId || chosen.id === objectId
+      || chosen.tapped || !(chosen.subtypes ?? []).includes(sub)) {
+      throw new Error(`Brak nietapniętego permanentu ${sub} do kosztu tap`);
+    }
+    tapObject(state, chosenId, playerId);
   }
   const effManaSpend = effectiveAbilityManaCost(state, playerId, ability, object);
   // M115: {X}{B} — X PLUS stała część kosztu (Entrancing Lyre ma samo {X},
@@ -1197,12 +1387,37 @@ export function performActivation(state, ctx) {
       || (land.kind !== 'land' && !(land.types ?? []).includes('Land'))) {
       throw new Error('Nielegalny land do poświęcenia (koszt)');
     }
-    const toZone = (land.counters ?? {}).finality > 0 ? 'exile' : 'graveyard';
+    const toZone = deathZoneFor(state, land);
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, sacrificeLandId, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
       fromId: sacrificeLandId, objectId: destId, playerId, cardId: moved.cardId, additionalCost: true, toZone,
     }));
+  }
+  // Batch 44 (Angel's Herald): koszt „Sacrifice a green creature, a white
+  // creature, and a blue creature" — trzy różne stwory, kolor per pozycja.
+  if (cost.sacrificeCreaturesByColors) {
+    const colorsNeeded = cost.sacrificeCreaturesByColors;
+    const ids = ctx.sacrificeCreatureIds;
+    if (!Array.isArray(ids) || ids.length !== colorsNeeded.length || new Set(ids).size !== ids.length) {
+      throw new Error('Koszt wymaga wskazania po jednym stworze na każdy kolor');
+    }
+    for (let k = 0; k < colorsNeeded.length; k += 1) {
+      const candidate = state.objects.get(ids[k]);
+      if (!candidate || candidate.zone !== 'battlefield' || candidate.controllerId !== playerId
+        || candidate.kind !== 'creature' || !(candidate.colors ?? []).includes(colorsNeeded[k])) {
+        throw new Error(`Nielegalny stwór do poświęcenia (kolor ${colorsNeeded[k]})`);
+      }
+    }
+    for (const sacId of ids) {
+      const sacObject = state.objects.get(sacId);
+      const toZone = deathZoneFor(state, sacObject);
+      const destId = `${toZone}-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, sacId, toZone, destId);
+      state.events.push(event('permanent_sacrificed', {
+        fromId: sacId, objectId: destId, playerId, cardId: moved.cardId, additionalCost: true, toZone,
+      }));
+    }
   }
   // Koszt „Exile this card from your graveyard" (Goldmeadow Nomad):
   // wygnanie źródła z grobu jest kosztem — następuje PRZED efektem.
@@ -1253,7 +1468,7 @@ export function performActivation(state, ctx) {
       effectTargets,
       // M115: X to WARTOŚĆ WYBRANA przez gracza, nie łączna zapłacona mana —
       // przy koszcie {X}{B} te liczby się różnią (X=2 → 3 many).
-      xValue: cost.manaX ? (xValue ?? 0) : undefined,
+      xValue: (cost.manaX || cost.tapXArtifacts) ? (xValue ?? 0) : undefined,
       crewCreatureIds: crewCreaturesToTap ?? undefined,
       // M153/A1: Station — id zatapianego INNEGO stwora (koszt tapOtherCreature),
       // żeby log podał jego nazwę.
@@ -1266,6 +1481,7 @@ export function performActivation(state, ctx) {
   // ma nadal podać nazwę karty). effectTypes = krótki opis „co robi
   // zdolność" dla logu stołu (zamiast „?\" po nazwach funkcji).
   const manaColors = collectManaColors(effectList);
+  const grantKeywords = collectGrantKeywords(effectList);
   const activated = event('ability_activated', {
     playerId, objectId, abilityIndex,
     cardId: effectSource.cardId ?? object.cardId,
@@ -1276,11 +1492,13 @@ export function performActivation(state, ctx) {
     effectTypes: effectList.map((e) => e?.type).filter(Boolean),
     // M150/C2: kolory wyprodukowanej many (Jeskai Devotee) w logu.
     ...(manaColors.length ? { manaColors } : {}),
+    // M175/A1: konkretne keywordy grantu — log nazywa je po polsku.
+    ...(grantKeywords.length ? { grantKeywords } : {}),
     // M73d (F): targets tylko dla zdolności z celami (spójnie z queue...).
     targets: (ability.targets?.length ? chosenTargets : []),
     // M115: X to WARTOŚĆ WYBRANA przez gracza, nie łączna zapłacona mana —
       // przy koszcie {X}{B} te liczby się różnią (X=2 → 3 many).
-      xValue: cost.manaX ? (xValue ?? 0) : undefined,
+      xValue: (cost.manaX || cost.tapXArtifacts) ? (xValue ?? 0) : undefined,
     // Crew (CR 701.36): zatapnięte stwory widoczne w logu.
     ...(crewCreaturesToTap ? { crewCreatureIds: [...crewCreaturesToTap] } : {}),
     // M153/A1: Station — id zatapianego INNEGO stwora w logu.
@@ -1337,13 +1555,17 @@ export function queueActivatedAbilityToStack(state, { playerId, objectId, abilit
   });
   state.objects.set(id, entry);
   state.zones.stack.push(id);
-  const stackManaColors = collectManaColors(Array.isArray(ability.effect) ? ability.effect : [ability.effect]);
+  const stackEffectList = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+  const stackManaColors = collectManaColors(stackEffectList);
+  const stackGrantKeywords = collectGrantKeywords(stackEffectList);
   const activated = event('ability_activated', {
     playerId, objectId: effectSourceId, cardId: entry.cardId, abilityIndex,
     keyword: ability.keyword ?? null,
-    effectTypes: (Array.isArray(ability.effect) ? ability.effect : [ability.effect]).map((e) => e?.type).filter(Boolean),
+    effectTypes: stackEffectList.map((e) => e?.type).filter(Boolean),
     // M150/C2: kolory wyprodukowanej many w logu.
     ...(stackManaColors.length ? { manaColors: stackManaColors } : {}),
+    // M175/A1: konkretne keywordy grantu — log nazywa je po polsku.
+    ...(stackGrantKeywords.length ? { grantKeywords: stackGrantKeywords } : {}),
     // M73d (F): „targets" tylko gdy zdolność MA cele — bezcelowe aktywacje
     // (Soulmender, crew, Cellar Door) nie logują „→ cel: <źródło>" (audyt
     // żywym testerem). effectTargets dla bezcelowych to [objectId] — szum.

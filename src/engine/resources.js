@@ -65,11 +65,17 @@ export function consumeManaPool(player, amount, requirements) {
   const units = expandManaPool(player.manaPool);
   const n = units.length;
   const pipUsed = new Array(n).fill(false);
-  // M166/C (Adamant, CR 117.7/podpowiedź ELD): kolory MANY WYDANEJ —
-  // zwracamy zużyte JEDNOKOLOROWE jednostki (dwubarwne/trzybarwne są
-  // niejednoznaczne co do koloru i nie liczą się żadnej stronie).
+  // M166/C (Adamant) + M171/N1 (audyt PR #68): kolory MANY WYDANEJ.
+  // Jednostka dopasowana do PIPA została wydana w kolorze pipa (przecięcie
+  // profilu jednostki z wymaganiem); jednostka WIELOKOLOROWA wydana na
+  // generic to wildcard (CR 106.7 — kolor „dowolnej" many wybiera gracz
+  // przy produkcji; silnik odracza wybór, więc wildcard = kolor mógł być
+  // dowolny z profilu). Wpisy wielokolorowe kodujemy stringiem >1 znaku.
   // ZWROT zamiast pola na playerze — księgowanie tymczasowe nie może
   // zostawiać śladu w stanie (sonda no-op vs koszt, klasa U9).
+  // M171/N1: przypisanie jednostka -> pozycja wymagania (kolor wydany
+  // na pip = przecięcie profilu jednostki z tym wymaganiem).
+  const pipAssignment = new Array(n).fill(-1);
   if (requirements.length > 0) {
     const matchPips = (pos) => {
       if (pos >= requirements.length) return true;
@@ -77,8 +83,10 @@ export function consumeManaPool(player, amount, requirements) {
         if (pipUsed[i]) continue;
         if (requirements[pos].some((c) => units[i].includes(c))) {
           pipUsed[i] = true;
+          pipAssignment[i] = pos;
           if (matchPips(pos + 1)) return true;
           pipUsed[i] = false;
+          pipAssignment[i] = -1;
         }
       }
       return false;
@@ -103,8 +111,14 @@ export function consumeManaPool(player, amount, requirements) {
   const consumedColors = [];
   for (let i = 0; i < n; i += 1) {
     if (consume[i]) {
-      // M166/C: zwracamy kolory wydanych jednostek (tylko jednoznaczne).
-      if (units[i].length === 1) consumedColors.push(units[i][0]);
+      // M171/N1: pip — kolor wydany to przecięcie z wymaganiem; generic —
+      // mono jednoznacznie, wielokolorowa jako wildcard (string >1 znaku).
+      if (pipAssignment[i] >= 0) {
+        const overlap = units[i].filter((c) => requirements[pipAssignment[i]].includes(c));
+        if (overlap.length >= 1) consumedColors.push(overlap.join(''));
+      } else if (units[i].length >= 1) {
+        consumedColors.push(units[i].join(''));
+      }
       continue;
     }
     const key = manaUnitKey(units[i]);
@@ -161,6 +175,16 @@ export function spendMana(state, playerId, amount, requirements = []) {
       tapLandForMana(state, playerId, source.id, { grantColor: plannedGrant });
       covered = matchColorRequirements(expandManaPool(player.manaPool), requirements);
     }
+    // M179/D: pipy niedomknięte landami pokrywają nielandowe źródła
+    // czystej many (kolor efektu, np. Scorned Villager → {G}).
+    if (!covered) {
+      for (const entry of untappedFreeManaSources(state, playerId)) {
+        if (covered) break;
+        if (!entry.colors.some((c) => reqColors.has(c))) continue;
+        tapFreeManaSource(state, playerId, entry);
+        covered = matchColorRequirements(expandManaPool(player.manaPool), requirements);
+      }
+    }
     // Obrona w głąb: canPayColoredCost gwarantuje pokrycie, więc ten throw
     // jest nieosiągalny — ale NIGDY nie płacimy pipa maną innego koloru.
     if (!covered) throw new Error('Brak kolorowej many');
@@ -188,6 +212,12 @@ export function spendMana(state, playerId, amount, requirements = []) {
       const srcColors = getSourceForObject(source)?.colors ?? [];
       const grantColor = grant > 0 ? (need ?? srcColors[0] ?? 'G') : null;
       tapLandForMana(state, playerId, source.id, { grantColor });
+    }
+    // M179/D: landy nie starczyły — dopłacamy z nielandowych źródeł
+    // czystej many (producibleMana je liczy, więc oferta = płatność, L48).
+    for (const entry of untappedFreeManaSources(state, playerId)) {
+      if ((player.mana ?? 0) >= amount) break;
+      tapFreeManaSource(state, playerId, entry);
     }
   }
   // Konsumpcja z kolorowej puli: pipy do pasujących jednostek, reszta (generic)
@@ -308,14 +338,79 @@ export function untappedLandManaSources(state, playerId) {
  * poświęcenia) — ich wydatek jest nieodwracalną decyzją strategiczną, więc
  * zostaje w rękach gracza (aktywacja przez activate_ability jak dotąd).
  */
-export function producibleMana(state, playerId) {
+/**
+ * M179/D (zlecenie właściciela): nielandowe źródła CZYSTEJ many — permanent
+ * z aktywowaną zdolnością o koszcie SAMEGO {T} i efekcie SAMEGO add_mana
+ * (Scorned Villager, Seer's Lantern). Liczą się do producibleMana i są
+ * auto-tapowane w płatności (L48: oferta = płatność). Świadomie POZA:
+ * źródła z kosztem many (Apprentice Wizard, Jeskai Devotee), z kosztem
+ * dodatkowym (Dragonbrood's Relic — tapCreature) i ze skutkami ubocznymi
+ * (Pristine Talisman — życie): ich użycie to decyzja strategiczna gracza
+ * (ręczna aktywacja jak dotąd). Stwór z chorobą przywołania nie użyje
+ * {T} (CR 302.6).
+ */
+export function untappedFreeManaSources(state, playerId, excludeSourceId = null) {
+  const excludedFree = excludeSourceId == null
+    ? null
+    : new Set(Array.isArray(excludeSourceId) ? excludeSourceId : [excludeSourceId]);
+  const out = [];
+  for (const id of state.zones.battlefield) {
+    const object = state.objects.get(id);
+    if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId || object.tapped) continue;
+    if (excludedFree != null && excludedFree.has(object.id)) continue;
+    const isLandSource = object.kind === 'land' || (object.types ?? []).includes('Land');
+    if (isLandSource) continue; // landy liczy untappedLandManaSources
+    for (const ability of object.abilities ?? []) {
+      if (ability?.type !== 'activated') continue;
+      const cost = ability.cost ?? {};
+      const costKeys = Object.keys(cost).filter((key) => cost[key]);
+      if (!(cost.tap === true && costKeys.length === 1)) continue;
+      const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+      if (effects.length !== 1 || effects[0]?.type !== 'add_mana') continue;
+      const isCreature = object.kind === 'creature' || (object.types ?? []).includes('Creature');
+      if (isCreature && object.summoningSickness && !effectiveKeywords(object, state).includes('haste')) continue;
+      const src = getSourceForObject(object);
+      out.push({ object, amount: effects[0].amount ?? 1, colors: effects[0].colors ?? src?.colors ?? [] });
+      break;
+    }
+  }
+  return out;
+}
+
+/** M179/D: auto-tap nielandowego źródła czystej many (zdolność many — bez stosu, CR 605.3). */
+export function tapFreeManaSource(state, playerId, entry) {
+  const object = state.objects.get(entry.object.id);
+  if (!object || object.zone !== 'battlefield' || object.tapped) throw new Error('Nielegalne źródło many (auto-tap)');
+  state.objects.set(object.id, Object.freeze({ ...object, tapped: true }));
+  const tappedEvent = event('object_tapped', { objectId: object.id, playerId, forMana: true });
+  state.events.push(tappedEvent);
+  const mana = addMana(state, playerId, entry.amount, { colors: entry.colors });
+  const produced = event('mana_produced', { playerId, source: object.id, amount: entry.amount, colors: [...entry.colors] });
+  state.events.push(produced);
+  return [tappedEvent, mana, produced];
+}
+
+export function producibleMana(state, playerId, excludeSourceId = null) {
+  // M174/B (Immersturm Skullcairn, klasa L48): koszt zdolności z {T}
+  // WŁASNEGO źródła many — źródło tapnięte kosztem nie zapłaci już many,
+  // więc oferta liczy zdolność BEZ niego (excludeSourceId); płatność i tak
+  // je pomija (jest tapnięte przed spendMana).
+  // Batch 44 (Heap Gate): koszt może tapować WIĘCEJ źródeł naraz ({T} źródła
+  // + „tap an untapped Gate") — excludeSourceId przyjmuje też tablicę id.
+  const excluded = excludeSourceId == null
+    ? null
+    : new Set(Array.isArray(excludeSourceId) ? excludeSourceId : [excludeSourceId]);
   const player = state.players.find((entry) => entry.id === playerId);
   let fromLands = 0;
   for (const land of untappedLandManaSources(state, playerId)) {
+    if (excluded != null && excluded.has(land.id)) continue;
     const grant = grantManaOnLand(state, land.id);
     fromLands += grant > 0 ? grant : 1;
   }
-  return (player?.mana ?? 0) + fromLands;
+  // M179/D: nielandowe źródła czystej many liczą się do oferty rzutów.
+  let fromFree = 0;
+  for (const entry of untappedFreeManaSources(state, playerId, excludeSourceId)) fromFree += entry.amount;
+  return (player?.mana ?? 0) + fromLands + fromFree;
 }
 
 /**
@@ -341,18 +436,24 @@ export function producibleMana(state, playerId) {
  * pipa" — wtedy oferta (backtracking) mówi TAK, a płatność pada
  * (Island + Plains+Embrace vs {U}{G}).
  */
-export function planGrantManaColors(state, playerId, requirements) {
+export function planGrantManaColors(state, playerId, requirements, excludeSourceId = null) {
   const player = state.players.find((entry) => entry.id === playerId);
   if (!player) return null;
   const units = expandManaPool(player.manaPool);
   const grantLands = [];
   for (const obj of untappedLandManaSources(state, playerId)) {
+    // M174/B (L48): źródło tapowane kosztem zdolności nie płaci jej pipów.
+    if (excludeSourceId != null && obj.id === excludeSourceId) continue;
     const grant = grantManaOnLand(state, obj.id);
     if (grant > 0) grantLands.push({ id: obj.id, grant });
     else {
       const src = getSourceForObject(obj);
       units.push(src?.colors ?? []);
     }
+  }
+  // M179/D: jednostki z nielandowych źródeł czystej many (kolor efektu).
+  for (const entry of untappedFreeManaSources(state, playerId, excludeSourceId)) {
+    for (let i = 0; i < entry.amount; i += 1) units.push([...entry.colors]);
   }
   if (grantLands.length === 0) {
     return matchColorRequirements(units, requirements) ? [] : null;
@@ -374,14 +475,15 @@ export function planGrantManaColors(state, playerId, requirements) {
   return grantLands.map((g, i) => ({ id: g.id, color: assignment[i], grant: g.grant }));
 }
 
-export function canPayColoredCost(state, playerId, requirements) {
+export function canPayColoredCost(state, playerId, requirements, excludeSourceId = null) {
   // MtG-castability KOLORÓW: czy pip(y) kolorowe da się dopasować do dostępnych
   // jednostek many (kolorowa pula + NIETAPNIĘTE źródła — da się tapnąć). Sprawd-
   // zane PRZED tapnięciem (do rzutu trzeba źródeł, których można UŻYĆ). AMOUNT
   // (efektywny koszt vs producibleMana) jest sprawdzany OSOBNO na ścieżkach
   // rzutów — tu rozłączamy kolor od sumy (m.in. Metalcraft/Sculptor redukują
-  // generic, więc nie liczymy go tu).
-  return planGrantManaColors(state, playerId, requirements) !== null;
+  // generic, więc nie liczymy go tu). excludeSourceId — patrz producibleMana
+  // (koszt z {T} własnego źródła many, M174/B).
+  return planGrantManaColors(state, playerId, requirements, excludeSourceId) !== null;
 }
 
 /** Czy JAWNA lista pipów kolorów da się pokryć (pula + nietapnięte źródła). */
@@ -561,6 +663,15 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
       throw new Error('Nielegalny cel dodatkowego kosztu (exile a creature)');
     }
   }
+  // M177/B (Makeshift Mauler): „exile a creature card from your graveyard”
+  // — walidacja PRZED mutacją (CR 601.2h), kandydat z WŁASNEGO grobu.
+  const exileGraveCost = object.additionalCost?.exileCreatureFromGraveyard;
+  if (exileGraveCost) {
+    const exileObj = state.objects.get(exileTargetId);
+    if (!exileObj || exileObj.zone !== 'graveyard' || exileObj.kind !== 'creature' || exileObj.controllerId !== playerId) {
+      throw new Error('Nielegalny cel dodatkowego kosztu (exile a creature card from your graveyard)');
+    }
+  }
   // Kicker dodaje pipy kolorów do wymagań (Kor Sanctifiers: {W} + kicker {W}
   // = dwa pipy białe); walidacja dotyczy całej sumy PRZED mutacją.
   const kickerPips = (kicker?.colors ?? []).map((color) => [color]);
@@ -606,6 +717,14 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     const exileId = `exile-${state.objectSequence++}`;
     const exiled = moveObjectDirectly(state, exileTargetId, 'exile', exileId);
     state.events.push(event('object_exiled', { fromId: exileTargetId, objectId: exileId, object: exiled, cardId: exiled.cardId, additionalCost: true }));
+  }
+  if (exileGraveCost) {
+    const exileId = `exile-${state.objectSequence++}`;
+    const exiled = moveObjectDirectly(state, exileTargetId, 'exile', exileId);
+    // object_moved grób→exile: wspólna ścieżka zdarzeń dla triggera
+    // „cards are put into exile from your graveyard” (Rakshasa Vizier) —
+    // ta sama, którą emituje escape (spells.js).
+    state.events.push(event('object_moved', { fromId: exileTargetId, object: exiled, fromZone: 'graveyard', toZone: 'exile', additionalCost: true }));
   }
   const manaSpent = totalMana;
   // Rzut permanenta to rzut CZARU (CR 601): obiekt ląduje na STOSIE, a na
@@ -784,6 +903,12 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
       if (!host || host.zone !== 'battlefield' || (host.kind !== 'creature' && !isLand)) {
         throw new Error('Celem czaru aury musi być stwór albo ląd');
       }
+    } else if (object.aura?.enchantType === 'creature_you_control') {
+      // Batch 45 (Pain for All): „Enchant creature you control" — host musi
+      // być stworem POD KONTROLĄ rzucającego (walidacja spójna z ofertą, M82).
+      if (!host || host.zone !== 'battlefield' || host.kind !== 'creature' || host.controllerId !== playerId) {
+        throw new Error('Celem czaru aury musi być własny stwór');
+      }
     } else if (object.aura?.enchantType === 'creature_or_vehicle') {
       // M154 (Batch 38): Silken Strength — „Enchant creature or Vehicle".
       const isVehicle = host && (host.subtypes ?? []).includes('Vehicle');
@@ -912,6 +1037,17 @@ export function legalAuraCasts(state, playerId) {
         const isLand = target.kind === 'land' || (target.types ?? []).includes('Land');
         if ((target.kind === 'creature' || isLand) && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
           for (const bestow of options) out.push({ objectId: id, targetId, bestow });
+        }
+      }
+    } else if (object.aura?.enchantType === 'creature_you_control') {
+      // Batch 45 (Pain for All): „Enchant creature you control" — oferta
+      // tylko WŁASNYCH stworów (oferta = walidacja, pułapka M82).
+      for (const targetId of state.zones.battlefield) {
+        const target = state.objects.get(targetId);
+        if (target && target.zone === 'battlefield' && target.kind === 'creature'
+          && target.controllerId === playerId
+          && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
+          out.push({ objectId: id, targetId, bestow: false });
         }
       }
     } else if (object.aura?.enchantType === 'creature_or_vehicle') {

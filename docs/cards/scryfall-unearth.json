@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Unearth&set=mh1",
+  "print": "Unearth (MH1)",
+  "name": "Unearth",
+  "mana_cost": "{B}",
+  "cmc": 1.0,
+  "type_line": "Sorcery",
+  "oracle_text": "Return target creature card with mana value 3 or less from your graveyard to the battlefield.\nCycling {2} ({2}, Discard this card: Draw a card.)",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [
+    "Cycling"
+  ],
+  "set": "mh1",
+  "collector_number": "113",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/6/b62abd0c-ec3e-45d7-989d-da269812aeef.jpg?1783933118"
+  },
+  "pobrano": "2026-08-22"
+}

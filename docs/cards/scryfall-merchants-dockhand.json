@@ -1,0 +1,24 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Merchant%27s%20Dockhand&set=aer",
+  "print": "Merchant's Dockhand (AER)",
+  "name": "Merchant's Dockhand",
+  "mana_cost": "{1}",
+  "cmc": 1.0,
+  "type_line": "Artifact Creature — Construct",
+  "oracle_text": "{3}{U}, {T}, Tap X untapped artifacts you control: Look at the top X cards of your library. Put one of them into your hand and the rest on the bottom of your library in any order.",
+  "power": "1",
+  "toughness": "2",
+  "colors": [],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [],
+  "set": "aer",
+  "collector_number": "163",
+  "rarity": "rare",
+  "pobrano": "2026-08-22",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/9/5/955b4bc9-1ded-4f23-b415-ab968c681eb7.jpg?1783936724",
+    "normal": "https://cards.scryfall.io/large/front/9/5/955b4bc9-1ded-4f23-b415-ab968c681eb7.jpg?1783936724"
+  }
+}

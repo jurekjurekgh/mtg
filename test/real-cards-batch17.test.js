@@ -257,6 +257,7 @@ test("Garruk's Companion: 3/2 z trample, nadmiar obrażeń idzie na gracza", () 
   jumpStep(state, 'p1', 'combat', 'declare_attackers', 5);
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: [comp.id] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { [comp.id]: ['blocker'] } }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);
   // M66 (R): trample = decyzja rozdzielania — odpowiadamy defaultem (jak bot).
   const assign = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_damage_assignment');
@@ -297,6 +298,7 @@ test('Carrion Call: niezablokowany token infect daje znaki trucizny (nie życie)
   jumpStep(state, 'p1', 'combat', 'declare_attackers', 5);
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: [insect] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} }).ok); // brak bloku
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);
   assert.equal(state.players.find((p) => p.id === 'p2').life, p2lifeBefore, 'Życie nietknięte (infect)');
   assert.equal(state.players.find((p) => p.id === 'p2').poison, 1, 'Znak trucizny +1');
@@ -315,6 +317,7 @@ test('Carrion Call: infect do blokującego stwora = licznik -1/-1 (śmierć przy
   jumpStep(state, 'p1', 'combat', 'declare_attackers', 5);
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: [insect] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { [insect]: ['blocker'] } }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);
   // Bloker 1/1 + licznik -1/-1 → wytrzymałość 0 → SBA zabija (CR 704.5f).
   assert.equal(state.objects.get('blocker'), undefined, 'Blokujący zginął od -1/-1');

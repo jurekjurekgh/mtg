@@ -217,6 +217,7 @@ test('Relic Robber: combat damage do gracza → TEN gracz dostaje Goblin Constru
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['rr'] }).ok);
   const noBlocks = playerView(state, 'p2').legalCommands.find((c) => c.type === 'declare_blockers');
   execute(state, noBlocks);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach
   const r = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.ok(r.ok, r.events?.[0]?.reason);
   resolveStack(state);
@@ -253,6 +254,7 @@ test('Flurry of Wings: X tokenów Bird Soldier = liczba atakujących', () => {
   // p2 bez bloków (declare_blockers), potem p1 ma priorytet w combat_damage
   const nb = playerView(state, 'p2').legalCommands.find((c) => c.type === 'declare_blockers');
   execute(state, nb);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach
   // p1 rzuca Flurry w odpowiedzi na atak (instant — z priorytetem po blokach)
   addRealCard(state, 'flurry', 'flurry-of-wings', 'p1', 'hand');
   addMana(state, 'p1', 3, { colors: ['G', 'W', 'U'] });
@@ -412,17 +414,17 @@ test('Tenth District Veteran: atak odkręca inny stwór (target)', () => {
 
 // --- Determinism -------------------------------------------------------------
 
-test('Batch 28: partia na green vs red kończy się deterministycznie', () => {
+test('Batch 28: partia na tarkir vs warhammer kończy się deterministycznie (M178)', () => {
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/green.txt', 'utf8'), REGISTRY).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), REGISTRY).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), REGISTRY).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer.txt', 'utf8'), REGISTRY).cardIds],
   ]);
   const s1 = createSession({ seed: 42, registry: REGISTRY, decks });
   playOut(s1);
   assert.ok(s1.state.status !== 'active', 'partia 1 nie zakończona');
   const decks2 = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/green.txt', 'utf8'), REGISTRY).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), REGISTRY).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), REGISTRY).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer.txt', 'utf8'), REGISTRY).cardIds],
   ]);
   const s2 = createSession({ seed: 42, registry: REGISTRY, decks: decks2 });
   playOut(s2);

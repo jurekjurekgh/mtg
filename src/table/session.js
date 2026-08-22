@@ -1,6 +1,7 @@
 import { execute, playerView } from '../engine/game-state.js';
 import { makeSimulate } from '../engine/lookahead.js';
 import { setupCardMatch } from '../cards/materialize.js';
+import { TOKEN_IMAGES } from '../cards/card-data.js';
 import { parseReplay, playReplay, replayFromState, serializeReplay } from '../engine/replay.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
 import { createHeuristicBot } from '../controllers/heuristic-bot.js';
@@ -122,6 +123,7 @@ function defaultBotFactory(seed, ctx) {
     gain_life: 'zdobycie życia',
     grant_keywords_until_end_of_turn: 'nadanie słów kluczowych do końca tury',
     lock_untap: 'cel nie odtapuje podczas następnego untap kontrolera',
+    look_top_put_one_hand_rest_bottom: 'spojrzenie na X kart z wierzchu — jedna do ręki, reszta na spód',
     lose_life: 'cel traci życie',
     mill_cards: 'mielenie kart do grobu',
     prevent_damage_this_turn: 'niwelowanie obrażeń do końca tury',
@@ -209,6 +211,8 @@ export function rejectionReasonLabel(reason) {
 
 export const TRIGGER_EVENT_LABELS = Object.freeze({
   another_creature_enters: 'wejście innego stworzenia',
+  // M177/B (Rakshasa Vizier): karty wygnane z twojego grobu.
+  cards_exiled_from_your_graveyard: 'karty wygnane z twojego grobu',
   creature_you_control_enters: 'wejście stwora pod twoją kontrolą',
   // audyt M100/E6 (Żywy Tester, azorius vs green seed 34): surowy slug
   // w LOGU zamiast etykiety (Setessan Skirmisher).
@@ -261,6 +265,7 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   enchanted_permanent_tapped: 'zatapnięcie zaczarowanego permanentu',
   // M166/B (Batch 40, Cacophodon): Enrage.
   dealt_damage: 'otrzymanie obrażeń',
+  enchanted_creature_dealt_damage: 'zaczarowany stwór otrzymał obrażenia',
   you_cast_spell_targeting_permanent: 'rzucenie czaru celującego w permanent',
 });
 
@@ -320,13 +325,17 @@ export function zoneLabel(zone) {
  * Osobny słownik od render.js: render.js importuje z tego modułu, więc
  * zależność w drugą stronę utworzyłaby cykl (build.mjs by go nie skleił).
  */
-const KEYWORD_EVENT_LABELS = Object.freeze({
+export const KEYWORD_EVENT_LABELS = Object.freeze({
+  toxic: 'toksyczny (combat damage graczowi = poison)',
   haste: 'pośpiech', flying: 'latanie', trample: 'zadeptywanie', reach: 'zasięg',
   vigilance: 'czujność', menace: 'postrach', lifelink: 'dotykanie życia',
   deathtouch: 'dotykanie śmierci', first_strike: 'pierwsze uderzenie',
   double_strike: 'podwójne uderzenie', hexproof: 'hexproof', indestructible: 'niezniszczalność',
   defender: 'obrońca', flash: 'flash', infect: 'infect', persist: 'persist',
   saddled: 'osiodłanie', exalted: 'egzaltacja',
+  // M179/A2 (strażnik kompletności): każdy grantowalny keyword katalogu ma
+  // etykietę logu — intimidate brakowało (Predator's Gambit, warunkowy).
+  intimidate: 'zastraszenie',
 });
 
 /**
@@ -347,8 +356,11 @@ const KEYWORD_EVENT_LABELS = Object.freeze({
  */
 const DRUGA_OSOBA = Object.freeze({
   aktywuje: 'aktywujesz', bierze: 'bierzesz', dobiera: 'dobierasz',
+  // M180/Z3 (Żywy Tester): „Ty dostaje +1 licznik poison” — brakowało odmiany.
+  dostaje: 'dostajesz',
   kieruje: 'kierujesz', kopiuje: 'kopiujesz', korzysta: 'korzystasz',
   kładzie: 'kładziesz', kończy: 'kończysz', mieli: 'mielisz',
+  dzieli: 'dzielisz',
   mulliganuje: 'mulliganujesz', może: 'możesz', niszczy: 'niszczysz',
   obejmuje: 'obejmujesz', odkłada: 'odkładasz', odrzuca: 'odrzucasz',
   odsłania: 'odsłaniasz', ogląda: 'oglądasz', otrzymuje: 'otrzymujesz',
@@ -360,7 +372,8 @@ const DRUGA_OSOBA = Object.freeze({
   wskazuje: 'wskazujesz', wybiera: 'wybierasz', wygrywa: 'wygrywasz',
   wykonuje: 'wykonujesz',
   wzmacnia: 'wzmacniasz', zagłębia: 'zagłębiasz', zagrywa: 'zagrywasz',
-  zatrzymuje: 'zatrzymujesz', znajduje: 'znajdujesz', zostawia: 'zostawiasz',
+  zatrzymuje: 'zatrzymujesz', zawiesza: 'zawieszasz', zdejmuje: 'zdejmujesz',
+  znajduje: 'znajdujesz', zostawia: 'zostawiasz',
   zwiększa: 'zwiększasz',
 });
 
@@ -381,9 +394,16 @@ export function odmienNaDrugaOsobe(text, humanName = PLAYER_NAMES[HUMAN_ID]) {
   });
 }
 
-export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
+/**
+ * M176 (uwaga właściciela 2026-08-22): sekcja „Przebieg tur (dla AI)” ma
+ * opisywać OBU graczy w 3. osobie („Czarodziejka zagrywa…”, „Nieprzyjaciel
+ * zagrywa…”) — opcja `drugaOsoba: false` wyłącza odmianę zdań o człowieku
+ * (główny log stołu zostaje w 2. osobie — M101/C bez zmian).
+ */
+export function describeGameEvent(e, helpers, names = PLAYER_NAMES, { drugaOsoba = true } = {}) {
   const opis = describeGameEventRaw(e, helpers, names);
-  return typeof opis === 'string' ? odmienNaDrugaOsobe(opis, names[HUMAN_ID]) : opis;
+  if (typeof opis !== 'string') return opis;
+  return drugaOsoba ? odmienNaDrugaOsobe(opis, names[HUMAN_ID]) : opis;
 }
 
 function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
@@ -493,11 +513,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         // Diament (2026-08-11): cele niosą LKI (targetCardIds) — cel, który
         // zniknął z state.objects (token/śmierć), nie wyświetla się jako „?"
         // (audyt: „Bone Splinters → cel: ?"). Gracze (bez cardId) po imieniu.
+        // M186/Z2 (Assert Perfection): pozycja „up to one target" bez celu
+        // to null — pomijamy w opisie zamiast pokazywać „?".
         const targets = (e.targets ?? []).map((id, i) => {
+          if (id == null) return null;
           if (isPlayer(id)) return whoN(id);
           // M100 (BUG A): LKI dopiero, gdy cel zniknął ze stanu (objectOrLki).
           return objectOrLki(id, e.targetCardIds?.[i]);
-        }).join(', ');
+        }).filter(Boolean).join(', ');
         const plotted = e.plotted ? ' z exile po plot' : '';
         const cleaved = e.cleaved ? ' z kosztem Cleave' : '';
         const adventure = e.adventure ? ' (przygoda)' : '';
@@ -715,8 +738,18 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         // Źródło mogło zniknąć w koszcie (Sacrifice this) — nazwa jedzie
         // wtedy z e.cardId, nie z lookupu po id obiektu (naprawione „?\" w logu).
         const sourceName = e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId);
+        // M175/A1 (uwaga właściciela, Death-Hood Cobra): grant keywordów
+        // nazywa KONKRET — „nadanie do końca tury: zasięg” zamiast ogólnika
+        // „nadanie słów kluczowych do końca tury” (zdarzenie niesie
+        // `grantKeywords` z silnika).
         const desc = (e.effectTypes ?? [])
-          .map((type) => ABILITY_EFFECT_LABELS[type])
+          .map((type) => {
+            if (type === 'grant_keywords_until_end_of_turn' && e.grantKeywords?.length) {
+              const named = e.grantKeywords.map((k) => KEYWORD_EVENT_LABELS[k] ?? k).join(', ');
+              return `nadanie do końca tury: ${named}`;
+            }
+            return ABILITY_EFFECT_LABELS[type];
+          })
           .filter(Boolean)
           .join(', ');
         // M150/C2: zdolność dodająca manę (Jeskai Devotee „{1}: Add {U}, {R},
@@ -835,6 +868,17 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       // nagle atakował w turze wejścia bez śladu w logu i w modalu.
       // Wyciszamy WYŁĄCZNIE keywordy z backupu (opisuje je backup_resolved,
       // kolejna linia byłaby dubletem) — reszta trafia do gracza.
+      // M177/A (Agate Assault): znacznik „if it would die this turn, exile it”.
+      // M177/D (Vanish from Sight): decyzja właściciela celu.
+      case 'library_placement_required':
+        return `${whoN(e.playerId)} wybiera: ${objectOrLki(e.targetId, e.cardId)} na wierzch czy spód biblioteki`;
+      case 'library_placement_resolved':
+        return `${objectOrLki(e.targetId, e.cardId)} trafia na ${e.placement === 'top' ? 'WIERZCH' : 'SPÓD'} biblioteki właściciela`;
+      // M177/E (Azorius Justiciar): detain (CR 701.29).
+      case 'object_detained':
+        return `${objectOrLki(e.objectId, e.cardId)} zatrzymany (detain): do następnej tury ${whoN(e.byPlayerId)} nie atakuje, nie blokuje i nie aktywuje zdolności`;
+      case 'exile_if_dies_marked':
+        return `${objectOrLki(e.objectId, e.cardId)}: jeśli umrze w tej turze, trafi na wygnanie zamiast do grobu`;
       case 'keyword_granted': {
         if (e.viaBackup) return null;
         const granted = (e.keywords ?? [])
@@ -941,12 +985,30 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         return `${whoN(e.playerId)} wykonuje Epic Experiment — wygnano ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki${exiled ? `: ${exiled}` : ''}`;
       }
       case 'epic_experiment_resolved': return `${whoN(e.playerId)} kończy Epic Experiment (${e.restToGrave} ${polishPlural(e.restToGrave, 'karta', 'karty', 'kart')} do grobu)`;
+      case 'grave_free_cast_required':
+        return `${whoN(e.playerId)} może zapłacić {X} i rzucić instant/sorcery o MV X z dowolnego grobu (${nameOf(e.sourceCardId)})`;
+      case 'grave_free_cast_resolved':
+        return e.declined
+          ? `${whoN(e.playerId)} rezygnuje z rzutu z grobu (${nameOf(e.sourceCardId)})`
+          : `${whoN(e.playerId)} płaci {${e.xPaid}} i rzuca ${nameOf(e.cardId)} z grobu za darmo (po rozstrzygnięciu: wygnanie)`;
       case 'damage_division_required': {
-        const names = (e.targetIds ?? []).map((id) => nameOfObject?.(id) ?? '?').join(', ');
-        return `${whoN(e.playerId)} dzieli ${e.total} obrażeń między: ${names}`;
+        // M171/Z4 (L6): objectOrLki — cel mógł już zniknąć ze stanu; token
+        // bez cardId ma LKI w targetNames (Z4b).
+        const divTargetName = (id, i) => {
+          const viaLki = objectOrLki(id, e.targetCardIds?.[i]);
+          return viaLki !== '?' ? viaLki : (e.targetNames?.[i] ?? '?');
+        };
+        const names = (e.targetIds ?? []).map(divTargetName).join(', ');
+        return `${whoN(e.playerId)} dzieli ${dmgCount(e.total)} między: ${names}`;
       }
       case 'damage_division_resolved': {
-        const parts = (e.targetIds ?? []).map((id, i) => `${nameOfObject?.(id) ?? '?'}: ${e.amounts?.[i] ?? '?'}`);
+        // M171/Z4 (L6): cel ginie od obrażeń tej samej komendy — LKI cardId
+        // (karta) albo name (token) ze zdarzenia zamiast „?".
+        const divTargetName = (id, i) => {
+          const viaLki = objectOrLki(id, e.targetCardIds?.[i]);
+          return viaLki !== '?' ? viaLki : (e.targetNames?.[i] ?? '?');
+        };
+        const parts = (e.targetIds ?? []).map((id, i) => `${divTargetName(id, i)}: ${e.amounts?.[i] ?? '?'}`);
         return `${whoN(e.playerId)} dzieli obrażenia — ${parts.join(', ')}`;
       }
       case 'initiative_taken': {
@@ -1052,9 +1114,18 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         return `${whoN(e.playerId)} rezygnuje z szukania i tasuje bibliotekę`;
       }
       case 'pay_or_sacrifice_required': return `${nameOfObject(e.sourceId)} — zapłać {${e.amount}} albo ją poświęć (wybór gracza)`;
-      case 'pay_or_sacrifice_resolved': return e.paid
-        ? `${whoN(e.playerId)} płaci {${e.amount}} za ${nameOfObject(e.sourceId)}`
-        : `${whoN(e.playerId)} poświęca ${nameOfObject(e.sourceId)}`;
+      case 'counter_pay_required': return `${nameOf(e.cardId)} zostanie skontrowany, chyba że kontroler zapłaci {${e.amount}}${e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : ''}`;
+      case 'counter_pay_resolved': return e.paid
+        ? `${nameOf(e.cardId)}: kontroler płaci — czar zostaje na stosie`
+        : `${nameOf(e.cardId)}: bez zapłaty — czar skontrowany`;
+      case 'pay_or_sacrifice_resolved': {
+        // M184/Z5: przy poświęceniu obiekt już zmienił id (grób) — nazwa
+        // z cardId (LKI), fallback na nameOfObject dla starych zdarzeń.
+        const co = e.cardId ? nameOf(e.cardId) : nameOfObject(e.sourceId);
+        return e.paid
+          ? `${whoN(e.playerId)} płaci {${e.amount}} za ${co}`
+          : `${whoN(e.playerId)} poświęca ${co}`;
+      }
       case 'optional_pay_required': {
         const parts = [];
         if (e.payMana) parts.push(`{${e.payMana}}`);
@@ -1069,7 +1140,9 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
           ? 'inny permanent do zwrotu na rękę'
           : (e.effectType === 'cant_be_blocked' ? 'stwora, który nie może być blokowany'
             : 'cel triggera');
-        return `${nameOf(e.cardId)} — wybierz ${hint} (${e.allowNone ? 'można odmówić' : 'wymagany'})`;
+        // M172/B: rozdział Sagi nazywa się tytułem z Oracle (Mesmerize).
+        const chapter = e.chapterName ? ` — ${e.chapterName}` : '';
+        return `${nameOf(e.cardId)}${chapter} — wybierz ${hint} (${e.allowNone ? 'można odmówić' : 'wymagany'})`;
       }
       case 'trigger_resolved': {
         // M106/Z2: powód „braku efektu" jest treścią dla gracza — inaczej
@@ -1358,7 +1431,8 @@ export function createSession(config) {
       return;
     }
     if (TURN_NOISE.has(e.type)) return;
-    const text = describeEvent(e, TURN_NAMES);
+    // M176: przebieg tur w 3. osobie dla OBU graczy (Czarodziejka/Nieprzyjaciel).
+    const text = describeEvent(e, TURN_NAMES, { drugaOsoba: false });
     if (!text) return;
     currentTurn.lines.push(text);
   }
@@ -1420,7 +1494,10 @@ export function createSession(config) {
     // M155 (audyt żywym testerem): tokeny niosą JAWNĄ nazwę w `object.name`
     // (cardId `token_*` poza rejestrem → nameOf zwracałby „token_squirrel").
     // Nazwa tokenu z pola obiektu, nie z mapy rejestru kart.
-    if (object.isToken && object.name != null) return object.name;
+    if (object.isToken && object.name != null) {
+      // M172/D: token-kopia z numerem — „Nazwa (kopia N)".
+      return object.copyNumber ? `${object.name} (kopia ${object.copyNumber})` : object.name;
+    }
     return nameOf(object.cardId);
   }
 
@@ -1432,7 +1509,7 @@ export function createSession(config) {
 
 
 /** Opis zdarzenia przez modułowego czytelnika (wstrzyknięte nazwy stanu). */
-  function describeEvent(e, names = PLAYER_NAMES) {
+  function describeEvent(e, names = PLAYER_NAMES, options = {}) {
     // Uwaga A (2026-08-12): tłumimy natychmiastowy library_searched po
     // search_choice_resolved — search_choice_resolved już opisuje wynik
     // („znajduje kartę i tasuje bibliotekę"). library_searched z innych ścieżek
@@ -1450,7 +1527,7 @@ export function createSession(config) {
     effectiveKeywordsOf: (object) => effectiveKeywords(object, state),
       isPlayer: (id) => state.players.some((player) => player.id === id),
       controllerOf: (objectId) => state.objects.get(objectId)?.controllerId ?? null,
-    }, names);
+    }, names, options);
   }
 
   /**
@@ -1876,6 +1953,20 @@ export function createSession(config) {
         streamAutoEvents(result.events);
         continue;
       }
+      // M180/Z4: blokująca decyzja OPCJONALNA z wyciszonymi wariantami —
+      // pass nie jest oferowany (decyzja blokuje), więc auto-pass wykonuje
+      // wariant rezygnacji (decline/skip) zamiast wywracać sesję wyjątkiem.
+      if (!view.legalCommands.some((cmd) => cmd.type === 'pass_priority')) {
+        // M186/Z3: „zakończ” pętli opcjonalnej (Epic Experiment, devour)
+        // niesie done: true — to też czysta rezygnacja.
+        const resign = view.legalCommands.find((cmd) => cmd.decline === true || cmd.skip === true || cmd.done === true);
+        if (resign) {
+          const declined = execute(state, resign);
+          if (!declined.ok) throw new Error(`Auto-decline odrzucony: ${declined.events[0]?.reason}`);
+          streamAutoEvents(declined.events);
+          continue;
+        }
+      }
       const pass = execute(state, { type: 'pass_priority', playerId: HUMAN_ID });
       if (!pass.ok) throw new Error(`Auto-pass odrzucony: ${pass.events[0]?.reason}`);
       // Uwaga E: auto-pass faz CZŁOWIEKA (koniec tury, cleanup) nie pauzuje —
@@ -1909,6 +2000,10 @@ export function createSession(config) {
       // w panelu akcji) — taka opcja nie przerywa auto-passu. Inne opcje
       // nadal przerywają; odznaczenie przywraca przerywanie.
       if (ignoredOptionKeys.has(commandOptionKey(cmd))) return false;
+      // M180/Z4: czysta REZYGNACJA (decline/skip) nie jest realną decyzją —
+      // gdy gracz wyciszył wszystkie warianty rzutu (Halo Forager), samotny
+      // wariant „Zrezygnuj” nie może dalej zatrzymywać auto-passu.
+      if (cmd.decline === true || cmd.skip === true || cmd.done === true) return false;
       // Puste deklaracje ataku/bloków nie są decyzją (engine oferuje je
       // zawsze w kroku deklaracji — bez stworów to czysty pass).
       if (cmd.type === 'declare_attackers') return (cmd.attackerIds?.length ?? 0) > 0;
@@ -1943,7 +2038,12 @@ export function createSession(config) {
       return colorsById.get(cardId) ?? [];
     },
     cardDetails(cardId) {
-      return registry.get(cardId) ?? null;
+      const card = registry.get(cardId);
+      if (card) return card;
+      // M173/B: tokeny (cardId token_*) nie są kartami rejestru — kafel
+      // i pełny ekran dostają druk Scryfalla z mapy TOKEN_IMAGES.
+      const tokenImage = TOKEN_IMAGES[cardId];
+      return tokenImage ? { imageUri: tokenImage } : null;
     },
     abilitiesOf(cardId) {
       const card = registry.get(cardId);

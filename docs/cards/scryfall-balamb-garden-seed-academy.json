@@ -1,0 +1,54 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Balamb+Garden%2C+SeeD+Academy&set=fin",
+  "print": "fin",
+  "name": "Balamb Garden, SeeD Academy // Balamb Garden, Airborne",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Land — Town // Legendary Artifact — Vehicle",
+  "colors": [],
+  "color_identity": [
+    "G",
+    "U"
+  ],
+  "set": "fin",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/0/001e9f20-5b15-41cb-bf82-46172decc235.jpg?1783906558",
+    "back": "https://cards.scryfall.io/large/back/0/0/001e9f20-5b15-41cb-bf82-46172decc235.jpg?1783906558"
+  },
+  "pobrano": "2026-08-22",
+  "layout": "transform",
+  "keywords": [
+    "Flying",
+    "Transform",
+    "Crew"
+  ],
+  "card_faces": [
+    {
+      "name": "Balamb Garden, SeeD Academy",
+      "mana_cost": "",
+      "type_line": "Land — Town",
+      "oracle_text": "This land enters tapped.\n{T}: Add {G} or {U}.\n{5}{G}{U}, {T}: Transform this land. This ability costs {1} less to activate for each other Town you control.",
+      "colors": [],
+      "image_uris": {
+        "large": "https://cards.scryfall.io/large/front/0/0/001e9f20-5b15-41cb-bf82-46172decc235.jpg?1783906558",
+        "normal": "https://cards.scryfall.io/normal/front/0/0/001e9f20-5b15-41cb-bf82-46172decc235.jpg?1783906558"
+      }
+    },
+    {
+      "name": "Balamb Garden, Airborne",
+      "mana_cost": "",
+      "type_line": "Legendary Artifact — Vehicle",
+      "oracle_text": "Flying\nWhenever Balamb Garden attacks, draw a card.\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)",
+      "power": "5",
+      "toughness": "4",
+      "colors": [],
+      "image_uris": {
+        "large": "https://cards.scryfall.io/large/back/0/0/001e9f20-5b15-41cb-bf82-46172decc235.jpg?1783906558",
+        "normal": "https://cards.scryfall.io/normal/back/0/0/001e9f20-5b15-41cb-bf82-46172decc235.jpg?1783906558"
+      }
+    }
+  ],
+  "collector_number": "272",
+  "rarity": "rare",
+  "artist": "Jonas De Ro"
+}

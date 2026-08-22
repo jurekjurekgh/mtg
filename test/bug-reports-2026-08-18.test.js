@@ -116,7 +116,7 @@ test('Bug B: Fathom Fleet Cutthroat — zniszczenie w panelu Rozgrywka', () => {
   const raport = [];
 
   for (const seed of [1, 3, 5, 7, 11, 13, 17, 23, 27, 31, 37, 42, 77, 99]) {
-    const session = makeSession(seed, 'black.txt', 'green.txt');
+    const session = makeSession(seed, 'dominaria.txt', 'tarkir.txt');
     const { shown, log } = playAndCollectPanel(session);
     const panelZniszczenia = shown.filter((t) => t.includes('zostaje zniszczony'));
     const logZniszczenia = log.filter((t) => t.includes('zostaje zniszczony'));

@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Malamet+Battle+Glyph&set=lci",
+  "print": "Malamet Battle Glyph (LCI)",
+  "name": "Malamet Battle Glyph",
+  "mana_cost": "{G}",
+  "cmc": 1.0,
+  "type_line": "Sorcery",
+  "oracle_text": "Choose target creature you control and target creature you don't control. If the creature you control entered this turn, put a +1/+1 counter on it. Then those creatures fight each other.",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Fight"
+  ],
+  "set": "lci",
+  "collector_number": "198",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/2/2/2259f959-ca97-4df9-8d50-0532090fb967.jpg?1783913743"
+  },
+  "pobrano": "2026-08-22"
+}

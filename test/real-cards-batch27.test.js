@@ -316,6 +316,7 @@ test('Giant Spider: reach blokuje atakującego z flying', () => {
   state.turn.priorityPlayerId = 'p1';
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['falcon'] }).ok);
   const r = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { falcon: ['spider'] } });
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(r.ok, r.events?.[0]?.reason);
 });
 
@@ -335,6 +336,7 @@ test('Scroll Thief: combat damage do gracza → draw', () => {
   const view2 = playerView(state, 'p2');
   const noBlocks = view2.legalCommands.find((c) => c.type === 'declare_blockers');
   execute(state, noBlocks);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const r = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.ok(r.ok, r.events?.[0]?.reason);
   // trigger combat_damage_to_player na stos → rozstrzygnij (jeśli czeka)
@@ -399,17 +401,17 @@ test('Force Away: bez ferocious (brak stwora 4+) — brak opcji draw', () => {
 
 // --- Determinism -------------------------------------------------------------
 
-test('Batch 27: partia na green vs red kończy się deterministycznie', () => {
+test('Batch 27: partia na tarkir vs warhammer kończy się deterministycznie (M178)', () => {
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/green.txt', 'utf8'), REGISTRY).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), REGISTRY).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), REGISTRY).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer.txt', 'utf8'), REGISTRY).cardIds],
   ]);
   const s1 = createSession({ seed: 42, registry: REGISTRY, decks });
   playOut(s1);
   assert.ok(s1.state.status !== 'active', 'partia 1 nie zakończona');
   const decks2 = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/green.txt', 'utf8'), REGISTRY).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), REGISTRY).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), REGISTRY).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer.txt', 'utf8'), REGISTRY).cardIds],
   ]);
   const s2 = createSession({ seed: 42, registry: REGISTRY, decks: decks2 });
   playOut(s2);

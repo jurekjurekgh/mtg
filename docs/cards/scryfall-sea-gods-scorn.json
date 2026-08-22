@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Sea%20God%27s%20Scorn&set=thb",
+  "print": "Sea God's Scorn (THB)",
+  "name": "Sea God's Scorn",
+  "mana_cost": "{4}{U}{U}",
+  "cmc": 6.0,
+  "type_line": "Sorcery",
+  "oracle_text": "Return up to three target creatures and/or enchantments to their owners' hands.",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [],
+  "set": "thb",
+  "collector_number": "63",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/9/5/9504dc26-f5d8-4b9d-9eb1-51a12b893beb.jpg?1783931579"
+  },
+  "pobrano": "2026-08-22"
+}

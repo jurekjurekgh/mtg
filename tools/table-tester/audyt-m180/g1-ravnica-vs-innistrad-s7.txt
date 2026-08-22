@@ -1,0 +1,600 @@
+== NOWA PARTIA: gracz=ravnica vs bot=innistrad, seed=7, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Swamp  ||  Zagraj ląd: Forest (1 z 2)  ||  Zagraj ląd: Plains  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Selesnya Charm · 2 · Instant · wybierz jedno — Wzmocnienie: +2/+2 do końca tury + zdobądź Zadeptywanie do końca tury · cel: stwór / Wygnanie: wygnij artefakt/enchantment · cel: stwór o sile ≥ 5 / Rycerz: Stwórz 2/2 Knight | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Liliana's Triumph · 2 · Instant · cel poświęca stwora + jeśli controlsPlaneswalkerWithSubtype: każdy przeciwnik odrzuca kartę; w przeciwnym razie: · cel: gracz | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+
+--- krok 3 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Plains (1 z 2)  ||  Zagraj ląd: Forest (1 z 2)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Selesnya Charm · 2 · Instant · wybierz jedno — Wzmocnienie: +2/+2 do końca tury + zdobądź Zadeptywanie do końca tury · cel: stwór / Wygnanie: wygnij artefakt/enchantment · cel: stwór o sile ≥ 5 / Rycerz: Stwórz 2/2 Knight | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Liliana's Triumph · 2 · Instant · cel poświęca stwora + jeśli controlsPlaneswalkerWithSubtype: każdy przeciwnik odrzuca kartę; w przeciwnym razie: · cel: gracz | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Zagraj ląd: Plains (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Cel czaru: Liliana's Triumph (2 opcje)
+  [modal choice] Cel czaru: Liliana's Triumph Rzuć: Liliana's Triumph (koszt 1B) → cel: Nieprzyjaciel Rzuć: Liliana's Triumph (koszt 1B) → cel: Ty
+  [modal choice]   ▶ Rzuć: Liliana's Triumph (koszt 1B) → cel: Nieprzyjaciel
+  [modal choice]     Rzuć: Liliana's Triumph (koszt 1B) → cel: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Liliana's Triumph → cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Liliana's Triumph zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+
+--- krok 6 | T. 4BotGracz: 20 ż.Bot: 20 ż.Główna 1Stos — Gather the Townsfolk ---
+  STOS: Gather the Townsfolk (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Selesnya Charm · 2 · Instant · wybierz jedno — Wzmocnienie: +2/+2 do końca tury + zdobądź Zadeptywanie do końca tury · cel: stwór / Wygnanie: wygnij artefakt/enchantment · cel: stwór o sile ≥ 5 / Rycerz: Stwórz 2/2 Knight | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Gather the Townsfolk
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Human (1/1)
+  [ROZGRYWKA]   • Human wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Human (1/1)
+  [ROZGRYWKA]   • Human wchodzi na pole bitwy
+  [ROZGRYWKA]   • Gather the Townsfolk zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Withstand
+  >> Zagraj ląd: Forest (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+
+--- krok 9 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Cel czaru: Withstand (4 opcje)  ||  Cel czaru: Selesnya Charm — Wzmocnienie (2 opcje)  ||  Rzuć: Selesnya Charm — Rycerz (koszt GW)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Selesnya Charm · 2 · Instant · wybierz jedno — Wzmocnienie: +2/+2 do końca tury + zdobądź Zadeptywanie do końca tury · cel: stwór / Wygnanie: wygnij artefakt/enchantment · cel: stwór o sile ≥ 5 / Rycerz: Stwórz 2/2 Knight | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Withstand · 3 · Instant · prewencja kolejnych 3 obrażeń + dobierz 1 kartę · dowolny cel
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Human · 0 · Creature — Human · choroba · 1/1 ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Rzuć: Selesnya Charm — Rycerz (koszt GW)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Selesnya Charm — tryb: Rycerz
+  [ROZGRYWKA]   • Ty tworzysz token Knight (2/2)
+  [ROZGRYWKA]   • Knight wchodzi na pole bitwy
+  [ROZGRYWKA]   • Selesnya Charm — tryb: Rycerz zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Spare from Evil
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Spare from Evil zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 7 — Ty
+
+--- krok 12 | T. 7GraczGracz: 20 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cel czaru: Withstand (5 opcji)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Withstand · 3 · Instant · prewencja kolejnych 3 obrażeń + dobierz 1 kartę · dowolny cel
+  MOJE POLA: Knight · 0 · Creature — Knight · Czujność · 2/2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Cel czaru: Withstand (5 opcji)
+  [modal choice] Cel czaru: Withstand Rzuć: Withstand (koszt 2W) → cel: Knight (Ty) Rzuć: Withstand (koszt 2W) → cel: Human (Nieprzyjaciel) (1 z 2) Rzuć: Withstand (koszt 2W) → cel: Human (Nieprzyjaciel) (2 z 2) Rzuć: Withstand (koszt 2W) → cel: Nieprzyjaciel Rzuć: Withstand (koszt 2W) → cel: Ty
+  [modal choice]   ▶ Rzuć: Withstand (koszt 2W) → cel: Knight (Ty)
+  [modal choice]     Rzuć: Withstand (koszt 2W) → cel: Human (Nieprzyjaciel) (1 z 2)
+  [modal choice]     Rzuć: Withstand (koszt 2W) → cel: Human (Nieprzyjaciel) (2 z 2)
+  [modal choice]     Rzuć: Withstand (koszt 2W) → cel: Nieprzyjaciel
+  [modal choice]     Rzuć: Withstand (koszt 2W) → cel: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Withstand → cel: Knight
+  [ROZGRYWKA]   • Withstand: tarcza chroni Knight przed 3 kolejnymi obrażeniami
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Withstand zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Veiled Ascension
+
+--- krok 15 | T. 7GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island  ||  Zagraj ląd: Plains  ||  Zagraj ląd: Forest  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2).
+  MOJE POLA: Knight · 0 · Creature — Knight · Czujność · 2/2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Knight
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Human i Human blokują Knight
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Rozdzielasz obrażenia bojowe (trample albo wielu blokerów)
+
+--- krok 18 | T. 7GraczGracz: 20 ż.Bot: 20 ż.Walka / Koniec walki ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Wybierz: Rozdzielenie obrażeń bojowych (1 opcja)
+  RĘKA: Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2).
+  MOJE POLA: Knight · 0 · Creature — Knight · Czujność · atakuje — blokują: Human, Human · 2/2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Human · 0 · Creature — Human · blokuje: Knight · 1/1 ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Wybierz: Rozdzielenie obrażeń bojowych (1 opcja)
+  [modal choice] Rozdziel obrażenia bojowe — przydziel moc atakujących blokującym:Knight (moc 2)Human (wytrz. 1, śmiertelne 1)−10+1↑↓Human (wytrz. 1, śmiertelne 1)−10+1↑↓Zatwierdź przydziałDomyślnie (lethal-first)Zamknij (dokończysz później)
+  [modal choice]   ▶ Zatwierdź przydział
+  [modal choice]     Domyślnie (lethal-first)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Obrażenia (1) do Withstand zapobiegnięte (tarcza prewencji)
+  [ROZGRYWKA]   • Obrażenia (1) do Withstand zapobiegnięte (tarcza prewencji)
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Azorius Justiciar
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+
+--- krok 21 | T. 9GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Azorius Justiciar (koszt 2WW)  ||  Zagraj: Veiled Ascension (koszt 3W)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Forest · Basic Land — Forest · T: dodaj 1 manę | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Azorius Justiciar · 4 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: detain — do twojej następnej tury cel nie atakuje, nie blokuje i nie aktywuje zdolności. · 2/2
+  MOJE POLA: Knight · 0 · Creature — Knight · Czujność · 2/2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Zagraj: Azorius Justiciar (koszt 2WW)
+  [kreator many] Płatność 2WW — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: W, WTapnij: Swamp (B)Tapnij: Plains (W)Tapni — źródła: 5
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Azorius Justiciar
+  [ROZGRYWKA]   • Azorius Justiciar wchodzi na pole bitwy
+  [ROZGRYWKA]   • Azorius Justiciar zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Azorius Justiciar — wybierz cel triggera (wymagany)
+  >> Azorius Justiciar — cel triggera (4 opcje)
+  [modal choice] Azorius Justiciar — cel triggera Azorius Justiciar — cele triggera: Human (Nieprzyjaciel) i Human (Nieprzyjaciel) Azorius Justiciar — cele triggera: Human (Nieprzyjaciel) (1 z 2) Azorius Justiciar — cele triggera: Human (Nieprzyjaciel) (2 z 2) Azorius Justiciar — bez celów („up to")
+  [modal choice]   ▶ Azorius Justiciar — cele triggera: Human (Nieprzyjaciel) i Human (Nieprzyjaciel)
+  [modal choice]     Azorius Justiciar — cele triggera: Human (Nieprzyjaciel) (1 z 2)
+  [modal choice]     Azorius Justiciar — cele triggera: Human (Nieprzyjaciel) (2 z 2)
+  [modal choice]     Azorius Justiciar — bez celów („up to")
+
+--- krok 24 | T. 9GraczGracz: 20 ż.Bot: 20 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Forest · Basic Land — Forest · T: dodaj 1 manę | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2).
+  MOJE POLA: Knight · 0 · Creature — Knight · Czujność · 2/2 | Azorius Justiciar · 4 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: detain — do twojej następnej tury cel nie atakuje, nie blokuje i nie aktywuje zdolności. · choroba · 2/2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Human · 0 · Creature — Human · zatrzymany (detain) · 1/1 ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Azorius Justiciar — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Azorius Justiciar — cel: Human
+  [ROZGRYWKA]   • Human zatrzymany (detain): do następnej tury Ty nie atakuje, nie blokuje i nie aktywuje zdolności
+  [ROZGRYWKA]   • Human zatrzymany (detain): do następnej tury Ty nie atakuje, nie blokuje i nie aktywuje zdolności
+  [ROZGRYWKA]   • Azorius Justiciar — trigger się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Knight
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Knight zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 18
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Village Bell-Ringer
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Courage in Crisis
+
+--- krok 27 | T. 11GraczGracz: 20 ż.Bot: 18 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: Cel czaru: Courage in Crisis (4 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Forest · Basic Land — Forest · T: dodaj 1 manę | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Courage in Crisis · 3 · Instant · połóż licznik +1/+1 + proliferate · cel: stwór
+  MOJE POLA: Knight · 0 · Creature — Knight · Czujność · 2/2 | Azorius Justiciar · 4 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: detain — do twojej następnej tury cel nie atakuje, nie blokuje i nie aktywuje zdolności. · 2/2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Cel czaru: Courage in Crisis (4 opcje)
+  [modal choice] Cel czaru: Courage in Crisis Rzuć: Courage in Crisis (koszt 2G) → cel: Azorius Justiciar (Ty) Rzuć: Courage in Crisis (koszt 2G) → cel: Knight (Ty) Rzuć: Courage in Crisis (koszt 2G) → cel: Human (Nieprzyjaciel) (1 z 2) Rzuć: Courage in Crisis (koszt 2G) → cel: Human (Nieprzyjaciel) (2 z 2)
+  [modal choice]   ▶ Rzuć: Courage in Crisis (koszt 2G) → cel: Azorius Justiciar (Ty)
+  [modal choice]     Rzuć: Courage in Crisis (koszt 2G) → cel: Knight (Ty)
+  [modal choice]     Rzuć: Courage in Crisis (koszt 2G) → cel: Human (Nieprzyjaciel) (1 z 2)
+  [modal choice]     Rzuć: Courage in Crisis (koszt 2G) → cel: Human (Nieprzyjaciel) (2 z 2)
+  [kreator many] Płatność 2G — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: GTapnij: Swamp (B)Tapnij: Plains (W)Tapnij: F — źródła: 5
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Courage in Crisis → cel: Azorius Justiciar
+  [ROZGRYWKA]   • Azorius Justiciar dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Wykonujesz proliferate — wskazuje permanenty/graczy z licznikami
+  >> Wybierz: Proliferate — cel licznika (2 opcje)
+  [modal choice] Wybierz: Proliferate — cel licznika Proliferate: Azorius Justiciar (Ty) Proliferate: bez celów (nic nie dostaje liczników)
+  [modal choice]   ▶ Proliferate: Azorius Justiciar (Ty)
+  [modal choice]     Proliferate: bez celów (nic nie dostaje liczników)
+
+--- krok 30 | T. 11GraczGracz: 20 ż.Bot: 18 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Forest  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Forest · Basic Land — Forest · T: dodaj 1 manę | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2).
+  MOJE POLA: Knight · 0 · Creature — Knight · Czujność · 2/2 | Azorius Justiciar · 4 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: detain — do twojej następnej tury cel nie atakuje, nie blokuje i nie aktywuje zdolności. · 2x +1/+1 · 4/4 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Azorius Justiciar dostaje +1 licznik +1/+1 (razem 2)
+  [ROZGRYWKA]   • Courage in Crisis zostaje rozstrzygnięty
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+
+--- krok 33 | T. 11GraczGracz: 20 ż.Bot: 18 ż.Walka / Koniec walki ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Wybierz: Rozdzielenie obrażeń bojowych (1 opcja)
+  RĘKA: Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2).
+  MOJE POLA: Knight · 0 · Creature — Knight · Czujność · atakuje — blokują: Human, Human · 2/2 | Azorius Justiciar · 4 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: detain — do twojej następnej tury cel nie atakuje, nie blokuje i nie aktywuje zdolności. · atakuje — niezablokowany · 2x +1/+1 · 4/4 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Human · 0 · Creature — Human · blokuje: Knight · 1/1 ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Knight, Azorius Justiciar
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Human i Human blokują Knight
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Rozdzielasz obrażenia bojowe (trample albo wielu blokerów)
+  >> Wybierz: Rozdzielenie obrażeń bojowych (1 opcja)
+  [modal choice] Rozdziel obrażenia bojowe — przydziel moc atakujących blokującym:Knight (moc 2)Human (wytrz. 1, śmiertelne 1)−10+1↑↓Human (wytrz. 1, śmiertelne 1)−10+1↑↓Zatwierdź przydziałDomyślnie (lethal-first)Zamknij (dokończysz później)
+  [modal choice]   ▶ Zatwierdź przydział
+  [modal choice]     Domyślnie (lethal-first)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Human zadaje 1 obrażenie (Knight)
+  [ROZGRYWKA]   • Human zadaje 1 obrażenie (Knight)
+  [ROZGRYWKA]   • Azorius Justiciar zadaje 4 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 18 → 14
+  [ROZGRYWKA]   • Knight ginie
+  [ROZGRYWKA]   • token Knight przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+
+--- krok 36 | T. 13GraczGracz: 18 ż.Bot: 14 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Tenth District Veteran · 3 · Creature — Human Soldier · Czujność · Gdy atakuje: odkręć. · 2/3
+  MOJE POLA: Azorius Justiciar · 4 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: detain — do twojej następnej tury cel nie atakuje, nie blokuje i nie aktywuje zdolności. · 2x +1/+1 · 4/4 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Human, Human
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Human zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 19
+  [ROZGRYWKA]   • Human zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 19 → 18
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Tenth District Veteran
+  >> Zagraj: Tenth District Veteran (koszt 2W)
+  [kreator many] Płatność 2W — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: WTapnij: Swamp (B)Tapnij: Plains (W)Tapnij: F — źródła: 6
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Tenth District Veteran
+  [ROZGRYWKA]   • Tenth District Veteran wchodzi na pole bitwy
+  [ROZGRYWKA]   • Tenth District Veteran zostaje rozstrzygnięty
+
+--- krok 39 | T. 13GraczGracz: 18 ż.Bot: 14 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2).
+  MOJE POLA: Azorius Justiciar · 4 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: detain — do twojej następnej tury cel nie atakuje, nie blokuje i nie aktywuje zdolności. · 2x +1/+1 · 4/4 | Tenth District Veteran · 3 · Creature — Human Soldier · Czujność · Gdy atakuje: odkręć. · choroba · 2/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Azorius Justiciar
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Azorius Justiciar zadaje 4 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 14 → 10
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Makeshift Mauler
+  [ROZGRYWKA]   • Nieprzyjaciel: Village Bell-Ringer — cmentarz → wygnanie
+
+--- krok 42 | T. 15GraczGracz: 18 ż.Bot: 10 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Epic Experiment · 2 · Sorcery · wygnaj wierzch biblioteki i rzuć czary bez kosztu
+  MOJE POLA: Azorius Justiciar · 4 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: detain — do twojej następnej tury cel nie atakuje, nie blokuje i nie aktywuje zdolności. · 2x +1/+1 · 4/4 | Tenth District Veteran · 3 · Creature — Human Soldier · Czujność · Gdy atakuje: odkręć. · 2/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 ×2 | Makeshift Mauler · 4 · Creature — Zombie Horror · choroba · 4/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Makeshift Mauler wchodzi na pole bitwy
+  [ROZGRYWKA]   • Makeshift Mauler zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Epic Experiment
+  >> Zagraj: Veiled Ascension (koszt 3W)
+  [kreator many] Płatność 3W — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: WTapnij: Swamp (B)Tapnij: Plains (W)Tapnij: F — źródła: 6
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Veiled Ascension
+  [ROZGRYWKA]   • Veiled Ascension wchodzi na pole bitwy
+  [ROZGRYWKA]   • Veiled Ascension zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Veiled Ascension — trigger (wejście na pole bitwy)
+
+--- krok 45 | T. 15GraczGracz: 18 ż.Bot: 10 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (4 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Epic Experiment · 2 · Sorcery · wygnaj wierzch biblioteki i rzuć czary bez kosztu
+  MOJE POLA: Azorius Justiciar · 4 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: detain — do twojej następnej tury cel nie atakuje, nie blokuje i nie aktywuje zdolności. · 2x +1/+1 · 4/4 | Tenth District Veteran · 3 · Creature — Human Soldier · Czujność · Gdy atakuje: odkręć. · 2/3 | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 ×2 | Makeshift Mauler · 4 · Creature — Zombie Horror · choroba · 4/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Veiled Ascension — trigger bez efektu (nic się nie wydarzyło (zerowy wynik))
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Azorius Justiciar, Tenth District Veteran
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Tenth District Veteran — wybierz cel triggera (wymagany)
+
+--- krok 48 | T. 15GraczGracz: 18 ż.Bot: 10 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Tenth District Veteran — cel triggera (2 opcje)
+  RĘKA: Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Epic Experiment · 2 · Sorcery · wygnaj wierzch biblioteki i rzuć czary bez kosztu
+  MOJE POLA: Azorius Justiciar · 4 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: detain — do twojej następnej tury cel nie atakuje, nie blokuje i nie aktywuje zdolności. · atakuje — niezablokowany · 2x +1/+1 · 4/4 | Tenth District Veteran · 3 · Creature — Human Soldier · Czujność · Gdy atakuje: odkręć. · atakuje — niezablokowany · 2/3 | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 ×2 | Makeshift Mauler · 4 · Creature — Zombie Horror · choroba · 4/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Tenth District Veteran — cel triggera (2 opcje)
+  [modal choice] Tenth District Veteran — cel triggera Tenth District Veteran — cel triggera: Azorius Justiciar (Ty) Tenth District Veteran — cel triggera: Tenth District Veteran (Ty)
+  [modal choice]   ▶ Tenth District Veteran — cel triggera: Azorius Justiciar (Ty)
+  [modal choice]     Tenth District Veteran — cel triggera: Tenth District Veteran (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tenth District Veteran — trigger (atak)
+  [ROZGRYWKA]   • Tenth District Veteran — cel: Azorius Justiciar
+  [ROZGRYWKA]   • Tenth District Veteran — trigger się rozstrzyga
+  [ROZGRYWKA]   • Makeshift Mauler blokuje Azorius Justiciar
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Azorius Justiciar zadaje 4 obrażenia (Makeshift Mauler)
+  [ROZGRYWKA]   • Makeshift Mauler zadaje 4 obrażenia (Azorius Justiciar)
+  [ROZGRYWKA]   • Tenth District Veteran zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 10 → 8
+  [ROZGRYWKA]   • Azorius Justiciar ginie
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Elgaud Inquisitor
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Elgaud Inquisitor wchodzi na pole bitwy
+  [ROZGRYWKA]   • Elgaud Inquisitor zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Makeshift Mauler
+
+--- krok 51 | T. 16BotGracz: 18 ż.Bot: 8 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Deklaracja blokujących (2 opcje)
+  RĘKA: Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Epic Experiment · 2 · Sorcery · wygnaj wierzch biblioteki i rzuć czary bez kosztu
+  MOJE POLA: Tenth District Veteran · 3 · Creature — Human Soldier · Czujność · Gdy atakuje: odkręć. · 2/3 | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 ×2 | Makeshift Mauler · 4 · Creature — Zombie Horror · atakuje — niezablokowany · 4/5 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Tenth District Veteran (2/3)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tenth District Veteran blokuje Makeshift Mauler
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Makeshift Mauler zadaje 4 obrażenia (Tenth District Veteran)
+  [ROZGRYWKA]   • Tenth District Veteran zadaje 2 obrażenia (Makeshift Mauler)
+  [ROZGRYWKA]   • Tenth District Veteran ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 17 — Ty
+
+--- krok 54 | T. 17GraczGracz: 18 ż.Bot: 8 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Wybierz: Efekt dobrowolny („you may") (2 opcje)
+  RĘKA: Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Epic Experiment · 2 · Sorcery · wygnaj wierzch biblioteki i rzuć czary bez kosztu
+  MOJE POLA: Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 ×2 | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Wybierz: Efekt dobrowolny („you may") (2 opcje)
+  [modal choice] Wybierz: Efekt dobrowolny („you may") Zrezygnuj z efektu Uruchom efekt dobrowolny (you may)
+  [modal choice]   ▶ Zrezygnuj z efektu
+  [modal choice]     Uruchom efekt dobrowolny (you may)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+
+--- krok 57 | T. 18BotGracz: 18 ż.Bot: 8 ż.Główna 1Stos — Somberwald Spider ---
+  STOS: Somberwald Spider (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Epic Experiment · 2 · Sorcery · wygnaj wierzch biblioteki i rzuć czary bez kosztu
+  MOJE POLA: Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 ×2 | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Somberwald Spider
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Somberwald Spider wchodzi na pole bitwy
+  [ROZGRYWKA]   • Somberwald Spider zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Human, Human, Makeshift Mauler, Elgaud Inquisitor
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Human zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 17
+  [ROZGRYWKA]   • Human zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 16
+  [ROZGRYWKA]   • Makeshift Mauler zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 12
+  [ROZGRYWKA]   • Elgaud Inquisitor zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 12 → 10
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 8 → 10
+  [ROZGRYWKA]   • Tura 19 — Ty
+  >> Wybierz: Efekt dobrowolny („you may") (2 opcje)
+  [modal choice] Wybierz: Efekt dobrowolny („you may") Zrezygnuj z efektu Uruchom efekt dobrowolny (you may)
+  [modal choice]   ▶ Zrezygnuj z efektu
+  [modal choice]     Uruchom efekt dobrowolny (you may)
+
+--- krok 60 | T. 19GraczGracz: 10 ż.Bot: 10 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Epic Experiment · 2 · Sorcery · wygnaj wierzch biblioteki i rzuć czary bez kosztu | Trestle Troll · 3 · Creature — Troll · Obrońca Zasięg · {1}, {B}, {G}: Regeneruj tego stwora (następne zniszczenie zostaje odwrócone) · 1/4
+  MOJE POLA: Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 ×2 | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2 | Somberwald Spider · 5 · Creature — Spider · Zasięg · choroba · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Trestle Troll
+  >> Zagraj: Trestle Troll (koszt 1BG)
+  [kreator many] Płatność 1BG — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: B, GTapnij: Swamp (B)Tapnij: Plains (W)Tapni — źródła: 7
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Trestle Troll
+  [ROZGRYWKA]   • Trestle Troll wchodzi na pole bitwy
+  [ROZGRYWKA]   • Trestle Troll zostaje rozstrzygnięty
+
+--- krok 63 | T. 20BotGracz: 10 ż.Bot: 10 ż.Główna 1Stos — Wolfkin Bond ---
+  STOS: Wolfkin Bond (rzuca: Nieprzyjaciel) → cel: Makeshift Mauler
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Epic Experiment · 2 · Sorcery · wygnaj wierzch biblioteki i rzuć czary bez kosztu
+  MOJE POLA: Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Trestle Troll · 3 · Creature — Troll · Obrońca Zasięg · {1}, {B}, {G}: Regeneruj tego stwora (następne zniszczenie zostaje odwrócone) · choroba · 1/4 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 ×2 | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2 | Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Wolfkin Bond → cel: Makeshift Mauler
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Wolfkin Bond zaczarowuje Makeshift Mauler
+  [ROZGRYWKA]   • Wolfkin Bond wchodzi na pole bitwy
+  [ROZGRYWKA]   • Wolfkin Bond — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Wolf (2/2)
+  [ROZGRYWKA]   • Wolf wchodzi na pole bitwy
+  [ROZGRYWKA]   • Wolfkin Bond — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Makeshift Mauler
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Trestle Troll (1/4)
+  [combat wizard] Zatwierdź bloki
+
+--- krok 66 | T. 20BotGracz: 10 ż.Bot: 10 ż.Walka / Koniec walki ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Epic Experiment · 2 · Sorcery · wygnaj wierzch biblioteki i rzuć czary bez kosztu
+  MOJE POLA: Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 ×2 | Makeshift Mauler · 4 · Creature — Zombie Horror · −1 · zaczarowana: Wolfkin Bond · 6/7 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2 | Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4 | Wolfkin Bond · 5 · Enchantment Aura · stwór: +2/+2 · Gdy wejdzie na pole bitwy: stwórz token Wolf. · aura → Makeshift Mauler | Wolf · 0 · Creature — Wolf · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Trestle Troll blokuje Makeshift Mauler
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Makeshift Mauler zadaje 6 obrażeń (Trestle Troll)
+  [ROZGRYWKA]   • Trestle Troll zadaje 1 obrażenie (Makeshift Mauler)
+  [ROZGRYWKA]   • Trestle Troll ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 21 — Ty
+  >> Wybierz: Efekt dobrowolny („you may") (2 opcje)
+  [modal choice] Wybierz: Efekt dobrowolny („you may") Zrezygnuj z efektu Uruchom efekt dobrowolny (you may)
+  [modal choice]   ▶ Zrezygnuj z efektu
+  [modal choice]     Uruchom efekt dobrowolny (you may)
+
+--- krok 69 | T. 21GraczGracz: 10 ż.Bot: 10 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Epic Experiment · 2 · Sorcery · wygnaj wierzch biblioteki i rzuć czary bez kosztu | Plains · Basic Land — Plains · T: dodaj 1 manę
+  MOJE POLA: Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 ×2 | Makeshift Mauler · 4 · Creature — Zombie Horror · zaczarowana: Wolfkin Bond · 6/7 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2 | Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4 | Wolfkin Bond · 5 · Enchantment Aura · stwór: +2/+2 · Gdy wejdzie na pole bitwy: stwórz token Wolf. · aura → Makeshift Mauler | Wolf · 0 · Creature — Wolf · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  [ROZGRYWKA]   • Tura 22 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Armored Skaab
+
+--- krok 72 | T. 22BotGracz: 10 ż.Bot: 10 ż.Główna 1Stos — Ghoulcaller's Bell ---
+  STOS: Ghoulcaller's Bell (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Epic Experiment · 2 · Sorcery · wygnaj wierzch biblioteki i rzuć czary bez kosztu
+  MOJE POLA: Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×4 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 ×2 | Makeshift Mauler · 4 · Creature — Zombie Horror · zaczarowana: Wolfkin Bond · 6/7 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2 | Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4 | Wolfkin Bond · 5 · Enchantment Aura · stwór: +2/+2 · Gdy wejdzie na pole bitwy: stwórz token Wolf. · aura → Makeshift Mauler | Wolf · 0 · Creature — Wolf · 2/2 | Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · choroba · 1/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Armored Skaab wchodzi na pole bitwy
+  [ROZGRYWKA]   • Armored Skaab zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Armored Skaab — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Snarling Wolf do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Lunar Rejection do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Swamp do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Swamp do grobu
+  [ROZGRYWKA]   • Armored Skaab — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Ghoulcaller's Bell
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ghoulcaller's Bell wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ghoulcaller's Bell zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Ghoulcaller's Bell
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 75 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Epic Experiment · 2 · Sorcery · wygnaj wierzch biblioteki i rzuć czary bez kosztu
+  MOJE POLA: Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×4 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Human · 0 · Creature — Human · 1/1 ×2 | Makeshift Mauler · 4 · Creature — Zombie Horror · zaczarowana: Wolfkin Bond · 6/7 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2 | Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4 | Wolfkin Bond · 5 · Enchantment Aura · stwór: +2/+2 · Gdy wejdzie na pole bitwy: stwórz token Wolf. · aura → Makeshift Mauler | Wolf · 0 · Creature — Wolf · 2/2 | Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · choroba · 1/4 | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Selesnya Charm, Ember Beast, Liliana's Triumph, Forest, Plains, Forest, Swamp ⏎ Nowa partia (seed 7). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 25, kliknięte: 31, modale: 9, sondy noop: 95 (panel 63, modal 32)
+== DETEKTORY: brak zgłoszeń ==

@@ -109,10 +109,11 @@ test('E4: look_top_resolved — człowiek widzi wziętą kartę, bot nie (FoW)',
 
 function makeSession(seed) {
   const registry = createCardRegistry();
-  // mechanicy też ma Curate — potrzebujemy surveil/skry także u BOTA (FoW).
+  // M178 (talie per plan): surveil siedzi w Forgotten Realms (Curate) —
+  // lustro FR vs FR daje surveil OBU stron (FoW: własny z nazwami, bota bez).
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/azorius.txt', 'utf8'), registry).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/mechanicy.txt', 'utf8'), registry).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/forgotten-realms.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/forgotten-realms.txt', 'utf8'), registry).cardIds],
   ]);
   return createSession({ registry, decks, seed, pauseOnBotMoves: true });
 }
@@ -153,7 +154,8 @@ test('E4 (modal): własny surveil z Curate — nazwy w modalu; surveil bota — 
   // Seed 5 po M132 (azorius +3 lądy wg reguły 2:1) — zmiana składu talii
   // zmienia rozdania, więc dawne seedy przestały dawać WŁASNY surveil.
   // Hunter przeszedł 140 seedów; 5 daje oba warunki naraz (kolejne: 63, 67).
-  for (const seed of [5, 63, 67, 13, 17, 42, 7, 11, 8]) {
+  // M178: seedy przelosowane hunterem na lustrze FR vs FR (1/2/4 dają oba warunki).
+  for (const seed of [1, 2, 4, 6, 10]) {
     const { modalTexts } = playCollectingModals(makeSession(seed));
     for (const line of modalTexts.filter((t) => /^Wykonujesz surveil/.test(t ?? ''))) {
       checkedMine += 1;
@@ -172,7 +174,7 @@ test('E4 (modal): własny surveil z Curate — nazwy w modalu; surveil bota — 
 
 test('E4 (modal): linie manipulacji w ogóle docierają (surveil/scry rozstrzygnięcia w modalu)', () => {
   let checked = 0;
-  for (const seed of [42, 7, 11, 77, 123, 202]) {
+  for (const seed of [1, 2, 3, 4, 6]) {
     const { modalTexts } = playCollectingModals(makeSession(seed));
     const surveilEnd = modalTexts.filter((t) => /kończ(ysz|y) surveil/.test(t ?? ''));
     checked += surveilEnd.length;

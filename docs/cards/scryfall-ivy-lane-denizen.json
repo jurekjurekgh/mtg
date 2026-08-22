@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Ivy+Lane+Denizen&set=cmr",
+  "print": "Ivy Lane Denizen (CMR)",
+  "name": "Ivy Lane Denizen",
+  "mana_cost": "{3}{G}",
+  "cmc": 4.0,
+  "type_line": "Creature — Elf Warrior",
+  "oracle_text": "Whenever another green creature you control enters, put a +1/+1 counter on target creature.",
+  "power": "2",
+  "toughness": "3",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [],
+  "set": "cmr",
+  "collector_number": "236",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/8/78bea375-8af3-4425-a418-bb5503e2dfb7.jpg?1783928792"
+  },
+  "pobrano": "2026-08-22"
+}

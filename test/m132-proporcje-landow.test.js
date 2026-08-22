@@ -94,10 +94,13 @@ test('M132/B: żadna talia nie jest przeważona lądami', () => {
   assert.deepEqual(offenders, [], 'talia przeważona lądami:\n' + offenders.join('\n'));
 });
 
-test('M132/B: talie, które rosły z batchami, mają dziś poprawną manabazę', () => {
-  // Regresja wprost na zgłoszenie — cztery talie zmierzone jako wadliwe.
-  // Wartości sprzed naprawy: green 2,52 | red 2,32 | black 2,25 | azorius 2,18.
-  for (const file of ['green.txt', 'red.txt', 'black.txt', 'azorius.txt']) {
+test('M178: talie generowane per plan trzymają regułę 1:2 z konstrukcji', () => {
+  // M178 (rewolucja talii, ADR 0023): stare talie batchowe (green/red/black/
+  // azorius) zastąpione taliami per PLAN z generatora
+  // (tools/generate-plan-decks.mjs) — landy = ceil(nielandów/2), więc każda
+  // talia spełnia próg z konstrukcji; ten test pilnuje, żeby generator się
+  // nie rozjechał (i żeby ręczne poprawki talii nie złamały reguły).
+  for (const file of DECK_FILES) {
     const { nonland, lands } = countDeck(file);
     const ratio = nonland / lands;
     assert.ok(ratio <= MAX_NONLAND_PER_LAND,

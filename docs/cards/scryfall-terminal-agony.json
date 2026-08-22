@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Terminal%20Agony&set=mh2",
+  "print": "Terminal Agony (MH2)",
+  "name": "Terminal Agony",
+  "mana_cost": "{2}{B}{R}",
+  "cmc": 4.0,
+  "type_line": "Sorcery",
+  "oracle_text": "Destroy target creature.\nMadness {B}{R} (If you discard this card, discard it into exile. When you do, cast it for its madness cost or put it into your graveyard.)",
+  "colors": [
+    "B",
+    "R"
+  ],
+  "color_identity": [
+    "B",
+    "R"
+  ],
+  "keywords": [
+    "Madness"
+  ],
+  "set": "mh2",
+  "collector_number": "215",
+  "rarity": "common",
+  "pobrano": "2026-08-21",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/1/314e94ad-0e12-48bb-aae1-2c842943114a.jpg?1783926810",
+    "normal": "https://cards.scryfall.io/large/front/3/1/314e94ad-0e12-48bb-aae1-2c842943114a.jpg?1783926810"
+  }
+}

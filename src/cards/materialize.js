@@ -46,6 +46,8 @@ export function gameObjectDataOf(card) {
     if (card.devour) data.devour = card.devour;
     // Endure (Kin-Tree Nurturer): ETB z decyzją resolve_endure_choice.
     if (card.endure != null) data.endure = card.endure;
+    // Toxic (CR 702.180): wartość na obiekcie gry (combat czyta source.toxic).
+    if (card.toxic != null) data.toxic = card.toxic;
     // Exploit (CR 702.110, Silumgar Butcher): ETB z opcjonalnym poświęceniem
     // (resolve_exploit_choice); po poświęceniu trigger „exploits".
     if (card.exploit) data.exploit = card.exploit;

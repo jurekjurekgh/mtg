@@ -18,7 +18,7 @@ export function createCardInstance({ id, cardId, ownerId }) {
   return Object.freeze({ id, cardId, ownerId });
 }
 
-export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, entersWithCountersIf = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, exploit = null, treasureAltCost = null, cardName = null, name = null, isToken = false, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, rebound = null, reboundCast = false, reboundReady = false }) {
+export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, entersWithCountersIf = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, exploit = null, treasureAltCost = null, cardName = null, name = null, isToken = false, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, rebound = null, reboundCast = false, reboundReady = false }) {
   if (!id || !instanceId || !cardId || !controllerId || !zone) {
     throw new TypeError('Obiekt gry wymaga id, instanceId, cardId, controllerId i zone');
   }
@@ -127,6 +127,10 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
         ? { replaceTokenCreation: Object.freeze({ ...aura.replaceTokenCreation }) }
         : {}),
       ...(aura.keepOwnAttachmentsOnProtection ? { keepOwnAttachmentsOnProtection: true } : {}),
+      // M174/D (klasa L47): warunkowe keywordy aury (Predator's Gambit).
+      ...(aura.conditionalKeywords?.length
+        ? { conditionalKeywords: Object.freeze(aura.conditionalKeywords.map((ck) => Object.freeze({ condition: Object.freeze({ ...ck.condition }), keywords: Object.freeze([...ck.keywords]) }))) }
+        : {}),
     }) : null,
     // Equipment (CR 301.5/702.6): permanent-artefakt ze zdolnością equip;
     // załączony daje zaczarowanemu nosicielowi pump/keywordy, a po utracie
@@ -142,6 +146,9 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
       if (equipment.conditionalKeywords && equipment.conditionalKeywords.length > 0) {
         base.conditionalKeywords = Object.freeze(equipment.conditionalKeywords.map((ck) => Object.freeze({ condition: Object.freeze({ ...ck.condition }), keywords: Object.freeze([...ck.keywords]) })));
       }
+      // Batch 44 (Thieves' Tools, L48): próg „can't be blocked" musi przejść
+      // cały łańcuch registry → gameObject, inaczej ginie po zmianie strefy.
+      if (equipment.cantBeBlockedMaxPower != null) base.cantBeBlockedMaxPower = equipment.cantBeBlockedMaxPower;
       // Ograniczenia nosiciela (jak przy aurze) — zarezerwowane dla
       // przyszłych equipmentów; obecnie żaden ich nie używa.
       if (equipment.cantAttack) base.cantAttack = true;
@@ -154,6 +161,9 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // +1/+1 na docelowym stworze; jeśli to inny stwór, zyskuje podane
     // zdolności do końca tury". Cel wybiera kontroler (komenda resolve_backup).
     backup: backup ? Object.freeze({ counters: backup.counters, grantKeywords: Object.freeze([...(backup.grantKeywords ?? [])]) }) : null,
+    // Toxic (CR 702.180, Batch 45 — Crawling Chorus): combat damage graczowi
+    // daje mu N poison counterów DODATKOWO do obrażeń (inaczej niż infect).
+    toxic: toxic ?? null,
     // Devour (CR 702.82) i endure (TDM): deskryptory ETB — jak backup,
     // decyzje blokujące (pendingDevours/pendingEndures, cz. 2 batchu).
     devour: devour ? Object.freeze({ counters: devour.counters }) : null,
@@ -203,7 +213,9 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     isToken,
     // Saga (CR 714, Shiva Warden of Ice): deskryptor rozdziałów; liczniki lore
     // wzbudzają kolejne rozdziały (wejście = I; po komponencie draw = dalsze).
-    saga: saga ? Object.freeze({ chapters: saga.chapters }) : null,
+    // M172/B (klasa L47 — ręczne przepisywanie deskryptora gubi nowe pola):
+    // saga niesie też chapterNames (tytuły rozdziałów z Oracle).
+    saga: saga ? Object.freeze({ chapters: saga.chapters, chapterNames: saga.chapterNames ?? null }) : null,
     // Station (EOE Spacecraft, Wedgelight Rammer): artefakt ze „ukrytym\"
     // stworem — przy >= threshold liczników charge obiekt JEST stworem
     // (pola kind przepina counters.js po każdej zmianie liczników).

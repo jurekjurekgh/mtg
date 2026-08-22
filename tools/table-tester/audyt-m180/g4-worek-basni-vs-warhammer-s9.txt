@@ -1,0 +1,364 @@
+== NOWA PARTIA: gracz=worek-basni vs bot=warhammer, seed=9, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island  ||  Zagraj ląd: Swamp  ||  Zagraj ląd: Plains  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Deadly Recluse · 2 · Creature — Spider · Zasięg Dotykanie śmierci · 1/2 | Barkform Harvester · 3 · Artifact Creature — Shapeshifter · Zasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki · 2/3 | Kappa Tech-Wrecker · 2 · Creature — Turtle Ninja · Ninjutsu {2}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · Gdy zada obrażenia graczowi: usuń licznik deathtouch, wygnij artefakt/enchantment. · 1/3
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Plains, Swamp, Island, Release the Ants, Deadly Recluse, Barkform Harvester, Kappa Tech-Wrecker ⏎ Nowa partia (seed 9). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mystic Sanctuary
+
+--- krok 3 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Mystic Sanctuary  ||  Zagraj ląd: Swamp  ||  Zagraj ląd: Plains  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Deadly Recluse · 2 · Creature — Spider · Zasięg Dotykanie śmierci · 1/2 | Barkform Harvester · 3 · Artifact Creature — Shapeshifter · Zasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki · 2/3 | Kappa Tech-Wrecker · 2 · Creature — Turtle Ninja · Ninjutsu {2}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · Gdy zada obrażenia graczowi: usuń licznik deathtouch, wygnij artefakt/enchantment. · 1/3 | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Plains, Swamp, Island, Release the Ants, Deadly Recluse, Barkform Harvester, Kappa Tech-Wrecker ⏎ Nowa partia (seed 9). Powodzenia!
+  >> Zagraj ląd: Mystic Sanctuary
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mystic Sanctuary (wchodzi zatapnięty)
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Cellar Door
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Cellar Door wchodzi na pole bitwy
+  [ROZGRYWKA]   • Cellar Door zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Zoraline, Cosmos Caller
+
+--- krok 6 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Swamp  ||  Zagraj ląd: Plains  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Plains · Basic Land — Plains · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Deadly Recluse · 2 · Creature — Spider · Zasięg Dotykanie śmierci · 1/2 | Barkform Harvester · 3 · Artifact Creature — Shapeshifter · Zasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki · 2/3 | Kappa Tech-Wrecker · 2 · Creature — Turtle Ninja · Ninjutsu {2}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · Gdy zada obrażenia graczowi: usuń licznik deathtouch, wygnij artefakt/enchantment. · 1/3 | Zoraline, Cosmos Caller · 3 · Legendary Creature — Bat Cleric · Latanie Czujność · Gdy nietoperz, który kontrolujesz, atakuje: zyskaj 1 życie. · Gdy wejdzie na pole bitwy: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · Gdy atakuje: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · 3/3
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Plains, Swamp, Island, Release the Ants, Deadly Recluse, Barkform Harvester, Kappa Tech-Wrecker ⏎ Nowa partia (seed 9). Powodzenia!
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Zagraj: Barkform Harvester (koszt 3)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Barkform Harvester
+  [ROZGRYWKA]   • Barkform Harvester wchodzi na pole bitwy
+  [ROZGRYWKA]   • Barkform Harvester zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+
+--- krok 9 | T. 7GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Plains (1 z 2)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Deadly Recluse · 2 · Creature — Spider · Zasięg Dotykanie śmierci · 1/2 | Kappa Tech-Wrecker · 2 · Creature — Turtle Ninja · Ninjutsu {2}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · Gdy zada obrażenia graczowi: usuń licznik deathtouch, wygnij artefakt/enchantment. · 1/3 | Zoraline, Cosmos Caller · 3 · Legendary Creature — Bat Cleric · Latanie Czujność · Gdy nietoperz, który kontrolujesz, atakuje: zyskaj 1 życie. · Gdy wejdzie na pole bitwy: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · Gdy atakuje: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · 3/3
+  MOJE POLA: Barkform Harvester · 3 · Artifact Creature — Shapeshifter · Zasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki · 2/3 | Island · Basic Land — Island · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Plains, Swamp, Island, Release the Ants, Deadly Recluse, Barkform Harvester, Kappa Tech-Wrecker ⏎ Nowa partia (seed 9). Powodzenia!
+  >> Zagraj ląd: Plains (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Zagraj: Zoraline, Cosmos Caller (koszt 1WB)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Zoraline, Cosmos Caller
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller wchodzi na pole bitwy
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller — trigger bez efektu (brak legalnych celów)
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+
+--- krok 12 | T. 9GraczGracz: 20 ż.Bot: 18 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Plains · Basic Land — Plains · T: dodaj 1 manę | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Deadly Recluse · 2 · Creature — Spider · Zasięg Dotykanie śmierci · 1/2 | Kappa Tech-Wrecker · 2 · Creature — Turtle Ninja · Ninjutsu {2}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · Gdy zada obrażenia graczowi: usuń licznik deathtouch, wygnij artefakt/enchantment. · 1/3 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2
+  MOJE POLA: Barkform Harvester · 3 · Artifact Creature — Shapeshifter · Zasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki · 2/3 | Zoraline, Cosmos Caller · 3 · Legendary Creature — Bat Cleric · Latanie Czujność · Gdy nietoperz, który kontrolujesz, atakuje: zyskaj 1 życie. · Gdy wejdzie na pole bitwy: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · Gdy atakuje: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · 3/3 | Island · Basic Land — Island · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Plains, Swamp, Island, Release the Ants, Deadly Recluse, Barkform Harvester, Kappa Tech-Wrecker ⏎ Nowa partia (seed 9). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Barkform Harvester
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Barkform Harvester zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 18
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Index
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Blade-Blizzard Kitsune
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Zagraj: Blade-Blizzard Kitsune (koszt 2W)
+  [kreator many] Płatność 2W — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: WTapnij: Island (U)Tapnij: Mystic Sanctuary ( — źródła: 5
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Mystic Sanctuary (U)
+
+--- krok 15 | T. 9GraczGracz: 20 ż.Bot: 18 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Deadly Recluse · 2 · Creature — Spider · Zasięg Dotykanie śmierci · 1/2 | Kappa Tech-Wrecker · 2 · Creature — Turtle Ninja · Ninjutsu {2}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · Gdy zada obrażenia graczowi: usuń licznik deathtouch, wygnij artefakt/enchantment. · 1/3
+  MOJE POLA: Barkform Harvester · 3 · Artifact Creature — Shapeshifter · Zasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki · 2/3 | Zoraline, Cosmos Caller · 3 · Legendary Creature — Bat Cleric · Latanie Czujność · Gdy nietoperz, który kontrolujesz, atakuje: zyskaj 1 życie. · Gdy wejdzie na pole bitwy: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · Gdy atakuje: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · 3/3 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · choroba · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Plains, Swamp, Island, Release the Ants, Deadly Recluse, Barkform Harvester, Kappa Tech-Wrecker ⏎ Nowa partia (seed 9). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Blade-Blizzard Kitsune
+  [ROZGRYWKA]   • Blade-Blizzard Kitsune wchodzi na pole bitwy
+  [ROZGRYWKA]   • Blade-Blizzard Kitsune zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Barkform Harvester, Zoraline, Cosmos Caller
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller — trigger bez efektu (brak legalnych celów)
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller — trigger (atak nietoperza)
+  [ROZGRYWKA]   • Ty: życie 20 → 21
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller — trigger się rozstrzyga
+
+--- krok 18 | T. 9GraczGracz: 21 ż.Bot: 18 ż.Walka / Obrażenia ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Wariant (2 opcje)  ||  Rozstrzygnij obrażenia w walce  ||  Poddaj partię
+  RĘKA: Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Deadly Recluse · 2 · Creature — Spider · Zasięg Dotykanie śmierci · 1/2 | Kappa Tech-Wrecker · 2 · Creature — Turtle Ninja · Ninjutsu {2}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · Gdy zada obrażenia graczowi: usuń licznik deathtouch, wygnij artefakt/enchantment. · 1/3
+  MOJE POLA: Barkform Harvester · 3 · Artifact Creature — Shapeshifter · Zasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki · atakuje — niezablokowany · 2/3 | Zoraline, Cosmos Caller · 3 · Legendary Creature — Bat Cleric · Latanie Czujność · Gdy nietoperz, który kontrolujesz, atakuje: zyskaj 1 życie. · Gdy wejdzie na pole bitwy: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · Gdy atakuje: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · atakuje — niezablokowany · 3/3 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · choroba · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Plains, Swamp, Island, Release the Ants, Deadly Recluse, Barkform Harvester, Kappa Tech-Wrecker ⏎ Nowa partia (seed 9). Powodzenia!
+  >> Rozstrzygnij obrażenia w walce
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Barkform Harvester zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 18 → 16
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 16 → 13
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Brute Force
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Cel czaru: Release the Ants (5 opcji)
+  [modal choice] Cel czaru: Release the Ants Rzuć: Release the Ants (koszt 1R) → cel: Blade-Blizzard Kitsune (Ty) Rzuć: Release the Ants (koszt 1R) → cel: Zoraline, Cosmos Caller (Ty) Rzuć: Release the Ants (koszt 1R) → cel: Barkform Harvester (Ty) Rzuć: Release the Ants (koszt 1R) → cel: Nieprzyjaciel Rzuć: Release the Ants (koszt 1R) → cel: Ty
+  [modal choice]   ▶ Rzuć: Release the Ants (koszt 1R) → cel: Blade-Blizzard Kitsune (Ty)
+  [modal choice]     Rzuć: Release the Ants (koszt 1R) → cel: Zoraline, Cosmos Caller (Ty)
+  [modal choice]     Rzuć: Release the Ants (koszt 1R) → cel: Barkform Harvester (Ty)
+  [modal choice]     Rzuć: Release the Ants (koszt 1R) → cel: Nieprzyjaciel
+  [modal choice]     Rzuć: Release the Ants (koszt 1R) → cel: Ty
+  [kreator many] Płatność 1R — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: RTapnij: Island (U)Tapnij: Mystic Sanctuary ( — źródła: 6
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Island (U)
+
+--- krok 21 | T. 11GraczGracz: 21 ż.Bot: 13 ż.Główna 1Stos — Release the Ants ---
+  STOS: Release the Ants (rzuca: Ty) → cel: Blade-Blizzard Kitsune
+  AKCJE: Poddaj partię  ||  Wybierz: Clash — wierzch czy spód? (2 opcje)
+  RĘKA: Deadly Recluse · 2 · Creature — Spider · Zasięg Dotykanie śmierci · 1/2 | Kappa Tech-Wrecker · 2 · Creature — Turtle Ninja · Ninjutsu {2}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · Gdy zada obrażenia graczowi: usuń licznik deathtouch, wygnij artefakt/enchantment. · 1/3
+  MOJE POLA: Barkform Harvester · 3 · Artifact Creature — Shapeshifter · Zasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki · 2/3 | Zoraline, Cosmos Caller · 3 · Legendary Creature — Bat Cleric · Latanie Czujność · Gdy nietoperz, który kontrolujesz, atakuje: zyskaj 1 życie. · Gdy wejdzie na pole bitwy: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · Gdy atakuje: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · 3/3 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · −1 · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Plains, Swamp, Island, Release the Ants, Deadly Recluse, Barkform Harvester, Kappa Tech-Wrecker ⏎ Nowa partia (seed 9). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Release the Ants → cel: Blade-Blizzard Kitsune
+  [ROZGRYWKA]   • Release the Ants zadaje 1 obrażenie (Blade-Blizzard Kitsune)
+  [ROZGRYWKA]   • Odsłaniasz Benevolent Blessing
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Swamp
+  [ROZGRYWKA]   • Clash: wygrywasz (mana value 2 vs 0)
+  >> Wybierz: Clash — wierzch czy spód? (2 opcje)
+  [modal choice] Wybierz: Clash — wierzch czy spód? Clash: Benevolent Blessing na wierzch biblioteki Clash: Benevolent Blessing na spód biblioteki
+  [modal choice]   ▶ Clash: Benevolent Blessing na wierzch biblioteki
+  [modal choice]     Clash: Benevolent Blessing na spód biblioteki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zostawiasz odsłoniętą kartę na wierzchu biblioteki
+  [ROZGRYWKA]   • Nieprzyjaciel zostawia odsłoniętą kartę na wierzchu biblioteki
+  [ROZGRYWKA]   • Ty: Release the Ants — stos → ręka
+  [ROZGRYWKA]   • Release the Ants zostaje rozstrzygnięty — wygrany clash zwraca czar do ręki właściciela
+
+--- krok 24 | T. 11GraczGracz: 21 ż.Bot: 13 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (8 opcji)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Deadly Recluse · 2 · Creature — Spider · Zasięg Dotykanie śmierci · 1/2 | Kappa Tech-Wrecker · 2 · Creature — Turtle Ninja · Ninjutsu {2}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · Gdy zada obrażenia graczowi: usuń licznik deathtouch, wygnij artefakt/enchantment. · 1/3 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel
+  MOJE POLA: Barkform Harvester · 3 · Artifact Creature — Shapeshifter · Zasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki · 2/3 | Zoraline, Cosmos Caller · 3 · Legendary Creature — Bat Cleric · Latanie Czujność · Gdy nietoperz, który kontrolujesz, atakuje: zyskaj 1 życie. · Gdy wejdzie na pole bitwy: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · Gdy atakuje: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · 3/3 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · −1 · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Plains, Swamp, Island, Release the Ants, Deadly Recluse, Barkform Harvester, Kappa Tech-Wrecker ⏎ Nowa partia (seed 9). Powodzenia!
+  >> Wybierz: Deklaracja atakujących (8 opcji)
+  [combat wizard] atakuję 3 z 3 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Barkform Harvester, Zoraline, Cosmos Caller, Blade-Blizzard Kitsune
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller — trigger bez efektu (brak legalnych celów)
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller — trigger (atak nietoperza)
+  [ROZGRYWKA]   • Ty: życie 21 → 22
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller — trigger się rozstrzyga
+  >> Rozstrzygnij obrażenia w walce
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Blade-Blizzard Kitsune zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 13 → 11
+  [ROZGRYWKA]   • Barkform Harvester zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 11 → 9
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 9 → 6
+  [ROZGRYWKA]   • Blade-Blizzard Kitsune zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 6 → 4
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+
+--- krok 27 | T. 12BotGracz: 22 ż.Bot: 4 ż.Główna 1Stos — Fledgling Imp ---
+  STOS: Fledgling Imp (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Deadly Recluse · 2 · Creature — Spider · Zasięg Dotykanie śmierci · 1/2 | Kappa Tech-Wrecker · 2 · Creature — Turtle Ninja · Ninjutsu {2}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · Gdy zada obrażenia graczowi: usuń licznik deathtouch, wygnij artefakt/enchantment. · 1/3 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel
+  MOJE POLA: Barkform Harvester · 3 · Artifact Creature — Shapeshifter · Zasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki · 2/3 | Zoraline, Cosmos Caller · 3 · Legendary Creature — Bat Cleric · Latanie Czujność · Gdy nietoperz, który kontrolujesz, atakuje: zyskaj 1 życie. · Gdy wejdzie na pole bitwy: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · Gdy atakuje: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · 3/3 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Plains, Swamp, Island, Release the Ants, Deadly Recluse, Barkform Harvester, Kappa Tech-Wrecker ⏎ Nowa partia (seed 9). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Fledgling Imp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Fledgling Imp wchodzi na pole bitwy
+  [ROZGRYWKA]   • Fledgling Imp zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Cel czaru: Release the Ants (6 opcji)
+  [modal choice] Cel czaru: Release the Ants Rzuć: Release the Ants (koszt 1R) → cel: Fledgling Imp (Nieprzyjaciel) Rzuć: Release the Ants (koszt 1R) → cel: Blade-Blizzard Kitsune (Ty) Rzuć: Release the Ants (koszt 1R) → cel: Zoraline, Cosmos Caller (Ty) Rzuć: Release the Ants (koszt 1R) → cel: Barkform Harvester (Ty) Rzuć: Release the Ants (koszt 1R) → cel: Nieprzyjaciel Rzuć: Release the Ants (koszt 1R) → cel: Ty
+  [modal choice]   ▶ Rzuć: Release the Ants (koszt 1R) → cel: Fledgling Imp (Nieprzyjaciel)
+  [modal choice]     Rzuć: Release the Ants (koszt 1R) → cel: Blade-Blizzard Kitsune (Ty)
+  [modal choice]     Rzuć: Release the Ants (koszt 1R) → cel: Zoraline, Cosmos Caller (Ty)
+  [modal choice]     Rzuć: Release the Ants (koszt 1R) → cel: Barkform Harvester (Ty)
+  [modal choice]     Rzuć: Release the Ants (koszt 1R) → cel: Nieprzyjaciel
+  [modal choice]     Rzuć: Release the Ants (koszt 1R) → cel: Ty
+  [kreator many] Płatność 1R — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: RTapnij: Island (U)Tapnij: Mystic Sanctuary ( — źródła: 6
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Island (U)
+
+--- krok 30 | T. 13GraczGracz: 22 ż.Bot: 4 ż.UpkeepStos — Release the Ants ---
+  STOS: Release the Ants (rzuca: Ty) → cel: Fledgling Imp
+  AKCJE: Poddaj partię  ||  Wybierz: Clash — wierzch czy spód? (2 opcje)
+  RĘKA: Deadly Recluse · 2 · Creature — Spider · Zasięg Dotykanie śmierci · 1/2 | Kappa Tech-Wrecker · 2 · Creature — Turtle Ninja · Ninjutsu {2}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · Gdy zada obrażenia graczowi: usuń licznik deathtouch, wygnij artefakt/enchantment. · 1/3
+  MOJE POLA: Barkform Harvester · 3 · Artifact Creature — Shapeshifter · Zasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki · 2/3 | Zoraline, Cosmos Caller · 3 · Legendary Creature — Bat Cleric · Latanie Czujność · Gdy nietoperz, który kontrolujesz, atakuje: zyskaj 1 życie. · Gdy wejdzie na pole bitwy: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · Gdy atakuje: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · 3/3 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Fledgling Imp · 3 · Creature — Imp · {B}, odrzuć kartę: zdobądź Latanie do końca tury · −1 · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Plains, Swamp, Island, Release the Ants, Deadly Recluse, Barkform Harvester, Kappa Tech-Wrecker ⏎ Nowa partia (seed 9). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Release the Ants → cel: Fledgling Imp
+  [ROZGRYWKA]   • Release the Ants zadaje 1 obrażenie (Fledgling Imp)
+  [ROZGRYWKA]   • Odsłaniasz Benevolent Blessing
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Plains
+  [ROZGRYWKA]   • Clash: wygrywasz (mana value 2 vs 0)
+  >> Wybierz: Clash — wierzch czy spód? (2 opcje)
+  [modal choice] Wybierz: Clash — wierzch czy spód? Clash: Benevolent Blessing na wierzch biblioteki Clash: Benevolent Blessing na spód biblioteki
+  [modal choice]   ▶ Clash: Benevolent Blessing na wierzch biblioteki
+  [modal choice]     Clash: Benevolent Blessing na spód biblioteki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zostawiasz odsłoniętą kartę na wierzchu biblioteki
+  [ROZGRYWKA]   • Nieprzyjaciel zostawia odsłoniętą kartę na wierzchu biblioteki
+  [ROZGRYWKA]   • Ty: Release the Ants — stos → ręka
+  [ROZGRYWKA]   • Release the Ants zostaje rozstrzygnięty — wygrany clash zwraca czar do ręki właściciela
+
+--- krok 33 | T. 13GraczGracz: 22 ż.Bot: 4 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Aura: Benevolent Blessing (4 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Deadly Recluse · 2 · Creature — Spider · Zasięg Dotykanie śmierci · 1/2 | Kappa Tech-Wrecker · 2 · Creature — Turtle Ninja · Ninjutsu {2}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · Gdy zada obrażenia graczowi: usuń licznik deathtouch, wygnij artefakt/enchantment. · 1/3 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Benevolent Blessing · 2 · Enchantment — Aura · Flash (błysk)
+  MOJE POLA: Barkform Harvester · 3 · Artifact Creature — Shapeshifter · Zasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki · 2/3 | Zoraline, Cosmos Caller · 3 · Legendary Creature — Bat Cleric · Latanie Czujność · Gdy nietoperz, który kontrolujesz, atakuje: zyskaj 1 życie. · Gdy wejdzie na pole bitwy: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · Gdy atakuje: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · 3/3 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Fledgling Imp · 3 · Creature — Imp · {B}, odrzuć kartę: zdobądź Latanie do końca tury · −1 · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Plains, Swamp, Island, Release the Ants, Deadly Recluse, Barkform Harvester, Kappa Tech-Wrecker ⏎ Nowa partia (seed 9). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Benevolent Blessing
+  >> Aura: Benevolent Blessing (4 opcje)
+  [modal choice] Aura: Benevolent Blessing Zagraj aurę: Benevolent Blessing (koszt 1W) → zaczaruj Fledgling Imp (Nieprzyjaciel) Zagraj aurę: Benevolent Blessing (koszt 1W) → zaczaruj Blade-Blizzard Kitsune (Ty) Zagraj aurę: Benevolent Blessing (koszt 1W) → zaczaruj Zoraline, Cosmos Caller (Ty) Zagraj aurę: Benevolent Blessing (koszt 1W) → zaczaruj Barkform Harvester (Ty)
+  [modal choice]   ▶ Zagraj aurę: Benevolent Blessing (koszt 1W) → zaczaruj Fledgling Imp (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Benevolent Blessing (koszt 1W) → zaczaruj Blade-Blizzard Kitsune (Ty)
+  [modal choice]     Zagraj aurę: Benevolent Blessing (koszt 1W) → zaczaruj Zoraline, Cosmos Caller (Ty)
+  [modal choice]     Zagraj aurę: Benevolent Blessing (koszt 1W) → zaczaruj Barkform Harvester (Ty)
+  [kreator many] Płatność 1W — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: WTapnij: Mystic Sanctuary (U)Tapnij: Swamp (B — źródła: 4
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Mystic Sanctuary (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Benevolent Blessing → cel: Fledgling Imp
+  [ROZGRYWKA]   • Benevolent Blessing zaczarowuje Fledgling Imp
+  [ROZGRYWKA]   • Benevolent Blessing wchodzi na pole bitwy
+  [ROZGRYWKA]   • Benevolent Blessing — wybór koloru (ochrona przed nim)
+
+--- krok 36 | T. 13GraczGracz: 22 ż.Bot: 4 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Wybierz: Kolor (np. ochrona) (5 opcji)
+  RĘKA: Deadly Recluse · 2 · Creature — Spider · Zasięg Dotykanie śmierci · 1/2 | Kappa Tech-Wrecker · 2 · Creature — Turtle Ninja · Ninjutsu {2}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · Gdy zada obrażenia graczowi: usuń licznik deathtouch, wygnij artefakt/enchantment. · 1/3 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel
+  MOJE POLA: Barkform Harvester · 3 · Artifact Creature — Shapeshifter · Zasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki · 2/3 | Zoraline, Cosmos Caller · 3 · Legendary Creature — Bat Cleric · Latanie Czujność · Gdy nietoperz, który kontrolujesz, atakuje: zyskaj 1 życie. · Gdy wejdzie na pole bitwy: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · Gdy atakuje: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · 3/3 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2 | Benevolent Blessing · 2 · Enchantment Aura · Flash (błysk) · aura → Fledgling Imp | Island · Basic Land — Island · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Fledgling Imp · 3 · Creature — Imp · {B}, odrzuć kartę: zdobądź Latanie do końca tury · −1 · choroba · zaczarowana: Benevolent Blessing · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Plains, Swamp, Island, Release the Ants, Deadly Recluse, Barkform Harvester, Kappa Tech-Wrecker ⏎ Nowa partia (seed 9). Powodzenia!
+  >> Wybierz: Kolor (np. ochrona) (5 opcji)
+  [modal choice] Wybierz: Kolor (np. ochrona) Kolor: Zielony (G) Kolor: Czerwony (R) Kolor: Czarny (B) Kolor: Niebieski (U) Kolor: Biały (W)
+  [modal choice]   ▶ Kolor: Zielony (G)
+  [modal choice]     Kolor: Czerwony (R)
+  [modal choice]     Kolor: Czarny (B)
+  [modal choice]     Kolor: Niebieski (U)
+  [modal choice]     Kolor: Biały (W)
+  >> Wybierz: Deklaracja atakujących (8 opcji)
+  [combat wizard] atakuję 3 z 3 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Barkform Harvester, Zoraline, Cosmos Caller, Blade-Blizzard Kitsune
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller — trigger bez efektu (brak legalnych celów)
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller — trigger (atak nietoperza)
+  [ROZGRYWKA]   • Ty: życie 22 → 23
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller — trigger się rozstrzyga
+  [ROZGRYWKA]   • Fledgling Imp blokuje Blade-Blizzard Kitsune
+
+--- krok 39 | T. 13GraczGracz: 23 ż.Bot: 4 ż.Walka / Obrażenia ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Wariant (2 opcje)  ||  Rozstrzygnij obrażenia w walce  ||  Poddaj partię
+  RĘKA: Deadly Recluse · 2 · Creature — Spider · Zasięg Dotykanie śmierci · 1/2 | Kappa Tech-Wrecker · 2 · Creature — Turtle Ninja · Ninjutsu {2}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · Gdy zada obrażenia graczowi: usuń licznik deathtouch, wygnij artefakt/enchantment. · 1/3 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel
+  MOJE POLA: Barkform Harvester · 3 · Artifact Creature — Shapeshifter · Zasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki · atakuje — niezablokowany · 2/3 | Zoraline, Cosmos Caller · 3 · Legendary Creature — Bat Cleric · Latanie Czujność · Gdy nietoperz, który kontrolujesz, atakuje: zyskaj 1 życie. · Gdy wejdzie na pole bitwy: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · Gdy atakuje: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · atakuje — niezablokowany · 3/3 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · atakuje — blokują: Fledgling Imp · 2/2 | Benevolent Blessing · 2 · Enchantment Aura · Flash (błysk) · aura → Fledgling Imp | Island · Basic Land — Island · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Fledgling Imp · 3 · Creature — Imp · {B}, odrzuć kartę: zdobądź Latanie do końca tury · blokuje: Blade-Blizzard Kitsune · −1 · choroba · zaczarowana: Benevolent Blessing · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Plains, Swamp, Island, Release the Ants, Deadly Recluse, Barkform Harvester, Kappa Tech-Wrecker ⏎ Nowa partia (seed 9). Powodzenia!
+  >> Rozstrzygnij obrażenia w walce
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Blade-Blizzard Kitsune zadaje 2 obrażenia (Fledgling Imp)
+  [ROZGRYWKA]   • Fledgling Imp ginie
+  [ROZGRYWKA]   • Barkform Harvester zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 4 → 2
+  [ROZGRYWKA]   • Zoraline, Cosmos Caller zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 2 → -1
+  [ROZGRYWKA]   • Nieprzyjaciel przegrywa (brak życia)
+== KONIEC PARTII == Koniec partii — wygrywa Gracz
+
+--- krok 41 | Koniec partii — wygrywa Gracz ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Deadly Recluse · 2 · Creature — Spider · Zasięg Dotykanie śmierci · 1/2 | Kappa Tech-Wrecker · 2 · Creature — Turtle Ninja · Ninjutsu {2}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · Gdy zada obrażenia graczowi: usuń licznik deathtouch, wygnij artefakt/enchantment. · 1/3 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel
+  MOJE POLA: Barkform Harvester · 3 · Artifact Creature — Shapeshifter · Zasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki · 2/3 | Zoraline, Cosmos Caller · 3 · Legendary Creature — Bat Cleric · Latanie Czujność · Gdy nietoperz, który kontrolujesz, atakuje: zyskaj 1 życie. · Gdy wejdzie na pole bitwy: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · Gdy atakuje: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · 3/3 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Plains, Swamp, Island, Release the Ants, Deadly Recluse, Barkform Harvester, Kappa Tech-Wrecker ⏎ Nowa partia (seed 9). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 19, kliknięte: 23, modale: 5, sondy noop: 68 (panel 45, modal 23)
+== DETEKTORY: brak zgłoszeń ==

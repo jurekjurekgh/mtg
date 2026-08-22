@@ -1,0 +1,737 @@
+== NOWA PARTIA: gracz=alara vs bot=warhammer, seed=23, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island (1 z 2)  ||  Zagraj ląd: Plains  ||  Zagraj ląd: Forest  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ethersworn Shieldmage · 3 · Artifact Creature — Vedalken Wizard · Flash (błysk) · Gdy wejdzie na pole bitwy: prewencja obrażeń do końca tury. · 2/2 | Dispeller's Capsule · 1 · Artifact · {2}, {W}, {T}, poświęć: cel: artefakt lub enchantment — zniszcz cel | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap.
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Island (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Tome Scour → cel: Ty
+
+--- krok 3 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ethersworn Shieldmage · 3 · Artifact Creature — Vedalken Wizard · Flash (błysk) · Gdy wejdzie na pole bitwy: prewencja obrażeń do końca tury. · 2/2 | Dispeller's Capsule · 1 · Artifact · {2}, {W}, {T}, poświęć: cel: artefakt lub enchantment — zniszcz cel | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap.
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Mielisz Esper Stormblade do grobu
+  [ROZGRYWKA]   • Mielisz Swamp do grobu
+  [ROZGRYWKA]   • Mielisz Grizzled Leotau do grobu
+  [ROZGRYWKA]   • Mielisz Fiery Fall do grobu
+  [ROZGRYWKA]   • Mielisz Island do grobu
+  [ROZGRYWKA]   • Tome Scour zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Plains (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Zagraj: Dispeller's Capsule (koszt W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Dispeller's Capsule
+  [ROZGRYWKA]   • Dispeller's Capsule wchodzi na pole bitwy
+  [ROZGRYWKA]   • Dispeller's Capsule zostaje rozstrzygnięty
+
+--- krok 6 | T. 4BotGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Ethersworn Shieldmage · 3 · Artifact Creature — Vedalken Wizard · Flash (błysk) · Gdy wejdzie na pole bitwy: prewencja obrażeń do końca tury. · 2/2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap.
+  MOJE POLA: Dispeller's Capsule · 1 · Artifact · {2}, {W}, {T}, poświęć: cel: artefakt lub enchantment — zniszcz cel | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Index
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel wykonuje Index (patrzy na 5 kart)
+  [ROZGRYWKA]   • Nieprzyjaciel kończy Index — przestawia karty na wierzchu biblioteki
+  [ROZGRYWKA]   • Index zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Knight of the Skyward Eye
+
+--- krok 9 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Plains  ||  Zagraj ląd: Island  ||  Zagraj ląd: Forest  ||  Zagraj: Knight of the Skyward Eye (koszt 1W)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ethersworn Shieldmage · 3 · Artifact Creature — Vedalken Wizard · Flash (błysk) · Gdy wejdzie na pole bitwy: prewencja obrażeń do końca tury. · 2/2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Knight of the Skyward Eye · 2 · Creature — Human Knight · {3}, {G}: +3/+3 do końca tury · 2/2
+  MOJE POLA: Dispeller's Capsule · 1 · Artifact · {2}, {W}, {T}, poświęć: cel: artefakt lub enchantment — zniszcz cel | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Zagraj: Knight of the Skyward Eye (koszt 1W)
+  [kreator many] Płatność 1W — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: WTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 3
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Knight of the Skyward Eye
+  [ROZGRYWKA]   • Knight of the Skyward Eye wchodzi na pole bitwy
+  [ROZGRYWKA]   • Knight of the Skyward Eye zostaje rozstrzygnięty
+
+--- krok 12 | T. 6BotGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Ethersworn Shieldmage · 3 · Artifact Creature — Vedalken Wizard · Flash (błysk) · Gdy wejdzie na pole bitwy: prewencja obrażeń do końca tury. · 2/2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap.
+  MOJE POLA: Dispeller's Capsule · 1 · Artifact · {2}, {W}, {T}, poświęć: cel: artefakt lub enchantment — zniszcz cel | Knight of the Skyward Eye · 2 · Creature — Human Knight · {3}, {G}: +3/+3 do końca tury · choroba · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 7 — Ty
+  >> Zagraj: Ethersworn Shieldmage (koszt 1WU)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Ethersworn Shieldmage
+  [ROZGRYWKA]   • Ethersworn Shieldmage wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ethersworn Shieldmage zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Ethersworn Shieldmage — trigger (wejście na pole bitwy)
+
+--- krok 15 | T. 7GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · 1/2
+  MOJE POLA: Dispeller's Capsule · 1 · Artifact · {2}, {W}, {T}, poświęć: cel: artefakt lub enchantment — zniszcz cel | Knight of the Skyward Eye · 2 · Creature — Human Knight · {3}, {G}: +3/+3 do końca tury · 2/2 | Ethersworn Shieldmage · 3 · Artifact Creature — Vedalken Wizard · Flash (błysk) · Gdy wejdzie na pole bitwy: prewencja obrażeń do końca tury. · choroba · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ethersworn Shieldmage: obrażenia zadawane chronionym obiektom będą niwelowane do końca tury
+  [ROZGRYWKA]   • Ethersworn Shieldmage — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Etherium Sculptor
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+
+--- krok 18 | T. 8BotGracz: 20 ż.Bot: 18 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Forest · Basic Land — Forest · T: dodaj 1 manę | Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · 1/2
+  MOJE POLA: Dispeller's Capsule · 1 · Artifact · {2}, {W}, {T}, poświęć: cel: artefakt lub enchantment — zniszcz cel | Knight of the Skyward Eye · 2 · Creature — Human Knight · {3}, {G}: +3/+3 do końca tury · 2/2 | Ethersworn Shieldmage · 3 · Artifact Creature — Vedalken Wizard · Flash (błysk) · Gdy wejdzie na pole bitwy: prewencja obrażeń do końca tury. · choroba · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Rupture Spire · Land · Gdy wejdzie na pole bitwy: zapłać {1} albo ją poświęć (płatność automatyczna). · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Knight of the Skyward Eye
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Knight of the Skyward Eye zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 18
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Rupture Spire (wchodzi zatapnięty)
+  [ROZGRYWKA]   • Rupture Spire — zapłać {1} albo ją poświęć (wybór gracza)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rupture Spire zostaje poświęcony
+  [ROZGRYWKA]   • Nieprzyjaciel poświęca Rupture Spire
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 9 — Ty
+
+--- krok 21 | T. 9GraczGracz: 20 ż.Bot: 18 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cel zdolności: Dispeller's Capsule (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Forest · Basic Land — Forest · T: dodaj 1 manę | Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · 1/2
+  MOJE POLA: Dispeller's Capsule · 1 · Artifact · {2}, {W}, {T}, poświęć: cel: artefakt lub enchantment — zniszcz cel | Knight of the Skyward Eye · 2 · Creature — Human Knight · {3}, {G}: +3/+3 do końca tury · 2/2 | Ethersworn Shieldmage · 3 · Artifact Creature — Vedalken Wizard · Flash (błysk) · Gdy wejdzie na pole bitwy: prewencja obrażeń do końca tury. · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Cel zdolności: Dispeller's Capsule (2 opcje)
+  [modal choice] Cel zdolności: Dispeller's Capsule Aktywuj: Dispeller's Capsule (Ty) (koszt 2W, T, poświęć) — zniszcz cel → cel: Ethersworn Shieldmage (Ty) Aktywuj: Dispeller's Capsule (Ty) (koszt 2W, T, poświęć) — zniszcz cel → cel: Dispeller's Capsule (Ty)
+  [modal choice]   ▶ Aktywuj: Dispeller's Capsule (Ty) (koszt 2W, T, poświęć) — zniszcz cel → cel: Ethersworn Shieldmage (Ty)
+  [modal choice]     Aktywuj: Dispeller's Capsule (Ty) (koszt 2W, T, poświęć) — zniszcz cel → cel: Dispeller's Capsule (Ty)
+  [kreator many] Płatność 2W — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: WTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 4
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Dispeller's Capsule → cel: Ethersworn Shieldmage
+  [ROZGRYWKA]   • Ethersworn Shieldmage zostaje zniszczony
+  [ROZGRYWKA]   • Ty: zdolność Dispeller's Capsule rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Illusory Demon
+
+--- krok 24 | T. 9GraczGracz: 20 ż.Bot: 18 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Forest  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Forest · Basic Land — Forest · T: dodaj 1 manę | Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · 1/2 | Illusory Demon · 3 · Creature — Demon Illusion · Latanie · Gdy rzucisz czar: poświęć ten permanent. · 4/3
+  MOJE POLA: Knight of the Skyward Eye · 2 · Creature — Human Knight · {3}, {G}: +3/+3 do końca tury · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Zagraj: Etherium Sculptor (koszt 1U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Etherium Sculptor
+  [ROZGRYWKA]   • Etherium Sculptor wchodzi na pole bitwy
+  [ROZGRYWKA]   • Etherium Sculptor zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+
+--- krok 27 | T. 10BotGracz: 20 ż.Bot: 16 ż.Główna 1Stos — Dismal Backwater ---
+  STOS: Trigger: Dismal Backwater (wejście na pole bitwy)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Illusory Demon · 3 · Creature — Demon Illusion · Latanie · Gdy rzucisz czar: poświęć ten permanent. · 4/3
+  MOJE POLA: Knight of the Skyward Eye · 2 · Creature — Human Knight · {3}, {G}: +3/+3 do końca tury · 2/2 | Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · choroba · 1/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Knight of the Skyward Eye
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Knight of the Skyward Eye zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 18 → 16
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Dismal Backwater (wchodzi zatapnięty)
+  [ROZGRYWKA]   • Dismal Backwater — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 16 → 17
+  [ROZGRYWKA]   • Dismal Backwater — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Aktywuj: Knight of the Skyward Eye (Ty) (koszt 3G) — +3/+3 do końca tury
+  [kreator many] Płatność 3G — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: GTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 5
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Plains (W)
+
+--- krok 30 | T. 11GraczGracz: 20 ż.Bot: 17 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Illusory Demon · 3 · Creature — Demon Illusion · Latanie · Gdy rzucisz czar: poświęć ten permanent. · 4/3
+  MOJE POLA: Knight of the Skyward Eye · 2 · Creature — Human Knight · {3}, {G}: +3/+3 do końca tury · +3/+3 · 5/5 | Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · 1/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Knight of the Skyward Eye — zmiana statystyk celu
+  [ROZGRYWKA]   • Ty: zdolność Knight of the Skyward Eye rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Etherwrought Page
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+
+--- krok 33 | T. 12BotGracz: 20 ż.Bot: 11 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Illusory Demon · 3 · Creature — Demon Illusion · Latanie · Gdy rzucisz czar: poświęć ten permanent. · 4/3 | Etherwrought Page · 4 · Artifact · wybierz tryb: Zysk 2 życia / Surveil 1 / Utrata życia
+  MOJE POLA: Knight of the Skyward Eye · 2 · Creature — Human Knight · {3}, {G}: +3/+3 do końca tury · 2/2 | Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · 1/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Knight of the Skyward Eye, Etherium Sculptor
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Knight of the Skyward Eye zadaje 5 obrażeń (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 17 → 12
+  [ROZGRYWKA]   • Etherium Sculptor zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 12 → 11
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Wrap in Flames — tryb: Owinięcie w płomienie → cel: Knight of the Skyward Eye, Etherium Sculptor
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Wrap in Flames zadaje 1 obrażenie (Knight of the Skyward Eye)
+  [ROZGRYWKA]   • Wrap in Flames zadaje 1 obrażenie (Etherium Sculptor)
+  [ROZGRYWKA]   • Wrap in Flames — tryb: Owinięcie w płomienie zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 13 — Ty
+
+--- krok 36 | T. 13GraczGracz: 20 ż.Bot: 11 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Knight of the Skyward Eye (Ty) (koszt 3G) — +3/+3 do końca tury  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Illusory Demon · 3 · Creature — Demon Illusion · Latanie · Gdy rzucisz czar: poświęć ten permanent. · 4/3 | Etherwrought Page · 4 · Artifact · wybierz tryb: Zysk 2 życia / Surveil 1 / Utrata życia
+  MOJE POLA: Knight of the Skyward Eye · 2 · Creature — Human Knight · {3}, {G}: +3/+3 do końca tury · 2/2 | Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · 1/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Aktywuj: Knight of the Skyward Eye (Ty) (koszt 3G) — +3/+3 do końca tury
+  [kreator many] Płatność 3G — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: GTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 5
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Knight of the Skyward Eye — zmiana statystyk celu
+  [ROZGRYWKA]   • Ty: zdolność Knight of the Skyward Eye rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+
+--- krok 39 | T. 13GraczGracz: 20 ż.Bot: 11 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Mountain  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Illusory Demon · 3 · Creature — Demon Illusion · Latanie · Gdy rzucisz czar: poświęć ten permanent. · 4/3 | Etherwrought Page · 4 · Artifact · wybierz tryb: Zysk 2 życia / Surveil 1 / Utrata życia | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  MOJE POLA: Knight of the Skyward Eye · 2 · Creature — Human Knight · {3}, {G}: +3/+3 do końca tury · +3/+3 · 5/5 | Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · 1/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Knight of the Skyward Eye, Etherium Sculptor
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Knight of the Skyward Eye zadaje 5 obrażeń (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 11 → 6
+  [ROZGRYWKA]   • Etherium Sculptor zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 6 → 5
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+
+--- krok 42 | T. 14BotGracz: 20 ż.Bot: 5 ż.Główna 1Stos — Terminal Agony ---
+  STOS: Terminal Agony (rzuca: Nieprzyjaciel) → cel: Knight of the Skyward Eye
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Illusory Demon · 3 · Creature — Demon Illusion · Latanie · Gdy rzucisz czar: poświęć ten permanent. · 4/3 | Etherwrought Page · 4 · Artifact · wybierz tryb: Zysk 2 życia / Surveil 1 / Utrata życia
+  MOJE POLA: Knight of the Skyward Eye · 2 · Creature — Human Knight · {3}, {G}: +3/+3 do końca tury · 2/2 | Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · 1/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Terminal Agony → cel: Knight of the Skyward Eye
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Knight of the Skyward Eye zostaje zniszczony
+  [ROZGRYWKA]   • Terminal Agony zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Bone Splinters
+  >> Zagraj: Angelic Benediction (koszt 3W)
+  [kreator many] Płatność 3W — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: WTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 6
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+
+--- krok 45 | T. 15GraczGracz: 20 ż.Bot: 5 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Illusory Demon · 3 · Creature — Demon Illusion · Latanie · Gdy rzucisz czar: poświęć ten permanent. · 4/3 | Etherwrought Page · 4 · Artifact · wybierz tryb: Zysk 2 życia / Surveil 1 / Utrata życia | Bone Splinters · 1 · Sorcery · zniszcz cel · cel: stwór
+  MOJE POLA: Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · 1/2 | Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Angelic Benediction
+  [ROZGRYWKA]   • Angelic Benediction wchodzi na pole bitwy
+  [ROZGRYWKA]   • Angelic Benediction zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Etherium Sculptor
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Angelic Benediction — trigger (samotny atak)
+  [ROZGRYWKA]   • Angelic Benediction — wybierz cel triggera (można odmówić)
+
+--- krok 48 | T. 15GraczGracz: 20 ż.Bot: 5 ż.Walka / BlokStos — Angelic Benediction ---
+  STOS: Trigger: Angelic Benediction (samotny atak)
+  AKCJE: Poddaj partię  ||  Angelic Benediction — cel triggera (2 opcje)
+  RĘKA: Illusory Demon · 3 · Creature — Demon Illusion · Latanie · Gdy rzucisz czar: poświęć ten permanent. · 4/3 | Etherwrought Page · 4 · Artifact · wybierz tryb: Zysk 2 życia / Surveil 1 / Utrata życia | Bone Splinters · 1 · Sorcery · zniszcz cel · cel: stwór
+  MOJE POLA: Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · atakuje — niezablokowany · 1/2 | Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Angelic Benediction — cel triggera (2 opcje)
+  [modal choice] Angelic Benediction — cel triggera Angelic Benediction — cel triggera: Etherium Sculptor (Ty) Angelic Benediction — bez celu (odmowa — „up to one"/„you may")
+  [modal choice]   ▶ Angelic Benediction — cel triggera: Etherium Sculptor (Ty)
+  [modal choice]     Angelic Benediction — bez celu (odmowa — „up to one"/„you may")
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Angelic Benediction — trigger (samotny atak)
+  [ROZGRYWKA]   • Angelic Benediction — cel: Etherium Sculptor
+  [ROZGRYWKA]   • Angelic Benediction — trigger bez efektu (nic się nie wydarzyło (zerowy wynik))
+  [ROZGRYWKA]   • Angelic Benediction — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Etherium Sculptor zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 5 → 3
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Revolutionist
+
+--- krok 51 | T. 16BotGracz: 20 ż.Bot: 3 ż.Główna 1Stos — Revolutionist ---
+  STOS: Trigger: Revolutionist (wejście na pole bitwy)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Illusory Demon · 3 · Creature — Demon Illusion · Latanie · Gdy rzucisz czar: poświęć ten permanent. · 4/3 | Etherwrought Page · 4 · Artifact · wybierz tryb: Zysk 2 życia / Surveil 1 / Utrata życia | Bone Splinters · 1 · Sorcery · zniszcz cel · cel: stwór
+  MOJE POLA: Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · 1/2 | Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · choroba · 3/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Revolutionist wchodzi na pole bitwy
+  [ROZGRYWKA]   • Revolutionist zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Revolutionist — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Revolutionist — cel: Tome Scour
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: Tome Scour — cmentarz → ręka
+  [ROZGRYWKA]   • Revolutionist — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 17 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plague Reaver
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+
+--- krok 54 | T. 17GraczGracz: 20 ż.Bot: 3 ż.Walka / BlokStos — Angelic Benediction ---
+  STOS: Trigger: Angelic Benediction (samotny atak)
+  AKCJE: Poddaj partię  ||  Angelic Benediction — cel triggera (3 opcje)
+  RĘKA: Illusory Demon · 3 · Creature — Demon Illusion · Latanie · Gdy rzucisz czar: poświęć ten permanent. · 4/3 | Etherwrought Page · 4 · Artifact · wybierz tryb: Zysk 2 życia / Surveil 1 / Utrata życia | Bone Splinters · 1 · Sorcery · zniszcz cel · cel: stwór | Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · 6/5
+  MOJE POLA: Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · atakuje — niezablokowany · 1/2 | Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · choroba · 3/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Etherium Sculptor
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Angelic Benediction — trigger (samotny atak)
+  [ROZGRYWKA]   • Angelic Benediction — wybierz cel triggera (można odmówić)
+  >> Angelic Benediction — cel triggera (3 opcje)
+  [modal choice] Angelic Benediction — cel triggera Angelic Benediction — cel triggera: Etherium Sculptor (Ty) Angelic Benediction — cel triggera: Revolutionist (Nieprzyjaciel) Angelic Benediction — bez celu (odmowa — „up to one"/„you may")
+  [modal choice]   ▶ Angelic Benediction — cel triggera: Etherium Sculptor (Ty)
+  [modal choice]     Angelic Benediction — cel triggera: Revolutionist (Nieprzyjaciel)
+  [modal choice]     Angelic Benediction — bez celu (odmowa — „up to one"/„you may")
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Angelic Benediction — trigger (samotny atak)
+  [ROZGRYWKA]   • Angelic Benediction — cel: Etherium Sculptor
+  [ROZGRYWKA]   • Angelic Benediction — trigger bez efektu (nic się nie wydarzyło (zerowy wynik))
+  [ROZGRYWKA]   • Angelic Benediction — trigger się rozstrzyga
+  [ROZGRYWKA]   • Revolutionist blokuje Etherium Sculptor
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Etherium Sculptor zadaje 2 obrażenia (Revolutionist)
+  [ROZGRYWKA]   • Revolutionist zadaje 3 obrażenia (Etherium Sculptor)
+  [ROZGRYWKA]   • Etherium Sculptor ginie
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Tome Scour → cel: Ty
+
+--- krok 57 | T. 18BotGracz: 20 ż.Bot: 3 ż.Główna 1Stos — Fledgling Imp ---
+  STOS: Fledgling Imp (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Illusory Demon · 3 · Creature — Demon Illusion · Latanie · Gdy rzucisz czar: poświęć ten permanent. · 4/3 | Etherwrought Page · 4 · Artifact · wybierz tryb: Zysk 2 życia / Surveil 1 / Utrata życia | Bone Splinters · 1 · Sorcery · zniszcz cel · cel: stwór | Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · 6/5
+  MOJE POLA: Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Mielisz Unstable Frontier do grobu
+  [ROZGRYWKA]   • Mielisz Gorger Wurm do grobu
+  [ROZGRYWKA]   • Mielisz Plains do grobu
+  [ROZGRYWKA]   • Mielisz Flurry of Wings do grobu
+  [ROZGRYWKA]   • Mielisz Wretched Banquet do grobu
+  [ROZGRYWKA]   • Tome Scour zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Fledgling Imp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Dismal Backwater — dodanie many do puli ({U}, {B})
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Fledgling Imp wchodzi na pole bitwy
+  [ROZGRYWKA]   • Fledgling Imp zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Revolutionist
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Revolutionist zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 17
+  [ROZGRYWKA]   • Tura 19 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+
+--- krok 60 | T. 19GraczGracz: 17 ż.Bot: 3 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Swamp  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Illusory Demon · 3 · Creature — Demon Illusion · Latanie · Gdy rzucisz czar: poświęć ten permanent. · 4/3 | Etherwrought Page · 4 · Artifact · wybierz tryb: Zysk 2 życia / Surveil 1 / Utrata życia | Bone Splinters · 1 · Sorcery · zniszcz cel · cel: stwór | Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · 6/5 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  MOJE POLA: Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3 | Fledgling Imp · 3 · Creature — Imp · {B}, odrzuć kartę: zdobądź Latanie do końca tury · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Zagraj: Plague Reaver (koszt 2B)
+  [kreator many] Płatność 2B — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: BTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 7
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Plague Reaver
+  [ROZGRYWKA]   • Plague Reaver wchodzi na pole bitwy
+  [ROZGRYWKA]   • Plague Reaver zostaje rozstrzygnięty
+
+--- krok 63 | T. 19GraczGracz: 17 ż.Bot: 3 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Plague Reaver (Ty) (koszt: odrzuć 2 karty, poświęć) — wróć na pole bitwy na początku upkeep → cel: Nieprzyjaciel  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Illusory Demon · 3 · Creature — Demon Illusion · Latanie · Gdy rzucisz czar: poświęć ten permanent. · 4/3 | Etherwrought Page · 4 · Artifact · wybierz tryb: Zysk 2 życia / Surveil 1 / Utrata życia | Bone Splinters · 1 · Sorcery · zniszcz cel · cel: stwór
+  MOJE POLA: Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · choroba · 6/5 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3 | Fledgling Imp · 3 · Creature — Imp · {B}, odrzuć kartę: zdobądź Latanie do końca tury · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Aktywuj: Plague Reaver (Ty) (koszt: odrzuć 2 karty, poświęć) — wróć na pole bitwy na początku upkeep → cel: Ni
+  >> Wybierz: Karta do odrzucenia (3 opcje)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Etherwrought Page Odrzuć: Illusory Demon Odrzuć: Bone Splinters
+  [modal choice]   ▶ Odrzuć: Etherwrought Page
+  [modal choice]     Odrzuć: Illusory Demon
+  [modal choice]     Odrzuć: Bone Splinters
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odrzucasz Etherwrought Page
+
+--- krok 66 | T. 19GraczGracz: 17 ż.Bot: 3 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Wybierz: Karta do odrzucenia (2 opcje)
+  RĘKA: Illusory Demon · 3 · Creature — Demon Illusion · Latanie · Gdy rzucisz czar: poświęć ten permanent. · 4/3 | Bone Splinters · 1 · Sorcery · zniszcz cel · cel: stwór
+  MOJE POLA: Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · choroba · 6/5 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3 | Fledgling Imp · 3 · Creature — Imp · {B}, odrzuć kartę: zdobądź Latanie do końca tury · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Wybierz: Karta do odrzucenia (2 opcje)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Illusory Demon Odrzuć: Bone Splinters
+  [modal choice]   ▶ Odrzuć: Illusory Demon
+  [modal choice]     Odrzuć: Bone Splinters
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odrzucasz Illusory Demon
+  [ROZGRYWKA]   • Plague Reaver zostaje poświęcony
+  [ROZGRYWKA]   • Aktywujesz zdolność: Plague Reaver → cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Plague Reaver — opóźniony trigger: powrót na pole bitwy w następnym upkeep gracza Nieprzyjaciel
+  [ROZGRYWKA]   • Ty: zdolność Plague Reaver rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Plague Reaver — trigger (opóźniony trigger)
+
+--- krok 69 | T. 20BotGracz: 17 ż.Bot: 3 ż.DobieranieStos — Squire's Lightblade ---
+  STOS: Squire's Lightblade (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Bone Splinters · 1 · Sorcery · zniszcz cel · cel: stwór
+  MOJE POLA: Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3 | Fledgling Imp · 3 · Creature — Imp · {B}, odrzuć kartę: zdobądź Latanie do końca tury · 2/2 | Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · choroba · 6/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: Plague Reaver — cmentarz → pole bitwy
+  [ROZGRYWKA]   • Plague Reaver przechodzi pod kontrolę gracza Nieprzyjaciel
+  [ROZGRYWKA]   • Plague Reaver — trigger się rozstrzyga (opóźniony)
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Squire's Lightblade
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Squire's Lightblade wchodzi na pole bitwy
+  [ROZGRYWKA]   • Squire's Lightblade zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Squire's Lightblade — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Squire's Lightblade — cel: Plague Reaver
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Squire's Lightblade wyposaża Plague Reaver
+  [ROZGRYWKA]   • Plague Reaver zyskuje: pierwsze uderzenie
+  [ROZGRYWKA]   • Squire's Lightblade — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Goblin Battle Jester
+
+--- krok 72 | T. 20BotGracz: 17 ż.Bot: 3 ż.Główna 1Stos — Fledgling Imp ---
+  STOS: Goblin Battle Jester (rzuca: Nieprzyjaciel) | Fledgling Imp (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Bone Splinters · 1 · Sorcery · zniszcz cel · cel: stwór
+  MOJE POLA: Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3 | Fledgling Imp · 3 · Creature — Imp · {B}, odrzuć kartę: zdobądź Latanie do końca tury · 2/2 | Plague Reaver · 3 · Creature — Beast · Pierwsze uderzenie · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · Pierwsze uderzenie · choroba · wyposażona: Squire's Lightblade · 7/5 | Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. · wyposaża → Plague Reaver
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera, którą kartę odrzucić jako koszt (Fledgling Imp)
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Minotaur Abomination
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę (koszt zdolności)
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Fledgling Imp — nadanie do końca tury: latanie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Fledgling Imp zyskuje: latanie
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Fledgling Imp rozstrzygnięta
+  [ROZGRYWKA]   • Goblin Battle Jester wchodzi na pole bitwy
+  [ROZGRYWKA]   • Goblin Battle Jester zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Revolutionist, Fledgling Imp
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Revolutionist zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 14
+  [ROZGRYWKA]   • Fledgling Imp zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 12
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Plague Reaver — trigger (krok końca tury)
+  [ROZGRYWKA]   • Revolutionist zostaje poświęcony
+  [ROZGRYWKA]   • Fledgling Imp zostaje poświęcony
+  [ROZGRYWKA]   • Goblin Battle Jester zostaje poświęcony
+  [ROZGRYWKA]   • Plague Reaver — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 21 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Goblin Deathraiders
+  >> Zagraj: Goblin Deathraiders (koszt BR)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Goblin Deathraiders
+  [ROZGRYWKA]   • Goblin Deathraiders wchodzi na pole bitwy
+  [ROZGRYWKA]   • Goblin Deathraiders zostaje rozstrzygnięty
+
+--- krok 75 | T. 22BotGracz: 12 ż.Bot: 3 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Bone Splinters · 1 · Sorcery · zniszcz cel · cel: stwór
+  MOJE POLA: Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Goblin Deathraiders · 2 · Creature — Goblin Warrior · Zadeptywanie · choroba · 3/1 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · wyposażona: Squire's Lightblade · 7/5 | Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. · wyposaża → Plague Reaver
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 22 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Plague Reaver
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Goblin Deathraiders (3/1)
+  [combat wizard] Zatwierdź bloki
+
+--- krok 78 | T. 22BotGracz: 12 ż.Bot: 3 ż.Walka / Koniec walki ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Bone Splinters · 1 · Sorcery · zniszcz cel · cel: stwór
+  MOJE POLA: Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · −3 · wyposażona: Squire's Lightblade · 7/5 | Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. · wyposaża → Plague Reaver
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Goblin Deathraiders blokuje Plague Reaver
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Plague Reaver zadaje 7 obrażeń (Goblin Deathraiders)
+  [ROZGRYWKA]   • Goblin Deathraiders zadaje 3 obrażenia (Plague Reaver)
+  [ROZGRYWKA]   • Goblin Deathraiders ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Plague Reaver — trigger (krok końca tury)
+  [ROZGRYWKA]   • Plague Reaver — trigger bez efektu (nic się nie wydarzyło (zerowy wynik))
+  [ROZGRYWKA]   • Tura 23 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Etherium Abomination
+  >> Zagraj: Etherium Abomination (koszt 3UB)
+  [kreator many] Płatność 3UB — tapuj źródła po jednympozostało 5 many · kolory do pokrycia: U, BTapnij: Island (U)Tapnij: Plains (W)Tapn — źródła: 7
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+
+--- krok 81 | T. 23GraczGracz: 12 ż.Bot: 3 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Bone Splinters · 1 · Sorcery · zniszcz cel · cel: stwór
+  MOJE POLA: Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Etherium Abomination · 5 · Artifact Creature — Horror · {U}, {B}: unearth (z grobu z haste, exile na końcu tury) · choroba · 4/3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · wyposażona: Squire's Lightblade · 7/5 | Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. · wyposaża → Plague Reaver
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Etherium Abomination
+  [ROZGRYWKA]   • Etherium Abomination wchodzi na pole bitwy
+  [ROZGRYWKA]   • Etherium Abomination zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 24 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Hill Giant
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Hill Giant wchodzi na pole bitwy
+  [ROZGRYWKA]   • Hill Giant zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Plague Reaver
+
+--- krok 84 | T. 24BotGracz: 12 ż.Bot: 3 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Deklaracja blokujących (2 opcje)
+  RĘKA: Bone Splinters · 1 · Sorcery · zniszcz cel · cel: stwór
+  MOJE POLA: Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Etherium Abomination · 5 · Artifact Creature — Horror · {U}, {B}: unearth (z grobu z haste, exile na końcu tury) · choroba · 4/3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · atakuje — niezablokowany · wyposażona: Squire's Lightblade · 7/5 | Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. · wyposaża → Plague Reaver | Hill Giant · 4 · Creature — Giant · choroba · 3/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Etherium Abomination (4/3)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Etherium Abomination blokuje Plague Reaver
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Plague Reaver zadaje 7 obrażeń (Etherium Abomination)
+  [ROZGRYWKA]   • Etherium Abomination zadaje 4 obrażenia (Plague Reaver)
+  [ROZGRYWKA]   • Etherium Abomination ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Plague Reaver — trigger (krok końca tury)
+  [ROZGRYWKA]   • Hill Giant zostaje poświęcony
+  [ROZGRYWKA]   • Plague Reaver — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 25 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Akrasan Squire
+
+--- krok 87 | T. 25GraczGracz: 12 ż.Bot: 3 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Akrasan Squire (koszt W)  ||  Aktywuj: Etherium Abomination (koszt UB) — unearth (z grobu z haste, exile na końcu tury)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Bone Splinters · 1 · Sorcery · zniszcz cel · cel: stwór | Akrasan Squire · 1 · Creature — Human Soldier · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · 1/1
+  MOJE POLA: Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · wyposażona: Squire's Lightblade · 7/5 | Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. · wyposaża → Plague Reaver
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  >> Zagraj: Akrasan Squire (koszt W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Akrasan Squire
+  [ROZGRYWKA]   • Akrasan Squire wchodzi na pole bitwy
+  [ROZGRYWKA]   • Akrasan Squire zostaje rozstrzygnięty
+  >> Aktywuj: Etherium Abomination (koszt UB) — unearth (z grobu z haste, exile na końcu tury)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Etherium Abomination
+  [ROZGRYWKA]   • Ty: Etherium Abomination — cmentarz → pole bitwy
+  [ROZGRYWKA]   • Ty: zdolność Etherium Abomination rozstrzygnięta
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+
+--- krok 90 | T. 25GraczGracz: 12 ż.Bot: 3 ż.Walka / BlokStos — Akrasan Squire ---
+  STOS: Trigger: Angelic Benediction (samotny atak) | Trigger: Akrasan Squire (samotny atak)
+  AKCJE: Poddaj partię  ||  Angelic Benediction — cel triggera (4 opcje)
+  RĘKA: Bone Splinters · 1 · Sorcery · zniszcz cel · cel: stwór
+  MOJE POLA: Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Akrasan Squire · 1 · Creature — Human Soldier · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · choroba · 1/1 | Etherium Abomination · 5 · Artifact Creature — Horror · Pośpiech · {U}, {B}: unearth (z grobu z haste, exile na końcu tury) · atakuje — niezablokowany · 4/3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · wyposażona: Squire's Lightblade · 7/5 | Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. · wyposaża → Plague Reaver
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Etherium Abomination
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Angelic Benediction — trigger (samotny atak)
+  [ROZGRYWKA]   • Angelic Benediction — wybierz cel triggera (można odmówić)
+  [ROZGRYWKA]   • Akrasan Squire — trigger (samotny atak)
+  >> Angelic Benediction — cel triggera (4 opcje)
+  [modal choice] Angelic Benediction — cel triggera Angelic Benediction — cel triggera: Plague Reaver (Nieprzyjaciel) Angelic Benediction — cel triggera: Akrasan Squire (Ty) Angelic Benediction — cel triggera: Etherium Abomination (Ty) Angelic Benediction — bez celu (odmowa — „up to one"/„you may")
+  [modal choice]   ▶ Angelic Benediction — cel triggera: Plague Reaver (Nieprzyjaciel)
+  [modal choice]     Angelic Benediction — cel triggera: Akrasan Squire (Ty)
+  [modal choice]     Angelic Benediction — cel triggera: Etherium Abomination (Ty)
+  [modal choice]     Angelic Benediction — bez celu (odmowa — „up to one"/„you may")
+== KONIEC PARTII == Koniec partii — wygrywa Gracz
+
+--- krok 93 | Koniec partii — wygrywa Gracz ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Bone Splinters · 1 · Sorcery · zniszcz cel · cel: stwór
+  MOJE POLA: Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap. | Akrasan Squire · 1 · Creature — Human Soldier · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · choroba · 1/1 | Etherium Abomination · 5 · Artifact Creature — Horror · Pośpiech · {U}, {B}: unearth (z grobu z haste, exile na końcu tury) · +2/+2 · 6/5 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · wyposażona: Squire's Lightblade · 7/5 | Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. · wyposaża → Plague Reaver
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Ethersworn Shieldmage, Dispeller's Capsule, Forest, Island, Plains, Angelic Benediction, Island ⏎ Nowa partia (seed 23). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 30, kliknięte: 31, modale: 5, sondy noop: 91 (panel 71, modal 20)
+== DETEKTORY: brak zgłoszeń ==

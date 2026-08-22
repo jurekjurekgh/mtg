@@ -252,8 +252,17 @@ test('S9: SYGNAŁ — brak instantów/sorcery z madness w katalogu; materialize 
   // wymagają rozszerzenia — patrz S10).
   const spellMadness = REGISTRY.supported().filter((card) => card.madness
     && (card.types.includes('Instant') || card.types.includes('Sorcery')));
-  assert.deepEqual(spellMadness.map((c) => c.id), [],
-    'pierwszy instant/sorcery z madness w katalogu: dopisz testy kartowe (ścieżka czarowa gotowa — S1–S4)');
+  // M174 (Batch 41): Terminal Agony to PIERWSZY czar z madness — testy
+  // kartowe w test/batch41-kart.test.js (C1–C3); karta mieści się w
+  // zakresie castMadnessSpell (bez additionalCost/X/modes — S10 pilnuje
+  // granic dla przyszłych kart).
+  assert.deepEqual(spellMadness.map((c) => c.id), ['terminal-agony'],
+    'nowa karta czarowa z madness: dopisz testy kartowe i zaktualizuj ten strażnik');
+  for (const card of spellMadness) {
+    assert.ok(!card.spell?.additionalCost && !card.spell?.xCost
+      && !(card.spell?.modes ?? []).some((m) => m.variableTargets),
+      `${card.id}: poza zakresem castMadnessSpell — wymaga rozszerzenia (S10)`);
+  }
   // Pozytywna kotwica: jedyna karta z madness to permanent (ścieżka
   // castPermanent pozostaje główną drogą katalogu).
   const revolutionist = REGISTRY.get('revolutionist');

@@ -38,8 +38,8 @@ import { parseDeckText } from '../src/cards/deck-text.js';
 function makeSession(seed) {
   const registry = createCardRegistry();
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/black.txt', 'utf8'), registry).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/green.txt', 'utf8'), registry).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/dominaria.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), registry).cardIds],
   ]);
   return createSession({ registry, decks, seed, pauseOnBotMoves: true });
 }
@@ -111,10 +111,16 @@ test('M99: skutek czaru bota (+X/+X) też trafia do modala, nie tylko do logu', 
   // Seed 1 po Batchu 36 (green +Feral Invocation +Grizzled Leotau +1 Forest) —
   // przelosowane hunterem.
   // Seed 2 po Batchu 39 A (green +Knight +4 Plains) — przelosowane hunterem.
-  const session = makeSession(2);
+  // Seed 3 po M178 (rewolucja talii: dominaria vs tarkir) — przelosowane
+  // hunterem (kolejne trafienia: 4, 6, 7).
+  // Seed 5 po Batchu 43 (tarkir +Rush of Battle) — przelosowane hunterem
+  // (kolejne trafienia: 6, 7, 8, 10, 16).
+  // Seed 4 po Batchu 44 B1 (dominaria +Blanchwood Prowler, tarkir
+  // +Descendant of Storms) — hunter (kolejne: 12, 16, 17, 21).
+  const session = makeSession(4);
   const { modalTexts, log } = playCollectingModals(session);
   const pumpInLog = log.filter((t) => /dostaje \+\d+\/\+\d+/.test(t));
-  assert.ok(pumpInLog.length > 0, 'seed 3 miał produkować pump w logu');
+  assert.ok(pumpInLog.length > 0, 'seed 4 miał produkować pump w logu');
   const pumpInModal = modalTexts.filter((t) => /dostaje \+\d+\/\+\d+/.test(t));
   assert.ok(
     pumpInModal.length > 0,

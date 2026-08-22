@@ -1,4 +1,5 @@
 import { choiceResponse } from '../protocol/types.js';
+import { OPTION_IGNORABLE_TYPES } from './render.js';
 import { commandOptionKey, FACE_DOWN_LABEL } from './session.js';
 
 function clearChoiceElement(element) {
@@ -46,10 +47,9 @@ export function renderChoiceRequest(host, request, { labelForOption, onResponse,
   // wyborze celu) ptaszek się nie pojawiał. Bez ptaszka Fake Your Own
   // Death (instant z wyborem celu) nie mógł być wyciszony i auto-pass
   // zatrzymywał się na nim, mimo że właściciel chciał go pominąć.
-  const IGNORABLE_IN_CHOICE = new Set([
-    'cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape', 'cast_flashback',
-    'cast_adventure', 'cast_adventure_creature', 'activate_ability', 'plot_card',
-  ]);
+  // M180/Z4: JEDNA lista typów wyciszalnych (render.OPTION_IGNORABLE_TYPES)
+  // dla panelu akcji I modala wyboru — w tym grupa Halo Foragera.
+  const IGNORABLE_IN_CHOICE = new Set(OPTION_IGNORABLE_TYPES);
   for (const option of request.options) {
     const button = choiceNode(options, 'button', 'action choice-request-option');
     button.type = 'button';
@@ -323,7 +323,11 @@ function creaturePT(view, id) {
 /** Czy stwór ma statyczną zdolność (np. cantAttackAlone) wg widoku. */
 function viewCreatureHasStatic(view, id, field) {
   const object = (view.zones.battlefield ?? []).find((o) => o.id === id);
-  return Boolean(object && (object.abilities ?? []).some((a) => a.type === 'static' && a[field] === true));
+  // M186/Z1: widok niesie flagę JAWNIE (entry.cantAttackAlone/cantBlockAlone)
+  // — wcześniej czytaliśmy entry.abilities, których playerView nie wysyła
+  // (martwa walidacja); fallback po abilities zostaje dla starych widoków.
+  return Boolean(object && (object[field] === true
+    || (object.abilities ?? []).some((a) => a.type === 'static' && a[field] === true)));
 }
 
 /**
@@ -533,6 +537,79 @@ export function renderCombatWizard(host, { kind, view, session, options, onCompl
  * blokerze (kolejność deklaracji), reguła „>= lethal przed następnym" pilnowana
  * na żywo. Trample: niewykorzystana moc idzie na gracza (pokazana).
  */
+/**
+ * M172/E (uwaga właściciela, Inferno Titan): „deals N damage divided as you
+ * choose among one, two, or three targets" — zamiast enumeracji kombinacji
+ * celów (33 opcje) JEDEN wizard: wszyscy kandydaci z licznikiem obrażeń
+ * i przyciskami +/− (wzorzec rozdzielania obrażeń po walce). Suma musi
+ * wynosić dokładnie `total`; celami zostają kandydaci z kwotą > 0 (to
+ * realizuje „among one, two, or three"), maksymalnie `maxTargets`.
+ * onComplete dostaje { targetIds, amounts } w kolejności kandydatów.
+ */
+export function renderDamageDivisionWizard(host, { view, session, candidateIds, total, maxTargets = 3, sourceName = null, onComplete, onCancel, onOpenCard = null }) {
+  clearChoiceElement(host);
+  choiceNode(host, 'div', 'choice-request-intro',
+    `${sourceName ? `${sourceName} — ` : ''}podziel ${total} obraż${total === 1 ? 'enie' : (total >= 2 && total <= 4 ? 'enia' : 'eń')} między maks. ${maxTargets} celów (suma musi wynosić ${total}):`);
+  const list = choiceNode(host, 'div', 'damage-wizard-list');
+  const amounts = candidateIds.map(() => 0);
+  const counters = [];
+  let confirm = null;
+  let sumEl = null;
+  const sum = () => amounts.reduce((a, b) => a + b, 0);
+  const chosenCount = () => amounts.filter((n) => n > 0).length;
+  const legal = () => sum() === total && chosenCount() >= 1 && chosenCount() <= maxTargets;
+  const refresh = () => {
+    candidateIds.forEach((id, idx) => { if (counters[idx]) counters[idx].textContent = String(amounts[idx]); });
+    if (sumEl) sumEl.textContent = `Przydzielono: ${sum()} / ${total}${chosenCount() > maxTargets ? ` — za dużo celów (maks. ${maxTargets})` : ''}`;
+    if (confirm) {
+      const ok = legal();
+      confirm.disabled = !ok;
+      confirm.classList?.toggle?.('is-disabled', !ok);
+    }
+  };
+  candidateIds.forEach((id, idx) => {
+    const row = choiceNode(list, 'div', 'damage-wizard-row');
+    const isPlayer = Boolean(view.players?.some((pl) => pl.id === id));
+    const name = isPlayer
+      ? (view.players.find((pl) => pl.id === id)?.name ?? id)
+      : objectName(view, session, id);
+    const nameEl = choiceNode(row, 'span', 'damage-wizard-name', name);
+    if (!isPlayer && onOpenCard) {
+      nameEl.dataset.objectId = id;
+      nameEl.addEventListener('click', () => onOpenCard(id));
+    }
+    const minus = choiceNode(row, 'button', 'ghost-btn damage-wizard-minus', '−1');
+    const counter = choiceNode(row, 'span', 'damage-wizard-count', '0');
+    const plus = choiceNode(row, 'button', 'ghost-btn damage-wizard-plus', '+1');
+    counters[idx] = counter;
+    minus.addEventListener('click', () => {
+      if (amounts[idx] > 0) { amounts[idx] -= 1; refresh(); }
+    });
+    plus.addEventListener('click', () => {
+      // Nowy cel dopiero, gdy jest wolny slot (maxTargets) i wolna suma.
+      if (sum() >= total) return;
+      if (amounts[idx] === 0 && chosenCount() >= maxTargets) return;
+      amounts[idx] += 1; refresh();
+    });
+  });
+  sumEl = choiceNode(host, 'div', 'damage-wizard-remaining', `Przydzielono: 0 / ${total}`);
+  const buttons = choiceNode(host, 'div', 'choice-request-actions');
+  confirm = choiceNode(buttons, 'button', 'primary-btn damage-division-confirm', 'Zatwierdź podział');
+  confirm.disabled = true;
+  confirm.addEventListener('click', () => {
+    if (!legal()) return;
+    const targetIds = [];
+    const chosenAmounts = [];
+    candidateIds.forEach((id, idx) => {
+      if (amounts[idx] > 0) { targetIds.push(id); chosenAmounts.push(amounts[idx]); }
+    });
+    onComplete({ targetIds, amounts: chosenAmounts });
+  });
+  const cancel = choiceNode(buttons, 'button', 'ghost-btn', 'Anuluj');
+  cancel.addEventListener('click', () => onCancel?.());
+  refresh();
+}
+
 export function renderDamageWizard(host, { view, session, pending, defaultCommand, onComplete, onCancel, probeKeyFor = null }) {
   clearChoiceElement(host);
   choiceNode(host, 'div', 'choice-request-intro', 'Rozdziel obrażenia bojowe — przydziel moc atakujących blokującym:');

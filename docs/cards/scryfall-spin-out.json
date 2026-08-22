@@ -1,0 +1,24 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Spin%20Out&set=dft",
+  "print": "Spin Out (DFT)",
+  "name": "Spin Out",
+  "mana_cost": "{1}{B}{B}",
+  "cmc": 3.0,
+  "type_line": "Instant",
+  "oracle_text": "Destroy target creature or Vehicle.",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [],
+  "set": "dft",
+  "collector_number": "106",
+  "rarity": "common",
+  "pobrano": "2026-08-21",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/e/be722ac5-e8c4-4180-aed0-7c28895afc0d.jpg?1783907889",
+    "normal": "https://cards.scryfall.io/large/front/b/e/be722ac5-e8c4-4180-aed0-7c28895afc0d.jpg?1783907889"
+  }
+}

@@ -36,6 +36,7 @@ ADR zapisują decyzje, których nie powinno się odtwarzać z historii czatu. Ka
 | [0020](0020-mandatory-session-workflow-pr-audit-incremental.md) | Obowiązkowy tryb sesji agentskiej — PR, audyt, inkrementalne commity | Zaakceptowana |
 | [0021](0021-default-session-work-no-queue-question.md) | Domyślna praca sesji — nie pytaj właściciela o kolejkę | Zaakceptowana |
 | [0022](0022-full-oracle-or-unsupported.md) | Katalog kart — pełny Oracle albo brak wsparcia (zastępuje interpretację M111 o „świadomym długu") | Zaakceptowana |
+| [0023](0023-decks-per-plan-and-benchmark-sample.md) | Talie per PLAN (worki dla małych planów), singleton, landy 1:2; testy i benchmark na stałej próbce talii jednoplanowych | Zaakceptowana |
 
 ## Gdzie zapisać regułę (ADR vs LESSONS vs handoff)
 

@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { producibleMana, spendMana, canPayColoredCost, castPermanent } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
-import { effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource, transformedCharacteristics } from './permanents.js';
+import { deathZoneFor, effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource, transformedCharacteristics } from './permanents.js';
 import { applyEffect, dealNonCombatDamage, maybeAddFaceDownFlyingCounter } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature, isLegalAuraHost, attachEquipmentToCreature } from './attachments.js';
@@ -79,6 +79,9 @@ export function hasHexproofAgainst(state, object, casterId) {
 export function validateTargets(state, targetSpec, chosen, casterId, sourceColors = null, sourceObject = null) {
   return chosen.map((targetId, index) => {
     const spec = targetSpec[index];
+    // Batch 45 (Assert Perfection, CR 601.2c): „up to one target" — pozycja
+    // opcjonalna może zostać świadomie pusta (null) i to nie jest błąd.
+    if (targetId == null && spec?.optional) return null;
     const object = state.objects.get(targetId);
     // Hexproof (CR 702.11): cel-permanent przeciwnika z hexproof jest nielegalny
     // dla WSZYSTKICH typów celów obiektowych (stwór, artefakt, aura, land...).
@@ -241,6 +244,9 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     // Cel „creature card from your graveyard" (Grave Exchange) — stwór-karta
     // w grobie rzucającego.
     if (spec?.type === 'creature_card_in_graveyard') {
+      if (spec.maxManaValue != null && (object?.manaCost ?? 0) > spec.maxManaValue) {
+        throw new Error(`Nielegalny cel: ${targetId} (mana value > ${spec.maxManaValue})`);
+      }
       if (object && object.zone === 'graveyard' && object.kind === 'creature'
         && object.controllerId === casterId) return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
@@ -353,6 +359,16 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       if (hasHexproofAgainst(state, object, casterId)) throw new Error(`Nielegalny cel: ${targetId} (hexproof)`);
       return object;
     }
+    // M177/D (Vanish from Sight, L48 oferta=walidacja): dowolny NIE-land na
+    // polu bitwy — typ istniał w ofercie (Thistledown Players), walidacja
+    // rzucała „Nieznany typ celu”.
+    if (spec?.type === 'nonland_permanent') {
+      if (!object || object.zone !== 'battlefield') throw new Error(`Nielegalny cel: ${targetId}`);
+      const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
+      if (isLand) throw new Error(`Nielegalny cel: ${targetId} (land)`);
+      if (hasHexproofAgainst(state, object, casterId)) throw new Error(`Nielegalny cel: ${targetId} (hexproof)`);
+      return object;
+    }
     throw new Error(`Nieznany typ celu: ${spec?.type}`);
   });
 }
@@ -428,11 +444,17 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // Poświęcenie stwora jest KOSZTEM rzutu — następuje, zanim czar trafi na stos
   // (nawet przy późniejszym kontrczarze stwór pozostaje poświęcony — CR 601.2h).
   // Lash: przy wariantcie payAlt nie poświęcamy (zapłaciliśmy maną).
+  // Batch 43 (Severed Strands): „You gain life equal to the sacrificed
+  // creature's toughness" — wytrzymałość poświęconego liczymy PRZED ruchem
+  // do grobu (LKI, CR 608.2g) i niesiemy na obiekcie stosu; efekt gain_life
+  // z amountFromSacrificedToughness czyta ją przy rozstrzygnięciu.
+  let sacrificedToughness = null;
   if (sacrificeCost && !payAltCost) {
     const sacObject = state.objects.get(sacrificeTargetId);
+    sacrificedToughness = effectiveToughness(sacObject, state);
     // Finality (CR 122.1b): koszt poświęcenia to też śmierć — obiekt z finality
     // idzie do exile zamiast do grobu (spójnie z sacrifice_permanent).
-    const toZone = (sacObject.counters ?? {}).finality > 0 ? 'exile' : 'graveyard';
+    const toZone = deathZoneFor(state, sacObject);
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, sacrificeTargetId, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
@@ -449,7 +471,10 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // flashback/suspend/plot). Przechodzi z kartą do strefy po rozstrzygnięciu
   // (resolveTopOfStack), gdzie decyduje o exile zamiast grobu.
   const reboundCast = Boolean(object.spell?.rebound && object.zone === 'hand');
-  const stacked = Object.freeze({ ...moved, tapped: false, chosenTargets: chosen.slice(), wasBuyback, reboundCast });
+  const stacked = Object.freeze({
+    ...moved, tapped: false, chosenTargets: chosen.slice(), wasBuyback, reboundCast,
+    ...(sacrificedToughness != null ? { sacrificedToughness } : {}),
+  });
   state.objects.set(stackId, stacked);
   if (wasBuyback) {
     // Buyback koszt many jest dodatkowy do bazowego — płacimy różnicę
@@ -458,8 +483,9 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   }
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
-    targets: targetObjects.map((entry) => entry.id),
-    targetCardIds: targetObjects.map((entry) => entry.cardId), plotted: Boolean(object.plotted),
+    // Batch 45 (Assert Perfection): pozycja optional może być null.
+    targets: targetObjects.map((entry) => entry?.id ?? null),
+    targetCardIds: targetObjects.map((entry) => entry?.cardId ?? null), plotted: Boolean(object.plotted),
     // Mana wydana na ten rzut (publiczna) — progi triggerów „if four or more
     // mana was spent to cast that spell" (Tellah, Great Sage) czytają ją
     // z kontekstu zdarzenia.
@@ -718,7 +744,7 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
   state.spellsCastThisTurn += 1;
   if (sacrificeCost) {
     const sacObject = state.objects.get(sacrificeTargetId);
-    const toZone = (sacObject.counters ?? {}).finality > 0 ? 'exile' : 'graveyard';
+    const toZone = deathZoneFor(state, sacObject);
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, sacrificeTargetId, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
@@ -731,8 +757,9 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
   state.objects.set(stackId, stacked);
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
-    targets: targetObjects.map((entry) => entry.id),
-    targetCardIds: targetObjects.map((entry) => entry.cardId), plotted: Boolean(object.plotted),
+    // Batch 45 (Assert Perfection): pozycja optional może być null.
+    targets: targetObjects.map((entry) => entry?.id ?? null),
+    targetCardIds: targetObjects.map((entry) => entry?.cardId ?? null), plotted: Boolean(object.plotted),
     manaSpent,
     colors: [...(object.colors ?? [])], cleaved: true,
   });
@@ -816,6 +843,16 @@ function targetCandidatesBySpec(state, playerId, spec) {
           && !hasHexproofAgainst(state, object, playerId);
       });
     }
+    case 'creature_or_enchantment': {
+      // Batch 43 (Sea God's Scorn): stwór albo enchantment na polu bitwy
+      // (enchantment creatures łapią się oba sposoby — jeden wpis).
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        return object?.zone === 'battlefield'
+          && (object.kind === 'creature' || (object.types ?? []).includes('Enchantment'))
+          && !hasHexproofAgainst(state, object, playerId);
+      });
+    }
     case 'artifact_or_creature_or_enchantment': {
       // Banishment Decree: artefakt, stwór albo enchantment na polu bitwy.
       return state.zones.battlefield.filter((objectId) => {
@@ -849,6 +886,9 @@ function targetCandidatesBySpec(state, playerId, spec) {
     case 'creature_card_in_graveyard': {
       return state.zones.graveyard.filter((objectId) => {
         const object = state.objects.get(objectId);
+        // Batch 45 (Unearth): „with mana value 3 or less" — filtr maxManaValue
+        // spójny w OFERCIE i WALIDACJI (pułapka M82).
+        if (spec?.maxManaValue != null && (object?.manaCost ?? 0) > spec.maxManaValue) return false;
         return object?.zone === 'graveyard' && object.kind === 'creature' && object.controllerId === playerId;
       });
     }
@@ -1431,7 +1471,9 @@ export function resolveTopOfStack(state) {
   // `rebound` idzie po rozstrzygnięciu do EXILE zamiast do grobu, a na początku
   // następnego upkeepu kontrolera otwiera jednorazową decyzję rzutu bez kosztu.
   const reboundCast = Boolean(object.reboundCast && !object.isSpellCopy);
-  const zoneAfterResolve = (adventure || flashedBack || reboundCast) ? 'exile' : 'graveyard';
+  // M174/E (Halo Forager): exileInsteadOfGraveyard — „If that spell would
+  // be put into a graveyard, exile it instead" (dotyczy też fizzle niżej).
+  const zoneAfterResolve = (adventure || flashedBack || reboundCast || object.exileInsteadOfGraveyard) ? 'exile' : 'graveyard';
   const afterId = `${zoneAfterResolve}-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, stackId, zoneAfterResolve, afterId);
   // Rebound: zaznacz wygnaną kartę jako gotową do rzutu bez kosztu w przyszłym
@@ -1535,7 +1577,7 @@ export function finishPendingSpell(state, stackId, remainingEffects) {
     return state.events.slice(before);
   }
   const flashedBack = Boolean(object.flashedBack);
-  const zoneAfter = flashedBack ? 'exile' : 'graveyard';
+  const zoneAfter = (flashedBack || object.exileInsteadOfGraveyard) ? 'exile' : 'graveyard';
   const afterId = `${zoneAfter}-${state.objectSequence++}`;
   moveObjectDirectly(state, stackId, zoneAfter, afterId);
   const resolved = event('spell_resolved', { fromId: stackId, toId: afterId, cardId: object.cardId, controllerId: object.controllerId, fizzled: false, flashedBack });
@@ -1700,8 +1742,12 @@ function resolvePermanentSpell(state, stackId, object, before) {
     // obiektu stosu (manaColorsSpent z spendMana).
     let holds = rule.morbid ? Boolean(state.creatureDiedThisTurn) : false;
     if (!holds && rule.adamant) {
+      // M171/N1: wpis jednoznaczny (1 znak) liczy się, gdy jest tym kolorem;
+      // wildcard (>1 znaku — jednostka wielokolorowa, CR 106.7: kolor wybrał
+      // gracz przy produkcji) liczy się, gdy zawiera kolor adamant.
       const spent = permanent.manaColorsSpent ?? [];
-      holds = spent.filter((color) => color === rule.adamant.color).length >= (rule.adamant.min ?? 3);
+      holds = spent.filter((color) => color === rule.adamant.color
+        || (color.length > 1 && color.includes(rule.adamant.color))).length >= (rule.adamant.min ?? 3);
     }
     if (holds) {
       for (const [name, amount] of Object.entries(rule.counters ?? {})) addCounter(state, newId, name, amount);
@@ -2020,7 +2066,13 @@ export function legalSpellCasts(state, playerId) {
     }
     // Kandydaci dla każdej pozycji specyfikacji celów (iloczyn kartezjański —
     // czary wielocelowe jak Grave Exchange). Każdy typ jest generyczny.
-    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec, object));
+    // Batch 45 (Assert Perfection): pozycja celu z `optional: true` („up to
+    // one target") enumeruje też wariant BEZ celu (null) — czar rzucalny
+    // nawet przy braku kandydatów na tej pozycji.
+    const candidatePools = targetSpec.map((spec) => {
+      const pool = legalTargetCandidates(state, playerId, spec, object);
+      return spec?.optional ? [...pool, null] : pool;
+    });
     if (candidatePools.some((pool) => pool.length === 0)) continue;
     for (const combo of cartesian(candidatePools)) {
       for (const sacId of sacrificePool) {
@@ -2070,7 +2122,13 @@ export function legalCleaveCasts(state, playerId) {
       casts.push({ objectId: id, targets: [] });
       continue;
     }
-    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec, object));
+    // Batch 45 (Assert Perfection): pozycja celu z `optional: true` („up to
+    // one target") enumeruje też wariant BEZ celu (null) — czar rzucalny
+    // nawet przy braku kandydatów na tej pozycji.
+    const candidatePools = targetSpec.map((spec) => {
+      const pool = legalTargetCandidates(state, playerId, spec, object);
+      return spec?.optional ? [...pool, null] : pool;
+    });
     if (candidatePools.some((pool) => pool.length === 0)) continue;
     for (const combo of cartesian(candidatePools)) {
       casts.push({ objectId: id, targets: combo });
@@ -2089,10 +2147,17 @@ export function legalCleaveCasts(state, playerId) {
 function legalModeCasts(state, playerId, objectId, modeIndex, mode) {
   const casts = [];
   if (mode.variableTargets) {
-    const creatures = state.zones.battlefield.filter((id) => {
-      const candidate = state.objects.get(id);
-      return candidate?.zone === 'battlefield' && candidate.kind === 'creature';
-    });
+    // Batch 43 (Sea God's Scorn): „up to three target creatures and/or
+    // enchantments" — variableTargets może nieść `type` (spec jak w
+    // legalTargetCandidates, np. 'creature_or_enchantment'); bez `type`
+    // zachowanie historyczne: dowolny stwór na polu bitwy.
+    const source = state.objects.get(objectId);
+    const creatures = mode.variableTargets.type
+      ? legalTargetCandidates(state, playerId, { type: mode.variableTargets.type }, source)
+      : state.zones.battlefield.filter((id) => {
+        const candidate = state.objects.get(id);
+        return candidate?.zone === 'battlefield' && candidate.kind === 'creature';
+      });
     const min = mode.variableTargets.min ?? 1;
     const max = Math.min(mode.variableTargets.max ?? creatures.length, creatures.length);
     const subsets = (arr, k) => {
@@ -2179,9 +2244,16 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   const chosen = Array.isArray(targets) ? targets : [];
   let chosenTargets = [];
   if (mode.variableTargets) {
+    // Tryb z `type` (Sea God's Scorn — creature_or_enchantment) waliduje
+    // celami z legalTargetCandidates; bez `type` historycznie: stwory.
+    const allowed = mode.variableTargets.type
+      ? new Set(legalTargetCandidates(state, playerId, { type: mode.variableTargets.type }, object))
+      : null;
     for (const tId of chosen) {
       const target = state.objects.get(tId);
-      if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') throw new Error(`Nielegalny cel: ${tId}`);
+      if (allowed ? !allowed.has(tId) : (!target || target.zone !== 'battlefield' || target.kind !== 'creature')) {
+        throw new Error(`Nielegalny cel: ${tId}`);
+      }
     }
     const min = mode.variableTargets.min ?? 1;
     const max = mode.variableTargets.max ?? chosen.length;
@@ -2285,7 +2357,13 @@ export function legalEscapeCasts(state, playerId) {
       for (const escapeExileIds of exileSubsets) casts.push({ objectId: id, targets: [], escapeExileIds });
       continue;
     }
-    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec, object));
+    // Batch 45 (Assert Perfection): pozycja celu z `optional: true` („up to
+    // one target") enumeruje też wariant BEZ celu (null) — czar rzucalny
+    // nawet przy braku kandydatów na tej pozycji.
+    const candidatePools = targetSpec.map((spec) => {
+      const pool = legalTargetCandidates(state, playerId, spec, object);
+      return spec?.optional ? [...pool, null] : pool;
+    });
     if (candidatePools.some((pool) => pool.length === 0)) continue;
     for (const combo of cartesian(candidatePools)) {
       for (const escapeExileIds of exileSubsets) casts.push({ objectId: id, targets: combo, escapeExileIds });
@@ -2373,7 +2451,13 @@ export function legalFlashbackCasts(state, playerId) {
       casts.push({ objectId: id, targets: [] });
       continue;
     }
-    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec, object));
+    // Batch 45 (Assert Perfection): pozycja celu z `optional: true` („up to
+    // one target") enumeruje też wariant BEZ celu (null) — czar rzucalny
+    // nawet przy braku kandydatów na tej pozycji.
+    const candidatePools = targetSpec.map((spec) => {
+      const pool = legalTargetCandidates(state, playerId, spec, object);
+      return spec?.optional ? [...pool, null] : pool;
+    });
     if (candidatePools.some((pool) => pool.length === 0)) continue;
     for (const combo of cartesian(candidatePools)) casts.push({ objectId: id, targets: combo });
   }
@@ -2447,7 +2531,13 @@ export function legalAdventureCasts(state, playerId) {
       casts.push({ objectId: id, targets: [] });
       continue;
     }
-    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec, object));
+    // Batch 45 (Assert Perfection): pozycja celu z `optional: true` („up to
+    // one target") enumeruje też wariant BEZ celu (null) — czar rzucalny
+    // nawet przy braku kandydatów na tej pozycji.
+    const candidatePools = targetSpec.map((spec) => {
+      const pool = legalTargetCandidates(state, playerId, spec, object);
+      return spec?.optional ? [...pool, null] : pool;
+    });
     if (candidatePools.some((pool) => pool.length === 0)) continue;
     for (const combo of cartesian(candidatePools)) casts.push({ objectId: id, targets: combo });
   }

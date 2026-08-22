@@ -13,6 +13,7 @@ test('syntetyczna partia przechodzi od permanenta do combat przez protokół', (
   assert.equal(state.turn.step, 'declare_blockers');
   assert.equal(state.turn.priorityPlayerId, 'p2');
   assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { attacker: ['blocker'] } }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.equal(state.turn.step, 'combat_damage');
   assert.equal(state.turn.priorityPlayerId, 'p1');
   const damage = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });

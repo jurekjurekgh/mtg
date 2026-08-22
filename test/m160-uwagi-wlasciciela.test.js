@@ -66,6 +66,7 @@ function combatKillBlockers(state, blockers) {
   state.turn = { ...state.turn, number: 3, activePlayerId: 'p2', priorityPlayerId: 'p2', phase: 'combat', step: 'declare_attackers', stepIndex: 5, passes: 0 };
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: attackers }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p1', assignments }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p2', defendingPlayerId: 'p1' }).ok);
 }
 

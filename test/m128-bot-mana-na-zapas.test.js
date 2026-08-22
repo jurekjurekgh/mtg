@@ -103,13 +103,16 @@ test('M128/B: bot NIE tapuje latarni, gdy same lądy już pokrywają koszt karty
 
 // --- 2. Anty-over-fix: mana, która NAPRAWDĘ odblokowuje zagranie ------------
 
-test('M128 (anty-over-fix): bot TAPUJE latarnię, gdy to odblokowuje zagranie', () => {
+test('M128 (anty-over-fix): mana z latarni ODBLOKOWUJE zagranie — bot je bierze', () => {
   // 6 lądów = 6 many; Woolly Loxodon kosztuje 7. Bez latarni czar jest poza
-  // zasięgiem, z latarnią — dokładnie na progu. Tu tapnięcie ma sens.
-  const { view, sourceId } = botBoard({ source: 'seers-lantern', lands: 6, hand: ['woolly-loxodon'] });
-  const { chosen, tapped } = tapsSource(view, sourceId);
-  assert.equal(tapped, true,
-    `mana przesuwa próg opłacalności — bot powinien ją wziąć: ${JSON.stringify(chosen)}`);
+  // zasięgiem, z latarnią — dokładnie na progu.
+  // M179/D: nielandowe źródła CZYSTEJ many liczą się w producibleMana,
+  // więc rzut jest oferowany OD RAZU (płatność sama do-tapuje latarnię) —
+  // bot nie musi (i nie powinien) najpierw ręcznie aktywować źródła.
+  const { view } = botBoard({ source: 'seers-lantern', lands: 6, hand: ['woolly-loxodon'] });
+  const chosen = createHeuristicBot({ seed: 3 }).chooseCommand(view);
+  assert.equal(chosen.type, 'cast_permanent',
+    `mana przesuwa próg opłacalności — bot rzuca czar (auto-tap w płatności): ${JSON.stringify(chosen)}`);
 });
 
 test('M128 (anty-over-fix): decyduje PRÓG, nie typ źródła — ta sama karta, dwa wyniki', () => {
@@ -120,7 +123,8 @@ test('M128 (anty-over-fix): decyduje PRÓG, nie typ źródła — ta sama karta,
   // Gdyby naprawa była „karą na artefakty many", oba przypadki dałyby to samo.
   const unlocks = botBoard({ source: 'seers-lantern', lands: 6, hand: ['woolly-loxodon'] });
   const wasted = botBoard({ source: 'seers-lantern', lands: 3, hand: ['woolly-loxodon'] });
-  assert.equal(tapsSource(unlocks.view, unlocks.sourceId).tapped, true, 'odblokowuje → bierze');
+  // M179/D: próg osiągnięty → rzut oferowany wprost (auto-tap w płatności).
+  assert.equal(createHeuristicBot({ seed: 3 }).chooseCommand(unlocks.view).type, 'cast_permanent', 'odblokowuje → rzuca');
   assert.equal(tapsSource(wasted.view, wasted.sourceId).tapped, false, 'nie odblokowuje → czeka');
 });
 

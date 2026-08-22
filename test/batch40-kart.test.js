@@ -321,16 +321,10 @@ test('D1: ETB z DWOMA celami — decyzja kwot (2+1), obrażenia według wyboru',
   }
   assert.ok(multi, 'decyzja multi-target otwarta');
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetIds: ['foe1', 'foe2'] }).ok);
-  // 2) Trigger na stosie → rozstrzygnięcie → decyzja KWOT.
-  for (let i = 0; i < 12; i += 1) {
-    if (state.pendingDamageDivision) break;
-    if (state.zones.stack.length > 0) {
-      assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
-      continue;
-    }
-    break;
-  }
+  // 2) M171/Z6 (CR 603.3d): decyzja KWOT otwiera się OD RAZU po wyborze
+  //    celów (deklaracja przy umieszczaniu na stosie), nie po rozstrzygnięciu.
   assert.ok(state.pendingDamageDivision, 'decyzja podziału kwot otwarta (2 cele)');
+  assert.ok(state.zones.stack.length > 0, 'trigger wciąż na stosie (Z6)');
   const view = playerView(state, 'p1');
   const offers = view.legalCommands.filter((c) => c.type === 'resolve_damage_division');
   assert.equal(offers.length, 2, 'kompozycje [1,2] i [2,1] — dokładnie dwie oferty');
@@ -338,6 +332,11 @@ test('D1: ETB z DWOMA celami — decyzja kwot (2+1), obrażenia według wyboru',
   assert.ok(chosen, 'oferta 2+1 dostępna');
   const done = execute(state, chosen);
   assert.ok(done.ok, `podział zaakceptowany: ${done.events?.[0]?.reason}`);
+  // M171/Z6 (CR 603.3d): kwoty są DEKLARACJĄ przy umieszczaniu na stosie —
+  // obrażenia zadaje dopiero rozstrzygnięcie triggera (passy).
+  for (let i = 0; i < 12 && state.zones.stack.length > 0; i += 1) {
+    assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
+  }
   // 2 obrażenia zabijają 2/1; 1 obrażenie na 6/5 zostaje.
   assert.ok([...state.objects.values()].some((o) => o.cardId === 'highland-game' && o.zone === 'graveyard'), '2/1 zabite (2 obrażenia)');
   const big = state.objects.get('foe2');
@@ -388,17 +387,13 @@ test('D4: trigger przy ATAKU — dzieli obrażenia (scenariusz walki)', () => {
   state.turn = { ...state.turn, phase: 'combat', step: 'declare_attackers', activePlayerId: 'p1', priorityPlayerId: 'p1' };
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['titan'] }).ok);
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetIds: ['foe1', 'foe2'] }).ok);
-  for (let i = 0; i < 12; i += 1) {
-    if (state.pendingDamageDivision) break;
-    if (state.zones.stack.length > 0) {
-      assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
-      continue;
-    }
-    break;
-  }
+  // M171/Z6 (CR 603.3d): deklaracja kwot przy umieszczaniu na stosie.
   assert.ok(state.pendingDamageDivision, 'decyzja kwot po ataku');
   const done = execute(state, { type: 'resolve_damage_division', playerId: 'p1', amounts: [2, 1] });
   assert.ok(done.ok, 'podział po ataku zaakceptowany');
+  for (let i = 0; i < 12 && state.zones.stack.length > 0; i += 1) {
+    assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
+  }
   const dead = [...state.objects.values()].filter((o) => o.cardId === 'highland-game' && o.zone === 'graveyard');
   assert.ok(dead.length >= 1, 'jeden 2/1 zabity (2 obrażenia z podziału)');
 });

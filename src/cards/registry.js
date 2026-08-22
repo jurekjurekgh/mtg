@@ -178,6 +178,12 @@ export function defineCard(data) {
         ? { replaceTokenCreation: Object.freeze({ ...data.aura.replaceTokenCreation }) }
         : {}),
       ...(data.aura.keepOwnAttachmentsOnProtection ? { keepOwnAttachmentsOnProtection: true } : {}),
+      // M174/D (Predator's Gambit, klasa L47): warunkowe keywordy aury —
+      // ta sama zdolność co equipment (Hunter's Blowgun), gubiona przy
+      // ręcznym przepisywaniu deskryptora.
+      ...(data.aura.conditionalKeywords?.length
+        ? { conditionalKeywords: Object.freeze(data.aura.conditionalKeywords.map((ck) => Object.freeze({ condition: Object.freeze({ ...ck.condition }), keywords: Object.freeze([...ck.keywords]) }))) }
+        : {}),
     }) : null,
     // Equipment (CR 702.6): { equip: koszt, pump, keywords } — załączony daje
     // nosicielowi pump/keywordy (Cloak of the Bat: flying, haste; equip {2}).
@@ -205,6 +211,10 @@ export function defineCard(data) {
           keywords: Object.freeze([...ck.keywords]),
         })));
       }
+      // Batch 44 (Thieves' Tools): „Equipped creature can't be blocked as
+      // long as its power is 3 or less" — próg mocy oceniany przy deklaracji
+      // blokerów (combat.js), nie statycznie.
+      if (data.equipment.cantBeBlockedMaxPower != null) base.cantBeBlockedMaxPower = data.equipment.cantBeBlockedMaxPower;
       // Ograniczenia nosiciela (jak przy aurze) — zarezerwowane pod przyszłe
       // equipmenty; obecnie żaden ich nie używa.
       if (data.equipment.cantAttack) base.cantAttack = true;
@@ -227,6 +237,8 @@ export function defineCard(data) {
     // Endure (TDM, Kin-Tree Nurturer): N liczników +1/+1 ALBO token Spirit N/N
     // — decyzja resolve_endure_choice; kwalifikacja licznika danymi.
     endure: data.endure ?? null,
+    // Toxic N (CR 702.180) — wartość liczbowa keyworda (Batch 45).
+    toxic: data.toxic ?? null,
     // Exploit (CR 702.110, Silumgar Butcher): flaga ETB — opcjonalne
     // poświęcenie przy wejściu (resolve_exploit_choice), potem trigger „exploits".
     exploit: data.exploit ? Object.freeze({}) : null,
@@ -251,6 +263,8 @@ export function defineCard(data) {
     // (enter = rozdział I; po komponencie draw = kolejne). Po rozdziale
     // ostatnim Saga jest poświęcana (CR 714.4), chyba że sama zniknęła.
     saga: data.saga ? Object.freeze({
+      // M172/B: tytuły rozdziałów (Oracle) — etykiety decyzji celu i logu.
+      chapterNames: data.saga.chapterNames ? Object.freeze([...data.saga.chapterNames]) : null,
       chapters: Object.freeze(data.saga.chapters.map((chapter) => Object.freeze(
         (chapter ?? []).map((effect) => Object.freeze({ ...effect })),
       ))),

@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Burning-Yard%20Trainer&set=eld",
+  "print": "Burning-Yard Trainer (ELD)",
+  "name": "Burning-Yard Trainer",
+  "mana_cost": "{4}{R}",
+  "cmc": 5.0,
+  "type_line": "Creature — Human Knight",
+  "oracle_text": "Trample, haste\nWhen this creature enters, another target Knight you control gets +2/+2 and gains trample and haste until end of turn.",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [
+    "Haste",
+    "Trample"
+  ],
+  "set": "eld",
+  "collector_number": "117",
+  "rarity": "uncommon",
+  "pobrano": "2026-08-21",
+  "power": "3",
+  "toughness": "3",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/1/7/17755d1b-3a56-4362-a534-85b35ceb1802.jpg?1783932628",
+    "normal": "https://cards.scryfall.io/large/front/1/7/17755d1b-3a56-4362-a534-85b35ceb1802.jpg?1783932628"
+  }
+}

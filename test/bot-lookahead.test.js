@@ -110,7 +110,7 @@ test('bot: lookahead=0 (domyślny) zachowuje dotychczasowe zachowanie', () => {
 
 test('bot: z lookahead wybiera legalną komendę i jest deterministyczny (2 przebiegi)', () => {
   const registry = createCardRegistry();
-  const deck = parseDeckText(fs.readFileSync('decks/green.txt', 'utf8'), registry);
+  const deck = parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), registry);
   const run = (seed) => {
     const state = setupCardMatch({ seed, players: [{ id: 'p1' }, { id: 'p2' }], decks: new Map([['p1', deck.cardIds], ['p2', deck.cardIds]]), registry });
     const result = runSimulation({
@@ -168,7 +168,7 @@ test('bot: lookahead unika bezwartościowej wymiany, którą naiwne B1 podejmuje
 
 test('smoke: partia botów z lookahead vs aggro kończy się rozstrzygnięciem', () => {
   const registry = createCardRegistry();
-  const deck = parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), registry);
+  const deck = parseDeckText(fs.readFileSync('decks/warhammer.txt', 'utf8'), registry);
   const state = setupCardMatch({ seed: 5, players: [{ id: 'p1' }, { id: 'p2' }], decks: new Map([['p1', deck.cardIds], ['p2', deck.cardIds]]), registry });
   const result = runSimulation({
     state,

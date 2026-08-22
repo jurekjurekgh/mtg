@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Call+the+Mountain+Chocobo&set=fin",
+  "print": "Call the Mountain Chocobo (FIN)",
+  "name": "Call the Mountain Chocobo",
+  "mana_cost": "{3}{R}",
+  "cmc": 4.0,
+  "type_line": "Sorcery",
+  "oracle_text": "Search your library for a Mountain card, reveal it, put it into your hand, then shuffle. Create a 2/2 green Bird creature token with \"Whenever a land you control enters, this token gets +1/+0 until end of turn.\"\nFlashback {5}{R} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [
+    "Flashback"
+  ],
+  "set": "fin",
+  "collector_number": "131",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/2/b2e1986c-2852-4843-bdc4-eddb727ba3d4.jpg?1783906607"
+  },
+  "pobrano": "2026-08-22"
+}

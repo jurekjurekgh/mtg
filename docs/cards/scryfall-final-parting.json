@@ -1,0 +1,24 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Final%20Parting&set=dom",
+  "print": "Final Parting (DOM)",
+  "name": "Final Parting",
+  "mana_cost": "{3}{B}{B}",
+  "cmc": 5.0,
+  "type_line": "Sorcery",
+  "oracle_text": "Search your library for two cards. Put one into your hand and the other into your graveyard. Then shuffle.",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [],
+  "set": "dom",
+  "collector_number": "93",
+  "rarity": "uncommon",
+  "pobrano": "2026-08-22",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/e/de8803f6-9efa-4323-b8c5-29bdd5a48f9a.jpg?1783935009",
+    "normal": "https://cards.scryfall.io/large/front/d/e/de8803f6-9efa-4323-b8c5-29bdd5a48f9a.jpg?1783935009"
+  }
+}

@@ -104,6 +104,7 @@ test('Dread Warlock: nie może być blokowany poza czarnymi stworami (CR)', () =
   assert.ok(!bad.ok, 'biały stwór nie może blokować Dread Warlock');
   // Czarny blocker może.
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { dw: ['black'] } }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
 });
 
 // --- 2. Impact Tremors: creature you control enters -> 1 dmg each opponent ---
@@ -327,6 +328,7 @@ test('Inspire Awe: prewencja obrażeń bojowych poza zaczarowanymi/enchantment-c
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const before = state.players[1].life;
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);
   resolveStack(state);

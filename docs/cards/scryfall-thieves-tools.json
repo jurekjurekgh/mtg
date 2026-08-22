@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Thieves%27%20Tools&set=clb",
+  "print": "Thieves' Tools (CLB)",
+  "name": "Thieves' Tools",
+  "mana_cost": "{1}{B}",
+  "cmc": 2.0,
+  "type_line": "Artifact — Equipment",
+  "oracle_text": "When this Equipment enters, create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")\nEquipped creature can't be blocked as long as its power is 3 or less.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [
+    "Treasure",
+    "Equip"
+  ],
+  "set": "clb",
+  "collector_number": "152",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/3/c3bf4ee1-b6a8-4a69-adab-6839c1786cc9.jpg?1783922750"
+  },
+  "pobrano": "2026-08-22"
+}

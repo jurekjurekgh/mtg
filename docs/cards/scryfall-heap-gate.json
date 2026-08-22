@@ -1,0 +1,21 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Heap%20Gate&set=clb",
+  "print": "Heap Gate (CLB)",
+  "name": "Heap Gate",
+  "mana_cost": "",
+  "cmc": 0.0,
+  "type_line": "Land — Gate",
+  "oracle_text": "{T}: Add {C}.\n{1}, {T}: Add one mana of any color.\n{1}, {T}, Tap an untapped Gate you control: Create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+  "colors": [],
+  "color_identity": [],
+  "keywords": [
+    "Treasure"
+  ],
+  "set": "clb",
+  "collector_number": "354",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/8/68489d65-1978-48b1-a903-2ef38c583239.jpg?1783922657"
+  },
+  "pobrano": "2026-08-22"
+}

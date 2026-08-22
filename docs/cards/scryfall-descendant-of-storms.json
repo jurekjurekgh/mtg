@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Descendant%20of%20Storms&set=tdm",
+  "print": "Descendant of Storms (TDM)",
+  "name": "Descendant of Storms",
+  "mana_cost": "{W}",
+  "cmc": 1.0,
+  "type_line": "Creature — Human Soldier",
+  "oracle_text": "Whenever this creature attacks, you may pay {1}{W}. If you do, it endures 1. (Put a +1/+1 counter on it or create a 1/1 white Spirit creature token.)",
+  "power": "2",
+  "toughness": "1",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [
+    "Endure"
+  ],
+  "set": "tdm",
+  "collector_number": "8",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/6/f632be90-9e7f-41f8-a52e-a2952354d730.jpg?1783907415"
+  },
+  "pobrano": "2026-08-22"
+}

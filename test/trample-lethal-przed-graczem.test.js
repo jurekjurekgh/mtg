@@ -42,6 +42,7 @@ function combatState({ attackerPower = 5, trample = true, blockers = [{ id: 'blk
     type: 'declare_blockers', playerId: 'p2',
     assignments: { att: blockers.map((b) => b.id) },
   }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   return state;
 }
 

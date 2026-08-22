@@ -78,11 +78,13 @@ test('M126/#1 (anty-over-fix): przy pełnej bibliotece BRAK ostrzeżenia', () =>
 
 // --- #2: brak pasującej karty w ręce --------------------------------------
 
-test('M126/#2: Dragon Arch bez wielokolorowego stwora w ręce ostrzega', () => {
+test('M126/#2 (M180/Z5): Dragon Arch bez wielokolorowego stwora w ręce NIE jest oferowany', () => {
+  // M180/Z5 (Żywy Tester): zamiast OSTRZEGAĆ przy jałowej ofercie — chowamy
+  // no-op (precedens M103/M104: powtórny grant, odkręcenie odkręconego).
+  // Efekt bez kandydata rozstrzyga się w nic, więc oferta to strata {2},{T}.
   const { view, sourceId } = board({ source: 'dragon-arch', hand: ['highland-game'], ownLibrary: ['basic-island'] });
   const cmd = view.legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === sourceId);
-  assert.ok(cmd, 'zdolność jest oferowana');
-  assert.match(labelOf(cmd, view), /brak pasującej karty w ręce/);
+  assert.equal(cmd, undefined, 'jałowa oferta schowana (no-op)');
 });
 
 test('M126/#2 (anty-over-fix): z wielokolorowym stworem BRAK ostrzeżenia', () => {

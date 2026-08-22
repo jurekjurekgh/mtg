@@ -1,12 +1,12 @@
 import { event } from '../protocol/types.js';
-import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
+import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife } from './players.js';
-import { spendMana, addMana } from './resources.js';
+import { spendMana, addMana, producibleMana } from './resources.js';
 import { getSourceForObject } from './mana-sources.js';
 import { moveObjectDirectly, singleTargetOfStackEntry } from './objects.js';
 import { tryRegenerate } from './state-based.js';
-import { createBattlefieldToken } from './tokens.js';
+import { createBattlefieldToken, nextCopyNumber } from './tokens.js';
 
 import { effectiveProtectionFromColors } from './attachments.js';
 import { shuffle } from './shuffle.js';
@@ -498,6 +498,22 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
  * tasuje (szukanie z pustym/niepasującym zbiorem to samo „search... shuffle").
  */
 /** Czy karta z biblioteki pasuje do kwalifikatora szukania (types/subtypes/kind/minMV). */
+/**
+ * M177/C (Sifter Wurm): reveal wierzchu biblioteki + życie równe mana value
+ * odsłoniętej karty. Wspólne dla ścieżki natychmiastowej (scry bez blokady)
+ * i po resolve_scry (game-state).
+ */
+export function revealTopGainLife(state, playerId, sourceCardId = null) {
+  const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
+  if (!topId) return;
+  const top = state.objects.get(topId);
+  state.events.push(event('card_revealed', {
+    playerId, objectId: topId, cardId: top.cardId, fromLibraryTop: true, sourceCardId,
+  }));
+  const gained = top.manaCost ?? 0;
+  if (gained > 0) changeLife(state, playerId, gained);
+}
+
 export function librarySearchMatches(object, qualifier, ownerId) {
   if (!object || object.controllerId !== ownerId || object.zone !== 'library') return false;
   const typeMatch = (qualifier.types ?? []).length === 0
@@ -507,10 +523,14 @@ export function librarySearchMatches(object, qualifier, ownerId) {
   const kindMatch = !qualifier.kind || object.kind === qualifier.kind;
   const minMv = qualifier.minManaValue;
   const mvOk = minMv == null || (object.manaCost ?? 0) >= minMv;
-  return typeMatch && subtypeMatch && kindMatch && mvOk;
+  // Batch 44 (Angel's Herald): „search ... for a card named Empyrial
+  // Archangel" — kwalifikator po dokładnej nazwie karty (CR 701.19b;
+  // kryterium jakości, więc fail to find pozostaje legalny).
+  const nameOk = !qualifier.name || (object.cardName ?? object.name) === qualifier.name;
+  return typeMatch && subtypeMatch && kindMatch && mvOk && nameOk;
 }
 
-export function queueSearchChoice(state, sourceObject, { qualifier, destination, entersTapped, destinations = null, chain = null, emitter = null }) {
+export function queueSearchChoice(state, sourceObject, { qualifier, destination, entersTapped, destinations = null, chain = null, emitter = null, mandatory = false }) {
   const ownerId = sourceObject.controllerId;
   const matches = (object) => librarySearchMatches(object, qualifier, ownerId);
   const candidateIds = state.zones.library.filter((id) => matches(state.objects.get(id)));
@@ -544,6 +564,9 @@ export function queueSearchChoice(state, sourceObject, { qualifier, destination,
     // Emiter decyzji pośredniej z aktywacji (cycling/channel): po wyborze
     // handler resolve_search_choice emituje ability_activated (jak cycling).
     emitter: emitter ? { ...emitter } : null,
+    // M177/C (Final Parting, CR 701.19c): szukanie BEZ kryterium jakości
+    // nie może „fail to find” — przy kandydatach decline nie jest oferowany.
+    mandatory: Boolean(mandatory),
   };
   state.turn.priorityPlayerId = ownerId;
   state.events.push(event('search_choice_required', {
@@ -623,6 +646,24 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     for (const objectId of hit) dealNonCombatDamage(state, sourceObject, objectId, amount);
     return;
   }
+  if (effect.type === 'fight') {
+    // Batch 45 (Malamet Battle Glyph, CR 701.12): dwa stwory-cele zadają
+    // sobie NAWZAJEM obrażenia równe swojej mocy. Obie moce liczone PRZED
+    // zadaniem (jednoczesność — CR 701.12b); jeśli którykolwiek przestał
+    // być legalny, ŻADEN nie zadaje obrażeń (CR 701.12c).
+    const aId = targets[effect.targetIndexA ?? 0];
+    const bId = targets[effect.targetIndexB ?? 1];
+    if (aId == null || bId == null) return;
+    const a = state.objects.get(aId);
+    const b = state.objects.get(bId);
+    if (!a || a.zone !== 'battlefield' || a.kind !== 'creature') return;
+    if (!b || b.zone !== 'battlefield' || b.kind !== 'creature') return;
+    const powerA = Math.max(0, effectivePower(a, state) ?? 0);
+    const powerB = Math.max(0, effectivePower(b, state) ?? 0);
+    dealNonCombatDamage(state, a, bId, powerA);
+    dealNonCombatDamage(state, b, aId, powerB);
+    return;
+  }
   if (effect.type === 'damage_from_target_power') {
     const dealerId = targets[effect.sourceTargetIndex ?? 0];
     const victimId = targets[effect.targetIndex ?? 1];
@@ -637,6 +678,18 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     dealNonCombatDamage(state, dealer, victimId, amount);
     return;
   }
+  if (effect.type === 'damage_from_enchanted_power') {
+    // Batch 45 (Pain for All, ETB): „enchanted creature deals damage equal
+    // to its power to any other target" — źródłem obrażeń jest GOSPODARZ
+    // aury (nie aura); moc efektywna z chwili rozstrzygnięcia (CR 608.2).
+    const targetId = targets[0];
+    if (targetId == null) return;
+    const host = state.objects.get(sourceObject.attachedTo);
+    if (!host || host.zone !== 'battlefield' || host.kind !== 'creature') return;
+    const amount = Math.max(0, effectivePower(host, state) ?? 0);
+    dealNonCombatDamage(state, host, targetId, amount);
+    return;
+  }
   if (effect.type === 'damage_each_opponent') {
     // „It deals N damage to each opponent" (Fear of Burning Alive, ETB):
     // obrażenia NIEsą combat damage (combat: false — istotne dla triggerów
@@ -644,10 +697,17 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // gracza poza kontrolerem źródła; kontroler jest nienaruszony.
     // amountFrom: 'manaSpent' — wartość z kontekstu triggera (Tellah:
     // „it deals that much damage to each opponent" — wydana mana rzutu).
-    const amount = effect.amountFrom === 'manaSpent' ? (context?.manaSpent ?? 0) : effect.amount;
+    // Batch 45 (Pain for All): amountFrom generycznie z kontekstu
+    // ('damageAmount' — tyle, ile obrażeń dostał zaczarowany stwór), a
+    // fromEnchanted przenosi ŹRÓDŁO obrażeń na gospodarza aury (CR 611.2c
+    // — to stwór zadaje, nie aura; istotne dla lifelinka/protection hosta).
+    const amount = effect.amountFrom ? (context?.[effect.amountFrom] ?? 0) : effect.amount;
+    const dmgSource = effect.fromEnchanted
+      ? (state.objects.get(sourceObject.attachedTo) ?? sourceObject)
+      : sourceObject;
     for (const player of state.players) {
       if (player.id === sourceObject.controllerId) continue;
-      dealNonCombatDamage(state, sourceObject, player.id, amount);
+      dealNonCombatDamage(state, dmgSource, player.id, amount);
     }
     return;
   }
@@ -768,8 +828,19 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       if (v === 'card_types_in_all_graveyards') return allGraveyardsCardTypeCount(state);
       return v ?? fallback;
     };
-    const power = dynt(effect.power, 0);
-    const toughness = dynt(effect.toughness, 0);
+    let power = dynt(effect.power, 0);
+    let toughness = dynt(effect.toughness, 0);
+    // M177/A (You're Not Alone): „If you control three or more creatures,
+    // it gets +4/+4 instead” — warunek liczony przy ROZSTRZYGANIU (CR 608.2),
+    // bonus ZASTĘPUJE bazową kwotę („instead”), nie sumuje się.
+    if (effect.upgradeIfCreatures) {
+      const mine = [...state.objects.values()].filter((o) => o.zone === 'battlefield'
+        && o.kind === 'creature' && o.controllerId === sourceObject.controllerId).length;
+      if (mine >= (effect.upgradeIfCreatures.min ?? 0)) {
+        power = effect.upgradeIfCreatures.power ?? power;
+        toughness = effect.upgradeIfCreatures.toughness ?? toughness;
+      }
+    }
     modifyStats(state, targetId, { power, toughness });
     return;
   }
@@ -806,8 +877,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // zostawał trwałym stworem, którego karta nigdy nim nie była.
     // `originalBeforeAnimation` trzyma stan sprzed animacji (permanents.js).
     const copyBase = src.originalBeforeAnimation ?? src;
+    // M172/D: kopia dostaje kolejny numer wśród żywych kopii tej nazwy —
+    // stół pokazuje „Nazwa (kopia N)" (rozróżnialne cele/bloki).
+    const copyName = src.cardName ?? src.cardId ?? 'Copy';
     const token = createBattlefieldToken(state, ctrl, {
-      cardId: src.cardId, name: src.cardName ?? src.cardId ?? 'Copy',
+      cardId: src.cardId, name: copyName,
+      copyNumber: nextCopyNumber(state, copyName),
       kind: (copyBase.kind ?? src.kind) === 'creature' ? 'creature' : 'artifact',
       power: copyBase.power ?? null, toughness: copyBase.toughness ?? null,
       colors: [...(src.colors ?? [])], types: [...(copyBase.types ?? src.types ?? [])],
@@ -1025,19 +1100,24 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       dealNonCombatDamage(state, sourceObject, chosen[0], total);
       return;
     }
-    state.pendingDamageDivision = {
-      playerId: sourceObject.controllerId,
-      sourceId: sourceObject.id,
-      cardId: sourceObject.cardId,
-      targetIds: Object.freeze([...chosen]),
-      total,
-      restorePriorityTo: state.turn.priorityPlayerId,
-    };
-    state.turn.priorityPlayerId = sourceObject.controllerId;
-    state.events.push(event('damage_division_required', {
-      playerId: sourceObject.controllerId, sourceId: sourceObject.id,
-      cardId: sourceObject.cardId, targetIds: [...chosen], total,
-    }));
+    // M171/Z6 (CR 603.3d/601.2d): kwoty ZADEKLAROWANE przy umieszczaniu na
+    // stosie jadą w context.damageDivision (announce w resolve_trigger_target,
+    // zapis na wpisie stosu). Cel nielegalny przy rozstrzyganiu nie dostaje
+    // nic — bez realokacji (CR 608.2b). Brak deklaracji przy >=2 celach =
+    // producent ominął ścieżkę announce (pierwszy CZAR z damage_divided —
+    // strażnik w test/m171-damage-division-announce.test.js) — jawny błąd
+    // zamiast cichej ścieżki niezgodnej z CR (L52).
+    const declared = Array.isArray(context.damageDivision) ? context.damageDivision : null;
+    if (!declared || declared.length !== chosen.length) {
+      throw new Error('damage_divided: podział niezadeklarowany przy umieszczaniu na stosie (CR 601.2d/603.3d)');
+    }
+    for (let i = 0; i < chosen.length; i += 1) {
+      const targetId = chosen[i];
+      const isPlayer = state.players.some((pl) => pl.id === targetId);
+      const stillLegal = isPlayer || (state.objects.get(targetId)?.zone === 'battlefield');
+      if (!stillLegal) continue; // CR 608.2b: kwota przepada.
+      dealNonCombatDamage(state, sourceObject, targetId, declared[i]);
+    }
     return;
   }
   if (effect.type === 'opponents_lose_life_if_poison') {
@@ -1287,6 +1367,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         abilities: effect.abilities ?? [],
         // M69 (Relic Robber — Goblin Construct „This token can't block").
         cantBlock: Boolean(effect.cantBlock),
+        // Batch 45 (Crawling Chorus — token Mite z toxic 1, CR 702.180).
+        ...(effect.toxic != null ? { toxic: effect.toxic } : {}),
         // M147 (Static Net — Powerstone): token wchodzi ZATAPNIĘTY.
         tapped: Boolean(effect.tapped),
       });
@@ -1356,12 +1438,18 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Wpis niesie więc listę objectIds; stwór, który wejdzie później, buffa
     // NIE dostaje (M101/B2 — wcześniej wpis był bezlistowy i łapał wszystko,
     // co pojawiło się do końca tury).
+    // Batch 43 (Rush of Battle): „Warrior creatures you control gain lifelink"
+    // — opcjonalny filtr `subtype` zawęża zbiór (ustalany przy rozstrzygnięciu,
+    // CR 611.2c — jak cała lista objectIds).
+    const buffIds = affectedCreatureIds(state, sourceObject.controllerId, false)
+      .filter((id) => !effect.subtype
+        || (state.objects.get(id)?.subtypes ?? []).includes(effect.subtype));
     state.untilEndOfTurnBuffs = [
       ...(state.untilEndOfTurnBuffs ?? []),
       Object.freeze({
         controllerId: sourceObject.controllerId,
         opponent: false,
-        objectIds: Object.freeze(affectedCreatureIds(state, sourceObject.controllerId, false)),
+        objectIds: Object.freeze(buffIds),
         power: effect.power ?? 0,
         toughness: effect.toughness ?? 0,
         keywords: Object.freeze([...(effect.keywords ?? [])]),
@@ -1499,6 +1587,19 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       entersTapped: false,
     });
   }
+  if (effect.type === 'search_library_two_cards_hand_and_grave') {
+    // Final Parting (DOM): „Search your library for two cards. Put one into
+    // your hand and the other into your graveyard. Then shuffle.” — dwa
+    // OBOWIĄZKOWE wybory (bez kryterium = bez fail to find): najpierw karta
+    // do ręki, potem łańcuchem (jak Springbloom) karta do grobu.
+    return queueSearchChoice(state, sourceObject, {
+      qualifier: {},
+      destination: 'hand',
+      entersTapped: false,
+      mandatory: true,
+      chain: { remaining: 1, destination: 'graveyard', qualifier: {}, mandatory: true },
+    });
+  }
   if (effect.type === 'search_library_to_hand') {
     // „You may search your library for a card with qualifier, reveal it, put
     // it into your hand, then shuffle" (Pilgrim's Eye; loch — Secret
@@ -1508,6 +1609,24 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       destination: 'hand',
       entersTapped: false,
     });
+  }
+  // M174/E (Halo Forager, MOM): „you may pay {X}. When you do, you may cast
+  // target instant or sorcery card with mana value X from a graveyard
+  // without paying its mana cost. If that spell would be put into a
+  // graveyard, exile it instead." Model: JEDNA decyzja (wybór karty = X i
+  // rzut; rezygnacja = nic) — wzorzec pendingMadnessCast/Epic; kandydaci
+  // liczeni ŻYWO w playerView (dowolny grób, MV == X, w zakresie epicCastOffers).
+  if (effect.type === 'pay_x_cast_from_graveyard') {
+    state.pendingGraveFreeCast = {
+      playerId: sourceObject.controllerId,
+      sourceCardId: sourceObject.cardId ?? null,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = sourceObject.controllerId;
+    state.events.push(event('grave_free_cast_required', {
+      playerId: sourceObject.controllerId, sourceCardId: sourceObject.cardId ?? null,
+    }));
+    return true;
   }
   if (effect.type === 'amass') {
     // Amass N: wybierz istniejącą Army kontrolera albo utwórz 0/0 Army,
@@ -1744,8 +1863,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'gain_life') {
-    if (!Number.isInteger(effect.amount) || effect.amount < 0) throw new RangeError('Zysk życia musi być nieujemny');
-    changeLife(state, sourceObject.controllerId, effect.amount);
+    // Batch 43 (Severed Strands): „You gain life equal to the sacrificed
+    // creature's toughness" — kwota z LKI poświęconego stwora (koszt rzutu),
+    // niesiona na obiekcie stosu przez castSpell (sacrificedToughness).
+    const amount = effect.amountFromSacrificedToughness
+      ? Math.max(0, sourceObject.sacrificedToughness ?? 0)
+      : effect.amount;
+    if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Zysk życia musi być nieujemny');
+    changeLife(state, sourceObject.controllerId, amount);
     return;
   }
   // Mournful Zombie (APC): „{W}, {T}: Target player gains 1 life." — zysk
@@ -1820,7 +1945,17 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // (T6 — okno odpowiedzi), sprawia, że efekt nic nie robi.
     const targetObj = state.objects.get(targetId);
     if (!targetObj || targetObj.zone !== 'battlefield') return;
-    addCounter(state, targetId, effect.counter, effect.amount ?? 1);
+    // Batch 45 (Malamet Battle Glyph): „If the creature you control entered
+    // this turn, put a +1/+1 counter on it" — warunek na CELU, oceniany przy
+    // rozstrzygnięciu (CR 608.2); bez spełnienia licznika nie ma, ale dalsze
+    // efekty czaru (fight) i tak następują.
+    if (effect.onlyIfTargetEnteredThisTurn && targetObj.enteredOnTurn !== state.turn?.number) return;
+    // M177/B (Rakshasa Vizier): liczba liczników z kontekstu zdarzenia
+    // („that many +1/+1 counters” — tyle, ile kart wyszło z grobu).
+    const counterAmount = effect.amountFromContext
+      ? (context?.[effect.amountFromContext] ?? effect.amount ?? 1)
+      : (effect.amount ?? 1);
+    addCounter(state, targetId, effect.counter, counterAmount);
     return;
   }
   if (effect.type === 'remove_counter') {
@@ -2055,6 +2190,30 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     return;
   }
+  if (effect.type === 'detain') {
+    // M177/E (Azorius Justiciar): detain KAŻDEGO z wybranych celów
+    // („up to two target creatures” — multi-target trigger; CR 701.29).
+    for (const targetId of targets) {
+      const detainee = state.objects.get(targetId);
+      if (!detainee || detainee.zone !== 'battlefield') continue; // CR 608.2b
+      detainUntilYourNextTurn(state, targetId, sourceObject.controllerId);
+    }
+    return;
+  }
+  if (effect.type === 'exile_if_dies_this_turn') {
+    // M177/A (Agate Assault): „If that creature would die this turn, exile it
+    // instead” — znacznik na id celu, konsumowany przez deathZoneFor we
+    // wszystkich ścieżkach śmierci; wygasa w cleanup (jak tarcze prewencji).
+    const targetId = targets[effect.targetIndex ?? 0];
+    if (targetId == null) return;
+    const marked = state.objects.get(targetId);
+    if (!marked || marked.zone !== 'battlefield') return;
+    if (!(state.exileIfDiesThisTurn ?? []).includes(targetId)) {
+      state.exileIfDiesThisTurn = [...(state.exileIfDiesThisTurn ?? []), targetId];
+    }
+    state.events.push(event('exile_if_dies_marked', { objectId: targetId, cardId: marked.cardId }));
+    return;
+  }
   if (effect.type === 'exile_permanent') {
     // „You may ... exile target ..." (Kappa Tech-Wrecker, Temat 2): przy
     // odrzuconym celu (null) efekt nie robi nic — jak tap_permanent „up to
@@ -2208,7 +2367,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Finality counter (CR 122.1b w pełnym wymiarze): „If this permanent would
     // die, exile it instead" — dotyczy KAŻDEJ przyczyny śmierci, także
     // zniszczenia efektem (wcześniej tylko zgony SBA).
-    const toZone = (object.counters ?? {}).finality > 0 ? 'exile' : 'graveyard';
+    const toZone = deathZoneFor(state, object);
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, targetId, toZone, destId);
     state.events.push(event('permanent_destroyed', {
@@ -2225,7 +2384,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (!object || object.zone !== 'battlefield') return;
     // Finality counter (CR 122.1b): poświęcenie też jest śmiercią — zamiast
     // grobu obiekt idzie do exile (wcześniej tylko zgony SBA).
-    const toZone = (object.counters ?? {}).finality > 0 ? 'exile' : 'graveyard';
+    const toZone = deathZoneFor(state, object);
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, object.id, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
@@ -2277,6 +2436,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'scry') {
+    // M177/C (Sifter Wurm): „scry 3, THEN reveal the top card of your
+    // library. You gain life equal to that card's mana value” — reveal
+    // dzieje się PO decyzji scry (flaga na pendingScry, konsumowana w
+    // resolve_scry); bez blokady (pusta biblioteka) — od razu.
     // Scry N (CR 701.18, minimalny wymiar — pierwsza karta to Prismari Campus):
     // patrzymy na N wierzchnich kart własnej biblioteki; decyzję o spodzie
     // podejmuje gracz osobną komendą resolve_scry (patrz game-state.js).
@@ -2296,6 +2459,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       playerId: ownerId, amount: seen.length,
       cardIds: seen.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
     }));
+    if (effect.thenRevealTopGainLife) {
+      if (seen.length > 0) state.pendingScry.revealTopGainLife = { sourceCardId: sourceObject.cardId ?? null };
+      else revealTopGainLife(state, ownerId, sourceObject.cardId ?? null);
+    }
     // Zwracamy true, gdy decyzja zablokowała bieg gry — rozstrzyganie czaru
     // (resolveTopOfStack) musi wtedy wstrzymać dalsze efekty do resolve_*.
     return seen.length > 0;
@@ -2744,6 +2911,53 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }));
     return;
   }
+  if (effect.type === 'counter_spell_unless_pays') {
+    // Batch 44 (Frightful Delusion): „Counter target spell unless its
+    // controller pays {1}. That player discards a card." — decyzja należy do
+    // KONTROLERA celowanego czaru (blokująca, resolve_counter_pay_choice).
+    // Bez many na opłatę nie ma decyzji: czar skontrowany od razu, potem
+    // discard (wybór karty w pendingDiscardChoice — CR 701.18).
+    const targetId = targets[0];
+    if (targetId == null) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'stack') return; // cel zniknął (CR 608.2b)
+    const payerId = object.controllerId;
+    const amount = effect.amount ?? 1;
+    const canPay = producibleMana(state, payerId) >= amount;
+    if (!canPay) {
+      const graveId = `grave-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, targetId, 'graveyard', graveId);
+      state.events.push(event('spell_countered', {
+        fromId: targetId, toId: graveId, cardId: moved.cardId,
+        controllerId: moved.controllerId, counteredBy: sourceObject.id,
+        counteredByCardId: sourceObject.cardId,
+      }));
+      const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === payerId);
+      if (handIds.length === 0) return; // bez ręki — nic więcej
+      state.pendingDiscardChoice = {
+        playerId: payerId, count: 1, handIds, purpose: 'effect',
+        sourceCardId: sourceObject.cardId ?? null,
+        restorePriorityTo: state.turn.priorityPlayerId,
+      };
+      state.turn.priorityPlayerId = payerId;
+      state.events.push(event('discard_choice_required', {
+        playerId: payerId, count: 1, cardIds: [...handIds], purpose: 'effect',
+        sourceCardId: sourceObject.cardId ?? null,
+      }));
+      return true; // discard dokończy rozstrzyganie czaru-źródła
+    }
+    state.pendingCounterPay = {
+      playerId: payerId, targetId, amount,
+      sourceId: sourceObject.id, sourceCardId: sourceObject.cardId ?? null,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = payerId;
+    state.events.push(event('counter_pay_required', {
+      playerId: payerId, targetId, cardId: object.cardId, amount,
+      sourceCardId: sourceObject.cardId ?? null,
+    }));
+    return true; // decyzja blokuje dalsze efekty czaru
+  }
   if (effect.type === 'player_sacrifices_creature') {
     // Grave Exchange (drugi cel): „Target player sacrifices a creature of
     // their choice." Wybór należy do CELU (blokująca decyzja resolve_sacrifice_choice,
@@ -3003,6 +3217,27 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }));
     return;
   }
+  if (effect.type === 'owner_library_top_or_bottom') {
+    // M177/D (Vanish from Sight): „Target nonland permanent's owner puts it
+    // on their choice of the top or bottom of their library” — decyzja
+    // należy do WŁAŚCICIELA celu (nie rzucającego): blokująca
+    // resolve_library_placement; sam ruch wykonuje komenda. Czar wisi
+    // (pendingSpell) — surveil 1 rzucającego dopiero po decyzji.
+    const targetId = targets[0];
+    if (targetId == null) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') return; // cel zniknął (CR 608.2b)
+    const ownerId = object.ownerId ?? object.controllerId;
+    state.pendingLibraryPlacement = {
+      playerId: ownerId, targetId, sourceCardId: sourceObject.cardId ?? null,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = ownerId;
+    state.events.push(event('library_placement_required', {
+      playerId: ownerId, targetId, cardId: object.cardId, sourceCardId: sourceObject.cardId ?? null,
+    }));
+    return true; // decyzja blokuje dalsze efekty czaru
+  }
   if (effect.type === 'bounce_to_library_top') {
     // Banishment Decree: „Put target artifact, creature, or enchantment on top
     // of its owner's library." CR 108.3/400.7: na wierzch biblioteki
@@ -3021,6 +3256,39 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.events.push(event('object_moved', {
       fromId: targetId, object: inOwnersLibrary, fromZone: 'battlefield', toZone: 'library',
       toTop: true, bounced: true, toOwner: true,
+    }));
+    return;
+  }
+  if (effect.type === 'bounce_to_library_bottom') {
+    // Batch 43 (Forced Landing): „Put target creature with flying on the
+    // bottom of its owner's library." — lustro bounce_to_library_top, ale na
+    // SPÓD (ostatni element strefy). Token poza polem bitwy przestaje istnieć
+    // (CR 111.7) — kasujemy go OD RAZU zamiast wkładać do biblioteki (wzorzec
+    // resolve_library_placement z M177: SBA sprzątałoby go dopiero po fakcie,
+    // a w bibliotece zdążyłby zaburzyć pending scry/surveil).
+    const targetId = targets[0];
+    if (targetId == null) return; // „up to one" bez celu — brak efektu
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') return; // cel zniknął (CR 608.2b)
+    if (object.isToken) {
+      state.objects.delete(targetId);
+      state.zones.battlefield = state.zones.battlefield.filter((id) => id !== targetId);
+      state.events.push(event('token_ceased_to_exist', {
+        objectId: targetId, cardId: object.cardId, name: object.name,
+        controllerId: object.controllerId, zone: 'library',
+      }));
+      return;
+    }
+    const ownerId = object.ownerId ?? object.controllerId;
+    const libId = `library-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'library', libId);
+    const inOwnersLibrary = Object.freeze({ ...moved, controllerId: ownerId });
+    state.objects.set(libId, inOwnersLibrary);
+    // Spód biblioteki = OSTATNI element w strefie (top = pierwszy).
+    state.zones.library = [...state.zones.library.filter((id) => id !== libId), libId];
+    state.events.push(event('object_moved', {
+      fromId: targetId, object: inOwnersLibrary, fromZone: 'battlefield', toZone: 'library',
+      toBottom: true, bounced: true, toOwner: true,
     }));
     return;
   }
@@ -3199,7 +3467,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     });
     for (const victimId of victims) {
       const victim = state.objects.get(victimId);
-      const toZone = (victim?.counters ?? {}).finality > 0 ? 'exile' : 'graveyard';
+      const toZone = deathZoneFor(state, victim);
       const destId = `${toZone}-${state.objectSequence++}`;
       const moved = moveObjectDirectly(state, victimId, toZone, destId);
       state.events.push(event('permanent_sacrificed', {
@@ -3678,6 +3946,28 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // the top four cards of your library. Put one of them into your hand and
   // the rest into your graveyard." — look top N, wybierz JEDNĄ do ręki,
   // reszta do grobu. Blokująca decyzja jak scry/surveil (pendingLookTopN).
+  if (effect.type === 'look_top_put_one_hand_rest_bottom') {
+    // M177/E (Merchant's Dockhand): „Look at the top X cards… Put one of
+    // them into your hand and the rest on the bottom of your library in any
+    // order.” — X z kosztu (context.xValue); reszta na SPÓD (pendingLookTopN
+    // z restTo, opcjonalna kolejność bottomOrder na komendzie — jak scry).
+    const controllerId = sourceObject.controllerId;
+    const n = effect.amount === 'x' ? (context?.xValue ?? 0) : (effect.amount ?? 1);
+    const topIds = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === controllerId).slice(0, n);
+    if (topIds.length === 0) return;
+    state.pendingLookTopN = {
+      playerId: controllerId,
+      objectIds: [...topIds],
+      restTo: 'library_bottom',
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('look_top_started', {
+      playerId: controllerId, count: topIds.length,
+      cardIds: topIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
+    }));
+    return true;
+  }
   if (effect.type === 'look_top_put_one_hand_rest_grave') {
     const controllerId = sourceObject.controllerId;
     const n = effect.amount ?? 4;
@@ -3704,15 +3994,38 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const controllerId = sourceObject.controllerId;
     const n = effect.amount ?? 4;
     const topIds = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === controllerId).slice(0, n);
-    if (topIds.length === 0) return;
+    // Batch 44 (Blanchwood Prowler): „mill three... You may put a land card
+    // from among the cards milled this way into your hand. If you don't, put
+    // a +1/+1 counter on this creature." — counterIfNone: gdy landa nie
+    // wzięto (rezygnacja ALBO brak landa wśród kart), źródło dostaje licznik.
+    // Bez landów decyzji nie ma: karty idą do grobu, licznik od razu.
+    if (topIds.length === 0) {
+      if (effect.counterIfNone && sourceObject.zone === 'battlefield' && sourceObject.kind === 'creature') {
+        addCounter(state, sourceObject.id, '+1/+1', 1);
+      }
+      return;
+    }
     const landIds = topIds.filter((id) => {
       const o = state.objects.get(id);
       return o && ((o.kind ?? '') === 'land' || (o.types ?? []).includes('Land'));
     });
+    if (effect.counterIfNone && landIds.length === 0) {
+      for (const id of topIds) {
+        const graveId = `grave-${state.objectSequence++}`;
+        const movedGrave = moveObjectDirectly(state, id, 'graveyard', graveId);
+        state.events.push(event('object_moved', { fromId: id, object: movedGrave, fromZone: 'library', toZone: 'graveyard', milled: true }));
+      }
+      const src = state.objects.get(sourceObject.id);
+      if (src && src.zone === 'battlefield' && src.kind === 'creature') {
+        addCounter(state, sourceObject.id, '+1/+1', 1);
+      }
+      return;
+    }
     state.pendingSatyrLook = {
       playerId: controllerId,
       objectIds: [...topIds],
       landIds: [...landIds],
+      ...(effect.counterIfNone ? { counterIfNoneSourceId: sourceObject.id } : {}),
       restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.turn.priorityPlayerId = controllerId;
@@ -3820,7 +4133,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       return o && o.kind !== 'land' && !(o.types ?? []).includes('Land');
     });
     const declineAmount = effect.declineAmount ?? 2;
+    // M174/B (Toll of the Invasion, WAR): „You choose a nonland card from
+    // it. That player discards that card." — wybór OBOWIĄZKOWY (bez opcji
+    // rezygnacji); brak kart nieladowych = nikt nic nie odrzuca (Oracle),
+    // a nie kara declineAmount (to wariant Nightsnare „If you don't").
+    const mandatory = effect.mandatory === true;
     const restorePriorityTo = state.turn.priorityPlayerId;
+    if (nonland.length === 0 && mandatory) return;
     if (nonland.length === 0) {
       // „If you don't" bez możliwości wyboru: od razu odrzucenie N kart
       // przez właściciela ręki (bez pustej oferty dla rzucającego).
@@ -3842,8 +4161,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       chooserId: sourceObject.controllerId,
       count: 1,
       handIds: nonland,
-      allowDecline: true,
-      declineAmount,
+      allowDecline: !mandatory,
+      ...(mandatory ? {} : { declineAmount }),
       purpose: 'effect',
       sourceCardId: sourceObject.cardId ?? null,
       restorePriorityTo,
@@ -3851,7 +4170,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.turn.priorityPlayerId = sourceObject.controllerId;
     state.events.push(event('discard_choice_required', {
       playerId: targetId, chooserId: sourceObject.controllerId, count: 1,
-      cardIds: [...nonland], allowDecline: true, declineAmount,
+      cardIds: [...nonland], allowDecline: !mandatory,
+      ...(mandatory ? {} : { declineAmount }),
       purpose: 'effect', sourceCardId: sourceObject.cardId ?? null,
     }));
     return true;

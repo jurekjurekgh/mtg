@@ -247,6 +247,7 @@ test('Skyclave Geopede: trample — nadmiar obrażeń przechodzi na gracza', () 
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['ge'] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { ge: ['chump'] } }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const lifeBefore = state.players[1].life;
   const result = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.ok(result.ok);
@@ -268,6 +269,7 @@ test('Skyclave Geopede: bez trample nadmiar nie przechodzi (regresja)', () => {
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['plain'] });
   execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { plain: ['chump'] } });
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const lifeBefore = state.players[1].life;
   execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.equal(state.players[1].life, lifeBefore, 'stwór bez trample nie przebija');

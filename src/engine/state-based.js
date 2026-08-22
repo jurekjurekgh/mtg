@@ -1,6 +1,6 @@
 import { event } from '../protocol/types.js';
 import { moveObjectDirectly } from './objects.js';
-import { effectiveKeywords, effectiveToughness } from './permanents.js';
+import { deathZoneFor, effectiveKeywords, effectiveToughness } from './permanents.js';
 import { removeIllegalAttachments } from './attachments.js';
 
 /**
@@ -152,7 +152,8 @@ export function runStateBasedActions(state) {
     // Finality counter: zamiast do grobu, stwór idzie do exile (CR 122.1b
     // w minimalnym wymiarze — dotyczy śmierci z obrażeń). Wygnanie NIE jest
     // śmiercią — nie wchodzi do simultaneousIds.
-    const hasFinality = (object.counters ?? {}).finality > 0;
+    // M177/A: finality LUB znacznik Agate Assault (deathZoneFor — jedno źródło).
+    const hasFinality = deathZoneFor(state, object) === 'exile';
     dying.push({ object, hasFinality });
   }
   const simultaneousIds = dying.filter((d) => !d.hasFinality).map((d) => d.object.id);

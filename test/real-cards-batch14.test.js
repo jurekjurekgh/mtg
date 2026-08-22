@@ -161,10 +161,10 @@ test('Batch 14: wszystkie karty mają artId i status supported', () => {
   assert.ok(compass.artId && compass.imageUri, 'artId i imageUri pozostają');
 });
 
-test('Batch 14: talia green.txt przechodzi walidację', async () => {
+test('Batch 14: talia tarkir.txt przechodzi walidację (M178: talie per plan)', async () => {
   const { parseDeckText } = await import('../src/cards/deck-text.js');
   const { validateDeck } = await import('../src/cards/deck-validation.js');
-  const deckText = fs.readFileSync('decks/'+`green.txt`,'utf8');
+  const deckText = fs.readFileSync('decks/'+`tarkir.txt`,'utf8');
   const parsed = parseDeckText(deckText, REGISTRY);
   const result = validateDeck(parsed.cardIds, REGISTRY);
   assert.ok(result.valid, `Talia nieprawidłowa: ${result.errors.join(', ')}`);
@@ -547,6 +547,7 @@ test('Deathtouch: creature with deathtouch destroys any creature it damages in c
   state.turn.priorityPlayerId = 'p1';
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['dt-attacker'] });
   execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { 'dt-attacker': ['dt-blocker'] } });
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   // Blocker should be destroyed despite 5 toughness
   const blockerObj = state.objects.get('dt-blocker');

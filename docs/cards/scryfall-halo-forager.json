@@ -1,0 +1,30 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Halo%20Forager&set=mom",
+  "print": "Halo Forager (MOM)",
+  "name": "Halo Forager",
+  "mana_cost": "{1}{U}{B}",
+  "cmc": 3.0,
+  "type_line": "Creature — Faerie Rogue",
+  "oracle_text": "Flying\nWhen this creature enters, you may pay {X}. When you do, you may cast target instant or sorcery card with mana value X from a graveyard without paying its mana cost. If that spell would be put into a graveyard, exile it instead.",
+  "colors": [
+    "B",
+    "U"
+  ],
+  "color_identity": [
+    "B",
+    "U"
+  ],
+  "keywords": [
+    "Flying"
+  ],
+  "set": "mom",
+  "collector_number": "227",
+  "rarity": "uncommon",
+  "pobrano": "2026-08-21",
+  "power": "3",
+  "toughness": "1",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/d/edb5f0cc-c826-4e7b-882c-63f6e51fa932.jpg?1783916950",
+    "normal": "https://cards.scryfall.io/large/front/e/d/edb5f0cc-c826-4e7b-882c-63f6e51fa932.jpg?1783916950"
+  }
+}

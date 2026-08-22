@@ -1,0 +1,640 @@
+== NOWA PARTIA: gracz=ostrza vs bot=graveyard, seed=7, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Mountain  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+
+--- krok 3 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Mountain  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  MOJE POLA: Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Zagraj: Jeskai Devotee (koszt 1R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Jeskai Devotee
+  [ROZGRYWKA]   • Jeskai Devotee wchodzi na pole bitwy
+  [ROZGRYWKA]   • Jeskai Devotee zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+
+--- krok 6 | T. 4BotGracz: 20 ż.Bot: 20 ż.Główna 1Stos — Canonized in Blood ---
+  STOS: Canonized in Blood (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · choroba · 2/2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Canonized in Blood
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Canonized in Blood wchodzi na pole bitwy
+  [ROZGRYWKA]   • Canonized in Blood zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  >> Aktywuj: Jeskai Devotee (Ty) (koszt 1) — dodaj manę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Jeskai Devotee — dodanie many do puli ({U}, {R}, {W})
+
+--- krok 9 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Seismic Monstrosaur (koszt 2) → szukaj: Mountain  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Dalej (pass)
+
+--- krok 12 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Walka / Początek walki ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Seismic Monstrosaur (koszt 2) → szukaj: Mountain  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Jeskai Devotee
+
+--- krok 15 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Walka / Obrażenia ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Seismic Monstrosaur (koszt 2) → szukaj: Mountain  ||  Rozstrzygnij obrażenia w walce  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · atakuje — niezablokowany · 2/2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Rozstrzygnij obrażenia w walce
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Jeskai Devotee zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 18
+  >> Dalej (pass)
+  >> Dalej (pass)
+
+--- krok 18 | T. 5GraczGracz: 20 ż.Bot: 18 ż.Koniec ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Seismic Monstrosaur (koszt 2) → szukaj: Mountain  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  >> Aktywuj: Jeskai Devotee (Ty) (koszt 1) — dodaj manę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Jeskai Devotee — dodanie many do puli ({U}, {R}, {W})
+
+--- krok 21 | T. 6BotGracz: 20 ż.Bot: 18 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Seismic Monstrosaur (koszt 2) → szukaj: Mountain  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Gray Slaad (przygoda)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Mountain do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Forever Young do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Ghoulcaller's Bell do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Cellar Door do grobu
+  [ROZGRYWKA]   • Gray Slaad zostaje rozstrzygnięty — przygoda rozstrzygnięta, karta czeka w exile (można rzucić stwora)
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Canonized in Blood — trigger bez efektu (brak legalnych celów)
+  [ROZGRYWKA]   • Tura 7 — Ty
+  >> Aktywuj: Jeskai Devotee (Ty) (koszt 1) — dodaj manę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Jeskai Devotee — dodanie many do puli ({U}, {R}, {W})
+
+--- krok 24 | T. 7GraczGracz: 20 ż.Bot: 18 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Seismic Monstrosaur (koszt 2) → szukaj: Mountain  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Dalej (pass)
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+
+--- krok 27 | T. 7GraczGracz: 20 ż.Bot: 18 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Brawler's Plate (koszt 3)  ||  Zagraj: Warmaker Gunship (koszt 2R)  ||  Zagraj: Ember Beast (koszt 2R)  ||  Cycling: Seismic Monstrosaur (koszt 2) → szukaj: Mountain  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×4
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Zagraj: Brawler's Plate (koszt 3)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Brawler's Plate
+  [ROZGRYWKA]   • Brawler's Plate wchodzi na pole bitwy
+  [ROZGRYWKA]   • Brawler's Plate zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Jeskai Devotee
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Jeskai Devotee zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 18 → 16
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Dawntreader Elk
+
+--- krok 30 | T. 9GraczGracz: 20 ż.Bot: 16 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Seismic Monstrosaur (koszt 2) → szukaj: Mountain  ||  Aktywuj: Jeskai Devotee (Ty) (koszt 1) — dodaj manę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×4
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Dawntreader Elk · 2 · Creature — Elk · {G}, poświęć: szukaj w bibliotece na pole bitwy · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dawntreader Elk wchodzi na pole bitwy
+  [ROZGRYWKA]   • Dawntreader Elk zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 9 — Ty
+  >> Aktywuj: Jeskai Devotee (Ty) (koszt 1) — dodaj manę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Jeskai Devotee — dodanie many do puli ({U}, {R}, {W})
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Inferno Titan
+
+--- krok 33 | T. 9GraczGracz: 20 ż.Bot: 16 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Seismic Monstrosaur (koszt 2) → szukaj: Mountain  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · 6/6
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×4
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Dawntreader Elk · 2 · Creature — Elk · {G}, poświęć: szukaj w bibliotece na pole bitwy · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Dalej (pass)
+  >> Zagraj: Warmaker Gunship (koszt 2R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Warmaker Gunship
+  [ROZGRYWKA]   • Warmaker Gunship wchodzi na pole bitwy
+  [ROZGRYWKA]   • Warmaker Gunship zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Warmaker Gunship — wybierz cel triggera (wymagany)
+  >> Warmaker Gunship — cel triggera: Dawntreader Elk (Nieprzyjaciel)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Warmaker Gunship — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Warmaker Gunship — cel: Dawntreader Elk
+  [ROZGRYWKA]   • Warmaker Gunship zadaje 2 obrażenia (Dawntreader Elk)
+  [ROZGRYWKA]   • Warmaker Gunship — trigger się rozstrzyga
+  [ROZGRYWKA]   • Dawntreader Elk ginie
+
+--- krok 36 | T. 9GraczGracz: 20 ż.Bot: 16 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Jeskai Devotee (Ty)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · 6/6
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×4
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Warmaker Gunship — liczniki charge ze Station (tapuje: Jeskai Devotee)
+  [ROZGRYWKA]   • Warmaker Gunship dostaje +2 liczniki charge (razem 2)
+  [ROZGRYWKA]   • Ty: zdolność Warmaker Gunship rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Aktywuj: Jeskai Devotee (Ty) (koszt 1) — dodaj manę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Jeskai Devotee — dodanie many do puli ({U}, {R}, {W})
+
+--- krok 39 | T. 11GraczGracz: 20 ż.Bot: 16 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Seismic Monstrosaur (koszt 2) → szukaj: Mountain  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · 6/6
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 2x charge | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×4
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Frontline War-Rager
+  >> Dalej (pass)
+  >> Zagraj: Frontline War-Rager (koszt 2R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Frontline War-Rager
+  [ROZGRYWKA]   • Frontline War-Rager wchodzi na pole bitwy
+  [ROZGRYWKA]   • Frontline War-Rager zostaje rozstrzygnięty
+
+--- krok 42 | T. 11GraczGracz: 20 ż.Bot: 16 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Warmaker Gunship (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · 6/6
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 2x charge | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · choroba · 2/3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×4
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Aktywuj: Warmaker Gunship (2 opcje)
+  [modal choice] Aktywuj: Warmaker Gunship Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Frontline War-Rager (Ty) Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Jeskai Devotee (Ty)
+  [modal choice]   ▶ Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Frontline War-Rager (Ty)
+  [modal choice]     Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Jeskai Devotee (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Warmaker Gunship — liczniki charge ze Station (tapuje: Frontline War-Rager)
+  [ROZGRYWKA]   • Warmaker Gunship dostaje +2 liczniki charge (razem 4)
+  [ROZGRYWKA]   • Ty: zdolność Warmaker Gunship rozstrzygnięta
+  >> Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Warmaker Gunship — liczniki charge ze Station (tapuje: Jeskai Devotee)
+  [ROZGRYWKA]   • Warmaker Gunship dostaje +2 liczniki charge (razem 6)
+  [ROZGRYWKA]   • Warmaker Gunship osiąga 6 liczników charge i staje się artefaktowym stworem (Station)
+  [ROZGRYWKA]   • Ty: zdolność Warmaker Gunship rozstrzygnięta
+
+--- krok 45 | T. 11GraczGracz: 20 ż.Bot: 16 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · 6/6
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 6x charge · 4/3 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · choroba · 2/3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×4
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Warmaker Gunship
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Warmaker Gunship zadaje 4 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 16 → 12
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Frontline War-Rager — trigger (krok końca tury)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Frontline War-Rager dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Frontline War-Rager — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+
+--- krok 48 | T. 12BotGracz: 20 ż.Bot: 12 ż.Główna 1Stos — Ainok Artillerist ---
+  STOS: Ainok Artillerist (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · 6/6
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 6x charge · 4/3 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · choroba · 1x +1/+1 · 3/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×4
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Ainok Artillerist
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ainok Artillerist wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ainok Artillerist zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Aktywuj: Jeskai Devotee (Ty) (koszt 1) — dodaj manę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Jeskai Devotee — dodanie many do puli ({U}, {R}, {W})
+
+--- krok 51 | T. 13GraczGracz: 20 ż.Bot: 12 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Seismic Monstrosaur (koszt 2) → szukaj: Mountain  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · 6/6
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 6x charge · 4/3 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 1x +1/+1 · 3/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×4
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · choroba · 4/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Dalej (pass)
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+
+--- krok 54 | T. 13GraczGracz: 20 ż.Bot: 12 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Ember Beast (koszt 2R)  ||  Cycling: Seismic Monstrosaur (koszt 2) → szukaj: Mountain  ||  Aktywuj: Warmaker Gunship (2 opcje)  ||  Wyposaż: Brawler's Plate (3 opcje)  ||  Cel czaru: Awaken the Sleeper (4 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · 6/6
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 6x charge · 4/3 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 1x +1/+1 · 3/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · choroba · 4/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Zagraj: Ember Beast (koszt 2R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Ember Beast
+  [ROZGRYWKA]   • Ember Beast wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ember Beast zostaje rozstrzygnięty
+  >> Aktywuj: Warmaker Gunship (3 opcje)
+  [modal choice] Aktywuj: Warmaker Gunship Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Ember Beast (Ty) Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Frontline War-Rager (Ty) Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Jeskai Devotee (Ty)
+  [modal choice]   ▶ Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Ember Beast (Ty)
+  [modal choice]     Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Frontline War-Rager (Ty)
+  [modal choice]     Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Jeskai Devotee (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Warmaker Gunship — liczniki charge ze Station (tapuje: Ember Beast)
+  [ROZGRYWKA]   • Warmaker Gunship dostaje +3 liczniki charge (razem 9)
+  [ROZGRYWKA]   • Ty: zdolność Warmaker Gunship rozstrzygnięta
+
+--- krok 57 | T. 13GraczGracz: 20 ż.Bot: 12 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Warmaker Gunship (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · 6/6
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 9x charge · 4/3 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 1x +1/+1 · 3/4 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · choroba · 3/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · choroba · 4/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Aktywuj: Warmaker Gunship (2 opcje)
+  [modal choice] Aktywuj: Warmaker Gunship Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Frontline War-Rager (Ty) Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Jeskai Devotee (Ty)
+  [modal choice]   ▶ Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Frontline War-Rager (Ty)
+  [modal choice]     Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Jeskai Devotee (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Warmaker Gunship — liczniki charge ze Station (tapuje: Frontline War-Rager)
+  [ROZGRYWKA]   • Warmaker Gunship dostaje +3 liczniki charge (razem 12)
+  [ROZGRYWKA]   • Ty: zdolność Warmaker Gunship rozstrzygnięta
+  >> Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Warmaker Gunship — liczniki charge ze Station (tapuje: Jeskai Devotee)
+  [ROZGRYWKA]   • Warmaker Gunship dostaje +2 liczniki charge (razem 14)
+  [ROZGRYWKA]   • Ty: zdolność Warmaker Gunship rozstrzygnięta
+
+--- krok 60 | T. 13GraczGracz: 20 ż.Bot: 12 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · 6/6
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 14x charge · 4/3 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 1x +1/+1 · 3/4 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · choroba · 3/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · choroba · 4/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Warmaker Gunship
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Warmaker Gunship zadaje 4 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 12 → 8
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Frontline War-Rager — trigger (krok końca tury)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Frontline War-Rager dostaje +1 licznik +1/+1 (razem 2)
+  [ROZGRYWKA]   • Frontline War-Rager — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+
+--- krok 63 | T. 14BotGracz: 20 ż.Bot: 8 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Jeskai Devotee (Ty) (koszt 1) — dodaj manę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · 6/6
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 14x charge · 4/3 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 2x +1/+1 · 4/5 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · choroba · 3/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Aktywuj: Jeskai Devotee (Ty) (koszt 1) — dodaj manę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Jeskai Devotee — dodanie many do puli ({U}, {R}, {W})
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Phyrexian Rager
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Phyrexian Rager wchodzi na pole bitwy
+  [ROZGRYWKA]   • Phyrexian Rager zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Phyrexian Rager — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 8 → 7
+  [ROZGRYWKA]   • Phyrexian Rager — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Ainok Artillerist
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Ainok Artillerist zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 16
+  [ROZGRYWKA]   • Tura 15 — Ty
+  >> Aktywuj: Jeskai Devotee (Ty) (koszt 1) — dodaj manę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Jeskai Devotee — dodanie many do puli ({U}, {R}, {W})
+
+--- krok 66 | T. 15GraczGracz: 16 ż.Bot: 7 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Seismic Monstrosaur (koszt 2) → szukaj: Mountain  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · 6/6
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 14x charge · 4/3 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 2x +1/+1 · 4/5 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Phyrexian Rager · 3 · Creature — Phyrexian Horror · Gdy wejdzie na pole bitwy: dobierz 1 kartę, utrata 1 życia. · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Dalej (pass)
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+
+--- krok 69 | T. 15GraczGracz: 16 ż.Bot: 7 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Seismic Monstrosaur (koszt 2) → szukaj: Mountain  ||  Aktywuj: Warmaker Gunship (3 opcje)  ||  Wyposaż: Brawler's Plate (4 opcje)  ||  Cel czaru: Awaken the Sleeper (6 opcji)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · 6/6
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 14x charge · 4/3 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 2x +1/+1 · 4/5 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×6
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Phyrexian Rager · 3 · Creature — Phyrexian Horror · Gdy wejdzie na pole bitwy: dobierz 1 kartę, utrata 1 życia. · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Aktywuj: Warmaker Gunship (3 opcje)
+  [modal choice] Aktywuj: Warmaker Gunship Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Ember Beast (Ty) Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Frontline War-Rager (Ty) Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Jeskai Devotee (Ty)
+  [modal choice]   ▶ Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Ember Beast (Ty)
+  [modal choice]     Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Frontline War-Rager (Ty)
+  [modal choice]     Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Jeskai Devotee (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Warmaker Gunship — liczniki charge ze Station (tapuje: Ember Beast)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Warmaker Gunship dostaje +3 liczniki charge (razem 17)
+  [ROZGRYWKA]   • Ty: zdolność Warmaker Gunship rozstrzygnięta
+
+--- krok 72 | T. 15GraczGracz: 16 ż.Bot: 7 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Seismic Monstrosaur (koszt 2) → szukaj: Mountain  ||  Aktywuj: Warmaker Gunship (2 opcje)  ||  Wyposaż: Brawler's Plate (4 opcje)  ||  Cel czaru: Awaken the Sleeper (6 opcji)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · 6/6
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 17x charge · 4/3 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 2x +1/+1 · 4/5 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×6
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Phyrexian Rager · 3 · Creature — Phyrexian Horror · Gdy wejdzie na pole bitwy: dobierz 1 kartę, utrata 1 życia. · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Aktywuj: Warmaker Gunship (2 opcje)
+  [modal choice] Aktywuj: Warmaker Gunship Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Frontline War-Rager (Ty) Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Jeskai Devotee (Ty)
+  [modal choice]   ▶ Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Frontline War-Rager (Ty)
+  [modal choice]     Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Jeskai Devotee (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Warmaker Gunship — liczniki charge ze Station (tapuje: Frontline War-Rager)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Warmaker Gunship dostaje +4 liczniki charge (razem 21)
+  [ROZGRYWKA]   • Ty: zdolność Warmaker Gunship rozstrzygnięta
+
+--- krok 75 | T. 15GraczGracz: 16 ż.Bot: 7 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Seismic Monstrosaur (koszt 2) → szukaj: Mountain  ||  Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Jeskai Devotee (Ty)  ||  Wyposaż: Brawler's Plate (4 opcje)  ||  Cel czaru: Awaken the Sleeper (6 opcji)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · 6/6
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 21x charge · 4/3 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 2x +1/+1 · 4/5 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×6
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Phyrexian Rager · 3 · Creature — Phyrexian Horror · Gdy wejdzie na pole bitwy: dobierz 1 kartę, utrata 1 życia. · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Warmaker Gunship — liczniki charge ze Station (tapuje: Jeskai Devotee)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Warmaker Gunship dostaje +2 liczniki charge (razem 23)
+  [ROZGRYWKA]   • Ty: zdolność Warmaker Gunship rozstrzygnięta
+  >> Cel czaru: Awaken the Sleeper (6 opcji)
+  [modal choice] Cel czaru: Awaken the Sleeper Rzuć: Awaken the Sleeper (koszt 3R) → cel: Phyrexian Rager (Nieprzyjaciel) Rzuć: Awaken the Sleeper (koszt 3R) → cel: Ember Beast (Ty) Rzuć: Awaken the Sleeper (koszt 3R) → cel: Ainok Artillerist (Nieprzyjaciel) Rzuć: Awaken the Sleeper (koszt 3R) → cel: Frontline War-Rager (Ty) Rzuć: Awaken the Sleeper (koszt 3R) → cel: Warmaker Gunship (Ty) Rzuć: Awaken the Sleeper (koszt 3R) → cel: Jeskai Devotee (Ty)
+  [modal choice]   ▶ Rzuć: Awaken the Sleeper (koszt 3R) → cel: Phyrexian Rager (Nieprzyjaciel)
+  [modal choice]     Rzuć: Awaken the Sleeper (koszt 3R) → cel: Ember Beast (Ty)
+  [modal choice]     Rzuć: Awaken the Sleeper (koszt 3R) → cel: Ainok Artillerist (Nieprzyjaciel)
+  [modal choice]     Rzuć: Awaken the Sleeper (koszt 3R) → cel: Frontline War-Rager (Ty)
+  [modal choice]     Rzuć: Awaken the Sleeper (koszt 3R) → cel: Warmaker Gunship (Ty)
+  [modal choice]     Rzuć: Awaken the Sleeper (koszt 3R) → cel: Jeskai Devotee (Ty)
+
+--- krok 78 | T. 15GraczGracz: 16 ż.Bot: 7 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Phyrexian Rager (Ty)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · 6/6
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 23x charge · 4/3 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 2x +1/+1 · 4/5 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Phyrexian Rager · 3 · Creature — Phyrexian Horror · Pośpiech · Gdy wejdzie na pole bitwy: dobierz 1 kartę, utrata 1 życia. · 2/2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×6
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Awaken the Sleeper → cel: Phyrexian Rager
+  [ROZGRYWKA]   • Phyrexian Rager przechodzi pod kontrolę gracza Ty
+  [ROZGRYWKA]   • Phyrexian Rager zyskuje: pośpiech
+  [ROZGRYWKA]   • Awaken the Sleeper zostaje rozstrzygnięty
+  >> Aktywuj: Warmaker Gunship (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Warmaker Gunship — liczniki charge ze Station (tapuje: Phyrexian Rager)
+  [ROZGRYWKA]   • Warmaker Gunship dostaje +2 liczniki charge (razem 25)
+  [ROZGRYWKA]   • Ty: zdolność Warmaker Gunship rozstrzygnięta
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+
+--- krok 81 | T. 15GraczGracz: 16 ż.Bot: 3 ż.KoniecStos — Frontline War-Rager ---
+  STOS: Trigger: Frontline War-Rager (krok końca tury)
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · 6/6
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 25x charge · 4/3 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 2x +1/+1 · 4/5 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Phyrexian Rager · 3 · Creature — Phyrexian Horror · Pośpiech · Gdy wejdzie na pole bitwy: dobierz 1 kartę, utrata 1 życia. · 2/2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×6
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Warmaker Gunship
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Warmaker Gunship zadaje 4 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 7 → 3
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Frontline War-Rager — trigger (krok końca tury)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Frontline War-Rager dostaje +1 licznik +1/+1 (razem 3)
+  [ROZGRYWKA]   • Frontline War-Rager — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  >> Aktywuj: Jeskai Devotee (Ty) (koszt 1) — dodaj manę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Jeskai Devotee — dodanie many do puli ({U}, {R}, {W})
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Gray Slaad
+
+--- krok 84 | T. 17GraczGracz: 10 ż.Bot: 3 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Seismic Monstrosaur (koszt 2) → szukaj: Mountain  ||  Aktywuj: Jeskai Devotee (Ty) (koszt 1) — dodaj manę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · 6/6
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 25x charge · 4/3 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 3x +1/+1 · 5/6 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×6
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Phyrexian Rager · 3 · Creature — Phyrexian Horror · Gdy wejdzie na pole bitwy: dobierz 1 kartę, utrata 1 życia. · 2/2 | Gray Slaad · 3 · Creature — Frog Horror · Postrach Dotykanie śmierci · przy 4+ stworach w grobie · choroba
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Gray Slaad wchodzi na pole bitwy
+  [ROZGRYWKA]   • Gray Slaad zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Ainok Artillerist, Phyrexian Rager
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Ainok Artillerist zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 12
+  [ROZGRYWKA]   • Phyrexian Rager zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 12 → 10
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Goblin Deathraiders
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Tura 17 — Ty
+  >> Aktywuj: Jeskai Devotee (Ty) (koszt 1) — dodaj manę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Jeskai Devotee — dodanie many do puli ({U}, {R}, {W})
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+
+--- krok 87 | T. 17GraczGracz: 10 ż.Bot: 3 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Seismic Monstrosaur (koszt 2) → szukaj: Mountain  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · 6/6 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 25x charge · 4/3 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 3x +1/+1 · 5/6 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×6
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Phyrexian Rager · 3 · Creature — Phyrexian Horror · Gdy wejdzie na pole bitwy: dobierz 1 kartę, utrata 1 życia. · 2/2 | Gray Slaad · 3 · Creature — Frog Horror · Postrach Dotykanie śmierci · przy 4+ stworach w grobie · choroba
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Dalej (pass)
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Zagraj: Inferno Titan (koszt 4RR)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Inferno Titan
+  [ROZGRYWKA]   • Inferno Titan wchodzi na pole bitwy
+  [ROZGRYWKA]   • Inferno Titan zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Inferno Titan — wybierz cel triggera (wymagany)
+
+--- krok 90 | T. 17GraczGracz: 10 ż.Bot: 3 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Inferno Titan — podziel 3 obrażenia między cele
+  RĘKA: Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 25x charge · 4/3 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 3x +1/+1 · 5/6 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · choroba · 6/6 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×7
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Phyrexian Rager · 3 · Creature — Phyrexian Horror · Gdy wejdzie na pole bitwy: dobierz 1 kartę, utrata 1 życia. · 2/2 | Gray Slaad · 3 · Creature — Frog Horror · Postrach Dotykanie śmierci · przy 4+ stworach w grobie · choroba
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Inferno Titan — podziel 3 obrażenia między cele
+  [division wizard] Przydzielono: 3 / 3
+== KONIEC PARTII == Koniec partii — wygrywa Gracz
+
+--- krok 92 | Koniec partii — wygrywa Gracz ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5
+  MOJE POLA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę · 2/2 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Warmaker Gunship · 3 · Artifact Creature — Spacecraft · Latanie · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) · 25x charge · 4/3 | Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. · 3x +1/+1 · 5/6 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Inferno Titan · 6 · Creature — Giant · {R}: +1/+0 do końca tury · Gdy wejdzie na pole bitwy: obrażenia dzielone między cele. · Gdy atakuje: obrażenia dzielone między cele. · choroba · 6/6 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×7
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Phyrexian Rager · 3 · Creature — Phyrexian Horror · Gdy wejdzie na pole bitwy: dobierz 1 kartę, utrata 1 życia. · 2/2 | Gray Slaad · 3 · Creature — Frog Horror · Postrach Dotykanie śmierci · przy 4+ stworach w grobie · choroba
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Ember Beast, Warmaker Gunship, Mountain, Jeskai Devotee, Brawler's Plate, Seismic Monstrosaur ⏎ Nowa partia (seed 7). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 21, kliknięte: 19, modale: 3, sondy noop: 113 (panel 97, modal 16)
+== DETEKTORY: brak zgłoszeń ==

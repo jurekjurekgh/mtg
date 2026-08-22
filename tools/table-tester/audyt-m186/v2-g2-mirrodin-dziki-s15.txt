@@ -1,0 +1,450 @@
+== NOWA PARTIA: gracz=mirrodin vs bot=worek-dziki, seed=15, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Swamp  ||  Zagraj ląd: Mountain  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Rustvine Cultivator · 1 · Creature — Phyrexian Elf Druid · {T}: połóż licznik oil · {T}, zdejmij 1 licznik oil: cel: ląd — odkręć · 1/2 | Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · 3/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Panic Spellbomb · 1 · Artifact · {T}, poświęć: cel: stwór — nie może blokować · Gdy ta karta umrze: dobierz 1 kartę. | Stoic Rebuttal · 3 · Instant · skontruj czar · cel: czar na stosie | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Rustvine Cultivator, Steelfin Whale, Mountain, Panic Spellbomb, Stoic Rebuttal, Swamp ⏎ Nowa partia (seed 15). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Zagraj: Panic Spellbomb (koszt 1)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Panic Spellbomb
+  [ROZGRYWKA]   • Panic Spellbomb wchodzi na pole bitwy
+  [ROZGRYWKA]   • Panic Spellbomb zostaje rozstrzygnięty
+
+--- krok 3 | T. 2BotGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Rustvine Cultivator · 1 · Creature — Phyrexian Elf Druid · {T}: połóż licznik oil · {T}, zdejmij 1 licznik oil: cel: ląd — odkręć · 1/2 | Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · 3/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Stoic Rebuttal · 3 · Instant · skontruj czar · cel: czar na stosie
+  MOJE POLA: Panic Spellbomb · 1 · Artifact · {T}, poświęć: cel: stwór — nie może blokować · Gdy ta karta umrze: dobierz 1 kartę. | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Rustvine Cultivator, Steelfin Whale, Mountain, Panic Spellbomb, Stoic Rebuttal, Swamp ⏎ Nowa partia (seed 15). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Merchant's Dockhand
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Merchant's Dockhand wchodzi na pole bitwy
+  [ROZGRYWKA]   • Merchant's Dockhand zostaje rozstrzygnięty
+
+--- krok 6 | T. 2BotGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Panic Spellbomb (Ty) (koszt T, poświęć) — nie może blokować → cel: Merchant's Dockhand (Nieprzyjaciel)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Rustvine Cultivator · 1 · Creature — Phyrexian Elf Druid · {T}: połóż licznik oil · {T}, zdejmij 1 licznik oil: cel: ląd — odkręć · 1/2 | Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · 3/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Stoic Rebuttal · 3 · Instant · skontruj czar · cel: czar na stosie
+  MOJE POLA: Panic Spellbomb · 1 · Artifact · {T}, poświęć: cel: stwór — nie może blokować · Gdy ta karta umrze: dobierz 1 kartę. | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Merchant's Dockhand · 1 · Artifact Creature — Construct · {3}, {U}, {T}, tapnij X swoich nietapniętych artefaktów: zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki · choroba · 1/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Rustvine Cultivator, Steelfin Whale, Mountain, Panic Spellbomb, Stoic Rebuttal, Swamp ⏎ Nowa partia (seed 15). Powodzenia!
+  >> Aktywuj: Panic Spellbomb (Ty) (koszt T, poświęć) — nie może blokować → cel: Merchant's Dockhand (Nieprzyjaciel
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Panic Spellbomb zostaje poświęcony
+  [ROZGRYWKA]   • Aktywujesz zdolność: Panic Spellbomb — docelowy stwór nie może blokować do końca tury → cel: Merchant's Dockhand
+  [ROZGRYWKA]   • Merchant's Dockhand nie może blokować do końca tury
+  [ROZGRYWKA]   • Ty: zdolność Panic Spellbomb rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+
+--- krok 9 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Rustvine Cultivator (koszt G)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Rustvine Cultivator · 1 · Creature — Phyrexian Elf Druid · {T}: połóż licznik oil · {T}, zdejmij 1 licznik oil: cel: ląd — odkręć · 1/2 | Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · 3/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Stoic Rebuttal · 3 · Instant · skontruj czar · cel: czar na stosie
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Merchant's Dockhand · 1 · Artifact Creature — Construct · {3}, {U}, {T}, tapnij X swoich nietapniętych artefaktów: zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki · choroba · 1/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Rustvine Cultivator, Steelfin Whale, Mountain, Panic Spellbomb, Stoic Rebuttal, Swamp ⏎ Nowa partia (seed 15). Powodzenia!
+  >> Zagraj: Rustvine Cultivator (koszt G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Rustvine Cultivator
+  [ROZGRYWKA]   • Rustvine Cultivator wchodzi na pole bitwy
+  [ROZGRYWKA]   • Rustvine Cultivator zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Illvoi Operative
+
+--- krok 12 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Rustvine Cultivator (Ty) (koszt T) — połóż licznik oil  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · 3/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Stoic Rebuttal · 3 · Instant · skontruj czar · cel: czar na stosie
+  MOJE POLA: Rustvine Cultivator · 1 · Creature — Phyrexian Elf Druid · {T}: połóż licznik oil · {T}, zdejmij 1 licznik oil: cel: ląd — odkręć · 1/2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Merchant's Dockhand · 1 · Artifact Creature — Construct · {3}, {U}, {T}, tapnij X swoich nietapniętych artefaktów: zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki · 1/2 | Illvoi Operative · 2 · Creature — Jellyfish Rogue · Gdy rzucisz drugi czar w turze: połóż licznik +1/+1. · choroba · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Rustvine Cultivator, Steelfin Whale, Mountain, Panic Spellbomb, Stoic Rebuttal, Swamp ⏎ Nowa partia (seed 15). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Illvoi Operative wchodzi na pole bitwy
+  [ROZGRYWKA]   • Illvoi Operative zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  >> Aktywuj: Rustvine Cultivator (Ty) (koszt T) — połóż licznik oil
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Rustvine Cultivator — licznik na celu
+  [ROZGRYWKA]   • Rustvine Cultivator dostaje +1 licznik oil (razem 1)
+  [ROZGRYWKA]   • Ty: zdolność Rustvine Cultivator rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+
+--- krok 15 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Mountain (1 z 2)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · 3/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Stoic Rebuttal · 3 · Instant · skontruj czar · cel: czar na stosie
+  MOJE POLA: Rustvine Cultivator · 1 · Creature — Phyrexian Elf Druid · {T}: połóż licznik oil · {T}, zdejmij 1 licznik oil: cel: ląd — odkręć · 1x oil · 1/2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Merchant's Dockhand · 1 · Artifact Creature — Construct · {3}, {U}, {T}, tapnij X swoich nietapniętych artefaktów: zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki · 1/2 | Illvoi Operative · 2 · Creature — Jellyfish Rogue · Gdy rzucisz drugi czar w turze: połóż licznik +1/+1. · choroba · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Rustvine Cultivator, Steelfin Whale, Mountain, Panic Spellbomb, Stoic Rebuttal, Swamp ⏎ Nowa partia (seed 15). Powodzenia!
+  >> Zagraj ląd: Mountain (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Malamet Battle Glyph → cel: Illvoi Operative, Rustvine Cultivator
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Illvoi Operative zadaje 2 obrażenia (Rustvine Cultivator)
+  [ROZGRYWKA]   • Rustvine Cultivator zadaje 1 obrażenie (Illvoi Operative)
+  [ROZGRYWKA]   • Malamet Battle Glyph zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Rustvine Cultivator ginie
+  [ROZGRYWKA]   • Illvoi Operative ginie
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Welder Automaton
+
+--- krok 18 | T. 7GraczGracz: 19 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · 3/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Stoic Rebuttal · 3 · Instant · skontruj czar · cel: czar na stosie | Plains · Basic Land — Plains · T: dodaj 1 manę
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Merchant's Dockhand · 1 · Artifact Creature — Construct · {3}, {U}, {T}, tapnij X swoich nietapniętych artefaktów: zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki · 1/2 | Welder Automaton · 2 · Artifact Creature — Construct · {3}, {R}: 1 obrażenie każdemu przeciwnikowi · choroba · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Rustvine Cultivator, Steelfin Whale, Mountain, Panic Spellbomb, Stoic Rebuttal, Swamp ⏎ Nowa partia (seed 15). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Welder Automaton wchodzi na pole bitwy
+  [ROZGRYWKA]   • Welder Automaton zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Merchant's Dockhand
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Merchant's Dockhand zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 19
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Cel czaru: Awaken the Sleeper (2 opcje)
+  [modal choice] Cel czaru: Awaken the Sleeper Rzuć: Awaken the Sleeper (koszt 3R) → cel: Welder Automaton (Nieprzyjaciel) Rzuć: Awaken the Sleeper (koszt 3R) → cel: Merchant's Dockhand (Nieprzyjaciel)
+  [modal choice]   ▶ Rzuć: Awaken the Sleeper (koszt 3R) → cel: Welder Automaton (Nieprzyjaciel)
+  [modal choice]     Rzuć: Awaken the Sleeper (koszt 3R) → cel: Merchant's Dockhand (Nieprzyjaciel)
+
+--- krok 21 | T. 7GraczGracz: 19 ż.Bot: 20 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · 3/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Stoic Rebuttal · 3 · Instant · skontruj czar · cel: czar na stosie
+  MOJE POLA: Welder Automaton · 2 · Artifact Creature — Construct · Pośpiech · {3}, {R}: 1 obrażenie każdemu przeciwnikowi · Pośpiech · kontrola do końca tury · 2/1 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Merchant's Dockhand · 1 · Artifact Creature — Construct · {3}, {U}, {T}, tapnij X swoich nietapniętych artefaktów: zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki · 1/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Rustvine Cultivator, Steelfin Whale, Mountain, Panic Spellbomb, Stoic Rebuttal, Swamp ⏎ Nowa partia (seed 15). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Awaken the Sleeper → cel: Welder Automaton
+  [ROZGRYWKA]   • Welder Automaton przechodzi pod kontrolę gracza Ty
+  [ROZGRYWKA]   • Welder Automaton zyskuje: pośpiech
+  [ROZGRYWKA]   • Awaken the Sleeper zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Welder Automaton
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Welder Automaton zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 18
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+
+--- krok 24 | T. 8BotGracz: 19 ż.Bot: 18 ż.Główna 1Stos — Cacophodon ---
+  STOS: Cacophodon (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · 3/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Stoic Rebuttal · 3 · Instant · skontruj czar · cel: czar na stosie
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Merchant's Dockhand · 1 · Artifact Creature — Construct · {3}, {U}, {T}, tapnij X swoich nietapniętych artefaktów: zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki · 1/2 | Welder Automaton · 2 · Artifact Creature — Construct · {3}, {R}: 1 obrażenie każdemu przeciwnikowi · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Rustvine Cultivator, Steelfin Whale, Mountain, Panic Spellbomb, Stoic Rebuttal, Swamp ⏎ Nowa partia (seed 15). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Cacophodon
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Cacophodon wchodzi na pole bitwy
+  [ROZGRYWKA]   • Cacophodon zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Merchant's Dockhand, Welder Automaton
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Merchant's Dockhand zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 19 → 18
+  [ROZGRYWKA]   • Welder Automaton zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 16
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+
+--- krok 27 | T. 10BotGracz: 16 ż.Bot: 18 ż.Główna 1Stos — Geological Appraiser ---
+  STOS: Geological Appraiser (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · 3/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Stoic Rebuttal · 3 · Instant · skontruj czar · cel: czar na stosie
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Merchant's Dockhand · 1 · Artifact Creature — Construct · {3}, {U}, {T}, tapnij X swoich nietapniętych artefaktów: zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki · 1/2 | Welder Automaton · 2 · Artifact Creature — Construct · {3}, {R}: 1 obrażenie każdemu przeciwnikowi · 2/1 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Rustvine Cultivator, Steelfin Whale, Mountain, Panic Spellbomb, Stoic Rebuttal, Swamp ⏎ Nowa partia (seed 15). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Geological Appraiser
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Geological Appraiser wchodzi na pole bitwy
+  [ROZGRYWKA]   • Geological Appraiser zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Geological Appraiser — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Spinewoods Paladin
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Plains
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Forest
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Fathom Fleet Cutthroat
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Island
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Moonlit Meditation
+  [ROZGRYWKA]   • Geological Appraiser — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Moonlit Meditation
+  [ROZGRYWKA]   • Moonlit Meditation — discover (rzut za darmo)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Moonlit Meditation wchodzi na pole bitwy
+  [ROZGRYWKA]   • Moonlit Meditation zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Merchant's Dockhand, Welder Automaton, Cacophodon
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Merchant's Dockhand zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 15
+  [ROZGRYWKA]   • Welder Automaton zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 15 → 13
+  [ROZGRYWKA]   • Cacophodon zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 11
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Trigon of Corruption
+
+--- krok 30 | T. 11GraczGracz: 11 ż.Bot: 18 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Mountain  ||  Zagraj: Trigon of Corruption (koszt 4)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · 3/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Stoic Rebuttal · 3 · Instant · skontruj czar · cel: czar na stosie | Trigon of Corruption · 4 · Artifact · {B}, {B}, {T}: połóż licznik charge · {2}, {T}, zdejmij 1 licznik charge: cel: stwór — połóż licznik -1/-1
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Merchant's Dockhand · 1 · Artifact Creature — Construct · {3}, {U}, {T}, tapnij X swoich nietapniętych artefaktów: zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki · 1/2 | Welder Automaton · 2 · Artifact Creature — Construct · {3}, {R}: 1 obrażenie każdemu przeciwnikowi · 2/1 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Geological Appraiser · 4 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: discover (odsłoń i rzuć za darmo). · choroba · 3/2 | Moonlit Meditation · 3 · Enchantment — Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Rustvine Cultivator, Steelfin Whale, Mountain, Panic Spellbomb, Stoic Rebuttal, Swamp ⏎ Nowa partia (seed 15). Powodzenia!
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Zagraj: Trigon of Corruption (koszt 4)
+  [kreator many] Płatność 4 — tapuj źródła po jednympozostało 4 manyTapnij: Swamp (B)Tapnij: Forest (G)Tapnij: Mountain (R)Tapnij: Plains — źródła: 6
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Trigon of Corruption
+  [ROZGRYWKA]   • Trigon of Corruption wchodzi na pole bitwy
+  [ROZGRYWKA]   • Trigon of Corruption dostaje +3 liczniki charge (razem 3)
+  [ROZGRYWKA]   • Trigon of Corruption zostaje rozstrzygnięty
+
+--- krok 33 | T. 11GraczGracz: 11 ż.Bot: 18 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Cel zdolności: Trigon of Corruption (4 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · 3/4 | Stoic Rebuttal · 3 · Instant · skontruj czar · cel: czar na stosie
+  MOJE POLA: Trigon of Corruption · 4 · Artifact · {B}, {B}, {T}: połóż licznik charge · {2}, {T}, zdejmij 1 licznik charge: cel: stwór — połóż licznik -1/-1 · 3x charge | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Merchant's Dockhand · 1 · Artifact Creature — Construct · {3}, {U}, {T}, tapnij X swoich nietapniętych artefaktów: zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki · 1/2 | Welder Automaton · 2 · Artifact Creature — Construct · {3}, {R}: 1 obrażenie każdemu przeciwnikowi · 2/1 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Geological Appraiser · 4 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: discover (odsłoń i rzuć za darmo). · choroba · 3/2 | Moonlit Meditation · 3 · Enchantment — Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Rustvine Cultivator, Steelfin Whale, Mountain, Panic Spellbomb, Stoic Rebuttal, Swamp ⏎ Nowa partia (seed 15). Powodzenia!
+  >> Cel zdolności: Trigon of Corruption (4 opcje)
+  [modal choice] Cel zdolności: Trigon of Corruption Aktywuj: Trigon of Corruption (Ty) (koszt 2, T, zdejmij 1 licznik charge) — połóż licznik -1/-1 → cel: Geological Appraiser (Nieprzyjaciel) Aktywuj: Trigon of Corruption (Ty) (koszt 2, T, zdejmij 1 licznik charge) — połóż licznik -1/-1 → cel: Cacophodon (Nieprzyjaciel) Aktywuj: Trigon of Corruption (Ty) (koszt 2, T, zdejmij 1 licznik charge) — połóż licznik -1/-1 → cel: Welder Automaton (Nieprzyjaciel) Aktywuj: Trigon of Corruption (Ty) (koszt 2, T, zdejmij 1 licznik charge) — połóż licznik -1/-1 → cel: Merchant's Dockhand (Nieprzyjaciel)
+  [modal choice]   ▶ Aktywuj: Trigon of Corruption (Ty) (koszt 2, T, zdejmij 1 licznik charge) — połóż licznik -1/-1 → cel: Geological Appraiser (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Trigon of Corruption (Ty) (koszt 2, T, zdejmij 1 licznik charge) — połóż licznik -1/-1 → cel: Cacophodon (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Trigon of Corruption (Ty) (koszt 2, T, zdejmij 1 licznik charge) — połóż licznik -1/-1 → cel: Welder Automaton (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Trigon of Corruption (Ty) (koszt 2, T, zdejmij 1 licznik charge) — połóż licznik -1/-1 → cel: Merchant's Dockhand (Nieprzyjaciel)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Trigon of Corruption traci 1 licznik charge (zostało 2)
+  [ROZGRYWKA]   • Aktywujesz zdolność: Trigon of Corruption — licznik na celu → cel: Geological Appraiser
+  [ROZGRYWKA]   • Geological Appraiser dostaje +1 licznik -1/-1 (razem 1)
+  [ROZGRYWKA]   • Ty: zdolność Trigon of Corruption rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+
+--- krok 36 | T. 12BotGracz: 11 ż.Bot: 18 ż.Główna 1Stos — Stall Out ---
+  STOS: Stall Out (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · 3/4 | Stoic Rebuttal · 3 · Instant · skontruj czar · cel: czar na stosie
+  MOJE POLA: Trigon of Corruption · 4 · Artifact · {B}, {B}, {T}: połóż licznik charge · {2}, {T}, zdejmij 1 licznik charge: cel: stwór — połóż licznik -1/-1 · 2x charge | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Merchant's Dockhand · 1 · Artifact Creature — Construct · {3}, {U}, {T}, tapnij X swoich nietapniętych artefaktów: zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki · 1/2 | Welder Automaton · 2 · Artifact Creature — Construct · {3}, {R}: 1 obrażenie każdemu przeciwnikowi · 2/1 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Geological Appraiser · 4 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: discover (odsłoń i rzuć za darmo). · 1x -1/-1 · 2/1 | Moonlit Meditation · 3 · Enchantment — Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Rustvine Cultivator, Steelfin Whale, Mountain, Panic Spellbomb, Stoic Rebuttal, Swamp ⏎ Nowa partia (seed 15). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje cycling: Stall Out
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Welder Automaton
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Welder Automaton zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 10
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Welder Automaton rozstrzygnięta
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Stall Out rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Merchant's Dockhand, Welder Automaton, Cacophodon, Geological Appraiser
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Merchant's Dockhand zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 10 → 9
+  [ROZGRYWKA]   • Welder Automaton zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 9 → 7
+  [ROZGRYWKA]   • Cacophodon zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 7 → 5
+  [ROZGRYWKA]   • Geological Appraiser zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 5 → 3
+  [ROZGRYWKA]   • Tura 13 — Ty
+
+--- krok 39 | T. 13GraczGracz: 3 ż.Bot: 18 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cel zdolności: Trigon of Corruption (4 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · 3/4 | Stoic Rebuttal · 3 · Instant · skontruj czar · cel: czar na stosie
+  MOJE POLA: Trigon of Corruption · 4 · Artifact · {B}, {B}, {T}: połóż licznik charge · {2}, {T}, zdejmij 1 licznik charge: cel: stwór — połóż licznik -1/-1 · 2x charge | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Merchant's Dockhand · 1 · Artifact Creature — Construct · {3}, {U}, {T}, tapnij X swoich nietapniętych artefaktów: zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki · 1/2 | Welder Automaton · 2 · Artifact Creature — Construct · {3}, {R}: 1 obrażenie każdemu przeciwnikowi · 2/1 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Geological Appraiser · 4 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: discover (odsłoń i rzuć za darmo). · 1x -1/-1 · 2/1 | Moonlit Meditation · 3 · Enchantment — Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Rustvine Cultivator, Steelfin Whale, Mountain, Panic Spellbomb, Stoic Rebuttal, Swamp ⏎ Nowa partia (seed 15). Powodzenia!
+  >> Cel zdolności: Trigon of Corruption (4 opcje)
+  [modal choice] Cel zdolności: Trigon of Corruption Aktywuj: Trigon of Corruption (Ty) (koszt 2, T, zdejmij 1 licznik charge) — połóż licznik -1/-1 → cel: Geological Appraiser (Nieprzyjaciel) Aktywuj: Trigon of Corruption (Ty) (koszt 2, T, zdejmij 1 licznik charge) — połóż licznik -1/-1 → cel: Cacophodon (Nieprzyjaciel) Aktywuj: Trigon of Corruption (Ty) (koszt 2, T, zdejmij 1 licznik charge) — połóż licznik -1/-1 → cel: Welder Automaton (Nieprzyjaciel) Aktywuj: Trigon of Corruption (Ty) (koszt 2, T, zdejmij 1 licznik charge) — połóż licznik -1/-1 → cel: Merchant's Dockhand (Nieprzyjaciel)
+  [modal choice]   ▶ Aktywuj: Trigon of Corruption (Ty) (koszt 2, T, zdejmij 1 licznik charge) — połóż licznik -1/-1 → cel: Geological Appraiser (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Trigon of Corruption (Ty) (koszt 2, T, zdejmij 1 licznik charge) — połóż licznik -1/-1 → cel: Cacophodon (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Trigon of Corruption (Ty) (koszt 2, T, zdejmij 1 licznik charge) — połóż licznik -1/-1 → cel: Welder Automaton (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Trigon of Corruption (Ty) (koszt 2, T, zdejmij 1 licznik charge) — połóż licznik -1/-1 → cel: Merchant's Dockhand (Nieprzyjaciel)
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Swamp (B)Tapnij: Forest (G)Tapnij: Mountain (R)Tapnij: Plains — źródła: 6
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Trigon of Corruption — licznik na celu → cel: Geological Appraiser
+  [ROZGRYWKA]   • Geological Appraiser dostaje +1 licznik -1/-1 (razem 2)
+  [ROZGRYWKA]   • Ty: zdolność Trigon of Corruption rozstrzygnięta
+  [ROZGRYWKA]   • Geological Appraiser ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Gloomfang Mauler
+
+--- krok 42 | T. 13GraczGracz: 3 ż.Bot: 18 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Gloomfang Mauler (koszt 2) → szukaj: Swamp  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · 3/4 | Stoic Rebuttal · 3 · Instant · skontruj czar · cel: czar na stosie | Gloomfang Mauler · 7 · Creature — Nightmare · Postrach · Cycling {2} → szukaj: Swamp · 5/5
+  MOJE POLA: Trigon of Corruption · 4 · Artifact · {B}, {B}, {T}: połóż licznik charge · {2}, {T}, zdejmij 1 licznik charge: cel: stwór — połóż licznik -1/-1 · 1x charge | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Merchant's Dockhand · 1 · Artifact Creature — Construct · {3}, {U}, {T}, tapnij X swoich nietapniętych artefaktów: zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki · 1/2 | Welder Automaton · 2 · Artifact Creature — Construct · {3}, {R}: 1 obrażenie każdemu przeciwnikowi · 2/1 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Moonlit Meditation · 3 · Enchantment — Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Rustvine Cultivator, Steelfin Whale, Mountain, Panic Spellbomb, Stoic Rebuttal, Swamp ⏎ Nowa partia (seed 15). Powodzenia!
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+
+--- krok 45 | T. 13GraczGracz: 3 ż.Bot: 18 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (1 opcja)  ||  Cycling: Gloomfang Mauler (koszt 2) → szukaj: Swamp  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · 3/4 | Stoic Rebuttal · 3 · Instant · skontruj czar · cel: czar na stosie | Gloomfang Mauler · 7 · Creature — Nightmare · Postrach · Cycling {2} → szukaj: Swamp · 5/5
+  MOJE POLA: Trigon of Corruption · 4 · Artifact · {B}, {B}, {T}: połóż licznik charge · {2}, {T}, zdejmij 1 licznik charge: cel: stwór — połóż licznik -1/-1 · 1x charge | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Merchant's Dockhand · 1 · Artifact Creature — Construct · {3}, {U}, {T}, tapnij X swoich nietapniętych artefaktów: zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki · 1/2 | Welder Automaton · 2 · Artifact Creature — Construct · {3}, {R}: 1 obrażenie każdemu przeciwnikowi · 2/1 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Moonlit Meditation · 3 · Enchantment — Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Rustvine Cultivator, Steelfin Whale, Mountain, Panic Spellbomb, Stoic Rebuttal, Swamp ⏎ Nowa partia (seed 15). Powodzenia!
+  >> Wybierz: Deklaracja atakujących (1 opcja)
+  [modal choice] Wybierz atakujących (zaznacz stwory, które mają atakować):Zatwierdź atakBez atakuZamknij (dokończysz później)
+  [modal choice]   ▶ Zatwierdź atak
+  >> Rozstrzygnij obrażenia w walce
+  >> Dalej (pass)
+
+--- krok 48 | T. 13GraczGracz: 3 ż.Bot: 18 ż.Główna 2 ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Gloomfang Mauler (koszt 2) → szukaj: Swamp  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · 3/4 | Stoic Rebuttal · 3 · Instant · skontruj czar · cel: czar na stosie | Gloomfang Mauler · 7 · Creature — Nightmare · Postrach · Cycling {2} → szukaj: Swamp · 5/5
+  MOJE POLA: Trigon of Corruption · 4 · Artifact · {B}, {B}, {T}: połóż licznik charge · {2}, {T}, zdejmij 1 licznik charge: cel: stwór — połóż licznik -1/-1 · 1x charge | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Merchant's Dockhand · 1 · Artifact Creature — Construct · {3}, {U}, {T}, tapnij X swoich nietapniętych artefaktów: zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki · 1/2 | Welder Automaton · 2 · Artifact Creature — Construct · {3}, {R}: 1 obrażenie każdemu przeciwnikowi · 2/1 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Moonlit Meditation · 3 · Enchantment — Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Rustvine Cultivator, Steelfin Whale, Mountain, Panic Spellbomb, Stoic Rebuttal, Swamp ⏎ Nowa partia (seed 15). Powodzenia!
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+
+--- krok 51 | T. 14BotGracz: 3 ż.Bot: 18 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Gloomfang Mauler (koszt 2) → szukaj: Swamp  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · 3/4 | Stoic Rebuttal · 3 · Instant · skontruj czar · cel: czar na stosie | Gloomfang Mauler · 7 · Creature — Nightmare · Postrach · Cycling {2} → szukaj: Swamp · 5/5
+  MOJE POLA: Trigon of Corruption · 4 · Artifact · {B}, {B}, {T}: połóż licznik charge · {2}, {T}, zdejmij 1 licznik charge: cel: stwór — połóż licznik -1/-1 · 1x charge | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Merchant's Dockhand · 1 · Artifact Creature — Construct · {3}, {U}, {T}, tapnij X swoich nietapniętych artefaktów: zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki · 1/2 | Welder Automaton · 2 · Artifact Creature — Construct · {3}, {R}: 1 obrażenie każdemu przeciwnikowi · 2/1 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Moonlit Meditation · 3 · Enchantment — Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Rustvine Cultivator, Steelfin Whale, Mountain, Panic Spellbomb, Stoic Rebuttal, Swamp ⏎ Nowa partia (seed 15). Powodzenia!
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Reclusive Artificer
+
+--- krok 54 | T. 14BotGracz: 3 ż.Bot: 18 ż.Główna 1Stos — Reclusive Artificer ---
+  STOS: Reclusive Artificer (rzuca: Nieprzyjaciel)
+  AKCJE: Cycling: Gloomfang Mauler (koszt 2) → szukaj: Swamp  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · 3/4 | Stoic Rebuttal · 3 · Instant · skontruj czar · cel: czar na stosie | Gloomfang Mauler · 7 · Creature — Nightmare · Postrach · Cycling {2} → szukaj: Swamp · 5/5
+  MOJE POLA: Trigon of Corruption · 4 · Artifact · {B}, {B}, {T}: połóż licznik charge · {2}, {T}, zdejmij 1 licznik charge: cel: stwór — połóż licznik -1/-1 · 1x charge | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Merchant's Dockhand · 1 · Artifact Creature — Construct · {3}, {U}, {T}, tapnij X swoich nietapniętych artefaktów: zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki · 1/2 | Welder Automaton · 2 · Artifact Creature — Construct · {3}, {R}: 1 obrażenie każdemu przeciwnikowi · 2/1 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Moonlit Meditation · 3 · Enchantment — Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Rustvine Cultivator, Steelfin Whale, Mountain, Panic Spellbomb, Stoic Rebuttal, Swamp ⏎ Nowa partia (seed 15). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Reclusive Artificer wchodzi na pole bitwy
+  [ROZGRYWKA]   • Reclusive Artificer zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Reclusive Artificer — cel odrzucony, trigger bez efektu
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Merchant's Dockhand, Welder Automaton, Cacophodon, Reclusive Artificer
+
+--- krok 57 | T. 14BotGracz: 3 ż.Bot: 18 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Gloomfang Mauler (koszt 2) → szukaj: Swamp  ||  Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Deklaracja blokujących (1 opcja)
+  RĘKA: Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · 3/4 | Stoic Rebuttal · 3 · Instant · skontruj czar · cel: czar na stosie | Gloomfang Mauler · 7 · Creature — Nightmare · Postrach · Cycling {2} → szukaj: Swamp · 5/5
+  MOJE POLA: Trigon of Corruption · 4 · Artifact · {B}, {B}, {T}: połóż licznik charge · {2}, {T}, zdejmij 1 licznik charge: cel: stwór — połóż licznik -1/-1 · 1x charge | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Merchant's Dockhand · 1 · Artifact Creature — Construct · {3}, {U}, {T}, tapnij X swoich nietapniętych artefaktów: zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki · atakuje — niezablokowany · 1/2 | Welder Automaton · 2 · Artifact Creature — Construct · {3}, {R}: 1 obrażenie każdemu przeciwnikowi · atakuje — niezablokowany · 2/1 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · atakuje — niezablokowany · 2/5 | Moonlit Meditation · 3 · Enchantment — Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) | Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · atakuje — niezablokowany · 2/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Rustvine Cultivator, Steelfin Whale, Mountain, Panic Spellbomb, Stoic Rebuttal, Swamp ⏎ Nowa partia (seed 15). Powodzenia!
+  >> Wybierz: Deklaracja blokujących (1 opcja)
+  [modal choice] Wybierz blokujących (przełączniki przy każdym atakującym):Zatwierdź blokiBez blokówZamknij (dokończysz później)
+  [modal choice]   ▶ Zatwierdź bloki
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Merchant's Dockhand zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 3 → 2
+  [ROZGRYWKA]   • Welder Automaton zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 2 → 0
+  [ROZGRYWKA]   • Cacophodon zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 0 → -2
+  [ROZGRYWKA]   • Reclusive Artificer zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie -2 → -4
+  [ROZGRYWKA]   • Przegrywasz (brak życia)
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 60 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · 3/4 | Stoic Rebuttal · 3 · Instant · skontruj czar · cel: czar na stosie | Gloomfang Mauler · 7 · Creature — Nightmare · Postrach · Cycling {2} → szukaj: Swamp · 5/5
+  MOJE POLA: Trigon of Corruption · 4 · Artifact · {B}, {B}, {T}: połóż licznik charge · {2}, {T}, zdejmij 1 licznik charge: cel: stwór — połóż licznik -1/-1 · 1x charge | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Merchant's Dockhand · 1 · Artifact Creature — Construct · {3}, {U}, {T}, tapnij X swoich nietapniętych artefaktów: zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki · 1/2 | Welder Automaton · 2 · Artifact Creature — Construct · {3}, {R}: 1 obrażenie każdemu przeciwnikowi · 2/1 | Cacophodon · 4 · Creature — Dinosaur · Trigger otrzymanie obrażeń: odkręć. · 2/5 | Moonlit Meditation · 3 · Enchantment — Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) | Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · 2/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Awaken the Sleeper, Rustvine Cultivator, Steelfin Whale, Mountain, Panic Spellbomb, Stoic Rebuttal, Swamp ⏎ Nowa partia (seed 15). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 21, kliknięte: 24, modale: 5, sondy noop: 64 (panel 53, modal 11)
+== DETEKTORY: brak zgłoszeń ==

@@ -187,7 +187,11 @@ export async function runTableGame({
   };
   const lines = [];
   const logL = (s) => { lines.push(s); log?.(s); };
-  const flush = () => fs.appendFileSync(out, lines.join('\n') + '\n', 'utf8');
+  // M171/Z5 (klasa L33): appendFileSync DOKLEJAŁ nowy przebieg do starego
+  // pliku przy tym samym --out — transkrypt zawierał dwa przebiegi naraz
+  // (stare linie sprzed fixu + nowe po nim) i wygenerował fałszywą hipotezę
+  // o „niedziałającym fixie". Transkrypt = JEDEN przebieg.
+  const flush = () => fs.writeFileSync(out, lines.join('\n') + '\n', 'utf8');
 
   // --- M97: deterministyczna losowość polityki (ADR 0005 — bez Math.random) --
   let rngState = (policySeed >>> 0) || 1;
@@ -362,7 +366,7 @@ export async function runTableGame({
     // M155 (audyt żywym testerem): „Rzuć za warp:" (Weftblade Enhancer — nowa
     // mechanika Batch 38) to rzut PERMANENTA; bez wzorca tester nigdy nie
     // ćwiczył warp. Dokładamy do puli ruchów i priorytetów greedy.
-    const plays = all(/Zagraj ląd|^Rzuć:|^Rzuć za warp:|^Zagraj:|^Aktywuj:|^Cycling:|^Wyposaż:|^Flashback:|^Cel czaru|^Cel zdolności:|^Bestow:|^Aura:|^Wybierz:|cel triggera/);
+    const plays = all(/Zagraj ląd|^Rzuć:|^Rzuć za warp:|^Zagraj:|^Aktywuj:|^Cycling:|^Wyposaż:|^Flashback:|^Cel czaru|^Cel zdolności:|^Bestow:|^Aura:|^Wybierz:|cel triggera|podziel \d+ obrażeni?[ae]?/);
     const decisions = all(/Odrzucenie karty|Poświęcenie|Zapłata|Dopłata|Karta z ręki|Wybór koloru|Wybór typu|Kolejność|Proliferate|Cel obrażeń|Rozdzielenie|Wybierz tryb|wybór trybu|Moonlit|Przekierowanie|Dobrowolna|Index|Rozstrzygnij|Pokój|wybierz cel|Karta do ręki|Szukanie|Wybór efektu|Karta na wierzch|Karty do grobu|Surveil|Stomping|odsłonięte|reveal_exile|Craft:|wygnaj|pomijam|brak karty/);
     const pass = by(/Dalej|pass/);
 
@@ -415,6 +419,7 @@ export async function runTableGame({
           || by(/^Aktywuj:/)
           || by(/^Wybierz:/)
           || by(/cel triggera/)
+          || by(/podziel \d+ obrażeni/) // M172/E: wizard podziału obrażeń
           || by(/^Cel zdolności:|^Cel czaru:|^Bestow:|^Aura:/)
           || (decisions.length > 0 ? decisions[0] : null)
           || pass;
@@ -476,6 +481,31 @@ export async function runTableGame({
     // Combat wizard: zaznacz pierwszego dowolnego atakującego (albo blokera),
     // potem zatwierdź. Dla bloków zaznaczamy po jednym blokerze na PIERWSZEGO
     // atakującego (prosta heurystyka), żeby obserwować walkę stwór–stwór.
+    // M172/E: wizard podziału obrażeń (Inferno Titan) — steppery +/− i
+    // „Zatwierdź podział". Polityka gracza: całość w PIERWSZEGO kandydata
+    // (profil random: rozrzuca po kandydatach). Bez tej gałęzi tester
+    // wisiał na modalu bez opcji .choice-request-option (M172, /tmp/e-flow).
+    const divisionConfirm = $$('#choice-request button').find((b) => /Zatwierdź podział/.test(text(b)));
+    if (divisionConfirm) {
+      const pluses = $$('#choice-request .damage-wizard-plus');
+      if (pluses.length > 0) {
+        for (let guard = 0; guard < 12 && divisionConfirm.disabled; guard += 1) {
+          const target = profile === 'random' ? pickRandom(pluses) : pluses[0];
+          target.click();
+          await sleep(20);
+        }
+      }
+      logL(`  [division wizard] ${text($('#choice-request .damage-wizard-remaining')) || 'podział'}`);
+      if (!divisionConfirm.disabled) {
+        divisionConfirm.click();
+        await sleep(80);
+        return true;
+      }
+      // Nie dało się złożyć legalnego podziału — anuluj (modal wróci).
+      const cancelBtn = $$('#choice-request button').find((b) => /Anuluj/.test(text(b)));
+      if (cancelBtn) { cancelBtn.click(); await sleep(60); }
+      return true;
+    }
     const toggles = $$('#choice-request .combat-wizard-toggle');
     if (toggles.length > 0 && /(atakujących|blokujących)/.test(intro)) {
       // Atakujący: zaznacz WSZYSTKIE dostępne (dla „can't attack alone" potrzebny

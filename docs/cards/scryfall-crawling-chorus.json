@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Crawling+Chorus&set=one",
+  "print": "Crawling Chorus (ONE)",
+  "name": "Crawling Chorus",
+  "mana_cost": "{W}",
+  "cmc": 1.0,
+  "type_line": "Creature — Phyrexian Horror",
+  "oracle_text": "Toxic 1 (Players dealt combat damage by this creature also get a poison counter.)\nWhen this creature dies, create a 1/1 colorless Phyrexian Mite artifact creature token with toxic 1 and \"This token can't block.\"",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [
+    "Toxic"
+  ],
+  "set": "one",
+  "collector_number": "8",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/a/a/aace4c44-7250-414b-aac4-df042a1e2e1d.jpg?1783918086"
+  },
+  "pobrano": "2026-08-22"
+}

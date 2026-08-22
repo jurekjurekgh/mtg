@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Ghost+Warden&set=gpt",
+  "print": "Ghost Warden (GPT)",
+  "name": "Ghost Warden",
+  "mana_cost": "{1}{W}",
+  "cmc": 2.0,
+  "type_line": "Creature — Spirit",
+  "oracle_text": "{T}: Target creature gets +1/+1 until end of turn.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [],
+  "set": "gpt",
+  "collector_number": "5",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/4/3/4304abfe-3c81-4053-a398-574cfac613a7.jpg?1783943530"
+  },
+  "pobrano": "2026-08-22"
+}

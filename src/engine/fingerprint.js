@@ -14,9 +14,9 @@ const PENDING_DECISION_FIELDS = Object.freeze([
   'pendingEnterAsCopy', 'pendingEpicExperiment', 'pendingExploits',
   'pendingExplore', 'pendingFertileThicket', 'pendingFoodChoice',
   'pendingHandCreature', 'pendingHandTopChoice', 'pendingIndex',
-  'pendingLandTypeChoice', 'pendingLookTopN', 'pendingSatyrLook', 'pendingRevealChoice', 'pendingMadnessCast', 'pendingModalTrigger',
+  'pendingLandTypeChoice', 'pendingLibraryPlacement', 'pendingLookTopN', 'pendingSatyrLook', 'pendingRevealChoice', 'pendingMadnessCast', 'pendingModalTrigger',
   'pendingMoonlitChoice', 'pendingMulliganBottom', 'pendingMulligans',
-  'pendingOptionalDraw', 'pendingOptionalPay', 'pendingOptionalTrigger',
+  'pendingOptionalDraw', 'pendingOptionalPay', 'pendingCounterPay', 'pendingOptionalTrigger',
   'pendingPayOrSacrifice', 'pendingProliferate', 'pendingRedirectChoice',
   'pendingRevealExile', 'pendingRevealOrder', 'pendingSearchChoice',
   'pendingSpellReturnToHand', 'pendingSpringbloom', 'pendingReboundCast',
@@ -38,7 +38,7 @@ function stableStringify(value) {
  */
 export function stateFingerprint(state) {
   const objects = [...state.objects.values()]
-    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, keywordGrants, abilityGrants, typeGrant, subtypes, transformTo, untapLockedBy, types, entersTapped, attachedTo, baseKind, bestow, aura, equipment, backup, colors, phyrexianManaCost, goaded, goadedUntilTurn, hexproofUntilTurn, enchantPlayer, enchantedPlayerId, cantBlock, cantBeBlocked, lostKeywordsUntilEOT, subtypesBeforeOverride, madnessReady }) => ({
+    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, keywordGrants, abilityGrants, typeGrant, subtypes, transformTo, untapLockedBy, types, entersTapped, attachedTo, baseKind, bestow, aura, equipment, backup, colors, phyrexianManaCost, goaded, goadedUntilTurn, detained, detainedUntilTurn, hexproofUntilTurn, enchantPlayer, enchantedPlayerId, cantBlock, cantBeBlocked, lostKeywordsUntilEOT, subtypesBeforeOverride, madnessReady }) => ({
       id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets,
       abilities: abilities ?? [],
       counters: { ...(counters ?? {}) }, faceDown: Boolean(faceDown),
@@ -53,7 +53,7 @@ export function stateFingerprint(state) {
       transformTo: transformTo ? { cardId: transformTo.cardId, power: transformTo.power, toughness: transformTo.toughness } : null,
       untapLockedBy: [...(untapLockedBy ?? [])],
       colors: [...(colors ?? [])], phyrexianManaCost: phyrexianManaCost ?? 0,
-      goaded: Boolean(goaded), goadedUntilTurn: goadedUntilTurn ?? null, hexproofUntilTurn: hexproofUntilTurn ?? null,
+      goaded: Boolean(goaded), goadedUntilTurn: goadedUntilTurn ?? null, detained: Boolean(detained), detainedUntilTurn: detainedUntilTurn ?? null, hexproofUntilTurn: hexproofUntilTurn ?? null,
       // M122/#1: efekty „do końca tury" zmieniające MOŻLIWOŚĆ blokowania
       // (`cant_be_blocked` — Coralhelm Guide; `cantBlock` — Panic Spellbomb)
       // były pomijane w odcisku. Skutki: (a) sonda „oferta bez skutku"
@@ -105,6 +105,7 @@ export function stateFingerprint(state) {
     // Magmarch), a replay nie odróżniał stanów z tarczą i bez.
     regenerationShields: [...(state.regenerationShields ?? [])],
     cantBeRegeneratedThisTurn: [...(state.cantBeRegeneratedThisTurn ?? [])],
+    exileIfDiesThisTurn: [...(state.exileIfDiesThisTurn ?? [])],
     untilEndOfTurnProtections: (state.untilEndOfTurnProtections ?? []).map((g) => ({
       controllerId: g.controllerId,
       objectIds: Array.isArray(g.objectIds) ? [...g.objectIds] : null,
@@ -117,7 +118,11 @@ export function stateFingerprint(state) {
       playerId: state.pendingDamageDivision.playerId,
       total: state.pendingDamageDivision.total,
       targetIds: [...state.pendingDamageDivision.targetIds],
+      // M171/Z6: deklaracja przy umieszczaniu na stosie (CR 603.3d).
+      announceStackId: state.pendingDamageDivision.announceStackId ?? null,
     } : null,
+    // M174/E: darmowy rzut z grobu (Halo Forager) — stan decyzji.
+    pendingGraveFreeCast: state.pendingGraveFreeCast ? { playerId: state.pendingGraveFreeCast.playerId } : null,
     pendingSpell: state.pendingSpell ? { stackId: state.pendingSpell.stackId, effects: (state.pendingSpell.effects ?? []).length } : null,
     pendingClash: state.pendingClash ? {
       choices: [...state.pendingClash.choices],

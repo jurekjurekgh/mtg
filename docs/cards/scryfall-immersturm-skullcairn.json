@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Immersturm%20Skullcairn&set=khm",
+  "print": "Immersturm Skullcairn (KHM)",
+  "name": "Immersturm Skullcairn",
+  "mana_cost": "",
+  "cmc": 0.0,
+  "type_line": "Land",
+  "oracle_text": "This land enters tapped.\n{T}: Add {B}.\n{1}{B}{R}{R}, {T}, Sacrifice this land: It deals 3 damage to target player. That player discards a card. Activate only as a sorcery.",
+  "colors": [],
+  "color_identity": [
+    "B",
+    "R"
+  ],
+  "keywords": [],
+  "set": "khm",
+  "collector_number": "263",
+  "rarity": "uncommon",
+  "pobrano": "2026-08-21",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/1/2/12ed97de-736d-43d8-977b-308ac54f88f4.jpg?1783928173",
+    "normal": "https://cards.scryfall.io/large/front/1/2/12ed97de-736d-43d8-977b-308ac54f88f4.jpg?1783928173"
+  }
+}

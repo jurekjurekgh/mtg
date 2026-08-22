@@ -243,10 +243,14 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
   if (spec.type === 'any_target') {
     // „Any target": przeciwnik źródła (preferencja), potem stwory w kolejności
     // pola bitwy, na końcu kontroler — porządek dawnej polityki.
+    // Batch 45 (Pain for All): „any OTHER target" — excludeAttachedHost
+    // wyklucza GOSPODARZA aury-źródła z kandydatów.
+    const excludedHostId = spec.excludeAttachedHost ? (sourceObject.attachedTo ?? null) : null;
     const players = state.players.map((p) => p.id);
     const opponentId = state.players.find((p) => p.id !== sourceObject.controllerId)?.id ?? null;
     const creatures = state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
+      if (excludedHostId != null && objectId === excludedHostId) return false;
       return object?.zone === 'battlefield' && object.kind === 'creature' && !hexproofBlocked(object);
     });
     const out = [];
@@ -571,7 +575,14 @@ function queueSagaChapter(state, sagaObject, chapterNumber, events) {
     trigger: { event: 'saga_chapter', requiresTarget: targetSpec },
     effect: [],
   };
-  queueTargetDecision(state, ability, sagaObject, candidates, false, [], events, { sagaChapter: chapterNumber }, targetSpec);
+  // M172/B (uwaga właściciela): decyzja celu rozdziału niesie TYTUŁ rozdziału
+  // (saga.chapterNames z Oracle — „Mesmerize") i typ celowanego efektu —
+  // modal i log opisują, CO robi trigger, zamiast generycznego „cel triggera".
+  queueTargetDecision(state, ability, sagaObject, candidates, false, [], events, {
+    sagaChapter: chapterNumber,
+    chapterName: sagaObject.saga?.chapterNames?.[chapterNumber - 1] ?? null,
+    chapterEffectType: effects[targetEffectIndex].type ?? null,
+  }, targetSpec);
 }
 
 /**
@@ -728,6 +739,8 @@ export function queueTriggerToStack(state, ability, source, targets, events, ext
   });
   state.events.push(fired);
   events.push(fired);
+  // M171/Z6: wywołujący (announce podziału obrażeń) potrzebuje id wpisu.
+  return entry;
   return entry;
 }
 
@@ -949,7 +962,10 @@ export function resolveTriggerEntry(state, entry) {
   // Cele: efekty same pomijają cele, które przestały być legalne
   // (CR 608.2b — applyEffect sprawdza strefę przy każdej akcji).
   const beforeEffects = state.events.length;
-  applyTriggerEffects(state, payload.ability, source, payload.targets ?? [], payload.extra ?? {});
+  // M171/Z6 (CR 603.3d): kwoty podziału obrażeń zadeklarowane przy
+  // umieszczaniu na stosie jadą w kontekście do applyEffect.
+  applyTriggerEffects(state, payload.ability, source, payload.targets ?? [],
+    payload.damageDivision ? { ...(payload.extra ?? {}), damageDivision: payload.damageDivision } : (payload.extra ?? {}));
   // M106/Z2 (decyzja właściciela 2026-08-16): trigger, który rozstrzygnął się
   // BEZ ŻADNEGO skutku (Undead Servant przy pustym grobie — 0 Zombie, Jyoti
   // bez rzutów commandera — 0 tokenów), ma to powiedzieć wprost. Dotąd gracz
@@ -1041,10 +1057,15 @@ function queueTargetDecision(state, ability, source, candidates, allowNone, fixe
     restorePriorityTo: state.turn.priorityPlayerId,
   });
   state.turn.priorityPlayerId = controllerId;
-  const effectType = (Array.isArray(ability?.effect) ? ability.effect[0]?.type : ability?.effect?.type) ?? null;
+  // M172/B: rozdział Sagi ma effect: [] (efekty wykonuje fireSagaChapter) —
+  // typ efektu dla etykiet bierzemy wtedy z extra.chapterEffectType.
+  const effectType = ((Array.isArray(ability?.effect) ? ability.effect[0]?.type : ability?.effect?.type) ?? null)
+    ?? extra?.chapterEffectType ?? null;
   const required = event('trigger_target_required', {
     playerId: controllerId, sourceId: source.id, cardId: source.cardId,
     candidateIds: [...candidates], allowNone: Boolean(allowNone), effectType,
+    // M172/B: tytuł rozdziału Sagi (log/modal) — null poza Sagami.
+    ...(extra?.chapterName ? { chapterName: extra.chapterName } : {}),
   });
   state.events.push(required);
   events.push(required);
@@ -1171,6 +1192,25 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
   if (Array.isArray(trigger.modes) && trigger.modes.length > 0) {
     if (requiresCounter(ability, 'deathtouch') && !hasCounter(source, 'deathtouch')) return false;
     if (!canPayTrigger(state, source.controllerId, trigger)) return false;
+    // M174/E-fix (Downwind Ambusher, CR 603.3b): tryb wybiera się przy
+    // kładzeniu na stos — gdy KAŻDY tryb wymaga celu i żaden nie ma
+    // legalnego kandydata, zdolność nie wchodzi na stos (bez decyzji;
+    // wcześniej pendingModalTrigger bez ofert = deadlock „tylko kapituluj",
+    // wykryty benchmarkiem B0 — graveyard vs black, pusty stół wroga).
+    const anyModeAvailable = trigger.modes.some((mode) => {
+      const spec = mode.targets?.[0];
+      if (!spec) return true;
+      return triggerTargetCandidates(state, spec, source, extra ?? {}).length > 0;
+    });
+    if (!anyModeAvailable) {
+      const skipped = event('trigger_resolved', {
+        objectId: source.id, cardId: source.cardId,
+        trigger: trigger.event ?? null, noEffect: true, reason: 'no_targets',
+      });
+      state.events.push(skipped);
+      events.push(skipped);
+      return false;
+    }
     state.pendingModalTrigger = {
       playerId: source.controllerId,
       sourceId: source.id,
@@ -1487,6 +1527,23 @@ export function processTriggers(state, recentEvents) {
     // exploited emituje resolve_exploit_choice po poświęceniu; trigger z
     // event 'exploits' odpala się na źródle (exploiterze), extra niesie
     // exploitedId (LKI poświęconego).
+    // M177/B (Rakshasa Vizier): „Whenever one or more cards are put into
+    // exile from your graveyard” — skan zdarzeń object_moved grób→exile
+    // (koszt Maulera, escape i każda przyszła ścieżka używająca tej samej
+    // konwencji zdarzeń). Każde zdarzenie = 1 karta (exiledCount w context).
+    if (ev.type === 'object_moved' && ev.fromZone === 'graveyard' && ev.toZone === 'exile') {
+      const graveOwnerId = ev.object?.controllerId ?? null;
+      if (graveOwnerId) {
+        for (const source of state.objects.values()) {
+          if (source.zone !== 'battlefield') continue;
+          for (const ability of effectiveAbilities(source)) {
+            if (ability?.trigger?.event !== 'cards_exiled_from_your_graveyard') continue;
+            if (source.controllerId !== graveOwnerId) continue;
+            tryFire(state, ability, source, [], events, { exiledCount: 1 });
+          }
+        }
+      }
+    }
     if (ev.type === 'exploited') {
       const exploiter = state.objects.get(ev.exploiterId);
       if (exploiter && exploiter.zone === 'battlefield') {
@@ -1499,11 +1556,10 @@ export function processTriggers(state, recentEvents) {
     }
     // M166/B (Enrage, RIX — Cacophodon): „Whenever this creature is dealt
     // damage" — dowolne obrażenia STWORA (combat i niecombat; amount > 0,
-    // CR 119.3 — w pełni zapobiegnięte nie odpala). Obiekt szukany po id
-    // ze zdarzenia; jeśli zginął w tej samej komendzie, odczyt LKI nie jest
-    // jeszcze prowadzony w payloadzie damage_dealt (uproszczenie jak przy
-    // Curiosity — patrz komentarz wyżej); trigger działa dla stwora, który
-    // obrażenia PRZEŻYŁ (2/5 Cacophodon w typowym scenariuszu).
+    // CR 119.3 — w pełni zapobiegnięte nie odpala). Obiekt po id ze
+    // zdarzenia ALBO targetLki (CR 603.10 looks-back — stwór zginął w SBA
+    // tej samej komendy); komentarz zaktualizowany w M171 (audyt PR #68,
+    // U1 — kod niżej CZYTA ev.targetLki, stara wersja notki temu przeczyła).
     if (ev.type === 'damage_dealt' && ev.amount > 0 && !isPlayerId(state, ev.target)) {
       // Obiekt na polu bitwy ALBO LKI ze zdarzenia (stwór zginął w SBA tej
       // samej komendy — trigger „looks back", CR 603.10). Zdolności czytamy
@@ -1514,6 +1570,17 @@ export function processTriggers(state, recentEvents) {
         for (const ability of effectiveAbilities(victim)) {
           if (ability?.trigger?.event === 'dealt_damage') {
             tryFire(state, ability, victim, [], events, { damageAmount: ev.amount, damageSourceId: ev.source });
+          }
+        }
+        // Batch 45 (Pain for All): „Whenever enchanted creature is dealt
+        // damage" — trigger na AURZE przypiętej do poszkodowanego stwora
+        // (źródłem triggera jest aura; kwota w kontekście zdarzenia).
+        for (const attachment of [...state.objects.values()]) {
+          if (attachment.zone !== 'battlefield' || attachment.attachedTo !== ev.target) continue;
+          for (const ability of effectiveAbilities(attachment)) {
+            if (ability?.trigger?.event === 'enchanted_creature_dealt_damage') {
+              tryFire(state, ability, attachment, [], events, { damageAmount: ev.amount, damageSourceId: ev.source });
+            }
           }
         }
       }
@@ -1801,7 +1868,14 @@ export function processTriggers(state, recentEvents) {
         for (const ability of effectiveAbilities(source)) {
           const triggerEvent = ability?.trigger?.event;
           if (triggerEvent === 'another_creature_enters') {
-            if (entered.kind === 'creature' && source.id !== entered.id) {
+            // Batch 45 (Ivy Lane Denizen): deskryptor może zawężać trigger do
+            // stworów KONTROLERA źródła (youControl) i/lub koloru
+            // (colorsInclude) — Midnight Guard bez pól działa jak dotąd.
+            const tt = ability.trigger ?? {};
+            const controlOk = !tt.youControl || entered.controllerId === source.controllerId;
+            const colorOk = !tt.colorsInclude?.length
+              || (entered.colors ?? []).some((c) => tt.colorsInclude.includes(c));
+            if (entered.kind === 'creature' && source.id !== entered.id && controlOk && colorOk) {
               tryFire(state, ability, source, [], events);
             }
           } else if (triggerEvent === 'land_entered_under_your_control') {

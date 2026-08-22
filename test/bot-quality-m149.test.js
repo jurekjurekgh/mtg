@@ -59,7 +59,12 @@ test('A2: bot NIE rzuca pumpu „do końca tury" we własnym draw (czeka na walk
     `bot rzucił trick bojowy w draw phase: ${JSON.stringify(choice)}`);
 });
 
-test('A2: bot RZUCA pump „do końca tury" w swojej main przed atakiem (trick przygotowany na atak)', () => {
+test('A2 (M179/A1): bot TRZYMA instant-pump w main — właściwe okno to walka po deklaracjach', () => {
+  // M179/A1 (zlecenie właściciela): optymalny moment na trik bojowy-instant
+  // to okno walki PO deklaracjach atakujących/blokujących — rzut w main
+  // oddaje przeciwnikowi informację i okno reakcji za darmo. Wcześniejsza
+  // wersja testu premiowała rzut w main (era, gdy bot nie rzucał wcale);
+  // rzut we właściwym oknie pokrywa test/m179-inwentaryzacja (A1b).
   const state = newState('main');
   put(state, 'fod', 'fake-your-own-death', 'p1', 'hand');
   put(state, 'myp', 'highland-game', 'p1', 'battlefield');
@@ -67,8 +72,8 @@ test('A2: bot RZUCA pump „do końca tury" w swojej main przed atakiem (trick p
   addMana(state, 'p1', 2);
   const bot = createHeuristicBot({ seed: 149 });
   const choice = bot.chooseCommand(playerView(state, 'p1'), {});
-  assert.equal(choice.type, 'cast_spell',
-    `bot powinien rzucić trick bojowy w main przed atakiem: ${JSON.stringify(choice)}`);
+  assert.notEqual(choice.type, 'cast_spell',
+    `instant-trik w main = oddane okno reakcji (wybrał: ${JSON.stringify(choice)})`);
 });
 
 // --- A3: Bone Splinters — nie poświęcaj dobrego stwora za słabszy ----------

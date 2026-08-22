@@ -36,11 +36,11 @@ import { BOT_ID, HUMAN_ID, createSession } from '../src/table/session.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 
-function makeSession(seed) {
+function makeSession(seed, botDeck = 'dominaria.txt') {
   const registry = createCardRegistry();
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/azorius.txt', 'utf8'), registry).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/graveyard.txt', 'utf8'), registry).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/innistrad.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync(`decks/${botDeck}`, 'utf8'), registry).cardIds],
   ]);
   return createSession({ registry, decks, seed, pauseOnBotMoves: true });
 }
@@ -155,10 +155,18 @@ test('M101/D: trigger jako JEDYNY obiekt na stosie też raportuje swój skutek',
   // Sprawdzamy, że w partii z takimi triggerami panel widzi ich rozstrzygnięcia.
   // Seed 1 po Batchu 36 (azorius +Survivor of Korlis) — przelosowane hunterem.
   // Seed 3 po Batchu 37 (azorius +Ojutai's Breath +Static Net, graveyard +Emerald Oryx) — przelosowane hunterem.
-  const { shown, log } = playCollectingPanel(makeSession(3));
+  // Seed 60 po Batchu 41 KOMPLET (graveyard +8 kart +Skullcairn +2 Islands +Forager) — hunter (2 opóźnione).
+  // Seed 38 po Batchu 42 transze A–C (graveyard +Mauler/Vizier/Final Parting +1 Island) — hunter (2 opóźnione).
+  // M178 (talie per plan): opóźnione triggery daje para innistrad vs alara
+  // (Plague Reaver) — hunter 1..60, seed 7 (5 opóźnionych).
+  // Seed 2 po Batchu 44 A (innistrad +Farbog Explorer +1 land) — hunter
+  // (5 opóźnionych; kolejne trafienia: 3, 4, 9, 10, 12).
+  // Seed 8 po Batchu 44 B2 (innistrad +Frightful Delusion) — hunter
+  // (6 opóźnionych; kolejne: 9, 11, 14).
+  const { shown, log } = playCollectingPanel(makeSession(8, 'alara.txt'));
   const panel = shown.join('\n');
   const opoznione = log.filter((l) => /trigger się rozstrzyga \(opóźniony\)/.test(l));
-  assert.ok(opoznione.length > 0, 'seed 3 miał zawierać opóźnione triggery — zmienił się przebieg partii');
+  assert.ok(opoznione.length > 0, 'seed 8 miał zawierać opóźnione triggery — zmienił się przebieg partii');
   for (const line of opoznione) {
     assert.ok(panel.includes(line), `opóźniony trigger poza panelem: „${line}"`);
   }

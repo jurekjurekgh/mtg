@@ -26,7 +26,42 @@ import { normalizeHeuristicWeights } from './heuristic-weights.js';
  * - blokowanie świadome ceny: nie chumpuje cennymi atakującymi bez presji.
  */
 
+// M173/D: liczniki-keywordy (deathtouch, flying...) traktujemy jak
+// statystyczne — dają trwałą zdolność, nie zasób do konsumpcji.
+const KEYWORD_COUNTERS = new Set(['deathtouch', 'flying', 'first_strike', 'double_strike', 'lifelink', 'trample', 'vigilance', 'menace', 'reach', 'haste', 'hexproof', 'indestructible']);
+
 const NEVER = Number.NEGATIVE_INFINITY;
+
+/**
+ * M179/B (zlecenie właściciela): efekty IDEMPOTENTNE „do końca tury” —
+ * znaczniki/Sety, których druga IDENTYCZNA aktywacja wisząca na stosie nic
+ * nie doda (grant keywordów, flagi cant-block/cant-be-blocked, animacja,
+ * zmiana podtypu…). Bot nie dubluje takich aktywacji na stosie (uogólnienie
+ * M175/A2 z samych grantów). NIE dotyczy „pakowania” (pump, liczniki,
+ * obrażenia, tarcze regeneracji — kumulują się).
+ */
+export const IDEMPOTENT_EOT_EFFECTS = new Set([
+  'grant_keywords_until_end_of_turn', 'cant_be_blocked', 'cant_block',
+  'becomes_subtype_until_end_of_turn', 'animate_permanent_until_end_of_turn',
+  'lock_untap', 'dont_untap_next_untap_step', 'tap_permanent', 'untap_permanent',
+  'set_saddled',
+]);
+
+/**
+ * M179/B: efekty KUMULUJĄCE w zdolnościach aktywowanych bez {T} — dublowanie
+ * na stosie jest legalne i bywa sensowne (pump +1/+0 ×N, liczniki, mana).
+ * Strażnik test/m179 wymaga klasyfikacji KAŻDEGO typu efektu występującego
+ * w zdolności aktywowanej bez tapa — nowy typ bez przydziału = czerwony test.
+ */
+export const STACKING_ACTIVATED_EFFECTS = new Set([
+  'pump', 'pump_enchanted_creature', 'add_counter', 'add_mana', 'damage',
+  'damage_each_opponent', 'draw_cards', 'discard_cards', 'create_token',
+  'create_copy_token', 'station_counters', 'scry', 'regenerate',
+  'search_library_to_battlefield', 'search_library_to_battlefield_tapped',
+  'put_graveyard_card_on_bottom', 'return_to_battlefield_tapped',
+  'return_to_battlefield_under_control_at_upkeep', 'unearth_return',
+  'attach_equipment_to_source', 'craft_transform', 'gain_life',
+]);
 
 /**
  * M106/Z6: rozwiązanie DYNAMICZNEJ liczby tokenów z widoku gracza (deskryptor
@@ -390,6 +425,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const HOSTILE_PERMANENT_EFFECTS = new Map([
     ['damage', 60],
     ['damage_from_target_power', 60],
+    // M177/A (Agate Assault): znacznik „exile zamiast śmierci” towarzyszy
+    // obrażeniom — wrogi dla celu (odcina grave-recursion), nigdy we własnych.
+    ['exile_if_dies_this_turn', 30],
     ['destroy_permanent', 90],
     ['destroy_if_least_power', 90],
     // M156/F2 (audyt PR #65, Divine Offering): niszczenie artefaktu z riderem
@@ -401,6 +439,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     ['exile_all', 40],
     ['bounce_permanent', 70],
     ['bounce_to_library_top', 70],
+    // Batch 43 (Forced Landing): odesłanie na SPÓD biblioteki jest mocniejsze
+    // od wierzchu (właściciel nie dobierze karty od razu) — 75.
+    ['bounce_to_library_bottom', 75],
+    // M177/D (Vanish from Sight): odesłanie na wierzch/spód biblioteki
+    // właściciela — tempo-removal jak bounce_to_library_top.
+    ['owner_library_top_or_bottom', 70],
     ['sacrifice_permanent', 90],
     ['player_sacrifices_creature', 90],
     ['tap_permanent', 45],
@@ -461,6 +505,46 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
       // 3. Efekty bez celu, które z definicji biją w nas (applyTo: self).
       if (playerCost != null && effect.applyTo === 'self') penalty += playerCost;
+    }
+    return penalty;
+  }
+
+  /**
+   * M179/E (zlecenie właściciela): efekty PRZYJAZNE celowi — pozytywny efekt
+   * wymierzony we WROGA to symetryczny błąd do selfHarmPenalty (wzmacniamy/
+   * ratujemy przeciwnika własną kartą i maną). Centralna klamra: działa
+   * nawet, gdy konkretna gałąź wyceny zapomni o karze (dotąd kary były
+   * rozsiane po gałęziach: pump −60, add_counter −90, grant −12…).
+   */
+  const FRIENDLY_TARGET_EFFECTS = new Map([
+    ['pump', 50], ['pump_by_creature_count', 50], ['pump_enchanted_creature', 50],
+    ['pump_by_gates', 50], ['grant_keywords_until_end_of_turn', 40],
+    ['cant_be_blocked', 40], ['regenerate', 40], ['prevent_damage_this_turn', 40],
+    ['set_base_pt_until_end_of_turn', 40], ['untap_permanent', 25],
+  ]);
+  const BENEFICIAL_COUNTERS = new Set(['+1/+1', '+1/+0', '+0/+1', 'shield']);
+
+  /** Kara za skierowanie efektu PRZYJAZNEGO we wrogie rzeczy (M179/E). */
+  function friendlyMisaimPenalty(view, effects, cmd, target) {
+    let penalty = 0;
+    const targets = cmd.targets ?? [];
+    const enemyId = enemy(view)?.id ?? null;
+    for (const effect of effects) {
+      if (!effect?.type) continue;
+      const friendCost = FRIENDLY_TARGET_EFFECTS.get(effect.type)
+        ?? (effect.type === 'add_counter' && BENEFICIAL_COUNTERS.has(effect.counter ?? '+1/+1') ? 50 : null);
+      if (friendCost != null) {
+        const slot = effect.targetIndex != null ? targets[effect.targetIndex] : null;
+        const beneficiary = (slot ? objectOnBoard(view, slot) : null) ?? target;
+        if (beneficiary && beneficiary.controllerId && beneficiary.controllerId !== view.playerId) {
+          penalty += friendCost + (beneficiary.power ?? 0);
+        }
+      }
+      // Życie dla PRZECIWNIKA (gain_life_target w cel-gracza).
+      if (effect.type === 'gain_life_target' && enemyId != null) {
+        const slot = targets[effect.targetIndex ?? 0] ?? null;
+        if (slot === enemyId) penalty += 30 + (effect.amount ?? 1);
+      }
     }
     return penalty;
   }
@@ -552,11 +636,51 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent' || type === 'cast_adventure_creature') return 'permanent';
     if (type === 'cast_spell' || type === 'cast_cleave' || type === 'cast_adventure' || type === 'plot_card' || type === 'suspend_card' || type === 'warp_card' || type === 'draw_card') return 'spell';
-    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_satyr_look_choice' || type === 'resolve_epic_choice' || type === 'resolve_suspend_cast' || type === 'resolve_rebound_cast' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice' || type === 'resolve_copy_targets' || type === 'resolve_opponent_target' || type === 'resolve_damage_division') return 'ability';
+    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_library_placement' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_counter_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_satyr_look_choice' || type === 'resolve_epic_choice' || type === 'resolve_suspend_cast' || type === 'resolve_rebound_cast' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice' || type === 'resolve_copy_targets' || type === 'resolve_opponent_target' || type === 'resolve_damage_division' || type === 'resolve_grave_free_cast') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
     return null;
   };
+
+  /**
+   * M179/A1 (zlecenie właściciela): wartość grantu keywordów-do-EOT dla
+   * WŁASNEGO stwora we właściwym oknie walki — WSPÓLNE dla zdolności
+   * aktywowanych (M173/E) i CZARÓW-trików (dotąd czary grantujące keywordy
+   * nie miały tej wyceny wcale).
+   */
+  function keywordGrantWindowValue(view, recipient, fresh) {
+    const combat = view.combat ?? null;
+    const attacking = Boolean(combat?.attackers?.includes(recipient.id));
+    const blocking = Object.values(combat?.blockers ?? {}).some((ids) => (ids ?? []).includes(recipient.id));
+    const enemyAttackDeclared = Boolean(combat) && combat.attackingPlayerId !== view.playerId;
+    const enemyFlyerAttacks = enemyAttackDeclared && (combat.attackers ?? []).some((id) => {
+      const attacker = objectOnBoard(view, id);
+      return attacker && (attacker.keywords ?? []).includes('flying');
+    });
+    let value = 0;
+    for (const kw of fresh) {
+      if (kw === 'reach') {
+        // OBRONNY: sens tylko, gdy nadlatuje atak z flying, a stwór może
+        // jeszcze zablokować (przed deklaracją bloków, nietapnięty).
+        value += (enemyFlyerAttacks && !recipient.tapped
+          && view.turn.step === 'declare_blockers' && !blocking) ? 8 : -10;
+      } else if (['deathtouch', 'first_strike', 'double_strike', 'lifelink', 'indestructible'].includes(kw)) {
+        // TRICK STARCIA: dopiero gdy stwór FAKTYCZNIE bierze udział w walce.
+        value += (attacking || blocking) ? (kw === 'deathtouch' ? 8 : 4) : -10;
+      } else if (['trample', 'flying', 'menace', 'haste'].includes(kw)) {
+        // EVASION/AGRESJA: nasz atak — zadeklarowany atakujący albo tuż
+        // przed deklaracją. Postcombat main i cudza tura = strata.
+        if (attacking) value += 2 + (recipient.power ?? 0);
+        else if (myTurn(view) && canAttackNow(recipient)
+          && ['precombat_main', 'combat'].includes(view.turn.phase)) value += 2 + (recipient.power ?? 0);
+        else value -= 10;
+      } else {
+        // Pozostałe (vigilance, hexproof...): tylko w oknach walki.
+        value += ['declare_attackers', 'declare_blockers', 'combat_damage'].includes(view.turn.step) ? 1 : -8;
+      }
+    }
+    return value;
+  }
 
   function weightedScore(commandType, score) {
     if (!Number.isFinite(score)) return score;
@@ -781,14 +905,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       case 'cast_spell':
       case 'cast_cleave':
       case 'cast_escape':
-      case 'cast_flashback': {
+      case 'cast_flashback':
+      case 'cast_adventure': {
         // M103/D: Escape/Flashback grają kartę z GROBU — handCard jej nie
         // widzi, a bez deskryptora czar dostawał 60 pkt „na ślepo" (bot
         // mielił samego siebie i wyganiał własne karty za darmo w wycenie).
         const card = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
         // Strefy „jawne" widoku (grób, wygnanie) potrafią nieść tylko id+cardId
         // — deskryptor czaru bierzemy wtedy wprost z rejestru (ADR 0002).
-        const spell = card?.spell ?? (card?.cardId ? cardDef(card.cardId)?.spell : undefined);
+        // M173/A (Gray Slaad): PRZYGODA to czar z deskryptora adventure —
+        // dotąd cast_adventure w ogóle nie trafiał do tej gałęzi (bez wyceny
+        // efektów bot nigdy nie wybierał przygody — klasa L50).
+        const spell = cmd.type === 'cast_adventure'
+          ? (card?.adventure?.spell ?? (card?.cardId ? cardDef(card.cardId)?.adventure?.spell : undefined))
+          : (card?.spell ?? (card?.cardId ? cardDef(card.cardId)?.spell : undefined));
         if (!spell) return finish(60);
         const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
         // M111: czar MODALNY trzyma treść w `spell.modes[i].effects`, a górne
@@ -848,7 +978,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         //
         // Rozpoznanie jest generyczne (ADR 0002): patrzymy na efekt
         // `counter_spell` i na kontrolera CELU na stosie, nie na nazwę karty.
-        if (effects.some((effect) => effect?.type === 'counter_spell')) {
+        // Batch 44 (Frightful Delusion): „counter unless pays" to słabszy
+        // kontrczar (przeciwnik może się wykupić za {1}), ale ta sama klasa
+        // decyzji — nigdy we własny czar; premia jak counter_spell.
+        if (effects.some((effect) => effect?.type === 'counter_spell' || effect?.type === 'counter_spell_unless_pays')) {
           const stack = view.zones.stack ?? [];
           const targets = cmd.targets ?? [];
           const ownTarget = targets.some((id) => {
@@ -874,6 +1007,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // M121: generyczna bramka „nie strzelaj do siebie" — obejmuje KAŻDY
         // efekt ofensywny z tabeli, także te dodane w przyszłości.
         score -= selfHarmPenalty(view, effects, cmd, target);
+        // M179/E: symetria — efekt przyjazny wycelowany we wroga.
+        score -= friendlyMisaimPenalty(view, effects, cmd, target);
         // M149/A3 (uwaga właściciela): dodatkowy koszt „poświęć stwora"
         // (Bone Splinters, Village Rites) — poświęcenie WŁASNEGO stwora to
         // strata. Czar niszczący (destroy) opłaca się tylko, gdy niszczymy
@@ -918,6 +1053,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             'destroy_artifact_gain_life_mana_value',
             'exile_permanent', 'exile_target_creature',
             'bounce_permanent', 'bounce_to_library_top',
+            'bounce_to_library_bottom',
           ]);
           if (REMOVAL_EFFECTS.has(effect.type) && target) {
             // M92: „destroy" w cel z aktywną tarczą regeneracji tylko ją
@@ -980,6 +1116,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             else {
               const lethal = power >= (victim.toughness ?? 0) - (victim.damage ?? 0);
               score += 8 + 2 * power + (lethal ? 15 : 0);
+            }
+          }
+          // Batch 45 (Malamet Battle Glyph, CR 701.12): fight to wymiana —
+          // premia, gdy nasz stwór (slot A) zabija wroga; kara, gdy sam ginie.
+          if (effect.type === 'fight') {
+            const mine = objectOnBoard(view, cmd.targets?.[effect.targetIndexA ?? 0]);
+            const theirs = objectOnBoard(view, cmd.targets?.[effect.targetIndexB ?? 1]);
+            if (!mine || !theirs) score -= 40;
+            else {
+              const counterBonus = effects.some((e) => e.type === 'add_counter' && e.onlyIfTargetEnteredThisTurn) ? 1 : 0;
+              const myPower = (mine.power ?? 0) + counterBonus;
+              const myToughness = (mine.toughness ?? 0) + counterBonus;
+              const killsTheirs = myPower >= (theirs.toughness ?? 0) - (theirs.damage ?? 0);
+              const losesMine = (theirs.power ?? 0) >= myToughness - (mine.damage ?? 0);
+              score += (killsTheirs ? 25 + 2 * (theirs.power ?? 0) : 5) - (losesMine ? 20 : 0);
             }
           }
           if (effect.type === 'return_to_hand' && target && target.controllerId !== view.playerId) {
@@ -1066,6 +1217,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (millsSelf && !millsFoe) score -= 80;
             else if (millsSelf) score -= 50;
             else if (millsFoe) score += 20 + 3 * (effect.amount ?? 1);
+            // M173/A (Gray Slaad — Entropic Decay „Mill four cards"): mill
+            // BEZ celu mieli WŁASNĄ bibliotekę. Wartość zależy od synergii
+            // grobu (deskryptory zależne od liczby kart w grobie — np.
+            // minCreatureCardsInGraveyard, ADR 0002) i wyścigu bibliotek.
+            else if (playerTargets.length === 0) {
+              const n = effect.amount ?? 1;
+              const myLib = view.zones.library.filter((o) => o.controllerId === view.playerId).length;
+              if (myLib - n <= 0) score -= 120; // deck-out — nigdy
+              else {
+                const ownCardIds = [
+                  ...view.zones.battlefield.filter((o) => o.controllerId === view.playerId),
+                  ...view.zones.hand.filter((o) => o.controllerId === view.playerId),
+                ].map((o) => o.cardId).filter(Boolean);
+                const graveSynergy = ownCardIds.some((cid) => (cardDef(cid)?.abilities ?? [])
+                  .some((a) => a?.condition?.minCreatureCardsInGraveyard != null));
+                score += graveSynergy ? 18 : -25;
+              }
+            }
+          }
+          // M174/B (Toll of the Invasion — strażnik L51): amass buduje WŁASNĄ
+          // Armię niezależnie od celu czaru — stały zysk (token/licznik).
+          if (effect.type === 'amass') {
+            score += 6 + 3 * (effect.amount ?? 1);
           }
           // M162/B (uwaga właściciela): symetryczny mill (Ghoulcaller's Bell —
           // „each player mills") — wycena WYŚCIGU bibliotek. Bez tej gałęzi
@@ -1222,10 +1396,45 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (inCombat) trick = 18;
             else if (!myTurnNow) trick = 12;
             else if (['upkeep', 'draw', 'end', 'cleanup'].includes(view.turn.step)) trick = -60;
-            else trick = -20;
+            else if (card?.spell?.timing === 'sorcery') {
+              // M179/C (zlecenie właściciela): SORCERY nie poczeka na combat
+              // — jedyne sensowne okno to GŁÓWNA 1 przed własnym atakiem;
+              // postcombat = strata klasy „upkeep” (efekt wyparuje w cleanup,
+              // a następnego okna dla sorcery w tej turze nie będzie).
+              trick = (view.turn.phase === 'precombat_main' && canAttackNow(target)) ? 10 : -75;
+            } else {
+              // M179/A1: kara we własnej main musi PRZEBIĆ bazową wartość
+              // czaru (~50–65, zależnie od karty) — przy −20 bot i tak rzucał
+              // trik w Głównej 1 zamiast poczekać na deklaracje walki
+              // (właściwe okno instantów — zlecenie A1 właściciela).
+              trick = -75;
+            }
             score += trick + (target.power ?? 0);
           } else if (isPumpEffect) {
             score -= 60; // wzmacnianie przeciwnika bez powodu jest błędem
+          }
+          // M179/A1 (zlecenie właściciela): grant keywordów z CZARU — ta sama
+          // logika okien walki co przy zdolnościach (M173/E). Dotąd czary
+          // grantujące keywordy nie miały wyceny okna wcale (liczył się tylko
+          // towarzyszący pump), więc czyste granty szły w pierwszy legalny cel.
+          if (effect.type === 'grant_keywords_until_end_of_turn') {
+            const recipient = target ?? null;
+            const grantedKw = effect.keywords ?? [];
+            if (recipient && recipient.controllerId !== view.playerId) {
+              score -= 12 + 2 * (recipient.power ?? 0);
+            } else if (recipient) {
+              const alreadyHasKw = new Set(recipient.keywords ?? []);
+              const freshKw = grantedKw.filter((k) => !alreadyHasKw.has(k));
+              if (freshKw.length === 0) {
+                score -= 10; // duplikat keywordu: zero zmiany w grze
+              } else if (card?.spell?.timing === 'sorcery') {
+                // M179/C: sorcery-grant — jedyne okno to Główna 1 przed atakiem.
+                score += (myTurn(view) && view.turn.phase === 'precombat_main' && canAttackNow(recipient))
+                  ? 4 + 2 * freshKw.length : -40;
+              } else {
+                score += keywordGrantWindowValue(view, recipient, freshKw);
+              }
+            }
           }
           // M155 (audyt żywym testerem, Courage in Crisis): `add_counter` z
           // POZYTYWNYM licznikiem statystyk (+1/+1 itp.) wzmacnia stwora.
@@ -1270,6 +1479,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const tapsCreature = Boolean(ability?.cost?.tapCreature);
         const effects = Array.isArray(ability?.effect) ? ability.effect : ability?.effect ? [ability.effect] : [];
         const abilityEffectTypes = effects.map((e) => e?.type).filter(Boolean);
+        // M179/B (uogólnienie M175/A2): IDENTYCZNA aktywacja (źródło +
+        // zdolność + cele) już WISI na stosie, a wszystkie efekty są
+        // idempotentne do EOT — drugi egzemplarz nic nie zmieni w grze.
+        if (abilityEffectTypes.length > 0
+          && abilityEffectTypes.every((type) => IDEMPOTENT_EOT_EFFECTS.has(type))) {
+          const sameTargets = (entry) => JSON.stringify(entry.targets ?? []) === JSON.stringify(cmd.targets ?? []);
+          const pendingTwin = (view.zones.stack ?? []).some((entry) => entry.controllerId === view.playerId
+            && entry.sourceId === cmd.objectId && entry.abilityIndex === (cmd.abilityIndex ?? 0)
+            && sameTargets(entry));
+          if (pendingTwin) return finish(-10);
+        }
         // Patologia B1: aktywacja kosztem tapu we własnym untap zostawiłaby
         // stwora zatapianego całą turę (bot stał w miejscu i deck-outował).
         if (wastefulStep(view)) return finish(taps || tapsCreature ? -30 : -5);
@@ -1303,6 +1523,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // tapować/niszczyć/mielić dokładnie tak samo (Entrancing Lyre,
         // Sterling Keykeeper, Cellar Door).
         score -= selfHarmPenalty(view, effects, cmd, target);
+        // M179/E: symetria — efekt przyjazny wycelowany we wroga.
+        score -= friendlyMisaimPenalty(view, effects, cmd, target);
         for (const effect of effects) {
           // M96 (audyt Żywym Testerem): `pump_enchanted_creature`
           // (firebreathing — Shiv's Embrace) NIE wpadało do tej gałęzi, więc
@@ -1391,23 +1613,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // gdy zdąży zadziałać w tej turze — i tylko taki, którego stwór
               // jeszcze nie ma (CR 702.x — duplikat nie robi nic).
               const alreadyHas = new Set(recipient.keywords ?? []);
-              const fresh = granted.filter((k) => !alreadyHas.has(k));
+              // M175/A2 (uwaga właściciela, Death-Hood Cobra): keywordy z
+              // IDENTYCZNEJ aktywacji już WISZĄCEJ na stosie liczą się jak
+              // posiadane — bot aktywował ten sam grant dwa razy pod rząd,
+              // bo między aktywacją a rozstrzygnięciem stwór keywordu
+              // jeszcze nie miał (widok stosu niesie sourceId + abilityIndex).
+              const pendingSameGrant = (view.zones.stack ?? []).some((entry) => (
+                entry.controllerId === view.playerId
+                && entry.sourceId === cmd.objectId
+                && entry.abilityIndex === cmd.abilityIndex
+              ));
+              const fresh = pendingSameGrant ? [] : granted.filter((k) => !alreadyHas.has(k));
               if (fresh.length === 0) {
-                score -= 10; // duplikat keywordu: zero zmiany w grze
+                score -= 10; // duplikat keywordu (na stworze albo na stosie): zero zmiany w grze
               } else {
-                const combatStep = ['declare_attackers', 'declare_blockers', 'combat_damage'].includes(view.turn.step);
-                // Evasion/agresja liczy się w NASZYM ataku, obronne — w cudzym.
-                const offensive = fresh.filter((k) => ['trample', 'flying', 'menace', 'haste', 'double_strike', 'first_strike', 'lifelink', 'deathtouch'].includes(k));
-                let value = 2 * offensive.length + (fresh.length - offensive.length);
-                if (offensive.length > 0) {
-                  // Zadeptywanie/latanie na stworze, który dziś NIE atakuje,
-                  // nic nie wnosi (wygasa w cleanup — patologia z M96).
-                  if (myTurn(view) && canAttackNow(recipient)) value += 2 + (recipient.power ?? 0);
-                  else if (!myTurn(view) && view.turn.step === 'declare_blockers') value += 1;
-                  else value -= 6;
-                }
-                if (!combatStep && !myTurn(view)) value -= 4;
-                score += value;
+                // M173/E: grant „until EOT" to TRICK BOJOWY — wspólna wycena
+                // okien walki (M179/A1: helper dzielony z gałęzią czarów).
+                score += keywordGrantWindowValue(view, recipient, fresh);
               }
             }
           }
@@ -1461,6 +1683,38 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             else if (foeLib - n <= 0) score += 80; // przeciwnik dobiera z pustej = wygrana
             else if (myLib <= foeLib) score -= 40; // nie prowadzę — dzwonienie szkodzi bardziej mnie
             else score += 6 + Math.min(10, myLib - foeLib); // prowadzę: mały zysk rosnący z przewagą
+          }
+          // M173/D (uwaga właściciela, Rustvine Cultivator): add_counter nie
+          // miał wyceny w ścieżce zdolności (klasa L50) — bot tapował się CO
+          // TURĘ na licznik oil (nawet w upkeepie) i nigdy go nie konsumował.
+          // Liczniki STATYSTYCZNE: jak w ścieżce czarów (własny +, wrogi −).
+          // Liczniki ZASOBOWE (oil itd.): wartość tylko, gdy INNA zdolność
+          // źródła je konsumuje (cost.removeCounter) i zapas < potrzeb;
+          // uzupełnianie po walce (postcombat), nie kosztem ataku/bloku.
+          if (effect.type === 'add_counter') {
+            const counterName = effect.counter ?? '+1/+1';
+            const statCounter = ['+1/+1', '+1/+0', '+0/+1', 'shield'].includes(counterName)
+              || KEYWORD_COUNTERS.has(counterName);
+            const tgt = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : source;
+            const amount = Math.max(1, effect.amount ?? 1);
+            if (statCounter) {
+              if (tgt?.controllerId === view.playerId) score += 8 + 4 * amount;
+              else score -= 90;
+            } else if (counterName !== 'charge') { // charge wycenia station_counters
+              const consumers = (source?.cardId ? (cardDef(source.cardId)?.abilities ?? []) : [])
+                .filter((a) => a?.cost?.removeCounter?.name === counterName);
+              const need = consumers.length > 0
+                ? Math.max(...consumers.map((a) => a.cost.removeCounter.amount ?? 1))
+                : 0;
+              const current = (tgt?.counters ?? {})[counterName] ?? 0;
+              if (need === 0 || current >= need) {
+                score -= 25; // nikt nie konsumuje / zapas pełny — tap za nic
+              } else {
+                const ownPostcombat = view.turn.activePlayerId === view.playerId
+                  && view.turn.phase === 'postcombat_main';
+                score += ownPostcombat ? 6 : -8; // uzupełnij zapas PO walce
+              }
+            }
           }
           if (effect.type === 'station_counters') {
             // Station (Wedgelight Rammer / Warmaker Gunship): cenne tylko do
@@ -2059,7 +2313,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           let score = 0;
           for (const id of cmd.targetIds) {
             const t2 = objectOnBoard(view, id);
-            if (!t2) continue;
+            if (!t2) {
+              // M171/Z3 (audyt Żywym Testerem, klasa L50): cel-GRACZ w
+              // wariancie wielocelowym był pomijany (0 pkt) — kombinacje
+              // remisowały i bot dzielił obrażenia Tytana we WŁASNĄ twarz.
+              // Ta sama polityka co w gałęzi jednocelowej (świadoma friendly).
+              if (id === view.playerId) score += cmd.friendly ? 25 : -40;
+              else if (id === enemy(view)?.id) score += cmd.friendly ? -40 : 25;
+              continue;
+            }
             const v2 = (t2.power ?? 0) * 2 + (t2.toughness ?? 0);
             // M167/A (Voice of the Vermin): przyjazny buff celuje
             // WSPÓŁATAKUJĄCEGO (atak trwa do końca tury — buff „on orbit").
@@ -2072,9 +2334,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         const target = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
         if (!target) {
+          // M171/Z3: gałąź bliźniacza z wielocelową (L41) — friendly odwraca.
           const playerId = cmd.targetId;
-          if (playerId === view.playerId) return finish(-40);
-          if (playerId && playerId === enemy(view)?.id) return finish(25);
+          if (playerId === view.playerId) return finish(cmd.friendly ? 25 : -40);
+          if (playerId && playerId === enemy(view)?.id) return finish(cmd.friendly ? -40 : 25);
           return finish(0);
         }
         const value = (target.power ?? 0) * 2 + (target.toughness ?? 0);
@@ -2158,6 +2421,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
         });
         return finish(score);
+      }
+      case 'resolve_library_placement': {
+        // M177/D (Vanish from Sight): decyzja WŁAŚCICIELA odsyłanego
+        // permanentu — wierzch = odzyskasz kartę najbliższym dobraniem
+        // (zwykle lepsze), spód = świeża karta zamiast odzyskiwania.
+        return finish(cmd.placement === 'top' ? 10 : 4);
+      }
+      case 'resolve_grave_free_cast': {
+        // M174/E (Halo Forager): darmowy czar z grobu za {X} = zwykle zysk
+        // (karta + efekt za samą manę); tanie czary lepsze. Rezygnacja przy
+        // braku budżetu/sensu ma niski dodatni score (nie blokuje decyzji).
+        if (cmd.decline) return finish(4);
+        return finish(Math.max(6, 40 - 3 * (cmd.xValue ?? 0)));
       }
       case 'resolve_madness_cast': {
         // M158/Batch 39: rzut za koszt madness to niemal zawsze zysk (karta

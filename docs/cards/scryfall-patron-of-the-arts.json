@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Patron+of+the+Arts&set=clb",
+  "print": "Patron of the Arts (CLB)",
+  "name": "Patron of the Arts",
+  "mana_cost": "{2}{R}",
+  "cmc": 3.0,
+  "type_line": "Creature — Dragon Noble",
+  "oracle_text": "When this creature enters or dies, create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+  "power": "3",
+  "toughness": "1",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [
+    "Treasure"
+  ],
+  "set": "clb",
+  "collector_number": "191",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/1/0/10b2b8ca-7433-4bfe-abab-e19128e46a1d.jpg?1783922732"
+  },
+  "pobrano": "2026-08-22"
+}

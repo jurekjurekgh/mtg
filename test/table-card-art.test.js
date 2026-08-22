@@ -71,7 +71,7 @@ const isImg = (el) => el.tagName === 'img';
 const imagesIn = (host) => host.findAll(isImg);
 const facesIn = (host) => host.findAll((el) => el.className.startsWith('face '));
 
-function buildSession(humanDeck, botDeck = 'red.txt', seed = 7) {
+function buildSession(humanDeck, botDeck = 'warhammer.txt', seed = 7) {
   const registry = createCardRegistry();
   const decks = new Map([
     [HUMAN_ID, parseDeckText(fs.readFileSync(`decks/${humanDeck}`, 'utf8'), registry).cardIds],
@@ -265,7 +265,7 @@ test('nakładka stanu opisuje to, czego nie widać na druku (obrażenia, choroba
 });
 
 test('tapnięta karta dostaje klasę obracającą CAŁY kafel (obraz razem z ramką)', () => {
-  const { session } = buildSession('green.txt');
+  const { session } = buildSession('tarkir.txt');
   const els = makeEls();
   // Pierwszy render: sprawdzamy strukturę, nie przebieg partii.
   renderTableView({ els, session, play: () => {}, onCardClick: () => {} });
@@ -317,7 +317,7 @@ test('hover pokazuje ten sam obraz w rozmiarze large i rotuje tory scrollem', ()
 });
 
 test('scroll nad kartą na stole przełącza tor podglądu (kopia zachowania legacy)', () => {
-  const { session } = buildSession('green.txt');
+  const { session } = buildSession('tarkir.txt');
   const els = makeEls();
   const seen = [];
   renderTableView({
@@ -349,7 +349,7 @@ test('scroll nad kartą na stole przełącza tor podglądu (kopia zachowania leg
 });
 
 test('okno podglądu nie wychodzi poza ekran (odbicie przy krawędzi, jak w legacy)', () => {
-  const { session } = buildSession('green.txt');
+  const { session } = buildSession('tarkir.txt');
   const els = makeEls();
   renderTableView({ els, session, play: () => {}, onCardClick: () => {} });
   const tileEl = els.hand.findAll((el) => el.className.startsWith('tile'))[0];

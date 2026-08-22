@@ -1,0 +1,511 @@
+== NOWA PARTIA: gracz=warhammer vs bot=forgotten-realms, seed=19, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Mountain  ||  Zagraj ląd: Dismal Backwater  ||  Zagraj ląd: Swamp  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Index · 1 · Sorcery · zobacz wierzch biblioteki (Index) | Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Tome Scour · 1 · Sorcery · mieli 5 kart (do grobu) · cel: gracz | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Unearth
+
+--- krok 3 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Dismal Backwater  ||  Zagraj ląd: Swamp  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Index · 1 · Sorcery · zobacz wierzch biblioteki (Index) | Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Tome Scour · 1 · Sorcery · mieli 5 kart (do grobu) · cel: gracz | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę
+  MOJE POLA: Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  >> Zagraj ląd: Dismal Backwater
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Dismal Backwater (wchodzi zatapnięty)
+  [ROZGRYWKA]   • Dismal Backwater — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Ty: życie 20 → 21
+  [ROZGRYWKA]   • Dismal Backwater — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Scorch Spitter
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Scorch Spitter wchodzi na pole bitwy
+  [ROZGRYWKA]   • Scorch Spitter zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+
+--- krok 6 | T. 5GraczGracz: 21 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Unearth (koszt 2) → dobierz kartę  ||  Aktywuj: Dismal Backwater (Ty) (koszt T) — dodaj manę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Index · 1 · Sorcery · zobacz wierzch biblioteki (Index) | Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Tome Scour · 1 · Sorcery · mieli 5 kart (do grobu) · cel: gracz | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę
+  MOJE POLA: Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · choroba · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  >> Aktywuj: Dismal Backwater (Ty) (koszt T) — dodaj manę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Dismal Backwater — dodanie many do puli ({U}, {B})
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+
+--- krok 9 | T. 5GraczGracz: 21 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Unearth (koszt 2) → dobierz kartę  ||  Cel czaru: Tome Scour (2 opcje)  ||  Rzuć: Index (koszt U)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Index · 1 · Sorcery · zobacz wierzch biblioteki (Index) | Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Tome Scour · 1 · Sorcery · mieli 5 kart (do grobu) · cel: gracz | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę
+  MOJE POLA: Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · choroba · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  >> Rzuć: Index (koszt U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Index
+  [ROZGRYWKA]   • Wykonujesz Index (patrzy na 5 kart: Irontread Crusher, Revolutionist, Hill Giant, Swamp, Gorehorn Minotaurs)
+  >> Wybierz: Index — kolejność na wierzchu biblioteki (1 opcja)
+  [modal choice] Index 5 — karty na wierzchu biblioteki (ułóż w dowolnej kolejności): 1. Irontread Crusher 2. Revolutionist 3. Hill Giant 4. Swamp 5. Gorehorn MinotaursUstaw nową kolejność od góry — wybieraj karty po kolei:1. na wierzchu: Irontread Crusher1. na wierzchu: Revolutionist1. na wierzchu: Hill Giant1. na wierzchu: Swamp1. na wierzchu: Gorehorn MinotaursZamknij (dokończysz później)
+  [modal choice]   ▶ 1. na wierzchu: Irontread Crusher
+  [modal choice]     1. na wierzchu: Revolutionist
+  [modal choice]     1. na wierzchu: Hill Giant
+  [modal choice]     1. na wierzchu: Swamp
+  [modal choice]     1. na wierzchu: Gorehorn Minotaurs
+  [modal choice] Index 5 — karty na wierzchu biblioteki (ułóż w dowolnej kolejności): 1. Irontread Crusher 2. Revolutionist 3. Hill Giant 4. Swamp 5. Gorehorn MinotaursUstaw nową kolejność od góry — wybieraj karty po kolei:2. na wierzchu: Revolutionist2. na wierzchu: Hill Giant2. na wierzchu: Swamp2. na wierzchu: Gorehorn MinotaursZamknij (dokończysz później)
+  [modal choice]   ▶ 2. na wierzchu: Revolutionist
+  [modal choice]     2. na wierzchu: Hill Giant
+  [modal choice]     2. na wierzchu: Swamp
+  [modal choice]     2. na wierzchu: Gorehorn Minotaurs
+  [modal choice] Index 5 — karty na wierzchu biblioteki (ułóż w dowolnej kolejności): 1. Irontread Crusher 2. Revolutionist 3. Hill Giant 4. Swamp 5. Gorehorn MinotaursUstaw nową kolejność od góry — wybieraj karty po kolei:3. na wierzchu: Hill Giant3. na wierzchu: Swamp3. na wierzchu: Gorehorn MinotaursZamknij (dokończysz później)
+  [modal choice]   ▶ 3. na wierzchu: Hill Giant
+  [modal choice]     3. na wierzchu: Swamp
+  [modal choice]     3. na wierzchu: Gorehorn Minotaurs
+  [modal choice] Index 5 — karty na wierzchu biblioteki (ułóż w dowolnej kolejności): 1. Irontread Crusher 2. Revolutionist 3. Hill Giant 4. Swamp 5. Gorehorn MinotaursUstaw nową kolejność od góry — wybieraj karty po kolei:4. na wierzchu: Swamp4. na wierzchu: Gorehorn MinotaursZamknij (dokończysz później)
+  [modal choice]   ▶ 4. na wierzchu: Swamp
+  [modal choice]     4. na wierzchu: Gorehorn Minotaurs
+  [modal choice] Index 5 — karty na wierzchu biblioteki (ułóż w dowolnej kolejności): 1. Irontread Crusher 2. Revolutionist 3. Hill Giant 4. Swamp 5. Gorehorn MinotaursUstaw nową kolejność od góry — wybieraj karty po kolei:5. na wierzchu: Gorehorn MinotaursZamknij (dokończysz później)
+  [modal choice]   ▶ 5. na wierzchu: Gorehorn Minotaurs
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kończysz Index — kolejność na wierzchu (od góry): Irontread Crusher, Revolutionist, Hill Giant, Swamp, Gorehorn Minotaurs
+  [ROZGRYWKA]   • Index zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+
+--- krok 12 | T. 6BotGracz: 21 ż.Bot: 20 ż.Główna 1Stos — Nefarious Imp ---
+  STOS: Nefarious Imp (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Tome Scour · 1 · Sorcery · mieli 5 kart (do grobu) · cel: gracz | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę
+  MOJE POLA: Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Nefarious Imp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nefarious Imp wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nefarious Imp zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Scorch Spitter
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Scorch Spitter — trigger (atak)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Scorch Spitter zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 21 → 20
+  [ROZGRYWKA]   • Scorch Spitter — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Scorch Spitter zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 19
+  [ROZGRYWKA]   • Tura 7 — Ty
+
+--- krok 15 | T. 7GraczGracz: 19 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Unearth (koszt 2) → dobierz kartę  ||  Aktywuj: Dismal Backwater (Ty) (koszt T) — dodaj manę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Tome Scour · 1 · Sorcery · mieli 5 kart (do grobu) · cel: gracz | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę
+  MOJE POLA: Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · choroba · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  >> Aktywuj: Dismal Backwater (Ty) (koszt T) — dodaj manę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Dismal Backwater — dodanie many do puli ({U}, {B})
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Irontread Crusher
+  >> Dalej (pass)
+
+--- krok 18 | T. 7GraczGracz: 19 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Swamp  ||  Cycling: Unearth (koszt 2) → dobierz kartę  ||  Cel czaru: Tome Scour (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Tome Scour · 1 · Sorcery · mieli 5 kart (do grobu) · cel: gracz | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę | Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury
+  MOJE POLA: Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · choroba · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Zagraj: Brawler's Plate (koszt 3)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Brawler's Plate
+  [ROZGRYWKA]   • Brawler's Plate wchodzi na pole bitwy
+  [ROZGRYWKA]   • Brawler's Plate zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Basilisk Gate
+
+--- krok 21 | T. 8BotGracz: 19 ż.Bot: 20 ż.Główna 1Stos — Thieves' Tools ---
+  STOS: Thieves' Tools (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Tome Scour · 1 · Sorcery · mieli 5 kart (do grobu) · cel: gracz | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę | Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury
+  MOJE POLA: Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Thieves' Tools
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Thieves' Tools wchodzi na pole bitwy
+  [ROZGRYWKA]   • Thieves' Tools zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Thieves' Tools — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Treasure
+  [ROZGRYWKA]   • Treasure wchodzi na pole bitwy
+  [ROZGRYWKA]   • Thieves' Tools — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Treasure — dodanie many do puli
+  [ROZGRYWKA]   • Treasure zostaje poświęcony
+  [ROZGRYWKA]   • token Treasure przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Silvanus's Invoker
+
+--- krok 24 | T. 8BotGracz: 19 ż.Bot: 20 ż.Walka / BlokStos — Scorch Spitter ---
+  STOS: Trigger: Scorch Spitter (atak)
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Tome Scour · 1 · Sorcery · mieli 5 kart (do grobu) · cel: gracz | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę | Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury
+  MOJE POLA: Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · atakuje — niezablokowany · 1/1 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · atakuje — niezablokowany · 2/1 | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Silvanus's Invoker · 3 · Creature — Dragon Druid · {8}: cel: twój ląd — odkręć + stanie się stworem do końca tury · choroba · 3/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Silvanus's Invoker wchodzi na pole bitwy
+  [ROZGRYWKA]   • Silvanus's Invoker zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Scorch Spitter, Nefarious Imp
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Scorch Spitter — trigger (atak)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Scorch Spitter zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 19 → 18
+  [ROZGRYWKA]   • Scorch Spitter — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Scorch Spitter zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 17
+  [ROZGRYWKA]   • Nefarious Imp zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 15
+  [ROZGRYWKA]   • Tura 9 — Ty
+  >> Aktywuj: Dismal Backwater (Ty) (koszt T) — dodaj manę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Dismal Backwater — dodanie many do puli ({U}, {B})
+
+--- krok 27 | T. 9GraczGracz: 15 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Unearth (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Tome Scour · 1 · Sorcery · mieli 5 kart (do grobu) · cel: gracz | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę | Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury
+  MOJE POLA: Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Silvanus's Invoker · 3 · Creature — Dragon Druid · {8}: cel: twój ląd — odkręć + stanie się stworem do końca tury · choroba · 3/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Revolutionist
+  >> Dalej (pass)
+  >> Cel czaru: Tome Scour (2 opcje)
+  [modal choice] Cel czaru: Tome Scour Rzuć: Tome Scour (koszt U) → cel: Nieprzyjaciel Rzuć: Tome Scour (koszt U) → cel: Ty
+  [modal choice]   ▶ Rzuć: Tome Scour (koszt U) → cel: Nieprzyjaciel
+  [modal choice]     Rzuć: Tome Scour (koszt U) → cel: Ty
+
+--- krok 30 | T. 9GraczGracz: 15 ż.Bot: 20 ż.Główna 1Stos — Tome Scour ---
+  STOS: Tome Scour (rzuca: Ty) → cel: Nieprzyjaciel
+  AKCJE: Cycling: Unearth (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę | Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3
+  MOJE POLA: Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Silvanus's Invoker · 3 · Creature — Dragon Druid · {8}: cel: twój ląd — odkręć + stanie się stworem do końca tury · choroba · 3/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Rzucasz Tome Scour → cel: Nieprzyjaciel
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Heap Gate do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Forest do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Your Temple Is Under Attack do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Lurking Green Dragon do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Underdark Explorer do grobu
+  [ROZGRYWKA]   • Tome Scour zostaje rozstrzygnięty
+  >> Dalej (pass)
+
+--- krok 33 | T. 9GraczGracz: 15 ż.Bot: 20 ż.Walka / Początek walki ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Unearth (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę | Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3
+  MOJE POLA: Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Silvanus's Invoker · 3 · Creature — Dragon Druid · {8}: cel: twój ląd — odkręć + stanie się stworem do końca tury · choroba · 3/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (1 opcja)
+  [modal choice] Wybierz atakujących (zaznacz stwory, które mają atakować):Zatwierdź atakBez atakuZamknij (dokończysz później)
+  [modal choice]   ▶ Zatwierdź atak
+  >> Rozstrzygnij obrażenia w walce
+
+--- krok 36 | T. 9GraczGracz: 15 ż.Bot: 20 ż.Walka / Koniec walki ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Unearth (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę | Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3
+  MOJE POLA: Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Silvanus's Invoker · 3 · Creature — Dragon Druid · {8}: cel: twój ląd — odkręć + stanie się stworem do końca tury · choroba · 3/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+
+--- krok 39 | T. 9GraczGracz: 15 ż.Bot: 20 ż.Sprzątanie ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Unearth (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę | Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3
+  MOJE POLA: Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Silvanus's Invoker · 3 · Creature — Dragon Druid · {8}: cel: twój ląd — odkręć + stanie się stworem do końca tury · choroba · 3/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+
+--- krok 42 | T. 10BotGracz: 15 ż.Bot: 20 ż.Główna 1Stos — Greatsword of Tyr ---
+  STOS: Greatsword of Tyr (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę | Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3
+  MOJE POLA: Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Silvanus's Invoker · 3 · Creature — Dragon Druid · {8}: cel: twój ląd — odkręć + stanie się stworem do końca tury · 3/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Greatsword of Tyr
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Greatsword of Tyr wchodzi na pole bitwy
+  [ROZGRYWKA]   • Greatsword of Tyr zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje Equip: Greatsword of Tyr → cel: Silvanus's Invoker
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Greatsword of Tyr wyposaża Silvanus's Invoker
+
+--- krok 45 | T. 10BotGracz: 15 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Unearth (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę | Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3
+  MOJE POLA: Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Silvanus's Invoker · 3 · Creature — Dragon Druid · {8}: cel: twój ląd — odkręć + stanie się stworem do końca tury · wyposażona: Greatsword of Tyr · 3/2 | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. · wyposaża → Silvanus's Invoker
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Scorch Spitter, Nefarious Imp, Silvanus's Invoker
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Scorch Spitter — trigger (atak)
+  [ROZGRYWKA]   • Greatsword of Tyr — wybierz cel triggera (można odmówić)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Greatsword of Tyr — trigger (atak wyposażonego stwora)
+  [ROZGRYWKA]   • Greatsword of Tyr — cel odrzucony, trigger bez efektu
+
+--- krok 48 | T. 10BotGracz: 15 ż.Bot: 20 ż.Walka / BlokStos — Greatsword of Tyr ---
+  STOS: Trigger: Scorch Spitter (atak) | Trigger: Greatsword of Tyr (atak wyposażonego stwora)
+  AKCJE: Cycling: Unearth (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę | Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3
+  MOJE POLA: Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · atakuje — niezablokowany · 1/1 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · atakuje — niezablokowany · 2/1 | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Silvanus's Invoker · 3 · Creature — Dragon Druid · {8}: cel: twój ląd — odkręć + stanie się stworem do końca tury · atakuje — niezablokowany · wyposażona: Greatsword of Tyr · 3/2 | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. · wyposaża → Silvanus's Invoker
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Silvanus's Invoker dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Greatsword of Tyr — trigger się rozstrzyga
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Scorch Spitter zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 15 → 14
+  [ROZGRYWKA]   • Scorch Spitter — trigger się rozstrzyga
+  >> Wybierz: Deklaracja blokujących (1 opcja)
+  [modal choice] Wybierz blokujących (przełączniki przy każdym atakującym):Zatwierdź blokiBez blokówZamknij (dokończysz później)
+  [modal choice]   ▶ Zatwierdź bloki
+
+--- krok 51 | T. 10BotGracz: 14 ż.Bot: 20 ż.Walka / Obrażenia ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Unearth (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę | Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3
+  MOJE POLA: Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · atakuje — niezablokowany · 1/1 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · atakuje — niezablokowany · 2/1 | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Silvanus's Invoker · 3 · Creature — Dragon Druid · {8}: cel: twój ląd — odkręć + stanie się stworem do końca tury · atakuje — niezablokowany · 1x +1/+1 · wyposażona: Greatsword of Tyr · 4/3 | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. · wyposaża → Silvanus's Invoker
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Scorch Spitter zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 13
+  [ROZGRYWKA]   • Nefarious Imp zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 11
+  [ROZGRYWKA]   • Silvanus's Invoker zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 7
+  >> Dalej (pass)
+  >> Dalej (pass)
+
+--- krok 54 | T. 10BotGracz: 7 ż.Bot: 20 ż.Koniec ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Unearth (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę | Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3
+  MOJE POLA: Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Silvanus's Invoker · 3 · Creature — Dragon Druid · {8}: cel: twój ląd — odkręć + stanie się stworem do końca tury · 1x +1/+1 · wyposażona: Greatsword of Tyr · 4/3 | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. · wyposaża → Silvanus's Invoker
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Aktywuj: Dismal Backwater (Ty) (koszt T) — dodaj manę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Dismal Backwater — dodanie many do puli ({U}, {B})
+
+--- krok 57 | T. 11GraczGracz: 7 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Unearth (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę | Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3
+  MOJE POLA: Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Silvanus's Invoker · 3 · Creature — Dragon Druid · {8}: cel: twój ląd — odkręć + stanie się stworem do końca tury · 1x +1/+1 · wyposażona: Greatsword of Tyr · 4/3 | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. · wyposaża → Silvanus's Invoker
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Hill Giant
+  >> Dalej (pass)
+  >> Dalej (pass)
+
+--- krok 60 | T. 11GraczGracz: 7 ż.Bot: 20 ż.Walka / Początek walki ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Unearth (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę | Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3 | Hill Giant · 4 · Creature — Giant · 3/3
+  MOJE POLA: Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Silvanus's Invoker · 3 · Creature — Dragon Druid · {8}: cel: twój ląd — odkręć + stanie się stworem do końca tury · 1x +1/+1 · wyposażona: Greatsword of Tyr · 4/3 | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. · wyposaża → Silvanus's Invoker
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (1 opcja)
+  [modal choice] Wybierz atakujących (zaznacz stwory, które mają atakować):Zatwierdź atakBez atakuZamknij (dokończysz później)
+  [modal choice]   ▶ Zatwierdź atak
+  >> Rozstrzygnij obrażenia w walce
+
+--- krok 63 | T. 11GraczGracz: 7 ż.Bot: 20 ż.Walka / Koniec walki ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Unearth (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę | Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3 | Hill Giant · 4 · Creature — Giant · 3/3
+  MOJE POLA: Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Silvanus's Invoker · 3 · Creature — Dragon Druid · {8}: cel: twój ląd — odkręć + stanie się stworem do końca tury · 1x +1/+1 · wyposażona: Greatsword of Tyr · 4/3 | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. · wyposaża → Silvanus's Invoker
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+
+--- krok 66 | T. 11GraczGracz: 7 ż.Bot: 20 ż.Sprzątanie ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Unearth (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę | Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3 | Hill Giant · 4 · Creature — Giant · 3/3
+  MOJE POLA: Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Silvanus's Invoker · 3 · Creature — Dragon Druid · {8}: cel: twój ląd — odkręć + stanie się stworem do końca tury · 1x +1/+1 · wyposażona: Greatsword of Tyr · 4/3 | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. · wyposaża → Silvanus's Invoker
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+
+--- krok 69 | T. 12BotGracz: 7 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Unearth (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę | Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3 | Hill Giant · 4 · Creature — Giant · 3/3
+  MOJE POLA: Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Silvanus's Invoker · 3 · Creature — Dragon Druid · {8}: cel: twój ląd — odkręć + stanie się stworem do końca tury · 1x +1/+1 · wyposażona: Greatsword of Tyr · 4/3 | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. · wyposaża → Silvanus's Invoker
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Scorch Spitter, Nefarious Imp, Silvanus's Invoker
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Scorch Spitter — trigger (atak)
+  [ROZGRYWKA]   • Greatsword of Tyr — wybierz cel triggera (można odmówić)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Greatsword of Tyr — trigger (atak wyposażonego stwora)
+  [ROZGRYWKA]   • Greatsword of Tyr — cel odrzucony, trigger bez efektu
+
+--- krok 72 | T. 12BotGracz: 7 ż.Bot: 20 ż.Walka / BlokStos — Greatsword of Tyr ---
+  STOS: Trigger: Scorch Spitter (atak) | Trigger: Greatsword of Tyr (atak wyposażonego stwora)
+  AKCJE: Cycling: Unearth (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę | Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3 | Hill Giant · 4 · Creature — Giant · 3/3
+  MOJE POLA: Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · atakuje — niezablokowany · 1/1 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · atakuje — niezablokowany · 2/1 | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Silvanus's Invoker · 3 · Creature — Dragon Druid · {8}: cel: twój ląd — odkręć + stanie się stworem do końca tury · atakuje — niezablokowany · 1x +1/+1 · wyposażona: Greatsword of Tyr · 4/3 | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. · wyposaża → Silvanus's Invoker
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Silvanus's Invoker dostaje +1 licznik +1/+1 (razem 2)
+  [ROZGRYWKA]   • Greatsword of Tyr — trigger się rozstrzyga
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Scorch Spitter zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 7 → 6
+  [ROZGRYWKA]   • Scorch Spitter — trigger się rozstrzyga
+  >> Wybierz: Deklaracja blokujących (1 opcja)
+  [modal choice] Wybierz blokujących (przełączniki przy każdym atakującym):Zatwierdź blokiBez blokówZamknij (dokończysz później)
+  [modal choice]   ▶ Zatwierdź bloki
+
+--- krok 75 | T. 12BotGracz: 6 ż.Bot: 20 ż.Walka / Obrażenia ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Unearth (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę | Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3 | Hill Giant · 4 · Creature — Giant · 3/3
+  MOJE POLA: Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · atakuje — niezablokowany · 1/1 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · atakuje — niezablokowany · 2/1 | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Silvanus's Invoker · 3 · Creature — Dragon Druid · {8}: cel: twój ląd — odkręć + stanie się stworem do końca tury · atakuje — niezablokowany · 2x +1/+1 · wyposażona: Greatsword of Tyr · 5/4 | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. · wyposaża → Silvanus's Invoker
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Scorch Spitter zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 6 → 5
+  [ROZGRYWKA]   • Nefarious Imp zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 5 → 3
+  [ROZGRYWKA]   • Silvanus's Invoker zadaje 5 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 3 → -2
+  [ROZGRYWKA]   • Przegrywasz (brak życia)
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 77 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Squire's Lightblade · 1 · Artifact — Equipment · Flash (błysk) · Equip {3} +1/+0 · Gdy wejdzie na pole bitwy: przypnij ten sprzęt do wybranego stwora, zdobądź Pierwsze uderzenie do końca tury. | Unearth · 1 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie o koszcie ≤ 3 · Cycling {2} → dobierz kartę | Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3 | Hill Giant · 4 · Creature — Giant · 3/3
+  MOJE POLA: Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj manę · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Basilisk Gate · Land — Gate · {2}, {T}: cel: stwór — +X/+X, X = liczba kontrolowanych bram (Gate) · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1 | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Silvanus's Invoker · 3 · Creature — Dragon Druid · {8}: cel: twój ląd — odkręć + stanie się stworem do końca tury · 2x +1/+1 · wyposażona: Greatsword of Tyr · 5/4 | Greatsword of Tyr · 2 · Artifact — Equipment · Equip {1} · Gdy wyposażony stwór atakuje: połóż licznik +1/+1, tap. · wyposaża → Silvanus's Invoker
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Index, Squire's Lightblade, Swamp, Tome Scour, Brawler's Plate, Dismal Backwater, Mountain ⏎ Nowa partia (seed 19). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 15, kliknięte: 23, modale: 5, sondy noop: 82 (panel 74, modal 8)
+== DETEKTORY: brak zgłoszeń ==

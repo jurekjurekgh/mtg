@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Azorius%20Justiciar&set=rtr",
+  "print": "Azorius Justiciar (RTR)",
+  "name": "Azorius Justiciar",
+  "mana_cost": "{2}{W}{W}",
+  "cmc": 4.0,
+  "type_line": "Creature — Human Wizard",
+  "oracle_text": "When this creature enters, detain up to two target creatures your opponents control. (Until your next turn, those creatures can't attack or block and their activated abilities can't be activated.)",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [
+    "Detain"
+  ],
+  "set": "rtr",
+  "collector_number": "6",
+  "rarity": "uncommon",
+  "pobrano": "2026-08-22",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/9/f/9f56272e-c05e-446b-8871-e3783dd29a8b.jpg?1783940377",
+    "normal": "https://cards.scryfall.io/large/front/9/f/9f56272e-c05e-446b-8871-e3783dd29a8b.jpg?1783940377"
+  }
+}

@@ -2070,6 +2070,9 @@ export const REAL_CARDS = Object.freeze([
     power: 4, toughness: 5, manaCost: 3,
     transformTo: 'jill-shivas-dominant',
     saga: {
+      // M172/B (uwaga właściciela): tytuły rozdziałów z Oracle — decyzja
+      // celu i log nazywają rozdział („Mesmerize"), nie generyczny trigger.
+      chapterNames: ['Mesmerize', 'Mesmerize', 'Cold Snap'],
       chapters: [
                 // I, II — Mesmerize: "Target creature can't be blocked this turn."
         // Temat 2 dla Sag: cel wybiera KONTROLER Sagi (resolve_trigger_target)
@@ -6834,6 +6837,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       effects: [{ type: 'destroy_artifact_gain_life_mana_value' }],
     },
     artId: null, plan: null,
+    plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -7003,6 +7007,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
     ],
     artId: null, plan: null,
+    plan: 'Eldraine',
     support: { status: 'supported', limitations: [] },
     notes: ['faerie_attacks: odpala się raz na combat, gdy atakujący kontroler atakuje z ≥1 Faerie; licznik na docelowym Faerie (requiresTarget creature_you_control+subtype)', '„when you discard a card this way” uproszczone: zawsze dobiera+odrzuca, więc licznik zawsze się pojawia (po wyborze Faerie)'],
   }),
@@ -7042,6 +7047,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
     ],
     artId: null, plan: null,
+    plan: 'Wiedźmin',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -7059,6 +7065,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
     ],
     artId: null, plan: null,
+    plan: 'Alara',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -7075,6 +7082,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
     ],
     artId: null, plan: null,
+    plan: 'Theros',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -7101,6 +7109,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
     ],
     artId: null, plan: null,
+    plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -7127,6 +7136,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
     ],
     artId: null, plan: null,
+    plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
     notes: ['trigger kopiowania wymaga DRUGIEGO przeciwnika — w 1v1 nigdy się nie odpala (fakt formatu, jak brak command zone); {1}{B}: Regenerate = tarcza regeneracji do końca tury (CR 701.12)'],
   }),
@@ -7144,6 +7154,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
     ],
     artId: null, plan: null,
+    plan: 'Ixalan',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -7160,6 +7171,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
     ],
     artId: null, plan: null,
+    plan: 'Wiedźmin',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -7184,6 +7196,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }],
     },
     artId: null, plan: null,
+    plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -7207,6 +7220,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       ],
     },
     artId: null, plan: null,
+    plan: 'Kaldheim',
     support: { status: 'supported', limitations: [] },
     notes: ['II: planeswalker-cel nie istnieje w 1v1 — obrażenia idą w przeciwnika', 'III: zadziała od razu po dodaniu pierwszej karty z podtypem Giant'],
   }),
@@ -7469,7 +7483,1229 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+// =========================================================================
+  // Batch 41 (10 kart, lista właściciela 2026-08-21) — transza A: reuse.
+  // Dane Scryfall: docs/cards/scryfall-*.json (ADR 0010 §2a).
+  // =========================================================================
+
+  // 1. Spin Out (DFT) {1}{B}{B} Instant — „Destroy target creature or
+  //    Vehicle." (cel creature_or_vehicle — M154; destroy_permanent).
+  defineCard({
+    id: 'spin-out', name: 'Spin Out', set: 'DFT',
+    types: ['Instant'], colors: ['B'], manaCost: 3,
+    oracleText: 'Destroy target creature or Vehicle.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/e/be722ac5-e8c4-4180-aed0-7c28895afc0d.jpg?1783907889',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature_or_vehicle' }],
+      effects: [{ type: 'destroy_permanent' }],
+    },
+    artId: 119, plan: 'Muraganda',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Stall Out (DFT) {1}{U} Sorcery — tap + 3 liczniki stun na stworze
+  //    lub Vehicle; Cycling {2} (wszystko reuse: stun M?, cycling generic).
+  defineCard({
+    id: 'stall-out', name: 'Stall Out', set: 'DFT',
+    types: ['Sorcery'], colors: ['U'], manaCost: 2,
+    oracleText: 'Tap target creature or Vehicle, then put three stun counters on it. (If a permanent with a stun counter would become untapped, remove one from it instead.)\nCycling {2} ({2}, Discard this card: Draw a card.)',
+    imageUri: 'https://cards.scryfall.io/large/front/4/e/4ea0e0d3-833f-4353-b648-57b0b657cc1c.jpg?1783907902',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature_or_vehicle' }],
+      // CR 608.2c „then": najpierw tap, potem liczniki — oba na tym samym celu.
+      effects: [
+        { type: 'tap_permanent', targetIndex: 0 },
+        { type: 'add_counter', counter: 'stun', amount: 3, targetIndex: 0 },
+      ],
+    },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'cycling',
+        cost: { mana: 2 },
+        cycling: { drawCards: 1 },
+        effect: [],
+      }),
+    ],
+    artId: 61, plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Horizon Spellbomb (SOM) {1} Artifact — bliźniak Panic Spellbomba
+  //    (ten sam cykl SOM): {2},{T},sac: szukaj basic land DO RĘKI;
+  //    dies: „you may pay {G} → draw" (trigger dies + payMana/payColors).
+  defineCard({
+    id: 'horizon-spellbomb', name: 'Horizon Spellbomb', set: 'SOM',
+    types: ['Artifact'], colors: [], manaCost: 1,
+    oracleText: '{2}, {T}, Sacrifice this artifact: Search your library for a basic land card, reveal it, put it into your hand, then shuffle.\nWhen this artifact is put into a graveyard from the battlefield, you may pay {G}. If you do, draw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/d/9d93378e-1de2-4954-9458-dd3306f2996e.jpg?1783941707',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, tap: true, sacrificeSelf: true },
+        effect: [{ type: 'search_library_to_hand', qualifier: { types: ['Basic', 'Land'] } }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies', payMana: 1, payColors: ['G'] },
+        effect: [{ type: 'draw_cards', amount: 1 }],
+      }),
+    ],
+    artId: 230, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+// ---- Batch 41 — transza B: discard/amass ----
+
+  // 4. Immersturm Skullcairn (KHM) — Land: wchodzi zatapiony; {T}: {B};
+  //    {1}{B}{R}{R},{T},sac (sorcery): 3 obrażenia w GRACZA + ten gracz
+  //    odrzuca kartę (discard_cards applyTo target — wzorzec Mindstab).
+  defineCard({
+    id: 'immersturm-skullcairn', name: 'Immersturm Skullcairn', set: 'KHM',
+    types: ['Land'], colors: ['B'], entersTapped: true,
+    oracleText: 'This land enters tapped.\n{T}: Add {B}.\n{1}{B}{R}{R}, {T}, Sacrifice this land: It deals 3 damage to target player. That player discards a card. Activate only as a sorcery.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/2/12ed97de-736d-43d8-977b-308ac54f88f4.jpg?1783928173',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        timing: 'sorcery',
+        cost: { mana: 4, colors: ['B', 'R', 'R'], tap: true, sacrificeSelf: true },
+        targets: [{ type: 'player' }],
+        effect: [
+          { type: 'damage', amount: 3 },
+          { type: 'discard_cards', amount: 1, applyTo: 'target' },
+        ],
+      }),
+    ],
+    artId: 224, plan: 'Kaldheim',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Toll of the Invasion (WAR) {2}{B} Sorcery — odsłoń rękę wroga,
+  //    rzucający WYBIERA nonland (obowiązkowo — mandatory), odrzucenie;
+  //    Amass Zombies 1 (token Zombie Army — pierwszy amass „Zombies").
+  defineCard({
+    id: 'toll-of-the-invasion', name: 'Toll of the Invasion', set: 'WAR',
+    types: ['Sorcery'], colors: ['B'], manaCost: 3,
+    oracleText: 'Target opponent reveals their hand. You choose a nonland card from it. That player discards that card.\nAmass Zombies 1. (Put a +1/+1 counter on an Army you control. It\'s also a Zombie. If you don\'t control an Army, create a 0/0 black Zombie Army creature token first.)',
+    imageUri: 'https://cards.scryfall.io/large/front/4/4/4471c2a5-aa2c-47e2-8238-1eb366c8adc9.jpg?1783933438',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'opponent' }],
+      effects: [
+        { type: 'reveal_hand_choose_discard', mandatory: true },
+        {
+          type: 'amass', amount: 1, subtype: 'Zombie', name: 'Zombie Army',
+          cardId: 'token_zombie_army', colors: ['B'],
+        },
+      ],
+    },
+    artId: 9, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Token Zombie Army (TWAR 10) — amass Zombies (Toll of the Invasion).
+  defineCard({
+    id: 'token_zombie_army', name: 'Zombie Army', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Zombie', 'Army'], colors: ['B'],
+    power: 0, toughness: 0, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/1/2/12742d1f-eb2e-4262-88e2-403c9ae6c431.jpg?1783933351',  // twar
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; statystyki rosną przez amass'] },
+  }),
+
+// ---- Batch 41 — transza C: pierwszy CZAR z madness ----
+
+  // 6. Terminal Agony (MH2) {2}{B}{R} Sorcery — „Destroy target creature.
+  //    Madness {B}{R}." PIERWSZA karta czarowa z madness w katalogu —
+  //    ścieżka castMadnessSpell (M161/O1) dostaje realny przypadek:
+  //    discard → exile (madnessReady) → decyzja rzutu za {B}{R} z celem
+  //    (oferta per cel — playerView) albo grób. Zakres castMadnessSpell:
+  //    bez additionalCost/X/modes — Terminal Agony mieści się w całości.
+  defineCard({
+    id: 'terminal-agony', name: 'Terminal Agony', set: 'MH2',
+    types: ['Sorcery'], colors: ['B', 'R'], manaCost: 4,
+    oracleText: 'Destroy target creature.\nMadness {B}{R} (If you discard this card, discard it into exile. When you do, cast it for its madness cost or put it into your graveyard.)',
+    imageUri: 'https://cards.scryfall.io/large/front/3/1/314e94ad-0e12-48bb-aae1-2c842943114a.jpg?1783926810',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature' }],
+      effects: [{ type: 'destroy_permanent' }],
+    },
+    madness: { cost: 2, colors: ['B', 'R'] },
+    artId: 534, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['madness: odrzucenie trafia do exile z decyzją rzutu za {B}{R} (timing ignorowany — CR 702.34e, także sorcery poza main fazą); cel wybierany przy rzucie'],
+  }),
+
+// ---- Batch 41 — transza D: triggery bojowe + intimidate ----
+
+  // 7. Burning-Yard Trainer (ELD) {4}{R} 3/3 Human Knight — trample+haste;
+  //    ETB: INNY celowany Rycerz pod twoją kontrolą +2/+2 + trample+haste
+  //    do końca tury (spec creature_you_control + notSelf + subtype — M154).
+  defineCard({
+    id: 'burning-yard-trainer', name: 'Burning-Yard Trainer', set: 'ELD',
+    types: ['Creature'], subtypes: ['Human', 'Knight'], colors: ['R'],
+    keywords: ['trample', 'haste'], power: 3, toughness: 3, manaCost: 5,
+    oracleText: 'Trample, haste\nWhen this creature enters, another target Knight you control gets +2/+2 and gains trample and haste until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/7/17755d1b-3a56-4362-a534-85b35ceb1802.jpg?1783932628',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          requiresTarget: { type: 'creature_you_control', notSelf: true, subtype: 'Knight' },
+        },
+        effect: [
+          { type: 'buff_creature_until_end_of_turn', power: 2, toughness: 2 },
+          { type: 'grant_keywords_until_end_of_turn', keywords: ['trample', 'haste'] },
+        ],
+      }),
+    ],
+    artId: 209, plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Downwind Ambusher (BLB) {3}{B} 4/2 Skunk Assassin — Flash; ETB modal:
+  //    −1/−1 na stworze wroga ALBO destroy stwora wroga ranionego w tej turze
+  //    (modal trigger z celami per tryb — wzorzec Inspiring Bard).
+  defineCard({
+    id: 'downwind-ambusher', name: 'Downwind Ambusher', set: 'BLB',
+    types: ['Creature'], subtypes: ['Skunk', 'Assassin'], colors: ['B'],
+    keywords: ['flash'], power: 4, toughness: 2, manaCost: 4,
+    oracleText: 'Flash\nWhen this creature enters, choose one —\n\u2022 Target creature an opponent controls gets -1/-1 until end of turn.\n\u2022 Destroy target creature an opponent controls that was dealt damage this turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/5/55cfd628-933a-4d3d-b2e5-70bc86960d1c.jpg?1783910835',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          modes: [
+            {
+              name: 'Osłabienie',
+              targets: [{ type: 'creature_opponent_controls' }],
+              effects: [{ type: 'buff_creature_until_end_of_turn', power: -1, toughness: -1 }],
+            },
+            {
+              name: 'Dobicie rannego',
+              targets: [{ type: 'creature_opponent_damaged_this_turn' }],
+              effects: [{ type: 'destroy_permanent' }],
+            },
+          ],
+        },
+        effect: [],
+      }),
+    ],
+    artId: 451, plan: 'Bloomburrow',
+    support: { status: 'supported', limitations: [] },
+    notes: ['tryb bez legalnego celu nie jest oferowany (jak modalny czar \u201echoose one\u201d)'],
+  }),
+
+  // 9. Predator\'s Gambit (AVR) {B} Aura — +2/+1; intimidate PÓKI kontroler
+  //    nie ma innych stworów (conditionalKeywords — wzorzec Hunter\'s
+  //    Blowgun; intimidate w canBlock: artefakty/wspólny kolor, CR 702.13).
+  defineCard({
+    id: 'predators-gambit', name: "Predator's Gambit", set: 'AVR',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['B'], manaCost: 1,
+    oracleText: 'Enchant creature\nEnchanted creature gets +2/+1.\nEnchanted creature has intimidate as long as its controller controls no other creatures. (It can\'t be blocked except by artifact creatures and/or creatures that share a color with it.)',
+    imageUri: 'https://cards.scryfall.io/large/front/8/8/88810a96-d5f8-4030-93f1-e2ad0d480317.jpg?1783940692',
+    aura: {
+      pump: { power: 2, toughness: 1 },
+      conditionalKeywords: [
+        { condition: { controlsNoOtherCreatures: true }, keywords: ['intimidate'] },
+      ],
+    },
+    artId: 159, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+// ---- Batch 41 — transza E: Halo Forager ----
+
+  // 10. Halo Forager (MOM) {1}{U}{B} 3/1 Faerie Rogue — Flying; ETB:
+  //     „you may pay {X} → cast target instant or sorcery card with mana
+  //     value X from a graveyard without paying its mana cost; if it would
+  //     be put into a graveyard, exile it instead." Model decyzji: jedna
+  //     komenda (karta = X + cele) albo rezygnacja — wzorzec madness/Epic;
+  //     zakres jak castMadnessSpell (bez additionalCost/X/fireball).
+  defineCard({
+    id: 'halo-forager', name: 'Halo Forager', set: 'MOM',
+    types: ['Creature'], subtypes: ['Faerie', 'Rogue'], colors: ['U', 'B'],
+    keywords: ['flying'], power: 3, toughness: 1, manaCost: 3,
+    oracleText: 'Flying\nWhen this creature enters, you may pay {X}. When you do, you may cast target instant or sorcery card with mana value X from a graveyard without paying its mana cost. If that spell would be put into a graveyard, exile it instead.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/d/edb5f0cc-c826-4e7b-882c-63f6e51fa932.jpg?1783916950',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'pay_x_cast_from_graveyard' }],
+      }),
+    ],
+    artId: 35, plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+    notes: ['decyzja rzutu liczona żywo (dowolny grób, MV = X, budżet many); czar poza zakresem (koszt dodatkowy/X) nie jest oferowany'],
+  }),
+
+
+// ---- Batch 42 — transza A ----
+
+  // 1. Swooping Protector (SNC) {3}{W} 2/1 Bird Citizen — Flash, Flying,
+  //    wchodzi z licznikiem shield (PEŁNY REUSE — wzorzec Voice of the
+  //    Vermin; shield przy damage/destroy już w silniku).
+  defineCard({
+    id: 'swooping-protector', name: 'Swooping Protector', set: 'SNC',
+    types: ['Creature'], subtypes: ['Bird', 'Citizen'], colors: ['W'],
+    power: 2, toughness: 1, manaCost: 4, keywords: ['flash', 'flying'],
+    entersWithCounters: { shield: 1 },
+    oracleText: 'Flash\nFlying\nThis creature enters with a shield counter on it. (If it would be dealt damage or destroyed, remove a shield counter from it instead.)',
+    imageUri: 'https://cards.scryfall.io/large/front/8/7/8713498f-a467-4a11-9de2-53a1bbd0b18b.jpg?1783923149',
+    artId: 379, plan: 'New Capenna',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. You're Not Alone (FIN) {W} Instant — +2/+2 EOT; przy 3+ własnych
+  //    stworach ZAMIAST tego +4/+4 (warunek przy rozstrzyganiu — CR 608.2).
+  defineCard({
+    id: 'youre-not-alone', name: "You're Not Alone", set: 'FIN',
+    types: ['Instant'], colors: ['W'], manaCost: 1,
+    oracleText: 'Target creature gets +2/+2 until end of turn. If you control three or more creatures, it gets +4/+4 until end of turn instead.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/8/1867b5cb-2bb0-4f49-b302-036fdffa2344.jpg?1783906640',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [{ type: 'pump', power: 2, toughness: 2, upgradeIfCreatures: { min: 3, power: 4, toughness: 4 } }],
+    },
+    artId: 29, plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Agate Assault (BLB) {2}{R} Sorcery — modal: 4 obrażenia w stwora
+  //    + „if it would die this turn, exile it instead” (nowy znacznik
+  //    exile_if_dies_this_turn → deathZoneFor) ALBO wygnanie artefaktu.
+  defineCard({
+    id: 'agate-assault', name: 'Agate Assault', set: 'BLB',
+    types: ['Sorcery'], colors: ['R'], manaCost: 3,
+    oracleText: 'Choose one —\n• Agate Assault deals 4 damage to target creature. If that creature would die this turn, exile it instead.\n• Exile target artifact.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/d/7dd9946b-515e-4e0d-9da2-711e126e9fa6.jpg?1783910826',
+    spell: {
+      timing: 'sorcery',
+      modes: [
+        { name: 'Obrażenia', targets: [{ type: 'creature' }],
+          effects: [
+            { type: 'exile_if_dies_this_turn' },
+            { type: 'damage', amount: 4 },
+          ] },
+        { name: 'Wygnanie artefaktu', targets: [{ type: 'artifact' }],
+          effects: [{ type: 'exile_permanent' }] },
+      ],
+    },
+    artId: 236, plan: 'Bloomburrow',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+
+// ---- Batch 42 — transza B ----
+
+  // 4. Makeshift Mauler (ISD) {3}{U} 4/5 Zombie Horror — dodatkowy koszt:
+  //    wygnaj kartę stwora z WŁASNEGO grobu (nowy additionalCost
+  //    exileCreatureFromGraveyard; zasila trigger Rakshasy).
+  defineCard({
+    id: 'makeshift-mauler', name: 'Makeshift Mauler', set: 'ISD',
+    types: ['Creature'], subtypes: ['Zombie', 'Horror'], colors: ['U'],
+    power: 4, toughness: 5, manaCost: 4,
+    additionalCost: { exileCreatureFromGraveyard: true },
+    oracleText: 'As an additional cost to cast this spell, exile a creature card from your graveyard.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/8/d869de57-9454-47ff-af14-eaefd387047a.jpg?1783940971',
+    artId: 226, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Rakshasa Vizier (KTK) {2}{B}{G}{U} 4/4 Demon — „Whenever one or more
+  //    cards are put into exile from your graveyard, put that many +1/+1
+  //    counters on this creature” (nowy trigger cards_exiled_from_your_
+  //    graveyard; liczba z kontekstu zdarzenia — amountFromContext).
+  defineCard({
+    id: 'rakshasa-vizier', name: 'Rakshasa Vizier', set: 'KTK',
+    types: ['Creature'], subtypes: ['Demon'], colors: ['B', 'G', 'U'],
+    power: 4, toughness: 4, manaCost: 5,
+    oracleText: 'Whenever one or more cards are put into exile from your graveyard, put that many +1/+1 counters on this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/b/cb39e674-919d-4db6-9ac1-cfa1cca02207.jpg?1783939055',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'cards_exiled_from_your_graveyard' },
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1, amountFromContext: 'exiledCount' },
+      }),
+    ],
+    artId: 520, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+
+// ---- Batch 42 — transza C ----
+
+  // 6. Sifter Wurm (HOU) {5}{G}{G} 7/7 Wurm — Trample; ETB: scry 3, POTEM
+  //    reveal wierzchu + życie równe mana value (thenRevealTopGainLife na
+  //    pendingScry — reveal po decyzji gracza, CR 608.2).
+  defineCard({
+    id: 'sifter-wurm', name: 'Sifter Wurm', set: 'HOU',
+    types: ['Creature'], subtypes: ['Wurm'], colors: ['G'],
+    power: 7, toughness: 7, manaCost: 7, keywords: ['trample'],
+    oracleText: "Trample\nWhen this creature enters, scry 3, then reveal the top card of your library. You gain life equal to that card's mana value.",
+    imageUri: 'https://cards.scryfall.io/large/front/5/d/5dbaf7e3-e2fc-4399-aa83-c13df43008a0.jpg?1783936012',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'scry', amount: 3, thenRevealTopGainLife: true },
+      }),
+    ],
+    artId: 183, plan: 'Amonkhet',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 7. Final Parting (DOM) {3}{B}{B} Sorcery — przeszukaj bibliotekę po DWIE
+  //    karty: jedna do ręki, druga do grobu; potem tasowanie. Wyszukiwanie
+  //    bez kryterium = OBOWIĄZKOWE (CR 701.19c — bez fail to find).
+  defineCard({
+    id: 'final-parting', name: 'Final Parting', set: 'DOM',
+    types: ['Sorcery'], colors: ['B'], manaCost: 5,
+    oracleText: 'Search your library for two cards. Put one into your hand and the other into your graveyard. Then shuffle.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/e/de8803f6-9efa-4323-b8c5-29bdd5a48f9a.jpg?1783935009',
+    spell: {
+      timing: 'sorcery',
+      effects: [{ type: 'search_library_two_cards_hand_and_grave' }],
+    },
+    artId: 111, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+
+// ---- Batch 42 — transza D ----
+
+  // 8. Vanish from Sight (DSK) {3}{U} Instant — właściciel celowanego
+  //    nielandowego permanentu kładzie go wg SWOJEGO wyboru na wierzch albo
+  //    spód biblioteki (nowa decyzja resolve_library_placement); potem
+  //    surveil 1 rzucającego (czar wisi w pendingSpell do decyzji).
+  defineCard({
+    id: 'vanish-from-sight', name: 'Vanish from Sight', set: 'DSK',
+    types: ['Instant'], colors: ['U'], manaCost: 4,
+    oracleText: "Target nonland permanent's owner puts it on their choice of the top or bottom of their library. Surveil 1. (Look at the top card of your library. You may put it into your graveyard.)",
+    imageUri: 'https://cards.scryfall.io/large/front/5/2/5254988b-3113-42f7-b751-517ffb3b40f0.jpg?1783909486',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'nonland_permanent' }],
+      effects: [
+        { type: 'owner_library_top_or_bottom' },
+        { type: 'surveil', amount: 1 },
+      ],
+    },
+    artId: 512, plan: 'Duskmourn',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+
+// ---- Batch 42 — transza E ----
+
+  // 9. Azorius Justiciar (RTR) {2}{W}{W} 2/2 Human Wizard — ETB: detain up to
+  //    two target creatures your opponents control (NOWA mechanika detain,
+  //    CR 701.29: do twojej następnej tury cel nie atakuje, nie blokuje,
+  //    nie aktywuje zdolności; multi-target z upTo — reuse M171/Z6).
+  defineCard({
+    id: 'azorius-justiciar', name: 'Azorius Justiciar', set: 'RTR',
+    types: ['Creature'], subtypes: ['Human', 'Wizard'], colors: ['W'],
+    power: 2, toughness: 2, manaCost: 4,
+    oracleText: "When this creature enters, detain up to two target creatures your opponents control. (Until your next turn, those creatures can't attack or block and their activated abilities can't be activated.)",
+    imageUri: 'https://cards.scryfall.io/large/front/9/f/9f56272e-c05e-446b-8871-e3783dd29a8b.jpg?1783940377',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature_opponent_controls', count: 2, upTo: true } },
+        effect: { type: 'detain' },
+      }),
+    ],
+    artId: 6, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 10. Merchant's Dockhand (AER) {1} 1/2 Artifact Creature Construct —
+  //     „{3}{U}, {T}, Tap X untapped artifacts you control: Look at the top X
+  //     cards… one into your hand, the rest on the bottom in any order”
+  //     (NOWY koszt tapXArtifacts + look_top_put_one_hand_rest_bottom).
+  defineCard({
+    id: 'merchants-dockhand', name: "Merchant's Dockhand", set: 'AER',
+    types: ['Artifact', 'Creature'], subtypes: ['Construct'], colors: [],
+    power: 1, toughness: 2, manaCost: 1,
+    oracleText: '{3}{U}, {T}, Tap X untapped artifacts you control: Look at the top X cards of your library. Put one of them into your hand and the rest on the bottom of your library in any order.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/5/955b4bc9-1ded-4f23-b415-ab968c681eb7.jpg?1783936724',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 4, colors: ['U'], tap: true, tapXArtifacts: true },
+        effect: { type: 'look_top_put_one_hand_rest_bottom', amount: 'x' },
+      }),
+    ],
+    artId: 12, plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // =========================================================================
+  // Batch 43 (10 kart, 2026-08-22) — lista właściciela (M182)
+  // Sleep of the Dead, Severed Strands, Rush of Battle, Dispeller's Capsule,
+  // Fleeting Distraction, Forced Landing, Tireless Hauler (DFC), Sea God's
+  // Scorn, Balamb Garden SeeD Academy (DFC land→vehicle), Greenwood Sentinel.
+  // Dane Oracle: docs/cards/scryfall-*.json; artId ze słownika kolekcji
+  // (tylne strony DFC mają WŁASNE wpisy: Dire-Strain Brawler 118,
+  // Balamb Garden Airborne 153).
+  // =========================================================================
+
+  // ---- Batch 43 — transza A: istniejące mechaniki ----
+
+  // 1. Greenwood Sentinel (M20) — 2/2 vigilance (french vanilla).
+  defineCard({
+    id: 'greenwood-sentinel', name: 'Greenwood Sentinel', set: 'M20',
+    types: ['Creature'], subtypes: ['Elf', 'Scout'], colors: ['G'],
+    power: 2, toughness: 2, manaCost: 2, keywords: ['vigilance'],
+    oracleText: 'Vigilance (Attacking doesn\'t cause this creature to tap.)',
+    imageUri: 'https://cards.scryfall.io/large/front/e/9/e9a1a70d-c146-453e-84c4-71cae4e0afaa.jpg?1783932966',
+    artId: 169, plan: 'Śródziemie',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Fleeting Distraction (FDN) — cantrip: cel −1/−0 do końca tury + dobierz.
+  defineCard({
+    id: 'fleeting-distraction', name: 'Fleeting Distraction', set: 'FDN',
+    types: ['Instant'], colors: ['U'], manaCost: 1,
+    oracleText: 'Target creature gets -1/-0 until end of turn.\nDraw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/0/c0b86a7b-4912-43a7-ab89-c3432385baa1.jpg?1783909081',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'pump', power: -1, toughness: 0 },
+        { type: 'draw_cards', amount: 1 },
+      ],
+    },
+    artId: 98, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Tireless Hauler // Dire-Strain Brawler (MID) — wilkołak
+  //    daybound/nightbound (wzorzec Ballista Watcher, M68/CR 708.9).
+  defineCard({
+    id: 'tireless-hauler', name: 'Tireless Hauler', set: 'MID',
+    types: ['Creature'], subtypes: ['Human', 'Werewolf'], colors: ['G'],
+    power: 4, toughness: 5, manaCost: 5, keywords: ['vigilance', 'daybound'],
+    oracleText: 'Vigilance\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)',
+    imageUri: 'https://cards.scryfall.io/large/front/3/e/3e96f9a6-c215-42b1-aa02-8e6143fe5bd7.jpg?1783925578',
+    transformTo: 'dire-strain-brawler',
+    artId: 117, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'dire-strain-brawler', name: 'Dire-Strain Brawler', set: 'MID',
+    types: ['Creature'], subtypes: ['Werewolf'], colors: ['G'],
+    power: 6, toughness: 6, manaCost: 5, keywords: ['vigilance', 'nightbound'],
+    oracleText: 'Vigilance\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)',
+    imageUri: 'https://cards.scryfall.io/large/back/3/e/3e96f9a6-c215-42b1-aa02-8e6143fe5bd7.jpg?1783925578',
+    transformTo: 'tireless-hauler',
+    artId: 118, plan: 'Innistrad',
+    support: { status: 'limited', limitations: ['tylna strona daybound/nightbound — nie można umieścić w talii'] },
+  }),
+
+  // 4. Dispeller's Capsule (ALA) — artefakt {W}; „{2}{W}, {T}, Sacrifice:
+  //    Destroy target artifact or enchantment."
+  defineCard({
+    id: 'dispellers-capsule', name: "Dispeller's Capsule", set: 'ALA',
+    types: ['Artifact'], colors: ['W'], manaCost: 1,
+    oracleText: '{2}{W}, {T}, Sacrifice this artifact: Destroy target artifact or enchantment.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/3/d3cf0771-10d6-427a-b4e5-3e1d4db14667.jpg?1783942584',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 3, colors: ['W'], tap: true, sacrificeSelf: true },
+        targets: [{ type: 'artifact_or_enchantment' }],
+        effect: { type: 'destroy_permanent' },
+      }),
+    ],
+    artId: 93, plan: 'Alara',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Sleep of the Dead (THB) — tap + jednorazowa blokada odkręcenia
+  //    (dont_untap_next_untap_step, wzorzec Wavecrash Triton); Escape
+  //    {2}{U} + wygnaj 3 inne karty z grobu (wzorzec Sweet Oblivion).
+  defineCard({
+    id: 'sleep-of-the-dead', name: 'Sleep of the Dead', set: 'THB',
+    types: ['Sorcery'], colors: ['U'], manaCost: 1,
+    oracleText: 'Tap target creature. It doesn\'t untap during its controller\'s next untap step.\nEscape—{2}{U}, Exile three other cards from your graveyard. (You may cast this card from your graveyard for its escape cost.)',
+    imageUri: 'https://cards.scryfall.io/large/front/4/0/4007572b-a6c8-4a56-b1a7-ff099189c9c0.jpg?1783931579',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'tap_permanent' },
+        { type: 'dont_untap_next_untap_step' },
+      ],
+      // Escape (CR 702.138): rzuć z grobu za {2}{U} + wygnaj 3 inne karty z grobu.
+      escape: { cost: 3, exileCount: 3 },
+    },
+    artId: 11, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+    notes: ['Escape: czar z grobu za koszt escape + wygnanie 3 innych kart z grobu; po rozstrzygnięciu wraca do grobu'],
+  }),
+
+  // ---- Batch 43 — transza B: drobne rozszerzenia silnika ----
+
+  // 6. Severed Strands (GRN) — dodatkowy koszt sacrifice a creature (wzorzec
+  //    Village Rites); zysk życia = wytrzymałość poświęconego (NOWE:
+  //    sacrificedToughness na obiekcie stosu + amountFromSacrificedToughness).
+  defineCard({
+    id: 'severed-strands', name: 'Severed Strands', set: 'GRN',
+    types: ['Sorcery'], colors: ['B'], manaCost: 2,
+    oracleText: 'As an additional cost to cast this spell, sacrifice a creature.\nYou gain life equal to the sacrificed creature\'s toughness. Destroy target creature an opponent controls.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/c/bce654d6-fcf1-40a8-8bdb-5c37e561f7dc.jpg?1783934171',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature_opponent_controls' }],
+      additionalCost: { sacrificeCreature: true },
+      effects: [
+        { type: 'gain_life', amountFromSacrificedToughness: true },
+        { type: 'destroy_permanent' },
+      ],
+    },
+    artId: 41, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+    notes: ['zysk życia = wytrzymałość poświęconego stwora (LKI z chwili płatności kosztu); przy nielegalnym celu w rozstrzygnięciu czar fizzluje w całości (CR 608.2b) — bez zysku życia'],
+  }),
+
+  // 7. Rush of Battle (KTK) — masowy buff +2/+1 dla wszystkich + lifelink
+  //    TYLKO dla Warriorów (NOWE: filtr subtype w buff_creatures_you_control).
+  defineCard({
+    id: 'rush-of-battle', name: 'Rush of Battle', set: 'KTK',
+    types: ['Sorcery'], colors: ['W'], manaCost: 4,
+    oracleText: 'Creatures you control get +2/+1 until end of turn. Warrior creatures you control gain lifelink until end of turn. (Damage dealt by those Warriors also causes their controller to gain that much life.)',
+    imageUri: 'https://cards.scryfall.io/large/front/0/d/0d47d8aa-59c8-4e2c-bb48-328ae924dbb3.jpg?1783939093',
+    spell: {
+      timing: 'sorcery',
+      targets: [],
+      effects: [
+        { type: 'buff_creatures_you_control', power: 2, toughness: 1 },
+        { type: 'buff_creatures_you_control', keywords: ['lifelink'], subtype: 'Warrior' },
+      ],
+    },
+    artId: 74, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Forced Landing (WAR) — cel: stwór z lataniem; na SPÓD biblioteki
+  //    właściciela (NOWY efekt bounce_to_library_bottom; token → przestaje
+  //    istnieć, CR 111.7).
+  defineCard({
+    id: 'forced-landing', name: 'Forced Landing', set: 'WAR',
+    types: ['Instant'], colors: ['G'], manaCost: 2,
+    oracleText: 'Put target creature with flying on the bottom of its owner\'s library.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/c/5cb319a7-564c-4748-82cf-c26ab110c32c.jpg?1783933414',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature_with_keyword', keyword: 'flying' }],
+      effects: [{ type: 'bounce_to_library_bottom' }],
+    },
+    artId: 108, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. Sea God's Scorn (THB) — „Return up to three target creatures and/or
+  //    enchantments to their owners' hands" (variableTargets z NOWYM `type`:
+  //    creature_or_enchantment; bounce per cel przez apply_to_each_target).
+  defineCard({
+    id: 'sea-gods-scorn', name: "Sea God's Scorn", set: 'THB',
+    types: ['Sorcery'], colors: ['U'], manaCost: 6,
+    oracleText: 'Return up to three target creatures and/or enchantments to their owners\' hands.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/5/9504dc26-f5d8-4b9d-9eb1-51a12b893beb.jpg?1783931579',
+    spell: {
+      timing: 'sorcery',
+      modes: [{
+        name: 'Wzgarda boga mórz',
+        variableTargets: { max: 3, min: 0, type: 'creature_or_enchantment' },
+        effects: [{
+          type: 'apply_to_each_target',
+          effects: [{ type: 'bounce_permanent' }],
+        }],
+      }],
+    },
+    artId: 121, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // ---- Batch 43 — transza C: Balamb Garden (DFC land → vehicle) ----
+
+  // 10. Balamb Garden, SeeD Academy (FIN) — Land Town wchodzący tapnięty;
+  //     {T}: Add {G} or {U}; aktywowany transform {5}{G}{U},{T} z redukcją
+  //     {1} za każdy INNY Town (NOWE: costReduction.perOtherSubtype).
+  defineCard({
+    id: 'balamb-garden-seed-academy', name: 'Balamb Garden, SeeD Academy', set: 'FIN',
+    types: ['Land'], subtypes: ['Town'], colors: [], entersTapped: true,
+    oracleText: 'This land enters tapped.\n{T}: Add {G} or {U}.\n{5}{G}{U}, {T}: Transform this land. This ability costs {1} less to activate for each other Town you control.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/0/001e9f20-5b15-41cb-bf82-46172decc235.jpg?1783906558',
+    transformTo: 'balamb-garden-airborne',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['G', 'U'] },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 7, colors: ['G', 'U'], tap: true },
+        costReduction: { perOtherSubtype: 'Town' },
+        effect: [{ type: 'transform' }],
+      }),
+    ],
+    artId: 150, plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['jedyny Town w katalogu — redukcja za inne Towny działa, ale w praktyce wynosi 0, dopóki nie dojdą kolejne Towny'],
+  }),
+  // Tylna strona — Balamb Garden, Airborne (Legendary Artifact — Vehicle 5/4).
+  defineCard({
+    id: 'balamb-garden-airborne', name: 'Balamb Garden, Airborne', set: 'FIN',
+    types: ['Legendary', 'Artifact'], subtypes: ['Vehicle'], colors: [],
+    power: 5, toughness: 4, keywords: ['flying'],
+    oracleText: 'Flying\nWhenever Balamb Garden attacks, draw a card.\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)',
+    imageUri: 'https://cards.scryfall.io/large/back/0/0/001e9f20-5b15-41cb-bf82-46172decc235.jpg?1783906558',
+    transformTo: 'balamb-garden-seed-academy',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks' },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        // Crew (CR 701.36) aktywuje się jak instant (audyt Batchu 26/M65).
+        cost: { crewPower: 1 },
+        effect: { type: 'animate_permanent_until_end_of_turn', power: 5, toughness: 4, typesAdd: ['Creature'] },
+      }),
+    ],
+    artId: 153, plan: 'Final Fantasy',
+    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
+  }),
+
+  // =========================================================================
+  // Batch 44 (10 kart, 2026-08-22) — lista właściciela (M183)
+  // Dismal Backwater, Descendant of Storms, Frightful Delusion, Hill Giant,
+  // Angel's Herald, Heap Gate, Thieves' Tools, Farbog Explorer, Blanchwood
+  // Prowler, Glaring Aegis. Dane Oracle: docs/cards/scryfall-*.json.
+  // =========================================================================
+
+  // ---- Batch 44 — transza A: istniejące mechaniki ----
+
+  // 1. Hill Giant (7ED) — vanilla 3/3.
+  defineCard({
+    id: 'hill-giant', name: 'Hill Giant', set: '7ED',
+    types: ['Creature'], subtypes: ['Giant'], colors: ['R'],
+    power: 3, toughness: 3, manaCost: 4, oracleText: '',
+    imageUri: 'https://cards.scryfall.io/large/front/e/7/e7ea1719-2bed-46f4-bb14-e3a4c87ce50a.jpg?1783945460',
+    artId: 258, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Farbog Explorer (AVR) — swampwalk (wzorzec Emerald Oryx, CR 702.33).
+  defineCard({
+    id: 'farbog-explorer', name: 'Farbog Explorer', set: 'AVR',
+    types: ['Creature'], subtypes: ['Human', 'Scout'], colors: ['W'],
+    power: 2, toughness: 3, manaCost: 3,
+    oracleText: "Swampwalk (This creature can't be blocked as long as defending player controls a Swamp.)",
+    imageUri: 'https://cards.scryfall.io/large/front/4/8/489c6a2f-38b4-4ff9-95f7-431384480ed9.jpg?1783940735',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        landwalk: { subtype: 'Swamp' },
+      }),
+    ],
+    artId: 299, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Dismal Backwater (M20) — dual land: wchodzi tapnięty, ETB +1 życia,
+  //    {T}: Add {U} or {B}.
+  defineCard({
+    id: 'dismal-backwater', name: 'Dismal Backwater', set: 'M20',
+    types: ['Land'], colors: [], entersTapped: true,
+    oracleText: 'This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {U} or {B}.',
+    imageUri: 'https://cards.scryfall.io/large/front/a/5/a5ff247f-82d1-4b79-9ac0-1471a1f0f58b.jpg?1783932937',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'gain_life', amount: 1 }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['U', 'B'] },
+      }),
+    ],
+    artId: 197, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. Glaring Aegis (M20) — aura +1/+3; ETB: tapnij stwora przeciwnika.
+  defineCard({
+    id: 'glaring-aegis', name: 'Glaring Aegis', set: 'M20',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['W'], manaCost: 1,
+    oracleText: 'Enchant creature\nWhen this Aura enters, tap target creature an opponent controls.\nEnchanted creature gets +1/+3.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/a/daa83dc2-4ec0-4e4f-8bfd-4f6d6df06a2d.jpg?1783933028',
+    aura: { pump: { power: 1, toughness: 3 } },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature_opponent_controls' } },
+        effect: [{ type: 'tap_permanent' }],
+      }),
+    ],
+    artId: 337, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Descendant of Storms (TDM) — „Whenever this creature attacks, you may
+  //    pay {1}{W}. If you do, it endures 1." — opcjonalna płatność triggera
+  //    (wzorzec Zoraline) + endure (wzorzec Krumar Initiate, CR 702.174).
+  defineCard({
+    id: 'descendant-of-storms', name: 'Descendant of Storms', set: 'TDM',
+    types: ['Creature'], subtypes: ['Human', 'Soldier'], colors: ['W'],
+    power: 2, toughness: 1, manaCost: 1,
+    oracleText: 'Whenever this creature attacks, you may pay {1}{W}. If you do, it endures 1. (Put a +1/+1 counter on it or create a 1/1 white Spirit creature token.)',
+    imageUri: 'https://cards.scryfall.io/large/front/f/6/f632be90-9e7f-41f8-a52e-a2952354d730.jpg?1783907415',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks', payMana: 2, payColors: ['W'] },
+        effect: [
+          { type: 'pay_mana', amount: 2 },
+          { type: 'endure_x', amount: 1 },
+        ],
+      }),
+    ],
+    artId: 240, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+    notes: ['płatność {1}{W} to decyzja gracza przy triggerze (resolve_optional_pay_choice); endure 1 = wybór: licznik +1/+1 albo token Spirit 1/1'],
+  }),
+
+  // ---- Batch 44 — transza B: rozszerzenia silnika ----
+
+  // 6. Blanchwood Prowler (BRO) — ETB: mill 3; land z młyna do ręki ALBO
+  //    +1/+1 (reveal_top_pick_land_rest_grave z counterIfNone).
+  defineCard({
+    id: 'blanchwood-prowler', name: 'Blanchwood Prowler', set: 'BRO',
+    types: ['Creature'], subtypes: ['Elemental'], colors: ['G'],
+    power: 1, toughness: 1, manaCost: 2,
+    oracleText: 'When this creature enters, mill three cards. You may put a land card from among the cards milled this way into your hand. If you don\'t, put a +1/+1 counter on this creature. (To mill a card, put the top card of your library into your graveyard.)',
+    imageUri: 'https://cards.scryfall.io/large/front/9/c/9c6988b6-ade0-4cd5-b27c-146e5e7ae91f.jpg?1783920050',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'reveal_top_pick_land_rest_grave', amount: 3, counterIfNone: true }],
+      }),
+    ],
+    artId: 303, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+    notes: ['bez landa wśród zmielonych: karty do grobu + licznik bez decyzji; rezygnacja z landa = licznik'],
+  }),
+
+  // 7. Thieves' Tools (CLB) — Equipment: ETB Treasure; nosiciel o mocy <=3
+  //    nie może być blokowany (NOWE: equipment.cantBeBlockedMaxPower).
+  defineCard({
+    id: 'thieves-tools', name: "Thieves' Tools", set: 'CLB',
+    types: ['Artifact'], subtypes: ['Equipment'], colors: ['B'], manaCost: 2,
+    oracleText: 'When this Equipment enters, create a Treasure token. (It\'s an artifact with "{T}, Sacrifice this token: Add one mana of any color.")\nEquipped creature can\'t be blocked as long as its power is 3 or less.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)',
+    imageUri: 'https://cards.scryfall.io/large/front/c/3/c3bf4ee1-b6a8-4a69-adab-6839c1786cc9.jpg?1783922750',
+    equipment: { equip: 2, cantBeBlockedMaxPower: 3 },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{
+          type: 'create_token', cardId: 'token_treasure', name: 'Treasure',
+          kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Treasure'],
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.activated,
+              cost: { tap: true, sacrificeSelf: true },
+              effect: { type: 'add_mana', amount: 1, fromTreasure: true },
+            }),
+          ],
+        }],
+      }),
+    ],
+    artId: 284, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+    notes: ['próg mocy liczony EFEKTYWNIE przy deklaracji blokerów — pump ponad 3 wyłącza nieblokowalność'],
+  }),
+
+  // 8. Heap Gate (CLB) — Gate: {T}: C; {1},{T}: dowolny kolor; {1},{T},
+  //    tapnij nietapnięty Gate: Treasure (NOWY koszt tapUntappedSubtype).
+  defineCard({
+    id: 'heap-gate', name: 'Heap Gate', set: 'CLB',
+    types: ['Land'], subtypes: ['Gate'], colors: [],
+    oracleText: '{T}: Add {C}.\n{1}, {T}: Add one mana of any color.\n{1}, {T}, Tap an untapped Gate you control: Create a Treasure token. (It\'s an artifact with "{T}, Sacrifice this token: Add one mana of any color.")',
+    imageUri: 'https://cards.scryfall.io/large/front/6/8/68489d65-1978-48b1-a903-2ef38c583239.jpg?1783922657',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['W', 'U', 'B', 'R', 'G'] },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, tap: true, tapUntappedSubtype: 'Gate' },
+        effect: [{
+          type: 'create_token', cardId: 'token_treasure', name: 'Treasure',
+          kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Treasure'],
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.activated,
+              cost: { tap: true, sacrificeSelf: true },
+              effect: { type: 'add_mana', amount: 1, fromTreasure: true },
+            }),
+          ],
+        }],
+      }),
+    ],
+    artId: 276, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+    notes: ['koszt „tapnij nietapnięty Gate" wymaga INNEJ bramy — {T} w koszcie zużywa już samą Heap Gate'],
+  }),
+
+  // 9. Angel's Herald (ALA) — {2}{W}, {T}, poświęć zielonego, białego
+  //    i niebieskiego stwora: tutor Empyrial Archangel na pole bitwy
+  //    (NOWY koszt sacrificeCreaturesByColors + search po nazwie).
+  defineCard({
+    id: 'angels-herald', name: "Angel's Herald", set: 'ALA',
+    types: ['Creature'], subtypes: ['Human', 'Cleric'], colors: ['W'],
+    power: 1, toughness: 1, manaCost: 1,
+    oracleText: '{2}{W}, {T}, Sacrifice a green creature, a white creature, and a blue creature: Search your library for a card named Empyrial Archangel, put it onto the battlefield, then shuffle.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/6/36197ed0-4382-4de3-8359-73cb74edc78b.jpg?1783942584',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 3, colors: ['W'], tap: true, sacrificeCreaturesByColors: ['G', 'W', 'U'] },
+        effect: { type: 'search_library_to_battlefield', qualifier: { name: 'Empyrial Archangel' } },
+      }),
+    ],
+    artId: 262, plan: 'Alara',
+    support: { status: 'supported', limitations: [] },
+    notes: ['Empyrial Archangel nie jest w katalogu — search legalnie „fails to find" (CR 701.19b: kryterium nazwy); zdolność w pełni wg Oracle, użyteczna po ewentualnym dodaniu anioła'],
+  }),
+
+  // 10. Frightful Delusion (ISD) — „Counter target spell unless its
+  //     controller pays {1}. That player discards a card." (NOWY efekt
+  //     counter_spell_unless_pays: decyzja kontrolera celu + discard).
+  defineCard({
+    id: 'frightful-delusion', name: 'Frightful Delusion', set: 'ISD',
+    types: ['Instant'], colors: ['U'], manaCost: 3,
+    oracleText: 'Counter target spell unless its controller pays {1}. That player discards a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/8/38c9ba98-90b4-4c28-9eef-a4fe0913b921.jpg?1783940974',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'spell_on_stack' }],
+      effects: [{ type: 'counter_spell_unless_pays', amount: 1 }],
+    },
+    artId: 256, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+    notes: ['kontroler celu decyduje (resolve_counter_pay_choice): zapłać {1} — czar zostaje; nie płać — skontrowany; NIEZALEŻNIE od decyzji odrzuca potem kartę (wybór odrzucanej — CR 701.18); bez many na {1} decyzji nie ma'],
+  }),
+
+  // =========================================================================
+  // Batch 45 (10 kart, 2026-08-22) — lista właściciela (M185)
+  // Call the Mountain Chocobo, Patron of the Arts, Pain for All, Assert
+  // Perfection, Ivy Lane Denizen, Malamet Battle Glyph, Unearth, Ghost
+  // Warden, Crawling Chorus, Doomed Dissenter. Oracle: docs/cards/.
+  // =========================================================================
+
+  // ---- Batch 45 — transza A: istniejące mechaniki ----
+
+  // 1. Ghost Warden (GPT) — „{T}: Target creature gets +1/+1 until end of turn."
+  defineCard({
+    id: 'ghost-warden', name: 'Ghost Warden', set: 'GPT',
+    types: ['Creature'], subtypes: ['Spirit'], colors: ['W'],
+    power: 1, toughness: 1, manaCost: 2,
+    oracleText: '{T}: Target creature gets +1/+1 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/3/4304abfe-3c81-4053-a398-574cfac613a7.jpg?1783943530',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        targets: [{ type: 'creature' }],
+        effect: { type: 'pump', power: 1, toughness: 1 },
+      }),
+    ],
+    artId: 264, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Doomed Dissenter (VOW) — dies → token Zombie 2/2.
+  defineCard({
+    id: 'doomed-dissenter', name: 'Doomed Dissenter', set: 'VOW',
+    types: ['Creature'], subtypes: ['Human'], colors: ['B'],
+    power: 1, toughness: 1, manaCost: 2,
+    oracleText: 'When this creature dies, create a 2/2 black Zombie creature token.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/7/f7c0cf16-81ea-45e3-99cc-4424d59bb44b.jpg?1783924866',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies' },
+        effect: [{
+          type: 'create_token', cardId: 'token_zombie', name: 'Zombie',
+          kind: 'creature', power: 2, toughness: 2, colors: ['B'],
+          types: ['Creature'], subtypes: ['Zombie'],
+        }],
+      }),
+    ],
+    artId: 376, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Patron of the Arts (CLB) — „When this creature enters OR dies,
+  //    create a Treasure token" — dwa triggery z tym samym efektem.
+  defineCard({
+    id: 'patron-of-the-arts', name: 'Patron of the Arts', set: 'CLB',
+    types: ['Creature'], subtypes: ['Dragon', 'Noble'], colors: ['R'],
+    power: 3, toughness: 1, manaCost: 3,
+    oracleText: 'When this creature enters or dies, create a Treasure token. (It\'s an artifact with "{T}, Sacrifice this token: Add one mana of any color.")',
+    imageUri: 'https://cards.scryfall.io/large/front/1/0/10b2b8ca-7433-4bfe-abab-e19128e46a1d.jpg?1783922732',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{
+          type: 'create_token', cardId: 'token_treasure', name: 'Treasure',
+          kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Treasure'],
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.activated,
+              cost: { tap: true, sacrificeSelf: true },
+              effect: { type: 'add_mana', amount: 1, fromTreasure: true },
+            }),
+          ],
+        }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies' },
+        effect: [{
+          type: 'create_token', cardId: 'token_treasure', name: 'Treasure',
+          kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Treasure'],
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.activated,
+              cost: { tap: true, sacrificeSelf: true },
+              effect: { type: 'add_mana', amount: 1, fromTreasure: true },
+            }),
+          ],
+        }],
+      }),
+    ],
+    artId: 339, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. Unearth (MH1) — return creature mv≤3 z grobu na pole; Cycling {2}.
+  defineCard({
+    id: 'unearth', name: 'Unearth', set: 'MH1',
+    types: ['Sorcery'], colors: ['B'], manaCost: 1,
+    oracleText: 'Return target creature card with mana value 3 or less from your graveyard to the battlefield.\nCycling {2} ({2}, Discard this card: Draw a card.)',
+    imageUri: 'https://cards.scryfall.io/large/front/b/6/b62abd0c-ec3e-45d7-989d-da269812aeef.jpg?1783933118',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature_card_in_graveyard', maxManaValue: 3 }],
+      effects: [{ type: 'return_permanent_from_graveyard' }],
+    },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'cycling',
+        cost: { mana: 2 },
+        cycling: { drawCards: 1 },
+        effect: [],
+      }),
+    ],
+    artId: 395, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Call the Mountain Chocobo (FIN) — tutor Mountain do ręki + token
+  //    Bird 2/2 z landfallowym +1/+0; Flashback {5}{R}.
+  defineCard({
+    id: 'call-the-mountain-chocobo', name: 'Call the Mountain Chocobo', set: 'FIN',
+    types: ['Sorcery'], colors: ['R'], manaCost: 4,
+    oracleText: 'Search your library for a Mountain card, reveal it, put it into your hand, then shuffle. Create a 2/2 green Bird creature token with "Whenever a land you control enters, this token gets +1/+0 until end of turn."\nFlashback {5}{R} (You may cast this card from your graveyard for its flashback cost. Then exile it.)',
+    imageUri: 'https://cards.scryfall.io/large/front/b/2/b2e1986c-2852-4843-bdc4-eddb727ba3d4.jpg?1783906607',
+    spell: {
+      timing: 'sorcery',
+      targets: [],
+      effects: [
+        { type: 'search_library_to_hand', qualifier: { subtypes: ['Mountain'] } },
+        {
+          type: 'create_token', cardId: 'token_bird_chocobo', name: 'Bird',
+          kind: 'creature', power: 2, toughness: 2, colors: ['G'],
+          types: ['Creature'], subtypes: ['Bird'],
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.triggered,
+              trigger: { event: 'land_entered_under_your_control' },
+              effect: [{ type: 'pump', power: 1, toughness: 0 }],
+            }),
+          ],
+        },
+      ],
+      flashback: { cost: 6, colors: ['R'] },
+    },
+    artId: 319, plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['token Bird pumpuje SAM SIEBIE przy wejściu landa kontrolera (landfall — trigger bez celu pumpuje źródło)'],
+  }),
+
+  // ---- Batch 45 — transza B: rozszerzenia silnika ----
+
+  // 6. Ivy Lane Denizen (CMR) — „Whenever another green creature you control
+  //    enters, put a +1/+1 counter on target creature" (filtry youControl +
+  //    colorsInclude na another_creature_enters).
+  defineCard({
+    id: 'ivy-lane-denizen', name: 'Ivy Lane Denizen', set: 'CMR',
+    types: ['Creature'], subtypes: ['Elf', 'Warrior'], colors: ['G'],
+    power: 2, toughness: 3, manaCost: 4,
+    oracleText: 'Whenever another green creature you control enters, put a +1/+1 counter on target creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/8/78bea375-8af3-4425-a418-bb5503e2dfb7.jpg?1783928792',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'another_creature_enters', youControl: true, colorsInclude: ['G'],
+          requiresTarget: { type: 'creature' },
+        },
+        effect: [{ type: 'add_counter', counter: '+1/+1', amount: 1 }],
+      }),
+    ],
+    artId: 460, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 7. Malamet Battle Glyph (LCI) — dwa cele; licznik, jeśli własny stwór
+  //    wszedł w tej turze; potem FIGHT (NOWY efekt, CR 701.12).
+  defineCard({
+    id: 'malamet-battle-glyph', name: 'Malamet Battle Glyph', set: 'LCI',
+    types: ['Sorcery'], colors: ['G'], manaCost: 1,
+    oracleText: 'Choose target creature you control and target creature you don\'t control. If the creature you control entered this turn, put a +1/+1 counter on it. Then those creatures fight each other.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/2/2259f959-ca97-4df9-8d50-0532090fb967.jpg?1783913743',
+    spell: {
+      timing: 'sorcery',
+      targets: [
+        { type: 'creature_you_control' },
+        { type: 'creature_opponent_controls' },
+      ],
+      effects: [
+        { type: 'add_counter', counter: '+1/+1', amount: 1, targetIndex: 0, onlyIfTargetEnteredThisTurn: true },
+        { type: 'fight', targetIndexA: 0, targetIndexB: 1 },
+      ],
+    },
+    artId: 215, plan: 'Ixalan',
+    support: { status: 'supported', limitations: [] },
+    notes: ['fight PO ewentualnym liczniku (kolejność Oracle); licznik tylko gdy własny cel wszedł w tej turze (enteredOnTurn)'],
+  }),
+
+  // 8. Assert Perfection (ECL) — bite: +1/+0 dla własnego stwora; obrażenia
+  //    równe jego mocy w „up to one" wrogiego stwora (NOWE: optional target).
+  defineCard({
+    id: 'assert-perfection', name: 'Assert Perfection', set: 'ECL',
+    types: ['Sorcery'], colors: ['G'], manaCost: 2,
+    oracleText: 'Target creature you control gets +1/+0 until end of turn. It deals damage equal to its power to up to one target creature an opponent controls.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/9/6995b308-5582-4ca1-ab10-a536d5ca0a6d.jpg?1783904435',
+    spell: {
+      timing: 'sorcery',
+      targets: [
+        { type: 'creature_you_control' },
+        { type: 'creature_opponent_controls', optional: true },
+      ],
+      effects: [
+        { type: 'pump', power: 1, toughness: 0 },
+        { type: 'damage_from_target_power', sourceTargetIndex: 0, targetIndex: 1 },
+      ],
+    },
+    artId: 366, plan: 'Lorwyn',
+    support: { status: 'supported', limitations: [] },
+    notes: ['„up to one target" — wariant bez drugiego celu jest legalny (pump bez ugryzienia); pump PRZED obrażeniami (kolejność Oracle — obrażenia liczą moc po +1/+0)'],
+  }),
+
+  // 9. Crawling Chorus (ONE) — Toxic 1 (NOWY keyword, CR 702.180); dies →
+  //    token Phyrexian Mite 1/1 (toxic 1, can't block).
+  defineCard({
+    id: 'crawling-chorus', name: 'Crawling Chorus', set: 'ONE',
+    types: ['Creature'], subtypes: ['Phyrexian', 'Horror'], colors: ['W'],
+    power: 1, toughness: 1, manaCost: 1, keywords: ['toxic'], toxic: 1,
+    oracleText: 'Toxic 1 (Players dealt combat damage by this creature also get a poison counter.)\nWhen this creature dies, create a 1/1 colorless Phyrexian Mite artifact creature token with toxic 1 and "This token can\'t block."',
+    imageUri: 'https://cards.scryfall.io/large/front/a/a/aace4c44-7250-414b-aac4-df042a1e2e1d.jpg?1783918086',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies' },
+        effect: [{
+          type: 'create_token', cardId: 'token_phyrexian_mite', name: 'Phyrexian Mite',
+          kind: 'creature', power: 1, toughness: 1, colors: [],
+          types: ['Artifact', 'Creature'], subtypes: ['Phyrexian', 'Mite'],
+          keywords: ['toxic'], toxic: 1, cantBlock: true,
+        }],
+      }),
+    ],
+    artId: 456, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+    notes: ['toxic N: combat damage graczowi daje mu N poison counterów DODATKOWO do obrażeń (inaczej niż infect — życie spada normalnie)'],
+  }),
+
+  // 10. Pain for All (EOE) — „Enchant creature you control"; ETB: host zadaje
+  //     obrażenia = swojej mocy w dowolny INNY cel; każdy damage w hosta
+  //     odbija się w każdego przeciwnika (NOWY trigger na aurze).
+  defineCard({
+    id: 'pain-for-all', name: 'Pain for All', set: 'EOE',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['R'], manaCost: 3,
+    oracleText: 'Enchant creature you control\nWhen this Aura enters, enchanted creature deals damage equal to its power to any other target.\nWhenever enchanted creature is dealt damage, it deals that much damage to each opponent.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/2/d2948913-817b-4715-92d5-ed3cde347be7.jpg?1783905949',
+    aura: { enchantType: 'creature_you_control' },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'any_target', excludeAttachedHost: true } },
+        effect: [{ type: 'damage_from_enchanted_power' }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enchanted_creature_dealt_damage' },
+        effect: [{ type: 'damage_each_opponent', amountFrom: 'damageAmount', fromEnchanted: true }],
+      }),
+    ],
+    artId: 344, plan: 'The Edge',
+    support: { status: 'supported', limitations: [] },
+    notes: ['źródłem obu porcji obrażeń jest ZACZAROWANY STWÓR (nie aura); utrata kontroli hosta zrzuca aurę (enchant creature you control — SBA)'],
+  }),
+
 ]);
+
+/**
+ * M173/B (uwaga właściciela): druki Scryfalla dla TOKENÓW. Tokeny mają
+ * cardId `token_*` spoza rejestru kart, więc kafel nie znajdował żadnej
+ * ilustracji. Adresy WYŁĄCZNIE z API Scryfalla (L26 — bez zgadywania UUID);
+ * kolejne tokeny uzupełniamy tą samą mapą.
+ */
+export const TOKEN_IMAGES = Object.freeze({
+  // Squirrel 1/1 G (TMSH 14) — api.scryfall.com/cards/fd0474f3-682d-4c6d-b902-84f3250aa269
+  token_squirrel: 'https://cards.scryfall.io/large/front/f/d/fd0474f3-682d-4c6d-b902-84f3250aa269.jpg?1783902800',
+});
 
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */
 export function createCardRegistry() {

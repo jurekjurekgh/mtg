@@ -378,6 +378,12 @@ function attachmentBonuses(state, object) {
         active = state.turn.activePlayerId === object.controllerId;
       } else if (cond.activePlayerIsController === false) {
         active = state.turn.activePlayerId !== object.controllerId;
+      } else if (cond.controlsNoOtherCreatures === true) {
+        // M174/D (Predator's Gambit): „as long as its controller controls
+        // no other creatures" — poza samym nosicielem.
+        active = ![...state.objects.values()].some((other) => other.zone === 'battlefield'
+          && other.controllerId === object.controllerId
+          && other.kind === 'creature' && other.id !== object.id);
       }
       if (active) bonus.keywords.push(...ck.keywords);
     }
@@ -872,6 +878,36 @@ export function goadUntilNextTurn(state, objectId, sourceControllerId) {
  * Nadaje stworowi keywordy „do końca tury" (np. backup, CR 702.165a) —
  * czyszczone w cleanup przez clearStatModifiers. Zwraca obiekt po zmianie.
  */
+/**
+ * M177/A (Agate Assault, CR 614.6): strefa śmierci permanentu — licznik
+ * finality (CR 122.1b) ALBO znacznik „if it would die this turn, exile it
+ * instead” (`state.exileIfDiesThisTurn`, czyszczony w cleanup) kierują
+ * obiekt do exile zamiast do grobu. Jedno źródło prawdy dla WSZYSTKICH
+ * ścieżek śmierci (SBA, destroy, sacrifice, legend rule).
+ */
+/**
+ * M177/E (Azorius Justiciar, CR 701.29): detain — „until your next turn,
+ * that permanent can't attack or block and its activated abilities can't be
+ * activated”. Wygasa na POCZĄTKU następnej tury gracza, który detainował
+ * (wzorzec goadedUntilTurn — wygaszenie w game-state przy starcie tury).
+ */
+export function detainUntilYourNextTurn(state, objectId, detainerId) {
+  const object = state.objects.get(objectId);
+  if (!object || object.zone !== 'battlefield') return object;
+  // W 1v1: jeśli trwa tura detainera → jego następna to number+2;
+  // w cudzej turze → najbliższa jego tura to number+1.
+  const until = state.turn.activePlayerId === detainerId ? state.turn.number + 2 : state.turn.number + 1;
+  const updated = replaceObject(state, object, { detained: true, detainedUntilTurn: until });
+  state.events.push(event('object_detained', { objectId, cardId: object.cardId, byPlayerId: detainerId }));
+  return updated;
+}
+
+export function deathZoneFor(state, object) {
+  if (((object?.counters ?? {}).finality ?? 0) > 0) return 'exile';
+  if ((state.exileIfDiesThisTurn ?? []).includes(object?.id)) return 'exile';
+  return 'graveyard';
+}
+
 export function grantKeywordsUntilEndOfTurn(state, objectId, keywords, options = {}) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error('Tymczasowe keywordy można nadawać tylko stworowi na polu bitwy');
