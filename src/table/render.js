@@ -1796,7 +1796,9 @@ export function commandLabel(cmd, session, view) {
       return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)})`;
     }
     case 'cast_spell': {
-      const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
+      // M186/Z2 (Assert Perfection): pozycja „up to one target" bez celu to
+      // null — pomijamy ją w etykiecie zamiast pokazywać „?".
+      const targets = (cmd.targets ?? []).filter((id) => id != null).map((id) => nameOfObjectId(id)).join(', ');
       // Modal "Choose one" (M30 Aerith, Your Temple, Ruinous Rampage, You're
       // Confronted by Robbers): gdy komenda niesie modeIndex, a tryb ma
       // własną nazwę (spell.modes[modeIndex].name), doklej ją po nazwie karty,

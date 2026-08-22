@@ -32,3 +32,23 @@ test('M186/Z1: widok niesie JAWNE flagi cantAttackAlone/cantBlockAlone (Ember Be
     assert.ok(!deer.cantBlockAlone, `${observer}: zwykły stwór bez flagi`);
   }
 });
+
+test('M186/Z2: etykieta Assert Perfection bez drugiego celu nie pokazuje pytajnika', async () => {
+  const { commandLabel } = await import('../src/table/render.js');
+  const MOCK = {
+    nameOf: (id) => REGISTRY.get(id)?.name ?? String(id),
+    nameOfObject: (id) => (id === 'mine' ? 'Highland Game' : String(id)),
+    cardDetails: (id) => REGISTRY.get(id) ?? null,
+    colorsOf: (id) => REGISTRY.get(id)?.colors ?? [],
+    view: () => ({ zones: { battlefield: [] } }),
+  };
+  const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const label = commandLabel(
+    { type: 'cast_spell', playerId: 'p1', objectId: 'x', targets: ['mine', null] },
+    MOCK,
+    playerView(state, 'p1'),
+  );
+  const celPart = String(label).split('cel:')[1] ?? '';
+  assert.ok(!celPart.includes('?'), `bez pytajnika w części celów: ${label}`);
+  assert.ok(celPart.includes('Highland Game'), 'nazwa pierwszego celu zostaje');
+});

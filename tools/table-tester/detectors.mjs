@@ -263,6 +263,10 @@ export function detectRuleSmells(lines, { profile = null, rejectionRecords = nul
       for (const rec of rejectionRecords) {
         const reason = String(rec?.reason ?? '').trim();
         const action = String(rec?.action ?? '').trim();
+        // M186: klik harnessu w martwe UI PO końcu partii (game_over) to szum
+        // testera, nie bug produktu — UI nie oferowało już żadnej akcji
+        // („AKCJE: (brak)"), a sterownik wysłał zbuforowany ruch wizarda.
+        if (/game_over/.test(reason)) continue;
         // M104: kontekst „tuż po ptaszku wyciszenia" zostaje w DOWODZIE, ale
         // nie zmienia kategorii. Taka była pierwotnie przyczyna trzech
         // odrzuceń w macierzy (zaznaczenie przewija grę — recheckAutoPass —

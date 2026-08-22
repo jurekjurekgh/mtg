@@ -513,11 +513,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         // Diament (2026-08-11): cele niosą LKI (targetCardIds) — cel, który
         // zniknął z state.objects (token/śmierć), nie wyświetla się jako „?"
         // (audyt: „Bone Splinters → cel: ?"). Gracze (bez cardId) po imieniu.
+        // M186/Z2 (Assert Perfection): pozycja „up to one target" bez celu
+        // to null — pomijamy w opisie zamiast pokazywać „?".
         const targets = (e.targets ?? []).map((id, i) => {
+          if (id == null) return null;
           if (isPlayer(id)) return whoN(id);
           // M100 (BUG A): LKI dopiero, gdy cel zniknął ze stanu (objectOrLki).
           return objectOrLki(id, e.targetCardIds?.[i]);
-        }).join(', ');
+        }).filter(Boolean).join(', ');
         const plotted = e.plotted ? ' z exile po plot' : '';
         const cleaved = e.cleaved ? ' z kosztem Cleave' : '';
         const adventure = e.adventure ? ' (przygoda)' : '';
