@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Gila+Courser&set=otj",
+  "print": "otj",
+  "name": "Gila Courser",
+  "mana_cost": "{2}{R}",
+  "cmc": 3,
+  "type_line": "Creature — Lizard Mount",
+  "oracle_text": "Whenever this creature attacks while saddled, exile the top card of your library. Until the end of your next turn, you may play that card.\nSaddle 1 (Tap any number of other creatures you control with total power 1 or more: This Mount becomes saddled until end of turn. Saddle only as a sorcery.)",
+  "power": "4",
+  "toughness": "2",
+  "colors": [
+    "R"
+  ],
+  "keywords": [
+    "Saddle"
+  ],
+  "set": "otj",
+  "set_name": "Outlaws of Thunder Junction",
+  "collector_number": "124",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/5/f568803d-65c0-48d7-916f-671267a9e00e.jpg?1783911821"
+  },
+  "pobrano": "2026-08-22"
+}

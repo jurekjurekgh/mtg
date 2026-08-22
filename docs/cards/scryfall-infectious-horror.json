@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Infectious+Horror&set=con",
+  "print": "con",
+  "name": "Infectious Horror",
+  "mana_cost": "{3}{B}",
+  "cmc": 4,
+  "type_line": "Creature — Zombie Horror",
+  "oracle_text": "Whenever this creature attacks, each opponent loses 2 life.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "B"
+  ],
+  "set": "con",
+  "set_name": "Conflux",
+  "collector_number": "47",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/b/bb460855-f09d-4460-9d3f-1bfcc7f3e626.jpg?1783942484"
+  },
+  "pobrano": "2026-08-22"
+}

@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Roiling+Regrowth&set=znr",
+  "print": "znr",
+  "name": "Roiling Regrowth",
+  "mana_cost": "{2}{G}",
+  "cmc": 3,
+  "type_line": "Instant",
+  "oracle_text": "Sacrifice a land. Search your library for up to two basic land cards, put them onto the battlefield tapped, then shuffle.",
+  "colors": [
+    "G"
+  ],
+  "set": "znr",
+  "set_name": "Zendikar Rising",
+  "collector_number": "201",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/a/fa259096-b24f-414c-af59-301bed4b4627.jpg?1783929332"
+  },
+  "pobrano": "2026-08-22"
+}

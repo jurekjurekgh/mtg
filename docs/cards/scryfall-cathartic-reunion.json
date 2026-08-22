@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Cathartic+Reunion&set=2xm",
+  "print": "2xm",
+  "name": "Cathartic Reunion",
+  "mana_cost": "{1}{R}",
+  "cmc": 2,
+  "type_line": "Sorcery",
+  "oracle_text": "As an additional cost to cast this spell, discard two cards.\nDraw three cards.",
+  "colors": [
+    "R"
+  ],
+  "set": "2xm",
+  "set_name": "Double Masters",
+  "collector_number": "121",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/3/b36fa6f3-29e8-4788-bfcd-59576187c399.jpg?1783930169"
+  },
+  "pobrano": "2026-08-22"
+}
