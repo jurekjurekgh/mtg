@@ -1424,9 +1424,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // gdy zdąży zadziałać w tej turze — i tylko taki, którego stwór
               // jeszcze nie ma (CR 702.x — duplikat nie robi nic).
               const alreadyHas = new Set(recipient.keywords ?? []);
-              const fresh = granted.filter((k) => !alreadyHas.has(k));
+              // M175/A2 (uwaga właściciela, Death-Hood Cobra): keywordy z
+              // IDENTYCZNEJ aktywacji już WISZĄCEJ na stosie liczą się jak
+              // posiadane — bot aktywował ten sam grant dwa razy pod rząd,
+              // bo między aktywacją a rozstrzygnięciem stwór keywordu
+              // jeszcze nie miał (widok stosu niesie sourceId + abilityIndex).
+              const pendingSameGrant = (view.zones.stack ?? []).some((entry) => (
+                entry.controllerId === view.playerId
+                && entry.sourceId === cmd.objectId
+                && entry.abilityIndex === cmd.abilityIndex
+              ));
+              const fresh = pendingSameGrant ? [] : granted.filter((k) => !alreadyHas.has(k));
               if (fresh.length === 0) {
-                score -= 10; // duplikat keywordu: zero zmiany w grze
+                score -= 10; // duplikat keywordu (na stworze albo na stosie): zero zmiany w grze
               } else {
                 // M173/E (uwaga właściciela, Death-Hood Cobra): grant „until
                 // EOT" to TRICK BOJOWY — wartość ma wyłącznie we WŁAŚCIWYM

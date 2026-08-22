@@ -4260,6 +4260,11 @@ export function playerView(state, playerId) {
               ? object.activatedEntry.targets
               : undefined),
           abilityIndex: object.activatedEntry?.abilityIndex,
+          // M175/A2 (uwaga właściciela, Death-Hood Cobra): ŹRÓDŁO aktywowanej
+          // zdolności jest ogłaszane przy kładzeniu na stos (informacja
+          // publiczna, ADR 0017) — bez niego bot nie widział, że IDENTYCZNY
+          // grant już wisi na stosie, i aktywował go drugi raz pod rząd.
+          ...(object.activatedEntry?.sourceId ? { sourceId: object.activatedEntry.sourceId } : {}),
           // Znacznik bestow odróżnia czar aury za koszt bestow od czystej
           // aury (inny flavor w UI, inne rozstrzygnięcie przy fizzle).
           bestow: object.bestow ?? null, attachedTo: object.attachedTo ?? null,

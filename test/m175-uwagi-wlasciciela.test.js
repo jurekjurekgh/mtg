@@ -9,6 +9,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { describeGameEvent } from '../src/table/session.js';
+import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -68,4 +69,42 @@ test('A1c: druga zdolność Cobry loguje „dotykanie śmierci”', () => {
   const ev = state.events.filter((e) => e.type === 'ability_activated').at(-1);
   const line = describeGameEvent(ev, HELPERS);
   assert.match(line, /dotykanie śmierci/, `log nazywa keyword: ${line}`);
+});
+
+// ---- A2: bot nie dubluje grantu wiszącego na stosie --------------------------
+
+function defendingCobra() {
+  const state = game('p1');
+  putCard(state, 'cobra', 'death-hood-cobra', 'p2', 'battlefield', { summoningSickness: false });
+  putCard(state, 'flyer', 'rustwing-falcon', 'p1', 'battlefield', { summoningSickness: false });
+  addMana(state, 'p2', 4, { colors: ['G'] });
+  state.turn = { ...state.turn, phase: 'combat', step: 'declare_attackers', activePlayerId: 'p1', priorityPlayerId: 'p1' };
+  assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['flyer'] }).ok);
+  state.turn.priorityPlayerId = 'p2';
+  return state;
+}
+
+test('A2a: widok stosu niesie sourceId aktywowanej zdolności (ADR 0017)', () => {
+  const state = defendingCobra();
+  assert.ok(execute(state, { type: 'activate_ability', playerId: 'p2', objectId: 'cobra', abilityIndex: 0 }).ok);
+  const entry = playerView(state, 'p2').zones.stack.find((o) => o.abilityIndex === 0);
+  assert.ok(entry, 'wpis aktywacji na stosie');
+  assert.equal(entry.sourceId, 'cobra', 'źródło zdolności jest publiczne');
+});
+
+test('A2b: bot NIE aktywuje tego samego grantu drugi raz, gdy pierwszy wisi na stosie', () => {
+  const state = defendingCobra();
+  // Sanity: w tym oknie bot CHCE aktywować reach (jak M173/E2).
+  const first = createHeuristicBot({ seed: 1 }).chooseCommand(playerView(state, 'p2'));
+  assert.ok(first.type === 'activate_ability' && first.objectId === 'cobra' && first.abilityIndex === 0,
+    `pierwsza aktywacja reach ma sens (wybrał: ${first.type} ${first.abilityIndex ?? ''})`);
+  assert.ok(execute(state, first).ok);
+  state.turn.priorityPlayerId = 'p2';
+  const view = playerView(state, 'p2');
+  const again = view.legalCommands.find((c) => c.type === 'activate_ability'
+    && c.objectId === 'cobra' && c.abilityIndex === 0);
+  assert.ok(again, 'oferta drugiej aktywacji istnieje (legalna wg CR)');
+  const chosen = createHeuristicBot({ seed: 1 }).chooseCommand(view);
+  assert.ok(!(chosen.type === 'activate_ability' && chosen.objectId === 'cobra' && chosen.abilityIndex === 0),
+    `duplikat grantu wisi na stosie — druga aktywacja to strata many (wybrał: ${chosen.type})`);
 });
