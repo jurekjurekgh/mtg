@@ -15,15 +15,44 @@ Backwater), worek-mroczny (Balamb Garden), wiedzmin (Fleeting Distraction).
 
 ## Kroki
 
-- [ ] `node tools/build.mjs` + `cd tools/table-tester && npm i` (jsdom)
-- [ ] G1: theros vs innistrad
-- [ ] G2: forgotten-realms vs tarkir
-- [ ] G3: dominaria vs ravnica
-- [ ] G4: alara vs wiedzmin
-- [ ] G5: warhammer vs worek-mroczny
-- [ ] G6: theros vs worek-legend (talia po awansie vs odchudzony worek)
-- [ ] G7: innistrad vs forgotten-realms
-- [ ] Przegląd transkryptów: DETEKTORY (źródło prawdy) + ręczny grep
+- [x] `node tools/build.mjs` + `cd tools/table-tester && npm i` (jsdom)
+- [x] G1: theros vs innistrad
+- [x] G2: forgotten-realms vs tarkir
+- [x] G3: dominaria vs ravnica
+- [x] G4: alara vs wiedzmin
+- [x] G5: warhammer vs worek-mroczny
+- [x] G6: theros vs worek-legend (talia po awansie vs odchudzony worek)
+- [x] G7: innistrad vs forgotten-realms
+- [x] Przegląd transkryptów: DETEKTORY (źródło prawdy) + ręczny grep
       nowych kart (scan.mjs tylko pomocniczo — szumi, L54/M180)
-- [ ] Naprawy zgłoszeń (każda osobny commit) + rebuild + ponowne gry
-- [ ] Dokumenty: plan odhaczony, PROJECT_STATE, PR #69 sekcja 16
+- [x] Naprawy zgłoszeń (każda osobny commit) + rebuild + ponowne gry
+- [x] Dokumenty: plan odhaczony, PROJECT_STATE, PR #69 sekcja 16
+
+## Wynik
+
+12 gier (7 podstawowych + 3 dogrywki pokrycia + 2 weryfikacje v2).
+Zgłoszenia i naprawy (wszystkie zweryfikowane ponownymi grami — 0 zgłoszeń):
+
+- **Z1 [ui]**: Sea God's Scorn opisywał się jako „wybierz jedno — ten sam
+  efekt na każdym z celów" — apply_to_each_target opisuje teraz efekty
+  WEWNĘTRZNE, a czar z jednym trybem nie udaje wyboru.
+- **Z2 [ui]**: opis Blanchwood Prowlera nie niósł liczby kart (3) ani
+  nagrody za odmowę (+1/+1) — reveal_top_pick_land_rest_grave czyta
+  amount/counterIfNone z deskryptora.
+- **Z3 [ui]**: opcja „Nie bierz lądu" nie mówiła o liczniku — komenda
+  niesie flagę counterIfNone (Satyr Wayfinder celowo bez zmian — Z3b).
+- **Z4 [ui]**: kafel Thieves' Tools nie wspominał o nieblokowalności
+  nosiciela ≤3 — equipLine z cantBeBlockedMaxPower.
+- **Z5 [ui/LKI]**: „Nieprzyjaciel poświęca ?" (Rupture Spire,
+  pay_or_sacrifice) — obiekt po poświęceniu ma nowe id w grobie; zdarzenie
+  niesie teraz cardId (wzorzec spell_countered/counteredByCardId).
+
+Pokrycie kart Batchy 43–44 w transkryptach: Sleep of the Dead (rzut +
+oferta Escape), Sea God's Scorn, Glaring Aegis (trigger z celem), Severed
+Strands (LKI toughness 2/2 z anthemu Trostani — POPRAWNE +2), Blanchwood
+(obie ścieżki), Thieves' Tools (ETB Treasure), Tireless Hauler, Heap Gate
+(mana), Balamb (land+mana G/U), Dismal (tapnięty+trigger+mana), Hill
+Giant, Greenwood, Farbog, Dispeller. Karty sytuacyjne bez zagrań testerem
+(Rush of Battle, Descendant, Angel's Herald, Dire-Strain transform) mają
+pełne cykle w testach silnikowych batch43/44-kart.
+Testy: test/m184-petla-jakosci.test.js (6).

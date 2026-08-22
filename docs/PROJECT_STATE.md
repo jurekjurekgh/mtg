@@ -1,7 +1,24 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-22 (M183: Batch 44 — 10 kart; PIERWSZY realny auto-awans M181: talia theros)
-- **Poprzednia:** 2026-08-22 (M182: Batch 43 — 10 kart właściciela, w tym 2 DFC)
+- **Ostatnia aktualizacja:** 2026-08-22 (M184: pętla jakości Żywym Testerem — Z1–Z5, 12 gier, 0 zgłoszeń po naprawach)
+- **Poprzednia:** 2026-08-22 (M183: Batch 44 — 10 kart; PIERWSZY realny auto-awans M181: talia theros)
+
+
+## M184 — pętla jakości Żywym Testerem: Batche 43–44 (2026-08-22, PR #69)
+
+Plan: `docs/plans/PLAN_2026-08-22-m184-petla-jakosci-batch43-44.md`.
+12 gier (theros/innistrad/forgotten-realms/tarkir/dominaria/ravnica/
+alara/wiedzmin/warhammer/worki), transkrypty w
+`tools/table-tester/audyt-m184/`. Zgłoszenia: Z1 (apply_to_each_target
+opisuje efekty wewnętrzne; single-mode bez „wybierz jedno" — Sea God's
+Scorn), Z2 (opis Blanchwood z amount i licznikiem), Z3 (opcja „Nie bierz
+lądu" ostrzega o +1/+1 — flaga counterIfNone w komendzie; Satyr bez
+zmian), Z4 (equipLine z cantBeBlockedMaxPower — Thieves' Tools), Z5
+(„poświęca ?" przy pay_or_sacrifice — zdarzenie niesie cardId, LKI).
+Weryfikacja: gry v2 = 0 zgłoszeń. Testy: m184-petla-jakosci (6).
+
+**Stan:** `test:all` **2737/2737**, build **52 moduły / 2364.4 kB**,
+benchmark regresji bota w progach.
 
 
 ## M183 — Batch 44: 10 kart właściciela (2026-08-22, PR #69)
