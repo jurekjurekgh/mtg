@@ -33,6 +33,37 @@ const KEYWORD_COUNTERS = new Set(['deathtouch', 'flying', 'first_strike', 'doubl
 const NEVER = Number.NEGATIVE_INFINITY;
 
 /**
+ * M179/B (zlecenie właściciela): efekty IDEMPOTENTNE „do końca tury” —
+ * znaczniki/Sety, których druga IDENTYCZNA aktywacja wisząca na stosie nic
+ * nie doda (grant keywordów, flagi cant-block/cant-be-blocked, animacja,
+ * zmiana podtypu…). Bot nie dubluje takich aktywacji na stosie (uogólnienie
+ * M175/A2 z samych grantów). NIE dotyczy „pakowania” (pump, liczniki,
+ * obrażenia, tarcze regeneracji — kumulują się).
+ */
+export const IDEMPOTENT_EOT_EFFECTS = new Set([
+  'grant_keywords_until_end_of_turn', 'cant_be_blocked', 'cant_block',
+  'becomes_subtype_until_end_of_turn', 'animate_permanent_until_end_of_turn',
+  'lock_untap', 'dont_untap_next_untap_step', 'tap_permanent', 'untap_permanent',
+  'set_saddled',
+]);
+
+/**
+ * M179/B: efekty KUMULUJĄCE w zdolnościach aktywowanych bez {T} — dublowanie
+ * na stosie jest legalne i bywa sensowne (pump +1/+0 ×N, liczniki, mana).
+ * Strażnik test/m179 wymaga klasyfikacji KAŻDEGO typu efektu występującego
+ * w zdolności aktywowanej bez tapa — nowy typ bez przydziału = czerwony test.
+ */
+export const STACKING_ACTIVATED_EFFECTS = new Set([
+  'pump', 'pump_enchanted_creature', 'add_counter', 'add_mana', 'damage',
+  'damage_each_opponent', 'draw_cards', 'discard_cards', 'create_token',
+  'create_copy_token', 'station_counters', 'scry', 'regenerate',
+  'search_library_to_battlefield', 'search_library_to_battlefield_tapped',
+  'put_graveyard_card_on_bottom', 'return_to_battlefield_tapped',
+  'return_to_battlefield_under_control_at_upkeep', 'unearth_return',
+  'attach_equipment_to_source', 'craft_transform', 'gain_life',
+]);
+
+/**
  * M106/Z6: rozwiązanie DYNAMICZNEJ liczby tokenów z widoku gracza (deskryptor
  * niesie klucz źródła zamiast liczby). Nieznane klucze traktujemy zachowawczo
  * jako 1 (jak dotąd), znane liczymy — 0 znaczy „czar nic nie zrobi".
@@ -471,6 +502,46 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
       // 3. Efekty bez celu, które z definicji biją w nas (applyTo: self).
       if (playerCost != null && effect.applyTo === 'self') penalty += playerCost;
+    }
+    return penalty;
+  }
+
+  /**
+   * M179/E (zlecenie właściciela): efekty PRZYJAZNE celowi — pozytywny efekt
+   * wymierzony we WROGA to symetryczny błąd do selfHarmPenalty (wzmacniamy/
+   * ratujemy przeciwnika własną kartą i maną). Centralna klamra: działa
+   * nawet, gdy konkretna gałąź wyceny zapomni o karze (dotąd kary były
+   * rozsiane po gałęziach: pump −60, add_counter −90, grant −12…).
+   */
+  const FRIENDLY_TARGET_EFFECTS = new Map([
+    ['pump', 50], ['pump_by_creature_count', 50], ['pump_enchanted_creature', 50],
+    ['pump_by_gates', 50], ['grant_keywords_until_end_of_turn', 40],
+    ['cant_be_blocked', 40], ['regenerate', 40], ['prevent_damage_this_turn', 40],
+    ['set_base_pt_until_end_of_turn', 40], ['untap_permanent', 25],
+  ]);
+  const BENEFICIAL_COUNTERS = new Set(['+1/+1', '+1/+0', '+0/+1', 'shield']);
+
+  /** Kara za skierowanie efektu PRZYJAZNEGO we wrogie rzeczy (M179/E). */
+  function friendlyMisaimPenalty(view, effects, cmd, target) {
+    let penalty = 0;
+    const targets = cmd.targets ?? [];
+    const enemyId = enemy(view)?.id ?? null;
+    for (const effect of effects) {
+      if (!effect?.type) continue;
+      const friendCost = FRIENDLY_TARGET_EFFECTS.get(effect.type)
+        ?? (effect.type === 'add_counter' && BENEFICIAL_COUNTERS.has(effect.counter ?? '+1/+1') ? 50 : null);
+      if (friendCost != null) {
+        const slot = effect.targetIndex != null ? targets[effect.targetIndex] : null;
+        const beneficiary = (slot ? objectOnBoard(view, slot) : null) ?? target;
+        if (beneficiary && beneficiary.controllerId && beneficiary.controllerId !== view.playerId) {
+          penalty += friendCost + (beneficiary.power ?? 0);
+        }
+      }
+      // Życie dla PRZECIWNIKA (gain_life_target w cel-gracza).
+      if (effect.type === 'gain_life_target' && enemyId != null) {
+        const slot = targets[effect.targetIndex ?? 0] ?? null;
+        if (slot === enemyId) penalty += 30 + (effect.amount ?? 1);
+      }
     }
     return penalty;
   }
@@ -930,6 +1001,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // M121: generyczna bramka „nie strzelaj do siebie" — obejmuje KAŻDY
         // efekt ofensywny z tabeli, także te dodane w przyszłości.
         score -= selfHarmPenalty(view, effects, cmd, target);
+        // M179/E: symetria — efekt przyjazny wycelowany we wroga.
+        score -= friendlyMisaimPenalty(view, effects, cmd, target);
         // M149/A3 (uwaga właściciela): dodatkowy koszt „poświęć stwora"
         // (Bone Splinters, Village Rites) — poświęcenie WŁASNEGO stwora to
         // strata. Czar niszczący (destroy) opłaca się tylko, gdy niszczymy
@@ -1384,6 +1457,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const tapsCreature = Boolean(ability?.cost?.tapCreature);
         const effects = Array.isArray(ability?.effect) ? ability.effect : ability?.effect ? [ability.effect] : [];
         const abilityEffectTypes = effects.map((e) => e?.type).filter(Boolean);
+        // M179/B (uogólnienie M175/A2): IDENTYCZNA aktywacja (źródło +
+        // zdolność + cele) już WISI na stosie, a wszystkie efekty są
+        // idempotentne do EOT — drugi egzemplarz nic nie zmieni w grze.
+        if (abilityEffectTypes.length > 0
+          && abilityEffectTypes.every((type) => IDEMPOTENT_EOT_EFFECTS.has(type))) {
+          const sameTargets = (entry) => JSON.stringify(entry.targets ?? []) === JSON.stringify(cmd.targets ?? []);
+          const pendingTwin = (view.zones.stack ?? []).some((entry) => entry.controllerId === view.playerId
+            && entry.sourceId === cmd.objectId && entry.abilityIndex === (cmd.abilityIndex ?? 0)
+            && sameTargets(entry));
+          if (pendingTwin) return finish(-10);
+        }
         // Patologia B1: aktywacja kosztem tapu we własnym untap zostawiłaby
         // stwora zatapianego całą turę (bot stał w miejscu i deck-outował).
         if (wastefulStep(view)) return finish(taps || tapsCreature ? -30 : -5);
@@ -1417,6 +1501,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // tapować/niszczyć/mielić dokładnie tak samo (Entrancing Lyre,
         // Sterling Keykeeper, Cellar Door).
         score -= selfHarmPenalty(view, effects, cmd, target);
+        // M179/E: symetria — efekt przyjazny wycelowany we wroga.
+        score -= friendlyMisaimPenalty(view, effects, cmd, target);
         for (const effect of effects) {
           // M96 (audyt Żywym Testerem): `pump_enchanted_creature`
           // (firebreathing — Shiv's Embrace) NIE wpadało do tej gałęzi, więc

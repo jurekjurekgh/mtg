@@ -324,13 +324,16 @@ export function zoneLabel(zone) {
  * Osobny słownik od render.js: render.js importuje z tego modułu, więc
  * zależność w drugą stronę utworzyłaby cykl (build.mjs by go nie skleił).
  */
-const KEYWORD_EVENT_LABELS = Object.freeze({
+export const KEYWORD_EVENT_LABELS = Object.freeze({
   haste: 'pośpiech', flying: 'latanie', trample: 'zadeptywanie', reach: 'zasięg',
   vigilance: 'czujność', menace: 'postrach', lifelink: 'dotykanie życia',
   deathtouch: 'dotykanie śmierci', first_strike: 'pierwsze uderzenie',
   double_strike: 'podwójne uderzenie', hexproof: 'hexproof', indestructible: 'niezniszczalność',
   defender: 'obrońca', flash: 'flash', infect: 'infect', persist: 'persist',
   saddled: 'osiodłanie', exalted: 'egzaltacja',
+  // M179/A2 (strażnik kompletności): każdy grantowalny keyword katalogu ma
+  // etykietę logu — intimidate brakowało (Predator's Gambit, warunkowy).
+  intimidate: 'zastraszenie',
 });
 
 /**

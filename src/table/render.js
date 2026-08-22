@@ -654,7 +654,7 @@ const ABILITY_KEYWORD_LABELS = Object.freeze({
   regenerate: 'Regeneruj tego stwora (następne zniszczenie zostaje odwrócone)',
 });
 
-const KEYWORD_LABELS = Object.freeze({
+export const KEYWORD_LABELS = Object.freeze({
   intimidate: 'zastraszenie (blok: artefakty/wspólny kolor)',
   flying: 'Latanie', vigilance: 'Czujność', transform: 'Transform', reach: 'Zasięg',
   haste: 'Pośpiech', menace: 'Postrach', lifelink: 'Dotykanie życia', deathtouch: 'Dotykanie śmierci',
