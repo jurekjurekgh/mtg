@@ -1,7 +1,37 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-22 (M190: uwagi A/A2/B/C/D — opisy many, GRAF lochu, equip Thieves' Tools, wizard many)
-- **Poprzednia:** 2026-08-22 (M189: uwagi L/M — sprzątanie UX artefaktu; dokończona pętla jakości Z2–Z4)
+- **Ostatnia aktualizacja:** 2026-08-22 (M191: Batch 46 — 10 kart; fabricate, echo, impulse-exile, ochrona po jakości, GRAF lochu w tle)
+- **Poprzednia:** 2026-08-22 (M190: uwagi A/A2/B/C/D — opisy many, GRAF lochu, equip Thieves' Tools, wizard many)
+
+
+## M191 — Batch 46: 10 kart właściciela (2026-08-22, PR #70)
+
+Plan: `docs/plans/PLAN_2026-08-22-m191-batch46.md`. Dane Oracle pobrane ze
+Scryfalla PRZED kodowaniem (ADR 0010 §2a). Karty: Infectious Horror,
+Roiling Regrowth, Bring Low, Cathartic Reunion, Guildscorn Ward,
+Glint-Sleeve Artisan, Bone Shredder, Manor Gate, Gila Courser,
+Rediscover the Way.
+
+**Nowe mechaniki:** `amountIfTargetHasCounter` (3 dmg / 5 przy liczniku);
+`additionalCost.discardCards` (koszt CR 601.2h — czar nierzucalny bez kart);
+TRWAŁA ochrona po JAKOŚCI na załączniku + jakość `multicolored` (dotąd
+jakość mogła pochodzić tylko z grantu „until EOT"); keyword **fabricate**
+(CR 702.122) z blokującą decyzją; keyword **echo** (CR 702.29) + wydzielone
+`queuePayOrSacrifice` wspólne z Rupture Spire; filtry celu `notArtifact`/
+`notColors`; wybór koloru na PERMANENCIE (Manor Gate — dotąd tylko aura);
+impulse-exile `playableUntilTurn` (Gila Courser); rozdział Sagi nadający
+trigger na czas tury (Rediscover the Way). Poprawka u źródła: gałąź
+`you_cast_noncreature_spell` pomijała `requiresTarget`, więc KAŻDY taki
+trigger z celem po cichu nie działał.
+
+**Regresja znaleziona benchmarkiem** (nie testami jednostkowymi): dwie
+ścieżki kasowały token bez odpięcia aur — `bounce_to_library_bottom` oraz
+MARTWY warunek `if (token.zone === 'battlefield')` w SBA (L44: komentarz
+opisywał zamiar, którego kod nie realizował). Obie naprawione, test B46/R2.
+
+**Stan:** `npm test` **2834/2834**, build **52 moduły / 2446.9 kB**,
+benchmark regresji **9/9**.
+
 
 
 ## M190 — uwagi właściciela z testów: A/A2, B, C, D (2026-08-22, PR #70)
