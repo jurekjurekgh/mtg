@@ -349,4 +349,6 @@ export const MANA_COSTS = {
   "rush-of-battle": "{3}{W}",
   "forced-landing": "{1}{G}",
   "sea-gods-scorn": "{4}{U}{U}",
+  "balamb-garden-seed-academy": "",
+  "balamb-garden-airborne": "",
 };

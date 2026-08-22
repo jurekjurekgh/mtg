@@ -8138,6 +8138,59 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // ---- Batch 43 — transza C: Balamb Garden (DFC land → vehicle) ----
+
+  // 10. Balamb Garden, SeeD Academy (FIN) — Land Town wchodzący tapnięty;
+  //     {T}: Add {G} or {U}; aktywowany transform {5}{G}{U},{T} z redukcją
+  //     {1} za każdy INNY Town (NOWE: costReduction.perOtherSubtype).
+  defineCard({
+    id: 'balamb-garden-seed-academy', name: 'Balamb Garden, SeeD Academy', set: 'FIN',
+    types: ['Land'], subtypes: ['Town'], colors: [], entersTapped: true,
+    oracleText: 'This land enters tapped.\n{T}: Add {G} or {U}.\n{5}{G}{U}, {T}: Transform this land. This ability costs {1} less to activate for each other Town you control.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/0/001e9f20-5b15-41cb-bf82-46172decc235.jpg?1783906558',
+    transformTo: 'balamb-garden-airborne',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['G', 'U'] },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 7, colors: ['G', 'U'], tap: true },
+        costReduction: { perOtherSubtype: 'Town' },
+        effect: [{ type: 'transform' }],
+      }),
+    ],
+    artId: 150, plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['jedyny Town w katalogu — redukcja za inne Towny działa, ale w praktyce wynosi 0, dopóki nie dojdą kolejne Towny'],
+  }),
+  // Tylna strona — Balamb Garden, Airborne (Legendary Artifact — Vehicle 5/4).
+  defineCard({
+    id: 'balamb-garden-airborne', name: 'Balamb Garden, Airborne', set: 'FIN',
+    types: ['Legendary', 'Artifact'], subtypes: ['Vehicle'], colors: [],
+    power: 5, toughness: 4, keywords: ['flying'],
+    oracleText: 'Flying\nWhenever Balamb Garden attacks, draw a card.\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)',
+    imageUri: 'https://cards.scryfall.io/large/back/0/0/001e9f20-5b15-41cb-bf82-46172decc235.jpg?1783906558',
+    transformTo: 'balamb-garden-seed-academy',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks' },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        // Crew (CR 701.36) aktywuje się jak instant (audyt Batchu 26/M65).
+        cost: { crewPower: 1 },
+        effect: { type: 'animate_permanent_until_end_of_turn', power: 5, toughness: 4, typesAdd: ['Creature'] },
+      }),
+    ],
+    artId: 153, plan: 'Final Fantasy',
+    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
+  }),
+
 ]);
 
 /**

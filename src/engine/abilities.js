@@ -78,6 +78,21 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   const base = ability?.cost?.mana ?? 0;
   const reduction = ability?.costReduction;
   if (!reduction) return base;
+  // Batch 43 (Balamb Garden, SeeD Academy): „This ability costs {1} less to
+  // activate for each other Town you control" — redukcja za KAŻDY INNY
+  // permanent gracza z danym podtypem (samo źródło się nie liczy);
+  // część kolorowa kosztu nie podlega redukcji (CR 601.2f — jak perCounter).
+  if (reduction.perOtherSubtype) {
+    let count = 0;
+    for (const id of state.zones.battlefield) {
+      const obj = state.objects.get(id);
+      if (!obj || obj.zone !== 'battlefield' || obj.id === sourceObject?.id) continue;
+      if (obj.controllerId !== playerId) continue;
+      if ((obj.subtypes ?? []).includes(reduction.perOtherSubtype)) count += 1;
+    }
+    const colored = (ability.cost?.colors ?? []).length;
+    return Math.max(colored, base - count * (reduction.amount ?? 1));
+  }
   if (reduction.perCounter === '+1/+1') {
     let counters = 0;
     for (const id of state.zones.battlefield) {
