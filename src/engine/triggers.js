@@ -970,14 +970,49 @@ export function resolveTriggerEntry(state, entry) {
   // BEZ ŻADNEGO skutku (Undead Servant przy pustym grobie — 0 Zombie, Jyoti
   // bez rzutów commandera — 0 tokenów), ma to powiedzieć wprost. Dotąd gracz
   // widział „trigger się rozstrzyga" i nie wiedział, czy coś przegapił.
+  // M106/Z2 wnioskowało „brak efektu" z BRAKU ZDARZEŃ. To za mocny wniosek:
+  // legalny no-op (CR 701.20b — tap już tapniętego, untap odkręconego) też
+  // nie produkuje zdarzeń, a trigger wykonał się w całości. M189/Z2 (Żywy
+  // Tester, transkrypt audyt-m187/g10): bot rzucił Glaring Aegis w stwora
+  // stapowanego wcześniej zdolnością many, a log ogłosił „nic się nie
+  // wydarzyło (zerowy wynik)" — gracz miał prawo sądzić, że zdolność
+  // przepadła. Efekt, który świadomie nic nie zmienia, bo stan JUŻ jest
+  // docelowy, raportujemy jako zwykłe rozstrzygnięcie.
   const producedNothing = state.events.length === beforeEffects;
+  const noOpByState = producedNothing
+    && applyTriggerEffectsWereNoOp(state, payload.ability, payload.targets ?? []);
   const resolved = event('trigger_resolved', {
     objectId: entry.id, cardId: entry.cardId,
     trigger: payload.ability?.trigger?.event ?? null,
-    ...(producedNothing ? { noEffect: true, reason: 'no_result' } : {}),
+    ...(producedNothing && !noOpByState ? { noEffect: true, reason: 'no_result' } : {}),
   });
   state.events.push(resolved);
   return state.events.slice(before);
+}
+
+/**
+ * Czy efekty triggera nie zmieniły stanu dlatego, że stan JUŻ był docelowy
+ * (CR 701.20b: tap tapniętego / untap odkręconego to legalne, wykonane
+ * działanie bez zmiany)? Rozróżnia „zdolność wykonała się, tylko nie było
+ * co zmieniać" od „zdolność nie zrobiła nic" (Undead Servant przy pustym
+ * grobie). Deskryptorowo — po typie efektu, nie po nazwie karty (ADR 0002).
+ */
+const STATE_IDEMPOTENT_EFFECTS = Object.freeze({
+  tap_permanent: (object) => object?.tapped === true,
+  untap_permanent: (object) => object?.tapped === false,
+});
+
+function applyTriggerEffectsWereNoOp(state, ability, targets) {
+  const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
+  const relevant = effects.filter(Boolean);
+  if (relevant.length === 0) return false;
+  return relevant.every((effect) => {
+    const predicate = STATE_IDEMPOTENT_EFFECTS[effect.type];
+    if (!predicate) return false;
+    const targetId = targets[effect.targetIndex ?? 0];
+    const target = targetId != null ? state.objects.get(targetId) : null;
+    return Boolean(target && target.zone === 'battlefield' && predicate(target));
+  });
 }
 
 /**

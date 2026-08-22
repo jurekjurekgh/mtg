@@ -1148,8 +1148,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         // M106/Z2: powód „braku efektu" jest treścią dla gracza — inaczej
         // pusty nagłówek triggera wygląda jak zgubiona zdolność.
         if (e.noEffect) {
+          // M189/Z2: „zerowy wynik" to żargon implementacji (liczba zdarzeń),
+          // a nie informacja dla gracza. Po naprawie w triggers.js ten powód
+          // zostaje wyłącznie dla triggerów, które naprawdę nic nie zrobiły
+          // (Undead Servant przy pustym grobie) — nazywamy to wprost.
           const why = e.reason === 'no_targets' ? 'brak legalnych celów'
-            : e.reason === 'no_result' ? 'nic się nie wydarzyło (zerowy wynik)'
+            : e.reason === 'no_result' ? 'nie było czego wykonać'
             : 'warunek/cele nieaktualne';
           return `${nameOf(e.cardId)} — trigger bez efektu (${why})`;
         }
