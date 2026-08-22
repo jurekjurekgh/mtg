@@ -34,8 +34,9 @@
 1x Terminal Agony
 1x Downwind Ambusher
 1x Predator's Gambit
-3x Island
+4x Island
 1x Halo Forager
 1x Makeshift Mauler
 1x Rakshasa Vizier
 1x Final Parting
+1x Vanish from Sight

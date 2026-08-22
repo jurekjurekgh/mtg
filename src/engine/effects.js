@@ -3100,6 +3100,27 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }));
     return;
   }
+  if (effect.type === 'owner_library_top_or_bottom') {
+    // M177/D (Vanish from Sight): „Target nonland permanent's owner puts it
+    // on their choice of the top or bottom of their library” — decyzja
+    // należy do WŁAŚCICIELA celu (nie rzucającego): blokująca
+    // resolve_library_placement; sam ruch wykonuje komenda. Czar wisi
+    // (pendingSpell) — surveil 1 rzucającego dopiero po decyzji.
+    const targetId = targets[0];
+    if (targetId == null) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') return; // cel zniknął (CR 608.2b)
+    const ownerId = object.ownerId ?? object.controllerId;
+    state.pendingLibraryPlacement = {
+      playerId: ownerId, targetId, sourceCardId: sourceObject.cardId ?? null,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = ownerId;
+    state.events.push(event('library_placement_required', {
+      playerId: ownerId, targetId, cardId: object.cardId, sourceCardId: sourceObject.cardId ?? null,
+    }));
+    return true; // decyzja blokuje dalsze efekty czaru
+  }
   if (effect.type === 'bounce_to_library_top') {
     // Banishment Decree: „Put target artifact, creature, or enchantment on top
     // of its owner's library." CR 108.3/400.7: na wierzch biblioteki

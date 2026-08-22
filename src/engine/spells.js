@@ -353,6 +353,16 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       if (hasHexproofAgainst(state, object, casterId)) throw new Error(`Nielegalny cel: ${targetId} (hexproof)`);
       return object;
     }
+    // M177/D (Vanish from Sight, L48 oferta=walidacja): dowolny NIE-land na
+    // polu bitwy — typ istniał w ofercie (Thistledown Players), walidacja
+    // rzucała „Nieznany typ celu”.
+    if (spec?.type === 'nonland_permanent') {
+      if (!object || object.zone !== 'battlefield') throw new Error(`Nielegalny cel: ${targetId}`);
+      const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
+      if (isLand) throw new Error(`Nielegalny cel: ${targetId} (land)`);
+      if (hasHexproofAgainst(state, object, casterId)) throw new Error(`Nielegalny cel: ${targetId} (hexproof)`);
+      return object;
+    }
     throw new Error(`Nieznany typ celu: ${spec?.type}`);
   });
 }

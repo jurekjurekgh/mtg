@@ -271,3 +271,49 @@ test('C2: Final Parting — dwa OBOWIĄZKOWE wybory: ręka, potem grób', () => 
   assert.equal(chosen2.zone, 'graveyard', 'druga karta w grobie');
   assert.equal(state.pendingSearchChoice, null, 'decyzje domknięte');
 });
+
+// ---- Transza D ----------------------------------------------------------------
+
+test('D1: Vanish from Sight — decyzja należy do WŁAŚCICIELA celu, wierzch działa', () => {
+  const state = game('p1');
+  putCard(state, 'vanish', 'vanish-from-sight', 'p1', 'hand');
+  putCard(state, 'foe', 'highland-game', 'p2');
+  putCard(state, 'lib-p1', 'basic-forest', 'p1', 'library'); // dla surveil rzucającego
+  addMana(state, 'p1', 4, { colors: ['U'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'vanish' && c.targets?.[0] === 'foe');
+  assert.ok(cast, 'oferta na wrogi permanent');
+  assert.ok(execute(state, cast).ok);
+  resolveStack(state);
+  assert.ok(state.pendingLibraryPlacement, 'decyzja blokuje');
+  assert.equal(state.pendingLibraryPlacement.playerId, 'p2', 'wybiera WŁAŚCICIEL celu (p2), nie rzucający');
+  // Rzucający NIE może podjąć decyzji za właściciela.
+  const wrong = execute(state, { type: 'resolve_library_placement', playerId: 'p1', placement: 'top' });
+  assert.equal(wrong.ok, false, 'cudza decyzja odrzucona');
+  // Oferty w widoku właściciela: top i bottom.
+  const offers = playerView(state, 'p2').legalCommands.filter((c) => c.type === 'resolve_library_placement');
+  assert.equal(offers.length, 2, 'dwie opcje: wierzch/spód');
+  assert.ok(execute(state, { type: 'resolve_library_placement', playerId: 'p2', placement: 'top' }).ok);
+  const returned = [...state.objects.values()].find((o) => o.cardId === 'highland-game');
+  assert.equal(returned.zone, 'library', 'permanent w bibliotece');
+  assert.equal(state.zones.library.findIndex((id) => state.objects.get(id)?.controllerId === 'p2'), state.zones.library.indexOf(returned.id) >= 0 ? state.zones.library.indexOf(returned.id) : -1, 'na wierzchu własnej biblioteki');
+  // Surveil 1 rzucającego uruchamia się PO decyzji.
+  assert.ok(state.pendingSurveil, 'surveil po decyzji');
+  assert.equal(state.pendingSurveil.playerId, 'p1', 'surveil należy do rzucającego');
+});
+
+test('D2: Vanish from Sight — spód biblioteki (wybór właściciela)', () => {
+  const state = game('p1');
+  putCard(state, 'vanish', 'vanish-from-sight', 'p1', 'hand');
+  putCard(state, 'foe', 'highland-game', 'p2');
+  putCard(state, 'foe-lib', 'segmented-krotiq', 'p2', 'library'); // istniejąca karta w bibliotece p2
+  addMana(state, 'p1', 4, { colors: ['U'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'vanish' && c.targets?.[0] === 'foe');
+  assert.ok(execute(state, cast).ok);
+  resolveStack(state);
+  assert.ok(execute(state, { type: 'resolve_library_placement', playerId: 'p2', placement: 'bottom' }).ok);
+  const p2lib = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === 'p2');
+  const returned = [...state.objects.values()].find((o) => o.cardId === 'highland-game');
+  assert.equal(p2lib.at(-1), returned.id, 'odesłany permanent na SPODZIE biblioteki p2');
+});

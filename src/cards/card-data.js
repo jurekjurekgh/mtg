@@ -7869,6 +7869,30 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+
+// ---- Batch 42 — transza D ----
+
+  // 8. Vanish from Sight (DSK) {3}{U} Instant — właściciel celowanego
+  //    nielandowego permanentu kładzie go wg SWOJEGO wyboru na wierzch albo
+  //    spód biblioteki (nowa decyzja resolve_library_placement); potem
+  //    surveil 1 rzucającego (czar wisi w pendingSpell do decyzji).
+  defineCard({
+    id: 'vanish-from-sight', name: 'Vanish from Sight', set: 'DSK',
+    types: ['Instant'], colors: ['U'], manaCost: 4,
+    oracleText: "Target nonland permanent's owner puts it on their choice of the top or bottom of their library. Surveil 1. (Look at the top card of your library. You may put it into your graveyard.)",
+    imageUri: 'https://cards.scryfall.io/large/front/5/2/5254988b-3113-42f7-b751-517ffb3b40f0.jpg?1783909486',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'nonland_permanent' }],
+      effects: [
+        { type: 'owner_library_top_or_bottom' },
+        { type: 'surveil', amount: 1 },
+      ],
+    },
+    artId: 512, plan: 'Duskmourn',
+    support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 /**

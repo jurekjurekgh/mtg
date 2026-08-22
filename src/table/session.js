@@ -858,6 +858,11 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       // Wyciszamy WYŁĄCZNIE keywordy z backupu (opisuje je backup_resolved,
       // kolejna linia byłaby dubletem) — reszta trafia do gracza.
       // M177/A (Agate Assault): znacznik „if it would die this turn, exile it”.
+      // M177/D (Vanish from Sight): decyzja właściciela celu.
+      case 'library_placement_required':
+        return `${whoN(e.playerId)} wybiera: ${objectOrLki(e.targetId, e.cardId)} na wierzch czy spód biblioteki`;
+      case 'library_placement_resolved':
+        return `${objectOrLki(e.targetId, e.cardId)} trafia na ${e.placement === 'top' ? 'WIERZCH' : 'SPÓD'} biblioteki właściciela`;
       case 'exile_if_dies_marked':
         return `${objectOrLki(e.objectId, e.cardId)}: jeśli umrze w tej turze, trafi na wygnanie zamiast do grobu`;
       case 'keyword_granted': {

@@ -77,6 +77,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   // M166/D (Inferno Titan).
   resolve_damage_division: 'Podział obrażeń (kwoty)',
   resolve_land_type_choice: 'Wybór typu landa',
+  resolve_library_placement: 'Wierzch czy spód biblioteki',
   resolve_pay_or_sacrifice: 'Zapłata albo poświęcenie',
   resolve_optional_pay_choice: 'Dobrowolna dopłata',
   resolve_moonlit_choice: 'Moonlit (wybór efektu)',
@@ -348,6 +349,7 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_optional_draw') return 'resolve_optional_draw';
   if (command.type === 'resolve_hand_top_choice') return 'resolve_hand_top_choice';
   if (command.type === 'resolve_land_type_choice') return 'resolve_land_type_choice';
+  if (command.type === 'resolve_library_placement') return 'resolve_library_placement';
   if (command.type === 'resolve_pay_or_sacrifice') return 'resolve_pay_or_sacrifice';
   if (command.type === 'resolve_optional_pay_choice') return 'resolve_optional_pay_choice';
   if (command.type === 'resolve_moonlit_choice') return 'resolve_moonlit_choice';
@@ -397,6 +399,7 @@ function choiceRequestType(commands) {
   if (first.type === 'resolve_discard_choice') return 'target';
   if (first.type === 'resolve_hand_top_choice') return 'target';
   if (first.type === 'resolve_land_type_choice') return 'command';
+  if (first.type === 'resolve_library_placement') return 'command';
   if (first.type === 'resolve_pay_or_sacrifice') return 'command';
   if (first.type === 'resolve_optional_pay_choice') return 'command';
   if (first.type === 'resolve_moonlit_choice') return 'command';
@@ -803,6 +806,7 @@ function describeEffect(e) {
     transform: () => 'transform (obróć kartę)',
     scry: () => `scry ${e.amount ?? 1}`,
     search_library_two_cards_hand_and_grave: () => 'przeszukaj bibliotekę: jedna karta do ręki, druga do grobu, potem tasowanie',
+    owner_library_top_or_bottom: () => 'właściciel celu kładzie go na wierzch albo spód swojej biblioteki (jego wybór)',
     sacrifice_permanent: () => 'poświęć ten permanent',
     grant_keywords_until_end_of_turn: () => `zdobądź ${(e.keywords ?? []).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')} do końca tury`,
     // M73c: pełna mapa pozostałych typów — koniec „efekt." i surowych slugów.
@@ -1391,6 +1395,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_enter_as_copy: 'Wejście jako kopia — który Ally?',
   resolve_destroy_equipment_choice: 'Zniszczyć equipment?',
   resolve_land_type_choice: 'Typ landa',
+  resolve_library_placement: 'Wierzch czy spód biblioteki',
   resolve_pay_or_sacrifice: 'Zapłata albo poświęcenie',
   resolve_optional_pay_choice: 'Dobrowolna dopłata',
   resolve_moonlit_choice: 'Moonlit — wybór efektu',
@@ -1958,6 +1963,12 @@ export function commandLabel(cmd, session, view) {
       // M163/A: warianty koloru miały identyczne etykiety słownikowe.
       const COLOR_LABELS = { W: 'Biały (W)', U: 'Niebieski (U)', B: 'Czarny (B)', R: 'Czerwony (R)', G: 'Zielony (G)' };
       return `Kolor: ${COLOR_LABELS[cmd.color] ?? cmd.color}`;
+    }
+    case 'resolve_library_placement': {
+      // M177/D (Vanish from Sight): dwa warianty właściciela celu.
+      return cmd.placement === 'top'
+        ? 'Na WIERZCH twojej biblioteki (odzyskasz najbliższym dobraniem)'
+        : 'Na SPÓD twojej biblioteki';
     }
     case 'resolve_land_type_choice': {
       // M163/A: warianty typu landa — j.w. (identyczne etykiety).
