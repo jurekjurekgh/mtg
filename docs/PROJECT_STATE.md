@@ -1,7 +1,34 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-22 (M184: pętla jakości Żywym Testerem — Z1–Z5, 12 gier, 0 zgłoszeń po naprawach)
-- **Poprzednia:** 2026-08-22 (M183: Batch 44 — 10 kart; PIERWSZY realny auto-awans M181: talia theros)
+- **Ostatnia aktualizacja:** 2026-08-22 (M185: Batch 45 — 10 kart; fight, toxic, optional targets, enchant creature you control)
+- **Poprzednia:** 2026-08-22 (M184: pętla jakości Żywym Testerem — Z1–Z5, 12 gier, 0 zgłoszeń po naprawach)
+
+
+## M185 — Batch 45: 10 kart właściciela (2026-08-22, PR #69)
+
+Plan: `docs/plans/PLAN_2026-08-22-m185-batch45.md`. Karty: Ghost Warden
+({T}: +1/+1), Doomed Dissenter (dies→Zombie), Patron of the Arts
+(enters+dies→Treasure), Unearth (return mv≤3 z grobu — NOWE: maxManaValue
+w creature_card_in_graveyard, oferta+walidacja+etykieta; Cycling {2}),
+Call the Mountain Chocobo (tutor Mountain + token Bird z landfall +1/+0;
+Flashback {5}{R}), Ivy Lane Denizen (NOWE: filtry youControl/colorsInclude
+na another_creature_enters + requiresTarget), Malamet Battle Glyph (NOWY
+efekt `fight` CR 701.12 — moce liczone PRZED zadaniem; add_counter z
+onlyIfTargetEnteredThisTurn), Assert Perfection (NOWE: `optional: true`
+w spell.targets — „up to one target", enumeracja z null + null-safe
+eventy), Crawling Chorus (NOWY keyword `toxic N` CR 702.180 — pole przez
+cały łańcuch registry→identity→materialize→tokens→addObject, L48/L21;
+combat damage graczowi → N poison DODATKOWO; dies→Mite toxic 1 can't
+block), Pain for All (NOWE: aura `enchantType: creature_you_control`;
+ETB damage_from_enchanted_power w any_target z excludeAttachedHost; NOWY
+trigger `enchanted_creature_dealt_damage` na aurze → damage_each_opponent
+amountFrom damageAmount, źródłem HOST). Naprawa procesu: blok oferty aury
+wstawiony w castAuraSpell zamiast legalAuraCasts (ten sam pattern w dwóch
+funkcjach) — rozdzielone. Strażnik artId 350→360; testy batch45-kart (13);
+seed session-abilities 2→1.
+
+**Stan:** `test:all` **2750/2750**, build **52 moduły / 2387.8 kB**,
+benchmark regresji bota w progach.
 
 
 ## M184 — pętla jakości Żywym Testerem: Batche 43–44 (2026-08-22, PR #69)
