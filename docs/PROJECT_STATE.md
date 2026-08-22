@@ -1,7 +1,37 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-21 (M173: uwagi właściciela — Gray Slaad/Adventure, TOKEN_IMAGES, badge czasowych flag, Rustvine, Death-Hood Cobra)
-- **Poprzednia:** 2026-08-21 (M172: uwagi właściciela A–F)
+- **Ostatnia aktualizacja:** 2026-08-21 (M174: Batch 41 KOMPLET 10/10 — m.in. pierwszy czar z madness, intimidate, free-cast z grobu)
+- **Poprzednia:** 2026-08-21 (M173: uwagi właściciela — Gray Slaad/Adventure, TOKEN_IMAGES, badge, Rustvine, Cobra)
+
+
+## M174 — Batch 41: 10 kart (lista właściciela 2026-08-21, PR #69) — KOMPLET
+
+Plan: `docs/plans/PLAN_2026-08-21-m174-batch-41-kart.md`. Testy:
+`test/batch41-kart.test.js` (21). Dane Scryfall ×10 + token Zombie Army.
+
+- **A (fc30ba2):** Spin Out, Stall Out, Horizon Spellbomb — pełny reuse.
+- **B (132931b):** Immersturm Skullcairn (damage+discard celu), Toll of
+  the Invasion (mandatory reveal-choose-discard + amass Zombies).
+- **C (98d6fcb):** Terminal Agony — PIERWSZY czar z madness (strażnik S9
+  skonsumowany; pełna ścieżka discard→exile→rzut za {B}{R} z celem).
+  Fixy L48/L4: koszt z {T} własnego źródła many (excludeSourceId) +
+  prewalidacja kolorów przed płatnością (odrzucenie bez mutacji).
+- **D (dbb0734):** Burning-Yard Trainer, Downwind Ambusher (modal ETB
+  z celami), Predator's Gambit — INTIMIDATE (CR 702.13) w canBlock
+  i declareBlockers; fix L47: conditionalKeywords AUR gubione w
+  registry/identity.
+- **E (31d86c0):** Halo Forager — NOWA mechanika pendingGraveFreeCast
+  („pay {X} → cast instant/sorcery MV=X z dowolnego grobu za darmo";
+  exileInsteadOfGraveyard po rozstrzygnięciu/fizzle; pełne warstwy).
+- **Fix z pełnego pakietu (867ab5e):** deadlock modalnego triggera
+  (CR 603.3b — bez wybieralnego trybu zdolność nie wchodzi na stos)
+  + pas skip w ofercie/walidacji (L48).
+
+Talie: tokens +2, ostrza +1, graveyard +7 kart +2 Islands (Forager
+{1}{U}{B}). Strażnik artId 308→318.
+
+**Stan:** `test:all` **2646/2646**, build **52 moduły / 2264.4 kB**,
+bot-benchmark 9/9.
 
 
 ## M173 — uwagi właściciela, transza 2 (2026-08-21, PR #69)

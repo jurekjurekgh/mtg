@@ -27,19 +27,35 @@
 
 ## Transze (osobne, samodzielnie zielone commity)
 
-- [ ] Etap 0: plan + dane Scryfall ×10 (commit).
-- [ ] Transza A (reuse + spec creature_or_vehicle): Spin Out, Stall Out,
-      Horizon Spellbomb (+talie tokens). Testy RED→GREEN.
-- [ ] Transza B: Immersturm Skullcairn (target player discards) + Toll of
-      the Invasion (reveal-choose-discard + Amass Zombies) (+graveyard).
-- [ ] Transza C: Terminal Agony — pierwszy czar z madness (aktualizacja
-      strażnika S9→karta realna; testy pełnej ścieżki inkl. cel).
-- [ ] Transza D: Burning-Yard Trainer + Downwind Ambusher + Predator's
-      Gambit (intimidate w canBlock) (+ostrza/graveyard).
-- [ ] Transza E: Halo Forager — free-cast z grobu za {X} (nowy pending +
-      oferta + wykonanie + exile-zamiast-grobu; boty; warstwy UI/log).
-- [ ] Zamknięcie: `test:all` + build + benchmark próbka + dokumentacja
-      + opis PR.
+- [x] Etap 0: plan + dane Scryfall ×10 (9213fc5).
+- [x] Transza A: Spin Out, Stall Out, Horizon Spellbomb — pełny reuse
+      (creature_or_vehicle/tap+stun/cycling/search-to-hand/dies+payMana);
+      artId 308→311 (fc30ba2). Testy A1–A3.
+- [x] Transza B: Skullcairn (damage+discard celu — discard_cards
+      applyTo target) + Toll (reveal_hand_choose_discard z NOWYM wariantem
+      mandatory + amass Zombies/token_zombie_army). Strażnik L51 wymusił
+      wycenę amass; artId→313 (132931b). Testy B1–B2b.
+- [x] Transza C: Terminal Agony — PIERWSZY czar z madness (S9 z kotwicą
+      terminal-agony + bramka zakresu). Przy okazji 2 fixy L48/L4: oferta
+      zdolności z {T} własnego źródła many liczyła jego pipy
+      (excludeSourceId w producibleMana/canPayColoredCost) i odrzucona
+      aktywacja tapowała ląd (prewalidacja kolorów). artId→314 (98d6fcb).
+      Testy C1–C3+B3.
+- [x] Transza D: Trainer (buff innego Rycerza — reuse), Ambusher (modal
+      ETB z celami per tryb), Gambit (INTIMIDATE w canBlock + walidacji
+      declareBlockers; conditionalKeywords aury — fix L47 w registry
+      i identity). Strażniki: opis pola aury, proporcja lądów graveyard
+      (+2 Islands), artId→317, seed 3→35 (dbb0734). Testy D1–D3b.
+- [x] Transza E: Halo Forager — pendingGraveFreeCast (decyzja: rezygnacja
+      albo karta=X+cele z DOWOLNEGO grobu; czar pod kontrolą kontrolera;
+      exileInsteadOfGraveyard po rozstrzygnięciu i fizzle; pełne warstwy
+      engine/boty/UI/log; strażniki M122+A3). artId→318 (31d86c0).
+      Testy E1–E3. KOMPLET 10/10.
+- [x] Zamknięcie: pełny pakiet wykrył DEADLOCK modalnego triggera
+      (Ambusher z oboma trybami celowanymi przy pustym stole = „tylko
+      kapituluj") — fix wg CR 603.3b + pas skip (L48), test D2c (867ab5e).
+      `test:all` **2646/2646**, build **52 moduły / 2264.4 kB**,
+      bot-benchmark 9/9.
 
 ## Ryzyka / pułapki (z LESSONS)
 
@@ -55,4 +71,10 @@
 
 ## Podsumowanie wykonania
 
-(uzupełniane na końcu)
+**BATCH 41 KOMPLET 10/10** w 6 commitach (9213fc5, fc30ba2, 132931b,
+98d6fcb, dbb0734, 31d86c0, 867ab5e). Nowe mechaniki: mandatory
+reveal-discard, amass Zombies, pierwszy czar z madness (ścieżka M161
+zużyta produkcyjnie), intimidate (CR 702.13), conditionalKeywords aur,
+free-cast z grobu za {X} (Halo Forager). Fixy klas L48/L4/L47 + deadlock
+CR 603.3b wykryty benchmarkiem. Talie: tokens +2, ostrza +1, graveyard
++7 kart +2 Islands. Testy `test/batch41-kart.test.js` (21).
