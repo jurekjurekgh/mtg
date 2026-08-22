@@ -31,6 +31,26 @@ test('detectRawText: łapie surowy identyfikator zdarzenia (snake_case)', () => 
   assert.ok(found.some((f) => /identyfikator/i.test(f.message)));
 });
 
+// M189 (pętla jakości, transkrypt audyt-m187/g6): „token_wizard — trigger…"
+// przeszedł przez detektor, bo SNAKE_CASE_EVENT wymaga DWÓCH podkreślników,
+// a identyfikatory tokenów mają jeden („token_wizard", „token_squirrel").
+// Klasa L27/L40: „0 zgłoszeń" znaczyło „nie mam takiej reguły".
+test('detectRawText: łapie surowy identyfikator TOKENU (jedno podkreślenie)', () => {
+  const found = detectRawText([
+    '  [ROZGRYWKA]   • token_wizard — trigger (rzucenie czaru niebędącego stworem)',
+  ]);
+  assert.ok(found.some((f) => /identyfikator/i.test(f.message)),
+    `token_* w tekście dla gracza musi być zgłoszony: ${JSON.stringify(found)}`);
+});
+
+test('detectRawText: nie myli nazwy tokenu z poprawnym opisem', () => {
+  const found = detectRawText([
+    '  [ROZGRYWKA]   • Wizard zadaje 1 obrażenie (Ty)',
+    '  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Squirrel (1/1)',
+  ]);
+  assert.deepEqual(found, [], 'poprawne polskie opisy tokenów bez zgłoszeń');
+});
+
 test('detectRawText: nie zgłasza poprawnego polskiego tekstu', () => {
   const found = detectRawText([
     '  [ROZGRYWKA]   • Nieprzyjaciel: Krotiq — biblioteka → ręka',

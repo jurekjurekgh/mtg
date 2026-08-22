@@ -20,6 +20,10 @@
 /** Surowe identyfikatory, które nigdy nie powinny trafić do oczu gracza. */
 const RAW_IDENTIFIER = /\b(battlefield|graveyard|library|exile|stack|hand)\s*→|→\s*(battlefield|graveyard|library|exile|stack|hand)\b/;
 const SNAKE_CASE_EVENT = /\b[a-z]+(_[a-z]+){2,}\b/;
+// M189 (transkrypt audyt-m187/g6): identyfikatory TOKENÓW mają tylko jedno
+// podkreślenie („token_wizard", „token_squirrel"), więc przechodziły przez
+// regułę wyżej — log pokazywał je graczowi, a detektory milczały (L27/L40).
+const RAW_TOKEN_ID = /\btoken_[a-z][a-z0-9_]*/;
 // M171/Z4: „?:" (nazwa celu zastąpiona znakiem zapytania przed kwotą).
 const PLACEHOLDER = /(^|[\s:(])\?($|[\s:),.])|undefined|NaN|\[object |null\b/;
 
@@ -47,6 +51,10 @@ export function detectRawText(lines) {
     const m = line.match(SNAKE_CASE_EVENT);
     if (m && !/http|\.mjs|\.js\b/.test(line)) {
       push(found, 'info', `Surowy identyfikator „${m[0]}" w tekście dla gracza`, line);
+    }
+    const token = line.match(RAW_TOKEN_ID);
+    if (token && !/http|\.mjs|\.js\b/.test(line)) {
+      push(found, 'info', `Surowy identyfikator tokenu „${token[0]}" zamiast nazwy`, line);
     }
     if (PLACEHOLDER.test(line.replace(/\(brak\)|\(pusty\)|\(puste\)|\(pusta\)/g, ''))) {
       push(found, 'ui', 'Placeholder (?/undefined/null) w tekście dla gracza', line);
