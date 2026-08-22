@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Fleeting%20Distraction&set=fdn",
+  "print": "Fleeting Distraction (FDN)",
+  "name": "Fleeting Distraction",
+  "mana_cost": "{U}",
+  "cmc": 1.0,
+  "type_line": "Instant",
+  "oracle_text": "Target creature gets -1/-0 until end of turn.\nDraw a card.",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [],
+  "set": "fdn",
+  "collector_number": "155",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/0/c0b86a7b-4912-43a7-ab89-c3432385baa1.jpg?1783909081"
+  },
+  "pobrano": "2026-08-22"
+}

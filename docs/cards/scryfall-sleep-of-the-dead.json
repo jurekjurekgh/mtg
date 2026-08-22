@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Sleep%20of%20the%20Dead&set=thb",
+  "print": "Sleep of the Dead (THB)",
+  "name": "Sleep of the Dead",
+  "mana_cost": "{U}",
+  "cmc": 1.0,
+  "type_line": "Sorcery",
+  "oracle_text": "Tap target creature. It doesn't untap during its controller's next untap step.\nEscape—{2}{U}, Exile three other cards from your graveyard. (You may cast this card from your graveyard for its escape cost.)",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Escape"
+  ],
+  "set": "thb",
+  "collector_number": "66",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/4/0/4007572b-a6c8-4a56-b1a7-ff099189c9c0.jpg?1783931579"
+  },
+  "pobrano": "2026-08-22"
+}

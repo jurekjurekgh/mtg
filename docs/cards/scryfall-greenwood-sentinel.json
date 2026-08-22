@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Greenwood%20Sentinel&set=m20",
+  "print": "Greenwood Sentinel (M20)",
+  "name": "Greenwood Sentinel",
+  "mana_cost": "{1}{G}",
+  "cmc": 2.0,
+  "type_line": "Creature — Elf Scout",
+  "oracle_text": "Vigilance (Attacking doesn't cause this creature to tap.)",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Vigilance"
+  ],
+  "set": "m20",
+  "collector_number": "174",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/9/e9a1a70d-c146-453e-84c4-71cae4e0afaa.jpg?1783932966"
+  },
+  "pobrano": "2026-08-22"
+}

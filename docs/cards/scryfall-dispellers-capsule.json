@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Dispeller%27s%20Capsule&set=ala",
+  "print": "Dispeller's Capsule (ALA)",
+  "name": "Dispeller's Capsule",
+  "mana_cost": "{W}",
+  "cmc": 1.0,
+  "type_line": "Artifact",
+  "oracle_text": "{2}{W}, {T}, Sacrifice this artifact: Destroy target artifact or enchantment.",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [],
+  "set": "ala",
+  "collector_number": "8",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/3/d3cf0771-10d6-427a-b4e5-3e1d4db14667.jpg?1783942584"
+  },
+  "pobrano": "2026-08-22"
+}

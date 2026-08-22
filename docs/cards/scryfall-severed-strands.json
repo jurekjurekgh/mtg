@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Severed%20Strands&set=grn",
+  "print": "Severed Strands (GRN)",
+  "name": "Severed Strands",
+  "mana_cost": "{1}{B}",
+  "cmc": 2.0,
+  "type_line": "Sorcery",
+  "oracle_text": "As an additional cost to cast this spell, sacrifice a creature.\nYou gain life equal to the sacrificed creature's toughness. Destroy target creature an opponent controls.",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [],
+  "set": "grn",
+  "collector_number": "85",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/c/bce654d6-fcf1-40a8-8bdb-5c37e561f7dc.jpg?1783934171"
+  },
+  "pobrano": "2026-08-22"
+}

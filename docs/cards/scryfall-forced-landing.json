@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Forced%20Landing&set=war",
+  "print": "Forced Landing (WAR)",
+  "name": "Forced Landing",
+  "mana_cost": "{1}{G}",
+  "cmc": 2.0,
+  "type_line": "Instant",
+  "oracle_text": "Put target creature with flying on the bottom of its owner's library.",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [],
+  "set": "war",
+  "collector_number": "161",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/c/5cb319a7-564c-4748-82cf-c26ab110c32c.jpg?1783933414"
+  },
+  "pobrano": "2026-08-22"
+}
