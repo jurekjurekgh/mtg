@@ -64,6 +64,8 @@ function commandIdentityKey(cmd) {
 // przejrzany neutralny), inaczej remis wariantów u bota kieruje efekt
 // w zły cel (klasa L50 — 6 wystąpień: M96, M135, M138/Z1, M146, M156/F1, Q2).
 export const HOSTILE_TRIGGER_TARGET_EFFECTS = new Set([
+  // Batch 45 (Pain for All): obrażenia = moc zaczarowanego stwora — wrogi.
+  'damage_from_enchanted_power',
   'damage', 'damage_from_target_power', 'damage_divided', 'damage_to_controller', 'destroy_permanent',
   'destroy_if_least_power', 'destroy_artifact_gain_life_mana_value',
   'exile_permanent', 'exile_target_creature', 'exile_opponent_creature',

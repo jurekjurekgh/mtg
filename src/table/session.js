@@ -265,6 +265,7 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   enchanted_permanent_tapped: 'zatapnięcie zaczarowanego permanentu',
   // M166/B (Batch 40, Cacophodon): Enrage.
   dealt_damage: 'otrzymanie obrażeń',
+  enchanted_creature_dealt_damage: 'zaczarowany stwór otrzymał obrażenia',
   you_cast_spell_targeting_permanent: 'rzucenie czaru celującego w permanent',
 });
 
@@ -325,6 +326,7 @@ export function zoneLabel(zone) {
  * zależność w drugą stronę utworzyłaby cykl (build.mjs by go nie skleił).
  */
 export const KEYWORD_EVENT_LABELS = Object.freeze({
+  toxic: 'toksyczny (combat damage graczowi = poison)',
   haste: 'pośpiech', flying: 'latanie', trample: 'zadeptywanie', reach: 'zasięg',
   vigilance: 'czujność', menace: 'postrach', lifelink: 'dotykanie życia',
   deathtouch: 'dotykanie śmierci', first_strike: 'pierwsze uderzenie',

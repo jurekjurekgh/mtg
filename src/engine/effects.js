@@ -678,6 +678,18 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     dealNonCombatDamage(state, dealer, victimId, amount);
     return;
   }
+  if (effect.type === 'damage_from_enchanted_power') {
+    // Batch 45 (Pain for All, ETB): „enchanted creature deals damage equal
+    // to its power to any other target" — źródłem obrażeń jest GOSPODARZ
+    // aury (nie aura); moc efektywna z chwili rozstrzygnięcia (CR 608.2).
+    const targetId = targets[0];
+    if (targetId == null) return;
+    const host = state.objects.get(sourceObject.attachedTo);
+    if (!host || host.zone !== 'battlefield' || host.kind !== 'creature') return;
+    const amount = Math.max(0, effectivePower(host, state) ?? 0);
+    dealNonCombatDamage(state, host, targetId, amount);
+    return;
+  }
   if (effect.type === 'damage_each_opponent') {
     // „It deals N damage to each opponent" (Fear of Burning Alive, ETB):
     // obrażenia NIEsą combat damage (combat: false — istotne dla triggerów
@@ -685,10 +697,17 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // gracza poza kontrolerem źródła; kontroler jest nienaruszony.
     // amountFrom: 'manaSpent' — wartość z kontekstu triggera (Tellah:
     // „it deals that much damage to each opponent" — wydana mana rzutu).
-    const amount = effect.amountFrom === 'manaSpent' ? (context?.manaSpent ?? 0) : effect.amount;
+    // Batch 45 (Pain for All): amountFrom generycznie z kontekstu
+    // ('damageAmount' — tyle, ile obrażeń dostał zaczarowany stwór), a
+    // fromEnchanted przenosi ŹRÓDŁO obrażeń na gospodarza aury (CR 611.2c
+    // — to stwór zadaje, nie aura; istotne dla lifelinka/protection hosta).
+    const amount = effect.amountFrom ? (context?.[effect.amountFrom] ?? 0) : effect.amount;
+    const dmgSource = effect.fromEnchanted
+      ? (state.objects.get(sourceObject.attachedTo) ?? sourceObject)
+      : sourceObject;
     for (const player of state.players) {
       if (player.id === sourceObject.controllerId) continue;
-      dealNonCombatDamage(state, sourceObject, player.id, amount);
+      dealNonCombatDamage(state, dmgSource, player.id, amount);
     }
     return;
   }
@@ -1348,6 +1367,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         abilities: effect.abilities ?? [],
         // M69 (Relic Robber — Goblin Construct „This token can't block").
         cantBlock: Boolean(effect.cantBlock),
+        // Batch 45 (Crawling Chorus — token Mite z toxic 1, CR 702.180).
+        ...(effect.toxic != null ? { toxic: effect.toxic } : {}),
         // M147 (Static Net — Powerstone): token wchodzi ZATAPNIĘTY.
         tapped: Boolean(effect.tapped),
       });

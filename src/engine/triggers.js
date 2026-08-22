@@ -243,10 +243,14 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
   if (spec.type === 'any_target') {
     // „Any target": przeciwnik źródła (preferencja), potem stwory w kolejności
     // pola bitwy, na końcu kontroler — porządek dawnej polityki.
+    // Batch 45 (Pain for All): „any OTHER target" — excludeAttachedHost
+    // wyklucza GOSPODARZA aury-źródła z kandydatów.
+    const excludedHostId = spec.excludeAttachedHost ? (sourceObject.attachedTo ?? null) : null;
     const players = state.players.map((p) => p.id);
     const opponentId = state.players.find((p) => p.id !== sourceObject.controllerId)?.id ?? null;
     const creatures = state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
+      if (excludedHostId != null && objectId === excludedHostId) return false;
       return object?.zone === 'battlefield' && object.kind === 'creature' && !hexproofBlocked(object);
     });
     const out = [];
@@ -1566,6 +1570,17 @@ export function processTriggers(state, recentEvents) {
         for (const ability of effectiveAbilities(victim)) {
           if (ability?.trigger?.event === 'dealt_damage') {
             tryFire(state, ability, victim, [], events, { damageAmount: ev.amount, damageSourceId: ev.source });
+          }
+        }
+        // Batch 45 (Pain for All): „Whenever enchanted creature is dealt
+        // damage" — trigger na AURZE przypiętej do poszkodowanego stwora
+        // (źródłem triggera jest aura; kwota w kontekście zdarzenia).
+        for (const attachment of [...state.objects.values()]) {
+          if (attachment.zone !== 'battlefield' || attachment.attachedTo !== ev.target) continue;
+          for (const ability of effectiveAbilities(attachment)) {
+            if (ability?.trigger?.event === 'enchanted_creature_dealt_damage') {
+              tryFire(state, ability, attachment, [], events, { damageAmount: ev.amount, damageSourceId: ev.source });
+            }
           }
         }
       }

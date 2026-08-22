@@ -285,6 +285,8 @@ const HANDLED_TRIGGER_EVENTS = new Set([
   'enchanted_permanent_tapped',
   // M166/B (Batch 40, Cacophodon): „Whenever this creature is dealt damage".
   'dealt_damage',
+  // Batch 45 (Pain for All): trigger na AURZE — host dostał obrażenia.
+  'enchanted_creature_dealt_damage',
 ]);
 
 test('strażnik: każdy trigger w registry używa zdarzenia obsługiwanego przez engine', () => {

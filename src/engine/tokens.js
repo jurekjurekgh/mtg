@@ -41,7 +41,7 @@ export function nextCopyNumber(state, name) {
   return max + 1;
 }
 
-export function createBattlefieldToken(state, controllerId, { cardId, name, kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [], keywords = [], abilities = [], cantBlock = false, transformTo = null, station = null, saga = null, tapped = false, copyNumber = null }) {
+export function createBattlefieldToken(state, controllerId, { cardId, name, kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [], keywords = [], abilities = [], cantBlock = false, toxic = null, transformTo = null, station = null, saga = null, tapped = false, copyNumber = null }) {
   if (!state || !state.players.some((p) => p.id === controllerId)) throw new Error('Nieznany kontroler tokenu');
   if (!cardId || !name) throw new TypeError('Token wymaga cardId i nazwy');
   // Token niebędący stworem (np. Treasure — artefakt) nie ma statystyk:
@@ -77,6 +77,7 @@ export function createBattlefieldToken(state, controllerId, { cardId, name, kind
     ...(tapped ? { tapped: true } : {}),
     enteredOnTurn: state.turn.number,
     ...(cantBlock ? { cantBlock: true } : {}),
+    ...(toxic != null ? { toxic } : {}),
     // CR 707.8a: token-kopia permanentu dwustronnego jest tokenem
     // dwustronnym — niesie deskryptor drugiej strony i może się przemienić
     // (craft/transform). Tokeny tworzone „z własnym zestawem cech" (Treasure,

@@ -1,6 +1,7 @@
 # Mirrodin
 
 1x Great Furnace
+1x Crawling Chorus
 1x Horizon Spellbomb
 1x Panic Spellbomb
 1x Rustvine Cultivator
@@ -28,7 +29,7 @@
 1x Steelfin Whale
 1x True Conviction
 1x Gloomfang Mauler
-3x Plains
+4x Plains
 3x Island
 4x Swamp
 2x Mountain

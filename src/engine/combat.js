@@ -76,6 +76,13 @@ function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amoun
   if (actual > 0 && hasKeyword(state, source, 'lifelink')) {
     events.push(...changeLife(state, source.controllerId, actual));
   }
+  // Toxic N (CR 702.180a, Batch 45 — Crawling Chorus): gracz, któremu to
+  // źródło zadało combat damage, dostaje DODATKOWO N poison counterów
+  // (życie spada normalnie — w odróżnieniu od infect). Tylko przy realnie
+  // zadanych obrażeniach (prewencja w całości = brak poisonu).
+  if (actual > 0 && (source?.toxic ?? 0) > 0) {
+    events.push(...addPoisonCounters(state, targetPlayerId, source.toxic));
+  }
 }
 
 /**

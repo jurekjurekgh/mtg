@@ -237,6 +237,8 @@ export function defineCard(data) {
     // Endure (TDM, Kin-Tree Nurturer): N liczników +1/+1 ALBO token Spirit N/N
     // — decyzja resolve_endure_choice; kwalifikacja licznika danymi.
     endure: data.endure ?? null,
+    // Toxic N (CR 702.180) — wartość liczbowa keyworda (Batch 45).
+    toxic: data.toxic ?? null,
     // Exploit (CR 702.110, Silumgar Butcher): flaga ETB — opcjonalne
     // poświęcenie przy wejściu (resolve_exploit_choice), potem trigger „exploits".
     exploit: data.exploit ? Object.freeze({}) : null,

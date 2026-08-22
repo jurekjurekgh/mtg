@@ -671,6 +671,7 @@ const ABILITY_KEYWORD_LABELS = Object.freeze({
 
 export const KEYWORD_LABELS = Object.freeze({
   intimidate: 'zastraszenie (blok: artefakty/wspólny kolor)',
+  toxic: 'Toksyczny (combat damage graczowi = poison)',
   flying: 'Latanie', vigilance: 'Czujność', transform: 'Transform', reach: 'Zasięg',
   haste: 'Pośpiech', menace: 'Postrach', lifelink: 'Dotykanie życia', deathtouch: 'Dotykanie śmierci',
   trample: 'Zadeptywanie', first_strike: 'Pierwsze uderzenie', hexproof: 'Hexproof (niecelowalność)',
@@ -989,6 +990,7 @@ function describeEffect(e) {
     attach_equipment_to_source: () => 'przyczep ekwipunek do tego stwora',
     damage_creatures_with_keyword: () => `${damageCount(e.amount ?? 1)} stworom z „${e.keyword ?? '?'}”`,
     damage_from_target_power: () => 'obrażenia równe mocy stwora',
+    damage_from_enchanted_power: () => 'zaczarowany stwór zadaje obrażenia równe swojej mocy',
     fight: () => 'walka: stwory zadają sobie nawzajem obrażenia równe mocy',
     endure_x: () => 'endure X (liczniki +1/+1 albo token Spirit)',
     grant_protection_until_end_of_turn: () => 'ochrona do końca tury',

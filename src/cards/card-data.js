@@ -8643,6 +8643,57 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['„up to one target" — wariant bez drugiego celu jest legalny (pump bez ugryzienia); pump PRZED obrażeniami (kolejność Oracle — obrażenia liczą moc po +1/+0)'],
   }),
 
+  // 9. Crawling Chorus (ONE) — Toxic 1 (NOWY keyword, CR 702.180); dies →
+  //    token Phyrexian Mite 1/1 (toxic 1, can't block).
+  defineCard({
+    id: 'crawling-chorus', name: 'Crawling Chorus', set: 'ONE',
+    types: ['Creature'], subtypes: ['Phyrexian', 'Horror'], colors: ['W'],
+    power: 1, toughness: 1, manaCost: 1, keywords: ['toxic'], toxic: 1,
+    oracleText: 'Toxic 1 (Players dealt combat damage by this creature also get a poison counter.)\nWhen this creature dies, create a 1/1 colorless Phyrexian Mite artifact creature token with toxic 1 and "This token can\'t block."',
+    imageUri: 'https://cards.scryfall.io/large/front/a/a/aace4c44-7250-414b-aac4-df042a1e2e1d.jpg?1783918086',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies' },
+        effect: [{
+          type: 'create_token', cardId: 'token_phyrexian_mite', name: 'Phyrexian Mite',
+          kind: 'creature', power: 1, toughness: 1, colors: [],
+          types: ['Artifact', 'Creature'], subtypes: ['Phyrexian', 'Mite'],
+          keywords: ['toxic'], toxic: 1, cantBlock: true,
+        }],
+      }),
+    ],
+    artId: 456, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+    notes: ['toxic N: combat damage graczowi daje mu N poison counterów DODATKOWO do obrażeń (inaczej niż infect — życie spada normalnie)'],
+  }),
+
+  // 10. Pain for All (EOE) — „Enchant creature you control"; ETB: host zadaje
+  //     obrażenia = swojej mocy w dowolny INNY cel; każdy damage w hosta
+  //     odbija się w każdego przeciwnika (NOWY trigger na aurze).
+  defineCard({
+    id: 'pain-for-all', name: 'Pain for All', set: 'EOE',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['R'], manaCost: 3,
+    oracleText: 'Enchant creature you control\nWhen this Aura enters, enchanted creature deals damage equal to its power to any other target.\nWhenever enchanted creature is dealt damage, it deals that much damage to each opponent.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/2/d2948913-817b-4715-92d5-ed3cde347be7.jpg?1783905949',
+    aura: { enchantType: 'creature_you_control' },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'any_target', excludeAttachedHost: true } },
+        effect: [{ type: 'damage_from_enchanted_power' }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enchanted_creature_dealt_damage' },
+        effect: [{ type: 'damage_each_opponent', amountFrom: 'damageAmount', fromEnchanted: true }],
+      }),
+    ],
+    artId: 344, plan: 'The Edge',
+    support: { status: 'supported', limitations: [] },
+    notes: ['źródłem obu porcji obrażeń jest ZACZAROWANY STWÓR (nie aura); utrata kontroli hosta zrzuca aurę (enchant creature you control — SBA)'],
+  }),
+
 ]);
 
 /**

@@ -116,6 +116,12 @@ export function isLegalAuraHost(attachment, host) {
     const isVehicle = (host.subtypes ?? []).includes('Vehicle');
     return host.kind === 'creature' || isVehicle;
   }
+  // Batch 45 (Pain for All): „Enchant creature you control" — stwór POD
+  // KONTROLĄ kontrolera aury; utrata kontroli hosta = aura spada (SBA,
+  // removeIllegalAttachments — CR 704.5n).
+  if (enchantKind === 'creature_you_control') {
+    return host.kind === 'creature' && host.controllerId === attachment.controllerId;
+  }
   // Zwykła aura / bestow / equipment — wyłącznie stwory.
   return host.kind === 'creature';
 }

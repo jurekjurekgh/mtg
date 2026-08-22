@@ -369,4 +369,6 @@ export const MANA_COSTS = {
   "ivy-lane-denizen": "{3}{G}",
   "malamet-battle-glyph": "{G}",
   "assert-perfection": "{1}{G}",
+  "crawling-chorus": "{W}",
+  "pain-for-all": "{2}{R}",
 };
