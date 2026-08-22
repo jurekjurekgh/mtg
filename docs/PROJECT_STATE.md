@@ -1,6 +1,31 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-22 (M176: przebieg tur w 3. osobie; M177: Batch 42 KOMPLET — detain, shield, exile-z-grobu, tap X artefaktów)
+- **Ostatnia aktualizacja:** 2026-08-22 (M178: REWOLUCJA TALII — ADR 0023: 14 talii per plan, benchmark na stałej próbce jednoplanowych)
+- **Poprzednia:** 2026-08-22 (M176: przebieg tur w 3. osobie; M177: Batch 42 KOMPLET)
+
+
+## M178 — rewolucja talii (2026-08-22, PR #69, ADR 0023)
+
+Zlecenie właściciela. Plan: `docs/plans/PLAN_2026-08-22-m178-rewolucja-talii.md`.
+
+- **Talie z generatora** `tools/generate-plan-decks.mjs`: plan ≥15 kart =
+  własna talia (innistrad 31, tarkir 28, mirrodin 28, dominaria 27,
+  warhammer 22, wiedzmin 20, alara 18, forgotten-realms/zendikar/ravnica 17);
+  mniejsze plany w 4 workach (baśnie/legendy/dziki/mroczny — PRZEJŚCIOWE:
+  15+ kart = wyjście z worka). Singleton, landy ceil(nieland/2) wg pipów.
+  Każda wspierana karta w DOKŁADNIE jednej talii (strażnik repo-decks).
+- **Stare talie usunięte** (green/red/black/azorius/graveyard/tokens/ostrza/
+  innistrad/wiedzmin/sojusznicy/spellslinger/mechanicy) — nowe karty idą do
+  talii SWOJEGO planu (koniec praktyki „tylko tokens/ostrza/graveyard”).
+- **Benchmark na stałej próbce** BENCH_DECKS (6 talii JEDNOPLANOWYCH,
+  672 mecze ~80 s; było: pełna macierz 2496/~6 min). Pomiar: 92.9% vs
+  random / 75.3% vs aggro → próg vs aggro 0.57→0.60. Testy też wyłącznie
+  na taliach jednoplanowych (decyzja właściciela).
+- **Testy:** ~35 plików przepiętych; 4 testy etykiet table-session
+  przepisane na deterministyczne scenariusze silnikowe (L53 — koniec
+  recydywy hunterów); reszta seedów przelosowana hunterami.
+- Fix danych: 11 kart miało plan tylko w CSV kolekcji — uzupełnione w
+  card-data (bez tego generator nie obejmował ich taliami).
 - **Poprzednia:** 2026-08-22 (M175: uwagi właściciela do Death-Hood Cobra — log grantu, dubel bota, badge)
 
 

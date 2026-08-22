@@ -44,19 +44,30 @@ wg motywu i najmniejszej talii).
 
 ## Kroki
 
-- [ ] 1. Plan (ten plik) + fix 11 brakujących pól `plan` w card-data — commit.
-- [ ] 2. Generator talii (tools/generate-plan-decks.mjs, deterministyczny) +
+- [x] 1. Plan (ten plik) + fix 11 brakujących pól `plan` w card-data — commit.
+- [x] 2. Generator talii (tools/generate-plan-decks.mjs, deterministyczny) +
   14 nowych talii + usunięcie 12 starych + aktualizacja repo-decks.test — commit.
-- [ ] 3. Triage `npm test`: naprawa testów po plikach/klasach (fixtury talii,
+- [x] 3. Triage `npm test`: naprawa testów po plikach/klasach (fixtury talii,
   zamrożone seedy — hunter L25) — commity partiami.
-- [ ] 4. bot-benchmark: zamiast pełnej macierzy par talii — STAŁA próbka
+- [x] 4. bot-benchmark: zamiast pełnej macierzy par talii — STAŁA próbka
   kilku par (doprecyzowanie właściciela: bez wszystkich kombinacji i 100k
   meczów; różnorodność kolorów/stylów, deterministyczna); rekalibracja
   progów — commit.
-- [ ] 5. ADR 0023 (polityka talii per plan + worki + zasady przyszłych
+- [x] 5. ADR 0023 (polityka talii per plan + worki + zasady przyszłych
   batchów), LESSONS, PROJECT_STATE, opis PR — commit.
-- [ ] 6. test:all + build + push + CI.
+- [x] 6. test:all + build + push + CI.
 
 ## Wynik
 
-(uzupełnić po wykonaniu)
+- Commity: fa8cc7b (plan + fix 11 pól plan), 315fb74 (rewolucja: talie,
+  generator, testy, benchmark), dalsze — ADR/dokumentacja.
+- 14 talii z generatora (10 jednoplanowych + 4 worki), każda wspierana karta
+  w dokładnie jednej talii (strażnik repo-decks), landy 1:2 z konstrukcji.
+- Doprecyzowania właściciela wdrożone: próg 15+ kart = własna talia planu;
+  testy i benchmark WYŁĄCZNIE na taliach jednoplanowych (worki przejściowe).
+- Benchmark: BENCH_DECKS (6 talii, 672 mecze, ~80 s; było 2496/~6 min);
+  pomiar 92.9% vs random / 75.3% vs aggro; próg vs aggro 0.57→0.60.
+- Testy: ~35 plików przepiętych; 4 testy etykiet table-session przepisane
+  na deterministyczne scenariusze silnikowe (L53); seedy przelosowane
+  hunterami tam, gdzie pełna partia jest treścią testu.
+- ADR 0023 + L53; fast tier 2670/2670, bot-benchmark 9/9.

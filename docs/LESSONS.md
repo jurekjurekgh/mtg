@@ -24,6 +24,18 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 
 ---
 
+## L53 (2026-08-22) — Test scenariuszowy na zamrożonym seedzie pełnej partii to dług odsetkowy
+
+Cztery testy etykiet w table-session miały po 10+ wpisów historii
+„przelosowane hunterem po batchu X” — KAŻDA zmiana talii oznaczała rundę
+polowań na seedy. Rewolucja talii (M178, ADR 0023) pokazała koszt zbiorczo:
+95 czerwonych testów naraz. Reguła: jeśli test sprawdza ETYKIETY/przepływ
+decyzji, buduj DETERMINISTYCZNY scenariusz silnikowy (putCard + execute +
+describeGameEvent) zamiast łowić seed pełnej partii; zamrożony seed jest
+uzasadniony tylko tam, gdzie testowana jest właśnie cała partia (fingerprint,
+determinizm, panel end-to-end). Przy okazji: fixtury talii w testach wybieraj
+z talii JEDNOPLANOWYCH (worki są przejściowe — ADR 0023 §5).
+
 ## L51 (2026-08-20) — Efekt celowany bez klasyfikacji to remis wariantów; strażnik zamiast łatek
 
 **Objaw:** klasa L50 po raz szósty (M96, M135, M138/Z1, M146, M156/F1, M156/Q1+Q2):

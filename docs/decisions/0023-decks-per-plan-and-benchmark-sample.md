@@ -1,0 +1,54 @@
+# ADR 0023: Talie per PLAN (worki dla małych planów) i stała próbka benchmarku
+
+- **Status:** Zaakceptowana
+- **Data:** 2026-08-22
+- **Decydenci:** właściciel projektu (zlecenie M178 + dwa doprecyzowania)
+
+## Kontekst
+
+Do M177 karty z batchów trafiały wyłącznie do trzech talii (tokens/ostrza/
+graveyard), bo pozostałe miały „zamrożone seedy” testów scenariuszowych.
+Efekt: talie od 30 do 70 kart, składy bez tożsamości, a każda zmiana talii
+i tak wymuszała przelosowanie seedów (recydywa L25 — niektóre testy miały
+po 10+ wpisów historii hunterów).
+
+## Decyzja
+
+1. **Talie buduje generator** `tools/generate-plan-decks.mjs` (źródło prawdy
+   przydziału; strażnik `repo-decks.test.js` pilnuje zgodności plików
+   z generatorem oraz pokrycia katalogu 1:1).
+2. **Plan z ≥15 kartami wspieranymi = własna talia jednoplanowa.** Mniejsze
+   plany trafiają do jednego z 4 „worków” (baśnie/legendy/dzikie światy/
+   mroczne światy — mapa w generatorze). Każda wspierana karta jest w
+   DOKŁADNIE jednej talii.
+3. **Singleton** (1x poza basic landami); **landy = ceil(nielandów/2)**,
+   kolory proporcjonalnie do pipów kosztów many (każdy używany kolor ≥1).
+4. **Worki są przejściowe:** gdy plan uzbiera 15+ kart, przechodzi z worka
+   do własnej talii (edycja mapy w generatorze + regeneracja).
+5. **Testy i benchmark korzystają WYŁĄCZNIE z talii jednoplanowych**
+   (decyzja właściciela): konwersja worka nie może wymuszać przeróbek
+   testów ani rekalibracji progów. Benchmark gra na STAŁEJ próbce
+   `BENCH_DECKS` (6 talii jednoplanowych, ~672 mecze) zamiast pełnej
+   macierzy `decks/*.txt`; pełne B0 dalej tylko na komendę (ADR 0018).
+
+## Procedura dla przyszłych batchów
+
+- Nowa karta → talia jej PLANU (jednoplanowa albo właściwy worek wg mapy
+  w generatorze); po dopisaniu karty do katalogu uruchom
+  `node tools/generate-plan-decks.mjs` (przelicza też landy).
+- Nowy plan → dopisz do `WOREK_DECKS` (motyw + najmniejsza talia); generator
+  wywróci się jawnym błędem, jeśli plan nie ma przydziału, a strażnik
+  progu przypilnuje, żeby plan z 15+ kartami dostał własną talię.
+- Zmiana talii jednoplanowej z próbki benchmarku może przesunąć wyniki —
+  progi rekalibrujemy regułą „zmierzone −15 p.p., tylko w górę”
+  (historia w nagłówku test/bot-benchmark.test.js).
+- Testy scenariuszowe: preferuj deterministyczne scenariusze silnikowe
+  (wzorzec: 4 testy etykiet w table-session po M178) zamiast zamrożonych
+  seedów pełnych partii; gdy seed konieczny — hunter jak dotąd (L25).
+
+## Konsekwencje
+
+- Skład talii przewidywalny i równy (23–39 kart), tożsamość = plan.
+- Benchmark szybszy (~80 s vs ~6 min) i odporny na wzrost liczby talii.
+- Stare nazwy talii (green/red/black/azorius/graveyard/tokens/ostrza/
+  sojusznicy/spellslinger/mechanicy) przestały istnieć — testy przepięte.
