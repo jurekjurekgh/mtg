@@ -23,7 +23,7 @@
 1x Instant Ramen
 8x Plains
 5x Forest
-3x Island
+4x Island
 1x Blade-Blizzard Kitsune
 1x Knockout Maneuver
 1x Krotiq Nestguard
@@ -35,3 +35,5 @@
 1x Swooping Protector
 1x You're Not Alone
 1x Sifter Wurm
+1x Azorius Justiciar
+1x Merchant's Dockhand

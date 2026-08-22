@@ -411,6 +411,9 @@ export function legalActivatedAbilities(state, playerId) {
       // graveyard") działa WYŁĄCZNIE z grobu — na polu bitwy nie jest oferowana
       // (oferta z grobu jest niżej; spójność oferty i walidacji).
       if (ability.fromGraveyard) continue;
+      // Detain (CR 701.29, M177/E): zdolności aktywowane zatrzymanego
+      // permanentu nie mogą być aktywowane (oferta i walidacja — L48).
+      if (object.detained) continue;
       // Mana dostępna na TĘ aktywację: koszt {T} wyklucza samo źródło z
       // auto-tapu (CR 601.2h — stała musi być odkręcona w chwili płatności,
       // więc land-źródło z kosztem {T} nie może dać many na własną aktywację,
@@ -622,6 +625,25 @@ export function legalActivatedAbilities(state, playerId) {
       // oferta ma jeden wariant bez xValue (i endure 0 = brak skutku). X
       // ogranicza dostępna mana po odjęciu stałej części kosztu ORAZ ŻYCIE
       // (CR 118.4: nie zapłacisz więcej życia, niż masz).
+      // M177/E (Merchant's Dockhand): „{3}{U}, {T}, Tap X untapped artifacts
+      // you control” — X = liczba INNYCH nietapniętych artefaktów wskazanych
+      // w komendzie; warianty X=1..N (pierwsze N w porządku pola bitwy —
+      // egzemplarze kosztu są z perspektywy zdolności równoważne).
+      if (targetSpec.length === 0 && ability.cost?.tapXArtifacts) {
+        if ((ability.cost?.mana ?? 0) > mana) continue;
+        if (ability.cost?.tap && object.tapped) continue;
+        if (ability.cost?.tap && tapBlockedBySummoningSickness(state, object, ability)) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
+        const artifactPool = state.zones.battlefield.filter((aid) => {
+          const cand = state.objects.get(aid);
+          return cand && cand.id !== id && cand.controllerId === playerId && !cand.tapped
+            && (cand.kind === 'artifact' || (cand.types ?? []).includes('Artifact'));
+        });
+        for (let x = 1; x <= artifactPool.length; x += 1) {
+          out.push({ objectId: id, abilityIndex: index, ability, xValue: x, tapArtifactIds: artifactPool.slice(0, x) });
+        }
+        continue;
+      }
       if (targetSpec.length === 0 && ability.cost?.manaX && ability.cost?.payLifeX) {
         const fixed = ability.cost.mana ?? 0;
         const life = state.players.find((entry) => entry.id === playerId)?.life ?? 0;
@@ -884,7 +906,7 @@ export function legalActivatedAbilities(state, playerId) {
  * go na maszynowe odrzucenie. `attackerId` jest wymagany wyłącznie dla
  * Ninjutsu; `targets` i `xValue` dla zdolności celowanych/{X}.
  */
-export function activateAbility(state, playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, opponentTargetIdArg, grantedFromEquipmentArg) {
+export function activateAbility(state, playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, opponentTargetIdArg, grantedFromEquipmentArg, tapArtifactIdsArg) {
   const object = state.objects.get(objectId);
   if (!object || object.controllerId !== playerId) throw new Error('Nielegalny obiekt zdolności');
   // Zdolność NADANA nosicielowi przez przypięty sprzęt (Blazing Torch) żyje
@@ -945,6 +967,8 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   } else if (object.zone !== 'battlefield') {
     throw new Error('Zdolność wymaga permanenta na polu bitwy');
   }
+  // Detain (CR 701.29, M177/E): walidacja niezależna od oferty (L48).
+  if (object.detained) throw new Error('Zatrzymany (detain) permanent nie aktywuje zdolności');
   // Morph/megamorph (CR 702.36/702.37): obrót twarzą do góry działa tylko,
   // póki permanent leży twarzą w dół — po obrocie zdolność wygasa. Walidacja
   // spójna z ofertą legalCommands (wcześniej lukę maskował throw w
@@ -1047,7 +1071,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     state.events.push(e);
     return e;
   }
-  return performActivation(state, { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, opponentTargetId: opponentTargetIdArg, grantedFromEquipment: grantedFromEquipmentArg ?? false });
+  return performActivation(state, { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, opponentTargetId: opponentTargetIdArg, grantedFromEquipment: grantedFromEquipmentArg ?? false, tapArtifactIds: tapArtifactIdsArg });
 }
 
 /**
@@ -1058,7 +1082,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
  * zdarzenie ability_activated (albo null).
  */
 export function performActivation(state, ctx) {
-  const { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId } = ctx;
+  const { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, tapArtifactIds } = ctx;
   const opponentTargetId = ctx.opponentTargetId;
   const object = state.objects.get(objectId);
   if (!object || object.controllerId !== playerId) throw new Error('Nielegalny obiekt zdolności');
@@ -1167,8 +1191,27 @@ export function performActivation(state, ctx) {
       }
     }
   }
+  // M177/E (Merchant's Dockhand): walidacja artefaktów do kosztu „Tap X”
+  // PRZED jakąkolwiek mutacją (CR 601.2h — odrzucona komenda nie tapuje).
+  let artifactsToTap = null;
+  if (cost.tapXArtifacts) {
+    const list = Array.isArray(tapArtifactIds) ? tapArtifactIds : [];
+    if (list.length === 0 || new Set(list).size !== list.length) throw new Error('Koszt Tap X artifacts wymaga niepustej listy różnych artefaktów');
+    for (const aid of list) {
+      const cand = state.objects.get(aid);
+      const isArtifact = cand && (cand.kind === 'artifact' || (cand.types ?? []).includes('Artifact'));
+      if (!cand || cand.zone !== 'battlefield' || cand.controllerId !== playerId || cand.tapped || !isArtifact || cand.id === objectId) {
+        throw new Error('Nielegalny artefakt w koszcie Tap X artifacts');
+      }
+    }
+    if ((xValue ?? list.length) !== list.length) throw new Error('X musi równać się liczbie tapowanych artefaktów');
+    artifactsToTap = list;
+  }
   if (cost.tap) {
     tapObject(state, objectId, playerId);
+  }
+  if (artifactsToTap) {
+    for (const aid of artifactsToTap) tapObject(state, aid, playerId);
   }
   // Koszt „{T}" zdolności NADANEJ nosicielowi (Blazing Torch): tapuje się
   // NOSICIEL (stwór ze sprzętem), nie sam sprzęt — zdolność ma nosiciel
@@ -1291,7 +1334,7 @@ export function performActivation(state, ctx) {
       effectTargets,
       // M115: X to WARTOŚĆ WYBRANA przez gracza, nie łączna zapłacona mana —
       // przy koszcie {X}{B} te liczby się różnią (X=2 → 3 many).
-      xValue: cost.manaX ? (xValue ?? 0) : undefined,
+      xValue: (cost.manaX || cost.tapXArtifacts) ? (xValue ?? 0) : undefined,
       crewCreatureIds: crewCreaturesToTap ?? undefined,
       // M153/A1: Station — id zatapianego INNEGO stwora (koszt tapOtherCreature),
       // żeby log podał jego nazwę.
@@ -1321,7 +1364,7 @@ export function performActivation(state, ctx) {
     targets: (ability.targets?.length ? chosenTargets : []),
     // M115: X to WARTOŚĆ WYBRANA przez gracza, nie łączna zapłacona mana —
       // przy koszcie {X}{B} te liczby się różnią (X=2 → 3 many).
-      xValue: cost.manaX ? (xValue ?? 0) : undefined,
+      xValue: (cost.manaX || cost.tapXArtifacts) ? (xValue ?? 0) : undefined,
     // Crew (CR 701.36): zatapnięte stwory widoczne w logu.
     ...(crewCreaturesToTap ? { crewCreatureIds: [...crewCreaturesToTap] } : {}),
     // M153/A1: Station — id zatapianego INNEGO stwora w logu.

@@ -123,6 +123,7 @@ function defaultBotFactory(seed, ctx) {
     gain_life: 'zdobycie życia',
     grant_keywords_until_end_of_turn: 'nadanie słów kluczowych do końca tury',
     lock_untap: 'cel nie odtapuje podczas następnego untap kontrolera',
+    look_top_put_one_hand_rest_bottom: 'spojrzenie na X kart z wierzchu — jedna do ręki, reszta na spód',
     lose_life: 'cel traci życie',
     mill_cards: 'mielenie kart do grobu',
     prevent_damage_this_turn: 'niwelowanie obrażeń do końca tury',
@@ -863,6 +864,9 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         return `${whoN(e.playerId)} wybiera: ${objectOrLki(e.targetId, e.cardId)} na wierzch czy spód biblioteki`;
       case 'library_placement_resolved':
         return `${objectOrLki(e.targetId, e.cardId)} trafia na ${e.placement === 'top' ? 'WIERZCH' : 'SPÓD'} biblioteki właściciela`;
+      // M177/E (Azorius Justiciar): detain (CR 701.29).
+      case 'object_detained':
+        return `${objectOrLki(e.objectId, e.cardId)} zatrzymany (detain): do następnej tury ${whoN(e.byPlayerId)} nie atakuje, nie blokuje i nie aktywuje zdolności`;
       case 'exile_if_dies_marked':
         return `${objectOrLki(e.objectId, e.cardId)}: jeśli umrze w tej turze, trafi na wygnanie zamiast do grobu`;
       case 'keyword_granted': {

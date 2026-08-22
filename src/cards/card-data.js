@@ -7893,6 +7893,51 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+
+// ---- Batch 42 — transza E ----
+
+  // 9. Azorius Justiciar (RTR) {2}{W}{W} 2/2 Human Wizard — ETB: detain up to
+  //    two target creatures your opponents control (NOWA mechanika detain,
+  //    CR 701.29: do twojej następnej tury cel nie atakuje, nie blokuje,
+  //    nie aktywuje zdolności; multi-target z upTo — reuse M171/Z6).
+  defineCard({
+    id: 'azorius-justiciar', name: 'Azorius Justiciar', set: 'RTR',
+    types: ['Creature'], subtypes: ['Human', 'Wizard'], colors: ['W'],
+    power: 2, toughness: 2, manaCost: 4,
+    oracleText: "When this creature enters, detain up to two target creatures your opponents control. (Until your next turn, those creatures can't attack or block and their activated abilities can't be activated.)",
+    imageUri: 'https://cards.scryfall.io/large/front/9/f/9f56272e-c05e-446b-8871-e3783dd29a8b.jpg?1783940377',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature_opponent_controls', count: 2, upTo: true } },
+        effect: { type: 'detain' },
+      }),
+    ],
+    artId: 6, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 10. Merchant's Dockhand (AER) {1} 1/2 Artifact Creature Construct —
+  //     „{3}{U}, {T}, Tap X untapped artifacts you control: Look at the top X
+  //     cards… one into your hand, the rest on the bottom in any order”
+  //     (NOWY koszt tapXArtifacts + look_top_put_one_hand_rest_bottom).
+  defineCard({
+    id: 'merchants-dockhand', name: "Merchant's Dockhand", set: 'AER',
+    types: ['Artifact', 'Creature'], subtypes: ['Construct'], colors: [],
+    power: 1, toughness: 2, manaCost: 1,
+    oracleText: '{3}{U}, {T}, Tap X untapped artifacts you control: Look at the top X cards of your library. Put one of them into your hand and the rest on the bottom of your library in any order.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/5/955b4bc9-1ded-4f23-b415-ab968c681eb7.jpg?1783936724',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 4, colors: ['U'], tap: true, tapXArtifacts: true },
+        effect: { type: 'look_top_put_one_hand_rest_bottom', amount: 'x' },
+      }),
+    ],
+    artId: 12, plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 /**

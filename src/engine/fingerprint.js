@@ -38,7 +38,7 @@ function stableStringify(value) {
  */
 export function stateFingerprint(state) {
   const objects = [...state.objects.values()]
-    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, keywordGrants, abilityGrants, typeGrant, subtypes, transformTo, untapLockedBy, types, entersTapped, attachedTo, baseKind, bestow, aura, equipment, backup, colors, phyrexianManaCost, goaded, goadedUntilTurn, hexproofUntilTurn, enchantPlayer, enchantedPlayerId, cantBlock, cantBeBlocked, lostKeywordsUntilEOT, subtypesBeforeOverride, madnessReady }) => ({
+    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, keywordGrants, abilityGrants, typeGrant, subtypes, transformTo, untapLockedBy, types, entersTapped, attachedTo, baseKind, bestow, aura, equipment, backup, colors, phyrexianManaCost, goaded, goadedUntilTurn, detained, detainedUntilTurn, hexproofUntilTurn, enchantPlayer, enchantedPlayerId, cantBlock, cantBeBlocked, lostKeywordsUntilEOT, subtypesBeforeOverride, madnessReady }) => ({
       id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets,
       abilities: abilities ?? [],
       counters: { ...(counters ?? {}) }, faceDown: Boolean(faceDown),
@@ -53,7 +53,7 @@ export function stateFingerprint(state) {
       transformTo: transformTo ? { cardId: transformTo.cardId, power: transformTo.power, toughness: transformTo.toughness } : null,
       untapLockedBy: [...(untapLockedBy ?? [])],
       colors: [...(colors ?? [])], phyrexianManaCost: phyrexianManaCost ?? 0,
-      goaded: Boolean(goaded), goadedUntilTurn: goadedUntilTurn ?? null, hexproofUntilTurn: hexproofUntilTurn ?? null,
+      goaded: Boolean(goaded), goadedUntilTurn: goadedUntilTurn ?? null, detained: Boolean(detained), detainedUntilTurn: detainedUntilTurn ?? null, hexproofUntilTurn: hexproofUntilTurn ?? null,
       // M122/#1: efekty „do końca tury" zmieniające MOŻLIWOŚĆ blokowania
       // (`cant_be_blocked` — Coralhelm Guide; `cantBlock` — Panic Spellbomb)
       // były pomijane w odcisku. Skutki: (a) sonda „oferta bez skutku"

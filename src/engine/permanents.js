@@ -885,6 +885,23 @@ export function goadUntilNextTurn(state, objectId, sourceControllerId) {
  * obiekt do exile zamiast do grobu. Jedno źródło prawdy dla WSZYSTKICH
  * ścieżek śmierci (SBA, destroy, sacrifice, legend rule).
  */
+/**
+ * M177/E (Azorius Justiciar, CR 701.29): detain — „until your next turn,
+ * that permanent can't attack or block and its activated abilities can't be
+ * activated”. Wygasa na POCZĄTKU następnej tury gracza, który detainował
+ * (wzorzec goadedUntilTurn — wygaszenie w game-state przy starcie tury).
+ */
+export function detainUntilYourNextTurn(state, objectId, detainerId) {
+  const object = state.objects.get(objectId);
+  if (!object || object.zone !== 'battlefield') return object;
+  // W 1v1: jeśli trwa tura detainera → jego następna to number+2;
+  // w cudzej turze → najbliższa jego tura to number+1.
+  const until = state.turn.activePlayerId === detainerId ? state.turn.number + 2 : state.turn.number + 1;
+  const updated = replaceObject(state, object, { detained: true, detainedUntilTurn: until });
+  state.events.push(event('object_detained', { objectId, cardId: object.cardId, byPlayerId: detainerId }));
+  return updated;
+}
+
 export function deathZoneFor(state, object) {
   if (((object?.counters ?? {}).finality ?? 0) > 0) return 'exile';
   if ((state.exileIfDiesThisTurn ?? []).includes(object?.id)) return 'exile';

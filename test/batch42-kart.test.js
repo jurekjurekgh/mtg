@@ -317,3 +317,91 @@ test('D2: Vanish from Sight — spód biblioteki (wybór właściciela)', () => 
   const returned = [...state.objects.values()].find((o) => o.cardId === 'highland-game');
   assert.equal(p2lib.at(-1), returned.id, 'odesłany permanent na SPODZIE biblioteki p2');
 });
+
+// ---- Transza E ----------------------------------------------------------------
+
+function detainSetup() {
+  const state = game('p1');
+  putCard(state, 'justiciar', 'azorius-justiciar', 'p1', 'hand');
+  putCard(state, 'foe1', 'highland-game', 'p2', 'battlefield', { summoningSickness: false });
+  putCard(state, 'foe2', 'segmented-krotiq', 'p2', 'battlefield', { summoningSickness: false });
+  addMana(state, 'p1', 4, { colors: ['W'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'justiciar');
+  assert.ok(cast, 'oferta rzutu');
+  assert.ok(execute(state, cast).ok);
+  resolveStack(state);
+  return state;
+}
+
+test('E1: Azorius Justiciar — ETB detain up to two (multi-target, upTo)', () => {
+  const state = detainSetup();
+  // Decyzja celu triggera: wariant z DWOMA celami.
+  const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_trigger_target');
+  assert.ok(offers.length > 0, 'oferty celu triggera');
+  const two = offers.find((c) => (c.targetIds ?? c.targets ?? []).length === 2);
+  assert.ok(two, `wariant z dwoma celami: ${JSON.stringify(offers.map((o) => o.targetIds ?? o.targets))}`);
+  assert.ok(execute(state, two).ok);
+  resolveStack(state);
+  assert.equal(state.objects.get('foe1').detained, true, 'foe1 zatrzymany');
+  assert.equal(state.objects.get('foe2').detained, true, 'foe2 zatrzymany');
+});
+
+test('E2: detain — cel nie atakuje, nie blokuje, nie aktywuje zdolności; wygasa', () => {
+  const state = game('p1');
+  const cobra = putCard(state, 'cobra', 'death-hood-cobra', 'p2', 'battlefield', { summoningSickness: false });
+  state.objects.set('cobra', Object.freeze({ ...cobra, detained: true, detainedUntilTurn: state.turn.number + 2 }));
+  addMana(state, 'p2', 2, { colors: ['G'] });
+  // Aktywacja zdolności zatrzymanego stwora: brak oferty + odrzucenie.
+  const offers = playerView(state, 'p2').legalCommands
+    .filter((c) => c.type === 'activate_ability' && c.objectId === 'cobra');
+  assert.equal(offers.length, 0, 'zero ofert aktywacji (CR 701.29)');
+  const rej = execute(state, { type: 'activate_ability', playerId: 'p2', objectId: 'cobra', abilityIndex: 0 });
+  assert.equal(rej.ok, false, 'walidacja też odrzuca (L48)');
+  // Blok zatrzymanym stworem nielegalny.
+  putCard(state, 'atk', 'highland-game', 'p1', 'battlefield', { summoningSickness: false });
+  state.turn = { ...state.turn, phase: 'combat', step: 'declare_attackers', activePlayerId: 'p1', priorityPlayerId: 'p1' };
+  assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
+  const badBlock = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['cobra'] } });
+  assert.equal(badBlock.ok, false, 'zatrzymany stwór nie blokuje');
+});
+
+test('E2b: detain — zatrzymany stwór nie może być deklarowany jako atakujący', () => {
+  const state = game('p2');
+  const foe = putCard(state, 'foe', 'highland-game', 'p2', 'battlefield', { summoningSickness: false });
+  state.objects.set('foe', Object.freeze({ ...foe, detained: true, detainedUntilTurn: state.turn.number + 1 }));
+  state.turn = { ...state.turn, phase: 'combat', step: 'declare_attackers', activePlayerId: 'p2', priorityPlayerId: 'p2' };
+  const atk = execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['foe'] });
+  assert.equal(atk.ok, false, 'zatrzymany stwór nie atakuje (CR 701.29)');
+});
+
+test('E3: Merchant\'s Dockhand — tap X artefaktów, top X: jedna do ręki, reszta na spód', () => {
+  const state = game('p1');
+  putCard(state, 'dock', 'merchants-dockhand', 'p1', 'battlefield', { summoningSickness: false });
+  putCard(state, 'bomb1', 'panic-spellbomb', 'p1', 'battlefield');
+  putCard(state, 'bomb2', 'horizon-spellbomb', 'p1', 'battlefield');
+  putCard(state, 'lib1', 'gorger-wurm', 'p1', 'library');
+  putCard(state, 'lib2', 'highland-game', 'p1', 'library');
+  putCard(state, 'lib3', 'basic-forest', 'p1', 'library');
+  addMana(state, 'p1', 4, { colors: ['U'] });
+  const offers = playerView(state, 'p1').legalCommands
+    .filter((c) => c.type === 'activate_ability' && c.objectId === 'dock');
+  assert.equal(offers.length, 2, 'warianty X=1 i X=2 (dwa inne artefakty)');
+  const x2 = offers.find((c) => c.xValue === 2);
+  assert.ok(x2 && (x2.tapArtifactIds ?? []).length === 2, 'X=2 tapuje dwa artefakty');
+  assert.ok(execute(state, x2).ok);
+  assert.equal(state.objects.get('bomb1').tapped, true, 'artefakt 1 zatapnięty (koszt)');
+  assert.equal(state.objects.get('bomb2').tapped, true, 'artefakt 2 zatapnięty (koszt)');
+  assert.equal(state.objects.get('dock').tapped, true, 'źródło zatapnięte ({T})');
+  assert.ok(resolveStack(state), 'zdolność rozstrzyga się ze stosu');
+  assert.ok(state.pendingLookTopN, 'decyzja look top X');
+  assert.equal(state.pendingLookTopN.objectIds.length, 2, 'patrzymy na X=2 kart');
+  assert.equal(state.pendingLookTopN.restTo, 'library_bottom', 'reszta na spód');
+  // Wybór: lib2 (druga z wierzchu) do ręki; lib1 na spód.
+  assert.ok(execute(state, { type: 'resolve_look_top_choice', playerId: 'p1', cardId: 'lib2' }).ok);
+  assert.equal(state.objects.get('lib2'), undefined, 'wybrana karta ma nowe id w ręce');
+  const inHand = [...state.objects.values()].find((o) => o.cardId === 'highland-game' && o.zone === 'hand');
+  assert.ok(inHand, 'karta w ręce');
+  const p1lib = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === 'p1');
+  assert.equal(state.objects.get(p1lib.at(-1))?.cardId, 'gorger-wurm', 'reszta na SPODZIE biblioteki');
+});

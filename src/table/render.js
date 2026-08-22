@@ -807,6 +807,7 @@ function describeEffect(e) {
     scry: () => `scry ${e.amount ?? 1}`,
     search_library_two_cards_hand_and_grave: () => 'przeszukaj bibliotekę: jedna karta do ręki, druga do grobu, potem tasowanie',
     owner_library_top_or_bottom: () => 'właściciel celu kładzie go na wierzch albo spód swojej biblioteki (jego wybór)',
+    detain: () => 'detain — do twojej następnej tury cel nie atakuje, nie blokuje i nie aktywuje zdolności',
     sacrifice_permanent: () => 'poświęć ten permanent',
     grant_keywords_until_end_of_turn: () => `zdobądź ${(e.keywords ?? []).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')} do końca tury`,
     // M73c: pełna mapa pozostałych typów — koniec „efekt." i surowych slugów.
@@ -893,6 +894,7 @@ function describeEffect(e) {
     graveyard_creatures_to_library_top_choice: () => 'karty z grobu na wierzch biblioteki',
     index_look: () => 'zobacz wierzch biblioteki (Index)',
     look_top_put_one_hand_rest_grave: () => 'zobacz wierzch biblioteki, jedną do ręki, resztę do grobu',
+    look_top_put_one_hand_rest_bottom: () => 'zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki',
     reveal_top_pick_land_rest_grave: () => 'odsłoń wierzch, możesz wziąć ląd do ręki, resztę do grobu',
     epic_experiment: () => 'wygnaj wierzch biblioteki i rzuć czary bez kosztu',
     mill_both_players: () => `mieli po ${e.amount ?? 1} karcie z biblioteki każdy gracz`,
@@ -990,6 +992,8 @@ const NON_MANA_COST_LABELS = Object.freeze([
   ['tapOtherCreature', 'tapnij innego swojego stwora'],
   ['exileFromGraveyard', 'wygnaj tę kartę z grobu'],
   ['payLifeX', 'zapłać X życia'],
+  // M177/E (Merchant's Dockhand): koszt „Tap X untapped artifacts you control”.
+  ['tapXArtifacts', 'tapnij X swoich nietapniętych artefaktów'],
   ['crewPower', (n) => `załoga ${n}`],
   ['saddlePower', (n) => `saddle ${n}`],
   ['removeCounter', (c) => {
@@ -2424,6 +2428,7 @@ export function cardInfo(session, object, combat = null) {
     // (playerView liczy effectiveKeywords — z grantami i załącznikami).
     summoningSickness: Boolean(object.summoningSickness) && !keywordsNow.includes('haste'),
     goaded: Boolean(object.goaded),
+    detained: Boolean(object.detained),
     damage: object.damage || 0,
     // A (2026-08-11): liczniki (np. +1/+1, oil, charge, lore) pokazane na karcie.
     counters: object.counters ?? {},
@@ -2649,6 +2654,8 @@ export function buildStateOverlay(visual, info) {
     // z nazwą, wrogi jako „morph") — na stole żywy stan jest na nakładce.
     if (info.faceDown) flags.push(['morph', info.morphBadge ?? FACE_DOWN_LABEL]);
     if (info.goaded) flags.push(['goad', 'goad']);
+    // M177/E (CR 701.29): detain — nie atakuje, nie blokuje, bez aktywacji.
+    if (info.detained) flags.push(['kw', 'zatrzymany (detain)']);
     // M168/B: AKTYWNE zmiany — badge tekstowy, póki efekt działa.
     for (const kw of info.grantedKeywords ?? []) {
       flags.push(['kw', `${KEYWORD_LABELS[kw] ?? kw}`]);

@@ -89,6 +89,8 @@ function isLegalAttacker(state, object, playerId) {
   if (object?.controllerId !== playerId || object.kind !== 'creature' || object.tapped) return false;
   // Defender (CR 702.3): stwór z defender NIE może atakować.
   if (hasKeyword(state, object, 'defender')) return false;
+  // Detain (CR 701.29, M177/E): zatrzymany stwór nie atakuje.
+  if (object.detained) return false;
   // „Enchanted creature can't attack" (Hobble): ograniczenie nakładane przez
   // załącznik, liczone przy odczycie — odłączenie aury znosi je natychmiast.
   if (attachmentRestrictions(state, object).cantAttack) return false;
@@ -192,6 +194,9 @@ export function declareBlockers(state, playerId, assignments) {
       throw new Error(`Stwora z landwalkiem (${landwalkSub}) nie może blokować obrońca z takim lądem`);
     }
     if (ids.some((object) => object.controllerId !== playerId || object.tapped)) throw new Error('Nielegalny blokujący');
+    // Detain (CR 701.29, M177/E) — walidacja niezależna od oferty (L48:
+    // dwie ścieżki jak przy intimidate).
+    if (ids.some((object) => object.detained)) throw new Error('Zatrzymany (detain) stwór nie może blokować');
     // Ograniczenia z załączników (Hobble: „can't block if it's black") —
     // walidacja niezależna od enumeracji (execute musi odrzucić zła komendę).
     if (ids.some((object) => object.cantBlock || attachmentRestrictions(state, object).cantBlock)) throw new Error('Nielegalny blokujący');
@@ -824,6 +829,8 @@ function attackerBlockSubtypeRestriction(state, attacker) {
 /** Czy dany blocker może blokować danego atakującego (reguła latania/zasięgu). */
 function canBlock(state, attacker, blocker) {
   if (!attacker || !blocker) return false;
+  // Detain (CR 701.29, M177/E): zatrzymany stwór nie blokuje.
+  if (blocker.detained) return false;
   // CR 701.38b: goad nakłada WYŁĄCZNIE wymogi ataku („attacks each combat if
   // able”, „attacks a player other than the goader if able”). Nie mówi nic
   // o blokowaniu — goadowany stwór blokuje normalnie. Wcześniej silnik

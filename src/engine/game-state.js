@@ -70,6 +70,8 @@ export const HOSTILE_TRIGGER_TARGET_EFFECTS = new Set([
   'exile_nonland_permanent_linked', 'bounce_permanent', 'bounce_to_library_top',
   'sacrifice_permanent', 'player_sacrifices_creature', 'tap_permanent', 'shrink',
   'pump_negative', 'cant_block', 'mill_cards', 'dont_untap_next_untap_step',
+  // M177/E (Azorius Justiciar): detain odbiera celowi atak/blok/aktywacje.
+  'detain',
 ]);
 // Liczniki wrogie dla obdarowanego (stun — nie odkręca; finality — śmierć
 // zamieniona na wygnanie). Pozostałe liczniki '+' są przyjazne (gałąź poniżej).
@@ -1683,10 +1685,26 @@ export function execute(state, input) {
     const movedHand = moveObjectDirectly(state, pickId, 'hand', handId);
     state.events.push(event('object_moved', { fromId: pickId, object: movedHand, fromZone: 'library', toZone: 'hand', looked: true }));
     const rest = pending.objectIds.filter((id) => id !== pickId);
-    for (const id of rest) {
-      const graveId = `grave-${state.objectSequence++}`;
-      const movedGrave = moveObjectDirectly(state, id, 'graveyard', graveId);
-      state.events.push(event('object_moved', { fromId: id, object: movedGrave, fromZone: 'library', toZone: 'graveyard', milled: true }));
+    if (pending.restTo === 'library_bottom') {
+      // M177/E (Merchant's Dockhand): reszta na SPÓD biblioteki „in any
+      // order” — kolejność z cmd.bottomOrder (permutacja resty, jak
+      // topOrder przy scry); domyślnie zachowana kolejność wierzchu.
+      const bottomOrder = Array.isArray(cmd.bottomOrder) ? cmd.bottomOrder : rest;
+      if (bottomOrder.length !== rest.length || new Set(bottomOrder).size !== bottomOrder.length
+        || bottomOrder.some((id) => !rest.includes(id))) {
+        return reject('illegal_look_top_bottom_order');
+      }
+      const bottomSet = new Set(bottomOrder);
+      state.zones.library = [...state.zones.library.filter((id) => !bottomSet.has(id)), ...bottomOrder];
+      for (const id of bottomOrder) {
+        state.events.push(event('object_moved', { fromId: id, object: state.objects.get(id), fromZone: 'library', toZone: 'library', toBottom: true, looked: true }));
+      }
+    } else {
+      for (const id of rest) {
+        const graveId = `grave-${state.objectSequence++}`;
+        const movedGrave = moveObjectDirectly(state, id, 'graveyard', graveId);
+        state.events.push(event('object_moved', { fromId: id, object: movedGrave, fromZone: 'library', toZone: 'graveyard', milled: true }));
+      }
     }
     state.pendingLookTopN = null;
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
@@ -3874,6 +3892,14 @@ export function execute(state, input) {
           // goadedUntilTurn <= bieżący numer tury. Wcześniej goad wygasał
           // w cleanup tej samej tury, więc zaczarowany stwór nie musiał
           // atakować w turze przeciwnika (bug znaleziony w srebrnym audycie).
+          // Detain (CR 701.29, M177/E): wygasa na początku następnej tury
+          // gracza, który detainował — ten sam mechanizm co goad.
+          for (const detainedObject of state.objects.values()) {
+            if (detainedObject.zone !== 'battlefield' || !detainedObject.detained) continue;
+            if ((detainedObject.detainedUntilTurn ?? 0) <= state.turn.number) {
+              state.objects.set(detainedObject.id, Object.freeze({ ...detainedObject, detained: false, detainedUntilTurn: null }));
+            }
+          }
           for (const goadedObject of state.objects.values()) {
             if (goadedObject.zone !== 'battlefield' || !goadedObject.goaded) continue;
             if ((goadedObject.goadedUntilTurn ?? 0) <= state.turn.number) {
@@ -4046,7 +4072,7 @@ export function execute(state, input) {
   if (cmd.type === 'activate_ability') {
     try {
       const before = state.events.length;
-      const e = activateAbility(state, cmd.playerId, cmd.objectId, cmd.abilityIndex, cmd.attackerId, cmd.targets, cmd.xValue, cmd.crewCreatureIds, cmd.tapCreatureId, cmd.tapOtherCreatureId, cmd.sacrificeLandId, undefined, cmd.grantedFromEquipment);
+      const e = activateAbility(state, cmd.playerId, cmd.objectId, cmd.abilityIndex, cmd.attackerId, cmd.targets, cmd.xValue, cmd.crewCreatureIds, cmd.tapCreatureId, cmd.tapOtherCreatureId, cmd.sacrificeLandId, undefined, cmd.grantedFromEquipment, cmd.tapArtifactIds);
       const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
       return accepted(state, cmd, { ok: true, events });
     } catch (error) {
@@ -4278,6 +4304,8 @@ export function playerView(state, playerId) {
         }
         if (object.faceDown) entry.faceDown = true;
         if (object.goaded === true) entry.goaded = true;
+        // M177/E: detain jest informacją publiczną (badge + boty).
+        if (object.detained === true) entry.detained = true;
         // M172/B2 (uwaga właściciela, klasa L1/ADR 0017): AKTYWNE zmiany
         // czasowe są informacją publiczną (skutki rozstrzygniętych efektów),
         // a render liczy z nich badge'e („nie może blokować", „nie do
@@ -5284,7 +5312,7 @@ export function playerView(state, playerId) {
     // od fazy. Każda oferowana aktywacja jest akceptowana przez execute.
     // Ninjutsu niesie dodatkowo attackerId (atakujący do zwrotu do ręki);
     // zdolności celowane/{X} niosą targets i xValue.
-    for (const { objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, grantedFromEquipment } of legalActivatedAbilities(state, playerId)) {
+    for (const { objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, grantedFromEquipment, tapArtifactIds } of legalActivatedAbilities(state, playerId)) {
       const extra = { objectId, abilityIndex };
       if (attackerId !== undefined) extra.attackerId = attackerId;
       if (targets !== undefined) extra.targets = targets;
@@ -5292,6 +5320,7 @@ export function playerView(state, playerId) {
       // Crew (CR 701.36): wybór stworów do tapnięcia jedzie w komendzie —
       // bez tego oferowana komenda byłaby odrzucana (nielegalny crew).
       if (crewCreatureIds !== undefined) extra.crewCreatureIds = crewCreatureIds;
+      if (tapArtifactIds !== undefined) extra.tapArtifactIds = tapArtifactIds;
       if (tapCreatureId !== undefined) extra.tapCreatureId = tapCreatureId;
       if (tapOtherCreatureId !== undefined) extra.tapOtherCreatureId = tapOtherCreatureId;
       if (sacrificeLandId !== undefined) extra.sacrificeLandId = sacrificeLandId;

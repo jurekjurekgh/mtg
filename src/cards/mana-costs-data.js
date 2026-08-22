@@ -330,6 +330,8 @@ export const MANA_COSTS = {
   "sifter-wurm": "{5}{G}{G}",
   "final-parting": "{3}{B}{B}",
   "vanish-from-sight": "{3}{U}",
+  "azorius-justiciar": "{2}{W}{W}",
+  "merchants-dockhand": "{1}",
   "horizon-spellbomb": "{1}",
   "toll-of-the-invasion": "{2}{B}",
   "terminal-agony": "{2}{B}{R}",

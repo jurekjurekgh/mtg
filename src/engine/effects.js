@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
+import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
@@ -2130,6 +2130,16 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     return;
   }
+  if (effect.type === 'detain') {
+    // M177/E (Azorius Justiciar): detain KAŻDEGO z wybranych celów
+    // („up to two target creatures” — multi-target trigger; CR 701.29).
+    for (const targetId of targets) {
+      const detainee = state.objects.get(targetId);
+      if (!detainee || detainee.zone !== 'battlefield') continue; // CR 608.2b
+      detainUntilYourNextTurn(state, targetId, sourceObject.controllerId);
+    }
+    return;
+  }
   if (effect.type === 'exile_if_dies_this_turn') {
     // M177/A (Agate Assault): „If that creature would die this turn, exile it
     // instead” — znacznik na id celu, konsumowany przez deathZoneFor we
@@ -3796,6 +3806,28 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // the top four cards of your library. Put one of them into your hand and
   // the rest into your graveyard." — look top N, wybierz JEDNĄ do ręki,
   // reszta do grobu. Blokująca decyzja jak scry/surveil (pendingLookTopN).
+  if (effect.type === 'look_top_put_one_hand_rest_bottom') {
+    // M177/E (Merchant's Dockhand): „Look at the top X cards… Put one of
+    // them into your hand and the rest on the bottom of your library in any
+    // order.” — X z kosztu (context.xValue); reszta na SPÓD (pendingLookTopN
+    // z restTo, opcjonalna kolejność bottomOrder na komendzie — jak scry).
+    const controllerId = sourceObject.controllerId;
+    const n = effect.amount === 'x' ? (context?.xValue ?? 0) : (effect.amount ?? 1);
+    const topIds = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === controllerId).slice(0, n);
+    if (topIds.length === 0) return;
+    state.pendingLookTopN = {
+      playerId: controllerId,
+      objectIds: [...topIds],
+      restTo: 'library_bottom',
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('look_top_started', {
+      playerId: controllerId, count: topIds.length,
+      cardIds: topIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
+    }));
+    return true;
+  }
   if (effect.type === 'look_top_put_one_hand_rest_grave') {
     const controllerId = sourceObject.controllerId;
     const n = effect.amount ?? 4;
