@@ -210,6 +210,8 @@ export function rejectionReasonLabel(reason) {
 
 export const TRIGGER_EVENT_LABELS = Object.freeze({
   another_creature_enters: 'wejście innego stworzenia',
+  // M177/B (Rakshasa Vizier): karty wygnane z twojego grobu.
+  cards_exiled_from_your_graveyard: 'karty wygnane z twojego grobu',
   creature_you_control_enters: 'wejście stwora pod twoją kontrolą',
   // audyt M100/E6 (Żywy Tester, azorius vs green seed 34): surowy slug
   // w LOGU zamiast etykiety (Setessan Skirmisher).

@@ -583,6 +583,15 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
       throw new Error('Nielegalny cel dodatkowego kosztu (exile a creature)');
     }
   }
+  // M177/B (Makeshift Mauler): „exile a creature card from your graveyard”
+  // — walidacja PRZED mutacją (CR 601.2h), kandydat z WŁASNEGO grobu.
+  const exileGraveCost = object.additionalCost?.exileCreatureFromGraveyard;
+  if (exileGraveCost) {
+    const exileObj = state.objects.get(exileTargetId);
+    if (!exileObj || exileObj.zone !== 'graveyard' || exileObj.kind !== 'creature' || exileObj.controllerId !== playerId) {
+      throw new Error('Nielegalny cel dodatkowego kosztu (exile a creature card from your graveyard)');
+    }
+  }
   // Kicker dodaje pipy kolorów do wymagań (Kor Sanctifiers: {W} + kicker {W}
   // = dwa pipy białe); walidacja dotyczy całej sumy PRZED mutacją.
   const kickerPips = (kicker?.colors ?? []).map((color) => [color]);
@@ -628,6 +637,14 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     const exileId = `exile-${state.objectSequence++}`;
     const exiled = moveObjectDirectly(state, exileTargetId, 'exile', exileId);
     state.events.push(event('object_exiled', { fromId: exileTargetId, objectId: exileId, object: exiled, cardId: exiled.cardId, additionalCost: true }));
+  }
+  if (exileGraveCost) {
+    const exileId = `exile-${state.objectSequence++}`;
+    const exiled = moveObjectDirectly(state, exileTargetId, 'exile', exileId);
+    // object_moved grób→exile: wspólna ścieżka zdarzeń dla triggera
+    // „cards are put into exile from your graveyard” (Rakshasa Vizier) —
+    // ta sama, którą emituje escape (spells.js).
+    state.events.push(event('object_moved', { fromId: exileTargetId, object: exiled, fromZone: 'graveyard', toZone: 'exile', additionalCost: true }));
   }
   const manaSpent = totalMana;
   // Rzut permanenta to rzut CZARU (CR 601): obiekt ląduje na STOSIE, a na

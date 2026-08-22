@@ -1523,6 +1523,23 @@ export function processTriggers(state, recentEvents) {
     // exploited emituje resolve_exploit_choice po poświęceniu; trigger z
     // event 'exploits' odpala się na źródle (exploiterze), extra niesie
     // exploitedId (LKI poświęconego).
+    // M177/B (Rakshasa Vizier): „Whenever one or more cards are put into
+    // exile from your graveyard” — skan zdarzeń object_moved grób→exile
+    // (koszt Maulera, escape i każda przyszła ścieżka używająca tej samej
+    // konwencji zdarzeń). Każde zdarzenie = 1 karta (exiledCount w context).
+    if (ev.type === 'object_moved' && ev.fromZone === 'graveyard' && ev.toZone === 'exile') {
+      const graveOwnerId = ev.object?.controllerId ?? null;
+      if (graveOwnerId) {
+        for (const source of state.objects.values()) {
+          if (source.zone !== 'battlefield') continue;
+          for (const ability of effectiveAbilities(source)) {
+            if (ability?.trigger?.event !== 'cards_exiled_from_your_graveyard') continue;
+            if (source.controllerId !== graveOwnerId) continue;
+            tryFire(state, ability, source, [], events, { exiledCount: 1 });
+          }
+        }
+      }
+    }
     if (ev.type === 'exploited') {
       const exploiter = state.objects.get(ev.exploiterId);
       if (exploiter && exploiter.zone === 'battlefield') {

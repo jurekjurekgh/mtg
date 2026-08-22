@@ -5266,6 +5266,21 @@ export function playerView(state, playerId) {
       if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') continue;
       // Additional cost "exile a creature you control" (Fear of Abduction):
       // enumerujemy własne stwory — każdy to osobny wariant komendy cast_permanent.
+      // M177/B (Makeshift Mauler): additional cost „exile a creature card
+      // from your graveyard” — warianty po kartach stworów z WŁASNEGO grobu.
+      if (object.additionalCost?.exileCreatureFromGraveyard) {
+        const exilePool = state.zones.graveyard.filter((oid) => {
+          const candidate = state.objects.get(oid);
+          return candidate?.zone === 'graveyard' && candidate.kind === 'creature'
+            && candidate.controllerId === playerId;
+        });
+        for (const exileId of exilePool) {
+          if (effectiveSpellManaCost(state, object) > manaAvailable) continue;
+          if (!hasColorForCardId(state, playerId, object.cardId, 0)) continue;
+          legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, exileTargetId: exileId }));
+        }
+        continue; // bez wygnania z grobu czaru nie da się rzucić (CR 601.2h)
+      }
       if (object.additionalCost?.exileCreature) {
         const exilePool = state.zones.battlefield.filter((oid) => {
           const candidate = state.objects.get(oid);

@@ -7792,6 +7792,44 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+
+// ---- Batch 42 — transza B ----
+
+  // 4. Makeshift Mauler (ISD) {3}{U} 4/5 Zombie Horror — dodatkowy koszt:
+  //    wygnaj kartę stwora z WŁASNEGO grobu (nowy additionalCost
+  //    exileCreatureFromGraveyard; zasila trigger Rakshasy).
+  defineCard({
+    id: 'makeshift-mauler', name: 'Makeshift Mauler', set: 'ISD',
+    types: ['Creature'], subtypes: ['Zombie', 'Horror'], colors: ['U'],
+    power: 4, toughness: 5, manaCost: 4,
+    additionalCost: { exileCreatureFromGraveyard: true },
+    oracleText: 'As an additional cost to cast this spell, exile a creature card from your graveyard.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/8/d869de57-9454-47ff-af14-eaefd387047a.jpg?1783940971',
+    artId: 226, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Rakshasa Vizier (KTK) {2}{B}{G}{U} 4/4 Demon — „Whenever one or more
+  //    cards are put into exile from your graveyard, put that many +1/+1
+  //    counters on this creature” (nowy trigger cards_exiled_from_your_
+  //    graveyard; liczba z kontekstu zdarzenia — amountFromContext).
+  defineCard({
+    id: 'rakshasa-vizier', name: 'Rakshasa Vizier', set: 'KTK',
+    types: ['Creature'], subtypes: ['Demon'], colors: ['B', 'G', 'U'],
+    power: 4, toughness: 4, manaCost: 5,
+    oracleText: 'Whenever one or more cards are put into exile from your graveyard, put that many +1/+1 counters on this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/b/cb39e674-919d-4db6-9ac1-cfa1cca02207.jpg?1783939055',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'cards_exiled_from_your_graveyard' },
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1, amountFromContext: 'exiledCount' },
+      }),
+    ],
+    artId: 520, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 /**

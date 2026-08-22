@@ -1858,7 +1858,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // (T6 — okno odpowiedzi), sprawia, że efekt nic nie robi.
     const targetObj = state.objects.get(targetId);
     if (!targetObj || targetObj.zone !== 'battlefield') return;
-    addCounter(state, targetId, effect.counter, effect.amount ?? 1);
+    // M177/B (Rakshasa Vizier): liczba liczników z kontekstu zdarzenia
+    // („that many +1/+1 counters” — tyle, ile kart wyszło z grobu).
+    const counterAmount = effect.amountFromContext
+      ? (context?.[effect.amountFromContext] ?? effect.amount ?? 1)
+      : (effect.amount ?? 1);
+    addCounter(state, targetId, effect.counter, counterAmount);
     return;
   }
   if (effect.type === 'remove_counter') {

@@ -144,3 +144,65 @@ test('A4c: Agate Assault tryb 2 — wygnanie artefaktu', () => {
   const bomb = [...state.objects.values()].find((o) => o.cardId === 'panic-spellbomb');
   assert.equal(bomb.zone, 'exile', 'artefakt wygnany');
 });
+
+// ---- Transza B ----------------------------------------------------------------
+
+test('B1: Makeshift Mauler — rzut WYMAGA wygnania karty stwora z własnego grobu', () => {
+  const state = game('p1');
+  putCard(state, 'mauler', 'makeshift-mauler', 'p1', 'hand');
+  addMana(state, 'p1', 4, { colors: ['U'] });
+  // Pusty grób: zero ofert rzutu (CR 601.2h — koszt nieopłacalny).
+  const none = playerView(state, 'p1').legalCommands
+    .filter((c) => c.type === 'cast_permanent' && c.objectId === 'mauler');
+  assert.equal(none.length, 0, 'bez karty stwora w grobie brak oferty');
+  // Karta stwora w grobie: wariant z exileTargetId.
+  putCard(state, 'deadwolf', 'highland-game', 'p1', 'graveyard');
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'mauler' && c.exileTargetId === 'deadwolf');
+  assert.ok(cast, 'oferta z wygnaniem karty z grobu');
+  assert.ok(execute(state, cast).ok);
+  assert.equal(state.objects.get('deadwolf'), undefined, 'karta opuściła grób (nowe id w exile)');
+  const exiled = [...state.objects.values()].find((o) => o.cardId === 'highland-game');
+  assert.equal(exiled.zone, 'exile', 'koszt zapłacony przy rzucie (przed stosem)');
+  assert.ok(resolveStack(state));
+  const onBoard = [...state.objects.values()].find((o) => o.cardId === 'makeshift-mauler');
+  assert.equal(onBoard.zone, 'battlefield', 'Mauler na polu bitwy');
+});
+
+test('B2: Rakshasa Vizier — licznik +1/+1 za kartę wygnaną z grobu (koszt Maulera)', () => {
+  const state = game('p1');
+  putCard(state, 'vizier', 'rakshasa-vizier', 'p1', 'battlefield', { summoningSickness: false });
+  putCard(state, 'mauler', 'makeshift-mauler', 'p1', 'hand');
+  putCard(state, 'deadwolf', 'highland-game', 'p1', 'graveyard');
+  addMana(state, 'p1', 4, { colors: ['U'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'mauler' && c.exileTargetId === 'deadwolf');
+  assert.ok(cast, 'oferta rzutu');
+  assert.ok(execute(state, cast).ok);
+  assert.ok(resolveStack(state));
+  const vizier = state.objects.get('vizier');
+  assert.equal(vizier.counters?.['+1/+1'], 1, 'trigger dał licznik +1/+1');
+});
+
+test('B3: trigger Rakshasy NIE odpala od wygnań z CUDZEGO grobu', () => {
+  const state = game('p2');
+  putCard(state, 'vizier', 'rakshasa-vizier', 'p1', 'battlefield', { summoningSickness: false });
+  putCard(state, 'mauler', 'makeshift-mauler', 'p2', 'hand');
+  putCard(state, 'deadfoe', 'highland-game', 'p2', 'graveyard');
+  addMana(state, 'p2', 4, { colors: ['U'] });
+  const cast = playerView(state, 'p2').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'mauler' && c.exileTargetId === 'deadfoe');
+  assert.ok(cast, 'oferta rzutu p2');
+  assert.ok(execute(state, cast).ok);
+  assert.ok(resolveStack(state));
+  const vizier = state.objects.get('vizier');
+  assert.ok(!(vizier.counters?.['+1/+1'] > 0), 'cudzy grób nie karmi Rakshasy');
+});
+
+test('B4: Rakshasa — kwota z kontekstu (amountFromContext) dla wielu kart', () => {
+  const state = game('p1');
+  const vizier = putCard(state, 'vizier', 'rakshasa-vizier', 'p1');
+  const ability = REGISTRY.get('rakshasa-vizier').abilities[0];
+  applyEffect(state, ability.effect, vizier, [], { exiledCount: 3 });
+  assert.equal(state.objects.get('vizier').counters?.['+1/+1'], 3, '3 karty = 3 liczniki');
+});

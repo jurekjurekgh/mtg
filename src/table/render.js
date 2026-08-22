@@ -1212,6 +1212,7 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   if (trigger.event === 'enchanted_creature_damage_to_opponent') return `Gdy zaczarowany stwór zada obrażenia przeciwnikowi: ${parts}.`;
   if (trigger.event === 'any_combat_damage_to_player') return `Gdy ${mine ? 'jeden z twoich stworów' : 'stwór kontrolera'} zada obrażenia bojowe graczowi: ${parts}.`;
   if (trigger.event === 'card_put_into_graveyard_from_nonbattlefield') return `Gdy karta trafia do grobu spoza pola bitwy: ${parts}.`;
+  if (trigger.event === 'cards_exiled_from_your_graveyard') return `Ilekroć karty trafiają na wygnanie z twojego grobu: ${parts}.`;
   if (trigger.event === 'spell_targets_this_creature') return `Gdy czar celuje w tę kartę: ${parts}.`;
   if (trigger.event === 'another_creature_enters') return `Gdy inny stwór wchodzi na pole bitwy: ${parts}.`;
   // M100/E10 (P7 — Żywy Tester h08/h13): mentor ma efekt [] (obsługiwany
