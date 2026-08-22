@@ -718,8 +718,18 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         // Źródło mogło zniknąć w koszcie (Sacrifice this) — nazwa jedzie
         // wtedy z e.cardId, nie z lookupu po id obiektu (naprawione „?\" w logu).
         const sourceName = e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId);
+        // M175/A1 (uwaga właściciela, Death-Hood Cobra): grant keywordów
+        // nazywa KONKRET — „nadanie do końca tury: zasięg” zamiast ogólnika
+        // „nadanie słów kluczowych do końca tury” (zdarzenie niesie
+        // `grantKeywords` z silnika).
         const desc = (e.effectTypes ?? [])
-          .map((type) => ABILITY_EFFECT_LABELS[type])
+          .map((type) => {
+            if (type === 'grant_keywords_until_end_of_turn' && e.grantKeywords?.length) {
+              const named = e.grantKeywords.map((k) => KEYWORD_EVENT_LABELS[k] ?? k).join(', ');
+              return `nadanie do końca tury: ${named}`;
+            }
+            return ABILITY_EFFECT_LABELS[type];
+          })
           .filter(Boolean)
           .join(', ');
         // M150/C2: zdolność dodająca manę (Jeskai Devotee „{1}: Add {U}, {R},

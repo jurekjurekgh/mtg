@@ -44,6 +44,22 @@ function collectManaColors(effects) {
 }
 
 /**
+ * M175/A1 (uwaga wlasciciela, Death-Hood Cobra): keywordy nadawane przez
+ * zdolnosc — do zdarzenia `ability_activated`, zeby log stolu nazwal KONKRET
+ * („nadanie do konca tury: zasieg"), a nie ogolnik „nadanie slow kluczowych".
+ */
+function collectGrantKeywords(effects) {
+  const keywords = [];
+  for (const effect of effects ?? []) {
+    if (effect?.type !== 'grant_keywords_until_end_of_turn') continue;
+    for (const keyword of effect.keywords ?? []) {
+      if (!keywords.includes(keyword)) keywords.push(keyword);
+    }
+  }
+  return keywords;
+}
+
+/**
  * Warunek zdolności „Max speed" (Glitch Ghost Surveyor): zdolność można
  * aktywować dopiero przy speed 4. Wspólne dla oferty i walidacji.
  */
@@ -1288,6 +1304,7 @@ export function performActivation(state, ctx) {
   // ma nadal podać nazwę karty). effectTypes = krótki opis „co robi
   // zdolność" dla logu stołu (zamiast „?\" po nazwach funkcji).
   const manaColors = collectManaColors(effectList);
+  const grantKeywords = collectGrantKeywords(effectList);
   const activated = event('ability_activated', {
     playerId, objectId, abilityIndex,
     cardId: effectSource.cardId ?? object.cardId,
@@ -1298,6 +1315,8 @@ export function performActivation(state, ctx) {
     effectTypes: effectList.map((e) => e?.type).filter(Boolean),
     // M150/C2: kolory wyprodukowanej many (Jeskai Devotee) w logu.
     ...(manaColors.length ? { manaColors } : {}),
+    // M175/A1: konkretne keywordy grantu — log nazywa je po polsku.
+    ...(grantKeywords.length ? { grantKeywords } : {}),
     // M73d (F): targets tylko dla zdolności z celami (spójnie z queue...).
     targets: (ability.targets?.length ? chosenTargets : []),
     // M115: X to WARTOŚĆ WYBRANA przez gracza, nie łączna zapłacona mana —
@@ -1359,13 +1378,17 @@ export function queueActivatedAbilityToStack(state, { playerId, objectId, abilit
   });
   state.objects.set(id, entry);
   state.zones.stack.push(id);
-  const stackManaColors = collectManaColors(Array.isArray(ability.effect) ? ability.effect : [ability.effect]);
+  const stackEffectList = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+  const stackManaColors = collectManaColors(stackEffectList);
+  const stackGrantKeywords = collectGrantKeywords(stackEffectList);
   const activated = event('ability_activated', {
     playerId, objectId: effectSourceId, cardId: entry.cardId, abilityIndex,
     keyword: ability.keyword ?? null,
-    effectTypes: (Array.isArray(ability.effect) ? ability.effect : [ability.effect]).map((e) => e?.type).filter(Boolean),
+    effectTypes: stackEffectList.map((e) => e?.type).filter(Boolean),
     // M150/C2: kolory wyprodukowanej many w logu.
     ...(stackManaColors.length ? { manaColors: stackManaColors } : {}),
+    // M175/A1: konkretne keywordy grantu — log nazywa je po polsku.
+    ...(stackGrantKeywords.length ? { grantKeywords: stackGrantKeywords } : {}),
     // M73d (F): „targets" tylko gdy zdolność MA cele — bezcelowe aktywacje
     // (Soulmender, crew, Cellar Door) nie logują „→ cel: <źródło>" (audyt
     // żywym testerem). effectTargets dla bezcelowych to [objectId] — szum.
