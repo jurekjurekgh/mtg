@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Sifter%20Wurm&set=hou",
+  "print": "Sifter Wurm (HOU)",
+  "name": "Sifter Wurm",
+  "mana_cost": "{5}{G}{G}",
+  "cmc": 7.0,
+  "type_line": "Creature — Wurm",
+  "oracle_text": "Trample\nWhen this creature enters, scry 3, then reveal the top card of your library. You gain life equal to that card's mana value.",
+  "power": "7",
+  "toughness": "7",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Trample",
+    "Scry"
+  ],
+  "set": "hou",
+  "collector_number": "135",
+  "rarity": "uncommon",
+  "pobrano": "2026-08-22",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/d/5dbaf7e3-e2fc-4399-aa83-c13df43008a0.jpg?1783936012",
+    "normal": "https://cards.scryfall.io/large/front/5/d/5dbaf7e3-e2fc-4399-aa83-c13df43008a0.jpg?1783936012"
+  }
+}

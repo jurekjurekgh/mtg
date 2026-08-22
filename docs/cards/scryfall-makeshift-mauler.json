@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Makeshift%20Mauler&set=isd",
+  "print": "Makeshift Mauler (ISD)",
+  "name": "Makeshift Mauler",
+  "mana_cost": "{3}{U}",
+  "cmc": 4.0,
+  "type_line": "Creature — Zombie Horror",
+  "oracle_text": "As an additional cost to cast this spell, exile a creature card from your graveyard.",
+  "power": "4",
+  "toughness": "5",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [],
+  "set": "isd",
+  "collector_number": "65",
+  "rarity": "common",
+  "pobrano": "2026-08-22",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/8/d869de57-9454-47ff-af14-eaefd387047a.jpg?1783940971",
+    "normal": "https://cards.scryfall.io/large/front/d/8/d869de57-9454-47ff-af14-eaefd387047a.jpg?1783940971"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Rakshasa%20Vizier&set=ktk",
+  "print": "Rakshasa Vizier (KTK)",
+  "name": "Rakshasa Vizier",
+  "mana_cost": "{2}{B}{G}{U}",
+  "cmc": 5.0,
+  "type_line": "Creature — Demon",
+  "oracle_text": "Whenever one or more cards are put into exile from your graveyard, put that many +1/+1 counters on this creature.",
+  "power": "4",
+  "toughness": "4",
+  "colors": [
+    "B",
+    "G",
+    "U"
+  ],
+  "color_identity": [
+    "B",
+    "G",
+    "U"
+  ],
+  "keywords": [],
+  "set": "ktk",
+  "collector_number": "193",
+  "rarity": "rare",
+  "pobrano": "2026-08-22",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/b/cb39e674-919d-4db6-9ac1-cfa1cca02207.jpg?1783939055",
+    "normal": "https://cards.scryfall.io/large/front/c/b/cb39e674-919d-4db6-9ac1-cfa1cca02207.jpg?1783939055"
+  }
+}

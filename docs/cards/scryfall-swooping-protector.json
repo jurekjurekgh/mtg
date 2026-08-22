@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Swooping%20Protector&set=snc",
+  "print": "Swooping Protector (SNC)",
+  "name": "Swooping Protector",
+  "mana_cost": "{3}{W}",
+  "cmc": 4.0,
+  "type_line": "Creature — Bird Citizen",
+  "oracle_text": "Flash\nFlying\nThis creature enters with a shield counter on it. (If it would be dealt damage or destroyed, remove a shield counter from it instead.)",
+  "power": "2",
+  "toughness": "1",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [
+    "Flying",
+    "Flash"
+  ],
+  "set": "snc",
+  "collector_number": "33",
+  "rarity": "uncommon",
+  "pobrano": "2026-08-22",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/8/7/8713498f-a467-4a11-9de2-53a1bbd0b18b.jpg?1783923149",
+    "normal": "https://cards.scryfall.io/large/front/8/7/8713498f-a467-4a11-9de2-53a1bbd0b18b.jpg?1783923149"
+  }
+}
