@@ -1,12 +1,14 @@
 # Forgotten Realms
 
 1x Basilisk Gate
+1x Heap Gate
 1x Scorch Spitter
 1x Circle of the Land Druid
 1x Cloak of the Bat
 1x Curate
 1x Greatsword of Tyr
 1x Guildsworn Prowler
+1x Thieves' Tools
 1x Gray Slaad
 1x Nefarious Imp
 1x Silvanus's Invoker
@@ -19,6 +21,6 @@
 1x Marut
 2x Plains
 2x Island
-2x Swamp
+3x Swamp
 1x Mountain
 2x Forest

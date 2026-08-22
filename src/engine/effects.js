@@ -523,7 +523,11 @@ export function librarySearchMatches(object, qualifier, ownerId) {
   const kindMatch = !qualifier.kind || object.kind === qualifier.kind;
   const minMv = qualifier.minManaValue;
   const mvOk = minMv == null || (object.manaCost ?? 0) >= minMv;
-  return typeMatch && subtypeMatch && kindMatch && mvOk;
+  // Batch 44 (Angel's Herald): „search ... for a card named Empyrial
+  // Archangel" — kwalifikator po dokładnej nazwie karty (CR 701.19b;
+  // kryterium jakości, więc fail to find pozostaje legalny).
+  const nameOk = !qualifier.name || (object.cardName ?? object.name) === qualifier.name;
+  return typeMatch && subtypeMatch && kindMatch && mvOk && nameOk;
 }
 
 export function queueSearchChoice(state, sourceObject, { qualifier, destination, entersTapped, destinations = null, chain = null, emitter = null, mandatory = false }) {
@@ -3899,15 +3903,38 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const controllerId = sourceObject.controllerId;
     const n = effect.amount ?? 4;
     const topIds = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === controllerId).slice(0, n);
-    if (topIds.length === 0) return;
+    // Batch 44 (Blanchwood Prowler): „mill three... You may put a land card
+    // from among the cards milled this way into your hand. If you don't, put
+    // a +1/+1 counter on this creature." — counterIfNone: gdy landa nie
+    // wzięto (rezygnacja ALBO brak landa wśród kart), źródło dostaje licznik.
+    // Bez landów decyzji nie ma: karty idą do grobu, licznik od razu.
+    if (topIds.length === 0) {
+      if (effect.counterIfNone && sourceObject.zone === 'battlefield' && sourceObject.kind === 'creature') {
+        addCounter(state, sourceObject.id, '+1/+1', 1);
+      }
+      return;
+    }
     const landIds = topIds.filter((id) => {
       const o = state.objects.get(id);
       return o && ((o.kind ?? '') === 'land' || (o.types ?? []).includes('Land'));
     });
+    if (effect.counterIfNone && landIds.length === 0) {
+      for (const id of topIds) {
+        const graveId = `grave-${state.objectSequence++}`;
+        const movedGrave = moveObjectDirectly(state, id, 'graveyard', graveId);
+        state.events.push(event('object_moved', { fromId: id, object: movedGrave, fromZone: 'library', toZone: 'graveyard', milled: true }));
+      }
+      const src = state.objects.get(sourceObject.id);
+      if (src && src.zone === 'battlefield' && src.kind === 'creature') {
+        addCounter(state, sourceObject.id, '+1/+1', 1);
+      }
+      return;
+    }
     state.pendingSatyrLook = {
       playerId: controllerId,
       objectIds: [...topIds],
       landIds: [...landIds],
+      ...(effect.counterIfNone ? { counterIfNoneSourceId: sourceObject.id } : {}),
       restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.turn.priorityPlayerId = controllerId;

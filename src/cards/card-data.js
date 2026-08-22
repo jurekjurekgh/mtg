@@ -8292,6 +8292,118 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['płatność {1}{W} to decyzja gracza przy triggerze (resolve_optional_pay_choice); endure 1 = wybór: licznik +1/+1 albo token Spirit 1/1'],
   }),
 
+  // ---- Batch 44 — transza B: rozszerzenia silnika ----
+
+  // 6. Blanchwood Prowler (BRO) — ETB: mill 3; land z młyna do ręki ALBO
+  //    +1/+1 (reveal_top_pick_land_rest_grave z counterIfNone).
+  defineCard({
+    id: 'blanchwood-prowler', name: 'Blanchwood Prowler', set: 'BRO',
+    types: ['Creature'], subtypes: ['Elemental'], colors: ['G'],
+    power: 1, toughness: 1, manaCost: 2,
+    oracleText: 'When this creature enters, mill three cards. You may put a land card from among the cards milled this way into your hand. If you don\'t, put a +1/+1 counter on this creature. (To mill a card, put the top card of your library into your graveyard.)',
+    imageUri: 'https://cards.scryfall.io/large/front/9/c/9c6988b6-ade0-4cd5-b27c-146e5e7ae91f.jpg?1783920050',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'reveal_top_pick_land_rest_grave', amount: 3, counterIfNone: true }],
+      }),
+    ],
+    artId: 303, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+    notes: ['bez landa wśród zmielonych: karty do grobu + licznik bez decyzji; rezygnacja z landa = licznik'],
+  }),
+
+  // 7. Thieves' Tools (CLB) — Equipment: ETB Treasure; nosiciel o mocy <=3
+  //    nie może być blokowany (NOWE: equipment.cantBeBlockedMaxPower).
+  defineCard({
+    id: 'thieves-tools', name: "Thieves' Tools", set: 'CLB',
+    types: ['Artifact'], subtypes: ['Equipment'], colors: ['B'], manaCost: 2,
+    oracleText: 'When this Equipment enters, create a Treasure token. (It\'s an artifact with "{T}, Sacrifice this token: Add one mana of any color.")\nEquipped creature can\'t be blocked as long as its power is 3 or less.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)',
+    imageUri: 'https://cards.scryfall.io/large/front/c/3/c3bf4ee1-b6a8-4a69-adab-6839c1786cc9.jpg?1783922750',
+    equipment: { equip: 2, cantBeBlockedMaxPower: 3 },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{
+          type: 'create_token', cardId: 'token_treasure', name: 'Treasure',
+          kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Treasure'],
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.activated,
+              cost: { tap: true, sacrificeSelf: true },
+              effect: { type: 'add_mana', amount: 1, fromTreasure: true },
+            }),
+          ],
+        }],
+      }),
+    ],
+    artId: 284, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+    notes: ['próg mocy liczony EFEKTYWNIE przy deklaracji blokerów — pump ponad 3 wyłącza nieblokowalność'],
+  }),
+
+  // 8. Heap Gate (CLB) — Gate: {T}: C; {1},{T}: dowolny kolor; {1},{T},
+  //    tapnij nietapnięty Gate: Treasure (NOWY koszt tapUntappedSubtype).
+  defineCard({
+    id: 'heap-gate', name: 'Heap Gate', set: 'CLB',
+    types: ['Land'], subtypes: ['Gate'], colors: [],
+    oracleText: '{T}: Add {C}.\n{1}, {T}: Add one mana of any color.\n{1}, {T}, Tap an untapped Gate you control: Create a Treasure token. (It\'s an artifact with "{T}, Sacrifice this token: Add one mana of any color.")',
+    imageUri: 'https://cards.scryfall.io/large/front/6/8/68489d65-1978-48b1-a903-2ef38c583239.jpg?1783922657',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['W', 'U', 'B', 'R', 'G'] },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, tap: true, tapUntappedSubtype: 'Gate' },
+        effect: [{
+          type: 'create_token', cardId: 'token_treasure', name: 'Treasure',
+          kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Treasure'],
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.activated,
+              cost: { tap: true, sacrificeSelf: true },
+              effect: { type: 'add_mana', amount: 1, fromTreasure: true },
+            }),
+          ],
+        }],
+      }),
+    ],
+    artId: 276, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+    notes: ['koszt „tapnij nietapnięty Gate" wymaga INNEJ bramy — {T} w koszcie zużywa już samą Heap Gate'],
+  }),
+
+  // 9. Angel's Herald (ALA) — {2}{W}, {T}, poświęć zielonego, białego
+  //    i niebieskiego stwora: tutor Empyrial Archangel na pole bitwy
+  //    (NOWY koszt sacrificeCreaturesByColors + search po nazwie).
+  defineCard({
+    id: 'angels-herald', name: "Angel's Herald", set: 'ALA',
+    types: ['Creature'], subtypes: ['Human', 'Cleric'], colors: ['W'],
+    power: 1, toughness: 1, manaCost: 1,
+    oracleText: '{2}{W}, {T}, Sacrifice a green creature, a white creature, and a blue creature: Search your library for a card named Empyrial Archangel, put it onto the battlefield, then shuffle.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/6/36197ed0-4382-4de3-8359-73cb74edc78b.jpg?1783942584',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 3, colors: ['W'], tap: true, sacrificeCreaturesByColors: ['G', 'W', 'U'] },
+        effect: { type: 'search_library_to_battlefield', qualifier: { name: 'Empyrial Archangel' } },
+      }),
+    ],
+    artId: 262, plan: 'Alara',
+    support: { status: 'supported', limitations: [] },
+    notes: ['Empyrial Archangel nie jest w katalogu — search legalnie „fails to find" (CR 701.19b: kryterium nazwy); zdolność w pełni wg Oracle, użyteczna po ewentualnym dodaniu anioła'],
+  }),
+
 ]);
 
 /**

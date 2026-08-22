@@ -356,4 +356,8 @@ export const MANA_COSTS = {
   "dismal-backwater": "",
   "glaring-aegis": "{W}",
   "descendant-of-storms": "{W}",
+  "blanchwood-prowler": "{1}{G}",
+  "thieves-tools": "{1}{B}",
+  "heap-gate": "",
+  "angels-herald": "{W}",
 };

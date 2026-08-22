@@ -999,6 +999,10 @@ const NON_MANA_COST_LABELS = Object.freeze([
   // M177/E (Merchant's Dockhand): koszt „Tap X untapped artifacts you control”.
   ['tapXArtifacts', 'tapnij X swoich nietapniętych artefaktów'],
   ['crewPower', (n) => `załoga ${n}`],
+  // Batch 44 (Heap Gate): koszt „Tap an untapped Gate you control".
+  ['tapUntappedSubtype', (sub) => `tapnij inny nietapnięty permanent (${sub})`],
+  // Batch 44 (Angel's Herald): koszt „Sacrifice a green/white/blue creature".
+  ['sacrificeCreaturesByColors', (colors) => `poświęć stwory kolorów: ${(colors ?? []).join('/')}`],
   ['saddlePower', (n) => `saddle ${n}`],
   ['removeCounter', (c) => {
     const amount = c.amount ?? 1;

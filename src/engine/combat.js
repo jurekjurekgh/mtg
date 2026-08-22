@@ -4,6 +4,20 @@ import { addCounter } from './counters.js';
 import { attachmentRestrictions, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, isProtectedFromSource, markDamage, markDealtDamageThisTurn, preventDamageTo, tapObject } from './permanents.js';
 import { attachmentsAttachedTo } from './attachments.js';
 import { effectiveProtectionFromColors } from './attachments.js';
+
+/**
+ * Batch 44 (Thieves' Tools, CR 509.1b): „Equipped creature can't be blocked
+ * as long as its power is 3 or less" — próg mocy z deskryptora equipmentu
+ * przypiętego do atakującego, oceniany przy deklaracji blokerów (moc
+ * EFEKTYWNA — pumpy i liczniki mogą wynieść nosiciela ponad próg).
+ */
+function cantBeBlockedFromEquipment(state, attacker) {
+  for (const attachment of attachmentsAttachedTo(state, attacker.id)) {
+    const maxPower = attachment.equipment?.cantBeBlockedMaxPower;
+    if (maxPower != null && effectivePower(attacker, state) <= maxPower) return true;
+  }
+  return false;
+}
 import { runStateBasedActions } from './state-based.js';
 
 function getCreature(state, id) {
@@ -176,6 +190,7 @@ export function declareBlockers(state, playerId, assignments) {
     if (!state.combat.attackers.includes(attackerId)) throw new Error('Blokowanie nieistniejącego atakującego');
     const attacker = getCreature(state, attackerId);
     if (attacker.cantBeBlocked) throw new Error('Stwora z cantBeBlocked nie można blokować');
+    if (cantBeBlockedFromEquipment(state, attacker)) throw new Error('Nosiciel equipmentu z progiem mocy nie może być blokowany');
     const ids = blockerIds.map((id) => getCreature(state, id));
     // Dread Warlock: „can't be blocked except by black creatures".
     const blockColors = attackerBlockColorRestriction(state, attacker);
@@ -854,6 +869,7 @@ function canBlock(state, attacker, blocker) {
   const landwalkSub = attackerLandwalkSubtype(state, attacker);
   if (landwalkSub && controlsLandWithSubtype(state, blocker.controllerId, landwalkSub)) return false;
   if (attacker.cantBeBlocked) return false;
+  if (cantBeBlockedFromEquipment(state, attacker)) return false;
   // Intimidate (CR 702.13, M174/D — Predator's Gambit): atakujący może być
   // blokowany wyłącznie przez ARTEFAKTOWE stwory i/lub stwory dzielące
   // z nim kolor.

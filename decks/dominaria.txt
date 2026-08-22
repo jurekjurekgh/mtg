@@ -4,6 +4,7 @@
 1x Chatter of the Squirrel
 1x Dreams of Steel and Oil
 1x Survivor of Korlis
+1x Blanchwood Prowler
 1x Evangel of Synthesis
 1x Goblin Picker
 1x Reassembling Skeleton
@@ -27,8 +28,8 @@
 1x Dragon Arch
 1x Final Parting
 1x Mindstab
-3x Plains
+2x Plains
 2x Island
 6x Swamp
 2x Mountain
-1x Forest
+2x Forest

@@ -211,6 +211,10 @@ export function defineCard(data) {
           keywords: Object.freeze([...ck.keywords]),
         })));
       }
+      // Batch 44 (Thieves' Tools): „Equipped creature can't be blocked as
+      // long as its power is 3 or less" — próg mocy oceniany przy deklaracji
+      // blokerów (combat.js), nie statycznie.
+      if (data.equipment.cantBeBlockedMaxPower != null) base.cantBeBlockedMaxPower = data.equipment.cantBeBlockedMaxPower;
       // Ograniczenia nosiciela (jak przy aurze) — zarezerwowane pod przyszłe
       // equipmenty; obecnie żaden ich nie używa.
       if (data.equipment.cantAttack) base.cantAttack = true;

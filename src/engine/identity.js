@@ -146,6 +146,9 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
       if (equipment.conditionalKeywords && equipment.conditionalKeywords.length > 0) {
         base.conditionalKeywords = Object.freeze(equipment.conditionalKeywords.map((ck) => Object.freeze({ condition: Object.freeze({ ...ck.condition }), keywords: Object.freeze([...ck.keywords]) })));
       }
+      // Batch 44 (Thieves' Tools, L48): próg „can't be blocked" musi przejść
+      // cały łańcuch registry → gameObject, inaczej ginie po zmianie strefy.
+      if (equipment.cantBeBlockedMaxPower != null) base.cantBeBlockedMaxPower = equipment.cantBeBlockedMaxPower;
       // Ograniczenia nosiciela (jak przy aurze) — zarezerwowane dla
       // przyszłych equipmentów; obecnie żaden ich nie używa.
       if (equipment.cantAttack) base.cantAttack = true;

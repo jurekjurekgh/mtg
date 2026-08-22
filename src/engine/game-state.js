@@ -1735,6 +1735,15 @@ export function execute(state, input) {
       state.events.push(event('object_moved', { fromId: id, object: movedGrave, fromZone: 'library', toZone: 'graveyard', milled: true }));
     }
     state.pendingSatyrLook = null;
+    // Batch 44 (Blanchwood Prowler): „If you don't, put a +1/+1 counter on
+    // this creature" — rezygnacja z landa (pickId null) daje licznik źródłu,
+    // o ile wciąż jest stworem na polu bitwy (CR 608.2b dla części „counter").
+    if (pending.counterIfNoneSourceId && pickId == null) {
+      const src = state.objects.get(pending.counterIfNoneSourceId);
+      if (src && src.zone === 'battlefield' && src.kind === 'creature') {
+        addCounter(state, pending.counterIfNoneSourceId, '+1/+1', 1);
+      }
+    }
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
@@ -4072,7 +4081,7 @@ export function execute(state, input) {
   if (cmd.type === 'activate_ability') {
     try {
       const before = state.events.length;
-      const e = activateAbility(state, cmd.playerId, cmd.objectId, cmd.abilityIndex, cmd.attackerId, cmd.targets, cmd.xValue, cmd.crewCreatureIds, cmd.tapCreatureId, cmd.tapOtherCreatureId, cmd.sacrificeLandId, undefined, cmd.grantedFromEquipment, cmd.tapArtifactIds);
+      const e = activateAbility(state, cmd.playerId, cmd.objectId, cmd.abilityIndex, cmd.attackerId, cmd.targets, cmd.xValue, cmd.crewCreatureIds, cmd.tapCreatureId, cmd.tapOtherCreatureId, cmd.sacrificeLandId, undefined, cmd.grantedFromEquipment, cmd.tapArtifactIds, { tapPermanentCostId: cmd.tapPermanentCostId, sacrificeCreatureIds: cmd.sacrificeCreatureIds });
       const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
       return accepted(state, cmd, { ok: true, events });
     } catch (error) {
@@ -5316,7 +5325,7 @@ export function playerView(state, playerId) {
     // od fazy. Każda oferowana aktywacja jest akceptowana przez execute.
     // Ninjutsu niesie dodatkowo attackerId (atakujący do zwrotu do ręki);
     // zdolności celowane/{X} niosą targets i xValue.
-    for (const { objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, grantedFromEquipment, tapArtifactIds } of legalActivatedAbilities(state, playerId)) {
+    for (const { objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, grantedFromEquipment, tapArtifactIds, tapPermanentCostId, sacrificeCreatureIds } of legalActivatedAbilities(state, playerId)) {
       const extra = { objectId, abilityIndex };
       if (attackerId !== undefined) extra.attackerId = attackerId;
       if (targets !== undefined) extra.targets = targets;
@@ -5328,6 +5337,10 @@ export function playerView(state, playerId) {
       if (tapCreatureId !== undefined) extra.tapCreatureId = tapCreatureId;
       if (tapOtherCreatureId !== undefined) extra.tapOtherCreatureId = tapOtherCreatureId;
       if (sacrificeLandId !== undefined) extra.sacrificeLandId = sacrificeLandId;
+      // Batch 44: koszt „tapnij nietapnięty Gate" (Heap Gate) i „poświęć
+      // stwory kolorów G/W/U" (Angel's Herald) jadą w komendzie.
+      if (tapPermanentCostId !== undefined) extra.tapPermanentCostId = tapPermanentCostId;
+      if (sacrificeCreatureIds !== undefined) extra.sacrificeCreatureIds = sacrificeCreatureIds;
       // M146 (Blazing Torch): zdolność NADANA nosicielowi przez przypięty
       // sprzęt — execute musi wiedzieć, że abilityIndex liczy się względem
       // equipment.grantedAbilities, nie object.abilities.

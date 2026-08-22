@@ -350,11 +350,14 @@ export function untappedLandManaSources(state, playerId) {
  * {T} (CR 302.6).
  */
 export function untappedFreeManaSources(state, playerId, excludeSourceId = null) {
+  const excludedFree = excludeSourceId == null
+    ? null
+    : new Set(Array.isArray(excludeSourceId) ? excludeSourceId : [excludeSourceId]);
   const out = [];
   for (const id of state.zones.battlefield) {
     const object = state.objects.get(id);
     if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId || object.tapped) continue;
-    if (excludeSourceId != null && object.id === excludeSourceId) continue;
+    if (excludedFree != null && excludedFree.has(object.id)) continue;
     const isLandSource = object.kind === 'land' || (object.types ?? []).includes('Land');
     if (isLandSource) continue; // landy liczy untappedLandManaSources
     for (const ability of object.abilities ?? []) {
@@ -392,10 +395,15 @@ export function producibleMana(state, playerId, excludeSourceId = null) {
   // WŁASNEGO źródła many — źródło tapnięte kosztem nie zapłaci już many,
   // więc oferta liczy zdolność BEZ niego (excludeSourceId); płatność i tak
   // je pomija (jest tapnięte przed spendMana).
+  // Batch 44 (Heap Gate): koszt może tapować WIĘCEJ źródeł naraz ({T} źródła
+  // + „tap an untapped Gate") — excludeSourceId przyjmuje też tablicę id.
+  const excluded = excludeSourceId == null
+    ? null
+    : new Set(Array.isArray(excludeSourceId) ? excludeSourceId : [excludeSourceId]);
   const player = state.players.find((entry) => entry.id === playerId);
   let fromLands = 0;
   for (const land of untappedLandManaSources(state, playerId)) {
-    if (excludeSourceId != null && land.id === excludeSourceId) continue;
+    if (excluded != null && excluded.has(land.id)) continue;
     const grant = grantManaOnLand(state, land.id);
     fromLands += grant > 0 ? grant : 1;
   }

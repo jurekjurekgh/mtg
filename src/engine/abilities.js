@@ -567,6 +567,55 @@ export function legalActivatedAbilities(state, playerId) {
         }
         continue;
       }
+      // Batch 44 (Heap Gate): koszt „Tap an untapped Gate you control" —
+      // INNY nietapnięty permanent z podtypem z deskryptora (samo źródło
+      // jest już tapowane przez {T}, więc nie może pokryć tego kosztu).
+      if (ability.cost?.tapUntappedSubtype) {
+        const sub = ability.cost.tapUntappedSubtype;
+        const candidates = state.zones.battlefield.filter((objectId) => {
+          const candidate = state.objects.get(objectId);
+          return candidate?.controllerId === playerId && candidate.id !== id
+            && !candidate.tapped && (candidate.subtypes ?? []).includes(sub);
+        });
+        if (candidates.length === 0) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
+        for (const tapId of candidates) {
+          // Klasa Z1/M180: źródło ({T} w koszcie) ANI kandydat tapowany
+          // kosztem nie zapłacą many — oferta liczy manę BEZ obu
+          // (płatność tapuje je przed spendMana).
+          const manaWithout = producibleMana(state, playerId, ability.cost?.tap ? [id, tapId] : [tapId]);
+          if ((ability.cost?.mana ?? 0) > manaWithout) continue;
+          out.push({ objectId: id, abilityIndex: index, ability, tapPermanentCostId: tapId });
+        }
+        continue;
+      }
+      // Batch 44 (Angel's Herald): koszt „Sacrifice a green creature, a white
+      // creature, and a blue creature" — trzy RÓŻNE stwory, każdy koloru ze
+      // swojej pozycji deskryptora (stwór wielokolorowy pokrywa jedną).
+      if (ability.cost?.sacrificeCreaturesByColors) {
+        const colorsNeeded = ability.cost.sacrificeCreaturesByColors;
+        const perColor = colorsNeeded.map((color) => state.zones.battlefield.filter((objectId) => {
+          const candidate = state.objects.get(objectId);
+          return candidate?.controllerId === playerId && candidate.kind === 'creature'
+            && (candidate.colors ?? []).includes(color);
+        }));
+        if ((ability.cost?.mana ?? 0) > mana) continue;
+        if (ability.cost?.tap && object.tapped) continue;
+        if (ability.cost?.tap && tapBlockedBySummoningSickness(state, object, ability)) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
+        const combos = [];
+        for (const a of perColor[0] ?? []) {
+          for (const b of perColor[1] ?? []) {
+            for (const c of perColor[2] ?? []) {
+              if (a !== b && a !== c && b !== c) combos.push([a, b, c]);
+            }
+          }
+        }
+        for (const combo of combos.slice(0, 12)) {
+          out.push({ objectId: id, abilityIndex: index, ability, sacrificeCreatureIds: combo });
+        }
+        continue;
+      }
       // Koszt „Tap ANOTHER creature you control" (Station, Wedgelight
       // Rammer): jak wyżej, ale zatapniany stwór NIE może być źródłem —
       // odróżnia go „another\" w tekście karty (CR 601.2h).
@@ -948,7 +997,7 @@ export function legalActivatedAbilities(state, playerId) {
  * go na maszynowe odrzucenie. `attackerId` jest wymagany wyłącznie dla
  * Ninjutsu; `targets` i `xValue` dla zdolności celowanych/{X}.
  */
-export function activateAbility(state, playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, opponentTargetIdArg, grantedFromEquipmentArg, tapArtifactIdsArg) {
+export function activateAbility(state, playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, opponentTargetIdArg, grantedFromEquipmentArg, tapArtifactIdsArg, extraCostsArg) {
   const object = state.objects.get(objectId);
   if (!object || object.controllerId !== playerId) throw new Error('Nielegalny obiekt zdolności');
   // Zdolność NADANA nosicielowi przez przypięty sprzęt (Blazing Torch) żyje
@@ -1113,7 +1162,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     state.events.push(e);
     return e;
   }
-  return performActivation(state, { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, opponentTargetId: opponentTargetIdArg, grantedFromEquipment: grantedFromEquipmentArg ?? false, tapArtifactIds: tapArtifactIdsArg });
+  return performActivation(state, { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, opponentTargetId: opponentTargetIdArg, grantedFromEquipment: grantedFromEquipmentArg ?? false, tapArtifactIds: tapArtifactIdsArg, tapPermanentCostId: extraCostsArg?.tapPermanentCostId, sacrificeCreatureIds: extraCostsArg?.sacrificeCreatureIds });
 }
 
 /**
@@ -1283,6 +1332,24 @@ export function performActivation(state, ctx) {
   if (crewCreaturesToTap) {
     for (const crewId of crewCreaturesToTap) tapObject(state, crewId, playerId);
   }
+  // Batch 44 (Heap Gate): koszt „Tap an untapped Gate you control" —
+  // tapnięcie INNEGO nietapniętego permanentu z podtypem. Płacimy PRZED
+  // spendMana: auto-tap many nie może zjeść permanentu wskazanego do kosztu
+  // (tapnięty Gate nie zostanie użyty jako źródło many — klasa Z1/M180).
+  if (cost.tapUntappedSubtype) {
+    const sub = cost.tapUntappedSubtype;
+    const chosenId = ctx.tapPermanentCostId ?? state.zones.battlefield.find((candidateId) => {
+      const candidate = state.objects.get(candidateId);
+      return candidate?.controllerId === playerId && candidate.id !== objectId
+        && !candidate.tapped && (candidate.subtypes ?? []).includes(sub);
+    });
+    const chosen = chosenId ? state.objects.get(chosenId) : null;
+    if (!chosen || chosen.controllerId !== playerId || chosen.id === objectId
+      || chosen.tapped || !(chosen.subtypes ?? []).includes(sub)) {
+      throw new Error(`Brak nietapniętego permanentu ${sub} do kosztu tap`);
+    }
+    tapObject(state, chosenId, playerId);
+  }
   const effManaSpend = effectiveAbilityManaCost(state, playerId, ability, object);
   // M115: {X}{B} — X PLUS stała część kosztu (Entrancing Lyre ma samo {X},
   // więc `cost.mana` jest tam zerowe i zachowanie się nie zmienia).
@@ -1326,6 +1393,31 @@ export function performActivation(state, ctx) {
     state.events.push(event('permanent_sacrificed', {
       fromId: sacrificeLandId, objectId: destId, playerId, cardId: moved.cardId, additionalCost: true, toZone,
     }));
+  }
+  // Batch 44 (Angel's Herald): koszt „Sacrifice a green creature, a white
+  // creature, and a blue creature" — trzy różne stwory, kolor per pozycja.
+  if (cost.sacrificeCreaturesByColors) {
+    const colorsNeeded = cost.sacrificeCreaturesByColors;
+    const ids = ctx.sacrificeCreatureIds;
+    if (!Array.isArray(ids) || ids.length !== colorsNeeded.length || new Set(ids).size !== ids.length) {
+      throw new Error('Koszt wymaga wskazania po jednym stworze na każdy kolor');
+    }
+    for (let k = 0; k < colorsNeeded.length; k += 1) {
+      const candidate = state.objects.get(ids[k]);
+      if (!candidate || candidate.zone !== 'battlefield' || candidate.controllerId !== playerId
+        || candidate.kind !== 'creature' || !(candidate.colors ?? []).includes(colorsNeeded[k])) {
+        throw new Error(`Nielegalny stwór do poświęcenia (kolor ${colorsNeeded[k]})`);
+      }
+    }
+    for (const sacId of ids) {
+      const sacObject = state.objects.get(sacId);
+      const toZone = deathZoneFor(state, sacObject);
+      const destId = `${toZone}-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, sacId, toZone, destId);
+      state.events.push(event('permanent_sacrificed', {
+        fromId: sacId, objectId: destId, playerId, cardId: moved.cardId, additionalCost: true, toZone,
+      }));
+    }
   }
   // Koszt „Exile this card from your graveyard" (Goldmeadow Nomad):
   // wygnanie źródła z grobu jest kosztem — następuje PRZED efektem.
