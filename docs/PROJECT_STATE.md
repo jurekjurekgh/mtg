@@ -1,7 +1,39 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-22 (M189: uwagi L/M — sprzątanie UX artefaktu; dokończona pętla jakości Z2–Z4)
-- **Poprzednia:** 2026-08-22 (M188: uwagi właściciela A/B/C/K — badge nadanych P/T, nazwy tokenów, jałowy atak bota, select tur)
+- **Ostatnia aktualizacja:** 2026-08-22 (M190: uwagi A/A2/B/C/D — opisy many, GRAF lochu, equip Thieves' Tools, wizard many)
+- **Poprzednia:** 2026-08-22 (M189: uwagi L/M — sprzątanie UX artefaktu; dokończona pętla jakości Z2–Z4)
+
+
+## M190 — uwagi właściciela z testów: A/A2, B, C, D (2026-08-22, PR #70)
+
+- **A + A2 (113f3e5) — opisy zdolności many.** Obie zdolności Heap Gate
+  miały w panelu identyczny opis („dodaj manę"), a log po aktywacji pisał
+  „({W}, {U}, {B}, {R}, {G})", co czyta się jak PIĘĆ many. Deskryptor niesie
+  `colors`, więc opis czyta go wprost: pięć kolorów = „1 mana dowolnego
+  koloru" (CR 106.6), brak listy = bezbarwna, konkretna lista = te kolory.
+  Rozpoznanie i opis w JEDNYM miejscu (`isAnyColorMana`, `manaEffectLabel`
+  w session.js) — używa ich panel i log (L41). Zdarzenie niesie
+  `manaAmount` (L6). Kontrola: Jeskai Devotee nadal wymienia {U}/{R}/{W}.
+- **B (730b705) — Undercity to GRAF, nie lista.** Silnik robił `current + 1`,
+  więc po Secret Entrance „przenosiło" gracza do Forge i loch szedł przez
+  wszystkie 9 pokoi. Oracle (tclb/20) daje przy każdym pokoju „Leads to: …",
+  a CR 309.4 oddaje wybór graczowi. Dane pokoi mają teraz `leadsTo`;
+  rozgałęzienie = blokująca decyzja (`resolve_undercity_route`), jedna droga
+  = przejście automatyczne. Pełne okablowanie: protokół, fingerprint,
+  playerView, log, panel, oba boty (z WYCENĄ — bez niej klasa L50) i render
+  („Dalsza droga: X albo Y" zamiast mylącego „pokój 3/9").
+- **C (a7ff1ec) — Thieves' Tools nie dawało się założyć.** Deskryptor
+  `equipment` opisuje skutek, ale aktywację „Equip {2}" (CR 702.6) enumeruje
+  osobna zdolność `keyword: 'equip'`; Batch 44 jej nie dopisał, więc karta
+  była martwa. **Strażnik**: każda karta z `equipment` musi mieć tę zdolność.
+- **D (4cbdd67) — wizard many proponował samobójczą płatność.** Basilisk Gate
+  ({2},{T}) dawał się „opłacić" tapnięciem samego siebie → fizzle. Silnik znał
+  regułę (`excludeSourceId`, M174/E), UI nie (klasa L48). Wykluczenie działa
+  WYŁĄCZNIE dla zdolności z `cost.tap` (Heap Gate {1} bez zmian).
+
+**Stan:** `npm test` **2808/2808**, build **52 moduły / 2414.0 kB**,
+benchmark regresji **9/9**, Żywy Tester: 0 zgłoszeń.
+
 
 
 ## M189 — uwagi L/M + dokończenie pętli jakości (2026-08-22, PR #70)

@@ -163,8 +163,10 @@ wypisuje listę dostępnych kolorów jako listę wyprodukowanej many.
 Reguła generyczna (ADR 0002): opis czyta deskryptor efektu — 5 kolorów =
 „dowolny kolor", brak `colors` = mana bezbarwna, jeden kolor = ten kolor.
 
-- [ ] etykieta oferty rozróżnia warianty (any color / bezbarwna / konkretny)
-- [ ] log mówi „1 mana dowolnego koloru" zamiast listy pięciu symboli
+- [x] etykieta oferty rozróżnia warianty (any color / bezbarwna / konkretny)
+- [x] log mówi „1 mana dowolnego koloru" zamiast listy pięciu symboli
+- **Zrobione** (113f3e5): `isAnyColorMana` + `manaEffectLabel` w session.js
+  (jedno źródło dla panelu i logu); zdarzenie niesie `manaAmount`.
 
 ### B — Undercity: loch to GRAF, nie lista
 
@@ -188,8 +190,24 @@ Obecnie `ventureIntoUndercity` robi `current + 1` — czyli JEDNĄ ścieżkę
 spośród wskazanych strzałkami) i pomija fakt, że loch kończy się po
 4–5 pokojach, nie po 9.
 
-- [ ] mapa przejść w danych (jedno źródło prawdy, z Oracle)
-- [ ] wybór następnego pokoju jako blokująca decyzja gracza
-      (jeden kandydat = bez pytania, jak przy innych decyzjach)
-- [ ] bot wybiera sensownie (nie pierwszą ofertę z listy)
-- [ ] widok/render: aktualny pokój + dostępne ścieżki
+- [x] mapa przejść w danych (jedno źródło prawdy, z Oracle)
+- [x] wybór następnego pokoju jako blokująca decyzja gracza
+- [x] bot wybiera sensownie (wycena pokoi + strażnik zgodności map)
+- [x] widok/render: aktualny pokój + dostępne ścieżki
+- **Zrobione** (730b705): `leadsTo` w danych, `pendingUndercityRoute` +
+  `resolve_undercity_route`, pełne okablowanie warstw, render „Dalsza droga".
+
+### C — Thieves' Tools nie dawało się założyć
+
+- **Zrobione** (a7ff1ec): brakowała zdolność `keyword: 'equip'` (deskryptor
+  `equipment` opisuje tylko skutek). Strażnik na cały katalog.
+
+### D — wizard many proponował zapłatę tapnięciem opłacanego źródła
+
+- **Zrobione** (4cbdd67): `manaSourcesOf({ excludeSourceId })` +
+  `selfTapExclusionFor` w main.js — wyłącznie dla zdolności z `cost.tap`.
+
+## Wynik M190
+
+`npm test` **2808/2808** · build **52 moduły / 2414.0 kB** ·
+benchmark **9/9** · Żywy Tester: 0 zgłoszeń.
