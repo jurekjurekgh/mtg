@@ -1271,3 +1271,40 @@ to zadanie na TERAZ dla kodu mechaniki — nie wpis do zapomnienia.
 
 **Sformalizowane w:** M161 (routing madness po kind, `castMadnessSpell`,
 strażnik katalogu w `test/m161-madness-spell-path.test.js`).
+
+## L56 (2026-08-23) — Twierdzenie o danych sprawdzasz GREPEM, zanim je zapiszesz
+
+**Objaw:** M196 ogłosiło „nowy plan w katalogu: Kamigawa". Właściciel: *„Jesteś
+pewien? Ja widzę w CSV takie karty z tego planu: Blade-Blizzard Kitsune, Kappa
+Tech-Wrecker, Greater Tanuki…"*. Plan istniał od dawna — nowa karta była jego
+czwartą, nie pierwszą.
+
+**Dlaczego to groźne:** nieprawda nie została w czacie. Poszła do
+`PROJECT_STATE.md`, do planu sesji, do komunikatu commita **i do asercji
+testu** (`assert.equal(card.plan, 'Kamigawa', 'NOWY plan w katalogu')`), gdzie
+zielony test zaczął ją uwiarygodniać. Test potwierdzał wartość pola, a
+komentarz przy nim kłamał o kontekście — to L1 przeniesione do dokumentacji.
+
+**Reguła:**
+1. Zdanie o stanie danych („nowy plan", „pierwsza taka karta", „jedyny
+   przypadek") wymaga **komendy przed zapisem** — `grep` po katalogu i po
+   źródłowym CSV/arkuszu. Koszt: 5 sekund.
+2. Jeśli takie zdanie ma trafić do repo, dostaje **strażnika**, nie samą
+   korektę: `test/m197-plany-kolekcji.test.js` skanuje dokumenty i czerwienieje,
+   gdy „nowym" nazwano plan, który repozytorium już zna.
+3. Strażnik z **wyjątkiem opartym o słowo kluczowe jest dziurawy**. Pierwsza
+   wersja zwalniała linie zawierające „sprostowanie" — mutacja pokazała, że
+   wystarczy postawić błędne zdanie obok tego słowa i kontrola znika.
+   Zwolnienie musi być **jawnym, nieprzypadkowym markerem** (`<!-- plan-cytat -->`).
+
+**Powiązane:** ten sam audyt ujawnił, że plany 8 kart były **zgadnięte po
+secie** zamiast odczytane z arkusza (Lab Rats „Rath", Deadly Recluse „Core",
+Ballista Watcher „Innistrad"…). Sygnał do wychwycenia: **wartość występująca
+wyłącznie po jednej stronie** dwóch reprezentacji tych samych danych (plany
+`Rath`/`Core`/`Commander`/`Modern Horizons`/`Phyrexia` istniały tylko
+w katalogu, nigdy w arkuszu) — to prawie zawsze zgadywanka, nie dana. L23 mówi
+„porównuj maszynowo"; L56 dodaje: **rozkład wartości też jest sygnałem**.
+
+**Sformalizowane w:** M197 (`test/m197-plany-kolekcji.test.js` — strażnik
+dokumentacji, higieny słownika i spójności plan katalog↔druk w kolekcji).
+

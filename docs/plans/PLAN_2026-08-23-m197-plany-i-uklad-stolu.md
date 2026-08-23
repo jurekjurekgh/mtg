@@ -74,31 +74,31 @@ zostają jako **nazwany wyjątek** w strażniku, nie jako cicha niezgodność.
 
 ### Kroki części 1
 
-- [ ] K1: sprostowanie „nowego planu" (dokumentacja + asercja testu) oraz
+- [x] K1 (`ee2dfed`): sprostowanie „nowego planu" (dokumentacja + asercja testu) oraz
       strażnik `plan-registry-guard` — nie da się nazwać planu nowym, gdy
       istnieje; `Świat Wiedźmina` zakazany jako alias `Wiedźmin`.
-- [ ] K2: higiena CSV — 10 dubli usuniętych, `Trade Route Envoy` dostaje plan,
+- [x] K2 (`92844cc`): higiena CSV — 10 dubli usuniętych, `Trade Route Envoy` dostaje plan,
       `Chittering Rats` → Wiedźmin; strażnik struktury pliku (3 kolumny,
       brak duplikatów `artId+nazwa`, brak pustego planu).
-- [ ] K3: synchronizacja 9 planów katalogu z CSV + regeneracja talii
+- [x] K3 (`2818d73`): synchronizacja 9 planów katalogu z CSV + regeneracja talii
       (ADR 0023) + przelosowanie seedów (L25).
 
 ## Część 2 — układ stołu (A1–A7)
 
-- [ ] A1: „Przebieg tur (dla AI)" — przycisk **kopiujący całą partię**
+- [x] A1: „Przebieg tur (dla AI)" — przycisk **kopiujący całą partię**
       (wszystkie tury), obok istniejącego kopiowania jednej tury.
-- [ ] A2: usunięcie tekstowego paska statusu (`Partia zakończona po N turach`
+- [x] A2: usunięcie tekstowego paska statusu (`Partia zakończona po N turach`
       + dwa wiersze „❤ … mana … ręka … biblioteka …") — dubluje panel graczy.
-- [ ] A3: pasek graczy:
-  - A3A: „🗂 Strefy (groby / exile / biblioteka)" **poza** pasek, jako osobny
+- [x] A3: pasek graczy:
+  - [x] A3A: „🗂 Strefy (groby / exile / biblioteka)" **poza** pasek, jako osobny
         boks z **licznikami** stref dla obu graczy (bez listy kart — te dalej
         po kliknięciu, w inspektorze).
-  - A3B: **graficzna pula many** (ile i jaka) dla obu graczy.
-  - A3C: „Ty" → „Gracz".
-- [ ] A4: „Stworki i inne" → „Permanenty poza lądami".
-- [ ] A5: inspektor stref bez sekcji „Biblioteka — podgląd topu (syntetyczny)".
-- [ ] A6: usunięcie nagłówka „MTG · Wirtualny Stół (M20)".
-- [ ] A7: usunięcie stopki „M20 — Wirtualny Stół i kreator talii…".
+  - [x] A3B: **graficzna pula many** (ile i jaka) dla obu graczy.
+  - [x] A3C: „Ty" → „Gracz".
+- [x] A4: „Stworki i inne" → „Permanenty poza lądami".
+- [x] A5: inspektor stref bez sekcji „Biblioteka — podgląd topu (syntetyczny)".
+- [x] A6: usunięcie nagłówka „MTG · Wirtualny Stół (M20)".
+- [x] A7: usunięcie stopki „M20 — Wirtualny Stół i kreator talii…".
 
 ## Ryzyka / pułapki
 
@@ -115,3 +115,47 @@ zostają jako **nazwany wyjątek** w strażniku, nie jako cicha niezgodność.
 - **A2 vs testy**: `els.status` jest używany przez `renderTableView`; usunięcie
   treści nie może wywrócić testów UI ani Żywego Testera.
 - Reset workspace zdarzył się 11× — commit i push po KAŻDYM zielonym kroku.
+
+## Wynik — KOMPLET
+
+`npm test` **2978/2978**, build **53 moduly / 2542.4 kB**. Katalog 459 kart.
+
+### Czesc 1 — plany kolekcji (3 commity)
+
+Zarzut wlasciciela potwierdzony w calosci; przy okazji wyszedl **blad
+systemowy w narzedziu**, ktory zatruwal dane od dawna.
+
+| Problem | Root cause | Naprawa |
+|---|---|---|
+| „Kamigawa to nowy plan" | M196 nie sprawdzilo grepem; teza poszla do 3 dokumentow i asercji testu | strażnik: dokument nie moze nazwac planu „nowym", gdy repo juz go zna |
+| Lista „planow" z nazwami kart | 10 wierszy CSV bez 3. kolumny → „ostatnia kolumna" zwracala nazwe karty | dublety usuniete (566→556) + strażnik ksztaltu pliku |
+| Curate/Negate: oba druki ten sam plan | `collectionCsvWithPlan` splaszczalo mape set-aware do „plan PIERWSZEGO wpisu" | zapis kolumny Plan jest set-aware (set z kolumny „Ilustracja") |
+| 8 kart z planem zgadnietym po secie | brak strażnika spojnosci katalog↔kolekcja | plan czytany z arkusza; strażnik pilnuje zgodnosci per DRUK |
+
+Plany wystepujace **wylacznie** w katalogu (`Rath`, `Core`, `Commander`,
+`Modern Horizons`, `Phyrexia`) okazaly sie w komplecie skutkiem zgadywania —
+po synchronizacji zniknely. `Swiat Wiedzmina` scalony z `Wiedzmin`.
+
+Talie przegenerowane (8 plikow), seedy przelosowane (L25): morph-label
+20→22, bot-spell-resolution-in-modal 6→10, session-abilities test 2 1→2.
+
+### Czesc 2 — uklad stolu (A1–A7)
+
+Wszystkie 7 punktow zrobione. Najwieksza zmiana pod spodem: **A3B** wymagalo
+rozszerzenia `playerView` o `manaPool` — widok niosl tylko LICZBE many, wiec
+UI nie mialo z czego narysowac kolorow (klasa L1).
+
+Weryfikacja na **zbudowanym artefakcie** (jsdom): naglowek/stopka/podglad
+topu nie istnieja, liczniki stref pokazuja realne rozmiary, etykieta grupy to
+„Permanenty poza ladami", 0 zgloszen detektorow. `run-game.mjs` zwraca teraz
+zrzut `layout`, wiec uklad stolu jest sprawdzalny na zywym artefakcie takze
+w kolejnych sesjach.
+
+### Naprawione przy okazji (nie bylo w zleceniu)
+
+- panel trucizny mowil „Ty"/„Nieprzyjaciel" niespojnie z reszta stolu →
+  wspolne stale `PLAYER_LABEL`/`BOT_LABEL`;
+- martwy `refreshLibraryPreview` w `main.js` (A5);
+- pierwsza wersja strażnika dokumentacji miala dziure (filtr po slowie
+  „sprostowanie") — wykryta **weryfikacja mutacyjna**, zastapiona jawnym
+  markerem `<!-- plan-cytat -->`.

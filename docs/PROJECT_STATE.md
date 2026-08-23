@@ -1,8 +1,44 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-23 (M196: Batch 48 — 14 kart w nowym formacie; formidable, equip warunkowy, trigger bloku, flash dla podtypu)
-- **Poprzednia:** 2026-08-23 (M195: uwagi właściciela A/B/C/C1/D — wizard many przy decyzjach, trick bojowy bota, ekran wyboru celów)
+- **Ostatnia aktualizacja:** 2026-08-23 (M197: sprostowanie planow kolekcji — „Kamigawa" nie byla nowym planem, plan czytany z arkusza zamiast zgadywany; porzadki w ukladzie stolu A1–A7)
+- **Poprzednia:** 2026-08-23 (M196: Batch 48 — 14 kart w nowym formacie; formidable, equip warunkowy, trigger bloku, flash dla podtypu)
 
+
+
+## M197 — plany kolekcji + układ stołu (2026-08-23, PR #70)
+
+Plan: `docs/plans/PLAN_2026-08-23-m197-plany-i-uklad-stolu.md`.
+
+**Zarzut właściciela: „Kamigawa to nowy plan?" — trafny.** Plan istniał
+w repozytorium przed Batchem 48 (Blade-Blizzard Kitsune, Kappa Tech-Wrecker,
+Greater Tanuki w katalogu; The Kami War w słowniku). Clawing Torment był jego
+CZWARTĄ kartą. M196 zapisało nieprawdę do trzech dokumentów i do asercji testu,
+bo nie sprawdziło grepem. Naprawa u źródła to **strażnik**, nie korekta zdań:
+dokument nie może nazwać planu „nowym", jeśli katalog albo słownik już go znają.
+
+**Błąd systemowy w narzędziu (drugi zarzut właściciela).** „Dla tych dwóch kart
+każda edycja powinna mieć przypisany inny plan" — `tools/fetch-plans.mjs` miało
+mapę set-aware, ale przy zapisie kolumny Plan **spłaszczało ją** do „plan
+PIERWSZEGO wpisu", więc oba druki Curate dostawały „Arcavios", a oba druki
+Negate „Wiedźmin". Zapis jest teraz set-aware (set z kolumny „Ilustracja",
+jak `pickArtId`). Strażnik spójności ujawnił **8 kolejnych kart** z planem
+zgadniętym po secie — wszystkie plany występujące wyłącznie w katalogu
+(`Rath`, `Core`, `Commander`, `Modern Horizons`, `Phyrexia`) należały do tej
+grupy i po synchronizacji zniknęły. `Świat Wiedźmina` scalony z `Wiedźmin`.
+Higiena słownika: 10 zdublowanych wierszy bez kolumny Plan (566 → **556**).
+
+**Układ stołu (A1–A7):** przycisk „Kopiuj całą partię"; usunięty tekstowy pasek
+statusu, nagłówek, stopka i „podgląd topu (syntetyczny)"; inspektor stref jako
+osobny boks z **licznikami** stref obu graczy; **graficzna pula many** (ikony
+kolorów z licznikiem) — wymagała rozszerzenia `playerView` o `manaPool`, bo
+widok niósł tylko liczbę many; „Ty" → „Gracz" (wspólne `PLAYER_LABEL`/
+`BOT_LABEL`); „Stworki i inne" → „Permanenty poza lądami".
+
+Weryfikacja na zbudowanym artefakcie (jsdom): `run-game.mjs` zwraca zrzut
+`layout`, więc układ stołu jest sprawdzalny na żywym artefakcie także później.
+
+**Stan:** `npm test` **2978/2978**, build **53 moduły / 2542.4 kB**,
+katalog **459 kart**, słownik kolekcji **556 pozycji**.
 
 ## M196 — Batch 48: 14 kart właściciela (2026-08-23, PR #70)
 
