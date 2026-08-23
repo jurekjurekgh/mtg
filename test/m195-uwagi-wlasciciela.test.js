@@ -229,3 +229,96 @@ test('M195/B: kara nie dotyczy zdolności BEZ kosztu tapnięcia (anty-over-fix)'
   assert.equal(ability.cost.tap, true,
     'Ghost Warden płaci tapnięciem — to on jest przypadkiem ze zgłoszenia');
 });
+
+// ---- A: wizard many takze przy decyzjach platniczych ---------------------
+// Zgloszenie: „Rupture Spire. ETB — poswiec albo zaplac 1 dowolnej many.
+// Wybralem zaplate, engine nie pokazal wizarda tylko sam zatapowal pierwszy
+// lepszy lad. ZAWSZE kiedy platnosc many jest niejednoznaczna (wiecej niz
+// 1 kombinacja rodzajow zrodel) powinien byc wizard."
+
+const { paymentDescriptorOf } = await import('../src/table/mana-wizard.js');
+
+/** Widok z dwoma RÓŻNYMI źródłami many — płatność {1} jest niejednoznaczna. */
+function viewWithTwoLandKinds() {
+  return {
+    playerId: 'p1',
+    players: [{ id: 'p1', mana: 0 }],
+    zones: {
+      battlefield: [
+        { id: 'isl', cardId: 'basic-island', controllerId: 'p1', kind: 'land', types: ['Basic', 'Land'], subtypes: ['Island'], tapped: false },
+        { id: 'mtn', cardId: 'basic-mountain', controllerId: 'p1', kind: 'land', types: ['Basic', 'Land'], subtypes: ['Mountain'], tapped: false },
+        { id: 'spire', cardId: 'rupture-spire', controllerId: 'p1', kind: 'land', types: ['Land'], tapped: true },
+      ],
+      hand: [], graveyard: [], exile: [], stack: [],
+    },
+    legalCommands: [],
+  };
+}
+
+test('M195/A: „zapłać albo poświęć" buduje deskryptor płatności dla wizarda', () => {
+  // Root cause: paymentDescriptorOf obsługiwał rzuty i activate_ability, ale
+  // NIE komendy decyzji płatniczych — te szły prosto do silnika, który
+  // auto-tapował źródła własną kolejnością.
+  const view = viewWithTwoLandKinds();
+  const cmd = { type: 'resolve_pay_or_sacrifice', playerId: 'p1', pay: true, cost: 1, sourceId: 'spire' };
+  const descriptor = paymentDescriptorOf(cmd, view);
+  assert.ok(descriptor, 'decyzja z zapłatą MUSI mieć deskryptor płatności');
+  assert.equal(descriptor.totalNeeded, 1, 'koszt z komendy (nie z MANA_COSTS karty)');
+  assert.deepEqual(descriptor.requirements, [], '„1 dowolnej many" — bez wymagań kolorów');
+});
+
+test('M195/A: wariant „poświęć" NIE otwiera wizarda (nic nie płacimy)', () => {
+  const view = viewWithTwoLandKinds();
+  const cmd = { type: 'resolve_pay_or_sacrifice', playerId: 'p1', pay: false, sourceId: 'spire' };
+  assert.equal(paymentDescriptorOf(cmd, view), null, 'poświęcenie jest darmowe');
+});
+
+test('M195/A: „zapłać, żeby nie skontrowano" (counter_pay) też ma deskryptor', () => {
+  const view = viewWithTwoLandKinds();
+  const cmd = { type: 'resolve_counter_pay_choice', playerId: 'p1', pay: true, cost: 2, targetId: 'spell' };
+  const descriptor = paymentDescriptorOf(cmd, view);
+  assert.ok(descriptor, 'ta sama klasa decyzji — ta sama reguła');
+  assert.equal(descriptor.totalNeeded, 2);
+});
+
+test('M195/A: opcjonalna zapłata triggera (optional_pay) też ma deskryptor', () => {
+  const view = viewWithTwoLandKinds();
+  const cmd = { type: 'resolve_optional_pay_choice', playerId: 'p1', pay: true, cost: 1 };
+  assert.ok(paymentDescriptorOf(cmd, view), 'decyzja „zapłacić {N}?" również');
+});
+
+test('M195/A: decyzja BEZ kosztu many nie otwiera wizarda (anty-over-fix)', () => {
+  const view = viewWithTwoLandKinds();
+  for (const cmd of [
+    { type: 'resolve_optional_pay_choice', playerId: 'p1', pay: true, cost: 0 },
+    { type: 'resolve_optional_pay_choice', playerId: 'p1', pay: false },
+    { type: 'resolve_scry', playerId: 'p1' },
+  ]) {
+    assert.equal(paymentDescriptorOf(cmd, view), null,
+      `bez kosztu many nie ma czego wybierać: ${JSON.stringify(cmd)}`);
+  }
+});
+
+test('M195/A: dwa RÓŻNE lądy dają ≥2 warianty — wizard realnie się otworzy', async () => {
+  // Sedno zgłoszenia to nie sam deskryptor, tylko to, czy gracz DOSTANIE
+  // wybór. main.js otwiera kreator, gdy wariantów jest ≥2 — sprawdzamy tę
+  // samą ścieżkę, którą idzie stół (L48: oferta = to, co widzi gracz).
+  const { countPaymentVariants, manaSourcesOf } = await import('../src/table/mana-wizard.js');
+  const view = viewWithTwoLandKinds();
+  const cmd = { type: 'resolve_pay_or_sacrifice', playerId: 'p1', pay: true, cost: 1, sourceId: 'spire' };
+  const descriptor = paymentDescriptorOf(cmd, view);
+  const sources = manaSourcesOf(view, 'p1');
+  const variants = countPaymentVariants(sources, 0, descriptor.totalNeeded, descriptor.requirements);
+  assert.ok(variants >= 2,
+    `Wyspa albo Góra — gracz ma wybrać sam, wariantów: ${variants}`);
+});
+
+test('M195/A: JEDNO źródło = brak wyboru, wizard nie przeszkadza (anty-over-fix)', async () => {
+  const { countPaymentVariants, manaSourcesOf } = await import('../src/table/mana-wizard.js');
+  const view = viewWithTwoLandKinds();
+  view.zones.battlefield = view.zones.battlefield.filter((o) => o.id !== 'mtn');
+  const cmd = { type: 'resolve_pay_or_sacrifice', playerId: 'p1', pay: true, cost: 1, sourceId: 'spire' };
+  const descriptor = paymentDescriptorOf(cmd, view);
+  const variants = countPaymentVariants(manaSourcesOf(view, 'p1'), 0, descriptor.totalNeeded, descriptor.requirements);
+  assert.ok(variants < 2, `jedno źródło = jednoznaczna płatność (auto-tap), wariantów: ${variants}`);
+});

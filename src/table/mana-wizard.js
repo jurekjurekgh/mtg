@@ -128,6 +128,17 @@ export function manaSourcesOf(view, playerId, abilityInfo, { excludeSourceId = n
  * obejmuje też tryby kosztu alternatywnego: cast_cleave, cast_escape oraz
  * cast_permanent w wariantach bestow/morph.
  */
+/**
+ * M195/A: komendy DECYZJI, w których gracz płaci manę (nie rzuca czaru).
+ * Każda z nich prowadzi do spendMana, więc podlega tej samej regule wyboru
+ * źródeł co rzuty — inaczej silnik tapuje „pierwszy lepszy ląd".
+ */
+const PAYMENT_DECISION_TYPES = new Set([
+  'resolve_pay_or_sacrifice',
+  'resolve_optional_pay_choice',
+  'resolve_counter_pay_choice',
+]);
+
 const WIZARD_CAST_TYPES = new Set(['cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape', 'cast_adventure', 'cast_adventure_creature']);
 
 /**
@@ -194,6 +205,25 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
     const generic = Math.max(0, manaCost - requirements.length);
     const costStr = `{${generic}}${(ability.cost?.colors ?? []).map((c) => `{${c}}`).join('')}`;
     return buildDescriptor(object, manaCost, requirements, costStr, generic);
+  }
+  // M195/A (uwaga właściciela, Rupture Spire): DECYZJE PŁATNICZE też mają
+  // kreator. „Zapłać {1} albo poświęć" wybierało pierwszy lepszy ląd, bo ta
+  // ścieżka szła prosto do silnika (auto-tap wg jego kolejności), a kreator
+  // znał tylko rzuty i aktywacje. Reguła właściciela jest ogólna: „zawsze
+  // kiedy płatność many jest niejednoznaczna (więcej niż 1 kombinacja
+  // rodzajów źródeł) powinien być wizard".
+  //
+  // Koszt bierzemy z KOMENDY (`cost`), nie z MANA_COSTS — to koszt decyzji,
+  // nie karty. Wymagania kolorów są puste: te decyzje mówią „zapłać {N}"
+  // (mana dowolnego rodzaju), więc o wyborze źródeł decyduje gracz.
+  if (PAYMENT_DECISION_TYPES.has(cmd.type)) {
+    if (cmd.pay !== true) return null;          // wariant bez płacenia
+    const cost = cmd.cost ?? cmd.amount ?? 0;
+    if (!Number.isInteger(cost) || cost <= 0) return null;
+    const allDecisionCards = Object.values(view?.zones ?? {}).flat();
+    const source = allDecisionCards.find((o) => o.id === (cmd.sourceId ?? cmd.targetId))
+      ?? { id: cmd.sourceId ?? cmd.targetId ?? null, cardId: null };
+    return buildDescriptor(source, cost, [], `{${cost}}`, cost);
   }
   if (!WIZARD_CAST_TYPES.has(cmd.type)) return null;
   const allCards = Object.values(view?.zones ?? {}).flat();
