@@ -1694,6 +1694,22 @@ export function processTriggers(state, recentEvents) {
           tryFire(state, ability, source, [], events, { damagedPlayerId: ev.target });
         }
       }
+      // Batch 48 (Contested Game Ball, LCI): „Whenever you're dealt combat
+      // damage…" — źródłem triggera jest dowolny permanent kontrolowany przez
+      // GRACZA, KTÓRY OTRZYMAŁ obrażenia (trigger siedzi na artefakcie, nie na
+      // stwora, który zadaje). Zdarzenie damage_dealt per obrażenie — trigger
+      // odpala się per zdarzenie (CR 603.2: „whenever" na każdym zdarzeniu).
+      for (const candidate of state.objects.values()) {
+        if (candidate.zone !== 'battlefield' || candidate.controllerId !== ev.target) continue;
+        for (const ability of effectiveAbilities(candidate)) {
+          if (ability?.trigger?.event !== 'combat_damage_to_you') continue;
+          if (!conditionHolds(ability.trigger ?? {}, state, candidate, {})) continue;
+          // atkujący jechał w zdarzeniu (state.combat jest już null — end_of_combat).
+          tryFire(state, ability, candidate, [], events, {
+            damagedPlayerId: ev.target, attackingPlayerId: ev.attackingPlayerId ?? null,
+          });
+        }
+      }
       // „Whenever one or more creatures you control deal combat damage to a
       // player" (Disa the Restless, CR 603.2): trigger odpala się RAZ na
       // komendę, gdy DOWOLNY stwór kontrolera źródła zadał obrażenia graczowi

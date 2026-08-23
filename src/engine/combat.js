@@ -62,6 +62,11 @@ function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amoun
   const damageEvent = event('damage_dealt', {
     source: sourceId, target: targetPlayerId, amount: actual, combat: true,
     sourceCardId: source?.cardId ?? null,
+    // M200/N3: „the attacking player" (Contested Game Ball) — trigger
+    // rozstrzyga się PO end_of_combat (state.combat już null), więc atakujący
+    // musi jechać w zdarzeniu (L6: zdarzenie niesie dane, których opis
+    // nie odtworzy).
+    attackingPlayerId: state.combat?.attackingPlayerId ?? null,
   });
   state.events.push(damageEvent);
   // Zdarzenia tarcz (damage_prevented) dołączamy do strumienia komendy.
