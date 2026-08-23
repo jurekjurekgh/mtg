@@ -149,4 +149,81 @@ test('M200/B: sesja eksponuje cardIdByName, a log partii rendery linkowane nazwy
   assert.ok(spans.length >= 1, `nazwa karty owinięta w span.log-card: ${els.log.textContent.slice(0, 120)}`);
   assert.equal(spans[0].dataset.cardId, 'highland-game', 'span niesie cardId do openCardFullscreenByCardId');
 });
+// ---- C: mulligan — odłożenie N kart na spód zaznaczaniem (nie kombinacje) ---
 
+function subsetsOf(arr, k) {
+  if (k === 0) return [[]];
+  if (arr.length < k) return [];
+  const [head, ...rest] = arr;
+  return [
+    ...subsetsOf(rest, k - 1).map((s) => [head, ...s]),
+    ...subsetsOf(rest, k),
+  ];
+}
+
+test('M200/C: plan mulliganu = wiersz na kartę; komenda odnawiana po podzbiorze (L48)', async () => {
+  const { mulliganBottomPlanOf, commandForMulliganSelection } = await import('../src/table/multi-target.js');
+  const cards = ['a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7'];
+  const commands = subsetsOf(cards, 3)
+    .map((combo) => ({ type: 'resolve_mulligan_bottom_choice', playerId: 'p1', cardIds: combo }));
+  assert.equal(commands.length, 35, 'engine enumeruje C(7,3)=35 komend (bez zmian — boty wybierają z listy)');
+  const plan = mulliganBottomPlanOf(commands);
+  assert.deepEqual([...plan.targets].sort(), cards, 'wizard: 7 wierszy (po karcie), nie 35 przycisków');
+  assert.equal(plan.count, 3);
+  const found = commandForMulliganSelection(commands, ['a7', 'a2', 'a1']);
+  assert.ok(found, 'dowolna kolejność zaznaczania = ten sam podzbiór');
+  assert.equal(commandForMulliganSelection(commands, ['a1', 'a2']), null, '2 < 3 — brak komendy');
+  assert.equal(commandForMulliganSelection(commands, ['a1', 'a2', 'x']), null, 'karta spoza ręki — brak komendy');
+  assert.equal(mulliganBottomPlanOf([{ type: 'resolve_mulligan_bottom_choice', cardIds: ['a1'] }]), null,
+    'pojedyncza komenda — zwykła lista, bez wizarda');
+});
+
+test('M200/C: wizard mulliganu — zatwierdź aktywuje się przy dokładnie N kart i oddaje komendę silnika', async () => {
+  const { renderMultiTargetWizard } = await import('../src/table/choice-request.js');
+  const { mulliganBottomPlanOf } = await import('../src/table/multi-target.js');
+  const cards = ['a1', 'a2', 'a3', 'a4', 'a5'];
+  const commands = subsetsOf(cards, 2)
+    .map((combo) => ({ type: 'resolve_mulligan_bottom_choice', playerId: 'p1', cardIds: combo }));
+  const plan = mulliganBottomPlanOf(commands);
+  const view = {
+    zones: {
+      hand: cards.map((id) => ({ id, cardId: id, controllerId: 'p1' })),
+      battlefield: [], stack: [], graveyard: [], library: [],
+    },
+    players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }],
+  };
+  const session = { nameOf: (id) => `Karta ${id}`, nameOfObject: (id) => `Karta ${id}` };
+  let completed = null;
+  const host = new MiniEl('div');
+  renderMultiTargetWizard(host, {
+    view, session, plan, commands,
+    intro: 'Mulligan: zaznacz 2 karty do odłożenia na spód biblioteki:',
+    onComplete: (cmd) => { completed = cmd; },
+    onCancel: () => {},
+  });
+  const toggles = host.querySelectorAll('.multi-target-toggle');
+  assert.equal(toggles.length, 5, 'wiersz na każdą kartę ręki');
+  const confirm = host.querySelectorAll('.multi-target-confirm')[0];
+  assert.equal(confirm.disabled, true, 'bez zaznaczenia — Zatwierdź wyłączone');
+  toggles[0].listeners.click[0](); // a1
+  assert.equal(confirm.disabled, true, '1 z 2 — nadal wyłączone');
+  toggles[2].listeners.click[0](); // a3
+  assert.equal(confirm.disabled, false, 'dokładnie 2 karty — włączone (komenda istnieje w engine)');
+  confirm.listeners.click[0]();
+  assert.ok(completed, 'zatwierdzenie oddało komendę');
+  assert.deepEqual([...completed.cardIds].sort(), ['a1', 'a3'], 'komenda = podzbiór z legalCommands silnika');
+});
+
+// ---- C2: etykieta „Zatrzymaj tę rękę” liczy ŻYWĄ rękę -----------------------
+
+test('M200/C2: „Zatrzymaj tę rękę” pokazuje aktualną liczbę kart (nie zawsze 7)', async () => {
+  const { commandLabel } = await import('../src/table/render.js');
+  const view = {
+    zones: { hand: ['h1', 'h2', 'h3', 'h4', 'h5'].map((id) => ({ id, cardId: id, controllerId: 'p1' })) },
+    players: [{ id: 'p1', name: 'Ty' }],
+  };
+  const session = { nameOf: (id) => id, nameOfObject: (id) => id, state: { mulliganCounts: {} } };
+  const label = commandLabel({ type: 'resolve_mulligan_choice', playerId: 'p1', keep: true }, session, view);
+  assert.ok(label.includes('5 kart'), `etykieta liczy żywą rękę (5): ${label}`);
+  assert.ok(!label.includes('7 kart'), 'stare „7 kart” zniknęło: ' + label);
+});

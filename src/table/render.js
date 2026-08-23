@@ -2240,7 +2240,12 @@ export function commandLabel(cmd, session, view) {
       return `Prawo legend: zostaw ${nameOfObjectId(cmd.keepId)}, pozostałe kopie do grobu`;
     }
     case 'resolve_mulligan_choice': {
-      if (cmd.keep) return 'Mulligan: Zatrzymaj tę rękę (keep — 7 kart)';
+      // M200/C2 (uwaga właściciela): liczba kart z ŻYWEJ ręki widoku — po
+      // mulliganie i odłożeniu na spód ręka ma np. 5 kart, a etykieta pisała
+      // wciąż „keep — 7 kart”.
+      const handSize = (view?.zones?.hand ?? []).filter((o) => o?.controllerId === cmd.playerId).length;
+      const keepPlural = polishPluralCount(handSize, 'kartę', 'karty', 'kart');
+      if (cmd.keep) return `Mulligan: Zatrzymaj tę rękę (keep — ${handSize} ${keepPlural})`;
       // Mulligan londyński (CR 103.4): dobierz 7, potem odłóż N na spód —
       // finalna ręka to 7−N (wcześniej „nowa ręka 7 kart" wprowadzała w błąd).
       const already = session.state?.mulliganCounts?.[cmd.playerId] ?? 0;

@@ -32,7 +32,7 @@ import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { lookWizardKindOf, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard } from './choice-request.js';
-import { multiTargetPlanOf } from './multi-target.js';
+import { multiTargetPlanOf, mulliganBottomPlanOf } from './multi-target.js';
 import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions } from './render.js';
 
 function runEngineSmoke() {
@@ -318,6 +318,25 @@ function bootstrapTable() {
     // przyciski („kompletnie bez sensu — mam 95 kombinacji obrażeń"), Wrap in
     // Flames 15. Plan liczymy z tych samych komend, które są w request.options,
     // więc zatwierdzenie oddaje komendę znaną silnikowi (L48).
+    // M200/C (uwaga właściciela): mulligan „odłóż N kart na spód” — ekran
+    // zaznaczania KART (ptaszek) zamiast listy wszystkich podzbiorów
+    // („7×7×7 kombinacji”). Te samy kontrakt co wielocelowość: zatwierdzenie
+    // wraca do komendy z legalCommands (L48).
+    const mulliganPlan = mulliganBottomPlanOf(request.options ?? []);
+    if (mulliganPlan) {
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: mulliganPlan,
+        commands: request.options,
+        intro: `Mulligan: zaznacz ${mulliganPlan.count} ${mulliganPlan.count === 1 ? 'kartę' : 'karty'} do odłożenia na spód biblioteki:`,
+        onOpenCard: openCardFullscreen,
+        onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
     const multiPlan = multiTargetPlanOf(request.options ?? []);
     if (multiPlan) {
       const sourceObject = [...(choiceView.zones?.hand ?? []), ...(choiceView.zones?.battlefield ?? []),
