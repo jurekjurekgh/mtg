@@ -1845,6 +1845,48 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               && (o.types ?? []).includes('Artifact')).length;
             score += artifactsInGrave > 0 ? 10 + artifactsInGrave * 3 : -8;
           }
+          // ---- Batch 48 (L50/L51): wycena nowych efektow -----------------
+          if (effect.type === 'creatures_cant_block_this_turn') {
+            // Ruthless Invasion: warte tyle, ile obrazen przepusci. Liczymy
+            // moc GOTOWYCH atakujacych minus to, co i tak jest nieblokowalne;
+            // bez wlasnych atakujacych czar jest bezuzyteczny.
+            const except = effect.exceptTypes ?? [];
+            const readyPower = myCreatures(view)
+              .filter((c) => canAttackNow(c))
+              .reduce((sum, c) => sum + (c.power ?? 0), 0);
+            const blockersRemoved = enemyCreatures(view)
+              .filter((c) => !c.tapped && !except.some((t) => (c.types ?? []).includes(t))).length;
+            score += readyPower > 0 && blockersRemoved > 0
+              ? Math.min(40, readyPower * 3 + blockersRemoved * 4)
+              : -25;
+          }
+          if (effect.type === 'your_creatures_gain_keywords_until_end_of_turn') {
+            // Formidable (Stampeding Elk Herd): trample dla druzyny ma wartosc
+            // tylko przy realnym ataku — trigger i tak odpala sie przy ataku,
+            // wiec liczymy liczbe wlasnych stworow.
+            score += Math.min(30, myCreatures(view).length * 6);
+          }
+          if (effect.type === 'sacrifice_self_if_counters_then_treasure') {
+            // Contested Game Ball: to rider zdolnosci „dobierz karte" —
+            // poswiecenie po piatym liczniku jest KORZYSTNE (Skarb), wiec
+            // nie karzemy; sama wycena dobrania wystarczy.
+            score += 0;
+          }
+          if (effect.type === 'subtype_spells_gain_flash_and_etb_fight_this_turn') {
+            // Cherished Hatchling: warte tyle, ile Dinozaurow zostalo w rece.
+            const inHand = (view.zones.hand ?? [])
+              .filter((o) => (o.subtypes ?? []).includes(effect.subtype)).length;
+            score += inHand * 8;
+          }
+          if (effect.type === 'attacker_gains_control_and_untaps') {
+            // Trigger obronny — nie jest wyborem bota (odpala sie sam);
+            // wycena zerowa, zeby nie zaburzac rankingu.
+            score += 0;
+          }
+          if (effect.type === 'lose_life_enchanted_permanent_controller') {
+            // Clawing Torment: powolne obcinanie zycia przeciwnika.
+            score += 6;
+          }
           if (effect.type === 'add_mana') {
             // Dodatkowa mana (Holdout Settlement, Apprentice Wizard, Treasure):
             // cenna tylko, gdy jest co zagrać. Liczy się BILANS: produkcja
