@@ -349,3 +349,52 @@ test('M200/E: Rupture Spire — kreator może tapnąć źródło, potem płatno�
   assert.ok(spire && spire.zone === 'battlefield', 'Rupture Spire na polu (nie poświęcony)');
   assert.equal(p1.mana, 0, '{1} opłacone z puli');
 });
+// ---- F: reanimacja Skeletona w turze bota — auto-pass nie może przeskoczyć ---
+// Zgłoszenie: Skeleton zginął w fazie walki bota; auto-pass „przelatuje”
+// do początku tury gracza i reanimację ({1}{B} z grobu) gracz dostaje
+// dopiero w upkeepu. Weryfikacja: engine OFERUJE aktywację z grobu w
+// postcombat bota (z priorytetem gracza) — więc sesja musi się na niej
+// ZATRZYMAĆ, nie auto-passować. (Jeżeli w grze gracza źródła many były
+// tapnięte w tym oknie, brak oferty jest poprawny — CR 502.4/601.2f;
+// test pinuje zachowanie dla okna, w którym koszt jest opłacalny.)
+
+test('M200/F: sesja zatrzymuje się na opłacalnej reanimacji w postcombat bota', async () => {
+  const fs = await import('node:fs');
+  const { HUMAN_ID, BOT_ID } = await import('../src/table/session.js');
+  const { parseDeckText } = await import('../src/cards/deck-text.js');
+  const registry = createCardRegistry();
+  const decks = new Map([
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/innistrad.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/dominaria.txt', 'utf8'), registry).cardIds],
+  ]);
+  const session = createSession({ seed: 77, registry, decks });
+  // Domykamy mulligany (obaj zatrzymują ręce) aż do statusu active.
+  // Decyzja bota idzie przez advance (session.continueBotPlay) — widok
+  // sesji to zawsze widok CZŁOWIEKA.
+  for (let i = 0; i < 30 && (session.state.pendingMulligans?.length ?? 0) > 0; i += 1) {
+    const keep = session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice');
+    if (keep) {
+      const res = session.apply(keep);
+      if (!res.ok) throw new Error(res.rejected?.reason ?? 'mulligan apply');
+      continue;
+    }
+    session.continueBotPlay();
+  }
+  assert.equal(session.state.status, 'active', 'gra ruszyła po mulliganach');
+  const state = session.state;
+  // Skeleton w grobie gracza + dwa nietapnięte źródła {1}{B} (swamp + dowolne).
+  putCard(state, 'skel', 'reassembling-skeleton', HUMAN_ID, 'graveyard');
+  putCard(state, 'sw', 'basic-swamp', HUMAN_ID);
+  putCard(state, 'mt', 'basic-mountain', HUMAN_ID);
+  // Okno: tura bota, postcombat main, priorytet gracza, stos pusty.
+  state.turn = { ...state.turn, number: 3, activePlayerId: BOT_ID, priorityPlayerId: HUMAN_ID,
+    phase: 'postcombat_main', step: 'main', stepIndex: 11, passes: 0 };
+  state.zones.stack = [];
+  session.continueBotPlay();
+  assert.equal(state.turn.phase, 'postcombat_main',
+    'auto-pass NIE przeskoczył okna z opłacalną reanimacją (stan tury bez zmian)');
+  assert.equal(state.turn.priorityPlayerId, HUMAN_ID, 'priorytet wciąż gracza');
+  const offer = session.view().legalCommands
+    .find((c) => c.type === 'activate_ability' && c.objectId === 'skel');
+  assert.ok(offer, 'oferta reanimacji ({1}{B}) widoczna dla gracza w turze bota');
+});
