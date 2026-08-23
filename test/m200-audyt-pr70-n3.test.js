@@ -133,3 +133,53 @@ test('M200/N3: anty-over-fix — obrażenia gracza NIE kontrolującego piłkę n
   assert.ok(!state.events.some((e) => e.type === 'control_changed' && e.objectId === 'ball'),
     'brak zdarzenia zmiany kontroli');
 });
+
+// ---- O-N3 (M200): intervening-if jest sprawdzany w tryFire (z pełnym extra) --
+// Usunięcie redundantnego pre-checku (z pustym eventData) musi zachować
+// egzekucję warunku: trigger z intervening-if odpala się tylko, gdy warunek
+// SPEŁNIONY — a warunek czytający dane zdarzenia nie może być uciszony przez
+// pre-check bez danych (wzór any_combat_damage: warunek w tryFire).
+
+async function ballWithConditionalTrigger(state, condition) {
+  const { createAbility, ABILITY_TYPE } = await import('../src/engine/abilities.js');
+  const ball = put(state, 'ball', 'contested-game-ball', 'p1', 'battlefield', { tapped: true });
+  const ability = createAbility({
+    type: ABILITY_TYPE.triggered,
+    trigger: { event: 'combat_damage_to_you', condition },
+    effect: { type: 'attacker_gains_control_and_untaps' },
+  });
+  state.objects.set('ball', Object.freeze({ ...ball, abilities: [ability] }));
+  return state.objects.get('ball');
+}
+
+test('M200/O-N3: intervening-if SPEŁNIONY — trigger z warunkiem odpala (pełna ścieżka)', async () => {
+  const state = combatState('p2');
+  beast(state, 'atk', 'p2', 3, 3);
+  await ballWithConditionalTrigger(state, { noSpellsLastTurn: true });
+  state.lastTurnSpellsCast = 0; // warunek spełniony
+  assert.equal(execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['atk'] }).ok, true);
+  assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: {} }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  resolveCombat(state, 'p2', 'p1');
+  drainStack(state);
+  const ball = state.objects.get('ball');
+  assert.equal(ball.controllerId, 'p2', 'warunek spełniony → trigger musiał odpalić (check w tryFire)');
+  assert.equal(ball.tapped, false, 'i odkręcić piłkę');
+});
+
+test('M200/O-N3: intervening-if NIESPEŁNIONY — trigger z warunkiem jest uciszony', async () => {
+  const state = combatState('p2');
+  beast(state, 'atk', 'p2', 3, 3);
+  await ballWithConditionalTrigger(state, { noSpellsLastTurn: true });
+  state.lastTurnSpellsCast = 1; // warunek niespełniony — usunięcie pre-checku nie wyłączyło warunku
+  assert.equal(execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['atk'] }).ok, true);
+  assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: {} }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  resolveCombat(state, 'p2', 'p1');
+  drainStack(state);
+  const ball = state.objects.get('ball');
+  assert.equal(ball.controllerId, 'p1', 'warunek niespełniony → trigger NIE odpala');
+  assert.equal(ball.tapped, true, 'i piłka pozostaje tapnięta');
+  assert.ok(!state.events.some((e) => e.type === 'control_changed' && e.objectId === 'ball'),
+    'brak zdarzenia zmiany kontroli');
+});

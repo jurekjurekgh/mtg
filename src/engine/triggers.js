@@ -1703,7 +1703,9 @@ export function processTriggers(state, recentEvents) {
         if (candidate.zone !== 'battlefield' || candidate.controllerId !== ev.target) continue;
         for (const ability of effectiveAbilities(candidate)) {
           if (ability?.trigger?.event !== 'combat_damage_to_you') continue;
-          if (!conditionHolds(ability.trigger ?? {}, state, candidate, {})) continue;
+          // Warunek intervening-if sprawdza tryFire z PEŁNYM extra (dane
+          // zdarzenia) — pre-check z pustym eventData cicho uciszałby warunki
+          // czytające dane zdarzenia (M200/O-N3; wzór: any_combat_damage).
           // atkujący jechał w zdarzeniu (state.combat jest już null — end_of_combat).
           tryFire(state, ability, candidate, [], events, {
             damagedPlayerId: ev.target, attackingPlayerId: ev.attackingPlayerId ?? null,
