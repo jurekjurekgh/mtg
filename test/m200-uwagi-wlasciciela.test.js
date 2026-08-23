@@ -314,3 +314,38 @@ test('M200/D: poświęcenie lądu + śmierć stwora w tej samej turze = DOKŁADN
   assert.equal(milledBy(state, 'p2'), 1,
     'dokładnie JEDEN trigger (za śmierć stwora) — przed fixem było 2 (fałszywy + prawdziwy)');
 });
+// ---- E: kreator many decyzji płatniczej — tap źródła przechodzi bramkę ----
+// Zgłoszenie: Rupture Spire („sacrifice it unless you pay {1}") — wybór
+// „zapłać maną” otwierał kreatora many, w którym NIE DAŁO SIĘ nic tapnąć:
+// tap_for_mana odrzucany „pay_or_sacrifice_unresolved”. Gracz musiał
+// poświęcić. Root cause: bramka oczekującej decyzji blokowała WSZYSTKO poza
+// komendą płatności, a kreator (M195/A) tapuje źródła PRZED nią. Fix:
+// komendy dodające manę do puli decydującego przechodzą normalne
+// rozstrzygnięcie (rodzina trzech bramek — L28).
+
+test('M200/E: Rupture Spire — kreator może tapnąć źródło, potem płatność z puli (brak poświęcenia)', () => {
+  const state = game('p1');
+  putCard(state, 'spire', 'rupture-spire', 'p1', 'hand');
+  putCard(state, 'l1', 'basic-island', 'p1');
+  putCard(state, 'l2', 'basic-forest', 'p1');
+  const res = execute(state, { type: 'play_land', playerId: 'p1', objectId: 'spire' });
+  assert.ok(res.ok, res.events?.[0]?.reason);
+  drainTriggersAndStack(state);
+  assert.ok(state.pendingPayOrSacrifice, 'oczekująca decyzja zapłać/poświęć');
+  const p1 = state.players.find((p) => p.id === 'p1');
+  assert.equal(p1.mana, 0, 'pula pusta (test nie jest próżny)');
+  // 1) tap źródła — dokładnie to, co robi kreator many:
+  const tap = execute(state, { type: 'tap_for_mana', playerId: 'p1', objectId: 'l1' });
+  assert.ok(tap.ok, `tap_for_mana musi przejść mimo oczekującej decyzji: ${tap.events?.[0]?.reason ?? ''}`);
+  assert.equal(p1.mana, 1, 'mana w puli');
+  // 2) komendy NIEDODAJĄCE many wciąż blokowane (decyzja musi zostać rozstrzygnięta):
+  const bad = execute(state, { type: 'pass_priority', playerId: 'p1' });
+  assert.equal(bad.ok, false, 'pass bez rozstrzygnięcia decyzji — odrzucony');
+  assert.equal(bad.events?.[0]?.reason, 'pay_or_sacrifice_unresolved', 'ten sam powód co przed fixem (bramka żywa)');
+  // 3) płatność z puli — spire NIE jest poświęcony:
+  const pay = execute(state, { type: 'resolve_pay_or_sacrifice', playerId: 'p1', pay: true });
+  assert.ok(pay.ok, pay.events?.[0]?.reason);
+  const spire = [...state.objects.values()].find((o) => o.cardId === 'rupture-spire');
+  assert.ok(spire && spire.zone === 'battlefield', 'Rupture Spire na polu (nie poświęcony)');
+  assert.equal(p1.mana, 0, '{1} opłacone z puli');
+});
