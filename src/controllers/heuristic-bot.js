@@ -1792,6 +1792,42 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 && readyPower >= foeLife - 2) score -= 12; // blisko wygranej
             }
           }
+          // ---- Batch 47 (L50/L51): wycena nowych efektow ----------------
+          // Bez wyceny kazdy wariant remisuje i bot gra losowo — w partii
+          // widac to jako bezsensowne aktywacje.
+          if (effect.type === 'each_player_exiles_top_face_down') {
+            // Pyxis of Pandemonium ({T}): efekt SYMETRYCZNY — wygania wierzch
+            // KAZDEMU. Sam w sobie nic nie daje (karty leza zakryte), wartosc
+            // pojawia sie dopiero przy drugiej zdolnosci za {7}. Lekko na
+            // plus, bo buduje zasob; mocno w dol, gdy nie stac nas na wyplate.
+            const canAffordPayoff = (view.player?.mana ?? 0) >= 7
+              || (view.zones.battlefield ?? []).filter((o) => o.controllerId === view.playerId
+                && (o.types ?? []).includes('Land') && !o.tapped).length >= 7;
+            score += canAffordPayoff ? 6 : 2;
+          }
+          if (effect.type === 'turn_up_exiled_and_put_permanents') {
+            // Wyplata Pyxis: im wiecej wygnanych kart, tym lepiej, ale efekt
+            // jest SYMETRYCZNY (przeciwnik tez dostaje swoje permanenty),
+            // wiec liczymy WLASNE karty na plus, cudze na minus.
+            const source = cmd.objectId ? objectOnBoard(view, cmd.objectId) : null;
+            const linked = source?.exiledCardIds ?? [];
+            let mine = 0;
+            let theirs = 0;
+            for (const id of linked) {
+              const card = (view.zones.exile ?? []).find((o) => o.id === id);
+              if (!card) continue;
+              if (card.controllerId === view.playerId) mine += 1; else theirs += 1;
+            }
+            score += mine * 8 - theirs * 6;
+          }
+          if (effect.type === 'graveyard_card_to_library_top_choice') {
+            // Sequestered Stash: odzysk artefaktu z grobu. Wartosc rosnie
+            // z liczba artefaktow w grobie; bez nich zostaje sam mill (na
+            // wlasnej bibliotece — raczej szkodliwy).
+            const artifactsInGrave = (view.zones.graveyard ?? []).filter((o) => o.controllerId === view.playerId
+              && (o.types ?? []).includes('Artifact')).length;
+            score += artifactsInGrave > 0 ? 10 + artifactsInGrave * 3 : -8;
+          }
           if (effect.type === 'add_mana') {
             // Dodatkowa mana (Holdout Settlement, Apprentice Wizard, Treasure):
             // cenna tylko, gdy jest co zagrać. Liczy się BILANS: produkcja
