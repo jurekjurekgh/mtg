@@ -25,7 +25,10 @@ test('A: odkrycie morpha nazywa zdolność — log „aktywuje Morph: …"', () 
     [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), REGISTRY).cardIds],
     [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer.txt', 'utf8'), REGISTRY).cardIds],
   ]);
-  const session = createSession({ seed: 20, registry: REGISTRY, decks });
+  // M197/K3: seed 20 -> 22. Plany 8 kart zsynchronizowane z arkuszem kolekcji
+  // (m.in. warhammer +Lab Rats +Reassembling Skeleton), wiec tasowanie sie
+  // przesunelo i seed 20 nie dawal juz morpha — przelosowane hunterem (L25).
+  const session = createSession({ seed: 22, registry: REGISTRY, decks });
   const state = session.state;
   // Goły stan do testu: domknij startowe decyzje sesji (mulligany) i ustaw
   // turę bota na main — w testach jednostkowych robimy to wprost.

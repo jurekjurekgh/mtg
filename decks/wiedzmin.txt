@@ -16,6 +16,8 @@
 1x Chittering Rats
 1x Dread Warlock
 1x Nature's Embrace
+1x Springbloom Druid
+1x Ballista Watcher
 1x Emerald Oryx
 1x Inspiration
 1x Nightshade Harvester
@@ -26,4 +28,4 @@
 5x Island
 3x Swamp
 2x Mountain
-2x Forest
+3x Forest

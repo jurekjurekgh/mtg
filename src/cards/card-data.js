@@ -4111,7 +4111,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         { type: 'create_token', cardId: 'token_rat', name: 'Rat', kind: 'creature', power: 1, toughness: 1, colors: ['B'], types: ['Creature'], subtypes: ['Rat'] },
       ],
     },
-    artId: 535, plan: 'Rath',
+    artId: 535, plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -4195,7 +4195,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: { type: 'return_to_battlefield_tapped' },
       }),
     ],
-    artId: 248, plan: 'Dominaria',
+    artId: 248, plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -4233,7 +4233,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     oracleText: 'Reach (This creature can block creatures with flying.)\nDeathtouch (Any amount of damage this deals to a creature is enough to destroy it.)',
     imageUri: 'https://cards.scryfall.io/large/front/6/a/6ab810f1-21d6-4a98-b77a-e455370aa6cc.jpg?1783942364',
     keywords: ['reach', 'deathtouch'],
-    artId: 375, plan: 'Core',
+    artId: 375, plan: 'Śródziemie',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -4249,7 +4249,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     // Protection from chosen color: when aura enters, player chooses a color.
     // The chosenColor is set on the aura permanent, and effectiveKeywords
     // computes protectionFromColors from it (attachments.js + permanents.js).
-    artId: 422, plan: 'Commander',
+    artId: 422, plan: 'Śródziemie',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -4267,7 +4267,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: [{ type: 'springbloom_sacrifice_search' }],
       }),
     ],
-    artId: 470, plan: 'Modern Horizons',
+    artId: 470, plan: 'Wiedźmin',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -5681,7 +5681,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: { type: 'damage', amount: 1 },
       }),
     ],
-    artId: 504, plan: 'Innistrad',
+    artId: 504, plan: 'Wiedźmin',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -5702,7 +5702,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         ],
       }),
     ],
-    artId: 505, plan: 'Innistrad',
+    artId: 505, plan: 'Wiedźmin',
     support: { status: 'limited', limitations: ['tylna strona daybound/nightbound — nie można umieścić w talii'] },
   }),
 
@@ -7376,7 +7376,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         { type: 'opponents_lose_life_if_poison', min: 3, amount: 3 },
       ],
     },
-    artId: null, plan: 'Phyrexia',
+    artId: null, plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
   }),
 

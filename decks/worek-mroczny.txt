@@ -15,7 +15,6 @@
 1x Mysidian Elder
 1x Aerith Rescue Mission
 1x Call the Mountain Chocobo
-1x Feed the Infection
 1x Security Rhox
 1x Swooping Protector
 1x Tiller of Flesh
@@ -27,7 +26,7 @@
 1x Unbreakable Bond
 1x Fear of Abduction
 1x Fear of Burning Alive
-4x Plains
+3x Plains
 3x Island
 2x Swamp
 4x Mountain

@@ -25,7 +25,6 @@
 1x Midnight Guard
 1x Selhoff Occultist
 1x Village Bell-Ringer
-1x Ballista Watcher
 1x Elgaud Inquisitor
 1x Makeshift Mauler
 1x Mark of the Vampire
@@ -36,8 +35,8 @@
 1x Tireless Hauler
 1x Wolfkin Bond
 1x Grave Exchange
-3x Plains
+4x Plains
 6x Island
-3x Swamp
-2x Mountain
-4x Forest
+2x Swamp
+1x Mountain
+5x Forest

@@ -36,9 +36,12 @@ test('M178: talia Innistrad streszcza się przewidywalnie (kolory i landy)', () 
   const registry = createCardRegistry();
   const deck = parseDeckText(fs.readFileSync('decks/innistrad.txt', 'utf8'), registry);
   const summary = summarizeDeck(deck.cardIds, registry);
-  assert.equal(summary.spells, 36, '36 wspieranych kart planu Innistrad (Batch 48: +Thraben Valiant)');
-  assert.equal(summary.lands, 18, 'ceil(36/2) = 18 landów');
-  assert.equal(summary.total, 54);
+  // M197/K3: 36 -> 35. Ballista Watcher i Ballista Wielder (VOW) mialy plan
+  // zgadniety po secie („Innistrad”); arkusz kolekcji przypisuje im „Wiedźmin”,
+  // wiec obie karty przeszly do talii wiedzmin (zgloszenie wlasciciela).
+  assert.equal(summary.spells, 35, '35 wspieranych kart planu Innistrad');
+  assert.equal(summary.lands, 18, 'ceil(35/2) = 18 landów');
+  assert.equal(summary.total, 53);
 });
 
 test('M178 (ADR 0023): każda wspierana karta jest w DOKŁADNIE jednej talii', () => {

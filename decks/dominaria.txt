@@ -8,7 +8,6 @@
 1x Enduring Sliver
 1x Evangel of Synthesis
 1x Goblin Picker
-1x Reassembling Skeleton
 1x Willbender
 1x Wormfang Newt
 1x Alaborn Trooper
@@ -31,6 +30,6 @@
 1x Mindstab
 3x Plains
 2x Island
-6x Swamp
+5x Swamp
 2x Mountain
 2x Forest

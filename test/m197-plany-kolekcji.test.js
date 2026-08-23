@@ -14,7 +14,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createCardRegistry } from '../src/cards/card-data.js';
-import { parseCSV } from '../tools/fetch-art-ids.mjs';
+import { parseCSV, pickArtId, artIdsBySetFromRows } from '../tools/fetch-art-ids.mjs';
 
 const CSV_PATH = 'tools/collection-art-ids.csv';
 const REGISTRY = createCardRegistry();
@@ -116,4 +116,61 @@ test('M197/K2: slownik nie zawiera zdublowanych pozycji (artId + nazwa)', () => 
     else seen.set(key, index + 2);
   });
   assert.deepEqual(dups, [], 'ta sama ilustracja i nazwa moze wystapic tylko raz');
+});
+
+// --- Spojnosc planow: katalog vs slownik kolekcji (M197/K3) --------------
+//
+// Zgloszenie wlasciciela: „65STX,Curate,Arcavios / 302BRO,Curate,Arcavios —
+// dla tych dwoch kart kazda edycja powinna miec przypisany inny plan".
+// Naprawione u zrodla w tools/fetch-plans.mjs (zapis kolumny Plan jest teraz
+// set-aware). Ten straznik pilnuje SKUTKU: plan karty w katalogu musi zgadzac
+// sie z planem jej DRUKU w slowniku kolekcji.
+//
+// Slownik odwzorowuje arkusz wlasciciela, wiec jest zrodlem prawdy dla planu.
+// Rozjazd oznacza, ze ktos zgadl plan po secie zamiast go odczytac.
+
+/** Plan druku z kolekcji: dopasowanie po secie karty (jak pickArtId). */
+function collectionPlanFor(card, bySet) {
+  const entries = bySet.get(card.name.toLowerCase());
+  if (!entries?.length) return undefined;
+  const exact = entries.find((e) => e.set && e.set.toUpperCase() === String(card.set ?? '').toUpperCase());
+  return (exact ?? entries[0]).plan;
+}
+
+test('M197/K3: plan kazdej karty w katalogu zgadza sie z jej DRUKIEM w kolekcji', () => {
+  const rows = parseCSV(fs.readFileSync(CSV_PATH, 'utf8'));
+  const bySet = new Map();
+  for (const row of rows.slice(1)) {
+    const art = (row[0] ?? '').trim();
+    const name = (row[1] ?? '').trim();
+    const plan = (row[2] ?? '').trim();
+    const num = art.match(/^\d+/);
+    if (!name || !num) continue;
+    const set = art.slice(num[0].length).toUpperCase().replace(/^_+/, '');
+    if (!bySet.has(name.toLowerCase())) bySet.set(name.toLowerCase(), []);
+    bySet.get(name.toLowerCase()).push({ plan, set });
+  }
+  const mismatches = [];
+  for (const card of REGISTRY.all()) {
+    if (!card.plan || !card.name) continue;
+    const expected = collectionPlanFor(card, bySet);
+    if (expected && expected !== card.plan) {
+      mismatches.push(`${card.name} (${card.set}): katalog „${card.plan}" vs kolekcja „${expected}"`);
+    }
+  }
+  assert.deepEqual(mismatches, [], 'plan czyta sie z kolekcji, nie zgaduje po secie');
+});
+
+test('M197/K3: dwa druki tej samej karty maja WLASNE plany (Curate, Negate)', () => {
+  const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync(CSV_PATH, 'utf8')));
+  // artId nadal rozstrzyga sie po secie — to samo zrodlo prawdy co plan.
+  assert.equal(pickArtId(byName.get('curate'), 'STX'), 65);
+  assert.equal(pickArtId(byName.get('curate'), 'BRO'), 302);
+  const curate = REGISTRY.get('curate-stx');
+  const curateBro = REGISTRY.get('curate');
+  assert.equal(curate.plan, 'Arcavios');
+  assert.equal(curateBro.plan, 'Forgotten Realms');
+  assert.notEqual(curate.plan, curateBro.plan, 'rozne druki = rozne plany (zlecenie Batcha 47)');
+  assert.equal(REGISTRY.get('negate-m15').plan, 'Warhammer Fantasy');
+  assert.equal(REGISTRY.get('negate').plan, 'Wiedźmin');
 });

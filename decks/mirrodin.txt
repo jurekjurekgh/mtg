@@ -21,6 +21,7 @@
 1x Bladed Sentinel
 1x Carrion Call
 1x Exterminator Magmarch
+1x Feed the Infection
 1x Fuel for the Cause
 1x Necrosquito
 1x Trigon of Corruption
@@ -35,6 +36,6 @@
 1x Gloomfang Mauler
 4x Plains
 5x Island
-4x Swamp
-2x Mountain
+5x Swamp
+1x Mountain
 2x Forest

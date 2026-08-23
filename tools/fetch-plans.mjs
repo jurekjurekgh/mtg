@@ -106,10 +106,28 @@ export function withPlan(source, cardId, plan) {
   return { source: source.replace(defRe, `${updated}${match[2]}`), changed: true, reason: 'zapisano' };
 }
 
+/** Kod setu z kolumny „Ilustracja” słownika („302BRO” → „BRO”, „5_2XM” → „2XM”). */
+function setFromIllustration(value) {
+  const cleaned = String(value ?? '').trim().replace(/\.png$/i, '').replace(/(FOT|KON|KRA)$/i, '');
+  const num = cleaned.match(/^\d+/);
+  if (!num) return '';
+  return cleaned.slice(num[0].length).toUpperCase().replace(/^_+/, '');
+}
+
 /**
  * Przepisuje lokalny słownik tools/collection-art-ids.csv, dodając kolumnę Plan
- * (3. kolumna) dopasowaną po nazwie. Zachowuje istniejące wiersze; brak planu
- * dla nazwy → pusta komórka.
+ * (3. kolumna). Zachowuje istniejące wiersze; brak planu dla nazwy → pusta
+ * komórka.
+ *
+ * M197/K3 (zgłoszenie właściciela 2026-08-23): dopasowanie jest SET-AWARE —
+ * „dla tych dwóch kart każda edycja powinna mieć przypisany inny plan”.
+ * Wcześniej funkcja brała mapę płaską (nazwa → plan PIERWSZEGO wpisu), więc
+ * oba druki Curate dostawały „Arcavios”, a oba druki Negate „Wiedźmin”.
+ * Set czytamy z kolumny „Ilustracja” (302BRO → BRO) — dokładnie tak, jak
+ * `pickArtId` rozstrzyga numer ilustracji dla dubli nazw.
+ *
+ * Przyjmuje mapę z `plansBySetFromRows` (nazwa → [{plan, set}]); dla zgodności
+ * wstecznej akceptuje też starą mapę płaską (nazwa → plan).
  */
 export function collectionCsvWithPlan(existingText, plansByName) {
   const rows = parseCSV(existingText);
@@ -122,10 +140,12 @@ export function collectionCsvWithPlan(existingText, plansByName) {
     return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
   };
   for (const row of rows.slice(1)) {
-    const illus = csvField(row[0] ?? '');
+    const illus = row[0] ?? '';
     const name = row[nameCol >= 0 ? nameCol : 1] ?? row[1] ?? '';
-    const plan = plansByName.get(String(name).trim().toLowerCase()) ?? '';
-    out.push(`${illus},${csvField(name)},${csvField(plan)}`);
+    const entry = plansByName.get(String(name).trim().toLowerCase());
+    // Mapa set-aware daje tablicę wpisów; stara płaska — gotowy string.
+    const plan = Array.isArray(entry) ? (pickPlan(entry, setFromIllustration(illus)) ?? '') : (entry ?? '');
+    out.push(`${csvField(illus)},${csvField(name)},${csvField(plan)}`);
   }
   return `${out.join('\n')}\n`;
 }
@@ -151,9 +171,7 @@ async function main(argv) {
     throw new Error('Brak źródła arkusza: podaj --csv plik albo ustaw MTG_COLLECTION_CSV_URL / csvUrl w tools/collection.config.json');
   }
 
-  const byName = plansBySetFromRows(parseCSV(csvText)); // set-aware dla card-data
-  const flat = new Map(); // name→plan (pierwsze wystąpienie) dla kolumny CSV
-  for (const [key, entries] of byName) flat.set(key, entries[0].plan);
+  const byName = plansBySetFromRows(parseCSV(csvText)); // set-aware: card-data ORAZ kolumna CSV
   const registry = createCardRegistry();
   const cards = registry.all();
 
@@ -183,7 +201,7 @@ async function main(argv) {
   }
   // Dopisz kolumnę Plan do lokalnego słownika (zawsze, by trzymać ją w repo).
   const bundled = fs.readFileSync(BUNDLED_CSV_PATH, 'utf8');
-  const updatedCsv = collectionCsvWithPlan(bundled, flat);
+  const updatedCsv = collectionCsvWithPlan(bundled, byName);
   if (updatedCsv !== bundled) {
     fs.writeFileSync(BUNDLED_CSV_PATH, updatedCsv);
     console.log(`Zaktualizowano ${BUNDLED_CSV_PATH.href.replace(/^file:\/\//, '')} (kolumna Plan).`);

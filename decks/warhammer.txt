@@ -5,6 +5,7 @@
 1x Brute Force
 1x Fireball
 1x Index
+1x Lab Rats
 1x Squire's Lightblade
 1x Tome Scour
 1x Unearth
@@ -14,6 +15,7 @@
 1x Goblin Piker
 1x Negate (M15)
 1x Omenspeaker
+1x Reassembling Skeleton
 1x Wooden Stake
 1x Brawler's Plate
 1x Feedback
@@ -32,6 +34,6 @@
 1x Revolutionist
 2x Plains
 3x Island
-3x Swamp
+4x Swamp
 6x Mountain
 1x Forest

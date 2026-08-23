@@ -97,7 +97,9 @@ test('log tłumaczy zdolności i tokeny na polski bez wycieku surowych typów', 
   // Seed 5 po Batchu 48 D (tarkir +Stampeding Elk Herd) — hunter.
   // Seed 1 po Batchu 48 E (warhammer +Contested Game Ball, +Cherished
   // Hatchling) — hunter (L25).
-  const session = createSession({ seed: 1, registry, decks });
+  // Seed 2 po M197/K3 (warhammer +Lab Rats +Reassembling Skeleton z arkusza
+  // kolekcji, manabaza przeliczona) — hunter (L25).
+  const session = createSession({ seed: 2, registry, decks });
   playOut(session);
   assert.ok(
     session.log.some((e) => e.text.includes('aktywuje zdolność')),
