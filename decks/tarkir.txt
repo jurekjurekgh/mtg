@@ -1,5 +1,6 @@
 # Tarkir
 
+1x Coat with Venom
 1x Descendant of Storms
 1x Servant of the Scale
 1x Delta Bloodflies
@@ -34,6 +35,6 @@
 1x Woolly Loxodon
 2x Plains
 3x Island
-2x Swamp
+3x Swamp
 3x Mountain
 6x Forest

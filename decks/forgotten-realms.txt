@@ -20,10 +20,11 @@
 1x Lurking Green Dragon
 1x Stirring Bard
 1x Angel of the Dawn
+1x Ettercap
 1x Underdark Explorer
 1x Marut
 2x Plains
 2x Island
 3x Swamp
 2x Mountain
-2x Forest
+3x Forest

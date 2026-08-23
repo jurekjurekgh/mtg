@@ -65,7 +65,8 @@ test('pełna partia z użyciem zdolności i tokenów przechodzi przez protokół
   // Seed 2 po Batchu 44 A (tarkir +Descendant of Storms, warhammer +Hill
   // Giant +Dismal Backwater) — hunter (kolejne: 3, 6, 7, 9, 10).
   // Seed 1 po Batchu 45 A (warhammer +Unearth) — hunter (kolejne: 3, 4, 5).
-  const session = createSession({ seed: 1, registry, decks });
+  // Seed 2 po Batchu 48 A (innistrad +Thraben Valiant) — hunter (L25).
+  const session = createSession({ seed: 2, registry, decks });
   playOut(session);
   assert.equal(session.state.status, 'finished', 'partia nie doszła do rozstrzygnięcia');
   assert.ok(
@@ -92,7 +93,8 @@ test('log tłumaczy zdolności i tokeny na polski bez wycieku surowych typów', 
   // Seed 2 po Batchu 47 A (warhammer +Negate M15 → manabaza przesunięta
   // o 1 Mountain na 1 Island): przy nowym tasowaniu seed 1 nie pokazywał
   // już żadnej aktywacji zdolności — przelosowane hunterem (L25).
-  const session = createSession({ seed: 2, registry, decks });
+  // Seed 10 po Batchu 48 A (innistrad/warhammer urosly) — hunter (L25).
+  const session = createSession({ seed: 10, registry, decks });
   playOut(session);
   assert.ok(
     session.log.some((e) => e.text.includes('aktywuje zdolność')),

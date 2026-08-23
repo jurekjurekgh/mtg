@@ -24,6 +24,7 @@
 1x Trigon of Corruption
 1x Banishment Decree
 1x Dementia Bat
+1x Quicksilver Fisher
 1x Spread the Sickness
 1x Strandwalker
 1x Chained Throatseeker
@@ -31,7 +32,7 @@
 1x True Conviction
 1x Gloomfang Mauler
 4x Plains
-3x Island
+4x Island
 4x Swamp
 2x Mountain
 2x Forest

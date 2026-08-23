@@ -9171,6 +9171,126 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['karty wygnane tym artefaktem są POWIĄZANE ze źródłem (exiledCardIds, CR 400.7) — druga zdolność odkrywa wyłącznie je', 'permanenty wchodzą pod kontrolę WŁAŚCICIELA karty (Oracle „all cards they own"), instanty i sorcery zostają w wygnaniu odkryte'],
   }),
 
+  // =========================================================================
+  // Batch 48 (14 kart, 2026-08-23) — lista właściciela (M196)
+  // Pierwszy batch w NOWYM formacie: artId, set i plan podane wprost
+  // w zleceniu (bez zgadywania ze słownika kolekcji).
+  // Dane Oracle: docs/cards/scryfall-*.json (pobrane 2026-08-23).
+  // =========================================================================
+
+  // ---- Batch 48 — transza A: istniejące mechaniki ----
+
+  // 1. Thraben Valiant (AVR) — 2/1 vigilance.
+  defineCard({
+    id: 'thraben-valiant', name: 'Thraben Valiant', set: 'AVR',
+    types: ['Creature'], subtypes: ['Human', 'Soldier'], colors: ['W'],
+    power: 2, toughness: 1, manaCost: 2, keywords: ['vigilance'],
+    oracleText: 'Vigilance',
+    imageUri: 'https://cards.scryfall.io/large/front/2/0/20558f69-9240-49b9-9695-caf75ee2db1b.jpg?1783940728',
+    artId: 544, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Quicksilver Fisher (ONE) — 4/3 flying, ETB „draw, then discard".
+  defineCard({
+    id: 'quicksilver-fisher', name: 'Quicksilver Fisher', set: 'ONE',
+    types: ['Creature'], subtypes: ['Phyrexian', 'Drake'], colors: ['U'],
+    power: 4, toughness: 3, manaCost: 5, keywords: ['flying'],
+    oracleText: 'Flying\nWhen this creature enters, draw a card, then discard a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/a/bad0e96a-b4cc-4439-aab9-731a1036145d.jpg?1783918058',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'draw_then_discard', amount: 1 }],
+      }),
+    ],
+    artId: 547, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Coat with Venom (DTK) — +1/+2 i deathtouch do końca tury.
+  defineCard({
+    id: 'coat-with-venom', name: 'Coat with Venom', set: 'DTK',
+    types: ['Instant'], colors: ['B'], manaCost: 1,
+    oracleText: 'Target creature gets +1/+2 and gains deathtouch until end of turn. (Any amount of damage it deals to a creature is enough to destroy it.)',
+    imageUri: 'https://cards.scryfall.io/large/front/8/c/8cc8e012-7043-405c-b6cd-b3b38f8a8d54.jpg?1783938600',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'pump', power: 1, toughness: 2 },
+        { type: 'grant_keywords_until_end_of_turn', keywords: ['deathtouch'] },
+      ],
+    },
+    artId: 553, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. Frost Lynx (M15) — ETB: tapnij stwora wroga; nie odkręci się
+  //    w jego najbliższym kroku odkręcania (tap + lock_untap, wzorzec Liry).
+  defineCard({
+    id: 'frost-lynx', name: 'Frost Lynx', set: 'M15',
+    types: ['Creature'], subtypes: ['Elemental', 'Cat'], colors: ['U'],
+    power: 2, toughness: 2, manaCost: 3,
+    oracleText: "When this creature enters, tap target creature an opponent controls. That creature doesn't untap during its controller's next untap step.",
+    imageUri: 'https://cards.scryfall.io/large/front/6/1/619268d2-f7a8-48cd-b17b-197e82474b13.jpg?1783939193',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature_opponent_controls' } },
+        effect: [
+          { type: 'tap_permanent' },
+          { type: 'lock_untap' },
+        ],
+      }),
+    ],
+    artId: 550, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Bedhead Beastie (DSK) — 5/6 menace + Mountaincycling {2}
+  //    (typecycling: szuka LĄDU o podtypie Mountain, nie karty „Mountain").
+  defineCard({
+    id: 'bedhead-beastie', name: 'Bedhead Beastie', set: 'DSK',
+    types: ['Creature'], subtypes: ['Beast'], colors: ['R'],
+    power: 5, toughness: 6, manaCost: 6, keywords: ['menace'],
+    oracleText: 'Menace (This creature can\'t be blocked except by two or more creatures.)\nMountaincycling {2} ({2}, Discard this card: Search your library for a Mountain card, reveal it, put it into your hand, then shuffle.)',
+    imageUri: 'https://cards.scryfall.io/large/front/7/7/77c72b5b-dd81-4eb4-80d9-a0124e27e1dc.jpg?1783909472',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'cycling',
+        cost: { mana: 2 },
+        cycling: { subtypes: ['Mountain'] },
+        effect: [],
+      }),
+    ],
+    artId: 555, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 6. Ettercap // Web Shot (CLB) — stwór 2/5 reach z Adventure niszczącą
+  //    latającego stwora (CR 715: przygoda wygania kartę, potem rzut stwora).
+  defineCard({
+    id: 'ettercap', name: 'Ettercap', set: 'CLB',
+    types: ['Creature'], subtypes: ['Spider', 'Beast'], colors: ['G'],
+    power: 2, toughness: 5, manaCost: 5, keywords: ['reach'],
+    oracleText: 'Reach // Destroy target creature with flying. (Then exile this card. You may cast the creature later from exile.)',
+    imageUri: 'https://cards.scryfall.io/large/front/8/f/8f5228dc-ec9d-456f-a89c-1bc592a1bbab.jpg?1783922714',
+    adventure: {
+      cost: 3, colors: ['G'],
+      spell: {
+        timing: 'instant',
+        targets: [{ type: 'creature_with_keyword', keyword: 'flying' }],
+        effects: [{ type: 'destroy_permanent' }],
+      },
+    },
+    artId: 552, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+    notes: ['Adventure „Web Shot" niszczy WYŁĄCZNIE stwora z lataniem (creature_with_keyword) — wzorzec Sagittars\' Volley'],
+  }),
+
 ]);
 
 /**

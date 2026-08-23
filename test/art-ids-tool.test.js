@@ -67,7 +67,7 @@ test('narzędzie nie zawiera adresu arkusza ani innych sekretów', () => {
 test('lokalny słownik zawiera wszystkie karty z ID setu, bez ucieczek i z dubletami setów', () => {
   const rows = parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8'));
   const data = rows.slice(1);
-  assert.equal(data.length, 552, 'pełna lista kolekcji (552 karty)');
+  assert.equal(data.length, 566, 'pełna lista kolekcji (566 kart — Batch 48 dopisał 14)');
   for (const [art, name] of data) {
     assert.match(art, /^\d+[A-Za-z0-9_]*$/, `ID ilustracji bez znaków specjalnych: ${art}`);
     assert.ok(name.trim(), `nazwa nie może być pusta (ID ${art})`);
@@ -96,7 +96,7 @@ test('dopasowanie rozstrzyga duplikaty po secie karty, inaczej pierwszym wpisem'
 
 test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', () => {
   const dict = artIdsFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
-  // Pełna lista kolekcji z arkusza (552 karty; 550 unikalnych nazw — duplikaty
+  // Pełna lista kolekcji z arkusza (566 kart; duplikaty nazw to różne druki —
   // to różne druki, np. Curate 65STX/302BRO — pierwsze wystąpienie wygrywa).
   assert.ok(dict.size >= 500, 'słownik zawiera pełną listę kolekcji');
 
@@ -104,7 +104,7 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // doda kartę bez odświeżenia słownika, ten test od razu to wskaże.
   const registry = createCardRegistry();
   const withArt = registry.all().filter((card) => card.artId != null);
-  assert.equal(withArt.length, 378, 'dokładnie 378 wpisów ma artId (Batche 1–46 + Batch 47 KOMPLET 8/8)');
+  assert.equal(withArt.length, 384, 'dokładnie 384 wpisy mają artId (Batche 1–47 + Batch 48 transza A)');
   const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   for (const card of withArt) {
     const entries = byName.get(card.name.toLowerCase()) ?? [];
