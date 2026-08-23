@@ -191,6 +191,19 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
     }
     return tapped >= condition.minTappedCreaturesControlled;
   }
+  // Batch 48 (Stampeding Elk Herd, DTK): FORMIDABLE (CR 702.103) —
+  // „if creatures you control have total power 8 or greater". Intervening-if
+  // (CR 603.4) sprawdzany PRZY ODPALENIU i ponownie przy rozstrzyganiu.
+  // Liczymy moc EFEKTYWNA (bufy, liczniki), nie wydrukowana.
+  if (condition.minTotalPowerYouControl != null) {
+    let total = 0;
+    for (const object of state.objects.values()) {
+      if (object.zone !== 'battlefield' || object.kind !== 'creature') continue;
+      if (object.controllerId !== sourceObject?.controllerId) continue;
+      total += effectivePower(object, state) ?? 0;
+    }
+    return total >= condition.minTotalPowerYouControl;
+  }
   return true;
 }
 

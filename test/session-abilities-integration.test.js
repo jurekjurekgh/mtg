@@ -94,7 +94,9 @@ test('log tłumaczy zdolności i tokeny na polski bez wycieku surowych typów', 
   // o 1 Mountain na 1 Island): przy nowym tasowaniu seed 1 nie pokazywał
   // już żadnej aktywacji zdolności — przelosowane hunterem (L25).
   // Seed 10 po Batchu 48 A (innistrad/warhammer urosly) — hunter (L25).
-  const session = createSession({ seed: 10, registry, decks });
+  // Seed 5 po Batchu 48 D (warhammer +Cherished Hatchling? nie; tarkir
+  // +Stampeding Elk Herd i przeliczone landy) — hunter.
+  const session = createSession({ seed: 5, registry, decks });
   playOut(session);
   assert.ok(
     session.log.some((e) => e.text.includes('aktywuje zdolność')),

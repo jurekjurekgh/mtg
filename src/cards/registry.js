@@ -166,6 +166,7 @@ export function defineCard(data) {
       // warunkowo, żeby nie zmieniać kształtu czystych aur bez enchant.
       ...(data.aura.enchant ? { enchant: data.aura.enchant } : {}),
       ...(data.aura.enchantType ? { enchantType: data.aura.enchantType } : {}),
+      ...(data.aura.ownControlOnly === false ? { ownControlOnly: false } : {}),
       ...(data.aura.grantMana ? { grantMana: Object.freeze({ ...data.aura.grantMana }) } : {}),
       ...(data.aura.chooseColor ? { chooseColor: true } : {}),
       // Batch 46 (Guildscorn Ward): TRWAŁA ochrona przed JAKOŚCIĄ źródła

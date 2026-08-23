@@ -2879,6 +2879,50 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // Batch 23: Feedback — „At the beginning of the upkeep of enchanted
   // enchantment's controller, this Aura deals 1 damage to that player."
   // attachedTo wskazuje enchantment, jego kontroler to cel obrażeń.
+  if (effect.type === 'lose_life_enchanted_permanent_controller') {
+    // Batch 48 (Clawing Torment, NEO): „Enchanted permanent has »At the
+    // beginning of your upkeep, you LOSE 1 LIFE.«" Wariant Feedbacku, ale
+    // utrata zycia (CR 118.2), nie obrazenia — nie da sie jej zapobiec
+    // prewencja obrazen ani przekierowac.
+    const enchantedId = sourceObject.attachedTo;
+    if (!enchantedId) return;
+    const enchanted = state.objects.get(enchantedId);
+    if (!enchanted || enchanted.zone !== 'battlefield') return;
+    changeLife(state, enchanted.controllerId, -(effect.amount ?? 1));
+    return;
+  }
+  if (effect.type === 'your_creatures_gain_keywords_until_end_of_turn') {
+    // Batch 48 (Stampeding Elk Herd, DTK): formidable — „creatures YOU
+    // control gain trample until end of turn". Zbior stworow ustalany PRZY
+    // ROZSTRZYGNIECIU (CR 611.2c): stwor wchodzacy pozniej nie dostaje nic.
+    // Slowa kluczowe sa deskryptorem, wiec ta sama sciezka obsluzy przyszle
+    // „gain flying" itd.
+    const controllerId = sourceObject.controllerId;
+    const keywords = effect.keywords ?? [];
+    if (keywords.length === 0) return;
+    const affected = [];
+    for (const id of state.zones.battlefield) {
+      const object = state.objects.get(id);
+      if (!object || object.kind !== 'creature' || object.controllerId !== controllerId) continue;
+      affected.push(id);
+    }
+    if (affected.length === 0) return;
+    state.untilEndOfTurnBuffs = [
+      ...(state.untilEndOfTurnBuffs ?? []),
+      Object.freeze({
+        controllerId,
+        objectIds: Object.freeze(affected),
+        power: 0,
+        toughness: 0,
+        keywords: Object.freeze([...keywords]),
+      }),
+    ];
+    state.events.push(event('mass_stats_modified', {
+      playerId: controllerId, objectIds: [...affected],
+      power: 0, toughness: 0, keywords: [...keywords],
+    }));
+    return;
+  }
   if (effect.type === 'damage_enchanted_permanent_controller') {
     const enchantedId = sourceObject.attachedTo;
     if (!enchantedId) return;

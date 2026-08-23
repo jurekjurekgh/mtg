@@ -9392,6 +9392,53 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['efekt globalny bez celu; zbiór stworów ustalany PRZY ROZSTRZYGNIĘCIU (CR 611.2c) — stwór wchodzący później blokuje normalnie'],
   }),
 
+  // ---- Batch 48 — transza D: aura warunkowa, formidable ----
+
+  // 11. Clawing Torment (NEO) — aura na artefakt LUB stwora: -1/-1 i zakaz
+  //     bloku (gdy jest stworem) oraz utrata 1 życia w upkeepie kontrolera.
+  defineCard({
+    id: 'clawing-torment', name: 'Clawing Torment', set: 'NEO',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['B'], manaCost: 1,
+    oracleText: 'Enchant artifact or creature\nAs long as enchanted permanent is a creature, it gets -1/-1 and can\'t block.\nEnchanted permanent has "At the beginning of your upkeep, you lose 1 life."',
+    imageUri: 'https://cards.scryfall.io/large/front/6/2/621fce96-5933-4e2b-98ec-2589940e24cb.jpg?1783923889',
+    // „As long as enchanted permanent IS A CREATURE" — pump i zakaz bloku
+    // dotyczą wyłącznie stworów, więc na artefakcie bez typu Creature
+    // po prostu nie mają na czym zadziałać (silnik liczy je dla stworów).
+    // `ownControlOnly: false` — Oracle NIE mówi „you control", więc aura
+    // celuje też w permanenty przeciwnika (to karta-debuff).
+    aura: { enchantType: 'artifact_or_creature', ownControlOnly: false, pump: { power: -1, toughness: -1 }, cantBlock: true },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'upkeep', condition: { enchantedPermanentControllerUpkeep: true } },
+        effect: { type: 'lose_life_enchanted_permanent_controller', amount: 1 },
+      }),
+    ],
+    artId: 546, plan: 'Kamigawa',
+    support: { status: 'supported', limitations: [] },
+    notes: ['utrata życia (CR 118.2), nie obrażenia — prewencja obrażeń jej nie zatrzyma', 'wzorzec triggera upkeepu z Feedback (enchantedPermanentControllerUpkeep)'],
+  }),
+
+  // 12. Stampeding Elk Herd (DTK) — formidable (CR 702.103): przy ataku,
+  //     jeśli łączna moc twoich stworów ≥ 8, cała drużyna dostaje trample.
+  defineCard({
+    id: 'stampeding-elk-herd', name: 'Stampeding Elk Herd', set: 'DTK',
+    types: ['Creature'], subtypes: ['Elk'], colors: ['G'],
+    power: 5, toughness: 5, manaCost: 5,
+    oracleText: 'Formidable — Whenever this creature attacks, if creatures you control have total power 8 or greater, creatures you control gain trample until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/e/7e55e213-6eab-4086-96cd-024de6150fbe.jpg?1783938575',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks', condition: { minTotalPowerYouControl: 8 } },
+        effect: { type: 'your_creatures_gain_keywords_until_end_of_turn', keywords: ['trample'] },
+      }),
+    ],
+    artId: 549, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+    notes: ['formidable to intervening-if (CR 603.4): warunek sprawdzany przy odpaleniu I przy rozstrzyganiu', 'moc liczona EFEKTYWNIE (bufy, liczniki), nie wydrukowana'],
+  }),
+
 ]);
 
 /**

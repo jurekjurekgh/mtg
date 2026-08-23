@@ -900,7 +900,10 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
       if (!host || host.zone !== 'battlefield') throw new Error('Czarem aury trzeba celować w permanent na polu bitwy');
       const isArtOrCreature = host.kind === 'creature' || host.kind === 'artifact' || (host.types ?? []).includes('Artifact');
       if (!isArtOrCreature) throw new Error('Czarem aury trzeba celować w artefakt lub stwora');
-      if (host.controllerId !== playerId) throw new Error('Czarem aury trzeba celować we własny permanent');
+      // Batch 48: „you control" tylko gdy Oracle tak mówi (ownControlOnly).
+      if (object.aura?.ownControlOnly !== false && host.controllerId !== playerId) {
+        throw new Error('Czarem aury trzeba celować we własny permanent');
+      }
     } else if (object.aura?.enchant === 'enchantment' || object.aura?.enchantType === 'enchantment') {
       // Batch 23: Feedback — „Enchant enchantment". Legalność gospodarza
       // wspólna z attach/SBA (attachments.isLegalAuraHost): enchantment na
@@ -1014,10 +1017,15 @@ export function legalAuraCasts(state, playerId) {
     // koloru aury nie jest oferowany (oferta = walidacja).
     const protectedTarget = (target) => auraTargetProtected(state, target, object);
     if (object.aura?.enchantType === 'artifact_or_creature') {
+      // Batch 48 (Clawing Torment, NEO): Oracle bywa DWOJAKI — „Enchant
+      // artifact or creature YOU CONTROL" (Moonlit Meditation) albo bez tego
+      // ograniczenia (Clawing Torment: aura-debuff rzucana na przeciwnika).
+      // Ograniczenie jest DESKRYPTOREM (`ownControlOnly`), nie stałą w kodzie.
+      const ownOnly = object.aura?.ownControlOnly !== false;
       for (const targetId of state.zones.battlefield) {
         const target = state.objects.get(targetId);
         const isArtOrCreature = target && (target.kind === 'creature' || target.kind === 'artifact' || (target.types ?? []).includes('Artifact'));
-        if (isArtOrCreature && target.controllerId === playerId && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
+        if (isArtOrCreature && (!ownOnly || target.controllerId === playerId) && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
           out.push({ objectId: id, targetId, bestow: false });
         }
       }

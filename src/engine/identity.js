@@ -118,6 +118,7 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
       // ostatniej (po wszystkich grantach).
       ...(aura.losesKeywords ? { losesKeywords: Object.freeze([...aura.losesKeywords]) } : {}),
       ...(aura.enchantType ? { enchantType: aura.enchantType } : {}),
+      ...(aura.ownControlOnly === false ? { ownControlOnly: false } : {}),
       ...(aura.grantMana ? { grantMana: Object.freeze({ ...aura.grantMana }) } : {}),
       // Efekt zastępczy tworzenia tokenów (Moonlit Meditation) — deskryptor
       // musi dojść z karty na obiekt gry, inaczej engine go nie zobaczy

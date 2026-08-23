@@ -369,3 +369,95 @@ test('B48/C4: Ruthless Invasion — PEŁNA ścieżka: bloker traci możliwość 
   assert.notEqual(state.objects.get('robot').cantBlock, true,
     'stwór-ARTEFAKT blokuje dalej (Oracle: „nonartifact")');
 });
+
+// ---- Transza D: Clawing Torment, Stampeding Elk Herd ---------------------
+
+test('B48/D1: Clawing Torment — aura na artefakt LUB stwora', () => {
+  // Oracle: „Enchant artifact or creature / As long as enchanted permanent
+  // is a creature, it gets -1/-1 and can't block. / Enchanted permanent has
+  // »At the beginning of your upkeep, you lose 1 life.«"
+  const card = REGISTRY.get('clawing-torment');
+  assert.ok(card, 'karta w katalogu');
+  assert.deepEqual(card.subtypes, ['Aura']);
+  assert.equal(card.manaCost, 1);
+  assert.equal(card.aura?.enchantType, 'artifact_or_creature', 'enchant obejmuje OBA typy');
+  assert.deepEqual([card.aura?.pump?.power, card.aura?.pump?.toughness], [-1, -1],
+    'debuff -1/-1 (tylko gdy permanent JEST stworem — pump i tak dotyczy stworów)');
+  assert.equal(card.aura?.cantBlock, true, 'Oracle: nie moze blokowac');
+  assert.equal(card.artId, 546);
+  assert.equal(card.plan, 'Kamigawa', 'NOWY plan w katalogu');
+});
+
+test('B48/D2: Clawing Torment — trigger upkeepu odbiera 1 życie', () => {
+  const card = REGISTRY.get('clawing-torment');
+  const trig = (card.abilities ?? []).find((a) => a.trigger?.event === 'upkeep');
+  assert.ok(trig, 'trigger upkeepu');
+  assert.equal(trig.trigger.condition?.enchantedPermanentControllerUpkeep, true,
+    'upkeep KONTROLERA zaczarowanego permanentu (wzorzec Feedback)');
+  const eff = (Array.isArray(trig.effect) ? trig.effect : [trig.effect])[0];
+  assert.equal(eff.type, 'lose_life_enchanted_permanent_controller');
+  assert.equal(eff.amount, 1);
+});
+
+test('B48/D3: Clawing Torment — PEŁNA ścieżka: stwór 3/3 staje się 2/2 bez bloku', () => {
+  const state = game('p1');
+  addObject(state, {
+    id: 'foe', instanceId: 'i-f', cardId: 'hill-giant', controllerId: 'p2', ownerId: 'p2',
+    zone: 'battlefield', kind: 'creature', power: 3, toughness: 3,
+    types: ['Creature'], subtypes: [], abilities: [],
+  });
+  put(state, 'aura', 'clawing-torment', 'p1', 'hand');
+  lands(state, 1, 'basic-swamp');
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'aura' && (c.targets ?? []).includes('foe'));
+  assert.ok(cast, 'oferta rzutu aury na stwora przeciwnika');
+  assert.ok(execute(state, cast).ok);
+  resolveStack(state);
+  const view = playerView(state, 'p1');
+  const foe = view.zones.battlefield.find((o) => o.id === 'foe');
+  assert.equal(foe.power, 2, 'Hill Giant 3/3 → 2/2 (aura -1/-1)');
+  assert.equal(foe.toughness, 2);
+  assert.equal(foe.cantBlock, true, 'i nie może blokować');
+});
+
+test('B48/D4: Stampeding Elk Herd — formidable nadaje trample całej drużynie', () => {
+  // Oracle: „Formidable — Whenever this creature attacks, if creatures you
+  // control have total power 8 or greater, creatures you control gain
+  // trample until end of turn."
+  const card = REGISTRY.get('stampeding-elk-herd');
+  assert.ok(card, 'karta w katalogu');
+  assert.deepEqual([card.power, card.toughness], [5, 5]);
+  const trig = (card.abilities ?? []).find((a) => a.trigger?.event === 'attacks');
+  assert.ok(trig, 'trigger ataku');
+  assert.equal(trig.trigger.condition?.minTotalPowerYouControl, 8,
+    'formidable = łączna moc twoich stworów ≥ 8 (CR 702.103)');
+  const eff = (Array.isArray(trig.effect) ? trig.effect : [trig.effect])[0];
+  assert.equal(eff.type, 'your_creatures_gain_keywords_until_end_of_turn');
+  assert.deepEqual(eff.keywords, ['trample']);
+  assert.equal(card.artId, 549);
+  assert.equal(card.plan, 'Tarkir');
+});
+
+test('B48/D5: formidable — przy mocy 8+ cała drużyna dostaje trample', async () => {
+  const { applyEffect } = await import('../src/engine/effects.js');
+  const state = game('p1');
+  for (const [id, power] of [['a', 5], ['b', 3]]) {
+    addObject(state, {
+      id, instanceId: `i-${id}`, cardId: 'hill-giant', controllerId: 'p1', ownerId: 'p1',
+      zone: 'battlefield', kind: 'creature', power, toughness: 3,
+      types: ['Creature'], subtypes: [], abilities: [], keywords: [],
+    });
+  }
+  addObject(state, {
+    id: 'foe', instanceId: 'i-foe', cardId: 'hill-giant', controllerId: 'p2', ownerId: 'p2',
+    zone: 'battlefield', kind: 'creature', power: 4, toughness: 4,
+    types: ['Creature'], subtypes: [], abilities: [], keywords: [],
+  });
+  applyEffect(state, { type: 'your_creatures_gain_keywords_until_end_of_turn', keywords: ['trample'] },
+    { id: 'src', controllerId: 'p1', cardId: 'stampeding-elk-herd', zone: 'battlefield' }, []);
+  const { effectiveKeywords } = await import('../src/engine/permanents.js');
+  assert.ok(effectiveKeywords(state.objects.get('a'), state).includes('trample'), 'mój stwór ma trample');
+  assert.ok(effectiveKeywords(state.objects.get('b'), state).includes('trample'), 'drugi też');
+  assert.ok(!effectiveKeywords(state.objects.get('foe'), state).includes('trample'),
+    'stwory PRZECIWNIKA nie dostają nic (Oracle: „creatures YOU control")');
+});

@@ -940,6 +940,8 @@ function describeEffect(e) {
     // Batch 47 (Pyxis of Pandemonium): oba efekty nazwane po polsku —
     // strażnik M122 pilnuje, żeby żaden typ nie pokazał surowego sluga.
     // Batch 48 (Ruthless Invasion): globalny zakaz bloku z wyjątkiem typu.
+    lose_life_enchanted_permanent_controller: () => `kontroler zaczarowanego permanentu traci ${e.amount ?? 1} życia w swoim upkeepie`,
+    your_creatures_gain_keywords_until_end_of_turn: () => `twoje stwory zdobywają ${(e.keywords ?? []).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')} do końca tury`,
     creatures_cant_block_this_turn: () => {
       const except = e.exceptTypes ?? [];
       const which = except.length
@@ -1401,6 +1403,10 @@ export function rulesText(info) {
       // pojedynczego pola zostawiłoby resztę na następny audyt.
       aura.cantAttack ? 'zaczarowany nie może atakować' : '',
       aura.cantBlock ? 'zaczarowany nie może blokować' : '',
+      // Batch 48 (Clawing Torment): aura bez klauzuli „you control" celuje
+      // też w permanenty przeciwnika — to informacja dla gracza, bo
+      // większość aur katalogu jest ograniczona do własnych permanentów.
+      aura.ownControlOnly === false ? 'można zaczarować permanent dowolnego gracza' : '',
       aura.cantAttackYou ? 'zaczarowany nie może atakować ciebie' : '',
       aura.replaceTokenCreation
         ? `pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu${aura.replaceTokenCreation.optional ? ' (możesz)' : ''}`

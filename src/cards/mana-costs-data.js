@@ -77,6 +77,8 @@ export const MANA_COSTS = {
   "wooden-stake": "{2}",
   "steelclaw-lance": "{B}{R}",
   "ruthless-invasion": "{3}{R/P}",
+  "clawing-torment": "{B}",
+  "stampeding-elk-herd": "{3}{G}{G}",
   "curate": "{1}{U}",
   "curate-stx": "{1}{U}",
   "curse-of-the-pierced-heart": "{1}{R}",
