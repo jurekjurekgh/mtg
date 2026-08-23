@@ -1359,7 +1359,7 @@ export function rulesText(info) {
   const plotLine = info.plot ? `Plot {${info.plot.cost ?? '?'}}: wygnaj z ręki, później rzuć bez kosztu` : '';
   const equip = info.equipment;
   const equipLine = equip
-    ? `Equip {${equip.equip ?? '?'}}${(equip.keywords ?? []).length ? ` — nosiciel: ${(equip.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : ''}${equip.pump ? ` ${signed(equip.pump.power ?? 0)}/${signed(equip.pump.toughness ?? 0)}` : ''}${equip.cantBeBlockedMaxPower != null ? ` — nosiciel o mocy ≤${equip.cantBeBlockedMaxPower} nie może być blokowany` : ''}`
+    ? `Equip ${equip.equipFor ? `${equip.equipFor.subtype} {${equip.equipFor.equip}} · ` : ''}{${equip.equip ?? '?'}}${(equip.keywords ?? []).length ? ` — nosiciel: ${(equip.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : ''}${equip.pump ? ` ${signed(equip.pump.power ?? 0)}/${signed(equip.pump.toughness ?? 0)}` : ''}${equip.cantBeBlockedMaxPower != null ? ` — nosiciel o mocy ≤${equip.cantBeBlockedMaxPower} nie może być blokowany` : ''}`
     : '';
   const morphLine = info.morph && info.morph.megamorphCost != null
     ? `Megamorph {${info.morph.megamorphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt Megamorph (+1/+1)`
@@ -1982,8 +1982,19 @@ export function commandLabel(cmd, session, view) {
         return `Channel: ${nameOfObjectId(cmd.objectId)} (koszt ${abilityCostHtml(ability)}) → szukaj podstawowego lądu`;
       }
       if (ability?.keyword === 'equip') {
-        const target = nameOfObjectId(cmd.targets?.[0]);
-        return `Wyposaż: ${nameOfObjectId(cmd.objectId)} → ${target} (koszt ${abilityCostHtml(ability)})`;
+        // Batch 48 (Steelclaw Lance, ELD): „Equip Knight {1}" obok „Equip {3}" —
+        // koszt zależy od PODTYPU celu (CR 702.6e). Etykieta musi pokazywać
+        // koszt dla KONKRETNEGO celu — ta sama reguła co oferta i walidacja
+        // engine (L41: pokazywany koszt = płacony koszt).
+        const targetId = cmd.targets?.[0];
+        const target = nameOfObjectId(targetId);
+        const targetEntry = targetId ? view.zones.battlefield.find((o) => o.id === targetId) : null;
+        const equipForActive = Boolean(object?.equipment?.equipFor
+          && (targetEntry?.subtypes ?? []).includes(object.equipment.equipFor.subtype));
+        const shownAbility = equipForActive
+          ? { ...ability, cost: { ...ability.cost, mana: object.equipment.equipFor.equip, colors: [] } }
+          : ability;
+        return `Wyposaż: ${nameOfObjectId(cmd.objectId)} → ${target} (koszt ${abilityCostHtml(shownAbility)})`;
       }
       if (object?.faceDown) {
         // Flip-zdolność buduje engine z deskryptora morph (nie ma jej w
