@@ -115,6 +115,20 @@ zweryfikowana** przed przejęciem (L7/L11/L56 — repo i pomiary, nie deklaracje
   (połowa tropów fałszywa — dokumentować), L33 (tester kłamie o stanie gry).
 - Nie wymyślać nowych batchy kart (ADR 0021 §4c).
 
-## Podsumowanie wykonania
+## Podsumowanie wykonania (2026-08-23)
 
-(dopisane na końcu)
+- **S0** ✓ roadmapa, PR #72 otwarty.
+- **S1–S3** ✓ N1/N2/N3 przejęte (każdy zweryfikowany: stan zielony 2991→3000→3003,
+  weryfikacja mutacyjna na kodzie PR #70), S4 ✓ O-N3.
+- **Uwagi właściciela (wpłynęły w trakcie):** A (wycofane — Oracle), A2 ✓, B ✓
+  (root cause: `cardIdByName` nieeksponowane), C/C2 ✓, D+E2 ✓ (root cause:
+  `any_creature_dies` na nie-stworach), E ✓ (bramka kreatora), F ✓ (werdykt:
+  poprawne wg CR 502.4/601.2f — test pinuje), G ✓, H ✓, R ✓ (wycena self-millu).
+- **S5 (audyt)** ✓ raport `docs/audits/AUDYT_PR70_2026-08-23.md`: N5, L
+  (prawdziwy błąd — fix turn-level), Formidable (WYCOFANE na decyzję
+  właściciela), M/M2 (werdykt: poprawne — testy pinują), E2a–E2e zamknięte.
+- **S6** częściowo: pętla jakości Żywym Testerem na zbudowanym artefakcie
+  **niewykonana** (decyzja właściciela: zakończyć sesję po fixach zgłoszeń);
+  domknięto M193 (K5–K7). Do następnej sesji: Żywy Tester + U2 + O1.
+- **S7** ✓ handoff, PROJECT_STATE, opis PR; pakiet 3023/3023, build
+  53/2561.2 kB; PR #72 otwarty (scalanie — decyzja właściciela).

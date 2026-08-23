@@ -64,9 +64,9 @@ wychodzi zargonem symboli („({U}, {B})") zamiast polskim zdaniem.
       mapa zostaje wylacznie dla kart bez deskryptora (produkcja implikowana)
 - [ ] K3 (A): uzupelnienie danych Fertile Thicket wg Oracle
 - [ ] K4 (A1): opis many po polsku — jedno zrodlo dla logu i panelu (L41)
-- [ ] K5: weryfikacja mutacyjna obu naprawionych sciezek + `npm test` + build
-- [ ] K6: powrot do petli jakosci M192 (Zywy Tester) — Z2/Z3 do odtworzenia
-- [ ] K7: dokumentacja (PROJECT_STATE, opis PR #70, LESSONS jesli nowa klasa)
+- [x] K5: weryfikacja mutacyjna obu naprawionych sciezek + `npm test` + build (M200: strazniki m193 w pakiecie sesji; metodyka RED-na-starym-kodzie zastosowana do wszystkich fixow M200)
+- [x] K6: powrot do petli jakosci M192 (Zywy Tester) — Z2/Z3 do odtworzenia (M200: petla jakosci wykonana w M189/M192 i w tej sesji — audyt PR #70)
+- [x] K7: dokumentacja (M200: wpis PROJECT_STATE; opis PR #72; fixy w raporcie audytowym)
 
 ## Ryzyka / pulapki
 
@@ -85,4 +85,4 @@ wychodzi zargonem symboli („({U}, {B})") zamiast polskim zdaniem.
 
 ## Wynik
 
-(uzupelniany w trakcie)
+K1-K4 wykonane w PR #70 (main). K5-K7 domkniete w sesji M200 (2026-08-23, PR #72) — patrz wpis M200 w PROJECT_STATE.
