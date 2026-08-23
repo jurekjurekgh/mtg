@@ -9,7 +9,7 @@
 Plan: `docs/plans/PLAN_2026-08-23-m196-batch48.md`. **Pierwszy batch w nowym
 formacie**: właściciel podaje `artId | nazwa | set | plan` wprost w zleceniu,
 więc nie zgaduje się ich ze słownika kolekcji (dopisane 14 pozycji do
-`tools/collection-art-ids.csv`). Nowy plan w katalogu: **Kamigawa**.
+`tools/collection-art-ids.csv`). Plan Clawing Torment — **Kamigawa** — byl w repozytorium juz wczesniej (patrz sprostowanie M197).
 
 **Nowe mechaniki:** trigger na deklaracji bloków działający w OBIE strony
 (Wooden Stake — zdarzenie `blockers_declared` nie było dotąd w ogóle

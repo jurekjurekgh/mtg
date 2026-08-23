@@ -3158,7 +3158,8 @@ export const REAL_CARDS = Object.freeze([
     power: 2, toughness: 2, manaCost: 3,
     oracleText: 'When this creature enters, target opponent puts a card from their hand on top of their library.',
     imageUri: 'https://cards.scryfall.io/large/front/9/8/980135d5-dfaa-4beb-b4b3-1e256bb46e61.jpg?1783944446',
-    artId: 540, plan: 'Świat Wiedźmina',
+    // M197 (decyzja właściciela): „Świat Wiedźmina to po prostu Wiedźmin".
+    artId: 540, plan: 'Wiedźmin',
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,

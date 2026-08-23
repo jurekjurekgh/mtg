@@ -25,7 +25,7 @@ Zlecenie właściciela z 2026-08-23 (dwie części):
 
 Dopiero czwartą kartą planu było Clawing Torment (546NEO) z Batcha 48.
 
-**Root cause**: M196 zapisało „nowy plan w katalogu: Kamigawa" bez sprawdzenia
+**Root cause**: M196 zapisało „nowy plan w katalogu: Kamigawa" bez sprawdzenia <!-- plan-cytat -->
 `grep Kamigawa` w katalogu i CSV — twierdzenie przeszło do trzech dokumentów
 oraz do asercji testu, gdzie utrwaliło się jako „prawda". Klasa L1 (widok/opis
 kłamie mimo poprawnych danych), tym razem w dokumentacji.

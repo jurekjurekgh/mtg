@@ -385,7 +385,9 @@ test('B48/D1: Clawing Torment — aura na artefakt LUB stwora', () => {
     'debuff -1/-1 (tylko gdy permanent JEST stworem — pump i tak dotyczy stworów)');
   assert.equal(card.aura?.cantBlock, true, 'Oracle: nie moze blokowac');
   assert.equal(card.artId, 546);
-  assert.equal(card.plan, 'Kamigawa', 'NOWY plan w katalogu');
+  // M197 (sprostowanie): Kamigawa NIE byla nowym planem — patrz
+  // test/m197-plany-kolekcji.test.js.
+  assert.equal(card.plan, 'Kamigawa');
 });
 
 test('B48/D2: Clawing Torment — trigger upkeepu odbiera 1 życie', () => {
