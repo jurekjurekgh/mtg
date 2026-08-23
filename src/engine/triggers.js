@@ -2175,7 +2175,10 @@ export function processTriggers(state, recentEvents) {
             // tryFire IGNORUJE przekazane cele (zawsze wysyla []), bo sluzy
             // triggerom bez celu albo z `requiresTarget`; tutaj cel jest
             // znany z samego zdarzenia, wiec kolejkujemy wprost.
-            if (!conditionHolds(ability.trigger ?? {}, state, attachment, {})) continue;
+            // M200/N5 (CR 603.4): intervening-if sprawdzany przy
+            // ROZSTRZYGNIECIU (resolveTriggerEntry — z payload.extra), nie
+            // przy kolejkowaniu — pre-check z pustym eventData byl
+            // redundantny i nie zgodny z CR (wzorzec: O-N3).
             queueTriggerToStack(state, ability, attachment, [foeId], events);
           }
         }
