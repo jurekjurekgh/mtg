@@ -9144,6 +9144,33 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['ukończenie lochu = dotarcie do pokoju bez dalszych ścieżek (Throne of the Dead Three) — Undercity jest grafem, więc liczy się brak wyjścia, nie numer pokoju', 'bez ukończonego lochu karta i tak jest grywalna w tej turze, ale za pełny koszt many'],
   }),
 
+  // ---- Batch 47 — transza E: Pyxis of Pandemonium ----
+
+  // 8. Pyxis of Pandemonium (THS) — {T}: każdy gracz wygania wierzch swojej
+  //    biblioteki ZAKRYTY; {7},{T},poświęć: wszyscy odkrywają swoje karty
+  //    wygnane TYM artefaktem i kładą spośród nich permanenty na pole bitwy.
+  defineCard({
+    id: 'pyxis-of-pandemonium', name: 'Pyxis of Pandemonium', set: 'THS',
+    types: ['Artifact'], colors: [], manaCost: 1,
+    oracleText: '{T}: Each player exiles the top card of their library face down.\n{7}, {T}, Sacrifice this artifact: Each player turns face up all cards they own exiled with this artifact, then puts all permanent cards among them onto the battlefield.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/b/dbc6a246-f32a-4dc0-9785-4038804f372f.jpg?1783939717',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'each_player_exiles_top_face_down' },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 7, tap: true, sacrificeSelf: true },
+        effect: { type: 'turn_up_exiled_and_put_permanents' },
+      }),
+    ],
+    artId: 21, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+    notes: ['karty wygnane tym artefaktem są POWIĄZANE ze źródłem (exiledCardIds, CR 400.7) — druga zdolność odkrywa wyłącznie je', 'permanenty wchodzą pod kontrolę WŁAŚCICIELA karty (Oracle „all cards they own"), instanty i sorcery zostają w wygnaniu odkryte'],
+  }),
+
 ]);
 
 /**

@@ -64,6 +64,7 @@ export const MANA_COSTS = {
   "crested-herdcaller": "{3}{G}{G}",
   "caves-of-chaos-adventurer": "{3}{R}",
   "divest": "{B}",
+  "pyxis-of-pandemonium": "{1}",
   "enduring-sliver": "{1}{W}",
   "supernatural-stamina": "{B}",
   "curate": "{1}{U}",

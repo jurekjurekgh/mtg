@@ -3198,6 +3198,70 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }));
     return true;
   }
+  if (effect.type === 'each_player_exiles_top_face_down') {
+    // Batch 47 (Pyxis of Pandemonium, THS): „{T}: Each player exiles the top
+    // card of their library face down." Kazdy gracz wygania SWOJ wierzch,
+    // karta lezy ZAKRYTA (CR 708 — nikt jej nie zna), a zrodlo pamieta, ktore
+    // karty wygnalo (CR 400.7): druga zdolnosc odkrywa wylacznie te wygnane
+    // TYM artefaktem, wiec bez powiazania nie dalaby sie wykonac poprawnie.
+    const source = state.objects.get(sourceObject.id) ?? sourceObject;
+    const exiledIds = [...(source.exiledCardIds ?? [])];
+    for (const player of state.players) {
+      const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === player.id);
+      if (topId == null) continue; // pusta biblioteka — ten gracz nic nie wygania
+      const exileId = `exile-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, topId, 'exile', exileId);
+      state.objects.set(exileId, Object.freeze({ ...moved, faceDown: true }));
+      exiledIds.push(exileId);
+      // Zdarzenie BEZ cardId: karta jest zakryta, wiec jej nazwa nie jest
+      // informacja publiczna (mgla wojny — nawet wlasciciel jej nie oglada).
+      state.events.push(event('object_exiled', {
+        fromId: topId, objectId: exileId, object: state.objects.get(exileId),
+        playerId: player.id, faceDown: true,
+      }));
+    }
+    if (state.objects.has(source.id)) {
+      state.objects.set(source.id, Object.freeze({ ...state.objects.get(source.id), exiledCardIds: exiledIds }));
+    }
+    return;
+  }
+  if (effect.type === 'turn_up_exiled_and_put_permanents') {
+    // Batch 47 (Pyxis of Pandemonium): „{7}, {T}, Sacrifice this artifact:
+    // Each player turns face up all cards they own exiled with this artifact,
+    // then puts all permanent cards among them onto the battlefield."
+    // Zrodlo jest juz poswiecone (koszt), wiec liste wygnanych czytamy z LKI
+    // obiektu przekazanego jako sourceObject.
+    const linked = [...(state.objects.get(sourceObject.id)?.exiledCardIds ?? sourceObject.exiledCardIds ?? [])];
+    if (linked.length === 0) return;
+    const NONPERMANENT = ['Instant', 'Sorcery'];
+    for (const exileId of linked) {
+      const card = state.objects.get(exileId);
+      if (!card || card.zone !== 'exile') continue;
+      // Odkrycie: karta przestaje byc zakryta niezaleznie od tego, czy jest
+      // permanentem (Oracle: „turns face up ALL cards they own").
+      state.objects.set(exileId, Object.freeze({ ...card, faceDown: false }));
+      state.events.push(event('card_revealed', {
+        playerId: card.ownerId ?? card.controllerId, objectId: exileId, cardId: card.cardId ?? null,
+      }));
+      const types = card.types ?? [];
+      const isPermanent = types.length > 0 && !types.some((type) => NONPERMANENT.includes(type));
+      if (!isPermanent) continue; // instant/sorcery zostaje w wygnaniu
+      // „puts … onto the battlefield" — pod kontrole WLASCICIELA karty
+      // (Oracle: „all cards THEY OWN"), nie kontrolera artefaktu.
+      const ownerId = card.ownerId ?? card.controllerId;
+      const battlefieldId = `permanent-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, exileId, 'battlefield', battlefieldId);
+      state.objects.set(battlefieldId, Object.freeze({
+        ...moved, controllerId: ownerId, faceDown: false,
+        summoningSickness: (moved.types ?? []).includes('Creature'),
+      }));
+      state.events.push(event('permanent_entered_battlefield', {
+        objectId: battlefieldId, object: state.objects.get(battlefieldId),
+        cardId: moved.cardId ?? null, controllerId: ownerId, fromExile: true,
+      }));
+    }
+    return;
+  }
   if (effect.type === 'epic_experiment') {
     // Epic Experiment (OTC): „Exile the top X cards of your library. You may
     // cast instant and sorcery spells with mana value X or less from among

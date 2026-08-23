@@ -681,3 +681,99 @@ test('B47/D8: impulse bez many nie jest oferowany (anty-over-fix)', async () => 
     .find((c) => c.type === 'cast_permanent' && c.objectId === exiled.id);
   assert.equal(offer, undefined, 'bez lądów nie ma z czego zapłacić {3}{R}');
 });
+
+// ---- Transza E: Pyxis of Pandemonium ------------------------------------
+
+test('B47/E1: Pyxis of Pandemonium — dane wg Oracle', () => {
+  const card = REGISTRY.get('pyxis-of-pandemonium');
+  assert.ok(card, 'karta w katalogu');
+  assert.deepEqual(card.types, ['Artifact']);
+  assert.equal(card.manaCost, 1);
+  const [tapAbility, popAbility] = card.abilities;
+  assert.deepEqual(tapAbility.cost, { tap: true }, '{T}: każdy gracz wygania wierzch');
+  assert.deepEqual((Array.isArray(tapAbility.effect) ? tapAbility.effect : [tapAbility.effect])
+    .map((e) => e.type), ['each_player_exiles_top_face_down']);
+  assert.equal(popAbility.cost.mana, 7, '{7} w koszcie');
+  assert.equal(popAbility.cost.tap, true);
+  assert.equal(popAbility.cost.sacrificeSelf, true);
+  assert.deepEqual((Array.isArray(popAbility.effect) ? popAbility.effect : [popAbility.effect])
+    .map((e) => e.type), ['turn_up_exiled_and_put_permanents']);
+});
+
+test('B47/E2: {T} wygania wierzch biblioteki KAŻDEGO gracza, zakryty', async () => {
+  const { createGameState, addObject } = await import('../src/engine/game-state.js');
+  const { applyEffect } = await import('../src/engine/effects.js');
+  const state = createGameState({ seed: 47, players: [{ id: 'p1' }, { id: 'p2' }] });
+  for (const [pid, cardId] of [['p1', 'hill-giant'], ['p2', 'seers-lantern']]) {
+    addObject(state, {
+      id: `lib-${pid}`, instanceId: `i-${pid}`, cardId, controllerId: pid, ownerId: pid,
+      zone: 'library', kind: 'creature', power: 1, toughness: 1, types: ['Creature'],
+    });
+  }
+  addObject(state, {
+    id: 'pyxis', instanceId: 'i-pyxis', cardId: 'pyxis-of-pandemonium', controllerId: 'p1',
+    ownerId: 'p1', zone: 'battlefield', kind: 'artifact', types: ['Artifact'],
+  });
+  applyEffect(state, { type: 'each_player_exiles_top_face_down' }, state.objects.get('pyxis'), []);
+  const exiled = [...state.objects.values()].filter((o) => o.zone === 'exile');
+  assert.equal(exiled.length, 2, 'KAŻDY gracz wygania jedną kartę');
+  assert.ok(exiled.every((o) => o.faceDown === true), 'karty leżą ZAKRYTE (CR 708)');
+  // Powiązanie ze źródłem (CR 400.7): druga zdolność musi wiedzieć, które
+  // karty wygnano TYM artefaktem.
+  const src = state.objects.get('pyxis');
+  assert.equal((src.exiledCardIds ?? []).length, 2, 'źródło pamięta wygnane karty');
+});
+
+test('B47/E3: zdolność za {7} odkrywa karty i wprowadza TYLKO permanenty', async () => {
+  const { createGameState, addObject } = await import('../src/engine/game-state.js');
+  const { applyEffect } = await import('../src/engine/effects.js');
+  const { gameObjectDataOf } = await import('../src/cards/materialize.js');
+  const state = createGameState({ seed: 47, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const giant = REGISTRY.get('hill-giant');       // permanent → na pole bitwy
+  const negate = REGISTRY.get('negate');          // instant  → zostaje w exile
+  addObject(state, {
+    id: 'lib-p1', instanceId: 'i1', cardId: 'hill-giant', controllerId: 'p1', ownerId: 'p1',
+    zone: 'library', ...gameObjectDataOf(giant), types: giant.types,
+  });
+  addObject(state, {
+    id: 'lib-p2', instanceId: 'i2', cardId: 'negate', controllerId: 'p2', ownerId: 'p2',
+    zone: 'library', ...gameObjectDataOf(negate), types: negate.types, spell: negate.spell,
+  });
+  addObject(state, {
+    id: 'pyxis', instanceId: 'i-pyxis', cardId: 'pyxis-of-pandemonium', controllerId: 'p1',
+    ownerId: 'p1', zone: 'battlefield', kind: 'artifact', types: ['Artifact'],
+  });
+  applyEffect(state, { type: 'each_player_exiles_top_face_down' }, state.objects.get('pyxis'), []);
+  applyEffect(state, { type: 'turn_up_exiled_and_put_permanents' }, state.objects.get('pyxis'), []);
+  const onField = [...state.objects.values()].filter((o) => o.zone === 'battlefield');
+  assert.ok(onField.some((o) => o.cardId === 'hill-giant'), 'permanent wchodzi na pole bitwy');
+  const stillExiled = [...state.objects.values()].filter((o) => o.zone === 'exile');
+  assert.deepEqual(stillExiled.map((o) => o.cardId), ['negate'],
+    'instant NIE jest permanentem — zostaje w wygnaniu');
+  assert.ok(stillExiled.every((o) => o.faceDown !== true), 'karty zostają ODKRYTE');
+});
+
+test('B47/E4: karta wchodzi pod kontrolę SWOJEGO właściciela (Oracle)', async () => {
+  // „Each player turns face up all cards THEY OWN … then puts all permanent
+  // cards among them onto the battlefield." Karta przeciwnika wraca do niego,
+  // a nie do kontrolera Pyxis.
+  const { createGameState, addObject } = await import('../src/engine/game-state.js');
+  const { applyEffect } = await import('../src/engine/effects.js');
+  const { gameObjectDataOf } = await import('../src/cards/materialize.js');
+  const state = createGameState({ seed: 47, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const giant = REGISTRY.get('hill-giant');
+  addObject(state, {
+    id: 'lib-p2', instanceId: 'i2', cardId: 'hill-giant', controllerId: 'p2', ownerId: 'p2',
+    zone: 'library', ...gameObjectDataOf(giant), types: giant.types,
+  });
+  addObject(state, {
+    id: 'pyxis', instanceId: 'i-pyxis', cardId: 'pyxis-of-pandemonium', controllerId: 'p1',
+    ownerId: 'p1', zone: 'battlefield', kind: 'artifact', types: ['Artifact'],
+  });
+  applyEffect(state, { type: 'each_player_exiles_top_face_down' }, state.objects.get('pyxis'), []);
+  applyEffect(state, { type: 'turn_up_exiled_and_put_permanents' }, state.objects.get('pyxis'), []);
+  const giantOnField = [...state.objects.values()]
+    .find((o) => o.zone === 'battlefield' && o.cardId === 'hill-giant');
+  assert.ok(giantOnField, 'stwór przeciwnika wchodzi na pole bitwy');
+  assert.equal(giantOnField.controllerId, 'p2', 'pod kontrolę WŁAŚCICIELA, nie gracza z Pyxis');
+});
