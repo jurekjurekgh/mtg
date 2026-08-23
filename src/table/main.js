@@ -21,7 +21,7 @@ import { stateFingerprint } from '../engine/fingerprint.js';
 import { createCardRegistry, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, FACE_DOWN_LABEL } from './session.js';
-import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace } from './render.js';
+import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, renderPlayerMeta } from './render.js';
 import { installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, countPaymentVariants, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
 import { effectiveSpellManaCost } from '../engine/spells.js';
@@ -31,7 +31,8 @@ import { parseManaCost } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
-import { lookWizardKindOf, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard } from './choice-request.js';
+import { lookWizardKindOf, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard } from './choice-request.js';
+import { multiTargetPlanOf } from './multi-target.js';
 import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions } from './render.js';
 
 function runEngineSmoke() {
@@ -101,7 +102,6 @@ function bootstrapTable() {
   const el = (id) => document.getElementById(id);
   const els = {
     banner: el('banner'),
-    status: el('status'),
     stackZone: el('stack-zone'),
     bfEnemy: el('bf-enemy'),
     bfOwn: el('bf-own'),
@@ -111,13 +111,17 @@ function bootstrapTable() {
     hand: el('hand'),
     actions: el('actions'),
     log: el('log'),
-    botReasoning: el('bot-reasoning'),
-    botReasoningCount: el('bot-reasoning-count'),
     turnHistory: el('turn-history'),
     turnHistoryCount: el('turn-history-count'),
     turnHistoryCopy: el('turn-history-copy'),
-    turnHistory1: el('turn-history-1'),
-    turnHistory2: el('turn-history-2'),
+    // M197/A1: kopiowanie CAŁEJ partii (wszystkie tury).
+    turnHistoryCopyAll: el('turn-history-copy-all'),
+    turnHistorySelect: el('turn-history-select'),
+    // M198/C: boks danych per gracz (strefy + pula many razem).
+    metaFoe: el('meta-foe'),
+    metaOwn: el('meta-own'),
+    // M198/B: warstwa komunikatów systemowych z guzikiem „Rozumiem".
+    noticeBody: el('notice-body'),
     daynight: el('daynight'),
     poison: el('poison'),
     undercity: el('undercity'),
@@ -137,19 +141,40 @@ function bootstrapTable() {
     manaWizardBody: el('mana-wizard-body'),
     botMoveBody: el('bot-move-body'),
   };
-  const statusNote = el('table-note');
-
-  // Sekcja „Przebieg tur (dla AI)" (M25): przełącznik 1/2 ostatnich tur
-  // odświeża panel, a guzik kopiuje gotowy blok do schowka.
-  for (const radio of [els.turnHistory1, els.turnHistory2]) {
-    radio?.addEventListener('change', () => rerender());
+  /**
+   * M198/B (screenshot właściciela): komunikaty systemowe zamiast pasa
+   * czerwonego tekstu w układzie pokazują się w warstwie z guzikiem
+   * „Rozumiem". Pusty tekst = nie ma czego pokazywać (dawne czyszczenie
+   * pasa), więc modal się nie otwiera.
+   */
+  function showNotice(text) {
+    const message = String(text ?? '').trim();
+    if (!message) return;
+    if (els.noticeBody) els.noticeBody.textContent = message;
+    showModal('notice');
   }
+
+  // Sekcja „Przebieg tur (dla AI)" (M25; M188/K — zlecenie właściciela):
+  // lista WSZYSTKICH ukończonych tur; wybór pokazuje turę, guzik kopiuje
+  // dokładnie tę wybraną.
+  els.turnHistorySelect?.addEventListener('change', () => rerender());
   els.turnHistoryCopy?.addEventListener('click', () => {
     if (!session) return;
-    const count = els.turnHistory2?.checked ? 2 : 1;
-    const text = typeof session.turnHistoryText === 'function' ? session.turnHistoryText(count) : '';
+    const turn = selectedTurnHistory(els);
+    const text = turn != null && typeof session.turnHistoryTextFor === 'function'
+      ? session.turnHistoryTextFor(turn)
+      : '';
     if (!text) return;
     copyTextToClipboard(text, els.turnHistoryCopy);
+  });
+
+  // M197/A1 (zlecenie właściciela): „skopiuj całą partię do schowka" —
+  // wszystkie tury od początku rozgrywki, nie tylko wybrana.
+  els.turnHistoryCopyAll?.addEventListener('click', () => {
+    if (!session) return;
+    const text = typeof session.turnHistoryTextAll === 'function' ? session.turnHistoryTextAll() : '';
+    if (!text) return;
+    copyTextToClipboard(text, els.turnHistoryCopyAll);
   });
 
   /** Kopiuje tekst do schowka: Clipboard API, a przy file:// fallback textarea. */
@@ -175,16 +200,11 @@ function bootstrapTable() {
     else fallback();
   }
 
-  let currentImageMode = detectImageMode(typeof location !== 'undefined' ? location.protocol : 'file:');
-  const imageModeSelect = el('image-mode');
-  if (imageModeSelect) {
-    imageModeSelect.addEventListener('change', () => {
-      const val = imageModeSelect.value;
-      if (val === 'auto') currentImageMode = detectImageMode(typeof location !== 'undefined' ? location.protocol : 'file:');
-      else if (val === 'scryfall') currentImageMode = 'scryfall';
-      else if (val === 'local') currentImageMode = 'local';
-    });
-  }
+  // M189/M (uwaga właściciela): panel „Ustawienia i pomoc" usunięty, więc
+  // nie ma już ręcznego przełącznika źródła ilustracji. Zostaje zachowanie
+  // domyślne, które i tak było jedynym używanym: AUTODETEKCJA po protokole
+  // (adres http(s) → Scryfall, plik z dysku → lokalne ./img/ z fallbackiem).
+  const currentImageMode = detectImageMode(typeof location !== 'undefined' ? location.protocol : 'file:');
 
   // Tor podglądu hover (scryfall → FOT → KON) przełączany scrollem nad kartą,
   // jak w legacy HTML. Trzymany w pamięci sesji strony — bez localStorage.
@@ -293,6 +313,29 @@ function bootstrapTable() {
     // wszystkich kombinacji — najpierw lista przeglądniętych kart, potem
     // wybory PO KOLEI dla każdej karty osobno; komenda resolve_* składana
     // na końcu kroków (protokół bez zmian — patrz renderLookWizard).
+    // M195/C + C1 (uwagi właściciela): czar wielocelowy / z {X} dostaje EKRAN
+    // ZAZNACZANIA zamiast listy wszystkich kombinacji. Fireball dawał 232
+    // przyciski („kompletnie bez sensu — mam 95 kombinacji obrażeń"), Wrap in
+    // Flames 15. Plan liczymy z tych samych komend, które są w request.options,
+    // więc zatwierdzenie oddaje komendę znaną silnikowi (L48).
+    const multiPlan = multiTargetPlanOf(request.options ?? []);
+    if (multiPlan) {
+      const sourceObject = [...(choiceView.zones?.hand ?? []), ...(choiceView.zones?.battlefield ?? []),
+        ...(choiceView.zones?.graveyard ?? []), ...(choiceView.zones?.exile ?? [])]
+        .find((o) => o.id === multiPlan.objectId);
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: multiPlan,
+        commands: request.options,
+        sourceName: sourceObject?.cardId ? session.nameOf(sourceObject.cardId) : null,
+        onOpenCard: openCardFullscreen,
+        onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
     const lookKind = lookWizardKindOf(request, choiceView);
     if (lookKind) {
       const pending = lookKind === 'surveil' ? choiceView.pendingSurveil
@@ -829,12 +872,12 @@ function bootstrapTable() {
       // kolejne odświeżenie nie cofało partii do początku (root cause
       // zgłoszenia 2026-08-07: „odświeżenie przerywa partię").
       autosave();
-      statusNote.textContent = `Wznowiono partię (${summary.steps} komend).`;
+      showNotice(`Wznowiono partię (${summary.steps} komend).`);
       rerender();
       showBotMoves();
       return true;
     } catch (error) {
-      statusNote.textContent = `Nie udało się wznowić: ${error.message}`;
+      showNotice(`Nie udało się wznowić: ${error.message}`);
       return false;
     }
   }
@@ -983,6 +1026,9 @@ function bootstrapTable() {
     el('life-enemy').textContent = String(foe?.life ?? '?');
     el('library-own').textContent = String(view.zones.library.filter((o) => o.controllerId === me?.id).length);
     el('library-enemy').textContent = String(view.zones.library.filter((o) => o.controllerId === foe?.id).length);
+    // M198/C: dane każdego gracza w JEGO boksie (strefy + pula many).
+    if (foe) renderPlayerMeta(els.metaFoe, view, foe.id);
+    if (me) renderPlayerMeta(els.metaOwn, view, me.id);
 
     // Wysuwany panel akcji: licznik w FAB; automatyczne otwarcie przy nowym
     // oknie decyzji (auto-pass w sesji zostawia tu tylko realne wybory).
@@ -1155,7 +1201,7 @@ function bootstrapTable() {
    * pola bitwy ich nie niesie. Źródła nie-lądowe pochodzą z legalCommands
    * (gwarancja legalności/timingu/opłacalności w danej chwili).
    */
-  function manaSourcesForPlayer() {
+  function manaSourcesForPlayer(excludeSourceId = null) {
     const view = session.view();
     const abilityInfo = (objectId, abilityIndex) => {
       const obj = session.state?.objects?.get(objectId);
@@ -1172,13 +1218,26 @@ function bootstrapTable() {
         isLand: obj.kind === 'land' || (obj.types ?? []).includes('Land'),
       };
     };
-    return manaSourcesOf(view, HUMAN_ID, abilityInfo);
+    return manaSourcesOf(view, HUMAN_ID, abilityInfo, { excludeSourceId });
   }
 
   /**
    * Deskryptor kreatora dla komendy rzutu albo null (bez kreatora).
    * Kreator tylko dla człowieka przy realnym wyborze źródeł (≥2 warianty).
    */
+  /**
+   * M190/D (zgłoszenie właściciela, Basilisk Gate): id źródła, którego NIE
+   * wolno użyć do zapłaty, bo aktywacja i tak je tapuje jako koszt
+   * (CR 602.2a). Dotyczy wyłącznie zdolności z `cost.tap` — zdolność bez
+   * tapnięcia (Heap Gate {1}: …) może być finansowana z własnej many.
+   */
+  function selfTapExclusionFor(cmd) {
+    if (cmd?.type !== 'activate_ability' || !Number.isInteger(cmd.abilityIndex)) return null;
+    const source = session.state?.objects?.get(cmd.objectId);
+    const ability = source?.abilities?.[cmd.abilityIndex];
+    return ability?.cost?.tap ? cmd.objectId : null;
+  }
+
   function manaWizardFor(cmd) {
     const view = session.view();
     // Kreator płaci koszt EFEKTYWNY (CR 601.2f): obniżki z permanentów
@@ -1208,7 +1267,7 @@ function bootstrapTable() {
     const descriptor = paymentDescriptorOf(cmd, view, opts);
     if (!descriptor) return null;
     const pool = (view.players ?? []).find((p) => p.id === HUMAN_ID)?.mana ?? 0;
-    const sources = manaSourcesForPlayer();
+    const sources = manaSourcesForPlayer(selfTapExclusionFor(cmd));
     const variants = countPaymentVariants(sources, pool, descriptor.totalNeeded, descriptor.requirements);
     if (variants < 2) return null;
     return { ...descriptor, cmd };
@@ -1245,7 +1304,7 @@ function bootstrapTable() {
   function refreshManaWizard() {
     if (!manaWizardDescriptor || !els.manaWizardBody || !session) return;
     const view = session.view();
-    const sources = manaSourcesForPlayer();
+    const sources = manaSourcesForPlayer(selfTapExclusionFor(manaWizardDescriptor.cmd));
     // Kolorowa pula (cz. 8): pokrycie kolorów z jednostek many W PULI gracza
     // (odzwierciedlają tapnięte źródła). main.js czyta pulę z pełnego stanu sesji.
     const humanPlayer = session.state?.players?.find((pl) => pl.id === HUMAN_ID);
@@ -1258,7 +1317,7 @@ function bootstrapTable() {
         && JSON.stringify(c.targets ?? null) === JSON.stringify(pending.cmd.targets ?? null));
       closeManaWizard();
       if (stillLegal) playDirect(pending.cmd);
-      else statusNote.textContent = 'Płatność zebrana, ale zagranie nie jest już dostępne — mana została w puli.';
+      else showNotice('Płatność zebrana, ale zagranie nie jest już dostępne — mana została w puli.');
       return;
     }
     renderManaWizard(els.manaWizardBody, {
@@ -1293,6 +1352,11 @@ function bootstrapTable() {
   }
 
   function startGame() {
+    // M198/B: nowa partia zamyka wiszący komunikat. Dawniej pas tekstu był
+    // czyszczony przez `statusNote.textContent = ''`; przy warstwie modala
+    // odpowiednikiem jest jej zamknięcie — inaczej komunikat z poprzedniej
+    // akcji (np. „Nowe ziarno…") zostawał na ekranie nad świeżą grą.
+    hideModal('notice');
     const seed = Number.parseInt(el('seed').value, 10);
     const humanKey = el('deck-human').value;
     const botKey = el('deck-bot').value;
@@ -1309,19 +1373,18 @@ function bootstrapTable() {
       // Nowa gra unieważnia wstrzymany rzut kreatora many (E.3a): deskryptor
       // odnosił się do starej sesji, więc zamykamy modal i zapominamy komendę.
       closeManaWizard();
-      statusNote.textContent = '';
       renderCardPreview(el('card-preview-body'), null, { imageMode: currentImageMode });
       autosave();
       rerender();
       // Bot mógł zacząć partię — pokaż jego pierwsze istotne zagranie (pauza).
       showBotMoves();
     } catch (error) {
-      statusNote.textContent = `Nie udało się rozpocząć partii: ${error.message}`;
+      showNotice(`Nie udało się rozpocząć partii: ${error.message}`);
     }
   }
 
   function exportReplay() {
-    if (!session) { statusNote.textContent = 'Najpierw rozpocznij partię.'; return; }
+    if (!session) { showNotice('Najpierw rozpocznij partię.'); return; }
     const text = session.exportReplayText();
     el('replay-out').value = text;
     // Dla urządzeń z menedżerem plików (iPad/iPhone): dodatkowo prawdziwy download.
@@ -1335,7 +1398,7 @@ function bootstrapTable() {
   }
 
   function importReplay() {
-    if (!session) { statusNote.textContent = 'Najpierw rozpocznij partię — import odtwarza zapis w składzie bieżących talii.'; return; }
+    if (!session) { showNotice('Najpierw rozpocznij partię — import odtwarza zapis w składzie bieżących talii.'); return; }
     const text = el('replay-out').value.trim();
     try {
       const summary = session.importReplayText(text);
@@ -1365,34 +1428,31 @@ function bootstrapTable() {
     // partię" zagra z nowym tasowaniem. Bieżącej partii nie dotyka.
     el('shuffle-seed')?.addEventListener('click', () => {
       el('seed').value = String(randomSeed());
-      statusNote.textContent = `Nowe ziarno: ${el('seed').value} — kliknij „Rozpocznij partię", żeby zagrać z tym tasowaniem.`;
+      showNotice(`Nowe ziarno: ${el('seed').value} — kliknij „Rozpocznij partię", żeby zagrać z tym tasowaniem.`);
     });
     el('export-replay').addEventListener('click', exportReplay);
     el('import-replay').addEventListener('click', importReplay);
     el('resume-replay').addEventListener('click', () => {
       const text = el('replay-out').value.trim();
-      if (!text) { statusNote.textContent = 'Wklej zapis partii do pola tekstowego.'; return; }
+      if (!text) { showNotice('Wklej zapis partii do pola tekstowego.'); return; }
       resumeFromSaved(JSON.stringify({ seed: session?.state.seed ?? Number.parseInt(el('seed').value, 10), humanDeck: el('deck-human').value, botDeck: el('deck-bot').value, replay: text }));
     });
     el('resume-save').addEventListener('click', () => {
       try {
         const raw = storage?.getItem(AUTOSAVE_KEY);
-        if (!raw) { statusNote.textContent = 'Brak autosave do wznowienia.'; return; }
+        if (!raw) { showNotice('Brak autosave do wznowienia.'); return; }
         resumeFromSaved(raw);
       } catch {
-        statusNote.textContent = 'Nie udało się odczytać autosave.';
+        showNotice('Nie udało się odczytać autosave.');
       }
     });
     refreshResumePanel();
-    function refreshLibraryPreview() {
-      const lib = session ? session.view().zones.library.slice(0, 3) : [];
-      const names = lib.map((o) => session.nameOf(o.cardId)).filter(Boolean);
-      el('library-preview').textContent = names.length ? names.join(', ') : 'Brak';
-    }
-    el('library-menu-btn').addEventListener('click', () => {
-      refreshLibraryPreview();
-      showModal('library-menu-panel');
-    });
+    // M197/A5: sekcja „Biblioteka — podgląd topu (syntetyczny)" usunięta.
+    // M198/D: inspektor otwiera osobny, wycentrowany przycisk pod boksami.
+    el('zone-inspector-open')?.addEventListener('click', () => showModal('library-menu-panel'));
+    // M198/B: zamknięcie komunikatu (guzik „Rozumiem" i ✕).
+    el('notice-ok')?.addEventListener('click', () => hideModal('notice'));
+    el('notice-close')?.addEventListener('click', () => hideModal('notice'));
     el('zone-inspector-close').addEventListener('click', () => hideModal('library-menu-panel'));
     el('card-preview-close').addEventListener('click', () => hideModal('card-preview'));
     el('context-menu-close').addEventListener('click', () => hideModal('context-menu'));
@@ -1481,7 +1541,7 @@ function bootstrapTable() {
     });
     resumeOrStart();
   } else {
-    statusNote.textContent = 'Brak wstrzykniętych talii (REPO_DECKS) — strona działa tylko z testem silnika. Otwórz plik zbudowany przez tools/build.mjs.';
+    showNotice('Brak wstrzykniętych talii (REPO_DECKS) — strona działa tylko z testem silnika. Otwórz plik zbudowany przez tools/build.mjs.');
     for (const id of ['new-game', 'export-replay', 'import-replay']) el(id).disabled = true;
   }
 }

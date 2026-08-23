@@ -52,6 +52,13 @@ export function attachmentGrant(object) {
   if (descriptor.chosenColor) {
     result.protectionFromColors = [descriptor.chosenColor];
   }
+  // Batch 46 (Guildscorn Ward): TRWAŁA ochrona przed JAKOŚCIĄ źródła
+  // (CR 702.16b–e, „protection from multicolored"). Dotąd jakość mogła
+  // pochodzić tylko z grantu „until end of turn" (Spare from Evil) —
+  // aura potrzebuje tej samej reguły bez daty ważności.
+  if (descriptor.protection) {
+    result.protection = { ...descriptor.protection };
+  }
   return result;
 }
 
@@ -298,6 +305,12 @@ export function effectiveProtectionQualities(state, object) {
     if (Array.isArray(grant.objectIds) && !grant.objectIds.includes(object.id)) continue;
     if (grant.quality) out.push(grant.quality);
   }
+  // Batch 46 (Guildscorn Ward): jakość z przypiętej AURY/equipmentu — trwała,
+  // liczona przy odczycie, więc odpięcie znosi ochronę natychmiast.
+  for (const attachment of attachmentsAttachedTo(state, object.id)) {
+    const grant = attachmentGrant(attachment);
+    if (grant.protection) out.push(grant.protection);
+  }
   return out;
 }
 
@@ -311,6 +324,9 @@ export function sourceHasProtectionQuality(quality, source) {
   if (quality.subtype && !(source.subtypes ?? []).includes(quality.subtype)) return false;
   if (quality.notSubtype && (source.subtypes ?? []).includes(quality.notSubtype)) return false;
   if (Array.isArray(quality.colors) && !quality.colors.some((c) => (source.colors ?? []).includes(c))) return false;
+  // Batch 46 (Guildscorn Ward, CR 702.16e): „protection from multicolored" —
+  // źródłem jest obiekt o DWÓCH lub więcej kolorach (CR 105.4).
+  if (quality.multicolored && (source.colors ?? []).length < 2) return false;
   return true;
 }
 

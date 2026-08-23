@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Bone+Shredder&set=mh2",
+  "print": "mh2",
+  "name": "Bone Shredder",
+  "mana_cost": "{2}{B}",
+  "cmc": 3,
+  "type_line": "Creature — Phyrexian Minion",
+  "oracle_text": "Flying\nEcho {2}{B} (At the beginning of your upkeep, if this came under your control since the beginning of your last upkeep, sacrifice it unless you pay its echo cost.)\nWhen this creature enters, destroy target nonartifact, nonblack creature.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+    "B"
+  ],
+  "keywords": [
+    "Echo",
+    "Flying"
+  ],
+  "set": "mh2",
+  "set_name": "Modern Horizons 2",
+  "collector_number": "272",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/3/63d0b5f0-ed45-4b30-9c24-1c12011e3513.jpg?1783926787"
+  },
+  "pobrano": "2026-08-22"
+}

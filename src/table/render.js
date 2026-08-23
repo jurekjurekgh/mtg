@@ -8,8 +8,10 @@ import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import {
   PLAYER_NAMES, HUMAN_ID, commandOptionKey, TRIGGER_EVENT_LABELS,
   FACE_DOWN_LABEL, faceDownName,
+  manaEffectLabel,
+  manaProducedLabel,
 } from './session.js';
-import { escapeHtml, manaCostHtml } from './mana-icons.js';
+import { escapeHtml, manaCostHtml, manaSymbolsHtml } from './mana-icons.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { installTapGesture } from './gestures.js';
 
@@ -110,25 +112,9 @@ function reasoningActionLabel(summary) {
   return REASONING_ACTION_LABELS[summary] ?? summary;
 }
 
-/**
- * Czytelny, jednozdaniowy opis jednego śladu decyzji bota (B5):
- * „T3 · Faza główna — Zagranie landa (ocena 90); alternatywy: …".
- * To jest „dlaczego bot zagrał X": bot wybiera opcję z najwyższą oceną.
- */
-export function botReasoningText(entry) {
-  // Trace bota zna tylko krok („main" dla obu faz głównych) — bez fazy.
-  const step = entry.step === 'main' ? 'Faza główna' : (STEP_LABELS[entry.step] ?? entry.step);
-  const chosen = reasoningActionLabel(entry.chosen);
-  const alternatives = (entry.options ?? [])
-    .filter((option) => option.cmd !== entry.chosen)
-    .slice(0, 3)
-    .map((option) => `${reasoningActionLabel(option.cmd)} (${option.score})`)
-    .join(', ');
-  const base = `T${entry.turn} · ${step} — ${chosen} (ocena ${entry.score})`;
-  if (!alternatives) return `${base}.`;
-  const total = (entry.options?.length ?? 0);
-  return `${base}; najlepsza z ${total} opcji. Alternatywy: ${alternatives}.`;
-}
+// M198/G: `botReasoningText` usunięty razem z panelem „Rozumowanie bota"
+// (właściciel go nie używał). REASONING_ACTION_LABELS zostaje — nazywa
+// też komendy w panelu akcji (commandLabel).
 
 const STEP_LABELS = Object.freeze({
   untap: 'Odkręcenie',
@@ -331,6 +317,8 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_damage_assignment') return 'resolve_damage_assignment';
   if (command.type === 'resolve_clash_choice') return 'resolve_clash_choice';
   if (command.type === 'resolve_room_target') return 'resolve_room_target';
+  if (command.type === 'resolve_undercity_route') return 'resolve_undercity_route';
+  if (command.type === 'resolve_fabricate') return 'resolve_fabricate';
   if (command.type === 'resolve_backup') return 'resolve_backup';
   if (command.type === 'resolve_sacrifice_choice') return 'resolve_sacrifice_choice';
   if (command.type === 'resolve_trigger_target') return 'resolve_trigger_target';
@@ -389,6 +377,8 @@ function choiceRequestType(commands) {
   if (first.type === 'resolve_damage_assignment') return 'damage_assignment';
   if (first.type === 'resolve_clash_choice') return 'clash';
   if (first.type === 'resolve_room_target') return 'room-target';
+  if (first.type === 'resolve_undercity_route') return 'undercity-route';
+  if (first.type === 'resolve_fabricate') return 'fabricate';
   if (first.type === 'resolve_backup') return 'target';
   if (first.type === 'resolve_sacrifice_choice') return 'sacrifice';
   if (first.type === 'resolve_trigger_target') return 'target';
@@ -676,6 +666,8 @@ const ABILITY_KEYWORD_LABELS = Object.freeze({
 export const KEYWORD_LABELS = Object.freeze({
   intimidate: 'zastraszenie (blok: artefakty/wspólny kolor)',
   toxic: 'Toksyczny (combat damage graczowi = poison)',
+  echo: 'Echo (w pierwszym swoim upkeepie zapłać koszt echa albo poświęć)',
+  fabricate: 'Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo)',
   flying: 'Latanie', vigilance: 'Czujność', transform: 'Transform', reach: 'Zasięg',
   haste: 'Pośpiech', menace: 'Postrach', lifelink: 'Dotykanie życia', deathtouch: 'Dotykanie śmierci',
   trample: 'Zadeptywanie', first_strike: 'Pierwsze uderzenie', hexproof: 'Hexproof (niecelowalność)',
@@ -708,6 +700,9 @@ const COUNTER_LABELS = Object.freeze({
   // wszystkich liczników w bazie wykazał też brakujący `level` (Kabira
   // Vindicator). Strażnik w testach pilnuje kompletności tej mapy.
   stun: 'ogłuszenie', level: 'poziom',
+  // Batch 48 (Contested Game Ball): licznik punktowy — po piątym artefakt
+  // jest poświęcany w zamian za Skarb.
+  point: 'punkt',
 });
 
 /** Opis dynamicznej wartości amount (string zamiast liczby). */
@@ -831,7 +826,15 @@ function describeEffect(e) {
     sacrifice_permanent: () => 'poświęć ten permanent',
     grant_keywords_until_end_of_turn: () => `zdobądź ${(e.keywords ?? []).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')} do końca tury`,
     // M73c: pełna mapa pozostałych typów — koniec „efekt." i surowych slugów.
-    add_mana: () => 'dodaj manę',
+    // M190/A (uwaga właściciela, Heap Gate): obie zdolności many miały
+    // identyczny opis („dodaj manę"), więc w panelu różniły się wyłącznie
+    // kosztem. Deskryptor niesie `colors` — opisujemy go wprost:
+    // pięć kolorów = „dowolnego koloru" (CR: „add one mana of any color"),
+    // brak listy = mana bezbarwna ({C}), konkretna lista = te kolory.
+    add_mana: () => manaEffectLabel(e),
+    fabricate: () => `fabricate ${e.amount ?? 1} (liczniki +1/+1 albo tokeny Servo)`,
+    exile_top_playable_until_next_turn: () => 'wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury',
+    grant_double_strike_on_noncreature_cast_this_turn: () => 'do końca tury: każdy twój czar niebędący stworem daje wybranemu stworowi podwójne uderzenie',
     add_flying_counter_to_face_down_you_control: () => 'połóż licznik flying na zakrytych stworach',
     amass: () => 'amass (stwórz/rozrośnij Armię)',
     animate_linked: () => 'animuj do końca tury',
@@ -920,9 +923,43 @@ function describeEffect(e) {
     goad: () => 'goad (musi atakować)',
     grant_abilities: () => 'nadaj zdolności do końca tury',
     graveyard_creatures_to_library_top_choice: () => 'karty z grobu na wierzch biblioteki',
+    // Batch 47 (Sequestered Stash): JEDNA karta wskazanego rodzaju, wybor
+    // opcjonalny („you may") — opis czyta filtr z deskryptora.
+    // Batch 47 (Pyxis of Pandemonium): oba efekty nazwane po polsku —
+    // strażnik M122 pilnuje, żeby żaden typ nie pokazał surowego sluga.
+    // Batch 48 (Ruthless Invasion): globalny zakaz bloku z wyjątkiem typu.
+    attacker_gains_control_and_untaps: () => 'gracz, który zadał ci obrażenia bojowe, przejmuje ten artefakt i go odkręca',
+    sacrifice_self_if_counters_then_treasure: () => `przy ${e.threshold ?? 5} licznikach ${e.counter ?? 'point'}: poświęć to i stwórz Skarb`,
+    subtype_spells_gain_flash_and_etb_fight_this_turn: () => `w tej turze twoje czary typu ${e.subtype ?? '?'} mają flash i po wejściu mogą walczyć`,
+    lose_life_enchanted_permanent_controller: () => `kontroler zaczarowanego permanentu traci ${e.amount ?? 1} życia w swoim upkeepie`,
+    your_creatures_gain_keywords_until_end_of_turn: () => `twoje stwory zdobywają ${(e.keywords ?? []).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')} do końca tury`,
+    creatures_cant_block_this_turn: () => {
+      const except = e.exceptTypes ?? [];
+      const which = except.length
+        ? `stwory niebędące ${except.map((t) => TARGET_TYPE_LABELS[t.toLowerCase()] ?? t.toLowerCase()).join(' ani ')}ami`
+        : 'wszystkie stwory';
+      return `${which} nie mogą blokować w tej turze`;
+    },
+    each_player_exiles_top_face_down: () => 'każdy gracz wygania wierzch swojej biblioteki zakryty',
+    turn_up_exiled_and_put_permanents: () => 'odkryj karty wygnane tym artefaktem — permanenty spośród nich wchodzą na pole bitwy',
+    graveyard_card_to_library_top_choice: () => {
+      const types = e.filter?.anyTypes ?? [];
+      const what = types.length
+        ? `${types.map((t) => TARGET_TYPE_LABELS[t.toLowerCase()] ?? t.toLowerCase()).join(' albo ')} z grobu`
+        : 'kartę z grobu';
+      return `możesz położyć ${what} na wierzch biblioteki`;
+    },
     index_look: () => 'zobacz wierzch biblioteki (Index)',
     look_top_put_one_hand_rest_grave: () => 'zobacz wierzch biblioteki, jedną do ręki, resztę do grobu',
-    look_top_put_one_hand_rest_bottom: () => 'zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki',
+    // M192/Z3 (petla jakosci): deskryptor NIESIE liczbe (Rediscover the Way:
+    // amount 3), a opis pokazywal literalne „X" — placeholder z kodu na
+    // kaflu karty. Gdy liczba pochodzi z kosztu ({X} Merchant's Dockhand),
+    // „X" jest poprawne, bo gracz wybiera ja przy aktywacji.
+    look_top_put_one_hand_rest_bottom: () => {
+      const n = e.amount === 'x' || e.amount == null ? 'X' : e.amount;
+      const noun = n === 'X' ? 'kart' : polishPluralCount(n, 'kartę', 'karty', 'kart');
+      return `zobacz ${n} ${noun} z wierzchu — jedna do ręki, reszta na spód biblioteki`;
+    },
     // M184/Z2: opis niósł ani liczby kart, ani nagrody za odmowę
     // (Blanchwood Prowler: licznik +1/+1) — gracz nie znał stawki decyzji.
     reveal_top_pick_land_rest_grave: () => {
@@ -1357,14 +1394,33 @@ export function rulesText(info) {
       // pojedynczego pola zostawiłoby resztę na następny audyt.
       aura.cantAttack ? 'zaczarowany nie może atakować' : '',
       aura.cantBlock ? 'zaczarowany nie może blokować' : '',
+      // Batch 48 (Clawing Torment): aura bez klauzuli „you control" celuje
+      // też w permanenty przeciwnika — to informacja dla gracza, bo
+      // większość aur katalogu jest ograniczona do własnych permanentów.
+      aura.ownControlOnly === false ? 'można zaczarować permanent dowolnego gracza' : '',
       aura.cantAttackYou ? 'zaczarowany nie może atakować ciebie' : '',
       aura.replaceTokenCreation
         ? `pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu${aura.replaceTokenCreation.optional ? ' (możesz)' : ''}`
         : '',
       aura.grantMana ? `ląd: „T: dodaj ${aura.grantMana.amount ?? 2} many dowolnego koloru"` : '',
+      // Batch 46 (Guildscorn Ward): ochrona przed JAKOŚCIĄ źródła (CR 702.16).
+      // Opis generyczny po deskryptorze — nowa jakość dopisuje się tutaj,
+      // a strażnik M138/#11 pilnuje, żeby żadne pole aury nie zostało nieme.
+      aura.protection ? `zaczarowany ma ochronę przed ${protectionQualityLabel(aura.protection)}` : '',
     ].filter(Boolean).join(' · ')
     : '';
-  const landLine = info.kind === 'land' ? 'T: dodaj 1 manę' : '';
+  // M192/Z4 (weryfikacja M193 Zywym Testerem): produkcja many ladu opisywana
+  // RAZ. Ta linia to opis produkcji IMPLIKOWANEJ — basicki nie maja zdolnosci
+  // w danych, ich mana wynika z podtypu (CR 305.6). Land, ktory NIESIE wlasna
+  // zdolnosc many (Dismal Backwater „{T}: Add {U} or {B}"), ma juz jej opis
+  // w abilityLine — dopisek dublowal go i klamal o kolorze („dodaj 1 mane"
+  // zamiast „niebieska lub czarna").
+  const hasOwnManaAbility = (info.abilities ?? []).some((a) => {
+    if (a?.type !== 'activated') return false;
+    const effects = Array.isArray(a.effect) ? a.effect : [a.effect];
+    return effects.some((e) => e?.type === 'add_mana');
+  });
+  const landLine = info.kind === 'land' && !hasOwnManaAbility ? 'T: dodaj 1 manę' : '';
   // M159/Z4 (Żywy Tester g6): Saga w ręce/na stole renderowała się BEZ
   // treści („Invasion of the Giants · 2 · Enchantment — Saga” i nic) —
   // rozdziały są całą treścią karty dla gracza (ta sama rodzina co pusty
@@ -1656,6 +1712,21 @@ function abilityFizzlesOnHand(ability, view) {
     const hand = (view?.zones?.hand ?? []).filter((o) => o?.controllerId === view.playerId);
     return !hand.some((card) => predicate(card));
   });
+}
+
+/** Opis JAKOŚCI ochrony (CR 702.16b–e) po deskryptorze — bez nazw kart. */
+export function protectionQualityLabel(quality) {
+  if (!quality) return 'wybranym źródłem';
+  const parts = [];
+  if (quality.multicolored) parts.push('wielokolorowymi');
+  if (Array.isArray(quality.colors) && quality.colors.length) {
+    parts.push(`kolorami: ${quality.colors.map((c) => `{${c}}`).join(', ')}`);
+  }
+  if (quality.subtype) parts.push(`źródłami o podtypie ${quality.subtype}`);
+  if (quality.notSubtype) parts.push(`źródłami spoza podtypu ${quality.notSubtype}`);
+  if (parts.length === 0 && quality.kind === 'creature') parts.push('stworami');
+  else if (quality.kind === 'creature') parts[parts.length - 1] += ' (stwory)';
+  return parts.length ? parts.join(' i ') : 'wybranym źródłem';
 }
 
 export function commandLabel(cmd, session, view) {
@@ -1987,6 +2058,15 @@ export function commandLabel(cmd, session, view) {
         ? `Clash: ${what} na spód biblioteki`
         : `Clash: ${what} na wierzch biblioteki`;
     }
+    // M190/B: wybór ścieżki w lochu — etykieta nazywa POKÓJ, do którego
+    // gracz wchodzi (Oracle „Leads to: Forge, Lost Well").
+    case 'resolve_undercity_route':
+      return `Podziemia — idź do: ${escapeHtml(String(cmd.roomName ?? ''))}`;
+    // Batch 46 (fabricate, CR 702.122): dwa warianty wyboru kontrolera.
+    case 'resolve_fabricate':
+      return cmd.mode === 'counters'
+        ? 'Fabricate: liczniki +1/+1 na tym stworze'
+        : 'Fabricate: tokeny Servo 1/1';
     case 'resolve_room_target': {
       // Wybór celu pokoju lochu (M24): etykieta pokazuje pokój i kandydata.
       const pending = view.pendingRoomTarget;
@@ -2358,6 +2438,14 @@ export function commandLabel(cmd, session, view) {
   }
 }
 
+/**
+ * M197/A3C (zlecenie właściciela): panel stołu mówi „Gracz", nie „Ty".
+ * Jedno źródło prawdy dla etykiet obu stron — wcześniej napisy były
+ * wpisane na sztywno w kilku miejscach i rozjeżdżały się między sobą.
+ */
+export const PLAYER_LABEL = 'Gracz';
+export const BOT_LABEL = 'Bot';
+
 // --- Pomocnicze budowanie DOM (bez innerHTML, bez classList) -----------
 
 function div(parent, className, text) {
@@ -2474,8 +2562,12 @@ export function cardInfo(session, object, combat = null) {
     // − keywordsNow" była zawsze pusta, bo widok wysyła keywordy EFEKTYWNE
     // (obie strony zawierały grant) i badge nigdy się nie pokazywał.
     grantedKeywords: faceDown ? [] : [...(object.grantedKeywords ?? [])],
+    // M188/A: nadane P/T z efektów ciągłych (statyka warunkowa, aura, anthem,
+    // buff do EOT) — widok liczy je jawnie, bo `powerModifier` ich nie niesie.
+    grantedPower: faceDown ? 0 : Number(object.grantedPower ?? 0),
+    grantedToughness: faceDown ? 0 : Number(object.grantedToughness ?? 0),
     lostKeywordsUntilEOT: faceDown ? [] : [...(object.lostKeywordsUntilEOT ?? [])],
-    cantBlockNow: Boolean(object.cantBlock),
+    cantBlockNow: Boolean(object.cantBlock || object.cantBlockPrinted),
     cantBeBlockedNow: Boolean(object.cantBeBlocked),
     // M173/C: czasowe stany z widoku (saddle/untap-lock/kontrola/regeneracja).
     saddledNow: Boolean(object.saddled),
@@ -2741,11 +2833,23 @@ export function buildStateOverlay(visual, info) {
     if (info.tempControlNow) flags.push(['kw', 'kontrola do końca tury']);
     if (info.cantRegenerateNow) flags.push(['kw', 'bez regeneracji']);
     {
+      const sign = (n) => (n > 0 ? `+${n}` : `${n}`);
       const pMod = Number(info.powerMod ?? 0);
       const tMod = Number(info.toughMod ?? 0);
       if (pMod !== 0 || tMod !== 0) {
-        const sign = (n) => (n > 0 ? `+${n}` : `${n}`);
         flags.push(['kw', `${sign(pMod)}/${sign(tMod)}`]);
+      }
+      // M188/A (uwaga właściciela): bonus z efektu CIĄGŁEGO (Evangel of
+      // Synthesis „+1/+0 i menace", aura, anthem) ma osobny badge — nie
+      // siedzi w powerModifier, więc bez tego kafel milczał o połowie
+      // działającej zdolności (menace było widać, +1/+0 już nie).
+      const gPow = Number(info.grantedPower ?? 0);
+      const gTou = Number(info.grantedToughness ?? 0);
+      if (gPow !== 0 || gTou !== 0) {
+        // Zapis jak w Oracle („gets +1/+0"): zero też z jawnym znakiem,
+        // żeby badge czytało się jak tekst karty, a nie jak ułamek „+1/0".
+        const signed = (n) => (n < 0 ? `${n}` : `+${n}`);
+        flags.push(['kw', `${signed(gPow)}/${signed(gTou)}`]);
       }
     }
     if (info.combatRole) flags.push(['combat', info.combatRole]);
@@ -3033,26 +3137,19 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     // CR 104.4b: remis nie ma zwycięzcy — bez tego baner pokazywał „wygrywa: ?".
     // M172/A: informacja „kto wygrał" używa nazw panelu (Gracz/Bot) —
     // „wygrywa: Ty" to zła odmiana (decyzja właściciela).
-    const winnerLabel = winner?.name === 'Ty' ? 'Gracz' : winner?.name === 'Nieprzyjaciel' ? 'Bot' : (winner?.name ?? '?');
+    const winnerLabel = winner?.name === 'Ty' ? PLAYER_LABEL : winner?.name === 'Nieprzyjaciel' ? BOT_LABEL : (winner?.name ?? '?');
     const outcome = view.isDraw ? 'REMIS (obaj gracze przegrali jednocześnie)' : `wygrywa: ${winnerLabel}`;
     div(els.banner, 'gameover', `Koniec gry — ${outcome} (seed ${session.state.seed})`);
   }
 
-  // --- Pasek statusu ---------------------------------------------------
+  // --- Pasek statusu ----------------------------------------------------
+  // M197/A2 (zlecenie właściciela): tekstowy pasek („Partia zakończona po N
+  // turach" + wiersze „❤ … mana … ręka … biblioteka …") USUNIĘTY — powielał
+  // informacje, które są już w stałym wskaźniku tury (tura/faza/koniec gry),
+  // w pasku graczy (życie, ręka, biblioteka) oraz — od M197 — w boksie
+  // liczników stref i puli many.
   const me = view.players.find((p) => p.id === view.playerId);
   const foe = view.players.find((p) => p.id !== view.playerId);
-  const active = view.players.find((p) => p.id === view.turn.activePlayerId);
-  div(els.status, 'status-turn', view.status === 'active'
-    ? `Tura ${view.turn.number} · ${active?.name} · ${stepLabel(view.turn)}`
-    : `Partia zakończona po ${view.turn.number} turach`);
-  const foeHand = view.zones.hand.filter((o) => o.hidden).length;
-  const ownHand = view.zones.hand.length - foeHand;
-  const ownLibrary = view.zones.library.filter((o) => o.controllerId === me?.id).length;
-  const foeLibrary = view.zones.library.length - ownLibrary;
-  div(els.status, 'status-row',
-    `${me?.name}: ❤ ${me?.life} · mana ${me?.mana} · ręka ${ownHand} · biblioteka ${ownLibrary}`);
-  div(els.status, 'status-row',
-    `${foe?.name}: ❤ ${foe?.life} · ręka ${foeHand} · biblioteka ${foeLibrary}`);
 
   // --- Stos ------------------------------------------------------------
   if (view.zones.stack.length === 0) {
@@ -3217,26 +3314,12 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     els.log.appendChild(line);
   }
 
-  // --- Rozumowanie bota (B5) -------------------------------------------
-  // Panel w index.html jest domyślnie zwinięty (<details> bez `open`) —
-  // render tylko uzupełnia zawartość; licznik pokazuje ile decyzji zapisano.
-  if (els.botReasoning) {
-    clear(els.botReasoning);
-    const reasoning = session.reasoning ?? [];
-    if (els.botReasoningCount) {
-      els.botReasoningCount.textContent = reasoning.length ? String(reasoning.length) : '';
-    }
-    if (reasoning.length === 0) {
-      div(els.botReasoning, 'zone-empty', 'Brak danych — bot nie zostawił śladu decyzji.');
-    } else {
-      for (const entry of reasoning.slice(-12).reverse()) {
-        div(els.botReasoning, 'reasoning-entry', botReasoningText(entry));
-      }
-    }
-  }
+  // M198/G (zlecenie właściciela): panel „Rozumowanie bota" usunięty —
+  // właściciel z niego nie korzystał. Sesja nadal zbiera ślad decyzji bota
+  // (session.reasoning) dla testów i Żywego Testera, ale stół go nie rysuje.
 
   // --- Przebieg tur (dla AI) (M25) ------------------------------------
-  renderTurnHistory(els, session, els.turnHistory2?.checked ? 2 : 1);
+  renderTurnHistory(els, session, selectedTurnHistory(els));
 
   // --- Day/Night (M68) — globalny znacznik, jak loch -------------------
   renderDayNight(els, session, view, { onClick: onDayNightClick, hover });
@@ -3290,7 +3373,7 @@ export function renderPoisonPanel(els, view, { onOpenCard = null } = {}) {
   const info = div(els.poison, 'poison-info');
   div(info, 'poison-status', 'Liczniki trucizny');
   for (const p of view.players ?? []) {
-    div(info, 'poison-count', `${p.id === view.playerId ? 'Ty' : 'Nieprzyjaciel'}: ${p.poison ?? 0} ${polishPluralCount(p.poison ?? 0, 'licznik', 'liczniki', 'liczników')} trucizny`);
+    div(info, 'poison-count', `${p.id === view.playerId ? PLAYER_LABEL : BOT_LABEL}: ${p.poison ?? 0} ${polishPluralCount(p.poison ?? 0, 'licznik', 'liczniki', 'liczników')} trucizny`);
   }
   div(info, 'poison-note', 'Gracz z 10 licznikami trucizny przegrywa (CR 704.10). Liczniki znikają tylko z końcem gry — obrażenia ich nie leczą.');
 }
@@ -3372,16 +3455,78 @@ export function renderUndercity(els, session, view, { onClick = null, hover = nu
   for (const [playerId, room] of entered) {
     const row = div(info, 'undercity-player');
     const playerName = PLAYER_NAMES[playerId] ?? playerId;
-    div(row, '', `${playerName} — pokój ${room}/${UNDERCITY_ROOMS.length}: ${UNDERCITY_ROOMS[room - 1]?.name ?? '?'}`);
+    // M190/B: loch jest GRAFEM (Oracle „Leads to: …"), więc „pokój 3/9" i
+    // chipy „done" po numerze kłamały — gracz nie przechodzi wszystkich
+    // dziewięciu pokoi, tylko jedną z tras. Pokazujemy AKTUALNY pokój
+    // i drogi, które z niego wychodzą.
+    const currentRoom = UNDERCITY_ROOMS[room - 1];
+    const leadsTo = currentRoom?.leadsTo ?? [];
+    div(row, '', `${playerName} — pokój: ${currentRoom?.name ?? '?'}`);
     const rooms = div(row, 'undercity-rooms');
     UNDERCITY_ROOMS.forEach((roomDef, index) => {
       const number = index + 1;
-      const stateClass = number === room ? ' current' : (number < room ? ' done' : '');
-      div(rooms, `undercity-room${stateClass}`, `${number}. ${roomDef.name}`);
+      const isCurrent = number === room;
+      const isNext = leadsTo.includes(roomDef.name);
+      const stateClass = isCurrent ? ' current' : (isNext ? ' next' : '');
+      div(rooms, `undercity-room${stateClass}`, roomDef.name);
     });
+    div(row, 'undercity-note', leadsTo.length > 0
+      ? `Dalsza droga: ${leadsTo.join(' albo ')}`
+      : 'Loch ukończony');
   }
   if (view.initiativePlayerId == null) {
     div(info, 'undercity-note', 'Inicjatywę obejmuje się combat damage na jej posiadacza albo efektem karty (np. Underdark Explorer).');
+  }
+}
+
+/** Polska nazwa strefy w liczniku (kolejność jak w inspektorze). */
+const ZONE_COUNTER_LABELS = Object.freeze([
+  ['cmentarz', 'graveyard'],
+  ['exile', 'exile'],
+  ['biblioteka', 'library'],
+]);
+
+/**
+ * M198/C (screenshot właściciela): boks danych JEDNEGO gracza — jego strefy
+ * ORAZ jego pula many razem. Wcześniej (M197) boksy dzieliły się „wg rodzaju
+ * danych" (osobno wszystkie strefy, osobno wszystkie pule), przez co pod
+ * licznikiem życia Bota stały dane obu graczy. Właściciel: pod licznikiem
+ * Bota mają być dane TYLKO Bota, po stronie Gracza — tylko Gracza.
+ */
+export function renderPlayerMeta(host, view, playerId) {
+  if (!host) return;
+  clear(host);
+  const own = playerId === view.playerId;
+  const player = (view.players ?? []).find((p) => p.id === playerId);
+  host.className = own ? 'meta-box own' : 'meta-box foe';
+  div(host, 'meta-label', own ? PLAYER_LABEL : BOT_LABEL);
+
+  const zones = div(host, 'meta-row');
+  div(zones, 'meta-row-label', 'Strefy');
+  const counts = div(zones, 'meta-row-values');
+  for (const [label, zone] of ZONE_COUNTER_LABELS) {
+    const pile = view.zones?.[zone] ?? [];
+    div(counts, 'zone-counter', `${label} [${pile.filter((o) => o.controllerId === playerId).length}]`);
+  }
+
+  const mana = div(host, 'meta-row');
+  div(mana, 'meta-row-label', 'Mana');
+  const pool = div(mana, 'meta-row-values');
+  const units = Object.entries(player?.manaPool ?? {}).filter(([, count]) => count > 0);
+  if (units.length === 0) {
+    div(pool, 'mana-pool-empty', 'pusta');
+    return;
+  }
+  for (const [key, count] of units) {
+    // Klucz pusty = mana bezbarwna ({C}); wielokolorowy = jednostka, która
+    // może zapłacić dowolny z tych kolorów (CR 106.7) — rysowana jako hybryda.
+    const symbol = key === '' ? '{C}' : `{${key.split('').join('/')}}`;
+    const chip = div(pool, 'mana-pool-chip');
+    chip.innerHTML = `${manaSymbolsHtml(symbol)}<span class="mana-pool-count">× ${count}</span>`;
+    // Opis słowny z manaProducedLabel (M193/A1) — jedno źródło polskiej
+    // odmiany kolorów dla całego stołu (L41).
+    chip.title = manaProducedLabel(count, key === '' ? [] : key.split(''))
+      .replace(/^dodanie /, '').replace(/ do puli$/, '');
   }
 }
 
@@ -3390,14 +3535,47 @@ export function renderUndercity(els, session, view, { onClick = null, hover = nu
  * gotowy tekst do skopiowania modelowi AI. Imiona: Czarodziejka / Nieprzyjaciel
  * (decyzja właściciela 2026-08-03). Licznik pokazuje liczbę ukończonych tur.
  */
-export function renderTurnHistory(els, session, count = 1) {
+/** Numer tury wybrany w selekcie „Przebieg tur" (null = brak wyboru). */
+export function selectedTurnHistory(els) {
+  const raw = els?.turnHistorySelect?.value;
+  const parsed = Number.parseInt(raw ?? '', 10);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function renderTurnHistory(els, session, selectedTurn = null) {
   if (!els.turnHistory) return;
-  const records = session.turnHistory ?? [];
+  // M188/K (zlecenie właściciela): lista WSZYSTKICH tur w <select> zamiast
+  // przełącznika „1 albo 2 ostatnie tury" — wybrana tura pokazuje się w
+  // panelu i to ją kopiuje przycisk.
+  const entries = typeof session.turnHistoryEntries === 'function'
+    ? session.turnHistoryEntries()
+    : [];
   if (els.turnHistoryCount) {
-    els.turnHistoryCount.textContent = records.length ? String(records.length) : '';
+    els.turnHistoryCount.textContent = entries.length ? String(entries.length) : '';
   }
-  const text = typeof session.turnHistoryText === 'function'
-    ? session.turnHistoryText(count)
+  // Domyślnie ostatnia ukończona tura (najczęstszy przypadek użycia).
+  const fallback = entries.length ? entries[entries.length - 1].number : null;
+  const wanted = entries.some((entry) => entry.number === selectedTurn) ? selectedTurn : fallback;
+  const select = els.turnHistorySelect;
+  if (select) {
+    // Odbudowa listy tylko przy zmianie zestawu tur — inaczej każdy render
+    // resetowałby rozwinięty select pod palcem gracza.
+    const signature = entries.map((entry) => entry.number).join(',');
+    if (select.dataset?.turns !== signature) {
+      if (select.dataset) select.dataset.turns = signature;
+      clear(select);
+      for (const entry of entries) {
+        const option = document.createElement('option');
+        option.value = String(entry.number);
+        option.textContent = entry.label;
+        select.appendChild(option);
+      }
+    }
+    select.disabled = entries.length === 0;
+    if (wanted != null) select.value = String(wanted);
+  }
+  const text = wanted != null && typeof session.turnHistoryTextFor === 'function'
+    ? session.turnHistoryTextFor(wanted)
     : '';
   els.turnHistory.textContent = text || 'Brak ukończonych tur — rozegraj przynajmniej jedną pełną turę, a pojawi się tu jej przebieg.';
 }
@@ -3412,9 +3590,10 @@ function renderBattlefield(host, view, session, controllerId, enemy, onCardClick
   const lands = mine.filter((o) => o.kind === 'land');
   const others = mine.filter((o) => o.kind !== 'land');
   // Wróg: lądy przy krawędzi (góra), stworki w stronę środka; Ty odwrotnie.
+  // M197/A4 (zlecenie właściciela): „Stworki i inne" → „Permanenty poza lądami".
   const groups = enemy
-    ? [[lands, 'Lądy'], [others, 'Stworki i inne']]
-    : [[others, 'Stworki i inne'], [lands, 'Lądy']];
+    ? [[lands, 'Lądy'], [others, 'Permanenty poza lądami']]
+    : [[others, 'Permanenty poza lądami'], [lands, 'Lądy']];
   for (const [cards, label] of groups) {
     if (!cards.length) continue;
     div(host, 'sub-label', label);

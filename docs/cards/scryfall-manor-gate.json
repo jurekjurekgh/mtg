@@ -1,0 +1,18 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Manor+Gate&set=clb",
+  "print": "clb",
+  "name": "Manor Gate",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Land — Gate",
+  "oracle_text": "This land enters tapped.\nAs this land enters, choose a color other than green.\n{T}: Add {G} or one mana of the chosen color.",
+  "colors": [],
+  "set": "clb",
+  "set_name": "Commander Legends: Battle for Baldur's Gate",
+  "collector_number": "356",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/9/793d4978-9e00-453d-8dc2-6d51ad6c26b7.jpg?1783922657"
+  },
+  "pobrano": "2026-08-22"
+}

@@ -36,7 +36,10 @@ test('M178: talia Innistrad streszcza się przewidywalnie (kolory i landy)', () 
   const registry = createCardRegistry();
   const deck = parseDeckText(fs.readFileSync('decks/innistrad.txt', 'utf8'), registry);
   const summary = summarizeDeck(deck.cardIds, registry);
-  assert.equal(summary.spells, 35, '35 wspieranych kart planu Innistrad (Batch 45: +Doomed Dissenter)');
+  // M197/K3: 36 -> 35. Ballista Watcher i Ballista Wielder (VOW) mialy plan
+  // zgadniety po secie („Innistrad”); arkusz kolekcji przypisuje im „Wiedźmin”,
+  // wiec obie karty przeszly do talii wiedzmin (zgloszenie wlasciciela).
+  assert.equal(summary.spells, 35, '35 wspieranych kart planu Innistrad');
   assert.equal(summary.lands, 18, 'ceil(35/2) = 18 landów');
   assert.equal(summary.total, 53);
 });
@@ -80,20 +83,22 @@ test('M178 (ADR 0023): generator talii jest zgodny z plikami w decks/', () => {
 });
 
 test('każda wspierana karta nielandowa jest w którejś talii (konwencja M33+)', () => {
+  // M194/K1 (Batch 47): katalog ma DWA egzemplarze niektórych kart (Curate
+  // BRO/STX, Negate M20/M15). Porównywanie po NAZWIE uznałoby oba za pokryte,
+  // gdy w taliach jest tylko jeden — a to dokładnie ta cicha pomyłka, przed
+  // którą chroni sufiks setu. Strażnik liczy więc EGZEMPLARZE (cardId),
+  // parsując pliki tym samym parserem co gra.
   const registry = createCardRegistry();
-  const text = deckFiles.map((file) => fs.readFileSync(`decks/${file}`, 'utf8')).join('\n');
-  const namesInDecks = new Set();
-  for (const raw of text.split(/\r?\n/)) {
-    const line = raw.trim();
-    if (!line || line.startsWith('#')) continue;
-    const match = line.match(/^(\d+)x\s+(.+)$/);
-    if (match) namesInDecks.add(match[2].trim());
+  const idsInDecks = new Set();
+  for (const file of deckFiles) {
+    const deck = parseDeckText(fs.readFileSync(`decks/${file}`, 'utf8'), registry);
+    for (const id of deck.cardIds) idsInDecks.add(id);
   }
   const missing = [];
   for (const card of registry.all()) {
     if (card.support?.status !== 'supported') continue;
     if ((card.types ?? []).includes('Land')) continue;
-    if (!namesInDecks.has(card.name)) missing.push(card.name);
+    if (!idsInDecks.has(card.id)) missing.push(`${card.name} (${card.set ?? '?'})`);
   }
   assert.deepEqual(missing, [], `karty bez talii: ${missing.join(', ')}`);
 });

@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { deathZoneFor, effectiveKeywords, effectivePower, tapObject } from './permanents.js';
+import { activatableAbilities, deathZoneFor, effectiveKeywords, effectivePower, tapObject } from './permanents.js';
 import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { addCounter, removeCounter } from './counters.js';
@@ -41,6 +41,20 @@ function collectManaColors(effects) {
     }
   }
   return colors;
+}
+
+/**
+ * M190/A2 (uwaga właściciela, Heap Gate): ILE many produkuje zdolność.
+ * Bez tego log nie odróżniał „1 mana dowolnego koloru" od pięciu — warstwa
+ * opisu musi dostać dane, których sama nie odtworzy (L6).
+ */
+function collectManaAmount(effects) {
+  let total = 0;
+  for (const effect of effects ?? []) {
+    if (effect?.type !== 'add_mana') continue;
+    total += effect.amount ?? 1;
+  }
+  return total;
 }
 
 /**
@@ -445,8 +459,12 @@ export function legalActivatedAbilities(state, playerId) {
   for (const id of state.zones.battlefield) {
     const object = state.objects.get(id);
     if (object?.controllerId !== playerId) continue;
-    for (let index = 0; index < (object.abilities ?? []).length; index += 1) {
-      const ability = object.abilities[index];
+    // Batch 47 (Enduring Sliver): oferta obejmuje tez zdolnosci NADANE przez
+    // cudza statyke („Other Sliver creatures you control have outlast {2}").
+    // Ta sama lista jest zrodlem prawdy w activateAbility (L48).
+    const activatable = activatableAbilities(state, object);
+    for (let index = 0; index < activatable.length; index += 1) {
+      const ability = activatable[index];
       if (ability?.type !== ABILITY_TYPE.activated) continue;
       // Zdolność „z grobu" (Goldmeadow Nomad: „Exile this card from your
       // graveyard") działa WYŁĄCZNIE z grobu — na polu bitwy nie jest oferowana
@@ -526,7 +544,16 @@ export function legalActivatedAbilities(state, playerId) {
       if (ability.keyword === 'equip') {
         if (!object.equipment) continue;
         if (!sorcerySpeed) continue;
-        if ((object.equipment.equip ?? 0) > mana) continue;
+        // Batch 48 (Steelclaw Lance, ELD): karta moze miec DWA koszty equip —
+        // „Equip Knight {1}" i „Equip {3}". Koszt zalezy wiec od CELU, a nie
+        // od samego sprzetu: tanszy wariant obowiazuje tylko dla wskazanego
+        // podtypu (CR 702.6e). Najtanszy mozliwy koszt decyduje o tym, czy
+        // w ogole warto enumerowac cele.
+        const cheapestEquip = Math.min(
+          object.equipment.equip ?? 0,
+          object.equipment.equipFor?.equip ?? Infinity,
+        );
+        if (cheapestEquip > mana) continue;
         if (!canPayColoredCost(state, playerId, colorRequirementsOf({ colors: object.equipment.colors ?? [] }))) continue;
         for (const targetId of state.zones.battlefield) {
           const target = state.objects.get(targetId);
@@ -539,8 +566,14 @@ export function legalActivatedAbilities(state, playerId) {
           // to czysty no-op — gracz płaci koszt equip i nic nie zmienia
           // (tester kliknął to dwa razy z rzędu, tracąc manę i całą turę).
           // Przepięcie na INNEGO stwora pozostaje pełnoprawną ofertą.
+          // Batch 48: koszt equipu dla TEGO celu (tanszy wariant po podtypie).
+          const equipForTarget = (object.equipment.equipFor
+            && (target?.subtypes ?? []).includes(object.equipment.equipFor.subtype))
+            ? object.equipment.equipFor.equip
+            : (object.equipment.equip ?? 0);
           if (target?.zone === 'battlefield' && target.kind === 'creature'
             && target.controllerId === playerId && target.id !== id
+            && equipForTarget <= mana
             && object.attachedTo !== target.id) {
             out.push({ objectId: id, abilityIndex: index, ability, targets: [targetId] });
           }
@@ -1008,7 +1041,9 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   // mogą istnieć na tym samym obiekcie (equip + granted).
   const ability = grantedFromEquipmentArg
     ? (object.equipment?.grantedAbilities ?? [])[abilityIndex]
-    : (object.abilities ?? [])[abilityIndex];
+    // Batch 47: indeks liczony wzgledem listy AKTYWOWALNYCH (wlasne + nadane
+    // cudza statyka) — dokladnie tej, ktora enumeruje oferta (L48).
+    : activatableAbilities(state, object)[abilityIndex];
   if (!ability || ability.type !== ABILITY_TYPE.activated) throw new Error('Nieznana zdolność aktywowana');
   if (ability.timing === 'sorcery') {
     const sorcerySpeed = state.turn.activePlayerId === playerId
@@ -1491,7 +1526,7 @@ export function performActivation(state, ctx) {
     keyword: ability.keyword ?? null,
     effectTypes: effectList.map((e) => e?.type).filter(Boolean),
     // M150/C2: kolory wyprodukowanej many (Jeskai Devotee) w logu.
-    ...(manaColors.length ? { manaColors } : {}),
+    ...(manaColors.length ? { manaColors, manaAmount: collectManaAmount(effectList) } : {}),
     // M175/A1: konkretne keywordy grantu — log nazywa je po polsku.
     ...(grantKeywords.length ? { grantKeywords } : {}),
     // M73d (F): targets tylko dla zdolności z celami (spójnie z queue...).
@@ -1781,7 +1816,15 @@ function activateEquip(state, playerId, object, abilityIndex, targets) {
   // przy rozstrzyganiu cel jest rewalidowany (CR 608.2b).
   const target = validateTargets(state, [Object.freeze({ type: 'creature' })], targets, playerId, object.colors ?? [], object)[0];
   if (target.controllerId !== playerId) throw new Error('Equip celuje wyłącznie we własne stwory');
-  spendMana(state, playerId, object.equipment.equip ?? 0);
+  // Batch 48 (Steelclaw Lance): koszt zalezy od CELU — „Equip Knight {1}"
+  // vs „Equip {3}". Ta sama regula co w ofercie (L48: rozjazd = odrzucona
+  // komenda, ktora UI wlasnie zaproponowalo).
+  const equipTarget = state.objects.get(targets?.[0]);
+  const equipCost = (object.equipment.equipFor
+    && (equipTarget?.subtypes ?? []).includes(object.equipment.equipFor.subtype))
+    ? object.equipment.equipFor.equip
+    : (object.equipment.equip ?? 0);
+  spendMana(state, playerId, equipCost);
   // Audyt PR #41 (B7.2, CR 602.2a): equip trafia na STOS jako zdolność
   // aktywowana — przeciwnik może odpowiedzieć (np. zniszczyć cel); założenie
   // następuje przy rozstrzyganiu (resolveEquipEntry), a cel nielegalny przy

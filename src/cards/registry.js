@@ -166,8 +166,13 @@ export function defineCard(data) {
       // warunkowo, żeby nie zmieniać kształtu czystych aur bez enchant.
       ...(data.aura.enchant ? { enchant: data.aura.enchant } : {}),
       ...(data.aura.enchantType ? { enchantType: data.aura.enchantType } : {}),
+      ...(data.aura.ownControlOnly === false ? { ownControlOnly: false } : {}),
       ...(data.aura.grantMana ? { grantMana: Object.freeze({ ...data.aura.grantMana }) } : {}),
       ...(data.aura.chooseColor ? { chooseColor: true } : {}),
+      // Batch 46 (Guildscorn Ward): TRWAŁA ochrona przed JAKOŚCIĄ źródła
+      // (CR 702.16e — „protection from multicolored"). L21/L48: pole musi
+      // przejść CAŁY łańcuch karta → registry → obiekt gry, inaczej ginie.
+      ...(data.aura.protection ? { protection: Object.freeze({ ...data.aura.protection }) } : {}),
       // Efekt zastępczy tworzenia tokenów (CR 614 — Moonlit Meditation:
       // „The first time you would create one or more tokens each turn, you
       // may instead create that many tokens that are copies of enchanted
@@ -200,6 +205,13 @@ export function defineCard(data) {
         // lista nie zmienia kształtu deskryptora (deepEqual w testach).
         ...(data.equipment.grantedAbilities?.length
           ? { grantedAbilities: Object.freeze(data.equipment.grantedAbilities.map((a) => Object.freeze({ ...a }))) }
+          : {}),
+        // Batch 48 (Steelclaw Lance): TAŃSZY koszt equipu dla wskazanego
+        // podtypu („Equip Knight {1}" obok „Equip {3}"). Bez tego pola
+        // deskryptor ginął przy budowie rejestru (klasa L21) i karta miała
+        // tylko jeden koszt.
+        ...(data.equipment.equipFor
+          ? { equipFor: Object.freeze({ ...data.equipment.equipFor }) }
           : {}),
       };
       // Conditional keywords (Hunter's Blowgun): different keywords granted
@@ -239,6 +251,11 @@ export function defineCard(data) {
     endure: data.endure ?? null,
     // Toxic N (CR 702.180) — wartość liczbowa keyworda (Batch 45).
     toxic: data.toxic ?? null,
+    // Batch 46 (Bone Shredder): koszt echa (CR 702.29).
+    echo: data.echo ?? null,
+    // Batch 46 (Manor Gate): „as this enters, choose a color…" na PERMANENCIE
+    // (nie aurze) — { exclude: ['G'] } zawęża listę (CR 614.12).
+    chooseColor: data.chooseColor ? Object.freeze({ ...data.chooseColor }) : null,
     // Exploit (CR 702.110, Silumgar Butcher): flaga ETB — opcjonalne
     // poświęcenie przy wejściu (resolve_exploit_choice), potem trigger „exploits".
     exploit: data.exploit ? Object.freeze({}) : null,

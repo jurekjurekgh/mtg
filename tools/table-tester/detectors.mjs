@@ -20,11 +20,18 @@
 /** Surowe identyfikatory, które nigdy nie powinny trafić do oczu gracza. */
 const RAW_IDENTIFIER = /\b(battlefield|graveyard|library|exile|stack|hand)\s*→|→\s*(battlefield|graveyard|library|exile|stack|hand)\b/;
 const SNAKE_CASE_EVENT = /\b[a-z]+(_[a-z]+){2,}\b/;
+// M189 (transkrypt audyt-m187/g6): identyfikatory TOKENÓW mają tylko jedno
+// podkreślenie („token_wizard", „token_squirrel"), więc przechodziły przez
+// regułę wyżej — log pokazywał je graczowi, a detektory milczały (L27/L40).
+const RAW_TOKEN_ID = /\btoken_[a-z][a-z0-9_]*/;
 // M171/Z4: „?:" (nazwa celu zastąpiona znakiem zapytania przed kwotą).
 const PLACEHOLDER = /(^|[\s:(])\?($|[\s:),.])|undefined|NaN|\[object |null\b/;
 
 /** Ile razy ta sama akcja bota w jednej turze jest już podejrzana. */
 const REPEAT_THRESHOLD = 4;
+
+/** Etykieta, która sama uprzedza gracza o fizzlu (M102/U8) — nie zgłaszamy. */
+const WARNED_FIZZLE = /UWAGA:\s*czar fizzluje/i;
 
 function push(out, category, message, evidence) {
   out.push({ category, message, evidence: String(evidence ?? '').slice(0, 160) });
@@ -47,6 +54,10 @@ export function detectRawText(lines) {
     const m = line.match(SNAKE_CASE_EVENT);
     if (m && !/http|\.mjs|\.js\b/.test(line)) {
       push(found, 'info', `Surowy identyfikator „${m[0]}" w tekście dla gracza`, line);
+    }
+    const token = line.match(RAW_TOKEN_ID);
+    if (token && !/http|\.mjs|\.js\b/.test(line)) {
+      push(found, 'info', `Surowy identyfikator tokenu „${token[0]}" zamiast nazwy`, line);
     }
     if (PLACEHOLDER.test(line.replace(/\(brak\)|\(pusty\)|\(puste\)|\(pusta\)/g, ''))) {
       push(found, 'ui', 'Placeholder (?/undefined/null) w tekście dla gracza', line);
@@ -407,8 +418,24 @@ export function detectGroupWithoutTick(actionRecords) {
   // pokoju Undercity, któremu ptaszek się NIE należy) — dlatego bare „Cel"
   // wymaga, by NIE szło po nim słowo (negative lookahead).
   const IGNORABLE_GROUP = /^(Cel czaru|Cel zdolności|Bestow|Aura|Wybierz: (Cel czaru|Cel zdolności|Cel(?! \p{L})|Wariant|Tryb|Wartość X))/iu;
+  // M189/Z3 (transkrypt audyt-m187/g13): pod „Wybierz: Cel" kryją się też
+  // OBOWIĄZKOWE decyzje narzucone przez kartę (Cuombajj Witches —
+  // `resolve_opponent_target`, CR 601.2c: cel wskazuje przeciwnik ZANIM
+  // aktywacja zapłaci koszty). Gracz nie może ich wyciszyć, bo musi
+  // odpowiedzieć — ptaszek by je zamroził. Rozpoznajemy je po treści opcji,
+  // bo etykieta grupy jest wspólna z celami czarów (klasa L12: fałszywy
+  // alarm naprawiamy w TESTERZE, nie w produkcie).
+  // Rozpoznajemy po TYPIE KOMENDY (data-option-key), bo etykieta grupy jest
+  // wspólna; `resolve_*` to decyzje, na które gracz MUSI odpowiedzieć.
+  // commandOptionKey to JSON komendy ({"type":"resolve_opponent_target",...}),
+  // więc typu szukamy w treści klucza, nie na jego początku.
+  const MANDATORY_COMMAND = /"type"\s*:\s*"resolve_/;
+  const MANDATORY_TEXT = /Wskaż cel obrażeń|Wybór przeciwnika|cel pokoju/i;
   for (const rec of actionRecords ?? []) {
     if (!IGNORABLE_GROUP.test(rec.label)) continue;
+    const optionText = Array.isArray(rec.options) ? rec.options.join(' ') : String(rec.options ?? '');
+    if (MANDATORY_COMMAND.test(String(rec.commandKey ?? ''))) continue;
+    if (MANDATORY_TEXT.test(optionText) || MANDATORY_TEXT.test(rec.label)) continue;
     if (rec.hasTick) continue;
     push(found, 'ui', 'Grupa wariantów czaru/zdolności bez ptaszka wyciszenia', rec.label);
   }
@@ -439,7 +466,11 @@ export function detectNoEffectOffers(probeRecords) {
   const found = [];
   // Produkcja many to realny efekt, który nie zostawia śladu w fingerprint
   // (pula many jest poza nim) — tapnięcie źródła wyglądałoby jak „sam koszt".
-  const MANA_ABILITY = /dodaj man|dodaje man|produkcj[aę] many|mana z/i;
+  // M190/A: etykieta zdolności many niesie teraz LICZBĘ („dodaj 1 manę
+  // dowolnego koloru"), więc wzorzec „dodaj man" przestał pasować i sonda
+  // zaczęła zgłaszać zdolności many jako „oferty bez skutku" (mana w puli
+  // nie jest częścią fingerprintu — to znany, świadomy artefakt pomiaru).
+  const MANA_ABILITY = /dodaj\s+(\d+\s+)?man|dodaje\s+(\d+\s+)?man|produkcj[aę] many|mana z/i;
   // Pass/concede/wznowienie z definicji nie są „ofertami skutku" — mostek
   // sesji je odfiltrowuje, ale detektor ma własną bramkę (obrona w głąb).
   const PASS_LABEL = /^Dalej\b|^Wznów grę bota|Poddaj/;
@@ -465,6 +496,12 @@ export function detectNoEffectOffers(probeRecords) {
       continue;
     }
     if (probe.fizzle) {
+      // M189/Z4 (transkrypt audyt-m187/v-b): wariant „czar celuje w stwora
+      // poświęcanego jako własny koszt" (Bone Splinters) to ROZWIĄZANY
+      // przypadek M102/U8 — jest legalny (CR 601.2c), zepchnięty na koniec
+      // listy, a etykieta SAMA ostrzega gracza. Zgłaszanie go w każdym
+      // przebiegu to szum przykrywający realne znaleziska (L12).
+      if (WARNED_FIZZLE.test(label)) continue;
       push(found, 'noop', `Oferta pewną stratą${where} — fizzle już przy pasywnym przeciwniku`, label);
       continue;
     }

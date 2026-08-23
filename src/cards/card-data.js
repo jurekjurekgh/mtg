@@ -1373,7 +1373,9 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         cost: { tap: true },
-        effect: { type: 'add_mana', amount: 1 },
+        // M193/A: kolor WPROST z Oracle („{T}: Add {G}") — dotad kolor znala
+        // wylacznie reczna mapa MANA_SOURCE_MAP, a deskryptor milczal.
+        effect: { type: 'add_mana', amount: 1, colors: ['G'] },
       }),
       createAbility({
         type: ABILITY_TYPE.triggered,
@@ -1399,7 +1401,8 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         cost: { tap: true },
-        effect: { type: 'add_mana', amount: 2 },
+        // M193/A: Oracle „{T}: Add {G}{G}" — dwie many ZIELONE (kolor z danych).
+        effect: { type: 'add_mana', amount: 2, colors: ['G'] },
       }),
       createAbility({
         type: ABILITY_TYPE.triggered,
@@ -3155,7 +3158,8 @@ export const REAL_CARDS = Object.freeze([
     power: 2, toughness: 2, manaCost: 3,
     oracleText: 'When this creature enters, target opponent puts a card from their hand on top of their library.',
     imageUri: 'https://cards.scryfall.io/large/front/9/8/980135d5-dfaa-4beb-b4b3-1e256bb46e61.jpg?1783944446',
-    artId: 540, plan: 'Świat Wiedźmina',
+    // M197 (decyzja właściciela): „Świat Wiedźmina to po prostu Wiedźmin".
+    artId: 540, plan: 'Wiedźmin',
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
@@ -4107,7 +4111,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         { type: 'create_token', cardId: 'token_rat', name: 'Rat', kind: 'creature', power: 1, toughness: 1, colors: ['B'], types: ['Creature'], subtypes: ['Rat'] },
       ],
     },
-    artId: 535, plan: 'Rath',
+    artId: 535, plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -4163,6 +4167,14 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         trigger: { event: 'enter_battlefield' },
         effect: [{ type: 'fertile_thicket_reveal' }],
       }),
+      // M193/A: Oracle „{T}: Add {G}" — zdolnosci many NIE BYLO w danych ani
+      // w MANA_SOURCE_MAP, wiec land byl zrodlem bezbarwnym: dokladnie objaw
+      // ze zgloszenia wlasciciela (pip {G} nie do oplacenia).
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['G'] },
+      }),
     ],
     artId: 273, plan: 'Zendikar',
     support: { status: 'supported', limitations: [] },
@@ -4183,7 +4195,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: { type: 'return_to_battlefield_tapped' },
       }),
     ],
-    artId: 248, plan: 'Dominaria',
+    artId: 248, plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -4221,7 +4233,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     oracleText: 'Reach (This creature can block creatures with flying.)\nDeathtouch (Any amount of damage this deals to a creature is enough to destroy it.)',
     imageUri: 'https://cards.scryfall.io/large/front/6/a/6ab810f1-21d6-4a98-b77a-e455370aa6cc.jpg?1783942364',
     keywords: ['reach', 'deathtouch'],
-    artId: 375, plan: 'Core',
+    artId: 375, plan: 'Śródziemie',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -4237,7 +4249,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     // Protection from chosen color: when aura enters, player chooses a color.
     // The chosenColor is set on the aura permanent, and effectiveKeywords
     // computes protectionFromColors from it (attachments.js + permanents.js).
-    artId: 422, plan: 'Commander',
+    artId: 422, plan: 'Śródziemie',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -4255,7 +4267,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: [{ type: 'springbloom_sacrifice_search' }],
       }),
     ],
-    artId: 470, plan: 'Modern Horizons',
+    artId: 470, plan: 'Wiedźmin',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -5669,7 +5681,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: { type: 'damage', amount: 1 },
       }),
     ],
-    artId: 504, plan: 'Innistrad',
+    artId: 504, plan: 'Wiedźmin',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -5690,7 +5702,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         ],
       }),
     ],
-    artId: 505, plan: 'Innistrad',
+    artId: 505, plan: 'Wiedźmin',
     support: { status: 'limited', limitations: ['tylna strona daybound/nightbound — nie można umieścić w talii'] },
   }),
 
@@ -6836,7 +6848,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       targets: [{ type: 'artifact' }],
       effects: [{ type: 'destroy_artifact_gain_life_mana_value' }],
     },
-    artId: null, plan: null,
+    artId: 47,
     plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
   }),
@@ -7006,7 +7018,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         ],
       }),
     ],
-    artId: null, plan: null,
+    artId: 166,
     plan: 'Eldraine',
     support: { status: 'supported', limitations: [] },
     notes: ['faerie_attacks: odpala się raz na combat, gdy atakujący kontroler atakuje z ≥1 Faerie; licznik na docelowym Faerie (requiresTarget creature_you_control+subtype)', '„when you discard a card this way” uproszczone: zawsze dobiera+odrzuca, więc licznik zawsze się pojawia (po wyborze Faerie)'],
@@ -7046,7 +7058,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: { type: 'mill_cards', amount: 2 },
       }),
     ],
-    artId: null, plan: null,
+    artId: 115,
     plan: 'Wiedźmin',
     support: { status: 'supported', limitations: [] },
   }),
@@ -7064,7 +7076,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         oncePerTurn: true,
       }),
     ],
-    artId: null, plan: null,
+    artId: 242,
     plan: 'Alara',
     support: { status: 'supported', limitations: [] },
   }),
@@ -7081,7 +7093,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: { type: 'untap_permanent' },
       }),
     ],
-    artId: null, plan: null,
+    artId: 133,
     plan: 'Theros',
     support: { status: 'supported', limitations: [] },
   }),
@@ -7108,7 +7120,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: [],
       }),
     ],
-    artId: null, plan: null,
+    artId: 524,
     plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: [] },
   }),
@@ -7135,7 +7147,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: { type: 'regenerate' },
       }),
     ],
-    artId: null, plan: null,
+    artId: 501,
     plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
     notes: ['trigger kopiowania wymaga DRUGIEGO przeciwnika — w 1v1 nigdy się nie odpala (fakt formatu, jak brak command zone); {1}{B}: Regenerate = tarcza regeneracji do końca tury (CR 701.12)'],
@@ -7153,7 +7165,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: { type: 'each_player_loses_life_fraction', numerator: 1, denominator: 3 },
       }),
     ],
-    artId: null, plan: null,
+    artId: 177,
     plan: 'Ixalan',
     support: { status: 'supported', limitations: [] },
   }),
@@ -7170,7 +7182,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: { type: 'becomes_subtype_until_end_of_turn', subtypes: ['Human'], losesKeywords: ['defender'] },
       }),
     ],
-    artId: null, plan: null,
+    artId: 432,
     plan: 'Wiedźmin',
     support: { status: 'supported', limitations: [] },
   }),
@@ -7195,7 +7207,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         }],
       }],
     },
-    artId: null, plan: null,
+    artId: 116,
     plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: [] },
   }),
@@ -7219,7 +7231,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         [{ type: 'next_spell_discount', amount: 2, subtype: 'Giant' }],
       ],
     },
-    artId: null, plan: null,
+    artId: 330,
     plan: 'Kaldheim',
     support: { status: 'supported', limitations: [] },
     notes: ['II: planeswalker-cel nie istnieje w 1v1 — obrażenia idą w przeciwnika', 'III: zadziała od razu po dodaniu pierwszej karty z podtypem Giant'],
@@ -7273,7 +7285,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         cost: { mana: 4, colors: ['W'] },
       }),
     ],
-    artId: null, plan: 'Kamigawa',
+    artId: 105, plan: 'Kamigawa',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -7296,7 +7308,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         { type: 'damage_from_target_power', sourceTargetIndex: 0, targetIndex: 1 },
       ],
     },
-    artId: null, plan: 'Tarkir',
+    artId: 463, plan: 'Tarkir',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -7319,7 +7331,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: [{ type: 'becomes_subtype_until_end_of_turn', losesKeywords: ['defender'] }],
       }),
     ],
-    artId: null, plan: 'Tarkir',
+    artId: 81, plan: 'Tarkir',
     support: { status: 'supported', limitations: [] },
     notes: ['aktywacja odsuwa defendera do końca tury (cleanup przywraca) — atak legalny po aktywacji, w następnej turze znów nie'],
   }),
@@ -7342,7 +7354,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: { type: 'untap_permanent' },
       }),
     ],
-    artId: null, plan: 'Ixalan',
+    artId: 468, plan: 'Ixalan',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -7364,7 +7376,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         { type: 'opponents_lose_life_if_poison', min: 3, amount: 3 },
       ],
     },
-    artId: null, plan: 'Phyrexia',
+    artId: 207, plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -7386,7 +7398,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: [{ type: 'add_counter', counter: '+1/+1', amount: 1, targetIndex: 0 }],
       }),
     ],
-    artId: null, plan: 'Lorwyn',
+    artId: 106, plan: 'Lorwyn',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -7402,7 +7414,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     oracleText: 'Menace (This creature can\'t be blocked except by two or more creatures.)\nAdamant — If at least three black mana was spent to cast this spell, this creature enters with a +1/+1 counter on it.',
     imageUri: 'https://cards.scryfall.io/large/front/d/a/da6f21a8-3dd0-42af-8a93-84f98968c781.jpg?1783932637',
     entersWithCountersIf: { adamant: { color: 'B', min: 3 }, counters: { '+1/+1': 1 } },
-    artId: null, plan: 'Eldraine',
+    artId: 445, plan: 'Eldraine',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -7423,7 +7435,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
           then: { type: 'damage_to_controller', amount: 2 } },
       ],
     },
-    artId: null, plan: 'Tarkir',
+    artId: 287, plan: 'Tarkir',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -7455,7 +7467,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: { type: 'damage_divided', amount: 3 },
       }),
     ],
-    artId: null, plan: 'Śródziemie',
+    artId: 202, plan: 'Śródziemie',
     support: { status: 'supported', limitations: [] },
     notes: ['podział obrażeń: cele (1-3) wybierane w decyzji multi-target, kwoty w JEDNEJ komendzie resolve_damage_division (kompozycje 3=[3]|[2,1]|[1,1,1])'],
   }),
@@ -7479,7 +7491,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: [{ type: 'add_counter', counter: '+1/+1', amount: 1, targetIndex: 0 }],
       }),
     ],
-    artId: null, plan: 'Lorwyn',
+    artId: 442, plan: 'Lorwyn',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -8323,6 +8335,17 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/c/3/c3bf4ee1-b6a8-4a69-adab-6839c1786cc9.jpg?1783922750',
     equipment: { equip: 2, cantBeBlockedMaxPower: 3 },
     abilities: [
+      // M190/C (zgłoszenie właściciela): bez tej zdolności sprzęt był
+      // NIEGRYWALNY — deskryptor `equipment` opisuje skutek założenia, ale
+      // samą aktywację „Equip {2}" (CR 702.6) enumeruje dopiero zdolność
+      // z keyword: 'equip'. Batch 44 jej nie dopisał, więc Thieves' Tools
+      // leżało na stole bez żadnej oferty. Strażnik: test M190/C2.
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'equip',
+        cost: { mana: 2 },
+        effect: [],
+      }),
       createAbility({
         type: ABILITY_TYPE.triggered,
         trigger: { event: 'enter_battlefield' },
@@ -8692,6 +8715,779 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     artId: 344, plan: 'The Edge',
     support: { status: 'supported', limitations: [] },
     notes: ['źródłem obu porcji obrażeń jest ZACZAROWANY STWÓR (nie aura); utrata kontroli hosta zrzuca aurę (enchant creature you control — SBA)'],
+  }),
+
+  // =========================================================================
+  // Batch 46 — 10 kart (2026-08-22, lista właściciela)
+  // Cathartic Reunion, Roiling Regrowth, Manor Gate, Bone Shredder,
+  // Infectious Horror, Guildscorn Ward, Gila Courser, Rediscover the Way,
+  // Bring Low, Glint-Sleeve Artisan.
+  // Dane Oracle: docs/cards/scryfall-* (pobrane 2026-08-22, ADR 0010 §2a).
+  // =========================================================================
+
+  // 1. Infectious Horror (CON) — {3}{B} 2/2: atak → każdy przeciwnik traci 2.
+  //    Mechanika w całości istniejąca (trigger attacks + lose_life scope).
+  defineCard({
+    id: 'infectious-horror', name: 'Infectious Horror', set: 'CON',
+    types: ['Creature'], subtypes: ['Zombie', 'Horror'], colors: ['B'],
+    power: 2, toughness: 2, manaCost: 4,
+    oracleText: 'Whenever this creature attacks, each opponent loses 2 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/b/bb460855-f09d-4460-9d3f-1bfcc7f3e626.jpg?1783942484',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks' },
+        effect: { type: 'lose_life', amount: 2, scope: 'each_opponent' },
+      }),
+    ],
+    artId: 320, plan: 'Alara',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Roiling Regrowth (ZNR) — {2}{G} instant: poświęć ląd, znajdź do dwóch
+  //    podstawowych lądów na pole bitwy TAPNIĘTE, potem tasuj. Efekt jak
+  //    Springbloom Druid (ETB), tu jako CZAR — poświęcenie jest OBOWIĄZKOWE
+  //    („Sacrifice a land.", nie „you may"), więc bez landa czar fizzluje.
+  defineCard({
+    id: 'roiling-regrowth', name: 'Roiling Regrowth', set: 'ZNR',
+    types: ['Instant'], colors: ['G'], manaCost: 3,
+    oracleText: 'Sacrifice a land. Search your library for up to two basic land cards, put them onto the battlefield tapped, then shuffle.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/a/fa259096-b24f-414c-af59-301bed4b4627.jpg?1783929332',
+    spell: {
+      timing: 'instant',
+      effects: [{ type: 'springbloom_sacrifice_search', mandatory: true }],
+    },
+    artId: 270, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+    notes: ['poświęcenie lądu jest OBOWIĄZKOWE (nie „you may") — bez lądu na polu bitwy czar nie robi nic'],
+  }),
+
+  // 3. Bring Low (KTK) — {3}{R} instant: 3 obrażenia w stwora, ale 5, gdy cel
+  //    ma licznik +1/+1 (NOWE: warunkowa kwota obrażeń od stanu celu).
+  defineCard({
+    id: 'bring-low', name: 'Bring Low', set: 'KTK',
+    types: ['Instant'], colors: ['R'], manaCost: 4,
+    oracleText: 'Bring Low deals 3 damage to target creature. If that creature has a +1/+1 counter on it, Bring Low deals 5 damage to it instead.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/b/9ba5e7bf-2ad8-4061-937a-ef1e9b63da3d.jpg?1783939074',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [{ type: 'damage', amount: 3, amountIfTargetHasCounter: { counter: '+1/+1', amount: 5 } }],
+    },
+    artId: 389, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+    notes: ['kwota liczona przy ROZSTRZYGNIĘCIU (CR 608.2) — licznik dołożony w odpowiedzi podbija obrażenia do 5'],
+  }),
+
+  // 4. Cathartic Reunion (2XM) — {1}{R} sorcery: dodatkowy koszt „odrzuć dwie
+  //    karty" (CR 601.2h), potem dobierz trzy.
+  defineCard({
+    id: 'cathartic-reunion', name: 'Cathartic Reunion', set: '2XM',
+    types: ['Sorcery'], colors: ['R'], manaCost: 2,
+    oracleText: 'As an additional cost to cast this spell, discard two cards.\nDraw three cards.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/3/b36fa6f3-29e8-4788-bfcd-59576187c399.jpg?1783930169',
+    spell: {
+      timing: 'sorcery',
+      additionalCost: { discardCards: 2 },
+      effects: [{ type: 'draw_cards', amount: 3 }],
+    },
+    artId: 355, plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+    notes: ['odrzucenie DWÓCH kart to koszt (CR 601.2h): płacony przy rzucaniu, więc kontrczar nie zwraca kart'],
+  }),
+
+  // 5. Guildscorn Ward (GTC) — {W} aura: zaczarowany ma ochronę przed
+  //    WIELOKOLOROWYMI (CR 702.16e). NOWE: trwała ochrona po jakości na aurze.
+  defineCard({
+    id: 'guildscorn-ward', name: 'Guildscorn Ward', set: 'GTC',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['W'], manaCost: 1,
+    oracleText: 'Enchant creature\nEnchanted creature has protection from multicolored.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/9/89c5c496-0a3e-40e1-84ac-8ad3a9d8352b.jpg?1783940143',
+    aura: { enchant: 'creature', protection: { multicolored: true } },
+    artId: 301, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+    notes: ['„multicolored" = źródło o dwóch lub więcej kolorach (CR 105.4); ochrona znika natychmiast po odpięciu aury'],
+  }),
+
+  // 6. Glint-Sleeve Artisan (2XM) — {2}{W} 2/2: Fabricate 1 (CR 702.122).
+  //    NOWE: wybór kontrolera przy ETB — licznik +1/+1 ALBO token Servo.
+  defineCard({
+    id: 'glint-sleeve-artisan', name: 'Glint-Sleeve Artisan', set: '2XM',
+    types: ['Creature'], subtypes: ['Dwarf', 'Artificer'], colors: ['W'],
+    power: 2, toughness: 2, manaCost: 3, keywords: ['fabricate'],
+    oracleText: 'Fabricate 1 (When this creature enters, put a +1/+1 counter on it or create a 1/1 colorless Servo artifact creature token.)',
+    imageUri: 'https://cards.scryfall.io/large/front/1/c/1c2fd5ac-963b-49ea-bd72-d0958ef8eb3e.jpg?1783930215',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'fabricate', amount: 1 }],
+      }),
+    ],
+    artId: 189, plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+    notes: ['wybór (licznik albo token) należy do kontrolera — blokująca decyzja resolve_fabricate'],
+  }),
+
+  // 7. Bone Shredder (MH2) — {2}{B} 1/1 flying: ETB destroy target
+  //    nonartifact, nonblack creature; Echo {2}{B} (CR 702.29).
+  defineCard({
+    id: 'bone-shredder', name: 'Bone Shredder', set: 'MH2',
+    types: ['Creature'], subtypes: ['Phyrexian', 'Minion'], colors: ['B'],
+    power: 1, toughness: 1, manaCost: 3, keywords: ['flying', 'echo'],
+    echo: 3,
+    oracleText: 'Flying\nEcho {2}{B} (At the beginning of your upkeep, if this came under your control since the beginning of your last upkeep, sacrifice it unless you pay its echo cost.)\nWhen this creature enters, destroy target nonartifact, nonblack creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/3/63d0b5f0-ed45-4b30-9c24-1c12011e3513.jpg?1783926787',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature', notArtifact: true, notColors: ['B'] } },
+        effect: [{ type: 'destroy_permanent' }],
+      }),
+    ],
+    artId: 326, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+    notes: ['echo płaci się w PIERWSZYM własnym upkeepie po wejściu (CR 702.29); bez many na opłatę stwór jest poświęcany'],
+  }),
+
+  // 8. Manor Gate (CLB) — land Gate: wchodzi tapnięty, przy wejściu wybór
+  //    koloru INNEGO NIŻ ZIELONY; {T}: {G} albo mana wybranego koloru.
+  defineCard({
+    id: 'manor-gate', name: 'Manor Gate', set: 'CLB',
+    types: ['Land'], subtypes: ['Gate'], colors: [],
+    oracleText: 'This land enters tapped.\nAs this land enters, choose a color other than green.\n{T}: Add {G} or one mana of the chosen color.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/9/793d4978-9e00-453d-8dc2-6d51ad6c26b7.jpg?1783922657',
+    entersTapped: true,
+    chooseColor: { exclude: ['G'] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        // M193/A: Oracle „{T}: Add {G} or one mana of the chosen color" —
+        // baza {G} w deskryptorze; wybrany kolor doklada getSourceForObject
+        // z pola `chosenColor` obiektu gry (ustawianego przy wejsciu).
+        effect: { type: 'add_mana', amount: 1, colors: ['G'] },
+      }),
+    ],
+    artId: 217, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+    notes: ['kolory produkcji: {G} + wybrany przy wejściu (deskryptor chooseColor.exclude pilnuje „other than green")'],
+  }),
+
+  // 9. Gila Courser (OTJ) — {2}{R} 4/2 Mount: atak w stanie saddled wygania
+  //    wierzch biblioteki z prawem zagrania do końca NASTĘPNEJ tury; Saddle 1.
+  defineCard({
+    id: 'gila-courser', name: 'Gila Courser', set: 'OTJ',
+    types: ['Creature'], subtypes: ['Lizard', 'Mount'], colors: ['R'],
+    power: 4, toughness: 2, manaCost: 3, keywords: ['saddle'],
+    oracleText: 'Whenever this creature attacks while saddled, exile the top card of your library. Until the end of your next turn, you may play that card.\nSaddle 1 (Tap any number of other creatures you control with total power 1 or more: This Mount becomes saddled until end of turn. Saddle only as a sorcery.)',
+    imageUri: 'https://cards.scryfall.io/large/front/f/5/f568803d-65c0-48d7-916f-671267a9e00e.jpg?1783911821',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks', condition: { saddled: true } },
+        effect: [{ type: 'exile_top_playable_until_next_turn' }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'saddle',
+        timing: 'sorcery',
+        cost: { saddlePower: 1 },
+        effect: { type: 'set_saddled' },
+      }),
+    ],
+    artId: 300, plan: 'Thunder Junction',
+    support: { status: 'supported', limitations: [] },
+    notes: ['wygnana karta jest grywalna z exile za PEŁNY koszt do końca twojej następnej tury (impulse)'],
+  }),
+
+  // 10. Rediscover the Way (TDM) — {U}{R}{W} Saga: I i II ten sam rozdział
+  //     (look 3, jedną do ręki, reszta na spód), III — double strike po
+  //     rzuceniu czaru niebędącego stworem w tej turze.
+  defineCard({
+    id: 'rediscover-the-way', name: 'Rediscover the Way', set: 'TDM',
+    types: ['Enchantment'], subtypes: ['Saga'], colors: ['U', 'R', 'W'], manaCost: 3,
+    oracleText: '(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI, II — Look at the top three cards of your library. Put one of them into your hand and the rest on the bottom of your library in any order.\nIII — Whenever you cast a noncreature spell this turn, target creature you control gains double strike until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/9/79d6decf-afd5-4e96-b87e-fd7ab7e3c068.jpg?1783907303',
+    saga: {
+      chapterNames: ['Rediscover the Way', 'Rediscover the Way', 'Rediscover the Way'],
+      chapters: [
+        // I — look 3, jedna do ręki, reszta na spód (ten sam efekt co II).
+        [{ type: 'look_top_put_one_hand_rest_bottom', amount: 3 }],
+        // II — identyczny rozdział (Oracle: „I, II —").
+        [{ type: 'look_top_put_one_hand_rest_bottom', amount: 3 }],
+        // III — opóźniony trigger na czar niebędący stworem w TEJ turze.
+        [{ type: 'grant_double_strike_on_noncreature_cast_this_turn' }],
+      ],
+    },
+    artId: 292, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+    notes: ['rozdziały I i II mają identyczny efekt (Oracle „I, II —"); III działa do końca tury, w której Saga dobiła do trzeciego licznika'],
+  }),
+
+  // =========================================================================
+  // Batch 47 (8 kart, 2026-08-23) — lista właściciela (M194)
+  // Caves of Chaos Adventurer, Curate (STX), Pyxis of Pandemonium, Divest,
+  // Negate (M15), Supernatural Stamina, Sequestered Stash, Enduring Sliver.
+  // Dane Oracle: docs/cards/scryfall-*.json (pobrane 2026-08-23).
+  //
+  // DWA WARIANTY TEJ SAMEJ KARTY (decyzja właściciela): Curate i Negate już
+  // były w katalogu w innych drukach. Właściciel nie zmienia tamtych kart —
+  // dokłada drugi egzemplarz z własnym artem i PLANEM, żeby trafił do innej
+  // talii. Reguły są identyczne (ten sam Oracle), różni się tylko druk.
+  // Pliki talii rozróżniają je sufiksem setu (M194/K1, deck-text.js).
+  // =========================================================================
+
+  // ---- Batch 47 — transza A: warianty druku (zero nowych mechanik) ----
+
+  // 1. Curate (STX) — drugi druk karty `curate` (BRO). Oracle identyczny:
+  //    „Surveil 2. Draw a card." Plan: Arcavios (art 65STX).
+  defineCard({
+    id: 'curate-stx', name: 'Curate', set: 'STX',
+    types: ['Instant'], colors: ['U'], manaCost: 2,
+    oracleText: 'Surveil 2. (Look at the top two cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order.)\nDraw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/2/f2a0e716-22b7-4a5e-9b7a-d4a806ee7427.jpg?1783927381',
+    spell: {
+      timing: 'instant',
+      targets: [],
+      effects: [
+        { type: 'surveil', amount: 2 },
+        { type: 'draw_cards', amount: 1 },
+      ],
+    },
+    artId: 65, plan: 'Arcavios',
+    support: { status: 'supported', limitations: [] },
+    notes: ['drugi druk karty Curate (obok BRO/Forgotten Realms) — te same reguły, inny art i plan; talie rozróżniają egzemplarze sufiksem setu'],
+  }),
+
+  // 2. Negate (M15) — drugi druk karty `negate` (M20). Oracle identyczny:
+  //    „Counter target noncreature spell." Plan: Warhammer Fantasy (art 76M15).
+  defineCard({
+    id: 'negate-m15', name: 'Negate', set: 'M15',
+    types: ['Instant'], colors: ['U'], manaCost: 2,
+    oracleText: 'Counter target noncreature spell.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/4/64a2ba6d-ada1-4f06-b135-37606b6588fc.jpg?1783939190',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'noncreature_spell_on_stack' }],
+      effects: [{ type: 'counter_spell' }],
+    },
+    artId: 76, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['drugi druk karty Negate (obok M20/Wiedźmin) — te same reguły, inny art i plan'],
+  }),
+
+  // ---- Batch 47 — transza B: istniejące mechaniki + deskryptorowy filtr ----
+
+  // 3. Divest (2XM) — reveal + wybór artefaktu/stwora do odrzucenia.
+  //    Wzorzec Toll of the Invasion, ale Oracle zawęża wybór do „artifact or
+  //    creature card" — stąd deskryptor `filter.anyTypes` (ADR 0002).
+  defineCard({
+    id: 'divest', name: 'Divest', set: '2XM',
+    types: ['Sorcery'], colors: ['B'], manaCost: 1,
+    oracleText: 'Target player reveals their hand. You choose an artifact or creature card from it. That player discards that card.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/4/4494cb6d-1a99-40b6-96cc-0dc2ddec102f.jpg?1783930183',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'player' }],
+      effects: [{
+        type: 'reveal_hand_choose_discard',
+        // „You choose" = wybór OBOWIĄZKOWY, bez wariantu „If you don't"
+        // (to Nightsnare). Brak artefaktu/stwora w ręce = nikt nic nie odrzuca.
+        mandatory: true,
+        filter: { anyTypes: ['Artifact', 'Creature'] },
+      }],
+    },
+    artId: 52, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+    notes: ['cel „target player\" obejmuje też samego siebie (Oracle nie mówi „opponent\"); filtr artefakt/stwór jest deskryptorem, nie warunkiem po nazwie karty'],
+  }),
+
+  // 4. Supernatural Stamina (2XM) — +2/+0 i nadany trigger „dies → wróć
+  //    zatapniony". Wzorzec Fake Your Own Death, ale BEZ tokenu Skarbu.
+  defineCard({
+    id: 'supernatural-stamina', name: 'Supernatural Stamina', set: '2XM',
+    types: ['Instant'], colors: ['B'], manaCost: 1,
+    oracleText: 'Until end of turn, target creature gets +2/+0 and gains "When this creature dies, return it to the battlefield tapped under its owner\'s control."',
+    imageUri: 'https://cards.scryfall.io/large/front/f/0/f0bff1b7-838f-48de-96bd-0c79e59ff827.jpg?1783930174',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'pump', power: 2, toughness: 0 },
+        {
+          type: 'grant_abilities',
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.triggered,
+              trigger: { event: 'dies' },
+              effect: [{ type: 'return_to_battlefield_tapped' }],
+            }),
+          ],
+        },
+      ],
+    },
+    artId: 383, plan: 'Amonkhet',
+    support: { status: 'supported', limitations: [] },
+    notes: ['nadany trigger dies działa z LKI (formerAbilityGrants) — przechodzi z obiektem do grobu w tej samej turze', 'wraca pod kontrolę WŁAŚCICIELA (Oracle „its owner\'s control\") — istotne przy przejętych stworach'],
+  }),
+
+  // ---- Batch 47 — transza C: Sequestered Stash ----
+
+  // 5. Sequestered Stash (KLD) — land {C} + zdolność „mill 5, potem MOŻESZ
+  //    wziąć artefakt z grobu na wierzch biblioteki". Kolejność z Oracle jest
+  //    istotna: wybór następuje PO millu, więc kandydatem może być artefakt
+  //    dopiero co zmielony (CR 608.2).
+  defineCard({
+    id: 'sequestered-stash', name: 'Sequestered Stash', set: 'KLD',
+    types: ['Land'], colors: [],
+    oracleText: '{T}: Add {C}.\n{4}, {T}, Sacrifice this land: Mill five cards. Then you may put an artifact card from your graveyard on top of your library.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/6/86a17084-bb96-4e81-bff0-005bd44a1fbd.jpg?1783937143',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        // Oracle „Add {C}" — mana BEZBARWNA (brak `colors`), czytana wprost
+        // z deskryptora (M193/A: kolory źródeł many idą z danych karty).
+        effect: { type: 'add_mana', amount: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 4, tap: true, sacrificeSelf: true },
+        effect: [
+          { type: 'mill_cards', amount: 5 },
+          {
+            type: 'graveyard_card_to_library_top_choice',
+            filter: { anyTypes: ['Artifact'] },
+          },
+        ],
+      }),
+    ],
+    artId: 384, plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+    notes: ['mill dotyczy WŁASNEJ biblioteki (Oracle „Mill five cards" bez wskazania gracza = kontroler)', 'wybór artefaktu jest opcjonalny („you may") i następuje PO millu — zmielony artefakt też jest kandydatem'],
+  }),
+
+  // ---- Batch 47 — transza C: Enduring Sliver (keyword outlast) ----
+
+  // 6. Enduring Sliver (MH1) — outlast {2} + nadanie outlast innym Sliverom.
+  //    CR 702.100a: „Outlast [cost]" = „[cost], {T}: Put a +1/+1 counter on
+  //    this creature. Activate only as a sorcery."
+  defineCard({
+    id: 'enduring-sliver', name: 'Enduring Sliver', set: 'MH1',
+    types: ['Creature'], subtypes: ['Sliver'], colors: ['W'],
+    power: 2, toughness: 2, manaCost: 2, keywords: ['outlast'],
+    oracleText: 'Outlast {2} ({2}, {T}: Put a +1/+1 counter on this creature. Outlast only as a sorcery.)\nOther Sliver creatures you control have outlast {2}.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/e/6ed0f6a5-ed40-44fc-a5e1-3f8bb968d1d9.jpg?1783933164',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'outlast',
+        cost: { mana: 2, tap: true },
+        timing: 'sorcery',
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+      }),
+      // „Other Sliver creatures you control have outlast {2}" — zdolność
+      // statyczna nadająca AKTYWOWANĄ zdolność plemieniu (CR 604). Zasięg po
+      // PODTYPIE (wzorzec Altar of the Goyf); `grantsAbilities` niesie tę samą
+      // zdolność, którą ma źródło, więc opis i koszt nie mogą się rozjechać.
+      createAbility({
+        type: ABILITY_TYPE.static,
+        scope: {
+          affects: 'creatures_with_subtype',
+          subtype: 'Sliver',
+          grantsAbilities: [
+            createAbility({
+              type: ABILITY_TYPE.activated,
+              keyword: 'outlast',
+              cost: { mana: 2, tap: true },
+              timing: 'sorcery',
+              effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+            }),
+          ],
+        },
+      }),
+    ],
+    artId: 349, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+    notes: ['outlast (CR 702.100a) wymaga {T} i działa tylko jak sorcery — stwór z chorobą przywołania go nie użyje', 'nadanie plemieniu liczone przy odczycie: zniknięcie Enduring Slivera natychmiast odbiera outlast pozostałym Sliverom'],
+  }),
+
+  // ---- Batch 47 — transza D: Caves of Chaos Adventurer ----
+
+  // 7. Caves of Chaos Adventurer (CLB) — trample, ETB inicjatywa, a przy
+  //    ataku impulse-exile z bonusem za UKOŃCZONY loch (CR 701.51b).
+  defineCard({
+    id: 'caves-of-chaos-adventurer', name: 'Caves of Chaos Adventurer', set: 'CLB',
+    types: ['Creature'], subtypes: ['Human', 'Barbarian'], colors: ['R'],
+    power: 5, toughness: 3, manaCost: 4, keywords: ['trample'],
+    oracleText: "Trample\nWhen this creature enters, you take the initiative.\nWhenever this creature attacks, exile the top card of your library. If you've completed a dungeon, you may play that card this turn without paying its mana cost. Otherwise, you may play that card this turn.",
+    imageUri: 'https://cards.scryfall.io/large/front/0/9/09abb6df-2aa1-4999-b550-db2892faa8c7.jpg?1783922743',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'take_initiative' }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks' },
+        effect: [{
+          type: 'exile_top_playable_until_next_turn',
+          // „If you've completed a dungeon … without paying its mana cost."
+          // Warunek w DANYCH; silnik sprawdza stan lochu (ADR 0002).
+          freeIfCondition: { type: 'completed_dungeon' },
+        }],
+      }),
+    ],
+    artId: 175, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+    notes: ['ukończenie lochu = dotarcie do pokoju bez dalszych ścieżek (Throne of the Dead Three) — Undercity jest grafem, więc liczy się brak wyjścia, nie numer pokoju', 'bez ukończonego lochu karta i tak jest grywalna w tej turze, ale za pełny koszt many'],
+  }),
+
+  // ---- Batch 47 — transza E: Pyxis of Pandemonium ----
+
+  // 8. Pyxis of Pandemonium (THS) — {T}: każdy gracz wygania wierzch swojej
+  //    biblioteki ZAKRYTY; {7},{T},poświęć: wszyscy odkrywają swoje karty
+  //    wygnane TYM artefaktem i kładą spośród nich permanenty na pole bitwy.
+  defineCard({
+    id: 'pyxis-of-pandemonium', name: 'Pyxis of Pandemonium', set: 'THS',
+    types: ['Artifact'], colors: [], manaCost: 1,
+    oracleText: '{T}: Each player exiles the top card of their library face down.\n{7}, {T}, Sacrifice this artifact: Each player turns face up all cards they own exiled with this artifact, then puts all permanent cards among them onto the battlefield.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/b/dbc6a246-f32a-4dc0-9785-4038804f372f.jpg?1783939717',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'each_player_exiles_top_face_down' },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 7, tap: true, sacrificeSelf: true },
+        effect: { type: 'turn_up_exiled_and_put_permanents' },
+      }),
+    ],
+    artId: 21, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+    notes: ['karty wygnane tym artefaktem są POWIĄZANE ze źródłem (exiledCardIds, CR 400.7) — druga zdolność odkrywa wyłącznie je', 'permanenty wchodzą pod kontrolę WŁAŚCICIELA karty (Oracle „all cards they own"), instanty i sorcery zostają w wygnaniu odkryte'],
+  }),
+
+  // =========================================================================
+  // Batch 48 (14 kart, 2026-08-23) — lista właściciela (M196)
+  // Pierwszy batch w NOWYM formacie: artId, set i plan podane wprost
+  // w zleceniu (bez zgadywania ze słownika kolekcji).
+  // Dane Oracle: docs/cards/scryfall-*.json (pobrane 2026-08-23).
+  // =========================================================================
+
+  // ---- Batch 48 — transza A: istniejące mechaniki ----
+
+  // 1. Thraben Valiant (AVR) — 2/1 vigilance.
+  defineCard({
+    id: 'thraben-valiant', name: 'Thraben Valiant', set: 'AVR',
+    types: ['Creature'], subtypes: ['Human', 'Soldier'], colors: ['W'],
+    power: 2, toughness: 1, manaCost: 2, keywords: ['vigilance'],
+    oracleText: 'Vigilance',
+    imageUri: 'https://cards.scryfall.io/large/front/2/0/20558f69-9240-49b9-9695-caf75ee2db1b.jpg?1783940728',
+    artId: 544, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Quicksilver Fisher (ONE) — 4/3 flying, ETB „draw, then discard".
+  defineCard({
+    id: 'quicksilver-fisher', name: 'Quicksilver Fisher', set: 'ONE',
+    types: ['Creature'], subtypes: ['Phyrexian', 'Drake'], colors: ['U'],
+    power: 4, toughness: 3, manaCost: 5, keywords: ['flying'],
+    oracleText: 'Flying\nWhen this creature enters, draw a card, then discard a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/a/bad0e96a-b4cc-4439-aab9-731a1036145d.jpg?1783918058',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'draw_then_discard', amount: 1 }],
+      }),
+    ],
+    artId: 547, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Coat with Venom (DTK) — +1/+2 i deathtouch do końca tury.
+  defineCard({
+    id: 'coat-with-venom', name: 'Coat with Venom', set: 'DTK',
+    types: ['Instant'], colors: ['B'], manaCost: 1,
+    oracleText: 'Target creature gets +1/+2 and gains deathtouch until end of turn. (Any amount of damage it deals to a creature is enough to destroy it.)',
+    imageUri: 'https://cards.scryfall.io/large/front/8/c/8cc8e012-7043-405c-b6cd-b3b38f8a8d54.jpg?1783938600',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'pump', power: 1, toughness: 2 },
+        { type: 'grant_keywords_until_end_of_turn', keywords: ['deathtouch'] },
+      ],
+    },
+    artId: 553, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. Frost Lynx (M15) — ETB: tapnij stwora wroga; nie odkręci się
+  //    w jego najbliższym kroku odkręcania (tap + lock_untap, wzorzec Liry).
+  defineCard({
+    id: 'frost-lynx', name: 'Frost Lynx', set: 'M15',
+    types: ['Creature'], subtypes: ['Elemental', 'Cat'], colors: ['U'],
+    power: 2, toughness: 2, manaCost: 3,
+    oracleText: "When this creature enters, tap target creature an opponent controls. That creature doesn't untap during its controller's next untap step.",
+    imageUri: 'https://cards.scryfall.io/large/front/6/1/619268d2-f7a8-48cd-b17b-197e82474b13.jpg?1783939193',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature_opponent_controls' } },
+        effect: [
+          { type: 'tap_permanent' },
+          { type: 'lock_untap' },
+        ],
+      }),
+    ],
+    artId: 550, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Bedhead Beastie (DSK) — 5/6 menace + Mountaincycling {2}
+  //    (typecycling: szuka LĄDU o podtypie Mountain, nie karty „Mountain").
+  defineCard({
+    id: 'bedhead-beastie', name: 'Bedhead Beastie', set: 'DSK',
+    types: ['Creature'], subtypes: ['Beast'], colors: ['R'],
+    power: 5, toughness: 6, manaCost: 6, keywords: ['menace'],
+    oracleText: 'Menace (This creature can\'t be blocked except by two or more creatures.)\nMountaincycling {2} ({2}, Discard this card: Search your library for a Mountain card, reveal it, put it into your hand, then shuffle.)',
+    imageUri: 'https://cards.scryfall.io/large/front/7/7/77c72b5b-dd81-4eb4-80d9-a0124e27e1dc.jpg?1783909472',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'cycling',
+        cost: { mana: 2 },
+        cycling: { subtypes: ['Mountain'] },
+        effect: [],
+      }),
+    ],
+    artId: 555, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 6. Ettercap // Web Shot (CLB) — stwór 2/5 reach z Adventure niszczącą
+  //    latającego stwora (CR 715: przygoda wygania kartę, potem rzut stwora).
+  defineCard({
+    id: 'ettercap', name: 'Ettercap', set: 'CLB',
+    types: ['Creature'], subtypes: ['Spider', 'Beast'], colors: ['G'],
+    power: 2, toughness: 5, manaCost: 5, keywords: ['reach'],
+    oracleText: 'Reach // Destroy target creature with flying. (Then exile this card. You may cast the creature later from exile.)',
+    imageUri: 'https://cards.scryfall.io/large/front/8/f/8f5228dc-ec9d-456f-a89c-1bc592a1bbab.jpg?1783922714',
+    adventure: {
+      cost: 3, colors: ['G'],
+      spell: {
+        timing: 'instant',
+        targets: [{ type: 'creature_with_keyword', keyword: 'flying' }],
+        effects: [{ type: 'destroy_permanent' }],
+      },
+    },
+    artId: 552, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+    notes: ['Adventure „Web Shot" niszczy WYŁĄCZNIE stwora z lataniem (creature_with_keyword) — wzorzec Sagittars\' Volley'],
+  }),
+
+  // ---- Batch 48 — transza B: kontra z proliferate, trigger bloku ----
+
+  // 7. Fuel for the Cause (MBS) — „Counter target spell, then proliferate."
+  //    Oba efekty już istnieją; nowość to ich ZŁOŻENIE w jednym czarze.
+  defineCard({
+    id: 'fuel-for-the-cause', name: 'Fuel for the Cause', set: 'MBS',
+    types: ['Instant'], colors: ['U'], manaCost: 4,
+    oracleText: 'Counter target spell, then proliferate. (Choose any number of permanents and/or players, then give each another counter of each kind already there.)',
+    imageUri: 'https://cards.scryfall.io/large/front/4/1/4126e0e5-9b23-496f-8a09-7a35499f9a09.jpg?1783941389',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'spell_on_stack' }],
+      effects: [
+        { type: 'counter_spell' },
+        // Proliferate (CR 701.27) — blokująca decyzja gracza (resolve_proliferate).
+        { type: 'proliferate' },
+      ],
+    },
+    artId: 545, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Wooden Stake (ISD) — sprzęt +1/+0; nosiciel zabija Wampira, którego
+  //    blokuje albo który blokuje jego (bez regeneracji).
+  defineCard({
+    id: 'wooden-stake', name: 'Wooden Stake', set: 'ISD',
+    types: ['Artifact'], subtypes: ['Equipment'], colors: [], manaCost: 2,
+    oracleText: "Equipped creature gets +1/+0.\nWhenever equipped creature blocks or becomes blocked by a Vampire, destroy that creature. It can't be regenerated.\nEquip {1} ({1}: Attach to target creature you control. Equip only as a sorcery.)",
+    imageUri: 'https://cards.scryfall.io/large/front/7/e/7e2825f5-8112-4108-910a-4303b2d57356.jpg?1783940895',
+    equipment: { equip: 1, pump: { power: 1, toughness: 0 } },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'equip',
+        cost: { mana: 1 },
+        effect: [],
+      }),
+      // NOWY trigger (Batch 48): blok w OBIE strony — nosiciel blokuje Wampira
+      // albo Wampir blokuje nosiciela. Podtyp jest deskryptorem (ADR 0002),
+      // więc ta sama ścieżka obsłuży przyszłe „…by a Zombie" itd.
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'equipped_creature_blocks_or_blocked_by', subtype: 'Vampire' },
+        effect: [
+          { type: 'destroy_permanent' },
+          { type: 'cant_be_regenerated_this_turn' },
+        ],
+      }),
+    ],
+    artId: 543, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['trigger działa w OBIE strony (CR 509.1): nosiciel blokujący Wampira i Wampir blokujący nosiciela'],
+  }),
+
+  // ---- Batch 48 — transza C: equip warunkowy, globalny zakaz bloku ----
+
+  // 9. Steelclaw Lance (ELD) — +2/+2 z DWOMA kosztami equip: tańszy dla
+  //    Rycerza (CR 702.6e). Koszt zależy od CELU, nie od samego sprzętu.
+  defineCard({
+    id: 'steelclaw-lance', name: 'Steelclaw Lance', set: 'ELD',
+    types: ['Artifact'], subtypes: ['Equipment'], colors: ['B', 'R'], manaCost: 2,
+    oracleText: 'Equipped creature gets +2/+2.\nEquip Knight {1}\nEquip {3}',
+    imageUri: 'https://cards.scryfall.io/large/front/c/a/cafcf909-d726-4bc2-adf6-c12ca242f0c1.jpg?1783932592',
+    equipment: {
+      equip: 3,
+      pump: { power: 2, toughness: 2 },
+      // Tańszy wariant equipu dla wskazanego PODTYPU (deskryptor, ADR 0002).
+      equipFor: { subtype: 'Knight', equip: 1 },
+    },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'equip',
+        cost: { mana: 3 },
+        effect: [],
+      }),
+    ],
+    artId: 548, plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+    notes: ['dwa koszty equip: {1} na Rycerza, {3} na dowolnego innego stwora — oferta i płatność liczą koszt dla KONKRETNEGO celu'],
+  }),
+
+  // 10. Ruthless Invasion (NPH) — „Nonartifact creatures can't block this
+  //     turn." Koszt {3}{R/P}: phyrexian można zapłacić 2 życiami.
+  defineCard({
+    id: 'ruthless-invasion', name: 'Ruthless Invasion', set: 'NPH',
+    // manaCost = część GENERYCZNA ({3}); pip phyrexian liczy phyrexianManaCost
+    // (konwencja katalogu, wzorzec Porcelain Legionnaire {2}{W/P} → manaCost 2).
+    types: ['Sorcery'], colors: ['R'], manaCost: 3, phyrexianManaCost: 1,
+    oracleText: "({R/P} can be paid with either {R} or 2 life.)\nNonartifact creatures can't block this turn.",
+    imageUri: 'https://cards.scryfall.io/large/front/b/c/bc2bbff9-af57-4858-9351-d148b8c4bc3a.jpg?1783941306',
+    spell: {
+      timing: 'sorcery',
+      targets: [],
+      effects: [{ type: 'creatures_cant_block_this_turn', exceptTypes: ['Artifact'] }],
+    },
+    artId: 556, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+    notes: ['efekt globalny bez celu; zbiór stworów ustalany PRZY ROZSTRZYGNIĘCIU (CR 611.2c) — stwór wchodzący później blokuje normalnie'],
+  }),
+
+  // ---- Batch 48 — transza D: aura warunkowa, formidable ----
+
+  // 11. Clawing Torment (NEO) — aura na artefakt LUB stwora: -1/-1 i zakaz
+  //     bloku (gdy jest stworem) oraz utrata 1 życia w upkeepie kontrolera.
+  defineCard({
+    id: 'clawing-torment', name: 'Clawing Torment', set: 'NEO',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['B'], manaCost: 1,
+    oracleText: 'Enchant artifact or creature\nAs long as enchanted permanent is a creature, it gets -1/-1 and can\'t block.\nEnchanted permanent has "At the beginning of your upkeep, you lose 1 life."',
+    imageUri: 'https://cards.scryfall.io/large/front/6/2/621fce96-5933-4e2b-98ec-2589940e24cb.jpg?1783923889',
+    // „As long as enchanted permanent IS A CREATURE" — pump i zakaz bloku
+    // dotyczą wyłącznie stworów, więc na artefakcie bez typu Creature
+    // po prostu nie mają na czym zadziałać (silnik liczy je dla stworów).
+    // `ownControlOnly: false` — Oracle NIE mówi „you control", więc aura
+    // celuje też w permanenty przeciwnika (to karta-debuff).
+    aura: { enchantType: 'artifact_or_creature', ownControlOnly: false, pump: { power: -1, toughness: -1 }, cantBlock: true },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'upkeep', condition: { enchantedPermanentControllerUpkeep: true } },
+        effect: { type: 'lose_life_enchanted_permanent_controller', amount: 1 },
+      }),
+    ],
+    artId: 546, plan: 'Kamigawa',
+    support: { status: 'supported', limitations: [] },
+    notes: ['utrata życia (CR 118.2), nie obrażenia — prewencja obrażeń jej nie zatrzyma', 'wzorzec triggera upkeepu z Feedback (enchantedPermanentControllerUpkeep)'],
+  }),
+
+  // 12. Stampeding Elk Herd (DTK) — formidable (CR 702.103): przy ataku,
+  //     jeśli łączna moc twoich stworów ≥ 8, cała drużyna dostaje trample.
+  defineCard({
+    id: 'stampeding-elk-herd', name: 'Stampeding Elk Herd', set: 'DTK',
+    types: ['Creature'], subtypes: ['Elk'], colors: ['G'],
+    power: 5, toughness: 5, manaCost: 5,
+    oracleText: 'Formidable — Whenever this creature attacks, if creatures you control have total power 8 or greater, creatures you control gain trample until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/e/7e55e213-6eab-4086-96cd-024de6150fbe.jpg?1783938575',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks', condition: { minTotalPowerYouControl: 8 } },
+        effect: { type: 'your_creatures_gain_keywords_until_end_of_turn', keywords: ['trample'] },
+      }),
+    ],
+    artId: 549, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+    notes: ['formidable to intervening-if (CR 603.4): warunek sprawdzany przy odpaleniu I przy rozstrzyganiu', 'moc liczona EFEKTYWNIE (bufy, liczniki), nie wydrukowana'],
+  }),
+
+  // ---- Batch 48 — transza E: przejmowany artefakt, Dinozaury z flash ----
+
+  // 13. Contested Game Ball (LCI) — piłka przechodzi do gracza, który zada
+  //     ci obrażenia bojowe; po piątym liczniku point znika, dając Skarb.
+  defineCard({
+    id: 'contested-game-ball', name: 'Contested Game Ball', set: 'LCI',
+    types: ['Artifact'], colors: [], manaCost: 2,
+    oracleText: "Whenever you're dealt combat damage, the attacking player gains control of this artifact and untaps it.\n{2}, {T}: Draw a card and put a point counter on this artifact. Then if it has five or more point counters on it, sacrifice it and create a Treasure token.",
+    imageUri: 'https://cards.scryfall.io/large/front/7/1/71cb7776-a6af-4efb-b536-6b9b4f3d3874.jpg?1783913724',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'combat_damage_to_you' },
+        effect: [{ type: 'attacker_gains_control_and_untaps' }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, tap: true },
+        effect: [
+          { type: 'draw_cards', amount: 1 },
+          { type: 'add_counter', counter: 'point', amount: 1 },
+          { type: 'sacrifice_self_if_counters_then_treasure', counter: 'point', threshold: 5 },
+        ],
+      }),
+    ],
+    artId: 551, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['zmiana kontroli jest TRWAŁA (nie „do końca tury") — piłka krąży między graczami', 'próg 5 liczników jest deskryptorem (counter/threshold), nie stałą w kodzie'],
+  }),
+
+  // 14. Cherished Hatchling (RIX) — po śmierci Dinozaury zyskują w tej turze
+  //     flash oraz ETB „możesz walczyć z innym stworem".
+  defineCard({
+    id: 'cherished-hatchling', name: 'Cherished Hatchling', set: 'RIX',
+    types: ['Creature'], subtypes: ['Dinosaur'], colors: ['G'],
+    power: 2, toughness: 1, manaCost: 2,
+    oracleText: 'When this creature dies, you may cast Dinosaur spells this turn as though they had flash, and whenever you cast a Dinosaur spell this turn, it gains "When this creature enters, you may have it fight another target creature."',
+    imageUri: 'https://cards.scryfall.io/large/front/0/a/0a14fe6c-b272-415b-974d-c60d016ab786.jpg?1783935290',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies' },
+        effect: [{ type: 'subtype_spells_gain_flash_and_etb_fight_this_turn', subtype: 'Dinosaur' }],
+      }),
+    ],
+    artId: 554, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['efekt dotyczy PRZYSZŁYCH czarów w tej turze — pozwolenie żyje w stanie tury (subtypeFlashThisTurn), nie na karcie', 'podtyp jest deskryptorem, więc ta sama ścieżka obsłuży przyszłe „Angel spells"'],
   }),
 
 ]);

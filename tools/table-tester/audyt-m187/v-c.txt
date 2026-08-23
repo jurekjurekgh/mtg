@@ -1,0 +1,228 @@
+== NOWA PARTIA: gracz=worek-dziki vs bot=dominaria, seed=66, profil=random, policy-seed=17, tick-rate=0.25 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Mountain (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Dreams of Steel and Oil → cel: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel wskazuje Fathom Fleet Cutthroat z ręki przeciwnika
+  [ROZGRYWKA]   • Fathom Fleet Cutthroat zostaje wygnany
+  [ROZGRYWKA]   • Dreams of Steel and Oil: wybrane karty zostają wygnane
+  [ROZGRYWKA]   • Dreams of Steel and Oil zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Ruinous Rampage
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Dalej (pass)
+  >> Cycling: Stall Out (koszt 2) → dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Początek walki
+  [ROZGRYWKA]   • Aktywujesz cycling: Stall Out
+  [ROZGRYWKA]   • Dobierasz: Canonized in Blood
+  [ROZGRYWKA]   • Ty: zdolność Stall Out rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Moonlit Meditation
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Phyrexian Rager
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Phyrexian Rager wchodzi na pole bitwy
+  [ROZGRYWKA]   • Phyrexian Rager zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Phyrexian Rager — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 19
+  [ROZGRYWKA]   • Phyrexian Rager — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Silken Strength
+  [ptaszek] wyciszam: Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Phyrexian Rager (Ni
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Rzuć: Ruinous Rampage — Wygnaj artefakty (koszt 1RR)
+  [kreator many] Płatność 1RR — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: R, RTapnij: Mountain (R)Tapnij: Plains (W)Ta — źródła: 4
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Ruinous Rampage — tryb: Wygnaj artefakty
+  [ROZGRYWKA]   • Ruinous Rampage — tryb: Wygnaj artefakty zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Faceless Butcher
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faceless Butcher wchodzi na pole bitwy
+  [ROZGRYWKA]   • Faceless Butcher zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faceless Butcher — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Faceless Butcher — cel: Phyrexian Rager
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: Phyrexian Rager — pole bitwy → wygnanie
+  [ROZGRYWKA]   • Faceless Butcher — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ptaszek] wyciszam: Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Faceless Butcher (N
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Urza's Mine
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Dragon Arch
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dragon Arch wchodzi na pole bitwy
+  [ROZGRYWKA]   • Dragon Arch zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Faceless Butcher
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Faceless Butcher zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 18
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Geological Appraiser
+  >> Zagraj: Geological Appraiser (koszt 2RR)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Geological Appraiser
+  [ROZGRYWKA]   • Geological Appraiser wchodzi na pole bitwy
+  [ROZGRYWKA]   • Geological Appraiser zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Geological Appraiser — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odsłaniasz Diplomatic Relations
+  [ROZGRYWKA]   • Wykonujesz discover (3) — trafiono Diplomatic Relations
+  [ROZGRYWKA]   • Geological Appraiser — trigger się rozstrzyga
+  >> Wybierz: Discover — rzucić czy wziąć do ręki? (2 opcje)
+  [modal choice] Wybierz: Discover — rzucić czy wziąć do ręki? Discover: weź kartę do ręki Discover: rzuć bez kosztu many
+  [modal choice]     Discover: weź kartę do ręki
+  [modal choice]   ▶ Discover: rzuć bez kosztu many
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Diplomatic Relations
+  [ROZGRYWKA]   • Diplomatic Relations zostaje rozstrzygnięty (cel nielegalny — bez efektu)
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Expunge → cel: Geological Appraiser
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Geological Appraiser zostaje zniszczony
+  [ROZGRYWKA]   • Expunge zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Faceless Butcher
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Faceless Butcher zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 16
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Dire Fleet Ravager
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Simian Simulacrum
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Simian Simulacrum wchodzi na pole bitwy
+  [ROZGRYWKA]   • Simian Simulacrum zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Simian Simulacrum — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Simian Simulacrum — cel: Faceless Butcher
+  [ptaszek] wyciszam: Aura: Silken Strength (2 opcje)
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Undead Servant
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Undead Servant wchodzi na pole bitwy
+  [ROZGRYWKA]   • Undead Servant zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Undead Servant — trigger (wejście na pole bitwy)
+  >> Aura: Silken Strength (3 opcje)
+  [modal choice] Aura: Silken Strength Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Undead Servant (Nieprzyjaciel) Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Simian Simulacrum (Nieprzyjaciel) Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Faceless Butcher (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Undead Servant (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Simian Simulacrum (Nieprzyjaciel)
+  [modal choice]   ▶ Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Faceless Butcher (Nieprzyjaciel)
+  [kreator many] Płatność 1G — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: GTapnij: Mountain (R)Tapnij: Plains (W)Tapnij — źródła: 4
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Silken Strength → cel: Faceless Butcher
+  [ROZGRYWKA]   • Silken Strength zaczarowuje Faceless Butcher
+  [ROZGRYWKA]   • Silken Strength wchodzi na pole bitwy
+  [ROZGRYWKA]   • Silken Strength — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Silken Strength — trigger bez efektu (nie było czego wykonać)
+  [ROZGRYWKA]   • Undead Servant — trigger bez efektu (nie było czego wykonać)
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Faceless Butcher, Simian Simulacrum
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Faceless Butcher zadaje 5 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 12 → 7
+  [ROZGRYWKA]   • Simian Simulacrum zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 7 → 5
+  [ROZGRYWKA]   • Tura 17 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Frontline War-Rager
+  >> Zagraj: Frontline War-Rager (koszt 2R)
+  [kreator many] Płatność 2R — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: RTapnij: Mountain (R)Tapnij: Plains (W)Tapnij — źródła: 4
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Frontline War-Rager
+  [ROZGRYWKA]   • Frontline War-Rager wchodzi na pole bitwy
+  [ROZGRYWKA]   • Frontline War-Rager zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Wormfang Newt
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Wormfang Newt wchodzi na pole bitwy
+  [ROZGRYWKA]   • Wormfang Newt zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Wormfang Newt — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Wormfang Newt — cel: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: Swamp — pole bitwy → wygnanie
+  [ROZGRYWKA]   • Wormfang Newt — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel zawiesza Mindstab (4 liczniki czasu)
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Faceless Butcher, Undead Servant
+  >> Wybierz: Deklaracja blokujących (3 opcje)
+  [combat wizard] blokuję 1 stworami: Frontline War-Rager (2/3)
+  [combat wizard] Zatwierdź bloki
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 42 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Pain for All · 3 · Enchantment — Aura · Gdy wejdzie na pole bitwy: zaczarowany stwór zadaje obrażenia równe swojej mocy. · Trigger zaczarowany stwór otrzymał obrażenia: X obrażeń każdemu przeciwnikowi. | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Moonlit Meditation · 3 · Enchantment — Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) | Illvoi Operative · 2 · Creature — Jellyfish Rogue · Gdy rzucisz drugi czar w turze: połóż licznik +1/+1. · 2/1 | Dire Fleet Ravager · 5 · Creature — Orc Pirate Wizard · Postrach Dotykanie śmierci · Gdy wejdzie na pole bitwy: każdy gracz traci część życia (zaokrąglone w górę). · 4/4 | Glitch Ghost Surveyor · 3 · Creature — Spirit Scout · Latanie · Gdy wejdzie na pole bitwy: start your engines!. · {3}, wygnaj tę kartę z grobu: dobierz 1 kartę · 2/2
+  MOJE POLA: Silken Strength · 2 · Enchantment Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent. · aura → Faceless Butcher | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Urza's Mine · Land — Urza's Mine · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Faceless Butcher · 4 · Creature — Nightmare Horror · Zasięg · Gdy wejdzie na pole bitwy: wygnij stwora. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · Zasięg · +1/+2 · 2x +1/+1 · zaczarowana: Silken Strength · 5/7 | Dragon Arch · 5 · Artifact · {2}, {T}: wielokolorowy stwór z ręki na pole bitwy | Simian Simulacrum · 3 · Artifact Creature — Ape · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · {2}, {G}, {G}: unearth (z grobu z haste, exile na końcu tury) · 2/1 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Plains, Forest, Mountain, Mountain, Fathom Fleet Cutthroat, Pain for All, Stall Out ⏎ Nowa partia (seed 66). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 16, kliknięte: 17, modale: 3, sondy noop: 34 (panel 30, modal 4)
+== DETEKTORY: brak zgłoszeń ==

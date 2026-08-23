@@ -155,7 +155,11 @@ test('E4 (modal): własny surveil z Curate — nazwy w modalu; surveil bota — 
   // zmienia rozdania, więc dawne seedy przestały dawać WŁASNY surveil.
   // Hunter przeszedł 140 seedów; 5 daje oba warunki naraz (kolejne: 63, 67).
   // M178: seedy przelosowane hunterem na lustrze FR vs FR (1/2/4 dają oba warunki).
-  for (const seed of [1, 2, 4, 6, 10]) {
+  // M191/Batch 46: forgotten-realms +Manor Gate (przeliczone landy) —
+  // hunter po 60 seedach: 10 i 37 dają OBA warunki naraz (konwencja L25).
+  // Batch 47 D (forgotten-realms +Caves of Chaos Adventurer, landy
+  // przeliczone) — hunter: 34 daje OBA warunki naraz (kolejne: 35, 37).
+  for (const seed of [34]) {
     const { modalTexts } = playCollectingModals(makeSession(seed));
     for (const line of modalTexts.filter((t) => /^Wykonujesz surveil/.test(t ?? ''))) {
       checkedMine += 1;
@@ -174,7 +178,10 @@ test('E4 (modal): własny surveil z Curate — nazwy w modalu; surveil bota — 
 
 test('E4 (modal): linie manipulacji w ogóle docierają (surveil/scry rozstrzygnięcia w modalu)', () => {
   let checked = 0;
-  for (const seed of [1, 2, 3, 4, 6]) {
+  // M191/Batch 46: seedy z manipulacją biblioteki po zmianie talii (hunter).
+  // Batch 47 D (forgotten-realms +Caves of Chaos Adventurer) — hunter:
+  // 25, 26, 29, 34, 35, 37 (konwencja L25).
+  for (const seed of [25, 26, 29, 34, 35]) {
     const { modalTexts } = playCollectingModals(makeSession(seed));
     const surveilEnd = modalTexts.filter((t) => /kończ(ysz|y) surveil/.test(t ?? ''));
     checked += surveilEnd.length;

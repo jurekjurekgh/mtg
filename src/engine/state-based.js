@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { moveObjectDirectly } from './objects.js';
 import { deathZoneFor, effectiveKeywords, effectiveToughness } from './permanents.js';
-import { removeIllegalAttachments } from './attachments.js';
+import { removeIllegalAttachments, detachAttachmentsFromHost } from './attachments.js';
 
 /**
  * Regeneracja (CR 701.12): tarcza z efektu „regenerate" zastępuje następne
@@ -213,6 +213,13 @@ export function runStateBasedActions(state) {
   for (const object of [...state.objects.values()]) {
     if (!object.isToken) continue;
     if (object.zone === 'battlefield' || object.zone === 'stack') continue;
+    // M191 (ujawnione benchmarkiem po dodaniu Guildscorn Ward): token znika
+    // z gry (CR 111.7), ale przypięte do niego aury/equipmenty zostawały ze
+    // wskaźnikiem na NIEISTNIEJĄCY obiekt — inwariant „załącznik wskazuje
+    // nieistniejącego gospodarza" wywracał partię. Kasowanie obiektu musi
+    // przejść przez tę samą listę „kto o nim jeszcze pyta", co przy zwykłym
+    // ruchu obiektu (L43: nowa reguła kasująca obiekt = przegląd konsumentów).
+    detachAttachmentsFromHost(state, object.id);
     state.objects.delete(object.id);
     for (const zoneName of ['graveyard', 'exile', 'hand', 'library']) {
       const zone = state.zones[zoneName];

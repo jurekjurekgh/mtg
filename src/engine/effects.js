@@ -11,7 +11,7 @@ import { createBattlefieldToken, nextCopyNumber } from './tokens.js';
 import { effectiveProtectionFromColors } from './attachments.js';
 import { shuffle } from './shuffle.js';
 import { createGameObject } from './identity.js';
-import { attachEquipmentToCreature } from './attachments.js';
+import { attachEquipmentToCreature, detachAttachmentsFromHost } from './attachments.js';
 
 /**
  * Loch „Undercity" (komponent inicjatywy, CR 725; karta „Undercity //
@@ -26,15 +26,15 @@ import { attachEquipmentToCreature } from './attachments.js';
  */
 export const UNDERCITY_ROOMS = Object.freeze([
   // 1. Secret Entrance — szukaj Basic Land do ręki, tasuj.
-  Object.freeze({ name: 'Secret Entrance', effects: Object.freeze([Object.freeze({ type: 'search_library_to_hand', qualifier: { types: ['Basic', 'Land'] } })]) }),
+  Object.freeze({ name: 'Secret Entrance', effects: Object.freeze([Object.freeze({ type: 'search_library_to_hand', qualifier: { types: ['Basic', 'Land'] } })]), leadsTo: Object.freeze(['Forge', 'Lost Well']) }),
   // 2. Forge — dwa liczniki +1/+1 na docelowym stworze (wybór celu).
-  Object.freeze({ name: 'Forge', effects: Object.freeze([Object.freeze({ type: 'add_counter', counter: '+1/+1', amount: 2, target: 'creature' })]) }),
+  Object.freeze({ name: 'Forge', effects: Object.freeze([Object.freeze({ type: 'add_counter', counter: '+1/+1', amount: 2, target: 'creature' })]), leadsTo: Object.freeze(['Trap!', 'Arena']) }),
   // 3. Lost Well — scry 2 (blokująca decyzja gracza).
-  Object.freeze({ name: 'Lost Well', effects: Object.freeze([Object.freeze({ type: 'scry', amount: 2 })]) }),
+  Object.freeze({ name: 'Lost Well', effects: Object.freeze([Object.freeze({ type: 'scry', amount: 2 })]), leadsTo: Object.freeze(['Arena', 'Stash']) }),
   // 4. Trap! — docelowy gracz traci 5 życia (wybór celu).
-  Object.freeze({ name: 'Trap!', effects: Object.freeze([Object.freeze({ type: 'lose_life', amount: 5, target: 'player' })]) }),
+  Object.freeze({ name: 'Trap!', effects: Object.freeze([Object.freeze({ type: 'lose_life', amount: 5, target: 'player' })]), leadsTo: Object.freeze(['Archives']) }),
   // 5. Arena — goad docelowego stwora (musi atakować do końca tury; wybór celu).
-  Object.freeze({ name: 'Arena', effects: Object.freeze([Object.freeze({ type: 'goad', target: 'creature' })]) }),
+  Object.freeze({ name: 'Arena', effects: Object.freeze([Object.freeze({ type: 'goad', target: 'creature' })]), leadsTo: Object.freeze(['Archives', 'Catacombs']) }),
   // 6. Stash — token Treasure (ze zdolnością „{T}, Sacrifice: Add one mana
   //    of any color\", jak każdy Skarb w MtG; mana oznaczona fromTreasure —
   //    Marut, Batch 16. Deskryptor pisany z ręki: effects.js nie importuje
@@ -49,14 +49,14 @@ export const UNDERCITY_ROOMS = Object.freeze([
       trigger: null, targets: null, cycling: null, condition: null, pump: null,
       keywords: null, oncePerTurn: false, mustAttack: false,
     })],
-  })]) }),
+  })]), leadsTo: Object.freeze(['Catacombs']) }),
   // 7. Archives — dobierz kartę.
-  Object.freeze({ name: 'Archives', effects: Object.freeze([Object.freeze({ type: 'draw_cards', amount: 1 })]) }),
+  Object.freeze({ name: 'Archives', effects: Object.freeze([Object.freeze({ type: 'draw_cards', amount: 1 })]), leadsTo: Object.freeze(['Throne of the Dead Three']) }),
   // 8. Catacombs — 4/1 czarny Skeleton z menace.
-  Object.freeze({ name: 'Catacombs', effects: Object.freeze([Object.freeze({ type: 'create_token', cardId: 'token_skeleton', name: 'Skeleton', kind: 'creature', power: 4, toughness: 1, colors: ['B'], types: ['Creature'], subtypes: ['Skeleton'], keywords: ['menace'] })]) }),
+  Object.freeze({ name: 'Catacombs', effects: Object.freeze([Object.freeze({ type: 'create_token', cardId: 'token_skeleton', name: 'Skeleton', kind: 'creature', power: 4, toughness: 1, colors: ['B'], types: ['Creature'], subtypes: ['Skeleton'], keywords: ['menace'] })]), leadsTo: Object.freeze(['Throne of the Dead Three']) }),
   // 9. Throne of the Dead Three — odsłoń 10 kart, połóż STWORA SPOŚRÓD NICH
   //    (wybór celu) z 3× +1/+1 i hexproof do twojej następnej tury, tasuj.
-  Object.freeze({ name: 'Throne of the Dead Three', effects: Object.freeze([Object.freeze({ type: 'reveal_top_put_creature', amount: 10, counters: '+1/+1', countersAmount: 3, hexproofUntilNextTurn: true })]) }),
+  Object.freeze({ name: 'Throne of the Dead Three', effects: Object.freeze([Object.freeze({ type: 'reveal_top_put_creature', amount: 10, counters: '+1/+1', countersAmount: 3, hexproofUntilNextTurn: true })]), leadsTo: Object.freeze([]) }),
 ]);
 
 /** Wirtualne źródło efektów lochu (nie jest obiektem w strefie — jak emblem). */
@@ -246,16 +246,84 @@ function executeRoomEffect(state, roomIndex, playerId) {
  * Po Throne of the Dead Three loch się kończy i dalsze venture nic nie robi.
  * Postęp jest jawny (event + stan w PlayerView) — kartę lochu renderuje stół.
  */
-function ventureIntoUndercity(state, playerId) {
-  const current = state.undercityProgress[playerId] ?? 0;
-  if (current >= UNDERCITY_ROOMS.length) return;
-  const room = current + 1;
+function roomIndexByName(name) {
+  return UNDERCITY_ROOMS.findIndex((room) => room.name === name) + 1;
+}
+
+/** Czy pokój jest ostatni (brak dalszych ścieżek — „Throne of the Dead Three")? */
+function isFinalRoom(roomIndex) {
+  return (UNDERCITY_ROOMS[roomIndex - 1]?.leadsTo ?? []).length === 0;
+}
+
+/**
+ * Batch 47 (CR 701.51b): gracz UKOŃCZYŁ loch, gdy jego znacznik dotarł do
+ * pokoju bez dalszych ścieżek. Undercity jest GRAFEM (M190/B), więc „ostatni
+ * pokój" to nie „pokój numer 9", tylko taki, z którego nie ma wyjścia —
+ * liczone z danych lochu, nie ze stałej.
+ */
+function hasCompletedDungeon(state, playerId) {
+  const room = state.undercityProgress?.[playerId] ?? 0;
+  return room > 0 && isFinalRoom(room);
+}
+
+/** Wchodzi do WSKAZANEGO pokoju: postęp, zdarzenie i efekt pokoju. */
+function enterUndercityRoom(state, playerId, room) {
   state.undercityProgress = { ...state.undercityProgress, [playerId]: room };
   state.events.push(event('ventured_into_undercity', {
     playerId, room, roomName: UNDERCITY_ROOMS[room - 1].name, total: UNDERCITY_ROOMS.length,
-    last: room === UNDERCITY_ROOMS.length,
+    last: isFinalRoom(room),
   }));
   executeRoomEffect(state, room, playerId);
+}
+
+export function ventureIntoUndercityForTest(state, playerId) {
+  return ventureIntoUndercity(state, playerId);
+}
+
+/**
+ * M190/B (zgłoszenie właściciela): Undercity to GRAF, nie lista 1..9.
+ * Oracle (Scryfall tclb/20) daje przy każdym pokoju klauzulę „(Leads to: …)",
+ * a CR 309.4 mówi, że gracz wybiera następny pokój spośród wskazanych
+ * strzałkami. Wcześniej silnik robił `current + 1`, czyli jedną sztywną
+ * trasę przez wszystkie dziewięć pokoi — gracza „przenosiło" do Forge bez
+ * pytania, a loch nigdy nie kończył się po 4–5 pokojach, jak powinien.
+ *
+ * Wybór jest blokującą decyzją (`pendingUndercityRoute`), jak każda inna
+ * decyzja gracza; przy JEDNEJ możliwej ścieżce nie pytamy (spójnie z resztą
+ * silnika — brak realnego wyboru nie zatrzymuje gry).
+ */
+function ventureIntoUndercity(state, playerId) {
+  const current = state.undercityProgress[playerId] ?? 0;
+  if (current === 0) {
+    enterUndercityRoom(state, playerId, 1);
+    return;
+  }
+  if (isFinalRoom(current)) return; // loch ukończony (CR 309.5)
+  const nextRooms = (UNDERCITY_ROOMS[current - 1]?.leadsTo ?? [])
+    .map((name) => ({ name, room: roomIndexByName(name) }))
+    .filter((entry) => entry.room > 0);
+  if (nextRooms.length === 0) return;
+  if (nextRooms.length === 1) {
+    enterUndercityRoom(state, playerId, nextRooms[0].room);
+    return;
+  }
+  state.pendingUndercityRoute = {
+    playerId,
+    fromRoom: current,
+    fromRoomName: UNDERCITY_ROOMS[current - 1].name,
+    candidates: nextRooms,
+    restorePriorityTo: state.turn.priorityPlayerId,
+  };
+  state.turn.priorityPlayerId = playerId;
+  state.events.push(event('undercity_route_required', {
+    playerId, fromRoom: current, fromRoomName: UNDERCITY_ROOMS[current - 1].name,
+    candidates: nextRooms.map((entry) => ({ room: entry.room, roomName: entry.name })),
+  }));
+}
+
+/** Domyka decyzję trasy — wywoływane przez komendę resolve_undercity_route. */
+export function enterChosenUndercityRoom(state, playerId, room) {
+  enterUndercityRoom(state, playerId, room);
 }
 
 /** Tasuje listę obiektów w exile i przenosi je na spód biblioteki właściciela. */
@@ -619,6 +687,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (amount === 'artifacts_you_control') {
       amount = countArtifactsControlled(state, sourceObject.controllerId);
     }
+    // Batch 46 (Bring Low): „If that creature has a +1/+1 counter on it,
+    // deals 5 damage instead." Warunek sprawdzamy przy ROZSTRZYGNIĘCIU
+    // (CR 608.2) — licznik dołożony w oknie odpowiedzi podbija kwotę.
+    const bonus = effect.amountIfTargetHasCounter;
+    if (bonus && targetId != null) {
+      const target = state.objects.get(targetId);
+      if ((target?.counters?.[bonus.counter] ?? 0) > 0) amount = bonus.amount;
+    }
     dealNonCombatDamage(state, sourceObject, targetId, amount);
     return;
   }
@@ -645,6 +721,95 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     for (const objectId of hit) dealNonCombatDamage(state, sourceObject, objectId, amount);
     return;
+  }
+  // Batch 46 (Glint-Sleeve Artisan) — FABRICATE N (CR 702.122): „When this
+  // creature enters, put N +1/+1 counters on it OR create N 1/1 colorless
+  // Servo artifact creature tokens." Wybór należy do KONTROLERA, więc jest
+  // blokującą decyzją (jak amass/endure), a nie deterministycznym efektem.
+  // Batch 46 (Rediscover the Way III) — „Whenever you cast a noncreature
+  // spell THIS TURN, target creature you control gains double strike until
+  // end of turn." Rozdział nadaje ŹRÓDŁU (Sadze) zdolność wyzwalaną na czas
+  // tury — wykorzystujemy istniejący mechanizm grantAbilitiesUntilEndOfTurn,
+  // więc trigger znika razem z końcem tury bez osobnego sprzątania.
+  if (effect.type === 'grant_double_strike_on_noncreature_cast_this_turn') {
+    const source = state.objects.get(sourceObject.id);
+    if (!source || source.zone !== 'battlefield') return;
+    const granted = Object.freeze({
+      type: 'triggered',
+      trigger: Object.freeze({
+        event: 'you_cast_noncreature_spell',
+        requiresTarget: Object.freeze({ type: 'creature_you_control' }),
+      }),
+      effect: Object.freeze([Object.freeze({
+        type: 'grant_keywords_until_end_of_turn', keywords: Object.freeze(['double_strike']),
+      })]),
+    });
+    const grants = [...(source.abilityGrants ?? []), granted];
+    state.objects.set(source.id, Object.freeze({ ...source, abilityGrants: Object.freeze(grants) }));
+    state.events.push(event('keyword_granted', {
+      objectId: source.id, cardId: source.cardId,
+      keywords: ['double_strike'], delayed: true, untilEndOfTurn: true,
+    }));
+    return;
+  }
+  // Batch 46 (Gila Courser) — IMPULSE EXILE: „exile the top card of your
+  // library. Until the end of your next turn, you may play that card."
+  // Karta idzie do exile ze znacznikiem `playableUntilTurn` (numer TWOJEJ
+  // następnej tury); ofertę rzutu/zagrania z exile enumeruje spells.js,
+  // a znacznik wygasa sam — nie trzeba go sprzątać cleanupem.
+  if (effect.type === 'exile_top_playable_until_next_turn') {
+    const controllerId = sourceObject.controllerId;
+    const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === controllerId);
+    if (topId == null) return;
+    const card = state.objects.get(topId);
+    const exileId = `exile-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, topId, 'exile', exileId);
+    // „Until the end of your NEXT turn" — jeśli to twoja tura, chodzi o tę
+    // następną (numer + 2 przy dwóch graczach); poza swoją turą o najbliższą.
+    const isMyTurn = state.turn.activePlayerId === controllerId;
+    const playableUntilTurn = state.turn.number + (isMyTurn ? 2 : 1);
+    // Batch 47 (Caves of Chaos Adventurer): „If you've COMPLETED A DUNGEON,
+    // you may play that card this turn without paying its mana cost.
+    // Otherwise, you may play that card this turn." Warunek jest deskryptorem
+    // efektu (ADR 0002), a jego spełnienie liczy silnik ze stanu lochu:
+    // ukończenie = dotarcie do pokoju bez dalszych ścieżek (Throne of the
+    // Dead Three). Bez deskryptora zachowanie zostaje jak dotąd — karta
+    // grywalna za pełny koszt (Gila Courser).
+    const freeCondition = effect.freeIfCondition ?? null;
+    const withoutPaying = freeCondition?.type === 'completed_dungeon'
+      && hasCompletedDungeon(state, controllerId);
+    state.objects.set(exileId, Object.freeze({
+      ...moved, playableUntilTurn,
+      ...(withoutPaying ? { playableWithoutPaying: true } : {}),
+    }));
+    state.events.push(event('object_exiled', {
+      fromId: topId, objectId: exileId, object: state.objects.get(exileId),
+      cardId: card?.cardId ?? null, playerId: controllerId, playableUntilTurn,
+      ...(withoutPaying ? { playableWithoutPaying: true } : {}),
+    }));
+    return;
+  }
+  if (effect.type === 'fabricate') {
+    const amount = effect.amount ?? 1;
+    const controllerId = sourceObject.controllerId;
+    const source = state.objects.get(sourceObject.id);
+    // Stwór mógł opuścić pole bitwy, zanim trigger się rozstrzygnął — wtedy
+    // liczniki nie mają na czym usiąść, ale tokeny powstają normalnie
+    // (CR 702.122a: wybór nadal należy do gracza).
+    state.pendingFabricate = {
+      playerId: controllerId,
+      sourceId: sourceObject.id,
+      cardId: sourceObject.cardId ?? null,
+      amount,
+      hostOnBattlefield: Boolean(source && source.zone === 'battlefield'),
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('fabricate_choice_required', {
+      playerId: controllerId, sourceId: sourceObject.id,
+      cardId: sourceObject.cardId ?? null, amount,
+    }));
+    return true; // decyzja blokuje dalsze efekty
   }
   if (effect.type === 'fight') {
     // Batch 45 (Malamet Battle Glyph, CR 701.12): dwa stwory-cele zadają
@@ -2714,6 +2879,50 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // Batch 23: Feedback — „At the beginning of the upkeep of enchanted
   // enchantment's controller, this Aura deals 1 damage to that player."
   // attachedTo wskazuje enchantment, jego kontroler to cel obrażeń.
+  if (effect.type === 'lose_life_enchanted_permanent_controller') {
+    // Batch 48 (Clawing Torment, NEO): „Enchanted permanent has »At the
+    // beginning of your upkeep, you LOSE 1 LIFE.«" Wariant Feedbacku, ale
+    // utrata zycia (CR 118.2), nie obrazenia — nie da sie jej zapobiec
+    // prewencja obrazen ani przekierowac.
+    const enchantedId = sourceObject.attachedTo;
+    if (!enchantedId) return;
+    const enchanted = state.objects.get(enchantedId);
+    if (!enchanted || enchanted.zone !== 'battlefield') return;
+    changeLife(state, enchanted.controllerId, -(effect.amount ?? 1));
+    return;
+  }
+  if (effect.type === 'your_creatures_gain_keywords_until_end_of_turn') {
+    // Batch 48 (Stampeding Elk Herd, DTK): formidable — „creatures YOU
+    // control gain trample until end of turn". Zbior stworow ustalany PRZY
+    // ROZSTRZYGNIECIU (CR 611.2c): stwor wchodzacy pozniej nie dostaje nic.
+    // Slowa kluczowe sa deskryptorem, wiec ta sama sciezka obsluzy przyszle
+    // „gain flying" itd.
+    const controllerId = sourceObject.controllerId;
+    const keywords = effect.keywords ?? [];
+    if (keywords.length === 0) return;
+    const affected = [];
+    for (const id of state.zones.battlefield) {
+      const object = state.objects.get(id);
+      if (!object || object.kind !== 'creature' || object.controllerId !== controllerId) continue;
+      affected.push(id);
+    }
+    if (affected.length === 0) return;
+    state.untilEndOfTurnBuffs = [
+      ...(state.untilEndOfTurnBuffs ?? []),
+      Object.freeze({
+        controllerId,
+        objectIds: Object.freeze(affected),
+        power: 0,
+        toughness: 0,
+        keywords: Object.freeze([...keywords]),
+      }),
+    ];
+    state.events.push(event('mass_stats_modified', {
+      playerId: controllerId, objectIds: [...affected],
+      power: 0, toughness: 0, keywords: [...keywords],
+    }));
+    return;
+  }
   if (effect.type === 'damage_enchanted_permanent_controller') {
     const enchantedId = sourceObject.attachedTo;
     if (!enchantedId) return;
@@ -2818,6 +3027,89 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     state.objects.set(targetId, Object.freeze({ ...object, cantBlock: true }));
     state.events.push(event('cant_block_granted', { objectId: targetId, cardId: object.cardId }));
+    return;
+  }
+  if (effect.type === 'attacker_gains_control_and_untaps') {
+    // Batch 48 (Contested Game Ball, LCI): „Whenever you're dealt combat
+    // damage, the ATTACKING PLAYER gains control of this artifact and untaps
+    // it." Zmiana kontroli jest TRWALA (bez tempControlUntilTurn) — pilka
+    // przechodzi z rak do rak przez cala partie.
+    const source = state.objects.get(sourceObject.id);
+    if (!source || source.zone !== 'battlefield') return;
+    const attackerId = state.combat?.attackingPlayerId
+      ?? state.players.find((p) => p.id !== source.controllerId)?.id
+      ?? null;
+    if (attackerId == null || attackerId === source.controllerId) return;
+    const previous = source.controllerId;
+    state.objects.set(source.id, Object.freeze({ ...source, controllerId: attackerId, tapped: false }));
+    state.events.push(event('control_changed', {
+      objectId: source.id, cardId: source.cardId,
+      controllerId: attackerId, fromControllerId: previous,
+    }));
+    return;
+  }
+  if (effect.type === 'sacrifice_self_if_counters_then_treasure') {
+    // Batch 48 (Contested Game Ball): „Then if it has five or more point
+    // counters on it, sacrifice it and create a Treasure token." Prog jest
+    // DESKRYPTOREM (counter/threshold), nie stala w kodzie (ADR 0002).
+    const source = state.objects.get(sourceObject.id);
+    if (!source || source.zone !== 'battlefield') return;
+    const counterName = effect.counter ?? 'point';
+    const have = source.counters?.[counterName] ?? 0;
+    if (have < (effect.threshold ?? 5)) return;   // ponizej progu — nic sie nie dzieje
+    const controllerId = source.controllerId;
+    applyEffect(state, { type: 'sacrifice_permanent' }, source, []);
+    applyEffect(state, {
+      type: 'create_token', cardId: 'token_treasure', name: 'Treasure', kind: 'artifact',
+      colors: [], types: ['Artifact'], subtypes: ['Treasure'],
+      abilities: [Object.freeze({
+        type: 'activated', timing: 'instant', keyword: null,
+        cost: Object.freeze({ tap: true, sacrificeSelf: true }),
+        effect: Object.freeze({ type: 'add_mana', amount: 1, fromTreasure: true }),
+        trigger: null, targets: null, cycling: null, condition: null, pump: null,
+        keywords: null, oncePerTurn: false, mustAttack: false,
+      })],
+    }, { ...source, controllerId }, []);
+    return;
+  }
+  if (effect.type === 'subtype_spells_gain_flash_and_etb_fight_this_turn') {
+    // Batch 48 (Cherished Hatchling, RIX): „you may cast Dinosaur spells this
+    // turn as though they had flash, and whenever you cast a Dinosaur spell
+    // this turn, it gains »When this creature enters, you may have it fight
+    // another target creature.«"
+    //
+    // Efekt dotyczy PRZYSZLYCH czarow w tej turze, wiec zapisujemy go jako
+    // pozwolenie na poziomie STANU (jak inne efekty „this turn"), a nie na
+    // konkretnej karcie. Podtyp jest deskryptorem — ta sama sciezka obsluzy
+    // przyszle „Angel spells" itd.
+    state.subtypeFlashThisTurn = [
+      ...(state.subtypeFlashThisTurn ?? []),
+      Object.freeze({
+        controllerId: sourceObject.controllerId,
+        subtype: effect.subtype,
+        etbFight: true,
+      }),
+    ];
+    return;
+  }
+  if (effect.type === 'creatures_cant_block_this_turn') {
+    // Batch 48 (Ruthless Invasion, NPH): „Nonartifact creatures can't block
+    // this turn." Efekt GLOBALNY (bez celu) — dotad `cant_block` dzialal
+    // wylacznie na jeden wskazany cel. Wyjatek typu jest DESKRYPTOREM
+    // (`exceptTypes`), wiec przyszle „non-Zombie creatures can't block"
+    // pojda ta sama sciezka bez zmian w silniku (ADR 0002).
+    //
+    // CR 611.2c: zbior stworow ustalamy PRZY ROZSTRZYGNIECIU — stwor
+    // wchodzacy pozniej w tej turze moze blokowac normalnie.
+    const except = effect.exceptTypes ?? [];
+    for (const id of state.zones.battlefield) {
+      const object = state.objects.get(id);
+      if (!object || object.kind !== 'creature') continue;
+      if (except.some((type) => (object.types ?? []).includes(type))) continue;
+      if (object.cantBlock === true) continue;
+      state.objects.set(id, Object.freeze({ ...object, cantBlock: true }));
+      state.events.push(event('cant_block_granted', { objectId: id, cardId: object.cardId }));
+    }
     return;
   }
   if (effect.type === 'cant_be_blocked') {
@@ -3003,6 +3295,99 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Blokująca decyzja — rozstrzyganie czaru czeka (state.pendingSpell,
     // pozostałe efekty dokończy resolve_graveyard_top_choice{done:true}).
     return true;
+  }
+  if (effect.type === 'graveyard_card_to_library_top_choice') {
+    // Batch 47 (Sequestered Stash, KLD): „Then you MAY put an artifact card
+    // from your graveyard on top of your library." Wariant Forever Young:
+    // JEDNA karta (maxCards) i wybor OPCJONALNY, a rodzaj karty niesie
+    // deskryptor (`filter.anyTypes`) — silnik nie zna nazw kart (ADR 0002).
+    // Decyzja jest blokujaca i nastepuje PO millu, wiec kandydatem moze byc
+    // takze artefakt dopiero co zmielony (CR 608.2).
+    const ownerId = sourceObject.controllerId;
+    const anyTypes = effect.filter?.anyTypes ?? null;
+    const candidates = state.zones.graveyard.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      if (!object || object.controllerId !== ownerId || object.name != null) return false;
+      if (anyTypes) return anyTypes.some((type) => (object.types ?? []).includes(type));
+      return true;
+    });
+    if (candidates.length === 0) return; // „may" bez kandydatow — brak decyzji
+    state.pendingGraveyardToTop = {
+      playerId: ownerId,
+      candidateIds: [...candidates],
+      filter: effect.filter ?? null,
+      maxCards: 1,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = ownerId;
+    state.events.push(event('graveyard_top_choice_required', {
+      playerId: ownerId, candidateIds: [...candidates], optional: true, maxCards: 1,
+    }));
+    return true;
+  }
+  if (effect.type === 'each_player_exiles_top_face_down') {
+    // Batch 47 (Pyxis of Pandemonium, THS): „{T}: Each player exiles the top
+    // card of their library face down." Kazdy gracz wygania SWOJ wierzch,
+    // karta lezy ZAKRYTA (CR 708 — nikt jej nie zna), a zrodlo pamieta, ktore
+    // karty wygnalo (CR 400.7): druga zdolnosc odkrywa wylacznie te wygnane
+    // TYM artefaktem, wiec bez powiazania nie dalaby sie wykonac poprawnie.
+    const source = state.objects.get(sourceObject.id) ?? sourceObject;
+    const exiledIds = [...(source.exiledCardIds ?? [])];
+    for (const player of state.players) {
+      const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === player.id);
+      if (topId == null) continue; // pusta biblioteka — ten gracz nic nie wygania
+      const exileId = `exile-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, topId, 'exile', exileId);
+      state.objects.set(exileId, Object.freeze({ ...moved, faceDown: true }));
+      exiledIds.push(exileId);
+      // Zdarzenie BEZ cardId: karta jest zakryta, wiec jej nazwa nie jest
+      // informacja publiczna (mgla wojny — nawet wlasciciel jej nie oglada).
+      state.events.push(event('object_exiled', {
+        fromId: topId, objectId: exileId, object: state.objects.get(exileId),
+        playerId: player.id, faceDown: true,
+      }));
+    }
+    if (state.objects.has(source.id)) {
+      state.objects.set(source.id, Object.freeze({ ...state.objects.get(source.id), exiledCardIds: exiledIds }));
+    }
+    return;
+  }
+  if (effect.type === 'turn_up_exiled_and_put_permanents') {
+    // Batch 47 (Pyxis of Pandemonium): „{7}, {T}, Sacrifice this artifact:
+    // Each player turns face up all cards they own exiled with this artifact,
+    // then puts all permanent cards among them onto the battlefield."
+    // Zrodlo jest juz poswiecone (koszt), wiec liste wygnanych czytamy z LKI
+    // obiektu przekazanego jako sourceObject.
+    const linked = [...(state.objects.get(sourceObject.id)?.exiledCardIds ?? sourceObject.exiledCardIds ?? [])];
+    if (linked.length === 0) return;
+    const NONPERMANENT = ['Instant', 'Sorcery'];
+    for (const exileId of linked) {
+      const card = state.objects.get(exileId);
+      if (!card || card.zone !== 'exile') continue;
+      // Odkrycie: karta przestaje byc zakryta niezaleznie od tego, czy jest
+      // permanentem (Oracle: „turns face up ALL cards they own").
+      state.objects.set(exileId, Object.freeze({ ...card, faceDown: false }));
+      state.events.push(event('card_revealed', {
+        playerId: card.ownerId ?? card.controllerId, objectId: exileId, cardId: card.cardId ?? null,
+      }));
+      const types = card.types ?? [];
+      const isPermanent = types.length > 0 && !types.some((type) => NONPERMANENT.includes(type));
+      if (!isPermanent) continue; // instant/sorcery zostaje w wygnaniu
+      // „puts … onto the battlefield" — pod kontrole WLASCICIELA karty
+      // (Oracle: „all cards THEY OWN"), nie kontrolera artefaktu.
+      const ownerId = card.ownerId ?? card.controllerId;
+      const battlefieldId = `permanent-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, exileId, 'battlefield', battlefieldId);
+      state.objects.set(battlefieldId, Object.freeze({
+        ...moved, controllerId: ownerId, faceDown: false,
+        summoningSickness: (moved.types ?? []).includes('Creature'),
+      }));
+      state.events.push(event('permanent_entered_battlefield', {
+        objectId: battlefieldId, object: state.objects.get(battlefieldId),
+        cardId: moved.cardId ?? null, controllerId: ownerId, fromExile: true,
+      }));
+    }
+    return;
   }
   if (effect.type === 'epic_experiment') {
     // Epic Experiment (OTC): „Exile the top X cards of your library. You may
@@ -3271,6 +3656,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return; // cel zniknął (CR 608.2b)
     if (object.isToken) {
+      // M191: przed skasowaniem tokena ODEPNIJ od niego aury/equipment —
+      // inaczej zostaje „wisząca" aura wskazująca nieistniejący obiekt
+      // (inwariant wywraca partię). Ta sama reguła co w SBA (CR 111.7).
+      detachAttachmentsFromHost(state, targetId);
       state.objects.delete(targetId);
       state.zones.battlefield = state.zones.battlefield.filter((id) => id !== targetId);
       state.events.push(event('token_ceased_to_exist', {
@@ -3874,6 +4263,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       controllerId,
       sourceId: sourceObject.id,
       landIds: lands,
+      // Batch 46 (Roiling Regrowth): „Sacrifice a land." jest OBOWIĄZKOWE,
+      // w odróżnieniu od Springbloom Druida („you may sacrifice a land").
+      // Bez tej flagi gracz dostawał opcję „nie poświęcaj" przy czarze,
+      // który jej nie ma (CR 601.2h — koszt/efekt obowiązkowy).
+      mandatory: Boolean(effect.mandatory),
     };
     state.events.push(event('springbloom_choice_required', { controllerId }));
     return;
@@ -4128,9 +4522,18 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       cardNames: handIds.map((id) => state.objects.get(id)?.cardId ?? null),
       sourceCardId: sourceObject.cardId ?? null, revealedToId: sourceObject.controllerId,
     }));
+    // Batch 47 (Divest, 2XM): Oracle zawęża wybór do „an artifact or creature
+    // card". Dotąd filtr był ZASZYTY na „nonland" (Toll of the Invasion), więc
+    // Divest wybierałby też instanty i enchantmenty. Filtr jest teraz
+    // deskryptorem karty (ADR 0002 — reguła w danych, nie w kodzie):
+    // `filter.anyTypes` = karta musi mieć CO NAJMNIEJ JEDEN z tych typów.
+    // Bez filtra zachowanie zostaje jak dotąd (dowolna karta nielandowa).
+    const anyTypes = effect.filter?.anyTypes ?? null;
     const nonland = handIds.filter((id) => {
       const o = state.objects.get(id);
-      return o && o.kind !== 'land' && !(o.types ?? []).includes('Land');
+      if (!o) return false;
+      if (anyTypes) return anyTypes.some((type) => (o.types ?? []).includes(type));
+      return o.kind !== 'land' && !(o.types ?? []).includes('Land');
     });
     const declineAmount = effect.declineAmount ?? 2;
     // M174/B (Toll of the Invasion, WAR): „You choose a nonland card from

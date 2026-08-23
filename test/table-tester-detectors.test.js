@@ -31,6 +31,84 @@ test('detectRawText: łapie surowy identyfikator zdarzenia (snake_case)', () => 
   assert.ok(found.some((f) => /identyfikator/i.test(f.message)));
 });
 
+// M189 (pętla jakości, transkrypt audyt-m187/g6): „token_wizard — trigger…"
+// przeszedł przez detektor, bo SNAKE_CASE_EVENT wymaga DWÓCH podkreślników,
+// a identyfikatory tokenów mają jeden („token_wizard", „token_squirrel").
+// Klasa L27/L40: „0 zgłoszeń" znaczyło „nie mam takiej reguły".
+// M190/A: po zmianie etykiety („dodaj 1 manę dowolnego koloru") wzorzec
+// wyciszający zdolności many przestał pasować i sonda zgłaszała je jako
+// „oferty bez skutku" (mana w puli nie wchodzi do fingerprintu — L12).
+test('detectNoEffectOffers: zdolność many z LICZBĄ w etykiecie jest wyciszona', () => {
+  const found = detectNoEffectOffers([{
+    applied: true, source: 'panel',
+    label: 'Aktywuj: Heap Gate (Ty) (koszt 1, T) — dodaj 1 manę dowolnego koloru',
+    probe: { ok: true, changed: false },
+  }]);
+  assert.deepEqual(found, [], `zdolność many to nie „oferta bez skutku": ${JSON.stringify(found)}`);
+});
+
+// M189/Z4 (transkrypt audyt-m187/v-b): detektor „noop" zgłaszał ofertę
+// Bone Splinters celującą we własnego stwora poświęcanego jako koszt — ale
+// to przypadek M102/U8, ROZWIĄZANY świadomie: wariant jest legalny (CR
+// 601.2c), spychany na koniec listy i etykieta SAMA ostrzega „UWAGA: czar
+// fizzluje". Zgłaszanie go co przebieg to szum, który przykrywa realne
+// znaleziska (L12: odróżniaj artefakt narzędzia od błędu produktu).
+test('detectNoopOffers: oferta z JAWNYM ostrzeżeniem o fizzlu to nie zgłoszenie', () => {
+  const found = detectNoEffectOffers([{
+    applied: true,
+    source: 'modal',
+    label: 'Rzuć: Bone Splinters (koszt B) → cel: Esper Stormblade (Ty) — poświęć Esper Stormblade (Ty) — UWAGA: czar fizzluje (cel poświęcony jako koszt)',
+    probe: { ok: true, changed: true, fizzle: true },
+  }]);
+  assert.deepEqual(found, [], `ostrzeżona oferta nie jest zgłoszeniem: ${JSON.stringify(found)}`);
+});
+
+test('detectNoopOffers: fizzle BEZ ostrzeżenia nadal zgłaszany (kontrola)', () => {
+  const found = detectNoEffectOffers([{
+    applied: true,
+    source: 'panel',
+    label: 'Rzuć: Shatter → cel: Bladed Sentinel',
+    probe: { ok: true, changed: true, fizzle: true },
+  }]);
+  assert.equal(found.length, 1, 'realny fizzle bez ostrzeżenia nadal łapany');
+});
+
+// M189/Z3 (transkrypt audyt-m187/g13): „Wybierz: Cel (7 opcji)" pochodziło
+// z Cuombajj Witches — `resolve_opponent_target`, czyli OBOWIĄZKOWEJ decyzji
+// wskazania celu (CR 601.2c). Ptaszek wyciszenia się jej nie należy (gracz
+// musi wskazać cel), a detektor zgłaszał brak ptaszka. Klasa L12: fałszywy
+// alarm narzędzia, nie błąd produktu — poprawiamy TESTER.
+test('detectGroupWithoutTick: obowiązkowa decyzja „Wskaż cel obrażeń" to NIE zgłoszenie', () => {
+  const found = detectGroupWithoutTick([
+    { label: 'Wybierz: Cel (7 opcji)', hasTick: false, commandKey: '{"type":"resolve_opponent_target","targetId":"orc-army"}' },
+  ]);
+  assert.deepEqual(found, [],
+    `wybór celu narzucony przez kartę przeciwnika nie jest wyciszalny: ${JSON.stringify(found)}`);
+});
+
+test('detectGroupWithoutTick: grupa CELU CZARU bez ptaszka nadal zgłaszana (kontrola)', () => {
+  const found = detectGroupWithoutTick([
+    { label: 'Wybierz: Cel czaru (3 opcje)', hasTick: false, commandKey: '{"type":"cast_spell","objectId":"shatter"}' },
+  ]);
+  assert.equal(found.length, 1, 'realny brak ptaszka nadal łapany (M98)');
+});
+
+test('detectRawText: łapie surowy identyfikator TOKENU (jedno podkreślenie)', () => {
+  const found = detectRawText([
+    '  [ROZGRYWKA]   • token_wizard — trigger (rzucenie czaru niebędącego stworem)',
+  ]);
+  assert.ok(found.some((f) => /identyfikator/i.test(f.message)),
+    `token_* w tekście dla gracza musi być zgłoszony: ${JSON.stringify(found)}`);
+});
+
+test('detectRawText: nie myli nazwy tokenu z poprawnym opisem', () => {
+  const found = detectRawText([
+    '  [ROZGRYWKA]   • Wizard zadaje 1 obrażenie (Ty)',
+    '  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Squirrel (1/1)',
+  ]);
+  assert.deepEqual(found, [], 'poprawne polskie opisy tokenów bez zgłoszeń');
+});
+
 test('detectRawText: nie zgłasza poprawnego polskiego tekstu', () => {
   const found = detectRawText([
     '  [ROZGRYWKA]   • Nieprzyjaciel: Krotiq — biblioteka → ręka',

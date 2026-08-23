@@ -163,10 +163,13 @@ test('M101/D: trigger jako JEDYNY obiekt na stosie też raportuje swój skutek',
   // (5 opóźnionych; kolejne trafienia: 3, 4, 9, 10, 12).
   // Seed 8 po Batchu 44 B2 (innistrad +Frightful Delusion) — hunter
   // (6 opóźnionych; kolejne: 9, 11, 14).
-  const { shown, log } = playCollectingPanel(makeSession(8, 'alara.txt'));
+  // Seed 5 po Batchu 46 T1 (alara +Infectious Horror, przeliczone landy) —
+  // hunter (2 opóźnione; kolejne trafienia: 16, 20). Konwencja L25: zmiana
+  // składu talii przelosowuje seedy testów scenariuszowych.
+  const { shown, log } = playCollectingPanel(makeSession(5, 'alara.txt'));
   const panel = shown.join('\n');
   const opoznione = log.filter((l) => /trigger się rozstrzyga \(opóźniony\)/.test(l));
-  assert.ok(opoznione.length > 0, 'seed 8 miał zawierać opóźnione triggery — zmienił się przebieg partii');
+  assert.ok(opoznione.length > 0, 'seed 5 miał zawierać opóźnione triggery — zmienił się przebieg partii');
   for (const line of opoznione) {
     assert.ok(panel.includes(line), `opóźniony trigger poza panelem: „${line}"`);
   }

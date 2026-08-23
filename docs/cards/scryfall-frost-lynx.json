@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Frost+Lynx&set=m15",
+  "print": "Frost Lynx (M15)",
+  "name": "Frost Lynx",
+  "mana_cost": "{2}{U}",
+  "cmc": 3.0,
+  "type_line": "Creature — Elemental Cat",
+  "oracle_text": "When this creature enters, tap target creature an opponent controls. That creature doesn't untap during its controller's next untap step.",
+  "colors": [
+    "U"
+  ],
+  "keywords": [],
+  "set": "m15",
+  "collector_number": "55",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/1/619268d2-f7a8-48cd-b17b-197e82474b13.jpg?1783939193"
+  },
+  "pobrano": "2026-08-23",
+  "power": "2",
+  "toughness": "2"
+}

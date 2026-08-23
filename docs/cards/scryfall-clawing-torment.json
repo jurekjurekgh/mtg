@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Clawing+Torment&set=neo",
+  "print": "Clawing Torment (NEO)",
+  "name": "Clawing Torment",
+  "mana_cost": "{B}",
+  "cmc": 1.0,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Enchant artifact or creature\nAs long as enchanted permanent is a creature, it gets -1/-1 and can't block.\nEnchanted permanent has \"At the beginning of your upkeep, you lose 1 life.\"",
+  "colors": [
+    "B"
+  ],
+  "keywords": [
+    "Enchant"
+  ],
+  "set": "neo",
+  "collector_number": "91",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/2/621fce96-5933-4e2b-98ec-2589940e24cb.jpg?1783923889"
+  },
+  "pobrano": "2026-08-23"
+}

@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Guildscorn+Ward&set=gtc",
+  "print": "gtc",
+  "name": "Guildscorn Ward",
+  "mana_cost": "{W}",
+  "cmc": 1,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Enchant creature\nEnchanted creature has protection from multicolored.",
+  "colors": [
+    "W"
+  ],
+  "keywords": [
+    "Enchant"
+  ],
+  "set": "gtc",
+  "set_name": "Gatecrash",
+  "collector_number": "15",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/8/9/89c5c496-0a3e-40e1-84ac-8ad3a9d8352b.jpg?1783940143"
+  },
+  "pobrano": "2026-08-22"
+}

@@ -58,8 +58,11 @@ class MiniEl {
 }
 
 function installMiniDom() {
-  const ids = ['selftest', 'seed', 'deck-human', 'deck-bot', 'new-game', 'table-note',
-    'banner', 'status', 'stack-zone', 'bf-enemy', 'bf-own', 'grave-enemy', 'grave-own',
+  // M198/A+B: 'status' (pusty szary pasek) i 'table-note' (pas komunikatow)
+  // usuniete z ukladu; komunikaty ida do warstwy 'notice'.
+  const ids = ['selftest', 'seed', 'deck-human', 'deck-bot', 'new-game',
+    'notice', 'notice-body', 'notice-ok', 'notice-close',
+    'banner', 'stack-zone', 'bf-enemy', 'bf-own', 'grave-enemy', 'grave-own',
     'exile-zone', 'hand', 'actions', 'log', 'card-preview', 'card-preview-body',
     'card-preview-close', 'hover-preview', 'context-menu', 'context-menu-body', 'context-menu-close',
     'export-replay', 'import-replay', 'resume-replay', 'resume-save', 'autosave-info',
@@ -68,12 +71,15 @@ function installMiniDom() {
     // Wskaźnik tury (2026-08-07): stała informacja w lewym górnym rogu.
     'turn-indicator',
     'life-own', 'life-enemy', 'library-own', 'library-enemy',
-    'library-menu-btn', 'library-menu-panel', 'library-preview', 'zone-inspector-close',
-    'replay-out', 'replay-summary', 'replay-download', 'replay-file', 'image-mode',
+    // M197/A3A+A5: przycisk inspektora żyje w boksie liczników stref, a sekcja
+    // „podgląd topu (syntetyczny)" zniknęła — zostaje sam panel inspektora.
+    // M198/C+D: boksy per gracz + osobny przycisk inspektora.
+    'library-menu-panel', 'zone-inspector-close', 'zone-inspector-open',
+    'meta-foe', 'meta-own',
+    'replay-out', 'replay-summary', 'replay-download', 'replay-file',
     'actions-drawer', 'actions-drawer-close', 'actions-fab', 'actions-fab-count',
-    'bot-reasoning', 'bot-reasoning-count',
     // M25: sekcja „Przebieg tur (dla AI)" — tekst, licznik, przełącznik i kopiowanie.
-    'turn-history', 'turn-history-count', 'turn-history-copy', 'turn-history-1', 'turn-history-2',
+    'turn-history', 'turn-history-count', 'turn-history-copy', 'turn-history-copy-all', 'turn-history-select',
     // M24: loch Undercity — karta specjalna na stole z zaznaczeniem pokoju.
     'daynight',
     'undercity',
@@ -171,7 +177,10 @@ globalThis.REPO_DECKS = {
   // Dwukolorowa talia pod kreator many (E.3a): 2 kolory lądów + tanie czary
   // z kolorowym wymaganiem (Curate {1}{U}) — gwarantuje niejednoznaczne
   // pokrycie kosztu (Wyspa+Wyspa+Równina, seed 1).
-  'many-wizard': '# Talia many-wizard\n\n26x Island\n6x Plains\n8x Curate\n',
+  // M194/K1 (Batch 47): katalog ma DWA egzemplarze Curate (BRO i STX), więc
+  // talia wskazuje DRUK — sama nazwa jest odtąd niejednoznaczna i parser
+  // odrzuca ją jawnym błędem, zamiast cicho brać pierwszy pasujący wpis.
+  'many-wizard': '# Talia many-wizard\n\n26x Island\n6x Plains\n8x Curate (BRO)\n',
 };
 await import('../src/table/main.js');
 
@@ -183,13 +192,25 @@ function restart(seed = '13') {
 test('strona stołu przechodzi self-test i startuje partię na pierwszej decyzji', () => {
   restart();
   assert.match(textOf(dom.get('selftest')), /✓ Headless engine/, 'self-test nie przeszedł');
-  assert.equal(textOf(dom.get('table-note')), '', 'błąd startu partii');
+  // M198/B: brak błędu = warstwa komunikatów nie została otwarta.
+  assert.doesNotMatch(dom.get('notice').className, /active/,
+    `błąd startu partii: ${textOf(dom.get('notice-body'))}`);
   const first = pickActionButton(dom.get('actions'));
   assert.ok(first, 'brak przycisków akcji po starcie');
-  assert.match(textOf(dom.get('status')), /Tura 1/);
-  assert.match(textOf(dom.get('status')), /ręka 7/);
-  // Ręka gracza rysuje nazwy kart z registry.
-  assert.match(textOf(dom.get('hand')), /Highland|Forest|Woolly|Snarling|Lyre|Panic/);
+  // M197/A2: tekstowy pasek statusu usunięty (dublował panel graczy) —
+  // numer tury żyje teraz w stałym wskaźniku „turn-indicator".
+  assert.match(textOf(dom.get('turn-indicator')), /T\.\s*1|Tura 1/);
+  // Rozmiar ręki sprawdzamy na SAMEJ ręce (niżej: siedem kafli), nie na
+  // usuniętym pasku statusu — to ta sama informacja u źródła.
+  // Ręka gracza rysuje nazwy kart z registry. Test sprawdza REGUŁĘ („kafle
+  // ręki mają nazwy z rejestru, nie surowe id"), więc zamiast listy tytułów
+  // zależnej od tasowania (L25/L53 — każda zmiana talii przelosowuje rękę)
+  // pytamy o kształt: siedem kafli z nazwą i linią typów.
+  const handText = textOf(dom.get('hand'));
+  assert.ok(handText.length > 0, 'ręka nie jest pusta');
+  assert.match(handText, /Creature|Instant|Sorcery|Land|Artifact|Enchantment/,
+    `kafle ręki niosą linię typów: ${JSON.stringify(handText.slice(0, 120))}`);
+  assert.ok(!/\bcard-\d|\bhand-\d/.test(handText), 'brak surowych identyfikatorów obiektów');
 });
 
 test('kreator talii pokazuje supported, liczy kopie i egzekwuje min. 15 nielandowych', () => {
@@ -232,7 +253,7 @@ test('gracz klika się przez całą partię do baneru końca gry', () => {
   assert.match(textOf(dom.get('banner')), /Koniec gry — wygrywa: (Gracz|Bot)/, `brak baneru końca gry: ${textOf(dom.get('banner'))}`);
   assert.match(textOf(log), /Tura gracza/, 'log nie opisuje tur');
   assert.ok(botPauses > 0, 'partia z botem powinna mieć pauzy po istotnych zagraniach bota');
-  assert.ok(!textOf(dom.get('table-note')), textOf(dom.get('table-note')));
+  assert.doesNotMatch(dom.get('notice').className, /active/, textOf(dom.get('notice-body')));
 });
 
 test('eksport i import zapisu partii działają przez przyciski strony', () => {
@@ -260,8 +281,10 @@ test('mirror match: obaj gracze mogą grać tą samą talię repo', () => {
   dom.get('deck-human').value = 'green';
   dom.get('deck-bot').value = 'green';
   dom.get('new-game').click();
-  assert.equal(textOf(dom.get('table-note')), '', `start mirror nie powinien zgłaszać błędu: ${textOf(dom.get('table-note'))}`);
-  assert.match(textOf(dom.get('status')), /Tura 1/);
+  assert.doesNotMatch(dom.get('notice').className, /active/, `start mirror nie powinien zgłaszać błędu: ${textOf(dom.get('notice-body'))}`);
+  // M197/A2: tekstowy pasek statusu usunięty (dublował panel graczy) —
+  // numer tury żyje teraz w stałym wskaźniku „turn-indicator".
+  assert.match(textOf(dom.get('turn-indicator')), /T\.\s*1|Tura 1/);
 });
 
 /** Symulacja dotyku: touchstart (x0) → touchend (x1) na warstwie. */
@@ -346,7 +369,8 @@ test('bug A (iOS): klik w tło świeżo otwartego modala jest ignorowany (odprys
   mock.timers.setTime(realNow);
   try {
     restart();
-    dom.get('library-menu-btn').click();
+    // M198/D: inspektor otwiera osobny, wycentrowany przycisk pod boksami.
+    dom.get('zone-inspector-open').click();
     const panel = dom.get('library-menu-panel');
     assert.equal(panel.className, 'modal active', 'panel biblioteki nie otworzył się');
     // Klik dokładnie w tło modala od razu po otwarciu — ignorowany.
@@ -531,7 +555,7 @@ test('kreator many (E.3a): dwukolorowa płatność Curate otwiera wizard, źród
   sources[0].click();
   assert.equal(dom.get('mana-wizard').className, 'modal', 'po zebraniu sumy kreator ma się zamknąć');
   assert.match(textOf(dom.get('stack-zone')), /Curate/, 'Curate po zebraniu many nie trafił na stos');
-  assert.equal(textOf(dom.get('table-note')), '');
+  assert.doesNotMatch(dom.get('notice').className, /active/);
 });
 
 test('kreator many (E.3a): Anuluj przerywa płatność — rzut nie odpala, mana zostaje w puli', () => {
@@ -548,7 +572,7 @@ test('kreator many (E.3a): Anuluj przerywa płatność — rzut nie odpala, mana
   cancel.click();
   assert.equal(dom.get('mana-wizard').className, 'modal', 'Anuluj ma zamknąć kreator');
   assert.ok(!textOf(dom.get('stack-zone')).includes('Curate'), 'anulowany rzut nie może trafić na stos');
-  assert.equal(textOf(dom.get('table-note')), '');
+  assert.doesNotMatch(dom.get('notice').className, /active/);
 });
 
 // --- Zgłoszenia 2026-08-07 przed scaleniem PR #32 ---------------------------
@@ -561,7 +585,9 @@ test('Tasuj talię: przycisk podmienia seed na losowy (nie rusza bieżącej part
   const after = Number.parseInt(dom.get('seed').value, 10);
   assert.ok(Number.isInteger(after) && after >= 1 && after <= 999999, `seed po tasowaniu: ${after}`);
   // Bieżąca partia (status) pozostaje nietknięta — seed działa przy następnym starcie.
-  assert.match(textOf(dom.get('status')), /Tura 1/);
+  // M197/A2: tekstowy pasek statusu usunięty (dublował panel graczy) —
+  // numer tury żyje teraz w stałym wskaźniku „turn-indicator".
+  assert.match(textOf(dom.get('turn-indicator')), /T\.\s*1|Tura 1/);
 });
 
 test('autosave: po zagraniu zapis trafia do localStorage, a Wznów autosave odtwarza partię', () => {
@@ -580,7 +606,7 @@ test('autosave: po zagraniu zapis trafia do localStorage, a Wznów autosave odtw
   // Wznowienie przez przycisk: sesja odtwarza zapis (stan po dobraniu).
   const lifeBefore = textOf(dom.get('life-own'));
   dom.get('resume-save').click();
-  assert.match(textOf(dom.get('table-note')), /Wznowiono partię/);
+  assert.match(textOf(dom.get('notice-body')), /Wznowiono partię/);
   assert.equal(textOf(dom.get('life-own')), lifeBefore, 'wznowienie zmieniło stan gry');
   // Po wznowieniu autosave NIE jest świeżą grą — wciąż niesie ten sam replay.
   const raw2 = localStorage.getItem('mtg-table-autosave-v1');
@@ -596,8 +622,10 @@ test('auto-start: świeży localStorage startuje nową partię (bez błędu wzno
   localStorage.clear();
   dom.get('seed').value = '5';
   dom.get('new-game').click();
-  assert.equal(textOf(dom.get('table-note')), '');
-  assert.match(textOf(dom.get('status')), /Tura 1/);
+  assert.doesNotMatch(dom.get('notice').className, /active/);
+  // M197/A2: tekstowy pasek statusu usunięty (dublował panel graczy) —
+  // numer tury żyje teraz w stałym wskaźniku „turn-indicator".
+  assert.match(textOf(dom.get('turn-indicator')), /T\.\s*1|Tura 1/);
 });
 
 test('wskaźnik tury (2026-08-07): stała informacja „Tura N, gracz, faza" w lewym górnym rogu', () => {

@@ -228,13 +228,20 @@ test('B1: ODZYSKANIE inicjatywy ≠ „po raz pierwszy" — firstTime tylko przy
   assert.equal(second.playerId, 'p1');
   assert.equal(second.firstTime, true, 'p1 enters the dungeon');
   assert.equal(state.undercityProgress.p2, 3, 'postęp p2 zachowany');
-  // 3) p2 ODZYSKUJE inicjatywę — nadal jest w lochu (pokój 3) → NIE „po raz
-  //    pierwszy"; venture awansuje do pokoju 4 (zachowanie CR 725.4).
+  // 3) p2 ODZYSKUJE inicjatywę — nadal jest w lochu (Lost Well) → NIE „po raz
+  //    pierwszy"; venture rusza dalej (zachowanie CR 725.4).
+  // M190/B: Lost Well ma DWIE drogi (Arena, Stash), więc venture otwiera
+  // wybór ścieżki zamiast awansować automatycznie (CR 309.4).
   const regained = castExplorer(state, 'p2', 'ex3');
   assert.equal(regained.playerId, 'p2');
   assert.equal(regained.firstTime, false,
-    `odzyskanie po utracie NIE jest „po raz pierwszy" (pokój 3 w toku), a było: ${JSON.stringify(regained)}`);
-  assert.equal(state.undercityProgress.p2, 4, 'venture awansuje pokój (Trap!)');
+    `odzyskanie po utracie NIE jest „po raz pierwszy" (loch w toku), a było: ${JSON.stringify(regained)}`);
+  assert.ok(state.pendingUndercityRoute, 'venture pyta o dalszą drogę z Lost Well');
+  const route = playerView(state, 'p2').legalCommands
+    .find((c) => c.type === 'resolve_undercity_route' && c.roomName === 'Arena');
+  assert.ok(route, 'Arena jest jedną z dróg z Lost Well');
+  assert.ok(execute(state, route).ok);
+  assert.equal(state.undercityProgress.p2, 5, 'po wyborze gracz jest w Arenie');
 });
 
 test('B2: ukończony loch (9/9) — brak „po raz pierwszy" i brak dalszego venture', () => {

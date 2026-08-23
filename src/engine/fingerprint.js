@@ -38,7 +38,7 @@ function stableStringify(value) {
  */
 export function stateFingerprint(state) {
   const objects = [...state.objects.values()]
-    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, keywordGrants, abilityGrants, typeGrant, subtypes, transformTo, untapLockedBy, types, entersTapped, attachedTo, baseKind, bestow, aura, equipment, backup, colors, phyrexianManaCost, goaded, goadedUntilTurn, detained, detainedUntilTurn, hexproofUntilTurn, enchantPlayer, enchantedPlayerId, cantBlock, cantBeBlocked, lostKeywordsUntilEOT, subtypesBeforeOverride, madnessReady }) => ({
+    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, keywordGrants, abilityGrants, typeGrant, subtypes, transformTo, untapLockedBy, types, entersTapped, attachedTo, baseKind, bestow, aura, equipment, backup, colors, phyrexianManaCost, goaded, goadedUntilTurn, detained, detainedUntilTurn, hexproofUntilTurn, enchantPlayer, enchantedPlayerId, cantBlock, cantBlockPrinted, cantBeBlocked, lostKeywordsUntilEOT, subtypesBeforeOverride, madnessReady }) => ({
       id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets,
       abilities: abilities ?? [],
       counters: { ...(counters ?? {}) }, faceDown: Boolean(faceDown),
@@ -60,7 +60,9 @@ export function stateFingerprint(state) {
       // raportowała fałszywe „brak skutku" dla legalnej, działającej
       // zdolności, (b) dwa stany różniące się prawem do blokowania miały
       // identyczny fingerprint, więc weryfikacja replayów ich nie odróżniała.
-      cantBlock: Boolean(cantBlock), cantBeBlocked: Boolean(cantBeBlocked),
+      // M187/N1: wydrukowane „can't block\" (token Mite) jest TRWAŁE i musi
+      // być w odcisku niezależnie od efektu „until end of turn\".
+      cantBlock: Boolean(cantBlock), cantBlockPrinted: Boolean(cantBlockPrinted), cantBeBlocked: Boolean(cantBeBlocked),
       // M159/Z1 (Żywy Tester, klasa M122/#1): stan „do końca tury” i madness
       // na obiekcie też są częścią stanu gry (Wishful Merfolk — utrata
       // keywordów; Revolutionist — gotowość rzutu za madness z exile).
@@ -140,6 +142,10 @@ export function stateFingerprint(state) {
     } : null,
     initiativePlayerId: state.initiativePlayerId ?? null,
     undercityProgress: { ...(state.undercityProgress ?? {}) },
+    // M190/B: oczekujący wybór trasy jest częścią stanu (determinizm replayów).
+    pendingUndercityRoute: state.pendingUndercityRoute
+      ? { playerId: state.pendingUndercityRoute.playerId, fromRoom: state.pendingUndercityRoute.fromRoom }
+      : null,
     descendedThisTurn: { ...(state.descendedThisTurn ?? {}) },
     abilityActivatedThisTurn: { ...(state.abilityActivatedThisTurn ?? {}) },
     delayedTriggers: (state.delayedTriggers ?? []).map((entry) => ({ ...entry })),

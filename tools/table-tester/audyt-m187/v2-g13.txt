@@ -1,0 +1,302 @@
+== NOWA PARTIA: gracz=mirrodin vs bot=worek-legend, seed=55, profil=explorer, policy-seed=13, tick-rate=0.3 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Steel Sabotage
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Gloomfang Mauler
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Wybierasz, którą kartę odrzucić przy limicie ręki
+  >> Wybierz: Karta do odrzucenia (8 opcji)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Steel Sabotage Odrzuć: Shatter Odrzuć: Carapace Forger Odrzuć: Consume Spirit Odrzuć: Divine Offering Odrzuć: Bladed Sentinel Odrzuć: Steelfin Whale Odrzuć: Gloomfang Mauler
+  [modal choice]   ▶ Odrzuć: Steel Sabotage
+  [modal choice]     Odrzuć: Shatter
+  [modal choice]     Odrzuć: Carapace Forger
+  [modal choice]     Odrzuć: Consume Spirit
+  [modal choice]     Odrzuć: Divine Offering
+  [modal choice]     Odrzuć: Bladed Sentinel
+  [modal choice]     Odrzuć: Steelfin Whale
+  [modal choice]     Odrzuć: Gloomfang Mauler
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Dunland Crebain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dunland Crebain wchodzi na pole bitwy
+  [ROZGRYWKA]   • Dunland Crebain zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Dunland Crebain — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Orc Army (0/0)
+  [ROZGRYWKA]   • Orc Army wchodzi na pole bitwy
+  [ROZGRYWKA]   • Orc Army dostaje +2 liczniki +1/+1 (razem 2)
+  [ROZGRYWKA]   • Dunland Crebain — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Awaken the Sleeper
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Wybierasz, którą kartę odrzucić przy limicie ręki
+  >> Wybierz: Karta do odrzucenia (8 opcji)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Shatter Odrzuć: Carapace Forger Odrzuć: Consume Spirit Odrzuć: Divine Offering Odrzuć: Awaken the Sleeper Odrzuć: Bladed Sentinel Odrzuć: Steelfin Whale Odrzuć: Gloomfang Mauler
+  [modal choice]   ▶ Odrzuć: Shatter
+  [modal choice]     Odrzuć: Carapace Forger
+  [modal choice]     Odrzuć: Consume Spirit
+  [modal choice]     Odrzuć: Divine Offering
+  [modal choice]     Odrzuć: Awaken the Sleeper
+  [modal choice]     Odrzuć: Bladed Sentinel
+  [modal choice]     Odrzuć: Steelfin Whale
+  [modal choice]     Odrzuć: Gloomfang Mauler
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Secluded Steppe (wchodzi zatapnięty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Dunland Crebain, Orc Army
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Dunland Crebain zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 19
+  [ROZGRYWKA]   • Orc Army zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 19 → 17
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Stoic Rebuttal
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Wybierasz, którą kartę odrzucić przy limicie ręki
+  >> Wybierz: Karta do odrzucenia (8 opcji)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Carapace Forger Odrzuć: Consume Spirit Odrzuć: Divine Offering Odrzuć: Stoic Rebuttal Odrzuć: Awaken the Sleeper Odrzuć: Bladed Sentinel Odrzuć: Steelfin Whale Odrzuć: Gloomfang Mauler
+  [modal choice]   ▶ Odrzuć: Carapace Forger
+  [modal choice]     Odrzuć: Consume Spirit
+  [modal choice]     Odrzuć: Divine Offering
+  [modal choice]     Odrzuć: Stoic Rebuttal
+  [modal choice]     Odrzuć: Awaken the Sleeper
+  [modal choice]     Odrzuć: Bladed Sentinel
+  [modal choice]     Odrzuć: Steelfin Whale
+  [modal choice]     Odrzuć: Gloomfang Mauler
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Scroll Thief
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Scroll Thief wchodzi na pole bitwy
+  [ROZGRYWKA]   • Scroll Thief zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Soulmender
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Soulmender wchodzi na pole bitwy
+  [ROZGRYWKA]   • Soulmender zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Dunland Crebain, Orc Army
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Dunland Crebain zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 16
+  [ROZGRYWKA]   • Orc Army zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 14
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Cycling: Gloomfang Mauler (koszt 2) → szukaj: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz cycling: Gloomfang Mauler
+  [ROZGRYWKA]   • Szukasz karty w bibliotece (Gloomfang Mauler) — wybiera, którą wziąć do ręki albo rezygnuje
+  >> Szukanie: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odsłaniasz Swamp
+  [ROZGRYWKA]   • Ty: Swamp — biblioteka → ręka
+  [ROZGRYWKA]   • Aktywujesz cycling: Gloomfang Mauler
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Cuombajj Witches
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Soulmender — zdobycie życia
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 21
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Soulmender rozstrzygnięta
+  [ROZGRYWKA]   • Cuombajj Witches wchodzi na pole bitwy
+  [ROZGRYWKA]   • Cuombajj Witches zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Dunland Crebain, Orc Army, Scroll Thief
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Dunland Crebain zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 13
+  [ROZGRYWKA]   • Orc Army zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 11
+  [ROZGRYWKA]   • Scroll Thief zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 10
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Scroll Thief — trigger (obrażenia bojowe graczowi)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Scroll Thief — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Horizon Spellbomb
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  [ptaszek] wyciszam: Cel czaru: Consume Spirit (7 opcji)
+  >> Zagraj: Horizon Spellbomb (koszt 1)
+  [kreator many] Płatność 1 — tapuj źródła po jednympozostało 1 manyTapnij: Island (U)Tapnij: Island (U)Tapnij: Swamp (B)Anuluj płatność — źródła: 3
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Horizon Spellbomb
+  [ROZGRYWKA]   • Horizon Spellbomb wchodzi na pole bitwy
+  [ROZGRYWKA]   • Horizon Spellbomb zostaje rozstrzygnięty
+  [ptaszek] wyciszam: Aktywuj: Horizon Spellbomb (Ty) (koszt 2, T, poświęć) — szukaj w bibli
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Sifter Wurm
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Cuombajj Witches: wskazujesz drugi cel obrażeń
+  >> Wybierz: Cel (7 opcji)
+  [modal choice] Wybierz: Cel Wskaż cel obrażeń: Dunland Crebain (Nieprzyjaciel) Wskaż cel obrażeń: Orc Army (Nieprzyjaciel) Wskaż cel obrażeń: Scroll Thief (Nieprzyjaciel) Wskaż cel obrażeń: Soulmender (Nieprzyjaciel) Wskaż cel obrażeń: Cuombajj Witches (Nieprzyjaciel) Wskaż cel obrażeń: Ty Wskaż cel obrażeń: Nieprzyjaciel
+  [modal choice]   ▶ Wskaż cel obrażeń: Dunland Crebain (Nieprzyjaciel)
+  [modal choice]     Wskaż cel obrażeń: Orc Army (Nieprzyjaciel)
+  [modal choice]     Wskaż cel obrażeń: Scroll Thief (Nieprzyjaciel)
+  [modal choice]     Wskaż cel obrażeń: Soulmender (Nieprzyjaciel)
+  [modal choice]     Wskaż cel obrażeń: Cuombajj Witches (Nieprzyjaciel)
+  [modal choice]     Wskaż cel obrażeń: Ty
+  [modal choice]     Wskaż cel obrażeń: Nieprzyjaciel
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Soulmender — zdobycie życia
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 21 → 22
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Soulmender rozstrzygnięta
+  [ROZGRYWKA]   • Cuombajj Witches zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 10 → 9
+  [ROZGRYWKA]   • Cuombajj Witches zadaje 1 obrażenie (Dunland Crebain)
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Cuombajj Witches rozstrzygnięta
+  [ROZGRYWKA]   • Dunland Crebain ginie
+  [ROZGRYWKA]   • Sifter Wurm wchodzi na pole bitwy
+  [ROZGRYWKA]   • Sifter Wurm zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Sifter Wurm — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel wykonuje scry (patrzy na 3 karty)
+  [ROZGRYWKA]   • Sifter Wurm — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Lash of the Balrog
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 22 → 23
+  [ROZGRYWKA]   • Nieprzyjaciel kończy scry — odkłada na spód biblioteki (1/3)
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Orc Army, Scroll Thief
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Orc Army zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 9 → 7
+  [ROZGRYWKA]   • Scroll Thief zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 7 → 6
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Scroll Thief — trigger (obrażenia bojowe graczowi)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Scroll Thief — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Aktywuj: Horizon Spellbomb (Ty) (koszt 2, T, poświęć) — szukaj w bibliotece do ręki
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Island (U)Tapnij: Island (U)Tapnij: Swamp (B)Anuluj płatność — źródła: 3
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Aktywujesz zdolność: Horizon Spellbomb
+  [ROZGRYWKA]   • Szukasz karty w bibliotece (Horizon Spellbomb) — wybiera, którą wziąć do ręki albo rezygnuje
+  [ROZGRYWKA]   • Ty: zdolność Horizon Spellbomb rozstrzygnięta
+  >> Wybierz: Szukanie w bibliotece (5 opcji)
+  [modal choice] Wybierz: Szukanie w bibliotece Szukanie — nie znajduj karty (rezygnuję) Szukanie: Mountain Szukanie: Forest Szukanie: Plains Szukanie: Swamp
+  [modal choice]     Szukanie — nie znajduj karty (rezygnuję)
+  [modal choice]   ▶ Szukanie: Mountain
+  [modal choice]     Szukanie: Forest
+  [modal choice]     Szukanie: Plains
+  [modal choice]     Szukanie: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odsłaniasz Mountain
+  [ROZGRYWKA]   • Ty: Mountain — biblioteka → ręka
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Cel czaru: Consume Spirit (7 opcji)
+  [modal choice] Cel czaru: Consume Spirit Rzuć: Consume Spirit (koszt X1B, X=0) → cel: Sifter Wurm (Nieprzyjaciel) Rzuć: Consume Spirit (koszt X1B, X=0) → cel: Cuombajj Witches (Nieprzyjaciel) Rzuć: Consume Spirit (koszt X1B, X=0) → cel: Soulmender (Nieprzyjaciel) Rzuć: Consume Spirit (koszt X1B, X=0) → cel: Scroll Thief (Nieprzyjaciel) Rzuć: Consume Spirit (koszt X1B, X=0) → cel: Orc Army (Nieprzyjaciel) Rzuć: Consume Spirit (koszt X1B, X=0) → cel: Nieprzyjaciel Rzuć: Consume Spirit (koszt X1B, X=0) → cel: Ty
+  [modal choice]   ▶ Rzuć: Consume Spirit (koszt X1B, X=0) → cel: Sifter Wurm (Nieprzyjaciel)
+  [modal choice]     Rzuć: Consume Spirit (koszt X1B, X=0) → cel: Cuombajj Witches (Nieprzyjaciel)
+  [modal choice]     Rzuć: Consume Spirit (koszt X1B, X=0) → cel: Soulmender (Nieprzyjaciel)
+  [modal choice]     Rzuć: Consume Spirit (koszt X1B, X=0) → cel: Scroll Thief (Nieprzyjaciel)
+  [modal choice]     Rzuć: Consume Spirit (koszt X1B, X=0) → cel: Orc Army (Nieprzyjaciel)
+  [modal choice]     Rzuć: Consume Spirit (koszt X1B, X=0) → cel: Nieprzyjaciel
+  [modal choice]     Rzuć: Consume Spirit (koszt X1B, X=0) → cel: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Consume Spirit → cel: Sifter Wurm
+  [ROZGRYWKA]   • Ty: życie 6 → 6
+  [ROZGRYWKA]   • Consume Spirit zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Seer's Lantern
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Cuombajj Witches: wskazujesz drugi cel obrażeń
+  >> Wybierz: Cel (7 opcji)
+  [modal choice] Wybierz: Cel Wskaż cel obrażeń: Orc Army (Nieprzyjaciel) Wskaż cel obrażeń: Scroll Thief (Nieprzyjaciel) Wskaż cel obrażeń: Soulmender (Nieprzyjaciel) Wskaż cel obrażeń: Cuombajj Witches (Nieprzyjaciel) Wskaż cel obrażeń: Sifter Wurm (Nieprzyjaciel) Wskaż cel obrażeń: Ty Wskaż cel obrażeń: Nieprzyjaciel
+  [modal choice]   ▶ Wskaż cel obrażeń: Orc Army (Nieprzyjaciel)
+  [modal choice]     Wskaż cel obrażeń: Scroll Thief (Nieprzyjaciel)
+  [modal choice]     Wskaż cel obrażeń: Soulmender (Nieprzyjaciel)
+  [modal choice]     Wskaż cel obrażeń: Cuombajj Witches (Nieprzyjaciel)
+  [modal choice]     Wskaż cel obrażeń: Sifter Wurm (Nieprzyjaciel)
+  [modal choice]     Wskaż cel obrażeń: Ty
+  [modal choice]     Wskaż cel obrażeń: Nieprzyjaciel
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Soulmender — zdobycie życia
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 23 → 24
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Soulmender rozstrzygnięta
+  [ROZGRYWKA]   • Cuombajj Witches zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 6 → 5
+  [ROZGRYWKA]   • Cuombajj Witches zadaje 1 obrażenie (Orc Army)
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Cuombajj Witches rozstrzygnięta
+  [ROZGRYWKA]   • Seer's Lantern wchodzi na pole bitwy
+  [ROZGRYWKA]   • Seer's Lantern zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Lab Rats
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Seer's Lantern — dodanie many do puli
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 50 | Koniec partii — wygrywa Bot ---
+  STOS: Trigger: Scroll Thief (obrażenia bojowe graczowi)
+  AKCJE: (brak)
+  RĘKA: Divine Offering · 2 · Instant · zniszcz artefakt; zyskujesz życie równe jego kosztowi many · cel: artefakt | Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · 3/4 | Bladed Sentinel · 4 · Artifact Creature — Construct · {W}: zdobądź Czujność do końca tury · 2/4 | Awaken the Sleeper · 4 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste + zniszcz cały wyposażony Equipment · cel: stwór | Stoic Rebuttal · 3 · Instant · skontruj czar · cel: czar na stosie | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Secluded Steppe · Land · Cycling {W} → dobierz kartę · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Orc Army · 0 · Creature — Orc Army · −1 · 2x +1/+1 · 2/2 | Scroll Thief · 3 · Creature — Merfolk Rogue · Gdy zada obrażenia graczowi: dobierz 1 kartę. · 1/3 | Soulmender · 1 · Creature — Human Cleric · {T}: zyskaj 1 życie · 1/1 | Cuombajj Witches · 2 · Creature — Human Wizard · {T}: dowolny cel — 1 obrażenie + 1 obrażenie · 1/3 | Sifter Wurm · 7 · Creature — Wurm · Zadeptywanie · Gdy wejdzie na pole bitwy: scry 3. · 7/7 | Seer's Lantern · 3 · Artifact · {T}: dodaj manę · {2}, {T}: scry 1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Divine Offering, Island, Consume Spirit, Carapace Forger, Steelfin Whale, Shatter, Bladed Sentinel ⏎ Nowa partia (seed 55). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 14, kliknięte: 21, modale: 8, sondy noop: 51 (panel 31, modal 20)
+== DETEKTORY: 1 zgłoszeń (do weryfikacji) ==
+  [ui] 1
+    - Grupa wariantów czaru/zdolności bez ptaszka wyciszenia
+      Wybierz: Cel (7 opcji)

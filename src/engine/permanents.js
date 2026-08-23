@@ -329,6 +329,23 @@ function anthemBonuses(state, object) {
  * odczycie względem kolorów gospodarza. Liczone przy każdym odczycie —
  * odłączenie aury znosi ograniczenie natychmiast (bez cleanupu).
  */
+/**
+ * Czy stwór ma zakaz blokowania (CR 509.1a) — JEDNO miejsce prawdy dla
+ * wszystkich ścieżek (enumeracja ofert, walidacja komendy, widok, boty).
+ *
+ * Dwa różne źródła zakazu, wcześniej sklejone w jednym polu `cantBlock`
+ * (klasa L14 — jedna instrukcja, dwie zasady):
+ *  - `cantBlockPrinted` — cecha WYDRUKOWANA na obiekcie („This token can't
+ *    block\" — Phyrexian Mite, Goblin Construct); trwała, cleanup jej nie
+ *    zdejmuje;
+ *  - `cantBlock` — efekt „can't block this turn\" (Panic Spellbomb);
+ *    wygasa w cleanup (CR 514.2).
+ * Ograniczenia z załączników liczy attachmentRestrictions (read-time).
+ */
+export function creatureCantBlock(object) {
+  return Boolean(object?.cantBlockPrinted || object?.cantBlock);
+}
+
 export function attachmentRestrictions(state, object) {
   const restrictions = { cantAttack: false, cantBlock: false };
   if (!state || object.zone !== 'battlefield' || object.kind !== 'creature') return restrictions;
@@ -443,6 +460,30 @@ export function effectivePower(object, state = null) {
     + untilEndOfTurnBonuses(state, object).power;
 }
 
+/**
+ * M188/A (uwaga właściciela): bonus P/T pochodzący z efektów CIĄGŁYCH,
+ * których nie widać w polach obiektu — statyki warunkowe (CR 604.3, Evangel
+ * of Synthesis: „as long as you've drawn two or more cards"), załączniki,
+ * anthemy i buffy „do końca tury". Kafel pokazuje go jako badge.
+ *
+ * Świadomie POMIJAMY `powerModifier`/`toughnessModifier` i liczniki +1/+1:
+ * mają na kaflu własne badge („+2/+2", „2x +1/+1"), więc wliczenie ich tutaj
+ * pokazałoby graczowi ten sam bonus dwa razy. Klasa M175/A3 — badge liczony
+ * jako różnica po stronie renderu zawsze wychodził zerowy, bo widok wysyła
+ * wartości EFEKTYWNE; różnicę musi policzyć warstwa, która zna składniki.
+ */
+export function grantedStatBonus(object, state = null) {
+  if (!object || object.power === null) return { power: 0, toughness: 0 };
+  const attachment = attachmentBonuses(state, object);
+  const statics = staticBonuses(state, object);
+  const anthem = anthemBonuses(state, object);
+  const untilEot = untilEndOfTurnBonuses(state, object);
+  return {
+    power: attachment.power + statics.power + anthem.power + untilEot.power,
+    toughness: attachment.toughness + statics.toughness + anthem.toughness + untilEot.toughness,
+  };
+}
+
 export function effectiveToughness(object, state = null) {
   if (object.toughness === null) return null;
   const base = object.faceDown ? 2 : (object.tempBasePT?.toughness ?? object.toughness);
@@ -461,6 +502,48 @@ export function effectiveAbilities(object) {
   const grants = object?.abilityGrants ?? [];
   if (grants.length === 0) return object?.abilities ?? [];
   return [...(object.abilities ?? []), ...grants];
+}
+
+/**
+ * Batch 47 (Enduring Sliver, CR 604): zdolności AKTYWOWANE nadane obiektowi
+ * przez cudzą zdolność statyczną — „Other Sliver creatures you control have
+ * outlast {2}". Efekt jest CIĄGŁY, więc liczymy go przy każdym odczycie
+ * (jak anthemBonuses), a nie zapisujemy na obiekcie: zniknięcie lorda ma
+ * natychmiast odbierać zdolność, bez sprzątania stanu.
+ *
+ * Zwracana lista jest doklejana na KOŃCU zdolności własnych, więc indeksy
+ * zdolności wydrukowanych nie zmieniają się (komendy niosą abilityIndex).
+ */
+export function grantedActivatedAbilities(state, object) {
+  if (!state || object?.zone !== 'battlefield' || object.faceDown) return [];
+  if (object.kind !== 'creature') return [];
+  const out = [];
+  for (const source of state.objects.values()) {
+    if (source.zone !== 'battlefield' || source.controllerId !== object.controllerId) continue;
+    for (const ability of source.abilities ?? []) {
+      if (ability?.type !== 'static' || !ability.scope?.grantsAbilities?.length) continue;
+      const scope = ability.scope;
+      if (scope.subtype && !(object.subtypes ?? []).includes(scope.subtype)) continue;
+      // „OTHER Sliver creatures" — źródło nie nadaje zdolności samemu sobie
+      // (ma ją wydrukowaną, inaczej pokazalibyśmy ofertę dwa razy).
+      if (scope.excludeSelf !== false && source.id === object.id) continue;
+      if (!staticConditionHolds(state, source, ability.condition)) continue;
+      out.push(...scope.grantsAbilities);
+    }
+  }
+  return out;
+}
+
+/**
+ * Zdolności, które obiekt MOŻE aktywować: wydrukowane + nadane grantem
+ * jednorazowym + nadane cudzą statyką. Jedno źródło prawdy dla oferty
+ * (legalActivatedAbilities) i walidacji (activateAbility) — rozjazd tych
+ * dwóch list to klasa L48 (oferta pokazuje ruch, którego silnik nie przyjmie).
+ */
+export function activatableAbilities(state, object) {
+  const own = effectiveAbilities(object);
+  const granted = grantedActivatedAbilities(state, object);
+  return granted.length === 0 ? own : [...own, ...granted];
 }
 
 /**
@@ -761,6 +844,8 @@ export function clearStatModifiers(state) {
   state.untilEndOfTurnBuffs = [];
   // M109: ochrona „do końca tury" (Spare from Evil) kończy się w cleanup.
   state.untilEndOfTurnProtections = [];
+  // Batch 48 (Cherished Hatchling): flash nadany podtypowi „this turn".
+  state.subtypeFlashThisTurn = [];
   for (const object of state.objects.values()) {
     if (object.zone !== 'battlefield') continue;
     // M158/Batch 39 (Wishful Merfolk): nadpisanie podtypów i utrata
@@ -811,14 +896,20 @@ export function clearStatModifiers(state) {
       || (current.keywordGrants ?? []).length > 0
       || (current.abilityGrants ?? []).length > 0
       || current.typeGrant != null
-      || current.cantBlock === true
+      // Wydrukowane „can't block\" (token) nie jest brudem do sprzątnięcia —
+      // bez tego wyłączenia cleanup przepisywałby token w każdej turze.
+      || (current.cantBlock === true && current.cantBlockPrinted !== true)
       || current.cantBeBlocked === true;
     if (dirty) {
       replaceObject(state, current, {
         powerModifier: 0, toughnessModifier: 0, keywordGrants: [],
         abilityGrants: [], typeGrant: null,
-        // „Can't block this turn\" (Panic Spellbomb) — cleanup zdejmuje.
-        cantBlock: false, cantBeBlocked: false,
+        // „Can't block this turn\" (Panic Spellbomb) — cleanup zdejmuje
+        // EFEKT (CR 514.2). Cecha WYDRUKOWANA („This token can't block\" —
+        // Phyrexian Mite, Goblin Construct) jest trwała: znacznik
+        // `cantBlockPrinted` przeżywa cleanup, a `cantBlock` pozostaje z nim
+        // zgodne, żeby każdy odczyt (widok, boty, walka) widział ten sam stan.
+        cantBlock: Boolean(current.cantBlockPrinted), cantBeBlocked: false,
         saddled: false, tempBasePT: null, damagedThisTurn: false, abilityResolvedThisTurn: 0,
       });
     }

@@ -1,0 +1,126 @@
+== NOWA PARTIA: gracz=warhammer vs bot=wiedzmin, seed=29, profil=impatient, policy-seed=13, tick-rate=0.3 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  >> ▶ Wznów grę bota
+  >> Zagraj ląd: Mountain (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  >> ▶ Wznów grę bota
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  >> ▶ Wznów grę bota
+  >> Cel czaru: Brute Force (2 opcje)
+  [modal choice] Cel czaru: Brute Force Rzuć: Brute Force (koszt R) → cel: Morph (Nieprzyjaciel) Rzuć: Brute Force (koszt R) → cel: Leafcrown Dryad (Nieprzyjaciel)
+  [modal choice]   ▶ Rzuć: Brute Force (koszt R) → cel: Morph (Nieprzyjaciel)
+  [modal choice]     Rzuć: Brute Force (koszt R) → cel: Leafcrown Dryad (Nieprzyjaciel)
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Emerald Oryx wchodzi na pole bitwy
+  [ROZGRYWKA]   • Emerald Oryx zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Leafcrown Dryad, Morph
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Leafcrown Dryad zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 16
+  [ROZGRYWKA]   • Morph zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 14
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Tome Scour
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Floodhound
+  >> ▶ Wznów grę bota
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  [ptaszek] wyciszam: Zagraj: Irontread Crusher (koszt 4)
+  >> Rzuć: You're Confronted by Robbers — Wezwanie pomocy (koszt 3W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz You're Confronted by Robbers — tryb: Wezwanie pomocy
+  [ROZGRYWKA]   • Ty tworzysz token Soldier (1/1)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ty tworzysz token Soldier (1/1)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ty tworzysz token Soldier (1/1)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • You're Confronted by Robbers — tryb: Wezwanie pomocy zostaje rozstrzygnięty
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Twiddle — tryb: Tapnięcie zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Maritime Guard
+  >> Wybierz: Deklaracja blokujących (25 opcji)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Maritime Guard wchodzi na pole bitwy
+  [ROZGRYWKA]   • Maritime Guard zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Leafcrown Dryad, Morph, Emerald Oryx, Floodhound
+  [combat wizard] blokuję 1 stworami: Soldier (1/1)
+  [combat wizard] Zatwierdź bloki
+  >> ▶ Wznów grę bota
+  [ptaszek] wyciszam: Zagraj: Gorehorn Minotaurs (koszt 2RR)
+  >> Aura: Hobble (7 opcji)
+  [modal choice] Aura: Hobble Zagraj aurę: Hobble (koszt 2W) → zaczaruj Maritime Guard (Nieprzyjaciel) Zagraj aurę: Hobble (koszt 2W) → zaczaruj Soldier (Ty) (1 z 2) Zagraj aurę: Hobble (koszt 2W) → zaczaruj Soldier (Ty) (2 z 2) Zagraj aurę: Hobble (koszt 2W) → zaczaruj Floodhound (Nieprzyjaciel) Zagraj aurę: Hobble (koszt 2W) → zaczaruj Emerald Oryx (Nieprzyjaciel) Zagraj aurę: Hobble (koszt 2W) → zaczaruj Morph (Nieprzyjaciel) Zagraj aurę: Hobble (koszt 2W) → zaczaruj Leafcrown Dryad (Nieprzyjaciel)
+  [modal choice]   ▶ Zagraj aurę: Hobble (koszt 2W) → zaczaruj Maritime Guard (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Hobble (koszt 2W) → zaczaruj Soldier (Ty) (1 z 2)
+  [modal choice]     Zagraj aurę: Hobble (koszt 2W) → zaczaruj Soldier (Ty) (2 z 2)
+  [modal choice]     Zagraj aurę: Hobble (koszt 2W) → zaczaruj Floodhound (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Hobble (koszt 2W) → zaczaruj Emerald Oryx (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Hobble (koszt 2W) → zaczaruj Morph (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Hobble (koszt 2W) → zaczaruj Leafcrown Dryad (Nieprzyjaciel)
+  [kreator many] Płatność 2W — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: WTapnij: Swamp (B)Tapnij: Mountain (R)Tapnij: — źródła: 4
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Mountain (R)
+  >> ▶ Wznów grę bota
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil impatient)
+  [combat wizard] Zatwierdź atak
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Clue
+  [ROZGRYWKA]   • Clue wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Floodhound rozstrzygnięta
+  [ROZGRYWKA]   • Wishful Merfolk wchodzi na pole bitwy
+  [ROZGRYWKA]   • Wishful Merfolk zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Leafcrown Dryad, Morph, Emerald Oryx
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Leafcrown Dryad zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 2 → 0
+  [ROZGRYWKA]   • Morph zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 0 → -2
+  [ROZGRYWKA]   • Emerald Oryx zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie -2 → -4
+  [ROZGRYWKA]   • Przegrywasz (brak życia)
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 20 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury | Omenspeaker · 2 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: scry 2. · 1/3 | Wrap in Flames · 4 · Sorcery · Owinięcie w płomienie: 1 obrażenie + nie może blokować (każdy z celów) | Feedback · 3 · Enchantment — Aura · Na początku upkeep (gdy rzucono 2+ czary): 1 obrażenie kontrolerowi zaczarowanego. | Gorehorn Minotaurs · 4 · Creature — Minotaur Warrior · 3/3 | Tome Scour · 1 · Sorcery · mieli 5 kart (do grobu) · cel: gracz | Fireball · 1 · Sorcery · X obrażeń podzielone po równo między cele
+  MOJE POLA: Soldier · 0 · Creature — Soldier · 1/1 | Hobble · 3 · Enchantment Aura · zaczarowany nie może atakować · zaczarowany nie może blokować · Gdy wejdzie na pole bitwy: dobierz 1 kartę. · aura → Maritime Guard | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Leafcrown Dryad · 2 · Enchantment Creature — Nymph Dryad · Zasięg · 2/2 | Face-down creature · Creature · Morph · 2/2 | Emerald Oryx · 4 · Creature — Antelope · 2/3 | Floodhound · 1 · Creature — Elemental Dog · {3}, {T}: investigate (stwórz token Clue) · 1/2 | Maritime Guard · 2 · Creature — Merfolk Soldier · zaczarowana: Hobble · 1/3 | Clue · 0 · Artifact Token — Clue · {2}, poświęć: dobierz 1 kartę | Wishful Merfolk · 2 · Creature — Merfolk · Obrońca · {1}, {U}: zmiana podtypu i utrata keyworda do końca tury · choroba · 3/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: You're Confronted by Robbers, Irontread Crusher, Omenspeaker, Mountain, Swamp, Mountain, Wrap in Flames ⏎ Nowa partia (seed 29). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 17, kliknięte: 14, modale: 3, sondy noop: 38 (panel 26, modal 12)
+== DETEKTORY: brak zgłoszeń ==

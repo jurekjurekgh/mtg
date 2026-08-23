@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Supernatural%20Stamina&set=2xm",
+  "print": "Supernatural Stamina (2XM)",
+  "name": "Supernatural Stamina",
+  "mana_cost": "{B}",
+  "cmc": 1.0,
+  "type_line": "Instant",
+  "oracle_text": "Until end of turn, target creature gets +2/+0 and gains \"When this creature dies, return it to the battlefield tapped under its owner's control.\"",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [],
+  "set": "2xm",
+  "collector_number": "108",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/0/f0bff1b7-838f-48de-96bd-0c79e59ff827.jpg?1783930174"
+  },
+  "pobrano": "2026-08-23"
+}

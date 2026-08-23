@@ -1,0 +1,19 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Pyxis+of+Pandemonium&set=ths",
+  "print": "Pyxis of Pandemonium (THS)",
+  "name": "Pyxis of Pandemonium",
+  "mana_cost": "{1}",
+  "cmc": 1.0,
+  "type_line": "Artifact",
+  "oracle_text": "{T}: Each player exiles the top card of their library face down.\n{7}, {T}, Sacrifice this artifact: Each player turns face up all cards they own exiled with this artifact, then puts all permanent cards among them onto the battlefield.",
+  "colors": [],
+  "color_identity": [],
+  "keywords": [],
+  "set": "ths",
+  "collector_number": "220",
+  "rarity": "rare",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/b/dbc6a246-f32a-4dc0-9785-4038804f372f.jpg?1783939717"
+  },
+  "pobrano": "2026-08-23"
+}

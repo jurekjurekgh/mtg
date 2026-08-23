@@ -3,22 +3,21 @@
 1x Idyllic Grange
 1x Mystic Sanctuary
 1x Cenn's Tactician
+1x Clawing Torment
 1x Goldmeadow Nomad
 1x High Stride
 1x Mosquito Guard
 1x Assert Perfection
-1x Benevolent Blessing
-1x Deadly Recluse
 1x Forever Young
 1x Insatiable Appetite
 1x Kappa Tech-Wrecker
 1x Release the Ants
 1x Soulbright Flamekin
+1x Steelclaw Lance
 1x Agate Assault
 1x Barkform Harvester
 1x Blade-Blizzard Kitsune
 1x Halo Forager
-1x Springbloom Druid
 1x Stomping Slabs
 1x Talion's Messenger
 1x Thistledown Players
@@ -30,7 +29,7 @@
 1x Puppeteer Clique
 1x Greater Tanuki
 3x Plains
-2x Island
-3x Swamp
+1x Island
+4x Swamp
 3x Mountain
-4x Forest
+3x Forest

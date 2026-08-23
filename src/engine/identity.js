@@ -18,7 +18,7 @@ export function createCardInstance({ id, cardId, ownerId }) {
   return Object.freeze({ id, cardId, ownerId });
 }
 
-export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, entersWithCountersIf = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, exploit = null, treasureAltCost = null, cardName = null, name = null, isToken = false, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, rebound = null, reboundCast = false, reboundReady = false }) {
+export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', echo = null, chooseColor = null, power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, entersWithCountersIf = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, exploit = null, treasureAltCost = null, cardName = null, name = null, isToken = false, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, rebound = null, reboundCast = false, reboundReady = false }) {
   if (!id || !instanceId || !cardId || !controllerId || !zone) {
     throw new TypeError('Obiekt gry wymaga id, instanceId, cardId, controllerId i zone');
   }
@@ -118,11 +118,14 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
       // ostatniej (po wszystkich grantach).
       ...(aura.losesKeywords ? { losesKeywords: Object.freeze([...aura.losesKeywords]) } : {}),
       ...(aura.enchantType ? { enchantType: aura.enchantType } : {}),
+      ...(aura.ownControlOnly === false ? { ownControlOnly: false } : {}),
       ...(aura.grantMana ? { grantMana: Object.freeze({ ...aura.grantMana }) } : {}),
       // Efekt zastępczy tworzenia tokenów (Moonlit Meditation) — deskryptor
       // musi dojść z karty na obiekt gry, inaczej engine go nie zobaczy
       // (lekcja L21: pola spoza kontraktu giną po cichu).
       ...(aura.chooseColor ? { chooseColor: true } : {}),
+      // Batch 46 (Guildscorn Ward): ochrona po jakości — jak wyżej (L21).
+      ...(aura.protection ? { protection: Object.freeze({ ...aura.protection }) } : {}),
       ...(aura.replaceTokenCreation
         ? { replaceTokenCreation: Object.freeze({ ...aura.replaceTokenCreation }) }
         : {}),
@@ -137,6 +140,10 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // gospodarza ZOSTAJE na polu bitwy odłączony (nie ginie jak aura).
     equipment: equipment ? (() => {
       const base = { equip: equipment.equip, pump: equipment.pump ? Object.freeze({ ...equipment.pump }) : null, keywords: Object.freeze([...(equipment.keywords ?? [])]), subtypes: Object.freeze([...(equipment.subtypes ?? [])]) };
+      // Batch 48 (Steelclaw Lance): TANSZY equip dla podtypu („Equip Knight
+      // {1}" obok „Equip {3}"). Trzecia warstwa przepisujaca equipment pole
+      // po polu — bez tego deskryptor ginie w drodze na obiekt gry (L21).
+      if (equipment.equipFor) base.equipFor = Object.freeze({ ...equipment.equipFor });
       // M146 (Blazing Torch): zdolności NADANE nosicielowi — muszą przejść
       // przez cały łańcuch registry → gameObject (L21/L48), inaczej giną
       // po cichu i sprzęt jest martwy. Pole tylko gdy niepuste (jak registry).
@@ -164,6 +171,14 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // Toxic (CR 702.180, Batch 45 — Crawling Chorus): combat damage graczowi
     // daje mu N poison counterów DODATKOWO do obrażeń (inaczej niż infect).
     toxic: toxic ?? null,
+    // Batch 46 (Bone Shredder) — ECHO (CR 702.29): koszt echa z karty oraz
+    // znacznik „nieopłacone echo" stawiany przy wejściu na pole bitwy.
+    echo: echo ?? null,
+    echoUnpaid: false,
+    // Batch 46 (Manor Gate): deskryptor wyboru koloru przy wejściu + wybrany
+    // kolor (ustawiany przez resolve_color_choice; czyta go zdolność many).
+    chooseColor: chooseColor ? Object.freeze({ ...chooseColor }) : null,
+    chosenColor: null,
     // Devour (CR 702.82) i endure (TDM): deskryptory ETB — jak backup,
     // decyzje blokujące (pendingDevours/pendingEndures, cz. 2 batchu).
     devour: devour ? Object.freeze({ counters: devour.counters }) : null,

@@ -268,6 +268,7 @@ const HANDLED_TRIGGER_EVENTS = new Set([
   'attacks', 'attacks_alone', 'aura_host_targeted_by_spell', 'bat_attacks', 'faerie_attacks', 'beginning_of_combat',
   'card_put_into_graveyard_from_nonbattlefield', 'combat_damage_to_player',
   'dies', 'enchanted_creature_damage_to_opponent', 'end_step', 'enter_battlefield', 'equipped_creature_attacks',
+  'equipped_creature_blocks_or_blocked_by', 'combat_damage_to_you',
   'exploits', 'land_entered_under_opponent_control',
   // M177/B (Rakshasa Vizier): karty wygnane z twojego grobu (hook w processTriggers).
   'cards_exiled_from_your_graveyard',

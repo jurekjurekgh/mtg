@@ -123,7 +123,15 @@ function defaultBotFactory(seed, ctx) {
     gain_life: 'zdobycie życia',
     grant_keywords_until_end_of_turn: 'nadanie słów kluczowych do końca tury',
     lock_untap: 'cel nie odtapuje podczas następnego untap kontrolera',
-    look_top_put_one_hand_rest_bottom: 'spojrzenie na X kart z wierzchu — jedna do ręki, reszta na spód',
+    look_top_put_one_hand_rest_bottom: 'spojrzenie na karty z wierzchu — jedna do ręki, reszta na spód',
+    creatures_cant_block_this_turn: 'zakaz blokowania dla stworów w tej turze',
+    lose_life_enchanted_permanent_controller: 'utrata życia przez kontrolera zaczarowanego permanentu',
+    attacker_gains_control_and_untaps: 'przejęcie kontroli przez atakującego (i odkręcenie)',
+    sacrifice_self_if_counters_then_treasure: 'poświęcenie po osiągnięciu progu liczników — w zamian Skarb',
+    subtype_spells_gain_flash_and_etb_fight_this_turn: 'czary wskazanego podtypu zyskują flash i walkę po wejściu (w tej turze)',
+    your_creatures_gain_keywords_until_end_of_turn: 'nadanie słów kluczowych twoim stworom do końca tury',
+    each_player_exiles_top_face_down: 'wygnanie wierzchu biblioteki każdego gracza (zakryte)',
+    turn_up_exiled_and_put_permanents: 'odkrycie wygnanych kart i wprowadzenie permanentów na pole bitwy',
     lose_life: 'cel traci życie',
     mill_cards: 'mielenie kart do grobu',
     prevent_damage_this_turn: 'niwelowanie obrażeń do końca tury',
@@ -144,6 +152,93 @@ function defaultBotFactory(seed, ctx) {
  * zdarzeń-dubletów (pomijanych w logu) albo surowy typ, gdy brak opisu —
  * KAŻDY nowy typ zdarzenia powinien dostać case (uwagi A/D 2026-08-10).
  */
+/**
+ * M190/A+A2 (uwagi właściciela, Heap Gate). Pięć kolorów w deskryptorze
+ * `add_mana` to „add one mana of any color" (CR 106.6), a nie pięć różnych
+ * many. Rozpoznanie i opis trzymamy w JEDNYM miejscu — używa ich etykieta
+ * oferty w panelu (render.js) i log stołu (L41: dwie kopie tej samej reguły
+ * rozjeżdżają się cicho).
+ */
+export const ALL_MANA_COLORS = Object.freeze(['W', 'U', 'B', 'R', 'G']);
+
+export function isAnyColorMana(colors) {
+  const list = colors ?? [];
+  return list.length === ALL_MANA_COLORS.length
+    && ALL_MANA_COLORS.every((color) => list.includes(color));
+}
+
+/**
+ * M193/A1 (uwaga właściciela, Dismal Backwater): NAZWY kolorów po polsku.
+ * Log pisał „dodanie many do puli ({U}, {B})" — żargon symboli, którego reszta
+ * stołu nie używa. Odmiana przymiotnika idzie za rzeczownikiem „mana" (rodzaj
+ * żeński, biernik): „1 manę niebieską", „2 many czarne".
+ */
+const MANA_COLOR_NAMES = Object.freeze({
+  W: { one: 'białą', many: 'białe' },
+  U: { one: 'niebieską', many: 'niebieskie' },
+  B: { one: 'czarną', many: 'czarne' },
+  R: { one: 'czerwoną', many: 'czerwone' },
+  G: { one: 'zieloną', many: 'zielone' },
+});
+
+/** Nazwy kolorów jako alternatywa: „niebieską lub czarną" (CR 106.1b). */
+function manaColorsLabel(colors, single) {
+  const named = colors
+    .map((color) => MANA_COLOR_NAMES[color]?.[single ? 'one' : 'many'])
+    .filter(Boolean);
+  // Nieznany symbol (hipotetyczny nowy kolor) — nie zgadujemy, wracamy do
+  // symboli, żeby opis nie zgubił informacji.
+  if (named.length !== colors.length) return colors.map((c) => `{${c}}`).join(', ');
+  if (named.length === 1) return named[0];
+  return `${named.slice(0, -1).join(', ')} lub ${named[named.length - 1]}`;
+}
+
+/**
+ * M193/A1: opis PRODUKCJI many do logu („dodanie …" wymaga dopełniacza:
+ * „dodanie 1 many niebieskiej", nie „…manę niebieską"). Trzymany obok
+ * manaEffectLabel, bo obie warstwy opisują ten sam deskryptor (L41).
+ */
+const MANA_COLOR_NAMES_GEN = Object.freeze({
+  W: 'białej', U: 'niebieskiej', B: 'czarnej', R: 'czerwonej', G: 'zielonej',
+});
+
+/** Dopełniacz liczby mnogiej: „2 many zielonych" (Moonscarred Werewolf). */
+const MANA_COLOR_NAMES_GEN_PL = Object.freeze({
+  W: 'białych', U: 'niebieskich', B: 'czarnych', R: 'czerwonych', G: 'zielonych',
+});
+
+export function manaProducedLabel(amount, colors) {
+  const single = amount === 1;
+  const count = `${amount} many`;
+  if (isAnyColorMana(colors)) return `dodanie ${count} dowolnego koloru do puli`;
+  if (!colors?.length) return `dodanie ${count} ${single ? 'bezbarwnej' : 'bezbarwnych'} do puli`;
+  // Liczba pojedyncza idzie w dopełniaczu („1 many zielonej"), mnoga w
+  // dopełniaczu liczby mnogiej („2 many zielonych") — CR nie reguluje polskiej
+  // fleksji, ale gracz czyta zdanie, nie tabelę.
+  const named = colors
+    .map((c) => (single ? MANA_COLOR_NAMES_GEN[c] : MANA_COLOR_NAMES_GEN_PL[c]))
+    .filter(Boolean);
+  if (named.length !== colors.length) {
+    return `dodanie ${count} do puli (${colors.map((c) => `{${c}}`).join(', ')})`;
+  }
+  const list = named.length === 1
+    ? named[0]
+    : `${named.slice(0, -1).join(', ')} lub ${named[named.length - 1]}`;
+  return `dodanie ${count} ${list} do puli`;
+}
+
+/** Opis efektu `add_mana`: bezbarwna / dowolnego koloru / konkretne kolory. */
+export function manaEffectLabel(effect) {
+  const amount = effect?.amount ?? 1;
+  const single = amount === 1;
+  const count = single ? '1 manę' : `${amount} many`;
+  if (isAnyColorMana(effect?.colors)) return `dodaj ${count} dowolnego koloru`;
+  const colors = effect?.colors ?? [];
+  if (colors.length === 0) return `dodaj ${count} bezbarwną`;
+  // M193/A1: „dodaj 1 manę niebieską lub czarną" zamiast „dodaj 1 manę ({U}, {B})".
+  return `dodaj ${count} ${manaColorsLabel(colors, single)}`;
+}
+
 /** Odmiana polska rzeczownika wg liczby: (1 → one, 2-4 → few, 5+ → many). */
 function polishPlural(n, one, few, many) {
     const mod10 = n % 10;
@@ -238,6 +333,10 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   end_step: 'krok końca tury',
   enter_battlefield: 'wejście na pole bitwy',
   equipped_creature_attacks: 'atak wyposażonego stwora',
+  // Batch 48 (Wooden Stake): blok w OBIE strony (CR 509.1).
+  equipped_creature_blocks_or_blocked_by: 'blok wyposażonego stwora (w obie strony)',
+  // Batch 48 (Contested Game Ball): obrażenia bojowe otrzymane przez CIEBIE.
+  combat_damage_to_you: 'otrzymanie obrażeń bojowych',
   exploits: 'exploit',
   land_entered_under_opponent_control: 'wejście landa przeciwnika',
   land_entered_under_your_control: 'Landfall',
@@ -298,6 +397,13 @@ export function triggerEventLabel(event, sourceController) {
  * pokazywał graczowi surowe identyfikatory z engine — „Segmented Krotiq —
  * library → hand". Reszta UI jest po polsku, więc to był przeciek techniczny.
  */
+/**
+ * M192/Z1: strefy UKRYTE przed przeciwnikiem (CR 400.2). Ruch karty MIEDZY
+ * nimi jest dla obserwatora bezimienny — widzi, ze cos sie przesunelo, ale
+ * nie co. Grob, wygnanie i pole bitwy sa jawne, wiec ich nie ma na liscie.
+ */
+export const HIDDEN_ZONES = Object.freeze(new Set(['hand', 'library']));
+
 export const ZONE_LABELS = Object.freeze({
   battlefield: 'pole bitwy',
   hand: 'ręka',
@@ -327,6 +433,8 @@ export function zoneLabel(zone) {
  */
 export const KEYWORD_EVENT_LABELS = Object.freeze({
   toxic: 'toksyczny (combat damage graczowi = poison)',
+  echo: 'echo (zapłać w swoim upkeepie albo poświęć)',
+  fabricate: 'fabricate (liczniki +1/+1 albo tokeny Servo)',
   haste: 'pośpiech', flying: 'latanie', trample: 'zadeptywanie', reach: 'zasięg',
   vigilance: 'czujność', menace: 'postrach', lifelink: 'dotykanie życia',
   deathtouch: 'dotykanie śmierci', first_strike: 'pierwsze uderzenie',
@@ -400,18 +508,49 @@ export function odmienNaDrugaOsobe(text, humanName = PLAYER_NAMES[HUMAN_ID]) {
  * zagrywa…”) — opcja `drugaOsoba: false` wyłącza odmianę zdań o człowieku
  * (główny log stołu zostaje w 2. osobie — M101/C bez zmian).
  */
-export function describeGameEvent(e, helpers, names = PLAYER_NAMES, { drugaOsoba = true } = {}) {
-  const opis = describeGameEventRaw(e, helpers, names);
+/**
+ * M199 (zlecenie właściciela 2026-08-23): tryb PEŁNEGO Fog of War dla sekcji
+ * „Przebieg tur (dla AI)". Zapis dla modelu ma być tym, co widziałby
+ * obserwator przy stole — więc informacja ukryta gracza (dobrana karta,
+ * tożsamość własnego morpha, karty oglądane przy scry/mulliganie) jest
+ * maskowana TAK SAMO jak informacja bota.
+ *
+ * Realizacja: zamiast dopisywać `if (fogOfWar)` w ~13 rozsianych gałęziach
+ * (klasa L41 — kopie tej samej reguły rozjeżdżają się), podmieniamy JEDEN
+ * punkt decyzyjny. Wszystkie te gałęzie pytają „czy to gracz-człowiek?"
+ * przez `playerId === HUMAN_ID`; w trybie FoW ta odpowiedź brzmi „nie"
+ * dla obu stron, bo obserwator nie zna kart żadnego z graczy.
+ *
+ * `fogOfWar` NIE dotyczy głównego logu stołu ani modala „Rozgrywka" —
+ * tam gracz widzi swoje karty i tak ma zostać (decyzja właściciela).
+ */
+export function describeGameEvent(e, helpers, names = PLAYER_NAMES, { drugaOsoba = true, fogOfWar = false } = {}) {
+  const opis = describeGameEventRaw(e, helpers, names, { fogOfWar });
   if (typeof opis !== 'string') return opis;
   return drugaOsoba ? odmienNaDrugaOsobe(opis, names[HUMAN_ID]) : opis;
 }
 
-function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
+function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = false } = {}) {
   const { nameOf, nameOfObject } = helpers;
   // Rozpoznanie „cel to gracz" — sesja przekazuje isPlayer (lookup state),
   // a testy mogą polegać na mapie imion (oba stołowe słowniki mapują p1/p2).
   const isPlayer = helpers.isPlayer ?? ((id) => names[id] != null);
   const whoN = (id) => names[id] ?? id;
+  /**
+   * M199: „czy pokazać ukrytą kartę tego gracza?". Poza trybem FoW ujawniamy
+   * karty człowieka (to jego własna wiedza — CR 400.2 pozwala mu patrzeć na
+   * swoją rękę). W trybie FoW nikt nie jest uprzywilejowany: zapis dla AI
+   * opisuje obie strony jak zewnętrzny obserwator.
+   */
+  const seesHiddenOf = (playerId) => !fogOfWar && playerId === HUMAN_ID;
+  /**
+   * M195/D (uwaga właściciela, Veiled Ascension): decyzję opcjonalną podejmuje
+   * KONKRETNY gracz — kontroler karty. Komunikaty pisały stałe „(wybór
+   * gracza)", więc gdy decydował bot, gracz czytał to jako WŁASNĄ decyzję
+   * i czekał na przycisk, którego nie było. Nazywamy decydenta wprost
+   * i w JEDNYM miejscu (L41: trzy kopie tej samej formuły rozjeżdżają się).
+   */
+  const decisionOwnerNote = (playerId) => `wybór opcjonalny: ${whoN(playerId)}`;
   // M100 (BUG A — zgłoszenie właściciela 2026-08-15; FoW, CR 708.2): fixy
   // M66/M74 („LKI cardId zamiast ?") nazywały po cardId nawet obiekty WCIĄŻ
   // leżące zakryte na stole („Nieprzyjaciel zagrywa Segmented Krotiq twarzą
@@ -480,7 +619,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       case 'step_advanced': return `— ${e.phase}/${e.step} —`;
       case 'turn_started': return `Tura gracza ${whoN(e.playerId)}`;
       case 'card_drawn': {
-        if (e.object?.cardId && e.playerId === HUMAN_ID) {
+        if (e.object?.cardId && seesHiddenOf(e.playerId)) {
           return `${whoN(e.playerId)} dobiera: ${nameOf(e.object.cardId)}`;
         }
         if (e.object?.cardId && e.playerId === BOT_ID) {
@@ -497,7 +636,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         if (e.faceDown) {
           // M127: etykieta z jednego źródła (FACE_DOWN_LABEL) — pisownia
           // mechaniki jest wspólna dla logu, kafli i wizardów.
-          const shown = e.playerId === HUMAN_ID ? nameOf(e.object?.cardId) : FACE_DOWN_LABEL;
+          const shown = seesHiddenOf(e.playerId) ? nameOf(e.object?.cardId) : FACE_DOWN_LABEL;
           return `${whoN(e.playerId)} zagrywa ${shown} twarzą w dół (2/2)`;
         }
         // Phyrexian mana (Batch 11): symbole {W/P} opłacone maną albo 2 życiem.
@@ -536,7 +675,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         // pole bitwy". Własny morph nazywamy (kontroler zna kartę — CR 708.6),
         // dokładnie jak w gałęzi `permanent_cast`.
         if (e.faceDown) {
-          const own = e.controllerId === HUMAN_ID;
+          const own = seesHiddenOf(e.controllerId);
           const shown = own ? nameOf(e.cardId) : FACE_DOWN_LABEL;
           return `${shown} zostaje rozstrzygnięty (twarzą w dół)`;
         }
@@ -748,6 +887,11 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
               const named = e.grantKeywords.map((k) => KEYWORD_EVENT_LABELS[k] ?? k).join(', ');
               return `nadanie do końca tury: ${named}`;
             }
+            // M193/A1: gdy zdarzenie niesie KOLORY many, pełny opis produkcji
+            // („dodanie 1 many niebieskiej lub czarnej do puli") powstaje niżej.
+            // Bez tego wyjątku log sklejał dwa opisy tego samego efektu:
+            // „… — dodanie many do puli — dodanie 1 many niebieskiej …".
+            if (type === 'add_mana' && e.manaColors?.length) return null;
             return ABILITY_EFFECT_LABELS[type];
           })
           .filter(Boolean)
@@ -755,15 +899,28 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         // M150/C2: zdolność dodająca manę (Jeskai Devotee „{1}: Add {U}, {R},
         // or {W}\") loguje też, JAKĄ manę produkuje — „dodanie many do puli
         // ({U}, {R}, {W})” zamiast milczeć o kolorze (uwaga właściciela).
-        const manaPart = (e.manaColors?.length)
-          ? ` (${e.manaColors.map((color) => `{${color}}`).join(', ')})`
+        // M190/A2 (uwaga właściciela, Heap Gate): lista PIĘCIU symboli
+        // („{W}, {U}, {B}, {R}, {G}") czytała się jak pięć dodanych many,
+        // a zdolność daje JEDNĄ manę dowolnego koloru. Pięć kolorów w
+        // deskryptorze = „dowolny kolor" (CR 106.6) — mówimy to wprost;
+        // konkretny zestaw (Jeskai Devotee: {U}/{R}/{W}) nadal wymieniamy.
+        // M193/A1 (uwaga właściciela, Dismal Backwater): także KONKRETNE
+        // kolory nazywamy po polsku — „dodanie 1 many niebieskiej lub czarnej
+        // do puli" zamiast „dodanie many do puli ({U}, {B})". Symbole to
+        // żargon; gracz czyta zdanie. Opis liczby+koloru bierzemy z tego
+        // samego miejsca co panel (L41), więc obie warstwy nie mogą się
+        // rozjechać.
+        const manaLabel = (e.manaColors?.length)
+          ? manaProducedLabel(e.manaAmount ?? 1, e.manaColors)
           : '';
+        const manaPart = manaLabel && desc ? `, ${manaLabel}` : '';
         // M153/A1: Station — nazwa zatapianego INNEGO stwora (koszt
         // tapOtherCreature), albo Morph, gdy zakryty (CR 708.2).
         const stationPart = e.stationTappedCreatureId
           ? ` (tapuje: ${nameOfObject(e.stationTappedCreatureId)})`
           : '';
-        return `${whoN(e.playerId)} aktywuje zdolność: ${sourceName}${desc ? ` — ${desc}` : ''}${manaPart}${xPart}${targets ? ` → cel: ${targets}` : ''}${crewPart}${stationPart}`;
+        const effectDesc = desc || manaLabel;
+        return `${whoN(e.playerId)} aktywuje zdolność: ${sourceName}${effectDesc ? ` — ${effectDesc}` : ''}${manaPart}${xPart}${targets ? ` → cel: ${targets}` : ''}${crewPart}${stationPart}`;
       }
       // D (2026-08-11): zdolność aktywowana rozstrzygnięta ze stosu.
       case 'ability_resolved': {
@@ -892,7 +1049,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         // M100/E10 (P4 — Żywy Tester h05): odmiana „1 kartę / 2 karty / 5 kart"
         // — polishPlural zamiast sztywnego „kart".
         const karty = polishPlural(e.amount, 'kartę', 'karty', 'kart');
-        if (e.cardIds?.length && e.playerId === HUMAN_ID) {
+        if (e.cardIds?.length && seesHiddenOf(e.playerId)) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
           return `${whoN(e.playerId)} wykonuje scry (patrzy na ${e.amount} ${karty}: ${names})`;
         }
@@ -901,7 +1058,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       case 'scry_resolved': {
         // M100/E4: spód/wierzch biblioteki to wiedza WŁASNA patrzącego —
         // człowiekowi pokazujemy nazwy, przeciwnikowi tylko liczby (FoW).
-        if (e.playerId === HUMAN_ID && (e.bottomCardIds?.length || e.topCardIds?.length)) {
+        if (seesHiddenOf(e.playerId) && (e.bottomCardIds?.length || e.topCardIds?.length)) {
           // Filtrowanie po samych NAZWACH: puste pole danych (np. brak
           // wierzchu po decyzji „wszystko na spód") nie może zostawić
           // śmieciowego segmentu w tekście.
@@ -920,7 +1077,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         // M100/E10 (P4): jak przy scry — odmiana (było „patrzy na 2 kart",
         // a dla 1 nawet „patrzy na 1 kart").
         const karty = polishPlural(e.amount, 'kartę', 'karty', 'kart');
-        if (e.cardIds?.length && e.playerId === HUMAN_ID) {
+        if (e.cardIds?.length && seesHiddenOf(e.playerId)) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
           return `${whoN(e.playerId)} wykonuje surveil (patrzy na ${e.amount} ${karty}: ${names})`;
         }
@@ -941,7 +1098,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         return `${whoN(e.playerId)} kończy surveil — ${n} ${noun} ${verb} do grobu`;
       }
       case 'index_started': {
-        if (e.cardIds?.length && e.playerId === HUMAN_ID) {
+        if (e.cardIds?.length && seesHiddenOf(e.playerId)) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
           return `${whoN(e.playerId)} wykonuje Index (patrzy na ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')}: ${names})`;
         }
@@ -949,13 +1106,13 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       }
       case 'index_resolved': {
         // M100/E4: ustalona kolejność to wiedza własna patrzącego.
-        if (e.playerId === HUMAN_ID && e.orderCardIds?.length) {
+        if (seesHiddenOf(e.playerId) && e.orderCardIds?.length) {
           return `${whoN(e.playerId)} kończy Index — kolejność na wierzchu (od góry): ${e.orderCardIds.map((cid) => nameOf(cid)).join(', ')}`;
         }
         return `${whoN(e.playerId)} kończy Index — przestawia karty na wierzchu biblioteki`;
       }
       case 'look_top_started': {
-        if (e.cardIds?.length && e.playerId === HUMAN_ID) {
+        if (e.cardIds?.length && seesHiddenOf(e.playerId)) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
           return `${whoN(e.playerId)} patrzy na ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki (${names})`;
         }
@@ -964,18 +1121,25 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       case 'look_top_resolved': {
         // M100/E4: wzięta karta to wiedza własna; reszta do grobu opisują
         // jawne zdarzenia przeniesienia (grób publiczny).
-        const pickName = (e.playerId === HUMAN_ID && e.pickCardId) ? nameOf(e.pickCardId) : 'kartę';
-        return `${whoN(e.playerId)} bierze ${pickName} z wierzchu do ręki (reszta do grobu)`;
+        // M192/Z2 (pętla jakości): są DWA warianty resztki — grób (Gurmag
+        // Drowner) albo SPÓD biblioteki (Merchant's Dockhand, Rediscover the
+        // Way). Log twierdził „do grobu" w obu, czyli mylił gracza co do
+        // stanu jego biblioteki. Miejsce bierzemy ze zdarzenia (L6).
+        const pickName = (seesHiddenOf(e.playerId) && e.pickCardId) ? nameOf(e.pickCardId) : 'kartę';
+        const restLabel = e.restTo === 'library_bottom'
+          ? 'reszta na spód biblioteki'
+          : 'reszta do grobu';
+        return `${whoN(e.playerId)} bierze ${pickName} z wierzchu do ręki (${restLabel})`;
       }
       case 'satyr_look_started': {
-        if (e.cardIds?.length && e.playerId === HUMAN_ID) {
+        if (e.cardIds?.length && seesHiddenOf(e.playerId)) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
           return `${whoN(e.playerId)} odsłania ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki (${names}) — może wziąć ląd do ręki`;
         }
         return `${whoN(e.playerId)} odsłania ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki — może wziąć ląd do ręki`;
       }
       case 'satyr_look_resolved': {
-        const pickName = (e.pickId != null && e.playerId === HUMAN_ID && e.pickCardId) ? nameOf(e.pickCardId) : 'żadnego lądu';
+        const pickName = (e.pickId != null && seesHiddenOf(e.playerId) && e.pickCardId) ? nameOf(e.pickCardId) : 'żadnego lądu';
         return `${whoN(e.playerId)} bierze ${pickName} z wierzchu do ręki (reszta do grobu)`;
       }
       // M100/E4: karty Epic Experiment lecą na ODKRYTY exile (publiczne) —
@@ -1015,7 +1179,21 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         const first = e.firstTime ? ' — obejmuje ją po raz pierwszy i zagłębia się w Podziemia' : '';
         return `${whoN(e.playerId)} obejmuje inicjatywę${first}`;
       }
+      case 'fabricate_choice_required':
+        return `${whoN(e.playerId)} wybiera fabricate ${e.amount ?? 1}: liczniki +1/+1 albo tokeny Servo`;
+      case 'fabricate_resolved':
+        return e.mode === 'counters'
+          ? `${nameOf(e.cardId)} — fabricate: ${e.amount ?? 1}× licznik +1/+1`
+          : `${nameOf(e.cardId)} — fabricate: ${e.amount ?? 1}× token Servo`;
       case 'ventured_into_undercity': return `${whoN(e.playerId)} zagłębia się w Podziemiach (pokój ${e.room}/${e.total}: ${e.roomName})`;
+      // M190/B: loch ma rozgałęzienia (Oracle „Leads to: …") — gracz wybiera
+      // ścieżkę, więc log musi pokazać i pytanie, i podjętą decyzję.
+      case 'undercity_route_required': {
+        const opts = (e.candidates ?? []).map((c) => c.roomName).join(' albo ');
+        return `${whoN(e.playerId)} wybiera dalszą drogę z pokoju ${e.fromRoomName}: ${opts}`;
+      }
+      case 'undercity_route_chosen':
+        return `${whoN(e.playerId)} wybiera drogę: ${e.fromRoomName} → ${e.roomName}`;
       case 'clash_resolved': {
         const mine = e.myManaValue ?? '—';
         const theirs = e.opponentManaValue ?? '—';
@@ -1113,7 +1291,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         }
         return `${whoN(e.playerId)} rezygnuje z szukania i tasuje bibliotekę`;
       }
-      case 'pay_or_sacrifice_required': return `${nameOfObject(e.sourceId)} — zapłać {${e.amount}} albo ją poświęć (wybór gracza)`;
+      case 'pay_or_sacrifice_required': return `${nameOfObject(e.sourceId)} — zapłać {${e.amount}} albo ją poświęć (${decisionOwnerNote(e.playerId)})`;
       case 'counter_pay_required': return `${nameOf(e.cardId)} zostanie skontrowany, chyba że kontroler zapłaci {${e.amount}}${e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : ''}`;
       case 'counter_pay_resolved': return e.paid
         ? `${nameOf(e.cardId)}: kontroler płaci — czar zostaje na stosie`
@@ -1130,7 +1308,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         const parts = [];
         if (e.payMana) parts.push(`{${e.payMana}}`);
         if (e.payLife) parts.push(`${e.payLife} życia`);
-        return `${nameOf(e.cardId)} — zapłacić ${parts.join(' i ')}? (wybór gracza)`;
+        return `${nameOf(e.cardId)} — zapłacić ${parts.join(' i ')}? (${decisionOwnerNote(e.playerId)})`;
       }
       case 'optional_pay_resolved': return e.paid
         ? `${whoN(e.playerId)} płaci i odpala trigger`
@@ -1148,8 +1326,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         // M106/Z2: powód „braku efektu" jest treścią dla gracza — inaczej
         // pusty nagłówek triggera wygląda jak zgubiona zdolność.
         if (e.noEffect) {
+          // M189/Z2: „zerowy wynik" to żargon implementacji (liczba zdarzeń),
+          // a nie informacja dla gracza. Po naprawie w triggers.js ten powód
+          // zostaje wyłącznie dla triggerów, które naprawdę nic nie zrobiły
+          // (Undead Servant przy pustym grobie) — nazywamy to wprost.
           const why = e.reason === 'no_targets' ? 'brak legalnych celów'
-            : e.reason === 'no_result' ? 'nic się nie wydarzyło (zerowy wynik)'
+            : e.reason === 'no_result' ? 'nie było czego wykonać'
             : 'warunek/cele nieaktualne';
           return `${nameOf(e.cardId)} — trigger bez efektu (${why})`;
         }
@@ -1166,7 +1348,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
           : (isPlayer(e.targetId) ? whoN(e.targetId) : nameOfObject(e.targetId));
         return `${src} — cel: ${target}`;
       }
-      case 'optional_trigger_required': return `${nameOf(e.cardId)} — skorzystać z efektu „you may"? (wybór gracza)`;
+      case 'optional_trigger_required': return `${nameOf(e.cardId)} — skorzystać z efektu „you may"? (${decisionOwnerNote(e.playerId)})`;
       // M138/Z7 (audyt Żywym Testerem): „Nieprzyjaciel korzysta z efektu «you
       // may»” nie mówiło Z CZEGO. W partii chodziło o Soulbright Flamekin
       // (8 many z trzeciej aktywacji) — zapowiedź dużego ruchu, a gracz widział
@@ -1257,7 +1439,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       // jest jego wiedzą — CR 400.2). Przeciwnikowi zostaje „kartę”
       // (FoW M142). Wzorzec jak card_drawn / look_top_resolved.
       case 'hand_top_choice_resolved': {
-        const card = (e.playerId === HUMAN_ID && e.cardId) ? nameOf(e.cardId) : 'kartę';
+        const card = (seesHiddenOf(e.playerId) && e.cardId) ? nameOf(e.cardId) : 'kartę';
         return `${whoN(e.playerId)} kładzie ${card} na wierzch biblioteki`;
       }
       case 'graveyard_top_choice_required': return `${whoN(e.playerId)} wybiera karty-stwory z grobu na wierzch biblioteki (Forever Young)${e.candidateIds?.length ? ` — do wyboru ${e.candidateIds.length}` : ''}`;
@@ -1353,6 +1535,27 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
  *   humanId?: string, botFactory?: (seed: number) => object,
  *   pauseOnBotMoves?: boolean }} config
  */
+/**
+ * Nazwy tokenów z katalogu: skan deskryptorów kart w poszukiwaniu par
+ * `{ cardId: 'token_*', name }` (create_token, tokeny z triggerów, tokeny
+ * tworzone przez inne tokeny). Generyczny — nowa karta z nowym tokenem
+ * dostaje nazwę bez zmiany kodu (ADR 0002).
+ */
+export function collectTokenNames(registry) {
+  const out = new Map();
+  const visit = (node) => {
+    if (!node || typeof node !== 'object') return;
+    if (Array.isArray(node)) { for (const item of node) visit(item); return; }
+    if (typeof node.cardId === 'string' && node.cardId.startsWith('token_')
+      && typeof node.name === 'string' && node.name.length > 0 && !out.has(node.cardId)) {
+      out.set(node.cardId, node.name);
+    }
+    for (const value of Object.values(node)) visit(value);
+  };
+  for (const card of registry.all()) visit(card);
+  return out;
+}
+
 export function createSession(config) {
   const { seed, registry, decks } = config;
   // Feature 2026-08-11: opcje wyciszone przez gracza (ptaszek w panelu akcji)
@@ -1367,6 +1570,17 @@ export function createSession(config) {
   const names = Object.entries(PLAYER_NAMES).map(([id, name]) => ({ id, name }));
   let state = setupCardMatch({ seed, players: names, decks, registry });
   const nameById = new Map(registry.all().map((card) => [card.id, card.name]));
+  // M188/B (uwaga właściciela): tokeny mają cardId `token_*`, którego NIE MA
+  // w rejestrze kart — nameOf zwracał więc surowy identyfikator i log pisał
+  // „token_squirrel zadaje 1 obrażenie", „token_squirrel ginie". Nazwa
+  // obiektu żywego szła z `object.name` (nameOfObject), ale token po śmierci
+  // znika ze stanu (CR 111.7), więc opis miał do dyspozycji tylko cardId.
+  // Mapę budujemy GENERYCZNIE ze wszystkich deskryptorów tworzących tokeny
+  // w katalogu (ADR 0002 — bez ręcznej listy nazw); strażnik w testach
+  // pilnuje, żeby każdy nowy token miał nazwę.
+  for (const [cardId, name] of collectTokenNames(registry)) {
+    if (!nameById.has(cardId)) nameById.set(cardId, name);
+  }
   const colorsById = new Map(registry.all().map((card) => [card.id, card.colors ?? []]));
   const log = []; // { kind: 'event'|'rejection'|'system', text }
   const sessionLog = (kind, text) => log.push({ kind, text });
@@ -1432,28 +1646,72 @@ export function createSession(config) {
     }
     if (TURN_NOISE.has(e.type)) return;
     // M176: przebieg tur w 3. osobie dla OBU graczy (Czarodziejka/Nieprzyjaciel).
-    const text = describeEvent(e, TURN_NAMES, { drugaOsoba: false });
+    // M199 (zlecenie właściciela): TYLKO ta sekcja jest w pełnym Fog of War —
+    // zapis dla AI ma być relacją obserwatora, więc karty gracza są ukryte
+    // dokładnie tak jak karty bota. Główny log stołu i modal „Rozgrywka"
+    // zostają bez zmian (gracz widzi tam swoje karty).
+    const text = describeEvent(e, TURN_NAMES, { drugaOsoba: false, fogOfWar: true });
     if (!text) return;
     currentTurn.lines.push(text);
   }
   /** Formatuje N ostatnich pełnych tur (1 albo 2) do tekstu dla AI. */
-  function turnHistoryText(count = 1) {
-    // Po zakończeniu partii ostatnia, przerwana tura też jest pełna.
+  /**
+   * M188/K (zlecenie właściciela): lista WSZYSTKICH ukończonych tur do
+   * selecta — „wybieram dowolną turę i ona się pokazuje". Wcześniej panel
+   * umiał pokazać tylko 1 albo 2 OSTATNIE tury, więc wcześniejsze przebiegi
+   * były nieosiągalne, mimo że sesja trzyma je w komplecie.
+   */
+  function turnHistoryEntries() {
+    flushFinishedTurn();
+    return turnHistory.map((record) => ({
+      number: record.number,
+      activePlayerId: record.activePlayerId,
+      label: `Tura ${record.number} — ${TURN_NAMES[record.activePlayerId] ?? record.activePlayerId}`,
+    }));
+  }
+
+  /** Tekst JEDNEJ, wskazanej tury (pusty, gdy takiej tury nie ma). */
+  function turnHistoryTextFor(turnNumber) {
+    flushFinishedTurn();
+    const record = turnHistory.find((entry) => entry.number === turnNumber);
+    if (!record) return '';
+    return formatTurnRecord(record);
+  }
+
+  /**
+   * M197/A1 (zlecenie właściciela): zapis CAŁEJ partii — „kopiuje nie jedną
+   * wybraną turę, ale wszystkie tury od początku rozgrywki (ten zapis dla
+   * AI)". Ten sam format bloku co pojedyncza tura, sklejony po kolei.
+   */
+  function turnHistoryTextAll() {
+    flushFinishedTurn();
+    if (turnHistory.length === 0) return '';
+    return turnHistory.map(formatTurnRecord).join('\n\n');
+  }
+
+  /** Wspólny format bloku tury (używany przez oba wejścia). */
+  function formatTurnRecord(record) {
+    const whoName = TURN_NAMES[record.activePlayerId] ?? record.activePlayerId;
+    const header = `**Tura ${record.number} — ${whoName}**`;
+    const lines = record.lines.length > 0
+      ? record.lines.map((line) => `• ${line}`)
+      : ['• (nic znaczącego)'];
+    return [header, ...lines].join('\n');
+  }
+
+  /** Po końcu partii ostatnia (przerwana) tura też jest pełna — domknij ją. */
+  function flushFinishedTurn() {
     if (state.status === 'finished' && currentTurn.lines.length > 0) {
       turnHistory.push(currentTurn);
       currentTurn = { number: state.turn.number, activePlayerId: state.turn.activePlayerId, lines: [] };
     }
+  }
+
+  function turnHistoryText(count = 1) {
+    flushFinishedTurn();
     const records = turnHistory.slice(-Math.max(1, Math.min(2, count)));
     if (records.length === 0) return '';
-    const blocks = records.map((record) => {
-      const whoName = TURN_NAMES[record.activePlayerId] ?? record.activePlayerId;
-      const header = `**Tura ${record.number} — ${whoName}**`;
-      const lines = record.lines.length > 0
-        ? record.lines.map((line) => `• ${line}`)
-        : ['• (nic znaczącego)'];
-      return [header, ...lines].join('\n');
-    });
-    return blocks.join('\n\n');
+    return records.map(formatTurnRecord).join('\n\n');
   }
   const captureBotReasoning = () => {
     const last = bot.trace?.().at(-1);
@@ -1472,8 +1730,13 @@ export function createSession(config) {
     return nameById.get(cardId) ?? cardId ?? '?';
   }
 
-  /** Nazwa obiektu gry (po id obiektu, nie karty) — do opisów ataków i celów. */
-  function nameOfObject(objectId) {
+  /**
+   * Nazwa obiektu gry (po id obiektu, nie karty) — do opisów ataków i celów.
+   * M199: `fogOfWar` maskuje tożsamość WŁASNEGO zakrytego permanentu gracza —
+   * w zapisie „Przebieg tur (dla AI)" obserwator nie wie, kto jest morphem
+   * (CR 708.2). W logu stołu (domyślnie) własny morph zostaje nazwany.
+   */
+  function nameOfObject(objectId, { fogOfWar = false } = {}) {
     // M73d (C): cel-gracz (np. Inspiration „target player draws") — imię
     // zamiast „?" (audyt żywym testerem: „rzuca Inspiration → cel: ?").
     if (state.players.some((pl) => pl.id === objectId)) return who(objectId);
@@ -1489,7 +1752,7 @@ export function createSession(config) {
     // morph — znacznik „(Morph)" odróżnia zakryte 2/2 od pełnego stwora.
     // M127: brzmienie i wielkość litery z jednego źródła (faceDownName).
     if (object.faceDown) {
-      return faceDownName(object.controllerId === HUMAN_ID ? nameOf(object.cardId) : null);
+      return faceDownName((!fogOfWar && object.controllerId === HUMAN_ID) ? nameOf(object.cardId) : null);
     }
     // M155 (audyt żywym testerem): tokeny niosą JAWNĄ nazwę w `object.name`
     // (cardId `token_*` poza rejestrem → nameOf zwracałby „token_squirrel").
@@ -1522,7 +1785,10 @@ export function createSession(config) {
       suppressNextLibrarySearched = true;
     }
     return describeGameEvent(e, {
-      nameOf, nameOfObject, cardIdByName,
+      nameOf,
+      // M199: w trybie FoW także nazwy obiektów maskują własnego morpha.
+      nameOfObject: (id) => nameOfObject(id, { fogOfWar: options.fogOfWar === true }),
+      cardIdByName,
     // M168/B: efektywne keywordy obiektu (render kafla liczy badge'e grantów).
     effectiveKeywordsOf: (object) => effectiveKeywords(object, state),
       isPlayer: (id) => state.players.some((player) => player.id === id),
@@ -1792,8 +2058,26 @@ export function createSession(config) {
       // strefy karty (object_moved) ma być pokazana w modalu ruchu bota,
       // choć do logu nie trafia (decyzja o gadatliwości logu zostaje).
       if (!BOT_PAUSE_EVENTS.has(e.type)) return;
-      const movedName = nameOf(e.object?.cardId ?? state.objects.get(e.fromId)?.cardId);
-      text = `${who(e.object?.controllerId)}: ${movedName} — ${zoneLabel(e.fromZone)} → ${zoneLabel(e.toZone)}`;
+      // M192/Z1 (audyt zywym testerem, CR 400.2): ta galaz opisuje ruch karty
+      // wlasnym tekstem, bo `object_moved` jest szumem LOGU. M123 zalatalo
+      // tylko MINIATURKE (`cardId`) — nazwa w TEKSCIE nie miala zadnej bramki
+      // mgly wojny, wiec modal wypisywal wprost karty, ktore przeciwnik
+      // ogladal prywatnie (Rediscover the Way: „Krumar Initiate — biblioteka
+      // → reka", „Mountain — biblioteka → biblioteka" = pelny podglad decyzji).
+      //
+      // Regula generyczna, nie latka na jedna kartę: gdy karta PRZECIWNIKA
+      // wedruje miedzy strefami UKRYTYMI (reka, biblioteka), gracz ma prawo
+      // wiedziec, ZE ruch nastapil, ale nie CO to za karta. Ruch z/do strefy
+      // jawnej (pole bitwy, grob, wygnanie) nazywamy dalej — tam informacja
+      // jest publiczna. Jawne odsloniecie (`revealed`) tez nazywamy.
+      const movedController = e.object?.controllerId ?? state.objects.get(e.fromId)?.controllerId;
+      const hidden = movedController != null && movedController !== HUMAN_ID
+        && HIDDEN_ZONES.has(e.fromZone) && HIDDEN_ZONES.has(e.toZone)
+        && e.revealed !== true;
+      const movedName = hidden
+        ? 'karta'
+        : nameOf(e.object?.cardId ?? state.objects.get(e.fromId)?.cardId);
+      text = `${who(movedController)}: ${movedName} — ${zoneLabel(e.fromZone)} → ${zoneLabel(e.toZone)}`;
     } else {
       text = describeEvent(e);
       if (!text) return;
@@ -2059,6 +2343,9 @@ export function createSession(config) {
     turnHistory,
     /** Tekst N ostatnich pełnych tur (1–2) dla AI — imiona Czarodziejka/Nieprzyjaciel. */
     turnHistoryText,
+    turnHistoryEntries,
+    turnHistoryTextFor,
+    turnHistoryTextAll,
     exportReplayText() {
       return serializeReplay(replayFromState(state));
     },

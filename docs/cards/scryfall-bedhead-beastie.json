@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Bedhead+Beastie&set=dsk",
+  "print": "Bedhead Beastie (DSK)",
+  "name": "Bedhead Beastie",
+  "mana_cost": "{4}{R}{R}",
+  "cmc": 6.0,
+  "type_line": "Creature — Beast",
+  "oracle_text": "Menace (This creature can't be blocked except by two or more creatures.)\nMountaincycling {2} ({2}, Discard this card: Search your library for a Mountain card, reveal it, put it into your hand, then shuffle.)",
+  "colors": [
+    "R"
+  ],
+  "keywords": [
+    "Mountaincycling",
+    "Landcycling",
+    "Menace",
+    "Typecycling",
+    "Cycling"
+  ],
+  "set": "dsk",
+  "collector_number": "125",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/7/77c72b5b-dd81-4eb4-80d9-a0124e27e1dc.jpg?1783909472"
+  },
+  "pobrano": "2026-08-23",
+  "power": "5",
+  "toughness": "6"
+}

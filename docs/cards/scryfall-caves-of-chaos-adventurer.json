@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Caves%20of%20Chaos%20Adventurer&set=clb",
+  "print": "Caves of Chaos Adventurer (CLB)",
+  "name": "Caves of Chaos Adventurer",
+  "mana_cost": "{3}{R}",
+  "cmc": 4.0,
+  "type_line": "Creature — Human Barbarian",
+  "oracle_text": "Trample\nWhen this creature enters, you take the initiative.\nWhenever this creature attacks, exile the top card of your library. If you've completed a dungeon, you may play that card this turn without paying its mana cost. Otherwise, you may play that card this turn.",
+  "power": "5",
+  "toughness": "3",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [
+    "Trample"
+  ],
+  "set": "clb",
+  "collector_number": "167",
+  "rarity": "rare",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/9/09abb6df-2aa1-4999-b550-db2892faa8c7.jpg?1783922743"
+  },
+  "pobrano": "2026-08-23"
+}

@@ -1,6 +1,7 @@
 # Wiedźmin
 
 1x Curiosity
+1x Divest
 1x Fleeting Distraction
 1x Floodhound
 1x Twiddle
@@ -9,18 +10,22 @@
 1x Leafcrown Dryad
 1x Maritime Guard
 1x Merfolk Mesmerist
-1x Negate
+1x Negate (M20)
 1x Wishful Merfolk
 1x Apprentice Wizard
 1x Chittering Rats
 1x Dread Warlock
 1x Nature's Embrace
+1x Springbloom Druid
+1x Ballista Watcher
 1x Emerald Oryx
 1x Inspiration
 1x Nightshade Harvester
 1x Nightsnare
+1x Bedhead Beastie
 1x Segmented Krotiq
 1x Howl of the Night Pack
 5x Island
 3x Swamp
+2x Mountain
 3x Forest

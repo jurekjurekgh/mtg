@@ -160,6 +160,23 @@ function allEffectsInertNow(view, effects, cmd) {
   return list.every((effect) => effectIsInertNow(view, effect, cmd));
 }
 
+/**
+ * M190/B: mapa dróg lochu (Oracle tclb/20) — kontroler nie importuje silnika
+ * (ADR 0004: bot dostaje widok), więc trzyma własną, jawną kopię do WYCENY.
+ * Zgodność z silnikiem pilnuje test m190 (jedno źródło prawdy = dane pokoi).
+ */
+export const UNDERCITY_ROOM_LINKS = Object.freeze({
+  'Secret Entrance': ['Forge', 'Lost Well'],
+  Forge: ['Trap!', 'Arena'],
+  'Lost Well': ['Arena', 'Stash'],
+  'Trap!': ['Archives'],
+  Arena: ['Archives', 'Catacombs'],
+  Stash: ['Catacombs'],
+  Archives: ['Throne of the Dead Three'],
+  Catacombs: ['Throne of the Dead Three'],
+  'Throne of the Dead Three': [],
+});
+
 export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null, weights = undefined, registry: registryOverride = undefined }) {
   if (!Number.isInteger(seed)) throw new TypeError('Bot wymaga całkowitego seeda');
   if (typeof randomness !== 'number' || randomness < 0 || randomness > 1) throw new RangeError('randomness ma być w [0, 1]');
@@ -636,7 +653,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent' || type === 'cast_adventure_creature') return 'permanent';
     if (type === 'cast_spell' || type === 'cast_cleave' || type === 'cast_adventure' || type === 'plot_card' || type === 'suspend_card' || type === 'warp_card' || type === 'draw_card') return 'spell';
-    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_library_placement' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_counter_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_satyr_look_choice' || type === 'resolve_epic_choice' || type === 'resolve_suspend_cast' || type === 'resolve_rebound_cast' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice' || type === 'resolve_copy_targets' || type === 'resolve_opponent_target' || type === 'resolve_damage_division' || type === 'resolve_grave_free_cast') return 'ability';
+    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_undercity_route' || type === 'resolve_fabricate' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_library_placement' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_counter_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_satyr_look_choice' || type === 'resolve_epic_choice' || type === 'resolve_suspend_cast' || type === 'resolve_rebound_cast' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice' || type === 'resolve_copy_targets' || type === 'resolve_opponent_target' || type === 'resolve_damage_division' || type === 'resolve_grave_free_cast') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
     return null;
@@ -1562,6 +1579,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // Pump kosztem tapu na stworze gotowym do ataku (main/combat
               // własnej tury) kosztuje utratę tego ataku — zwykle się nie opłaca.
               if (source?.kind === 'creature' && taps && canAttackNow(recipient)) value -= (recipient.power ?? 0) + 3;
+              // M195/B (uwaga właściciela, Ghost Warden): trick bojowy użyty
+              // NA SAMYM SOBIE kosztem {T}. Bot tapował Ghost Wardena w swojej
+              // fazie walki, żeby dać sobie +1/+1 — stwór i tak nie atakował
+              // (nie był zadeklarowany), a tapnięcie odbierało mu blok w turze
+              // przeciwnika. Cytat: „jeśli tapnę tą kartę to już nią nie
+              // zaatakuję, więc buffowanie jest bez sensu".
+              //
+              // Kara wyżej tego nie łapała: sprawdzała `canAttackNow(recipient)`,
+              // a Ghost Warden JEST już wykluczony z ataku w kroku blokujących
+              // (atakujący są zadeklarowani), więc warunek nie zachodził.
+              // Reguła generyczna (ADR 0002 — bez nazw kart): pump na SIEBIE
+              // kosztem tapu ma wartość tylko wtedy, gdy to źródło realnie
+              // bierze udział w walce (atakuje albo blokuje). Inaczej +X/+X
+              // wygaśnie w cleanup, a stwór zostanie zatapiany.
+              const selfPump = source && recipient && source.id === recipient.id;
+              const fightsNow = Boolean(recipient?.attacking || recipient?.blocking);
+              if (selfPump && taps && !fightsNow) value -= 30;
             } else {
               value -= 4; // pump na wrogu bez powodu
             }
@@ -1775,6 +1809,84 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 && readyPower >= foeLife - 2) score -= 12; // blisko wygranej
             }
           }
+          // ---- Batch 47 (L50/L51): wycena nowych efektow ----------------
+          // Bez wyceny kazdy wariant remisuje i bot gra losowo — w partii
+          // widac to jako bezsensowne aktywacje.
+          if (effect.type === 'each_player_exiles_top_face_down') {
+            // Pyxis of Pandemonium ({T}): efekt SYMETRYCZNY — wygania wierzch
+            // KAZDEMU. Sam w sobie nic nie daje (karty leza zakryte), wartosc
+            // pojawia sie dopiero przy drugiej zdolnosci za {7}. Lekko na
+            // plus, bo buduje zasob; mocno w dol, gdy nie stac nas na wyplate.
+            const canAffordPayoff = (view.player?.mana ?? 0) >= 7
+              || (view.zones.battlefield ?? []).filter((o) => o.controllerId === view.playerId
+                && (o.types ?? []).includes('Land') && !o.tapped).length >= 7;
+            score += canAffordPayoff ? 6 : 2;
+          }
+          if (effect.type === 'turn_up_exiled_and_put_permanents') {
+            // Wyplata Pyxis: im wiecej wygnanych kart, tym lepiej, ale efekt
+            // jest SYMETRYCZNY (przeciwnik tez dostaje swoje permanenty),
+            // wiec liczymy WLASNE karty na plus, cudze na minus.
+            const source = cmd.objectId ? objectOnBoard(view, cmd.objectId) : null;
+            const linked = source?.exiledCardIds ?? [];
+            let mine = 0;
+            let theirs = 0;
+            for (const id of linked) {
+              const card = (view.zones.exile ?? []).find((o) => o.id === id);
+              if (!card) continue;
+              if (card.controllerId === view.playerId) mine += 1; else theirs += 1;
+            }
+            score += mine * 8 - theirs * 6;
+          }
+          if (effect.type === 'graveyard_card_to_library_top_choice') {
+            // Sequestered Stash: odzysk artefaktu z grobu. Wartosc rosnie
+            // z liczba artefaktow w grobie; bez nich zostaje sam mill (na
+            // wlasnej bibliotece — raczej szkodliwy).
+            const artifactsInGrave = (view.zones.graveyard ?? []).filter((o) => o.controllerId === view.playerId
+              && (o.types ?? []).includes('Artifact')).length;
+            score += artifactsInGrave > 0 ? 10 + artifactsInGrave * 3 : -8;
+          }
+          // ---- Batch 48 (L50/L51): wycena nowych efektow -----------------
+          if (effect.type === 'creatures_cant_block_this_turn') {
+            // Ruthless Invasion: warte tyle, ile obrazen przepusci. Liczymy
+            // moc GOTOWYCH atakujacych minus to, co i tak jest nieblokowalne;
+            // bez wlasnych atakujacych czar jest bezuzyteczny.
+            const except = effect.exceptTypes ?? [];
+            const readyPower = myCreatures(view)
+              .filter((c) => canAttackNow(c))
+              .reduce((sum, c) => sum + (c.power ?? 0), 0);
+            const blockersRemoved = enemyCreatures(view)
+              .filter((c) => !c.tapped && !except.some((t) => (c.types ?? []).includes(t))).length;
+            score += readyPower > 0 && blockersRemoved > 0
+              ? Math.min(40, readyPower * 3 + blockersRemoved * 4)
+              : -25;
+          }
+          if (effect.type === 'your_creatures_gain_keywords_until_end_of_turn') {
+            // Formidable (Stampeding Elk Herd): trample dla druzyny ma wartosc
+            // tylko przy realnym ataku — trigger i tak odpala sie przy ataku,
+            // wiec liczymy liczbe wlasnych stworow.
+            score += Math.min(30, myCreatures(view).length * 6);
+          }
+          if (effect.type === 'sacrifice_self_if_counters_then_treasure') {
+            // Contested Game Ball: to rider zdolnosci „dobierz karte" —
+            // poswiecenie po piatym liczniku jest KORZYSTNE (Skarb), wiec
+            // nie karzemy; sama wycena dobrania wystarczy.
+            score += 0;
+          }
+          if (effect.type === 'subtype_spells_gain_flash_and_etb_fight_this_turn') {
+            // Cherished Hatchling: warte tyle, ile Dinozaurow zostalo w rece.
+            const inHand = (view.zones.hand ?? [])
+              .filter((o) => (o.subtypes ?? []).includes(effect.subtype)).length;
+            score += inHand * 8;
+          }
+          if (effect.type === 'attacker_gains_control_and_untaps') {
+            // Trigger obronny — nie jest wyborem bota (odpala sie sam);
+            // wycena zerowa, zeby nie zaburzac rankingu.
+            score += 0;
+          }
+          if (effect.type === 'lose_life_enchanted_permanent_controller') {
+            // Clawing Torment: powolne obcinanie zycia przeciwnika.
+            score += 6;
+          }
           if (effect.type === 'add_mana') {
             // Dodatkowa mana (Holdout Settlement, Apprentice Wizard, Treasure):
             // cenna tylko, gdy jest co zagrać. Liczy się BILANS: produkcja
@@ -1967,6 +2079,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const weakestBlockerToughness = blockers.reduce((min, o) => Math.min(min, o.toughness ?? 0), Number.POSITIVE_INFINITY);
         const enemyLife = enemy(view)?.life ?? 0;
         let score = 0;
+        // M188/C (uwaga właściciela): ilu atakujących nie osiąga NICZEGO —
+        // nie zada obrażeń (obrońca ma czym zablokować bez straty) i nie
+        // zabije blokera. Taki atak tylko tapuje własnego stwora.
+        let futileAttackers = 0;
         for (const id of attackers) {
           const object = objectOnBoard(view, id);
           if (!object) continue;
@@ -2010,6 +2126,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // a tapnięty atakujący nie zablokuje w następnej turze — netto
             // strata, poniżej passu (uwaga właściciela z testów).
             perAttacker = -2;
+            // M188/C: ten atak jest JAŁOWY — obrońca zablokuje bez straty,
+            // więc nie przejdą obrażenia ani nie zginie żaden bloker.
+            futileAttackers += 1;
           } else if (power >= strongestBlockerToughness) {
             perAttacker = power - 1; // wymiana: obrażenia + usunięcie blockerów
           } else {
@@ -2047,7 +2166,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const racing = enemyLife <= 10
           || enemyBoardPower(view) >= myLife(view)
           || (libraryExists && myLibraryCount(view) <= 4);
-        if (racing && attackers.length > 0) {
+        // M188/C (uwaga właściciela: „bot atakuje 2/2 mimo mojej 1/5 —
+        // jedynym efektem jest tapnięcie jego stwora"): atak, w którym ŻADEN
+        // atakujący nic nie osiąga, nie może być ratowany premią wyścigu.
+        // Klasa L3: kara −2 istniała, ale premia (+8/+20) ją przebijała, więc
+        // była martwa. Zgodnie z L3 POMIJAMY premię zamiast dokładać karę —
+        // presja bez obrażeń nie jest presją. Lethal (penetratingPower) jest
+        // wyżej i nie przechodzi przez tę gałąź, bo wtedy atak nie jest jałowy.
+        const wholeAttackFutile = attackers.length > 0 && futileAttackers === attackers.length;
+        if (racing && attackers.length > 0 && !wholeAttackFutile) {
           score += totalPower >= enemyLife - 5 ? 20 : 8;
           if (libraryExists && myLibraryCount(view) <= 2) score += 15;
         }
@@ -2217,6 +2344,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Na spód odkładamy dokładnie wtedy, gdy karty nie chcemy dobrać.
         if (cmd.putOnBottom) return finish(20 - keep);
         return finish(20 + keep);
+      }
+      // M190/B: wybór ŚCIEŻKI w lochu (Oracle „Leads to: …"). Bez wyceny
+      // wszystkie warianty remisują i bot bierze pierwszą ofertę (klasa L50).
+      // Wartość pokoju = jego realny wpływ na partię; przy równych wartościach
+      // preferujemy krótszą drogę do Throne (najsilniejszy pokój końcowy).
+      case 'resolve_undercity_route': {
+        const ROOM_VALUE = {
+          'Trap!': 34,            // 5 życia w przeciwnika
+          Catacombs: 30,          // 4/1 menace
+          Forge: 22,              // 2× +1/+1
+          Archives: 18,           // dobranie karty
+          Arena: 14,              // goad (sytuacyjny)
+          Stash: 12,              // Treasure
+          'Lost Well': 8,         // scry 2
+          'Throne of the Dead Three': 40,
+        };
+        const base = ROOM_VALUE[cmd.roomName] ?? 10;
+        // Krótsza droga do końca lochu jest warta premii: Trap!/Archives
+        // domykają trasę szybciej niż pętla przez Arenę i Catacombs.
+        const room = (cmd.room ?? 0) - 1;
+        const leadsTo = UNDERCITY_ROOM_LINKS[cmd.roomName] ?? [];
+        const closesFast = leadsTo.includes('Throne of the Dead Three') ? 6 : 0;
+        return finish(base + closesFast + (room >= 0 ? 0 : 0));
       }
       case 'resolve_room_target': {
         // Wybór celu pokoju lochu (M24): Trap! → przeciwnik; Throne →
@@ -2604,6 +2754,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (cmd.type === 'declare_attackers') return `attack[${cmd.attackerIds.join(',')}]`;
     if (cmd.type === 'declare_blockers') return `block[${Object.entries(cmd.assignments ?? {}).map(([a, b]) => `${a}<${b.join('+')}`).join(' ')}]`;
     if (cmd.type === 'cast_spell' || cmd.type === 'cast_cleave' || cmd.type === 'cast_permanent' || cmd.type === 'cast_adventure' || cmd.type === 'cast_adventure_creature') return `${cmd.type}(${cmd.objectId}${cmd.targets ? '->' + cmd.targets.join('+') : ''})`;
+    // M195/B: aktywacja zdolności bez ŹRÓDŁA i CELU była w śladzie nieczytelna
+    // („activate_ability" × N) — nie dało się odróżnić buffu sojusznika od
+    // tapnięcia samego siebie ani w diagnostyce, ani w teście wyceny.
+    if (cmd.type === 'activate_ability') {
+      return `activate_ability(${cmd.objectId}#${cmd.abilityIndex ?? 0}${(cmd.targets ?? []).length ? '->' + cmd.targets.join('+') : ''})`;
+    }
     return cmd.type;
   }
 

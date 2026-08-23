@@ -19,6 +19,10 @@ export function gameObjectDataOf(card) {
     // zdolności aktywowane poza implikowanym {T}: add mana ({4},{T}: Scry 1).
     const landData = { kind: 'land', entersTapped: card.entersTapped ?? false, abilities: card.abilities ?? [], colors: colors(), cardName: card.name };
     if (card.entersTappedCondition) landData.entersTappedCondition = card.entersTappedCondition;
+    // Batch 46 (Manor Gate): „As this land enters, choose a color other than
+    // green." Deskryptor musi dojść na obiekt gry (L21) — LAND ma osobną
+    // gałąź materializacji niż stwory, więc pole dopisujemy tutaj.
+    if (card.chooseColor) landData.chooseColor = card.chooseColor;
     return landData;
   }
   if (card.types.includes('Creature')) {
@@ -48,6 +52,8 @@ export function gameObjectDataOf(card) {
     if (card.endure != null) data.endure = card.endure;
     // Toxic (CR 702.180): wartość na obiekcie gry (combat czyta source.toxic).
     if (card.toxic != null) data.toxic = card.toxic;
+    // Batch 46 (Bone Shredder): echo — koszt musi dojść na obiekt gry (L21).
+    if (card.echo != null) data.echo = card.echo;
     // Exploit (CR 702.110, Silumgar Butcher): ETB z opcjonalnym poświęceniem
     // (resolve_exploit_choice); po poświęceniu trigger „exploits".
     if (card.exploit) data.exploit = card.exploit;

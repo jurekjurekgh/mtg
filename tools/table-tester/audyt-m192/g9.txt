@@ -1,0 +1,1120 @@
+== NOWA PARTIA: gracz=worek-dziki vs bot=alara, seed=8, profil=random, policy-seed=6, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Forest
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Unstable Frontier
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Unstable Frontier
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Unstable Frontier staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Unstable Frontier staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Dalej (pass)
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 2
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Swamp staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Swamp staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Merchant's Dockhand
+  >> Zagraj: Merchant's Dockhand (koszt 1)
+  [kreator many] Płatność 1 — tapuj źródła po jednympozostało 1 manyTapnij: Forest (G)Tapnij: Mountain (R)Anuluj płatność — źródła: 2
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Merchant's Dockhand
+  [ROZGRYWKA]   • Merchant's Dockhand wchodzi na pole bitwy
+  [ROZGRYWKA]   • Merchant's Dockhand zostaje rozstrzygnięty
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Swamp staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Swamp staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Geological Appraiser
+  >> Rzuć: Cathartic Reunion (koszt 1R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Rzucasz Cathartic Reunion
+  >> Wybierz: Karta do odrzucenia (6 opcji)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Geological Appraiser Odrzuć: Cacophodon Odrzuć: Ruinous Rampage Odrzuć: Swamp Odrzuć: Island (1 z 2) Odrzuć: Island (2 z 2)
+  [modal choice]     Odrzuć: Geological Appraiser
+  [modal choice]     Odrzuć: Cacophodon
+  [modal choice]     Odrzuć: Ruinous Rampage
+  [modal choice]     Odrzuć: Swamp
+  [modal choice]     Odrzuć: Island (1 z 2)
+  [modal choice]   ▶ Odrzuć: Island (2 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odrzucasz Island
+  >> Wybierz: Karta do odrzucenia (5 opcji)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Geological Appraiser Odrzuć: Cacophodon Odrzuć: Ruinous Rampage Odrzuć: Swamp Odrzuć: Island
+  [modal choice]     Odrzuć: Geological Appraiser
+  [modal choice]     Odrzuć: Cacophodon
+  [modal choice]     Odrzuć: Ruinous Rampage
+  [modal choice]   ▶ Odrzuć: Swamp
+  [modal choice]     Odrzuć: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odrzucasz Swamp
+  [ROZGRYWKA]   • Dobierasz: Welder Automaton
+  [ROZGRYWKA]   • Dobierasz: Glitch Ghost Surveyor
+  [ROZGRYWKA]   • Dobierasz: Hunter's Blowgun
+  [ROZGRYWKA]   • Cathartic Reunion zostaje rozstrzygnięty
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Merchant's Dockhand
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Merchant's Dockhand zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 19
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Zagraj: Hunter's Blowgun (koszt 1)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Hunter's Blowgun
+  [ROZGRYWKA]   • Hunter's Blowgun wchodzi na pole bitwy
+  [ROZGRYWKA]   • Hunter's Blowgun zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Illusory Demon
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Island staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Island staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Illusory Demon wchodzi na pole bitwy
+  [ROZGRYWKA]   • Illusory Demon zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Merchant's Dockhand
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Illusory Demon blokuje Merchant's Dockhand
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Merchant's Dockhand zadaje 1 obrażenie (Illusory Demon)
+  [ROZGRYWKA]   • Illusory Demon zadaje 4 obrażenia (Merchant's Dockhand)
+  [ROZGRYWKA]   • Merchant's Dockhand ginie
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Akrasan Squire
+  [ROZGRYWKA]   • Illusory Demon — trigger (rzucenie czaru)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Plains staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Plains staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Illusory Demon zostaje poświęcony
+  [ROZGRYWKA]   • Illusory Demon — trigger się rozstrzyga
+  [ROZGRYWKA]   • Akrasan Squire wchodzi na pole bitwy
+  [ROZGRYWKA]   • Akrasan Squire zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Dalej (pass)
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 2
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Zagraj: Cacophodon (koszt 3G)
+  [kreator many] Płatność 3G — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: GTapnij: Forest (G)Tapnij: Mountain (R)Tapnij — źródła: 5
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Cacophodon
+  [ROZGRYWKA]   • Cacophodon wchodzi na pole bitwy
+  [ROZGRYWKA]   • Cacophodon zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Ethersworn Shieldmage
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ethersworn Shieldmage wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ethersworn Shieldmage zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Ethersworn Shieldmage — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Ethersworn Shieldmage — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Spinewoods Paladin
+  >> Wyposaż: Hunter's Blowgun (Ty) → Cacophodon (Ty) (koszt 2)
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Forest (G)Tapnij: Mountain (R)Tapnij: Island (U)Tapnij: Fores — źródła: 5
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Aktywujesz Equip: Hunter's Blowgun → cel: Cacophodon
+  [ROZGRYWKA]   • Hunter's Blowgun wyposaża Cacophodon
+  >> Zagraj: Glitch Ghost Surveyor (koszt 2U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Glitch Ghost Surveyor
+  [ROZGRYWKA]   • Glitch Ghost Surveyor wchodzi na pole bitwy
+  [ROZGRYWKA]   • Glitch Ghost Surveyor zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Glitch Ghost Surveyor — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zwiększasz prędkość (speed: 1)
+  [ROZGRYWKA]   • Glitch Ghost Surveyor — trigger się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Cacophodon
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Akrasan Squire blokuje Cacophodon
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Cacophodon zadaje 3 obrażenia (Akrasan Squire)
+  [ROZGRYWKA]   • Akrasan Squire zadaje 1 obrażenie (Cacophodon)
+  [ROZGRYWKA]   • Akrasan Squire ginie
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Cacophodon — wybierz cel triggera (wymagany)
+  >> Cacophodon — cel triggera (15 opcji)
+  [modal choice] Cacophodon — cel triggera Cacophodon — cel triggera: Cacophodon (Ty) Cacophodon — cel triggera: Ethersworn Shieldmage (Nieprzyjaciel) Cacophodon — cel triggera: Glitch Ghost Surveyor (Ty) Cacophodon — cel triggera: Hunter's Blowgun (Ty) Cacophodon — cel triggera: Forest (Ty) (1 z 2) Cacophodon — cel triggera: Unstable Frontier (Nieprzyjaciel) Cacophodon — cel triggera: Mountain (Ty) Cacophodon — cel triggera: Swamp (Nieprzyjaciel) (1 z 2) Cacophodon — cel triggera: Swamp (Nieprzyjaciel) (2 z 2) Cacophodon — cel triggera: Island (Ty) Cacophodon — cel triggera: Island (Nieprzyjaciel) (1 z 2) Cacophodon — cel triggera: Forest (Ty) (2 z 2) Cacophodon — cel triggera: Plains (Nieprzyjaciel) Cacophodon — cel triggera: Swamp (Ty) Cacophodon — cel triggera: Island (Nieprzyjaciel) (2 z 2)
+  [modal choice]     Cacophodon — cel triggera: Cacophodon (Ty)
+  [modal choice]     Cacophodon — cel triggera: Ethersworn Shieldmage (Nieprzyjaciel)
+  [modal choice]     Cacophodon — cel triggera: Glitch Ghost Surveyor (Ty)
+  [modal choice]     Cacophodon — cel triggera: Hunter's Blowgun (Ty)
+  [modal choice]     Cacophodon — cel triggera: Forest (Ty) (1 z 2)
+  [modal choice]     Cacophodon — cel triggera: Unstable Frontier (Nieprzyjaciel)
+  [modal choice]     Cacophodon — cel triggera: Mountain (Ty)
+  [modal choice]     Cacophodon — cel triggera: Swamp (Nieprzyjaciel) (1 z 2)
+  [modal choice]   ▶ Cacophodon — cel triggera: Swamp (Nieprzyjaciel) (2 z 2)
+  [modal choice]     Cacophodon — cel triggera: Island (Ty)
+  [modal choice]     Cacophodon — cel triggera: Island (Nieprzyjaciel) (1 z 2)
+  [modal choice]     Cacophodon — cel triggera: Forest (Ty) (2 z 2)
+  [modal choice]     Cacophodon — cel triggera: Plains (Nieprzyjaciel)
+  [modal choice]     Cacophodon — cel triggera: Swamp (Ty)
+  [modal choice]     Cacophodon — cel triggera: Island (Nieprzyjaciel) (2 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Cacophodon — trigger (otrzymanie obrażeń)
+  [ROZGRYWKA]   • Cacophodon — cel: Swamp
+  [ROZGRYWKA]   • Cacophodon — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Etherium Sculptor
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Island staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Island staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Etherium Sculptor wchodzi na pole bitwy
+  [ROZGRYWKA]   • Etherium Sculptor zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Angel's Herald
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Angel's Herald wchodzi na pole bitwy
+  [ROZGRYWKA]   • Angel's Herald zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Ethersworn Shieldmage
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Glitch Ghost Surveyor (2/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Glitch Ghost Surveyor blokuje Ethersworn Shieldmage
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Ethersworn Shieldmage zadaje 2 obrażenia (Glitch Ghost Surveyor)
+  [ROZGRYWKA]   • Glitch Ghost Surveyor zadaje 2 obrażenia (Ethersworn Shieldmage)
+  [ROZGRYWKA]   • Ethersworn Shieldmage ginie
+  [ROZGRYWKA]   • Glitch Ghost Surveyor ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Gila Courser
+  >> Zagraj: Welder Automaton (koszt 2)
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Forest (G)Tapnij: Mountain (R)Tapnij: Island (U)Tapnij: Fores — źródła: 5
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Welder Automaton
+  [ROZGRYWKA]   • Welder Automaton wchodzi na pole bitwy
+  [ROZGRYWKA]   • Welder Automaton zostaje rozstrzygnięty
+  >> Wyposaż: Hunter's Blowgun (Ty) → Welder Automaton (Ty) (koszt 2)
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Forest (G)Tapnij: Mountain (R)Tapnij: Island (U)Anuluj płatno — źródła: 3
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz Equip: Hunter's Blowgun → cel: Welder Automaton
+  [ROZGRYWKA]   • Hunter's Blowgun wyposaża Welder Automaton
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Cacophodon
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Cacophodon zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 19 → 17
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Goblin Deathraiders
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Mountain staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Mountain staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Goblin Deathraiders wchodzi na pole bitwy
+  [ROZGRYWKA]   • Goblin Deathraiders zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Etherwrought Page
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Etherwrought Page wchodzi na pole bitwy
+  [ROZGRYWKA]   • Etherwrought Page zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 17 — Ty
+  >> Aktywuj: Welder Automaton (Ty) (koszt 3R) — 1 obrażenie każdemu przeciwnikowi
+  [kreator many] Płatność 3R — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: RTapnij: Forest (G)Tapnij: Mountain (R)Tapnij — źródła: 5
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Swamp (B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Welder Automaton
+  [ROZGRYWKA]   • Welder Automaton zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 17 → 16
+  [ROZGRYWKA]   • Ty: zdolność Welder Automaton rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Dire Fleet Ravager
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Etherwrought Page — wybierz tryb zdolności triggerowanej
+  [ROZGRYWKA]   • Ty: życie 20 → 19
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Knight of the Skyward Eye
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Knight of the Skyward Eye wchodzi na pole bitwy
+  [ROZGRYWKA]   • Knight of the Skyward Eye zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 19 — Ty
+  >> Aktywuj: Welder Automaton (Ty) (koszt 3R) — 1 obrażenie każdemu przeciwnikowi
+  [kreator many] Płatność 3R — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: RTapnij: Forest (G)Tapnij: Mountain (R)Tapnij — źródła: 5
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Welder Automaton
+  [ROZGRYWKA]   • Welder Automaton zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 16 → 15
+  [ROZGRYWKA]   • Ty: zdolność Welder Automaton rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Wyposaż: Hunter's Blowgun (Ty) → Cacophodon (Ty) (koszt 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz Equip: Hunter's Blowgun → cel: Cacophodon
+  [ROZGRYWKA]   • Hunter's Blowgun wyposaża Cacophodon
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 0 z 2 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Etherwrought Page — wybierz tryb zdolności triggerowanej
+  [ROZGRYWKA]   • Ty: życie 19 → 18
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Swamp staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Swamp staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Grizzled Leotau
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Grizzled Leotau wchodzi na pole bitwy
+  [ROZGRYWKA]   • Grizzled Leotau zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 21 — Ty
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Fake Your Own Death
+  >> Aktywuj: Welder Automaton (Ty) (koszt 3R) — 1 obrażenie każdemu przeciwnikowi
+  [kreator many] Płatność 3R — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: RTapnij: Forest (G)Tapnij: Mountain (R)Tapnij — źródła: 6
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Welder Automaton
+  >> Cel czaru: Fake Your Own Death (7 opcji)
+  [modal choice] Cel czaru: Fake Your Own Death Rzuć: Fake Your Own Death (koszt 1B) → cel: Grizzled Leotau (Nieprzyjaciel) Rzuć: Fake Your Own Death (koszt 1B) → cel: Knight of the Skyward Eye (Nieprzyjaciel) Rzuć: Fake Your Own Death (koszt 1B) → cel: Goblin Deathraiders (Nieprzyjaciel) Rzuć: Fake Your Own Death (koszt 1B) → cel: Welder Automaton (Ty) Rzuć: Fake Your Own Death (koszt 1B) → cel: Angel's Herald (Nieprzyjaciel) Rzuć: Fake Your Own Death (koszt 1B) → cel: Etherium Sculptor (Nieprzyjaciel) Rzuć: Fake Your Own Death (koszt 1B) → cel: Cacophodon (Ty)
+  [modal choice]     Rzuć: Fake Your Own Death (koszt 1B) → cel: Grizzled Leotau (Nieprzyjaciel)
+  [modal choice]     Rzuć: Fake Your Own Death (koszt 1B) → cel: Knight of the Skyward Eye (Nieprzyjaciel)
+  [modal choice]     Rzuć: Fake Your Own Death (koszt 1B) → cel: Goblin Deathraiders (Nieprzyjaciel)
+  [modal choice]     Rzuć: Fake Your Own Death (koszt 1B) → cel: Welder Automaton (Ty)
+  [modal choice]     Rzuć: Fake Your Own Death (koszt 1B) → cel: Angel's Herald (Nieprzyjaciel)
+  [modal choice]   ▶ Rzuć: Fake Your Own Death (koszt 1B) → cel: Etherium Sculptor (Nieprzyjaciel)
+  [modal choice]     Rzuć: Fake Your Own Death (koszt 1B) → cel: Cacophodon (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Fake Your Own Death → cel: Etherium Sculptor
+  [ROZGRYWKA]   • Fake Your Own Death zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Welder Automaton zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 15 → 14
+  [ROZGRYWKA]   • Ty: zdolność Welder Automaton rozstrzygnięta
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Cacophodon, Welder Automaton
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Grizzled Leotau blokuje Welder Automaton
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Cacophodon zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 14 → 11
+  [ROZGRYWKA]   • Welder Automaton zadaje 2 obrażenia (Grizzled Leotau)
+  [ROZGRYWKA]   • Grizzled Leotau zadaje 1 obrażenie (Welder Automaton)
+  [ROZGRYWKA]   • Welder Automaton ginie
+  [ROZGRYWKA]   • Tura 22 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Etherwrought Page — wybierz tryb zdolności triggerowanej
+  [ROZGRYWKA]   • Ty: życie 18 → 17
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Grizzled Leotau zostaje poświęcony
+  [ROZGRYWKA]   • Knight of the Skyward Eye zostaje poświęcony
+  [ROZGRYWKA]   • Etherium Sculptor zostaje poświęcony
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Angel's Herald — szukanie karty w bibliotece na pole bitwy
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Angel's Herald rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Goblin Deathraiders
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Goblin Deathraiders zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 14
+  [ROZGRYWKA]   • Tura 23 — Ty
+  >> Aktywuj: Glitch Ghost Surveyor (koszt 3, wygnaj tę kartę z grobu) — dobierz 1 kartę
+  [kreator many] Płatność 3 — tapuj źródła po jednympozostało 3 manyTapnij: Forest (G)Tapnij: Mountain (R)Tapnij: Island (U)Tapnij: Fores — źródła: 6
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Glitch Ghost Surveyor — dobranie kart
+  [ROZGRYWKA]   • Dobierasz: Tumbleweed Rising
+  [ROZGRYWKA]   • Ty: zdolność Glitch Ghost Surveyor rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Reclusive Artificer
+  >> Rzuć: Tumbleweed Rising (koszt 1G)
+  [kreator many] Płatność 1G — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: GTapnij: Forest (G)Tapnij: Mountain (R)Tapnij — źródła: 3
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Rzucasz Tumbleweed Rising
+  [ROZGRYWKA]   • Ty tworzysz token Elemental (3/3)
+  [ROZGRYWKA]   • Elemental wchodzi na pole bitwy
+  [ROZGRYWKA]   • Tumbleweed Rising zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Cacophodon
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Cacophodon zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 11 → 8
+  [ROZGRYWKA]   • Tura 24 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Etherwrought Page — wybierz tryb zdolności triggerowanej
+  [ROZGRYWKA]   • Ty: życie 14 → 13
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Wretched Banquet → cel: Cacophodon
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Swamp staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Swamp staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Wretched Banquet zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Gorger Wurm
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Gorger Wurm wchodzi na pole bitwy
+  [ROZGRYWKA]   • Gorger Wurm zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Gorger Wurm — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Angel's Herald zostaje poświęcony
+  [ROZGRYWKA]   • Gorger Wurm dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Devour (Gorger Wurm): Angel's Herald poświęcony — 1× licznik +1/+1 na źródle
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Devour (Gorger Wurm): Nieprzyjaciel kończy poświęcanie
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Goblin Deathraiders
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Elemental (3/3)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Elemental blokuje Goblin Deathraiders
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Nieprzyjaciel rozdziela obrażenia bojowe (trample albo wielu blokerów)
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Goblin Deathraiders zadaje 3 obrażenia (Elemental)
+  [ROZGRYWKA]   • Elemental zadaje 3 obrażenia (Goblin Deathraiders)
+  [ROZGRYWKA]   • Goblin Deathraiders ginie
+  [ROZGRYWKA]   • Elemental ginie
+  [ROZGRYWKA]   • token Elemental przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 25 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj: Spinewoods Paladin (koszt 4G)
+  [kreator many] Płatność 4G — tapuj źródła po jednympozostało 5 many · kolory do pokrycia: GTapnij: Forest (G)Tapnij: Mountain (R)Tapnij — źródła: 6
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Spinewoods Paladin
+  [ROZGRYWKA]   • Spinewoods Paladin wchodzi na pole bitwy
+  [ROZGRYWKA]   • Spinewoods Paladin zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Spinewoods Paladin — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: życie 13 → 16
+  [ROZGRYWKA]   • Spinewoods Paladin — trigger się rozstrzyga
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Cacophodon
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Gorger Wurm blokuje Cacophodon
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Cacophodon zadaje 3 obrażenia (Gorger Wurm)
+  [ROZGRYWKA]   • Gorger Wurm zadaje 6 obrażeń (Cacophodon)
+  [ROZGRYWKA]   • Cacophodon ginie
+  [ROZGRYWKA]   • Gorger Wurm ginie
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Cacophodon — wybierz cel triggera (wymagany)
+  >> Cacophodon — cel triggera (18 opcji)
+  [modal choice] Cacophodon — cel triggera Cacophodon — cel triggera: Spinewoods Paladin (Ty) Cacophodon — cel triggera: Etherwrought Page (Nieprzyjaciel) Cacophodon — cel triggera: Hunter's Blowgun (Ty) Cacophodon — cel triggera: Forest (Ty) (1 z 2) Cacophodon — cel triggera: Unstable Frontier (Nieprzyjaciel) Cacophodon — cel triggera: Mountain (Ty) (1 z 2) Cacophodon — cel triggera: Swamp (Nieprzyjaciel) (1 z 3) Cacophodon — cel triggera: Swamp (Nieprzyjaciel) (2 z 3) Cacophodon — cel triggera: Island (Ty) Cacophodon — cel triggera: Island (Nieprzyjaciel) (1 z 2) Cacophodon — cel triggera: Forest (Ty) (2 z 2) Cacophodon — cel triggera: Plains (Nieprzyjaciel) Cacophodon — cel triggera: Swamp (Ty) Cacophodon — cel triggera: Island (Nieprzyjaciel) (2 z 2) Cacophodon — cel triggera: Mountain (Nieprzyjaciel) Cacophodon — cel triggera: Plains (Ty) Cacophodon — cel triggera: Swamp (Nieprzyjaciel) (3 z 3) Cacophodon — cel triggera: Mountain (Ty) (2 z 2)
+  [modal choice]     Cacophodon — cel triggera: Spinewoods Paladin (Ty)
+  [modal choice]     Cacophodon — cel triggera: Etherwrought Page (Nieprzyjaciel)
+  [modal choice]     Cacophodon — cel triggera: Hunter's Blowgun (Ty)
+  [modal choice]     Cacophodon — cel triggera: Forest (Ty) (1 z 2)
+  [modal choice]   ▶ Cacophodon — cel triggera: Unstable Frontier (Nieprzyjaciel)
+  [modal choice]     Cacophodon — cel triggera: Mountain (Ty) (1 z 2)
+  [modal choice]     Cacophodon — cel triggera: Swamp (Nieprzyjaciel) (1 z 3)
+  [modal choice]     Cacophodon — cel triggera: Swamp (Nieprzyjaciel) (2 z 3)
+  [modal choice]     Cacophodon — cel triggera: Island (Ty)
+  [modal choice]     Cacophodon — cel triggera: Island (Nieprzyjaciel) (1 z 2)
+  [modal choice]     Cacophodon — cel triggera: Forest (Ty) (2 z 2)
+  [modal choice]     Cacophodon — cel triggera: Plains (Nieprzyjaciel)
+  [modal choice]     Cacophodon — cel triggera: Swamp (Ty)
+  [modal choice]     Cacophodon — cel triggera: Island (Nieprzyjaciel) (2 z 2)
+  [modal choice]     Cacophodon — cel triggera: Mountain (Nieprzyjaciel)
+  [modal choice]     Cacophodon — cel triggera: Plains (Ty)
+  [modal choice]     Cacophodon — cel triggera: Swamp (Nieprzyjaciel) (3 z 3)
+  [modal choice]     Cacophodon — cel triggera: Mountain (Ty) (2 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Cacophodon — trigger (otrzymanie obrażeń)
+  [ROZGRYWKA]   • Cacophodon — cel: Unstable Frontier
+  [ROZGRYWKA]   • Cacophodon — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera podstawowy typ landa (Unstable Frontier)
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Swamp staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Swamp staje się typem Forest do końca tury
+  >> Wyposaż: Hunter's Blowgun (Ty) → Spinewoods Paladin (Ty) (koszt 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz Equip: Hunter's Blowgun → cel: Spinewoods Paladin
+  [ROZGRYWKA]   • Hunter's Blowgun wyposaża Spinewoods Paladin
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 26 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Etherwrought Page — wybierz tryb zdolności triggerowanej
+  [ROZGRYWKA]   • Ty: życie 16 → 15
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Plains staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Plains staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Tura 27 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj: Geological Appraiser (koszt 2RR)
+  [kreator many] Płatność 2RR — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: R, RTapnij: Forest (G)Tapnij: Mountain (R)Ta — źródła: 7
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Geological Appraiser
+  [ROZGRYWKA]   • Geological Appraiser wchodzi na pole bitwy
+  [ROZGRYWKA]   • Geological Appraiser zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Geological Appraiser — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odsłaniasz Pain for All
+  [ROZGRYWKA]   • Wykonujesz discover (3) — trafiono Pain for All
+  [ROZGRYWKA]   • Geological Appraiser — trigger się rozstrzyga
+  >> Wybierz: Discover — rzucić czy wziąć do ręki? (2 opcje)
+  [modal choice] Wybierz: Discover — rzucić czy wziąć do ręki? Discover: weź kartę do ręki Discover: rzuć bez kosztu many
+  [modal choice]     Discover: weź kartę do ręki
+  [modal choice]   ▶ Discover: rzuć bez kosztu many
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Pain for All
+  [ROZGRYWKA]   • Pain for All wchodzi na pole bitwy
+  [ROZGRYWKA]   • Pain for All zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Pain for All — wybierz cel triggera (wymagany)
+  >> Pain for All — cel triggera (4 opcje)
+  [modal choice] Pain for All — cel triggera Pain for All — cel triggera: Nieprzyjaciel Pain for All — cel triggera: Spinewoods Paladin (Ty) Pain for All — cel triggera: Geological Appraiser (Ty) Pain for All — cel triggera: Ty
+  [modal choice]     Pain for All — cel triggera: Nieprzyjaciel
+  [modal choice]     Pain for All — cel triggera: Spinewoods Paladin (Ty)
+  [modal choice]   ▶ Pain for All — cel triggera: Geological Appraiser (Ty)
+  [modal choice]     Pain for All — cel triggera: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Pain for All — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Pain for All — cel: Geological Appraiser
+  [ROZGRYWKA]   • Pain for All — trigger bez efektu (nie było czego wykonać)
+  >> Wyposaż: Hunter's Blowgun (Ty) → Geological Appraiser (Ty) (koszt 2)
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Island (U)Tapnij: Swamp (B)Tapnij: Plains (W)Anuluj płatność — źródła: 3
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Swamp (B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz Equip: Hunter's Blowgun → cel: Geological Appraiser
+  [ROZGRYWKA]   • Hunter's Blowgun wyposaża Geological Appraiser
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Wyposaż: Hunter's Blowgun (Ty) → Spinewoods Paladin (Ty) (koszt 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz Equip: Hunter's Blowgun → cel: Spinewoods Paladin
+  [ROZGRYWKA]   • Hunter's Blowgun wyposaża Spinewoods Paladin
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Spinewoods Paladin
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Spinewoods Paladin zadaje 6 obrażeń (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 8 → 2
+  [ROZGRYWKA]   • Tura 28 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Etherwrought Page — wybierz tryb zdolności triggerowanej
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 2 → 4
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Plains staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Plains staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Tura 29 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Glint-Sleeve Artisan
+  >> Zagraj: Gila Courser (koszt 2R)
+  [kreator many] Płatność 2R — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: RTapnij: Forest (G)Tapnij: Mountain (R)Tapnij — źródła: 8
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Gila Courser
+  [ROZGRYWKA]   • Gila Courser wchodzi na pole bitwy
+  [ROZGRYWKA]   • Gila Courser zostaje rozstrzygnięty
+  >> Zagraj: Glint-Sleeve Artisan (koszt 2W)
+  [kreator many] Płatność 2W — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: WTapnij: Mountain (R)Tapnij: Island (U)Tapnij — źródła: 5
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Glint-Sleeve Artisan
+  [ROZGRYWKA]   • Glint-Sleeve Artisan wchodzi na pole bitwy
+  [ROZGRYWKA]   • Glint-Sleeve Artisan zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Glint-Sleeve Artisan — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Wybierasz fabricate 1: liczniki +1/+1 albo tokeny Servo
+  [ROZGRYWKA]   • Glint-Sleeve Artisan — trigger się rozstrzyga
+  >> Aktywuj: Gila Courser (7 opcji)
+  [modal choice] Aktywuj: Gila Courser Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty), Geological Appraiser (Ty), Spinewoods Paladin (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty), Spinewoods Paladin (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty), Spinewoods Paladin (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Spinewoods Paladin (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty), Geological Appraiser (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty), Geological Appraiser (Ty), Spinewoods Paladin (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty), Spinewoods Paladin (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty), Spinewoods Paladin (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Spinewoods Paladin (Ty)
+  [modal choice]   ▶ Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty), Geological Appraiser (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty)
+  >> Aktywuj: Gila Courser (7 opcji)
+  [modal choice] Aktywuj: Gila Courser Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty), Geological Appraiser (Ty), Spinewoods Paladin (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty), Spinewoods Paladin (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty), Spinewoods Paladin (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Spinewoods Paladin (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty), Geological Appraiser (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty)
+  [modal choice]   ▶ Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty), Geological Appraiser (Ty), Spinewoods Paladin (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty), Spinewoods Paladin (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty), Spinewoods Paladin (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Spinewoods Paladin (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty), Geological Appraiser (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty)
+  >> Wyposaż: Hunter's Blowgun (3 opcje)
+  [modal choice] Wyposaż: Hunter's Blowgun Wyposaż: Hunter's Blowgun (Ty) → Glint-Sleeve Artisan (Ty) (koszt 2) Wyposaż: Hunter's Blowgun (Ty) → Gila Courser (Ty) (koszt 2) Wyposaż: Hunter's Blowgun (Ty) → Geological Appraiser (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Hunter's Blowgun (Ty) → Glint-Sleeve Artisan (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Hunter's Blowgun (Ty) → Gila Courser (Ty) (koszt 2)
+  [modal choice]   ▶ Wyposaż: Hunter's Blowgun (Ty) → Geological Appraiser (Ty) (koszt 2)
+  >> Wyposaż: Hunter's Blowgun (3 opcje)
+  [modal choice] Wyposaż: Hunter's Blowgun Wyposaż: Hunter's Blowgun (Ty) → Glint-Sleeve Artisan (Ty) (koszt 2) Wyposaż: Hunter's Blowgun (Ty) → Gila Courser (Ty) (koszt 2) Wyposaż: Hunter's Blowgun (Ty) → Geological Appraiser (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Hunter's Blowgun (Ty) → Glint-Sleeve Artisan (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Hunter's Blowgun (Ty) → Gila Courser (Ty) (koszt 2)
+  [modal choice]   ▶ Wyposaż: Hunter's Blowgun (Ty) → Geological Appraiser (Ty) (koszt 2)
+  >> Wyposaż: Hunter's Blowgun (3 opcje)
+  [modal choice] Wyposaż: Hunter's Blowgun Wyposaż: Hunter's Blowgun (Ty) → Glint-Sleeve Artisan (Ty) (koszt 2) Wyposaż: Hunter's Blowgun (Ty) → Gila Courser (Ty) (koszt 2) Wyposaż: Hunter's Blowgun (Ty) → Geological Appraiser (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Hunter's Blowgun (Ty) → Glint-Sleeve Artisan (Ty) (koszt 2)
+  [modal choice]   ▶ Wyposaż: Hunter's Blowgun (Ty) → Gila Courser (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Hunter's Blowgun (Ty) → Geological Appraiser (Ty) (koszt 2)
+  >> Wyposaż: Hunter's Blowgun (3 opcje)
+  [modal choice] Wyposaż: Hunter's Blowgun Wyposaż: Hunter's Blowgun (Ty) → Glint-Sleeve Artisan (Ty) (koszt 2) Wyposaż: Hunter's Blowgun (Ty) → Gila Courser (Ty) (koszt 2) Wyposaż: Hunter's Blowgun (Ty) → Geological Appraiser (Ty) (koszt 2)
+  [modal choice]   ▶ Wyposaż: Hunter's Blowgun (Ty) → Glint-Sleeve Artisan (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Hunter's Blowgun (Ty) → Gila Courser (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Hunter's Blowgun (Ty) → Geological Appraiser (Ty) (koszt 2)
+  >> Wybierz: Wariant (2 opcje)
+  [modal choice] Wybierz: Wariant Fabricate: liczniki +1/+1 na tym stworze Fabricate: tokeny Servo 1/1
+  [modal choice]     Fabricate: liczniki +1/+1 na tym stworze
+  [modal choice]   ▶ Fabricate: tokeny Servo 1/1
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty tworzysz token Servo (1/1)
+  [ROZGRYWKA]   • Servo wchodzi na pole bitwy
+  >> Aktywuj: Gila Courser (15 opcji)
+  [modal choice] Aktywuj: Gila Courser Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Servo (Ty), Glint-Sleeve Artisan (Ty), Geological Appraiser (Ty), Spinewoods Paladin (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty), Geological Appraiser (Ty), Spinewoods Paladin (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Servo (Ty), Geological Appraiser (Ty), Spinewoods Paladin (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty), Spinewoods Paladin (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Servo (Ty), Glint-Sleeve Artisan (Ty), Spinewoods Paladin (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty), Spinewoods Paladin (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Servo (Ty), Spinewoods Paladin (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Spinewoods Paladin (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Servo (Ty), Glint-Sleeve Artisan (Ty), Geological Appraiser (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty), Geological Appraiser (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Servo (Ty), Geological Appraiser (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Servo (Ty), Glint-Sleeve Artisan (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Servo (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Servo (Ty), Glint-Sleeve Artisan (Ty), Geological Appraiser (Ty), Spinewoods Paladin (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty), Geological Appraiser (Ty), Spinewoods Paladin (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Servo (Ty), Geological Appraiser (Ty), Spinewoods Paladin (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty), Spinewoods Paladin (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Servo (Ty), Glint-Sleeve Artisan (Ty), Spinewoods Paladin (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty), Spinewoods Paladin (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Servo (Ty), Spinewoods Paladin (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Spinewoods Paladin (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Servo (Ty), Glint-Sleeve Artisan (Ty), Geological Appraiser (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty), Geological Appraiser (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Servo (Ty), Geological Appraiser (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Servo (Ty), Glint-Sleeve Artisan (Ty)
+  [modal choice]   ▶ Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Servo (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Gila Courser — załoga: Glint-Sleeve Artisan
+  [ROZGRYWKA]   • Gila Courser zyskuje: osiodłanie
+  [ROZGRYWKA]   • Ty: zdolność Gila Courser rozstrzygnięta
+  >> Wyposaż: Hunter's Blowgun (4 opcje)
+  [modal choice] Wyposaż: Hunter's Blowgun Wyposaż: Hunter's Blowgun (Ty) → Servo (Ty) (koszt 2) Wyposaż: Hunter's Blowgun (Ty) → Glint-Sleeve Artisan (Ty) (koszt 2) Wyposaż: Hunter's Blowgun (Ty) → Gila Courser (Ty) (koszt 2) Wyposaż: Hunter's Blowgun (Ty) → Geological Appraiser (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Hunter's Blowgun (Ty) → Servo (Ty) (koszt 2)
+  [modal choice]   ▶ Wyposaż: Hunter's Blowgun (Ty) → Glint-Sleeve Artisan (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Hunter's Blowgun (Ty) → Gila Courser (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Hunter's Blowgun (Ty) → Geological Appraiser (Ty) (koszt 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz Equip: Hunter's Blowgun → cel: Glint-Sleeve Artisan
+  [ROZGRYWKA]   • Hunter's Blowgun wyposaża Glint-Sleeve Artisan
+  >> Aktywuj: Gila Courser (7 opcji)
+  [modal choice] Aktywuj: Gila Courser Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Servo (Ty), Geological Appraiser (Ty), Spinewoods Paladin (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty), Spinewoods Paladin (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Servo (Ty), Spinewoods Paladin (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Spinewoods Paladin (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Servo (Ty), Geological Appraiser (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Servo (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Servo (Ty), Geological Appraiser (Ty), Spinewoods Paladin (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty), Spinewoods Paladin (Ty)
+  [modal choice]   ▶ Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Servo (Ty), Spinewoods Paladin (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Spinewoods Paladin (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Servo (Ty), Geological Appraiser (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Servo (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Gila Courser — załoga: Servo, Spinewoods Paladin
+  [ROZGRYWKA]   • Gila Courser zyskuje: osiodłanie
+  [ROZGRYWKA]   • Ty: zdolność Gila Courser rozstrzygnięta
+  >> Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological A
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Gila Courser — załoga: Geological Appraiser
+  [ROZGRYWKA]   • Gila Courser zyskuje: osiodłanie
+  [ROZGRYWKA]   • Ty: zdolność Gila Courser rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 30 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Etherwrought Page — wybierz tryb zdolności triggerowanej
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 4 → 6
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Dispeller's Capsule
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Plains staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Plains staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Dispeller's Capsule wchodzi na pole bitwy
+  [ROZGRYWKA]   • Dispeller's Capsule zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Dispeller's Capsule zostaje poświęcony
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Dispeller's Capsule → cel: Servo
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • token_servo zostaje zniszczony
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Dispeller's Capsule rozstrzygnięta
+  [ROZGRYWKA]   • Tura 31 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Lodestone Needle
+  >> Zagraj: Lodestone Needle (koszt 1U)
+  [kreator many] Płatność 1U — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: UTapnij: Forest (G)Tapnij: Mountain (R)Tapnij — źródła: 8
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Lodestone Needle
+  [ROZGRYWKA]   • Lodestone Needle wchodzi na pole bitwy
+  [ROZGRYWKA]   • Lodestone Needle zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Lodestone Needle — wybierz cel triggera (można odmówić)
+  >> Lodestone Needle — cel triggera (7 opcji)
+  [modal choice] Lodestone Needle — cel triggera Lodestone Needle — cel triggera: Hunter's Blowgun (Ty) Lodestone Needle — cel triggera: Etherwrought Page (Nieprzyjaciel) Lodestone Needle — cel triggera: Spinewoods Paladin (Ty) Lodestone Needle — cel triggera: Geological Appraiser (Ty) Lodestone Needle — cel triggera: Gila Courser (Ty) Lodestone Needle — cel triggera: Glint-Sleeve Artisan (Ty) Lodestone Needle — bez celu (odmowa — „up to one"/„you may")
+  [modal choice]     Lodestone Needle — cel triggera: Hunter's Blowgun (Ty)
+  [modal choice]     Lodestone Needle — cel triggera: Etherwrought Page (Nieprzyjaciel)
+  [modal choice]   ▶ Lodestone Needle — cel triggera: Spinewoods Paladin (Ty)
+  [modal choice]     Lodestone Needle — cel triggera: Geological Appraiser (Ty)
+  [modal choice]     Lodestone Needle — cel triggera: Gila Courser (Ty)
+  [modal choice]     Lodestone Needle — cel triggera: Glint-Sleeve Artisan (Ty)
+  [modal choice]     Lodestone Needle — bez celu (odmowa — „up to one"/„you may")
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Lodestone Needle — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Lodestone Needle — cel: Spinewoods Paladin
+  [ROZGRYWKA]   • Spinewoods Paladin dostaje +2 liczniki stun (razem 2)
+  [ROZGRYWKA]   • Lodestone Needle — trigger się rozstrzyga
+  >> Aktywuj: Lodestone Needle (Ty) (koszt 3) — craft — transform
+  [kreator many] Płatność 3 — tapuj źródła po jednympozostało 3 manyTapnij: Forest (G)Tapnij: Mountain (R)Tapnij: Forest (G)Tapnij: Swamp — źródła: 6
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Lodestone Needle — craft — przemiana artefaktu
+  [ROZGRYWKA]   • Wybierasz karty do craftu (Lodestone Needle)
+  [ROZGRYWKA]   • Ty: zdolność Lodestone Needle rozstrzygnięta
+  >> Wybierz: Craft — karta do wygnania (3 opcje)
+  [modal choice] Wybierz: Craft — karta do wygnania Craft: wygnaj Welder Automaton Craft: wygnaj Merchant's Dockhand Craft: wygnaj Hunter's Blowgun (Ty)
+  [modal choice]     Craft: wygnaj Welder Automaton
+  [modal choice]   ▶ Craft: wygnaj Merchant's Dockhand
+  [modal choice]     Craft: wygnaj Hunter's Blowgun (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: Merchant's Dockhand — cmentarz → wygnanie
+  [ROZGRYWKA]   • Ty: Lodestone Needle — pole bitwy → wygnanie
+  [ROZGRYWKA]   • Ty: Guidestone Compass — wygnanie → pole bitwy
+  >> Aktywuj: Gila Courser (3 opcje)
+  [modal choice] Aktywuj: Gila Courser Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty), Glint-Sleeve Artisan (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty)
+  [modal choice]   ▶ Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty), Glint-Sleeve Artisan (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Glint-Sleeve Artisan (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Gila Courser — załoga: Geological Appraiser, Glint-Sleeve Artisan
+  [ROZGRYWKA]   • Gila Courser zyskuje: osiodłanie
+  [ROZGRYWKA]   • Ty: zdolność Gila Courser rozstrzygnięta
+  >> Cel zdolności: Guidestone Compass (4 opcje)
+  [modal choice] Cel zdolności: Guidestone Compass Aktywuj: Guidestone Compass (Ty) (koszt 1, T) — explore → cel: Glint-Sleeve Artisan (Ty) Aktywuj: Guidestone Compass (Ty) (koszt 1, T) — explore → cel: Gila Courser (Ty) Aktywuj: Guidestone Compass (Ty) (koszt 1, T) — explore → cel: Geological Appraiser (Ty) Aktywuj: Guidestone Compass (Ty) (koszt 1, T) — explore → cel: Spinewoods Paladin (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt 1, T) — explore → cel: Glint-Sleeve Artisan (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt 1, T) — explore → cel: Gila Courser (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt 1, T) — explore → cel: Geological Appraiser (Ty)
+  [modal choice]   ▶ Aktywuj: Guidestone Compass (Ty) (koszt 1, T) — explore → cel: Spinewoods Paladin (Ty)
+  [kreator many] Płatność 1 — tapuj źródła po jednympozostało 1 manyTapnij: Forest (G)Tapnij: Swamp (B)Tapnij: Plains (W)Anuluj płatność — źródła: 3
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Guidestone Compass — explore (odsłonięcie wierzchu biblioteki) → cel: Spinewoods Paladin
+  [ROZGRYWKA]   • Odsłaniasz Mountain
+  [ROZGRYWKA]   • Explore: Mountain trafia do ręki
+  [ROZGRYWKA]   • Ty: zdolność Guidestone Compass rozstrzygnięta
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Gila Courser
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Gila Courser — trigger (atak)
+  [ROZGRYWKA]   • Plains zostaje wygnany
+  [ROZGRYWKA]   • Gila Courser — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Gila Courser zadaje 4 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 6 → 2
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 32 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Etherwrought Page — wybierz tryb zdolności triggerowanej
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 2 → 4
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Island staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Island staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Tura 33 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Crested Herdcaller
+  >> Zagraj: Reclusive Artificer (koszt 2UR)
+  [kreator many] Płatność 2UR — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: U, RTapnij: Forest (G)Tapnij: Mountain (R)Ta — źródła: 9
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Reclusive Artificer
+  [ROZGRYWKA]   • Reclusive Artificer wchodzi na pole bitwy
+  [ROZGRYWKA]   • Reclusive Artificer zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Reclusive Artificer — wybierz cel triggera (można odmówić)
+  >> Reclusive Artificer — cel triggera (6 opcji)
+  [modal choice] Reclusive Artificer — cel triggera Reclusive Artificer — cel triggera: Spinewoods Paladin (Ty) Reclusive Artificer — cel triggera: Geological Appraiser (Ty) Reclusive Artificer — cel triggera: Gila Courser (Ty) Reclusive Artificer — cel triggera: Glint-Sleeve Artisan (Ty) Reclusive Artificer — cel triggera: Reclusive Artificer (Ty) Reclusive Artificer — bez celu (odmowa — „up to one"/„you may")
+  [modal choice]     Reclusive Artificer — cel triggera: Spinewoods Paladin (Ty)
+  [modal choice]     Reclusive Artificer — cel triggera: Geological Appraiser (Ty)
+  [modal choice]     Reclusive Artificer — cel triggera: Gila Courser (Ty)
+  [modal choice]   ▶ Reclusive Artificer — cel triggera: Glint-Sleeve Artisan (Ty)
+  [modal choice]     Reclusive Artificer — cel triggera: Reclusive Artificer (Ty)
+  [modal choice]     Reclusive Artificer — bez celu (odmowa — „up to one"/„you may")
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Reclusive Artificer — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Reclusive Artificer — cel: Glint-Sleeve Artisan
+  [ROZGRYWKA]   • Reclusive Artificer zadaje 2 obrażenia (Glint-Sleeve Artisan)
+  [ROZGRYWKA]   • Reclusive Artificer — trigger się rozstrzyga
+  >> Cel zdolności: Guidestone Compass (5 opcji)
+  [modal choice] Cel zdolności: Guidestone Compass Aktywuj: Guidestone Compass (Ty) (koszt 1, T) — explore → cel: Reclusive Artificer (Ty) Aktywuj: Guidestone Compass (Ty) (koszt 1, T) — explore → cel: Glint-Sleeve Artisan (Ty) Aktywuj: Guidestone Compass (Ty) (koszt 1, T) — explore → cel: Gila Courser (Ty) Aktywuj: Guidestone Compass (Ty) (koszt 1, T) — explore → cel: Geological Appraiser (Ty) Aktywuj: Guidestone Compass (Ty) (koszt 1, T) — explore → cel: Spinewoods Paladin (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt 1, T) — explore → cel: Reclusive Artificer (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt 1, T) — explore → cel: Glint-Sleeve Artisan (Ty)
+  [modal choice]   ▶ Aktywuj: Guidestone Compass (Ty) (koszt 1, T) — explore → cel: Gila Courser (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt 1, T) — explore → cel: Geological Appraiser (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt 1, T) — explore → cel: Spinewoods Paladin (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Guidestone Compass — explore (odsłonięcie wierzchu biblioteki) → cel: Gila Courser
+  [ROZGRYWKA]   • Odsłaniasz Forest
+  [ROZGRYWKA]   • Explore: Forest trafia do ręki
+  [ROZGRYWKA]   • Ty: zdolność Guidestone Compass rozstrzygnięta
+  >> Wyposaż: Hunter's Blowgun (4 opcje)
+  [modal choice] Wyposaż: Hunter's Blowgun Wyposaż: Hunter's Blowgun (Ty) → Reclusive Artificer (Ty) (koszt 2) Wyposaż: Hunter's Blowgun (Ty) → Gila Courser (Ty) (koszt 2) Wyposaż: Hunter's Blowgun (Ty) → Geological Appraiser (Ty) (koszt 2) Wyposaż: Hunter's Blowgun (Ty) → Spinewoods Paladin (Ty) (koszt 2)
+  [modal choice]   ▶ Wyposaż: Hunter's Blowgun (Ty) → Reclusive Artificer (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Hunter's Blowgun (Ty) → Gila Courser (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Hunter's Blowgun (Ty) → Geological Appraiser (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Hunter's Blowgun (Ty) → Spinewoods Paladin (Ty) (koszt 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz Equip: Hunter's Blowgun → cel: Reclusive Artificer
+  [ROZGRYWKA]   • Hunter's Blowgun wyposaża Reclusive Artificer
+  [ROZGRYWKA]   • Glint-Sleeve Artisan ginie
+  >> Aktywuj: Gila Courser (3 opcje)
+  [modal choice] Aktywuj: Gila Courser Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty), Reclusive Artificer (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Reclusive Artificer (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty), Reclusive Artificer (Ty)
+  [modal choice]   ▶ Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Reclusive Artificer (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Gila Courser — załoga: Reclusive Artificer
+  [ROZGRYWKA]   • Gila Courser zyskuje: osiodłanie
+  [ROZGRYWKA]   • Ty: zdolność Gila Courser rozstrzygnięta
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 34 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Etherwrought Page — wybierz tryb zdolności triggerowanej
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 4 → 6
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Infectious Horror
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Infectious Horror wchodzi na pole bitwy
+  [ROZGRYWKA]   • Infectious Horror zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 35 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Seismic Monstrosaur
+  >> Dalej (pass)
+  >> Rzuć: Ruinous Rampage — Wygnaj artefakty (koszt 1RR)
+  [kreator many] Płatność 1RR — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: R, RTapnij: Forest (G)Tapnij: Mountain (R)Ta — źródła: 9
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Rzucasz Ruinous Rampage — tryb: Wygnaj artefakty
+  >> Cycling: Seismic Monstrosaur (koszt 2) → szukaj: Mountain
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Forest (G)Tapnij: Island (U)Tapnij: Forest (G)Tapnij: Swamp ( — źródła: 6
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Swamp (B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz cycling: Seismic Monstrosaur
+  [ROZGRYWKA]   • Szukasz karty w bibliotece (Seismic Monstrosaur) — wybiera, którą wziąć do ręki albo rezygnuje
+  >> Szukanie: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odsłaniasz Mountain
+  [ROZGRYWKA]   • Ty: Mountain — biblioteka → ręka
+  [ROZGRYWKA]   • Aktywujesz cycling: Seismic Monstrosaur
+  [ROZGRYWKA]   • Ty: Hunter's Blowgun — pole bitwy → wygnanie
+  [ROZGRYWKA]   • Ty: Guidestone Compass — pole bitwy → wygnanie
+  [ROZGRYWKA]   • Ruinous Rampage — tryb: Wygnaj artefakty zostaje rozstrzygnięty
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Aktywuj: Gila Courser (3 opcje)
+  [modal choice] Aktywuj: Gila Courser Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Reclusive Artificer (Ty), Geological Appraiser (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Reclusive Artificer (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Reclusive Artificer (Ty), Geological Appraiser (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty)
+  [modal choice]   ▶ Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Reclusive Artificer (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Gila Courser — załoga: Reclusive Artificer
+  [ROZGRYWKA]   • Gila Courser zyskuje: osiodłanie
+  [ROZGRYWKA]   • Ty: zdolność Gila Courser rozstrzygnięta
+  >> Zagraj: Crested Herdcaller (koszt 3GG)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Crested Herdcaller
+  [ROZGRYWKA]   • Crested Herdcaller wchodzi na pole bitwy
+  [ROZGRYWKA]   • Crested Herdcaller zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Crested Herdcaller — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty tworzysz token Dinosaur (3/3)
+  [ROZGRYWKA]   • Dinosaur wchodzi na pole bitwy
+  [ROZGRYWKA]   • Crested Herdcaller — trigger się rozstrzyga
+  >> Aktywuj: Gila Courser (7 opcji)
+  [modal choice] Aktywuj: Gila Courser Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty), Crested Herdcaller (Ty), Dinosaur (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Crested Herdcaller (Ty), Dinosaur (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty), Dinosaur (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Dinosaur (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty), Crested Herdcaller (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Crested Herdcaller (Ty) Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty), Crested Herdcaller (Ty), Dinosaur (Ty)
+  [modal choice]   ▶ Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Crested Herdcaller (Ty), Dinosaur (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty), Dinosaur (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Dinosaur (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty), Crested Herdcaller (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Crested Herdcaller (Ty)
+  [modal choice]     Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological Appraiser (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Gila Courser — załoga: Crested Herdcaller, Dinosaur
+  [ROZGRYWKA]   • Gila Courser zyskuje: osiodłanie
+  [ROZGRYWKA]   • Ty: zdolność Gila Courser rozstrzygnięta
+  >> Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: tapnij Geological A
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Gila Courser — załoga: Geological Appraiser
+  [ROZGRYWKA]   • Gila Courser zyskuje: osiodłanie
+  [ROZGRYWKA]   • Ty: zdolność Gila Courser rozstrzygnięta
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 0 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 36 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Etherwrought Page — wybierz tryb zdolności triggerowanej
+  [ROZGRYWKA]   • Ty: życie 15 → 14
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Forest staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Forest staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Infectious Horror
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Infectious Horror — trigger (atak)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: życie 14 → 12
+  [ROZGRYWKA]   • Infectious Horror — trigger się rozstrzyga
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Gila Courser (4/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Gila Courser blokuje Infectious Horror
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Infectious Horror zadaje 2 obrażenia (Gila Courser)
+  [ROZGRYWKA]   • Gila Courser zadaje 4 obrażenia (Infectious Horror)
+  [ROZGRYWKA]   • Gila Courser ginie
+  [ROZGRYWKA]   • Infectious Horror ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 37 — Ty
+  [ROZGRYWKA]   • Spinewoods Paladin odkręca się (koniec liczników stun)
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (32 opcje)
+  [combat wizard] atakuję 4 z 5 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+== KONIEC PARTII == Koniec partii — wygrywa Gracz
+
+--- krok 216 | Koniec partii — wygrywa Gracz ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Dire Fleet Ravager · 5 · Creature — Orc Pirate Wizard · Postrach Dotykanie śmierci · Gdy wejdzie na pole bitwy: każdy gracz traci część życia (zaokrąglone w górę). · 4/4 | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  MOJE POLA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Geological Appraiser · 4 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: discover (odsłoń i rzuć za darmo). · 3/2 | Pain for All · 3 · Enchantment — Aura · Gdy wejdzie na pole bitwy: zaczarowany stwór zadaje obrażenia równe swojej mocy. · Trigger zaczarowany stwór otrzymał obrażenia: X obrażeń każdemu przeciwnikowi. | Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · 2/3 | Crested Herdcaller · 5 · Creature — Dinosaur · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Dinosaur. · 3/3 | Dinosaur · 0 · Creature — Dinosaur · Zadeptywanie · 3/3 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×5 | Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Unstable Frontier · Land · {T}: cel: twój ląd — stań się podstawowym lądem · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Etherwrought Page · 4 · Artifact · wybierz tryb: Zysk 2 życia / Surveil 1 / Utrata życia
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Mountain, Forest, Island, Island, Cacophodon, Ruinous Rampage ⏎ Nowa partia (seed 8). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 55, kliknięte: 64, modale: 16, sondy noop: 274 (panel 177, modal 97)
+== DETEKTORY: 5 zgłoszeń (do weryfikacji) ==
+  [info] 1
+    - Surowy identyfikator tokenu „token_servo" zamiast nazwy
+        [ROZGRYWKA]   • token_servo zostaje zniszczony
+  [rules] 4
+    - Komenda gracza odrzucona przez engine
+      Aktywuj: Gila Courser (Ty) (koszt saddle 1) — zostanie osiodłany do końca tury — osiodłaj: → Ruch odrzucony: ruch odrzucony przez zasady gry (fabricate_unresolv
+    - Komenda gracza odrzucona przez engine
+      Wyposaż: Hunter's Blowgun (Ty) → Geological Appraiser (Ty) (koszt 2) → Ruch odrzucony: ruch odrzucony przez zasady gry (fabricate_unresolved)
+    - Komenda gracza odrzucona przez engine
+      Wyposaż: Hunter's Blowgun (Ty) → Gila Courser (Ty) (koszt 2) → Ruch odrzucony: ruch odrzucony przez zasady gry (fabricate_unresolved)
+    - Komenda gracza odrzucona przez engine
+      Wyposaż: Hunter's Blowgun (Ty) → Glint-Sleeve Artisan (Ty) (koszt 2) → Ruch odrzucony: ruch odrzucony przez zasady gry (fabricate_unresolved)

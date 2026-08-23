@@ -67,7 +67,10 @@ test('narzędzie nie zawiera adresu arkusza ani innych sekretów', () => {
 test('lokalny słownik zawiera wszystkie karty z ID setu, bez ucieczek i z dubletami setów', () => {
   const rows = parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8'));
   const data = rows.slice(1);
-  assert.equal(data.length, 552, 'pełna lista kolekcji (552 karty)');
+  // M197/K2: 566 -> 556. Plik miał 10 wierszy zdublowanych BEZ kolumny Plan
+  // (pełne wpisy tych kart są wyżej) — usunięte, bo przy czytaniu ostatniej
+  // kolumny udawały plany o nazwach kart (zgłoszenie właściciela 2026-08-23).
+  assert.equal(data.length, 556, 'pełna lista kolekcji (556 unikalnych pozycji)');
   for (const [art, name] of data) {
     assert.match(art, /^\d+[A-Za-z0-9_]*$/, `ID ilustracji bez znaków specjalnych: ${art}`);
     assert.ok(name.trim(), `nazwa nie może być pusta (ID ${art})`);
@@ -96,7 +99,7 @@ test('dopasowanie rozstrzyga duplikaty po secie karty, inaczej pierwszym wpisem'
 
 test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', () => {
   const dict = artIdsFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
-  // Pełna lista kolekcji z arkusza (552 karty; 550 unikalnych nazw — duplikaty
+  // Pełna lista kolekcji z arkusza (556 kart; duplikaty nazw to różne druki —
   // to różne druki, np. Curate 65STX/302BRO — pierwsze wystąpienie wygrywa).
   assert.ok(dict.size >= 500, 'słownik zawiera pełną listę kolekcji');
 
@@ -104,7 +107,12 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // doda kartę bez odświeżenia słownika, ten test od razu to wskaże.
   const registry = createCardRegistry();
   const withArt = registry.all().filter((card) => card.artId != null);
-  assert.equal(withArt.length, 360, 'dokładnie 360 wpisów ma artId (Batche 1–45 + tyły DFC — Batch 45 KOMPLET)');
+  // M197/K4: ten strażnik sprawdzał WYŁĄCZNIE karty, które już mają artId
+  // (`filter(card.artId != null)`), więc 21 kart z pustym numerem było dla
+  // niego niewidzialnych — mimo że słownik znał ich numery (pułapka L23).
+  // Brak numeru pilnuje teraz test/m197-plany-kolekcji.test.js; tutaj zostaje
+  // sama liczba, już bez kart-widm.
+  assert.equal(withArt.length, 413, 'wszystkie realne karty mają artId (Batche 1–48)');
   const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   for (const card of withArt) {
     const entries = byName.get(card.name.toLowerCase()) ?? [];

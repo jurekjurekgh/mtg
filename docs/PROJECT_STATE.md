@@ -1,7 +1,375 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-22 (M186: pętla jakości Żywym Testerem po Batchu 45 — Z1–Z4; 9. reset workspace odzyskany)
-- **Poprzednia:** 2026-08-22 (M185: Batch 45 — 10 kart; fight, toxic, optional targets, enchant creature you control)
+- **Ostatnia aktualizacja:** 2026-08-23 (M199: „Przebieg tur (dla AI)" w pełnym Fog of War — zapis opisuje obu graczy jak obserwator)
+- **Poprzednia:** 2026-08-23 (M198: poprawki układu stołu po screenshocie właściciela — boksy per gracz, komunikaty w modalu, usunięty panel rozumowania bota)
+
+
+
+
+
+## M199 — „Przebieg tur (dla AI)" w pełnym FoW (2026-08-23, PR #70)
+
+Zlecenie właściciela: zapis dla modelu ma opisywać Czarodziejkę **tak samo jak
+Nieprzyjaciela** — bez wglądu w jej informacje ukryte (dobrane karty, kto jest
+morphem). Wyraźnie zastrzeżone: **tylko ta sekcja**; Rozgrywka, główny log
+i reszta stołu bez zmian.
+
+**Repro** (seed 20): panel pokazywał „Czarodziejka dobiera: Colossodon
+Yearling" obok „Nieprzyjaciel dobiera kartę" — asymetria w jednym zapisie.
+
+**Rozwiązanie — jeden punkt decyzyjny zamiast 13 łat.** `describeGameEventRaw`
+miał 13 rozsianych warunków `e.playerId === HUMAN_ID`, każdy decydujący „czy
+ujawnić kartę". Dopisanie do nich `if (fogOfWar)` byłoby 13 kopiami tej samej
+reguły (L41), więc wprowadzony został predykat
+`seesHiddenOf(playerId) = !fogOfWar && playerId === HUMAN_ID`, o który pytają
+wszystkie gałęzie. Dodatkowo `nameOfObject(id, { fogOfWar })` maskuje tożsamość
+**własnego** zakrytego permanentu (CR 708.2).
+
+Flaga włączona w **dokładnie jednym** miejscu (`recordTurnEvent`); domyślnie
+`false`, więc główny log i modal „Rozgrywka" pokazują karty gracza jak dotąd
+(CR 400.2 — wolno mu patrzeć na własną rękę). Osobny test pilnuje, żeby **nie
+ocenzurować za dużo**: zagrania, czary, walka i groby zostają widoczne.
+
+Weryfikacja mutacyjna (3), w tym mutacja „FoW przecieka do głównego logu"
+(over-fix). Na żywym artefakcie: 18 tur, 0 wycieków w panelu, główny log nadal
+z „Dobierasz: …".
+
+**Stan:** `npm test` **2987/2987**, build **53 moduły / 2542.9 kB**.
+
+## M198 — poprawki układu stołu ze screenshota (2026-08-23, PR #70)
+
+Właściciel przysłał zrzut ekranu: zmiany z M197 „nie wyglądają dobrze".
+Siedem uwag (A–G), wszystkie zrobione.
+
+- **A.** Pusty **szary prostokąt** nad licznikami życia. Został po M197/A2:
+  wyczyściłem *treść* paska statusu, ale kontener `.statusbar` (ramka + tło)
+  dalej był w DOM. Usunięty w całości.
+- **B.** Pas białej przestrzeni na komunikaty systemowe zastąpiony **warstwą
+  z guzikiem „Rozumiem"**; 11 zapisów do pasa tekstu → jedno `showNotice()`.
+- **C.** Boksy dzielą się **per gracz**, nie wg rodzaju danych: pod licznikiem
+  Bota jego strefy i pula many, po stronie Gracza — jego własne
+  (`renderZoneCounters` + `renderManaPools` → jedno `renderPlayerMeta`).
+- **D.** „Pokaż karty w strefach" jako osobny, wycentrowany pasek.
+- **E.** Odstęp między boksami a planszą. **F.** Stopka justowana do lewej
+  (po prawej chowała się pod przyciskiem „Twoje działania").
+- **G.** Panel „Rozumowanie bota" usunięty w całości (HTML, main, render,
+  martwy `botReasoningText` i jego test).
+
+**Naprawa u źródła znaleziona przy okazji:** nowa partia nie zamykała
+wiszącego komunikatu — dawniej pas czyścił `statusNote.textContent = ''`,
+a przy modalu odpowiednikiem jest jego zamknięcie (`startGame` → `hideModal`).
+
+**Stan:** `npm test` **2981/2981**, build **53 moduły / 2541.0 kB**.
+
+## M197 — plany kolekcji + układ stołu (2026-08-23, PR #70)
+
+Plan: `docs/plans/PLAN_2026-08-23-m197-plany-i-uklad-stolu.md`.
+
+**Zarzut właściciela: „Kamigawa to nowy plan?" — trafny.** Plan istniał
+w repozytorium przed Batchem 48 (Blade-Blizzard Kitsune, Kappa Tech-Wrecker,
+Greater Tanuki w katalogu; The Kami War w słowniku). Clawing Torment był jego
+CZWARTĄ kartą. M196 zapisało nieprawdę do trzech dokumentów i do asercji testu,
+bo nie sprawdziło grepem. Naprawa u źródła to **strażnik**, nie korekta zdań:
+dokument nie może nazwać planu „nowym", jeśli katalog albo słownik już go znają.
+
+**Błąd systemowy w narzędziu (drugi zarzut właściciela).** „Dla tych dwóch kart
+każda edycja powinna mieć przypisany inny plan" — `tools/fetch-plans.mjs` miało
+mapę set-aware, ale przy zapisie kolumny Plan **spłaszczało ją** do „plan
+PIERWSZEGO wpisu", więc oba druki Curate dostawały „Arcavios", a oba druki
+Negate „Wiedźmin". Zapis jest teraz set-aware (set z kolumny „Ilustracja",
+jak `pickArtId`). Strażnik spójności ujawnił **8 kolejnych kart** z planem
+zgadniętym po secie — wszystkie plany występujące wyłącznie w katalogu
+(`Rath`, `Core`, `Commander`, `Modern Horizons`, `Phyrexia`) należały do tej
+grupy i po synchronizacji zniknęły. `Świat Wiedźmina` scalony z `Wiedźmin`.
+Higiena słownika: 10 zdublowanych wierszy bez kolumny Plan (566 → **556**).
+
+**Trzeci zarzut właściciela: „wszystkie karty mają numery ilustracji i plany"
+— też trafny.** 21 kart miało w katalogu `artId: null`, choć słownik znał ich
+numery (dopasowanie po secie). Strażnik `art-ids-tool` filtrował
+`card.artId != null`, więc sprawdzał wyłącznie karty, które już mają numer —
+brakujące były dla niego niewidzialne (pułapka L23). Skutek dla gracza:
+`card-images.js` zwraca pustą listę źródeł bez `artId`, więc te karty nie
+pokazywały się w torach podglądu **FOT/KON**. Numery przeniesione narzędziem
+`withArtId` (392 → **413** kart z artId; realnych bez artId: **0**).
+Przy okazji: **11 definicji miało zdublowane pole `plan`** („artId: N,
+plan: null," + właściwy plan linijkę niżej) — działało przypadkiem, bo
+w literalu JS wygrywa ostatnia wartość. Usunięte, ze strażnikiem na duplikaty.
+
+**Układ stołu (A1–A7):** przycisk „Kopiuj całą partię"; usunięty tekstowy pasek
+statusu, nagłówek, stopka i „podgląd topu (syntetyczny)"; inspektor stref jako
+osobny boks z **licznikami** stref obu graczy; **graficzna pula many** (ikony
+kolorów z licznikiem) — wymagała rozszerzenia `playerView` o `manaPool`, bo
+widok niósł tylko liczbę many; „Ty" → „Gracz" (wspólne `PLAYER_LABEL`/
+`BOT_LABEL`); „Stworki i inne" → „Permanenty poza lądami".
+
+Weryfikacja na zbudowanym artefakcie (jsdom): `run-game.mjs` zwraca zrzut
+`layout`, więc układ stołu jest sprawdzalny na żywym artefakcie także później.
+
+**Stan:** `npm test` **2978/2978**, build **53 moduły / 2542.4 kB**,
+katalog **459 kart** (413 z artId), słownik kolekcji **556 pozycji**.
+
+## M196 — Batch 48: 14 kart właściciela (2026-08-23, PR #70)
+
+Plan: `docs/plans/PLAN_2026-08-23-m196-batch48.md`. **Pierwszy batch w nowym
+formacie**: właściciel podaje `artId | nazwa | set | plan` wprost w zleceniu,
+więc nie zgaduje się ich ze słownika kolekcji (dopisane 14 pozycji do
+`tools/collection-art-ids.csv`). Plan Clawing Torment — **Kamigawa** — byl w repozytorium juz wczesniej (patrz sprostowanie M197).
+
+**Nowe mechaniki:** trigger na deklaracji bloków działający w OBIE strony
+(Wooden Stake — zdarzenie `blockers_declared` nie było dotąd w ogóle
+skanowane); equip z warunkiem podtypu („Equip Knight {1}" obok „Equip {3}");
+globalny zakaz bloku z wyjątkiem typu (Ruthless Invasion); aura bez klauzuli
+„you control" (Clawing Torment celuje w permanenty przeciwnika); **formidable**
+(CR 702.103) z warunkiem łącznej mocy i masowym grantem keywordów; zdarzenie
+`combat_damage_to_you` z trwałą zmianą kontroli oraz poświęceniem po progu
+liczników (Contested Game Ball); flash nadany PODTYPOWI na jedną turę
+(Cherished Hatchling — pozwolenie żyje w stanie tury, nie na karcie).
+
+**Naprawy u źródła:** `tryFire` ignoruje przekazywane cele, więc trigger
+Wooden Stake rozstrzygał się bez efektu; pułapka L21 trzykrotnie (`equipFor`
+i `ownControlOnly` ginęły w warstwach przepisujących deskryptory); widok nie
+pokazywał zakazu bloku pochodzącego z załącznika, choć walka go respektowała.
+
+**Stan:** `npm test` **2957/2957**, build **53 moduły / 2535.9 kB**,
+katalog **459 kart**.
+
+
+## M195 — uwagi właściciela z testów: A, B, C/C1, D (2026-08-23, PR #70)
+
+Plan: `docs/plans/PLAN_2026-08-23-m195-uwagi-wlasciciela.md`.
+
+- **A (799d4c0) — wizard many także przy DECYZJACH płatniczych.** Rupture
+  Spire („zapłać {1} albo poświęć") auto-tapowało pierwszy lepszy ląd, bo
+  kreator znał tylko rzuty i aktywacje. Reguła właściciela jest ogólna:
+  *zawsze* gdy płatność jest niejednoznaczna, gracz wybiera źródła. Objęte:
+  `resolve_pay_or_sacrifice`, `resolve_optional_pay_choice`,
+  `resolve_counter_pay_choice`.
+- **B (813b1b0) — bot marnował trick bojowy na siebie.** Tapował Ghost
+  Wardena w swojej fazie walki, żeby dać sobie +1/+1, choć stwór nie atakował
+  (tracił tylko blok w turze przeciwnika). Istniejąca kara sprawdzała
+  `canAttackNow`, a w kroku blokujących ten warunek już nie zachodził. Teraz
+  pump NA SOBIE kosztem {T} jest karany, gdy źródło realnie nie walczy;
+  buff atakującego, blokującego i siebie-atakującego zostaje.
+- **C + C1 (adba3bc, 69f9e3a) — wielocelowość jako lista wyboru.** Silnik
+  enumeruje każdą kombinację celów i X jako osobną komendę: Fireball dawał
+  **232** przyciski, Wrap in Flames 15. Nowy `src/table/multi-target.js`
+  rozkłada te warianty na dwa wymiary (zbiór celów + zakres X), a
+  `renderMultiTargetWizard` pokazuje ptaszki i licznik X. Zatwierdzenie
+  wraca do komendy z `legalCommands`, więc silnik i protokół są bez zmian.
+- **D (134f4f1) — komunikat nazywa decydenta.** „(wybór gracza)" przy karcie
+  BOTA czytało się jak własna decyzja. Trzy komunikaty mówią teraz wprost
+  „(wybór opcjonalny: Nieprzyjaciel)"; strażnik pilnuje, by fraza nie wróciła.
+
+**Stan:** `npm test` **2926/2926**, build **53 moduły / 2502.3 kB**.
+
+
+## M194 — Batch 47: 8 kart właściciela (2026-08-23, PR #70)
+
+Plan: `docs/plans/PLAN_2026-08-23-m194-batch47.md`. Dane Oracle pobrane ze
+Scryfalla PRZED kodowaniem (ADR 0010 §2a). Karty: Curate (STX), Negate (M15),
+Divest, Supernatural Stamina, Sequestered Stash, Enduring Sliver, Caves of
+Chaos Adventurer, Pyxis of Pandemonium. (Skilled Animator z pierwotnej listy
+wycofany przez właściciela — karta już istniała.)
+
+**DWA WARIANTY tej samej karty (nowa konwencja).** Curate i Negate były już
+w katalogu; właściciel dołożył drugi egzemplarz z innym drukiem, artem
+i PLANEM, żeby trafił do innej talii. Rozpoznanie wykryło ryzyko blokujące:
+pliki talii zapisywały karty po NAZWIE, a parser brał pierwszą pasującą, więc
+dwa „Curate" rozjechałyby się po cichu (jedna karta zniknęłaby z gry przy
+zielonych strażnikach). Format talii wskazuje teraz EGZEMPLARZ — „1x Curate
+(STX)" — przy realnej kolizji nazw; 15 istniejących plików nie zmieniło się
+ani o znak.
+
+**Nowe mechaniki:** keyword **outlast** (CR 702.100a) wraz z pierwszą
+w projekcie statyką nadającą ZDOLNOŚĆ AKTYWOWANĄ plemieniu (liczona przy
+odczycie, więc odejście lorda natychmiast ją odbiera); `filter.anyTypes` przy
+reveal+discard (Divest wybiera tylko artefakt/stwora); opcjonalny odzysk karty
+z grobu na wierzch po millu (Sequestered Stash — kandydatem jest też artefakt
+dopiero co zmielony); `freeIfCondition: completed_dungeon` (Caves of Chaos
+Adventurer — ukończenie lochu liczone z grafu Undercity, nie z numeru pokoju);
+wygnanie zakryte per gracz z powiązaniem ze źródłem + odkrycie i wprowadzenie
+permanentów pod kontrolę WŁAŚCICIELA (Pyxis of Pandemonium).
+
+**Dwie naprawy u źródła (klasa L48 — oferta ≠ walidacja):**
+1. **Impulse-exile był martwy od Batcha 46**: permanent wygnany przez Gila
+   Courser NIGDY nie był enumerowany w ofercie — silnik przyjmował komendę,
+   której nikt nie proponował, więc karty nie dało się zagrać.
+2. **Ręczne łańcuchy pendingów w playerView** pomijały część decyzji
+   (`pendingUndercityRoute` z M190/B, `pendingFabricate`) — oferta rzutów
+   pojawiała się mimo czekającej decyzji, a execute ją odbijał („Bot wybrał
+   nielegalną komendę"). Zastąpione jednym `firstDecisionOwner == null`.
+
+Trzy strażniki porównywały karty po NAZWIE i po dodaniu wariantów przestały
+mówić prawdę (jeden miał własną kopię parsera talii — klasa L41).
+
+**Stan:** `npm test` **2893/2893**, build **52 moduły / 2490.0 kB**,
+katalog **437 kart**, 15 talii (Theros awansował z worka).
+
+
+## M191 — Batch 46: 10 kart właściciela (2026-08-22, PR #70)
+
+Plan: `docs/plans/PLAN_2026-08-22-m191-batch46.md`. Dane Oracle pobrane ze
+Scryfalla PRZED kodowaniem (ADR 0010 §2a). Karty: Infectious Horror,
+Roiling Regrowth, Bring Low, Cathartic Reunion, Guildscorn Ward,
+Glint-Sleeve Artisan, Bone Shredder, Manor Gate, Gila Courser,
+Rediscover the Way.
+
+**Nowe mechaniki:** `amountIfTargetHasCounter` (3 dmg / 5 przy liczniku);
+`additionalCost.discardCards` (koszt CR 601.2h — czar nierzucalny bez kart);
+TRWAŁA ochrona po JAKOŚCI na załączniku + jakość `multicolored` (dotąd
+jakość mogła pochodzić tylko z grantu „until EOT"); keyword **fabricate**
+(CR 702.122) z blokującą decyzją; keyword **echo** (CR 702.29) + wydzielone
+`queuePayOrSacrifice` wspólne z Rupture Spire; filtry celu `notArtifact`/
+`notColors`; wybór koloru na PERMANENCIE (Manor Gate — dotąd tylko aura);
+impulse-exile `playableUntilTurn` (Gila Courser); rozdział Sagi nadający
+trigger na czas tury (Rediscover the Way). Poprawka u źródła: gałąź
+`you_cast_noncreature_spell` pomijała `requiresTarget`, więc KAŻDY taki
+trigger z celem po cichu nie działał.
+
+**Regresja znaleziona benchmarkiem** (nie testami jednostkowymi): dwie
+ścieżki kasowały token bez odpięcia aur — `bounce_to_library_bottom` oraz
+MARTWY warunek `if (token.zone === 'battlefield')` w SBA (L44: komentarz
+opisywał zamiar, którego kod nie realizował). Obie naprawione, test B46/R2.
+
+**Stan:** `npm test` **2834/2834**, build **52 moduły / 2446.9 kB**,
+benchmark regresji **9/9**.
+
+
+
+## M190 — uwagi właściciela z testów: A/A2, B, C, D (2026-08-22, PR #70)
+
+- **A + A2 (113f3e5) — opisy zdolności many.** Obie zdolności Heap Gate
+  miały w panelu identyczny opis („dodaj manę"), a log po aktywacji pisał
+  „({W}, {U}, {B}, {R}, {G})", co czyta się jak PIĘĆ many. Deskryptor niesie
+  `colors`, więc opis czyta go wprost: pięć kolorów = „1 mana dowolnego
+  koloru" (CR 106.6), brak listy = bezbarwna, konkretna lista = te kolory.
+  Rozpoznanie i opis w JEDNYM miejscu (`isAnyColorMana`, `manaEffectLabel`
+  w session.js) — używa ich panel i log (L41). Zdarzenie niesie
+  `manaAmount` (L6). Kontrola: Jeskai Devotee nadal wymienia {U}/{R}/{W}.
+- **B (730b705) — Undercity to GRAF, nie lista.** Silnik robił `current + 1`,
+  więc po Secret Entrance „przenosiło" gracza do Forge i loch szedł przez
+  wszystkie 9 pokoi. Oracle (tclb/20) daje przy każdym pokoju „Leads to: …",
+  a CR 309.4 oddaje wybór graczowi. Dane pokoi mają teraz `leadsTo`;
+  rozgałęzienie = blokująca decyzja (`resolve_undercity_route`), jedna droga
+  = przejście automatyczne. Pełne okablowanie: protokół, fingerprint,
+  playerView, log, panel, oba boty (z WYCENĄ — bez niej klasa L50) i render
+  („Dalsza droga: X albo Y" zamiast mylącego „pokój 3/9").
+- **C (a7ff1ec) — Thieves' Tools nie dawało się założyć.** Deskryptor
+  `equipment` opisuje skutek, ale aktywację „Equip {2}" (CR 702.6) enumeruje
+  osobna zdolność `keyword: 'equip'`; Batch 44 jej nie dopisał, więc karta
+  była martwa. **Strażnik**: każda karta z `equipment` musi mieć tę zdolność.
+- **D (4cbdd67) — wizard many proponował samobójczą płatność.** Basilisk Gate
+  ({2},{T}) dawał się „opłacić" tapnięciem samego siebie → fizzle. Silnik znał
+  regułę (`excludeSourceId`, M174/E), UI nie (klasa L48). Wykluczenie działa
+  WYŁĄCZNIE dla zdolności z `cost.tap` (Heap Gate {1} bez zmian).
+
+**Stan:** `npm test` **2808/2808**, build **52 moduły / 2414.0 kB**,
+benchmark regresji **9/9**, Żywy Tester: 0 zgłoszeń.
+
+
+
+## M189 — uwagi L/M + dokończenie pętli jakości (2026-08-22, PR #70)
+
+**Uwagi właściciela (UX artefaktu):**
+
+- **L (550bddd)** — sekcja „Test działania" usunięta z interfejsu; zostaje
+  stempel „Wersja artefaktu: YYYY-MM-DD **HH:MM**" (godziny wcześniej NIE
+  było — build wstawiał samą datę, więc dwóch buildów z jednego dnia nie
+  dało się odróżnić na telefonie). Kontener `#selftest` zostaje UKRYTY,
+  bo self-test jest bramką CI (`bundle-smoke`, `table-ui`) — usunięte
+  zostało UI, nie kontrola.
+- **M (550bddd)** — sekcja „Ustawienia i pomoc" usunięta w całości.
+  Zachowana AUTODETEKCJA trybu obrazów po protokole (http(s) → Scryfall,
+  plik → `./img/`), bo to jedyne realnie używane zachowanie usuniętego
+  przełącznika; bez niej karty straciłyby ilustracje.
+
+**Pętla jakości (13 partii + weryfikacje, `tools/table-tester/audyt-m187/`):**
+
+- **Z2 (2f3596d) + Z2e (d69ce69)** — „trigger bez efektu (nic się nie
+  wydarzyło (zerowy wynik))" dla LEGALNEGO no-opa. M106/Z2 wnioskował brak
+  efektu z BRAKU ZDARZEŃ, a tap już tapniętego / untap odkręconego
+  (CR 701.20b) też ich nie produkuje — gracz widział komunikat sugerujący
+  zgubioną zdolność (Glaring Aegis, Steelfin Whale, Thistledown Players).
+  Naprawa deskryptorowa: `STATE_IDEMPOTENT_EFFECTS` + fallback na ŹRÓDŁO
+  dla efektów bez jawnego celu; żargon „zerowy wynik" → „nie było czego
+  wykonać". Anty-over-fix: Undead Servant przy pustym grobie NADAL raportuje
+  brak efektu.
+- **Narzędzie (e07ccb3, 2bac13c, 0848139)** — trzy naprawy detektorów
+  (AGENTS.md: braki testera naprawia się w testerze): (a) `token_*`
+  przechodziło przez regułę snake_case (wymagała 2+ podkreśleń) —
+  weryfikacja wsteczna: archiwalny transkrypt 2 zgłoszenia, po naprawie
+  M188/B 0; (b) oś 3 zgłaszała OBOWIĄZKOWE decyzje (`resolve_opponent_target`
+  — Cuombajj Witches, CR 601.2c), którym ptaszek się nie należy; (c) oś
+  „noop" zgłaszała rozwiązany przypadek M102/U8, gdzie etykieta SAMA
+  ostrzega „UWAGA: czar fizzluje". Wszystkie trzy z kontrolą, że realne
+  przypadki nadal są łapane.
+
+**Stan:** `npm test` **2788/2788**, build **52 moduły / 2401.4 kB**,
+benchmark regresji **9/9**; końcowe przebiegi Żywego Testera: **0 zgłoszeń**.
+
+
+
+## M188 — uwagi właściciela z testów: A, B, C, K (2026-08-22, PR #70)
+
+Zlecenie w czacie po audycie PR #69; rozpoznanie sondami headless PRZED
+kodowaniem (plan: `docs/plans/PLAN_2026-08-22-m187-audyt-pr69-petla-jakosci.md`).
+
+- **A (a8a0744) — badge nadanych P/T.** Evangel of Synthesis miał „+1/+0
+  i menace" po drugim dobraniu, a kafel pokazywał tylko menace. Silnik
+  liczył POPRAWNIE (3/3) — brakowało badge'a: liczono go z `powerModifier`,
+  którego statyka warunkowa (CR 604.3, read-time) nie ustawia. Klasa
+  M175/A3 dla P/T. Naprawa: `grantedStatBonus()` (statyki, aury/equipment,
+  anthemy, buffy EOT — BEZ liczników i pumpów, które mają własne badge)
+  → `grantedPower`/`grantedToughness` w playerView → badge „+1/+0".
+  Dotyczy każdej takiej karty, nie tylko Evangela.
+- **B (889cd00) — surowe `token_squirrel` w logu.** `nameOf` czytał mapę
+  z rejestru kart, a tokeny mają `cardId` spoza rejestru; żywy token miał
+  nazwę z `object.name`, ale po śmierci (CR 111.7) obiekt znika i zostaje
+  sam cardId. Naprawa generyczna: `collectTokenNames(registry)` skanuje
+  deskryptory katalogu. **Strażnik**: każdy z 29 tokenów ma nazwę.
+- **C (b0ca2d5) — bot atakował 2/2 w nietapnięte 1/5.** Kara −2 za jałowy
+  atak istniała, ale premia wyścigu (+8/+20) ją przebijała (score +6, przy
+  5 życiach +18; pass = 0) — klasa L3/L54. Naprawa wg L3: POMIJAMY premię
+  (`futileAttackers`), zamiast dokładać karę. Kontrole anty-over-fix:
+  zabija blokera / pusta plansza / lethal przez blokera — atak zostaje.
+  **Bot SILNIEJSZY: 80.1% vs aggro (było 75.3%), 91.1% vs random.**
+- **K (b8a8b49) — „Przebieg tur (dla AI)".** Przełącznik „1 albo 2 ostatnie
+  tury" zastąpiony `<select>` ze WSZYSTKIMI turami od początku gry; wybrana
+  tura wyświetla się i to ją kopiuje przycisk. Sesja: `turnHistoryEntries()`
+  + `turnHistoryTextFor(n)`; lista przebudowywana tylko przy zmianie
+  zestawu tur (nie zamyka się pod palcem), cel dotyku 36 px.
+
+**Stan:** `npm test` **2772/2772**, build **52 moduły / 2400.5 kB**,
+benchmark regresji **9/9** (szybki pomiar 85.6% — 575/672).
+
+
+## M187 — audyt PR #69 (M171–M186) + pętla jakości (2026-08-22, PR #70)
+
+Raport: `docs/audits/AUDYT_PR69_2026-08-22.md`. Wynik **POZYTYWNY** z jednym
+błędem regułowym i jedną luką pokrycia.
+
+- **N1 (413a0ac) — „can't block" tokenu ginęło po cleanupie.** Pole
+  `cantBlock` niosło DWIE zasady (klasa L14): efekt „can't block this turn"
+  (Panic Spellbomb, wygasa w cleanupie CR 514.2) i cechę WYDRUKOWANĄ na
+  tokenie (Phyrexian Mite z Crawling Chorus, Goblin Construct z Relic
+  Robber). Cleanup kasował obie → token po przełomie tury legalnie blokował
+  (oferta, walidacja, widok, badge). Bug żył od M69. Naprawa: trwały
+  `cantBlockPrinted` (jak `isToken` — L43) + centralny `creatureCantBlock()`;
+  podpięte wszystkie ścieżki (L41) łącznie z fingerprintem.
+- **N2 (429242d) — luka pokrycia.** `counter_spell_unless_pays` ma trzy
+  gałęzie; testy pokrywały dwie — mutacja `canPay = true` nie czerwieniła
+  pakietu (L13: mutacja mierzy TEST, nie kod). Dopisany strażnik.
+- **Z1 (3b702b5) — podwójne zdarzenia w logu** („Dreams of Steel and Oil
+  zostaje rozstrzygnięty" ×2; znalezione Żywym Testerem, repro headless).
+  `finishPendingSpell` sam dopisuje zdarzenia do `state.events` i je zwraca;
+  2 z 21 call-site'ów robiły dodatkowy `push` (klasa L41). Naprawione oba
+  + **strażnik** skanujący plik (L28/L51).
+- **Sprawdzone i poprawne:** ADR 0002 (zero przypadków po nazwie karty),
+  Oracle vs Scryfall maszynowo dla 366 kart, `limitations` wg ADR 0022,
+  talie == generator (ADR 0023), toxic/fight/optional/maxManaValue, FoW
+  52 pendingów. Mutacja „fight liczy moc PO obrażeniach" okazała się
+  RÓWNOWAŻNA (L15) — udokumentowane w raporcie.
+
 
 
 ## M186 — pętla jakości Żywym Testerem: Batch 45 (2026-08-22, PR #69)

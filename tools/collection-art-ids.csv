@@ -74,7 +74,7 @@ Ilustracja,Nazwa Karty,Plan
 73MBS,Bladed Sentinel,Mirrodin
 74KTK,Rush of Battle,Tarkir
 75DMU,Phyrexian Rager,Dominaria
-76M15,Negate,Wiedźmin
+76M15,Negate,Warhammer Fantasy
 77FUS,Lucid Rebuke,Wiedźmin
 78ORI,Nightsnare,Wiedźmin
 79OGW,Holdout Settlement,Zendikar
@@ -121,7 +121,7 @@ Ilustracja,Nazwa Karty,Plan
 120ORI,Returned Centaur,Theros
 121THB,Sea God's Scorn,Theros
 122ISD,Blazing Torch,Innistrad
-123TDM,Trade Route Envoy,
+123TDM,Trade Route Envoy,Tarkir
 124WAR,Courage in Crisis,Ravnica
 125FUS,The Healer in the Shattered Grove,Śródziemie
 126FUS,The Rat Finds the Broken Ward,New Capenna
@@ -300,7 +300,7 @@ Ilustracja,Nazwa Karty,Plan
 299AVR,Farbog Explorer,Innistrad
 300OTJ,Gila Courser,Thunder Junction
 301GTC,Guildscorn Ward,Ravnica
-302BRO,Curate,Arcavios
+302BRO,Curate,Forgotten Realms
 303BRO,Blanchwood Prowler,Dominaria
 304RNA,Sagittars' Volley,Ravnica
 305ARB,Illusory Demon,Alara
@@ -538,16 +538,20 @@ Ilustracja,Nazwa Karty,Plan
 537CMR,Kor Cartographer,Zendikar
 538DTK,Ojutai's Breath,Tarkir
 539CLB,Silvanus's Invoker,Forgotten Realms
-540DST,Chittering Rats,Świat Wiedźmina
+540DST,Chittering Rats,Wiedźmin
 541KLD,Bomat Bazaar Barge,Kaladesh
 542SOM,Panic Spellbomb,Mirrodin
-235RTR,Trestle Troll
-535STH,Lab Rats
-231FDN,Anthem of Champions
-8ALA,Goblin Deathraiders
-273BFZ,Fertile Thicket
-248M19,Reassembling Skeleton
-187ELD,Idyllic Grange
-375M10,Deadly Recluse
-422CMR,Benevolent Blessing
-470MH1,Springbloom Druid
+543ISD,Wooden Stake,Warhammer Fantasy
+544AVR,Thraben Valiant,Innistrad
+545MBS,Fuel for the Cause,Mirrodin
+546NEO,Clawing Torment,Kamigawa
+547ONE,Quicksilver Fisher,Mirrodin
+548ELD,Steelclaw Lance,Eldraine
+549DTK,Stampeding Elk Herd,Tarkir
+550M15,Frost Lynx,Warhammer Fantasy
+551LCI,Contested Game Ball,Warhammer Fantasy
+552CLB,Ettercap,Forgotten Realms
+553DTK,Coat with Venom,Tarkir
+554RIX,Cherished Hatchling,Warhammer Fantasy
+555DSK,Bedhead Beastie,Wiedźmin
+556NPH,Ruthless Invasion,Mirrodin

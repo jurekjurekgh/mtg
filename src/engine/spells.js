@@ -43,8 +43,12 @@ function hasColorForObject(state, playerId, object) {
 
 function requireSpell(state, playerId, objectId, targets, cleaved) {
   const object = state.objects.get(objectId);
+  // Batch 46 (Gila Courser): karta wygnana „impulse" jest grywalna z exile
+  // do końca twojej następnej tury — za PEŁNY koszt (w odróżnieniu od plot).
+  const impulse = object?.zone === 'exile' && object.playableUntilTurn != null
+    && state.turn.number <= object.playableUntilTurn;
   const plotted = object?.zone === 'exile' && (object.plotted || object.suspendReady);
-  if (!object || object.controllerId !== playerId || (!['hand', 'exile'].includes(object.zone)) || object.kind !== 'spell' || (object.zone === 'exile' && !plotted)) {
+  if (!object || object.controllerId !== playerId || (!['hand', 'exile'].includes(object.zone)) || object.kind !== 'spell' || (object.zone === 'exile' && !plotted && !impulse)) {
     throw new Error('To nie jest rzucalny czar z ręki, zaplotowany albo gotowy z suspendu z exile');
   }
   if (!object.spell || !object.spell.effects?.length) throw new Error('Obiekt nie ma deskryptora czaru');
@@ -122,6 +126,15 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     }
     if (spec?.type === 'creature') {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
+      // Batch 46 (Bone Shredder): „nonartifact, nonblack creature" — te same
+      // filtry, co w ofercie/enumeracji triggerów (L48: jeden filtr, dwie
+      // ścieżki nie mogą się rozjechać).
+      if (spec.notArtifact && (object.kind === 'artifact' || (object.types ?? []).includes('Artifact'))) {
+        throw new Error(`Nielegalny cel: ${targetId} (artefakt)`);
+      }
+      if (Array.isArray(spec.notColors) && spec.notColors.some((color) => (object.colors ?? []).includes(color))) {
+        throw new Error(`Nielegalny cel: ${targetId} (wykluczony kolor)`);
+      }
       return object;
     }
     // Cel „artifact" (Shatter, CR 701.7): artefakt na polu bitwy (kind artifact
@@ -428,14 +441,23 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
       throw new Error('Za mało many na alternatywny koszt Lash of the Balrog');
     }
   }
+  // Batch 46 (Cathartic Reunion): koszt „discard two cards" — walidacja PRZED
+  // jakąkolwiek mutacją (CR 601.2h), jak przy poświęceniu wyżej.
+  const discardCost = object.spell.additionalCost?.discardCards ?? 0;
+  if (discardCost > 0 && countDiscardableFor(state, playerId, objectId) < discardCost) {
+    throw new Error('Za mało kart w ręce na dodatkowy koszt (discard)');
+  }
   // Kolorowa walidacja many (Sweet Oblivion: 2 Plains nie mogą rzucić U)
   // Plot – rzut bez kosztu many (bez koloru) – pomijamy walidację kolorową, jak w legalSpellCasts.
   // Suspend (CR 702.62): rzut po zdjęciu ostatniego licznika czasu — bez kosztu.
-  if (!object.plotted && !object.suspendReady && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
+  // Batch 47: impulse „bez placenia" (Caves of Chaos Adventurer po ukonczonym
+  // lochu) omija koszt i kolorowa walidacje — jak plot/suspend.
+  const freeImpulse = object.zone === 'exile' && object.playableWithoutPaying === true;
+  if (!object.plotted && !object.suspendReady && !freeImpulse && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
   // Warunkowa obniżka kosztu (Metalcraft, Stoic Rebuttal) oraz modyfikatory
   // z permanentów (Etherium Sculptor): płacimy efektywny koszt wyliczony
   // w chwili rzutu (warunki i modyfikatory oceniane na bieżącej planszy).
-  const baseMana = (object.plotted || object.suspendReady) ? 0 : effectiveSpellManaCost(state, object);
+  const baseMana = (object.plotted || object.suspendReady || freeImpulse) ? 0 : effectiveSpellManaCost(state, object);
   const altManaExtra = (sacrificeCost && payAltCost) ? (orPayMana ?? 0) : 0;
   const manaSpent = baseMana + altManaExtra;
   spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId));
@@ -480,6 +502,26 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     // Buyback koszt many jest dodatkowy do bazowego — płacimy różnicę
     const bbCost = object.spell.buyback.cost ?? 0;
     if (bbCost > 0) spendMana(state, playerId, bbCost, []);
+  }
+  // Batch 46 (Cathartic Reunion): odrzucenie kart to KOSZT (CR 601.2h) —
+  // płacone przy rzucaniu, po umieszczeniu czaru na stosie (czar nie może
+  // odrzucić sam siebie). Wybór kart należy do gracza, więc kolejkujemy
+  // blokującą decyzję; kontrczar nie zwraca odrzuconych kart.
+  if (discardCost > 0) {
+    const handIds = state.zones.hand.filter((handId) => state.objects.get(handId)?.controllerId === playerId);
+    state.pendingDiscardChoice = {
+      playerId,
+      count: Math.min(discardCost, handIds.length),
+      handIds,
+      purpose: 'cost',
+      sourceCardId: object.cardId ?? null,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = playerId;
+    state.events.push(event('discard_choice_required', {
+      playerId, count: Math.min(discardCost, handIds.length), cardIds: [...handIds],
+      purpose: 'cost', sourceCardId: object.cardId ?? null,
+    }));
   }
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
@@ -1945,6 +1987,16 @@ function legalFireballCasts(state, playerId, objectId, object, manaAvailable) {
   return casts;
 }
 
+/**
+ * Ile kart gracz może odrzucić jako dodatkowy koszt rzutu (CR 601.2h) —
+ * ręka BEZ rzucanego czaru (sam czar opuszcza rękę wcześniej niż płacimy
+ * koszty, więc nie może się „odrzucić sam").
+ */
+export function countDiscardableFor(state, playerId, castObjectId) {
+  return state.zones.hand.filter((handId) => handId !== castObjectId
+    && state.objects.get(handId)?.controllerId === playerId).length;
+}
+
 export function legalSpellCasts(state, playerId) {
   const player = state.players.find((entry) => entry.id === playerId);
   const casts = [];
@@ -1956,18 +2008,32 @@ export function legalSpellCasts(state, playerId) {
     ...state.zones.hand,
     ...state.zones.exile.filter((id) => {
       const obj = state.objects.get(id);
-      return obj?.controllerId === playerId && (obj?.plotted || obj?.suspendReady);
+      if (obj?.controllerId !== playerId) return false;
+      // Batch 47: karta wygnana IMPULSEM (Gila Courser, Caves of Chaos
+      // Adventurer) jest grywalna z exile do konca wskazanej tury. Dotad
+      // requireSpell ja przyjmowal, ale OFERTA jej nie enumerowala, wiec
+      // gracz nie mial jej w „Twoje dzialania" (klasa L48).
+      const impulseLive = obj?.playableUntilTurn != null && state.turn.number <= obj.playableUntilTurn;
+      return obj?.plotted || obj?.suspendReady || impulseLive;
     }),
   ];
   for (const id of ids) {
     const object = state.objects.get(id);
     if (object?.controllerId !== playerId || object.kind !== 'spell' || !object.spell) continue;
+    // „Without paying its mana cost" (ukonczony loch) — jak plot.
+    const freeImpulseCast = object.zone === 'exile' && object.playableWithoutPaying === true;
+    if (freeImpulseCast) {
+      if (object.spell.timing === 'sorcery') {
+        const mainPhaseFree = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
+        if (!mainPhaseFree || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) continue;
+      }
+    }
     // Metalcraft (Stoic Rebuttal): warunkowa obniżka kosztu oceniana w chwili
     // enumeracji — przy spełnionym warunku czar pojawia się przy mniejszej puli.
     // Suspend (CR 702.62): rzut po zdjęciu ostatniego licznika czasu jest
     // bez kosztu many — jak zaplotowany.
-    if (!object.plotted && !object.suspendReady && effectiveSpellManaCost(state, object) > manaAvailable) continue;
-    if (!object.plotted && !object.suspendReady && !hasColorForObject(state, playerId, object)) continue;
+    if (!object.plotted && !object.suspendReady && !freeImpulseCast && effectiveSpellManaCost(state, object) > manaAvailable) continue;
+    if (!object.plotted && !object.suspendReady && !freeImpulseCast && !hasColorForObject(state, playerId, object)) continue;
     if (object.spell.timing === 'sorcery') {
       const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
       if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) continue;
@@ -2042,6 +2108,12 @@ export function legalSpellCasts(state, playerId) {
     const payAltAvailable = Boolean(sacrificeCost && orPayMana != null
       && effectiveSpellManaCost(state, object) + orPayMana <= manaAvailable);
     if (sacrificeCost && sacrificePool.length === 0 && !payAltAvailable) continue;
+    // Batch 46 (Cathartic Reunion): „As an additional cost to cast this spell,
+    // discard two cards." Koszt trzeba móc ZAPŁACIĆ, żeby czar był rzucalny
+    // (CR 601.2h) — liczymy karty ręki BEZ samego czaru. Oferta i walidacja
+    // używają tego samego warunku (L48).
+    const discardCost = object.spell.additionalCost?.discardCards ?? 0;
+    if (discardCost > 0 && countDiscardableFor(state, playerId, id) < discardCost) continue;
     if (targetSpec.length === 0) {
       for (const sacId of sacrificePool) {
         const cast = { objectId: id, targets: [] };

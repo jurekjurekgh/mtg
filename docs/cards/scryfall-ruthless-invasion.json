@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Ruthless+Invasion&set=nph",
+  "print": "Ruthless Invasion (NPH)",
+  "name": "Ruthless Invasion",
+  "mana_cost": "{3}{R/P}",
+  "cmc": 4.0,
+  "type_line": "Sorcery",
+  "oracle_text": "({R/P} can be paid with either {R} or 2 life.)\nNonartifact creatures can't block this turn.",
+  "colors": [
+    "R"
+  ],
+  "keywords": [],
+  "set": "nph",
+  "collector_number": "93",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/c/bc2bbff9-af57-4858-9351-d148b8c4bc3a.jpg?1783941306"
+  },
+  "pobrano": "2026-08-23"
+}

@@ -191,6 +191,19 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
     }
     return tapped >= condition.minTappedCreaturesControlled;
   }
+  // Batch 48 (Stampeding Elk Herd, DTK): FORMIDABLE (CR 702.103) —
+  // „if creatures you control have total power 8 or greater". Intervening-if
+  // (CR 603.4) sprawdzany PRZY ODPALENIU i ponownie przy rozstrzyganiu.
+  // Liczymy moc EFEKTYWNA (bufy, liczniki), nie wydrukowana.
+  if (condition.minTotalPowerYouControl != null) {
+    let total = 0;
+    for (const object of state.objects.values()) {
+      if (object.zone !== 'battlefield' || object.kind !== 'creature') continue;
+      if (object.controllerId !== sourceObject?.controllerId) continue;
+      total += effectivePower(object, state) ?? 0;
+    }
+    return total >= condition.minTotalPowerYouControl;
+  }
   return true;
 }
 
@@ -400,6 +413,11 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       const object = state.objects.get(objectId);
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
       if (spec.notSelf && object.id === sourceObject.id) return false;
+      // Batch 46 (Bone Shredder): „destroy target nonartifact, nonblack
+      // creature" — filtry wykluczające po typie i kolorze. Deskryptorowo
+      // (ADR 0002); ta sama lista napędza ofertę i walidację (L48).
+      if (spec.notArtifact && (object.kind === 'artifact' || (object.types ?? []).includes('Artifact'))) return false;
+      if (Array.isArray(spec.notColors) && spec.notColors.some((color) => (object.colors ?? []).includes(color))) return false;
       if (hexproofBlocked(object)) return false;
       return true;
     });
@@ -970,14 +988,51 @@ export function resolveTriggerEntry(state, entry) {
   // BEZ ŻADNEGO skutku (Undead Servant przy pustym grobie — 0 Zombie, Jyoti
   // bez rzutów commandera — 0 tokenów), ma to powiedzieć wprost. Dotąd gracz
   // widział „trigger się rozstrzyga" i nie wiedział, czy coś przegapił.
+  // M106/Z2 wnioskowało „brak efektu" z BRAKU ZDARZEŃ. To za mocny wniosek:
+  // legalny no-op (CR 701.20b — tap już tapniętego, untap odkręconego) też
+  // nie produkuje zdarzeń, a trigger wykonał się w całości. M189/Z2 (Żywy
+  // Tester, transkrypt audyt-m187/g10): bot rzucił Glaring Aegis w stwora
+  // stapowanego wcześniej zdolnością many, a log ogłosił „nic się nie
+  // wydarzyło (zerowy wynik)" — gracz miał prawo sądzić, że zdolność
+  // przepadła. Efekt, który świadomie nic nie zmienia, bo stan JUŻ jest
+  // docelowy, raportujemy jako zwykłe rozstrzygnięcie.
   const producedNothing = state.events.length === beforeEffects;
+  const noOpByState = producedNothing
+    && applyTriggerEffectsWereNoOp(state, payload.ability, payload.targets ?? [], source);
   const resolved = event('trigger_resolved', {
     objectId: entry.id, cardId: entry.cardId,
     trigger: payload.ability?.trigger?.event ?? null,
-    ...(producedNothing ? { noEffect: true, reason: 'no_result' } : {}),
+    ...(producedNothing && !noOpByState ? { noEffect: true, reason: 'no_result' } : {}),
   });
   state.events.push(resolved);
   return state.events.slice(before);
+}
+
+/**
+ * Czy efekty triggera nie zmieniły stanu dlatego, że stan JUŻ był docelowy
+ * (CR 701.20b: tap tapniętego / untap odkręconego to legalne, wykonane
+ * działanie bez zmiany)? Rozróżnia „zdolność wykonała się, tylko nie było
+ * co zmieniać" od „zdolność nie zrobiła nic" (Undead Servant przy pustym
+ * grobie). Deskryptorowo — po typie efektu, nie po nazwie karty (ADR 0002).
+ */
+const STATE_IDEMPOTENT_EFFECTS = Object.freeze({
+  tap_permanent: (object) => object?.tapped === true,
+  untap_permanent: (object) => object?.tapped === false,
+});
+
+function applyTriggerEffectsWereNoOp(state, ability, targets, source) {
+  const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
+  const relevant = effects.filter(Boolean);
+  if (relevant.length === 0) return false;
+  return relevant.every((effect) => {
+    const predicate = STATE_IDEMPOTENT_EFFECTS[effect.type];
+    if (!predicate) return false;
+    // Efekt bez jawnego celu działa na ŹRÓDŁO (Steelfin Whale, Midnight
+    // Guard: „untap this creature") — tak samo jak w applyEffect.
+    const targetId = targets[effect.targetIndex ?? 0] ?? source?.id ?? null;
+    const target = targetId != null ? state.objects.get(targetId) : null;
+    return Boolean(target && target.zone === 'battlefield' && predicate(target));
+  });
 }
 
 /**
@@ -992,7 +1047,16 @@ export function resolveTriggerEntry(state, entry) {
  * poświęcenie następuje wyłącznie, gdy zapłacić się nie da.
  */
 function firePayOrSacrifice(state, ability, source, events) {
-  const amount = ability.trigger?.payMana ?? 0;
+  return queuePayOrSacrifice(state, source, ability.trigger?.payMana ?? 0, events, ability.trigger?.event);
+}
+
+/**
+ * Wspólna procedura „zapłać {N} albo poświęć" (CR 601.2h/702.1): Rupture Spire
+ * (trigger ETB) i ECHO (CR 702.29, Bone Shredder — pierwszy własny upkeep po
+ * wejściu). Wydzielona w Batchu 46, żeby obie ścieżki miały JEDNĄ regułę
+ * płatności i te same zdarzenia (L41).
+ */
+function queuePayOrSacrifice(state, source, amount, events, triggerEvent = 'echo') {
   const controllerId = source.controllerId;
   // Temat 7 (Rupture Spire, CR 601.2h/702.1): „sacrifice it unless you pay
   // {1}" — wybór należy do KONTROLERA. Gdy płatność jest możliwa (pula +
@@ -1004,7 +1068,7 @@ function firePayOrSacrifice(state, ability, source, events) {
     const before = state.events.length;
     applyEffect(state, { type: 'sacrifice_permanent' }, source, []);
     const e = event('ability_triggered', {
-      objectId: source.id, cardId: source.cardId, trigger: ability.trigger?.event,
+      objectId: source.id, cardId: source.cardId, trigger: triggerEvent,
       sacrificed: true, autoSacrificed: true,
     });
     state.events.push(e);
@@ -1962,7 +2026,16 @@ export function processTriggers(state, recentEvents) {
             if (!isNoncreatureCast) continue;
             // Kontekst rzutu: manaSpent ze zdarzenia (progi efektów Tellah,
             // Great Sage — „if four/eight or more mana was spent").
-            queueTriggerToStack(state, ability, source, [], events, { manaSpent: ev.manaSpent ?? 0 });
+            // Batch 46 (Rediscover the Way III): trigger prowess-podobny może
+            // WYMAGAĆ CELU („target creature you control gains double strike").
+            // queueTriggerToStack sam celów nie wybiera — wtedy idziemy przez
+            // tryFire, który otwiera decyzję wyboru celu (L48: jedna ścieżka
+            // dla triggerów z celem, niezależnie od zdarzenia).
+            if (ability.trigger?.requiresTarget) {
+              tryFire(state, ability, source, [], events, { manaSpent: ev.manaSpent ?? 0 });
+            } else {
+              queueTriggerToStack(state, ability, source, [], events, { manaSpent: ev.manaSpent ?? 0 });
+            }
           } else if (triggerEvent === 'you_cast_spell_targeting_permanent') {
             // Tiller of Flesh: „Whenever you cast a spell that targets one or
             // more permanents". Permanent = obiekt na BITWISKU (CR 110.1);
@@ -2041,6 +2114,43 @@ export function processTriggers(state, recentEvents) {
       if (!flipped || flipped.zone !== 'battlefield') return;
       for (const ability of effectiveAbilities(flipped)) {
         if (ability?.trigger?.event === 'turned_face_up') tryFire(state, ability, flipped, [], events);
+      }
+    }
+    // Batch 48 (Wooden Stake, ISD): „Whenever equipped creature BLOCKS OR
+    // BECOMES BLOCKED BY a Vampire, destroy that creature." Zdarzenie
+    // `blockers_declared` NIE BYLO dotad w ogole skanowane przez triggery —
+    // ta galaz jest pierwsza. Dziala w OBIE strony (CR 509.1): nosiciel
+    // blokujacy Wampira oraz Wampir blokujacy nosiciela. Podtyp pochodzi
+    // z DESKRYPTORA zdolnosci (ADR 0002), wiec przyszle „…by a Zombie"
+    // pojda ta sama sciezka bez zmian w silniku.
+    if (ev.type === 'blockers_declared') {
+      const assignments = ev.assignments ?? {};
+      /** Pary (nosiciel, przeciwnik-w-bloku) z tej deklaracji. */
+      const pairs = [];
+      for (const [attackerId, blockerIds] of Object.entries(assignments)) {
+        for (const blockerId of blockerIds ?? []) {
+          pairs.push([attackerId, blockerId]);  // atakujacy zostal ZABLOKOWANY przez blokera
+          pairs.push([blockerId, attackerId]);  // bloker BLOKUJE atakujacego
+        }
+      }
+      for (const [ownId, foeId] of pairs) {
+        const own = state.objects.get(ownId);
+        const foe = state.objects.get(foeId);
+        if (!own || own.zone !== 'battlefield' || !foe || foe.zone !== 'battlefield') continue;
+        for (const attachment of state.objects.values()) {
+          if (attachment.zone !== 'battlefield' || attachment.attachedTo !== ownId) continue;
+          for (const ability of effectiveAbilities(attachment)) {
+            if (ability?.trigger?.event !== 'equipped_creature_blocks_or_blocked_by') continue;
+            const wanted = ability.trigger.subtype;
+            if (wanted && !(foe.subtypes ?? []).includes(wanted)) continue;
+            // Cel STALY: stwor bioracy udzial w tym bloku („that creature").
+            // tryFire IGNORUJE przekazane cele (zawsze wysyla []), bo sluzy
+            // triggerom bez celu albo z `requiresTarget`; tutaj cel jest
+            // znany z samego zdarzenia, wiec kolejkujemy wprost.
+            if (!conditionHolds(ability.trigger ?? {}, state, attachment, {})) continue;
+            queueTriggerToStack(state, ability, attachment, [foeId], events);
+          }
+        }
       }
     }
     // Deklaracja atakujących: triggery „attacks" (na atakującym), tribał
@@ -2216,6 +2326,22 @@ export function processTriggers(state, recentEvents) {
           if (!cond.eachUpkeep && !otherPlayersUpkeep && object.controllerId !== state.turn.activePlayerId) continue;
           tryFire(state, ability, object, [], events);
         }
+      }
+    }
+    // Batch 46 (Bone Shredder) — ECHO (CR 702.29): „At the beginning of your
+    // upkeep, if this came under your control since the beginning of your
+    // last upkeep, sacrifice it unless you pay its echo cost." Znacznik
+    // `echoUnpaid` stawia wejście na pole bitwy; pierwszy WŁASNY upkeep po
+    // wejściu pyta o zapłatę (ta sama decyzja co Rupture Spire —
+    // pendingPayOrSacrifice), a po rozstrzygnięciu znacznik gaśnie, więc
+    // echo płaci się dokładnie raz.
+    if (ev.type === 'step_advanced' && ev.step === 'upkeep') {
+      for (const object of [...state.objects.values()]) {
+        if (object.zone !== 'battlefield' || !object.echoUnpaid) continue;
+        if (object.controllerId !== state.turn.activePlayerId) continue;
+        const cost = object.echo ?? 0;
+        state.objects.set(object.id, Object.freeze({ ...object, echoUnpaid: false }));
+        queuePayOrSacrifice(state, object, cost, events);
       }
     }
     // Suspend (CR 702.62a): „At the beginning of your upkeep, if this card is

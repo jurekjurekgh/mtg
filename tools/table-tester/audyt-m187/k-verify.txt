@@ -1,0 +1,361 @@
+== NOWA PARTIA: gracz=ravnica vs bot=innistrad, seed=23, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Island (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Dream Twist → cel: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Mielisz Plains do grobu
+  [ROZGRYWKA]   • Mielisz Ember Beast do grobu
+  [ROZGRYWKA]   • Mielisz Sagittars' Volley do grobu
+  [ROZGRYWKA]   • Dream Twist zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Dream Twist → cel: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Mielisz Azorius Justiciar do grobu
+  [ROZGRYWKA]   • Mielisz Withstand do grobu
+  [ROZGRYWKA]   • Mielisz Piercing Rays do grobu
+  [ROZGRYWKA]   • Dream Twist zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Rzuć: Selesnya Charm — Rycerz (koszt GW)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Selesnya Charm — tryb: Rycerz
+  [ROZGRYWKA]   • Ty tworzysz token Knight (2/2)
+  [ROZGRYWKA]   • Knight wchodzi na pole bitwy
+  [ROZGRYWKA]   • Selesnya Charm — tryb: Rycerz zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Blazing Torch
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Blazing Torch wchodzi na pole bitwy
+  [ROZGRYWKA]   • Blazing Torch zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Expose to Daylight
+  >> Rzuć: Expose to Daylight (koszt 2W) → cel: Blazing Torch (Nieprzyjaciel)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Expose to Daylight → cel: Blazing Torch
+  [ROZGRYWKA]   • Blazing Torch zostaje zniszczony
+  [ROZGRYWKA]   • Wykonujesz scry (patrzy na 1 kartę: Mountain)
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [modal choice] Scry 1 — obejrzane karty: 1. MountainKarta 1 z 1: MountainNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kończysz scry — na spód (1/1): Mountain
+  [ROZGRYWKA]   • Expose to Daylight zostaje rozstrzygnięty
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Knight
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Knight zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 18
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Lunar Rejection z kosztem Cleave → cel: Knight
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: Knight — pole bitwy → ręka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Lunar Rejection zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Rzuć: Toll of the Invasion (koszt 2B) → cel: Nieprzyjaciel
+  [kreator many] Płatność 2B — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: BTapnij: Island (U)Tapnij: Forest (G)Tapnij:  — źródła: 5
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Toll of the Invasion → cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania rękę (Toll of the Invasion): Ballista Watcher, Wolfkin Bond, Somberwald Spider, Gather the Townsfolk, Swamp
+  [ROZGRYWKA]   • Wybierasz z odsłoniętej ręki gracza Nieprzyjaciel kartę do odrzucenia (Toll of the Invasion)
+  >> Wybierz: Karta do odrzucenia (4 opcje)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Gather the Townsfolk Odrzuć: Ballista Watcher Odrzuć: Somberwald Spider Odrzuć: Wolfkin Bond
+  [modal choice]   ▶ Odrzuć: Gather the Townsfolk
+  [modal choice]     Odrzuć: Ballista Watcher
+  [modal choice]     Odrzuć: Somberwald Spider
+  [modal choice]     Odrzuć: Wolfkin Bond
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Gather the Townsfolk
+  [ROZGRYWKA]   • Ty tworzysz token Zombie Army (0/0)
+  [ROZGRYWKA]   • Zombie Army wchodzi na pole bitwy
+  [ROZGRYWKA]   • Zombie Army dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Toll of the Invasion zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Somberwald Spider
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Somberwald Spider wchodzi na pole bitwy
+  [ROZGRYWKA]   • Somberwald Spider zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Zagraj: Trostani Discordant (koszt 3GW)
+  [kreator many] Płatność 3GW — tapuj źródła po jednympozostało 5 many · kolory do pokrycia: G, WTapnij: Island (U)Tapnij: Forest (G)Tapn — źródła: 6
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Trostani Discordant
+  [ROZGRYWKA]   • Trostani Discordant wchodzi na pole bitwy
+  [ROZGRYWKA]   • Trostani Discordant zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Trostani Discordant — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty tworzysz token Soldier (2/2)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ty tworzysz token Soldier (2/2)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Trostani Discordant — trigger się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Zombie Army
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Somberwald Spider blokuje Zombie Army
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Zombie Army zadaje 2 obrażenia (Somberwald Spider)
+  [ROZGRYWKA]   • Somberwald Spider zadaje 2 obrażenia (Zombie Army)
+  [ROZGRYWKA]   • Zombie Army ginie
+  [ROZGRYWKA]   • token Zombie Army przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Trostani Discordant — trigger (krok końca tury)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Trostani Discordant — trigger bez efektu (nic się nie wydarzyło (zerowy wynik))
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Wolfkin Bond → cel: Somberwald Spider
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Wolfkin Bond zaczarowuje Somberwald Spider
+  [ROZGRYWKA]   • Wolfkin Bond wchodzi na pole bitwy
+  [ROZGRYWKA]   • Wolfkin Bond — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Wolf (2/2)
+  [ROZGRYWKA]   • Wolf wchodzi na pole bitwy
+  [ROZGRYWKA]   • Wolfkin Bond — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Somberwald Spider
+  >> Wybierz: Deklaracja blokujących (8 opcji)
+  [combat wizard] blokuję 1 stworami: Trostani Discordant (1/4)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Trostani Discordant blokuje Somberwald Spider
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Somberwald Spider zadaje 4 obrażenia (Trostani Discordant)
+  [ROZGRYWKA]   • Trostani Discordant zadaje 1 obrażenie (Somberwald Spider)
+  [ROZGRYWKA]   • Trostani Discordant ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Chronic Flooding
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Aura: Chronic Flooding (13 opcji)
+  [modal choice] Aura: Chronic Flooding Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Island (Ty) (1 z 2) Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Island (Nieprzyjaciel) (1 z 2) Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Forest (Ty) (1 z 2) Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Swamp (Nieprzyjaciel) Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Ty) (1 z 2) Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Forest (Nieprzyjaciel) Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Swamp (Ty) Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Nieprzyjaciel) (1 z 2) Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Ty) (2 z 2) Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Nieprzyjaciel) (2 z 2) Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Forest (Ty) (2 z 2) Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Island (Nieprzyjaciel) (2 z 2) Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Island (Ty) (2 z 2)
+  [modal choice]   ▶ Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Island (Ty) (1 z 2)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Island (Nieprzyjaciel) (1 z 2)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Forest (Ty) (1 z 2)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Swamp (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Ty) (1 z 2)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Forest (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Swamp (Ty)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Nieprzyjaciel) (1 z 2)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Ty) (2 z 2)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Nieprzyjaciel) (2 z 2)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Forest (Ty) (2 z 2)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Island (Nieprzyjaciel) (2 z 2)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Island (Ty) (2 z 2)
+  [kreator many] Płatność 1U — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: UTapnij: Island (U)Tapnij: Forest (G)Tapnij:  — źródła: 7
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Chronic Flooding → cel: Island
+  [ROZGRYWKA]   • Chronic Flooding zaczarowuje Island
+  [ROZGRYWKA]   • Chronic Flooding wchodzi na pole bitwy
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Soldier, Soldier
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Wolf blokuje Soldier
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Soldier zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 18 → 17
+  [ROZGRYWKA]   • Ty: życie 20 → 21
+  [ROZGRYWKA]   • Ty: życie 21 → 22
+  [ROZGRYWKA]   • Soldier zadaje 1 obrażenie (Wolf)
+  [ROZGRYWKA]   • Wolf zadaje 2 obrażenia (Soldier)
+  [ROZGRYWKA]   • Soldier ginie
+  [ROZGRYWKA]   • token Soldier przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Snarling Wolf
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Snarling Wolf wchodzi na pole bitwy
+  [ROZGRYWKA]   • Snarling Wolf zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Somberwald Spider, Wolf
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Somberwald Spider zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 22 → 18
+  [ROZGRYWKA]   • Wolf zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 16
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Ghost Warden
+  >> Zagraj: Ghost Warden (koszt 1W)
+  [kreator many] Płatność 1W — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: WTapnij: Island (U)Tapnij: Forest (G)Tapnij:  — źródła: 7
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Ghost Warden
+  [ROZGRYWKA]   • Ghost Warden wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ghost Warden zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Soldier
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Snarling Wolf blokuje Soldier
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Ty: życie 16 → 17
+  [ROZGRYWKA]   • Soldier zadaje 1 obrażenie (Snarling Wolf)
+  [ROZGRYWKA]   • Snarling Wolf zadaje 1 obrażenie (Soldier)
+  [ROZGRYWKA]   • Soldier ginie
+  [ROZGRYWKA]   • Snarling Wolf ginie
+  [ROZGRYWKA]   • token Soldier przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Thornhide Wolves
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Thornhide Wolves wchodzi na pole bitwy
+  [ROZGRYWKA]   • Thornhide Wolves zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Somberwald Spider, Wolf
+  >> Wybierz: Deklaracja blokujących (3 opcje)
+  [combat wizard] blokuję 1 stworami: Ghost Warden (1/1)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ghost Warden blokuje Wolf
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Somberwald Spider zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 13
+  [ROZGRYWKA]   • Wolf zadaje 2 obrażenia (Ghost Warden)
+  [ROZGRYWKA]   • Ghost Warden zadaje 1 obrażenie (Wolf)
+  [ROZGRYWKA]   • Ghost Warden ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 17 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Trestle Troll
+  >> Zagraj: Trestle Troll (koszt 1BG)
+  [kreator many] Płatność 1BG — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: B, GTapnij: Island (U)Tapnij: Forest (G)Tapn — źródła: 7
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Swamp (B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Trestle Troll
+  [ROZGRYWKA]   • Trestle Troll wchodzi na pole bitwy
+  [ROZGRYWKA]   • Trestle Troll zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Caravan Vigil
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Swamp
+  [ROZGRYWKA]   • Nieprzyjaciel: Swamp — biblioteka → ręka
+  [ROZGRYWKA]   • Nieprzyjaciel znajduje Swamp i tasuje bibliotekę
+  [ROZGRYWKA]   • Caravan Vigil zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Somberwald Spider, Thornhide Wolves
+  >> Wybierz: Deklaracja blokujących (3 opcje)
+  [combat wizard] blokuję 1 stworami: Trestle Troll (1/4)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Trestle Troll blokuje Thornhide Wolves
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Somberwald Spider zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 9
+  [ROZGRYWKA]   • Thornhide Wolves zadaje 4 obrażenia (Trestle Troll)
+  [ROZGRYWKA]   • Trestle Troll zadaje 1 obrażenie (Thornhide Wolves)
+  [ROZGRYWKA]   • Trestle Troll ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 19 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Boros Challenger
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 64 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Forced Landing · 2 · Instant · włóż na spód biblioteki właściciela · cel: stwór ze słowem kluczowym Latanie | Boros Challenger · 2 · Creature — Human Soldier · Gdy ten stwór atakuje jako mentor: wybrany atakujący stwór o mniejszej sile dostaje licznik +1/+1. · {2}, {R}, {W}: +1/+1 do końca tury · 2/3
+  MOJE POLA: Chronic Flooding · 2 · Enchantment Aura · Trigger zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Island | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę · zaczarowana: Chronic Flooding
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Somberwald Spider · 5 · Creature — Spider · Zasięg · +2/+2 · zaczarowana: Wolfkin Bond · 4/6 | Wolfkin Bond · 5 · Enchantment Aura · stwór: +2/+2 · Gdy wejdzie na pole bitwy: stwórz token Wolf. · aura → Somberwald Spider | Wolf · 0 · Creature — Wolf · 2/2 | Thornhide Wolves · 5 · Creature — Wolf · 4/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Swamp, Trostani Discordant, Selesnya Charm, Forced Landing, Toll of the Invasion, Island ⏎ Nowa partia (seed 23). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 19, kliknięte: 22, modale: 4, sondy noop: 73 (panel 50, modal 23)
+== DETEKTORY: brak zgłoszeń ==

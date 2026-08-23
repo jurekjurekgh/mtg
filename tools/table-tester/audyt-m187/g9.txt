@@ -1,0 +1,325 @@
+== NOWA PARTIA: gracz=zendikar vs bot=alara, seed=41, profil=defensive, policy-seed=11, tick-rate=0.25 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Molten Nursery
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Scion Summoner
+  [ROZGRYWKA]   • Dobierasz: Pilgrim's Eye
+  [ROZGRYWKA]   • Dobierasz: Kor Sanctifiers
+  [ROZGRYWKA]   • Dobierasz: Healer of the Glade
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Wybierz: Karty na spód biblioteki (mulligan) (6 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (1): Molten Nursery Mulligan — odłóż na spód (1): Forest Mulligan — odłóż na spód (1): Scion Summoner Mulligan — odłóż na spód (1): Pilgrim's Eye Mulligan — odłóż na spód (1): Kor Sanctifiers Mulligan — odłóż na spód (1): Healer of the Glade
+  [modal choice]   ▶ Mulligan — odłóż na spód (1): Molten Nursery
+  [modal choice]     Mulligan — odłóż na spód (1): Forest
+  [modal choice]     Mulligan — odłóż na spód (1): Scion Summoner
+  [modal choice]     Mulligan — odłóż na spód (1): Pilgrim's Eye
+  [modal choice]     Mulligan — odłóż na spód (1): Kor Sanctifiers
+  [modal choice]     Mulligan — odłóż na spód (1): Healer of the Glade
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Skyclave Geopede
+  [ROZGRYWKA]   • Dobierasz: Kor Cartographer
+  [ROZGRYWKA]   • Dobierasz: Kor Sanctifiers
+  [ROZGRYWKA]   • Dobierasz: Kazuul's Toll Collector
+  [ROZGRYWKA]   • Dobierasz: Scion Summoner
+  >> Wybierz: Karty na spód biblioteki (mulligan) (21 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (2): Mountain, Plains Mulligan — odłóż na spód (2): Mountain, Skyclave Geopede Mulligan — odłóż na spód (2): Mountain, Kor Cartographer Mulligan — odłóż na spód (2): Mountain, Kor Sanctifiers Mulligan — odłóż na spód (2): Mountain, Kazuul's Toll Collector Mulligan — odłóż na spód (2): Mountain, Scion Summoner Mulligan — odłóż na spód (2): Plains, Skyclave Geopede Mulligan — odłóż na spód (2): Plains, Kor Cartographer Mulligan — odłóż na spód (2): Plains, Kor Sanctifiers Mulligan — odłóż na spód (2): Plains, Kazuul's Toll Collector Mulligan — odłóż na spód (2): Plains, Scion Summoner Mulligan — odłóż na spód (2): Skyclave Geopede, Kor Cartographer Mulligan — odłóż na spód (2): Skyclave Geopede, Kor Sanctifiers Mulligan — odłóż na spód (2): Skyclave Geopede, Kazuul's Toll Collector Mulligan — odłóż na spód (2): Skyclave Geopede, Scion Summoner Mulligan — odłóż na spód (2): Kor Cartographer, Kor Sanctifiers Mulligan — odłóż na spód (2): Kor Cartographer, Kazuul's Toll Collector Mulligan — odłóż na spód (2): Kor Cartographer, Scion Summoner Mulligan — odłóż na spód (2): Kor Sanctifiers, Kazuul's Toll Collector Mulligan — odłóż na spód (2): Kor Sanctifiers, Scion Summoner Mulligan — odłóż na spód (2): Kazuul's Toll Collector, Scion Summoner
+  [modal choice]   ▶ Mulligan — odłóż na spód (2): Mountain, Plains
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Skyclave Geopede
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Kor Cartographer
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Kor Sanctifiers
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Kazuul's Toll Collector
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Scion Summoner
+  [modal choice]     Mulligan — odłóż na spód (2): Plains, Skyclave Geopede
+  [modal choice]     Mulligan — odłóż na spód (2): Plains, Kor Cartographer
+  [modal choice]     Mulligan — odłóż na spód (2): Plains, Kor Sanctifiers
+  [modal choice]     Mulligan — odłóż na spód (2): Plains, Kazuul's Toll Collector
+  [modal choice]     Mulligan — odłóż na spód (2): Plains, Scion Summoner
+  [modal choice]     Mulligan — odłóż na spód (2): Skyclave Geopede, Kor Cartographer
+  [modal choice]     Mulligan — odłóż na spód (2): Skyclave Geopede, Kor Sanctifiers
+  [modal choice]     Mulligan — odłóż na spód (2): Skyclave Geopede, Kazuul's Toll Collector
+  [modal choice]     Mulligan — odłóż na spód (2): Skyclave Geopede, Scion Summoner
+  [modal choice]     Mulligan — odłóż na spód (2): Kor Cartographer, Kor Sanctifiers
+  [modal choice]     Mulligan — odłóż na spód (2): Kor Cartographer, Kazuul's Toll Collector
+  [modal choice]     Mulligan — odłóż na spód (2): Kor Cartographer, Scion Summoner
+  [modal choice]     Mulligan — odłóż na spód (2): Kor Sanctifiers, Kazuul's Toll Collector
+  [modal choice]     Mulligan — odłóż na spód (2): Kor Sanctifiers, Scion Summoner
+  [modal choice]     Mulligan — odłóż na spód (2): Kazuul's Toll Collector, Scion Summoner
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Pilgrim's Eye
+  [ROZGRYWKA]   • Dobierasz: Kor Cartographer
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Battle-Rattle Shaman
+  [ROZGRYWKA]   • Dobierasz: Coralhelm Guide
+  [ROZGRYWKA]   • Dobierasz: Might of the Masses
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Wybierz: Karty na spód biblioteki (mulligan) (32 opcje)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (3): Pilgrim's Eye, Kor Cartographer, Forest Mulligan — odłóż na spód (3): Pilgrim's Eye, Kor Cartographer, Battle-Rattle Shaman Mulligan — odłóż na spód (3): Pilgrim's Eye, Kor Cartographer, Coralhelm Guide Mulligan — odłóż na spód (3): Pilgrim's Eye, Kor Cartographer, Might of the Masses Mulligan — odłóż na spód (3): Pilgrim's Eye, Kor Cartographer, Mountain Mulligan — odłóż na spód (3): Pilgrim's Eye, Forest, Battle-Rattle Shaman Mulligan — odłóż na spód (3): Pilgrim's Eye, Forest, Coralhelm Guide Mulligan — odłóż na spód (3): Pilgrim's Eye, Forest, Might of the Masses Mulligan — odłóż na spód (3): Pilgrim's Eye, Forest, Mountain Mulligan — odłóż na spód (3): Pilgrim's Eye, Battle-Rattle Shaman, Coralhelm Guide Mulligan — odłóż na spód (3): Pilgrim's Eye, Battle-Rattle Shaman, Might of the Masses Mulligan — odłóż na spód (3): Pilgrim's Eye, Battle-Rattle Shaman, Mountain Mulligan — odłóż na spód (3): Pilgrim's Eye, Coralhelm Guide, Might of the Masses Mulligan — odłóż na spód (3): Pilgrim's Eye, Coralhelm Guide, Mountain Mulligan — odłóż na spód (3): Pilgrim's Eye, Might of the Masses, Mountain Mulligan — odłóż na spód (3): Kor Cartographer, Forest, Battle-Rattle Shaman Mulligan — odłóż na spód (3): Kor Cartographer, Forest, Coralhelm Guide Mulligan — odłóż na spód (3): Kor Cartographer, Forest, Might of the Masses Mulligan — odłóż na spód (3): Kor Cartographer, Forest, Mountain Mulligan — odłóż na spód (3): Kor Cartographer, Battle-Rattle Shaman, Coralhelm Guide Mulligan — odłóż na spód (3): Kor Cartographer, Battle-Rattle Shaman, Might of the Masses Mulligan — odłóż na spód (3): Kor Cartographer, Battle-Rattle Shaman, Mountain Mulligan — odłóż na spód (3): Kor Cartographer, Coralhelm Guide, Might of the Masses Mulligan — odłóż na spód (3): Kor Cartographer, Coralhelm Guide, Mountain Mulligan — odłóż na spód (3): Kor Cartographer, Might of the Masses, Mountain Mulligan — odłóż na spód (3): Forest, Battle-Rattle Shaman, Coralhelm Guide Mulligan — odłóż na spód (3): Forest, Battle-Rattle Shaman, Might of the Masses Mulligan — odłóż na spód (3): Forest, Battle-Rattle Shaman, Mountain Mulligan — odłóż na spód (3): Forest, Coralhelm Guide, Might of the Masses Mulligan — odłóż na spód (3): Forest, Coralhelm Guide, Mountain Mulligan — odłóż na spód (3): Forest, Might of the Masses, Mountain Mulligan — odłóż na spód (3): Battle-Rattle Shaman, Coralhelm Guide, Might of the Masses
+  [modal choice]   ▶ Mulligan — odłóż na spód (3): Pilgrim's Eye, Kor Cartographer, Forest
+  [modal choice]     Mulligan — odłóż na spód (3): Pilgrim's Eye, Kor Cartographer, Battle-Rattle Shaman
+  [modal choice]     Mulligan — odłóż na spód (3): Pilgrim's Eye, Kor Cartographer, Coralhelm Guide
+  [modal choice]     Mulligan — odłóż na spód (3): Pilgrim's Eye, Kor Cartographer, Might of the Masses
+  [modal choice]     Mulligan — odłóż na spód (3): Pilgrim's Eye, Kor Cartographer, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Pilgrim's Eye, Forest, Battle-Rattle Shaman
+  [modal choice]     Mulligan — odłóż na spód (3): Pilgrim's Eye, Forest, Coralhelm Guide
+  [modal choice]     Mulligan — odłóż na spód (3): Pilgrim's Eye, Forest, Might of the Masses
+  [modal choice]     Mulligan — odłóż na spód (3): Pilgrim's Eye, Forest, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Pilgrim's Eye, Battle-Rattle Shaman, Coralhelm Guide
+  [modal choice]     Mulligan — odłóż na spód (3): Pilgrim's Eye, Battle-Rattle Shaman, Might of the Masses
+  [modal choice]     Mulligan — odłóż na spód (3): Pilgrim's Eye, Battle-Rattle Shaman, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Pilgrim's Eye, Coralhelm Guide, Might of the Masses
+  [modal choice]     Mulligan — odłóż na spód (3): Pilgrim's Eye, Coralhelm Guide, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Pilgrim's Eye, Might of the Masses, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Kor Cartographer, Forest, Battle-Rattle Shaman
+  [modal choice]     Mulligan — odłóż na spód (3): Kor Cartographer, Forest, Coralhelm Guide
+  [modal choice]     Mulligan — odłóż na spód (3): Kor Cartographer, Forest, Might of the Masses
+  [modal choice]     Mulligan — odłóż na spód (3): Kor Cartographer, Forest, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Kor Cartographer, Battle-Rattle Shaman, Coralhelm Guide
+  [modal choice]     Mulligan — odłóż na spód (3): Kor Cartographer, Battle-Rattle Shaman, Might of the Masses
+  [modal choice]     Mulligan — odłóż na spód (3): Kor Cartographer, Battle-Rattle Shaman, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Kor Cartographer, Coralhelm Guide, Might of the Masses
+  [modal choice]     Mulligan — odłóż na spód (3): Kor Cartographer, Coralhelm Guide, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Kor Cartographer, Might of the Masses, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Battle-Rattle Shaman, Coralhelm Guide
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Battle-Rattle Shaman, Might of the Masses
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Battle-Rattle Shaman, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Coralhelm Guide, Might of the Masses
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Coralhelm Guide, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Forest, Might of the Masses, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Battle-Rattle Shaman, Coralhelm Guide, Might of the Masses
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Might of the Masses
+  [ROZGRYWKA]   • Dobierasz: Kazuul's Toll Collector
+  [ROZGRYWKA]   • Dobierasz: Holdout Settlement
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Wybierz: Karty na spód biblioteki (mulligan) (25 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (4): Forest, Might of the Masses, Kazuul's Toll Collector, Holdout Settlement Mulligan — odłóż na spód (4): Forest, Might of the Masses, Kazuul's Toll Collector, Mountain Mulligan — odłóż na spód (4): Forest, Might of the Masses, Kazuul's Toll Collector, Plains Mulligan — odłóż na spód (4): Forest, Might of the Masses, Holdout Settlement, Mountain Mulligan — odłóż na spód (4): Forest, Might of the Masses, Holdout Settlement, Plains Mulligan — odłóż na spód (4): Forest, Might of the Masses, Mountain, Plains Mulligan — odłóż na spód (4): Forest, Might of the Masses, Mountain, Mountain Mulligan — odłóż na spód (4): Forest, Kazuul's Toll Collector, Holdout Settlement, Mountain Mulligan — odłóż na spód (4): Forest, Kazuul's Toll Collector, Holdout Settlement, Plains Mulligan — odłóż na spód (4): Forest, Kazuul's Toll Collector, Mountain, Plains Mulligan — odłóż na spód (4): Forest, Kazuul's Toll Collector, Mountain, Mountain Mulligan — odłóż na spód (4): Forest, Holdout Settlement, Mountain, Plains Mulligan — odłóż na spód (4): Forest, Holdout Settlement, Mountain, Mountain Mulligan — odłóż na spód (4): Forest, Mountain, Plains, Mountain Mulligan — odłóż na spód (4): Might of the Masses, Kazuul's Toll Collector, Holdout Settlement, Mountain Mulligan — odłóż na spód (4): Might of the Masses, Kazuul's Toll Collector, Holdout Settlement, Plains Mulligan — odłóż na spód (4): Might of the Masses, Kazuul's Toll Collector, Mountain, Plains Mulligan — odłóż na spód (4): Might of the Masses, Kazuul's Toll Collector, Mountain, Mountain Mulligan — odłóż na spód (4): Might of the Masses, Holdout Settlement, Mountain, Plains Mulligan — odłóż na spód (4): Might of the Masses, Holdout Settlement, Mountain, Mountain Mulligan — odłóż na spód (4): Might of the Masses, Mountain, Plains, Mountain Mulligan — odłóż na spód (4): Kazuul's Toll Collector, Holdout Settlement, Mountain, Plains Mulligan — odłóż na spód (4): Kazuul's Toll Collector, Holdout Settlement, Mountain, Mountain Mulligan — odłóż na spód (4): Kazuul's Toll Collector, Mountain, Plains, Mountain Mulligan — odłóż na spód (4): Holdout Settlement, Mountain, Plains, Mountain
+  [modal choice]   ▶ Mulligan — odłóż na spód (4): Forest, Might of the Masses, Kazuul's Toll Collector, Holdout Settlement
+  [modal choice]     Mulligan — odłóż na spód (4): Forest, Might of the Masses, Kazuul's Toll Collector, Mountain
+  [modal choice]     Mulligan — odłóż na spód (4): Forest, Might of the Masses, Kazuul's Toll Collector, Plains
+  [modal choice]     Mulligan — odłóż na spód (4): Forest, Might of the Masses, Holdout Settlement, Mountain
+  [modal choice]     Mulligan — odłóż na spód (4): Forest, Might of the Masses, Holdout Settlement, Plains
+  [modal choice]     Mulligan — odłóż na spód (4): Forest, Might of the Masses, Mountain, Plains
+  [modal choice]     Mulligan — odłóż na spód (4): Forest, Might of the Masses, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (4): Forest, Kazuul's Toll Collector, Holdout Settlement, Mountain
+  [modal choice]     Mulligan — odłóż na spód (4): Forest, Kazuul's Toll Collector, Holdout Settlement, Plains
+  [modal choice]     Mulligan — odłóż na spód (4): Forest, Kazuul's Toll Collector, Mountain, Plains
+  [modal choice]     Mulligan — odłóż na spód (4): Forest, Kazuul's Toll Collector, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (4): Forest, Holdout Settlement, Mountain, Plains
+  [modal choice]     Mulligan — odłóż na spód (4): Forest, Holdout Settlement, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (4): Forest, Mountain, Plains, Mountain
+  [modal choice]     Mulligan — odłóż na spód (4): Might of the Masses, Kazuul's Toll Collector, Holdout Settlement, Mountain
+  [modal choice]     Mulligan — odłóż na spód (4): Might of the Masses, Kazuul's Toll Collector, Holdout Settlement, Plains
+  [modal choice]     Mulligan — odłóż na spód (4): Might of the Masses, Kazuul's Toll Collector, Mountain, Plains
+  [modal choice]     Mulligan — odłóż na spód (4): Might of the Masses, Kazuul's Toll Collector, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (4): Might of the Masses, Holdout Settlement, Mountain, Plains
+  [modal choice]     Mulligan — odłóż na spód (4): Might of the Masses, Holdout Settlement, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (4): Might of the Masses, Mountain, Plains, Mountain
+  [modal choice]     Mulligan — odłóż na spód (4): Kazuul's Toll Collector, Holdout Settlement, Mountain, Plains
+  [modal choice]     Mulligan — odłóż na spód (4): Kazuul's Toll Collector, Holdout Settlement, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (4): Kazuul's Toll Collector, Mountain, Plains, Mountain
+  [modal choice]     Mulligan — odłóż na spód (4): Holdout Settlement, Mountain, Plains, Mountain
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Kor Cartographer
+  [ROZGRYWKA]   • Dobierasz: Battle-Rattle Shaman
+  [ROZGRYWKA]   • Dobierasz: Holdout Settlement
+  [ROZGRYWKA]   • Dobierasz: Jwari Shapeshifter
+  [ROZGRYWKA]   • Dobierasz: Fertile Thicket
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Wybierz: Karty na spód biblioteki (mulligan) (21 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (5): Kor Cartographer, Battle-Rattle Shaman, Holdout Settlement, Jwari Shapeshifter, Fertile Thicket Mulligan — odłóż na spód (5): Kor Cartographer, Battle-Rattle Shaman, Holdout Settlement, Jwari Shapeshifter, Island Mulligan — odłóż na spód (5): Kor Cartographer, Battle-Rattle Shaman, Holdout Settlement, Jwari Shapeshifter, Mountain Mulligan — odłóż na spód (5): Kor Cartographer, Battle-Rattle Shaman, Holdout Settlement, Fertile Thicket, Island Mulligan — odłóż na spód (5): Kor Cartographer, Battle-Rattle Shaman, Holdout Settlement, Fertile Thicket, Mountain Mulligan — odłóż na spód (5): Kor Cartographer, Battle-Rattle Shaman, Holdout Settlement, Island, Mountain Mulligan — odłóż na spód (5): Kor Cartographer, Battle-Rattle Shaman, Jwari Shapeshifter, Fertile Thicket, Island Mulligan — odłóż na spód (5): Kor Cartographer, Battle-Rattle Shaman, Jwari Shapeshifter, Fertile Thicket, Mountain Mulligan — odłóż na spód (5): Kor Cartographer, Battle-Rattle Shaman, Jwari Shapeshifter, Island, Mountain Mulligan — odłóż na spód (5): Kor Cartographer, Battle-Rattle Shaman, Fertile Thicket, Island, Mountain Mulligan — odłóż na spód (5): Kor Cartographer, Holdout Settlement, Jwari Shapeshifter, Fertile Thicket, Island Mulligan — odłóż na spód (5): Kor Cartographer, Holdout Settlement, Jwari Shapeshifter, Fertile Thicket, Mountain Mulligan — odłóż na spód (5): Kor Cartographer, Holdout Settlement, Jwari Shapeshifter, Island, Mountain Mulligan — odłóż na spód (5): Kor Cartographer, Holdout Settlement, Fertile Thicket, Island, Mountain Mulligan — odłóż na spód (5): Kor Cartographer, Jwari Shapeshifter, Fertile Thicket, Island, Mountain Mulligan — odłóż na spód (5): Battle-Rattle Shaman, Holdout Settlement, Jwari Shapeshifter, Fertile Thicket, Island Mulligan — odłóż na spód (5): Battle-Rattle Shaman, Holdout Settlement, Jwari Shapeshifter, Fertile Thicket, Mountain Mulligan — odłóż na spód (5): Battle-Rattle Shaman, Holdout Settlement, Jwari Shapeshifter, Island, Mountain Mulligan — odłóż na spód (5): Battle-Rattle Shaman, Holdout Settlement, Fertile Thicket, Island, Mountain Mulligan — odłóż na spód (5): Battle-Rattle Shaman, Jwari Shapeshifter, Fertile Thicket, Island, Mountain Mulligan — odłóż na spód (5): Holdout Settlement, Jwari Shapeshifter, Fertile Thicket, Island, Mountain
+  [modal choice]   ▶ Mulligan — odłóż na spód (5): Kor Cartographer, Battle-Rattle Shaman, Holdout Settlement, Jwari Shapeshifter, Fertile Thicket
+  [modal choice]     Mulligan — odłóż na spód (5): Kor Cartographer, Battle-Rattle Shaman, Holdout Settlement, Jwari Shapeshifter, Island
+  [modal choice]     Mulligan — odłóż na spód (5): Kor Cartographer, Battle-Rattle Shaman, Holdout Settlement, Jwari Shapeshifter, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Kor Cartographer, Battle-Rattle Shaman, Holdout Settlement, Fertile Thicket, Island
+  [modal choice]     Mulligan — odłóż na spód (5): Kor Cartographer, Battle-Rattle Shaman, Holdout Settlement, Fertile Thicket, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Kor Cartographer, Battle-Rattle Shaman, Holdout Settlement, Island, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Kor Cartographer, Battle-Rattle Shaman, Jwari Shapeshifter, Fertile Thicket, Island
+  [modal choice]     Mulligan — odłóż na spód (5): Kor Cartographer, Battle-Rattle Shaman, Jwari Shapeshifter, Fertile Thicket, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Kor Cartographer, Battle-Rattle Shaman, Jwari Shapeshifter, Island, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Kor Cartographer, Battle-Rattle Shaman, Fertile Thicket, Island, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Kor Cartographer, Holdout Settlement, Jwari Shapeshifter, Fertile Thicket, Island
+  [modal choice]     Mulligan — odłóż na spód (5): Kor Cartographer, Holdout Settlement, Jwari Shapeshifter, Fertile Thicket, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Kor Cartographer, Holdout Settlement, Jwari Shapeshifter, Island, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Kor Cartographer, Holdout Settlement, Fertile Thicket, Island, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Kor Cartographer, Jwari Shapeshifter, Fertile Thicket, Island, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Battle-Rattle Shaman, Holdout Settlement, Jwari Shapeshifter, Fertile Thicket, Island
+  [modal choice]     Mulligan — odłóż na spód (5): Battle-Rattle Shaman, Holdout Settlement, Jwari Shapeshifter, Fertile Thicket, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Battle-Rattle Shaman, Holdout Settlement, Jwari Shapeshifter, Island, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Battle-Rattle Shaman, Holdout Settlement, Fertile Thicket, Island, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Battle-Rattle Shaman, Jwari Shapeshifter, Fertile Thicket, Island, Mountain
+  [modal choice]     Mulligan — odłóż na spód (5): Holdout Settlement, Jwari Shapeshifter, Fertile Thicket, Island, Mountain
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Might of the Masses
+  [ROZGRYWKA]   • Dobierasz: Relic Robber
+  [ROZGRYWKA]   • Dobierasz: Kazuul's Toll Collector
+  [ROZGRYWKA]   • Dobierasz: Molten Nursery
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Scion Summoner
+  >> Wybierz: Karty na spód biblioteki (mulligan) (7 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (6): Might of the Masses, Relic Robber, Kazuul's Toll Collector, Molten Nursery, Island, Mountain Mulligan — odłóż na spód (6): Might of the Masses, Relic Robber, Kazuul's Toll Collector, Molten Nursery, Island, Scion Summoner Mulligan — odłóż na spód (6): Might of the Masses, Relic Robber, Kazuul's Toll Collector, Molten Nursery, Mountain, Scion Summoner Mulligan — odłóż na spód (6): Might of the Masses, Relic Robber, Kazuul's Toll Collector, Island, Mountain, Scion Summoner Mulligan — odłóż na spód (6): Might of the Masses, Relic Robber, Molten Nursery, Island, Mountain, Scion Summoner Mulligan — odłóż na spód (6): Might of the Masses, Kazuul's Toll Collector, Molten Nursery, Island, Mountain, Scion Summoner Mulligan — odłóż na spód (6): Relic Robber, Kazuul's Toll Collector, Molten Nursery, Island, Mountain, Scion Summoner
+  [modal choice]   ▶ Mulligan — odłóż na spód (6): Might of the Masses, Relic Robber, Kazuul's Toll Collector, Molten Nursery, Island, Mountain
+  [modal choice]     Mulligan — odłóż na spód (6): Might of the Masses, Relic Robber, Kazuul's Toll Collector, Molten Nursery, Island, Scion Summoner
+  [modal choice]     Mulligan — odłóż na spód (6): Might of the Masses, Relic Robber, Kazuul's Toll Collector, Molten Nursery, Mountain, Scion Summoner
+  [modal choice]     Mulligan — odłóż na spód (6): Might of the Masses, Relic Robber, Kazuul's Toll Collector, Island, Mountain, Scion Summoner
+  [modal choice]     Mulligan — odłóż na spód (6): Might of the Masses, Relic Robber, Molten Nursery, Island, Mountain, Scion Summoner
+  [modal choice]     Mulligan — odłóż na spód (6): Might of the Masses, Kazuul's Toll Collector, Molten Nursery, Island, Mountain, Scion Summoner
+  [modal choice]     Mulligan — odłóż na spód (6): Relic Robber, Kazuul's Toll Collector, Molten Nursery, Island, Mountain, Scion Summoner
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Pilgrim's Eye
+  [ROZGRYWKA]   • Dobierasz: Kor Sanctifiers
+  [ROZGRYWKA]   • Dobierasz: Kabira Vindicator
+  [ROZGRYWKA]   • Dobierasz: Kor Cartographer
+  >> Mulligan — odłóż na spód (7): Forest, Plains, Plains, Pilgrim's Eye, Kor Sanctifiers, Kabira Vindicator, Kor C
+  >> Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Akrasan Squire
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Akrasan Squire wchodzi na pole bitwy
+  [ROZGRYWKA]   • Akrasan Squire zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Skyclave Geopede
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Knight of the Skyward Eye
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Knight of the Skyward Eye wchodzi na pole bitwy
+  [ROZGRYWKA]   • Knight of the Skyward Eye zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Akrasan Squire
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Akrasan Squire — trigger (samotny atak)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Akrasan Squire — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Akrasan Squire zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 18
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Jwari Shapeshifter
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Angel's Herald
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Angel's Herald wchodzi na pole bitwy
+  [ROZGRYWKA]   • Angel's Herald zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Akrasan Squire, Knight of the Skyward Eye
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Akrasan Squire zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 17
+  [ROZGRYWKA]   • Knight of the Skyward Eye zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 15
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Healer of the Glade
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Akrasan Squire, Knight of the Skyward Eye, Angel's Herald
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Akrasan Squire zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 15 → 14
+  [ROZGRYWKA]   • Knight of the Skyward Eye zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 12
+  [ROZGRYWKA]   • Angel's Herald zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 12 → 11
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Molten Nursery
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Unstable Frontier
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Angelic Benediction
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Angelic Benediction wchodzi na pole bitwy
+  [ROZGRYWKA]   • Angelic Benediction zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Akrasan Squire, Knight of the Skyward Eye, Angel's Herald
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Akrasan Squire zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 10
+  [ROZGRYWKA]   • Knight of the Skyward Eye zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 10 → 8
+  [ROZGRYWKA]   • Angel's Herald zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 8 → 7
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mysteries of the Deep
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Plains staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Plains staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Faza: Początek walki
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Knight of the Skyward Eye — zmiana statystyk celu
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 38 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Skyclave Geopede · 3 · Creature — Insect · Zadeptywanie · Landfall — gdy land wchodzi pod twoją kontrolą: +2/+2 do końca tury. · 3/1 | Jwari Shapeshifter · 2 · Creature — Shapeshifter Ally · 0/0 | Healer of the Glade · 1 · Creature — Elf · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 1/2 | Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Mysteries of the Deep · 5 · Instant · jeśli land wchodził pod twoją kontrolą w tej turze (Landfall): dobierz 3 karty; w przeciwnym razie: dobierz 2 karty
+  MOJE POLA: (puste)
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Unstable Frontier · Land · {T}: cel: twój ląd — stań się podstawowym lądem · T: dodaj 1 manę | Akrasan Squire · 1 · Creature — Human Soldier · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · 1/1 | Knight of the Skyward Eye · 2 · Creature — Human Knight · {3}, {G}: +3/+3 do końca tury · +3/+3 · 5/5 | Angel's Herald · 1 · Creature — Human Cleric · {2}, {W}, {T}, poświęć stwory kolorów: G/W/U: szukaj w bibliotece na pole bitwy · 1/1 | Angelic Benediction · 4 · Enchantment · Egzaltacja · Gdy atakuje samotnie: +1/+1 do końca tury (egzaltacja). · Gdy atakuje samotnie: tap.
+  LOG: Dobierasz: Forest ⏎ Dobierasz: Molten Nursery ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Scion Summoner, Might of the Masses, Jwari Shapeshifter, Fertile Thicket, Kor Sanctifiers, Plains, Pilgrim's Eye ⏎ Nowa partia (seed 41). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 5, kliknięte: 14, modale: 2, sondy noop: 30 (panel 17, modal 13)
+== DETEKTORY: brak zgłoszeń ==

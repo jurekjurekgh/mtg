@@ -1,0 +1,24 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Quicksilver+Fisher&set=one",
+  "print": "Quicksilver Fisher (ONE)",
+  "name": "Quicksilver Fisher",
+  "mana_cost": "{3}{U}{U}",
+  "cmc": 5.0,
+  "type_line": "Creature — Phyrexian Drake",
+  "oracle_text": "Flying\nWhen this creature enters, draw a card, then discard a card.",
+  "colors": [
+    "U"
+  ],
+  "keywords": [
+    "Flying"
+  ],
+  "set": "one",
+  "collector_number": "66",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/a/bad0e96a-b4cc-4439-aab9-731a1036145d.jpg?1783918058"
+  },
+  "pobrano": "2026-08-23",
+  "power": "4",
+  "toughness": "3"
+}

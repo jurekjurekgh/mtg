@@ -208,7 +208,7 @@ export async function runTableGame({
   const seenActions = new Set();     // etykiety akcji (bez wartości zmiennych)
   const clickedActions = new Set();
   const seenModals = new Set();
-  const actionRecords = [];          // { label, hasTick } — dla detektora osi 3
+  const actionRecords = [];          // { label, hasTick, commandKey } — detektor osi 3
   // M99: panel akcji w KAŻDYM kroku — detektor martwego okna (Forever Young)
   // nie może zależeć od snapshotów, bo `--quiet` je wyłącza.
   const windowRecords = [];          // { actions: string[], gameOver: boolean }
@@ -256,7 +256,14 @@ export async function runTableGame({
       const label = normalize(t);
       if (!seenActions.has(label)) {
         seenActions.add(label);
-        actionRecords.push({ label: t.trim(), hasTick: Boolean(tick) });
+        // M189/Z3: rekord niesie TYP KOMENDY z `data-option-key` — etykieta
+        // („Wybierz: Cel (7 opcji)") nie odróżnia wyciszalnego celu czaru od
+        // OBOWIĄZKOWEJ decyzji narzuconej przez kartę (Cuombajj Witches:
+        // `resolve_opponent_target`), a detektor osi 3 musi je rozdzielić.
+        // Opcje grupy nie są w DOM przycisku (modal buduje je po kliknięciu),
+        // więc źródłem prawdy jest klucz komendy, nie tekst.
+        const optionKey = b.dataset?.optionKey ?? b.getAttribute?.('data-option-key') ?? '';
+        actionRecords.push({ label: t.trim(), hasTick: Boolean(tick), commandKey: String(optionKey) });
       }
       if (tick && !tick.checked && tickRate > 0 && rnd() < tickRate) {
         tick.click();
@@ -772,7 +779,35 @@ export async function runTableGame({
   for (const line of formatFindings(findings)) logL(line);
 
   flush();
-  return { lines, findings, windowRecords, probeRecords, rejectionRecords, coverage: { seenActions: [...seenActions], clickedActions: [...clickedActions], modals: [...seenModals] } };
+  // M197: zrzut UKŁADU STOŁU na żywym artefakcie — boksy liczników stref,
+  // pula many i etykiety grup permanentów. Pozwala sprawdzić w prawdziwym
+  // DOM (nie w mini-DOM testów), że sekcje naprawdę się renderują.
+  const layout = {
+    metaFoe: text($('#meta-foe')),
+    metaOwn: text($('#meta-own')),
+    manaSymbols: $$('.mana-pool-chip .ms').length,
+    groupLabels: $$('.sub-label').map((e) => text(e)),
+    // M198/A+B: pusty pasek statusu i pas komunikatow zniknely z ukladu.
+    hasStatusBar: Boolean($('#status')),
+    hasTableNote: Boolean($('#table-note')),
+    hasNoticeModal: Boolean($('#notice-ok')),
+    // M198/D+G: osobny przycisk inspektora, brak panelu rozumowania bota.
+    inspectorButton: text($('#zone-inspector-open')),
+    hasBotReasoning: Boolean($('#bot-reasoning')),
+    buildStampAlign: ($('.build-stamp') && domWindow.getComputedStyle)
+      ? domWindow.getComputedStyle($('.build-stamp')).textAlign : null,
+    hasBrand: Boolean($('.brand')),
+    hasFoot: Boolean($('.foot')),
+    hasLibraryPreview: Boolean($('#library-preview')),
+    copyAllLabel: text($('#turn-history-copy-all')),
+    // M199: zapis „Przebieg tur (dla AI)" ma być w pełnym FoW — sprawdzalne
+    // na ŻYWYM artefakcie (panel + główny log obok siebie).
+    turnHistoryTurns: $('#turn-history-select')?.options?.length ?? 0,
+    turnHistoryText: text($('#turn-history')),
+    mainLogShowsOwnDraw: /Dobierasz:/.test(text($('#log'))),
+    ownPlayerLabel: text($('.player.own .pname')),
+  };
+  return { lines, findings, windowRecords, probeRecords, rejectionRecords, layout, coverage: { seenActions: [...seenActions], clickedActions: [...clickedActions], modals: [...seenModals] } };
 }
 
 // ---------------------------------------------------------------------------

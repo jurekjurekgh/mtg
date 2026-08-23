@@ -1,5 +1,6 @@
 # Tarkir
 
+1x Coat with Venom
 1x Descendant of Storms
 1x Servant of the Scale
 1x Delta Bloodflies
@@ -20,18 +21,21 @@
 1x Krotiq Nestguard
 1x Monastery Flock
 1x Ojutai's Breath
+1x Rediscover the Way
 1x Vow of Wildness
+1x Bring Low
 1x Gurmag Drowner
 1x Rush of Battle
 1x Trade Route Envoy
 1x Rakshasa Vizier
 1x Sarkhan's Rage
 1x Silumgar Butcher
+1x Stampeding Elk Herd
 1x Vandalize
 1x Ainok Tracker
 1x Woolly Loxodon
 2x Plains
 3x Island
-2x Swamp
-2x Mountain
+3x Swamp
+3x Mountain
 6x Forest

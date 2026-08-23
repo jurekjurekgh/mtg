@@ -2,10 +2,11 @@
 
 1x Basilisk Gate
 1x Heap Gate
+1x Manor Gate
 1x Scorch Spitter
 1x Circle of the Land Druid
 1x Cloak of the Bat
-1x Curate
+1x Curate (BRO)
 1x Greatsword of Tyr
 1x Guildsworn Prowler
 1x Thieves' Tools
@@ -14,14 +15,16 @@
 1x Patron of the Arts
 1x Silvanus's Invoker
 1x Your Temple Is Under Attack
+1x Caves of Chaos Adventurer
 1x Inspiring Bard
 1x Lurking Green Dragon
 1x Stirring Bard
 1x Angel of the Dawn
+1x Ettercap
 1x Underdark Explorer
 1x Marut
 2x Plains
-1x Island
+2x Island
 3x Swamp
 2x Mountain
-2x Forest
+3x Forest

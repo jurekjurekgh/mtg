@@ -1,9 +1,11 @@
 # Worek: Dzikie Światy
 
+1x Sequestered Stash
 1x Hunter's Blowgun
 1x Malamet Battle Glyph
 1x Merchant's Dockhand
 1x Canonized in Blood
+1x Cathartic Reunion
 1x Emissary Escort
 1x Fake Your Own Death
 1x Illvoi Operative
@@ -17,6 +19,8 @@
 1x Cogwork Assembler
 1x Diplomatic Relations
 1x Frontline War-Rager
+1x Gila Courser
+1x Glint-Sleeve Artisan
 1x Glitch Ghost Surveyor
 1x Moonlit Meditation
 1x Pain for All
@@ -36,8 +40,8 @@
 1x Spreading Insurrection
 1x Seismic Monstrosaur
 1x Weftblade Enhancer
-2x Plains
+3x Plains
 4x Island
 3x Swamp
-5x Mountain
+6x Mountain
 4x Forest

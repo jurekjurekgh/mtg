@@ -210,8 +210,10 @@ test('F: panel trucizny — ukryty przy 0, widoczny z licznikami przy poison > 0
   const img = poisonEl.find((el) => el.tagName === 'img');
   assert.ok(img, 'ilustracja Poison Counter w panelu');
   assert.match(img.src, /cards\.scryfall\.io\/large\/front\/8\/a\/8a9cb417/);
-  assert.match(poisonEl.textContent, /Ty: 3 liczniki trucizny/, 'licznik gracza');
-  assert.match(poisonEl.textContent, /Nieprzyjaciel: 1 licznik trucizny/, 'licznik przeciwnika');
+  // M197/A3C: panel stołu mówi „Gracz"/„Bot" (wspólne etykiety PLAYER_LABEL/
+  // BOT_LABEL) — wcześniej ten panel pisał „Ty"/„Nieprzyjaciel".
+  assert.match(poisonEl.textContent, /Gracz: 3 liczniki trucizny/, 'licznik gracza');
+  assert.match(poisonEl.textContent, /Bot: 1 licznik trucizny/, 'licznik przeciwnika');
   assert.match(poisonEl.textContent, /10 licznik/);
 });
 

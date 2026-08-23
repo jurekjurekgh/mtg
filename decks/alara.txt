@@ -17,11 +17,12 @@
 1x Plague Reaver
 1x Angelic Benediction
 1x Etherwrought Page
+1x Infectious Horror
 1x Etherium Abomination
 1x Gorger Wurm
 1x Fiery Fall
 3x Plains
 3x Island
-2x Swamp
+3x Swamp
 1x Mountain
 1x Forest

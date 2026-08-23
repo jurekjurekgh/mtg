@@ -211,7 +211,10 @@ test('Z2: trigger o zerowym wyniku (0 tokenów) też to komunikuje', () => {
   assert.ok(resolved.length > 0, 'trigger wejścia się rozstrzygnął');
   const zero = resolved.find((e) => e.noEffect && e.reason === 'no_result');
   assert.ok(zero, 'zerowy wynik jest oznaczony');
-  assert.match(describeGameEvent(zero, HELPERS), /nic się nie wydarzyło/);
+  // M189/Z2: brzmienie zmienione z „nic się nie wydarzyło (zerowy wynik)"
+  // (żargon: liczba zdarzeń) na „nie było czego wykonać". Sens kontroli bez
+  // zmian: trigger, który NAPRAWDĘ nic nie zrobił, nadal to komunikuje.
+  assert.match(describeGameEvent(zero, HELPERS), /bez efektu \(nie było czego wykonać\)/);
 });
 
 test('Z2b: bot NIE rzuca czaru, którego cała treść jest teraz pusta', async () => {

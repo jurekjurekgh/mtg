@@ -1,0 +1,621 @@
+== NOWA PARTIA: gracz=forgotten-realms vs bot=theros, seed=44, profil=explorer, policy-seed=21, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Forest
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Guildsworn Prowler
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Zagraj: Guildsworn Prowler (koszt 1B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Guildsworn Prowler
+  [ROZGRYWKA]   • Guildsworn Prowler wchodzi na pole bitwy
+  [ROZGRYWKA]   • Guildsworn Prowler zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Setessan Skirmisher
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Setessan Skirmisher wchodzi na pole bitwy
+  [ROZGRYWKA]   • Setessan Skirmisher zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Zagraj: Gray Slaad (koszt 2B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Gray Slaad
+  [ROZGRYWKA]   • Gray Slaad wchodzi na pole bitwy
+  [ROZGRYWKA]   • Gray Slaad zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Guildsworn Prowler
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Setessan Skirmisher blokuje Guildsworn Prowler
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Guildsworn Prowler zadaje 2 obrażenia (Setessan Skirmisher)
+  [ROZGRYWKA]   • Setessan Skirmisher zadaje 2 obrażenia (Guildsworn Prowler)
+  [ROZGRYWKA]   • Guildsworn Prowler ginie
+  [ROZGRYWKA]   • Setessan Skirmisher ginie
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Guildsworn Prowler — trigger (śmierć stwora)
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Guildsworn Prowler — trigger się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Satyr Wayfinder
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Satyr Wayfinder wchodzi na pole bitwy
+  [ROZGRYWKA]   • Satyr Wayfinder zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Satyr Wayfinder — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Satyr Wayfinder — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel: Plains — biblioteka → ręka
+  [ROZGRYWKA]   • Nieprzyjaciel: Anthem of Champions — biblioteka → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel: Sea God's Scorn — biblioteka → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel: Breaching Hippocamp — biblioteka → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel bierze żadnego lądu z wierzchu do ręki (reszta do grobu)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Zagraj: Nefarious Imp (koszt 2B)
+  [kreator many] Płatność 2B — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: BTapnij: Forest (G)Tapnij: Swamp (B)Tapnij: M — źródła: 4
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Nefarious Imp
+  [ROZGRYWKA]   • Nefarious Imp wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nefarious Imp zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 0 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Sweet Oblivion → cel: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Mielisz Greatsword of Tyr do grobu
+  [ROZGRYWKA]   • Mielisz Island do grobu
+  [ROZGRYWKA]   • Mielisz Marut do grobu
+  [ROZGRYWKA]   • Mielisz Underdark Explorer do grobu
+  [ROZGRYWKA]   • Sweet Oblivion zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Satyr Wayfinder
+  >> Wybierz: Deklaracja blokujących (4 opcje)
+  [combat wizard] blokuję 2 stworami: Gray Slaad (4/1)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Gray Slaad i Nefarious Imp blokują Satyr Wayfinder
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Nieprzyjaciel rozdziela obrażenia bojowe (trample albo wielu blokerów)
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Satyr Wayfinder zadaje 1 obrażenie (Gray Slaad)
+  [ROZGRYWKA]   • Gray Slaad zadaje 4 obrażenia (Satyr Wayfinder)
+  [ROZGRYWKA]   • Nefarious Imp zadaje 2 obrażenia (Satyr Wayfinder)
+  [ROZGRYWKA]   • Gray Slaad ginie
+  [ROZGRYWKA]   • Satyr Wayfinder ginie
+  [ROZGRYWKA]   • Nefarious Imp — trigger (odejście twoich permanentów z pola bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Wykonujesz scry (patrzy na 1 kartę: Mountain)
+  [ROZGRYWKA]   • Nefarious Imp — trigger się rozstrzyga
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [modal choice] Scry 1 — obejrzane karty: 1. MountainKarta 1 z 1: MountainNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kończysz scry — na spód (1/1): Mountain
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Inspiring Bard
+  >> Zagraj ląd: Heap Gate
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Heap Gate
+  >> Zagraj: Inspiring Bard (koszt 3G)
+  [kreator many] Płatność 3G — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: GTapnij: Forest (G)Tapnij: Swamp (B)Tapnij: M — źródła: 5
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Inspiring Bard
+  >> Aktywuj: Heap Gate (Ty) (koszt T) — dodaj 1 manę bezbarwną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Heap Gate — dodanie many do puli
+  [ROZGRYWKA]   • Inspiring Bard wchodzi na pole bitwy
+  [ROZGRYWKA]   • Inspiring Bard zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Inspiring Bard — wybierz tryb zdolności triggerowanej
+  >> Inspiring Bard — wybór trybu (3 opcje)
+  [modal choice] Inspiring Bard — wybór trybu Inspiring Bard — Tryb: Inspiracja barda → cel: Inspiring Bard (Ty) Inspiring Bard — Tryb: Inspiracja barda → cel: Nefarious Imp (Ty) Inspiring Bard — Tryb: Pieśń odpoczynku
+  [modal choice]   ▶ Inspiring Bard — Tryb: Inspiracja barda → cel: Inspiring Bard (Ty)
+  [modal choice]     Inspiring Bard — Tryb: Inspiracja barda → cel: Nefarious Imp (Ty)
+  [modal choice]     Inspiring Bard — Tryb: Pieśń odpoczynku
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Inspiring Bard dostaje +2/+2
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Nefarious Imp
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Nefarious Imp zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 18
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Returned Centaur
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Returned Centaur wchodzi na pole bitwy
+  [ROZGRYWKA]   • Returned Centaur zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Returned Centaur — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Returned Centaur — cel: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Mielisz Angel of the Dawn do grobu
+  [ROZGRYWKA]   • Mielisz Basilisk Gate do grobu
+  [ROZGRYWKA]   • Mielisz Curate do grobu
+  [ROZGRYWKA]   • Mielisz Lurking Green Dragon do grobu
+  [ROZGRYWKA]   • Returned Centaur — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Aktywuj: Heap Gate (Ty) (koszt 1, T) — dodaj 1 manę dowolnego koloru
+  [kreator many] Płatność 1 — tapuj źródła po jednympozostało 1 manyTapnij: Forest (G)Tapnij: Swamp (B)Tapnij: Mountain (R)Tapnij: Plains — źródła: 4
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Heap Gate — dodanie many do puli (1 mana dowolnego koloru)
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Your Temple Is Under Attack
+  >> Rzuć: Your Temple Is Under Attack — Modlitwa o ochronę (koszt 2W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Your Temple Is Under Attack — tryb: Modlitwa o ochronę
+  [ROZGRYWKA]   • twoje stwory (2 stwory): niezniszczalność do końca tury
+  [ROZGRYWKA]   • Your Temple Is Under Attack — tryb: Modlitwa o ochronę zostaje rozstrzygnięty
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Nefarious Imp, Inspiring Bard
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Returned Centaur blokuje Inspiring Bard
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Nefarious Imp zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 18 → 16
+  [ROZGRYWKA]   • Inspiring Bard zadaje 3 obrażenia (Returned Centaur)
+  [ROZGRYWKA]   • Returned Centaur zadaje 2 obrażenia (Inspiring Bard)
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Wavecrash Triton
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Wavecrash Triton wchodzi na pole bitwy
+  [ROZGRYWKA]   • Wavecrash Triton zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Returned Centaur
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Returned Centaur zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 18
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Aktywuj: Heap Gate (Ty) (koszt T) — dodaj 1 manę bezbarwną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Heap Gate — dodanie many do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Thieves' Tools
+  >> Zagraj: Thieves' Tools (koszt 1B)
+  [kreator many] Płatność 1B — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: BTapnij: Forest (G)Tapnij: Swamp (B)Tapnij: M — źródła: 5
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Thieves' Tools
+  [ROZGRYWKA]   • Thieves' Tools wchodzi na pole bitwy
+  [ROZGRYWKA]   • Thieves' Tools zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Thieves' Tools — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty tworzysz token Treasure
+  [ROZGRYWKA]   • Treasure wchodzi na pole bitwy
+  [ROZGRYWKA]   • Thieves' Tools — trigger się rozstrzyga
+  >> Zagraj: Patron of the Arts (koszt 2R)
+  [kreator many] Płatność 2R — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: RTapnij: Mountain (R)Tapnij: Plains (W)Tapnij — źródła: 4
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Patron of the Arts
+  >> Aktywuj: Treasure (Ty) —
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Treasure — dodanie many do puli
+  [ROZGRYWKA]   • Treasure zostaje poświęcony
+  [ROZGRYWKA]   • Patron of the Arts wchodzi na pole bitwy
+  [ROZGRYWKA]   • Patron of the Arts zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Patron of the Arts — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty tworzysz token Treasure
+  [ROZGRYWKA]   • Treasure wchodzi na pole bitwy
+  [ROZGRYWKA]   • Patron of the Arts — trigger się rozstrzyga
+  >> Aktywuj: Treasure (Ty) —
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Treasure — dodanie many do puli
+  [ROZGRYWKA]   • Treasure zostaje poświęcony
+  >> Zagraj: Circle of the Land Druid (koszt 1G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Circle of the Land Druid
+  [ROZGRYWKA]   • Circle of the Land Druid wchodzi na pole bitwy
+  [ROZGRYWKA]   • Circle of the Land Druid zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Circle of the Land Druid — skorzystać z efektu „you may"? (wybór gracza)
+  >> Wybierz: Efekt dobrowolny („you may") (2 opcje)
+  [modal choice] Wybierz: Efekt dobrowolny („you may") Zrezygnuj z efektu Uruchom efekt dobrowolny (you may)
+  [modal choice]   ▶ Zrezygnuj z efektu
+  [modal choice]     Uruchom efekt dobrowolny (you may)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rezygnujesz z efektu „you may" (Circle of the Land Druid)
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 1 z 2 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Inspiring Bard
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Wavecrash Triton blokuje Inspiring Bard
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Inspiring Bard zadaje 3 obrażenia (Wavecrash Triton)
+  [ROZGRYWKA]   • Wavecrash Triton zadaje 1 obrażenie (Inspiring Bard)
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Sweet Oblivion → cel: Ty
+  [ROZGRYWKA]   • Nieprzyjaciel: Setessan Skirmisher — cmentarz → wygnanie
+  [ROZGRYWKA]   • Nieprzyjaciel: Anthem of Champions — cmentarz → wygnanie
+  [ROZGRYWKA]   • Nieprzyjaciel: Sea God's Scorn — cmentarz → wygnanie
+  [ROZGRYWKA]   • Nieprzyjaciel: Satyr Wayfinder — cmentarz → wygnanie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Mielisz Swamp do grobu
+  [ROZGRYWKA]   • Mielisz Silvanus's Invoker do grobu
+  [ROZGRYWKA]   • Mielisz Stirring Bard do grobu
+  [ROZGRYWKA]   • Mielisz Plains do grobu
+  [ROZGRYWKA]   • Sweet Oblivion zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Returned Centaur, Wavecrash Triton
+  >> Wybierz: Deklaracja blokujących (27 opcji)
+  [combat wizard] blokuję 3 stworami: Nefarious Imp (2/1)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nefarious Imp, Patron of the Arts i Circle of the Land Druid blokują Wavecrash Triton
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Returned Centaur zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 16
+  [ROZGRYWKA]   • Nieprzyjaciel rozdziela obrażenia bojowe (trample albo wielu blokerów)
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Wavecrash Triton zadaje 1 obrażenie (Nefarious Imp)
+  [ROZGRYWKA]   • Nefarious Imp zadaje 2 obrażenia (Wavecrash Triton)
+  [ROZGRYWKA]   • Patron of the Arts zadaje 3 obrażenia (Wavecrash Triton)
+  [ROZGRYWKA]   • Circle of the Land Druid zadaje 1 obrażenie (Wavecrash Triton)
+  [ROZGRYWKA]   • Nefarious Imp ginie
+  [ROZGRYWKA]   • Wavecrash Triton ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 15 — Ty
+  >> Aktywuj: Heap Gate (Ty) (koszt T) — dodaj 1 manę bezbarwną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Heap Gate — dodanie many do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Scorch Spitter
+  >> Zagraj: Scorch Spitter (koszt R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Scorch Spitter
+  [ROZGRYWKA]   • Scorch Spitter wchodzi na pole bitwy
+  [ROZGRYWKA]   • Scorch Spitter zostaje rozstrzygnięty
+  >> Wyposaż: Thieves' Tools (4 opcje)
+  [modal choice] Wyposaż: Thieves' Tools Wyposaż: Thieves' Tools (Ty) → Scorch Spitter (Ty) (koszt 2) Wyposaż: Thieves' Tools (Ty) → Circle of the Land Druid (Ty) (koszt 2) Wyposaż: Thieves' Tools (Ty) → Patron of the Arts (Ty) (koszt 2) Wyposaż: Thieves' Tools (Ty) → Inspiring Bard (Ty) (koszt 2)
+  [modal choice]   ▶ Wyposaż: Thieves' Tools (Ty) → Scorch Spitter (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Thieves' Tools (Ty) → Circle of the Land Druid (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Thieves' Tools (Ty) → Patron of the Arts (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Thieves' Tools (Ty) → Inspiring Bard (Ty) (koszt 2)
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Forest (G)Tapnij: Swamp (B)Tapnij: Plains (W)Tapnij: Forest ( — źródła: 4
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Swamp (B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz Equip: Thieves' Tools → cel: Scorch Spitter
+  [ROZGRYWKA]   • Thieves' Tools wyposaża Scorch Spitter
+  >> Wyposaż: Thieves' Tools (3 opcje)
+  [modal choice] Wyposaż: Thieves' Tools Wyposaż: Thieves' Tools (Ty) → Circle of the Land Druid (Ty) (koszt 2) Wyposaż: Thieves' Tools (Ty) → Patron of the Arts (Ty) (koszt 2) Wyposaż: Thieves' Tools (Ty) → Inspiring Bard (Ty) (koszt 2)
+  [modal choice]   ▶ Wyposaż: Thieves' Tools (Ty) → Circle of the Land Druid (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Thieves' Tools (Ty) → Patron of the Arts (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Thieves' Tools (Ty) → Inspiring Bard (Ty) (koszt 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz Equip: Thieves' Tools → cel: Circle of the Land Druid
+  [ROZGRYWKA]   • Thieves' Tools wyposaża Circle of the Land Druid
+  >> Wybierz: Deklaracja atakujących (8 opcji)
+  [combat wizard] atakuję 2 z 3 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Inspiring Bard, Patron of the Arts
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Inspiring Bard zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 16 → 13
+  [ROZGRYWKA]   • Patron of the Arts zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 13 → 10
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Feral Invocation → cel: Returned Centaur
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Feral Invocation zaczarowuje Returned Centaur
+  [ROZGRYWKA]   • Feral Invocation wchodzi na pole bitwy
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Sleep of the Dead → cel: Scorch Spitter
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Scorch Spitter nie odkręca się w następnym kroku odkręcania
+  [ROZGRYWKA]   • Sleep of the Dead zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Returned Centaur
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Circle of the Land Druid (1/1)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Circle of the Land Druid blokuje Returned Centaur
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Returned Centaur zadaje 4 obrażenia (Circle of the Land Druid)
+  [ROZGRYWKA]   • Circle of the Land Druid zadaje 1 obrażenie (Returned Centaur)
+  [ROZGRYWKA]   • Circle of the Land Druid ginie
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Circle of the Land Druid — wybierz cel triggera (wymagany)
+  >> Circle of the Land Druid — cel triggera (4 opcje)
+  [modal choice] Circle of the Land Druid — cel triggera Circle of the Land Druid — cel triggera: Island Circle of the Land Druid — cel triggera: Basilisk Gate Circle of the Land Druid — cel triggera: Swamp Circle of the Land Druid — cel triggera: Plains
+  [modal choice]   ▶ Circle of the Land Druid — cel triggera: Island
+  [modal choice]     Circle of the Land Druid — cel triggera: Basilisk Gate
+  [modal choice]     Circle of the Land Druid — cel triggera: Swamp
+  [modal choice]     Circle of the Land Druid — cel triggera: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Circle of the Land Druid — trigger (śmierć stwora)
+  [ROZGRYWKA]   • Circle of the Land Druid — cel: Island
+  [ROZGRYWKA]   • Ty: Island — cmentarz → ręka
+  [ROZGRYWKA]   • Circle of the Land Druid — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 17 — Ty
+  >> Aktywuj: Heap Gate (Ty) (koszt 1, T) — dodaj 1 manę dowolnego koloru
+  [kreator many] Płatność 1 — tapuj źródła po jednympozostało 1 manyTapnij: Forest (G)Tapnij: Swamp (B)Tapnij: Mountain (R)Tapnij: Plains — źródła: 5
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Heap Gate — dodanie many do puli (1 mana dowolnego koloru)
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Cloak of the Bat
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Zagraj: Cloak of the Bat (koszt 2)
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Swamp (B)Tapnij: Mountain (R)Tapnij: Plains (W)Tapnij: Forest — źródła: 5
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Cloak of the Bat
+  [ROZGRYWKA]   • Cloak of the Bat wchodzi na pole bitwy
+  [ROZGRYWKA]   • Cloak of the Bat zostaje rozstrzygnięty
+  >> Wyposaż: Cloak of the Bat (3 opcje)
+  [modal choice] Wyposaż: Cloak of the Bat Wyposaż: Cloak of the Bat (Ty) → Scorch Spitter (Ty) (koszt 2) Wyposaż: Cloak of the Bat (Ty) → Patron of the Arts (Ty) (koszt 2) Wyposaż: Cloak of the Bat (Ty) → Inspiring Bard (Ty) (koszt 2)
+  [modal choice]   ▶ Wyposaż: Cloak of the Bat (Ty) → Scorch Spitter (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Cloak of the Bat (Ty) → Patron of the Arts (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Cloak of the Bat (Ty) → Inspiring Bard (Ty) (koszt 2)
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Plains (W)Tapnij: Forest (G)Tapnij: Island (U)Anuluj płatność — źródła: 3
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz Equip: Cloak of the Bat → cel: Scorch Spitter
+  [ROZGRYWKA]   • Cloak of the Bat wyposaża Scorch Spitter
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 1 z 2 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Inspiring Bard
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Inspiring Bard zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 10 → 7
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Entrancing Lyre
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Entrancing Lyre wchodzi na pole bitwy
+  [ROZGRYWKA]   • Entrancing Lyre zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Entrancing Lyre — cel nie odtapuje podczas następnego untap kontrolera (X=3) → cel: Patron of the Arts
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Patron of the Arts nie odkręca się, dopóki Entrancing Lyre jest na polu bitwy i zatapnięte
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Entrancing Lyre rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Returned Centaur
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Returned Centaur zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 12
+  [ROZGRYWKA]   • Tura 19 — Ty
+  >> Aktywuj: Heap Gate (Ty) (koszt T) — dodaj 1 manę bezbarwną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Heap Gate — dodanie many do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Wyposaż: Cloak of the Bat (2 opcje)
+  [modal choice] Wyposaż: Cloak of the Bat Wyposaż: Cloak of the Bat (Ty) → Patron of the Arts (Ty) (koszt 2) Wyposaż: Cloak of the Bat (Ty) → Inspiring Bard (Ty) (koszt 2)
+  [modal choice]   ▶ Wyposaż: Cloak of the Bat (Ty) → Patron of the Arts (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Cloak of the Bat (Ty) → Inspiring Bard (Ty) (koszt 2)
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Forest (G)Tapnij: Swamp (B)Tapnij: Mountain (R)Tapnij: Plains — źródła: 6
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Swamp (B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Aktywujesz Equip: Cloak of the Bat → cel: Patron of the Arts
+  [ROZGRYWKA]   • Cloak of the Bat wyposaża Patron of the Arts
+  >> Wyposaż: Cloak of the Bat (2 opcje)
+  [modal choice] Wyposaż: Cloak of the Bat Wyposaż: Cloak of the Bat (Ty) → Scorch Spitter (Ty) (koszt 2) Wyposaż: Cloak of the Bat (Ty) → Inspiring Bard (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Cloak of the Bat (Ty) → Scorch Spitter (Ty) (koszt 2)
+  [modal choice]   ▶ Wyposaż: Cloak of the Bat (Ty) → Inspiring Bard (Ty) (koszt 2)
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Mountain (R)Tapnij: Plains (W)Tapnij: Forest (G)Tapnij: Islan — źródła: 4
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz Equip: Cloak of the Bat → cel: Inspiring Bard
+  [ROZGRYWKA]   • Cloak of the Bat wyposaża Inspiring Bard
+  >> Wyposaż: Cloak of the Bat (2 opcje)
+  [modal choice] Wyposaż: Cloak of the Bat Wyposaż: Cloak of the Bat (Ty) → Scorch Spitter (Ty) (koszt 2) Wyposaż: Cloak of the Bat (Ty) → Patron of the Arts (Ty) (koszt 2)
+  [modal choice]   ▶ Wyposaż: Cloak of the Bat (Ty) → Scorch Spitter (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Cloak of the Bat (Ty) → Patron of the Arts (Ty) (koszt 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz Equip: Cloak of the Bat → cel: Scorch Spitter
+  [ROZGRYWKA]   • Cloak of the Bat wyposaża Scorch Spitter
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 1 z 2 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Scorch Spitter
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Scorch Spitter — trigger (atak)
+  [ROZGRYWKA]   • Scorch Spitter zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 7 → 6
+  [ROZGRYWKA]   • Scorch Spitter — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Scorch Spitter zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 6 → 5
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Returned Centaur
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Inspiring Bard (3/3)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Inspiring Bard blokuje Returned Centaur
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Returned Centaur zadaje 4 obrażenia (Inspiring Bard)
+  [ROZGRYWKA]   • Inspiring Bard zadaje 3 obrażenia (Returned Centaur)
+  [ROZGRYWKA]   • Inspiring Bard ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 21 — Ty
+  >> Aktywuj: Heap Gate (Ty) (koszt 1, T) — dodaj 1 manę dowolnego koloru
+  [kreator many] Płatność 1 — tapuj źródła po jednympozostało 1 manyTapnij: Forest (G)Tapnij: Swamp (B)Tapnij: Mountain (R)Tapnij: Plains — źródła: 7
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Heap Gate — dodanie many do puli (1 mana dowolnego koloru)
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Inspire Awe
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel wykonuje scry (patrzy na 2 karty)
+  [ROZGRYWKA]   • Nieprzyjaciel kończy scry — odkłada na spód biblioteki (1/2)
+  [ROZGRYWKA]   • Inspire Awe zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Wyposaż: Thieves' Tools (2 opcje)
+  [modal choice] Wyposaż: Thieves' Tools Wyposaż: Thieves' Tools (Ty) → Scorch Spitter (Ty) (koszt 2) Wyposaż: Thieves' Tools (Ty) → Patron of the Arts (Ty) (koszt 2)
+  [modal choice]     Wyposaż: Thieves' Tools (Ty) → Scorch Spitter (Ty) (koszt 2)
+  [modal choice]   ▶ Wyposaż: Thieves' Tools (Ty) → Patron of the Arts (Ty) (koszt 2)
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Swamp (B)Tapnij: Mountain (R)Tapnij: Plains (W)Tapnij: Forest — źródła: 6
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Aktywujesz Equip: Thieves' Tools → cel: Patron of the Arts
+  [ROZGRYWKA]   • Thieves' Tools wyposaża Patron of the Arts
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Wyposaż: Cloak of the Bat (Ty) → Patron of the Arts (Ty) (koszt 2)
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Plains (W)Tapnij: Forest (G)Tapnij: Island (U)Tapnij: Swamp ( — źródła: 5
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Forest (G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz Equip: Cloak of the Bat → cel: Patron of the Arts
+  [ROZGRYWKA]   • Cloak of the Bat wyposaża Patron of the Arts
+  >> Wyposaż: Thieves' Tools (Ty) → Scorch Spitter (Ty) (koszt 2)
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Island (U)Tapnij: Swamp (B)Tapnij: Mountain (R)Anuluj płatnoś — źródła: 3
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Swamp (B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz Equip: Thieves' Tools → cel: Scorch Spitter
+  [ROZGRYWKA]   • Thieves' Tools wyposaża Scorch Spitter
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Scorch Spitter
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Scorch Spitter — trigger (atak)
+  [ROZGRYWKA]   • Scorch Spitter zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 5 → 4
+  [ROZGRYWKA]   • Scorch Spitter — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 22 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Glaring Aegis → cel: Patron of the Arts
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Glaring Aegis zaczarowuje Patron of the Arts
+  [ROZGRYWKA]   • Glaring Aegis wchodzi na pole bitwy
+  [ROZGRYWKA]   • Glaring Aegis — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Glaring Aegis — cel: Patron of the Arts
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Glaring Aegis — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Sweet Oblivion → cel: Ty
+  [ROZGRYWKA]   • Nieprzyjaciel: Breaching Hippocamp — cmentarz → wygnanie
+  [ROZGRYWKA]   • Nieprzyjaciel: Wavecrash Triton — cmentarz → wygnanie
+  [ROZGRYWKA]   • Nieprzyjaciel: Sleep of the Dead — cmentarz → wygnanie
+  [ROZGRYWKA]   • Nieprzyjaciel: Inspire Awe — cmentarz → wygnanie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Sweet Oblivion zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Returned Centaur
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Returned Centaur zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 12 → 8
+  [ROZGRYWKA]   • Tura 23 — Ty
+  >> Aktywuj: Heap Gate (Ty) (koszt T) — dodaj 1 manę bezbarwną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Heap Gate — dodanie many do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Przegrywasz (pusta biblioteka)
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 121 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: (pusta)
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. · wyposaża → Scorch Spitter | Patron of the Arts · 3 · Creature — Dragon Noble · Latanie Pośpiech · Gdy wejdzie na pole bitwy: stwórz token Treasure. · Gdy ta karta umrze: stwórz token Treasure. · Latanie · Pośpiech · nie odtapuje się · +1/+3 · wyposażona: Cloak of the Bat · zaczarowana: Glaring Aegis · 4/4 | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · wyposażona: Thieves' Tools · 1/1 | Cloak of the Bat · 2 · Artifact — Equipment · Equip {2} — nosiciel: Latanie, Pośpiech · wyposaża → Patron of the Arts | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Heap Gate · Land — Gate · {T}: dodaj 1 manę bezbarwną · {1}, {T}: dodaj 1 manę dowolnego koloru · {1}, {T}, tapnij inny nietapnięty permanent (Gate): stwórz token Treasure · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · +2/+2 · zaczarowana: Feral Invocation · 4/6 | Feral Invocation · 3 · Enchantment Aura · Flash (błysk) · stwór: +2/+2 · aura → Returned Centaur | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Glaring Aegis · 1 · Enchantment Aura · stwór: +1/+3 · Gdy wejdzie na pole bitwy: tap. · aura → Patron of the Arts
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Circle of the Land Druid, Patron of the Arts, Nefarious Imp, Heap Gate, Gray Slaad, Swamp, Forest ⏎ Nowa partia (seed 44). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 36, kliknięte: 41, modale: 9, sondy noop: 137 (panel 104, modal 33)
+== DETEKTORY: 1 zgłoszeń (do weryfikacji) ==
+  [noop] 1
+    - Oferta bez skutku — jedyna zmiana to zapłacony koszt
+      Aktywuj: Heap Gate (Ty) (koszt 1, T) — dodaj 1 manę dowolnego koloru

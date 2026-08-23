@@ -1,0 +1,1058 @@
+== NOWA PARTIA: gracz=ravnica vs bot=alara, seed=19, profil=explorer, policy-seed=5, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Plains (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Ghost Warden
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Zagraj: Ghost Warden (koszt 1W)
+  [kreator many] Płatność 1W — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: WTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 3
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Ghost Warden
+  [ROZGRYWKA]   • Ghost Warden wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ghost Warden zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Illusory Demon
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Illusory Demon wchodzi na pole bitwy
+  [ROZGRYWKA]   • Illusory Demon zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 7 — Ty
+  >> Cel zdolności: Ghost Warden (2 opcje)
+  [modal choice] Cel zdolności: Ghost Warden Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Illusory Demon (Nieprzyjaciel) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [modal choice]   ▶ Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Illusory Demon (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghost Warden — zmiana statystyk celu → cel: Illusory Demon
+  [ROZGRYWKA]   • Ty: zdolność Ghost Warden rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Trestle Troll
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Zagraj: Veiled Ascension (koszt 3W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Veiled Ascension
+  [ROZGRYWKA]   • Veiled Ascension wchodzi na pole bitwy
+  [ROZGRYWKA]   • Veiled Ascension zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Veiled Ascension — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Veiled Ascension — trigger bez efektu (nie było czego wykonać)
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Unstable Frontier
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Esper Stormblade
+  [ROZGRYWKA]   • Illusory Demon — trigger (rzucenie czaru)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Unstable Frontier
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Unstable Frontier staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Unstable Frontier staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Illusory Demon zostaje poświęcony
+  [ROZGRYWKA]   • Illusory Demon — trigger się rozstrzyga
+  [ROZGRYWKA]   • Esper Stormblade wchodzi na pole bitwy
+  [ROZGRYWKA]   • Esper Stormblade zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 9 — Ty
+  >> Wybierz: Efekt dobrowolny („you may") (2 opcje)
+  [modal choice] Wybierz: Efekt dobrowolny („you may") Zrezygnuj z efektu Uruchom efekt dobrowolny (you may)
+  [modal choice]   ▶ Zrezygnuj z efektu
+  [modal choice]     Uruchom efekt dobrowolny (you may)
+  >> Cel zdolności: Ghost Warden (2 opcje)
+  [modal choice] Cel zdolności: Ghost Warden Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Esper Stormblade (Nieprzyjaciel) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [modal choice]   ▶ Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Esper Stormblade (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghost Warden — zmiana statystyk celu → cel: Esper Stormblade
+  [ROZGRYWKA]   • Ty: zdolność Ghost Warden rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Guildscorn Ward
+  >> Aura: Guildscorn Ward (2 opcje)
+  [modal choice] Aura: Guildscorn Ward Zagraj aurę: Guildscorn Ward (koszt W) → zaczaruj Esper Stormblade (Nieprzyjaciel) Zagraj aurę: Guildscorn Ward (koszt W) → zaczaruj Ghost Warden (Ty)
+  [modal choice]   ▶ Zagraj aurę: Guildscorn Ward (koszt W) → zaczaruj Esper Stormblade (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Guildscorn Ward (koszt W) → zaczaruj Ghost Warden (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Rzucasz Guildscorn Ward → cel: Esper Stormblade
+  [ROZGRYWKA]   • Guildscorn Ward zaczarowuje Esper Stormblade
+  [ROZGRYWKA]   • Guildscorn Ward wchodzi na pole bitwy
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Etherium Sculptor
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Plains staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Plains staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Etherium Sculptor wchodzi na pole bitwy
+  [ROZGRYWKA]   • Etherium Sculptor zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Esper Stormblade
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Esper Stormblade zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 18
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Wybierz: Efekt dobrowolny („you may") (2 opcje)
+  [modal choice] Wybierz: Efekt dobrowolny („you may") Zrezygnuj z efektu Uruchom efekt dobrowolny (you may)
+  [modal choice]     Zrezygnuj z efektu
+  [modal choice]   ▶ Uruchom efekt dobrowolny (you may)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Veiled Ascension — trigger (krok upkeep)
+  [ROZGRYWKA]   • Korzystasz z efektu „you may" (Veiled Ascension)
+  >> Cel zdolności: Ghost Warden (3 opcje)
+  [modal choice] Cel zdolności: Ghost Warden Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Etherium Sculptor (Nieprzyjaciel) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Esper Stormblade (Nieprzyjaciel) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Etherium Sculptor (Nieprzyjaciel)
+  [modal choice]   ▶ Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Esper Stormblade (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghost Warden — zmiana statystyk celu → cel: Esper Stormblade
+  [ROZGRYWKA]   • Ty: zdolność Ghost Warden rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Mountain (Morph) dostaje +1 licznik flying (razem 1)
+  [ROZGRYWKA]   • Mountain (Morph) wchodzi na pole bitwy
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  >> Rzuć: Forced Landing (koszt 1G) → cel: Mountain (Morph)
+  [kreator many] Płatność 1G — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: GTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 4
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Forced Landing → cel: Mountain (Morph)
+  [ROZGRYWKA]   • Ty: Mountain — pole bitwy → biblioteka
+  [ROZGRYWKA]   • Forced Landing zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Liliana's Triumph
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plague Reaver
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Plains staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Plains staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Plague Reaver wchodzi na pole bitwy
+  [ROZGRYWKA]   • Plague Reaver zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera, którą kartę odrzucić jako koszt (Plague Reaver)
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Gorger Wurm
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera, którą kartę odrzucić jako koszt (Plague Reaver)
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Etherwrought Page
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę (koszt zdolności)
+  [ROZGRYWKA]   • Plague Reaver zostaje poświęcony
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Plague Reaver → cel: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Plague Reaver — opóźniony trigger: powrót na pole bitwy w następnym upkeep gracza Ty
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Plague Reaver rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Esper Stormblade, Etherium Sculptor
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Esper Stormblade zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 16
+  [ROZGRYWKA]   • Etherium Sculptor zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 15
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Plague Reaver — trigger (opóźniony trigger)
+  >> Wybierz: Efekt dobrowolny („you may") (2 opcje)
+  [modal choice] Wybierz: Efekt dobrowolny („you may") Zrezygnuj z efektu Uruchom efekt dobrowolny (you may)
+  [modal choice]   ▶ Zrezygnuj z efektu
+  [modal choice]     Uruchom efekt dobrowolny (you may)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rezygnujesz z efektu „you may" (Veiled Ascension)
+  >> Cel zdolności: Ghost Warden (3 opcje)
+  [modal choice] Cel zdolności: Ghost Warden Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Etherium Sculptor (Nieprzyjaciel) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Esper Stormblade (Nieprzyjaciel) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Etherium Sculptor (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Esper Stormblade (Nieprzyjaciel)
+  [modal choice]   ▶ Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghost Warden — zmiana statystyk celu → cel: Ghost Warden
+  [ROZGRYWKA]   • Ty: zdolność Ghost Warden rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: Plague Reaver — cmentarz → pole bitwy
+  [ROZGRYWKA]   • Plague Reaver przechodzi pod kontrolę gracza Ty
+  [ROZGRYWKA]   • Plague Reaver — trigger się rozstrzyga (opóźniony)
+  >> Aktywuj: Plague Reaver (Ty) (koszt: odrzuć 2 karty, poświęć) — wróć na pole bitwy na początku upkeep → cel: Ni
+  >> Wybierz: Karta do odrzucenia (4 opcje)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Trestle Troll Odrzuć: Toll of the Invasion Odrzuć: Liliana's Triumph Odrzuć: Epic Experiment
+  [modal choice]   ▶ Odrzuć: Trestle Troll
+  [modal choice]     Odrzuć: Toll of the Invasion
+  [modal choice]     Odrzuć: Liliana's Triumph
+  [modal choice]     Odrzuć: Epic Experiment
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odrzucasz Trestle Troll
+  >> Wybierz: Karta do odrzucenia (3 opcje)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Toll of the Invasion Odrzuć: Liliana's Triumph Odrzuć: Epic Experiment
+  [modal choice]   ▶ Odrzuć: Toll of the Invasion
+  [modal choice]     Odrzuć: Liliana's Triumph
+  [modal choice]     Odrzuć: Epic Experiment
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odrzucasz Toll of the Invasion
+  [ROZGRYWKA]   • Plague Reaver zostaje poświęcony
+  [ROZGRYWKA]   • Aktywujesz zdolność: Plague Reaver → cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Plague Reaver — opóźniony trigger: powrót na pole bitwy w następnym upkeep gracza Nieprzyjaciel
+  [ROZGRYWKA]   • Ty: zdolność Plague Reaver rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Ember Beast
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Plague Reaver — trigger (opóźniony trigger)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: Plague Reaver — cmentarz → pole bitwy
+  [ROZGRYWKA]   • Plague Reaver przechodzi pod kontrolę gracza Nieprzyjaciel
+  [ROZGRYWKA]   • Plague Reaver — trigger się rozstrzyga (opóźniony)
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Angel's Herald
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera, którą kartę odrzucić jako koszt (Plague Reaver)
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Flurry of Wings
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera, którą kartę odrzucić jako koszt (Plague Reaver)
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Akrasan Squire
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę (koszt zdolności)
+  [ROZGRYWKA]   • Plague Reaver zostaje poświęcony
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Plague Reaver → cel: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Plains staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Plains staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Plague Reaver — opóźniony trigger: powrót na pole bitwy w następnym upkeep gracza Ty
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Plague Reaver rozstrzygnięta
+  [ROZGRYWKA]   • Angel's Herald wchodzi na pole bitwy
+  [ROZGRYWKA]   • Angel's Herald zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Esper Stormblade, Etherium Sculptor
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Esper Stormblade zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 15 → 13
+  [ROZGRYWKA]   • Etherium Sculptor zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 12
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Plague Reaver — trigger (opóźniony trigger)
+  >> Wybierz: Efekt dobrowolny („you may") (2 opcje)
+  [modal choice] Wybierz: Efekt dobrowolny („you may") Zrezygnuj z efektu Uruchom efekt dobrowolny (you may)
+  [modal choice]   ▶ Zrezygnuj z efektu
+  [modal choice]     Uruchom efekt dobrowolny (you may)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rezygnujesz z efektu „you may" (Veiled Ascension)
+  >> Cel zdolności: Ghost Warden (4 opcje)
+  [modal choice] Cel zdolności: Ghost Warden Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Angel's Herald (Nieprzyjaciel) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Etherium Sculptor (Nieprzyjaciel) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Esper Stormblade (Nieprzyjaciel) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Angel's Herald (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Etherium Sculptor (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Esper Stormblade (Nieprzyjaciel)
+  [modal choice]   ▶ Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghost Warden — zmiana statystyk celu → cel: Ghost Warden
+  [ROZGRYWKA]   • Ty: zdolność Ghost Warden rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: Plague Reaver — cmentarz → pole bitwy
+  [ROZGRYWKA]   • Plague Reaver przechodzi pod kontrolę gracza Ty
+  [ROZGRYWKA]   • Plague Reaver — trigger się rozstrzyga (opóźniony)
+  >> Aktywuj: Plague Reaver (Ty) (koszt: odrzuć 2 karty, poświęć) — wróć na pole bitwy na początku upkeep → cel: Ni
+  >> Wybierz: Karta do odrzucenia (3 opcje)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Ember Beast Odrzuć: Liliana's Triumph Odrzuć: Epic Experiment
+  [modal choice]   ▶ Odrzuć: Ember Beast
+  [modal choice]     Odrzuć: Liliana's Triumph
+  [modal choice]     Odrzuć: Epic Experiment
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odrzucasz Ember Beast
+  >> Wybierz: Karta do odrzucenia (2 opcje)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Liliana's Triumph Odrzuć: Epic Experiment
+  [modal choice]   ▶ Odrzuć: Liliana's Triumph
+  [modal choice]     Odrzuć: Epic Experiment
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odrzucasz Liliana's Triumph
+  [ROZGRYWKA]   • Plague Reaver zostaje poświęcony
+  [ROZGRYWKA]   • Aktywujesz zdolność: Plague Reaver → cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Plague Reaver — opóźniony trigger: powrót na pole bitwy w następnym upkeep gracza Nieprzyjaciel
+  [ROZGRYWKA]   • Ty: zdolność Plague Reaver rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Azorius Justiciar
+  >> Zagraj: Azorius Justiciar (koszt 2WW)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Azorius Justiciar
+  [ROZGRYWKA]   • Azorius Justiciar wchodzi na pole bitwy
+  [ROZGRYWKA]   • Azorius Justiciar zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Azorius Justiciar — wybierz cel triggera (wymagany)
+  >> Azorius Justiciar — cel triggera (7 opcji)
+  [modal choice] Azorius Justiciar — cel triggera Azorius Justiciar — cele triggera: Esper Stormblade (Nieprzyjaciel) i Etherium Sculptor (Nieprzyjaciel) Azorius Justiciar — cele triggera: Esper Stormblade (Nieprzyjaciel) i Angel's Herald (Nieprzyjaciel) Azorius Justiciar — cele triggera: Etherium Sculptor (Nieprzyjaciel) i Angel's Herald (Nieprzyjaciel) Azorius Justiciar — cele triggera: Esper Stormblade (Nieprzyjaciel) Azorius Justiciar — cele triggera: Etherium Sculptor (Nieprzyjaciel) Azorius Justiciar — cele triggera: Angel's Herald (Nieprzyjaciel) Azorius Justiciar — bez celów („up to")
+  [modal choice]   ▶ Azorius Justiciar — cele triggera: Esper Stormblade (Nieprzyjaciel) i Etherium Sculptor (Nieprzyjaciel)
+  [modal choice]     Azorius Justiciar — cele triggera: Esper Stormblade (Nieprzyjaciel) i Angel's Herald (Nieprzyjaciel)
+  [modal choice]     Azorius Justiciar — cele triggera: Etherium Sculptor (Nieprzyjaciel) i Angel's Herald (Nieprzyjaciel)
+  [modal choice]     Azorius Justiciar — cele triggera: Esper Stormblade (Nieprzyjaciel)
+  [modal choice]     Azorius Justiciar — cele triggera: Etherium Sculptor (Nieprzyjaciel)
+  [modal choice]     Azorius Justiciar — cele triggera: Angel's Herald (Nieprzyjaciel)
+  [modal choice]     Azorius Justiciar — bez celów („up to")
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Azorius Justiciar — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Azorius Justiciar — cel: Esper Stormblade
+  [ROZGRYWKA]   • Esper Stormblade zatrzymany (detain): do następnej tury Ty nie atakuje, nie blokuje i nie aktywuje zdolności
+  [ROZGRYWKA]   • Etherium Sculptor zatrzymany (detain): do następnej tury Ty nie atakuje, nie blokuje i nie aktywuje zdolności
+  [ROZGRYWKA]   • Azorius Justiciar — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Plague Reaver — trigger (opóźniony trigger)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: Plague Reaver — cmentarz → pole bitwy
+  [ROZGRYWKA]   • Plague Reaver przechodzi pod kontrolę gracza Nieprzyjaciel
+  [ROZGRYWKA]   • Plague Reaver — trigger się rozstrzyga (opóźniony)
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Dispeller's Capsule
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Plains staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Plains staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Dispeller's Capsule wchodzi na pole bitwy
+  [ROZGRYWKA]   • Dispeller's Capsule zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Plague Reaver — trigger (krok końca tury)
+  [ROZGRYWKA]   • Guildscorn Ward trafia do grobu (aura bez legalnego gospodarza)
+  [ROZGRYWKA]   • Esper Stormblade zostaje poświęcony
+  [ROZGRYWKA]   • Etherium Sculptor zostaje poświęcony
+  [ROZGRYWKA]   • Angel's Herald zostaje poświęcony
+  [ROZGRYWKA]   • Plague Reaver — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 17 — Ty
+  >> Wybierz: Efekt dobrowolny („you may") (2 opcje)
+  [modal choice] Wybierz: Efekt dobrowolny („you may") Zrezygnuj z efektu Uruchom efekt dobrowolny (you may)
+  [modal choice]     Zrezygnuj z efektu
+  [modal choice]   ▶ Uruchom efekt dobrowolny (you may)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Veiled Ascension — trigger (krok upkeep)
+  [ROZGRYWKA]   • Korzystasz z efektu „you may" (Veiled Ascension)
+  >> Cel zdolności: Ghost Warden (3 opcje)
+  [modal choice] Cel zdolności: Ghost Warden Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Plague Reaver (Nieprzyjaciel) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Azorius Justiciar (Ty) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [modal choice]   ▶ Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Plague Reaver (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Azorius Justiciar (Ty)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghost Warden — zmiana statystyk celu → cel: Plague Reaver
+  [ROZGRYWKA]   • Ty: zdolność Ghost Warden rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Selesnya Charm (Morph) dostaje +1 licznik flying (razem 1)
+  [ROZGRYWKA]   • Selesnya Charm (Morph) wchodzi na pole bitwy
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 0 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Angelic Benediction
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Plains staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Plains staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Angelic Benediction wchodzi na pole bitwy
+  [ROZGRYWKA]   • Angelic Benediction zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Plague Reaver
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Angelic Benediction — trigger (samotny atak)
+  [ROZGRYWKA]   • Angelic Benediction — wybierz cel triggera (można odmówić)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Angelic Benediction — trigger (samotny atak)
+  [ROZGRYWKA]   • Angelic Benediction — cel: Azorius Justiciar
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Angelic Benediction — trigger się rozstrzyga
+  [ROZGRYWKA]   • Plague Reaver dostaje +1/+1
+  [ROZGRYWKA]   • Angelic Benediction — trigger się rozstrzyga
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Morph (2/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Selesnya Charm (Morph) blokuje Plague Reaver
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Plague Reaver zadaje 7 obrażeń (Selesnya Charm)
+  [ROZGRYWKA]   • Selesnya Charm zadaje 2 obrażenia (Plague Reaver)
+  [ROZGRYWKA]   • Selesnya Charm ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Plague Reaver — trigger (krok końca tury)
+  [ROZGRYWKA]   • Plague Reaver — trigger bez efektu (nie było czego wykonać)
+  [ROZGRYWKA]   • Tura 19 — Ty
+  >> Wybierz: Efekt dobrowolny („you may") (2 opcje)
+  [modal choice] Wybierz: Efekt dobrowolny („you may") Zrezygnuj z efektu Uruchom efekt dobrowolny (you may)
+  [modal choice]   ▶ Zrezygnuj z efektu
+  [modal choice]     Uruchom efekt dobrowolny (you may)
+  >> Cel zdolności: Ghost Warden (3 opcje)
+  [modal choice] Cel zdolności: Ghost Warden Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Plague Reaver (Nieprzyjaciel) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Azorius Justiciar (Ty) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [modal choice]   ▶ Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Plague Reaver (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Azorius Justiciar (Ty)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghost Warden — zmiana statystyk celu → cel: Plague Reaver
+  [ROZGRYWKA]   • Ty: zdolność Ghost Warden rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Azorius Justiciar
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Azorius Justiciar zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 18
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dispeller's Capsule zostaje poświęcony
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Dispeller's Capsule → cel: Veiled Ascension
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Swamp staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Swamp staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Veiled Ascension zostaje zniszczony
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Dispeller's Capsule rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Plague Reaver
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Angelic Benediction — trigger (samotny atak)
+  [ROZGRYWKA]   • Angelic Benediction — wybierz cel triggera (można odmówić)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Angelic Benediction — trigger (samotny atak)
+  [ROZGRYWKA]   • Angelic Benediction — cel: Azorius Justiciar
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Angelic Benediction — trigger się rozstrzyga
+  [ROZGRYWKA]   • Plague Reaver dostaje +1/+1
+  [ROZGRYWKA]   • Angelic Benediction — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Plague Reaver zadaje 7 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 12 → 5
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Plague Reaver — trigger (krok końca tury)
+  [ROZGRYWKA]   • Plague Reaver — trigger bez efektu (nie było czego wykonać)
+  [ROZGRYWKA]   • Tura 21 — Ty
+  >> Cel zdolności: Ghost Warden (3 opcje)
+  [modal choice] Cel zdolności: Ghost Warden Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Plague Reaver (Nieprzyjaciel) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Azorius Justiciar (Ty) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [modal choice]   ▶ Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Plague Reaver (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Azorius Justiciar (Ty)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghost Warden — zmiana statystyk celu → cel: Plague Reaver
+  [ROZGRYWKA]   • Ty: zdolność Ghost Warden rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Trostani Discordant
+  >> Zagraj: Trostani Discordant (koszt 3GW)
+  [kreator many] Płatność 3GW — tapuj źródła po jednympozostało 5 many · kolory do pokrycia: G, WTapnij: Island (U)Tapnij: Plains (W)Tapn — źródła: 6
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Trostani Discordant
+  [ROZGRYWKA]   • Trostani Discordant wchodzi na pole bitwy
+  [ROZGRYWKA]   • Trostani Discordant zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Trostani Discordant — trigger (wejście na pole bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty tworzysz token Soldier (2/2)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ty tworzysz token Soldier (2/2)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Trostani Discordant — trigger się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Azorius Justiciar
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Azorius Justiciar zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 18 → 15
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Trostani Discordant — trigger (krok końca tury)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Trostani Discordant — trigger bez efektu (nie było czego wykonać)
+  [ROZGRYWKA]   • Tura 22 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Swamp staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Swamp staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Plague Reaver
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Angelic Benediction — trigger (samotny atak)
+  [ROZGRYWKA]   • Angelic Benediction — wybierz cel triggera (można odmówić)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Angelic Benediction — trigger (samotny atak)
+  [ROZGRYWKA]   • Angelic Benediction — cel: Azorius Justiciar
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Angelic Benediction — trigger się rozstrzyga
+  [ROZGRYWKA]   • Plague Reaver dostaje +1/+1
+  [ROZGRYWKA]   • Angelic Benediction — trigger się rozstrzyga
+  >> Wybierz: Deklaracja blokujących (8 opcji)
+  [combat wizard] blokuję 2 stworami: Trostani Discordant (1/4)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Trostani Discordant i Soldier blokują Plague Reaver
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Nieprzyjaciel rozdziela obrażenia bojowe (trample albo wielu blokerów)
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Plague Reaver zadaje 4 obrażenia (Trostani Discordant)
+  [ROZGRYWKA]   • Plague Reaver zadaje 2 obrażenia (Soldier)
+  [ROZGRYWKA]   • Trostani Discordant zadaje 1 obrażenie (Plague Reaver)
+  [ROZGRYWKA]   • Ty: życie 5 → 7
+  [ROZGRYWKA]   • Soldier zadaje 2 obrażenia (Plague Reaver)
+  [ROZGRYWKA]   • Trostani Discordant ginie
+  [ROZGRYWKA]   • Soldier ginie
+  [ROZGRYWKA]   • token Soldier przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Plague Reaver — trigger (krok końca tury)
+  [ROZGRYWKA]   • Plague Reaver — trigger bez efektu (nie było czego wykonać)
+  [ROZGRYWKA]   • Tura 23 — Ty
+  >> Cel zdolności: Ghost Warden (4 opcje)
+  [modal choice] Cel zdolności: Ghost Warden Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Soldier (Ty) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Plague Reaver (Nieprzyjaciel) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Azorius Justiciar (Ty) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Soldier (Ty)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Plague Reaver (Nieprzyjaciel)
+  [modal choice]   ▶ Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Azorius Justiciar (Ty)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghost Warden — zmiana statystyk celu → cel: Azorius Justiciar
+  [ROZGRYWKA]   • Ty: zdolność Ghost Warden rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Piercing Rays
+  >> Cel czaru: Piercing Rays (2 opcje)
+  [modal choice] Cel czaru: Piercing Rays Rzuć: Piercing Rays (koszt 1W) → cel: Plague Reaver (Nieprzyjaciel) Rzuć: Piercing Rays (koszt 1W) → cel: Ghost Warden (Ty)
+  [modal choice]   ▶ Rzuć: Piercing Rays (koszt 1W) → cel: Plague Reaver (Nieprzyjaciel)
+  [modal choice]     Rzuć: Piercing Rays (koszt 1W) → cel: Ghost Warden (Ty)
+  [kreator many] Płatność 1W — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: WTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 6
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Rzucasz Piercing Rays → cel: Plague Reaver
+  [ROZGRYWKA]   • Nieprzyjaciel: Plague Reaver — pole bitwy → wygnanie
+  [ROZGRYWKA]   • Piercing Rays zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Azorius Justiciar, Soldier
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Azorius Justiciar zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 15 → 12
+  [ROZGRYWKA]   • Soldier zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 12 → 11
+  [ROZGRYWKA]   • Ty: życie 7 → 8
+  [ROZGRYWKA]   • Tura 24 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Knight of the Skyward Eye
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Swamp staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Swamp staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Knight of the Skyward Eye wchodzi na pole bitwy
+  [ROZGRYWKA]   • Knight of the Skyward Eye zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 25 — Ty
+  >> Cel zdolności: Ghost Warden (4 opcje)
+  [modal choice] Cel zdolności: Ghost Warden Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Knight of the Skyward Eye (Nieprzyjaciel) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Soldier (Ty) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Azorius Justiciar (Ty) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Knight of the Skyward Eye (Nieprzyjaciel)
+  [modal choice]   ▶ Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Soldier (Ty)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Azorius Justiciar (Ty)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghost Warden — zmiana statystyk celu → cel: Soldier
+  [ROZGRYWKA]   • Ty: zdolność Ghost Warden rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Expose to Daylight
+  >> Rzuć: Expose to Daylight (koszt 2W) → cel: Angelic Benediction (Nieprzyjaciel)
+  [kreator many] Płatność 2W — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: WTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 6
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Expose to Daylight → cel: Angelic Benediction
+  [ROZGRYWKA]   • Angelic Benediction zostaje zniszczony
+  [ROZGRYWKA]   • Wykonujesz scry (patrzy na 1 kartę: Forest)
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [modal choice] Scry 1 — obejrzane karty: 1. ForestKarta 1 z 1: ForestNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kończysz scry — na spód (1/1): Forest
+  [ROZGRYWKA]   • Expose to Daylight zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 1 z 2 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Soldier
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Knight of the Skyward Eye blokuje Soldier
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Ty: życie 8 → 10
+  [ROZGRYWKA]   • Soldier zadaje 2 obrażenia (Knight of the Skyward Eye)
+  [ROZGRYWKA]   • Knight of the Skyward Eye zadaje 2 obrażenia (Soldier)
+  [ROZGRYWKA]   • Soldier ginie
+  [ROZGRYWKA]   • Knight of the Skyward Eye ginie
+  [ROZGRYWKA]   • token Soldier przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA]   • Tura 26 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Forest staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Forest staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Tura 27 — Ty
+  >> Cel zdolności: Ghost Warden (2 opcje)
+  [modal choice] Cel zdolności: Ghost Warden Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Azorius Justiciar (Ty) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Azorius Justiciar (Ty)
+  [modal choice]   ▶ Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghost Warden — zmiana statystyk celu → cel: Ghost Warden
+  [ROZGRYWKA]   • Ty: zdolność Ghost Warden rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Chronic Flooding
+  >> Aura: Chronic Flooding (13 opcji)
+  [modal choice] Aura: Chronic Flooding Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Forest (Nieprzyjaciel) Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Swamp (Nieprzyjaciel) (1 z 3) Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Forest (Ty) (1 z 2) Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Island (Ty) (1 z 2) Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Nieprzyjaciel) Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Unstable Frontier (Nieprzyjaciel) Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Forest (Ty) (2 z 2) Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Island (Nieprzyjaciel) Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Ty) (1 z 2) Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Swamp (Nieprzyjaciel) (2 z 3) Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Ty) (2 z 2) Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Swamp (Nieprzyjaciel) (3 z 3) Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Island (Ty) (2 z 2)
+  [modal choice]   ▶ Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Forest (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Swamp (Nieprzyjaciel) (1 z 3)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Forest (Ty) (1 z 2)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Island (Ty) (1 z 2)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Unstable Frontier (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Forest (Ty) (2 z 2)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Island (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Ty) (1 z 2)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Swamp (Nieprzyjaciel) (2 z 3)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Ty) (2 z 2)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Swamp (Nieprzyjaciel) (3 z 3)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Island (Ty) (2 z 2)
+  [kreator many] Płatność 1U — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: UTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 6
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Rzucasz Chronic Flooding → cel: Forest
+  [ROZGRYWKA]   • Chronic Flooding zaczarowuje Forest
+  [ROZGRYWKA]   • Chronic Flooding wchodzi na pole bitwy
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Azorius Justiciar
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Azorius Justiciar zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 11 → 9
+  [ROZGRYWKA]   • Tura 28 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Forest staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Forest staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Tura 29 — Ty
+  >> Cel zdolności: Ghost Warden (2 opcje)
+  [modal choice] Cel zdolności: Ghost Warden Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Azorius Justiciar (Ty) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [modal choice]   ▶ Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Azorius Justiciar (Ty)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghost Warden — zmiana statystyk celu → cel: Azorius Justiciar
+  [ROZGRYWKA]   • Ty: zdolność Ghost Warden rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Ivy Lane Denizen
+  >> Zagraj: Ivy Lane Denizen (koszt 3G)
+  [kreator many] Płatność 3G — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: GTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 6
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Ivy Lane Denizen
+  [ROZGRYWKA]   • Ivy Lane Denizen wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ivy Lane Denizen zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 0 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 30 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Island staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Island staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Tura 31 — Ty
+  >> Cel zdolności: Ghost Warden (3 opcje)
+  [modal choice] Cel zdolności: Ghost Warden Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ivy Lane Denizen (Ty) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Azorius Justiciar (Ty) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ivy Lane Denizen (Ty)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Azorius Justiciar (Ty)
+  [modal choice]   ▶ Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghost Warden — zmiana statystyk celu → cel: Ghost Warden
+  [ROZGRYWKA]   • Ty: zdolność Ghost Warden rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 0 z 2 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 32 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Plains staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Plains staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Tura 33 — Ty
+  >> Cel zdolności: Ghost Warden (3 opcje)
+  [modal choice] Cel zdolności: Ghost Warden Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ivy Lane Denizen (Ty) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Azorius Justiciar (Ty) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ivy Lane Denizen (Ty)
+  [modal choice]   ▶ Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Azorius Justiciar (Ty)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghost Warden — zmiana statystyk celu → cel: Azorius Justiciar
+  [ROZGRYWKA]   • Ty: zdolność Ghost Warden rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Sagittars' Volley
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Azorius Justiciar, Ivy Lane Denizen
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Azorius Justiciar zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 9 → 6
+  [ROZGRYWKA]   • Ivy Lane Denizen zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 6 → 4
+  [ROZGRYWKA]   • Tura 34 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Grizzled Leotau
+  [ROZGRYWKA]   • Chronic Flooding — trigger (zatapnięcie zaczarowanego permanentu)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Plains staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Plains staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Plains do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Etherium Abomination do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Wretched Banquet do grobu
+  [ROZGRYWKA]   • Chronic Flooding — trigger się rozstrzyga
+  [ROZGRYWKA]   • Grizzled Leotau wchodzi na pole bitwy
+  [ROZGRYWKA]   • Grizzled Leotau zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Bone Splinters → cel: Ivy Lane Denizen
+  [ROZGRYWKA]   • Grizzled Leotau zostaje poświęcony
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ivy Lane Denizen zostaje zniszczony
+  [ROZGRYWKA]   • Bone Splinters zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Etherium Abomination
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: Etherium Abomination — cmentarz → pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Etherium Abomination rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Etherium Abomination
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Etherium Abomination zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 10 → 6
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Etherium Abomination — trigger (opóźniony trigger)
+  [ROZGRYWKA]   • Etherium Abomination zostaje wygnany (opóźniony trigger)
+  [ROZGRYWKA]   • Etherium Abomination — trigger się rozstrzyga (opóźniony)
+  [ROZGRYWKA]   • Tura 35 — Ty
+  >> Cel zdolności: Ghost Warden (2 opcje)
+  [modal choice] Cel zdolności: Ghost Warden Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Azorius Justiciar (Ty) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [modal choice]   ▶ Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Azorius Justiciar (Ty)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghost Warden — zmiana statystyk celu → cel: Azorius Justiciar
+  [ROZGRYWKA]   • Ty: zdolność Ghost Warden rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Withstand
+  >> Cel czaru: Withstand (4 opcje)
+  [modal choice] Cel czaru: Withstand Rzuć: Withstand (koszt 2W) → cel: Azorius Justiciar (Ty) Rzuć: Withstand (koszt 2W) → cel: Ghost Warden (Ty) Rzuć: Withstand (koszt 2W) → cel: Nieprzyjaciel Rzuć: Withstand (koszt 2W) → cel: Ty
+  [modal choice]   ▶ Rzuć: Withstand (koszt 2W) → cel: Azorius Justiciar (Ty)
+  [modal choice]     Rzuć: Withstand (koszt 2W) → cel: Ghost Warden (Ty)
+  [modal choice]     Rzuć: Withstand (koszt 2W) → cel: Nieprzyjaciel
+  [modal choice]     Rzuć: Withstand (koszt 2W) → cel: Ty
+  [kreator many] Płatność 2W — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: WTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 7
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Withstand → cel: Azorius Justiciar
+  [ROZGRYWKA]   • Withstand: tarcza chroni Azorius Justiciar przed 3 kolejnymi obrażeniami
+  [ROZGRYWKA]   • Dobierasz: Severed Strands
+  [ROZGRYWKA]   • Withstand zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Azorius Justiciar
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Azorius Justiciar zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 4 → 1
+  [ROZGRYWKA]   • Tura 36 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Fiery Fall → cel: Azorius Justiciar
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Fiery Fall zadaje 5 obrażeń (Azorius Justiciar)
+  [ROZGRYWKA]   • Fiery Fall zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Azorius Justiciar ginie
+  [ROZGRYWKA]   • Tura 37 — Ty
+  >> Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghost Warden — zmiana statystyk celu → cel: Ghost Warden
+  [ROZGRYWKA]   • Ty: zdolność Ghost Warden rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  [ROZGRYWKA]   • Tura 38 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Goblin Deathraiders
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Mountain staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Mountain staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Goblin Deathraiders wchodzi na pole bitwy
+  [ROZGRYWKA]   • Goblin Deathraiders zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 39 — Ty
+  >> Cel zdolności: Ghost Warden (2 opcje)
+  [modal choice] Cel zdolności: Ghost Warden Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Goblin Deathraiders (Nieprzyjaciel) Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [modal choice]   ▶ Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Goblin Deathraiders (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghost Warden — zmiana statystyk celu → cel: Goblin Deathraiders
+  [ROZGRYWKA]   • Ty: zdolność Ghost Warden rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Rzuć: Severed Strands (koszt 1B) → cel: Goblin Deathraiders (Nieprzyjaciel) — poświęć Ghost Warden (Ty)
+  [kreator many] Płatność 1B — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: BTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 8
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Rzucasz Severed Strands → cel: Goblin Deathraiders
+  [ROZGRYWKA]   • Ghost Warden zostaje poświęcony
+  [ROZGRYWKA]   • Ty: życie 6 → 7
+  [ROZGRYWKA]   • Goblin Deathraiders zostaje zniszczony
+  [ROZGRYWKA]   • Severed Strands zostaje rozstrzygnięty
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Plains
+  [ROZGRYWKA]   • Tura 40 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Infectious Horror
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Mountain staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Mountain staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Infectious Horror wchodzi na pole bitwy
+  [ROZGRYWKA]   • Infectious Horror zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 41 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Tenth District Veteran
+  >> Zagraj: Tenth District Veteran (koszt 2W)
+  [kreator many] Płatność 2W — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: WTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 9
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Tenth District Veteran
+  [ROZGRYWKA]   • Tenth District Veteran wchodzi na pole bitwy
+  [ROZGRYWKA]   • Tenth District Veteran zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 42 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Ethersworn Shieldmage
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ethersworn Shieldmage wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ethersworn Shieldmage zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Ethersworn Shieldmage — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Ethersworn Shieldmage — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Mountain staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Mountain staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Infectious Horror
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Infectious Horror — trigger (atak)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: życie 7 → 5
+  [ROZGRYWKA]   • Infectious Horror — trigger się rozstrzyga
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Tenth District Veteran (2/3)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tenth District Veteran blokuje Infectious Horror
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Infectious Horror zadaje 2 obrażenia (Tenth District Veteran)
+  [ROZGRYWKA]   • Tenth District Veteran zadaje 2 obrażenia (Infectious Horror)
+  [ROZGRYWKA]   • Infectious Horror ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 43 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Courage in Crisis
+  >> Cel czaru: Courage in Crisis (2 opcje)
+  [modal choice] Cel czaru: Courage in Crisis Rzuć: Courage in Crisis (koszt 2G) → cel: Ethersworn Shieldmage (Nieprzyjaciel) Rzuć: Courage in Crisis (koszt 2G) → cel: Tenth District Veteran (Ty)
+  [modal choice]   ▶ Rzuć: Courage in Crisis (koszt 2G) → cel: Ethersworn Shieldmage (Nieprzyjaciel)
+  [modal choice]     Rzuć: Courage in Crisis (koszt 2G) → cel: Tenth District Veteran (Ty)
+  [kreator many] Płatność 2G — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: GTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 9
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Courage in Crisis → cel: Ethersworn Shieldmage
+  [ROZGRYWKA]   • Ethersworn Shieldmage dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Wykonujesz proliferate — wskazuje permanenty/graczy z licznikami
+  >> Wybierz: Proliferate — cel licznika (2 opcje)
+  [modal choice] Wybierz: Proliferate — cel licznika Proliferate: Ethersworn Shieldmage (Nieprzyjaciel) Proliferate: bez celów (nic nie dostaje liczników)
+  [modal choice]   ▶ Proliferate: Ethersworn Shieldmage (Nieprzyjaciel)
+  [modal choice]     Proliferate: bez celów (nic nie dostaje liczników)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ethersworn Shieldmage dostaje +1 licznik +1/+1 (razem 2)
+  [ROZGRYWKA]   • Courage in Crisis zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Tenth District Veteran
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Tenth District Veteran — wybierz cel triggera (wymagany)
+  >> Tenth District Veteran — cel triggera: Tenth District Veteran (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tenth District Veteran — trigger (atak)
+  [ROZGRYWKA]   • Tenth District Veteran — cel: Tenth District Veteran
+  [ROZGRYWKA]   • Tenth District Veteran — trigger się rozstrzyga
+  [ROZGRYWKA]   • Ethersworn Shieldmage blokuje Tenth District Veteran
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Tenth District Veteran zadaje 2 obrażenia (Ethersworn Shieldmage)
+  [ROZGRYWKA]   • Ethersworn Shieldmage zadaje 4 obrażenia (Tenth District Veteran)
+  [ROZGRYWKA]   • Tenth District Veteran ginie
+  [ROZGRYWKA]   • Tura 44 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Unstable Frontier rozstrzygnięta
+  [ROZGRYWKA]   • Island staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Island staje się typem Forest do końca tury
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Ethersworn Shieldmage
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Ethersworn Shieldmage zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 5 → 1
+  [ROZGRYWKA]   • Tura 45 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Boros Challenger
+== KONIEC PARTII == Koniec partii — wygrywa Gracz
+
+--- krok 213 | Koniec partii — wygrywa Gracz ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Epic Experiment · 2 · Sorcery · wygnaj wierzch biblioteki i rzuć czary bez kosztu | Sagittars' Volley · 3 · Instant · zniszcz cel + 1 obrażenie stworom z „flying” · cel: stwór ze słowem kluczowym Latanie | Boros Challenger · 2 · Creature — Human Soldier · Gdy ten stwór atakuje jako mentor: wybrany atakujący stwór o mniejszej sile dostaje licznik +1/+1. · {2}, {R}, {W}: +1/+1 do końca tury · 2/3
+  MOJE POLA: Chronic Flooding · 2 · Enchantment Aura · Trigger zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Forest | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×4 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Unstable Frontier · Land · {T}: cel: twój ląd — stań się podstawowym lądem · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Ethersworn Shieldmage · 3 · Artifact Creature — Vedalken Wizard · Flash (błysk) · Gdy wejdzie na pole bitwy: prewencja obrażeń do końca tury. · 2x +1/+1 · 4/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forced Landing, Forest, Plains, Epic Experiment, Veiled Ascension, Toll of the Invasion, Island ⏎ Nowa partia (seed 19). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 34, kliknięte: 47, modale: 15, sondy noop: 198 (panel 121, modal 77)
+== DETEKTORY: brak zgłoszeń ==
+Transkrypt zapisany: audyt-m192/g3.txt | zgłoszeń detektorów: 0

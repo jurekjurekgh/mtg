@@ -83,12 +83,14 @@ test('Batch 38: wszystkie 10 kart mają status supported, Oracle i MANA_COSTS', 
     if (id !== 'colossodon-yearling') assert.ok((def.oracleText ?? '').length > 0, `${id} ma tekst Oracle`);
     assert.ok(MANA_COSTS[id], `${id} ma MANA_COSTS`);
   }
-  // Karty z artId w słowniku kolekcji (8/10; Divine i Talion's poza arkuszem).
-  const withArt = ['weftblade-enhancer', 'colossodon-yearling', 'fortify', 'mysidian-elder',
-    'pristine-talisman', 'chatter-of-the-squirrel', 'silken-strength', 'lotusguard-disciple'];
-  for (const id of withArt) assert.ok(REGISTRY.get(id).artId != null, `${id} ma artId`);
-  assert.equal(REGISTRY.get('divine-offering').artId, null);
-  assert.equal(REGISTRY.get('talions-messenger').artId, null);
+  // M197/K4: WSZYSTKIE 10 kart ma artId. Ten test utrwalał założenie „Divine
+  // Offering i Talion's Messenger są poza arkuszem" — nieprawdziwe: słownik
+  // kolekcji znał ich numery (47MBS, 166WOE) od początku, tylko nikt ich nie
+  // przeniósł do katalogu. Właściciel: „Wszystkie karty mają numery
+  // ilustracji i plany".
+  for (const id of ids) assert.ok(REGISTRY.get(id).artId != null, `${id} ma artId`);
+  assert.equal(REGISTRY.get('divine-offering').artId, 47);
+  assert.equal(REGISTRY.get('talions-messenger').artId, 166);
 });
 
 // --- Divine Offering: zniszcz artefakt, zyskaj życie = MV ---

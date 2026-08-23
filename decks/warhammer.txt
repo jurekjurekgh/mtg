@@ -5,15 +5,22 @@
 1x Brute Force
 1x Fireball
 1x Index
+1x Lab Rats
 1x Squire's Lightblade
 1x Tome Scour
 1x Unearth
 1x Cellar Door
+1x Cherished Hatchling
+1x Contested Game Ball
 1x Goblin Piker
+1x Negate (M15)
 1x Omenspeaker
+1x Reassembling Skeleton
+1x Wooden Stake
 1x Brawler's Plate
 1x Feedback
 1x Fledgling Imp
+1x Frost Lynx
 1x Hobble
 1x Ramroller
 1x Goblin Battle Jester
@@ -26,6 +33,7 @@
 1x Minotaur Abomination
 1x Revolutionist
 2x Plains
-2x Island
-3x Swamp
+3x Island
+4x Swamp
 6x Mountain
+1x Forest

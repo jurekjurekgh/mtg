@@ -104,31 +104,38 @@ test('renderTurnHistory: pusta historia pokazuje podpowiedź, po ruchach tekst t
   const els = {
     turnHistory: new MiniEl('pre'),
     turnHistoryCount: new MiniEl('span'),
-    turnHistory2: new MiniEl('input'),
+    turnHistorySelect: new MiniEl('select'),
   };
-  els.turnHistory2.checked = false;
-  renderTurnHistory(els, session, 1);
+  renderTurnHistory(els, session, null);
   assert.match(els.turnHistory.textContent, /Brak ukończonych tur/);
   assert.equal(els.turnHistoryCount.textContent, '');
 
   playSome(session, 60);
-  renderTurnHistory(els, session, 1);
+  renderTurnHistory(els, session, null); // null = domyślnie ostatnia tura
   assert.match(els.turnHistory.textContent, /\*\*Tura \d+ — (Czarodziejka|Nieprzyjaciel)\*\*/);
   assert.ok(els.turnHistoryCount.textContent.length > 0, 'licznik pokazuje liczbę pełnych tur');
 });
 
-test('przełącznik 2 tur (checked) steruje liczbą nagłówków w renderze', () => {
+// M188/K (zlecenie właściciela 2026-08-22): przełącznik „1 albo 2 ostatnie
+// tury" zastąpiony listą WSZYSTKICH tur — render pokazuje JEDNĄ wybraną.
+test('render pokazuje dokładnie JEDNĄ wybraną turę z listy (M188/K)', () => {
   const { registry, decks } = buildDecks();
   const session = createSession({ seed: 10, registry, decks });
   playSome(session, 120);
   const els = {
     turnHistory: new MiniEl('pre'),
     turnHistoryCount: new MiniEl('span'),
-    turnHistory2: new MiniEl('input'),
+    turnHistorySelect: new MiniEl('select'),
   };
-  els.turnHistory2.checked = true;
-  renderTurnHistory(els, session, 2);
-  assert.equal((els.turnHistory.textContent.match(/\*\*Tura/g) ?? []).length, Math.min(2, session.turnHistory.length));
+  const entries = session.turnHistoryEntries();
+  assert.ok(entries.length >= 2, 'scenariusz ma co najmniej dwie ukończone tury');
+  renderTurnHistory(els, session, entries[0].number);
+  assert.equal((els.turnHistory.textContent.match(/\*\*Tura/g) ?? []).length, 1,
+    'panel pokazuje jedną turę (dwie naraz są zbędne — zlecenie właściciela)');
+  assert.match(els.turnHistory.textContent, new RegExp(`\\*\\*Tura ${entries[0].number} `),
+    'i jest to tura wybrana w liście');
+  assert.equal(els.turnHistorySelect.children.length, entries.length,
+    'lista zawiera WSZYSTKIE tury od początku gry');
 });
 
 test('renderUndercity: karta lochu z inicjatywą i zaznaczeniem pokoju gracza (M24)', () => {
@@ -146,7 +153,10 @@ test('renderUndercity: karta lochu z inicjatywą i zaznaczeniem pokoju gracza (M
   assert.equal(cardEl.children[0].alt, 'The Undercity');
   assert.match(cardEl.children[0].src, /tclb\/20/);
   assert.match(els.undercity.textContent, /Inicjatywa: Ty/, 'imię ze stołu (Ty/Bot), nie z sekcji AI');
-  assert.match(els.undercity.textContent, /pokój 2\/9: Forge/, 'zaznaczony bieżący pokój gracza');
+  // M190/B: loch to graf — panel pokazuje NAZWĘ pokoju i dostępne drogi
+  // („pokój 2/9" sugerowało liniowy przemarsz przez wszystkie dziewięć).
+  assert.match(els.undercity.textContent, /pokój: Forge/, 'zaznaczony bieżący pokój gracza');
+  assert.match(els.undercity.textContent, /Dalsza droga: Trap! albo Arena/, 'drogi z Forge wg Oracle');
   assert.match(els.undercity.textContent, /Secret Entrance/, 'chipy pokoi zawierają nazwy wszystkich pokoi');
   // Brak inicjatywy i postępu → panel ukryty.
   const els2 = { undercity: new MiniEl('div') };
