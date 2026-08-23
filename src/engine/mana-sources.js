@@ -41,18 +41,15 @@ const MANA_SOURCE_MAP = Object.freeze({
 
   // Mana artifacts / creatures
   'dragonbroods-relic': { colors: ['W', 'U', 'B', 'R', 'G'], amount: 1 },
-  'scorned-villager': { colors: ['G'], amount: 1 },
-  'moonscarred-werewolf': { colors: ['G'], amount: 2 }, // {T}: Add {G}{G}
   'apprentice-wizard': { colors: [], amount: 3 }, // {C}{C}{C}
-  'seers-lantern': { colors: [], amount: 1 }, // {T}: Add {C}
   'token_treasure': { colors: ['W', 'U', 'B', 'R', 'G'], amount: 1 },
   // Static Net (BRO): Powerstone — „{T}: Add {C} — Spend this mana only to
   // cast artifact spells.\" Restrykcja artefaktowa nieimplementowana (engine
   // nie zna ograniczeń użycia many poza fromTreasure); produkuje bezbarwną {C}.
   'token_powerstone': { colors: [], amount: 1 },
-  // Batch 46 (Manor Gate, CLB): „{T}: Add {G} or one mana of the chosen
-  // color." Bazowo {G}; kolor wybrany przy wejściu dokłada getSourceForObject.
-  'manor-gate': { colors: ['G'], amount: 1 },
+  // Karty Z DARMOWĄ zdolnością „{T}: Add …" NIE wchodzą do mapy —
+  // kolory/ilość czytane są z deskryptora (manaAbilityColors/Amount),
+  // żeby mapa nie stała się cieniem danych karty (strażnik test/m200-...).
   'token_food': { colors: [], amount: 0 }, // nie daje many
   'token_robot': { colors: [], amount: 0 },
   'token_wolf': { colors: [], amount: 0 },
@@ -170,14 +167,7 @@ export function getSourceForObject(gameObject, state = null) {
       : abilityColors;
     return { id: gameObject.id, cardId, colors, amount };
   }
-  // Batch 46 (Manor Gate): „{T}: Add {G} or one mana of the chosen color."
-  // Kolor wybrany przy wejściu (chosenColor) DOKŁADA się do kolorów bazowych
-  // z mapy — deskryptorowo, bez warunku po nazwie karty (ADR 0002).
   const info = getManaSourceInfo(cardId);
-  if (info && gameObject.chosenColor) {
-    const colors = [...new Set([...(info.colors ?? []), gameObject.chosenColor])];
-    return { id: gameObject.id, cardId, colors, amount: info.amount ?? 1 };
-  }
   if (info) {
     let amt = info.amount ?? 1;
     // Urza's tron: {T}: Add {C}{C} zamiast {C}, gdy kontrolujesz też
