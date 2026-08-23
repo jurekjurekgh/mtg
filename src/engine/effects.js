@@ -3036,16 +3036,31 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // przechodzi z rak do rak przez cala partie.
     const source = state.objects.get(sourceObject.id);
     if (!source || source.zone !== 'battlefield') return;
-    const attackerId = state.combat?.attackingPlayerId
+    // Atakujący: kontekst triggera (zamrożony przy odpaleniu — state.combat
+    // jest null po end_of_combat), potem stan (ścieżki natychmiastowe),
+    // na końcu przeciwnik kontrolera (1v1: obrażenia bojowe dostaje się
+    // wyłącznie od przeciwnika, z wyjątkiem nadwyżki trample we własnym
+    // ataku — stąd kontekst ma pierwszeństwo).
+    const attackerId = context.attackingPlayerId
+      ?? state.combat?.attackingPlayerId
       ?? state.players.find((p) => p.id !== source.controllerId)?.id
       ?? null;
-    if (attackerId == null || attackerId === source.controllerId) return;
+    if (attackerId == null) return;
+    // Edge case (CR, audyt M200/N3): gdy atakującymi był kontroler piłki
+    // (otrzymał obrażenia od blokerów we WŁASNYM ataku), „gains control"
+    // jest puste — ale Oracle i tak mówi „and untaps it".
+    const sameController = attackerId === source.controllerId;
+    if (sameController && !source.tapped) return;
     const previous = source.controllerId;
     state.objects.set(source.id, Object.freeze({ ...source, controllerId: attackerId, tapped: false }));
-    state.events.push(event('control_changed', {
-      objectId: source.id, cardId: source.cardId,
-      controllerId: attackerId, fromControllerId: previous,
-    }));
+    if (sameController) {
+      state.events.push(event('object_untapped', { objectId: source.id, cardId: source.cardId }));
+    } else {
+      state.events.push(event('control_changed', {
+        objectId: source.id, cardId: source.cardId,
+        controllerId: attackerId, fromControllerId: previous,
+      }));
+    }
     return;
   }
   if (effect.type === 'sacrifice_self_if_counters_then_treasure') {
