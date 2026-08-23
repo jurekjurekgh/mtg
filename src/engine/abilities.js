@@ -544,7 +544,16 @@ export function legalActivatedAbilities(state, playerId) {
       if (ability.keyword === 'equip') {
         if (!object.equipment) continue;
         if (!sorcerySpeed) continue;
-        if ((object.equipment.equip ?? 0) > mana) continue;
+        // Batch 48 (Steelclaw Lance, ELD): karta moze miec DWA koszty equip —
+        // „Equip Knight {1}" i „Equip {3}". Koszt zalezy wiec od CELU, a nie
+        // od samego sprzetu: tanszy wariant obowiazuje tylko dla wskazanego
+        // podtypu (CR 702.6e). Najtanszy mozliwy koszt decyduje o tym, czy
+        // w ogole warto enumerowac cele.
+        const cheapestEquip = Math.min(
+          object.equipment.equip ?? 0,
+          object.equipment.equipFor?.equip ?? Infinity,
+        );
+        if (cheapestEquip > mana) continue;
         if (!canPayColoredCost(state, playerId, colorRequirementsOf({ colors: object.equipment.colors ?? [] }))) continue;
         for (const targetId of state.zones.battlefield) {
           const target = state.objects.get(targetId);
@@ -557,8 +566,14 @@ export function legalActivatedAbilities(state, playerId) {
           // to czysty no-op — gracz płaci koszt equip i nic nie zmienia
           // (tester kliknął to dwa razy z rzędu, tracąc manę i całą turę).
           // Przepięcie na INNEGO stwora pozostaje pełnoprawną ofertą.
+          // Batch 48: koszt equipu dla TEGO celu (tanszy wariant po podtypie).
+          const equipForTarget = (object.equipment.equipFor
+            && (target?.subtypes ?? []).includes(object.equipment.equipFor.subtype))
+            ? object.equipment.equipFor.equip
+            : (object.equipment.equip ?? 0);
           if (target?.zone === 'battlefield' && target.kind === 'creature'
             && target.controllerId === playerId && target.id !== id
+            && equipForTarget <= mana
             && object.attachedTo !== target.id) {
             out.push({ objectId: id, abilityIndex: index, ability, targets: [targetId] });
           }
@@ -1801,7 +1816,15 @@ function activateEquip(state, playerId, object, abilityIndex, targets) {
   // przy rozstrzyganiu cel jest rewalidowany (CR 608.2b).
   const target = validateTargets(state, [Object.freeze({ type: 'creature' })], targets, playerId, object.colors ?? [], object)[0];
   if (target.controllerId !== playerId) throw new Error('Equip celuje wyłącznie we własne stwory');
-  spendMana(state, playerId, object.equipment.equip ?? 0);
+  // Batch 48 (Steelclaw Lance): koszt zalezy od CELU — „Equip Knight {1}"
+  // vs „Equip {3}". Ta sama regula co w ofercie (L48: rozjazd = odrzucona
+  // komenda, ktora UI wlasnie zaproponowalo).
+  const equipTarget = state.objects.get(targets?.[0]);
+  const equipCost = (object.equipment.equipFor
+    && (equipTarget?.subtypes ?? []).includes(object.equipment.equipFor.subtype))
+    ? object.equipment.equipFor.equip
+    : (object.equipment.equip ?? 0);
+  spendMana(state, playerId, equipCost);
   // Audyt PR #41 (B7.2, CR 602.2a): equip trafia na STOS jako zdolność
   // aktywowana — przeciwnik może odpowiedzieć (np. zniszczyć cel); założenie
   // następuje przy rozstrzyganiu (resolveEquipEntry), a cel nielegalny przy

@@ -124,6 +124,7 @@ function defaultBotFactory(seed, ctx) {
     grant_keywords_until_end_of_turn: 'nadanie słów kluczowych do końca tury',
     lock_untap: 'cel nie odtapuje podczas następnego untap kontrolera',
     look_top_put_one_hand_rest_bottom: 'spojrzenie na karty z wierzchu — jedna do ręki, reszta na spód',
+    creatures_cant_block_this_turn: 'zakaz blokowania dla stworów w tej turze',
     each_player_exiles_top_face_down: 'wygnanie wierzchu biblioteki każdego gracza (zakryte)',
     turn_up_exiled_and_put_permanents: 'odkrycie wygnanych kart i wprowadzenie permanentów na pole bitwy',
     lose_life: 'cel traci życie',

@@ -9345,6 +9345,53 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['trigger działa w OBIE strony (CR 509.1): nosiciel blokujący Wampira i Wampir blokujący nosiciela'],
   }),
 
+  // ---- Batch 48 — transza C: equip warunkowy, globalny zakaz bloku ----
+
+  // 9. Steelclaw Lance (ELD) — +2/+2 z DWOMA kosztami equip: tańszy dla
+  //    Rycerza (CR 702.6e). Koszt zależy od CELU, nie od samego sprzętu.
+  defineCard({
+    id: 'steelclaw-lance', name: 'Steelclaw Lance', set: 'ELD',
+    types: ['Artifact'], subtypes: ['Equipment'], colors: ['B', 'R'], manaCost: 2,
+    oracleText: 'Equipped creature gets +2/+2.\nEquip Knight {1}\nEquip {3}',
+    imageUri: 'https://cards.scryfall.io/large/front/c/a/cafcf909-d726-4bc2-adf6-c12ca242f0c1.jpg?1783932592',
+    equipment: {
+      equip: 3,
+      pump: { power: 2, toughness: 2 },
+      // Tańszy wariant equipu dla wskazanego PODTYPU (deskryptor, ADR 0002).
+      equipFor: { subtype: 'Knight', equip: 1 },
+    },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'equip',
+        cost: { mana: 3 },
+        effect: [],
+      }),
+    ],
+    artId: 548, plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+    notes: ['dwa koszty equip: {1} na Rycerza, {3} na dowolnego innego stwora — oferta i płatność liczą koszt dla KONKRETNEGO celu'],
+  }),
+
+  // 10. Ruthless Invasion (NPH) — „Nonartifact creatures can't block this
+  //     turn." Koszt {3}{R/P}: phyrexian można zapłacić 2 życiami.
+  defineCard({
+    id: 'ruthless-invasion', name: 'Ruthless Invasion', set: 'NPH',
+    // manaCost = część GENERYCZNA ({3}); pip phyrexian liczy phyrexianManaCost
+    // (konwencja katalogu, wzorzec Porcelain Legionnaire {2}{W/P} → manaCost 2).
+    types: ['Sorcery'], colors: ['R'], manaCost: 3, phyrexianManaCost: 1,
+    oracleText: "({R/P} can be paid with either {R} or 2 life.)\nNonartifact creatures can't block this turn.",
+    imageUri: 'https://cards.scryfall.io/large/front/b/c/bc2bbff9-af57-4858-9351-d148b8c4bc3a.jpg?1783941306',
+    spell: {
+      timing: 'sorcery',
+      targets: [],
+      effects: [{ type: 'creatures_cant_block_this_turn', exceptTypes: ['Artifact'] }],
+    },
+    artId: 556, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+    notes: ['efekt globalny bez celu; zbiór stworów ustalany PRZY ROZSTRZYGNIĘCIU (CR 611.2c) — stwór wchodzący później blokuje normalnie'],
+  }),
+
 ]);
 
 /**

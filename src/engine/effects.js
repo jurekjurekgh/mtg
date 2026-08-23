@@ -2985,6 +2985,26 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.events.push(event('cant_block_granted', { objectId: targetId, cardId: object.cardId }));
     return;
   }
+  if (effect.type === 'creatures_cant_block_this_turn') {
+    // Batch 48 (Ruthless Invasion, NPH): „Nonartifact creatures can't block
+    // this turn." Efekt GLOBALNY (bez celu) — dotad `cant_block` dzialal
+    // wylacznie na jeden wskazany cel. Wyjatek typu jest DESKRYPTOREM
+    // (`exceptTypes`), wiec przyszle „non-Zombie creatures can't block"
+    // pojda ta sama sciezka bez zmian w silniku (ADR 0002).
+    //
+    // CR 611.2c: zbior stworow ustalamy PRZY ROZSTRZYGNIECIU — stwor
+    // wchodzacy pozniej w tej turze moze blokowac normalnie.
+    const except = effect.exceptTypes ?? [];
+    for (const id of state.zones.battlefield) {
+      const object = state.objects.get(id);
+      if (!object || object.kind !== 'creature') continue;
+      if (except.some((type) => (object.types ?? []).includes(type))) continue;
+      if (object.cantBlock === true) continue;
+      state.objects.set(id, Object.freeze({ ...object, cantBlock: true }));
+      state.events.push(event('cant_block_granted', { objectId: id, cardId: object.cardId }));
+    }
+    return;
+  }
   if (effect.type === 'cant_be_blocked') {
     // Coralhelm Guide: "Target creature can't be blocked this turn."
     const targetId = targets[0];

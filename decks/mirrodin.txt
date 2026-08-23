@@ -15,6 +15,7 @@
 1x Turn the Tide
 1x Bone Shredder
 1x Pristine Talisman
+1x Ruthless Invasion
 1x Stoic Rebuttal
 1x Awaken the Sleeper
 1x Bladed Sentinel
@@ -35,5 +36,5 @@
 4x Plains
 5x Island
 4x Swamp
-1x Mountain
+2x Mountain
 2x Forest

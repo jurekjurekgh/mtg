@@ -296,3 +296,76 @@ test('B48/B7: Wooden Stake — nosiciel BLOKUJĄCY Wampira też go zabija', () =
     .some((o) => o.zone === 'battlefield' && (o.subtypes ?? []).includes('Vampire'));
   assert.equal(vampAlive, false, 'Wampir zablokowany przez nosiciela też ginie');
 });
+
+// ---- Transza C: Steelclaw Lance, Ruthless Invasion -----------------------
+
+test('B48/C1: Steelclaw Lance — +2/+2 z DWOMA kosztami equip', () => {
+  // Oracle: „Equip Knight {1}" ORAZ „Equip {3}" — tańszy wariant tylko dla
+  // Rycerza. Dotąd deskryptor `equipment.equip` niósł JEDEN koszt.
+  const card = REGISTRY.get('steelclaw-lance');
+  assert.ok(card, 'karta w katalogu');
+  assert.deepEqual(card.subtypes, ['Equipment']);
+  assert.deepEqual([card.equipment?.pump?.power, card.equipment?.pump?.toughness], [2, 2]);
+  assert.equal(card.equipment?.equip, 3, 'koszt podstawowy Equip {3}');
+  assert.deepEqual(card.equipment?.equipFor, { subtype: 'Knight', equip: 1 },
+    'tańszy equip wyłącznie na Rycerza (deskryptor, nie nazwa karty)');
+  assert.equal(card.artId, 548);
+  assert.equal(card.plan, 'Eldraine');
+});
+
+test('B48/C2: Steelclaw Lance — Rycerz kosztuje {1}, inny stwór {3}', () => {
+  const state = game('p1');
+  put(state, 'lance', 'steelclaw-lance', 'p1');
+  // Rycerz i nie-Rycerz na stole.
+  addObject(state, {
+    id: 'knight', instanceId: 'i-k', cardId: 'hill-giant', controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', kind: 'creature', power: 2, toughness: 2,
+    types: ['Creature'], subtypes: ['Knight'], abilities: [],
+  });
+  addObject(state, {
+    id: 'other', instanceId: 'i-o', cardId: 'hill-giant', controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', kind: 'creature', power: 3, toughness: 3,
+    types: ['Creature'], subtypes: ['Giant'], abilities: [],
+  });
+  // Tylko JEDNA mana: stać nas wyłącznie na equip Rycerza.
+  lands(state, 1, 'basic-swamp');
+  const offers = playerView(state, 'p1').legalCommands
+    .filter((c) => c.type === 'activate_ability' && c.objectId === 'lance');
+  const targets = offers.flatMap((c) => c.targets ?? []);
+  assert.ok(targets.includes('knight'), 'Rycerza stać nas wyposażyć za {1}');
+  assert.ok(!targets.includes('other'), 'na zwykłego stwora ({3}) many nie starcza');
+});
+
+test('B48/C3: Ruthless Invasion — nieartefaktowe stwory nie blokują w tej turze', () => {
+  const card = REGISTRY.get('ruthless-invasion');
+  assert.ok(card, 'karta w katalogu');
+  assert.deepEqual(card.types, ['Sorcery']);
+  assert.equal(card.manaCost, 3, '{3} generyczne; pip {R/P} osobno (konwencja katalogu)');
+  assert.equal(card.phyrexianManaCost, 1, '{R/P} — mana albo 2 życia');
+  assert.deepEqual(card.spell.targets, [], 'czar bez celu — działa globalnie');
+  const eff = card.spell.effects[0];
+  assert.equal(eff.type, 'creatures_cant_block_this_turn');
+  assert.deepEqual(eff.exceptTypes, ['Artifact'], 'Oracle: „NONARTIFACT creatures"');
+  assert.equal(card.artId, 556);
+  assert.equal(card.plan, 'Mirrodin');
+});
+
+test('B48/C4: Ruthless Invasion — PEŁNA ścieżka: bloker traci możliwość bloku', async () => {
+  const { applyEffect } = await import('../src/engine/effects.js');
+  const state = game('p1');
+  addObject(state, {
+    id: 'foe', instanceId: 'i-f', cardId: 'hill-giant', controllerId: 'p2', ownerId: 'p2',
+    zone: 'battlefield', kind: 'creature', power: 2, toughness: 2,
+    types: ['Creature'], subtypes: [], abilities: [],
+  });
+  addObject(state, {
+    id: 'robot', instanceId: 'i-r', cardId: 'hill-giant', controllerId: 'p2', ownerId: 'p2',
+    zone: 'battlefield', kind: 'creature', power: 1, toughness: 1,
+    types: ['Artifact', 'Creature'], subtypes: [], abilities: [],
+  });
+  applyEffect(state, { type: 'creatures_cant_block_this_turn', exceptTypes: ['Artifact'] },
+    { id: 'src', controllerId: 'p1', cardId: 'ruthless-invasion', zone: 'stack' }, []);
+  assert.equal(state.objects.get('foe').cantBlock, true, 'zwykły stwór nie zablokuje');
+  assert.notEqual(state.objects.get('robot').cantBlock, true,
+    'stwór-ARTEFAKT blokuje dalej (Oracle: „nonartifact")');
+});

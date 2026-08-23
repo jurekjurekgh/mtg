@@ -939,6 +939,14 @@ function describeEffect(e) {
     // opcjonalny („you may") — opis czyta filtr z deskryptora.
     // Batch 47 (Pyxis of Pandemonium): oba efekty nazwane po polsku —
     // strażnik M122 pilnuje, żeby żaden typ nie pokazał surowego sluga.
+    // Batch 48 (Ruthless Invasion): globalny zakaz bloku z wyjątkiem typu.
+    creatures_cant_block_this_turn: () => {
+      const except = e.exceptTypes ?? [];
+      const which = except.length
+        ? `stwory niebędące ${except.map((t) => TARGET_TYPE_LABELS[t.toLowerCase()] ?? t.toLowerCase()).join(' ani ')}ami`
+        : 'wszystkie stwory';
+      return `${which} nie mogą blokować w tej turze`;
+    },
     each_player_exiles_top_face_down: () => 'każdy gracz wygania wierzch swojej biblioteki zakryty',
     turn_up_exiled_and_put_permanents: () => 'odkryj karty wygnane tym artefaktem — permanenty spośród nich wchodzą na pole bitwy',
     graveyard_card_to_library_top_choice: () => {

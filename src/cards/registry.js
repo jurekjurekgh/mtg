@@ -205,6 +205,13 @@ export function defineCard(data) {
         ...(data.equipment.grantedAbilities?.length
           ? { grantedAbilities: Object.freeze(data.equipment.grantedAbilities.map((a) => Object.freeze({ ...a }))) }
           : {}),
+        // Batch 48 (Steelclaw Lance): TAŃSZY koszt equipu dla wskazanego
+        // podtypu („Equip Knight {1}" obok „Equip {3}"). Bez tego pola
+        // deskryptor ginął przy budowie rejestru (klasa L21) i karta miała
+        // tylko jeden koszt.
+        ...(data.equipment.equipFor
+          ? { equipFor: Object.freeze({ ...data.equipment.equipFor }) }
+          : {}),
       };
       // Conditional keywords (Hunter's Blowgun): different keywords granted
       // based on a condition (e.g. activePlayerIsController = your turn).

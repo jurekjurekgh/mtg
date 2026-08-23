@@ -139,6 +139,10 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // gospodarza ZOSTAJE na polu bitwy odłączony (nie ginie jak aura).
     equipment: equipment ? (() => {
       const base = { equip: equipment.equip, pump: equipment.pump ? Object.freeze({ ...equipment.pump }) : null, keywords: Object.freeze([...(equipment.keywords ?? [])]), subtypes: Object.freeze([...(equipment.subtypes ?? [])]) };
+      // Batch 48 (Steelclaw Lance): TANSZY equip dla podtypu („Equip Knight
+      // {1}" obok „Equip {3}"). Trzecia warstwa przepisujaca equipment pole
+      // po polu — bez tego deskryptor ginie w drodze na obiekt gry (L21).
+      if (equipment.equipFor) base.equipFor = Object.freeze({ ...equipment.equipFor });
       // M146 (Blazing Torch): zdolności NADANE nosicielowi — muszą przejść
       // przez cały łańcuch registry → gameObject (L21/L48), inaczej giną
       // po cichu i sprzęt jest martwy. Pole tylko gdy niepuste (jak registry).

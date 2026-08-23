@@ -14,6 +14,7 @@
 1x Kappa Tech-Wrecker
 1x Release the Ants
 1x Soulbright Flamekin
+1x Steelclaw Lance
 1x Agate Assault
 1x Barkform Harvester
 1x Blade-Blizzard Kitsune
@@ -30,7 +31,7 @@
 1x Puppeteer Clique
 1x Greater Tanuki
 3x Plains
-2x Island
-3x Swamp
+1x Island
+4x Swamp
 3x Mountain
 4x Forest
