@@ -40,6 +40,27 @@ function enterForge(state, playerId) {
   assert.ok(execute(state, forge).ok, 'wybór Forge');
 }
 
+// ---- A2: rozgałęzienie lochu — nazwany tytuł wyboru -----------------------
+
+test('M200/A2: wybór trasy Undercity ma nazwany tytuł (nie „Wariant (2 opcje)")', async () => {
+  const { choiceGroupLabel } = await import('../src/table/render.js');
+  const state = game('p1');
+  state.undercityProgress = { p1: 1 };
+  ventureIntoUndercityForTest(state, 'p1');
+  assert.ok(state.pendingUndercityRoute, 'oczekująca decyzja trasy (Secret Entrance → Forge/Lost Well)');
+  const view = playerView(state, 'p1');
+  const routes = view.legalCommands.filter((c) => c.type === 'resolve_undercity_route');
+  assert.equal(routes.length, 2, 'dwie ścieżki w ofercie');
+  const session = {
+    nameOf: (id) => REGISTRY.get(id)?.name ?? String(id),
+    nameOfObject: (id) => String(id),
+    abilitiesOf: (id) => REGISTRY.get(id)?.abilities ?? [],
+  };
+  const label = choiceGroupLabel({ type: 'target', options: routes }, session, view);
+  assert.ok(label.includes('Ścieżka w Undercity'), `tytuł nazywa czynność: ${label}`);
+  assert.ok(!label.includes('Wariant'), 'bez generycznego „Wariant”: ' + label);
+});
+
 // ---- A: Forge nie wzmacnia przeciwnika (fizzle bez własnej kreatury) -------
 
 test('M200/A: Forge bez WŁASNEJ kreatury — efekt fizzluje, nie buffuje przeciwnika', () => {

@@ -1475,6 +1475,11 @@ const CHOICE_GROUP_TYPE_DESCRIPTORS = Object.freeze({
 
 /** Deskryptory grup wyboru po typie pierwszej komendy (typ żądania generyczny). */
 const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
+  // A2 (uwaga właściciela 2026-08-23): rozgałęzienie lochu pokazywało
+  // generyczne „Wybierz: Wariant (2 opcje)” — gracz nie wiedział, czego
+  // dotyczy wybór. Nazwij czynność (jako reszta wpisów mapy).
+  resolve_undercity_route: 'Ścieżka w Undercity',
+  resolve_room_target: 'Cel efektu pokoju',
   resolve_mulligan_choice: 'Mulligan',
   resolve_mulligan_bottom_choice: 'Karty na spód biblioteki (mulligan)',
   resolve_search_choice: 'Szukanie w bibliotece',
