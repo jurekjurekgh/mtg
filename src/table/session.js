@@ -510,6 +510,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
   // a testy mogą polegać na mapie imion (oba stołowe słowniki mapują p1/p2).
   const isPlayer = helpers.isPlayer ?? ((id) => names[id] != null);
   const whoN = (id) => names[id] ?? id;
+  /**
+   * M195/D (uwaga właściciela, Veiled Ascension): decyzję opcjonalną podejmuje
+   * KONKRETNY gracz — kontroler karty. Komunikaty pisały stałe „(wybór
+   * gracza)", więc gdy decydował bot, gracz czytał to jako WŁASNĄ decyzję
+   * i czekał na przycisk, którego nie było. Nazywamy decydenta wprost
+   * i w JEDNYM miejscu (L41: trzy kopie tej samej formuły rozjeżdżają się).
+   */
+  const decisionOwnerNote = (playerId) => `wybór opcjonalny: ${whoN(playerId)}`;
   // M100 (BUG A — zgłoszenie właściciela 2026-08-15; FoW, CR 708.2): fixy
   // M66/M74 („LKI cardId zamiast ?") nazywały po cardId nawet obiekty WCIĄŻ
   // leżące zakryte na stole („Nieprzyjaciel zagrywa Segmented Krotiq twarzą
@@ -1250,7 +1258,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         }
         return `${whoN(e.playerId)} rezygnuje z szukania i tasuje bibliotekę`;
       }
-      case 'pay_or_sacrifice_required': return `${nameOfObject(e.sourceId)} — zapłać {${e.amount}} albo ją poświęć (wybór gracza)`;
+      case 'pay_or_sacrifice_required': return `${nameOfObject(e.sourceId)} — zapłać {${e.amount}} albo ją poświęć (${decisionOwnerNote(e.playerId)})`;
       case 'counter_pay_required': return `${nameOf(e.cardId)} zostanie skontrowany, chyba że kontroler zapłaci {${e.amount}}${e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : ''}`;
       case 'counter_pay_resolved': return e.paid
         ? `${nameOf(e.cardId)}: kontroler płaci — czar zostaje na stosie`
@@ -1267,7 +1275,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         const parts = [];
         if (e.payMana) parts.push(`{${e.payMana}}`);
         if (e.payLife) parts.push(`${e.payLife} życia`);
-        return `${nameOf(e.cardId)} — zapłacić ${parts.join(' i ')}? (wybór gracza)`;
+        return `${nameOf(e.cardId)} — zapłacić ${parts.join(' i ')}? (${decisionOwnerNote(e.playerId)})`;
       }
       case 'optional_pay_resolved': return e.paid
         ? `${whoN(e.playerId)} płaci i odpala trigger`
@@ -1307,7 +1315,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
           : (isPlayer(e.targetId) ? whoN(e.targetId) : nameOfObject(e.targetId));
         return `${src} — cel: ${target}`;
       }
-      case 'optional_trigger_required': return `${nameOf(e.cardId)} — skorzystać z efektu „you may"? (wybór gracza)`;
+      case 'optional_trigger_required': return `${nameOf(e.cardId)} — skorzystać z efektu „you may"? (${decisionOwnerNote(e.playerId)})`;
       // M138/Z7 (audyt Żywym Testerem): „Nieprzyjaciel korzysta z efektu «you
       // may»” nie mówiło Z CZEGO. W partii chodziło o Soulbright Flamekin
       // (8 many z trzeciej aktywacji) — zapowiedź dużego ruchu, a gracz widział
