@@ -1,10 +1,40 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-23 (M198: poprawki układu stołu po screenshocie właściciela — boksy per gracz, komunikaty w modalu, usunięty panel rozumowania bota)
-- **Poprzednia:** 2026-08-23 (M197: sprostowanie planow kolekcji — „Kamigawa" nie byla nowym planem, plan czytany z arkusza zamiast zgadywany; porzadki w ukladzie stolu A1–A7)
+- **Ostatnia aktualizacja:** 2026-08-23 (M199: „Przebieg tur (dla AI)" w pełnym Fog of War — zapis opisuje obu graczy jak obserwator)
+- **Poprzednia:** 2026-08-23 (M198: poprawki układu stołu po screenshocie właściciela — boksy per gracz, komunikaty w modalu, usunięty panel rozumowania bota)
 
 
 
+
+
+## M199 — „Przebieg tur (dla AI)" w pełnym FoW (2026-08-23, PR #70)
+
+Zlecenie właściciela: zapis dla modelu ma opisywać Czarodziejkę **tak samo jak
+Nieprzyjaciela** — bez wglądu w jej informacje ukryte (dobrane karty, kto jest
+morphem). Wyraźnie zastrzeżone: **tylko ta sekcja**; Rozgrywka, główny log
+i reszta stołu bez zmian.
+
+**Repro** (seed 20): panel pokazywał „Czarodziejka dobiera: Colossodon
+Yearling" obok „Nieprzyjaciel dobiera kartę" — asymetria w jednym zapisie.
+
+**Rozwiązanie — jeden punkt decyzyjny zamiast 13 łat.** `describeGameEventRaw`
+miał 13 rozsianych warunków `e.playerId === HUMAN_ID`, każdy decydujący „czy
+ujawnić kartę". Dopisanie do nich `if (fogOfWar)` byłoby 13 kopiami tej samej
+reguły (L41), więc wprowadzony został predykat
+`seesHiddenOf(playerId) = !fogOfWar && playerId === HUMAN_ID`, o który pytają
+wszystkie gałęzie. Dodatkowo `nameOfObject(id, { fogOfWar })` maskuje tożsamość
+**własnego** zakrytego permanentu (CR 708.2).
+
+Flaga włączona w **dokładnie jednym** miejscu (`recordTurnEvent`); domyślnie
+`false`, więc główny log i modal „Rozgrywka" pokazują karty gracza jak dotąd
+(CR 400.2 — wolno mu patrzeć na własną rękę). Osobny test pilnuje, żeby **nie
+ocenzurować za dużo**: zagrania, czary, walka i groby zostają widoczne.
+
+Weryfikacja mutacyjna (3), w tym mutacja „FoW przecieka do głównego logu"
+(over-fix). Na żywym artefakcie: 18 tur, 0 wycieków w panelu, główny log nadal
+z „Dobierasz: …".
+
+**Stan:** `npm test` **2987/2987**, build **53 moduły / 2542.9 kB**.
 
 ## M198 — poprawki układu stołu ze screenshota (2026-08-23, PR #70)
 
