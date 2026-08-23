@@ -9291,6 +9291,60 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['Adventure „Web Shot" niszczy WYŁĄCZNIE stwora z lataniem (creature_with_keyword) — wzorzec Sagittars\' Volley'],
   }),
 
+  // ---- Batch 48 — transza B: kontra z proliferate, trigger bloku ----
+
+  // 7. Fuel for the Cause (MBS) — „Counter target spell, then proliferate."
+  //    Oba efekty już istnieją; nowość to ich ZŁOŻENIE w jednym czarze.
+  defineCard({
+    id: 'fuel-for-the-cause', name: 'Fuel for the Cause', set: 'MBS',
+    types: ['Instant'], colors: ['U'], manaCost: 4,
+    oracleText: 'Counter target spell, then proliferate. (Choose any number of permanents and/or players, then give each another counter of each kind already there.)',
+    imageUri: 'https://cards.scryfall.io/large/front/4/1/4126e0e5-9b23-496f-8a09-7a35499f9a09.jpg?1783941389',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'spell_on_stack' }],
+      effects: [
+        { type: 'counter_spell' },
+        // Proliferate (CR 701.27) — blokująca decyzja gracza (resolve_proliferate).
+        { type: 'proliferate' },
+      ],
+    },
+    artId: 545, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Wooden Stake (ISD) — sprzęt +1/+0; nosiciel zabija Wampira, którego
+  //    blokuje albo który blokuje jego (bez regeneracji).
+  defineCard({
+    id: 'wooden-stake', name: 'Wooden Stake', set: 'ISD',
+    types: ['Artifact'], subtypes: ['Equipment'], colors: [], manaCost: 2,
+    oracleText: "Equipped creature gets +1/+0.\nWhenever equipped creature blocks or becomes blocked by a Vampire, destroy that creature. It can't be regenerated.\nEquip {1} ({1}: Attach to target creature you control. Equip only as a sorcery.)",
+    imageUri: 'https://cards.scryfall.io/large/front/7/e/7e2825f5-8112-4108-910a-4303b2d57356.jpg?1783940895',
+    equipment: { equip: 1, pump: { power: 1, toughness: 0 } },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'equip',
+        cost: { mana: 1 },
+        effect: [],
+      }),
+      // NOWY trigger (Batch 48): blok w OBIE strony — nosiciel blokuje Wampira
+      // albo Wampir blokuje nosiciela. Podtyp jest deskryptorem (ADR 0002),
+      // więc ta sama ścieżka obsłuży przyszłe „…by a Zombie" itd.
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'equipped_creature_blocks_or_blocked_by', subtype: 'Vampire' },
+        effect: [
+          { type: 'destroy_permanent' },
+          { type: 'cant_be_regenerated_this_turn' },
+        ],
+      }),
+    ],
+    artId: 543, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['trigger działa w OBIE strony (CR 509.1): nosiciel blokujący Wampira i Wampir blokujący nosiciela'],
+  }),
+
 ]);
 
 /**

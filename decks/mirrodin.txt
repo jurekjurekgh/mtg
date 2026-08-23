@@ -20,6 +20,7 @@
 1x Bladed Sentinel
 1x Carrion Call
 1x Exterminator Magmarch
+1x Fuel for the Cause
 1x Necrosquito
 1x Trigon of Corruption
 1x Banishment Decree
@@ -32,7 +33,7 @@
 1x True Conviction
 1x Gloomfang Mauler
 4x Plains
-4x Island
+5x Island
 4x Swamp
-2x Mountain
+1x Mountain
 2x Forest

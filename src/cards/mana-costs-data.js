@@ -73,6 +73,8 @@ export const MANA_COSTS = {
   "frost-lynx": "{2}{U}",
   "bedhead-beastie": "{4}{R}{R}",
   "ettercap": "{4}{G}",
+  "fuel-for-the-cause": "{2}{U}{U}",
+  "wooden-stake": "{2}",
   "curate": "{1}{U}",
   "curate-stx": "{1}{U}",
   "curse-of-the-pierced-heart": "{1}{R}",

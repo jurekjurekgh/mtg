@@ -2103,6 +2103,43 @@ export function processTriggers(state, recentEvents) {
         if (ability?.trigger?.event === 'turned_face_up') tryFire(state, ability, flipped, [], events);
       }
     }
+    // Batch 48 (Wooden Stake, ISD): „Whenever equipped creature BLOCKS OR
+    // BECOMES BLOCKED BY a Vampire, destroy that creature." Zdarzenie
+    // `blockers_declared` NIE BYLO dotad w ogole skanowane przez triggery —
+    // ta galaz jest pierwsza. Dziala w OBIE strony (CR 509.1): nosiciel
+    // blokujacy Wampira oraz Wampir blokujacy nosiciela. Podtyp pochodzi
+    // z DESKRYPTORA zdolnosci (ADR 0002), wiec przyszle „…by a Zombie"
+    // pojda ta sama sciezka bez zmian w silniku.
+    if (ev.type === 'blockers_declared') {
+      const assignments = ev.assignments ?? {};
+      /** Pary (nosiciel, przeciwnik-w-bloku) z tej deklaracji. */
+      const pairs = [];
+      for (const [attackerId, blockerIds] of Object.entries(assignments)) {
+        for (const blockerId of blockerIds ?? []) {
+          pairs.push([attackerId, blockerId]);  // atakujacy zostal ZABLOKOWANY przez blokera
+          pairs.push([blockerId, attackerId]);  // bloker BLOKUJE atakujacego
+        }
+      }
+      for (const [ownId, foeId] of pairs) {
+        const own = state.objects.get(ownId);
+        const foe = state.objects.get(foeId);
+        if (!own || own.zone !== 'battlefield' || !foe || foe.zone !== 'battlefield') continue;
+        for (const attachment of state.objects.values()) {
+          if (attachment.zone !== 'battlefield' || attachment.attachedTo !== ownId) continue;
+          for (const ability of effectiveAbilities(attachment)) {
+            if (ability?.trigger?.event !== 'equipped_creature_blocks_or_blocked_by') continue;
+            const wanted = ability.trigger.subtype;
+            if (wanted && !(foe.subtypes ?? []).includes(wanted)) continue;
+            // Cel STALY: stwor bioracy udzial w tym bloku („that creature").
+            // tryFire IGNORUJE przekazane cele (zawsze wysyla []), bo sluzy
+            // triggerom bez celu albo z `requiresTarget`; tutaj cel jest
+            // znany z samego zdarzenia, wiec kolejkujemy wprost.
+            if (!conditionHolds(ability.trigger ?? {}, state, attachment, {})) continue;
+            queueTriggerToStack(state, ability, attachment, [foeId], events);
+          }
+        }
+      }
+    }
     // Deklaracja atakujących: triggery „attacks" (na atakującym), tribał
     // „bat_attacks" (na kontrolowanych permanentach — np. Zoraline) oraz
     // triggery załączników „whenever equipped creature attacks" (Greatsword

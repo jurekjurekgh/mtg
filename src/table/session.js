@@ -327,6 +327,8 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   end_step: 'krok końca tury',
   enter_battlefield: 'wejście na pole bitwy',
   equipped_creature_attacks: 'atak wyposażonego stwora',
+  // Batch 48 (Wooden Stake): blok w OBIE strony (CR 509.1).
+  equipped_creature_blocks_or_blocked_by: 'blok wyposażonego stwora (w obie strony)',
   exploits: 'exploit',
   land_entered_under_opponent_control: 'wejście landa przeciwnika',
   land_entered_under_your_control: 'Landfall',

@@ -160,3 +160,139 @@ test('B48/A9: wszystkie karty transzy A mają plan i artId z promptu', () => {
     assert.equal(card.support.status, 'supported', `${id}: w pełni wspierana (ADR 0022)`);
   }
 });
+
+// ---- Transza B: Fuel for the Cause, Wooden Stake -------------------------
+
+test('B48/B1: Fuel for the Cause — kontra + proliferate', () => {
+  const card = REGISTRY.get('fuel-for-the-cause');
+  assert.ok(card, 'karta w katalogu');
+  assert.equal(card.manaCost, 4, '{2}{U}{U}');
+  assert.deepEqual(card.spell.targets, [{ type: 'spell_on_stack' }]);
+  assert.deepEqual(card.spell.effects.map((e) => e.type), ['counter_spell', 'proliferate'],
+    'Oracle: „Counter target spell, THEN proliferate"');
+  assert.equal(card.artId, 545);
+  assert.equal(card.plan, 'Mirrodin');
+});
+
+test('B48/B2: Fuel for the Cause — realnie kontruje czar na stosie', () => {
+  const state = game('p1');
+  // Czar przeciwnika na stosie (rzucony przez p2).
+  put(state, 'foe-spell', 'coat-with-venom', 'p2', 'hand');
+  put(state, 'foe-cre', 'hill-giant', 'p2', 'battlefield', { summoningSickness: false });
+  lands(state, 1, 'basic-swamp', 'p2');
+  state.turn.priorityPlayerId = 'p2';
+  const foeCast = playerView(state, 'p2').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'foe-spell');
+  assert.ok(foeCast, 'przeciwnik rzuca czar');
+  assert.ok(execute(state, foeCast).ok);
+  // Teraz my kontrujemy.
+  put(state, 'fuel', 'fuel-for-the-cause', 'p1', 'hand');
+  lands(state, 4, 'basic-island');
+  state.turn.priorityPlayerId = 'p1';
+  const counter = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'fuel');
+  assert.ok(counter, 'oferta kontry');
+  assert.ok(execute(state, counter).ok, 'kontra rzucona');
+});
+
+test('B48/B3: Wooden Stake — equipment +1/+0 z equip {1}', () => {
+  const card = REGISTRY.get('wooden-stake');
+  assert.ok(card, 'karta w katalogu');
+  assert.deepEqual(card.types, ['Artifact']);
+  assert.deepEqual(card.subtypes, ['Equipment']);
+  assert.equal(card.equipment?.equip, 1, 'Equip {1}');
+  assert.deepEqual([card.equipment?.pump?.power, card.equipment?.pump?.toughness], [1, 0]);
+  assert.ok((card.abilities ?? []).some((a) => a?.keyword === 'equip'),
+    'sprzęt musi mieć zdolność equip (strażnik M190/C2)');
+  assert.equal(card.artId, 543);
+  assert.equal(card.plan, 'Warhammer Fantasy');
+});
+
+test('B48/B4: Wooden Stake — trigger niszczy Wampira przy bloku', () => {
+  // Oracle: „Whenever equipped creature blocks or becomes blocked by
+  // a Vampire, destroy that creature. It can't be regenerated."
+  const card = REGISTRY.get('wooden-stake');
+  const trig = (card.abilities ?? []).find((a) => a.trigger?.event === 'equipped_creature_blocks_or_blocked_by');
+  assert.ok(trig, 'trigger bloku na sprzęcie');
+  assert.equal(trig.trigger.subtype, 'Vampire', 'wyłącznie Wampir (Oracle)');
+  const effects = (Array.isArray(trig.effect) ? trig.effect : [trig.effect]).map((e) => e.type);
+  assert.deepEqual(effects, ['destroy_permanent', 'cant_be_regenerated_this_turn'],
+    'Oracle: „destroy that creature. It can\'t be regenerated"');
+});
+
+test('B48/B5: Wooden Stake — PEŁNA ścieżka: Wampir blokuje nosiciela i ginie', () => {
+  // Deskryptor to za mało — silnik musi skanować deklarację bloków.
+  const state = game('p1', 'declare_blockers');
+  put(state, 'bearer', 'hill-giant', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'stake', 'wooden-stake', 'p1', 'battlefield', { attachedTo: 'bearer' });
+  // Wampir przeciwnika (podtyp z danych karty).
+  addObject(state, {
+    id: 'vamp', instanceId: 'i-vamp', cardId: 'hill-giant', controllerId: 'p2', ownerId: 'p2',
+    zone: 'battlefield', kind: 'creature', power: 3, toughness: 3,
+    types: ['Creature'], subtypes: ['Vampire'], abilities: [],
+  });
+  state.combat = {
+    attackingPlayerId: 'p1', attackers: ['bearer'],
+    blockers: new Map(), blockedAttackers: new Set(),
+  };
+  // Bloki deklaruje OBROŃCA — priorytet musi należeć do niego.
+  state.turn.priorityPlayerId = 'p2';
+  const declare = playerView(state, 'p2').legalCommands
+    .find((c) => c.type === 'declare_blockers' && (c.assignments?.bearer ?? []).includes('vamp'));
+  assert.ok(declare, 'przeciwnik może zablokować Wampirem');
+  assert.ok(execute(state, declare).ok, 'Wampir blokuje');
+  resolveStack(state);
+  const vampAlive = [...state.objects.values()]
+    .some((o) => o.zone === 'battlefield' && (o.subtypes ?? []).includes('Vampire'));
+  assert.equal(vampAlive, false, 'Wampir blokujący nosiciela Wooden Stake ginie');
+});
+
+test('B48/B6: Wooden Stake — NIE-Wampir przeżywa blok (anty-over-fix)', () => {
+  const state = game('p1', 'declare_blockers');
+  put(state, 'bearer', 'hill-giant', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'stake', 'wooden-stake', 'p1', 'battlefield', { attachedTo: 'bearer' });
+  addObject(state, {
+    id: 'human', instanceId: 'i-human', cardId: 'hill-giant', controllerId: 'p2', ownerId: 'p2',
+    zone: 'battlefield', kind: 'creature', power: 1, toughness: 4,
+    types: ['Creature'], subtypes: ['Human'], abilities: [],
+  });
+  state.combat = {
+    attackingPlayerId: 'p1', attackers: ['bearer'],
+    blockers: new Map(), blockedAttackers: new Set(),
+  };
+  state.turn.priorityPlayerId = 'p2';
+  const declare = playerView(state, 'p2').legalCommands
+    .find((c) => c.type === 'declare_blockers' && (c.assignments?.bearer ?? []).includes('human'));
+  assert.ok(declare, 'Human może zablokować');
+  assert.ok(execute(state, declare).ok);
+  resolveStack(state);
+  assert.ok([...state.objects.values()].some((o) => o.zone === 'battlefield' && o.id === 'human'),
+    'Oracle mówi wyłącznie o Wampirze — inne stwory nie giną');
+});
+
+test('B48/B7: Wooden Stake — nosiciel BLOKUJĄCY Wampira też go zabija', () => {
+  // Oracle mówi „blocks OR becomes blocked by" — obie strony. Luka wykryta
+  // weryfikacją mutacyjną: usunięcie jednej z par nie czerwieniło niczego.
+  const state = game('p2', 'declare_blockers');   // tura PRZECIWNIKA
+  put(state, 'bearer', 'hill-giant', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'stake', 'wooden-stake', 'p1', 'battlefield', { attachedTo: 'bearer' });
+  addObject(state, {
+    id: 'vamp', instanceId: 'i-vamp', cardId: 'hill-giant', controllerId: 'p2', ownerId: 'p2',
+    zone: 'battlefield', kind: 'creature', power: 2, toughness: 6,
+    types: ['Creature'], subtypes: ['Vampire'], abilities: [],
+  });
+  // To WAMPIR atakuje, a nosiciel sprzętu go blokuje.
+  state.combat = {
+    attackingPlayerId: 'p2', attackers: ['vamp'],
+    blockers: new Map(), blockedAttackers: new Set(),
+  };
+  state.turn.priorityPlayerId = 'p1';
+  const declare = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'declare_blockers' && (c.assignments?.vamp ?? []).includes('bearer'));
+  assert.ok(declare, 'nosiciel może zablokować Wampira');
+  assert.ok(execute(state, declare).ok);
+  resolveStack(state);
+  const vampAlive = [...state.objects.values()]
+    .some((o) => o.zone === 'battlefield' && (o.subtypes ?? []).includes('Vampire'));
+  assert.equal(vampAlive, false, 'Wampir zablokowany przez nosiciela też ginie');
+});
