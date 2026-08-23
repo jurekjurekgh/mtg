@@ -448,3 +448,40 @@ test('M200/H: bot nie rzuca Grounded na stwora bez latania; na latającego — t
   assert.equal(chosen2.objectId, 'grounded');
   assert.equal(chosen2.targets?.[0], 'demon', 'cel = latający stwór');
 });
+// ---- L (weryfikacja zgłoszenia audytu agenta): Ruthless Invasion — efekt CIĄGŁY ----
+// Zgłoszenie: „the 'this turn' restriction freezes the creature set at
+// resolution time — in Oracle (continuous effect), creatures that enter the
+// battlefield later within the same turn must also be unable to block”.
+// VERDYKT: PRAWDZIWY BŁĄD — stara implementacja znaczkowała zbiór przy
+// rozstrzygnięciu. Fix: ograniczenie na obiekcie tury (nowa tura = nowy
+// state.turn = wygaśnięcie), odczyt read-time w creatureCantBlock.
+
+test('M200/L: ograniczenie turewcze — późniejszy stwór objęty, nowa tura = wygaśnięcie', async () => {
+  const { applyEffect } = await import('../src/engine/effects.js');
+  const { creatureCantBlock } = await import('../src/engine/permanents.js');
+  const { nextTurnStep } = await import('../src/engine/turn.js');
+  const state = game('p1');
+  putCard(state, 'late', 'highland-game', 'p2');
+  applyEffect(state, { type: 'creatures_cant_block_this_turn', exceptTypes: ['Artifact'] },
+    { id: 'src', controllerId: 'p1', cardId: 'ruthless-invasion', zone: 'stack' }, []);
+  assert.equal(state.turn.cantBlockRestrictions?.length, 1, 'ograniczenie zarejestrowane na turze');
+  assert.ok(state.events.some((e) => e.type === 'turn_cant_block'), 'zdarzenie turn_cant_block (opis zamiast N flag)');
+  // Stwór na stole OD POCZĄTKU i ten, który wejdzie PÓŹNIEJ — obaj objęci:
+  putCard(state, 'later', 'illusory-demon', 'p2');
+  assert.equal(creatureCantBlock(state.objects.get('late'), state), true, 'stwór istniejący — objęty');
+  assert.equal(creatureCantBlock(state.objects.get('later'), state), true, 'stwór wchodzący później — objęty (CR 611.2)');
+  // W ramach tej samej tury ograniczenie TRWA (kolejne kroki rozprzestrzeniają
+  // obiekt tury — tak jak pozostałe pola tur):
+  state.turn = nextTurnStep(state.turn, state.players);
+  assert.equal(creatureCantBlock(state.objects.get('later'), state), true, 'ten sam obrót tury — nadal objęty');
+  // Nowa tura = NOWY obiekt state.turn (przejście z ostatniego kroku) =
+  // wygaśnięcie naturalne (CR 514.2):
+  let t = state.turn;
+  for (let i = 0; i < 20 && t.number === state.turn.number; i += 1) {
+    t = nextTurnStep(t, state.players);
+  }
+  state.turn = t;
+  assert.notEqual(state.turn.number, 1, 'przeszliśmy na kolejną turę');
+  assert.equal(state.turn.cantBlockRestrictions, undefined, 'nowy obiekt tury bez ograniczenia');
+  assert.equal(creatureCantBlock(state.objects.get('later'), state), false, 'nowa tura — stwór blokuje normalnie');
+});

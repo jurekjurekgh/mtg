@@ -226,7 +226,7 @@ export function declareBlockers(state, playerId, assignments) {
     if (ids.some((object) => object.detained)) throw new Error('Zatrzymany (detain) stwór nie może blokować');
     // Ograniczenia z załączników (Hobble: „can't block if it's black") —
     // walidacja niezależna od enumeracji (execute musi odrzucić zła komendę).
-    if (ids.some((object) => creatureCantBlock(object) || attachmentRestrictions(state, object).cantBlock)) throw new Error('Nielegalny blokujący');
+    if (ids.some((object) => creatureCantBlock(object, state) || attachmentRestrictions(state, object).cantBlock)) throw new Error('Nielegalny blokujący');
     // „Can't block alone" (Ember Beast, CR 509.1c): stwór może blokować tylko,
     // gdy tego samego atakującego blokuje też co najmniej jeden inny stwór.
     if (ids.length === 1 && ids.some((object) => hasAloneRestriction(object, 'cantBlockAlone'))) {
@@ -918,7 +918,7 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
   for (const id of state.zones.battlefield) {
     const object = state.objects.get(id);
     // CR 701.38b: goad nie ogranicza blokowania — nie filtrujemy po `goaded`.
-    if (object && object.zone === 'battlefield' && object.controllerId === playerId && object.kind === 'creature' && !object.tapped && !creatureCantBlock(object)
+    if (object && object.zone === 'battlefield' && object.controllerId === playerId && object.kind === 'creature' && !object.tapped && !creatureCantBlock(object, state)
       && !attachmentRestrictions(state, object).cantBlock) blockers.push(id);
   }
   if ((attackers.length + 1) ** blockers.length <= cap) {
@@ -934,7 +934,7 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
       const blocker = state.objects.get(blockerId);
       // Zakaz blokowania: efekt „can't block this turn\" (Panic Spellbomb)
       // albo cecha wydrukowana („This token can't block\" — Phyrexian Mite).
-      if (creatureCantBlock(blocker)) continue;
+      if (creatureCantBlock(blocker, state)) continue;
       // Ograniczenie z załącznika (Hobble: „can't block if it's black").
       if (attachmentRestrictions(state, blocker).cantBlock) continue;
       const extended = [];

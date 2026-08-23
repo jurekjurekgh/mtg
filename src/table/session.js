@@ -591,6 +591,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       }
       case 'command_rejected': return `Odrzucono: ${e.reason ?? 'nielegalna komenda'}`;
       case 'cant_block_granted': return `${nameOfObject(e.objectId)} nie może blokować do końca tury`;
+      // M200/L: ograniczenie TUREWCZE (Ruthless Invasion) — jedno zdarzenie
+      // zamiast N per-stworowych; opis nazywa wyjątek typu.
+      case 'turn_cant_block': {
+        const except = (e.exceptTypes ?? []).map((t) => t.charAt(0).toLowerCase() + t.slice(1));
+        return except.length
+          ? `Stwory, które nie są: ${except.join(' lub ')}, nie mogą blokować do końca tury`
+          : 'Wszystkie stwory nie mogą blokować do końca tury';
+      }
       case 'spell_countered': return `${nameOf(e.cardId)} zostaje skontrowany${e.counteredByCardId ? ` (${nameOf(e.counteredByCardId)})` : (e.counteredBy ? ` (${nameOfObject(e.counteredBy)})` : '')}`;
       case 'sacrifice_choice_required': return `${whoN(e.playerId)} wskazuje stwora do poświęcenia`;
       case 'food_choice_required': return `${whoN(e.playerId)} rozstrzyga: poświęcić Food na +3 życia?`;

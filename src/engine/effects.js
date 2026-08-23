@@ -3114,17 +3114,20 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // (`exceptTypes`), wiec przyszle „non-Zombie creatures can't block"
     // pojda ta sama sciezka bez zmian w silniku (ADR 0002).
     //
-    // CR 611.2c: zbior stworow ustalamy PRZY ROZSTRZYGNIECIU — stwor
-    // wchodzacy pozniej w tej turze moze blokowac normalnie.
-    const except = effect.exceptTypes ?? [];
-    for (const id of state.zones.battlefield) {
-      const object = state.objects.get(id);
-      if (!object || object.kind !== 'creature') continue;
-      if (except.some((type) => (object.types ?? []).includes(type))) continue;
-      if (object.cantBlock === true) continue;
-      state.objects.set(id, Object.freeze({ ...object, cantBlock: true }));
-      state.events.push(event('cant_block_granted', { objectId: id, cardId: object.cardId }));
-    }
+    // M200/L (CR 611.2 — efekt CIAGLY): ograniczenie obowiazuje przez
+    // cala swoje trwanie i dotyczy kazdego stwora spelniajacego warunek
+    // W TYM CZASIE — takze stwora wchodzacego na pole bitwy POZCIEJ w tej
+    // turze. Stara implementacja znaczkowala zbiór przy rozstrzygnięciu
+    // (jednorazowa flaga na obiekcie) — odchyłka od Oracle (audyt: zbior
+    // „zamrazany” przy resolution). Ograniczenie zyj na obiekcie tury
+    // (nowa tura = nowy state.turn = wygasniecie naturalne, CR 514.2) i
+    // jest czytane read-time w creatureCantBlock (centralny odczyt).
+    const except = [...(effect.exceptTypes ?? [])];
+    state.turn.cantBlockRestrictions = [...(state.turn.cantBlockRestrictions ?? []), {
+      exceptTypes: except,
+      cardId: sourceObject?.cardId ?? null,
+    }];
+    state.events.push(event('turn_cant_block', { exceptTypes: except, cardId: sourceObject?.cardId ?? null }));
     return;
   }
   if (effect.type === 'cant_be_blocked') {

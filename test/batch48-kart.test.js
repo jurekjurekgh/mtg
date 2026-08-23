@@ -365,9 +365,21 @@ test('B48/C4: Ruthless Invasion — PEŁNA ścieżka: bloker traci możliwość 
   });
   applyEffect(state, { type: 'creatures_cant_block_this_turn', exceptTypes: ['Artifact'] },
     { id: 'src', controllerId: 'p1', cardId: 'ruthless-invasion', zone: 'stack' }, []);
-  assert.equal(state.objects.get('foe').cantBlock, true, 'zwykły stwór nie zablokuje');
-  assert.notEqual(state.objects.get('robot').cantBlock, true,
+  // M200/L: odczyt centralny (creatureCantBlock z state) — ograniczenie
+  // turewcze, nie jednorazowa flaga na obiekcie.
+  const { creatureCantBlock } = await import('../src/engine/permanents.js');
+  assert.equal(creatureCantBlock(state.objects.get('foe'), state), true, 'zwykły stwór nie zablokuje');
+  assert.equal(creatureCantBlock(state.objects.get('robot'), state), false,
     'stwór-ARTEFAKT blokuje dalej (Oracle: „nonartifact")');
+  // CR 611.2 (efekt ciągły): stwór wchodzący POZCIEJ w tej samej turze też
+  // podlega ograniczeniu (M200/L — stary kod zamrażał zbiór przy resolution).
+  addObject(state, {
+    id: 'late', instanceId: 'i-l', cardId: 'hill-giant', controllerId: 'p2', ownerId: 'p2',
+    zone: 'battlefield', kind: 'creature', power: 2, toughness: 2,
+    types: ['Creature'], subtypes: [], abilities: [],
+  });
+  assert.equal(creatureCantBlock(state.objects.get('late'), state), true,
+    'stwór wchodzący później w tej turze też nie może blokować');
 });
 
 // ---- Transza D: Clawing Torment, Stampeding Elk Herd ---------------------

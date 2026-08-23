@@ -342,8 +342,22 @@ function anthemBonuses(state, object) {
  *    wygasa w cleanup (CR 514.2).
  * Ograniczenia z załączników liczy attachmentRestrictions (read-time).
  */
-export function creatureCantBlock(object) {
-  return Boolean(object?.cantBlockPrinted || object?.cantBlock);
+/**
+ * Ograniczenie TUREWCZE zakazu blokowania (CR 611.2 — efekt ciągły):
+ * „Nonartifact creatures can't block this turn" (Ruthless Invasion). Ograniczenie
+ * żyje na obiekcie tury (NOWA tura = nowy state.turn = wygaśnięcie naturalne,
+ * CR 514.2) i jest czytane READ-TIME — obejmuje także stwory wchodzące na
+ * pole bitwy POZCIEJ w tej samej turze (M200/L: stara implementacja
+ * zamrażała zbiór przy rozstrzygnięciu — odchyłka od Oracle).
+ */
+export function turnCantBlockRestricts(state, object) {
+  const restrictions = state?.turn?.cantBlockRestrictions;
+  if (!Array.isArray(restrictions) || restrictions.length === 0 || !object) return false;
+  return restrictions.some((r) => !(r.exceptTypes ?? []).some((t) => (object.types ?? []).includes(t)));
+}
+
+export function creatureCantBlock(object, state = null) {
+  return Boolean(object?.cantBlockPrinted || object?.cantBlock || turnCantBlockRestricts(state, object));
 }
 
 export function attachmentRestrictions(state, object) {

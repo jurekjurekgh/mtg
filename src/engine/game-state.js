@@ -4579,7 +4579,7 @@ export function playerView(state, playerId) {
         // flage na obiekcie — kafel milczal, choc stwor realnie nie mogl
         // blokowac (klasa L1/ADR 0017: skutek widoczny w grze musi byc
         // widoczny na stole).
-        if (creatureCantBlock(object) || attachmentRestrictions(state, object).cantBlock) entry.cantBlock = true;
+        if (creatureCantBlock(object, state) || attachmentRestrictions(state, object).cantBlock) entry.cantBlock = true;
         if (object.cantBeBlocked === true) entry.cantBeBlocked = true;
         // M186/Z1 (Żywy Tester, ravnica vs innistrad s9): „can't attack/block
         // alone" JAWNIE w widoku — wizard walki walidował po entry.abilities,
