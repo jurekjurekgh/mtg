@@ -21,7 +21,7 @@ import { stateFingerprint } from '../engine/fingerprint.js';
 import { createCardRegistry, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, FACE_DOWN_LABEL } from './session.js';
-import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory } from './render.js';
+import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, renderZoneCounters, renderManaPools } from './render.js';
 import { installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, countPaymentVariants, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
 import { effectiveSpellManaCost } from '../engine/spells.js';
@@ -117,7 +117,12 @@ function bootstrapTable() {
     turnHistory: el('turn-history'),
     turnHistoryCount: el('turn-history-count'),
     turnHistoryCopy: el('turn-history-copy'),
+    // M197/A1: kopiowanie CAŁEJ partii (wszystkie tury).
+    turnHistoryCopyAll: el('turn-history-copy-all'),
     turnHistorySelect: el('turn-history-select'),
+    // M197/A3A+A3B: boksy liczników stref i puli many.
+    zoneCounters: el('zone-counters'),
+    manaPools: el('mana-pools'),
     daynight: el('daynight'),
     poison: el('poison'),
     undercity: el('undercity'),
@@ -151,6 +156,15 @@ function bootstrapTable() {
       : '';
     if (!text) return;
     copyTextToClipboard(text, els.turnHistoryCopy);
+  });
+
+  // M197/A1 (zlecenie właściciela): „skopiuj całą partię do schowka" —
+  // wszystkie tury od początku rozgrywki, nie tylko wybrana.
+  els.turnHistoryCopyAll?.addEventListener('click', () => {
+    if (!session) return;
+    const text = typeof session.turnHistoryTextAll === 'function' ? session.turnHistoryTextAll() : '';
+    if (!text) return;
+    copyTextToClipboard(text, els.turnHistoryCopyAll);
   });
 
   /** Kopiuje tekst do schowka: Clipboard API, a przy file:// fallback textarea. */
@@ -1002,6 +1016,10 @@ function bootstrapTable() {
     el('life-enemy').textContent = String(foe?.life ?? '?');
     el('library-own').textContent = String(view.zones.library.filter((o) => o.controllerId === me?.id).length);
     el('library-enemy').textContent = String(view.zones.library.filter((o) => o.controllerId === foe?.id).length);
+    // M197/A3A+A3B: liczniki stref (z przyciskiem otwierającym inspektor)
+    // oraz graficzna pula many obu graczy.
+    renderZoneCounters(els.zoneCounters, view, session, { onOpen: () => showModal('library-menu-panel') });
+    renderManaPools(els.manaPools, view, session);
 
     // Wysuwany panel akcji: licznik w FAB; automatyczne otwarcie przy nowym
     // oknie decyzji (auto-pass w sesji zostawia tu tylko realne wybory).
@@ -1416,15 +1434,9 @@ function bootstrapTable() {
       }
     });
     refreshResumePanel();
-    function refreshLibraryPreview() {
-      const lib = session ? session.view().zones.library.slice(0, 3) : [];
-      const names = lib.map((o) => session.nameOf(o.cardId)).filter(Boolean);
-      el('library-preview').textContent = names.length ? names.join(', ') : 'Brak';
-    }
-    el('library-menu-btn').addEventListener('click', () => {
-      refreshLibraryPreview();
-      showModal('library-menu-panel');
-    });
+    // M197/A5 (zlecenie właściciela): sekcja „Biblioteka — podgląd topu
+    // (syntetyczny)" usunięta z inspektora, więc znika też jej odświeżanie.
+    // Inspektor otwiera się teraz z boksu liczników stref (M197/A3A).
     el('zone-inspector-close').addEventListener('click', () => hideModal('library-menu-panel'));
     el('card-preview-close').addEventListener('click', () => hideModal('card-preview'));
     el('context-menu-close').addEventListener('click', () => hideModal('context-menu'));

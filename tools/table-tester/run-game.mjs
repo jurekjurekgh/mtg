@@ -779,7 +779,22 @@ export async function runTableGame({
   for (const line of formatFindings(findings)) logL(line);
 
   flush();
-  return { lines, findings, windowRecords, probeRecords, rejectionRecords, coverage: { seenActions: [...seenActions], clickedActions: [...clickedActions], modals: [...seenModals] } };
+  // M197: zrzut UKŁADU STOŁU na żywym artefakcie — boksy liczników stref,
+  // pula many i etykiety grup permanentów. Pozwala sprawdzić w prawdziwym
+  // DOM (nie w mini-DOM testów), że sekcje naprawdę się renderują.
+  const layout = {
+    zoneCounters: text($('#zone-counters')),
+    manaPools: text($('#mana-pools')),
+    manaSymbols: $$('#mana-pools .ms').length,
+    groupLabels: $$('.sub-label').map((e) => text(e)),
+    statusBar: text($('#status')),
+    hasBrand: Boolean($('.brand')),
+    hasFoot: Boolean($('.foot')),
+    hasLibraryPreview: Boolean($('#library-preview')),
+    copyAllLabel: text($('#turn-history-copy-all')),
+    ownPlayerLabel: text($('.player.own .pname')),
+  };
+  return { lines, findings, windowRecords, probeRecords, rejectionRecords, layout, coverage: { seenActions: [...seenActions], clickedActions: [...clickedActions], modals: [...seenModals] } };
 }
 
 // ---------------------------------------------------------------------------

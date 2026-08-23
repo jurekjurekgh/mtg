@@ -68,12 +68,14 @@ function installMiniDom() {
     // Wskaźnik tury (2026-08-07): stała informacja w lewym górnym rogu.
     'turn-indicator',
     'life-own', 'life-enemy', 'library-own', 'library-enemy',
-    'library-menu-btn', 'library-menu-panel', 'library-preview', 'zone-inspector-close',
+    // M197/A3A+A5: przycisk inspektora żyje w boksie liczników stref, a sekcja
+    // „podgląd topu (syntetyczny)" zniknęła — zostaje sam panel inspektora.
+    'library-menu-panel', 'zone-inspector-close', 'zone-counters', 'mana-pools',
     'replay-out', 'replay-summary', 'replay-download', 'replay-file',
     'actions-drawer', 'actions-drawer-close', 'actions-fab', 'actions-fab-count',
     'bot-reasoning', 'bot-reasoning-count',
     // M25: sekcja „Przebieg tur (dla AI)" — tekst, licznik, przełącznik i kopiowanie.
-    'turn-history', 'turn-history-count', 'turn-history-copy', 'turn-history-select',
+    'turn-history', 'turn-history-count', 'turn-history-copy', 'turn-history-copy-all', 'turn-history-select',
     // M24: loch Undercity — karta specjalna na stole z zaznaczeniem pokoju.
     'daynight',
     'undercity',
@@ -189,8 +191,11 @@ test('strona stołu przechodzi self-test i startuje partię na pierwszej decyzji
   assert.equal(textOf(dom.get('table-note')), '', 'błąd startu partii');
   const first = pickActionButton(dom.get('actions'));
   assert.ok(first, 'brak przycisków akcji po starcie');
-  assert.match(textOf(dom.get('status')), /Tura 1/);
-  assert.match(textOf(dom.get('status')), /ręka 7/);
+  // M197/A2: tekstowy pasek statusu usunięty (dublował panel graczy) —
+  // numer tury żyje teraz w stałym wskaźniku „turn-indicator".
+  assert.match(textOf(dom.get('turn-indicator')), /T\.\s*1|Tura 1/);
+  // Rozmiar ręki sprawdzamy na SAMEJ ręce (niżej: siedem kafli), nie na
+  // usuniętym pasku statusu — to ta sama informacja u źródła.
   // Ręka gracza rysuje nazwy kart z registry. Test sprawdza REGUŁĘ („kafle
   // ręki mają nazwy z rejestru, nie surowe id"), więc zamiast listy tytułów
   // zależnej od tasowania (L25/L53 — każda zmiana talii przelosowuje rękę)
@@ -271,7 +276,9 @@ test('mirror match: obaj gracze mogą grać tą samą talię repo', () => {
   dom.get('deck-bot').value = 'green';
   dom.get('new-game').click();
   assert.equal(textOf(dom.get('table-note')), '', `start mirror nie powinien zgłaszać błędu: ${textOf(dom.get('table-note'))}`);
-  assert.match(textOf(dom.get('status')), /Tura 1/);
+  // M197/A2: tekstowy pasek statusu usunięty (dublował panel graczy) —
+  // numer tury żyje teraz w stałym wskaźniku „turn-indicator".
+  assert.match(textOf(dom.get('turn-indicator')), /T\.\s*1|Tura 1/);
 });
 
 /** Symulacja dotyku: touchstart (x0) → touchend (x1) na warstwie. */
@@ -356,7 +363,11 @@ test('bug A (iOS): klik w tło świeżo otwartego modala jest ignorowany (odprys
   mock.timers.setTime(realNow);
   try {
     restart();
-    dom.get('library-menu-btn').click();
+    // M197/A3A: inspektor otwiera przycisk w boksie liczników stref
+    // („🗂 Pokaż karty w strefach"), a nie kafelek między graczami.
+    const opener = dom.get('zone-counters').children.find((c) => /Pokaż karty w strefach/.test(c.textContent ?? ''));
+    assert.ok(opener, 'boks liczników ma przycisk otwierający inspektor');
+    opener.click();
     const panel = dom.get('library-menu-panel');
     assert.equal(panel.className, 'modal active', 'panel biblioteki nie otworzył się');
     // Klik dokładnie w tło modala od razu po otwarciu — ignorowany.
@@ -571,7 +582,9 @@ test('Tasuj talię: przycisk podmienia seed na losowy (nie rusza bieżącej part
   const after = Number.parseInt(dom.get('seed').value, 10);
   assert.ok(Number.isInteger(after) && after >= 1 && after <= 999999, `seed po tasowaniu: ${after}`);
   // Bieżąca partia (status) pozostaje nietknięta — seed działa przy następnym starcie.
-  assert.match(textOf(dom.get('status')), /Tura 1/);
+  // M197/A2: tekstowy pasek statusu usunięty (dublował panel graczy) —
+  // numer tury żyje teraz w stałym wskaźniku „turn-indicator".
+  assert.match(textOf(dom.get('turn-indicator')), /T\.\s*1|Tura 1/);
 });
 
 test('autosave: po zagraniu zapis trafia do localStorage, a Wznów autosave odtwarza partię', () => {
@@ -607,7 +620,9 @@ test('auto-start: świeży localStorage startuje nową partię (bez błędu wzno
   dom.get('seed').value = '5';
   dom.get('new-game').click();
   assert.equal(textOf(dom.get('table-note')), '');
-  assert.match(textOf(dom.get('status')), /Tura 1/);
+  // M197/A2: tekstowy pasek statusu usunięty (dublował panel graczy) —
+  // numer tury żyje teraz w stałym wskaźniku „turn-indicator".
+  assert.match(textOf(dom.get('turn-indicator')), /T\.\s*1|Tura 1/);
 });
 
 test('wskaźnik tury (2026-08-07): stała informacja „Tura N, gracz, faza" w lewym górnym rogu', () => {

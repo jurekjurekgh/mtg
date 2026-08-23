@@ -1651,6 +1651,17 @@ export function createSession(config) {
     return formatTurnRecord(record);
   }
 
+  /**
+   * M197/A1 (zlecenie właściciela): zapis CAŁEJ partii — „kopiuje nie jedną
+   * wybraną turę, ale wszystkie tury od początku rozgrywki (ten zapis dla
+   * AI)". Ten sam format bloku co pojedyncza tura, sklejony po kolei.
+   */
+  function turnHistoryTextAll() {
+    flushFinishedTurn();
+    if (turnHistory.length === 0) return '';
+    return turnHistory.map(formatTurnRecord).join('\n\n');
+  }
+
   /** Wspólny format bloku tury (używany przez oba wejścia). */
   function formatTurnRecord(record) {
     const whoName = TURN_NAMES[record.activePlayerId] ?? record.activePlayerId;
@@ -2299,6 +2310,7 @@ export function createSession(config) {
     turnHistoryText,
     turnHistoryEntries,
     turnHistoryTextFor,
+    turnHistoryTextAll,
     exportReplayText() {
       return serializeReplay(replayFromState(state));
     },

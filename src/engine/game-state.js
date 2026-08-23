@@ -5799,7 +5799,15 @@ export function playerView(state, playerId) {
   // UI i boty planują na nich swoje okno priorytetu.
   // M157/F: liczniki trucizny są jawne (CR 122) i decyzyjne (przegrana przy 10)
   // — panel stołu i kontrolerzy czytają je z widoku (ADR 0017).
-  const players = state.players.map(({ id, name, life, mana, landPlays, poison }) => ({ id, name, life, mana: mana ?? 0, landPlays: landPlays ?? 0, poison: poison ?? 0 }));
+  // M197/A3B (zlecenie właściciela): pula many ma być pokazana GRAFICZNIE —
+  // „ile i jaka”. Sam licznik `mana` nie niósł kolorów, więc UI nie miało
+  // z czego rysować. `manaPool` to mapa profil-kolorów → liczba jednostek
+  // (klucz `manaUnitKey`: 'U', 'UR', '' = bezbarwna). Pula jest jawną
+  // informacją stołową (jak `mana`), więc trafia do widoku OBU graczy.
+  const players = state.players.map(({ id, name, life, mana, landPlays, poison, manaPool }) => ({
+    id, name, life, mana: mana ?? 0, landPlays: landPlays ?? 0, poison: poison ?? 0,
+    manaPool: { ...(manaPool ?? {}) },
+  }));
   // Fog of War scry: patrzący (właściciel decyzji) widzi treść kart (jak rękę),
   // przeciwnik dowiaduje się wyłącznie, że decyzja trwa i ile kart obejrzano.
   const pendingScry = state.pendingScry ? {

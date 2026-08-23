@@ -9,8 +9,9 @@ import {
   PLAYER_NAMES, HUMAN_ID, commandOptionKey, TRIGGER_EVENT_LABELS,
   FACE_DOWN_LABEL, faceDownName,
   manaEffectLabel,
+  manaProducedLabel,
 } from './session.js';
-import { escapeHtml, manaCostHtml } from './mana-icons.js';
+import { escapeHtml, manaCostHtml, manaSymbolsHtml } from './mana-icons.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { installTapGesture } from './gestures.js';
 
@@ -2453,6 +2454,14 @@ export function commandLabel(cmd, session, view) {
   }
 }
 
+/**
+ * M197/A3C (zlecenie właściciela): panel stołu mówi „Gracz", nie „Ty".
+ * Jedno źródło prawdy dla etykiet obu stron — wcześniej napisy były
+ * wpisane na sztywno w kilku miejscach i rozjeżdżały się między sobą.
+ */
+export const PLAYER_LABEL = 'Gracz';
+export const BOT_LABEL = 'Bot';
+
 // --- Pomocnicze budowanie DOM (bez innerHTML, bez classList) -----------
 
 function div(parent, className, text) {
@@ -3144,26 +3153,19 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     // CR 104.4b: remis nie ma zwycięzcy — bez tego baner pokazywał „wygrywa: ?".
     // M172/A: informacja „kto wygrał" używa nazw panelu (Gracz/Bot) —
     // „wygrywa: Ty" to zła odmiana (decyzja właściciela).
-    const winnerLabel = winner?.name === 'Ty' ? 'Gracz' : winner?.name === 'Nieprzyjaciel' ? 'Bot' : (winner?.name ?? '?');
+    const winnerLabel = winner?.name === 'Ty' ? PLAYER_LABEL : winner?.name === 'Nieprzyjaciel' ? BOT_LABEL : (winner?.name ?? '?');
     const outcome = view.isDraw ? 'REMIS (obaj gracze przegrali jednocześnie)' : `wygrywa: ${winnerLabel}`;
     div(els.banner, 'gameover', `Koniec gry — ${outcome} (seed ${session.state.seed})`);
   }
 
-  // --- Pasek statusu ---------------------------------------------------
+  // --- Pasek statusu ----------------------------------------------------
+  // M197/A2 (zlecenie właściciela): tekstowy pasek („Partia zakończona po N
+  // turach" + wiersze „❤ … mana … ręka … biblioteka …") USUNIĘTY — powielał
+  // informacje, które są już w stałym wskaźniku tury (tura/faza/koniec gry),
+  // w pasku graczy (życie, ręka, biblioteka) oraz — od M197 — w boksie
+  // liczników stref i puli many.
   const me = view.players.find((p) => p.id === view.playerId);
   const foe = view.players.find((p) => p.id !== view.playerId);
-  const active = view.players.find((p) => p.id === view.turn.activePlayerId);
-  div(els.status, 'status-turn', view.status === 'active'
-    ? `Tura ${view.turn.number} · ${active?.name} · ${stepLabel(view.turn)}`
-    : `Partia zakończona po ${view.turn.number} turach`);
-  const foeHand = view.zones.hand.filter((o) => o.hidden).length;
-  const ownHand = view.zones.hand.length - foeHand;
-  const ownLibrary = view.zones.library.filter((o) => o.controllerId === me?.id).length;
-  const foeLibrary = view.zones.library.length - ownLibrary;
-  div(els.status, 'status-row',
-    `${me?.name}: ❤ ${me?.life} · mana ${me?.mana} · ręka ${ownHand} · biblioteka ${ownLibrary}`);
-  div(els.status, 'status-row',
-    `${foe?.name}: ❤ ${foe?.life} · ręka ${foeHand} · biblioteka ${foeLibrary}`);
 
   // --- Stos ------------------------------------------------------------
   if (view.zones.stack.length === 0) {
@@ -3401,7 +3403,7 @@ export function renderPoisonPanel(els, view, { onOpenCard = null } = {}) {
   const info = div(els.poison, 'poison-info');
   div(info, 'poison-status', 'Liczniki trucizny');
   for (const p of view.players ?? []) {
-    div(info, 'poison-count', `${p.id === view.playerId ? 'Ty' : 'Nieprzyjaciel'}: ${p.poison ?? 0} ${polishPluralCount(p.poison ?? 0, 'licznik', 'liczniki', 'liczników')} trucizny`);
+    div(info, 'poison-count', `${p.id === view.playerId ? PLAYER_LABEL : BOT_LABEL}: ${p.poison ?? 0} ${polishPluralCount(p.poison ?? 0, 'licznik', 'liczniki', 'liczników')} trucizny`);
   }
   div(info, 'poison-note', 'Gracz z 10 licznikami trucizny przegrywa (CR 704.10). Liczniki znikają tylko z końcem gry — obrażenia ich nie leczą.');
 }
@@ -3508,6 +3510,81 @@ export function renderUndercity(els, session, view, { onClick = null, hover = nu
 }
 
 /**
+ * M197/A3A (zlecenie właściciela): boks LICZNIKÓW stref — „Bot (cmentarz [10],
+ * exile [2], biblioteka [3]) — Gracz (cmentarz [10], …)". Bez wypisywania
+ * kart: konkretne karty pokazuje dopiero inspektor po kliknięciu (tak jak
+ * dotąd). Wcześniej między graczami wisiał sam przycisk inspektora, a rozmiary
+ * stref nie były widoczne nigdzie.
+ */
+export function renderZoneCounters(host, view, session = null, { onOpen = null } = {}) {
+  if (!host) return;
+  clear(host);
+  const me = view.players.find((p) => p.id === view.playerId);
+  const foe = view.players.find((p) => p.id !== view.playerId);
+  // Kolejność jak na stole: przeciwnik u góry, gracz pod nim.
+  for (const player of [foe, me]) {
+    if (!player) continue;
+    const own = player.id === view.playerId;
+    const row = div(host, own ? 'zone-counter-row own' : 'zone-counter-row');
+    div(row, 'zone-counter-name', own ? PLAYER_LABEL : BOT_LABEL);
+    const counts = [
+      ['cmentarz', (view.zones.graveyard ?? []).filter((o) => o.controllerId === player.id).length],
+      // Exile jest strefą wspólną i jawną — liczymy karty wygnane przez tego gracza.
+      ['exile', (view.zones.exile ?? []).filter((o) => o.controllerId === player.id).length],
+      ['biblioteka', (view.zones.library ?? []).filter((o) => o.controllerId === player.id).length],
+    ];
+    for (const [label, count] of counts) {
+      div(row, 'zone-counter', `${label} [${count}]`);
+    }
+  }
+  if (onOpen) {
+    const btn = document.createElement('button');
+    btn.className = 'ghost-btn inspector-btn';
+    btn.textContent = '🗂 Pokaż karty w strefach';
+    btn.addEventListener('click', () => onOpen());
+    host.appendChild(btn);
+  }
+}
+
+/**
+ * M197/A3B (zlecenie właściciela): „dodać graficzne pokazanie many w puli
+ * (ile i jaka) dla obu graczy". Pula żyje w `player.manaPool` jako mapa
+ * profil-kolorów → liczba jednostek (klucz `manaUnitKey`: 'U', 'UR',
+ * '' = bezbarwna); widok niesie ją od M197. Rysujemy symbolami many — te
+ * same ikony co w kosztach czarów.
+ */
+export function renderManaPools(host, view, session = null) {
+  if (!host) return;
+  clear(host);
+  const me = view.players.find((p) => p.id === view.playerId);
+  const foe = view.players.find((p) => p.id !== view.playerId);
+  for (const player of [foe, me]) {
+    if (!player) continue;
+    const own = player.id === view.playerId;
+    const row = div(host, own ? 'mana-pool-row own' : 'mana-pool-row');
+    div(row, 'mana-pool-name', own ? PLAYER_LABEL : BOT_LABEL);
+    const pool = player.manaPool ?? {};
+    const units = Object.entries(pool).filter(([, count]) => count > 0);
+    if (units.length === 0) {
+      div(row, 'mana-pool-empty', 'pusta');
+      continue;
+    }
+    for (const [key, count] of units) {
+      // Klucz pusty = mana bezbarwna ({C}); wielokolorowy = jednostka, która
+      // może zapłacić dowolny z tych kolorów (CR 106.7) — pokazujemy hybrydę.
+      const symbol = key === '' ? '{C}' : `{${key.split('').join('/')}}`;
+      const chip = div(row, 'mana-pool-chip');
+      chip.innerHTML = `${manaSymbolsHtml(symbol)}<span class="mana-pool-count">× ${count}</span>`;
+      // Opis słowny bierzemy z manaProducedLabel (M193/A1) — jedno źródło
+      // polskiej odmiany kolorów dla całego stołu (L41), zamiast drugiej,
+      // rozjeżdżającej się mapy nazw.
+      chip.title = manaProducedLabel(count, key === '' ? [] : key.split(''))
+        .replace(/^dodanie /, '').replace(/ do puli$/, '');
+    }
+  }
+}
+
+/**
  * Sekcja „Przebieg tur (dla AI)": N ostatnich pełnych tur (1 albo 2) jako
  * gotowy tekst do skopiowania modelowi AI. Imiona: Czarodziejka / Nieprzyjaciel
  * (decyzja właściciela 2026-08-03). Licznik pokazuje liczbę ukończonych tur.
@@ -3567,9 +3644,10 @@ function renderBattlefield(host, view, session, controllerId, enemy, onCardClick
   const lands = mine.filter((o) => o.kind === 'land');
   const others = mine.filter((o) => o.kind !== 'land');
   // Wróg: lądy przy krawędzi (góra), stworki w stronę środka; Ty odwrotnie.
+  // M197/A4 (zlecenie właściciela): „Stworki i inne" → „Permanenty poza lądami".
   const groups = enemy
-    ? [[lands, 'Lądy'], [others, 'Stworki i inne']]
-    : [[others, 'Stworki i inne'], [lands, 'Lądy']];
+    ? [[lands, 'Lądy'], [others, 'Permanenty poza lądami']]
+    : [[others, 'Permanenty poza lądami'], [lands, 'Lądy']];
   for (const [cards, label] of groups) {
     if (!cards.length) continue;
     div(host, 'sub-label', label);

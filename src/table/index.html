@@ -175,6 +175,34 @@
   .plib b { color: var(--text); }
   .players .inspector-btn { align-self: center; }
 
+  /* --- M197/A3A+A3B: boks liczników stref i puli many ---------------- */
+  .table-meta {
+    display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap;
+  }
+  .meta-box {
+    flex: 1; min-width: 220px;
+    border: 1px solid var(--border); border-radius: 10px; padding: 6px 10px;
+    background: var(--panel, #fff);
+  }
+  .meta-label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .04em;
+    color: var(--muted); font-weight: 700; margin-bottom: 4px;
+  }
+  .zone-counter-row, .mana-pool-row {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    font-size: 12px; padding: 2px 0;
+  }
+  .zone-counter-name, .mana-pool-name {
+    font-weight: 700; min-width: 46px; color: #b91c1c;
+  }
+  .zone-counter-row.own .zone-counter-name,
+  .mana-pool-row.own .mana-pool-name { color: #15803d; }
+  .zone-counter { color: var(--muted); white-space: nowrap; }
+  .mana-pool-empty { color: var(--muted); font-style: italic; }
+  .mana-pool-chip { display: inline-flex; align-items: center; gap: 2px; }
+  .mana-pool-count { font-size: 11px; color: var(--muted); font-weight: 700; }
+  .zone-counters .inspector-btn { margin-top: 4px; }
+
   /* --- Stół -------------------------------------------------------- */
   .board {
     background: radial-gradient(120% 100% at 50% 0%, var(--felt) 0%, var(--felt-2) 60%, var(--felt-edge) 100%);
@@ -804,7 +832,8 @@
 <div id="turn-indicator" class="turn-indicator" aria-live="polite"></div>
 <div class="app">
   <div class="topbar">
-    <div class="brand">MTG · Wirtualny Stół <small>(M20)</small></div>
+    <!-- M197/A6 (zlecenie właściciela): nagłówek „MTG · Wirtualny Stół (M20)"
+         usunięty — zajmował miejsce, nic nie wnosząc. -->
     <div class="seed-deck">
       <label for="seed">Ziarno:</label>
       <input type="number" id="seed" value="42" inputmode="numeric">
@@ -820,18 +849,34 @@
   <div id="table-note" class="note"></div>
   <div id="banner"></div>
 
-  <div class="statusbar" id="status"></div>
+  <!-- M197/A2: tekstowy pasek statusu usunięty (dublował panel graczy);
+       kontener zostaje pusty dla zgodności ze starymi zapisami układu. -->
+  <div class="statusbar" id="status" hidden></div>
   <div class="players">
     <div class="player foe">
       <span class="pname">Bot</span>
       <span class="plife" id="life-enemy">20</span>
       <span class="plib">🎴 <b id="library-enemy">20</b></span>
     </div>
-    <button id="library-menu-btn" class="ghost-btn inspector-btn">🗂 Strefy (groby / exile / biblioteka)</button>
+    <!-- M197/A3C: „Ty" → „Gracz". -->
     <div class="player own">
-      <span class="pname">Ty</span>
+      <span class="pname">Gracz</span>
       <span class="plife" id="life-own">20</span>
       <span class="plib">🎴 <b id="library-own">20</b></span>
+    </div>
+  </div>
+
+  <!-- M197/A3A+A3B (zlecenie właściciela): osobny boks pod paskiem graczy —
+       LICZNIKI stref (bez wypisywania kart; konkretne karty pokazuje
+       inspektor po kliknięciu) oraz graficzna pula many obu graczy. -->
+  <div class="table-meta">
+    <div class="meta-box">
+      <div class="meta-label">Strefy</div>
+      <div id="zone-counters" class="zone-counters"></div>
+    </div>
+    <div class="meta-box">
+      <div class="meta-label">Pula many</div>
+      <div id="mana-pools" class="mana-pools"></div>
     </div>
   </div>
 
@@ -958,7 +1003,9 @@
         <div class="row turn-history-controls">
           <label class="turn-history-toggle" for="turn-history-select">Tura:</label>
           <select id="turn-history-select" class="turn-history-select"></select>
-          <button id="turn-history-copy" class="ghost-btn" type="button">Kopiuj do schowka</button>
+          <button id="turn-history-copy" class="ghost-btn" type="button">Kopiuj wybraną turę</button>
+          <!-- M197/A1: zapis CAŁEJ partii (wszystkie tury od początku). -->
+          <button id="turn-history-copy-all" class="ghost-btn" type="button">Kopiuj całą partię</button>
         </div>
         <pre class="turn-history-box" id="turn-history"></pre>
       </div>
@@ -1001,7 +1048,6 @@
   <div id="selftest" hidden></div>
   <div class="build-stamp">Wersja artefaktu: <!--BUILT--></div>
 
-  <div class="foot">M20 — Wirtualny Stół i kreator talii. Talie są wstrzykiwane z decks/ przy budowie, a kreator eksportuje ten sam tekst (ADR 0011/0012). Obrazy realnych kart pochodzą ze Scryfalla.</div>
 </div>
 
 <!-- Wysuwany panel akcji (warstwa): Twoje działania są zawsze pod ręką,
@@ -1036,10 +1082,6 @@
       <div class="zone-block">
         <div class="zone-label">Exile</div>
         <div class="zone-grid" id="exile-zone"></div>
-      </div>
-      <div class="zone-block">
-        <div class="zone-label">Biblioteka — podgląd topu (syntetyczny)</div>
-        <div id="library-preview" class="zone-empty">Brak</div>
       </div>
     </div>
   </div>
