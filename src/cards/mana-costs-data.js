@@ -62,6 +62,8 @@ export const MANA_COSTS = {
   "coralhelm-guide": "{1}{U}",
   "courage-in-crisis": "{2}{G}",
   "crested-herdcaller": "{3}{G}{G}",
+  "divest": "{B}",
+  "supernatural-stamina": "{B}",
   "curate": "{1}{U}",
   "curate-stx": "{1}{U}",
   "curse-of-the-pierced-heart": "{1}{R}",

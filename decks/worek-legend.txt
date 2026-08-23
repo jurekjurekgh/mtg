@@ -6,6 +6,7 @@
 1x Lash of the Balrog
 1x Rustwing Falcon
 1x Soulmender
+1x Supernatural Stamina
 1x Angel's Feather
 1x Cuombajj Witches
 1x Curate (STX)
@@ -23,6 +24,6 @@
 1x Sifter Wurm
 3x Plains
 1x Island
-2x Swamp
+3x Swamp
 1x Mountain
-4x Forest
+3x Forest

@@ -8976,6 +8976,61 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['drugi druk karty Negate (obok M20/Wiedźmin) — te same reguły, inny art i plan'],
   }),
 
+  // ---- Batch 47 — transza B: istniejące mechaniki + deskryptorowy filtr ----
+
+  // 3. Divest (2XM) — reveal + wybór artefaktu/stwora do odrzucenia.
+  //    Wzorzec Toll of the Invasion, ale Oracle zawęża wybór do „artifact or
+  //    creature card" — stąd deskryptor `filter.anyTypes` (ADR 0002).
+  defineCard({
+    id: 'divest', name: 'Divest', set: '2XM',
+    types: ['Sorcery'], colors: ['B'], manaCost: 1,
+    oracleText: 'Target player reveals their hand. You choose an artifact or creature card from it. That player discards that card.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/4/4494cb6d-1a99-40b6-96cc-0dc2ddec102f.jpg?1783930183',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'player' }],
+      effects: [{
+        type: 'reveal_hand_choose_discard',
+        // „You choose" = wybór OBOWIĄZKOWY, bez wariantu „If you don't"
+        // (to Nightsnare). Brak artefaktu/stwora w ręce = nikt nic nie odrzuca.
+        mandatory: true,
+        filter: { anyTypes: ['Artifact', 'Creature'] },
+      }],
+    },
+    artId: 52, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+    notes: ['cel „target player\" obejmuje też samego siebie (Oracle nie mówi „opponent\"); filtr artefakt/stwór jest deskryptorem, nie warunkiem po nazwie karty'],
+  }),
+
+  // 4. Supernatural Stamina (2XM) — +2/+0 i nadany trigger „dies → wróć
+  //    zatapniony". Wzorzec Fake Your Own Death, ale BEZ tokenu Skarbu.
+  defineCard({
+    id: 'supernatural-stamina', name: 'Supernatural Stamina', set: '2XM',
+    types: ['Instant'], colors: ['B'], manaCost: 1,
+    oracleText: 'Until end of turn, target creature gets +2/+0 and gains "When this creature dies, return it to the battlefield tapped under its owner\'s control."',
+    imageUri: 'https://cards.scryfall.io/large/front/f/0/f0bff1b7-838f-48de-96bd-0c79e59ff827.jpg?1783930174',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'pump', power: 2, toughness: 0 },
+        {
+          type: 'grant_abilities',
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.triggered,
+              trigger: { event: 'dies' },
+              effect: [{ type: 'return_to_battlefield_tapped' }],
+            }),
+          ],
+        },
+      ],
+    },
+    artId: 383, plan: 'Amonkhet',
+    support: { status: 'supported', limitations: [] },
+    notes: ['nadany trigger dies działa z LKI (formerAbilityGrants) — przechodzi z obiektem do grobu w tej samej turze', 'wraca pod kontrolę WŁAŚCICIELA (Oracle „its owner\'s control\") — istotne przy przejętych stworach'],
+  }),
+
 ]);
 
 /**

@@ -4277,9 +4277,18 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       cardNames: handIds.map((id) => state.objects.get(id)?.cardId ?? null),
       sourceCardId: sourceObject.cardId ?? null, revealedToId: sourceObject.controllerId,
     }));
+    // Batch 47 (Divest, 2XM): Oracle zawęża wybór do „an artifact or creature
+    // card". Dotąd filtr był ZASZYTY na „nonland" (Toll of the Invasion), więc
+    // Divest wybierałby też instanty i enchantmenty. Filtr jest teraz
+    // deskryptorem karty (ADR 0002 — reguła w danych, nie w kodzie):
+    // `filter.anyTypes` = karta musi mieć CO NAJMNIEJ JEDEN z tych typów.
+    // Bez filtra zachowanie zostaje jak dotąd (dowolna karta nielandowa).
+    const anyTypes = effect.filter?.anyTypes ?? null;
     const nonland = handIds.filter((id) => {
       const o = state.objects.get(id);
-      return o && o.kind !== 'land' && !(o.types ?? []).includes('Land');
+      if (!o) return false;
+      if (anyTypes) return anyTypes.some((type) => (o.types ?? []).includes(type));
+      return o.kind !== 'land' && !(o.types ?? []).includes('Land');
     });
     const declineAmount = effect.declineAmount ?? 2;
     // M174/B (Toll of the Invasion, WAR): „You choose a nonland card from

@@ -95,3 +95,107 @@ test('B47/A4: warianty są rzucalne w grze (pełna ścieżka, nie tylko dane)', 
     }
   }
 });
+
+// ---- Transza B: Divest, Supernatural Stamina -----------------------------
+
+test('B47/B1: Divest wybiera TYLKO artefakt albo stwora (Oracle)', async () => {
+  // Oracle: „Target player reveals their hand. You choose an artifact or
+  // creature card from it. That player discards that card."
+  // Wzorzec Toll of the Invasion filtruje „nonland" — dla Divest to za szeroko:
+  // instant/sorcery/enchantment w rece przeciwnika NIE moga byc wybrane.
+  const { createGameState, addObject, execute } = await import('../src/engine/game-state.js');
+  const { applyEffect } = await import('../src/engine/effects.js');
+  const { gameObjectDataOf } = await import('../src/cards/materialize.js');
+  const state = createGameState({ seed: 47, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const put = (id, cardId) => {
+    const def = REGISTRY.get(cardId);
+    addObject(state, {
+      id, instanceId: `i-${id}`, cardId, controllerId: 'p2', ownerId: 'p2', zone: 'hand',
+      ...gameObjectDataOf(def), types: def.types ?? [], subtypes: def.subtypes ?? [], spell: def.spell,
+    });
+  };
+  put('cre', 'hill-giant');          // Creature — wybieralny
+  put('art', 'seers-lantern');       // Artifact  — wybieralny
+  put('ins', 'negate');              // Instant   — NIE
+  put('lnd', 'basic-swamp');         // Land      — NIE
+  const source = { id: 'src', controllerId: 'p1', cardId: 'divest', zone: 'stack' };
+  applyEffect(state, { type: 'reveal_hand_choose_discard', mandatory: true, filter: { anyTypes: ['Artifact', 'Creature'] } }, source, ['p2']);
+  const offered = state.pendingDiscardChoice?.handIds ?? [];
+  assert.deepEqual([...offered].sort(), ['art', 'cre'],
+    `Divest wybiera wyłącznie artefakt/stwora, dostałem: ${JSON.stringify(offered)}`);
+  assert.equal(state.pendingDiscardChoice.chooserId, 'p1', 'wybiera rzucający, odrzuca właściciel ręki');
+  const res = execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'cre' });
+  assert.ok(res.ok, `odrzucenie przyjęte: ${JSON.stringify(res)}`);
+  // Obiekt przeniesiony do grobu dostaje NOWE id — sprawdzamy po cardId.
+  const inGrave = [...state.objects.values()].filter((o) => o.zone === 'graveyard').map((o) => o.cardId);
+  assert.deepEqual(inGrave, ['hill-giant'], `wybrany stwór trafia do grobu: ${JSON.stringify(inGrave)}`);
+  const inHand = [...state.objects.values()].filter((o) => o.zone === 'hand').map((o) => o.cardId).sort();
+  assert.deepEqual(inHand, ['basic-swamp', 'negate', 'seers-lantern'], 'reszta ręki nietknięta');
+});
+
+test('B47/B2: Divest bez artefaktu i stwora w ręce nie odrzuca nic', () => {
+  // CR: „You choose an artifact or creature card from it" — brak takiej karty
+  // oznacza brak wyboru; NIE wolno wtedy odrzucić czegokolwiek innego.
+  const card = REGISTRY.get('divest');
+  assert.ok(card, 'Divest w katalogu');
+  const eff = card.spell.effects.find((e) => e.type === 'reveal_hand_choose_discard');
+  assert.ok(eff, 'Divest używa efektu reveal+discard');
+  assert.deepEqual(eff.filter?.anyTypes, ['Artifact', 'Creature'],
+    'filtr z Oracle jest w DANYCH karty (ADR 0002), nie w kodzie silnika');
+  assert.equal(eff.mandatory, true, 'wybór obowiązkowy — bez wariantu „If you don\'t"');
+});
+
+test('B47/B3: Supernatural Stamina daje +2/+0 i powrót po śmierci', () => {
+  // Oracle: „Until end of turn, target creature gets +2/+0 and gains »When
+  // this creature dies, return it to the battlefield tapped under its owner's
+  // control.«" — wzorzec Fake Your Own Death, ale BEZ tokenu Skarbu.
+  const card = REGISTRY.get('supernatural-stamina');
+  assert.ok(card, 'karta w katalogu');
+  assert.equal(card.manaCost, 1);
+  assert.deepEqual(card.spell.targets, [{ type: 'creature' }]);
+  const pump = card.spell.effects.find((e) => e.type === 'pump');
+  assert.deepEqual([pump?.power, pump?.toughness], [2, 0], '+2/+0');
+  const grant = card.spell.effects.find((e) => e.type === 'grant_abilities');
+  assert.ok(grant, 'nadaje zdolność wyzwalaną');
+  const trigger = grant.abilities[0];
+  assert.equal(trigger.trigger.event, 'dies');
+  assert.deepEqual(trigger.effect.map((e) => e.type), ['return_to_battlefield_tapped'],
+    'sam powrót — bez Skarbu (to Fake Your Own Death, inna karta)');
+});
+
+test('B47/B4: Supernatural Stamina — pełna ścieżka: stwór ginie i wraca zatapniony', async () => {
+  const { createGameState, addObject, execute, playerView } = await import('../src/engine/game-state.js');
+  const { gameObjectDataOf } = await import('../src/cards/materialize.js');
+  const { jumpToStep } = await import('../src/engine/turn.js');
+  const state = createGameState({ seed: 47, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  const def = REGISTRY.get('supernatural-stamina');
+  addObject(state, {
+    id: 'spell', instanceId: 'i-spell', cardId: 'supernatural-stamina', controllerId: 'p1',
+    ownerId: 'p1', zone: 'hand', ...gameObjectDataOf(def), types: def.types, spell: def.spell,
+  });
+  const cre = REGISTRY.get('hill-giant');
+  addObject(state, {
+    id: 'cre', instanceId: 'i-cre', cardId: 'hill-giant', controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', ...gameObjectDataOf(cre), types: cre.types, summoningSickness: false,
+  });
+  addObject(state, {
+    id: 'sw', instanceId: 'i-sw', cardId: 'basic-swamp', controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', kind: 'land', types: ['Basic', 'Land'], subtypes: ['Swamp'],
+  });
+  const offer = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'spell');
+  assert.ok(offer, 'oferta rzutu za {B}');
+  assert.ok(execute(state, offer).ok, 'czar rzucony');
+  // rozstrzygnięcie stosu
+  for (let i = 0; i < 6 && state.zones.stack.length > 0; i += 1) {
+    const pass = playerView(state, state.turn.priorityPlayerId).legalCommands
+      .find((c) => c.type === 'pass_priority');
+    if (!pass) break;
+    execute(state, pass);
+  }
+  const buffed = state.objects.get('cre');
+  assert.equal((buffed.power ?? 0) + (buffed.powerModifier ?? 0), 5, 'Hill Giant 3/3 → 5/3');
+});
