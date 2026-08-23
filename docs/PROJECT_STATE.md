@@ -1,7 +1,33 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-23 (M195: uwagi właściciela A/B/C/C1/D — wizard many przy decyzjach, trick bojowy bota, ekran wyboru celów zamiast setek kombinacji)
-- **Poprzednia:** 2026-08-23 (M194: Batch 47 — 8 kart; outlast, warianty druku, Pyxis, naprawa martwego impulse-exile)
+- **Ostatnia aktualizacja:** 2026-08-23 (M196: Batch 48 — 14 kart w nowym formacie; formidable, equip warunkowy, trigger bloku, flash dla podtypu)
+- **Poprzednia:** 2026-08-23 (M195: uwagi właściciela A/B/C/C1/D — wizard many przy decyzjach, trick bojowy bota, ekran wyboru celów)
+
+
+## M196 — Batch 48: 14 kart właściciela (2026-08-23, PR #70)
+
+Plan: `docs/plans/PLAN_2026-08-23-m196-batch48.md`. **Pierwszy batch w nowym
+formacie**: właściciel podaje `artId | nazwa | set | plan` wprost w zleceniu,
+więc nie zgaduje się ich ze słownika kolekcji (dopisane 14 pozycji do
+`tools/collection-art-ids.csv`). Nowy plan w katalogu: **Kamigawa**.
+
+**Nowe mechaniki:** trigger na deklaracji bloków działający w OBIE strony
+(Wooden Stake — zdarzenie `blockers_declared` nie było dotąd w ogóle
+skanowane); equip z warunkiem podtypu („Equip Knight {1}" obok „Equip {3}");
+globalny zakaz bloku z wyjątkiem typu (Ruthless Invasion); aura bez klauzuli
+„you control" (Clawing Torment celuje w permanenty przeciwnika); **formidable**
+(CR 702.103) z warunkiem łącznej mocy i masowym grantem keywordów; zdarzenie
+`combat_damage_to_you` z trwałą zmianą kontroli oraz poświęceniem po progu
+liczników (Contested Game Ball); flash nadany PODTYPOWI na jedną turę
+(Cherished Hatchling — pozwolenie żyje w stanie tury, nie na karcie).
+
+**Naprawy u źródła:** `tryFire` ignoruje przekazywane cele, więc trigger
+Wooden Stake rozstrzygał się bez efektu; pułapka L21 trzykrotnie (`equipFor`
+i `ownControlOnly` ginęły w warstwach przepisujących deskryptory); widok nie
+pokazywał zakazu bloku pochodzącego z załącznika, choć walka go respektowała.
+
+**Stan:** `npm test` **2957/2957**, build **53 moduły / 2535.9 kB**,
+katalog **459 kart**.
 
 
 ## M195 — uwagi właściciela z testów: A, B, C/C1, D (2026-08-23, PR #70)
