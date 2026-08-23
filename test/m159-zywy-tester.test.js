@@ -151,7 +151,10 @@ test('Z5b (strażnik łańcucha pól): żaden deskryptor mechaniki nie ginie w m
   const MECHANIC_FIELDS = ['madness', 'saga', 'warp', 'suspend', 'plot', 'kicker',
     'adventure', 'buyback', 'bestow', 'devour', 'endure', 'exploit', 'backup',
     'bloodthirst', 'additionalCost', 'costReduction', 'treasureAltCost',
-    'equipment', 'aura', 'station', 'morph', 'entersWithCounters', 'rebound'];
+    'equipment', 'aura', 'station', 'morph', 'entersWithCounters', 'rebound',
+    // M200/N2: gałąź spell gubiła pole — karta-czar z pitem phyrexian
+    // (Ruthless Invasion) nie miała wariantów płatności życiem.
+    'phyrexianManaCost'];
   for (const def of REGISTRY.all()) {
     const data = gameObjectDataOf(def);
     for (const field of MECHANIC_FIELDS) {

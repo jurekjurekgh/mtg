@@ -591,6 +591,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       }
       case 'command_rejected': return `Odrzucono: ${e.reason ?? 'nielegalna komenda'}`;
       case 'cant_block_granted': return `${nameOfObject(e.objectId)} nie może blokować do końca tury`;
+      // M200/L: ograniczenie TUREWCZE (Ruthless Invasion) — jedno zdarzenie
+      // zamiast N per-stworowych; opis nazywa wyjątek typu.
+      case 'turn_cant_block': {
+        const except = (e.exceptTypes ?? []).map((t) => t.charAt(0).toLowerCase() + t.slice(1));
+        return except.length
+          ? `Stwory, które nie są: ${except.join(' lub ')}, nie mogą blokować do końca tury`
+          : 'Wszystkie stwory nie mogą blokować do końca tury';
+      }
       case 'spell_countered': return `${nameOf(e.cardId)} zostaje skontrowany${e.counteredByCardId ? ` (${nameOf(e.counteredByCardId)})` : (e.counteredBy ? ` (${nameOfObject(e.counteredBy)})` : '')}`;
       case 'sacrifice_choice_required': return `${whoN(e.playerId)} wskazuje stwora do poświęcenia`;
       case 'food_choice_required': return `${whoN(e.playerId)} rozstrzyga: poświęcić Food na +3 życia?`;
@@ -667,7 +675,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         // nazwy trybu był w logu bezużyteczny: gracz nie wiedział, czy dostanie
         // 3 obrażenia, czy straci artefakty.
         const mode = e.modeName ? ` — tryb: ${e.modeName}` : '';
-        return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${mode}${plotted}${cleaved}${adventure}${targets ? ` → cel: ${targets}` : ''}`;
+        // Phyrexian mana (CR 118.9) — jak gałąź permanent_cast.
+        const paidWithLife = e.phyrexianPaidWithLife ?? 0;
+        const phyrexian = e.phyrexianSymbols
+          ? ` — phyrexian: ${paidWithLife > 0 ? `${paidWithLife}× po 2 życia` : 'za manę'}`
+          : '';
+        return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${mode}${plotted}${cleaved}${adventure}${phyrexian}${targets ? ` → cel: ${targets}` : ''}`;
       }
       case 'spell_resolved': {
         // M102/U6 (CR 708.2): zakryty permanent PRZECIWNIKA zostaje bezimienny
@@ -2317,6 +2330,11 @@ export function createSession(config) {
     get state() { return state; },
     nameOf,
     nameOfObject,
+    // M200/B (uwaga właściciela): nazwy kart w logu są klikalne (M167/E2) —
+    // render.js czyta tę mapę, żeby owinać nazwy w <span class="log-card">.
+    // Karta NIGDY nie działała, bo mapa istniała tylko w closure sesji
+    // (klasa L5: test testował funkcję z rękodziełem, nie wiring).
+    cardIdByName,
     /** Kolory karty (do akcentów w UI); nieznane id → pusta lista. */
     colorsOf(cardId) {
       return colorsById.get(cardId) ?? [];

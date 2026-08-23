@@ -1,7 +1,7 @@
 import { choiceResponse } from '../protocol/types.js';
 import { OPTION_IGNORABLE_TYPES } from './render.js';
 import { commandOptionKey, FACE_DOWN_LABEL } from './session.js';
-import { commandForSelection } from './multi-target.js';
+import { commandForSelection, commandForMulliganSelection } from './multi-target.js';
 
 function clearChoiceElement(element) {
   if (element) element.textContent = '';
@@ -623,14 +623,17 @@ export function renderDamageDivisionWizard(host, { view, session, candidateIds, 
  * legalność rozstrzyga silnik — UI nie wymyśla ruchów (L48). Przycisk
  * „Zatwierdź" jest wyłączony, dopóki wybór nie odpowiada żadnej komendzie.
  */
-export function renderMultiTargetWizard(host, { view, session, plan, commands, sourceName = null, onComplete, onCancel, onOpenCard = null }) {
+export function renderMultiTargetWizard(host, { view, session, plan, commands, sourceName = null, intro = null, onComplete, onCancel, onOpenCard = null }) {
   clearChoiceElement(host);
   const xLabel = plan.hasX ? ` oraz wartość X (${plan.xMin}–${plan.xMax})` : '';
   const range = plan.minTargets === plan.maxTargets
     ? `${plan.maxTargets}`
     : `${plan.minTargets}–${plan.maxTargets}`;
+  // M200/C: mulligan (odłożenie N kart na spód) używa tegoż ekranu — wiersz
+  // na KARTĘ (nie kombinację), zatwierdzenie = komenda z legalCommands.
+  const itemWord = plan.itemLabel ?? 'cele';
   choiceNode(host, 'div', 'choice-request-intro',
-    `${sourceName ? `${sourceName} — ` : ''}zaznacz cele (${range})${xLabel}:\n`);
+    intro ?? `${sourceName ? `${sourceName} — ` : ''}zaznacz ${itemWord} (${range})${xLabel}:\n`);
 
   const chosen = new Set();
   let xValue = plan.hasX ? plan.xMin : null;
@@ -640,9 +643,9 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   let statusEl = null;
   let xCounter = null;
 
-  const currentCommand = () => commandForSelection(commands, {
-    targets: [...chosen], xValue: plan.hasX ? xValue : null,
-  });
+  const currentCommand = () => (plan.cardIdsMode
+    ? commandForMulliganSelection(commands, [...chosen])
+    : commandForSelection(commands, { targets: [...chosen], xValue: plan.hasX ? xValue : null }));
 
   const refresh = () => {
     for (const [id, node] of toggles) {
@@ -652,8 +655,8 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     const cmd = currentCommand();
     if (statusEl) {
       statusEl.textContent = cmd
-        ? `Wybrano cele: ${chosen.size}${plan.hasX ? ` · X = ${xValue}` : ''}`
-        : `Wybór niedozwolony (cele: ${chosen.size}${plan.hasX ? `, X = ${xValue}` : ''})`;
+        ? `Wybrano ${itemWord}: ${chosen.size}${plan.hasX ? ` · X = ${xValue}` : ''}`
+        : `Wybór niedozwolony (${itemWord}: ${chosen.size}${plan.hasX ? `, X = ${xValue}` : ''})`;
     }
     if (confirm) {
       confirm.disabled = !cmd;

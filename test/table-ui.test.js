@@ -109,6 +109,9 @@ function installMiniDom() {
       return registry.get(id);
     },
     createElement: (tag) => new MiniEl(tag),
+    // M200/B: linki nazw kart w logu (appendLogLineWithCardLinks) tworzą
+    // tekstowe węzły — mock Mini-DOM musiał je obsługiwać.
+    createTextNode: (text) => ({ isText: true, text: String(text), get textContent() { return this.text; } }),
     addEventListener(type, fn) { (documentListeners[type] ??= []).push(fn); },
   };
   globalThis.window = { confirm: () => false };

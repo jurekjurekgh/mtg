@@ -134,6 +134,11 @@ export function gameObjectDataOf(card) {
     // strażnik katalogu w test/m161-madness-spell-path.test.js sygnalizuje
     // pierwszą.
     if (card.madness) data.madness = card.madness;
+    // Phyrexian mana (CR 118.9): gałąź spell kopiuje pola ręcznie (klasa
+    // Z5/L21) — Batch 48 (Ruthless Invasion) to pierwszy CZAR z pitem {R/P};
+    // bez tego pola warianty płatności życiem i pełny koszt pipu były
+    // martwe na każdej karcie-czarze (strażnik Z5b pilnuje listy).
+    if (card.phyrexianManaCost) data.phyrexianManaCost = card.phyrexianManaCost;
     return data;
   }
   return { kind: 'card', manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors(), cardName: card.name };

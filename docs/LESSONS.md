@@ -24,6 +24,40 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 
 ---
 
+
+## L57 (2026-08-23) — Zgłoszenie właściciela weryfikujesz wobec Oracle/CR PRZED wdrożeniem; rozbieżność zgłaszasz, nie wdrażasz
+
+**Objaw (M200/A):** właściciel zgłosił: „bot wszedł do Forge i wzmacnia MÓJ stwór —
+to bez sensu, powinien fizzle, gdy nie ma [własnej] kreatury”. Wdrożyłem to
+ślepko (kandydaci pokoju = tylko własne stwory, 3 testy, commit, push).
+Właściciel po przeanalizowaniu Oracle wycofał zgłoszenie: zdolność pokoju
+MUSI się rozstrzygnąć, gdy istnieje legalny cel — stwór przeciwnika jest
+legalnym celem. Fix został wycofany (revert + testy zamieniające).
+
+**Przyczyna:** zgłoszenie z rozgrywki opisuje SYMPTOM z perspektywy gracza
+(„bez sensu”), a nie regułę. Symptom był prawdziwy (bot buffował mojego stwora),
+ale wniosek naprawczy sprzeczny z Oracle (celowanie w dowolnego stwora jest
+legalne i obowiązkowe przy istnieniu celu). Zgoda właściciela na zgłoszenie
+≠ weryfikacja regułowa — ADR 0022/0002 i „engine jest autorytetem reguł”
+obligują do sprawdzenia w źródle, zanim zmieni się zachowanie.
+
+**Reguły:**
+1. Zanim wdrożysz zmianę sugerowaną przez zgłoszenie, przeczytaj Oracle text
+   kart i/lub CR (pliki `docs/cards/scryfall-*.json` w repo) i napisz JAWNIE
+   (w opisie commita / w czacie), jak reguła rozstrzyga zgłoszenie — także
+   wtedy, gdy zgłoszenie się potwierdza.
+2. Gdy sugerowana naprawa KONTRA DYCTUJE regułę (zaczyna zmieniać legalność
+   celów/kosztów/efektów niezgodnie z Oracle): NIE wdrażaj — zgłoś właścicielowi
+   rozbieżność z powołaniem na regułę i poczekaj na decyzję. Symptom można
+   poprawić legalnymi środkami (np. etykieta, kolejność ofert), ale legalność
+   się nie negocjuje.
+3. Wycofanie fixa = nowy commit (nie force push) + testy pinujące ostateczny
+   stan (także negatywny — „stwór przeciwnika JEST legalnym celem”) i wpis
+   lekcji. Historia git zostawia ślad błędu procesu — to dobrze.
+
+**Sformalizowane w:** AGENTS.md § Nienegocjowalne granice (weryfikacja zgłoszeń
+wobec Oracle/CR przed wdrożeniem).
+
 ## L55 (2026-08-22) — Jedno pole na „cechę trwałą" i „efekt do końca tury" to bomba zegarowa; badge liczony z pola technicznego kłamie
 
 **Objaw (trzy niezależne trafienia w jednej sesji):**
@@ -1321,4 +1355,3 @@ w literalu to zawsze mina; wart osobnego strażnika.
 **Sformalizowane w:** M197 (`test/m197-plany-kolekcji.test.js` — strażnik
 dokumentacji, higieny słownika, spójności plan katalog↔druk, OBECNOŚCI artId
 oraz braku zdublowanych pól w definicjach).
-

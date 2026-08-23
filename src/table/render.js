@@ -292,6 +292,10 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'cast_spell' && (command.targets?.length || command.sacrificeTargetId || command.modeIndex != null)) {
     return `spell:${command.objectId}:${command.modeIndex ?? 'x'}`;
   }
+  // Phyrexian mana (CR 118.9): warianty płatności pita {R/P} czaru (jak perm-x).
+  if (command.type === 'cast_spell' && command.phyrexianPayWithLife != null) {
+    return `spell-x:${command.objectId}`;
+  }
   if (command.type === 'cast_cleave' && command.targets?.length) return `cleave:${command.objectId}`;
   if (command.type === 'cast_permanent' && command.targets?.length) {
     return `permanent:${command.objectId}:${Boolean(command.bestow)}`;
@@ -1355,7 +1359,7 @@ export function rulesText(info) {
   const plotLine = info.plot ? `Plot {${info.plot.cost ?? '?'}}: wygnaj z ręki, później rzuć bez kosztu` : '';
   const equip = info.equipment;
   const equipLine = equip
-    ? `Equip {${equip.equip ?? '?'}}${(equip.keywords ?? []).length ? ` — nosiciel: ${(equip.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : ''}${equip.pump ? ` ${signed(equip.pump.power ?? 0)}/${signed(equip.pump.toughness ?? 0)}` : ''}${equip.cantBeBlockedMaxPower != null ? ` — nosiciel o mocy ≤${equip.cantBeBlockedMaxPower} nie może być blokowany` : ''}`
+    ? `Equip ${equip.equipFor ? `${equip.equipFor.subtype} {${equip.equipFor.equip}} · ` : ''}{${equip.equip ?? '?'}}${(equip.keywords ?? []).length ? ` — nosiciel: ${(equip.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : ''}${equip.pump ? ` ${signed(equip.pump.power ?? 0)}/${signed(equip.pump.toughness ?? 0)}` : ''}${equip.cantBeBlockedMaxPower != null ? ` — nosiciel o mocy ≤${equip.cantBeBlockedMaxPower} nie może być blokowany` : ''}`
     : '';
   const morphLine = info.morph && info.morph.megamorphCost != null
     ? `Megamorph {${info.morph.megamorphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt Megamorph (+1/+1)`
@@ -1471,6 +1475,11 @@ const CHOICE_GROUP_TYPE_DESCRIPTORS = Object.freeze({
 
 /** Deskryptory grup wyboru po typie pierwszej komendy (typ żądania generyczny). */
 const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
+  // A2 (uwaga właściciela 2026-08-23): rozgałęzienie lochu pokazywało
+  // generyczne „Wybierz: Wariant (2 opcje)” — gracz nie wiedział, czego
+  // dotyczy wybór. Nazwij czynność (jako reszta wpisów mapy).
+  resolve_undercity_route: 'Ścieżka w Undercity',
+  resolve_room_target: 'Cel efektu pokoju',
   resolve_mulligan_choice: 'Mulligan',
   resolve_mulligan_bottom_choice: 'Karty na spód biblioteki (mulligan)',
   resolve_search_choice: 'Szukanie w bibliotece',
@@ -1905,7 +1914,17 @@ export function commandLabel(cmd, session, view) {
       const selfFizzle = cmd.sacrificeTargetId != null
         && (cmd.targets ?? []).includes(cmd.sacrificeTargetId)
         ? ' — UWAGA: czar fizzluje (cel poświęcony jako koszt)' : '';
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)}${xPart})${targets ? ` → cel: ${targets}` : ''}${sac}${alt}${selfFizzle}`;
+      // Phyrexian mana (CR 118.9): wariant płatności pita {R/P} (jak cast_permanent).
+      let phy = '';
+      if (cmd.phyrexianPayWithLife != null) {
+        const symbols = cardForMode?.phyrexianManaCost ?? 0;
+        const byMana = symbols - cmd.phyrexianPayWithLife;
+        const parts = [];
+        if (byMana > 0) parts.push(`${byMana}× maną`);
+        if (cmd.phyrexianPayWithLife > 0) parts.push(`${cmd.phyrexianPayWithLife}× po 2 życia`);
+        phy = ` · phyrexian ${parts.join(' + ')}`;
+      }
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)}${xPart}${phy})${targets ? ` → cel: ${targets}` : ''}${sac}${alt}${selfFizzle}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
@@ -1968,8 +1987,19 @@ export function commandLabel(cmd, session, view) {
         return `Channel: ${nameOfObjectId(cmd.objectId)} (koszt ${abilityCostHtml(ability)}) → szukaj podstawowego lądu`;
       }
       if (ability?.keyword === 'equip') {
-        const target = nameOfObjectId(cmd.targets?.[0]);
-        return `Wyposaż: ${nameOfObjectId(cmd.objectId)} → ${target} (koszt ${abilityCostHtml(ability)})`;
+        // Batch 48 (Steelclaw Lance, ELD): „Equip Knight {1}" obok „Equip {3}" —
+        // koszt zależy od PODTYPU celu (CR 702.6e). Etykieta musi pokazywać
+        // koszt dla KONKRETNEGO celu — ta sama reguła co oferta i walidacja
+        // engine (L41: pokazywany koszt = płacony koszt).
+        const targetId = cmd.targets?.[0];
+        const target = nameOfObjectId(targetId);
+        const targetEntry = targetId ? view.zones.battlefield.find((o) => o.id === targetId) : null;
+        const equipForActive = Boolean(object?.equipment?.equipFor
+          && (targetEntry?.subtypes ?? []).includes(object.equipment.equipFor.subtype));
+        const shownAbility = equipForActive
+          ? { ...ability, cost: { ...ability.cost, mana: object.equipment.equipFor.equip, colors: [] } }
+          : ability;
+        return `Wyposaż: ${nameOfObjectId(cmd.objectId)} → ${target} (koszt ${abilityCostHtml(shownAbility)})`;
       }
       if (object?.faceDown) {
         // Flip-zdolność buduje engine z deskryptora morph (nie ma jej w
@@ -2210,7 +2240,12 @@ export function commandLabel(cmd, session, view) {
       return `Prawo legend: zostaw ${nameOfObjectId(cmd.keepId)}, pozostałe kopie do grobu`;
     }
     case 'resolve_mulligan_choice': {
-      if (cmd.keep) return 'Mulligan: Zatrzymaj tę rękę (keep — 7 kart)';
+      // M200/C2 (uwaga właściciela): liczba kart z ŻYWEJ ręki widoku — po
+      // mulliganie i odłożeniu na spód ręka ma np. 5 kart, a etykieta pisała
+      // wciąż „keep — 7 kart”.
+      const handSize = (view?.zones?.hand ?? []).filter((o) => o?.controllerId === cmd.playerId).length;
+      const keepPlural = polishPluralCount(handSize, 'kartę', 'karty', 'kart');
+      if (cmd.keep) return `Mulligan: Zatrzymaj tę rękę (keep — ${handSize} ${keepPlural})`;
       // Mulligan londyński (CR 103.4): dobierz 7, potem odłóż N na spód —
       // finalna ręka to 7−N (wcześniej „nowa ręka 7 kart" wprowadzała w błąd).
       const already = session.state?.mulliganCounts?.[cmd.playerId] ?? 0;
@@ -3410,9 +3445,14 @@ export function renderDayNight(els, session, view, { onClick = null, hover = nul
   }
   const info = div(els.daynight, 'daynight-info');
   div(info, 'daynight-status', designation === 'night' ? 'Noc' : 'Dzień');
+  // M200/G (uwaga właściciela): opis zgodny z IMPLEMENTACJĄ (M68,
+  // applyDayNightAtStarnStart… patrz triggers.js): zmiana dzień/noc dzieje
+  // się na początku tury wg liczby czarów gracza, KTÓRY WŁAŚNIE ZAKOŃCZYŁ
+  // swoją turę — dzień + 0 czarów → noc; noc + ≥2 czary → dzień.
+  // Stary tekst twierdził, że „rzut czaru robi noc” (wręcz odwrotnie).
   div(info, 'daynight-note', designation === 'night'
-    ? 'Wilkołaki daybound są na nightbound stronach. Rzut czaru w turze gracza po wejściu daybounda robi noc; brak czarów aktywnego w poprzedniej turze robi dzień w jego upkeep.'
-    : 'Wilkołaki daybound są na daybound stronach. Rzut czaru w turze gracza po wejściu daybounda robi noc.');
+    ? 'Wilkołaki daybound są na nightbound stronach. Jeśli gracz, który zakończył swoją turę, rzucił 2 lub więcej czarów, wstaje dzień (na początku następnej tury).'
+    : 'Wilkołaki daybound są na daybound stronach. Jeśli gracz, który zakończył swoją turę, nie rzucił żadnego czaru, zapada noc (na początku następnej tury).');
 }
 
 export function renderUndercity(els, session, view, { onClick = null, hover = null } = {}) {

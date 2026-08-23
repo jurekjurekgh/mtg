@@ -1159,6 +1159,33 @@ function accepted(state, cmd, result) {
 }
 
 /** Wykonuje komendę po walidacji i zwraca zdarzenia; tylko ta funkcja mutuje stan. */
+
+/**
+ * M200/E (uwaga właściciela, Rupture Spire): kreator many decyzji płatniczych
+ * (M195/A: resolve_pay_or_sacrifice / resolve_optional_pay_choice /
+ * resolve_counter_pay_choice) tapuje wybrane ŹRÓDŁA komendami
+ * tap_for_mana / activate_ability, a dopiero potem odpala komendę płatności.
+ * Bramka oczekującej decyzji odrzucała WSZYSTKO poza komendą płatności
+ * („pay_or_sacrifice_unresolved”) — kreator nie mógł niczego tapnąć, gracz
+ * widział czerwone „Ruch odrzucony” przy każdym kliknięciu i musiał
+ * poświęcić kartę. CR: mana z nietapniętych źródeł jest dostępna dla
+ * płatności, więc dopóki decyzja płatnicza oczekuje, komendy DODAJĄCE manę
+ * do puli decydującego gracza (własne lądy, własne zdolności many) przechodzą
+ * do normalnego rozstrzygnięcia (engine waliduje je jak zwykle); komenda
+ * płatności płaci potem z puli. Rodzina trzech bramek — jeden predykat (L28).
+ */
+function manaGeneratingCommandFor(state, cmd, playerId) {
+  if (!cmd || cmd.playerId !== playerId) return false;
+  if (cmd.type === 'tap_for_mana') return true;
+  if (cmd.type === 'activate_ability' && Number.isInteger(cmd.abilityIndex)) {
+    const obj = state.objects.get(cmd.objectId);
+    const ability = obj?.abilities?.[cmd.abilityIndex];
+    const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
+    return effects.some((e) => e?.type === 'add_mana');
+  }
+  return false;
+}
+
 export function execute(state, input) {
   let cmd;
   try { cmd = command(input.type, input.playerId, input); } catch { return reject('invalid_command'); }
@@ -2555,7 +2582,10 @@ export function execute(state, input) {
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
   }
   // Oczekująca decyzja „zapłać albo poświęć" (Rupture Spire, Temat 7).
-  if (state.pendingPayOrSacrifice) {
+  if (state.pendingPayOrSacrifice && !manaGeneratingCommandFor(state, cmd, state.pendingPayOrSacrifice.playerId)) {
+    // M200/E: komendy produkujące manę (tap lądu / zdolność many) przechodzą
+    // do normalnego rozstrzygnięcia — kreator many tapuje źródła PRZED
+    // komendą płatności (patrz manaGeneratingCommandFor).
     if (cmd.type !== 'resolve_pay_or_sacrifice') return reject('pay_or_sacrifice_unresolved');
     if (cmd.playerId !== state.pendingPayOrSacrifice.playerId) return reject('pay_or_sacrifice_not_your_decision');
     const pending = state.pendingPayOrSacrifice;
@@ -2591,7 +2621,8 @@ export function execute(state, input) {
   // („That player discards a card" — niezależnie od wyniku), a czar-źródło
   // dokańcza rozstrzyganie (finishPendingSpell przez discard purpose 'effect'
   // albo wprost przy pustej ręce).
-  if (state.pendingCounterPay) {
+  if (state.pendingCounterPay && !manaGeneratingCommandFor(state, cmd, state.pendingCounterPay.playerId)) {
+    // M200/E: jak przy pay_or_sacrifice — kreator many tapuje źródła wcześniej.
     if (cmd.type !== 'resolve_counter_pay_choice') return reject('counter_pay_unresolved');
     if (cmd.playerId !== state.pendingCounterPay.playerId) return reject('counter_pay_not_your_decision');
     const pending = state.pendingCounterPay;
@@ -2645,7 +2676,8 @@ export function execute(state, input) {
     }
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
-  if (state.pendingOptionalPay) {
+  if (state.pendingOptionalPay && !manaGeneratingCommandFor(state, cmd, state.pendingOptionalPay.playerId)) {
+    // M200/E: jak przy pay_or_sacrifice — kreator many tapuje źródła wcześniej.
     if (cmd.type !== 'resolve_optional_pay_choice') return reject('optional_pay_unresolved');
     if (cmd.playerId !== state.pendingOptionalPay.playerId) return reject('optional_pay_not_your_decision');
     const pending = state.pendingOptionalPay;
@@ -4222,7 +4254,7 @@ export function execute(state, input) {
       // accepted() skanuje result.events pod kątem triggerów dies/leaves.
       // Wcześniej tylko [e] — poświęcony kosztem stwór nie odpalał dies.
       const before = state.events.length;
-      const e = castSpell(state, cmd.playerId, cmd.objectId, cmd.targets, cmd.sacrificeTargetId, cmd.modeIndex, cmd.stunTargetId, cmd.buyback, cmd.payAltCost, cmd.xValue);
+      const e = castSpell(state, cmd.playerId, cmd.objectId, cmd.targets, cmd.sacrificeTargetId, cmd.modeIndex, cmd.stunTargetId, cmd.buyback, cmd.payAltCost, cmd.xValue, cmd.phyrexianPayWithLife);
       const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
       return accepted(state, cmd, { ok: true, events });
     } catch (error) {
@@ -4547,7 +4579,7 @@ export function playerView(state, playerId) {
         // flage na obiekcie — kafel milczal, choc stwor realnie nie mogl
         // blokowac (klasa L1/ADR 0017: skutek widoczny w grze musi byc
         // widoczny na stole).
-        if (creatureCantBlock(object) || attachmentRestrictions(state, object).cantBlock) entry.cantBlock = true;
+        if (creatureCantBlock(object, state) || attachmentRestrictions(state, object).cantBlock) entry.cantBlock = true;
         if (object.cantBeBlocked === true) entry.cantBeBlocked = true;
         // M186/Z1 (Żywy Tester, ravnica vs innistrad s9): „can't attack/block
         // alone" JAWNIE w widoku — wizard walki walidował po entry.abilities,

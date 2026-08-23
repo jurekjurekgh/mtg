@@ -706,7 +706,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   }
 
   function scoreCommand(view, cmd) {
-    const finish = (score) => weightedScore(cmd.type, score);
+    const finish = (score) => { const w = weightedScore(cmd.type, score); if (process.env.BOT_DEBUG_SCORES && cmd.objectId === 'slaad') console.error(`[score] ${cmd.type} raw=${score} weighted=${w}`); return w; };
     // M111: TRYB modalnego triggera („At the beginning of your upkeep,
     // choose one —" Etherwrought Page). Widok niesie tylko nazwy trybów,
     // więc treść bierzemy z rejestru po cardId (jak przy czarach) i wyceniamy
@@ -836,6 +836,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (auraIsHostile(descriptor, card ? cardDef(card.cardId) : undefined)) {
             if (!target) return finish(-50);
             const worth = (target.power ?? 0) + (target.toughness ?? 0);
+            // M200/H (uwaga właściciela, Grounded): aura, KTÓRA ODBIERA
+            // keyword (losesKeywords), na stworze bez niego jest jałowa —
+            // bot marnował Grounded na stwora bez latania („karta służy
+            // do uziemiania latających”). Sprawdzamy efektywne keywordy
+            // celu (widok niesie granty — spójnie z warstwą odbioru, patrz
+            // notes karty). Żaden usunięty keyword nieobecny = kara
+            // miażdżąca (L3: kara musi przebić premię); gdy żaden cel go
+            // nie ma, bot nie rzuca czaru w ogóle.
+            const lostKeywords = descriptor?.losesKeywords ?? [];
+            if (lostKeywords.length > 0
+              && !lostKeywords.some((k) => (target.keywords ?? []).includes(k))) {
+              return finish(-80 - worth);
+            }
             return finish(target.controllerId === view.playerId
               ? -70 - worth              // unieruchamiam własnego stwora
               : 55 + 2 * worth);         // unieruchamiam stwora wroga
@@ -952,6 +965,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // stworów do osłabienia, pusty grób), to wyrzucona karta — nie rzucamy.
         if (allEffectsInertNow(view, effects, cmd)) return finish(-70);
         let score = 50;
+        // Phyrexian mana (CR 118.9): jak gałąź cast_permanent — bot woli manę
+        // (wariant k=0 jest najtańszy; życiowe dostępne, gdy życie wytrzymuje).
+        if (cmd.phyrexianPayWithLife != null && cmd.phyrexianPayWithLife > 0) {
+          score -= 2 * cmd.phyrexianPayWithLife;
+        }
         // M146 (Twiddle — czysto-utylitarny czar): tap/untap nie ma „bazowej
         // wartości" jak obrażenia czy tokeny — cała jego wartość siedzi w
         // EFEKCIE na konkretnym celu. Przy bazie 50 bot rzucał Twiddle na
@@ -1238,6 +1256,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // BEZ celu mieli WŁASNĄ bibliotekę. Wartość zależy od synergii
             // grobu (deskryptory zależne od liczby kart w grobie — np.
             // minCreatureCardsInGraveyard, ADR 0002) i wyścigu bibliotek.
+            // M200/R (uwaga właściciela): biblioteka jest UKRYTA w widoku
+            // (FoW) — bot nie zna, CO mieli. Stałe +18 zakładało, że
+            // zmielone karty pomogą synergii grobu, więc przygoda (50+18=68)
+            // wygrywała z postawieniem 4/1 na planszy (79*0.9=71.1) z
+            // przewagą 3 pkt, a w scenariuszu z karami kontekstowymi (np.
+            // castSacrificePenalty) odwracała wybór — bot „millował się”
+            // zamiast postawić blokera. Synergia to MOŻLIWOŚĆ, nie pewność:
+            // premia konserwatywna (+6), a ryzyko deck-outu stopniowane
+            // im bliżej dna biblioteki.
             else if (playerTargets.length === 0) {
               const n = effect.amount ?? 1;
               const myLib = view.zones.library.filter((o) => o.controllerId === view.playerId).length;
@@ -1249,7 +1276,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 ].map((o) => o.cardId).filter(Boolean);
                 const graveSynergy = ownCardIds.some((cid) => (cardDef(cid)?.abilities ?? [])
                   .some((a) => a?.condition?.minCreatureCardsInGraveyard != null));
-                score += graveSynergy ? 18 : -25;
+                const deckOutRisk = myLib - n <= 4 ? -20 : myLib - n <= 8 ? -10 : 0;
+                score += (graveSynergy ? 6 : -25) + deckOutRisk;
               }
             }
           }

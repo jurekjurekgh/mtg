@@ -1463,6 +1463,13 @@ export function processTriggers(state, recentEvents) {
           tryFire(state, ability, died, [], events, { wasBlocking: died?.isBlockingThisCombat === true });
         }
       }
+      // M200/D+E2 (uwagi właściciela, CR 700.4c): „die” dotyczy STWORÓW —
+      // poświęcenie/zniszczenie lądu lub artefaktu (Blazing Torch, Rupture
+      // Spire) NIE jest śmiercią i nie może odpalać any_creature_dies.
+      // Dotąd Selhoff Occultist mielił kartę przy każdym poświęceniu
+      // jakiegokolwiek permanentu („trigger zadziałał dwa razy” = fałszywy
+      // trigger na poświęcony artefakt + prawdziwy na zginętego stwora).
+      const diedIsCreature = died?.kind === 'creature' || (died?.types ?? []).includes('Creature');
       // M160/A (Selhoff Occultist, CR 603.10a): przy JEDNOCZESNYCH zgonach
       // (jeden przebieg SBA — walka, masowe -X/-X) zdolności
       // any_creature_dies stworów, które zginęły RAZEM z `died`, też odpalają
@@ -1473,6 +1480,9 @@ export function processTriggers(state, recentEvents) {
       // („another creature dies”) również się liczy.
       for (const fellow of simultaneousFellows) {
         if (!fellow || fellow.id === died.id) continue;
+        const fellowIsCreature = fellow?.kind === 'creature'
+          || (fellow?.types ?? []).includes('Creature');
+        if (!fellowIsCreature) continue;
         for (const ability of abilitiesOnDeath(fellow)) {
           if (ability?.trigger?.event === 'any_creature_dies') {
             tryFire(state, ability, fellow, [], events);
@@ -1482,7 +1492,7 @@ export function processTriggers(state, recentEvents) {
       for (const source of state.objects.values()) {
         if (source.zone !== 'battlefield' || source.id === died.id) continue;
         for (const ability of effectiveAbilities(source)) {
-          if (ability?.trigger?.event === 'any_creature_dies') tryFire(state, ability, source, [], events);
+          if (diedIsCreature && ability?.trigger?.event === 'any_creature_dies') tryFire(state, ability, source, [], events);
         }
         // Necrosquito (ONE): „Whenever ANOTHER creature or artifact you control
         // is put into a graveyard from the battlefield, put an oil counter on
@@ -1692,6 +1702,24 @@ export function processTriggers(state, recentEvents) {
       for (const ability of effectiveAbilities(source)) {
         if (ability?.trigger?.event === 'combat_damage_to_player') {
           tryFire(state, ability, source, [], events, { damagedPlayerId: ev.target });
+        }
+      }
+      // Batch 48 (Contested Game Ball, LCI): „Whenever you're dealt combat
+      // damage…" — źródłem triggera jest dowolny permanent kontrolowany przez
+      // GRACZA, KTÓRY OTRZYMAŁ obrażenia (trigger siedzi na artefakcie, nie na
+      // stwora, który zadaje). Zdarzenie damage_dealt per obrażenie — trigger
+      // odpala się per zdarzenie (CR 603.2: „whenever" na każdym zdarzeniu).
+      for (const candidate of state.objects.values()) {
+        if (candidate.zone !== 'battlefield' || candidate.controllerId !== ev.target) continue;
+        for (const ability of effectiveAbilities(candidate)) {
+          if (ability?.trigger?.event !== 'combat_damage_to_you') continue;
+          // Warunek intervening-if sprawdza tryFire z PEŁNYM extra (dane
+          // zdarzenia) — pre-check z pustym eventData cicho uciszałby warunki
+          // czytające dane zdarzenia (M200/O-N3; wzór: any_combat_damage).
+          // atkujący jechał w zdarzeniu (state.combat jest już null — end_of_combat).
+          tryFire(state, ability, candidate, [], events, {
+            damagedPlayerId: ev.target, attackingPlayerId: ev.attackingPlayerId ?? null,
+          });
         }
       }
       // „Whenever one or more creatures you control deal combat damage to a
@@ -2147,7 +2175,10 @@ export function processTriggers(state, recentEvents) {
             // tryFire IGNORUJE przekazane cele (zawsze wysyla []), bo sluzy
             // triggerom bez celu albo z `requiresTarget`; tutaj cel jest
             // znany z samego zdarzenia, wiec kolejkujemy wprost.
-            if (!conditionHolds(ability.trigger ?? {}, state, attachment, {})) continue;
+            // M200/N5 (CR 603.4): intervening-if sprawdzany przy
+            // ROZSTRZYGNIECIU (resolveTriggerEntry — z payload.extra), nie
+            // przy kolejkowaniu — pre-check z pustym eventData byl
+            // redundantny i nie zgodny z CR (wzorzec: O-N3).
             queueTriggerToStack(state, ability, attachment, [foeId], events);
           }
         }

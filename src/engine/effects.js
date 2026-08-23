@@ -3036,16 +3036,31 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // przechodzi z rak do rak przez cala partie.
     const source = state.objects.get(sourceObject.id);
     if (!source || source.zone !== 'battlefield') return;
-    const attackerId = state.combat?.attackingPlayerId
+    // Atakujący: kontekst triggera (zamrożony przy odpaleniu — state.combat
+    // jest null po end_of_combat), potem stan (ścieżki natychmiastowe),
+    // na końcu przeciwnik kontrolera (1v1: obrażenia bojowe dostaje się
+    // wyłącznie od przeciwnika, z wyjątkiem nadwyżki trample we własnym
+    // ataku — stąd kontekst ma pierwszeństwo).
+    const attackerId = context.attackingPlayerId
+      ?? state.combat?.attackingPlayerId
       ?? state.players.find((p) => p.id !== source.controllerId)?.id
       ?? null;
-    if (attackerId == null || attackerId === source.controllerId) return;
+    if (attackerId == null) return;
+    // Edge case (CR, audyt M200/N3): gdy atakującymi był kontroler piłki
+    // (otrzymał obrażenia od blokerów we WŁASNYM ataku), „gains control"
+    // jest puste — ale Oracle i tak mówi „and untaps it".
+    const sameController = attackerId === source.controllerId;
+    if (sameController && !source.tapped) return;
     const previous = source.controllerId;
     state.objects.set(source.id, Object.freeze({ ...source, controllerId: attackerId, tapped: false }));
-    state.events.push(event('control_changed', {
-      objectId: source.id, cardId: source.cardId,
-      controllerId: attackerId, fromControllerId: previous,
-    }));
+    if (sameController) {
+      state.events.push(event('object_untapped', { objectId: source.id, cardId: source.cardId }));
+    } else {
+      state.events.push(event('control_changed', {
+        objectId: source.id, cardId: source.cardId,
+        controllerId: attackerId, fromControllerId: previous,
+      }));
+    }
     return;
   }
   if (effect.type === 'sacrifice_self_if_counters_then_treasure') {
@@ -3099,17 +3114,20 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // (`exceptTypes`), wiec przyszle „non-Zombie creatures can't block"
     // pojda ta sama sciezka bez zmian w silniku (ADR 0002).
     //
-    // CR 611.2c: zbior stworow ustalamy PRZY ROZSTRZYGNIECIU — stwor
-    // wchodzacy pozniej w tej turze moze blokowac normalnie.
-    const except = effect.exceptTypes ?? [];
-    for (const id of state.zones.battlefield) {
-      const object = state.objects.get(id);
-      if (!object || object.kind !== 'creature') continue;
-      if (except.some((type) => (object.types ?? []).includes(type))) continue;
-      if (object.cantBlock === true) continue;
-      state.objects.set(id, Object.freeze({ ...object, cantBlock: true }));
-      state.events.push(event('cant_block_granted', { objectId: id, cardId: object.cardId }));
-    }
+    // M200/L (CR 611.2 — efekt CIAGLY): ograniczenie obowiazuje przez
+    // cala swoje trwanie i dotyczy kazdego stwora spelniajacego warunek
+    // W TYM CZASIE — takze stwora wchodzacego na pole bitwy POZCIEJ w tej
+    // turze. Stara implementacja znaczkowala zbiór przy rozstrzygnięciu
+    // (jednorazowa flaga na obiekcie) — odchyłka od Oracle (audyt: zbior
+    // „zamrazany” przy resolution). Ograniczenie zyj na obiekcie tury
+    // (nowa tura = nowy state.turn = wygasniecie naturalne, CR 514.2) i
+    // jest czytane read-time w creatureCantBlock (centralny odczyt).
+    const except = [...(effect.exceptTypes ?? [])];
+    state.turn.cantBlockRestrictions = [...(state.turn.cantBlockRestrictions ?? []), {
+      exceptTypes: except,
+      cardId: sourceObject?.cardId ?? null,
+    }];
+    state.events.push(event('turn_cant_block', { exceptTypes: except, cardId: sourceObject?.cardId ?? null }));
     return;
   }
   if (effect.type === 'cant_be_blocked') {

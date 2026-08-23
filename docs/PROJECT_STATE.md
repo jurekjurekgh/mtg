@@ -1,7 +1,57 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-23 (M199: „Przebieg tur (dla AI)" w pełnym Fog of War — zapis opisuje obu graczy jak obserwator)
-- **Poprzednia:** 2026-08-23 (M198: poprawki układu stołu po screenshocie właściciela — boksy per gracz, komunikaty w modalu, usunięty panel rozumowania bota)
+- **Ostatnia aktualizacja:** 2026-08-23 (M200: audyt PR #70 + uwagi właściciela A–R — PR #72 otwarty)
+- **Poprzednia:** 2026-08-23 (M199: „Przebieg tur (dla AI)" w pełnym Fog of War — zapis opisuje obu graczy jak obserwator)
+
+
+## M200 — audyt PR #70 (M187–M199) + uwagi właściciela (2026-08-23, PR #72)
+
+Plan: `docs/plans/PLAN_2026-08-23-m200-kontynuacja-audyt-pr70.md` · raport:
+`docs/audits/AUDYT_PR70_2026-08-23.md`.
+
+**Kontekst:** poprzednia sesja M200 (PR #71) zamknięta przez właściciela bez
+scalenia (wątpliwości co do jakości). Praca odzyskana z gałęzi, każdy fix
+przeze mnie zweryfikowany od nowa (L7/L11/L34): stan bazy 2987/2987,
+weryfikacja mutacyjna testów na kodzie PR #70 (N1 strażnik RED, N2 5/9 RED,
+N3 2/3 RED), potem cherry-pick jako osobne commity.
+
+**Fixy (każdy RED→GREEN, pakiet po każdym):**
+- przejęte N1 (MANA_SOURCE_MAP nie cieniuje deskryptorów `add_mana`),
+  N2 (pipy phyrexian w czarach, CR 118.9 — koszt {3}{R/P} = 4 many / 2 życia,
+  warianty k=0..N), N3 (martwy trigger `combat_damage_to_you` Contested Game
+  Ball — ADR 0022), O-N3 (redundantny pre-check w gałęzi N3).
+- **N5:** gałąź Wooden Stake — redundantny pre-check (CR 603.4).
+- **L (zgłoszenie audytu agenta — PRAWDZIWY BŁĄD):** Ruthless Invasion
+  „can't block this turn" — zbiór zamrażany przy rozstrzygnięciu zamiast
+  efektu ciągłego. Fix: `turn.cantBlockRestrictions` (read-time w centralnym
+  `creatureCantBlock(object, state)`, wygaśnięcie w `nextTurnStep` — CR 514.2,
+  jedno zdarzenie `turn_cant_block`).
+- **Uwagi A–H, M/M2, R:** A wycofane (właściciel: legalny cel = zdolność musi
+  się rozstrzygnąć); A2 tytuły wyborów lochu; **B root cause** (sesza nie
+  eksponowała `cardIdByName` — linki logu M167/E2 martwe, klasa L5); C/C2
+  mulligan (wizard zaznaczania + liczba z żywej ręki); **D/E2 root cause**
+  (`any_creature_dies` odpalał się na NIE-stworach — CR 700.4c); **E**
+  (bramka pay_or_sacrifice blokowała `tap_for_mana` kreatora — rodzina
+  3 bramek, L28); F poprawne wg CR 502.4/601.2f (test pinuje); G opis
+  dnia/nocy zgodny z M68; H Grounded wymaga keywordu u celu (wycena);
+  M/M2 poprawne na bieżącym kodzie (testy pinują); **R** Gray Slaad —
+  self-mill wyceniany +18 mimo ukrytej biblioteki (FoW) → +6 + stopniowane
+  ryzyko deck-outu (marża stwor-vs-przygoda z 3 pkt na ~20).
+- **Formidable (E2c): WYCOFANE na decyzję właściciela** — sesja zgłosiła
+  brak keywordu w danych + „CR 702.103"; właściciel zakwestionował regułę
+  i rozstrzygnął (mechanika karty = warunkowe trample ataku, implementowane
+  prawidłowo). Zmiany odwrócone. Proces: twierdzenie o regule bez weryfikacji
+  u źródła nie powinno wchodzić do fixa (L56/L57).
+
+**M193 (plan niedomknięty dokumentacyjnie z PR #70):** kod/testy w mainie;
+K5–K7 domknięte (strażniki m193 + metodyka mutacyjna; pętla jakości
+M189/M192/M200; dokumentacja tu).
+
+**Stan:** `npm test` **3023/3023**, build **53 moduły / 2561.2 kB**, katalog
+**459 kart**, próbka bota **9/9**. Do następnej sesji: U2 (epicCastOffers
+bez `additionalCost`), O1 (nadwyżka trample blokera, CR 702.19).
+
+## M199 — „Przebieg tur (dla AI)" w pełnym FoW (2026-08-23, PR #70)
 
 
 

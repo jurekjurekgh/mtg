@@ -83,3 +83,59 @@ export function commandForSelection(commands, { targets = [], xValue = null } = 
     return cmd.xValue === xValue;
   }) ?? null;
 }
+
+// ===========================================================================
+// M200/C (uwaga właściciela 2026-08-23): mulligan — odłożenie N kart na spód.
+//
+// Zgłoszenie: „zamiast dać wszystkie opcje kart z ptaszkiem do zaznaczania
+// tych, które chcę oddać, mam wszystkie możliwe kombinacje — przy 3 kartach
+// do odłożenia to będzie 7×7×7 kombinacji!”. Te samy wzorzec co wielocelowość:
+// silnik enumeruje podzbiory jako osobne legalne komendy (poprawne dla botów),
+// a człowiek dostaje listę kart z ptaszkiem. Zatwierdzenie wraca do komendy
+// z legalCommands — silnik pozostaje jedynym źródłem prawdy o legalności.
+// ===========================================================================
+
+/**
+ * Plan odłożenia kart po mulliganie albo null, gdy grupa nie jest
+ * „karty-do-zaznaczenia” (np. pojedyncza komenda po deduplikacji — zwykła
+ * lista radzi sobie sama). Wszystkie komendy grupy mają ten sam `count`.
+ */
+export function mulliganBottomPlanOf(commands) {
+  const list = (commands ?? []).filter((cmd) =>
+    cmd?.type === 'resolve_mulligan_bottom_choice' && Array.isArray(cmd.cardIds));
+  if (list.length < 2) return null;
+  const count = list[0].cardIds.length;
+  if (!list.every((cmd) => cmd.cardIds.length === count)) return null;
+  const cardIds = [];
+  for (const cmd of list) {
+    for (const id of cmd.cardIds) if (!cardIds.includes(id)) cardIds.push(id);
+  }
+  return {
+    type: 'resolve_mulligan_bottom_choice',
+    cardIds,
+    count,
+    playerId: list[0].playerId ?? null,
+    // Pola w kształcie planu wielocelowego — renderMultiTargetWizard jest
+    // wspólny (cardIdsMode przełącza szukanie komendy na cardIds).
+    targets: cardIds,
+    minTargets: count,
+    maxTargets: count,
+    hasX: false,
+    cardIdsMode: true,
+    itemLabel: 'karty',
+  };
+}
+
+/**
+ * Komenda odpowiadająca zaznaczonym kartom albo null (wybór nielegalny =
+ * brak takiej komendy — UI nie buduje komendy z palca, L48).
+ */
+export function commandForMulliganSelection(commands, cardIds) {
+  const selection = [...(cardIds ?? [])].sort().join('|');
+  const cmd = (commands ?? []).find((entry) =>
+    entry?.type === 'resolve_mulligan_bottom_choice'
+    && Array.isArray(entry.cardIds)
+    && entry.cardIds.length === cardIds.length
+    && [...entry.cardIds].sort().join('|') === selection);
+  return cmd ?? null;
+}
