@@ -398,3 +398,24 @@ test('M200/F: sesja zatrzymuje się na opłacalnej reanimacji w postcombat bota'
     .find((c) => c.type === 'activate_ability' && c.objectId === 'skel');
   assert.ok(offer, 'oferta reanimacji ({1}{B}) widoczna dla gracza w turze bota');
 });
+// ---- G: opis dnia/nocy zgodny z implementacją (M68) ------------------------
+// Zgłoszenie: panel pisał „Rzut czaru w turze gracza po wejściu daybounda
+// robi noc” oraz (w nocnej wersji) „brak czarów … robi dzień” — to odwrotność
+// reguły engine (applyDayNightAtTurnStart): zmiana następuje na początku
+// tury wg czarów gracza, który ZAKOŃCZYŁ turę: dzień + 0 czarów → noc;
+// noc + ≥2 czary → dzień.
+
+test('M200/G: opis dnia/nocy opisuje regułę engine (0 czarów → noc, ≥2 → dzień)', async () => {
+  const { renderDayNight } = await import('../src/table/render.js');
+  const els = { daynight: new MiniEl('#daynight') };
+  renderDayNight(els, {}, { dayNight: 'day' });
+  const dayNote = els.daynight.textContent;
+  assert.ok(dayNote.includes('nie rzucił żadnego czaru, zapada noc'),
+    `dzień: reguła 0 czarów → noc: ${dayNote}`);
+  assert.ok(!dayNote.includes('Rzut czaru'), 'stary błędny tekst zniknął');
+  renderDayNight(els, {}, { dayNight: 'night' });
+  const nightNote = els.daynight.textContent;
+  assert.ok(nightNote.includes('2 lub więcej czarów, wstaje dzień'),
+    `noc: reguła ≥2 czary → dzień: ${nightNote}`);
+  assert.ok(!nightNote.includes('robi noc'), 'stary błędny tekst zniknął (noc)');
+});

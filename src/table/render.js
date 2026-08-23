@@ -3445,9 +3445,14 @@ export function renderDayNight(els, session, view, { onClick = null, hover = nul
   }
   const info = div(els.daynight, 'daynight-info');
   div(info, 'daynight-status', designation === 'night' ? 'Noc' : 'Dzień');
+  // M200/G (uwaga właściciela): opis zgodny z IMPLEMENTACJĄ (M68,
+  // applyDayNightAtStarnStart… patrz triggers.js): zmiana dzień/noc dzieje
+  // się na początku tury wg liczby czarów gracza, KTÓRY WŁAŚNIE ZAKOŃCZYŁ
+  // swoją turę — dzień + 0 czarów → noc; noc + ≥2 czary → dzień.
+  // Stary tekst twierdził, że „rzut czaru robi noc” (wręcz odwrotnie).
   div(info, 'daynight-note', designation === 'night'
-    ? 'Wilkołaki daybound są na nightbound stronach. Rzut czaru w turze gracza po wejściu daybounda robi noc; brak czarów aktywnego w poprzedniej turze robi dzień w jego upkeep.'
-    : 'Wilkołaki daybound są na daybound stronach. Rzut czaru w turze gracza po wejściu daybounda robi noc.');
+    ? 'Wilkołaki daybound są na nightbound stronach. Jeśli gracz, który zakończył swoją turę, rzucił 2 lub więcej czarów, wstaje dzień (na początku następnej tury).'
+    : 'Wilkołaki daybound są na daybound stronach. Jeśli gracz, który zakończył swoją turę, nie rzucił żadnego czaru, zapada noc (na początku następnej tury).');
 }
 
 export function renderUndercity(els, session, view, { onClick = null, hover = null } = {}) {
