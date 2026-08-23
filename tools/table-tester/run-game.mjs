@@ -783,11 +783,19 @@ export async function runTableGame({
   // pula many i etykiety grup permanentów. Pozwala sprawdzić w prawdziwym
   // DOM (nie w mini-DOM testów), że sekcje naprawdę się renderują.
   const layout = {
-    zoneCounters: text($('#zone-counters')),
-    manaPools: text($('#mana-pools')),
-    manaSymbols: $$('#mana-pools .ms').length,
+    metaFoe: text($('#meta-foe')),
+    metaOwn: text($('#meta-own')),
+    manaSymbols: $$('.mana-pool-chip .ms').length,
     groupLabels: $$('.sub-label').map((e) => text(e)),
-    statusBar: text($('#status')),
+    // M198/A+B: pusty pasek statusu i pas komunikatow zniknely z ukladu.
+    hasStatusBar: Boolean($('#status')),
+    hasTableNote: Boolean($('#table-note')),
+    hasNoticeModal: Boolean($('#notice-ok')),
+    // M198/D+G: osobny przycisk inspektora, brak panelu rozumowania bota.
+    inspectorButton: text($('#zone-inspector-open')),
+    hasBotReasoning: Boolean($('#bot-reasoning')),
+    buildStampAlign: ($('.build-stamp') && domWindow.getComputedStyle)
+      ? domWindow.getComputedStyle($('.build-stamp')).textAlign : null,
     hasBrand: Boolean($('.brand')),
     hasFoot: Boolean($('.foot')),
     hasLibraryPreview: Boolean($('#library-preview')),

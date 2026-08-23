@@ -19,7 +19,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession } from '../src/table/session.js';
 import { addMana } from '../src/engine/resources.js';
-import { renderZoneCounters, renderManaPools } from '../src/table/render.js';
+import { renderPlayerMeta } from '../src/table/render.js';
 
 const REGISTRY = createCardRegistry();
 const HTML = fs.readFileSync('src/table/index.html', 'utf8');
@@ -96,12 +96,16 @@ test('M197/A2: znikl tekstowy pasek statusu (dublowal panel graczy)', () => {
   assert.doesNotMatch(RENDER_CODE, /ręka \$\{ownHand\}|mana \$\{me\?\.mana\}/,
     'wiersze „mana / reka / biblioteka" usuniete');
   assert.doesNotMatch(RENDER_CODE, /status-row/, 'nie ma juz wierszy paska statusu');
+  // M198/A: pusty kontener tez zniknal z DOM (był widoczny jako szary pasek).
+  assert.doesNotMatch(HTML_CODE, /id="status"/, 'kontener paska usuniety');
 });
 
 // --- A3 ------------------------------------------------------------------
 
 test('M197/A3A: inspektor stref to osobny boks z LICZNIKAMI, nie pasek graczy', () => {
-  assert.match(HTML, /id="zone-counters"/, 'osobny boks liczników stref');
+  // M198/C: boksy dziela sie PER GRACZ (meta-foe / meta-own), a nie wg
+  // rodzaju danych — sama zasada („liczniki poza paskiem graczy") zostaje.
+  assert.match(HTML, /id="meta-foe"/, 'boks danych przeciwnika');
   // Przycisk otwierajacy inspektor nie moze juz siedziec miedzy graczami.
   assert.doesNotMatch(HTML_CODE, /id="library-menu-btn"/,
     'przycisk stref nie siedzi juz miedzy graczami (inspektor otwiera boks liczników)');
@@ -109,8 +113,14 @@ test('M197/A3A: inspektor stref to osobny boks z LICZNIKAMI, nie pasek graczy', 
 
 test('M197/A3A: liczniki podaja rozmiar kazdej strefy dla OBU graczy', () => {
   const session = sessionWithTurns(60);
+  const view = session.view();
+  // M198/C: liczniki zyja w boksie KAZDEGO gracza osobno.
   const host = new MiniEl('div');
-  renderZoneCounters(host, session.view(), session);
+  for (const player of view.players) {
+    const box = new MiniEl('div');
+    renderPlayerMeta(box, view, player.id);
+    host.appendChild(box);
+  }
   const text = host.textContent;
   for (const label of ['cmentarz', 'exile', 'biblioteka']) {
     assert.ok(text.toLowerCase().includes(label), `licznik „${label}" w boksie: ${text}`);
@@ -125,8 +135,11 @@ test('M197/A3B: pula many pokazana graficznie dla obu graczy', () => {
   const session = sessionWithTurns(40);
   const view = session.view();
   const host = new MiniEl('div');
-  renderManaPools(host, view, session);
-  // Kazdy gracz ma swoj wiersz puli.
+  for (const player of view.players) {
+    const box = new MiniEl('div');
+    renderPlayerMeta(box, view, player.id);
+    host.appendChild(box);
+  }
   const text = host.textContent;
   assert.ok(/Gracz/.test(text), `wiersz gracza: ${text}`);
   assert.ok(/Bot/.test(text), `wiersz bota: ${text}`);
@@ -151,7 +164,7 @@ test('M197/A3B: PELNA sciezka — tapniecie landa w grze zapala ikone w puli', (
   const me = view.players.find((p) => p.id === view.playerId);
   assert.deepEqual(me.manaPool, { U: 2, '': 1 }, 'widok niesie pule po kolorach');
   const host = new MiniEl('div');
-  renderManaPools(host, view, session);
+  renderPlayerMeta(host, view, HUMAN_ID);
   const chips = host.descendants().filter((el) => el.className === 'mana-pool-chip');
   assert.equal(chips.length, 2, 'jeden chip na profil koloru (U oraz bezbarwna)');
   assert.match(chips[0].innerHTML, /ms-u/, 'ikona many niebieskiej');

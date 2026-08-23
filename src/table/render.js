@@ -112,25 +112,9 @@ function reasoningActionLabel(summary) {
   return REASONING_ACTION_LABELS[summary] ?? summary;
 }
 
-/**
- * Czytelny, jednozdaniowy opis jednego śladu decyzji bota (B5):
- * „T3 · Faza główna — Zagranie landa (ocena 90); alternatywy: …".
- * To jest „dlaczego bot zagrał X": bot wybiera opcję z najwyższą oceną.
- */
-export function botReasoningText(entry) {
-  // Trace bota zna tylko krok („main" dla obu faz głównych) — bez fazy.
-  const step = entry.step === 'main' ? 'Faza główna' : (STEP_LABELS[entry.step] ?? entry.step);
-  const chosen = reasoningActionLabel(entry.chosen);
-  const alternatives = (entry.options ?? [])
-    .filter((option) => option.cmd !== entry.chosen)
-    .slice(0, 3)
-    .map((option) => `${reasoningActionLabel(option.cmd)} (${option.score})`)
-    .join(', ');
-  const base = `T${entry.turn} · ${step} — ${chosen} (ocena ${entry.score})`;
-  if (!alternatives) return `${base}.`;
-  const total = (entry.options?.length ?? 0);
-  return `${base}; najlepsza z ${total} opcji. Alternatywy: ${alternatives}.`;
-}
+// M198/G: `botReasoningText` usunięty razem z panelem „Rozumowanie bota"
+// (właściciel go nie używał). REASONING_ACTION_LABELS zostaje — nazywa
+// też komendy w panelu akcji (commandLabel).
 
 const STEP_LABELS = Object.freeze({
   untap: 'Odkręcenie',
@@ -3330,23 +3314,9 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     els.log.appendChild(line);
   }
 
-  // --- Rozumowanie bota (B5) -------------------------------------------
-  // Panel w index.html jest domyślnie zwinięty (<details> bez `open`) —
-  // render tylko uzupełnia zawartość; licznik pokazuje ile decyzji zapisano.
-  if (els.botReasoning) {
-    clear(els.botReasoning);
-    const reasoning = session.reasoning ?? [];
-    if (els.botReasoningCount) {
-      els.botReasoningCount.textContent = reasoning.length ? String(reasoning.length) : '';
-    }
-    if (reasoning.length === 0) {
-      div(els.botReasoning, 'zone-empty', 'Brak danych — bot nie zostawił śladu decyzji.');
-    } else {
-      for (const entry of reasoning.slice(-12).reverse()) {
-        div(els.botReasoning, 'reasoning-entry', botReasoningText(entry));
-      }
-    }
-  }
+  // M198/G (zlecenie właściciela): panel „Rozumowanie bota" usunięty —
+  // właściciel z niego nie korzystał. Sesja nadal zbiera ślad decyzji bota
+  // (session.reasoning) dla testów i Żywego Testera, ale stół go nie rysuje.
 
   // --- Przebieg tur (dla AI) (M25) ------------------------------------
   renderTurnHistory(els, session, selectedTurnHistory(els));
@@ -3509,78 +3479,54 @@ export function renderUndercity(els, session, view, { onClick = null, hover = nu
   }
 }
 
-/**
- * M197/A3A (zlecenie właściciela): boks LICZNIKÓW stref — „Bot (cmentarz [10],
- * exile [2], biblioteka [3]) — Gracz (cmentarz [10], …)". Bez wypisywania
- * kart: konkretne karty pokazuje dopiero inspektor po kliknięciu (tak jak
- * dotąd). Wcześniej między graczami wisiał sam przycisk inspektora, a rozmiary
- * stref nie były widoczne nigdzie.
- */
-export function renderZoneCounters(host, view, session = null, { onOpen = null } = {}) {
-  if (!host) return;
-  clear(host);
-  const me = view.players.find((p) => p.id === view.playerId);
-  const foe = view.players.find((p) => p.id !== view.playerId);
-  // Kolejność jak na stole: przeciwnik u góry, gracz pod nim.
-  for (const player of [foe, me]) {
-    if (!player) continue;
-    const own = player.id === view.playerId;
-    const row = div(host, own ? 'zone-counter-row own' : 'zone-counter-row');
-    div(row, 'zone-counter-name', own ? PLAYER_LABEL : BOT_LABEL);
-    const counts = [
-      ['cmentarz', (view.zones.graveyard ?? []).filter((o) => o.controllerId === player.id).length],
-      // Exile jest strefą wspólną i jawną — liczymy karty wygnane przez tego gracza.
-      ['exile', (view.zones.exile ?? []).filter((o) => o.controllerId === player.id).length],
-      ['biblioteka', (view.zones.library ?? []).filter((o) => o.controllerId === player.id).length],
-    ];
-    for (const [label, count] of counts) {
-      div(row, 'zone-counter', `${label} [${count}]`);
-    }
-  }
-  if (onOpen) {
-    const btn = document.createElement('button');
-    btn.className = 'ghost-btn inspector-btn';
-    btn.textContent = '🗂 Pokaż karty w strefach';
-    btn.addEventListener('click', () => onOpen());
-    host.appendChild(btn);
-  }
-}
+/** Polska nazwa strefy w liczniku (kolejność jak w inspektorze). */
+const ZONE_COUNTER_LABELS = Object.freeze([
+  ['cmentarz', 'graveyard'],
+  ['exile', 'exile'],
+  ['biblioteka', 'library'],
+]);
 
 /**
- * M197/A3B (zlecenie właściciela): „dodać graficzne pokazanie many w puli
- * (ile i jaka) dla obu graczy". Pula żyje w `player.manaPool` jako mapa
- * profil-kolorów → liczba jednostek (klucz `manaUnitKey`: 'U', 'UR',
- * '' = bezbarwna); widok niesie ją od M197. Rysujemy symbolami many — te
- * same ikony co w kosztach czarów.
+ * M198/C (screenshot właściciela): boks danych JEDNEGO gracza — jego strefy
+ * ORAZ jego pula many razem. Wcześniej (M197) boksy dzieliły się „wg rodzaju
+ * danych" (osobno wszystkie strefy, osobno wszystkie pule), przez co pod
+ * licznikiem życia Bota stały dane obu graczy. Właściciel: pod licznikiem
+ * Bota mają być dane TYLKO Bota, po stronie Gracza — tylko Gracza.
  */
-export function renderManaPools(host, view, session = null) {
+export function renderPlayerMeta(host, view, playerId) {
   if (!host) return;
   clear(host);
-  const me = view.players.find((p) => p.id === view.playerId);
-  const foe = view.players.find((p) => p.id !== view.playerId);
-  for (const player of [foe, me]) {
-    if (!player) continue;
-    const own = player.id === view.playerId;
-    const row = div(host, own ? 'mana-pool-row own' : 'mana-pool-row');
-    div(row, 'mana-pool-name', own ? PLAYER_LABEL : BOT_LABEL);
-    const pool = player.manaPool ?? {};
-    const units = Object.entries(pool).filter(([, count]) => count > 0);
-    if (units.length === 0) {
-      div(row, 'mana-pool-empty', 'pusta');
-      continue;
-    }
-    for (const [key, count] of units) {
-      // Klucz pusty = mana bezbarwna ({C}); wielokolorowy = jednostka, która
-      // może zapłacić dowolny z tych kolorów (CR 106.7) — pokazujemy hybrydę.
-      const symbol = key === '' ? '{C}' : `{${key.split('').join('/')}}`;
-      const chip = div(row, 'mana-pool-chip');
-      chip.innerHTML = `${manaSymbolsHtml(symbol)}<span class="mana-pool-count">× ${count}</span>`;
-      // Opis słowny bierzemy z manaProducedLabel (M193/A1) — jedno źródło
-      // polskiej odmiany kolorów dla całego stołu (L41), zamiast drugiej,
-      // rozjeżdżającej się mapy nazw.
-      chip.title = manaProducedLabel(count, key === '' ? [] : key.split(''))
-        .replace(/^dodanie /, '').replace(/ do puli$/, '');
-    }
+  const own = playerId === view.playerId;
+  const player = (view.players ?? []).find((p) => p.id === playerId);
+  host.className = own ? 'meta-box own' : 'meta-box foe';
+  div(host, 'meta-label', own ? PLAYER_LABEL : BOT_LABEL);
+
+  const zones = div(host, 'meta-row');
+  div(zones, 'meta-row-label', 'Strefy');
+  const counts = div(zones, 'meta-row-values');
+  for (const [label, zone] of ZONE_COUNTER_LABELS) {
+    const pile = view.zones?.[zone] ?? [];
+    div(counts, 'zone-counter', `${label} [${pile.filter((o) => o.controllerId === playerId).length}]`);
+  }
+
+  const mana = div(host, 'meta-row');
+  div(mana, 'meta-row-label', 'Mana');
+  const pool = div(mana, 'meta-row-values');
+  const units = Object.entries(player?.manaPool ?? {}).filter(([, count]) => count > 0);
+  if (units.length === 0) {
+    div(pool, 'mana-pool-empty', 'pusta');
+    return;
+  }
+  for (const [key, count] of units) {
+    // Klucz pusty = mana bezbarwna ({C}); wielokolorowy = jednostka, która
+    // może zapłacić dowolny z tych kolorów (CR 106.7) — rysowana jako hybryda.
+    const symbol = key === '' ? '{C}' : `{${key.split('').join('/')}}`;
+    const chip = div(pool, 'mana-pool-chip');
+    chip.innerHTML = `${manaSymbolsHtml(symbol)}<span class="mana-pool-count">× ${count}</span>`;
+    // Opis słowny z manaProducedLabel (M193/A1) — jedno źródło polskiej
+    // odmiany kolorów dla całego stołu (L41).
+    chip.title = manaProducedLabel(count, key === '' ? [] : key.split(''))
+      .replace(/^dodanie /, '').replace(/ do puli$/, '');
   }
 }
 
