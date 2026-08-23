@@ -59,15 +59,13 @@ decyduje. Zdarzenia niosa `playerId`, wiec opis moze nazwac decydenta wprost.
 
 ## Kroki (kazdy = osobny zielony commit + push; ADR 0020 C)
 
-- [ ] K0: ten plan
-- [ ] K1 (D): decydent nazwany po imieniu — jedno zrodlo dla 3 komunikatow
-- [ ] K2 (A): wizard many takze dla decyzji platniczych (pay_or_sacrifice,
-      optional_pay, counter_pay)
-- [ ] K3 (B): kara bota za tapniecie sie samego trickiem bojowym poza oknem,
-      w ktorym to cokolwiek daje
-- [ ] K4 (C1): ekran wyboru celow dla `variableTargets` (Wrap in Flames)
-- [ ] K5 (C): ekran wyboru celow + licznik X dla podzialu obrazen (Fireball)
-- [ ] K6: benchmark bota (po B moze sie zmienic sila) + dokumentacja
+- [x] K0: ten plan — `1e03aff`
+- [x] K1 (D): decydent nazwany po imieniu — `134f4f1`
+- [x] K2 (A): wizard many takze dla decyzji platniczych — `799d4c0`
+- [x] K3 (B): kara bota za tapniecie siebie poza walka — `813b1b0`
+- [x] K4+K5 (C/C1): rdzen wyboru celow — `adba3bc`
+- [x] K4+K5 (C/C1): ekran zaznaczania podlaczony do stolu — `69f9e3a`
+- [x] K6: dokumentacja
 
 ## Ryzyka / pulapki
 
@@ -81,6 +79,29 @@ decyduje. Zdarzenia niosa `playerId`, wiec opis moze nazwac decydenta wprost.
 - **L25**: zmiany w bocie przelosuja seedy testow scenariuszowych.
 - Reset workspace zdarzyl sie 10x — commit + push po KAZDYM kroku.
 
-## Wynik
+## Wynik — WSZYSTKIE 4 UWAGI NAPRAWIONE
 
-(uzupelniany w trakcie)
+`npm test` **2926/2926**, build **53 moduly / 2502.3 kB**.
+
+| Uwaga | Efekt |
+|---|---|
+| A | wizard many otwiera sie takze przy „zaplac albo poswiec", opcjonalnej zaplacie i zaplacie za brak kontry |
+| B | bot nie tapuje juz stwora, zeby wzmocnic samego siebie poza walka |
+| C | Fireball: **232 przyciski -> 6 celow + licznik X 1..7** |
+| C1 | Wrap in Flames: **15 przyciskow -> 4 cele (0..3), bez licznika** |
+| D | „(wybor gracza)" -> „(wybor opcjonalny: Nieprzyjaciel)" |
+
+### Co znalazlem przy okazji
+
+- **B**: `summarize` w sladzie bota gubil zrodlo i cel aktywacji, wiec
+  w diagnostyce nie dalo sie odroznic buffu sojusznika od tapniecia siebie.
+- **B**: pierwsza wersja testow anty-over-fix pytala o NIEISTNIEJACE API bota
+  (`rankCommands`) i cicho sie pomijala — pulapka L15 (test, ktory nigdy nie
+  czerwienieje). Przepisane na realne `trace()`.
+- **C**: zmierzone repro bylo gorsze niz w zgloszeniu — 232 kombinacje przy
+  4 stworach i 8 ladach (wlasciciel widzial 95).
+
+### Weryfikacja
+
+Kazda naprawa ma mutacje czerwieniaca test. Uwaga C dodatkowo sprawdzona
+Zywym Testerem na zbudowanym artefakcie (0 zgloszen detektorow).

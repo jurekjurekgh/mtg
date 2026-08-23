@@ -1,7 +1,36 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-23 (M194: Batch 47 — 8 kart; outlast, warianty druku, Pyxis, naprawa martwego impulse-exile)
-- **Poprzednia:** 2026-08-23 (M193: kolory źródeł many czytane z Oracle — zgłoszenie właściciela A/A1)
+- **Ostatnia aktualizacja:** 2026-08-23 (M195: uwagi właściciela A/B/C/C1/D — wizard many przy decyzjach, trick bojowy bota, ekran wyboru celów zamiast setek kombinacji)
+- **Poprzednia:** 2026-08-23 (M194: Batch 47 — 8 kart; outlast, warianty druku, Pyxis, naprawa martwego impulse-exile)
+
+
+## M195 — uwagi właściciela z testów: A, B, C/C1, D (2026-08-23, PR #70)
+
+Plan: `docs/plans/PLAN_2026-08-23-m195-uwagi-wlasciciela.md`.
+
+- **A (799d4c0) — wizard many także przy DECYZJACH płatniczych.** Rupture
+  Spire („zapłać {1} albo poświęć") auto-tapowało pierwszy lepszy ląd, bo
+  kreator znał tylko rzuty i aktywacje. Reguła właściciela jest ogólna:
+  *zawsze* gdy płatność jest niejednoznaczna, gracz wybiera źródła. Objęte:
+  `resolve_pay_or_sacrifice`, `resolve_optional_pay_choice`,
+  `resolve_counter_pay_choice`.
+- **B (813b1b0) — bot marnował trick bojowy na siebie.** Tapował Ghost
+  Wardena w swojej fazie walki, żeby dać sobie +1/+1, choć stwór nie atakował
+  (tracił tylko blok w turze przeciwnika). Istniejąca kara sprawdzała
+  `canAttackNow`, a w kroku blokujących ten warunek już nie zachodził. Teraz
+  pump NA SOBIE kosztem {T} jest karany, gdy źródło realnie nie walczy;
+  buff atakującego, blokującego i siebie-atakującego zostaje.
+- **C + C1 (adba3bc, 69f9e3a) — wielocelowość jako lista wyboru.** Silnik
+  enumeruje każdą kombinację celów i X jako osobną komendę: Fireball dawał
+  **232** przyciski, Wrap in Flames 15. Nowy `src/table/multi-target.js`
+  rozkłada te warianty na dwa wymiary (zbiór celów + zakres X), a
+  `renderMultiTargetWizard` pokazuje ptaszki i licznik X. Zatwierdzenie
+  wraca do komendy z `legalCommands`, więc silnik i protokół są bez zmian.
+- **D (134f4f1) — komunikat nazywa decydenta.** „(wybór gracza)" przy karcie
+  BOTA czytało się jak własna decyzja. Trzy komunikaty mówią teraz wprost
+  „(wybór opcjonalny: Nieprzyjaciel)"; strażnik pilnuje, by fraza nie wróciła.
+
+**Stan:** `npm test` **2926/2926**, build **53 moduły / 2502.3 kB**.
 
 
 ## M194 — Batch 47: 8 kart właściciela (2026-08-23, PR #70)
