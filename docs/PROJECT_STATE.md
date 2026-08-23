@@ -1,7 +1,50 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-22 (M191: Batch 46 — 10 kart; fabricate, echo, impulse-exile, ochrona po jakości, GRAF lochu w tle)
-- **Poprzednia:** 2026-08-22 (M190: uwagi A/A2/B/C/D — opisy many, GRAF lochu, equip Thieves' Tools, wizard many)
+- **Ostatnia aktualizacja:** 2026-08-23 (M194: Batch 47 — 8 kart; outlast, warianty druku, Pyxis, naprawa martwego impulse-exile)
+- **Poprzednia:** 2026-08-23 (M193: kolory źródeł many czytane z Oracle — zgłoszenie właściciela A/A1)
+
+
+## M194 — Batch 47: 8 kart właściciela (2026-08-23, PR #70)
+
+Plan: `docs/plans/PLAN_2026-08-23-m194-batch47.md`. Dane Oracle pobrane ze
+Scryfalla PRZED kodowaniem (ADR 0010 §2a). Karty: Curate (STX), Negate (M15),
+Divest, Supernatural Stamina, Sequestered Stash, Enduring Sliver, Caves of
+Chaos Adventurer, Pyxis of Pandemonium. (Skilled Animator z pierwotnej listy
+wycofany przez właściciela — karta już istniała.)
+
+**DWA WARIANTY tej samej karty (nowa konwencja).** Curate i Negate były już
+w katalogu; właściciel dołożył drugi egzemplarz z innym drukiem, artem
+i PLANEM, żeby trafił do innej talii. Rozpoznanie wykryło ryzyko blokujące:
+pliki talii zapisywały karty po NAZWIE, a parser brał pierwszą pasującą, więc
+dwa „Curate" rozjechałyby się po cichu (jedna karta zniknęłaby z gry przy
+zielonych strażnikach). Format talii wskazuje teraz EGZEMPLARZ — „1x Curate
+(STX)" — przy realnej kolizji nazw; 15 istniejących plików nie zmieniło się
+ani o znak.
+
+**Nowe mechaniki:** keyword **outlast** (CR 702.100a) wraz z pierwszą
+w projekcie statyką nadającą ZDOLNOŚĆ AKTYWOWANĄ plemieniu (liczona przy
+odczycie, więc odejście lorda natychmiast ją odbiera); `filter.anyTypes` przy
+reveal+discard (Divest wybiera tylko artefakt/stwora); opcjonalny odzysk karty
+z grobu na wierzch po millu (Sequestered Stash — kandydatem jest też artefakt
+dopiero co zmielony); `freeIfCondition: completed_dungeon` (Caves of Chaos
+Adventurer — ukończenie lochu liczone z grafu Undercity, nie z numeru pokoju);
+wygnanie zakryte per gracz z powiązaniem ze źródłem + odkrycie i wprowadzenie
+permanentów pod kontrolę WŁAŚCICIELA (Pyxis of Pandemonium).
+
+**Dwie naprawy u źródła (klasa L48 — oferta ≠ walidacja):**
+1. **Impulse-exile był martwy od Batcha 46**: permanent wygnany przez Gila
+   Courser NIGDY nie był enumerowany w ofercie — silnik przyjmował komendę,
+   której nikt nie proponował, więc karty nie dało się zagrać.
+2. **Ręczne łańcuchy pendingów w playerView** pomijały część decyzji
+   (`pendingUndercityRoute` z M190/B, `pendingFabricate`) — oferta rzutów
+   pojawiała się mimo czekającej decyzji, a execute ją odbijał („Bot wybrał
+   nielegalną komendę"). Zastąpione jednym `firstDecisionOwner == null`.
+
+Trzy strażniki porównywały karty po NAZWIE i po dodaniu wariantów przestały
+mówić prawdę (jeden miał własną kopię parsera talii — klasa L41).
+
+**Stan:** `npm test` **2893/2893**, build **52 moduły / 2490.0 kB**,
+katalog **437 kart**, 15 talii (Theros awansował z worka).
 
 
 ## M191 — Batch 46: 10 kart właściciela (2026-08-22, PR #70)
