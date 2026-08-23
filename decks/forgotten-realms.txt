@@ -15,6 +15,7 @@
 1x Patron of the Arts
 1x Silvanus's Invoker
 1x Your Temple Is Under Attack
+1x Caves of Chaos Adventurer
 1x Inspiring Bard
 1x Lurking Green Dragon
 1x Stirring Bard
@@ -22,7 +23,7 @@
 1x Underdark Explorer
 1x Marut
 2x Plains
-1x Island
+2x Island
 3x Swamp
 2x Mountain
-3x Forest
+2x Forest

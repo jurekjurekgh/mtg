@@ -484,3 +484,200 @@ test('B47/C2f: outlast znika, gdy Enduring Sliver opuszcza pole bitwy', async ()
     .filter((c) => c.type === 'activate_ability' && c.objectId === 'other');
   assert.deepEqual(after, [], 'po odejściu lorda outlast znika natychmiast');
 });
+
+// ---- Transza D: Caves of Chaos Adventurer --------------------------------
+
+test('B47/D1: Caves of Chaos Adventurer — dane wg Oracle', () => {
+  const card = REGISTRY.get('caves-of-chaos-adventurer');
+  assert.ok(card, 'karta w katalogu');
+  assert.deepEqual([card.power, card.toughness], [5, 3]);
+  assert.equal(card.manaCost, 4);
+  assert.deepEqual(card.keywords, ['trample']);
+  const etb = card.abilities.find((a) => a.trigger?.event === 'enter_battlefield');
+  assert.ok(etb, 'ETB: obejmujesz inicjatywę');
+  assert.deepEqual((Array.isArray(etb.effect) ? etb.effect : [etb.effect]).map((e) => e.type),
+    ['take_initiative']);
+  const atk = card.abilities.find((a) => a.trigger?.event === 'attacks');
+  assert.ok(atk, 'trigger ataku: impulse exile');
+  assert.deepEqual((Array.isArray(atk.effect) ? atk.effect : [atk.effect]).map((e) => e.type),
+    ['exile_top_playable_until_next_turn']);
+});
+
+test('B47/D2: atak wygania wierzch biblioteki jako grywalny', async () => {
+  const { createGameState, addObject, execute, playerView } = await import('../src/engine/game-state.js');
+  const { gameObjectDataOf } = await import('../src/cards/materialize.js');
+  const { jumpToStep } = await import('../src/engine/turn.js');
+  const state = createGameState({ seed: 47, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  const def = REGISTRY.get('caves-of-chaos-adventurer');
+  addObject(state, {
+    id: 'adv', instanceId: 'i-adv', cardId: 'caves-of-chaos-adventurer', controllerId: 'p1',
+    ownerId: 'p1', zone: 'battlefield', ...gameObjectDataOf(def),
+    types: def.types, keywords: def.keywords, subtypes: def.subtypes ?? [], summoningSickness: false,
+  });
+  addObject(state, {
+    id: 'lib0', instanceId: 'i-lib0', cardId: 'hill-giant', controllerId: 'p1', ownerId: 'p1',
+    zone: 'library', kind: 'creature', power: 3, toughness: 3, types: ['Creature'],
+  });
+  const declare = playerView(state, 'p1').legalCommands.find((c) => c.type === 'declare_attackers');
+  assert.ok(declare, 'można zadeklarować atak');
+  assert.ok(execute(state, { ...declare, attackerIds: ['adv'] }).ok, 'atak zadeklarowany');
+  for (let i = 0; i < 8 && state.zones.stack.length > 0; i += 1) {
+    const pass = playerView(state, state.turn.priorityPlayerId).legalCommands
+      .find((c) => c.type === 'pass_priority');
+    if (!pass) break;
+    execute(state, pass);
+  }
+  const exiled = [...state.objects.values()].filter((o) => o.zone === 'exile');
+  assert.equal(exiled.length, 1, 'wierzch biblioteki wygnany');
+  assert.ok(exiled[0].playableUntilTurn != null,
+    'wygnana karta jest GRYWALNA do końca następnej tury (impulse exile)');
+});
+
+test('B47/D3: bez ukończonego lochu karta kosztuje normalnie', () => {
+  // Oracle: „If you've completed a dungeon, you may play that card this turn
+  // WITHOUT PAYING its mana cost. Otherwise, you may play that card this turn."
+  // Warunek musi być w DANYCH karty (ADR 0002) — silnik nie zna nazw kart.
+  const card = REGISTRY.get('caves-of-chaos-adventurer');
+  const atk = card.abilities.find((a) => a.trigger?.event === 'attacks');
+  const eff = (Array.isArray(atk.effect) ? atk.effect : [atk.effect])[0];
+  assert.equal(eff.freeIfCondition?.type, 'completed_dungeon',
+    'deskryptor niesie warunek „za darmo, jeśli ukończyłeś loch"');
+});
+
+test('B47/D4: ukończony loch daje grę BEZ płacenia kosztu', async () => {
+  const { createGameState, addObject } = await import('../src/engine/game-state.js');
+  const { applyEffect } = await import('../src/engine/effects.js');
+  const state = createGameState({ seed: 47, players: [{ id: 'p1' }, { id: 'p2' }] });
+  addObject(state, {
+    id: 'lib0', instanceId: 'i-lib0', cardId: 'hill-giant', controllerId: 'p1', ownerId: 'p1',
+    zone: 'library', kind: 'creature', power: 3, toughness: 3, types: ['Creature'], manaCost: 4,
+  });
+  // Gracz ukończył loch: ostatni pokój Undercity (Throne of the Dead Three).
+  state.undercityProgress = { p1: 9 };
+  const source = { id: 'src', controllerId: 'p1', cardId: 'caves-of-chaos-adventurer', zone: 'battlefield' };
+  applyEffect(state, {
+    type: 'exile_top_playable_until_next_turn',
+    freeIfCondition: { type: 'completed_dungeon' },
+  }, source, []);
+  const exiled = [...state.objects.values()].find((o) => o.zone === 'exile');
+  assert.ok(exiled, 'karta wygnana');
+  assert.equal(exiled.playableWithoutPaying, true,
+    'po ukończeniu lochu kartę gra się bez płacenia kosztu many');
+});
+
+test('B47/D5: NIEukończony loch — karta grywalna, ale za koszt (anty-over-fix)', async () => {
+  const { createGameState, addObject } = await import('../src/engine/game-state.js');
+  const { applyEffect } = await import('../src/engine/effects.js');
+  const state = createGameState({ seed: 47, players: [{ id: 'p1' }, { id: 'p2' }] });
+  addObject(state, {
+    id: 'lib0', instanceId: 'i-lib0', cardId: 'hill-giant', controllerId: 'p1', ownerId: 'p1',
+    zone: 'library', kind: 'creature', power: 3, toughness: 3, types: ['Creature'], manaCost: 4,
+  });
+  state.undercityProgress = { p1: 3 }; // w trakcie lochu, nie na końcu
+  const source = { id: 'src', controllerId: 'p1', cardId: 'caves-of-chaos-adventurer', zone: 'battlefield' };
+  applyEffect(state, {
+    type: 'exile_top_playable_until_next_turn',
+    freeIfCondition: { type: 'completed_dungeon' },
+  }, source, []);
+  const exiled = [...state.objects.values()].find((o) => o.zone === 'exile');
+  assert.ok(exiled.playableUntilTurn != null, 'karta nadal grywalna');
+  assert.notEqual(exiled.playableWithoutPaying, true, 'ale za PEŁNY koszt many');
+});
+
+test('B47/D6: po ukończonym lochu karta z impulse-exile gra się BEZ many', async () => {
+  // Dowód, że flaga nie jest martwa (L48): przy PUSTEJ manabazie karta
+  // wygnana po ukończonym lochu musi dać się zagrać, a bez lochu — nie.
+  const { createGameState, addObject, playerView, execute } = await import('../src/engine/game-state.js');
+  const { applyEffect } = await import('../src/engine/effects.js');
+  const { gameObjectDataOf } = await import('../src/cards/materialize.js');
+  const { jumpToStep } = await import('../src/engine/turn.js');
+  const build = (room) => {
+    const state = createGameState({ seed: 47, players: [{ id: 'p1' }, { id: 'p2' }] });
+    state.turn = jumpToStep(state.turn, 'main', 'p1');
+    state.turn.activePlayerId = 'p1';
+    state.turn.priorityPlayerId = 'p1';
+    const giant = REGISTRY.get('hill-giant'); // {3}{R}, a gracz NIE MA lądów
+    addObject(state, {
+      id: 'lib0', instanceId: 'i-lib0', cardId: 'hill-giant', controllerId: 'p1', ownerId: 'p1',
+      zone: 'library', ...gameObjectDataOf(giant), types: giant.types,
+    });
+    state.undercityProgress = { p1: room };
+    applyEffect(state, {
+      type: 'exile_top_playable_until_next_turn',
+      freeIfCondition: { type: 'completed_dungeon' },
+    }, { id: 'src', controllerId: 'p1', cardId: 'caves-of-chaos-adventurer', zone: 'battlefield' }, []);
+    return state;
+  };
+  // 9 = Throne of the Dead Three (pokój bez wyjścia) → loch ukończony.
+  const done = build(9);
+  const exiledId = [...done.objects.values()].find((o) => o.zone === 'exile').id;
+  const freeOffer = playerView(done, 'p1').legalCommands
+    .find((c) => (c.type === 'cast_permanent' || c.type === 'cast_spell') && c.objectId === exiledId);
+  assert.ok(freeOffer, 'bez lądów, ale po ukończonym lochu — oferta zagrania jest');
+  assert.ok(execute(done, freeOffer).ok, 'zagranie bez płacenia przyjęte');
+  // Kontrola: bez ukończonego lochu tej oferty NIE MA (brak many na {3}{R}).
+  const mid = build(3);
+  const midExiledId = [...mid.objects.values()].find((o) => o.zone === 'exile').id;
+  const paidOffer = playerView(mid, 'p1').legalCommands
+    .find((c) => (c.type === 'cast_permanent' || c.type === 'cast_spell') && c.objectId === midExiledId);
+  assert.equal(paidOffer, undefined, 'w trakcie lochu trzeba zapłacić — bez many brak oferty');
+});
+
+test('B47/D7: REGRESJA — impulse-exile za PEŁNY koszt też ma ofertę (Gila Courser)', async () => {
+  // Luka wykryta przy Batchu 47, ale pochodzaca z Batcha 46: permanent
+  // wygnany impulsem NIE BYL enumerowany w ofercie, wiec Gila Courser
+  // wyganial karte, ktorej nastepnie nie dalo sie zagrac. Silnik przyjmowal
+  // komende, ale nikt jej nie proponowal (klasa L48).
+  const { createGameState, addObject, playerView, execute } = await import('../src/engine/game-state.js');
+  const { applyEffect } = await import('../src/engine/effects.js');
+  const { gameObjectDataOf } = await import('../src/cards/materialize.js');
+  const { jumpToStep } = await import('../src/engine/turn.js');
+  const state = createGameState({ seed: 46, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  const giant = REGISTRY.get('hill-giant'); // {3}{R}
+  addObject(state, {
+    id: 'lib0', instanceId: 'i-lib0', cardId: 'hill-giant', controllerId: 'p1', ownerId: 'p1',
+    zone: 'library', ...gameObjectDataOf(giant), types: giant.types,
+  });
+  for (let i = 0; i < 4; i += 1) {
+    addObject(state, {
+      id: `mtn${i}`, instanceId: `i-mtn${i}`, cardId: 'basic-mountain', controllerId: 'p1',
+      ownerId: 'p1', zone: 'battlefield', kind: 'land', types: ['Basic', 'Land'], subtypes: ['Mountain'],
+    });
+  }
+  // Impulse BEZ warunku lochu — wariant Gila Coursera (pełny koszt).
+  applyEffect(state, { type: 'exile_top_playable_until_next_turn' },
+    { id: 'src', controllerId: 'p1', cardId: 'gila-courser', zone: 'battlefield' }, []);
+  const exiled = [...state.objects.values()].find((o) => o.zone === 'exile');
+  const offer = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === exiled.id);
+  assert.ok(offer, 'karta wygnana impulsem MUSI mieć ofertę zagrania (za pełny koszt)');
+  assert.ok(execute(state, offer).ok, 'i musi dać się zagrać');
+});
+
+test('B47/D8: impulse bez many nie jest oferowany (anty-over-fix)', async () => {
+  const { createGameState, addObject, playerView } = await import('../src/engine/game-state.js');
+  const { applyEffect } = await import('../src/engine/effects.js');
+  const { gameObjectDataOf } = await import('../src/cards/materialize.js');
+  const { jumpToStep } = await import('../src/engine/turn.js');
+  const state = createGameState({ seed: 46, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  const giant = REGISTRY.get('hill-giant');
+  addObject(state, {
+    id: 'lib0', instanceId: 'i-lib0', cardId: 'hill-giant', controllerId: 'p1', ownerId: 'p1',
+    zone: 'library', ...gameObjectDataOf(giant), types: giant.types,
+  });
+  applyEffect(state, { type: 'exile_top_playable_until_next_turn' },
+    { id: 'src', controllerId: 'p1', cardId: 'gila-courser', zone: 'battlefield' }, []);
+  const exiled = [...state.objects.values()].find((o) => o.zone === 'exile');
+  const offer = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === exiled.id);
+  assert.equal(offer, undefined, 'bez lądów nie ma z czego zapłacić {3}{R}');
+});

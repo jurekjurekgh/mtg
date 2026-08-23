@@ -9112,6 +9112,38 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['outlast (CR 702.100a) wymaga {T} i działa tylko jak sorcery — stwór z chorobą przywołania go nie użyje', 'nadanie plemieniu liczone przy odczycie: zniknięcie Enduring Slivera natychmiast odbiera outlast pozostałym Sliverom'],
   }),
 
+  // ---- Batch 47 — transza D: Caves of Chaos Adventurer ----
+
+  // 7. Caves of Chaos Adventurer (CLB) — trample, ETB inicjatywa, a przy
+  //    ataku impulse-exile z bonusem za UKOŃCZONY loch (CR 701.51b).
+  defineCard({
+    id: 'caves-of-chaos-adventurer', name: 'Caves of Chaos Adventurer', set: 'CLB',
+    types: ['Creature'], subtypes: ['Human', 'Barbarian'], colors: ['R'],
+    power: 5, toughness: 3, manaCost: 4, keywords: ['trample'],
+    oracleText: "Trample\nWhen this creature enters, you take the initiative.\nWhenever this creature attacks, exile the top card of your library. If you've completed a dungeon, you may play that card this turn without paying its mana cost. Otherwise, you may play that card this turn.",
+    imageUri: 'https://cards.scryfall.io/large/front/0/9/09abb6df-2aa1-4999-b550-db2892faa8c7.jpg?1783922743',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'take_initiative' }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks' },
+        effect: [{
+          type: 'exile_top_playable_until_next_turn',
+          // „If you've completed a dungeon … without paying its mana cost."
+          // Warunek w DANYCH; silnik sprawdza stan lochu (ADR 0002).
+          freeIfCondition: { type: 'completed_dungeon' },
+        }],
+      }),
+    ],
+    artId: 175, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+    notes: ['ukończenie lochu = dotarcie do pokoju bez dalszych ścieżek (Throne of the Dead Three) — Undercity jest grafem, więc liczy się brak wyjścia, nie numer pokoju', 'bez ukończonego lochu karta i tak jest grywalna w tej turze, ale za pełny koszt many'],
+  }),
+
 ]);
 
 /**

@@ -552,6 +552,12 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // (CR 702.136 — „Cast it as a sorcery on a later turn without paying its
   // mana cost"). Batch 24: Spinewoods Paladin — plot dla permanentów.
   const plotted = object?.zone === 'exile' && object.plotted;
+  // Batch 47 (Caves of Chaos Adventurer, CR 701.51b): karta wygnana impulse
+  // po UKOŃCZONYM lochu gra się „without paying its mana cost" — tak jak
+  // plot. Flagę ustawia efekt wygnania (exile_top_playable_until_next_turn),
+  // tutaj tylko ZERUJEMY koszt; bez tego pole byłoby martwe (L48: oferta
+  // i płatność muszą znać tę samą regułę).
+  const freeImpulse = object?.zone === 'exile' && object.playableWithoutPaying === true;
   // M158/Batch 39 (CR 702.34): rzut za koszt madness z exile (karta
   // odrzucona z madnessReady) — timing ignorowany (rzut w rozstrzyganiu
   // zdolności, jak rebound/suspend).
@@ -563,7 +569,12 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   if (plotted && object.plottedAtTurn != null && state.turn.number <= object.plottedAtTurn) {
     throw new Error('Plot: można rzucić dopiero w późniejszej turze');
   }
-  if (!player || !object || object.controllerId !== playerId || (object.zone !== 'hand' && !plotted && !warpReady && !madnessLive)) throw new Error('Nielegalny permanent');
+  // Batch 47 (Gila Courser, Caves of Chaos Adventurer): PERMANENT wygnany
+  // impulsem jest grywalny z exile do konca wskazanej tury (CR 601.2b).
+  // Bez tej bramki oferta pokazywala ruch, ktorego walidacja nie przyjmowala.
+  const impulseLive = object?.zone === 'exile' && object.playableUntilTurn != null
+    && state.turn.number <= object.playableUntilTurn;
+  if (!player || !object || object.controllerId !== playerId || (object.zone !== 'hand' && !plotted && !warpReady && !madnessLive && !impulseLive)) throw new Error('Nielegalny permanent');
   if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') throw new Error('Ten obiekt nie jest zagrywalnym permanentem');
   // Flash (CR 702.8): permanent z flash można zagrać w każdej fazie (jak instant);
   // bez flash — tylko w swojej main phase (plot też rzuca się jako sorcery).
@@ -580,7 +591,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   if (warpCast && !object.warp) throw new Error('Ta karta nie ma mechaniki warp');
   if (madnessCast && !object.madness) throw new Error('Ta karta nie ma mechaniki madness');
   if (warpCast && (faceDown || kicked || treasureAlt || phyrexianPayWithLife > 0)) throw new Error('Koszt warp wyklucza morph/kicker/phyrexian/skarby');
-  let cost = plotted ? 0 : (warpCast ? (object.warp?.cost ?? object.manaCost ?? 0)
+  let cost = (plotted || freeImpulse) ? 0 : (warpCast ? (object.warp?.cost ?? object.manaCost ?? 0)
     : (madnessCast ? (object.madness?.cost ?? object.manaCost ?? 0) : (object.manaCost ?? 0)));
   if (faceDown) {
     if (!object.morph || object.morph.cost == null) throw new Error('Ta karta nie może być zagrana twarzą w dół');
@@ -632,7 +643,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     : warpCast
       ? (object.warp?.colors ?? []).map((color) => [color])
       : null;
-  if (!plotted && !faceDown && !treasureAltCost) {
+  if (!plotted && !freeImpulse && !faceDown && !treasureAltCost) {
     const colorGateOk = altCostColors
       ? hasColorRequirements(state, playerId, altCostColors)
       : hasColorManaForObject(state, playerId, object, phyrexianPayWithLife);
@@ -681,12 +692,12 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // Plot – rzut bez kosztu many – nie ma też wymagań kolorowych (CR 702.136).
   // M161/O2: przy madness/warp pipy AKTYWNEGO kosztu alternatywnego
   // (altCostColors — ta sama lista co bramka kolorów wyżej).
-  const requirements = (faceDown || plotted) ? [] : altCostColors
+  const requirements = (faceDown || plotted || freeImpulse) ? [] : altCostColors
     ? altCostColors
     : treasureAltCost
       ? (treasureAltCost.colors ?? []).map((color) => [color])
       : [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips];
-  if (!faceDown && !plotted && !warpCast && !madnessCast && !treasureAltCost && !hasColorRequirements(state, playerId, requirements)) {
+  if (!faceDown && !plotted && !freeImpulse && !warpCast && !madnessCast && !treasureAltCost && !hasColorRequirements(state, playerId, requirements)) {
     throw new Error('Brak kolorowego źródła many');
   }
   if (treasureAltCost) {

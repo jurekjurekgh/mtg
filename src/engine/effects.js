@@ -255,6 +255,17 @@ function isFinalRoom(roomIndex) {
   return (UNDERCITY_ROOMS[roomIndex - 1]?.leadsTo ?? []).length === 0;
 }
 
+/**
+ * Batch 47 (CR 701.51b): gracz UKOŃCZYŁ loch, gdy jego znacznik dotarł do
+ * pokoju bez dalszych ścieżek. Undercity jest GRAFEM (M190/B), więc „ostatni
+ * pokój" to nie „pokój numer 9", tylko taki, z którego nie ma wyjścia —
+ * liczone z danych lochu, nie ze stałej.
+ */
+function hasCompletedDungeon(state, playerId) {
+  const room = state.undercityProgress?.[playerId] ?? 0;
+  return room > 0 && isFinalRoom(room);
+}
+
 /** Wchodzi do WSKAZANEGO pokoju: postęp, zdarzenie i efekt pokoju. */
 function enterUndercityRoom(state, playerId, room) {
   state.undercityProgress = { ...state.undercityProgress, [playerId]: room };
@@ -757,10 +768,24 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // następną (numer + 2 przy dwóch graczach); poza swoją turą o najbliższą.
     const isMyTurn = state.turn.activePlayerId === controllerId;
     const playableUntilTurn = state.turn.number + (isMyTurn ? 2 : 1);
-    state.objects.set(exileId, Object.freeze({ ...moved, playableUntilTurn }));
+    // Batch 47 (Caves of Chaos Adventurer): „If you've COMPLETED A DUNGEON,
+    // you may play that card this turn without paying its mana cost.
+    // Otherwise, you may play that card this turn." Warunek jest deskryptorem
+    // efektu (ADR 0002), a jego spełnienie liczy silnik ze stanu lochu:
+    // ukończenie = dotarcie do pokoju bez dalszych ścieżek (Throne of the
+    // Dead Three). Bez deskryptora zachowanie zostaje jak dotąd — karta
+    // grywalna za pełny koszt (Gila Courser).
+    const freeCondition = effect.freeIfCondition ?? null;
+    const withoutPaying = freeCondition?.type === 'completed_dungeon'
+      && hasCompletedDungeon(state, controllerId);
+    state.objects.set(exileId, Object.freeze({
+      ...moved, playableUntilTurn,
+      ...(withoutPaying ? { playableWithoutPaying: true } : {}),
+    }));
     state.events.push(event('object_exiled', {
       fromId: topId, objectId: exileId, object: state.objects.get(exileId),
       cardId: card?.cardId ?? null, playerId: controllerId, playableUntilTurn,
+      ...(withoutPaying ? { playableWithoutPaying: true } : {}),
     }));
     return;
   }

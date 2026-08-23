@@ -450,11 +450,14 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // Kolorowa walidacja many (Sweet Oblivion: 2 Plains nie mogą rzucić U)
   // Plot – rzut bez kosztu many (bez koloru) – pomijamy walidację kolorową, jak w legalSpellCasts.
   // Suspend (CR 702.62): rzut po zdjęciu ostatniego licznika czasu — bez kosztu.
-  if (!object.plotted && !object.suspendReady && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
+  // Batch 47: impulse „bez placenia" (Caves of Chaos Adventurer po ukonczonym
+  // lochu) omija koszt i kolorowa walidacje — jak plot/suspend.
+  const freeImpulse = object.zone === 'exile' && object.playableWithoutPaying === true;
+  if (!object.plotted && !object.suspendReady && !freeImpulse && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
   // Warunkowa obniżka kosztu (Metalcraft, Stoic Rebuttal) oraz modyfikatory
   // z permanentów (Etherium Sculptor): płacimy efektywny koszt wyliczony
   // w chwili rzutu (warunki i modyfikatory oceniane na bieżącej planszy).
-  const baseMana = (object.plotted || object.suspendReady) ? 0 : effectiveSpellManaCost(state, object);
+  const baseMana = (object.plotted || object.suspendReady || freeImpulse) ? 0 : effectiveSpellManaCost(state, object);
   const altManaExtra = (sacrificeCost && payAltCost) ? (orPayMana ?? 0) : 0;
   const manaSpent = baseMana + altManaExtra;
   spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId));
@@ -2005,18 +2008,32 @@ export function legalSpellCasts(state, playerId) {
     ...state.zones.hand,
     ...state.zones.exile.filter((id) => {
       const obj = state.objects.get(id);
-      return obj?.controllerId === playerId && (obj?.plotted || obj?.suspendReady);
+      if (obj?.controllerId !== playerId) return false;
+      // Batch 47: karta wygnana IMPULSEM (Gila Courser, Caves of Chaos
+      // Adventurer) jest grywalna z exile do konca wskazanej tury. Dotad
+      // requireSpell ja przyjmowal, ale OFERTA jej nie enumerowala, wiec
+      // gracz nie mial jej w „Twoje dzialania" (klasa L48).
+      const impulseLive = obj?.playableUntilTurn != null && state.turn.number <= obj.playableUntilTurn;
+      return obj?.plotted || obj?.suspendReady || impulseLive;
     }),
   ];
   for (const id of ids) {
     const object = state.objects.get(id);
     if (object?.controllerId !== playerId || object.kind !== 'spell' || !object.spell) continue;
+    // „Without paying its mana cost" (ukonczony loch) — jak plot.
+    const freeImpulseCast = object.zone === 'exile' && object.playableWithoutPaying === true;
+    if (freeImpulseCast) {
+      if (object.spell.timing === 'sorcery') {
+        const mainPhaseFree = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
+        if (!mainPhaseFree || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) continue;
+      }
+    }
     // Metalcraft (Stoic Rebuttal): warunkowa obniżka kosztu oceniana w chwili
     // enumeracji — przy spełnionym warunku czar pojawia się przy mniejszej puli.
     // Suspend (CR 702.62): rzut po zdjęciu ostatniego licznika czasu jest
     // bez kosztu many — jak zaplotowany.
-    if (!object.plotted && !object.suspendReady && effectiveSpellManaCost(state, object) > manaAvailable) continue;
-    if (!object.plotted && !object.suspendReady && !hasColorForObject(state, playerId, object)) continue;
+    if (!object.plotted && !object.suspendReady && !freeImpulseCast && effectiveSpellManaCost(state, object) > manaAvailable) continue;
+    if (!object.plotted && !object.suspendReady && !freeImpulseCast && !hasColorForObject(state, playerId, object)) continue;
     if (object.spell.timing === 'sorcery') {
       const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
       if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) continue;
