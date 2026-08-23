@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Wooden+Stake&set=isd",
+  "print": "Wooden Stake (ISD)",
+  "name": "Wooden Stake",
+  "mana_cost": "{2}",
+  "cmc": 2.0,
+  "type_line": "Artifact — Equipment",
+  "oracle_text": "Equipped creature gets +1/+0.\nWhenever equipped creature blocks or becomes blocked by a Vampire, destroy that creature. It can't be regenerated.\nEquip {1} ({1}: Attach to target creature you control. Equip only as a sorcery.)",
+  "colors": [],
+  "keywords": [
+    "Equip"
+  ],
+  "set": "isd",
+  "collector_number": "237",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/e/7e2825f5-8112-4108-910a-4303b2d57356.jpg?1783940895"
+  },
+  "pobrano": "2026-08-23"
+}

@@ -1,0 +1,24 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Ettercap+//+Web+Shot&set=clb",
+  "print": "Ettercap // Web Shot (CLB)",
+  "name": "Ettercap // Web Shot",
+  "mana_cost": "{4}{G} // {2}{G}",
+  "cmc": 5.0,
+  "type_line": "Creature — Spider Beast // Instant — Adventure",
+  "oracle_text": "Reach // Destroy target creature with flying. (Then exile this card. You may cast the creature later from exile.)",
+  "colors": [
+    "G"
+  ],
+  "keywords": [
+    "Reach"
+  ],
+  "set": "clb",
+  "collector_number": "231",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/8/f/8f5228dc-ec9d-456f-a89c-1bc592a1bbab.jpg?1783922714"
+  },
+  "pobrano": "2026-08-23",
+  "power": "2",
+  "toughness": "5"
+}

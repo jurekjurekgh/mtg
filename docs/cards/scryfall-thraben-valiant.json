@@ -1,0 +1,24 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Thraben+Valiant&set=avr",
+  "print": "Thraben Valiant (AVR)",
+  "name": "Thraben Valiant",
+  "mana_cost": "{1}{W}",
+  "cmc": 2.0,
+  "type_line": "Creature — Human Soldier",
+  "oracle_text": "Vigilance",
+  "colors": [
+    "W"
+  ],
+  "keywords": [
+    "Vigilance"
+  ],
+  "set": "avr",
+  "collector_number": "39",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/2/0/20558f69-9240-49b9-9695-caf75ee2db1b.jpg?1783940728"
+  },
+  "pobrano": "2026-08-23",
+  "power": "2",
+  "toughness": "1"
+}

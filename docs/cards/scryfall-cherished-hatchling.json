@@ -1,0 +1,24 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Cherished+Hatchling&set=rix",
+  "print": "Cherished Hatchling (RIX)",
+  "name": "Cherished Hatchling",
+  "mana_cost": "{1}{G}",
+  "cmc": 2.0,
+  "type_line": "Creature — Dinosaur",
+  "oracle_text": "When this creature dies, you may cast Dinosaur spells this turn as though they had flash, and whenever you cast a Dinosaur spell this turn, it gains \"When this creature enters, you may have it fight another target creature.\"",
+  "colors": [
+    "G"
+  ],
+  "keywords": [
+    "Fight"
+  ],
+  "set": "rix",
+  "collector_number": "124",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/a/0a14fe6c-b272-415b-974d-c60d016ab786.jpg?1783935290"
+  },
+  "pobrano": "2026-08-23",
+  "power": "2",
+  "toughness": "1"
+}

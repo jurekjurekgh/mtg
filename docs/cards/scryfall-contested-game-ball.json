@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Contested+Game+Ball&set=lci",
+  "print": "Contested Game Ball (LCI)",
+  "name": "Contested Game Ball",
+  "mana_cost": "{2}",
+  "cmc": 2.0,
+  "type_line": "Artifact",
+  "oracle_text": "Whenever you're dealt combat damage, the attacking player gains control of this artifact and untaps it.\n{2}, {T}: Draw a card and put a point counter on this artifact. Then if it has five or more point counters on it, sacrifice it and create a Treasure token.",
+  "colors": [],
+  "keywords": [
+    "Treasure"
+  ],
+  "set": "lci",
+  "collector_number": "251",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/1/71cb7776-a6af-4efb-b536-6b9b4f3d3874.jpg?1783913724"
+  },
+  "pobrano": "2026-08-23"
+}

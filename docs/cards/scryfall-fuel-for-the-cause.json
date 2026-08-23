@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Fuel+for+the+Cause&set=mbs",
+  "print": "Fuel for the Cause (MBS)",
+  "name": "Fuel for the Cause",
+  "mana_cost": "{2}{U}{U}",
+  "cmc": 4.0,
+  "type_line": "Instant",
+  "oracle_text": "Counter target spell, then proliferate. (Choose any number of permanents and/or players, then give each another counter of each kind already there.)",
+  "colors": [
+    "U"
+  ],
+  "keywords": [
+    "Proliferate"
+  ],
+  "set": "mbs",
+  "collector_number": "25",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/4/1/4126e0e5-9b23-496f-8a09-7a35499f9a09.jpg?1783941389"
+  },
+  "pobrano": "2026-08-23"
+}

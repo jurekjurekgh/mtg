@@ -1,0 +1,24 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Stampeding+Elk+Herd&set=dtk",
+  "print": "Stampeding Elk Herd (DTK)",
+  "name": "Stampeding Elk Herd",
+  "mana_cost": "{3}{G}{G}",
+  "cmc": 5.0,
+  "type_line": "Creature — Elk",
+  "oracle_text": "Formidable — Whenever this creature attacks, if creatures you control have total power 8 or greater, creatures you control gain trample until end of turn.",
+  "colors": [
+    "G"
+  ],
+  "keywords": [
+    "Formidable"
+  ],
+  "set": "dtk",
+  "collector_number": "208",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/e/7e55e213-6eab-4086-96cd-024de6150fbe.jpg?1783938575"
+  },
+  "pobrano": "2026-08-23",
+  "power": "5",
+  "toughness": "5"
+}

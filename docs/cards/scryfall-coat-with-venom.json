@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Coat+with+Venom&set=dtk",
+  "print": "Coat with Venom (DTK)",
+  "name": "Coat with Venom",
+  "mana_cost": "{B}",
+  "cmc": 1.0,
+  "type_line": "Instant",
+  "oracle_text": "Target creature gets +1/+2 and gains deathtouch until end of turn. (Any amount of damage it deals to a creature is enough to destroy it.)",
+  "colors": [
+    "B"
+  ],
+  "keywords": [],
+  "set": "dtk",
+  "collector_number": "91",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/8/c/8cc8e012-7043-405c-b6cd-b3b38f8a8d54.jpg?1783938600"
+  },
+  "pobrano": "2026-08-23"
+}

@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Steelclaw+Lance&set=eld",
+  "print": "Steelclaw Lance (ELD)",
+  "name": "Steelclaw Lance",
+  "mana_cost": "{B}{R}",
+  "cmc": 2.0,
+  "type_line": "Artifact — Equipment",
+  "oracle_text": "Equipped creature gets +2/+2.\nEquip Knight {1}\nEquip {3}",
+  "colors": [
+    "B",
+    "R"
+  ],
+  "keywords": [
+    "Equip"
+  ],
+  "set": "eld",
+  "collector_number": "202",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/a/cafcf909-d726-4bc2-adf6-c12ca242f0c1.jpg?1783932592"
+  },
+  "pobrano": "2026-08-23"
+}
