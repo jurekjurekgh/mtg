@@ -1,4 +1,4 @@
-// M200 — uwagi właściciela z testów (2026-08-23): A, A2, B, C, C2, D, E, E2,
+// M200 — uwagi właściciela z testów (2026-08-23): A (wycofane — patrz test), A2, B, C, C2, D, E, E2,
 // F, G, H + weryfikacja zgłoszenia L z audytu agenta. Każdy punkt osobnym
 // commitem (ADR 0020 C); plik rośnie kumulatywnie.
 import { test } from 'node:test';
@@ -61,30 +61,30 @@ test('M200/A2: wybór trasy Undercity ma nazwany tytuł (nie „Wariant (2 opcje
   assert.ok(!label.includes('Wariant'), 'bez generycznego „Wariant”: ' + label);
 });
 
-// ---- A: Forge nie wzmacnia przeciwnika (fizzle bez własnej kreatury) -------
+// ---- A (WYCOFANE, decyzja właściciela 2026-08-23): pokój Forge CELOWA DOWOLNEGO stwora ----
+// Wstępna „poprawka" A (kandydaci = tylko własne stwory) została WYCOFANA po
+// przeanalizowaniu Oracle przez właściciela: zdolność pokoju MUSI się rozstrzygnąć,
+// gdy istnieje legalny cel — stwór przeciwnika jest legalnym celem i musi móc
+// go dostać liczniki. Reguła procesu (L57): zgłoszenie właściciela weryfikować
+// wobec Oracle/CR PRZED wdrożeniem — rozbieżność zgłaszać, nie wdrażać ślepo.
 
-test('M200/A: Forge bez WŁASNEJ kreatury — efekt fizzluje, nie buffuje przeciwnika', () => {
+test('M200/A (wycofane): Forge — stwór PRZECIWNIKA jest legalnym celem i dostaje liczniki', () => {
   const state = game('p1');
-  putCard(state, 'foe', 'highland-game', 'p2'); // stwór PRZECIWNIKA
+  putCard(state, 'foe', 'highland-game', 'p2'); // jedyny stwór na stole
   enterForge(state, 'p1');
-  assert.equal(state.pendingRoomTargets.length, 0,
-    'brak własnej kreatury = brak decyzji celu (fizzle), nie wymuszony wybór');
-  assert.equal(state.objects.get('foe')?.counters?.['+1/+1'] ?? 0, 0,
-    'stwór przeciwnika NIE dostaje liczników (zgłoszenie: „bezsens wzmacniać mojego stwora”)');
-});
-
-test('M200/A: Forge z własną kreaturą — kandydaci = TYLKO własne, liczniki lądują na nich', () => {
-  const state = game('p1');
-  putCard(state, 'own', 'highland-game', 'p1');
-  putCard(state, 'foe', 'spinewoods-paladin', 'p2');
-  enterForge(state, 'p1');
-  assert.equal(state.pendingRoomTargets.length, 1, 'decyzja celu pokoju');
-  const pending = state.pendingRoomTargets[0];
-  assert.deepEqual(pending.candidateIds, ['own'],
-    'stwór przeciwnika nie jest kandydatem („target creature” pokoju = twój stwór)');
+  assert.equal(state.pendingRoomTargets.length, 1,
+    'istnieje legalny cel (stwór przeciwnika) — decyzja celu OBOWIĄZUJE (Oracle)');
+  assert.deepEqual(state.pendingRoomTargets[0].candidateIds, ['foe'],
+    'kandydaci = wszystkie stwory na polu bitwy');
   const cmd = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_room_target');
   assert.ok(cmd, 'oferta wyboru celu');
   assert.ok(execute(state, cmd).ok, 'wybór celu');
-  assert.equal(state.objects.get('own')?.counters?.['+1/+1'] ?? 0, 2, 'dwa liczniki +1/+1 na własnym stwora');
-  assert.equal(state.objects.get('foe')?.counters?.['+1/+1'] ?? 0, 0, 'przeciwnik nietknięty');
+  assert.equal(state.objects.get('foe')?.counters?.['+1/+1'] ?? 0, 2,
+    'zdolność rozstrzyga się na jedynym legalnym celu (właściciel: „musi być wykonana”)');
+});
+
+test('M200/A (wycofane): Forge bez JAKIEGOKOLWIEK stwora — efekt fizzluje (brak legalnego celu)', () => {
+  const state = game('p1');
+  enterForge(state, 'p1');
+  assert.equal(state.pendingRoomTargets.length, 0, 'zero stworów = brak legalnego celu = fizzle');
 });

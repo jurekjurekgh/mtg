@@ -159,6 +159,12 @@ Te reguły obowiązują każdego agenta bez wyjątku (szczegóły: `docs/WORKFLO
 ## Nienegocjowalne granice
 
 - Engine jest autorytetem reguł i stanu.
+- **Zgłoszenie ≠ reguła.** Zmianę sugerowaną przez zgłoszenie z rozgrywki
+  weryfikujesz wobec Oracle text (pliki `docs/cards/scryfall-*.json`) i CR
+  PRZED wdrożeniem. Gdy sugerowana naprawa zmienia legalność (cele, koszty,
+  efekty) niezgodnie z Oracle — NIE wdrażasz: zgłaszasz właścicielowi
+  rozbieżność z powołaniem na regułę i czekasz na decyzję. Lekcja L57
+  (2026-08-23, wycofany fix M200/A).
 - UI i kontrolery wysyłają intencje/wybory; nie mutują bezpośrednio stanu.
 - Core nie zawiera specjalnych przypadków rozpoznających konkretną kartę po nazwie/ID.
 - Kontroler otrzymuje widok gracza, nie pełny stan z ukrytymi informacjami.
