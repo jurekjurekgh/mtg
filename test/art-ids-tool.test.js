@@ -67,7 +67,10 @@ test('narzędzie nie zawiera adresu arkusza ani innych sekretów', () => {
 test('lokalny słownik zawiera wszystkie karty z ID setu, bez ucieczek i z dubletami setów', () => {
   const rows = parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8'));
   const data = rows.slice(1);
-  assert.equal(data.length, 566, 'pełna lista kolekcji (566 kart — Batch 48 dopisał 14)');
+  // M197/K2: 566 -> 556. Plik miał 10 wierszy zdublowanych BEZ kolumny Plan
+  // (pełne wpisy tych kart są wyżej) — usunięte, bo przy czytaniu ostatniej
+  // kolumny udawały plany o nazwach kart (zgłoszenie właściciela 2026-08-23).
+  assert.equal(data.length, 556, 'pełna lista kolekcji (556 unikalnych pozycji)');
   for (const [art, name] of data) {
     assert.match(art, /^\d+[A-Za-z0-9_]*$/, `ID ilustracji bez znaków specjalnych: ${art}`);
     assert.ok(name.trim(), `nazwa nie może być pusta (ID ${art})`);
@@ -96,7 +99,7 @@ test('dopasowanie rozstrzyga duplikaty po secie karty, inaczej pierwszym wpisem'
 
 test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', () => {
   const dict = artIdsFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
-  // Pełna lista kolekcji z arkusza (566 kart; duplikaty nazw to różne druki —
+  // Pełna lista kolekcji z arkusza (556 kart; duplikaty nazw to różne druki —
   // to różne druki, np. Curate 65STX/302BRO — pierwsze wystąpienie wygrywa).
   assert.ok(dict.size >= 500, 'słownik zawiera pełną listę kolekcji');
 

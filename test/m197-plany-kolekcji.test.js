@@ -88,3 +88,32 @@ test('M197: „Swiat Wiedzmina" to alias planu „Wiedzmin" — nie osobny plan 
   assert.equal(catalog.has('Świat Wiedźmina'), false, 'katalog uzywa nazwy „Wiedźmin"');
   assert.equal(plansInCollection().has('Świat Wiedźmina'), false, 'slownik kolekcji tak samo');
 });
+
+// --- Higiena slownika kolekcji (M197/K2) ---------------------------------
+//
+// Zgloszenie wlasciciela zaczelo sie od listy „planow", w ktorej byly nazwy
+// kart (Trestle Troll, Lab Rats, Anthem of Champions...). Powod: 10 wierszy
+// pliku NIE MIALO kolumny Plan, wiec czytanie „ostatniej kolumny" zwracalo
+// dla nich nazwe karty. Kazdy z tych wierszy byl DUBLETEM pozycji obecnej
+// wyzej w komplecie. Straznik pilnuje ksztaltu pliku, zeby taki wiersz nie
+// wrocil i nie zatruwal zadnej analizy.
+
+test('M197/K2: kazdy wiersz slownika ma komplet 3 kolumn z niepustym planem', () => {
+  const rows = collectionRows();
+  const broken = rows
+    .map((row, index) => ({ line: index + 2, row }))
+    .filter(({ row }) => row.length !== 3 || !(row[2] ?? '').trim());
+  assert.deepEqual(broken.map(({ line, row }) => `${line}: ${row.join(',')}`), [],
+    'wiersz bez kolumny Plan udaje plan o nazwie karty przy czytaniu ostatniej kolumny');
+});
+
+test('M197/K2: slownik nie zawiera zdublowanych pozycji (artId + nazwa)', () => {
+  const seen = new Map();
+  const dups = [];
+  collectionRows().forEach((row, index) => {
+    const key = `${(row[0] ?? '').trim()}|${(row[1] ?? '').trim()}`;
+    if (seen.has(key)) dups.push(`linia ${index + 2}: ${key} (dubel linii ${seen.get(key)})`);
+    else seen.set(key, index + 2);
+  });
+  assert.deepEqual(dups, [], 'ta sama ilustracja i nazwa moze wystapic tylko raz');
+});
