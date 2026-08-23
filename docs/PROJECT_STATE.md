@@ -1,9 +1,35 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-23 (M197: sprostowanie planow kolekcji — „Kamigawa" nie byla nowym planem, plan czytany z arkusza zamiast zgadywany; porzadki w ukladzie stolu A1–A7)
-- **Poprzednia:** 2026-08-23 (M196: Batch 48 — 14 kart w nowym formacie; formidable, equip warunkowy, trigger bloku, flash dla podtypu)
+- **Ostatnia aktualizacja:** 2026-08-23 (M198: poprawki układu stołu po screenshocie właściciela — boksy per gracz, komunikaty w modalu, usunięty panel rozumowania bota)
+- **Poprzednia:** 2026-08-23 (M197: sprostowanie planow kolekcji — „Kamigawa" nie byla nowym planem, plan czytany z arkusza zamiast zgadywany; porzadki w ukladzie stolu A1–A7)
 
 
+
+
+## M198 — poprawki układu stołu ze screenshota (2026-08-23, PR #70)
+
+Właściciel przysłał zrzut ekranu: zmiany z M197 „nie wyglądają dobrze".
+Siedem uwag (A–G), wszystkie zrobione.
+
+- **A.** Pusty **szary prostokąt** nad licznikami życia. Został po M197/A2:
+  wyczyściłem *treść* paska statusu, ale kontener `.statusbar` (ramka + tło)
+  dalej był w DOM. Usunięty w całości.
+- **B.** Pas białej przestrzeni na komunikaty systemowe zastąpiony **warstwą
+  z guzikiem „Rozumiem"**; 11 zapisów do pasa tekstu → jedno `showNotice()`.
+- **C.** Boksy dzielą się **per gracz**, nie wg rodzaju danych: pod licznikiem
+  Bota jego strefy i pula many, po stronie Gracza — jego własne
+  (`renderZoneCounters` + `renderManaPools` → jedno `renderPlayerMeta`).
+- **D.** „Pokaż karty w strefach" jako osobny, wycentrowany pasek.
+- **E.** Odstęp między boksami a planszą. **F.** Stopka justowana do lewej
+  (po prawej chowała się pod przyciskiem „Twoje działania").
+- **G.** Panel „Rozumowanie bota" usunięty w całości (HTML, main, render,
+  martwy `botReasoningText` i jego test).
+
+**Naprawa u źródła znaleziona przy okazji:** nowa partia nie zamykała
+wiszącego komunikatu — dawniej pas czyścił `statusNote.textContent = ''`,
+a przy modalu odpowiednikiem jest jego zamknięcie (`startGame` → `hideModal`).
+
+**Stan:** `npm test` **2981/2981**, build **53 moduły / 2541.0 kB**.
 
 ## M197 — plany kolekcji + układ stołu (2026-08-23, PR #70)
 
