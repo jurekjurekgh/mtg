@@ -706,7 +706,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   }
 
   function scoreCommand(view, cmd) {
-    const finish = (score) => weightedScore(cmd.type, score);
+    const finish = (score) => { const w = weightedScore(cmd.type, score); if (process.env.BOT_DEBUG_SCORES && cmd.objectId === 'slaad') console.error(`[score] ${cmd.type} raw=${score} weighted=${w}`); return w; };
     // M111: TRYB modalnego triggera („At the beginning of your upkeep,
     // choose one —" Etherwrought Page). Widok niesie tylko nazwy trybów,
     // więc treść bierzemy z rejestru po cardId (jak przy czarach) i wyceniamy
@@ -1256,6 +1256,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // BEZ celu mieli WŁASNĄ bibliotekę. Wartość zależy od synergii
             // grobu (deskryptory zależne od liczby kart w grobie — np.
             // minCreatureCardsInGraveyard, ADR 0002) i wyścigu bibliotek.
+            // M200/R (uwaga właściciela): biblioteka jest UKRYTA w widoku
+            // (FoW) — bot nie zna, CO mieli. Stałe +18 zakładało, że
+            // zmielone karty pomogą synergii grobu, więc przygoda (50+18=68)
+            // wygrywała z postawieniem 4/1 na planszy (79*0.9=71.1) z
+            // przewagą 3 pkt, a w scenariuszu z karami kontekstowymi (np.
+            // castSacrificePenalty) odwracała wybór — bot „millował się”
+            // zamiast postawić blokera. Synergia to MOŻLIWOŚĆ, nie pewność:
+            // premia konserwatywna (+6), a ryzyko deck-outu stopniowane
+            // im bliżej dna biblioteki.
             else if (playerTargets.length === 0) {
               const n = effect.amount ?? 1;
               const myLib = view.zones.library.filter((o) => o.controllerId === view.playerId).length;
@@ -1267,7 +1276,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 ].map((o) => o.cardId).filter(Boolean);
                 const graveSynergy = ownCardIds.some((cid) => (cardDef(cid)?.abilities ?? [])
                   .some((a) => a?.condition?.minCreatureCardsInGraveyard != null));
-                score += graveSynergy ? 18 : -25;
+                const deckOutRisk = myLib - n <= 4 ? -20 : myLib - n <= 8 ? -10 : 0;
+                score += (graveSynergy ? 6 : -25) + deckOutRisk;
               }
             }
           }

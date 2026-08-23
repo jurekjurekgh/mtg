@@ -552,3 +552,45 @@ test('M200/M+M2: Delusion — cel wyłącznie czar; cel ma nazwę na stosie (nie
     `cel-czar nazwany na stosie (nie „?”): ${stackText.slice(0, 200)}`);
   assert.ok(!/Frightful Delusion[^\n]*cel: \?/.test(stackText), 'bez „cel: ?” przy istniejącym celu');
 });
+// ---- R: Gray Slaad — bot stawia stwora na planszy, nie „milluje się” --------
+// Zgłoszenie: „Bot będąc w słabym stanie na stole, atakowany przez gracza i
+// bez blokerów, rzuca w swojej turze adventure z Gray Slaad (mill 4 karty)
+// zamiast postawić slaada jako blokera. Coś z wyceną jest nie tak.”
+//
+// Rozpoznanie (zmierzone, BOT_DEBUG_SCORES): w scenariuszu bazowym (oba
+// warianty opłacalne, bez kar kontekstowych) stwór wygrywał z przygodą
+// tylko o 3 pkt (79*0.9=71.1 vs 50+18=68) — o odwrócenie wyboru w partii
+// wystarczyła dowolna kar/premia kontekstowa (w grze właściciela się
+// odwróciło). Root cause wyceny: stałe +18 za „synergię grobu” zakładało,
+// że zmielone karty POMOGĄ synergii — a biblioteka jest ukryta w widoku
+// (FoW), więc to tylko MOŻLIWOŚĆ. Fix: premia +6 + stopniowane ryzyko
+// deck-outu — stwór wygrywa z przewagą ~20 pkt nawet przy karach
+// kontekstowych (mierzony scenariusz: 61.2 vs 41).
+
+test('M200/R: przy obu opłacalnych — bot stawia Gray Slaada (4/1), nie „milluje się”', async () => {
+  const { createHeuristicBot } = await import('../src/controllers/heuristic-bot.js');
+  const state = game('p2');
+  putCard(state, 'slaad', 'gray-slaad', 'p2', 'hand');
+  // Scenariusz właściciela: bot w słabym stanie (jedyny stwór to Illusory
+  // Demon — „when you cast a spell, sacrifice” — kara kontekstowa wyceny),
+  // gracz atakuje dwoma stworami, bot bez blokerów. OBA warianty opłacalne.
+  putCard(state, 'demon', 'illusory-demon', 'p2');
+  putCard(state, 'atk1', 'highland-game', 'p1');
+  putCard(state, 'atk2', 'illusory-demon', 'p1');
+  // Synergia grobowa obecna (Slaad w ręce: warunek 4+ stworów w grobie) +
+  // kara kontekstowa (Demon: „when you cast a spell, sacrifice”) — w tym
+  // scenariuszu stary kod dawał przygodzie 53 a stwora 61.2 (remisowy
+  // margines 8 pkt); fix obniża przygodę do 41 (przewaga stwora ~20 pkt).
+  for (let i = 0; i < 6; i += 1) putCard(state, `g${i}`, 'highland-game', 'p2', 'graveyard');
+  for (let i = 0; i < 18; i += 1) putCard(state, `lib${i}`, 'basic-swamp', 'p2', 'library');
+  const p2 = state.players.find((p) => p.id === 'p2');
+  p2.mana = 3;
+  p2.manaPool = { B: 1, '': 2 };
+  const view = playerView(state, 'p2');
+  assert.ok(view.legalCommands.some((c) => c.type === 'cast_permanent' && c.objectId === 'slaad'), 'oferta stwora');
+  assert.ok(view.legalCommands.some((c) => c.type === 'cast_adventure' && c.objectId === 'slaad'), 'oferta przygody');
+  const chosen = createHeuristicBot({ seed: 3 }).chooseCommand(view);
+  assert.equal(chosen.type, 'cast_permanent',
+    `bot stawia 4/1 na planszy (korpus > 4 nieznane karty), nie milluje się: ${JSON.stringify(chosen)}`);
+});
+
