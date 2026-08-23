@@ -1579,6 +1579,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // Pump kosztem tapu na stworze gotowym do ataku (main/combat
               // własnej tury) kosztuje utratę tego ataku — zwykle się nie opłaca.
               if (source?.kind === 'creature' && taps && canAttackNow(recipient)) value -= (recipient.power ?? 0) + 3;
+              // M195/B (uwaga właściciela, Ghost Warden): trick bojowy użyty
+              // NA SAMYM SOBIE kosztem {T}. Bot tapował Ghost Wardena w swojej
+              // fazie walki, żeby dać sobie +1/+1 — stwór i tak nie atakował
+              // (nie był zadeklarowany), a tapnięcie odbierało mu blok w turze
+              // przeciwnika. Cytat: „jeśli tapnę tą kartę to już nią nie
+              // zaatakuję, więc buffowanie jest bez sensu".
+              //
+              // Kara wyżej tego nie łapała: sprawdzała `canAttackNow(recipient)`,
+              // a Ghost Warden JEST już wykluczony z ataku w kroku blokujących
+              // (atakujący są zadeklarowani), więc warunek nie zachodził.
+              // Reguła generyczna (ADR 0002 — bez nazw kart): pump na SIEBIE
+              // kosztem tapu ma wartość tylko wtedy, gdy to źródło realnie
+              // bierze udział w walce (atakuje albo blokuje). Inaczej +X/+X
+              // wygaśnie w cleanup, a stwór zostanie zatapiany.
+              const selfPump = source && recipient && source.id === recipient.id;
+              const fightsNow = Boolean(recipient?.attacking || recipient?.blocking);
+              if (selfPump && taps && !fightsNow) value -= 30;
             } else {
               value -= 4; // pump na wrogu bez powodu
             }
@@ -2695,6 +2712,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (cmd.type === 'declare_attackers') return `attack[${cmd.attackerIds.join(',')}]`;
     if (cmd.type === 'declare_blockers') return `block[${Object.entries(cmd.assignments ?? {}).map(([a, b]) => `${a}<${b.join('+')}`).join(' ')}]`;
     if (cmd.type === 'cast_spell' || cmd.type === 'cast_cleave' || cmd.type === 'cast_permanent' || cmd.type === 'cast_adventure' || cmd.type === 'cast_adventure_creature') return `${cmd.type}(${cmd.objectId}${cmd.targets ? '->' + cmd.targets.join('+') : ''})`;
+    // M195/B: aktywacja zdolności bez ŹRÓDŁA i CELU była w śladzie nieczytelna
+    // („activate_ability" × N) — nie dało się odróżnić buffu sojusznika od
+    // tapnięcia samego siebie ani w diagnostyce, ani w teście wyceny.
+    if (cmd.type === 'activate_ability') {
+      return `activate_ability(${cmd.objectId}#${cmd.abilityIndex ?? 0}${(cmd.targets ?? []).length ? '->' + cmd.targets.join('+') : ''})`;
+    }
     return cmd.type;
   }
 
