@@ -836,6 +836,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (auraIsHostile(descriptor, card ? cardDef(card.cardId) : undefined)) {
             if (!target) return finish(-50);
             const worth = (target.power ?? 0) + (target.toughness ?? 0);
+            // M200/H (uwaga właściciela, Grounded): aura, KTÓRA ODBIERA
+            // keyword (losesKeywords), na stworze bez niego jest jałowa —
+            // bot marnował Grounded na stwora bez latania („karta służy
+            // do uziemiania latających”). Sprawdzamy efektywne keywordy
+            // celu (widok niesie granty — spójnie z warstwą odbioru, patrz
+            // notes karty). Żaden usunięty keyword nieobecny = kara
+            // miażdżąca (L3: kara musi przebić premię); gdy żaden cel go
+            // nie ma, bot nie rzuca czaru w ogóle.
+            const lostKeywords = descriptor?.losesKeywords ?? [];
+            if (lostKeywords.length > 0
+              && !lostKeywords.some((k) => (target.keywords ?? []).includes(k))) {
+              return finish(-80 - worth);
+            }
             return finish(target.controllerId === view.playerId
               ? -70 - worth              // unieruchamiam własnego stwora
               : 55 + 2 * worth);         // unieruchamiam stwora wroga

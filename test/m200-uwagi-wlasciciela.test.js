@@ -419,3 +419,32 @@ test('M200/G: opis dnia/nocy opisuje regułę engine (0 czarów → noc, ≥2 �
     `noc: reguła ≥2 czary → dzień: ${nightNote}`);
   assert.ok(!nightNote.includes('robi noc'), 'stary błędny tekst zniknął (noc)');
 });
+// ---- H: bot nie marnuje Grounded na stwora bez latania ---------------------
+// Zgłoszenie: „Bot rzucił [Grounded] na moją kreaturę, która nie ma i nigdy
+// nie miała latania. To bez sensu, karta służy do uziemiania latających.”
+// Aura z losesKeywords na celu bez tego keywordu jest jałowa (L15/L3).
+
+test('M200/H: bot nie rzuca Grounded na stwora bez latania; na latającego — tak', async () => {
+  const { createHeuristicBot } = await import('../src/controllers/heuristic-bot.js');
+  // Negatywny: jedyny stwór wroga nie lata.
+  const state = game('p2');
+  putCard(state, 'grounded', 'grounded', 'p2', 'hand');
+  const p2 = state.players.find((p) => p.id === 'p2');
+  p2.mana = 2;
+  p2.manaPool = { G: 1, '': 1 };
+  putCard(state, 'victim', 'highland-game', 'p1'); // 2/1, bez latania
+  const chosen = createHeuristicBot({ seed: 5 }).chooseCommand(playerView(state, 'p2'));
+  assert.ok(!(chosen.type === 'cast_permanent' && chosen.objectId === 'grounded'),
+    `bot zmarnował Grounded na stwora bez latania: ${JSON.stringify(chosen)}`);
+  // Pozytywny: wróg ma latającego stwora — bot celuje w niego.
+  const state2 = game('p2');
+  putCard(state2, 'grounded', 'grounded', 'p2', 'hand');
+  const p2b = state2.players.find((p) => p.id === 'p2');
+  p2b.mana = 2;
+  p2b.manaPool = { G: 1, '': 1 };
+  putCard(state2, 'demon', 'illusory-demon', 'p1'); // 4/3 flying
+  const chosen2 = createHeuristicBot({ seed: 5 }).chooseCommand(playerView(state2, 'p2'));
+  assert.equal(chosen2.type, 'cast_permanent', `bot rzuca aurę: ${JSON.stringify(chosen2)}`);
+  assert.equal(chosen2.objectId, 'grounded');
+  assert.equal(chosen2.targets?.[0], 'demon', 'cel = latający stwór');
+});
