@@ -850,10 +850,16 @@ function mentorDecisionPending(state, pending) {
  * Young): karty-stwory w grobie gracza (tokeny — z ustawionym name — nie są
  * kartami).
  */
-function graveyardToTopCandidates(state, playerId) {
+function graveyardToTopCandidates(state, playerId, filter = null) {
+  // Batch 47 (Sequestered Stash): rodzaj karty jest DESKRYPTOREM efektu, nie
+  // stalą w kodzie (ADR 0002). Forever Young bierze karty-stwory (brak
+  // filtra = zachowanie dotychczasowe), Sequestered Stash — artefakty.
+  const anyTypes = filter?.anyTypes ?? null;
   return state.zones.graveyard.filter((objectId) => {
     const object = state.objects.get(objectId);
-    return object && object.controllerId === playerId && object.kind === 'creature' && object.name == null;
+    if (!object || object.controllerId !== playerId || object.name != null) return false;
+    if (anyTypes) return anyTypes.some((type) => (object.types ?? []).includes(type));
+    return object.kind === 'creature';
   });
 }
 
@@ -3852,7 +3858,7 @@ export function execute(state, input) {
       }
       return accepted(state, cmd, { ok: true, events: resolvedEvents });
     }
-    if (!graveyardToTopCandidates(state, pending.playerId).includes(cmd.targetId)) return reject('illegal_graveyard_top_target');
+    if (!graveyardToTopCandidates(state, pending.playerId, pending.filter).includes(cmd.targetId)) return reject('illegal_graveyard_top_target');
     const libId = `library-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, cmd.targetId, 'library', libId);
     // moveObjectDirectly dokłada na KONIEC zones.library (spód) — „on top of
@@ -3863,10 +3869,26 @@ export function execute(state, input) {
     if (topIndex === -1) library.push(libId);
     else library.splice(topIndex, 0, libId);
     state.zones.library = library;
+    // Batch 47 (Sequestered Stash): „put AN artifact card … on top" — JEDNA
+    // karta konczy decyzje. Forever Young („any number") pyta dalej.
+    const singlePick = pending.maxCards === 1;
     state.events.push(event('graveyard_top_choice_resolved', {
       playerId: cmd.playerId, targetId: cmd.targetId, movedId: libId,
-      cardId: moved.cardId, done: false,
+      cardId: moved.cardId, done: singlePick,
     }));
+    if (singlePick) {
+      state.pendingGraveyardToTop = null;
+      if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+        state.turn.priorityPlayerId = pending.restorePriorityTo;
+      }
+      const picked = state.events.slice(before);
+      if (state.pendingSpell) {
+        const spellPending = state.pendingSpell;
+        state.pendingSpell = null;
+        picked.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
+      }
+      return accepted(state, cmd, { ok: true, events: picked });
+    }
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
   // Prawo legend (CR 704.5j): state-based actions zakolejkowały wybór —
@@ -5280,7 +5302,7 @@ export function playerView(state, playerId) {
   } else if (state.status === 'active' && !blockedByOthersDecision && activeGraveyardToTop) {
     // Oczekująca decyzja Forever Young: karta-stwora z grobu na wierzch
     // (dynamicznie — przeniesione odpadają) albo zakończenie { done: true }.
-    for (const targetId of graveyardToTopCandidates(state, state.pendingGraveyardToTop.playerId)) {
+    for (const targetId of graveyardToTopCandidates(state, state.pendingGraveyardToTop.playerId, state.pendingGraveyardToTop.filter)) {
       legalCommands.unshift(command('resolve_graveyard_top_choice', playerId, { targetId }));
     }
     legalCommands.unshift(command('resolve_graveyard_top_choice', playerId, { done: true }));

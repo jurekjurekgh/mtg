@@ -3144,6 +3144,35 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // pozostałe efekty dokończy resolve_graveyard_top_choice{done:true}).
     return true;
   }
+  if (effect.type === 'graveyard_card_to_library_top_choice') {
+    // Batch 47 (Sequestered Stash, KLD): „Then you MAY put an artifact card
+    // from your graveyard on top of your library." Wariant Forever Young:
+    // JEDNA karta (maxCards) i wybor OPCJONALNY, a rodzaj karty niesie
+    // deskryptor (`filter.anyTypes`) — silnik nie zna nazw kart (ADR 0002).
+    // Decyzja jest blokujaca i nastepuje PO millu, wiec kandydatem moze byc
+    // takze artefakt dopiero co zmielony (CR 608.2).
+    const ownerId = sourceObject.controllerId;
+    const anyTypes = effect.filter?.anyTypes ?? null;
+    const candidates = state.zones.graveyard.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      if (!object || object.controllerId !== ownerId || object.name != null) return false;
+      if (anyTypes) return anyTypes.some((type) => (object.types ?? []).includes(type));
+      return true;
+    });
+    if (candidates.length === 0) return; // „may" bez kandydatow — brak decyzji
+    state.pendingGraveyardToTop = {
+      playerId: ownerId,
+      candidateIds: [...candidates],
+      filter: effect.filter ?? null,
+      maxCards: 1,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = ownerId;
+    state.events.push(event('graveyard_top_choice_required', {
+      playerId: ownerId, candidateIds: [...candidates], optional: true, maxCards: 1,
+    }));
+    return true;
+  }
   if (effect.type === 'epic_experiment') {
     // Epic Experiment (OTC): „Exile the top X cards of your library. You may
     // cast instant and sorcery spells with mana value X or less from among

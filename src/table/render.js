@@ -935,6 +935,15 @@ function describeEffect(e) {
     goad: () => 'goad (musi atakować)',
     grant_abilities: () => 'nadaj zdolności do końca tury',
     graveyard_creatures_to_library_top_choice: () => 'karty z grobu na wierzch biblioteki',
+    // Batch 47 (Sequestered Stash): JEDNA karta wskazanego rodzaju, wybor
+    // opcjonalny („you may") — opis czyta filtr z deskryptora.
+    graveyard_card_to_library_top_choice: () => {
+      const types = e.filter?.anyTypes ?? [];
+      const what = types.length
+        ? `${types.map((t) => TARGET_TYPE_LABELS[t.toLowerCase()] ?? t.toLowerCase()).join(' albo ')} z grobu`
+        : 'kartę z grobu';
+      return `możesz położyć ${what} na wierzch biblioteki`;
+    },
     index_look: () => 'zobacz wierzch biblioteki (Index)',
     look_top_put_one_hand_rest_grave: () => 'zobacz wierzch biblioteki, jedną do ręki, resztę do grobu',
     // M192/Z3 (petla jakosci): deskryptor NIESIE liczbe (Rediscover the Way:

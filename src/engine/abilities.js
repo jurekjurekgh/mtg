@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { deathZoneFor, effectiveKeywords, effectivePower, tapObject } from './permanents.js';
+import { activatableAbilities, deathZoneFor, effectiveKeywords, effectivePower, tapObject } from './permanents.js';
 import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { addCounter, removeCounter } from './counters.js';
@@ -459,8 +459,12 @@ export function legalActivatedAbilities(state, playerId) {
   for (const id of state.zones.battlefield) {
     const object = state.objects.get(id);
     if (object?.controllerId !== playerId) continue;
-    for (let index = 0; index < (object.abilities ?? []).length; index += 1) {
-      const ability = object.abilities[index];
+    // Batch 47 (Enduring Sliver): oferta obejmuje tez zdolnosci NADANE przez
+    // cudza statyke („Other Sliver creatures you control have outlast {2}").
+    // Ta sama lista jest zrodlem prawdy w activateAbility (L48).
+    const activatable = activatableAbilities(state, object);
+    for (let index = 0; index < activatable.length; index += 1) {
+      const ability = activatable[index];
       if (ability?.type !== ABILITY_TYPE.activated) continue;
       // Zdolność „z grobu" (Goldmeadow Nomad: „Exile this card from your
       // graveyard") działa WYŁĄCZNIE z grobu — na polu bitwy nie jest oferowana
@@ -1022,7 +1026,9 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   // mogą istnieć na tym samym obiekcie (equip + granted).
   const ability = grantedFromEquipmentArg
     ? (object.equipment?.grantedAbilities ?? [])[abilityIndex]
-    : (object.abilities ?? [])[abilityIndex];
+    // Batch 47: indeks liczony wzgledem listy AKTYWOWALNYCH (wlasne + nadane
+    // cudza statyka) — dokladnie tej, ktora enumeruje oferta (L48).
+    : activatableAbilities(state, object)[abilityIndex];
   if (!ability || ability.type !== ABILITY_TYPE.activated) throw new Error('Nieznana zdolność aktywowana');
   if (ability.timing === 'sorcery') {
     const sorcerySpeed = state.turn.activePlayerId === playerId

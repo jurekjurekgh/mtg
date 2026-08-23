@@ -199,3 +199,288 @@ test('B47/B4: Supernatural Stamina — pełna ścieżka: stwór ginie i wraca za
   const buffed = state.objects.get('cre');
   assert.equal((buffed.power ?? 0) + (buffed.powerModifier ?? 0), 5, 'Hill Giant 3/3 → 5/3');
 });
+
+// ---- Transza C: Sequestered Stash, Enduring Sliver (keyword outlast) ------
+
+test('B47/C1: Sequestered Stash produkuje {C} i ma zdolność mill+odzysk', () => {
+  // Oracle: „{T}: Add {C}. / {4}, {T}, Sacrifice this land: Mill five cards.
+  // Then you may put an artifact card from your graveyard on top of your
+  // library." Kolor produkcji czytany z DESKRYPTORA (naprawa M193/A).
+  const card = REGISTRY.get('sequestered-stash');
+  assert.ok(card, 'karta w katalogu');
+  assert.deepEqual(card.types, ['Land']);
+  const mana = card.abilities.find((a) => (Array.isArray(a.effect) ? a.effect : [a.effect])
+    .some((e) => e?.type === 'add_mana'));
+  assert.ok(mana, 'zdolność many z Oracle');
+  assert.deepEqual(mana.cost, { tap: true }, 'koszt {T}');
+  const sac = card.abilities.find((a) => a.cost?.sacrificeSelf);
+  assert.ok(sac, 'zdolność z poświęceniem');
+  assert.equal(sac.cost.mana, 4, '{4} w koszcie');
+  assert.equal(sac.cost.tap, true, '{T} w koszcie');
+  const types = (Array.isArray(sac.effect) ? sac.effect : [sac.effect]).map((e) => e.type);
+  // Wybór artefaktu następuje PO millu i jest opcjonalny, więc to blokująca
+  // decyzja (wzorzec Forever Young), a nie efekt z celem wskazanym przy
+  // aktywacji — zmielony artefakt też musi być kandydatem (CR 608.2).
+  assert.deepEqual(types, ['mill_cards', 'graveyard_card_to_library_top_choice'],
+    'mill 5, potem opcjonalny odzysk artefaktu');
+  const pick = (Array.isArray(sac.effect) ? sac.effect : [sac.effect])[1];
+  assert.deepEqual(pick.filter?.anyTypes, ['Artifact'], 'filtr rodzaju karty w DANYCH (ADR 0002)');
+});
+
+test('B47/C1b: Sequestered Stash jest źródłem many BEZBARWNEJ (nie kolorowej)', async () => {
+  const { getSourceForObject } = await import('../src/engine/mana-sources.js');
+  const { gameObjectDataOf } = await import('../src/cards/materialize.js');
+  const card = REGISTRY.get('sequestered-stash');
+  const object = {
+    id: 'ss', cardId: 'sequestered-stash', controllerId: 'p1', zone: 'battlefield',
+    ...gameObjectDataOf(card), types: card.types, subtypes: card.subtypes ?? [],
+  };
+  assert.deepEqual(getSourceForObject(object)?.colors, [], 'Oracle „Add {C}" — bezbarwna');
+});
+
+test('B47/C2: Enduring Sliver ma outlast {2} i nadaje go INNYM Sliverom', () => {
+  // Oracle: „Outlast {2} ({2}, {T}: Put a +1/+1 counter on this creature.
+  // Outlast only as a sorcery.) / Other Sliver creatures you control have
+  // outlast {2}."
+  const card = REGISTRY.get('enduring-sliver');
+  assert.ok(card, 'karta w katalogu');
+  assert.deepEqual(card.subtypes, ['Sliver']);
+  assert.deepEqual([card.power, card.toughness], [2, 2]);
+  const outlast = card.abilities.find((a) => a.keyword === 'outlast');
+  assert.ok(outlast, 'własne outlast jako zdolność aktywowana');
+  assert.equal(outlast.cost.mana, 2, 'koszt {2}');
+  assert.equal(outlast.cost.tap, true, 'outlast wymaga {T} (CR 702.100a)');
+  assert.equal(outlast.timing, 'sorcery', 'outlast tylko jak sorcery');
+  const eff = Array.isArray(outlast.effect) ? outlast.effect[0] : outlast.effect;
+  assert.deepEqual([eff.type, eff.counter], ['add_counter', '+1/+1']);
+  // Nadanie plemieniu — zasięg po PODTYPIE (wzorzec Altar of the Goyf).
+  const grant = card.abilities.find((a) => a.type === 'static' && a.scope);
+  assert.ok(grant, 'statyka nadająca outlast innym Sliverom');
+  assert.equal(grant.scope.subtype, 'Sliver');
+});
+
+test('B47/C2b: outlast jest ZNANYM keywordem (nie martwym wpisem)', async () => {
+  // Strażnik z bug-hunt pilnuje, żeby keyword w danych miał mechanikę.
+  // Ten test wymusza, by outlast realnie działał: aktywacja kładzie licznik.
+  const { createGameState, addObject, execute, playerView } = await import('../src/engine/game-state.js');
+  const { gameObjectDataOf } = await import('../src/cards/materialize.js');
+  const { jumpToStep } = await import('../src/engine/turn.js');
+  const state = createGameState({ seed: 47, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  const def = REGISTRY.get('enduring-sliver');
+  addObject(state, {
+    id: 'sliver', instanceId: 'i-sliver', cardId: 'enduring-sliver', controllerId: 'p1',
+    ownerId: 'p1', zone: 'battlefield', ...gameObjectDataOf(def),
+    types: def.types, subtypes: def.subtypes, summoningSickness: false,
+  });
+  for (let i = 0; i < 2; i += 1) {
+    addObject(state, {
+      id: `pl${i}`, instanceId: `i-pl${i}`, cardId: 'basic-plains', controllerId: 'p1',
+      ownerId: 'p1', zone: 'battlefield', kind: 'land', types: ['Basic', 'Land'], subtypes: ['Plains'],
+    });
+  }
+  const offer = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'activate_ability' && c.objectId === 'sliver');
+  assert.ok(offer, 'outlast jest oferowany w oknie sorcery');
+  assert.ok(execute(state, offer).ok, 'aktywacja przyjęta');
+  assert.equal(state.objects.get('sliver').tapped, true, 'koszt {T} zapłacony od razu');
+  // Outlast nie jest zdolnością many — idzie na stos (CR 602.2a).
+  for (let i = 0; i < 8 && state.zones.stack.length > 0; i += 1) {
+    const pass = playerView(state, state.turn.priorityPlayerId).legalCommands
+      .find((c) => c.type === 'pass_priority');
+    if (!pass) break;
+    execute(state, pass);
+  }
+  const after = state.objects.get('sliver');
+  assert.equal(after.counters?.['+1/+1'] ?? 0, 1, 'outlast kładzie licznik +1/+1');
+});
+
+test('B47/C2c: outlast NIE jest dostępny w oknie instant (CR 702.100a)', async () => {
+  const { createGameState, addObject, playerView } = await import('../src/engine/game-state.js');
+  const { gameObjectDataOf } = await import('../src/cards/materialize.js');
+  const { jumpToStep } = await import('../src/engine/turn.js');
+  const state = createGameState({ seed: 47, players: [{ id: 'p1' }, { id: 'p2' }] });
+  // Krok deklaracji blokujących = okno instant, nie sorcery.
+  state.turn = jumpToStep(state.turn, 'declare_blockers', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  const def = REGISTRY.get('enduring-sliver');
+  addObject(state, {
+    id: 'sliver', instanceId: 'i-sliver', cardId: 'enduring-sliver', controllerId: 'p1',
+    ownerId: 'p1', zone: 'battlefield', ...gameObjectDataOf(def),
+    types: def.types, subtypes: def.subtypes, summoningSickness: false,
+  });
+  for (let i = 0; i < 2; i += 1) {
+    addObject(state, {
+      id: `pl${i}`, instanceId: `i-pl${i}`, cardId: 'basic-plains', controllerId: 'p1',
+      ownerId: 'p1', zone: 'battlefield', kind: 'land', types: ['Basic', 'Land'], subtypes: ['Plains'],
+    });
+  }
+  const offers = playerView(state, 'p1').legalCommands
+    .filter((c) => c.type === 'activate_ability' && c.objectId === 'sliver');
+  assert.deepEqual(offers, [], 'outlast tylko jak sorcery');
+});
+
+test('B47/C2d: inny Sliver dostaje outlast od Enduring Slivera', async () => {
+  // „Other Sliver creatures you control have outlast {2}" — statyka nadaje
+  // ZDOLNOŚĆ (nie keyword-cechę), więc drugi Sliver ma dostać ofertę.
+  const { createGameState, addObject, playerView } = await import('../src/engine/game-state.js');
+  const { gameObjectDataOf } = await import('../src/cards/materialize.js');
+  const { jumpToStep } = await import('../src/engine/turn.js');
+  const state = createGameState({ seed: 47, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  const def = REGISTRY.get('enduring-sliver');
+  addObject(state, {
+    id: 'lord', instanceId: 'i-lord', cardId: 'enduring-sliver', controllerId: 'p1',
+    ownerId: 'p1', zone: 'battlefield', ...gameObjectDataOf(def),
+    types: def.types, subtypes: def.subtypes, summoningSickness: false,
+  });
+  // Drugi Sliver: syntetyczny stwór o podtypie Sliver bez własnego outlast.
+  addObject(state, {
+    id: 'other', instanceId: 'i-other', cardId: 'hill-giant', controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', kind: 'creature', power: 3, toughness: 3,
+    types: ['Creature'], subtypes: ['Sliver'], abilities: [], summoningSickness: false,
+  });
+  for (let i = 0; i < 4; i += 1) {
+    addObject(state, {
+      id: `pl${i}`, instanceId: `i-pl${i}`, cardId: 'basic-plains', controllerId: 'p1',
+      ownerId: 'p1', zone: 'battlefield', kind: 'land', types: ['Basic', 'Land'], subtypes: ['Plains'],
+    });
+  }
+  const offers = playerView(state, 'p1').legalCommands
+    .filter((c) => c.type === 'activate_ability' && c.objectId === 'other');
+  assert.ok(offers.length > 0,
+    'Sliver bez własnego outlast dostaje go od Enduring Slivera (CR 604 — statyka)');
+});
+
+test('B47/C1c: Sequestered Stash — pełna ścieżka: mill 5, wybór artefaktu na wierzch', async () => {
+  // Sedno karty: artefakt DOPIERO CO zmielony musi dać się odzyskać.
+  const { createGameState, addObject, execute, playerView } = await import('../src/engine/game-state.js');
+  const { gameObjectDataOf } = await import('../src/cards/materialize.js');
+  const { jumpToStep } = await import('../src/engine/turn.js');
+  const state = createGameState({ seed: 47, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  const def = REGISTRY.get('sequestered-stash');
+  addObject(state, {
+    id: 'stash', instanceId: 'i-stash', cardId: 'sequestered-stash', controllerId: 'p1',
+    ownerId: 'p1', zone: 'battlefield', ...gameObjectDataOf(def), types: def.types, subtypes: [],
+  });
+  for (let i = 0; i < 4; i += 1) {
+    addObject(state, {
+      id: `mtn${i}`, instanceId: `i-mtn${i}`, cardId: 'basic-mountain', controllerId: 'p1',
+      ownerId: 'p1', zone: 'battlefield', kind: 'land', types: ['Basic', 'Land'], subtypes: ['Mountain'],
+    });
+  }
+  // Biblioteka: artefakt na wierzchu + 4 wypełniacze (mill 5 zabiera wszystko).
+  const lantern = REGISTRY.get('seers-lantern');
+  addObject(state, {
+    id: 'lib0', instanceId: 'i-lib0', cardId: 'seers-lantern', controllerId: 'p1', ownerId: 'p1',
+    zone: 'library', ...gameObjectDataOf(lantern), types: lantern.types,
+  });
+  for (let i = 1; i < 5; i += 1) {
+    addObject(state, {
+      id: `lib${i}`, instanceId: `i-lib${i}`, cardId: 'basic-forest', controllerId: 'p1',
+      ownerId: 'p1', zone: 'library', kind: 'land', types: ['Basic', 'Land'], subtypes: ['Forest'],
+    });
+  }
+  const offer = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'activate_ability' && c.objectId === 'stash' && c.abilityIndex === 1);
+  assert.ok(offer, 'oferta zdolności {4},{T},poświęć');
+  assert.ok(execute(state, offer).ok, 'aktywacja przyjęta');
+  // Zdolność NIE jest mana ability, więc idzie na stos (CR 602.2a) —
+  // rozstrzygamy ją, zanim sprawdzimy skutek millu.
+  for (let i = 0; i < 8 && state.zones.stack.length > 0; i += 1) {
+    const pass = playerView(state, state.turn.priorityPlayerId).legalCommands
+      .find((c) => c.type === 'pass_priority');
+    if (!pass) break;
+    execute(state, pass);
+  }
+  const graveCards = [...state.objects.values()].filter((o) => o.zone === 'graveyard').map((o) => o.cardId);
+  assert.ok(graveCards.includes('seers-lantern'), `artefakt zmielony do grobu: ${graveCards}`);
+  // Blokująca decyzja: wybór artefaktu z grobu (także tego zmielonego).
+  const pickCmd = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'resolve_graveyard_top_choice' && c.targetId != null);
+  assert.ok(pickCmd, 'gracz dostaje wybór artefaktu z grobu');
+  const chosen = state.objects.get(pickCmd.targetId);
+  assert.equal(chosen.cardId, 'seers-lantern', 'kandydatem jest ARTEFAKT, nie zmielone lasy');
+  assert.ok(execute(state, pickCmd).ok, 'wybór przyjęty');
+  const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === 'p1');
+  assert.equal(state.objects.get(topId)?.cardId, 'seers-lantern', 'artefakt ląduje na wierzchu biblioteki');
+});
+
+test('B47/C2e: outlast NIE wycieka na stwory spoza plemienia (anty-over-fix)', async () => {
+  // Luka wykryta weryfikacja mutacyjna: usuniecie filtra podtypu nie
+  // czerwienilo zadnego testu, wiec „Other SLIVER creatures" moglo po cichu
+  // stac sie „wszystkie twoje stwory". Oracle jest wezszy — pilnujemy tego.
+  const { createGameState, addObject, playerView } = await import('../src/engine/game-state.js');
+  const { gameObjectDataOf } = await import('../src/cards/materialize.js');
+  const { jumpToStep } = await import('../src/engine/turn.js');
+  const state = createGameState({ seed: 47, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  const def = REGISTRY.get('enduring-sliver');
+  addObject(state, {
+    id: 'lord', instanceId: 'i-lord', cardId: 'enduring-sliver', controllerId: 'p1',
+    ownerId: 'p1', zone: 'battlefield', ...gameObjectDataOf(def),
+    types: def.types, subtypes: def.subtypes, summoningSickness: false,
+  });
+  // Stwór BEZ podtypu Sliver — nie może dostać outlast.
+  const giant = REGISTRY.get('hill-giant');
+  addObject(state, {
+    id: 'giant', instanceId: 'i-giant', cardId: 'hill-giant', controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', ...gameObjectDataOf(giant), types: giant.types,
+    subtypes: giant.subtypes ?? [], summoningSickness: false,
+  });
+  for (let i = 0; i < 4; i += 1) {
+    addObject(state, {
+      id: `pl${i}`, instanceId: `i-pl${i}`, cardId: 'basic-plains', controllerId: 'p1',
+      ownerId: 'p1', zone: 'battlefield', kind: 'land', types: ['Basic', 'Land'], subtypes: ['Plains'],
+    });
+  }
+  const offers = playerView(state, 'p1').legalCommands
+    .filter((c) => c.type === 'activate_ability' && c.objectId === 'giant');
+  assert.deepEqual(offers, [], 'Hill Giant to nie Sliver — żadnego outlast');
+});
+
+test('B47/C2f: outlast znika, gdy Enduring Sliver opuszcza pole bitwy', async () => {
+  // Statyka jest liczona przy ODCZYCIE (CR 604) — po zniknięciu lorda
+  // pozostałe Slivery natychmiast tracą nadaną zdolność, bez sprzątania stanu.
+  const { createGameState, addObject, playerView, moveObjectDirectly } = await import('../src/engine/game-state.js');
+  const { gameObjectDataOf } = await import('../src/cards/materialize.js');
+  const { jumpToStep } = await import('../src/engine/turn.js');
+  const state = createGameState({ seed: 47, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  const def = REGISTRY.get('enduring-sliver');
+  addObject(state, {
+    id: 'lord', instanceId: 'i-lord', cardId: 'enduring-sliver', controllerId: 'p1',
+    ownerId: 'p1', zone: 'battlefield', ...gameObjectDataOf(def),
+    types: def.types, subtypes: def.subtypes, summoningSickness: false,
+  });
+  addObject(state, {
+    id: 'other', instanceId: 'i-other', cardId: 'hill-giant', controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', kind: 'creature', power: 3, toughness: 3,
+    types: ['Creature'], subtypes: ['Sliver'], abilities: [], summoningSickness: false,
+  });
+  for (let i = 0; i < 4; i += 1) {
+    addObject(state, {
+      id: `pl${i}`, instanceId: `i-pl${i}`, cardId: 'basic-plains', controllerId: 'p1',
+      ownerId: 'p1', zone: 'battlefield', kind: 'land', types: ['Basic', 'Land'], subtypes: ['Plains'],
+    });
+  }
+  const before = playerView(state, 'p1').legalCommands
+    .filter((c) => c.type === 'activate_ability' && c.objectId === 'other');
+  assert.ok(before.length > 0, 'przy lordzie Sliver ma outlast');
+  moveObjectDirectly(state, 'lord', 'graveyard', 'grave-lord');
+  const after = playerView(state, 'p1').legalCommands
+    .filter((c) => c.type === 'activate_ability' && c.objectId === 'other');
+  assert.deepEqual(after, [], 'po odejściu lorda outlast znika natychmiast');
+});

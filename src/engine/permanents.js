@@ -505,6 +505,48 @@ export function effectiveAbilities(object) {
 }
 
 /**
+ * Batch 47 (Enduring Sliver, CR 604): zdolności AKTYWOWANE nadane obiektowi
+ * przez cudzą zdolność statyczną — „Other Sliver creatures you control have
+ * outlast {2}". Efekt jest CIĄGŁY, więc liczymy go przy każdym odczycie
+ * (jak anthemBonuses), a nie zapisujemy na obiekcie: zniknięcie lorda ma
+ * natychmiast odbierać zdolność, bez sprzątania stanu.
+ *
+ * Zwracana lista jest doklejana na KOŃCU zdolności własnych, więc indeksy
+ * zdolności wydrukowanych nie zmieniają się (komendy niosą abilityIndex).
+ */
+export function grantedActivatedAbilities(state, object) {
+  if (!state || object?.zone !== 'battlefield' || object.faceDown) return [];
+  if (object.kind !== 'creature') return [];
+  const out = [];
+  for (const source of state.objects.values()) {
+    if (source.zone !== 'battlefield' || source.controllerId !== object.controllerId) continue;
+    for (const ability of source.abilities ?? []) {
+      if (ability?.type !== 'static' || !ability.scope?.grantsAbilities?.length) continue;
+      const scope = ability.scope;
+      if (scope.subtype && !(object.subtypes ?? []).includes(scope.subtype)) continue;
+      // „OTHER Sliver creatures" — źródło nie nadaje zdolności samemu sobie
+      // (ma ją wydrukowaną, inaczej pokazalibyśmy ofertę dwa razy).
+      if (scope.excludeSelf !== false && source.id === object.id) continue;
+      if (!staticConditionHolds(state, source, ability.condition)) continue;
+      out.push(...scope.grantsAbilities);
+    }
+  }
+  return out;
+}
+
+/**
+ * Zdolności, które obiekt MOŻE aktywować: wydrukowane + nadane grantem
+ * jednorazowym + nadane cudzą statyką. Jedno źródło prawdy dla oferty
+ * (legalActivatedAbilities) i walidacji (activateAbility) — rozjazd tych
+ * dwóch list to klasa L48 (oferta pokazuje ruch, którego silnik nie przyjmie).
+ */
+export function activatableAbilities(state, object) {
+  const own = effectiveAbilities(object);
+  const granted = grantedActivatedAbilities(state, object);
+  return granted.length === 0 ? own : [...own, ...granted];
+}
+
+/**
  * Efektywne podtypy = własne + tymczasowa zmiana typu (Unstable Frontier:
  * „target land you control becomes the basic land type of your choice until
  * end of turn" — CR 205.1a/305.7: nowy typ ZASTĘPUJE dotychczasowe typy

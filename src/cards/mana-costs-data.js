@@ -63,6 +63,7 @@ export const MANA_COSTS = {
   "courage-in-crisis": "{2}{G}",
   "crested-herdcaller": "{3}{G}{G}",
   "divest": "{B}",
+  "enduring-sliver": "{1}{W}",
   "supernatural-stamina": "{B}",
   "curate": "{1}{U}",
   "curate-stx": "{1}{U}",

@@ -181,6 +181,8 @@ const KNOWN_KEYWORDS = new Set([
   'level_up', 'exalted', 'station', 'devoid', 'toxic',
   // Batch 46: echo (CR 702.29) i fabricate (CR 702.122).
   'echo', 'fabricate',
+  // Batch 47: outlast (CR 702.100) — {koszt},{T}: licznik +1/+1, tylko jak sorcery.
+  'outlast',
 ]);
 
 test('Sherlock strażnik: każdy keyword w registry to mały snake_case z listy obsługiwanych', () => {

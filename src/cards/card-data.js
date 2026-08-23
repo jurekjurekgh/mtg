@@ -9031,6 +9031,87 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['nadany trigger dies działa z LKI (formerAbilityGrants) — przechodzi z obiektem do grobu w tej samej turze', 'wraca pod kontrolę WŁAŚCICIELA (Oracle „its owner\'s control\") — istotne przy przejętych stworach'],
   }),
 
+  // ---- Batch 47 — transza C: Sequestered Stash ----
+
+  // 5. Sequestered Stash (KLD) — land {C} + zdolność „mill 5, potem MOŻESZ
+  //    wziąć artefakt z grobu na wierzch biblioteki". Kolejność z Oracle jest
+  //    istotna: wybór następuje PO millu, więc kandydatem może być artefakt
+  //    dopiero co zmielony (CR 608.2).
+  defineCard({
+    id: 'sequestered-stash', name: 'Sequestered Stash', set: 'KLD',
+    types: ['Land'], colors: [],
+    oracleText: '{T}: Add {C}.\n{4}, {T}, Sacrifice this land: Mill five cards. Then you may put an artifact card from your graveyard on top of your library.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/6/86a17084-bb96-4e81-bff0-005bd44a1fbd.jpg?1783937143',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        // Oracle „Add {C}" — mana BEZBARWNA (brak `colors`), czytana wprost
+        // z deskryptora (M193/A: kolory źródeł many idą z danych karty).
+        effect: { type: 'add_mana', amount: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 4, tap: true, sacrificeSelf: true },
+        effect: [
+          { type: 'mill_cards', amount: 5 },
+          {
+            type: 'graveyard_card_to_library_top_choice',
+            filter: { anyTypes: ['Artifact'] },
+          },
+        ],
+      }),
+    ],
+    artId: 384, plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+    notes: ['mill dotyczy WŁASNEJ biblioteki (Oracle „Mill five cards" bez wskazania gracza = kontroler)', 'wybór artefaktu jest opcjonalny („you may") i następuje PO millu — zmielony artefakt też jest kandydatem'],
+  }),
+
+  // ---- Batch 47 — transza C: Enduring Sliver (keyword outlast) ----
+
+  // 6. Enduring Sliver (MH1) — outlast {2} + nadanie outlast innym Sliverom.
+  //    CR 702.100a: „Outlast [cost]" = „[cost], {T}: Put a +1/+1 counter on
+  //    this creature. Activate only as a sorcery."
+  defineCard({
+    id: 'enduring-sliver', name: 'Enduring Sliver', set: 'MH1',
+    types: ['Creature'], subtypes: ['Sliver'], colors: ['W'],
+    power: 2, toughness: 2, manaCost: 2, keywords: ['outlast'],
+    oracleText: 'Outlast {2} ({2}, {T}: Put a +1/+1 counter on this creature. Outlast only as a sorcery.)\nOther Sliver creatures you control have outlast {2}.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/e/6ed0f6a5-ed40-44fc-a5e1-3f8bb968d1d9.jpg?1783933164',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'outlast',
+        cost: { mana: 2, tap: true },
+        timing: 'sorcery',
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+      }),
+      // „Other Sliver creatures you control have outlast {2}" — zdolność
+      // statyczna nadająca AKTYWOWANĄ zdolność plemieniu (CR 604). Zasięg po
+      // PODTYPIE (wzorzec Altar of the Goyf); `grantsAbilities` niesie tę samą
+      // zdolność, którą ma źródło, więc opis i koszt nie mogą się rozjechać.
+      createAbility({
+        type: ABILITY_TYPE.static,
+        scope: {
+          affects: 'creatures_with_subtype',
+          subtype: 'Sliver',
+          grantsAbilities: [
+            createAbility({
+              type: ABILITY_TYPE.activated,
+              keyword: 'outlast',
+              cost: { mana: 2, tap: true },
+              timing: 'sorcery',
+              effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+            }),
+          ],
+        },
+      }),
+    ],
+    artId: 349, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+    notes: ['outlast (CR 702.100a) wymaga {T} i działa tylko jak sorcery — stwór z chorobą przywołania go nie użyje', 'nadanie plemieniu liczone przy odczycie: zniknięcie Enduring Slivera natychmiast odbiera outlast pozostałym Sliverom'],
+  }),
+
 ]);
 
 /**
