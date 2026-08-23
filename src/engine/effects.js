@@ -178,9 +178,16 @@ function executeRoomEffect(state, roomIndex, playerId) {
   const source = dungeonSource(playerId);
   for (const effect of room.effects) {
     if (effect.target === 'creature') {
+      // Uwaga A (właściciel, 2026-08-23): „target creature" pokoju działa na
+      // stwory VENTURERA (Forge wzmacnia, Arena goaduje WŁASNEGO stwora).
+      // Dotąd kandydatami były WSZYSTKIE stwory — bot bez własnej kreatury
+      // musiał „wybrać" stwora przeciwnika i go wzmacniać (bezsens). Bez
+      // własnej kreatury kandydaci są pusty = efekt fizzluje (linia niżej),
+      // dokładnie jak właściciel wskazał.
       const candidates = state.zones.battlefield
         .map((id) => state.objects.get(id))
-        .filter((object) => object && object.zone === 'battlefield' && object.kind === 'creature')
+        .filter((object) => object && object.zone === 'battlefield' && object.kind === 'creature'
+          && object.controllerId === playerId)
         .map((object) => object.id);
       if (candidates.length === 0) continue; // brak legalnego celu — efekt nie działa
       queueRoomTarget(state, playerId, {

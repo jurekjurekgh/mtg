@@ -239,31 +239,37 @@ test('Underdark Explorer ETB: obejmuje inicjatywę i wchodzi do pokoju 1 (Secret
   assert.ok(pick.events.some((event) => event.type === 'card_revealed'));
 });
 
-test('loch: Forge — gracz WYBIERA cel spośród legalnych stworów (2× +1/+1)', () => {
+test('loch: Forge — gracz WYBIERA cel spośród WŁASNYCH stworów (2× +1/+1)', () => {
   const state = mainPhase(game());
   addSimpleCreature(state, 'own', 'p1', 1, 1);
+  addSimpleCreature(state, 'own2', 'p1', 2, 2);
   addSimpleCreature(state, 'enemy', 'p2', 3, 3);
   const room = ventureToNextRoom(state, 1); // pokój 2 — Forge
   assert.equal(room, 2);
-  // Wybór celu jest realną, blokującą decyzją: legalne cele = wszystkie stwory.
+  // Wybór celu jest realną, blokującą decyzją: legalne cele = stwory
+  // VENTURERA (uwaga A właściciela 2026-08-23: pokój wzmacnia WŁASNEGO
+  // stwora, nie przeciwnika; bez własnej kreatury efekt fizzluje).
   assert.ok(state.pendingRoomTargets.length === 1, 'Forge kolejkuje wybór celu');
   const pending = state.pendingRoomTargets[0];
   assert.equal(pending.kind, 'creature');
-  assert.deepEqual([...pending.candidateIds].sort(), ['enemy', 'own'].sort(), 'kandydaci: oba stwory na polu bitwy');
+  assert.deepEqual([...pending.candidateIds].sort(), ['own', 'own2'].sort(), 'kandydaci: tylko własne stwory');
   const view = playerView(state, 'p1');
   const choices = view.legalCommands.filter((cmd) => cmd.type === 'resolve_room_target');
   assert.equal(choices.length, 2, 'PlayerView oferuje wybór z legalnych celów');
   assert.equal(view.pendingRoomTarget.roomName, 'Forge');
-  // Wszystko poza resolve_room_target zablokowane; cudza decyzja odrzucona.
+  // Wszystko poza resolve_room_target zablokowane; cudza decyzja odrzucona;
+  // stwór przeciwnika NIE jest legalnym celem (M200/A).
   assert.equal(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok, false);
   assert.equal(execute(state, { type: 'resolve_room_target', playerId: 'p2', targetId: 'own' }).ok, false);
-  // Gracz wybiera wroga (3/3) — liczniki idą na wskazany cel.
-  resolveRoomTarget(state, 'enemy');
-  const enemy = state.objects.get('enemy');
-  assert.equal(enemy.counters['+1/+1'], 2, 'Forge: 2× +1/+1 na wybranym stworze');
-  assert.equal(effectivePower(enemy, state), 5);
+  assert.equal(execute(state, { type: 'resolve_room_target', playerId: 'p1', targetId: 'enemy' }).ok, false);
+  // Gracz wybiera własnego (2/2) — liczniki idą na wskazany cel.
+  resolveRoomTarget(state, 'own2');
+  const own2 = state.objects.get('own2');
+  assert.equal(own2.counters['+1/+1'], 2, 'Forge: 2× +1/+1 na wybranym stworze');
+  assert.equal(effectivePower(own2, state), 4);
+  assert.equal(state.objects.get('enemy').counters?.['+1/+1'] ?? 0, 0, 'przeciwnik nietknięty (M200/A)');
   assert.equal(state.pendingRoomTargets.length, 0);
-  assert.ok(state.events.some((event) => event.type === 'room_target_resolved' && event.targetId === 'enemy'));
+  assert.ok(state.events.some((event) => event.type === 'room_target_resolved' && event.targetId === 'own2'));
 });
 
 test('loch: Forge bez stworów na polu bitwy nie kolejkuje wyboru', () => {
@@ -301,7 +307,7 @@ test('loch: Trap! — gracz WYBIERA docelowego gracza (5 życia)', () => {
   assert.equal(state.players[0].life, 20);
 });
 
-test('loch: Arena — gracz WYBIERA, którego stwora goaduje (musi atakować)', () => {
+test('loch: Arena — gracz WYBIERA, którego WŁASNEGO stwora goaduje (musi atakować)', () => {
   const state = mainPhase(game());
   addSimpleCreature(state, 'own', 'p1', 1, 1);
   addSimpleCreature(state, 'enemy', 'p2', 4, 4);
@@ -309,11 +315,13 @@ test('loch: Arena — gracz WYBIERA, którego stwora goaduje (musi atakować)', 
   assert.equal(room, roomNo('Arena'));
   assert.ok(state.pendingRoomTargets.length === 1, 'Arena kolejkuje wybór celu');
   assert.equal(state.pendingRoomTargets[0].effectType, 'goad');
-  // Gracz goaduje stwora wroga.
-  resolveRoomTarget(state, 'enemy');
-  assert.equal(state.objects.get('enemy').goaded, true, 'Arena: goad na wybranym stworze');
-  assert.equal(state.objects.get('own').goaded, false, 'niewybrany stwór nie jest sprowokowany');
-  assert.ok(state.events.some((event) => event.type === 'object_goaded' && event.objectId === 'enemy'));
+  assert.deepEqual(state.pendingRoomTargets[0].candidateIds, ['own'],
+    'goad dotyczy WŁASNEGO stwora (uwaga A właściciela 2026-08-23)');
+  // Gracz goaduje własnego stwora.
+  resolveRoomTarget(state, 'own');
+  assert.equal(state.objects.get('own').goaded, true, 'Arena: goad na wybranym stworze');
+  assert.equal(state.objects.get('enemy').goaded, false, 'stwór wroga NIE jest sprowokowany (M200/A)');
+  assert.ok(state.events.some((event) => event.type === 'object_goaded' && event.objectId === 'own'));
 });
 
 test('loch: nielegalny cel pokoju jest odrzucany', () => {
