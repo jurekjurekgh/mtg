@@ -485,3 +485,70 @@ test('M200/L: ograniczenie turewcze — późniejszy stwór objęty, nowa tura =
   assert.equal(state.turn.cantBlockRestrictions, undefined, 'nowy obiekt tury bez ograniczenia');
   assert.equal(creatureCantBlock(state.objects.get('later'), state), false, 'nowa tura — stwór blokuje normalnie');
 });
+// ---- M+M2: Frightful Delusion — cel = CZAR (nie zdolność) + nazwa celu na stosie ----
+// Zgłoszenie M: stos pokazywał „Frightful Delusion (rzuca: Nieprzyjaciel) → cel: ?”.
+// Zgłoszenie M2: „bot rzucił na moją zdolność z Cellar Door; rozstrzyga się
+// ale NIE COUNTERUJE; czar w ogóle nie powinien być rzucony”.
+//
+// WERDYKT (L7/L57 — zweryfikowane na bieżącym kodzie): oba zachowania są
+// PRAWIDŁOWE i testy PINUJĄ je, żeby nie wróciły:
+// - spec „spell on the stack” wyklucza zdolności (kind 'activated'/'trigger')
+//   — Oracle „Counter target spell” (CR 701.5a): zdolność NIE jest czarem;
+//   oferta bota może więc zawierać wyłącznie czary (zdolność Cellar Door
+//   nigdy nie jest celem — bot nie może jej „nie skontrować”, bo nie celuje
+//   w nią; rozstrzyga się normalnie, co jest poprawne);
+// - cel-czar na stosie ma nazwę w widoku (nameOfObject po cardId) — „cel: ?”
+//   nie występuje dla istniejącego czaru na stosie.
+
+test('M200/M+M2: Delusion — cel wyłącznie czar; cel ma nazwę na stosie (nie „?")', async () => {
+  const fs = await import('node:fs');
+  const { playerView } = await import('../src/engine/game-state.js');
+  const { renderTableView } = await import('../src/table/render.js');
+  const { HUMAN_ID, BOT_ID } = await import('../src/table/session.js');
+  const { parseDeckText } = await import('../src/cards/deck-text.js');
+  const registry = createCardRegistry();
+  const decks = new Map([
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/innistrad.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/dominaria.txt', 'utf8'), registry).cardIds],
+  ]);
+  const session = createSession({ seed: 88, registry, decks });
+  for (let i = 0; i < 30 && (session.state.pendingMulligans?.length ?? 0) > 0; i += 1) {
+    const keep = session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice');
+    if (keep) { const r = session.apply(keep); if (!r.ok) throw new Error(r.rejected?.reason ?? 'mulligan'); continue; }
+    session.continueBotPlay();
+  }
+  const state = session.state;
+  // Scenariusz właściciela: zdolność Cellar Door + czar na stosie.
+  putCard(state, 'celldoor', 'cellar-door', HUMAN_ID);
+  putCard(state, 'insp', 'inspiration', HUMAN_ID, 'hand');
+  putCard(state, 'del', 'frightful-delusion', BOT_ID, 'hand');
+  const p1 = state.players.find((p) => p.id === HUMAN_ID);
+  const p2 = state.players.find((p) => p.id === BOT_ID);
+  p1.mana = 7; p1.manaPool = { '': 5, U: 2 };
+  p2.mana = 3; p2.manaPool = { U: 1, '': 2 };
+  state.turn = { ...state.turn, number: 2, activePlayerId: HUMAN_ID, priorityPlayerId: HUMAN_ID,
+    phase: 'precombat_main', step: 'main', stepIndex: 3, passes: 0 };
+  state.zones.stack = [];
+  const { execute } = await import('../src/engine/game-state.js');
+  assert.ok(execute(state, { type: 'activate_ability', playerId: HUMAN_ID, objectId: 'celldoor', abilityIndex: 0, targets: [BOT_ID] }).ok);
+  assert.ok(execute(state, { type: 'cast_spell', playerId: HUMAN_ID, objectId: 'insp', targets: [BOT_ID] }).ok);
+  assert.ok(execute(state, { type: 'pass_priority', playerId: HUMAN_ID }).ok);
+  // M2: oferta Deluzji = WYŁĄCZNIE czar (Inspiration); zdolność Cellar Door
+  // (kind 'activated') nie jest celem „counter target spell” (CR 701.5a).
+  const botView = playerView(state, BOT_ID);
+  const offers = botView.legalCommands.filter((c) => c.type === 'cast_spell' && c.objectId === 'del');
+  assert.equal(offers.length, 1, `jedyny legalny cel = czar, nie zdolność: ${JSON.stringify(offers)}`);
+  const stackSpellId = state.zones.stack.find((id) => state.objects.get(id)?.cardId === 'inspiration');
+  assert.equal(offers[0].targets?.[0], stackSpellId, 'cel = czar na stosie');
+  assert.ok(execute(state, offers[0]).ok, 'bot rzuca Deluzję w czar');
+  // M: nazwa celu na stosie (render — pełna ścieżka, nie symulacja):
+  const els = {};
+  for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) {
+    els[key] = new MiniEl(`#${key}`);
+  }
+  renderTableView({ els, session, play: () => {}, onCardClick: () => {} });
+  const stackText = els.stackZone.textContent;
+  assert.ok(stackText.includes('cel: Inspiration'),
+    `cel-czar nazwany na stosie (nie „?”): ${stackText.slice(0, 200)}`);
+  assert.ok(!/Frightful Delusion[^\n]*cel: \?/.test(stackText), 'bez „cel: ?” przy istniejącym celu');
+});
