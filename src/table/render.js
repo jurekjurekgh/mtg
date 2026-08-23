@@ -292,6 +292,10 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'cast_spell' && (command.targets?.length || command.sacrificeTargetId || command.modeIndex != null)) {
     return `spell:${command.objectId}:${command.modeIndex ?? 'x'}`;
   }
+  // Phyrexian mana (CR 118.9): warianty płatności pita {R/P} czaru (jak perm-x).
+  if (command.type === 'cast_spell' && command.phyrexianPayWithLife != null) {
+    return `spell-x:${command.objectId}`;
+  }
   if (command.type === 'cast_cleave' && command.targets?.length) return `cleave:${command.objectId}`;
   if (command.type === 'cast_permanent' && command.targets?.length) {
     return `permanent:${command.objectId}:${Boolean(command.bestow)}`;
@@ -1905,7 +1909,17 @@ export function commandLabel(cmd, session, view) {
       const selfFizzle = cmd.sacrificeTargetId != null
         && (cmd.targets ?? []).includes(cmd.sacrificeTargetId)
         ? ' — UWAGA: czar fizzluje (cel poświęcony jako koszt)' : '';
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)}${xPart})${targets ? ` → cel: ${targets}` : ''}${sac}${alt}${selfFizzle}`;
+      // Phyrexian mana (CR 118.9): wariant płatności pita {R/P} (jak cast_permanent).
+      let phy = '';
+      if (cmd.phyrexianPayWithLife != null) {
+        const symbols = cardForMode?.phyrexianManaCost ?? 0;
+        const byMana = symbols - cmd.phyrexianPayWithLife;
+        const parts = [];
+        if (byMana > 0) parts.push(`${byMana}× maną`);
+        if (cmd.phyrexianPayWithLife > 0) parts.push(`${cmd.phyrexianPayWithLife}× po 2 życia`);
+        phy = ` · phyrexian ${parts.join(' + ')}`;
+      }
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)}${xPart}${phy})${targets ? ` → cel: ${targets}` : ''}${sac}${alt}${selfFizzle}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');

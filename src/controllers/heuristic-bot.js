@@ -952,6 +952,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // stworów do osłabienia, pusty grób), to wyrzucona karta — nie rzucamy.
         if (allEffectsInertNow(view, effects, cmd)) return finish(-70);
         let score = 50;
+        // Phyrexian mana (CR 118.9): jak gałąź cast_permanent — bot woli manę
+        // (wariant k=0 jest najtańszy; życiowe dostępne, gdy życie wytrzymuje).
+        if (cmd.phyrexianPayWithLife != null && cmd.phyrexianPayWithLife > 0) {
+          score -= 2 * cmd.phyrexianPayWithLife;
+        }
         // M146 (Twiddle — czysto-utylitarny czar): tap/untap nie ma „bazowej
         // wartości" jak obrażenia czy tokeny — cała jego wartość siedzi w
         // EFEKCIE na konkretnym celu. Przy bazie 50 bot rzucał Twiddle na

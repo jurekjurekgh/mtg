@@ -4222,7 +4222,7 @@ export function execute(state, input) {
       // accepted() skanuje result.events pod kątem triggerów dies/leaves.
       // Wcześniej tylko [e] — poświęcony kosztem stwór nie odpalał dies.
       const before = state.events.length;
-      const e = castSpell(state, cmd.playerId, cmd.objectId, cmd.targets, cmd.sacrificeTargetId, cmd.modeIndex, cmd.stunTargetId, cmd.buyback, cmd.payAltCost, cmd.xValue);
+      const e = castSpell(state, cmd.playerId, cmd.objectId, cmd.targets, cmd.sacrificeTargetId, cmd.modeIndex, cmd.stunTargetId, cmd.buyback, cmd.payAltCost, cmd.xValue, cmd.phyrexianPayWithLife);
       const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
       return accepted(state, cmd, { ok: true, events });
     } catch (error) {

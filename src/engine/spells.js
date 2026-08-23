@@ -8,24 +8,26 @@ import { attachAuraToCreature, isLegalAuraHost, attachEquipmentToCreature } from
 import { effectiveProtectionFromColors } from './attachments.js';
 import { addCounter } from './counters.js';
 import { shuffle } from './shuffle.js';
+import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, canPayManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, coloredPipsOf, consumePendingSpellDiscount } from './mana-cost.js';
 import { allControlledManaSources } from './mana-sources.js';
 
-function hasColorForSpell(state, playerId, cardId) {
+function hasColorForSpell(state, playerId, cardId, phyrexianPay = 0) {
   const costStr = MANA_COSTS[cardId];
   if (!costStr) return true;
   const parsed = parseManaCost(costStr);
   if (!parsed) return true;
   if (parsed.colored.length === 0 && parsed.hybrid.length === 0 && parsed.phyrexian.length === 0) return true;
   // Kolorowa pula (cz. 7): MtG-castability z UŻYTECZNYCH źródeł (pula + untapped).
-  return canPayColoredCost(state, playerId, coloredPipsOf(cardId));
+  // Pipy phyrexian opłacone życiem (CR 118.9) nie wymagają kolorowego źródła.
+  return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
 
-function hasColorForObject(state, playerId, object) {
+function hasColorForObject(state, playerId, object, phyrexianPay = 0) {
   if (!object) return true;
   if (object.kind === 'land') return true;
-  return hasColorForSpell(state, playerId, object.cardId);
+  return hasColorForSpell(state, playerId, object.cardId, phyrexianPay);
 }
 
 /**
@@ -402,7 +404,7 @@ export function effectiveSpellManaCost(state, object) {
 }
 
 /** Rzuca czar: płaci koszt, kładzie obiekt na stos z wybranymi celami. */
-export function castSpell(state, playerId, objectId, targets, sacrificeTargetId, modeIndex, stunTargetId, buyback = false, payAltCost = false, xValue) {
+export function castSpell(state, playerId, objectId, targets, sacrificeTargetId, modeIndex, stunTargetId, buyback = false, payAltCost = false, xValue, phyrexianPayWithLife = 0) {
   const preObject = state.objects.get(objectId);
   // Modal „Choose one" (Aerith Rescue Mission): osobna ścieżka walidacji —
   // cele i efekty pochodzą z wybranego trybu, a nie z nadrzędnego deskryptora.
@@ -420,6 +422,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     return castFireball(state, playerId, objectId, targets, xValue);
   }
   const { object, targetSpec, chosen } = requireSpell(state, playerId, objectId, targets);
+  const player = state.players.find((entry) => entry.id === playerId);
   const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object);
   // Dodatkowy koszt „sacrifice a creature" (Village Rites): walidacja celu-
   // poświęcenia PRZED jakąkolwiek mutacją (CR 601.2h) — nieudany rzut nie może
@@ -453,14 +456,27 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // Batch 47: impulse „bez placenia" (Caves of Chaos Adventurer po ukonczonym
   // lochu) omija koszt i kolorowa walidacje — jak plot/suspend.
   const freeImpulse = object.zone === 'exile' && object.playableWithoutPaying === true;
-  if (!object.plotted && !object.suspendReady && !freeImpulse && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
+  // Phyrexian mana (CR 118.9): każdy pip {R/P} płaci się maną LUB 2 życiem —
+  // ta sama reguła co ścieżka permanentów (cast_permanent: warianty
+  // phyrexianPayWithLife + changeLife). Batch 48 (Ruthless Invasion): PIERWSZY
+  // czar z pitem phyrexian — dotąd ścieżka czarów znała tylko pipy kolorowe
+  // (koszt liczony bez pipa = karta o manę tańsza; płatność życiem
+  // niedostępna — klasa L23 + CR 118.9).
+  const phyrexianSymbols = (object.plotted || object.suspendReady || freeImpulse) ? 0 : (object.phyrexianManaCost ?? 0);
+  const lifePaid = phyrexianSymbols > 0 ? (phyrexianPayWithLife ?? 0) : 0;
+  if (lifePaid < 0 || lifePaid > phyrexianSymbols) throw new Error('Nieprawidłowa liczba symboli phyrexian płaconych życiem');
+  if (!object.plotted && !object.suspendReady && !freeImpulse && !hasColorForObject(state, playerId, object, lifePaid)) throw new Error('Brak kolorowego źródła many');
   // Warunkowa obniżka kosztu (Metalcraft, Stoic Rebuttal) oraz modyfikatory
   // z permanentów (Etherium Sculptor): płacimy efektywny koszt wyliczony
   // w chwili rzutu (warunki i modyfikatory oceniane na bieżącej planszy).
   const baseMana = (object.plotted || object.suspendReady || freeImpulse) ? 0 : effectiveSpellManaCost(state, object);
   const altManaExtra = (sacrificeCost && payAltCost) ? (orPayMana ?? 0) : 0;
-  const manaSpent = baseMana + altManaExtra;
-  spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId));
+  // Pip phyrexian płacony maną to pełna jednostka many (CR 118.9); pipy
+  // opłacone życiem nie biorą udziału w koszcie many.
+  const manaSpent = baseMana + altManaExtra + (phyrexianSymbols - lifePaid);
+  if (2 * lifePaid > (player.life ?? 0)) throw new Error('Niewystarczające życie');
+  spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId, lifePaid));
+  if (lifePaid > 0) changeLife(state, playerId, -2 * lifePaid);
   consumePendingSpellDiscount(state, object);
   state.spellsCastThisTurn += 1;
   // Poświęcenie stwora jest KOSZTEM rzutu — następuje, zanim czar trafi na stos
@@ -535,6 +551,9 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     // Kolory rzucanego czaru (publiczne) — trigger „a player casts a white
     // spell" (Angel's Feather) filtruje po nich generycznie.
     colors: [...(object.colors ?? [])],
+    // Phyrexian mana (CR 118.9) — publiczne: ile symboli i czy opłacono
+    // życiem (jak permanent_cast; log i panel nazywają wybór).
+    phyrexianSymbols, phyrexianPaidWithLife: lifePaid,
   });
   state.events.push(e);
   // Storm (CR 702.40a): „When you cast this spell, copy it for each spell cast
@@ -2032,8 +2051,35 @@ export function legalSpellCasts(state, playerId) {
     // enumeracji — przy spełnionym warunku czar pojawia się przy mniejszej puli.
     // Suspend (CR 702.62): rzut po zdjęciu ostatniego licznika czasu jest
     // bez kosztu many — jak zaplotowany.
-    if (!object.plotted && !object.suspendReady && !freeImpulseCast && effectiveSpellManaCost(state, object) > manaAvailable) continue;
-    if (!object.plotted && !object.suspendReady && !freeImpulseCast && !hasColorForObject(state, playerId, object)) continue;
+    // Phyrexian mana (CR 118.9): pips {R/P} czaru — warianty komendy
+    // phyrexianPayWithLife k=0..N (lustro ścieżki cast_permanent; Batch 48:
+    // Ruthless Invasion — pierwszy czar z pitem phyrexian). Bez pipów:
+    // zwykła bramka many + kolorów (zachowanie sprzed Batcha 48).
+    const phyrexianSymbols = (!object.plotted && !object.suspendReady && !freeImpulseCast) ? (object.phyrexianManaCost ?? 0) : 0;
+    const spellPhyrexianVariants = (() => {
+      if (phyrexianSymbols === 0) {
+        if (object.plotted || object.suspendReady || freeImpulseCast) return [null];
+        const base = effectiveSpellManaCost(state, object);
+        return (base <= manaAvailable && hasColorForSpell(state, playerId, object.cardId, 0)) ? [null] : [];
+      }
+      const base = effectiveSpellManaCost(state, object);
+      const out = [];
+      for (let k = 0; k <= phyrexianSymbols; k += 1) {
+        if (base + (phyrexianSymbols - k) > manaAvailable) continue;
+        if (2 * k > (player.life ?? 0)) continue;
+        if (!hasColorForSpell(state, playerId, object.cardId, k)) continue;
+        out.push(k);
+      }
+      return out;
+    })();
+    if (spellPhyrexianVariants.length === 0) continue;
+    const pushSpellCast = (cast) => {
+      // Kolejność panelu: wariant manowy (k=0) PIERWSZY — playerView wstawia
+      // listę legalSpellCasts przez unshift (odwrotnie), jak tryby modalne.
+      for (const k of [...spellPhyrexianVariants].reverse()) {
+        casts.push(k == null ? cast : { ...cast, phyrexianPayWithLife: k });
+      }
+    };
     if (object.spell.timing === 'sorcery') {
       const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
       if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) continue;
@@ -2118,9 +2164,9 @@ export function legalSpellCasts(state, playerId) {
       for (const sacId of sacrificePool) {
         const cast = { objectId: id, targets: [] };
         if (sacId !== null) cast.sacrificeTargetId = sacId;
-        casts.push(cast);
+        pushSpellCast(cast);
       }
-      if (payAltAvailable) casts.push({ objectId: id, targets: [], payAltCost: true });
+      if (payAltAvailable) pushSpellCast({ objectId: id, targets: [], payAltCost: true });
       // Buyback (CR 702.26): wariant z dodatkowym kosztem — czar wraca do ręki
       // po rozstrzygnięciu zamiast do grobu. Enumerujemy osobną komendę.
       // Buyback (CR 702.26): wariant z dodatkowym kosztem — czar wraca do ręki
@@ -2129,8 +2175,11 @@ export function legalSpellCasts(state, playerId) {
       if (object.spell.buyback && !object.plotted) {
         const baseCost = effectiveSpellManaCost(state, object);
         const bbCost = object.spell.buyback.cost ?? 0;
-        if (baseCost + bbCost <= manaAvailable) {
+        for (const k of [...spellPhyrexianVariants].reverse()) {
+          const pipMana = k == null ? 0 : (phyrexianSymbols - k);
+          if (baseCost + bbCost + pipMana > manaAvailable) continue;
           const cast2 = { objectId: id, targets: [], buyback: true };
+          if (k != null) cast2.phyrexianPayWithLife = k;
           casts.push(cast2);
         }
       }
@@ -2150,9 +2199,9 @@ export function legalSpellCasts(state, playerId) {
       for (const sacId of sacrificePool) {
         const cast = { objectId: id, targets: combo };
         if (sacId !== null) cast.sacrificeTargetId = sacId;
-        casts.push(cast);
+        pushSpellCast(cast);
       }
-      if (payAltAvailable) casts.push({ objectId: id, targets: combo, payAltCost: true });
+      if (payAltAvailable) pushSpellCast({ objectId: id, targets: combo, payAltCost: true });
     }
   }
   // M102/U8 (Żywy Tester, graveyard vs innistrad): czar z dodatkowym kosztem
