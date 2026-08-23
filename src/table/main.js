@@ -751,6 +751,7 @@ function bootstrapTable() {
     // Klucz grupowania – uproszczony odpowiednik choiceRequestGroupKey z render.js
     const groupKey = (cmd) => {
       if (cmd.type === 'cast_spell' && cmd.targets?.length) return `spell:${cmd.objectId}`;
+      if (cmd.type === 'cast_spell' && cmd.phyrexianPayWithLife != null) return `spell-x:${cmd.objectId}`;
       if (cmd.type === 'cast_cleave' && cmd.targets?.length) return `cleave:${cmd.objectId}`;
       if (cmd.type === 'cast_permanent' && cmd.targets?.length) return `perm:${cmd.objectId}:${Boolean(cmd.bestow)}`;
       if (cmd.type === 'cast_permanent' && cmd.phyrexianPayWithLife != null) return `perm-x:${cmd.objectId}`;

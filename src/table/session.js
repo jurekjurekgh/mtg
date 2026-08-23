@@ -667,7 +667,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         // nazwy trybu był w logu bezużyteczny: gracz nie wiedział, czy dostanie
         // 3 obrażenia, czy straci artefakty.
         const mode = e.modeName ? ` — tryb: ${e.modeName}` : '';
-        return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${mode}${plotted}${cleaved}${adventure}${targets ? ` → cel: ${targets}` : ''}`;
+        // Phyrexian mana (CR 118.9) — jak gałąź permanent_cast.
+        const paidWithLife = e.phyrexianPaidWithLife ?? 0;
+        const phyrexian = e.phyrexianSymbols
+          ? ` — phyrexian: ${paidWithLife > 0 ? `${paidWithLife}× po 2 życia` : 'za manę'}`
+          : '';
+        return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${mode}${plotted}${cleaved}${adventure}${phyrexian}${targets ? ` → cel: ${targets}` : ''}`;
       }
       case 'spell_resolved': {
         // M102/U6 (CR 708.2): zakryty permanent PRZECIWNIKA zostaje bezimienny
