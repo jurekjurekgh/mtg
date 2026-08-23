@@ -187,3 +187,103 @@ test('M195/C1: REALNY Wrap in Flames — podzbiory celów zamiast kombinacji', a
   const chosen = commandForSelection(commands, { targets: plan.targets.slice(0, 2) });
   assert.ok(chosen && commands.includes(chosen), 'zatwierdzenie daje legalną komendę silnika');
 });
+
+// ---- Warstwa UI: ekran zaznaczania celów + licznik X ---------------------
+
+/** Minimalny DOM (wzorzec z m172) — render jest czysty, bez prawdziwego DOM. */
+function withMiniDom(run) {
+  class MiniEl {
+    constructor(tag) {
+      this.tagName = tag; this.children = []; this.listeners = {};
+      this.className = ''; this.text = ''; this.dataset = {}; this.disabled = false;
+      this.classList = { toggle: () => {}, add: () => {}, remove: () => {} };
+    }
+    set textContent(v) { this.text = String(v); this.children = []; }
+    get textContent() { return this.text + this.children.map((c) => c.textContent).join(''); }
+    appendChild(c) { this.children.push(c); return c; }
+    replaceChildren(...n) { this.children = n.flat(); }
+    addEventListener(t, l) { (this.listeners[t] ??= []).push(l); }
+    click() { for (const l of this.listeners.click ?? []) l({}); }
+    /** Wszystkie węzły drzewa (do wyszukiwania przycisków w teście). */
+    all() { return [this, ...this.children.flatMap((c) => (c.all ? c.all() : [c]))]; }
+    find(pred) { return this.all().find(pred); }
+    findAll(pred) { return this.all().filter(pred); }
+  }
+  globalThis.document = globalThis.document ?? {};
+  const old = globalThis.document.createElement;
+  globalThis.document.createElement = (tag) => new MiniEl(tag);
+  try { return run(new MiniEl('div')); } finally {
+    if (old) globalThis.document.createElement = old; else delete globalThis.document.createElement;
+  }
+}
+
+const VIEW = {
+  playerId: 'p1',
+  players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }],
+  zones: { battlefield: [
+    { id: 'c0', cardId: 'hill-giant', controllerId: 'p1' },
+    { id: 'c1', cardId: 'hill-giant', controllerId: 'p2' },
+  ] },
+};
+const SESSION = { nameOf: (id) => id ?? '?', nameOfObject: (id) => id ?? '?', faceDownName: () => 'morph' };
+
+test('M195/C: ekran wyboru rysuje JEDEN wiersz na cel, nie na kombinację', async () => {
+  const { renderMultiTargetWizard } = await import('../src/table/choice-request.js');
+  const commands = fireballCommands();
+  const plan = multiTargetPlanOf(commands);
+  withMiniDom((host) => {
+    renderMultiTargetWizard(host, {
+      view: VIEW, session: SESSION, plan, commands, sourceName: 'Fireball',
+      onComplete: () => {}, onCancel: () => {},
+    });
+    const rows = host.findAll((n) => String(n.className).includes('multi-target-row'));
+    assert.equal(rows.length, plan.targets.length,
+      `${commands.length} kombinacji → ${plan.targets.length} wierszy do zaznaczenia`);
+  });
+});
+
+test('M195/C: licznik X ma przyciski +/- i pokazuje wartość', async () => {
+  const { renderMultiTargetWizard } = await import('../src/table/choice-request.js');
+  const commands = fireballCommands();
+  withMiniDom((host) => {
+    renderMultiTargetWizard(host, {
+      view: VIEW, session: SESSION, plan: multiTargetPlanOf(commands), commands,
+      sourceName: 'Fireball', onComplete: () => {}, onCancel: () => {},
+    });
+    assert.ok(host.find((n) => String(n.className).includes('multi-target-x-plus')), 'przycisk +1 dla X');
+    assert.ok(host.find((n) => String(n.className).includes('multi-target-x-minus')), 'przycisk −1 dla X');
+  });
+});
+
+test('M195/C: zatwierdzenie oddaje legalną komendę z wybranymi celami i X', async () => {
+  const { renderMultiTargetWizard } = await import('../src/table/choice-request.js');
+  const commands = fireballCommands();
+  let submitted = null;
+  withMiniDom((host) => {
+    renderMultiTargetWizard(host, {
+      view: VIEW, session: SESSION, plan: multiTargetPlanOf(commands), commands,
+      sourceName: 'Fireball', onComplete: (cmd) => { submitted = cmd; }, onCancel: () => {},
+    });
+    // zaznacz pierwszy cel i podbij X o 1
+    host.find((n) => String(n.className).includes('multi-target-toggle'))?.click();
+    host.find((n) => String(n.className).includes('multi-target-x-plus'))?.click();
+    host.find((n) => String(n.className).includes('multi-target-confirm'))?.click();
+  });
+  assert.ok(submitted, 'zatwierdzenie musi oddać komendę');
+  assert.ok(commands.includes(submitted), 'i to komendę z legalCommands (silnik ją zna)');
+  assert.equal(submitted.targets.length, 1);
+  assert.equal(submitted.xValue, 2, 'X podbite z 1 na 2');
+});
+
+test('M195/C: zatwierdzenie jest ZABLOKOWANE, gdy wybór nielegalny', async () => {
+  const { renderMultiTargetWizard } = await import('../src/table/choice-request.js');
+  const commands = fireballCommands(); // wymaga min. 1 celu
+  withMiniDom((host) => {
+    renderMultiTargetWizard(host, {
+      view: VIEW, session: SESSION, plan: multiTargetPlanOf(commands), commands,
+      sourceName: 'Fireball', onComplete: () => {}, onCancel: () => {},
+    });
+    const confirm = host.find((n) => String(n.className).includes('multi-target-confirm'));
+    assert.equal(confirm.disabled, true, 'bez zaznaczonego celu nie da się zatwierdzić');
+  });
+});

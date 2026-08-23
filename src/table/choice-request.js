@@ -1,6 +1,7 @@
 import { choiceResponse } from '../protocol/types.js';
 import { OPTION_IGNORABLE_TYPES } from './render.js';
 import { commandOptionKey, FACE_DOWN_LABEL } from './session.js';
+import { commandForSelection } from './multi-target.js';
 
 function clearChoiceElement(element) {
   if (element) element.textContent = '';
@@ -608,6 +609,105 @@ export function renderDamageDivisionWizard(host, { view, session, candidateIds, 
   const cancel = choiceNode(buttons, 'button', 'ghost-btn', 'Anuluj');
   cancel.addEventListener('click', () => onCancel?.());
   refresh();
+}
+
+/**
+ * M195/C + C1 (uwagi właściciela): EKRAN WYBORU CELÓW zamiast setek przycisków.
+ *
+ * „Fireball — mam 95 kombinacji obrażeń. Powinna być lista legalnych celów do
+ * wyboru (ptaszek) i osobny licznik +- do określenia obrażeń (X) i kosztu."
+ * „Wrap in Flames — zamiast 50 kombinacji lista legalnych celów z ptaszkiem."
+ *
+ * Wiersz na CEL (nie na kombinację) + opcjonalny licznik X. Zatwierdzenie
+ * mapuje wybór z powrotem na komendę z `legalCommands` (multi-target.js), więc
+ * legalność rozstrzyga silnik — UI nie wymyśla ruchów (L48). Przycisk
+ * „Zatwierdź" jest wyłączony, dopóki wybór nie odpowiada żadnej komendzie.
+ */
+export function renderMultiTargetWizard(host, { view, session, plan, commands, sourceName = null, onComplete, onCancel, onOpenCard = null }) {
+  clearChoiceElement(host);
+  const xLabel = plan.hasX ? ` oraz wartość X (${plan.xMin}–${plan.xMax})` : '';
+  const range = plan.minTargets === plan.maxTargets
+    ? `${plan.maxTargets}`
+    : `${plan.minTargets}–${plan.maxTargets}`;
+  choiceNode(host, 'div', 'choice-request-intro',
+    `${sourceName ? `${sourceName} — ` : ''}zaznacz cele (${range})${xLabel}:\n`);
+
+  const chosen = new Set();
+  let xValue = plan.hasX ? plan.xMin : null;
+  const list = choiceNode(host, 'div', 'multi-target-list');
+  const toggles = new Map();
+  let confirm = null;
+  let statusEl = null;
+  let xCounter = null;
+
+  const currentCommand = () => commandForSelection(commands, {
+    targets: [...chosen], xValue: plan.hasX ? xValue : null,
+  });
+
+  const refresh = () => {
+    for (const [id, node] of toggles) {
+      node.textContent = `${chosen.has(id) ? '[x]' : '[ ]'} ${objectOrPlayerName(view, session, id)}`;
+    }
+    if (xCounter) xCounter.textContent = String(xValue ?? '');
+    const cmd = currentCommand();
+    if (statusEl) {
+      statusEl.textContent = cmd
+        ? `Wybrano cele: ${chosen.size}${plan.hasX ? ` · X = ${xValue}` : ''}`
+        : `Wybór niedozwolony (cele: ${chosen.size}${plan.hasX ? `, X = ${xValue}` : ''})`;
+    }
+    if (confirm) {
+      confirm.disabled = !cmd;
+      confirm.classList?.toggle?.('is-disabled', !cmd);
+    }
+  };
+
+  for (const id of plan.targets) {
+    const row = choiceNode(list, 'div', 'multi-target-row');
+    const toggle = choiceNode(row, 'button', 'action multi-target-toggle');
+    toggle.type = 'button';
+    toggles.set(id, toggle);
+    toggle.addEventListener('click', () => {
+      if (chosen.has(id)) chosen.delete(id);
+      else chosen.add(id);
+      refresh();
+    });
+    if (onOpenCard && !view.players?.some((pl) => pl.id === id)) {
+      const peek = choiceNode(row, 'button', 'ghost-btn multi-target-peek', 'Podgląd');
+      peek.type = 'button';
+      peek.addEventListener('click', () => onOpenCard(id));
+    }
+  }
+
+  if (plan.hasX) {
+    const xRow = choiceNode(host, 'div', 'multi-target-x');
+    choiceNode(xRow, 'span', 'multi-target-x-label', 'X:');
+    const minus = choiceNode(xRow, 'button', 'ghost-btn multi-target-x-minus', '−1');
+    xCounter = choiceNode(xRow, 'span', 'multi-target-x-count', String(xValue));
+    const plus = choiceNode(xRow, 'button', 'ghost-btn multi-target-x-plus', '+1');
+    minus.addEventListener('click', () => { if (xValue > plan.xMin) { xValue -= 1; refresh(); } });
+    plus.addEventListener('click', () => { if (xValue < plan.xMax) { xValue += 1; refresh(); } });
+  }
+
+  statusEl = choiceNode(host, 'div', 'multi-target-status', '');
+  const buttons = choiceNode(host, 'div', 'choice-request-actions');
+  confirm = choiceNode(buttons, 'button', 'primary-btn multi-target-confirm', 'Zatwierdź wybór');
+  confirm.type = 'button';
+  confirm.disabled = true;
+  confirm.addEventListener('click', () => {
+    const cmd = currentCommand();
+    if (cmd) onComplete(cmd);
+  });
+  const cancel = choiceNode(buttons, 'button', 'ghost-btn multi-target-cancel', 'Anuluj');
+  cancel.type = 'button';
+  cancel.addEventListener('click', () => onCancel?.());
+  refresh();
+}
+
+/** Nazwa celu: gracz („Nieprzyjaciel") albo karta na polu bitwy. */
+function objectOrPlayerName(view, session, id) {
+  const player = view.players?.find((pl) => pl.id === id);
+  if (player) return player.name ?? id;
+  return objectName(view, session, id);
 }
 
 export function renderDamageWizard(host, { view, session, pending, defaultCommand, onComplete, onCancel, probeKeyFor = null }) {

@@ -31,7 +31,8 @@ import { parseManaCost } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
-import { lookWizardKindOf, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard } from './choice-request.js';
+import { lookWizardKindOf, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard } from './choice-request.js';
+import { multiTargetPlanOf } from './multi-target.js';
 import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions } from './render.js';
 
 function runEngineSmoke() {
@@ -288,6 +289,29 @@ function bootstrapTable() {
     // wszystkich kombinacji — najpierw lista przeglądniętych kart, potem
     // wybory PO KOLEI dla każdej karty osobno; komenda resolve_* składana
     // na końcu kroków (protokół bez zmian — patrz renderLookWizard).
+    // M195/C + C1 (uwagi właściciela): czar wielocelowy / z {X} dostaje EKRAN
+    // ZAZNACZANIA zamiast listy wszystkich kombinacji. Fireball dawał 232
+    // przyciski („kompletnie bez sensu — mam 95 kombinacji obrażeń"), Wrap in
+    // Flames 15. Plan liczymy z tych samych komend, które są w request.options,
+    // więc zatwierdzenie oddaje komendę znaną silnikowi (L48).
+    const multiPlan = multiTargetPlanOf(request.options ?? []);
+    if (multiPlan) {
+      const sourceObject = [...(choiceView.zones?.hand ?? []), ...(choiceView.zones?.battlefield ?? []),
+        ...(choiceView.zones?.graveyard ?? []), ...(choiceView.zones?.exile ?? [])]
+        .find((o) => o.id === multiPlan.objectId);
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: multiPlan,
+        commands: request.options,
+        sourceName: sourceObject?.cardId ? session.nameOf(sourceObject.cardId) : null,
+        onOpenCard: openCardFullscreen,
+        onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
     const lookKind = lookWizardKindOf(request, choiceView);
     if (lookKind) {
       const pending = lookKind === 'surveil' ? choiceView.pendingSurveil
