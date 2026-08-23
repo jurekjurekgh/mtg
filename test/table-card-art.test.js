@@ -61,7 +61,11 @@ class MiniEl {
 }
 
 function installMiniDom() {
-  globalThis.document = { createElement: (tag) => new MiniEl(tag) };
+  globalThis.document = {
+    createElement: (tag) => new MiniEl(tag),
+    // M200/B: linki nazw kart w logu tworzą tekstowe węzły.
+    createTextNode: (text) => ({ isText: true, text: String(text), get textContent() { return this.text; } }),
+  };
   globalThis.window = { innerWidth: 1400, innerHeight: 900, matchMedia: () => ({ matches: false }) };
 }
 

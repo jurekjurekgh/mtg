@@ -2322,6 +2322,11 @@ export function createSession(config) {
     get state() { return state; },
     nameOf,
     nameOfObject,
+    // M200/B (uwaga właściciela): nazwy kart w logu są klikalne (M167/E2) —
+    // render.js czyta tę mapę, żeby owinać nazwy w <span class="log-card">.
+    // Karta NIGDY nie działała, bo mapa istniała tylko w closure sesji
+    // (klasa L5: test testował funkcję z rękodziełem, nie wiring).
+    cardIdByName,
     /** Kolory karty (do akcentów w UI); nieznane id → pusta lista. */
     colorsOf(cardId) {
       return colorsById.get(cardId) ?? [];
