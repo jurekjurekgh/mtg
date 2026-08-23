@@ -800,6 +800,11 @@ export async function runTableGame({
     hasFoot: Boolean($('.foot')),
     hasLibraryPreview: Boolean($('#library-preview')),
     copyAllLabel: text($('#turn-history-copy-all')),
+    // M199: zapis „Przebieg tur (dla AI)" ma być w pełnym FoW — sprawdzalne
+    // na ŻYWYM artefakcie (panel + główny log obok siebie).
+    turnHistoryTurns: $('#turn-history-select')?.options?.length ?? 0,
+    turnHistoryText: text($('#turn-history')),
+    mainLogShowsOwnDraw: /Dobierasz:/.test(text($('#log'))),
     ownPlayerLabel: text($('.player.own .pname')),
   };
   return { lines, findings, windowRecords, probeRecords, rejectionRecords, layout, coverage: { seenActions: [...seenActions], clickedActions: [...clickedActions], modals: [...seenModals] } };

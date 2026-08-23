@@ -508,18 +508,41 @@ export function odmienNaDrugaOsobe(text, humanName = PLAYER_NAMES[HUMAN_ID]) {
  * zagrywa…”) — opcja `drugaOsoba: false` wyłącza odmianę zdań o człowieku
  * (główny log stołu zostaje w 2. osobie — M101/C bez zmian).
  */
-export function describeGameEvent(e, helpers, names = PLAYER_NAMES, { drugaOsoba = true } = {}) {
-  const opis = describeGameEventRaw(e, helpers, names);
+/**
+ * M199 (zlecenie właściciela 2026-08-23): tryb PEŁNEGO Fog of War dla sekcji
+ * „Przebieg tur (dla AI)". Zapis dla modelu ma być tym, co widziałby
+ * obserwator przy stole — więc informacja ukryta gracza (dobrana karta,
+ * tożsamość własnego morpha, karty oglądane przy scry/mulliganie) jest
+ * maskowana TAK SAMO jak informacja bota.
+ *
+ * Realizacja: zamiast dopisywać `if (fogOfWar)` w ~13 rozsianych gałęziach
+ * (klasa L41 — kopie tej samej reguły rozjeżdżają się), podmieniamy JEDEN
+ * punkt decyzyjny. Wszystkie te gałęzie pytają „czy to gracz-człowiek?"
+ * przez `playerId === HUMAN_ID`; w trybie FoW ta odpowiedź brzmi „nie"
+ * dla obu stron, bo obserwator nie zna kart żadnego z graczy.
+ *
+ * `fogOfWar` NIE dotyczy głównego logu stołu ani modala „Rozgrywka" —
+ * tam gracz widzi swoje karty i tak ma zostać (decyzja właściciela).
+ */
+export function describeGameEvent(e, helpers, names = PLAYER_NAMES, { drugaOsoba = true, fogOfWar = false } = {}) {
+  const opis = describeGameEventRaw(e, helpers, names, { fogOfWar });
   if (typeof opis !== 'string') return opis;
   return drugaOsoba ? odmienNaDrugaOsobe(opis, names[HUMAN_ID]) : opis;
 }
 
-function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
+function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = false } = {}) {
   const { nameOf, nameOfObject } = helpers;
   // Rozpoznanie „cel to gracz" — sesja przekazuje isPlayer (lookup state),
   // a testy mogą polegać na mapie imion (oba stołowe słowniki mapują p1/p2).
   const isPlayer = helpers.isPlayer ?? ((id) => names[id] != null);
   const whoN = (id) => names[id] ?? id;
+  /**
+   * M199: „czy pokazać ukrytą kartę tego gracza?". Poza trybem FoW ujawniamy
+   * karty człowieka (to jego własna wiedza — CR 400.2 pozwala mu patrzeć na
+   * swoją rękę). W trybie FoW nikt nie jest uprzywilejowany: zapis dla AI
+   * opisuje obie strony jak zewnętrzny obserwator.
+   */
+  const seesHiddenOf = (playerId) => !fogOfWar && playerId === HUMAN_ID;
   /**
    * M195/D (uwaga właściciela, Veiled Ascension): decyzję opcjonalną podejmuje
    * KONKRETNY gracz — kontroler karty. Komunikaty pisały stałe „(wybór
@@ -596,7 +619,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       case 'step_advanced': return `— ${e.phase}/${e.step} —`;
       case 'turn_started': return `Tura gracza ${whoN(e.playerId)}`;
       case 'card_drawn': {
-        if (e.object?.cardId && e.playerId === HUMAN_ID) {
+        if (e.object?.cardId && seesHiddenOf(e.playerId)) {
           return `${whoN(e.playerId)} dobiera: ${nameOf(e.object.cardId)}`;
         }
         if (e.object?.cardId && e.playerId === BOT_ID) {
@@ -613,7 +636,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         if (e.faceDown) {
           // M127: etykieta z jednego źródła (FACE_DOWN_LABEL) — pisownia
           // mechaniki jest wspólna dla logu, kafli i wizardów.
-          const shown = e.playerId === HUMAN_ID ? nameOf(e.object?.cardId) : FACE_DOWN_LABEL;
+          const shown = seesHiddenOf(e.playerId) ? nameOf(e.object?.cardId) : FACE_DOWN_LABEL;
           return `${whoN(e.playerId)} zagrywa ${shown} twarzą w dół (2/2)`;
         }
         // Phyrexian mana (Batch 11): symbole {W/P} opłacone maną albo 2 życiem.
@@ -652,7 +675,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         // pole bitwy". Własny morph nazywamy (kontroler zna kartę — CR 708.6),
         // dokładnie jak w gałęzi `permanent_cast`.
         if (e.faceDown) {
-          const own = e.controllerId === HUMAN_ID;
+          const own = seesHiddenOf(e.controllerId);
           const shown = own ? nameOf(e.cardId) : FACE_DOWN_LABEL;
           return `${shown} zostaje rozstrzygnięty (twarzą w dół)`;
         }
@@ -1026,7 +1049,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         // M100/E10 (P4 — Żywy Tester h05): odmiana „1 kartę / 2 karty / 5 kart"
         // — polishPlural zamiast sztywnego „kart".
         const karty = polishPlural(e.amount, 'kartę', 'karty', 'kart');
-        if (e.cardIds?.length && e.playerId === HUMAN_ID) {
+        if (e.cardIds?.length && seesHiddenOf(e.playerId)) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
           return `${whoN(e.playerId)} wykonuje scry (patrzy na ${e.amount} ${karty}: ${names})`;
         }
@@ -1035,7 +1058,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       case 'scry_resolved': {
         // M100/E4: spód/wierzch biblioteki to wiedza WŁASNA patrzącego —
         // człowiekowi pokazujemy nazwy, przeciwnikowi tylko liczby (FoW).
-        if (e.playerId === HUMAN_ID && (e.bottomCardIds?.length || e.topCardIds?.length)) {
+        if (seesHiddenOf(e.playerId) && (e.bottomCardIds?.length || e.topCardIds?.length)) {
           // Filtrowanie po samych NAZWACH: puste pole danych (np. brak
           // wierzchu po decyzji „wszystko na spód") nie może zostawić
           // śmieciowego segmentu w tekście.
@@ -1054,7 +1077,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         // M100/E10 (P4): jak przy scry — odmiana (było „patrzy na 2 kart",
         // a dla 1 nawet „patrzy na 1 kart").
         const karty = polishPlural(e.amount, 'kartę', 'karty', 'kart');
-        if (e.cardIds?.length && e.playerId === HUMAN_ID) {
+        if (e.cardIds?.length && seesHiddenOf(e.playerId)) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
           return `${whoN(e.playerId)} wykonuje surveil (patrzy na ${e.amount} ${karty}: ${names})`;
         }
@@ -1075,7 +1098,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         return `${whoN(e.playerId)} kończy surveil — ${n} ${noun} ${verb} do grobu`;
       }
       case 'index_started': {
-        if (e.cardIds?.length && e.playerId === HUMAN_ID) {
+        if (e.cardIds?.length && seesHiddenOf(e.playerId)) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
           return `${whoN(e.playerId)} wykonuje Index (patrzy na ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')}: ${names})`;
         }
@@ -1083,13 +1106,13 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       }
       case 'index_resolved': {
         // M100/E4: ustalona kolejność to wiedza własna patrzącego.
-        if (e.playerId === HUMAN_ID && e.orderCardIds?.length) {
+        if (seesHiddenOf(e.playerId) && e.orderCardIds?.length) {
           return `${whoN(e.playerId)} kończy Index — kolejność na wierzchu (od góry): ${e.orderCardIds.map((cid) => nameOf(cid)).join(', ')}`;
         }
         return `${whoN(e.playerId)} kończy Index — przestawia karty na wierzchu biblioteki`;
       }
       case 'look_top_started': {
-        if (e.cardIds?.length && e.playerId === HUMAN_ID) {
+        if (e.cardIds?.length && seesHiddenOf(e.playerId)) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
           return `${whoN(e.playerId)} patrzy na ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki (${names})`;
         }
@@ -1102,21 +1125,21 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         // Drowner) albo SPÓD biblioteki (Merchant's Dockhand, Rediscover the
         // Way). Log twierdził „do grobu" w obu, czyli mylił gracza co do
         // stanu jego biblioteki. Miejsce bierzemy ze zdarzenia (L6).
-        const pickName = (e.playerId === HUMAN_ID && e.pickCardId) ? nameOf(e.pickCardId) : 'kartę';
+        const pickName = (seesHiddenOf(e.playerId) && e.pickCardId) ? nameOf(e.pickCardId) : 'kartę';
         const restLabel = e.restTo === 'library_bottom'
           ? 'reszta na spód biblioteki'
           : 'reszta do grobu';
         return `${whoN(e.playerId)} bierze ${pickName} z wierzchu do ręki (${restLabel})`;
       }
       case 'satyr_look_started': {
-        if (e.cardIds?.length && e.playerId === HUMAN_ID) {
+        if (e.cardIds?.length && seesHiddenOf(e.playerId)) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
           return `${whoN(e.playerId)} odsłania ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki (${names}) — może wziąć ląd do ręki`;
         }
         return `${whoN(e.playerId)} odsłania ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki — może wziąć ląd do ręki`;
       }
       case 'satyr_look_resolved': {
-        const pickName = (e.pickId != null && e.playerId === HUMAN_ID && e.pickCardId) ? nameOf(e.pickCardId) : 'żadnego lądu';
+        const pickName = (e.pickId != null && seesHiddenOf(e.playerId) && e.pickCardId) ? nameOf(e.pickCardId) : 'żadnego lądu';
         return `${whoN(e.playerId)} bierze ${pickName} z wierzchu do ręki (reszta do grobu)`;
       }
       // M100/E4: karty Epic Experiment lecą na ODKRYTY exile (publiczne) —
@@ -1416,7 +1439,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       // jest jego wiedzą — CR 400.2). Przeciwnikowi zostaje „kartę”
       // (FoW M142). Wzorzec jak card_drawn / look_top_resolved.
       case 'hand_top_choice_resolved': {
-        const card = (e.playerId === HUMAN_ID && e.cardId) ? nameOf(e.cardId) : 'kartę';
+        const card = (seesHiddenOf(e.playerId) && e.cardId) ? nameOf(e.cardId) : 'kartę';
         return `${whoN(e.playerId)} kładzie ${card} na wierzch biblioteki`;
       }
       case 'graveyard_top_choice_required': return `${whoN(e.playerId)} wybiera karty-stwory z grobu na wierzch biblioteki (Forever Young)${e.candidateIds?.length ? ` — do wyboru ${e.candidateIds.length}` : ''}`;
@@ -1623,7 +1646,11 @@ export function createSession(config) {
     }
     if (TURN_NOISE.has(e.type)) return;
     // M176: przebieg tur w 3. osobie dla OBU graczy (Czarodziejka/Nieprzyjaciel).
-    const text = describeEvent(e, TURN_NAMES, { drugaOsoba: false });
+    // M199 (zlecenie właściciela): TYLKO ta sekcja jest w pełnym Fog of War —
+    // zapis dla AI ma być relacją obserwatora, więc karty gracza są ukryte
+    // dokładnie tak jak karty bota. Główny log stołu i modal „Rozgrywka"
+    // zostają bez zmian (gracz widzi tam swoje karty).
+    const text = describeEvent(e, TURN_NAMES, { drugaOsoba: false, fogOfWar: true });
     if (!text) return;
     currentTurn.lines.push(text);
   }
@@ -1703,8 +1730,13 @@ export function createSession(config) {
     return nameById.get(cardId) ?? cardId ?? '?';
   }
 
-  /** Nazwa obiektu gry (po id obiektu, nie karty) — do opisów ataków i celów. */
-  function nameOfObject(objectId) {
+  /**
+   * Nazwa obiektu gry (po id obiektu, nie karty) — do opisów ataków i celów.
+   * M199: `fogOfWar` maskuje tożsamość WŁASNEGO zakrytego permanentu gracza —
+   * w zapisie „Przebieg tur (dla AI)" obserwator nie wie, kto jest morphem
+   * (CR 708.2). W logu stołu (domyślnie) własny morph zostaje nazwany.
+   */
+  function nameOfObject(objectId, { fogOfWar = false } = {}) {
     // M73d (C): cel-gracz (np. Inspiration „target player draws") — imię
     // zamiast „?" (audyt żywym testerem: „rzuca Inspiration → cel: ?").
     if (state.players.some((pl) => pl.id === objectId)) return who(objectId);
@@ -1720,7 +1752,7 @@ export function createSession(config) {
     // morph — znacznik „(Morph)" odróżnia zakryte 2/2 od pełnego stwora.
     // M127: brzmienie i wielkość litery z jednego źródła (faceDownName).
     if (object.faceDown) {
-      return faceDownName(object.controllerId === HUMAN_ID ? nameOf(object.cardId) : null);
+      return faceDownName((!fogOfWar && object.controllerId === HUMAN_ID) ? nameOf(object.cardId) : null);
     }
     // M155 (audyt żywym testerem): tokeny niosą JAWNĄ nazwę w `object.name`
     // (cardId `token_*` poza rejestrem → nameOf zwracałby „token_squirrel").
@@ -1753,7 +1785,10 @@ export function createSession(config) {
       suppressNextLibrarySearched = true;
     }
     return describeGameEvent(e, {
-      nameOf, nameOfObject, cardIdByName,
+      nameOf,
+      // M199: w trybie FoW także nazwy obiektów maskują własnego morpha.
+      nameOfObject: (id) => nameOfObject(id, { fogOfWar: options.fogOfWar === true }),
+      cardIdByName,
     // M168/B: efektywne keywordy obiektu (render kafla liczy badge'e grantów).
     effectiveKeywordsOf: (object) => effectiveKeywords(object, state),
       isPlayer: (id) => state.players.some((player) => player.id === id),
