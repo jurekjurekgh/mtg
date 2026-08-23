@@ -174,3 +174,58 @@ test('M197/K3: dwa druki tej samej karty maja WLASNE plany (Curate, Negate)', ()
   assert.equal(REGISTRY.get('negate-m15').plan, 'Warhammer Fantasy');
   assert.equal(REGISTRY.get('negate').plan, 'Wiedźmin');
 });
+
+// --- M197/K4: BRAK artId tez jest bledem ---------------------------------
+//
+// Wlasciciel 2026-08-23: „Wszystkie karty maja numery ilustracji i plany.
+// (...) Wydaje mi sie jednak, ze miales sciagniety CSV gdzie bylo wszystko".
+// Zgadza sie — CSV zna numer KAZDEJ z 21 kart, ktore w katalogu mialy
+// `artId: null`. Numery nigdy nie zostaly przeniesione do katalogu.
+//
+// ROOT CAUSE straznika: `test/art-ids-tool.test.js` filtruje
+// `card.artId != null`, wiec sprawdza wylacznie karty, KTORE JUZ MAJA numer.
+// Karta bez numeru byla dla niego niewidzialna — dokladnie pulapka L23
+// („straznik, ktory sam siebie wylacza przy braku danych, wymaga drugiego
+// straznika na OBECNOSC tych danych").
+
+/** Karty spoza toru realnych drukow: landy podstawowe, tokeny, atrapy testowe. */
+function isVirtualCard(card) {
+  const types = card.types ?? [];
+  return types.includes('Basic') || types.includes('Token') || card.set == null;
+}
+
+test('M197/K4: kazda realna karta ma artId, gdy slownik kolekcji go zna', () => {
+  const rows = parseCSV(fs.readFileSync(CSV_PATH, 'utf8'));
+  const bySet = artIdsBySetFromRows(rows);
+  const missing = [];
+  for (const card of REGISTRY.all()) {
+    if (isVirtualCard(card) || card.artId != null) continue;
+    const known = pickArtId(bySet.get(card.name.toLowerCase()) ?? [], card.set);
+    if (known != null) missing.push(`${card.name} (${card.set}): slownik ma ${known}, katalog null`);
+  }
+  assert.deepEqual(missing, [], 'numer ilustracji jest w kolekcji — trzeba go przeniesc do katalogu');
+});
+
+test('M197/K4: kazda realna karta ma plan (kolekcja opisuje plan wszystkich)', () => {
+  const withoutPlan = REGISTRY.all()
+    .filter((card) => !isVirtualCard(card) && !card.plan)
+    .map((card) => `${card.name} (${card.set})`);
+  assert.deepEqual(withoutPlan, [], 'realna karta bez planu');
+});
+
+test('M197/K4: definicja karty nie ma ZDUBLOWANYCH pol artId/plan', () => {
+  // W literale JS druga wartosc nadpisuje pierwsza po cichu, wiec
+  // „artId: 47, plan: null," + „plan: 'Mirrodin'," w kolejnej linii DZIALALO
+  // przypadkiem. Taki zapis to mina: przestawienie linii zmienia dane.
+  const src = fs.readFileSync('src/cards/card-data.js', 'utf8');
+  const offenders = [];
+  for (const block of src.match(/id: '[^']+'[\s\S]*?\n\s*support:/g) ?? []) {
+    const id = /id: '([^']+)'/.exec(block)?.[1] ?? '?';
+    for (const field of ['artId', 'plan']) {
+      const count = (block.match(new RegExp(`\\b${field}:`, 'g')) ?? []).length;
+      if (count > 1) offenders.push(`${id}: pole ${field} wystepuje ${count}x`);
+    }
+  }
+  assert.deepEqual(offenders, [], 'kazde pole definicji wystepuje dokladnie raz');
+});
+

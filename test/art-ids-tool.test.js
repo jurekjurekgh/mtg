@@ -107,7 +107,12 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // doda kartę bez odświeżenia słownika, ten test od razu to wskaże.
   const registry = createCardRegistry();
   const withArt = registry.all().filter((card) => card.artId != null);
-  assert.equal(withArt.length, 392, 'dokładnie 392 wpisy mają artId (Batche 1–47 + Batch 48 KOMPLET 14/14)');
+  // M197/K4: ten strażnik sprawdzał WYŁĄCZNIE karty, które już mają artId
+  // (`filter(card.artId != null)`), więc 21 kart z pustym numerem było dla
+  // niego niewidzialnych — mimo że słownik znał ich numery (pułapka L23).
+  // Brak numeru pilnuje teraz test/m197-plany-kolekcji.test.js; tutaj zostaje
+  // sama liczba, już bez kart-widm.
+  assert.equal(withArt.length, 413, 'wszystkie realne karty mają artId (Batche 1–48)');
   const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   for (const card of withArt) {
     const entries = byName.get(card.name.toLowerCase()) ?? [];
