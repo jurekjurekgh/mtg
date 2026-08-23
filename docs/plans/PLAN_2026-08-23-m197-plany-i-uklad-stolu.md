@@ -131,6 +131,8 @@ systemowy w narzedziu**, ktory zatruwal dane od dawna.
 | Lista „planow" z nazwami kart | 10 wierszy CSV bez 3. kolumny → „ostatnia kolumna" zwracala nazwe karty | dublety usuniete (566→556) + strażnik ksztaltu pliku |
 | Curate/Negate: oba druki ten sam plan | `collectionCsvWithPlan` splaszczalo mape set-aware do „plan PIERWSZEGO wpisu" | zapis kolumny Plan jest set-aware (set z kolumny „Ilustracja") |
 | 8 kart z planem zgadnietym po secie | brak strażnika spojnosci katalog↔kolekcja | plan czytany z arkusza; strażnik pilnuje zgodnosci per DRUK |
+| 21 kart bez `artId`, choc CSV je zna | straznik filtrowal `artId != null`, wiec karty BEZ numeru byly niewidzialne (L23) | numery przeniesione narzedziem; straznik na OBECNOSC numeru |
+| 11 definicji ze zdublowanym polem `plan` | „artId: N, plan: null," + wlasciwy plan linijke nizej — JS bierze ostatnia wartosc | martwe wpisy usuniete + straznik duplikatow pol |
 
 Plany wystepujace **wylacznie** w katalogu (`Rath`, `Core`, `Commander`,
 `Modern Horizons`, `Phyrexia`) okazaly sie w komplecie skutkiem zgadywania —
@@ -139,7 +141,11 @@ po synchronizacji zniknely. `Swiat Wiedzmina` scalony z `Wiedzmin`.
 Talie przegenerowane (8 plikow), seedy przelosowane (L25): morph-label
 20→22, bot-spell-resolution-in-modal 6→10, session-abilities test 2 1→2.
 
-### Czesc 2 — uklad stolu (A1–A7)
+#- [x] K4 (`708a9ac`): 21 brakujacych `artId` przeniesionych z arkusza
+      (wlasciciel: „wszystkie karty maja numery ilustracji i plany") +
+      11 zdublowanych pol `plan` usunietych; straznik uszczelniony.
+
+## Czesc 2 — uklad stolu (A1–A7)
 
 Wszystkie 7 punktow zrobione. Najwieksza zmiana pod spodem: **A3B** wymagalo
 rozszerzenia `playerView` o `manaPool` — widok niosl tylko LICZBE many, wiec

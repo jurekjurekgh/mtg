@@ -27,6 +27,18 @@ zgadniętym po secie — wszystkie plany występujące wyłącznie w katalogu
 grupy i po synchronizacji zniknęły. `Świat Wiedźmina` scalony z `Wiedźmin`.
 Higiena słownika: 10 zdublowanych wierszy bez kolumny Plan (566 → **556**).
 
+**Trzeci zarzut właściciela: „wszystkie karty mają numery ilustracji i plany"
+— też trafny.** 21 kart miało w katalogu `artId: null`, choć słownik znał ich
+numery (dopasowanie po secie). Strażnik `art-ids-tool` filtrował
+`card.artId != null`, więc sprawdzał wyłącznie karty, które już mają numer —
+brakujące były dla niego niewidzialne (pułapka L23). Skutek dla gracza:
+`card-images.js` zwraca pustą listę źródeł bez `artId`, więc te karty nie
+pokazywały się w torach podglądu **FOT/KON**. Numery przeniesione narzędziem
+`withArtId` (392 → **413** kart z artId; realnych bez artId: **0**).
+Przy okazji: **11 definicji miało zdublowane pole `plan`** („artId: N,
+plan: null," + właściwy plan linijkę niżej) — działało przypadkiem, bo
+w literalu JS wygrywa ostatnia wartość. Usunięte, ze strażnikiem na duplikaty.
+
 **Układ stołu (A1–A7):** przycisk „Kopiuj całą partię"; usunięty tekstowy pasek
 statusu, nagłówek, stopka i „podgląd topu (syntetyczny)"; inspektor stref jako
 osobny boks z **licznikami** stref obu graczy; **graficzna pula many** (ikony
@@ -38,7 +50,7 @@ Weryfikacja na zbudowanym artefakcie (jsdom): `run-game.mjs` zwraca zrzut
 `layout`, więc układ stołu jest sprawdzalny na żywym artefakcie także później.
 
 **Stan:** `npm test` **2978/2978**, build **53 moduły / 2542.4 kB**,
-katalog **459 kart**, słownik kolekcji **556 pozycji**.
+katalog **459 kart** (413 z artId), słownik kolekcji **556 pozycji**.
 
 ## M196 — Batch 48: 14 kart właściciela (2026-08-23, PR #70)
 

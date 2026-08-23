@@ -1305,6 +1305,20 @@ wyłącznie po jednej stronie** dwóch reprezentacji tych samych danych (plany
 w katalogu, nigdy w arkuszu) — to prawie zawsze zgadywanka, nie dana. L23 mówi
 „porównuj maszynowo"; L56 dodaje: **rozkład wartości też jest sygnałem**.
 
+**Wariant „brak danych" (ta sama sesja, trzeci zarzut właściciela):** 21 kart
+miało `artId: null`, choć słownik znał ich numery. Strażnik ich nie widział, bo
+filtrował `card.artId != null` — sprawdzał WYŁĄCZNIE rekordy, które już mają
+dane. To L23 w czystej postaci. **Reguła:** strażnik zgodności dwóch
+reprezentacji potrzebuje bliźniaka na OBECNOŚĆ: „skoro źródło zna wartość,
+katalog nie może mieć `null`". Skutek bywa niewidoczny w testach, a dotkliwy
+dla gracza — tu karty bez `artId` znikały z torów podglądu FOT/KON.
+
+**Wariant „pole zapisane dwa razy":** 11 definicji miało `plan: null` w linii
+z `artId` i właściwy `plan` linijkę niżej. Działało, bo w literalu JS wygrywa
+ostatnia wartość — ale przestawienie linii cicho zmieniłoby dane. Duplikat pola
+w literalu to zawsze mina; wart osobnego strażnika.
+
 **Sformalizowane w:** M197 (`test/m197-plany-kolekcji.test.js` — strażnik
-dokumentacji, higieny słownika i spójności plan katalog↔druk w kolekcji).
+dokumentacji, higieny słownika, spójności plan katalog↔druk, OBECNOŚCI artId
+oraz braku zdublowanych pól w definicjach).
 
