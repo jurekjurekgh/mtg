@@ -844,6 +844,8 @@ export function clearStatModifiers(state) {
   state.untilEndOfTurnBuffs = [];
   // M109: ochrona „do końca tury" (Spare from Evil) kończy się w cleanup.
   state.untilEndOfTurnProtections = [];
+  // Batch 48 (Cherished Hatchling): flash nadany podtypowi „this turn".
+  state.subtypeFlashThisTurn = [];
   for (const object of state.objects.values()) {
     if (object.zone !== 'battlefield') continue;
     // M158/Batch 39 (Wishful Merfolk): nadpisanie podtypów i utrata

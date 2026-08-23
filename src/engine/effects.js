@@ -3029,6 +3029,69 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.events.push(event('cant_block_granted', { objectId: targetId, cardId: object.cardId }));
     return;
   }
+  if (effect.type === 'attacker_gains_control_and_untaps') {
+    // Batch 48 (Contested Game Ball, LCI): „Whenever you're dealt combat
+    // damage, the ATTACKING PLAYER gains control of this artifact and untaps
+    // it." Zmiana kontroli jest TRWALA (bez tempControlUntilTurn) — pilka
+    // przechodzi z rak do rak przez cala partie.
+    const source = state.objects.get(sourceObject.id);
+    if (!source || source.zone !== 'battlefield') return;
+    const attackerId = state.combat?.attackingPlayerId
+      ?? state.players.find((p) => p.id !== source.controllerId)?.id
+      ?? null;
+    if (attackerId == null || attackerId === source.controllerId) return;
+    const previous = source.controllerId;
+    state.objects.set(source.id, Object.freeze({ ...source, controllerId: attackerId, tapped: false }));
+    state.events.push(event('control_changed', {
+      objectId: source.id, cardId: source.cardId,
+      controllerId: attackerId, fromControllerId: previous,
+    }));
+    return;
+  }
+  if (effect.type === 'sacrifice_self_if_counters_then_treasure') {
+    // Batch 48 (Contested Game Ball): „Then if it has five or more point
+    // counters on it, sacrifice it and create a Treasure token." Prog jest
+    // DESKRYPTOREM (counter/threshold), nie stala w kodzie (ADR 0002).
+    const source = state.objects.get(sourceObject.id);
+    if (!source || source.zone !== 'battlefield') return;
+    const counterName = effect.counter ?? 'point';
+    const have = source.counters?.[counterName] ?? 0;
+    if (have < (effect.threshold ?? 5)) return;   // ponizej progu — nic sie nie dzieje
+    const controllerId = source.controllerId;
+    applyEffect(state, { type: 'sacrifice_permanent' }, source, []);
+    applyEffect(state, {
+      type: 'create_token', cardId: 'token_treasure', name: 'Treasure', kind: 'artifact',
+      colors: [], types: ['Artifact'], subtypes: ['Treasure'],
+      abilities: [Object.freeze({
+        type: 'activated', timing: 'instant', keyword: null,
+        cost: Object.freeze({ tap: true, sacrificeSelf: true }),
+        effect: Object.freeze({ type: 'add_mana', amount: 1, fromTreasure: true }),
+        trigger: null, targets: null, cycling: null, condition: null, pump: null,
+        keywords: null, oncePerTurn: false, mustAttack: false,
+      })],
+    }, { ...source, controllerId }, []);
+    return;
+  }
+  if (effect.type === 'subtype_spells_gain_flash_and_etb_fight_this_turn') {
+    // Batch 48 (Cherished Hatchling, RIX): „you may cast Dinosaur spells this
+    // turn as though they had flash, and whenever you cast a Dinosaur spell
+    // this turn, it gains »When this creature enters, you may have it fight
+    // another target creature.«"
+    //
+    // Efekt dotyczy PRZYSZLYCH czarow w tej turze, wiec zapisujemy go jako
+    // pozwolenie na poziomie STANU (jak inne efekty „this turn"), a nie na
+    // konkretnej karcie. Podtyp jest deskryptorem — ta sama sciezka obsluzy
+    // przyszle „Angel spells" itd.
+    state.subtypeFlashThisTurn = [
+      ...(state.subtypeFlashThisTurn ?? []),
+      Object.freeze({
+        controllerId: sourceObject.controllerId,
+        subtype: effect.subtype,
+        etbFight: true,
+      }),
+    ];
+    return;
+  }
   if (effect.type === 'creatures_cant_block_this_turn') {
     // Batch 48 (Ruthless Invasion, NPH): „Nonartifact creatures can't block
     // this turn." Efekt GLOBALNY (bez celu) — dotad `cant_block` dzialal

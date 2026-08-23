@@ -9,6 +9,8 @@
 1x Tome Scour
 1x Unearth
 1x Cellar Door
+1x Cherished Hatchling
+1x Contested Game Ball
 1x Goblin Piker
 1x Negate (M15)
 1x Omenspeaker
@@ -32,3 +34,4 @@
 3x Island
 3x Swamp
 6x Mountain
+1x Forest

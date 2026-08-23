@@ -126,6 +126,9 @@ function defaultBotFactory(seed, ctx) {
     look_top_put_one_hand_rest_bottom: 'spojrzenie na karty z wierzchu — jedna do ręki, reszta na spód',
     creatures_cant_block_this_turn: 'zakaz blokowania dla stworów w tej turze',
     lose_life_enchanted_permanent_controller: 'utrata życia przez kontrolera zaczarowanego permanentu',
+    attacker_gains_control_and_untaps: 'przejęcie kontroli przez atakującego (i odkręcenie)',
+    sacrifice_self_if_counters_then_treasure: 'poświęcenie po osiągnięciu progu liczników — w zamian Skarb',
+    subtype_spells_gain_flash_and_etb_fight_this_turn: 'czary wskazanego podtypu zyskują flash i walkę po wejściu (w tej turze)',
     your_creatures_gain_keywords_until_end_of_turn: 'nadanie słów kluczowych twoim stworom do końca tury',
     each_player_exiles_top_face_down: 'wygnanie wierzchu biblioteki każdego gracza (zakryte)',
     turn_up_exiled_and_put_permanents: 'odkrycie wygnanych kart i wprowadzenie permanentów na pole bitwy',
@@ -332,6 +335,8 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   equipped_creature_attacks: 'atak wyposażonego stwora',
   // Batch 48 (Wooden Stake): blok w OBIE strony (CR 509.1).
   equipped_creature_blocks_or_blocked_by: 'blok wyposażonego stwora (w obie strony)',
+  // Batch 48 (Contested Game Ball): obrażenia bojowe otrzymane przez CIEBIE.
+  combat_damage_to_you: 'otrzymanie obrażeń bojowych',
   exploits: 'exploit',
   land_entered_under_opponent_control: 'wejście landa przeciwnika',
   land_entered_under_your_control: 'Landfall',

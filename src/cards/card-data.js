@@ -9439,6 +9439,56 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['formidable to intervening-if (CR 603.4): warunek sprawdzany przy odpaleniu I przy rozstrzyganiu', 'moc liczona EFEKTYWNIE (bufy, liczniki), nie wydrukowana'],
   }),
 
+  // ---- Batch 48 — transza E: przejmowany artefakt, Dinozaury z flash ----
+
+  // 13. Contested Game Ball (LCI) — piłka przechodzi do gracza, który zada
+  //     ci obrażenia bojowe; po piątym liczniku point znika, dając Skarb.
+  defineCard({
+    id: 'contested-game-ball', name: 'Contested Game Ball', set: 'LCI',
+    types: ['Artifact'], colors: [], manaCost: 2,
+    oracleText: "Whenever you're dealt combat damage, the attacking player gains control of this artifact and untaps it.\n{2}, {T}: Draw a card and put a point counter on this artifact. Then if it has five or more point counters on it, sacrifice it and create a Treasure token.",
+    imageUri: 'https://cards.scryfall.io/large/front/7/1/71cb7776-a6af-4efb-b536-6b9b4f3d3874.jpg?1783913724',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'combat_damage_to_you' },
+        effect: [{ type: 'attacker_gains_control_and_untaps' }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, tap: true },
+        effect: [
+          { type: 'draw_cards', amount: 1 },
+          { type: 'add_counter', counter: 'point', amount: 1 },
+          { type: 'sacrifice_self_if_counters_then_treasure', counter: 'point', threshold: 5 },
+        ],
+      }),
+    ],
+    artId: 551, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['zmiana kontroli jest TRWAŁA (nie „do końca tury") — piłka krąży między graczami', 'próg 5 liczników jest deskryptorem (counter/threshold), nie stałą w kodzie'],
+  }),
+
+  // 14. Cherished Hatchling (RIX) — po śmierci Dinozaury zyskują w tej turze
+  //     flash oraz ETB „możesz walczyć z innym stworem".
+  defineCard({
+    id: 'cherished-hatchling', name: 'Cherished Hatchling', set: 'RIX',
+    types: ['Creature'], subtypes: ['Dinosaur'], colors: ['G'],
+    power: 2, toughness: 1, manaCost: 2,
+    oracleText: 'When this creature dies, you may cast Dinosaur spells this turn as though they had flash, and whenever you cast a Dinosaur spell this turn, it gains "When this creature enters, you may have it fight another target creature."',
+    imageUri: 'https://cards.scryfall.io/large/front/0/a/0a14fe6c-b272-415b-974d-c60d016ab786.jpg?1783935290',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies' },
+        effect: [{ type: 'subtype_spells_gain_flash_and_etb_fight_this_turn', subtype: 'Dinosaur' }],
+      }),
+    ],
+    artId: 554, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['efekt dotyczy PRZYSZŁYCH czarów w tej turze — pozwolenie żyje w stanie tury (subtypeFlashThisTurn), nie na karcie', 'podtyp jest deskryptorem, więc ta sama ścieżka obsłuży przyszłe „Angel spells"'],
+  }),
+
 ]);
 
 /**

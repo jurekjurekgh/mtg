@@ -5515,7 +5515,12 @@ export function playerView(state, playerId) {
       // już przy rzuceniu; oferta bez celu byłaby odrzucana przez walidację).
       if (object.aura) continue;
       if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') continue;
-      if (!(object.keywords ?? []).includes('flash')) continue;
+      // Batch 48 (Cherished Hatchling): flash moze pochodzic z EFEKTU tej tury
+      // („you may cast Dinosaur spells as though they had flash"), nie tylko
+      // z wydrukowanego keywordu. Zbior podtypow trzymamy w stanie tury.
+      const grantedFlash = (state.subtypeFlashThisTurn ?? []).some((grant) => grant.controllerId === playerId
+        && (object.subtypes ?? []).includes(grant.subtype));
+      if (!(object.keywords ?? []).includes('flash') && !grantedFlash) continue;
       if (effectiveSpellManaCost(state, object) > manaAvailable) continue;
       if (!hasColorForCardId(state, playerId, object.cardId, 0)) continue;
       legalCommands.unshift(command('cast_permanent', playerId, { objectId: id }));

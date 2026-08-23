@@ -715,6 +715,9 @@ const COUNTER_LABELS = Object.freeze({
   // wszystkich liczników w bazie wykazał też brakujący `level` (Kabira
   // Vindicator). Strażnik w testach pilnuje kompletności tej mapy.
   stun: 'ogłuszenie', level: 'poziom',
+  // Batch 48 (Contested Game Ball): licznik punktowy — po piątym artefakt
+  // jest poświęcany w zamian za Skarb.
+  point: 'punkt',
 });
 
 /** Opis dynamicznej wartości amount (string zamiast liczby). */
@@ -940,6 +943,9 @@ function describeEffect(e) {
     // Batch 47 (Pyxis of Pandemonium): oba efekty nazwane po polsku —
     // strażnik M122 pilnuje, żeby żaden typ nie pokazał surowego sluga.
     // Batch 48 (Ruthless Invasion): globalny zakaz bloku z wyjątkiem typu.
+    attacker_gains_control_and_untaps: () => 'gracz, który zadał ci obrażenia bojowe, przejmuje ten artefakt i go odkręca',
+    sacrifice_self_if_counters_then_treasure: () => `przy ${e.threshold ?? 5} licznikach ${e.counter ?? 'point'}: poświęć to i stwórz Skarb`,
+    subtype_spells_gain_flash_and_etb_fight_this_turn: () => `w tej turze twoje czary typu ${e.subtype ?? '?'} mają flash i po wejściu mogą walczyć`,
     lose_life_enchanted_permanent_controller: () => `kontroler zaczarowanego permanentu traci ${e.amount ?? 1} życia w swoim upkeepie`,
     your_creatures_gain_keywords_until_end_of_turn: () => `twoje stwory zdobywają ${(e.keywords ?? []).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')} do końca tury`,
     creatures_cant_block_this_turn: () => {

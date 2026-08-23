@@ -461,3 +461,112 @@ test('B48/D5: formidable — przy mocy 8+ cała drużyna dostaje trample', async
   assert.ok(!effectiveKeywords(state.objects.get('foe'), state).includes('trample'),
     'stwory PRZECIWNIKA nie dostają nic (Oracle: „creatures YOU control")');
 });
+
+// ---- Transza E: Contested Game Ball, Cherished Hatchling -----------------
+
+test('B48/E1: Contested Game Ball — dane wg Oracle', () => {
+  const card = REGISTRY.get('contested-game-ball');
+  assert.ok(card, 'karta w katalogu');
+  assert.deepEqual(card.types, ['Artifact']);
+  assert.equal(card.manaCost, 2);
+  // „Whenever you're dealt combat damage, the attacking player gains control
+  // of this artifact and untaps it."
+  const steal = (card.abilities ?? []).find((a) => a.trigger?.event === 'combat_damage_to_you');
+  assert.ok(steal, 'trigger przejęcia po otrzymaniu obrażeń bojowych');
+  assert.deepEqual((Array.isArray(steal.effect) ? steal.effect : [steal.effect]).map((e) => e.type),
+    ['attacker_gains_control_and_untaps']);
+  // „{2}, {T}: Draw a card and put a point counter on this artifact. Then if
+  // it has five or more point counters on it, sacrifice it and create
+  // a Treasure token."
+  const draw = (card.abilities ?? []).find((a) => a.type === 'activated');
+  assert.ok(draw, 'zdolność aktywowana');
+  assert.equal(draw.cost.mana, 2);
+  assert.equal(draw.cost.tap, true);
+  const types = (Array.isArray(draw.effect) ? draw.effect : [draw.effect]).map((e) => e.type);
+  assert.deepEqual(types, ['draw_cards', 'add_counter', 'sacrifice_self_if_counters_then_treasure']);
+  assert.equal(card.artId, 551);
+  assert.equal(card.plan, 'Warhammer Fantasy');
+});
+
+test('B48/E2: Contested Game Ball — piąty licznik poświęca i daje Skarb', async () => {
+  const { applyEffect } = await import('../src/engine/effects.js');
+  const state = game('p1');
+  put(state, 'ball', 'contested-game-ball', 'p1');
+  // Cztery liczniki: piąty przekroczy próg.
+  const { addCounter } = await import('../src/engine/counters.js');
+  for (let i = 0; i < 5; i += 1) addCounter(state, 'ball', 'point', 1);
+  applyEffect(state, { type: 'sacrifice_self_if_counters_then_treasure', counter: 'point', threshold: 5 },
+    state.objects.get('ball'), []);
+  const ballOnField = [...state.objects.values()].some((o) => o.zone === 'battlefield' && o.cardId === 'contested-game-ball');
+  assert.equal(ballOnField, false, 'przy 5 licznikach artefakt jest poświęcany');
+  const treasure = [...state.objects.values()].some((o) => o.zone === 'battlefield' && o.cardId === 'token_treasure');
+  assert.ok(treasure, 'i powstaje token Skarbu');
+});
+
+test('B48/E3: Contested Game Ball — poniżej progu NIC się nie dzieje (anty-over-fix)', async () => {
+  const { applyEffect } = await import('../src/engine/effects.js');
+  const { addCounter } = await import('../src/engine/counters.js');
+  const state = game('p1');
+  put(state, 'ball', 'contested-game-ball', 'p1');
+  for (let i = 0; i < 4; i += 1) addCounter(state, 'ball', 'point', 1);
+  applyEffect(state, { type: 'sacrifice_self_if_counters_then_treasure', counter: 'point', threshold: 5 },
+    state.objects.get('ball'), []);
+  assert.ok([...state.objects.values()].some((o) => o.zone === 'battlefield' && o.cardId === 'contested-game-ball'),
+    'przy 4 licznikach artefakt zostaje na stole');
+  assert.ok(![...state.objects.values()].some((o) => o.cardId === 'token_treasure'),
+    'i nie ma Skarbu');
+});
+
+test('B48/E4: Contested Game Ball — atakujący przejmuje kontrolę i odkręca', async () => {
+  const { applyEffect } = await import('../src/engine/effects.js');
+  const state = game('p2');   // tura przeciwnika: to ON atakuje
+  put(state, 'ball', 'contested-game-ball', 'p1', 'battlefield', { tapped: true });
+  state.combat = {
+    attackingPlayerId: 'p2', attackers: [],
+    blockers: new Map(), blockedAttackers: new Set(),
+  };
+  applyEffect(state, { type: 'attacker_gains_control_and_untaps' }, state.objects.get('ball'), []);
+  const ball = state.objects.get('ball');
+  assert.equal(ball.controllerId, 'p2', 'artefakt przechodzi do atakującego');
+  assert.equal(ball.tapped, false, 'i zostaje odkręcony');
+});
+
+test('B48/E5: Cherished Hatchling — dies nadaje Dinozaurom flash i ETB fight', () => {
+  // Oracle: „When this creature dies, you may cast Dinosaur spells this turn
+  // as though they had flash, and whenever you cast a Dinosaur spell this
+  // turn, it gains »When this creature enters, you may have it fight another
+  // target creature.«"
+  const card = REGISTRY.get('cherished-hatchling');
+  assert.ok(card, 'karta w katalogu');
+  assert.deepEqual([card.power, card.toughness], [2, 1]);
+  assert.deepEqual(card.subtypes, ['Dinosaur']);
+  const dies = (card.abilities ?? []).find((a) => a.trigger?.event === 'dies');
+  assert.ok(dies, 'trigger śmierci');
+  const eff = (Array.isArray(dies.effect) ? dies.effect : [dies.effect])[0];
+  assert.equal(eff.type, 'subtype_spells_gain_flash_and_etb_fight_this_turn');
+  assert.equal(eff.subtype, 'Dinosaur', 'dotyczy WYŁĄCZNIE Dinozaurów');
+  assert.equal(card.artId, 554);
+  assert.equal(card.plan, 'Warhammer Fantasy');
+});
+
+test('B48/E6: Cherished Hatchling — po śmierci Dinozaur da się rzucić jak instant', async () => {
+  const { applyEffect } = await import('../src/engine/effects.js');
+  const state = game('p1', 'declare_blockers');   // okno instant, nie main
+  // Dinozaur w ręce (sorcery-speed: normalnie nie do rzucenia teraz).
+  // Uwaga: walidacja kolorów czyta MANA_COSTS po cardId, więc karta-atrapa
+  // musi mieć koszt dający się opłacić z lasów (hill-giant to {3}{R}).
+  addObject(state, {
+    id: 'dino', instanceId: 'i-d', cardId: 'cherished-hatchling', controllerId: 'p1', ownerId: 'p1',
+    zone: 'hand', kind: 'creature', power: 2, toughness: 1, manaCost: 2,
+    types: ['Creature'], subtypes: ['Dinosaur'], abilities: [],
+  });
+  lands(state, 3, 'basic-forest');
+  const before = playerView(state, 'p1').legalCommands
+    .some((c) => c.type === 'cast_permanent' && c.objectId === 'dino');
+  assert.equal(before, false, 'bez efektu Dinozaura nie rzucimy w oknie instant');
+  applyEffect(state, { type: 'subtype_spells_gain_flash_and_etb_fight_this_turn', subtype: 'Dinosaur' },
+    { id: 'src', controllerId: 'p1', cardId: 'cherished-hatchling', zone: 'graveyard' }, []);
+  const after = playerView(state, 'p1').legalCommands
+    .some((c) => c.type === 'cast_permanent' && c.objectId === 'dino');
+  assert.ok(after, 'po śmierci Hatchlinga Dinozaury mają flash w tej turze');
+});
