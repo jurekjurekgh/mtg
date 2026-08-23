@@ -227,3 +227,90 @@ test('M200/C2: „Zatrzymaj tę rękę” pokazuje aktualną liczbę kart (nie z
   assert.ok(label.includes('5 kart'), `etykieta liczy żywą rękę (5): ${label}`);
   assert.ok(!label.includes('7 kart'), 'stare „7 kart” zniknęło: ' + label);
 });
+// ---- D+E2: any_creature_dies dotyczy WYŁĄCZNIE stworów (CR 700.4c) --------
+// Zgłoszenie D: „w jednej turze trigger zadziałał dwa razy” — Selhoff
+// Occultist mielił przy poświęceniu Blazing Torch (ARTEFAKT) i przy śmierci
+// Reassembling Skeleton (stwór). E2: „poświęciłem Rupture Spire (LAND) i
+// aktywował się trigger”. Wspólna przyczyna: skan zgonów odpalał
+// any_creature_dies dla KAŻDEGO obiektu battlefield→grób, bez filtra
+// kind === 'creature'. Naprawa w fireDeathTriggers (triggers.js).
+
+function addLibCards(state, playerId, n, cardId = 'highland-game') {
+  for (let i = 0; i < n; i += 1) putCard(state, `${playerId}-lib${i}`, cardId, playerId, 'library');
+}
+
+function milledBy(state, playerId) {
+  return [...state.objects.values()]
+    .filter((o) => o.cardId === 'highland-game' && o.zone === 'graveyard' && o.controllerId === playerId).length;
+}
+
+/** Rozstrzyga stos i decyzje celu Selhoffa (cel: p2). */
+function drainTriggersAndStack(state) {
+  for (let i = 0; i < 30; i += 1) {
+    if (state.pendingTriggerTargets.length > 0) {
+      const pending = state.pendingTriggerTargets[0];
+      const done = execute(state, { type: 'resolve_trigger_target', playerId: pending.playerId, targetId: 'p2' });
+      assert.ok(done.ok, done.events?.[0]?.reason);
+      continue;
+    }
+    if (state.zones.stack.length > 0) {
+      const done = execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+      assert.ok(done.ok, done.events?.[0]?.reason);
+      continue;
+    }
+    break;
+  }
+}
+
+test('M200/E2: poświęcenie LANDU nie odpala any_creature_dies (Selhoff)', () => {
+  const state = game('p1');
+  putCard(state, 'occ', 'selhoff-occultist', 'p1');
+  putCard(state, 'mon', 'seismic-monstrosaur', 'p1');
+  putCard(state, 'land', 'basic-mountain', 'p1');
+  putCard(state, 'land2', 'basic-island', 'p1');
+  putCard(state, 'p1lib0', 'highland-game', 'p1', 'library'); // monstrosaur dobiera (pusta biblioteka = przegrana, CR 106.3)
+  addLibCards(state, 'p2', 3);
+  const p1 = state.players.find((p) => p.id === 'p1');
+  p1.mana = 3;
+  p1.manaPool = { R: 1, '': 2 };
+  // {2}{R}, Sacrifice a land: Draw a card — poświęcenie lądu jako KOSZT.
+  const res = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'mon', abilityIndex: 0, sacrificeLandId: 'land' });
+  assert.ok(res.ok, res.events?.[0]?.reason);
+  drainTriggersAndStack(state);
+  assert.equal(state.pendingTriggerTargets.length, 0,
+    'poświęcony LAND nie jest śmiercią (CR 700.4c) — trigger NIE mógł odpalić');
+  assert.equal(milledBy(state, 'p2'), 0, 'żadna karta zmielona');
+  assert.ok(state.objects.get('land') == null, 'ląd faktycznie poświęcony (test nie jest próżny)');
+});
+
+test('M200/D: poświęcenie lądu + śmierć stwora w tej samej turze = DOKŁADNIE 1 trigger', () => {
+  const state = game('p1');
+  putCard(state, 'occ', 'selhoff-occultist', 'p1');
+  putCard(state, 'mon', 'seismic-monstrosaur', 'p1');
+  putCard(state, 'land', 'basic-mountain', 'p1');
+  putCard(state, 'land2', 'basic-island', 'p1');
+  putCard(state, 'p1lib0', 'highland-game', 'p1', 'library'); // monstrosaur dobiera (CR 106.3)
+  const victim = putCard(state, 'victim', 'highland-game', 'p1');
+  state.objects.set('victim', Object.freeze({ ...victim, power: 1, toughness: 1, summoningSickness: false }));
+  addLibCards(state, 'p2', 3);
+  const p1 = state.players.find((p) => p.id === 'p1');
+  p1.mana = 3;
+  p1.manaPool = { R: 1, '': 2 };
+  // 1) poświęcenie lądu (artefakt/land — NIE śmierć):
+  assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'mon', abilityIndex: 0, sacrificeLandId: 'land' }).ok);
+  drainTriggersAndStack(state);
+  assert.equal(state.pendingTriggerTargets.length, 0, 'po poświęceniu lądu: zero triggerów');
+  // 2) śmierć stwora (prawdziwy zgon — SBA po obrażeniach walki):
+  const atk = putCard(state, 'atk', 'highland-game', 'p2');
+  state.objects.set('atk', Object.freeze({ ...atk, power: 5, toughness: 5, summoningSickness: false }));
+  state.turn = { ...state.turn, number: 4, activePlayerId: 'p2', priorityPlayerId: 'p2', phase: 'combat', step: 'declare_attackers', stepIndex: 5, passes: 0 };
+  assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['atk'] }).ok);
+  // Ofiara BLOKUJE (5 mocy zabija 1/1 w odbiciu; niewyblokowany atak raniłby gracza).
+  assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: { atk: ['victim'] } }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p2', defendingPlayerId: 'p1' }).ok);
+  assert.equal(state.objects.get('victim'), undefined, 'ofiara zginęła (test nie jest próżny)');
+  drainTriggersAndStack(state);
+  assert.equal(milledBy(state, 'p2'), 1,
+    'dokładnie JEDEN trigger (za śmierć stwora) — przed fixem było 2 (fałszywy + prawdziwy)');
+});
