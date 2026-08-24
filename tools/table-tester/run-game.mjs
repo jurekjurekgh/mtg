@@ -35,10 +35,14 @@ const DECKS_DIR = path.resolve(__dirname, '../../decks');
 // ---------------------------------------------------------------------------
 // Argumenty CLI
 // ---------------------------------------------------------------------------
-function parseArgs(argv) {
+export function parseArgs(argv) {
   const opts = {
-    human: 'green',
-    bot: 'red',
+    // M203: talie per PLAN od M178 (ADR 0023) — `green`/`red` przestały
+    // istnieć, a tester grał wtedy tym, co artefakt miał wybrane domyślnie,
+    // nagłówkując transkrypt podaną nazwą (cichy fałsz). Domyślne = pierwsza
+    // i czwarta talia stałej próbki benchmarku (tools/benchmark.mjs).
+    human: 'dominaria',
+    bot: 'ravnica',
     seed: 42,
     steps: 300,
     out: 'transcript.txt',
@@ -51,6 +55,7 @@ function parseArgs(argv) {
     profile: 'greedy',
     policySeed: 1,
     tickRate: 0,
+    listDecks: false,
   };
   const take = (i, name) => {
     if (i + 1 >= argv.length) throw new Error(`Opcja ${name} wymaga wartości`);
@@ -68,10 +73,25 @@ function parseArgs(argv) {
     else if (a === '--profile' || a === '-p') { opts.profile = take(i, a); i += 1; }
     else if (a === '--policy-seed') { opts.policySeed = Number(take(i, a)); i += 1; }
     else if (a === '--tick-rate') { opts.tickRate = Number(take(i, a)); i += 1; }
+    else if (a === '--list-decks') opts.listDecks = true;
     else if (a === '--help') opts.help = true;
     else throw new Error(`Nieznana opcja: ${a}`);
   }
+  // M203: nieistniejąca talia to BŁĄD, nie cichy fallback. Sterownik wybiera
+  // talię pętlą „jeśli opcja pasuje, ustaw" — bez tego sprawdzenia partia
+  // startowała na innej talii, niż zapowiadał nagłówek transkryptu (L24).
+  const available = deckNames();
+  for (const [flag, deck] of [['--human', opts.human], ['--bot', opts.bot]]) {
+    if (!available.includes(deck)) {
+      throw new Error(`Nie ma talii „${deck}" (${flag}). Dostępne: ${available.join(', ')}`);
+    }
+  }
   return opts;
+}
+
+/** Nazwy talii w `decks/` (bez rozszerzenia) — jedno źródło dla CLI i pomocy. */
+export function deckNames() {
+  return fs.readdirSync(DECKS_DIR).filter((f) => f.endsWith('.txt')).map((f) => f.replace('.txt', ''));
 }
 
 const HELP = `Żywy tester stołu — automatyczny gracz na prawdziwym artefakcie (jsdom).
@@ -80,8 +100,8 @@ Użycie:
   node run-game.mjs [opcje]
 
 Opcje:
-  --human <talia>        talia gracza (nazwa pliku decks/*.txt bez .txt) [green]
-  --bot <talia>          talia bota                                              [red]
+  --human <talia>        talia gracza (nazwa pliku decks/*.txt bez .txt) [dominaria]
+  --bot <talia>          talia bota                                              [ravnica]
   --seed <n>             seed partii                                            [42]
   --steps <n>            limit kroków gry                                      [300]
   --out <plik>           plik transkryptu                              [transcript.txt]
@@ -91,6 +111,7 @@ Opcje:
                          | impatient (klika W TRAKCIE pauzy bota)        [greedy]
   --policy-seed <n>      seed decyzji profilu (deterministycznie)                  [1]
   --tick-rate <0..1>     jak często gracz „ptaszkuje" akcję (wycisza auto-pass)    [0]
+  --list-decks           wypisz talie z decks/ i zakończ (bez partii)
   --help                 ten tekst
 
 Profile gracza:
@@ -99,7 +120,7 @@ Profile gracza:
   defensive  — unika ataku, chętnie blokuje, woli zdolności od czarów
   explorer   — preferuje akcje NIEODWIEDZONE w tej partii (pokrycie UI)
 
-Talie: ${fs.readdirSync(DECKS_DIR).filter((f) => f.endsWith('.txt')).map((f) => f.replace('.txt', '')).join(', ')}
+Talie: ${deckNames().join(', ')}
 
 Przed uruchomieniem: npm run build (artefakt dist/mtg-table.html) i npm i (jsdom).
 
@@ -191,7 +212,12 @@ export async function runTableGame({
   // pliku przy tym samym --out — transkrypt zawierał dwa przebiegi naraz
   // (stare linie sprzed fixu + nowe po nim) i wygenerował fałszywą hipotezę
   // o „niedziałającym fixie". Transkrypt = JEDEN przebieg.
-  const flush = () => fs.writeFileSync(out, lines.join('\n') + '\n', 'utf8');
+  // M203: ścieżka względna jest liczona od katalogu narzędzia, nie od bieżącego
+  // katalogu — uruchomienie z korzenia repo zostawiało `transcript.txt` obok
+  // `package.json`, poza zasięgiem `.gitignore` (który pilnuje tylko
+  // `tools/table-tester/transcript.txt`).
+  const outPath = path.isAbsolute(out) ? out : path.resolve(__dirname, out);
+  const flush = () => fs.writeFileSync(outPath, lines.join('\n') + '\n', 'utf8');
 
   // --- M97: deterministyczna losowość polityki (ADR 0005 — bez Math.random) --
   let rngState = (policySeed >>> 0) || 1;
@@ -734,8 +760,20 @@ export async function runTableGame({
   // --- Start partii ---
   for (let i = 0; i < 100 && !($('#new-game') && $('#deck-human')?.options?.length); i += 1) await sleep(50);
   $('#seed').value = String(seed);
-  for (const opt of $('#deck-human').options) if (opt.value === human) $('#deck-human').value = opt.value;
-  for (const opt of $('#deck-bot').options) if (opt.value === bot) $('#deck-bot').value = opt.value;
+  // M203: brak talii na liście artefaktu = jawny błąd. Wcześniej pętla bez
+  // `else` zostawiała wybór domyślny, a transkrypt i tak głosił `human`.
+  const selectDeck = (selector, deck) => {
+    const select = $(selector);
+    const option = [...(select?.options ?? [])].find((opt) => opt.value === deck);
+    if (!option) {
+      throw new Error(`Talia „${deck}" nie jest dostępna w artefakcie (${selector}). `
+        + `Dostępne: ${[...(select?.options ?? [])].map((opt) => opt.value).join(', ') || '(brak)'} `
+        + '— uruchom npm run build, jeśli decks/ jest nowszy niż dist/.');
+    }
+    select.value = deck;
+  };
+  selectDeck('#deck-human', human);
+  selectDeck('#deck-bot', bot);
   logL(`== NOWA PARTIA: gracz=${human} vs bot=${bot}, seed=${seed}, profil=${profile}, policy-seed=${policySeed}, tick-rate=${tickRate} ==`);
   $('#new-game').click();
   await sleep(300);
@@ -807,7 +845,7 @@ export async function runTableGame({
     mainLogShowsOwnDraw: /Dobierasz:/.test(text($('#log'))),
     ownPlayerLabel: text($('.player.own .pname')),
   };
-  return { lines, findings, windowRecords, probeRecords, rejectionRecords, layout, coverage: { seenActions: [...seenActions], clickedActions: [...clickedActions], modals: [...seenModals] } };
+  return { lines, findings, windowRecords, probeRecords, rejectionRecords, layout, outPath, coverage: { seenActions: [...seenActions], clickedActions: [...clickedActions], modals: [...seenModals] } };
 }
 
 // ---------------------------------------------------------------------------
@@ -817,8 +855,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
   try {
     const opts = parseArgs(process.argv.slice(2));
     if (opts.help) { console.log(HELP); process.exit(0); }
+    if (opts.listDecks) { console.log(deckNames().join('\n')); process.exit(0); }
     runTableGame({ ...opts, log: (s) => console.log(s) })
-      .then((r) => console.log(`Transkrypt zapisany: ${opts.out} | zgłoszeń detektorów: ${r?.findings?.length ?? 0}`))
+      .then((r) => console.log(`Transkrypt zapisany: ${r?.outPath ?? opts.out} | zgłoszeń detektorów: ${r?.findings?.length ?? 0}`))
       .catch((e) => { console.error('BŁĄD:', e.message); process.exit(1); });
   } catch (e) {
     console.error('BŁĄD:', e.message);

@@ -28,15 +28,15 @@ telefonie (jsdom nie renderuje layoutu/obrazów — patrz „Ograniczenia").
 ```bash
 npm run build                      # 1. zbuduj artefakt (wymagany)
 cd tools/table-tester && npm i     # 2. zainstaluj jsdom (jedyna zależność)
-node run-game.mjs --human green --bot red --seed 42 --steps 300 --out g1.txt
+node run-game.mjs --human dominaria --bot ravnica --seed 42 --steps 300 --out g1.txt
 ```
 
 Opcje:
 
 | Opcja | Znaczenie | Domyślnie |
 |---|---|---|
-| `--human <talia>` | talia gracza (nazwa z `decks/*.txt` bez `.txt`) | `green` |
-| `--bot <talia>` | talia bota | `red` |
+| `--human <talia>` | talia gracza (nazwa z `decks/*.txt` bez `.txt`) | `dominaria` |
+| `--bot <talia>` | talia bota | `ravnica` |
 | `--seed <n>` | seed partii | `42` |
 | `--steps <n>` | limit kroków gry | `300` |
 | `--out <plik>` | plik transkryptu | `transcript.txt` |
@@ -47,12 +47,16 @@ Opcje:
 | `--snapshot-every <n>` | snapshot co n kroków (przy `--quiet`) | `3` |
 | `--help` | pomoc | — |
 
-Dostępne talie: lista `decks/*.txt` (aktualnie: azorius, black, graveyard,
-green, innistrad, red, spellslinger, tokens, wiedzmin).
+Dostępne talie: lista `decks/*.txt` — **aktualną listę wypisuje
+`node run-game.mjs --list-decks`** (nie przepisuj jej tutaj: talie buduje
+generator `tools/generate-plan-decks.mjs`, ADR 0023, więc skład zmienia się
+przy każdym batchu kart). Nieistniejąca nazwa to jawny błąd z listą
+dostępnych — tester nie gra już „czymkolwiek" (M203).
 
-Przykłady kombinacji do audytu: `green vs red` (ramp vs aggro),
-`tokens vs spellslinger` (tokeny i czary), `innistrad vs wiedzmin` (wilkołaki
-i transformy), `azorius vs black` (aura/protection vs destroy).
+Przykłady kombinacji do audytu: `dominaria vs ravnica`, `innistrad vs
+wiedzmin` (wilkołaki i transformy), `tarkir vs mirrodin`, `worek-dziki vs
+worek-mroczny`. Próbkę benchmarku (`BENCH_DECKS` w `tools/benchmark.mjs`)
+warto audytować w pierwszej kolejności — to na niej mierzone są progi bota.
 
 ### Jak czytać transkrypt
 
@@ -105,7 +109,7 @@ auto-passu" — sprawdza oś 3 w ruchu (czy wyciszenie faktycznie przewija okna)
 Przykład szerokiego audytu:
 
 ```bash
-node run-game.mjs --human tokens --bot black --seed 5 --profile explorer \
+node run-game.mjs --human worek-legend --bot theros --seed 5 --profile explorer \
   --policy-seed 3 --tick-rate 0.25 --steps 400 --out audyt.txt
 ```
 

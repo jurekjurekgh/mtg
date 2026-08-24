@@ -18,5 +18,7 @@ Thumbs.db
 .tune-out.txt
 
 .collection-A-D.csv
-# Domyślny transkrypt Żywego Testera (bez --out) — artefakt przebiegu.
-tools/table-tester/transcript.txt
+# Transkrypty Żywego Testera (domyślny `transcript.txt` i pliki z --out) —
+# artefakty przebiegu. M203: ścieżka względna --out jest liczona od katalogu
+# narzędzia, więc wszystkie lądują tutaj, a nie w korzeniu repo.
+tools/table-tester/*.txt
