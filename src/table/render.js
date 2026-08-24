@@ -3688,7 +3688,21 @@ export function renderEnemyHand(host, label, view, session, enemyId) {
     div(host, 'zone-empty', 'Ręka przeciwnika pusta');
     return 0;
   }
-  for (let i = 0; i < count; i += 1) div(host, 'card-back', '');
+  // M202/A (uwaga właściciela 2026-08-24): rewers to PRAWDZIWY tył karty MTG
+  // ze Scryfall — ten sam `CARD_BACK_URL`, który noszą zakryte permanenty
+  // (morph) na stole — i pełny kafel w rozmiarze reszty ręki (`size: 'sm'`
+  // = `--card-w-hand`), a nie mała zaślepka z CSS.
+  //
+  // Tożsamość zostaje ukryta (CR 402.2): `faceDown` w `artOf` kieruje
+  // `tileImageSources` na JEDEN wspólny rewers, a kafel nie ma `cardId` ani
+  // danych karty — więc sam fakt pobrania obrazu nic nie zdradza (ADR 0003,
+  // komentarz przy `CARD_BACK_URL`).
+  for (let i = 0; i < count; i += 1) {
+    tile(host, {
+      objectId: `enemy-hand-${i}`, cardId: null, faceDown: true,
+      name: 'Karta przeciwnika', colors: [], kind: 'card', types: [],
+    }, { size: 'sm' });
+  }
   return count;
 }
 

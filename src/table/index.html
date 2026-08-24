@@ -392,14 +392,10 @@
     min-height: calc(var(--card-w-hand) * 1.4 + 24px);
   }
   .hand .tile { flex: 0 0 auto; }
-  /* M201/B: rewersy ręki przeciwnika — rozmiar jak kafel ręki, bez treści. */
-  .hand-enemy { min-height: calc(var(--card-w-hand) * 0.9); padding: 6px; }
-  .card-back {
-    flex: 0 0 auto; width: calc(var(--card-w-hand) * 0.62);
-    height: calc(var(--card-w-hand) * 0.87); border-radius: 6px;
-    border: 1px solid var(--border);
-    background: repeating-linear-gradient(135deg, #2a2340 0 6px, #1d1830 6px 12px);
-  }
+  /* M201/B + M202/A (uwaga właściciela): ręka przeciwnika to te same kafle co
+     własna ręka (rewers ze Scryfall), więc sekcja ma jej wysokość i odstępy. */
+  .hand-enemy { min-height: calc(var(--card-w-hand) * 1.4 + 24px); padding: 10px 6px 14px; }
+  .hand-enemy .tile { flex: 0 0 auto; }
   /* M201/A2: poczekalnia wygnania. */
   .waitwrap {
     background: var(--bg-panel); border: 1px solid var(--border);
