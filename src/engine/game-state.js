@@ -2000,7 +2000,11 @@ export function execute(state, input) {
       && ['instant', 'sorcery'].includes(card.spell?.timing)
       && !card.spell?.additionalCost && !card.spell?.xCost && !card.spell?.fireball;
     if (!inScope) return reject('illegal_grave_free_cast');
+    // M203: X jest częścią KOMENDY (wybór gracza), a walidacja pilnuje druku —
+    // „card with mana value X". Wcześniej X było czytane z karty, więc komenda
+    // z dowolnym X przechodziła (zmierzone: xValue 3 przy karcie MV 1 → ok).
     const xValue = card.manaCost ?? 0;
+    if (!Number.isInteger(cmd.xValue) || cmd.xValue !== xValue) return reject('illegal_grave_free_cast_x');
     if (producibleMana(state, cmd.playerId, null, spellManaPurpose(card)) < xValue) return reject('illegal_grave_free_cast');
     // Cele/tryb jak przy Epic (walidacja przed płatnością — L4).
     const chosen = Array.isArray(cmd.targets) ? cmd.targets : [];
@@ -2028,6 +2032,10 @@ export function execute(state, input) {
     } catch {
       return reject('illegal_grave_free_cast_targets');
     }
+    // Zapłata {X} (CR 601.2h — koszt płacony przy rozstrzyganiu „you may pay
+    // {X}"); koszt many samego czaru wynosi {0} (CR 118.9a), więc nic więcej
+    // nie jest pobierane. Cel wydania = rzucana karta: {X} wydane na czar
+    // nie-artefaktowy nie może pochodzić z many ograniczonej drukiem.
     spendMana(state, cmd.playerId, xValue, [], spellManaPurpose(card));
     const stackId = `spell-${state.objectSequence++}`;
     moveObjectDirectly(state, cmd.objectId, 'stack', stackId);
@@ -5577,17 +5585,24 @@ export function playerView(state, playerId) {
     && state.pendingGraveFreeCast && state.pendingGraveFreeCast.playerId === playerId) {
     // M174/E (Halo Forager): oferta = rezygnacja + rzut per (karta w
     // DOWOLNYM grobie, MV opłacalne, zestaw celów/tryb z epicCastOffers).
+    // M203 (audyt PR #74, N-NEW-1): „you may pay {X} … cast … WITH MANA VALUE X
+    // … WITHOUT PAYING ITS MANA COST" — X jest WYBOREM gracza i musi równać się
+    // MV rzucanej karty, a jedyną wydaną maną jest zapłata {X} (koszt many
+    // czaru wynosi {0}, CR 118.9a). Budżet liczymy PER KARTA z celem wydania
+    // (M202/N1, L59): zapłata {X} za czar nie-artefaktowy nie może pochodzić
+    // z many ograniczonej drukiem (Powerstone), a jeden wspólny budżet
+    // rozjeżdżałby ofertę z walidacją (L48).
     legalCommands.unshift(command('resolve_grave_free_cast', playerId, { decline: true }));
-    const budget = producibleMana(state, playerId);
     for (const graveId of state.zones.graveyard) {
       const card = state.objects.get(graveId);
       if (!card || card.zone !== 'graveyard' || card.kind !== 'spell') continue;
       if (!['instant', 'sorcery'].includes(card.spell?.timing)) continue;
       if (card.spell?.additionalCost || card.spell?.xCost || card.spell?.fireball) continue;
-      if ((card.manaCost ?? 0) > budget) continue;
+      const xValue = card.manaCost ?? 0;
+      if (producibleMana(state, playerId, null, spellManaPurpose(card)) < xValue) continue;
       for (const offer of epicCastOffers(state, playerId, card)) {
         legalCommands.unshift(command('resolve_grave_free_cast', playerId, {
-          objectId: graveId, cardId: card.cardId, xValue: card.manaCost ?? 0,
+          objectId: graveId, cardId: card.cardId, xValue,
           targets: offer.targets,
           ...(offer.modeIndex != null ? { modeIndex: offer.modeIndex } : {}),
         }));

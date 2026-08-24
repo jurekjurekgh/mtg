@@ -7817,7 +7817,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     ],
     artId: 35, plan: 'Eldraine',
     support: { status: 'supported', limitations: [] },
-    notes: ['decyzja rzutu liczona żywo (dowolny grób, MV = X, budżet many); czar poza zakresem (koszt dodatkowy/X) nie jest oferowany'],
+    notes: ['M203: X jest częścią decyzji i musi równać się MV rzucanej karty (druk „with mana value X"); jedyną wydaną maną jest zapłata {X} — koszt many czaru wynosi {0} (CR 118.9a), a zapłata za czar nie-artefaktowy nie może pochodzić z many ograniczonej drukiem (M202/N1). Decyzja liczona żywo: dowolny grób, X = MV karty, budżet per karta. Czar z kosztem dodatkowym/X/Fireball pozostaje poza zakresem tej ścieżki'],
   }),
 
 
