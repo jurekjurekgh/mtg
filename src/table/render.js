@@ -64,6 +64,8 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_optional_trigger_choice: 'Efekt „you may"',
   resolve_enter_as_copy: 'Wejście jako kopia',
   resolve_destroy_equipment_choice: 'Zniszczenie equipmentu',
+  // M202/odznaka #3 (CR 616.1): wybór efektu zastępczego — tarcza albo regeneracja.
+  resolve_replacement_choice: 'Wybór efektu zastępczego',
   resolve_mulligan_choice: 'Mulligan (ręka startowa)',
   resolve_mulligan_bottom_choice: 'Odłożenie kart na spód',
   resolve_search_choice: 'Szukanie w bibliotece',
@@ -350,6 +352,7 @@ export function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_optional_trigger_choice') return 'resolve_optional_trigger_choice';
   if (command.type === 'resolve_enter_as_copy') return 'resolve_enter_as_copy';
   if (command.type === 'resolve_destroy_equipment_choice') return 'resolve_destroy_equipment_choice';
+  if (command.type === 'resolve_replacement_choice') return 'resolve_replacement_choice';
   if (command.type === 'resolve_discard_choice') return 'resolve_discard_choice';
   // M163/A (uwaga właściciela): decyzje wielowariantowe bez klucza renderują
   // się jako luźne przyciski z identycznymi etykietami (Exploit Butchera).
@@ -1537,6 +1540,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_optional_trigger_choice: 'Efekt dobrowolny („you may")',
   resolve_enter_as_copy: 'Wejście jako kopia — który Ally?',
   resolve_destroy_equipment_choice: 'Zniszczyć equipment?',
+  resolve_replacement_choice: 'Tarcza czy regeneracja?',
   resolve_land_type_choice: 'Typ landa',
   resolve_library_placement: 'Wierzch czy spód biblioteki',
   resolve_pay_or_sacrifice: 'Zapłata albo poświęcenie',
@@ -2479,6 +2483,12 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_destroy_equipment_choice':
       return cmd.destroy ? 'Zniszcz equipment' : 'Zostaw equipment';
+    // M202/odznaka #3 (CR 616.1): wybór efektu zastępczego — etykieta nazywa
+    // kartę, żeby w modalu było widać, o który permanent chodzi.
+    case 'resolve_replacement_choice':
+      return cmd.choice === 'shield'
+        ? `Zdejmij licznik tarczy (${nameOfObjectId(cmd.objectId)})`
+        : `Regeneruj (${nameOfObjectId(cmd.objectId)})`;
     case 'resolve_opponent_target': {
       // Cuombajj Witches: to TY wskazujesz cel obrażeń przeciwnika.
       return `Wskaż cel obrażeń: ${nameOfObjectId(cmd.targetId)}`;

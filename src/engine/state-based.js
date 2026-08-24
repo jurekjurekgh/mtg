@@ -83,6 +83,10 @@ export function addRegenerationShield(state, objectId) {
  */
 export function runStateBasedActions(state) {
   const events = [];
+  // M202/odznaka #3 (CR 616.1): dopóki gracz nie rozstrzygnie wyboru efektu
+  // zastępczego (tarcza albo regeneracja), nie przetwarzamy kolejnych akcji
+  // stanowych — inaczej drugi przebieg rozstrzygnąłby za gracza.
+  if (state.pendingReplacementChoice) return events;
   // CR 506.4c (M201, znalezisko #1): „A permanent that's no longer a creature
   // is removed from combat.” Przyczyna bywa dowolna — koniec animacji
   // (Skilled Animator), utrata typu, zmiana charakterystyk — więc reguła
@@ -183,6 +187,28 @@ export function runStateBasedActions(state) {
     const killedByDamage = !isIndestructible && object.damage >= toughness;
     const killedByDeathtouch = !isIndestructible && object.damagedByDeathtouch && object.damage > 0;
     if (!killedByZeroToughness && !killedByDamage && !killedByDeathtouch) continue;
+    // M202/odznaka #3 (CR 616.1): gdy zniszczenie można zastąpić na DWA
+    // sposoby — licznikiem tarczy (CR 122.1b) albo tarczą regeneracji
+    // (CR 701.12) — wybiera KONTROLER permanenta, nie silnik. Dotąd tarcza
+    // była konsumowana zawsze, czyli gracz tracił licznik nawet wtedy, gdy
+    // wolał regenerację (która dodatkowo zdejmuje obrażenia i odpina od walki).
+    // Wytrzymałość <= 0 nie jest zniszczeniem, więc wybór tam nie istnieje.
+    const hasShieldCounter = (object.counters?.shield ?? 0) > 0;
+    const hasRegenerationShield = (state.regenerationShields ?? []).includes(object.id)
+      && !(state.cantBeRegeneratedThisTurn ?? []).includes(object.id);
+    if (!killedByZeroToughness && hasShieldCounter && hasRegenerationShield) {
+      state.pendingReplacementChoice = {
+        playerId: object.controllerId,
+        objectId: object.id,
+        cardId: object.cardId ?? null,
+      };
+      state.turn.priorityPlayerId = object.controllerId;
+      const required = event('replacement_choice_required', {
+        playerId: object.controllerId, objectId: object.id, cardId: object.cardId ?? null,
+      });
+      state.events.push(required); events.push(required);
+      return events;
+    }
     // Shield: zniszczenie z obrażeń zastąp zdjęciem tarczy (CR 122.1b).
     if (!killedByZeroToughness && (object.counters?.shield ?? 0) > 0) {
       const next = { ...(object.counters ?? {}) };
