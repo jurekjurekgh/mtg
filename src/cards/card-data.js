@@ -5479,7 +5479,9 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       modes: [
         { name: 'Kontra', targets: [{ type: 'artifact_spell_on_stack' }],
           effects: [{ type: 'counter_spell' }] },
-        { name: 'Odbicie', targets: [{ type: 'artifact' }],
+        // M202/E (uwaga właściciela): „Odbicie” sugerowało kontrę; Oracle mówi
+        // „Return target artifact to its owner's hand” — więc „Zwrot do ręki”.
+        { name: 'Zwrot do ręki', targets: [{ type: 'artifact' }],
           effects: [{ type: 'bounce_permanent' }] },
       ],
     },

@@ -106,7 +106,7 @@ test('A: choiceGroupTitle Hunter\'s Blowgun nie escape\'uje apostrofu', () => {
   assert.match(title, /Cel zdolności/);
 });
 
-test('C: choiceGroupTitle Steel Sabotage rozróżnia tryby Kontr i Odbicie', () => {
+test('C: choiceGroupTitle Steel Sabotage rozróżnia tryby Kontr i Zwrot do ręki', () => {
   const steel = REGISTRY.get('steel-sabotage');
   const view = baseView({
     zones: {
@@ -126,7 +126,7 @@ test('C: choiceGroupTitle Steel Sabotage rozróżnia tryby Kontr i Odbicie', () 
   assert.match(kontr, /Steel Sabotage/);
   assert.match(kontr, /Kontr/);
   assert.match(odbicie, /Steel Sabotage/);
-  assert.match(odbicie, /Odbicie/);
+  assert.match(odbicie, /Zwrot do ręki/);  // M202/E: było „Odbicie”
   assert.notEqual(kontr, odbicie);
 });
 
@@ -134,7 +134,7 @@ test('C: describeSpellEffects Steel Sabotage opisuje tryby, nie puste pole', () 
   const text = describeSpellEffects(REGISTRY.get('steel-sabotage').spell);
   assert.match(text, /wybierz jedno/);
   assert.match(text, /Kontr/);
-  assert.match(text, /Odbicie/);
+  assert.match(text, /Zwrot do ręki/);  // M202/E
   assert.notEqual(text.trim(), '');
 });
 
@@ -219,7 +219,7 @@ test('C: dwa tryby Steel Sabotage to dwa przyciski, nie jeden Wybierz', () => {
   assert.equal(wybierz.length, 0, `nie oczekiwano jednego Wybierz: ${els.actions.textContent}`);
   const labels = buttons.map((b) => b.textContent);
   assert.ok(labels.some((t) => /Kontr/.test(t)), `brak Kontr: ${labels.join(' | ')}`);
-  assert.ok(labels.some((t) => /Odbicie/.test(t)), `brak Odbicie: ${labels.join(' | ')}`);
+  assert.ok(labels.some((t) => /Zwrot do ręki/.test(t)), `brak „Zwrot do ręki”: ${labels.join(' | ')}`);  // M202/E
   assert.equal(opened.length, 0);
 });
 
