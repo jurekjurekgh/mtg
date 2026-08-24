@@ -1,6 +1,6 @@
 # PLAN M202 — audyt PR #73 + pętla jakości (2026-08-24)
 
-Sesja: `arena/01a032b2-mtg` · PR: (otwierany po pierwszym commicie tego planu)
+Sesja: `arena/01a032b2-mtg` · PR: **#74**
 Tryb: **ADR 0020** (PR → audyt poprzedniego PR → inkrementalne commity)
 + **ADR 0021** (prompt „kontynuujemy” = pętla domyślna, nie pytanie o kolejkę).
 
@@ -80,7 +80,7 @@ kumulatywnie + blok przekazania w czacie (ADR 0013).
 
 - [x] 0. Rozpoznanie: testy/build bazy, diff PR #73 pobrany z GitHuba.
 - [x] 1. Plan spisany i wypchnięty (ten commit) — PR otwarty.
-- [ ] 2. Audyt: raport w `docs/audits/`.
+- [x] 2. Audyt: raport `docs/audits/AUDYT_PR73_2026-08-24.md` — N1/N2/N3 + O1–O4, weryfikacja mutacyjna 3/3 RED, pomiar duplikatów zdarzeń 17 816 komend / 0.
 - [ ] 3. Fix N1 + testy.
 - [ ] 4. Fix N2 + testy.
 - [ ] 5. Strażnik N3.
