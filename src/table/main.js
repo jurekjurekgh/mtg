@@ -31,7 +31,7 @@ import { parseManaCost } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
-import { lookWizardKindOf, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard } from './choice-request.js';
+import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard } from './choice-request.js';
 import { multiTargetPlanOf, mulliganBottomPlanOf } from './multi-target.js';
 import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions } from './render.js';
 
@@ -588,20 +588,19 @@ function bootstrapTable() {
    */
   /**
    * M201/C2: karta, której dotyczy opcja decyzji (do podglądu w modalu).
-   * Generyczne: bierzemy pierwszy identyfikator obiektu, jaki niesie komenda,
-   * i tłumaczymy go na cardId przez pełny stan sesji. Brak karty = brak lupy.
+   * Generyczne — bez wiedzy o typie komendy; brak karty = brak lupy.
    */
   function cardIdForChoiceOption(option) {
-    if (!session || !option || typeof option !== 'object') return null;
-    if (typeof option.cardId === 'string' && session.cardDetails(option.cardId)) return option.cardId;
-    const candidates = [option.cardId, option.objectId, option.targetId, option.keepId,
-      option.sacrificeTargetId, option.chosenCardId, ...(option.targets ?? []), ...(option.cardIds ?? [])];
-    for (const id of candidates) {
-      if (typeof id !== 'string') continue;
+    if (!session) return null;
+    // M202/B: polityka kolejności (CEL przed źródłem) żyje w czystej funkcji
+    // `previewCardIdOfOption` z własnymi testami; tutaj tylko tłumaczenie
+    // identyfikatora na kartę — z PEŁNEGO stanu sesji, bo widok chowa `cardId`
+    // kart przeciwnika (FoW), dokładnie jak `commandLabel`.
+    return previewCardIdOfOption(option, (id) => {
+      if (session.cardDetails(id)) return id; // jawny cardId w komendzie
       const cardId = session.state?.objects?.get(id)?.cardId ?? null;
-      if (cardId && session.cardDetails(cardId)) return cardId;
-    }
-    return null;
+      return cardId && session.cardDetails(cardId) ? cardId : null;
+    });
   }
 
   function openCardFullscreenByCardId(cardId) {

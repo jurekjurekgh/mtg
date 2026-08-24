@@ -41,6 +41,41 @@ const CHOICE_TYPE_LABELS = Object.freeze({
  * jest generyczne (`cardIdOfOption` dostarcza wywołujący, bo tylko on ma
  * pełny stan sesji), więc działa dla każdej rodziny decyzji.
  */
+/**
+ * M202/B (uwaga właściciela 2026-08-24): karta, którą podgląda lupa przy opcji
+ * decyzji.
+ *
+ * Zgłoszenie: „Przycisk «Podejrzyj kartę» podgląda kartę używającą zdolności,
+ * a nie kartę celu zdolności — przy Ghost Warden i 4 celach mogę 4 razy
+ * podejrzeć Ghost Warden”. Opcja wyboru CELU dotyczy celu, a karta używająca
+ * zdolności jest i tak widoczna (ręka/stół). Dlatego identyfikatory CELU idą
+ * przed `cardId`/`objectId` komendy; opcja bez celu (rzut czaru, rezygnacja)
+ * nadal podgląda kartę, której dotyczy.
+ *
+ * `resolveCardId(id)` tłumaczy identyfikator (cardId albo objectId) na cardId
+ * znany katalogowi i zwraca `null`, gdy to nie karta (np. cel-gracz) — dzięki
+ * temu funkcja jest czysta i testowalna bez sesji (wstrzyknięcie, nie import).
+ */
+export function previewCardIdOfOption(option, resolveCardId) {
+  if (!option || typeof option !== 'object' || typeof resolveCardId !== 'function') return null;
+  const ordered = [
+    // cele (zdolności, czary, decyzje wyboru celu)
+    ...(Array.isArray(option.targets) ? option.targets : []),
+    ...(Array.isArray(option.targetIds) ? option.targetIds : []),
+    option.targetId, option.keepId, option.sacrificeTargetId, option.chosenCardId,
+    option.exileTargetId, option.tapCreatureId,
+    ...(Array.isArray(option.cardIds) ? option.cardIds : []),
+    // dopiero potem karta, której dotyczy sama komenda
+    option.cardId, option.objectId,
+  ];
+  for (const id of ordered) {
+    if (typeof id !== 'string') continue;
+    const cardId = resolveCardId(id);
+    if (cardId) return cardId;
+  }
+  return null;
+}
+
 export function renderChoiceRequest(host, request, { labelForOption, onResponse, introLabel, ignoredOptionKeys = null, onToggleIgnoredOption = null, onOpenCard = null, cardIdOfOption = null }) {
   clearChoiceElement(host);
   // introLabel (choiceGroupTitle) — opis wyboru jak w panelu akcji (uwaga A);
