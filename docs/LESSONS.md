@@ -61,8 +61,19 @@ bo nikt nie kwestionował nazw talii w dokumentacji narzędzia.
    wynik przy parametrze wskazującym nieistniejący plik. Sprawdź to raz
    celowo — koszt 10 sekund, a rozjazd bywa wielosesyjny.
 
+**Dopisek z tej samej sesji (pułapka weryfikacji):** test, który uruchamia CLI
+narzędzia, dziedziczy jego zależności. Pierwsza wersja strażnika M203 była
+zielona lokalnie i **czerwona w CI**, bo `run-game.mjs` importował `jsdom`
+statycznie na górze pliku, a CI (`node tools/run-tests.mjs all`) nie robi
+`npm i` w `tools/table-tester`. Fix: leniwy `await import('jsdom')` w `boot()`
+— walidacja argumentów, `--help` i `--list-decks` nie potrzebują DOM-u.
+**Reguła:** jeśli test woła narzędzie przez `spawnSync`, sprawdź jego importy
+i uruchom test raz **bez** katalogu `node_modules` narzędzia — „zielone
+lokalnie" nie znaczy „zielone w CI" (AGENTS.md: samodzielnie zielony = cały
+pakiet, w środowisku bramki).
+
 **Sformalizowane w:** M203 (walidacja talii w `parseArgs`, drugi bezpiecznik
-przy wyborze w DOM, `--list-decks`, strażnik dokumentacji).
+przy wyborze w DOM, `--list-decks`, leniwy import jsdom, strażnik dokumentacji).
 
 ## L59 (2026-08-24) — Ograniczenie zasobu i koszt dodatkowy żyją w WIELU ścieżkach: definiuj przez ZAKAZ i pilnuj strażnikiem każdej ścieżki
 

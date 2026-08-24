@@ -66,8 +66,18 @@ PR #74, `ENVIRONMENT.md` §3 — znalezisko O3 z audytu PR #73).
 `unshift`/`push` w `playerView` + pomiar benchmarku zamiast trzech łatek
 (pierwsza oferta aury wskazuje stwora przeciwnika).
 
-**Wynik:** `npm test` **3188/3188** (3181 + 7 nowych), build 53/2626.0 kB.
-Pełne B0 nieuruchomione (ADR 0018).
+**Poprawka po czerwonym CI (ta sama sesja):** pierwsza wersja strażnika M203
+była zielona lokalnie i **czerwona w CI** — test uruchamia CLI testera, a
+`run-game.mjs` importował `jsdom` statycznie, więc w CI (które nie robi `npm i`
+w `tools/table-tester`) padał `MODULE_NOT_FOUND`. Fix: leniwy
+`await import('jsdom')` w `boot()` — walidacja argumentów, `--help`
+i `--list-decks` nie potrzebują DOM-u. Zweryfikowane dwustronnie: test 7/7
+**bez** `node_modules` narzędzia (symulacja CI) i pełna partia z jsdom
+(0 zgłoszeń detektorów). Dopisane do L60 jako pułapka weryfikacji.
+
+**Wynik:** `npm test` **3188/3188** (3181 + 7 nowych), `npm run test:all`
+**3197/3197** (to samo co CI), build 53/2626.0 kB. Pełne B0 nieuruchomione
+(ADR 0018).
 
 ## M202 — audyt PR #73: 3 błędy reguł/oferty (2026-08-24, PR #74)
 

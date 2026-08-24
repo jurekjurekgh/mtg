@@ -21,7 +21,12 @@
  *
  * Pełna instrukcja: docs/setup/TESTER_STOLU.md
  */
-import { JSDOM } from 'jsdom';
+// M203: `jsdom` importowany LENIWIE w `boot()`. Statyczny import na górze pliku
+// sprawiał, że KAŻDE uruchomienie narzędzia (także `--help`, `--list-decks`
+// i walidacja nazw talii) wymagało `npm i` w tym katalogu — a CI instaluje
+// zależności tylko w korzeniu repo, więc testy CLI testera padały tam
+// MODULE_NOT_FOUND, choć lokalnie były zielone (AGENTS.md: „samodzielnie
+// zielony znaczy cały pakiet", tu: w środowisku CI).
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -130,7 +135,8 @@ Pełna instrukcja: docs/setup/TESTER_STOLU.md
 // ---------------------------------------------------------------------------
 // jsdom + polyfill-e
 // ---------------------------------------------------------------------------
-function boot() {
+async function boot() {
+  const { JSDOM } = await import('jsdom');
   if (!fs.existsSync(ARTIFACT)) {
     throw new Error(`Brak artefaktu: ${ARTIFACT}\nUruchom najpierw: npm run build`);
   }
@@ -167,7 +173,7 @@ export async function runTableGame({
   human, bot, seed, steps, out, quiet, snapshotEvery, log,
   profile = 'greedy', policySeed = 1, tickRate = 0,
 }) {
-  const { window: domWindow, document } = boot();
+  const { window: domWindow, document } = await boot();
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => [...document.querySelectorAll(sel)];
   // M103 (L15): mostek diagnostyczny artefaktu (?tester=1) — sonda „oferta
