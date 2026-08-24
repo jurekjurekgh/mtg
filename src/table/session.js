@@ -1523,7 +1523,11 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'springbloom_choice_required': return `${srcName(e)}${whoN(e.controllerId)} może poświęcić land`;
       // M201/C1: jeden czasownik po podmiocie (druga część jako fraza
       // rzeczownikowa) — inaczej „Poświęcasz land — szuka…”.
-      case 'springbloom_resolved': return `${srcName(e)}${whoN(e.controllerId)} poświęca land — szukanie do dwóch bazowych lądów`;
+      // M202/C (uwaga właściciela): log mówił tylko „poświęca land”, więc przy
+      // grze bota nie było wiadomo CZY i JAKI ląd padł. Nazwa lądu idzie
+      // z `sacrificedLandId` przez nameOfObject — ten ma pamięć LKI
+      // (CR 603.10), więc nazywa land, który jest już w grobie pod nowym id.
+      case 'springbloom_resolved': return `${srcName(e)}${whoN(e.controllerId)} poświęca ${e.sacrificedLandId ? nameOfObject(e.sacrificedLandId) : 'land'} — szukanie do dwóch bazowych lądów`;
       case 'springbloom_skipped': return `${srcName(e)}${whoN(e.controllerId)} nie poświęca landa`;
       case 'optional_draw_required': return `${whoN(e.playerId)} może dobrać kartę (potem odrzuci — Force Away)`;
       case 'optional_draw_resolved': return e.drew
