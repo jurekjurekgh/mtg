@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-24 (M202: audyt PR #73 + poprawki właściciela A/B/C + brązowa odznaka 2/5 — PR #74 otwarty)
+- **Ostatnia aktualizacja:** 2026-08-24 (M202: audyt PR #73 + poprawki A/B/C + brązowa odznaka 3/5 — PR #74 otwarty)
 - **Poprzednia:** 2026-08-23 (M201: audyt PR #72 + zgłoszenia właściciela F/M/M2 — PR #73 scalony)
 
 ## M202 — audyt PR #73: 3 błędy reguł/oferty (2026-08-24, PR #74)
@@ -102,6 +102,14 @@ zablokowany**, wbrew `docs/setup/ENVIRONMENT.md` §4 (do korekty).
    biblioteki to ZNACZNIK dla akcji stanowej (`state.emptyLibraryDraw`),
    rozstrzygany razem z życiem i trucizną (jedno źródło reguły, L41).
    6 testów, mutacyjnie 6/6 RED.
+3. **CR 616.1 — silnik wybierał efekt zastępczy za gracza.** Stwór z licznikiem
+   tarczy (CR 122.1b) i tarczą regeneracji (CR 701.12) zawsze tracił licznik,
+   choć reguła mówi, że wybiera **kontroler**. Fix: nowa decyzja gracza
+   `resolve_replacement_choice` (pełne okablowanie: stan, fingerprint,
+   protokół, oba boty, etykiety i log). Uwaga z CR 704.3 („Then the process
+   repeats”): po wybraniu tarczy i tak dobija regeneracja — oba zabezpieczenia
+   przepadają, co jest dokładnie powodem, dla którego wybór należy do gracza.
+   8 testów, mutacyjnie 5/8 RED.
 2. **CR 702.170d — zaplotowana karta musi czekać na własną fazę main.** Bramka
    timingu wisiała wyłącznie na `timing === 'sorcery'`, więc zaplotowany
    INSTANT nie miał ograniczenia („Cast it **as a sorcery** on a later turn”).
@@ -128,14 +136,17 @@ rozjazdów). Fuzzer inwariantów: 18 partii, 8346 komend, **21 915 ofert
 sprawdzonych pod kątem „oferta = walidacja” — 0 naruszeń**, 0 naruszeń
 inwariantów stanu (strefy, tokeny, załączniki, walka, pula many).
 
-**Kandydaci na kolejne 3 znaleziska (wymagają dalszego budżetu):** CR 616.1 —
-kolejność efektów zastępczych (tarcza vs regeneracja) jest ustalona na sztywno
-w SBA zamiast wyboru kontrolera; CR 603.3b — kolejność APNAP na stosie
-(nie udało się zbudować repro w tej sesji); CR 510.1c — walidacja
-nielegalnego przydziału obrażeń (nie udało się dojść do decyzji
-`resolve_damage_assignment` z sondy).
+**Kandydaci 2 i 3 — zamknięte jako POPRAWNE (nie badać drugi raz):**
+- **CR 603.3b (APNAP)** — zweryfikowane na dwóch `dies` triggerach ginących
+  razem w walce: `state.zones.stack[length-1]` to WIERZCH, a stos był
+  `[p1(AP), p2(NAP)]`, więc trigger gracza NIEaktywnego rozstrzyga się
+  pierwszy — dokładnie jak wymaga reguła.
+- **CR 510.1c/d + 702.19b (przydział obrażeń)** — `validateDamageAssignment`
+  już pilnuje lethal dla każdego wcześniejszego blokera
+  (`illegal_damage_order`) i minimalnego lethal przy trample
+  (`trample_blocker_below_lethal`).
 
-**Stan:** `npm test` **3135/3135**, build **53 moduły / 2603.9 kB**,
+**Stan:** `npm test` **3143/3143**, build **53 moduły / 2609.6 kB**, benchmark bota **9/9**.
 `node --test test/bot-benchmark.test.js` **9/9**. Pełna macierz B0 — tylko na
 komendę właściciela (ADR 0018).
 
