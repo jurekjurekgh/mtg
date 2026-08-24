@@ -2779,6 +2779,28 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // obrażenia przeciwnika — darmowy damage, prawie zawsze warto.
         return finish(cmd.cardId != null ? 40 + (cmd.amount ?? 2) * 4 : 0);
       }
+      case 'resolve_discard_choice': {
+        // M202/I (uwaga właściciela, Nightsnare): „Target opponent reveals
+        // their hand. You may choose a nonland card from it. If you do, that
+        // player discards that card. If you don't, that player discards two
+        // cards.” Bot nie miał ŻADNEJ wyceny tej decyzji, więc wszystkie
+        // warianty remisowały i brał pierwszą ofertę z listy — „wybrał jakąś
+        // bezsensowną kartę z mojej ręki, miałem dużo lepsze”.
+        // Zgodnie ze wskazówką właściciela: gdy wybór jednej karty jest
+        // loterią, lepsza jest druga opcja (przeciwnik odrzuca dwie).
+        // Rozróżnienie, czyja to ręka, jest policzalne z widoku: karty MOJEJ
+        // ręki są w view.zones.hand (odrzucone jako koszt — wolę najtańsze),
+        // karty odsłoniętej ręki przeciwnika nie.
+        if (cmd.cardId == null) return finish(40);
+        const mine = (view.zones.hand ?? []).some((o) => o.id === cmd.cardId);
+        const value = view.zones.library.find((o) => o.id === cmd.cardId)?.manaCost
+          ?? (view.zones.hand ?? []).find((o) => o.id === cmd.cardId)?.manaCost ?? 0;
+        // Moja ręka (koszt): im tańsza karta, tym lepiej ją oddać.
+        if (mine) return finish(20 - Math.min(10, value));
+        // Ręka przeciwnika: wybranie drogiej karty ma wartość, ale dwie karty
+        // odrzucone bez wyboru są warte więcej — stąd poniżej progu rezygnacji.
+        return finish(10 + 3 * value);
+      }
       case 'resolve_satyr_look_choice': {
         // Satyr Wayfinder: wzięcie lądu do ręki = pewna mana (zawsze lepsze niż
         // rezygnacja, bo reszta i tak idzie do grobu). Ląd premiami za manabazę.
