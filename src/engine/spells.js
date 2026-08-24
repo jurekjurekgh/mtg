@@ -43,6 +43,27 @@ function hasColorForObject(state, playerId, object, phyrexianPay = 0) {
  * nigdy nazwy kart.
  */
 
+/**
+ * M202/odznaka #2 (CR 702.170d): rzut ZAPLOTOWANEJ karty to specjalne
+ * pozwolenie ograniczone do „their main phase while the stack is empty during
+ * any turn after the turn in which it became plotted” — przypomnienie na karcie
+ * brzmi „Cast it **as a sorcery** on a later turn”, czyli timing karty NIE ma
+ * znaczenia: zaplotowany instant też czeka na własną fazę main przy pustym
+ * stosie. Bramka wisiała dotąd wyłącznie na `timing === 'sorcery'`, więc
+ * zaplotowany instant omijałby ją całkowicie (w katalogu nie ma dziś
+ * zaplotowanego instantu — luka utajona; zamykamy ją teraz, bo pierwsza taka
+ * karta weszłaby bez bramki — L52).
+ *
+ * `suspendReady` jest WYŁĄCZONE z tej bramki: rzut suspend rozstrzyga się
+ * w trakcie zdolności triggerowanej i ignoruje timing karty (CR 702.62c).
+ */
+export function plottedCastAllowed(state, playerId, object) {
+  if (!object?.plotted || object.zone !== 'exile') return true;
+  return ['precombat_main', 'postcombat_main'].includes(state.turn.phase)
+    && state.turn.activePlayerId === playerId
+    && state.zones.stack.length === 0;
+}
+
 function requireSpell(state, playerId, objectId, targets, cleaved) {
   const object = state.objects.get(objectId);
   // Batch 46 (Gila Courser): karta wygnana „impulse" jest grywalna z exile
@@ -56,6 +77,10 @@ function requireSpell(state, playerId, objectId, targets, cleaved) {
   if (!object.spell || !object.spell.effects?.length) throw new Error('Obiekt nie ma deskryptora czaru');
   const { timing } = object.spell;
   const targetSpec = cleaved && object.spell.cleave ? (object.spell.cleave.targets ?? []) : (object.spell.targets ?? []);
+  // M202/odznaka #2 (CR 702.170d): zaplotowana karta — niezależnie od timingu.
+  if (!plottedCastAllowed(state, playerId, object)) {
+    throw new Error('Zaplotowaną kartę rzuca się w swoją fazę main przy pustym stosie');
+  }
   if (timing === 'sorcery') {
     const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
     if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) {
@@ -2097,6 +2122,9 @@ export function legalSpellCasts(state, playerId) {
       const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
       if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) continue;
     }
+    // M202/odznaka #2 (CR 702.170d): ta sama bramka co w walidacji — oferta nie
+    // może obiecywać rzutu, który execute odrzuci (L48).
+    if (!plottedCastAllowed(state, playerId, object)) continue;
     // Modal „Choose one" (Aerith Rescue Mission): każdy tryb enumerujemy osobno.
     // M155 (audyt żywym testerem): playerView wstawia komendy przez `unshift`,
     // więc kolejność widziana przez gracza jest ODWROTNA do `casts`. Iterujemy
@@ -2253,6 +2281,9 @@ export function legalCleaveCasts(state, playerId) {
       const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
       if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) continue;
     }
+    // M202/odznaka #2 (CR 702.170d): ta sama bramka co w walidacji — oferta nie
+    // może obiecywać rzutu, który execute odrzuci (L48).
+    if (!plottedCastAllowed(state, playerId, object)) continue;
     const targetSpec = object.spell.cleave.targets ?? [];
     if (targetSpec.length === 0) {
       casts.push({ objectId: id, targets: [] });
