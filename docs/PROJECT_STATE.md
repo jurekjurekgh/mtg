@@ -146,7 +146,35 @@ inwariantów stanu (strefy, tokeny, załączniki, walka, pula many).
   (`illegal_damage_order`) i minimalnego lethal przy trample
   (`trample_blocker_below_lethal`).
 
-**Stan:** `npm test` **3143/3143**, build **53 moduły / 2609.6 kB**, benchmark bota **9/9**.
+**Druga transza poprawek właściciela (G, J, I, O — 2026-08-24):**
+
+- **G** — Fleeting Distraction debuffował WŁASNEGO stwora. Efekt to
+  `{ type: 'pump', power: −1 }`, a klasyfikacja przyjazności celów patrzyła
+  wyłącznie na TYP (`pump` → przyjazny, +50), więc wycena była odwrócona
+  o 180°: debuff wroga karany jak wzmacnianie przeciwnika, debuff własnego
+  stwora bezkarny, a przy wrogim celu czar nie dostawał żadnej wartości i bot
+  w ogóle go nie rzucał. Fix: `isNegativePump()` — klasyfikacja po ZNAKU
+  deskryptora (ADR 0002).
+- **J** — Merfolk Mesmerist millował co turę jedynym blokerem przy 18 vs 30
+  kart. Fix: dwie bramki ze zgłoszenia (brak innego nietapniętego stwora
+  o mocy > 0 → −60; biblioteka wroga większa niż własna → −60). Pierwsza próba
+  z −30/−20 nie zadziałała — kary nie przebijały premii za mill (L3).
+- **I** — Nightsnare: bot nie miał ŻADNEJ wyceny `resolve_discard_choice`, więc
+  warianty remisowały i brał pierwszą ofertę (L51). Fix: rezygnacja (wróg
+  odrzuca 2) warta więcej niż jedna karta wybrana na chybił trafił; przy własnej
+  ręce jako koszt oddaje najtańszą.
+- **O** — Horizon Spellbomb / kreator many: dochodzenie pokazało, że reguła
+  otwarcia (`countPaymentVariants >= 2`) w opisanym scenariuszu (jeden las,
+  koszt {G}) daje 1, czyli kreator NIE powinien się otworzyć — zgłoszenia nie
+  udało się odtworzyć. Reguła wydzielona do testowalnej `shouldOpenManaWizard`
+  i przypięta 6 testami (wcześniej inline, bez żadnego testu). Do domknięcia
+  potrzebny dokładny stan stołu z tamtej partii.
+
+Dwa testy scenariuszowe z zamrożonym seedem (`session-abilities-integration`,
+dług odsetkowy L53) przelosowane hunterem po zmianach zachowania bota
+(J: seed 2→4, I: seed 4→9; sprawdzone też 14, 20).
+
+**Stan:** `npm test` **3181/3181**, build **53 moduły / 2626.0 kB**, benchmark bota **9/9**.
 `node --test test/bot-benchmark.test.js` **9/9**. Pełna macierz B0 — tylko na
 komendę właściciela (ADR 0018).
 
