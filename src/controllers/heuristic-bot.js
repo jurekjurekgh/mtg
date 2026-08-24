@@ -559,6 +559,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    *    koszt, nie efekt, i nie przechodzi tą ścieżką,
    *  - efekt bez celu (globalny) nie jest tu oceniany.
    */
+  /**
+   * M202/G (uwaga właściciela, Fleeting Distraction): efekt `pump` jest
+   * PRZYJAZNY tylko przy dodatnich wartościach — „Target creature gets -1/-0
+   * until end of turn” to efekt WROGI. Klasyfikacja wyłącznie po TYPIE efektu
+   * (`pump` = przyjazny, +50) karała rzucenie debuffu we wroga i premiowała
+   * rzucenie go we WŁASNEGO stwora — dokładnie zgłoszenie: „Bot ma na stole
+   * kreatury, gracz nie ma. Bot rzuca ten czar na swoją kreaturę i debuffuje
+   * ją. Bez sensu.” Reguła generyczna po ZNAKU deskryptora (ADR 0002).
+   */
+  function isNegativePump(effect) {
+    if (effect?.type !== 'pump') return false;
+    return (effect.power ?? 0) < 0 || (effect.toughness ?? 0) < 0;
+  }
+
   function selfHarmPenalty(view, effects, cmd, target) {
     let penalty = 0;
     const targets = cmd.targets ?? [];
@@ -574,6 +588,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (victim && victim.controllerId === meId) {
           // Im cenniejszy własny permanent, tym gorzej.
           penalty += permCost + (victim.power ?? 0) + (victim.toughness ?? 0);
+        }
+      }
+      // M202/G: `pump` z ujemnymi wartościami jest efektem WROGIM, a mapa
+      // HOSTILE_PERMANENT_EFFECTS zna tylko `pump_negative` i `shrink` — więc
+      // debuff własnego stwora (Fleeting Distraction) był bezkarny.
+      if (isNegativePump(effect)) {
+        const slot = effect.targetIndex != null ? targets[effect.targetIndex] : null;
+        const victim = slot ? objectOnBoard(view, slot) : target;
+        if (victim && victim.controllerId === meId) {
+          penalty += 45 + (victim.power ?? 0) + (victim.toughness ?? 0);
         }
       }
       // 2. Efekt wymierzony w GRACZA — sprawdzamy, czy to my.
@@ -610,8 +634,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const enemyId = enemy(view)?.id ?? null;
     for (const effect of effects) {
       if (!effect?.type) continue;
-      const friendCost = FRIENDLY_TARGET_EFFECTS.get(effect.type)
-        ?? (effect.type === 'add_counter' && BENEFICIAL_COUNTERS.has(effect.counter ?? '+1/+1') ? 50 : null);
+      // M202/G: ujemny pump NIE jest efektem przyjaznym — bez tego wykluczenia
+      // rzucenie debuffu we wroga dostawało karę jak wzmacnianie przeciwnika.
+      const friendCost = isNegativePump(effect)
+        ? null
+        : (FRIENDLY_TARGET_EFFECTS.get(effect.type)
+          ?? (effect.type === 'add_counter' && BENEFICIAL_COUNTERS.has(effect.counter ?? '+1/+1') ? 50 : null));
       if (friendCost != null) {
         const slot = effect.targetIndex != null ? targets[effect.targetIndex] : null;
         const beneficiary = (slot ? objectOnBoard(view, slot) : null) ?? target;
@@ -1484,7 +1512,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             || effect.type === 'pump_by_creature_count'
             || effect.type === 'pump_enchanted_creature'
             || effect.type === 'pump_by_gates';
-          if (isPumpEffect && target && target.controllerId === view.playerId) {
+          // M202/G: ujemny pump na WROGIM stworze to debuff przeciwnika —
+          // realny zysk (Fleeting Distraction: „-1/-0 until end of turn”).
+          // Bez tej gałęzi efekt nie dostawał ŻADNEJ wartości (dodatnie pumpy
+          // wyceniała gałąź poniżej, a klamra M179/E tylko karała), więc bot
+          // w ogóle nie rzucał czaru.
+          if (isPumpEffect && isNegativePump(effect) && target
+            && target.controllerId !== view.playerId) {
+            score += 25 + 4 * Math.abs(effect.power ?? 0) + 4 * Math.abs(effect.toughness ?? 0);
+          }
+          if (isPumpEffect && !isNegativePump(effect) && target && target.controllerId === view.playerId) {
             // M146 (uwaga właściciela): pump „do końca tury" ma wartość tylko
             // w oknie, w którym zdąży pomóc. Bot rzucał Fake Your Own Death
             // w swoim upkeepie i passował — czysta strata. Okna:
