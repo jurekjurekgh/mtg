@@ -1,7 +1,73 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-23 (M201: audyt PR #72 + zgłoszenia właściciela F/M/M2 — PR #73 otwarty)
-- **Poprzednia:** 2026-08-23 (M200: audyt PR #70 + uwagi właściciela A–R — PR #72 scalony)
+- **Ostatnia aktualizacja:** 2026-08-24 (M202: audyt PR #73 — 3 błędy naprawione, PR #74 otwarty)
+- **Poprzednia:** 2026-08-23 (M201: audyt PR #72 + zgłoszenia właściciela F/M/M2 — PR #73 scalony)
+
+## M202 — audyt PR #73: 3 błędy reguł/oferty (2026-08-24, PR #74)
+
+Plan: `docs/plans/PLAN_2026-08-24-m202-audyt-pr73-petla-jakosci.md` · raport:
+`docs/audits/AUDYT_PR73_2026-08-24.md` · nowa lekcja: **L59**.
+
+Tryb sesji: ADR 0020 (PR #74 na starcie → audyt poprzedniego PR → commit na
+każdy samodzielnie zielony krok) + ADR 0021 (prompt „kontynuujemy” = pętla
+domyślna, bez pytania o kolejkę).
+
+**Baza zweryfikowana przed pracą:** `npm test` 3096/3096, build 53 moduły /
+2592.4 kB — zgodnie z tym plikiem. Diff PR #73 pobrany z GitHuba (`gh pr diff
+73`): klony Areny są spłaszczone do jednego commita, lokalna historia nie ma
+rodzica.
+
+**Naprawione (każde osobnym commitem, test RED→GREEN):**
+
+1. **N1 — BŁĄD REGUŁ wprowadzony przez PR #73.** Mana ograniczona drukiem
+   (Powerstone: „This mana can't be spent **to cast a nonartifact spell**”)
+   była traktowana jak „tylko do czarów-artefaktów”: `producibleMana` bez
+   `purpose` odejmował ją dla KAŻDEJ płatności, więc przy Powerstone jako
+   jedynym źródle many zdolność `{1}` nie miała oferty, a wymuszona komenda
+   była odrzucana (silnik odbierał legalną akcję — klasa L44). Fix: semantyka
+   celu wydania odwrócona do zgodnej z drukiem (`spellManaPurpose` +
+   `restrictedManaBlocked` w `resources.js`), jawny cel w ~25 ścieżkach
+   płatności i ofert (spells/resources/abilities/game-state), plot/suspend/
+   warp pozostają bez ograniczenia (akcje specjalne, nie rzuty). Strażnik
+   źródła pilnuje, żeby żadna przyszła funkcja `cast*`/`*Casts` nie zapomniała
+   o celu (mutacyjnie RED).
+2. **N2 — MARTWY DESKRYPTOR.** `prefer: 'opponent'` (Dementia Bat, znalezisko
+   #4 z M201) czytało wyłącznie `triggerTargetCandidates`; w
+   `targetCandidatesBySpec` pole było martwe (L21), a kolejność „przeciwnik
+   pierwszy” istniała przypadkiem (`state.players` + `unshift`). Fix w jednym
+   centralnym miejscu + piny kolejności i pierwszej oferty. Świadoma granica:
+   `legalActivatedAbilities` ma własną gałąź celów-graczy (6 zdolności) —
+   przepięcie jej odwróciłoby kolejność w UI, bo `playerView` dokłada oferty
+   aktywacji przez `unshift`; rozjazd konwencji (unshift vs push) opisany
+   w raporcie jako osobny temat.
+3. **N4 — BŁĄD OFERTY (znaleziony przy pisaniu pinów N3).** Permanent wygnany
+   impulsem z kosztem dodatkowym NA OBIEKCIE (Fear of Abduction, Makeshift
+   Mauler) dostawał ofertę `cast_permanent` BEZ `exileTargetId`, a walidacja ją
+   odrzucała (zmierzone: oferta jest, `execute` → `ok: false`; klasa L48).
+   Root cause: trzy gałęzie oferty liczyły koszty osobno, znała je jedna (L41).
+   Fix: wspólny `exileAdditionalCostCandidates` dla gałęzi z ręki, z flash
+   i z impulsu (CR 601.2h).
+
+**Zabezpieczone strażnikiem bez zmiany kodu:** **N3** — ścieżki darmowego rzutu
+czytają wyłącznie `obj.spell.additionalCost`, więc karta z kosztem dodatkowym
+na OBIEKCIE + suspend/rebound/madness poszłaby za darmo; test katalogowy
+czerwienieje w dniu wejścia pierwszej takiej karty (L52 §4).
+
+**Obserwacje bez zmian (O1–O4 w raporcie):** domyślne `beginning_of_combat`
+= „on your turn” (pilnowane strażnikiem katalogu z M201); `waiting` wysyła
+`kind`/`types` dla obiektów `faceDown` (dziś nieosiągalne); `commit-msg.txt`
+w katalogu głównym to leftover wbrew `ENVIRONMENT.md` §3 — do decyzji
+właściciela; `damage_dealt.sourceLki` niesie pełny snapshot źródła (dziś żaden
+opis ani widok go nie czyta).
+
+**Weryfikacja mutacyjna testów PR #73 (3/3 RED):** wyłączenie reguły SBA dla
+nie-stworów, wyłączenie grupowania `combat_damage_to_you`, `process.env`
+w heuristic-bocie. Pomiar: 32 partie headless / 17 816 komend / 0
+zduplikowanych zdarzeń w strumieniu komendy (wrapper `processTriggers` z M201).
+
+**Stan:** `npm test` **3116/3116**, build **53 moduły / 2598.3 kB**,
+`node --test test/bot-benchmark.test.js` **9/9**. Pełna macierz B0 — tylko na
+komendę właściciela (ADR 0018).
 
 ## M201 — audyt PR #72 + zgłoszenia właściciela + BRĄZOWA ODZNAKA (2026-08-23, PR #73)
 

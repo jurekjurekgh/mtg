@@ -81,8 +81,18 @@ kumulatywnie + blok przekazania w czacie (ADR 0013).
 - [x] 0. Rozpoznanie: testy/build bazy, diff PR #73 pobrany z GitHuba.
 - [x] 1. Plan spisany i wypchnięty (ten commit) — PR otwarty.
 - [x] 2. Audyt: raport `docs/audits/AUDYT_PR73_2026-08-24.md` — N1/N2/N3 + O1–O4, weryfikacja mutacyjna 3/3 RED, pomiar duplikatów zdarzeń 17 816 komend / 0.
-- [ ] 3. Fix N1 + testy.
-- [ ] 4. Fix N2 + testy.
-- [ ] 5. Strażnik N3.
-- [ ] 6. Pętla jakości.
-- [ ] 7. Dokumentacja zamknięcia sesji.
+- [x] 3. Fix N1 (commit `494188a`) — 7 testów + strażnik źródła; `npm test` 3103/3103, benchmark 9/9.
+- [x] 4. Fix N2 (commit `233fc68`) — 6 testów; `npm test` 3112/3112.
+- [x] 5. Strażnik N3 + **fix N4** (commit `d3fc7c1`) — piny N3 okazały się RED i ujawniły błąd oferty rzutu impulsem; `npm test` 3116/3116, benchmark 9/9.
+- [x] 6. Lekcja **L59** w `docs/LESSONS.md` (ograniczenie zasobu i koszt dodatkowy w wielu ścieżkach).
+- [x] 7. Dokumentacja: `PROJECT_STATE.md` (sekcja M202), `HANDOFF_2026-08-24-m202.md`, opis PR #74.
+
+## Podsumowanie wykonania
+
+Zakres planu wykonany w całości poza punktem 3 pętli jakości (Żywy Tester):
+`tools/table-tester` nie ma `node_modules`, a egress HTTPS z sandboxa jest
+zablokowany (ENVIRONMENT §4) — audyt z perspektywy gracza wymaga sesji z siecią.
+Zamiast tego pętla jakości poszła w polowanie na niezgodności z CR innymi
+ścieżkami niż M201 (many ograniczone, koszty dodatkowe, cele-gracze), co dało
+trzy naprawione błędy i jeden strażnik. Żadnego nowego batcha kart (ADR 0021
+pkt 4c). Pełna macierz B0 nieuruchomiona (ADR 0018).
