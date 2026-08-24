@@ -706,7 +706,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   }
 
   function scoreCommand(view, cmd) {
-    const finish = (score) => { const w = weightedScore(cmd.type, score); if (process.env.BOT_DEBUG_SCORES && cmd.objectId === 'slaad') console.error(`[score] ${cmd.type} raw=${score} weighted=${w}`); return w; };
+    const finish = (score) => weightedScore(cmd.type, score);
     // M111: TRYB modalnego triggera („At the beginning of your upkeep,
     // choose one —" Etherwrought Page). Widok niesie tylko nazwy trybów,
     // więc treść bierzemy z rejestru po cardId (jak przy czarach) i wyceniamy
