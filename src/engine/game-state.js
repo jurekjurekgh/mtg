@@ -3,7 +3,7 @@ import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
 import { initialTurn, jumpToStep, nextTurnStep } from './turn.js';
 import { assertStateInvariants } from './invariants.js';
-import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, spendMana, treasureManaAvailable, canPayMadnessCost } from './resources.js';
+import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, spendMana, spellManaPurpose, treasureManaAvailable, canPayMadnessCost } from './resources.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, canPayManaCost, coloredPipsOf, matchColorRequirements } from './mana-cost.js';
 import { allControlledManaSources } from './mana-sources.js';
@@ -750,7 +750,8 @@ function freeCastAdditionalCostVariants(state, playerId, obj) {
       .map((id) => ({ sacrificeTargetId: id }));
     // Lash of the Balrog: „sacrifice a creature OR pay {4}" — wariant manowy
     // jest legalny także przy darmowym rzucie (płacimy tylko dodatek).
-    if (additional.orPayMana != null && producibleMana(state, playerId) >= additional.orPayMana) {
+    if (additional.orPayMana != null
+      && producibleMana(state, playerId, null, spellManaPurpose(obj)) >= additional.orPayMana) {
       variants.push({ payAltCost: true });
     }
     return variants;
@@ -771,8 +772,11 @@ function payFreeCastAdditionalCost(state, playerId, obj, cmd) {
   if (!additional.sacrificeCreature) return 'additional_cost_unsupported';
   if (cmd.payAltCost === true) {
     const need = additional.orPayMana;
-    if (need == null || producibleMana(state, playerId) < need) return 'additional_cost_unpaid';
-    spendMana(state, playerId, need, []);
+    // M202/N1: doplata {4} jest czescia RZUCENIA czaru (CR 118.5) — mana
+    // ograniczona drukiem (Powerstone) nie moze jej oplacic.
+    const purpose = spellManaPurpose(obj);
+    if (need == null || producibleMana(state, playerId, null, purpose) < need) return 'additional_cost_unpaid';
+    spendMana(state, playerId, need, [], purpose);
     return null;
   }
   const sacrifice = state.objects.get(cmd.sacrificeTargetId);
@@ -1993,7 +1997,7 @@ export function execute(state, input) {
       && !card.spell?.additionalCost && !card.spell?.xCost && !card.spell?.fireball;
     if (!inScope) return reject('illegal_grave_free_cast');
     const xValue = card.manaCost ?? 0;
-    if (producibleMana(state, cmd.playerId) < xValue) return reject('illegal_grave_free_cast');
+    if (producibleMana(state, cmd.playerId, null, spellManaPurpose(card)) < xValue) return reject('illegal_grave_free_cast');
     // Cele/tryb jak przy Epic (walidacja przed płatnością — L4).
     const chosen = Array.isArray(cmd.targets) ? cmd.targets : [];
     let chosenTargets = [];
@@ -2020,7 +2024,7 @@ export function execute(state, input) {
     } catch {
       return reject('illegal_grave_free_cast_targets');
     }
-    spendMana(state, cmd.playerId, xValue, []);
+    spendMana(state, cmd.playerId, xValue, [], spellManaPurpose(card));
     const stackId = `spell-${state.objectSequence++}`;
     moveObjectDirectly(state, cmd.objectId, 'stack', stackId);
     const stacked = Object.freeze({
@@ -5621,8 +5625,10 @@ export function playerView(state, playerId) {
   // artifact spells") liczy się WYŁĄCZNIE przy czarach-artefaktach. Oferta
   // musi używać tego samego rachunku co płatność (L48), więc pytamy o budżet
   // per KARTA, a nie raz na całą listę.
-  const manaAvailableFor = (object) => producibleMana(state, playerId, null,
-    { artifactSpell: (object?.types ?? []).includes('Artifact') });
+  // M202/N1: cel wydania liczony wspólnym `spellManaPurpose` — mana
+  // ograniczona drukiem nie opłaci czaru nie-artefaktowego, ale opłaci
+  // artefakt i KAŻDĄ płatność, która nie jest rzutem czaru (L48).
+  const manaAvailableFor = (object) => producibleMana(state, playerId, null, spellManaPurpose(object));
   // Batch 47: te RECZNE lancuchy pendingow pomijaly kilka decyzji (m.in.
   // pendingUndercityRoute z M190/B i pendingFabricate), wiec oferta rzutow
   // pojawiala sie MIMO czekajacej decyzji, a execute odbijal ja bramka
@@ -5758,7 +5764,7 @@ export function playerView(state, playerId) {
           && object.playableUntilTurn != null && state.turn.number <= object.playableUntilTurn) {
           const freeCast = object.playableWithoutPaying === true;
           const affordable = freeCast
-            || (effectiveSpellManaCost(state, object) <= manaAvailable
+            || (effectiveSpellManaCost(state, object) <= manaAvailableFor(object)
               && hasColorForCardId(state, playerId, object.cardId, 0));
           if (affordable) legalCommands.unshift(command('cast_permanent', playerId, { objectId: id }));
         }
@@ -5862,7 +5868,7 @@ export function playerView(state, playerId) {
       }
       // Morph/megamorph: zagranie twarzą w dół jako 2/2 za koszt morph ({3}) —
       // niezależnie od kosztu many karty (alternatywny koszt zagrania).
-      if (object.kind === 'creature' && object.morph && (object.morph.cost ?? 0) <= manaAvailable) {
+      if (object.kind === 'creature' && object.morph && (object.morph.cost ?? 0) <= manaAvailableFor(object)) {
         // Morph jest bezbarwny (CR 702.36) – nie wymaga kolorowego źródła
         legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, faceDown: true }));
       }
