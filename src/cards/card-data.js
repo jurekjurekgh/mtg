@@ -725,6 +725,35 @@ export const REAL_CARDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/9/6/96ec91a9-659a-455f-98e0-cd30b6c6c2a4.jpg?1783918166',  // tone
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Crawling Chorus'] },
   }),
+  // M202/K cd. (ta sama przyczyna co Phyrexian Mite): tokeny tworzone przez
+  // Mysidian Elder, Chatter of the Squirrel i Call the Mountain Chocobo nie
+  // miały wpisów w katalogu, więc ich kafle renderowały syntetyczną zaślepkę
+  // zamiast grafiki. Wpisy są WYŁĄCZNIE danymi prezentacji (druk tokena +
+  // obraz Scryfall); reguły tokenów zostają inline w efektach `create_token`
+  // (ADR 0002 — jedno źródło reguły). Strażnik: test/m202-k-tokeny-wpisy.test.js.
+  defineCard({
+    id: 'token_wizard', name: 'Wizard', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Wizard'], colors: ['B'],
+    power: 0, toughness: 1, manaCost: 0,
+    oracleText: 'Whenever you cast a noncreature spell, this token deals 1 damage to each opponent.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/8/187fe54c-7d0c-4225-9d46-3affbead897d.jpg?1783906133',  // tfin
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Mysidian Elder'] },
+  }),
+  defineCard({
+    id: 'token_squirrel', name: 'Squirrel', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Squirrel'], colors: ['G'],
+    power: 1, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/5/a/5a6ec62e-0e9b-4312-bfe8-cc85d76fd9e0.jpg?1783909765',  // tblb
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Chatter of the Squirrel'] },
+  }),
+  defineCard({
+    id: 'token_bird_chocobo', name: 'Bird', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Bird'], colors: ['G'],
+    power: 2, toughness: 2, manaCost: 0,
+    oracleText: 'Whenever a land you control enters, this token gets +1/+0 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/f/1fbc471d-5948-47fc-b7cc-81cc13a4cd15.jpg?1783906133',  // tfin
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Call the Mountain Chocobo'] },
+  }),
   defineCard({
     id: 'unstable-frontier', name: 'Unstable Frontier', set: 'CON',
     types: ['Land'], colors: [],
