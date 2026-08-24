@@ -4532,6 +4532,36 @@ export function execute(state, input) {
 }
 
 /**
+ * M202/N4 (audyt PR #73): warianty kosztu dodatkowego ZAPISANEGO NA OBIEKCIE
+ * („As an additional cost to cast this spell, exile a creature you control” —
+ * Fear of Abduction; „…exile a creature card from your graveyard” — Makeshift
+ * Mauler). Zwraca `null`, gdy karta takiego kosztu nie ma, albo listę celów
+ * wygnania (pusta = koszt nieopłacalny, czaru nie da się rzucić — CR 601.2h).
+ *
+ * Jeden odczyt dla WSZYSTKICH gałęzi oferty `cast_permanent` (z ręki, z flash,
+ * z impulsu). Dotąd każda gałąź liczyła sama, a dwie z trzech w ogóle nie
+ * wiedziały o koszcie: oferta powstawała bez `exileTargetId`, a walidacja ją
+ * odrzucała (klasa L48 — oferta ≠ walidacja; L41 — trzy kopie tej samej logiki).
+ */
+function exileAdditionalCostCandidates(state, playerId, object) {
+  if (object?.additionalCost?.exileCreatureFromGraveyard) {
+    return state.zones.graveyard.filter((oid) => {
+      const candidate = state.objects.get(oid);
+      return candidate?.zone === 'graveyard' && candidate.kind === 'creature'
+        && candidate.controllerId === playerId;
+    });
+  }
+  if (object?.additionalCost?.exileCreature) {
+    return state.zones.battlefield.filter((oid) => {
+      const candidate = state.objects.get(oid);
+      return candidate?.zone === 'battlefield' && candidate.kind === 'creature'
+        && candidate.controllerId === playerId;
+    });
+  }
+  return null;
+}
+
+/**
  * Projektuje wyłącznie informacje dostępne danemu graczowi.
  *
  * `legalCommands` jest kompletnym kontraktem dla kontrolera: każda oferowana
@@ -5678,6 +5708,15 @@ export function playerView(state, playerId) {
       if (!(object.keywords ?? []).includes('flash') && !grantedFlash) continue;
       if (effectiveSpellManaCost(state, object) > manaAvailableFor(object)) continue;
       if (!hasColorForCardId(state, playerId, object.cardId, 0)) continue;
+      // M202/N4: koszt dodatkowy na obiekcie obowiązuje także przy rzucie
+      // z flash (CR 601.2h) — oferta bez celu wygnania byłaby odrzucana (L48).
+      const flashExileCost = exileAdditionalCostCandidates(state, playerId, object);
+      if (flashExileCost) {
+        for (const exileId of flashExileCost) {
+          legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, exileTargetId: exileId }));
+        }
+        continue;
+      }
       legalCommands.unshift(command('cast_permanent', playerId, { objectId: id }));
     }
     // Aura z flash (CR 702.8 + CR 303.4, Benevolent Blessing): rzut jak instant
@@ -5766,7 +5805,21 @@ export function playerView(state, playerId) {
           const affordable = freeCast
             || (effectiveSpellManaCost(state, object) <= manaAvailableFor(object)
               && hasColorForCardId(state, playerId, object.cardId, 0));
-          if (affordable) legalCommands.unshift(command('cast_permanent', playerId, { objectId: id }));
+          // M202/N4 (zmierzone): rzut impulsem zwalnia z KOSZTU MANY, nie
+          // z kosztów dodatkowych (CR 601.2h/118.5). Bez tego oferta
+          // Fear of Abduction / Makeshift Mauler powstawała bez celu
+          // wygnania i była odrzucana przez walidację (L48: stół pokazywał
+          // akcję, która zawsze się nie udaje, a bot dostawał reject).
+          const impulseExileCost = exileAdditionalCostCandidates(state, playerId, object);
+          if (impulseExileCost) {
+            if (affordable) {
+              for (const exileId of impulseExileCost) {
+                legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, exileTargetId: exileId }));
+              }
+            }
+          } else if (affordable) {
+            legalCommands.unshift(command('cast_permanent', playerId, { objectId: id }));
+          }
         }
       }
     }
@@ -5837,34 +5890,19 @@ export function playerView(state, playerId) {
       const object = state.objects.get(id);
       if (object?.controllerId !== playerId || object.aura) continue;
       if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') continue;
-      // Additional cost "exile a creature you control" (Fear of Abduction):
-      // enumerujemy własne stwory — każdy to osobny wariant komendy cast_permanent.
-      // M177/B (Makeshift Mauler): additional cost „exile a creature card
-      // from your graveyard” — warianty po kartach stworów z WŁASNEGO grobu.
-      if (object.additionalCost?.exileCreatureFromGraveyard) {
-        const exilePool = state.zones.graveyard.filter((oid) => {
-          const candidate = state.objects.get(oid);
-          return candidate?.zone === 'graveyard' && candidate.kind === 'creature'
-            && candidate.controllerId === playerId;
-        });
-        for (const exileId of exilePool) {
+      // Additional cost "exile a creature you control" (Fear of Abduction) i
+      // M177/B „exile a creature card from your graveyard” (Makeshift Mauler):
+      // każdy legalny cel wygnania to osobny wariant komendy cast_permanent,
+      // a brak celu = brak rzutu (CR 601.2h). M202/N4: ten sam odczyt służy
+      // gałęzi flash i gałęzi impulsu — wcześniej znała go tylko ta gałąź.
+      const handExileCost = exileAdditionalCostCandidates(state, playerId, object);
+      if (handExileCost) {
+        for (const exileId of handExileCost) {
           if (effectiveSpellManaCost(state, object) > manaAvailableFor(object)) continue;
           if (!hasColorForCardId(state, playerId, object.cardId, 0)) continue;
           legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, exileTargetId: exileId }));
         }
-        continue; // bez wygnania z grobu czaru nie da się rzucić (CR 601.2h)
-      }
-      if (object.additionalCost?.exileCreature) {
-        const exilePool = state.zones.battlefield.filter((oid) => {
-          const candidate = state.objects.get(oid);
-          return candidate?.zone === 'battlefield' && candidate.kind === 'creature' && candidate.controllerId === playerId;
-        });
-        for (const exileId of exilePool) {
-          if (effectiveSpellManaCost(state, object) > manaAvailableFor(object)) continue;
-          if (!hasColorForCardId(state, playerId, object.cardId, 0)) continue;
-          legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, exileTargetId: exileId }));
-        }
-        continue; // obsłużone — nie generuj zwykłego cast_permanent
+        continue; // bez opłaconego kosztu dodatkowego czaru nie da się rzucić
       }
       // Morph/megamorph: zagranie twarzą w dół jako 2/2 za koszt morph ({3}) —
       // niezależnie od kosztu many karty (alternatywny koszt zagrania).
