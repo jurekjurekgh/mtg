@@ -422,7 +422,9 @@ export const REAL_CARDS = Object.freeze([
       }),
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'beginning_of_combat' },
+        // Oracle: „At the beginning of EACH combat…" — także w turze
+        // przeciwnika (deskryptor, nie warunek po nazwie karty — ADR 0002).
+        trigger: { event: 'beginning_of_combat', eachCombat: true },
         effect: { type: 'buff_land_creatures', power: 'source_power', toughness: 'source_power' },
       }),
     ],
@@ -2991,7 +2993,11 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         cost: { mana: 5, sacrificeSelf: true, colors: ['B'] },
-        targets: [{ type: 'opponent' }],
+        // M201 (znalezisko #4, CR 115.4): Oracle mówi „target PLAYER” —
+        // kontroler też jest legalnym celem (bywa sensowny: madness, efekty
+        // z grobu). Deskryptor `opponent` cicho zmieniał legalność celów;
+        // `prefer: 'opponent'` zostawia botom dotychczasowy wybór.
+        targets: [{ type: 'player', prefer: 'opponent' }],
         effect: [{ type: 'discard_cards', amount: 2, applyTo: 'target' }],
       }),
     ],
@@ -6731,6 +6737,15 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
           {
             type: 'create_token', cardId: 'token_powerstone', name: 'Powerstone',
             kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Powerstone'],
+            // Druk tokenu Powerstone: „{T}: Add {C}. This mana can't be spent
+            // to cast a nonartifact spell." Ograniczenie jest DESKRYPTOREM
+            // (`spendOnly`), więc przyszłe źródła many warunkowej (Sol Grail,
+            // powerstone'y z BRO) pójdą tą samą ścieżką (ADR 0002).
+            abilities: [createAbility({
+              type: ABILITY_TYPE.activated,
+              cost: { tap: true },
+              effect: { type: 'add_mana', amount: 1, colors: [], spendOnly: 'artifact' },
+            })],
             tapped: true,
           },
         ],
