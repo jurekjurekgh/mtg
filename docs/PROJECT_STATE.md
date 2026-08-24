@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-24 (M202: audyt PR #73 — 3 błędy naprawione, PR #74 otwarty)
+- **Ostatnia aktualizacja:** 2026-08-24 (M202: audyt PR #73 + poprawki właściciela A/B/C + brązowa odznaka 2/5 — PR #74 otwarty)
 - **Poprzednia:** 2026-08-23 (M201: audyt PR #72 + zgłoszenia właściciela F/M/M2 — PR #73 scalony)
 
 ## M202 — audyt PR #73: 3 błędy reguł/oferty (2026-08-24, PR #74)
@@ -91,7 +91,51 @@ zduplikowanych zdarzeń w strumieniu komendy (wrapper `processTriggers` z M201).
 **Środowisko:** `tools/table-tester` + `npm i` działa — **egress HTTPS NIE jest
 zablokowany**, wbrew `docs/setup/ENVIRONMENT.md` §4 (do korekty).
 
-**Stan:** `npm test` **3124/3124**, build **53 moduły / 2601.0 kB**,
+**Brązowa odznaka (wyzwanie właściciela) — 2 z 5 znalezisk w tej rundzie:**
+
+1. **CR 704.5m + CR 104.4b — jednoczesny deck-out dawał zwycięzcę zamiast
+   remisu.** `drawPlayerCards` i `performDrawStepDraw` kończyły partię w miejscu
+   dobrania i ogłaszały zwycięzcą „drugiego gracza”, więc przy „You and target
+   opponent each draw two cards” (Strike a Deal) z dwiema pustymi bibliotekami
+   o wyniku decydowała kolejność przetwarzania. Zmierzone: `wygrany: p2` →
+   `wygrany: null, remis: true`. Fix u root cause: próba dobrania z pustej
+   biblioteki to ZNACZNIK dla akcji stanowej (`state.emptyLibraryDraw`),
+   rozstrzygany razem z życiem i trucizną (jedno źródło reguły, L41).
+   6 testów, mutacyjnie 6/6 RED.
+2. **CR 702.170d — zaplotowana karta musi czekać na własną fazę main.** Bramka
+   timingu wisiała wyłącznie na `timing === 'sorcery'`, więc zaplotowany
+   INSTANT nie miał ograniczenia („Cast it **as a sorcery** on a later turn”).
+   Luka utajona (brak takiej karty w katalogu) — zamknięta teraz z bramką
+   `plottedCastAllowed` w walidacji i ofercie (L52, L48). 5 testów,
+   mutacyjnie 1 RED.
+
+**Zweryfikowane jako POPRAWNE w tym polowaniu (nie badać drugi raz):**
+trample + deathtouch (4 obrażenia przeniesione z 5/5 na gracza przez blokera
+3/3 — CR 702.19b), trample 5/5 i 6/6 vs dwóch blokerów (CR 510.1c), deathtouch
+z 0 obrażeń nie niszczy (CR 702.15b), bestow po śmierci gospodarza zostaje
+stworem (CR 702.103b), ochrona od koloru odpina equipment (CR 702.16d),
+hexproof nie chroni przed własnymi celami (CR 702.11b), menace (blok tylko
+2+), defender (nie atakuje, blokuje), tapnięty stwór nie atakuje i nie blokuje
+(CR 508.1a/509.1b), indestructible nie chroni przed poświęceniem (CR 702.21b),
+kasowanie par +1/+1 i −1/−1 (CR 704.5n), limit ręki w cleanup (CR 514.1),
+mana znika na końcu każdego kroku i fazy (CR 106.4), plot „późniejsza tura”
+(CR 702.170d), timing suspend (CR 702.62a/c), morph jako akcja specjalna poza
+stosem (CR 702.36e), land play raz na turę i tylko we własnej fazie main
+(CR 305.3), efekty „do końca tury” nie obejmują permanentów wchodzących później
+(CR 611.2c), deskryptory celów zgodne z Oracle (skan całego katalogu: 0
+rozjazdów), keyword-y wydrukowane zgodne z `keywords`/`station` (skan: 0
+rozjazdów). Fuzzer inwariantów: 18 partii, 8346 komend, **21 915 ofert
+sprawdzonych pod kątem „oferta = walidacja” — 0 naruszeń**, 0 naruszeń
+inwariantów stanu (strefy, tokeny, załączniki, walka, pula many).
+
+**Kandydaci na kolejne 3 znaleziska (wymagają dalszego budżetu):** CR 616.1 —
+kolejność efektów zastępczych (tarcza vs regeneracja) jest ustalona na sztywno
+w SBA zamiast wyboru kontrolera; CR 603.3b — kolejność APNAP na stosie
+(nie udało się zbudować repro w tej sesji); CR 510.1c — walidacja
+nielegalnego przydziału obrażeń (nie udało się dojść do decyzji
+`resolve_damage_assignment` z sondy).
+
+**Stan:** `npm test` **3135/3135**, build **53 moduły / 2603.9 kB**,
 `node --test test/bot-benchmark.test.js` **9/9**. Pełna macierz B0 — tylko na
 komendę właściciela (ADR 0018).
 
