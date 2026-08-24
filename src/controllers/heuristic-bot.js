@@ -1755,6 +1755,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const canAttackNow2 = Boolean(self) && !self.tapped && !self.summoningSickness;
             score += (beforeCombat && canAttackNow2) ? 10 + 2 * (self?.power ?? 0) : -20;
           }
+          // M202/J (uwaga właściciela, Merfolk Mesmerist): „{U}, {T}: Target
+          // player mills two cards” TAPUJE źródło, więc mill za cenę blokera ma
+          // sens tylko, gdy (a) jest kim blokować BEZ niego i (b) przeciwnik
+          // realnie mieści się w wyścigu bibliotek. Bez bramek bot millował co
+          // turę swoim JEDYNYM stworem, mając 18 kart przy 30 u przeciwnika —
+          // „bot prędzej zginie niż opróżni mi bibliotekę”. Liczba kart
+          // w bibliotece jest informacją jawną (CR 402.1), więc oba warunki są
+          // policzalne z widoku (FoW nienaruszone). Kary muszą PRZEBIĆ premię
+          // za mill — inaczej są martwe (klasa L3); warunki właściciela są
+          // łącznikiem „i”, więc niespełnienie KTÓREGOKOLWIEK gasi zdolność.
+          if ((effect.type === 'mill_cards' || effect.type === 'mill_from_bottom')
+            && (cmd.targets ?? []).includes(enemy(view)?.id)) {
+            const source = objectOnBoard(view, cmd.objectId);
+            const otherBlockers = myCreatures(view).filter((o) => o.id !== cmd.objectId
+              && !o.tapped && (o.power ?? 0) > 0).length;
+            if (source && !source.tapped && otherBlockers === 0) score -= 60;
+            const foeLibrary = view.zones.library.filter((o) => o.controllerId !== view.playerId).length;
+            if (foeLibrary > myLibraryCount(view)) score -= 60;
+          }
           // M146 (Twiddle — tryb Odkręcenie jako zdolność): jak przy czarach —
           // odkręcenie WŁASNEGO zatapniętego stwora ma wartość, cudzego to kara.
           if (effect.type === 'untap_permanent') {

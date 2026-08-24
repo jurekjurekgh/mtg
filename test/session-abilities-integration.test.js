@@ -99,7 +99,12 @@ test('log tłumaczy zdolności i tokeny na polski bez wycieku surowych typów', 
   // Hatchling) — hunter (L25).
   // Seed 2 po M197/K3 (warhammer +Lab Rats +Reassembling Skeleton z arkusza
   // kolekcji, manabaza przeliczona) — hunter (L25).
-  const session = createSession({ seed: 2, registry, decks });
+  // Seed 4 po M202/J (Merfolk Mesmerist milluje tylko z zapasowym blokerem
+  // i przy mniejszej bibliotece wroga — bot przestał millować co turę, więc
+  // przy seedzie 2 w tej partii nie było już żadnej aktywacji zdolności)
+  // — przelosowane hunterem (kolejne sprawdzone: 3 częściowo). Konwencja L25;
+  // ten test to dług odsetkowy (L53).
+  const session = createSession({ seed: 4, registry, decks });
   playOut(session);
   assert.ok(
     session.log.some((e) => e.text.includes('aktywuje zdolność')),
