@@ -644,6 +644,19 @@ export function legalActivatedAbilities(state, playerId) {
             }
           }
         }
+        // M203/2 (konwencja „prezentacja = enumeracja"): boty i gracz biorą
+        // PIERWSZĄ ofertę, więc kolejność jest treścią decyzji, nie szczegółem
+        // implementacji. Wcześniej pierwszą prezentowaną kombinację dawało
+        // odwrócenie listy przez `unshift` w playerView — czyli przypadek.
+        // Teraz: najpierw kombinacje NIEpoświęcające źródła zdolności (gracz
+        // rzadko chce oddawać permanent, którego zdolność aktywuje), a w
+        // ramach tego — wcześniejsze w kolejności pola bitwy (deterministyczne,
+        // ADR 0005).
+        const zoneRank = new Map(state.zones.battlefield.map((zid, index) => [zid, index]));
+        const comboPenalty = (combo) => (combo.includes(id) ? 1 : 0);
+        const comboRank = (combo) => combo.reduce((max, cid) => Math.max(max, zoneRank.get(cid) ?? 0), 0);
+        combos.sort((left, right) => (comboPenalty(left) - comboPenalty(right))
+          || (comboRank(left) - comboRank(right)));
         for (const combo of combos.slice(0, 12)) {
           out.push({ objectId: id, abilityIndex: index, ability, sacrificeCreatureIds: combo });
         }
@@ -827,8 +840,15 @@ export function legalActivatedAbilities(state, playerId) {
       // Cogwork Assembler — cel 'artifact' oferował zwykłe stwory).
       const candidates = opponentTarget
         ? state.players.filter((entry) => entry.id !== playerId).map((entry) => entry.id)
+        // M203/2: cel-gracz idzie przez WSPÓLNE `legalTargetCandidates` — ta
+        // gałąź miała własną enumerację `state.players`, więc deskryptor
+        // `prefer: 'opponent'` (Dementia Bat) był w niej MARTWY (L21), a
+        // poprawna kolejność brała się z odwrócenia `unshift` w playerView.
+        // Po zmianie konwencji na „prezentacja = enumeracja" (M203/2) brak
+        // preferencji wyszedł na wierzch: pierwszą ofertą było „odrzuć 2
+        // WŁASNE karty". Jedno źródło reguły zamiast dwóch kopii (L41).
         : anyPlayerTarget
-        ? state.players.map((entry) => entry.id)
+        ? legalTargetCandidates(state, playerId, targetSpec[0], object)
         : graveTarget
         ? state.zones.graveyard.filter((objectId) => {
           const target = state.objects.get(objectId);

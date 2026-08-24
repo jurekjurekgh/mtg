@@ -6668,7 +6668,11 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       timing: 'instant',
       // „Each opponent\" w formacie 1v1 = jedyny przeciwnik. Wybór poświęcanego
       // stwora należy do CELU (blokująca decyzja resolve_sacrifice_choice).
-      targets: [{ type: 'player' }],
+      // M203/2: deskryptor niesie `opponent: true` (jak Dreams of Steel and
+      // Oil) — bez niego rzucający był legalnym celem własnego „each
+      // opponent", czyli cel niezgodny z Oracle (CR 115.2: cel musi spełniać
+      // deskryptor celu). Dotąd „poprawny" cel brał się z kolejności ofert.
+      targets: [{ type: 'player', opponent: true }],
       effects: [
         { type: 'player_sacrifices_creature' },
         // Klauzula warunkowa (decyzja właściciela 2026-08-19): efekt kodujemy
