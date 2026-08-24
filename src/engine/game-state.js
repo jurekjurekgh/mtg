@@ -599,21 +599,22 @@ function reject(reason) { return { ok: false, events: [event('command_rejected',
  * draws a card"). Wspólny kod dla AKCJI TUROWEJ (drawStepTurnBasedAction,
  * ścieżka normalna) i starej komendy `draw_card` (zgodność replayów).
  *
- * Pusta biblioteka: CR 104.3c — gracz przegrywa, gdy próbuje dobrać z pustej
- * biblioteki. Zwracamy { ok: true }, bo akcja turowa doszła do skutku (partia
- * się kończy), a nie została odrzucona.
+ * Pusta biblioteka: CR 704.5m — gracz, który próbował dobrać z pustej
+ * biblioteki, przegrywa, ale rozstrzyga to AKCJA STANOWA w najbliższym
+ * przebiegu (CR 704), a nie ta funkcja. Zwracamy { ok: true }, bo akcja
+ * turowa doszła do skutku (próba dobrania), a nie została odrzucona.
  */
 function performDrawStepDraw(state, playerId, objectId = null) {
   const topId = objectId ?? state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
   const object = topId ? state.objects.get(topId) : null;
   if (!object) {
     if (state.zones.library.every((id) => state.objects.get(id)?.controllerId !== playerId)) {
-      const winner = state.players.find((p) => p.id !== playerId);
-      state.status = 'finished';
-      state.winnerId = winner.id;
-      const lost = event('player_lost', { playerId, reason: 'empty_library', winnerId: winner.id });
-      state.events.push(lost);
-      return { ok: true, events: [lost] };
+      // M202 (CR 704.5m + 104.4b): próba dobrania z pustej biblioteki jest
+      // ZNACZNIKIEM dla akcji stanowej, nie natychmiastowym końcem gry —
+      // dokładnie jak w `drawPlayerCards`. Dzięki temu jednoczesne przegrane
+      // (np. obie biblioteki puste) dają remis, a nie zwycięzcę z kolejności.
+      state.emptyLibraryDraw = { ...(state.emptyLibraryDraw ?? {}), [playerId]: true };
+      return { ok: true, events: [] };
     }
     return { ok: false, reason: 'invalid_draw', events: [] };
   }

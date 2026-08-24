@@ -125,9 +125,22 @@ export function runStateBasedActions(state) {
     for (const player of state.players) {
       const isZeroLife = player.life <= 0;
       const isPoisoned = (player.poison ?? 0) >= 10;
-      if (!isZeroLife && !isPoisoned) continue;
-      losers.push({ playerId: player.id, reason: isPoisoned ? 'poison_ten' : 'life_zero' });
+      // M202 (CR 704.5m): gracz, który od ostatniego przebiegu akcji stanowych
+      // próbował dobrać kartę z pustej biblioteki, przegrywa. Rozstrzygamy to
+      // TUTAJ, razem z życiem i trucizną, bo dopiero wtedy wiadomo, czy
+      // przegranych jest więcej niż jeden — a wtedy CR 104.4b daje REMIS.
+      // Wcześniej ścieżki dobrania kończyły grę natychmiast, więc przy
+      // jednoczesnym deck-oucie („You and target opponent each draw two
+      // cards”) zwycięzcę wyznaczała kolejność przetwarzania.
+      const drewFromEmpty = Boolean(state.emptyLibraryDraw?.[player.id]);
+      if (!isZeroLife && !isPoisoned && !drewFromEmpty) continue;
+      losers.push({
+        playerId: player.id,
+        reason: drewFromEmpty ? 'empty_library' : (isPoisoned ? 'poison_ten' : 'life_zero'),
+      });
     }
+    // Znacznik dotyczy wyłącznie tego przebiegu akcji stanowych.
+    if (state.emptyLibraryDraw) state.emptyLibraryDraw = {};
     if (losers.length > 0) {
       // CR 104.4b: „If the game somehow enters a state in which all remaining
       // players lose simultaneously, the game is a draw." Wcześniej pętla

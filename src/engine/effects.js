@@ -426,18 +426,19 @@ export function drawPlayerCards(state, playerId, amount, source = 'effect') {
     drawn += 1;
     state.events.push(event('card_drawn', { playerId, fromId: topId, object: drawnObj, source }));
   }
-  // CR 104.3c: gracz, który MUSI dobrać więcej kart, niż ma w bibliotece,
-  // dobiera pozostałe, a następnie PRZEGRYWA. Poprzednio efekt draw_cards
-  // cicho pomijał brak kart (przegrana tylko z próby dobrania w kroku draw) —
-  // Phyrexian Rager / Evangel / Glitch Ghost Surveyor nie kończyły gry przy
-  // deck-out (bug złotej odznaki; spójnie z komendą draw_card).
+  // CR 704.5m: gracz, który MUSI dobrać więcej kart, niż ma w bibliotece,
+  // dobiera pozostałe, a następnie PRZEGRYWA — ale przegrana jest AKCJĄ
+  // STANOWĄ (CR 704), a nie natychmiastowym skutkiem efektu. Poprzednio gra
+  // kończyła się tutaj, więc o wyniku decydowała KOLEJNOŚĆ przetwarzania:
+  // „You and target opponent each draw two cards” (Strike a Deal) przy dwóch
+  // pustych bibliotekach ogłaszało zwycięzcą tego, kto dobierał DRUGI —
+  // tymczasem CR 104.4b mówi, że gdy wszyscy pozostali gracze przegrywają
+  // jednocześnie, partia jest REMISEM. Ten sam błąd był już naprawiony dla
+  // życia/trucizny w `runStateBasedActions`; ścieżka dobrania go nie miała.
+  // Znacznik kasuje przebieg SBA (CR 704.5m: „since the last time state-based
+  // actions were checked”).
   if (drawn < amount && state.status === 'active') {
-    const winner = state.players.find((pl) => pl.id !== playerId);
-    state.status = 'finished';
-    state.winnerId = winner?.id ?? null;
-    state.events.push(event('player_lost', {
-      playerId, reason: 'empty_library', winnerId: winner?.id ?? null,
-    }));
+    state.emptyLibraryDraw = { ...(state.emptyLibraryDraw ?? {}), [playerId]: true };
   }
 }
 
