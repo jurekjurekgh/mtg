@@ -65,7 +65,33 @@ nie-stworów, wyłączenie grupowania `combat_damage_to_you`, `process.env`
 w heuristic-bocie. Pomiar: 32 partie headless / 17 816 komend / 0
 zduplikowanych zdarzeń w strumieniu komendy (wrapper `processTriggers` z M201).
 
-**Stan:** `npm test` **3116/3116**, build **53 moduły / 2598.3 kB**,
+**Poprawki właściciela z rozgrywki (2026-08-24):**
+
+- **A** — ręka przeciwnika: prawdziwy rewers karty MTG ze Scryfall (ten sam
+  `CARD_BACK_URL` co zakryte permanenty) w pełnym kaflu `size: 'sm'`, czyli
+  w rozmiarze reszty ręki i stołu; zaślepka CSS usunięta. Tożsamość ukryta
+  (CR 402.2): jeden wspólny adres dla wszystkich kart — test pilnuje, że nie
+  ma ich kilku.
+- **B** — „Podejrzyj kartę” przy opcji podglądało kartę UŻYWAJĄCĄ zdolności
+  (Ghost Warden 4× ta sama karta). Root cause: `cardIdForChoiceOption` brał
+  `objectId` przed celami, a cała polityka żyła w domknięciu `bootstrapTable`
+  bez testu (L5). Fix: czysta `previewCardIdOfOption` (cele przed źródłem)
+  + 5 testów; przy okazji `resolve_trigger_target` (`targetIds`) zyskał lupę,
+  której nie miał wcale.
+- **C** (Żywy Tester) — etykiety triggerów na kaflach: „Trigger <fraza
+  rzeczownikowa>” dawało zdanie nie po polsku (15× w jednej partii); M80
+  pilnował tego na ręcznej liście 7 kart (L26). Fix + **strażnik całego
+  katalogu**; weryfikacja dwustronna na artefakcie 15 → 0.
+- **D** (zgłoszone, bez fixa) — pierwsza oferta aury wskazuje stwora
+  PRZECIWNIKA (bot liczy poprawnie, człowiek klika stratę). Trzecie wcielenie
+  klasy N2: `playerView` dokłada oferty przez `unshift` (prezentacja =
+  odwrotność enumeracji), a triggery przez `push`. Do decyzji właściciela:
+  jedna zmiana konwencji + pomiar benchmarku zamiast trzech łatek.
+
+**Środowisko:** `tools/table-tester` + `npm i` działa — **egress HTTPS NIE jest
+zablokowany**, wbrew `docs/setup/ENVIRONMENT.md` §4 (do korekty).
+
+**Stan:** `npm test` **3124/3124**, build **53 moduły / 2601.0 kB**,
 `node --test test/bot-benchmark.test.js` **9/9**. Pełna macierz B0 — tylko na
 komendę właściciela (ADR 0018).
 
