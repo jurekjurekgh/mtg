@@ -2264,7 +2264,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // or {W}) — jednostka many ['U','R','W'] opłaca każdy z tych pipów (MtG:
     // gracz wybiera kolor przy produkcji; pula trzyma ją jako wielokolorową).
     const colors = effect.colors ?? src?.colors ?? [];
-    addMana(state, sourceObject.controllerId, effect.amount ?? 1, { colors, fromTreasure: Boolean(effect.fromTreasure) });
+    addMana(state, sourceObject.controllerId, effect.amount ?? 1, {
+      colors, fromTreasure: Boolean(effect.fromTreasure),
+      // M201 (znalezisko #3): ograniczenie wydania jedzie z deskryptora
+      // zdolności do puli (Powerstone: „only to cast artifact spells”).
+      spendOnly: effect.spendOnly ?? null,
+    });
     return;
   }
   if (effect.type === 'pay_life') {
@@ -4280,6 +4285,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.pendingSpringbloom = {
       controllerId,
       sourceId: sourceObject.id,
+      // M201/F: nazwa ŹRÓDŁA jedzie w decyzji — kolejne zdarzenia (resolved,
+      // skipped) też muszą nazwać właściwą kartę, nie pierwszą, która
+      // wprowadziła mechanikę.
+      cardId: sourceObject?.cardId ?? null,
       landIds: lands,
       // Batch 46 (Roiling Regrowth): „Sacrifice a land." jest OBOWIĄZKOWE,
       // w odróżnieniu od Springbloom Druida („you may sacrifice a land").
@@ -4287,7 +4296,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       // który jej nie ma (CR 601.2h — koszt/efekt obowiązkowy).
       mandatory: Boolean(effect.mandatory),
     };
-    state.events.push(event('springbloom_choice_required', { controllerId }));
+    // M201/F (zgłoszenie właściciela): zdarzenie niesie ŹRÓDŁO efektu —
+    // mechanika nazywa się po pierwszej karcie, która ją wprowadziła
+    // (Springbloom Druid), ale używa jej też Roiling Regrowth. Bez cardId
+    // warstwa opisu pisała w logu cudzą nazwę (ADR 0002 w warstwie opisu).
+    state.events.push(event('springbloom_choice_required', {
+      controllerId, cardId: sourceObject?.cardId ?? null,
+    }));
     return;
   }
   // Might of the Masses (2XM): target creature gets +1/+1 per creature you control
@@ -4616,6 +4631,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.pendingRevealExile = {
       playerId: sourceObject.controllerId,
       opponentId: targetId,
+      cardId: sourceObject?.cardId ?? null, // M201/F: źródło do opisów
       handIds,
       graveIds,
       chosenHand: null,
@@ -4629,6 +4645,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.events.push(event('reveal_exile_required', {
       playerId: sourceObject.controllerId, opponentId: targetId,
       handCardIds: handIds, graveCardIds: graveIds,
+      // M201/F (ta sama klasa co springbloom): opis nazywa ŹRÓDŁO z danych,
+      // nie zaszytą w kodzie nazwę karty.
+      cardId: sourceObject?.cardId ?? null,
     }));
     return true;
   }

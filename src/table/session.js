@@ -537,6 +537,17 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
   const isPlayer = helpers.isPlayer ?? ((id) => names[id] != null);
   const whoN = (id) => names[id] ?? id;
   /**
+   * M201/F: prefiks „<Nazwa karty>: ” z DANYCH zdarzenia. Mechaniki bywają
+   * nazwane po pierwszej karcie, która je wprowadziła (springbloom, reveal
+   * exile), a używa ich potem kilka kart — zaszyta nazwa w opisie kłamie
+   * (ADR 0002 w warstwie prezentacji). Brak źródła = brak prefiksu.
+   */
+  const srcName = (ev) => {
+    const cardId = ev?.cardId ?? ev?.sourceCardId ?? null;
+    const label = cardId ? nameOf(cardId) : null;
+    return label ? `${label}: ` : '';
+  };
+  /**
    * M199: „czy pokazać ukrytą kartę tego gracza?". Poza trybem FoW ujawniamy
    * karty człowieka (to jego własna wiedza — CR 400.2 pozwala mu patrzeć na
    * swoją rękę). W trybie FoW nikt nie jest uprzywilejowany: zapis dla AI
@@ -590,6 +601,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         return null;
       }
       case 'command_rejected': return `Odrzucono: ${e.reason ?? 'nielegalna komenda'}`;
+      // M201 (znalezisko #1, CR 506.4c): permanent przestał być stworem i
+      // wypadł z walki — gracz musi wiedzieć, dlaczego atak zniknął.
+      case 'permanent_removed_from_combat':
+        return e.reason === 'controller_changed'
+          ? `${nameOfObject(e.objectId)} zmienia kontrolera i wychodzi z walki (CR 506.4)`
+          : `${nameOfObject(e.objectId)} przestaje być stworem i wychodzi z walki`;
       case 'cant_block_granted': return `${nameOfObject(e.objectId)} nie może blokować do końca tury`;
       // M200/L: ograniczenie TUREWCZE (Ruthless Invasion) — jedno zdarzenie
       // zamiast N per-stworowych; opis nazywa wyjątek typu.
@@ -1492,14 +1509,20 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'fertile_thicket_resolved': return e.skipped
         ? `Fertile Thicket: ${whoN(e.controllerId)} odkłada wszystkie odsłonięte karty na spód`
         : `Fertile Thicket: ${whoN(e.controllerId)} kładzie wybranego landa na wierzch, resztę na spód`;
-      case 'springbloom_choice_required': return `Springbloom Druid: ${whoN(e.controllerId)} może poświęcić land`;
-      case 'springbloom_resolved': return `Springbloom Druid: ${whoN(e.controllerId)} poświęca land — szuka do dwóch bazowych lądów`;
-      case 'springbloom_skipped': return `Springbloom Druid: ${whoN(e.controllerId)} nie poświęca landa`;
+      // M201/F (zgłoszenie właściciela): mechanika nazywa się po pierwszej
+      // karcie (Springbloom Druid), ale używa jej też Roiling Regrowth —
+      // log pisał więc cudzą nazwę („co to za druid?”). Nazwa idzie z danych
+      // zdarzenia; brak źródła = neutralny opis, nigdy zaszyta nazwa.
+      case 'springbloom_choice_required': return `${srcName(e)}${whoN(e.controllerId)} może poświęcić land`;
+      // M201/C1: jeden czasownik po podmiocie (druga część jako fraza
+      // rzeczownikowa) — inaczej „Poświęcasz land — szuka…”.
+      case 'springbloom_resolved': return `${srcName(e)}${whoN(e.controllerId)} poświęca land — szukanie do dwóch bazowych lądów`;
+      case 'springbloom_skipped': return `${srcName(e)}${whoN(e.controllerId)} nie poświęca landa`;
       case 'optional_draw_required': return `${whoN(e.playerId)} może dobrać kartę (potem odrzuci — Force Away)`;
       case 'optional_draw_resolved': return e.drew
         ? `${whoN(e.playerId)} dobiera kartę (i zaraz odrzuci)`
         : `${whoN(e.playerId)} nie dobiera karty`;
-      case 'proliferate_started': return `${whoN(e.playerId)} wykonuje proliferate — wskazuje permanenty/graczy z licznikami`;
+      case 'proliferate_started': return `${whoN(e.playerId)} wykonuje proliferate — wybór permanentów/graczy z licznikami`;
       // M119/Z2: „2 celów” → „2 cele” (odmiana na piechotę myliła 2–4 z 5+).
       case 'proliferated': return `Proliferate: ${e.count} ${polishPlural(e.count, 'cel', 'cele', 'celów')} dostaje dodatkowe liczniki`;
       // M96: bez tej gałęzi log pokazywał dosłownie „proliferate_resolved"
@@ -1518,18 +1541,22 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
           ? `${whoN(e.playerId)} odsłania ${e.amount} ${polishPlural(e.amount, 'kartę', 'karty', 'kart')} z wierzchu biblioteki: ${names}`
           : `${whoN(e.playerId)} odsłania ${e.amount} ${polishPlural(e.amount, 'kartę', 'karty', 'kart')} z wierzchu biblioteki`;
       }
-      case 'reveal_exile_required': return `Dreams of Steel and Oil: ${whoN(e.playerId)} ogląda rękę i grób gracza ${whoN(e.opponentId)} i wybiera kartę do wygnania`;
+      // M201/C1 (zgłoszenie właściciela): zdanie miało DWA czasowniki
+      // („ogląda … i wybiera”), a odmiana na 2. osobę zmienia tylko pierwszy
+      // („oglądasz … i wybiera”). Jeden czasownik = brak rozjazdu osób
+      // (strażnik `test/m201-opis-osoba-i-nazwy.test.js` pilnuje klasy).
+      case 'reveal_exile_required': return `${srcName(e)}${whoN(e.playerId)} wybiera kartę do wygnania z ręki i grobu gracza ${whoN(e.opponentId)}`;
       // M99: gdy w ręce nie ma kandydata (artefakt/stwór), engine pomija etap
       // i wysyła cardId: null — log musi to powiedzieć wprost, a nie pokazywać
       // „wskazuje ? z ręki przeciwnika" (symetrycznie do wariantu grobu).
       case 'reveal_exile_hand_chosen': return e.cardId
         ? `${whoN(e.playerId)} wskazuje ${nameOf(e.cardId)} z ręki przeciwnika`
         : `${whoN(e.playerId)} nie wskazuje karty z ręki przeciwnika`;
-      case 'reveal_exile_grave_required': return `Dreams of Steel and Oil: ${whoN(e.playerId)} wybiera kartę z grobu przeciwnika do wygnania`;
+      case 'reveal_exile_grave_required': return `${srcName(e)}${whoN(e.playerId)} wybiera kartę z grobu przeciwnika do wygnania`;
       case 'reveal_exile_grave_chosen': return e.cardId
         ? `${whoN(e.playerId)} wskazuje ${nameOf(e.cardId)} z grobu przeciwnika`
         : `${whoN(e.playerId)} nie wskazuje karty z grobu`;
-      case 'reveal_exile_resolved': return `Dreams of Steel and Oil: wybrane karty zostają wygnane`;
+      case 'reveal_exile_resolved': return `${srcName(e)}wybrane karty zostają wygnane`;
       case 'reveal_order_resolved': return `Stomping Slabs: ${whoN(e.playerId)} układa odsłonięte karty na spodzie biblioteki`;
       case 'speed_changed': return `${whoN(e.playerId)} zwiększa prędkość (speed: ${e.speed})`;
       case 'turned_face_up': return `${nameOf(e.cardId)} zostaje obrócony twarzą do góry`;
@@ -1753,7 +1780,13 @@ export function createSession(config) {
     // M73d (C): cel-gracz (np. Inspiration „target player draws") — imię
     // zamiast „?" (audyt żywym testerem: „rzuca Inspiration → cel: ?").
     if (state.players.some((pl) => pl.id === objectId)) return who(objectId);
-    const object = state.objects.get(objectId);
+    // M201/M (zgłoszenie właściciela, CR 603.10): obiekt mógł PRZESTAĆ
+    // ISTNIEĆ, a odwołanie do niego wciąż żyje — cel czaru na stosie po
+    // skontrowaniu celu (Frightful Delusion zostaje na stosie do odrzucenia
+    // karty), wpis logu, etykieta akcji. Wcześniej wypadał tu znak zapytania
+    // („Frightful Delusion → cel: ?”). Ostatnia znana tożsamość jedzie
+    // w rejestrze LKI silnika (jedyny choke point zmian stref).
+    const object = state.objects.get(objectId) ?? state.lastKnownObjects?.get(objectId) ?? null;
     if (!object) return '?';
     // Face-down (morph/megamorph, CR 708.2): tożsamość ukryta przed
     // przeciwnikiem — „morph" zamiast „?" w etykietach celów/logu
@@ -2274,6 +2307,33 @@ export function createSession(config) {
   }
 
   /**
+   * M201/N1b (zgłoszenie właściciela): pętla bota może rzucić wyjątkiem
+   * (w przeglądarce zrobił to debug `process.env` — M201/N1). Taki wyjątek
+   * NIE MOŻE wyjść poza sesję: w UI leciał przez handler kliknięcia, więc
+   * render się nie wykonywał, log milczał, a stan gry był już po komendzie
+   * gracza — stół wyglądał na zawieszony („nic się nie dzieje”, a drugi klik
+   * dawał `mulligan_not_your_decision`). Klasa L24: skutek bez śladu nie
+   * istnieje dla gracza.
+   *
+   * Awarię ZGŁASZAMY (log + pole `internalError`), nie maskujemy: partia się
+   * zatrzymuje w miejscu, w którym pętla padła, ale gracz wie dlaczego i może
+   * wyeksportować replay.
+   */
+  function advanceGuarded() {
+    try {
+      advance();
+      return null;
+    } catch (error) {
+      const message = error?.message ?? String(error);
+      isBotAdvancing = false;
+      botActing = false;
+      awaitingBotAck = false;
+      sessionLog('rejection', `Błąd wewnętrzny stołu: ${message}. Partia zatrzymana — wyeksportuj zapis i zgłoś problem.`);
+      return message;
+    }
+  }
+
+  /**
    * Czy człowiek ma teraz realną decyzję? Sam pass, samo tapnięcie lądu,
    * pusta deklaracja ataku/bloków i rozstrzygnięcie walki bez odpowiedzi
    * NIE są decyzją — auto-pass ma przewijać sekcje tury, w których gracz
@@ -2440,14 +2500,14 @@ export function createSession(config) {
         // komunikat w „Rozgrywka" (UX właściciela 2026-08-15).
         if (e.type === 'card_drawn' && e.playerId === HUMAN_ID) ownDraw = true;
       }
-      advance();
+      const internalError = advanceGuarded();
       // M100/E8: modal własnego dobrania pokazuje parę nagłówkową tury
       // („Tura N — Ty" + „Ty dobiera: X"), nie samą linię — kontekst M98.
       if (ownDraw && pendingTurnHeader && pendingTurnHeader.text.startsWith(`Tura ${state.turn.number} — `)) {
         botMoves.unshift(pendingTurnHeader);
       }
       if (ownDraw && pauseOnBotMoves && !awaitingBotAck) awaitingBotAck = true;
-      return { ok: true, botPause: awaitingBotAck };
+      return { ok: true, botPause: awaitingBotAck, ...(internalError ? { internalError } : {}) };
     },
     /** Sesja czeka na potwierdzenie istotnego zagraniu bota (klik gracza). */
     get botPausePending() { return awaitingBotAck; },
@@ -2458,8 +2518,8 @@ export function createSession(config) {
      */
     continueBotPlay() {
       if (!awaitingBotAck) return { ok: true, botPause: false };
-      advance();
-      return { ok: true, botPause: awaitingBotAck };
+      const internalError = advanceGuarded();
+      return { ok: true, botPause: awaitingBotAck, ...(internalError ? { internalError } : {}) };
     },
     /**
      * Feature 2026-08-11: po zmianie zbioru wyciszonych opcji przewija grę,
@@ -2468,8 +2528,8 @@ export function createSession(config) {
      * nadal wymaga decyzji.
      */
     recheckAutoPass() {
-      advance();
-      return { ok: true, botPause: awaitingBotAck };
+      const internalError = advanceGuarded();
+      return { ok: true, botPause: awaitingBotAck, ...(internalError ? { internalError } : {}) };
     },
     /** Odtwarza zapis partii w TYM samym składzie talii; zwraca podsumowanie. */
     resumeReplayText(text) {

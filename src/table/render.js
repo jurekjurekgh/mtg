@@ -286,7 +286,7 @@ const ACTION_RANK = Object.freeze({
  * wartość X, wybór atakującego dla ninjutsu albo decyzja scry/backup. Combat
  * pozostaje jawnie enumerowany, bo ma osobny model deklaracji w engine.
  */
-function choiceRequestGroupKey(command) {
+export function choiceRequestGroupKey(command) {
   // M87: tryby modalne (Steel Sabotage Kontr vs Odbicie) i warianty
   // poświęcenia (Village Rites) nie mogą wpadać do jednego „Cel czaru".
   if (command.type === 'cast_spell' && (command.targets?.length || command.sacrificeTargetId || command.modeIndex != null)) {
@@ -368,6 +368,21 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_reveal_order') return 'resolve_reveal_order';
   if (command.type === 'resolve_mulligan_choice') return 'resolve_mulligan_choice';
   if (command.type === 'resolve_mulligan_bottom_choice') return 'resolve_mulligan_bottom_choice';
+  // M201/C2 (zgłoszenie właściciela, Dreams of Steel and Oil): wybór karty
+  // z ręki/grobu przeciwnika był listą luźnych przycisków „wygnaj z ręki: X”.
+  if (command.type === 'resolve_reveal_exile_hand') return 'resolve_reveal_exile_hand';
+  if (command.type === 'resolve_reveal_exile_grave') return 'resolve_reveal_exile_grave';
+  // M201/D (zgłoszenie właściciela, Mindstab): rodzina „darmowy rzut
+  // z wygnania” — rzut (per zestaw celów) i rezygnacja to JEDNA decyzja.
+  if (command.type === 'resolve_suspend_cast') return 'resolve_suspend_cast';
+  if (command.type === 'resolve_rebound_cast') return 'resolve_rebound_cast';
+  if (command.type === 'resolve_madness_cast') return 'resolve_madness_cast';
+  // Pozostałe decyzje wielowariantowe bez klucza (znalezione strażnikiem
+  // M201/D): podgląd kart i kopiowanie celów też są jednym wyborem.
+  if (command.type === 'resolve_look_top_choice') return 'resolve_look_top_choice';
+  if (command.type === 'resolve_satyr_look_choice') return 'resolve_satyr_look_choice';
+  if (command.type === 'resolve_copy_targets') return 'resolve_copy_targets';
+  if (command.type === 'resolve_reveal_choice') return 'resolve_reveal_choice';
   return null;
 }
 
@@ -3128,7 +3143,7 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
 export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, onDayNightClick = null, onPoisonCardClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
   const view = session.view();
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
-  for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) clear(els[key]);
+  for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'handEnemy', 'waitingZone', 'actions', 'log']) clear(els[key]);
 
   // Hover (desktop): powiększona karta pod kursorem — ta sama ilustracja co na
   // kaflu, w rozmiarze `large`, a przy jej braku syntetyczna twarz. Scroll nad
@@ -3225,6 +3240,10 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   }
 
   // --- Bitwiska (wróg u góry, Ty na dole) ------------------------------
+  // M201/B: ręka bota (rewersy + licznik) nad jego lądami.
+  renderEnemyHand(els.handEnemy, els.handEnemyLabel, view, session, foe?.id);
+  // M201/A2: poczekalnia wygnania (suspend/plot/impuls/rebound/madness).
+  renderWaitingExile(els.waitingZone, els.waitingWrap, view, session, { onCardClick, hover, onCardDoubleClick });
   renderBattlefield(els.bfEnemy, view, session, foe?.id, true, onCardClick, hover, onCardDoubleClick);
   renderBattlefield(els.bfOwn, view, session, me?.id, false, onCardClick, hover, onCardDoubleClick);
 
@@ -3653,6 +3672,80 @@ function renderZonePile(host, view, session, controllerId, onCardClick, hover, o
     return;
   }
   for (const object of pile) tile(host, cardInfo(session, object), { session, onCardClick, hover, onCardDoubleClick });
+}
+
+/**
+ * M201/B (zgłoszenie właściciela): ręka PRZECIWNIKA nad jego lądami —
+ * rewersy kart, lustrzanie do własnej ręki. Tożsamość zostaje ukryta
+ * (CR 402.2: karty w ręce są prywatne), jawna jest wyłącznie LICZBA, którą
+ * gracz i tak może policzyć w regułach — dotąd stół jej nie pokazywał.
+ */
+export function renderEnemyHand(host, label, view, session, enemyId) {
+  const count = (view.zones?.hand ?? []).filter((o) => o.controllerId === enemyId).length;
+  if (label) label.textContent = `Ręka przeciwnika: ${count} ${polishPluralCount(count, 'karta', 'karty', 'kart')}`;
+  if (!host) return count;
+  if (count === 0) {
+    div(host, 'zone-empty', 'Ręka przeciwnika pusta');
+    return 0;
+  }
+  for (let i = 0; i < count; i += 1) div(host, 'card-back', '');
+  return count;
+}
+
+/**
+ * M201/A2 (zgłoszenie właściciela, Mindstab): „poczekalnia” wygnania —
+ * karty, które technicznie leżą w exile, ale CZEKAJĄ na swój moment:
+ * suspend (CR 702.62a — liczniki czasu), plot (CR 702.168a), impuls
+ * („zagraj do końca tury”), rebound (CR 702.97), madness (CR 702.35).
+ * Dotąd wpadały do ukrytego worka i gracz nie wiedział ani co tam jest,
+ * ani ile liczników zostało.
+ *
+ * CR 406.3: wygnanie jest domyślnie ODKRYTE — pokazujemy karty obu graczy
+ * (zakryte wygnanie przeciwnika zostaje bezimienne, `hidden` z widoku).
+ * Sekcja chowa się, gdy nie ma na co patrzeć (nie dokładamy pustego boksu
+ * do układu stołu — uwaga właściciela z M198/A).
+ */
+export function waitingExileEntries(view) {
+  return (view.zones?.exile ?? []).filter((o) => o.suspended || o.plotted || o.plottedAtTurn != null
+    || o.playableWithoutPaying || o.reboundReady || o.madnessReady);
+}
+
+/** Opis stanu oczekiwania — jedno źródło dla kafla i dla podpowiedzi. */
+export function waitingExileStatus(object) {
+  const parts = [];
+  if (object.suspended) {
+    const n = object.timeCounters ?? 0;
+    parts.push(n > 0
+      ? `Zawieszona · ⏳ ${n} ${polishPluralCount(n, 'licznik', 'liczniki', 'liczników')} czasu`
+      : 'Zawieszona · ostatni licznik zdjęty — rzut bez kosztu many');
+  }
+  if (object.plotted || object.plottedAtTurn != null) {
+    parts.push(object.plottedAtTurn != null
+      ? `Plot · rzut bez kosztu od tury ${object.plottedAtTurn + 1}`
+      : 'Plot · rzut bez kosztu w kolejnej turze');
+  }
+  if (object.playableWithoutPaying) {
+    parts.push(object.playableUntilTurn != null
+      ? `Impuls · zagrywalna do końca tury ${object.playableUntilTurn}`
+      : 'Impuls · zagrywalna bez płacenia');
+  }
+  if (object.reboundReady) parts.push('Rebound · rzut w Twoim upkeepie');
+  if (object.madnessReady) parts.push('Madness · czeka na decyzję rzutu');
+  return parts.join(' · ');
+}
+
+export function renderWaitingExile(host, wrap, view, session, { onCardClick, hover, onCardDoubleClick } = {}) {
+  const entries = waitingExileEntries(view);
+  if (wrap) wrap.hidden = entries.length === 0;
+  if (!host || entries.length === 0) return 0;
+  for (const object of entries) {
+    const cell = div(host, 'waiting-cell');
+    const owner = PLAYER_NAMES[object.controllerId] ?? object.controllerId;
+    div(cell, 'waiting-owner', owner);
+    tile(cell, cardInfo(session, object), { session, size: 'sm', onCardClick, hover, onCardDoubleClick });
+    div(cell, 'waiting-status', waitingExileStatus(object));
+  }
+  return entries.length;
 }
 
 function renderExile(host, view, session, onCardClick, hover, onCardDoubleClick = null) {

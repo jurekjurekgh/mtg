@@ -109,6 +109,12 @@ function bootstrapTable() {
     graveOwn: el('grave-own'),
     exileZone: el('exile-zone'),
     hand: el('hand'),
+    // M201/B + A2 (zgłoszenia właściciela): ręka bota (rewersy) i poczekalnia
+    // wygnania (suspend/plot/impuls) — sekcje stołu, nie inspektora stref.
+    handEnemy: el('hand-enemy'),
+    handEnemyLabel: el('hand-enemy-label'),
+    waitingZone: el('waiting-zone'),
+    waitingWrap: el('waiting-wrap'),
     actions: el('actions'),
     log: el('log'),
     turnHistory: el('turn-history'),
@@ -487,6 +493,11 @@ function bootstrapTable() {
       // wewnątrz wizarda (cast_spell z targets w entry.request) ptaszek
       // nie pojawiał się — auto-pass nie mógł pominąć takiego czaru.
       ignoredOptionKeys, onToggleIgnoredOption: toggleIgnoredOption,
+      // M201/C2: karta wskazywana przez opcję → podgląd pełnoekranowy.
+      // Identyfikator karty bierzemy z PEŁNEGO stanu sesji (widok chowa
+      // cardId kart z ręki przeciwnika — FoW), dokładnie jak commandLabel.
+      onOpenCard: openCardFullscreenByCardId,
+      cardIdOfOption: (option) => cardIdForChoiceOption(option),
       onResponse: (response) => {
         hideModal('choice-request');
         play(response.value);
@@ -575,6 +586,24 @@ function bootstrapTable() {
    * `cardId` z eventu). Dane karty czytamy z registry (analogicznie do
    * `cardInfoForFullscreen`, ale bez obiektu gry).
    */
+  /**
+   * M201/C2: karta, której dotyczy opcja decyzji (do podglądu w modalu).
+   * Generyczne: bierzemy pierwszy identyfikator obiektu, jaki niesie komenda,
+   * i tłumaczymy go na cardId przez pełny stan sesji. Brak karty = brak lupy.
+   */
+  function cardIdForChoiceOption(option) {
+    if (!session || !option || typeof option !== 'object') return null;
+    if (typeof option.cardId === 'string' && session.cardDetails(option.cardId)) return option.cardId;
+    const candidates = [option.cardId, option.objectId, option.targetId, option.keepId,
+      option.sacrificeTargetId, option.chosenCardId, ...(option.targets ?? []), ...(option.cardIds ?? [])];
+    for (const id of candidates) {
+      if (typeof id !== 'string') continue;
+      const cardId = session.state?.objects?.get(id)?.cardId ?? null;
+      if (cardId && session.cardDetails(cardId)) return cardId;
+    }
+    return null;
+  }
+
   function openCardFullscreenByCardId(cardId) {
     if (!session || !els.cardFullscreenBody) return;
     const details = session.cardDetails(cardId);
@@ -1181,9 +1210,25 @@ function bootstrapTable() {
 
   /** Jedyna droga akcji gracza: komenda → sesja → przerysowanie. */
   function playDirect(cmd) {
-    const result = session.apply(cmd);
+    // M201/N1b (zgłoszenie właściciela): awaria wewnątrz sesji (wyjątek pętli
+    // bota) nie może zjeść kliknięcia. Sesja łapie ją i oddaje `internalError`
+    // (log partii ma już wpis) — tutaj dokładamy widoczny komunikat, żeby
+    // gracz nie patrzył na stół, który „nic nie robi”.
+    let result;
+    try {
+      result = session.apply(cmd);
+    } catch (error) {
+      autosave();
+      rerender();
+      showNotice(`Błąd wewnętrzny stołu: ${error?.message ?? error}. Wyeksportuj zapis partii i zgłoś problem.`);
+      return;
+    }
     autosave();
     rerender();
+    if (result?.internalError) {
+      showNotice(`Błąd wewnętrzny stołu: ${result.internalError}. Wyeksportuj zapis partii i zgłoś problem.`);
+      return;
+    }
     if (result?.ok !== false) showBotMoves();
   }
 
