@@ -1600,6 +1600,14 @@ function choiceSourceTitle(cmd, session, view) {
   // M87: tytuł idzie i do innerHTML przycisku, i do textContent nagłówka
   // modala — escapeHtml dawał „Hunter&#39;s Blowgun" w oknie wyboru.
   const name = session.nameOf(object.cardId);
+  // M202/D+M (zgłoszenie właściciela, Ruthless Invasion i Porcelain Legionnaire):
+  // warianty zapłaty many phyrexian ({W/P} — mana ALBO 2 życia) grupują się po
+  // karcie, ale tytuł spadał do generycznego „Wybierz: Zapłata: mana czy życie?”
+  // — gracz widział wybór, nie wiedząc KTÓREJ karty dotyczy. Nazwa karty jest
+  // w komendzie (objectId), więc tytuł może ją podać jak inne grupy.
+  if (cmd.phyrexianPayWithLife != null) {
+    return `${name} — zapłata: mana czy życie?`;
+  }
   if (cmd.type === 'cast_permanent' && cmd.targets?.length) {
     if (cmd.bestow) return `Bestow: ${name}`;
     if (object.aura) return `Aura: ${name}`;
