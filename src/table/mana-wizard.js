@@ -379,6 +379,34 @@ export function countPaymentVariants(sources, poolMana, totalNeeded, requirement
 }
 
 /**
+ * M202/O (uwaga właściciela, Horizon Spellbomb): czy w ogóle otwierać kreator
+ * many dla tej płatności.
+ *
+ * Zgłoszenie: „Kliknąłem że korzystam z tej dobrowolnej opłaty. Mam na stole
+ * tylko jeden niezatapowany las, mimo to dostałem mana wizard do zapłacenia G.
+ * Mógłby to sam zapłacić bez wizarda skoro nie było innych opcji zapłacenia.”
+ *
+ * Dotąd decydował wyłącznie `countPaymentVariants`, który liczy RÓŻNE KSZTAŁTY
+ * płatności (deduplikacja po profilu źródła `kolory#ilość`), więc równoważne
+ * wybory nie są osobnymi wariantami. To za mało: gdy jest JEDNO użyteczne
+ * źródło, a pula sama nie pokrywa kosztu (w tym kolorów), wyboru nie ma
+ * w ogóle — kreator tylko klika się „dalej” zamiast zapłacić.
+ *
+ * Reguła: kreator otwieramy WYŁĄCZNIE, gdy istnieją co najmniej dwa różne
+ * kształty płatności. Funkcja jest wydzieleniem dotychczasowej reguły z
+ * main.js do postaci testowalnej — zachowanie bez zmian, ale teraz przypięte
+ * testami (wcześniej reguła była inline i nie miała żadnego testu).
+ */
+export function shouldOpenManaWizard({ sources, poolMana, totalNeeded, requirements }) {
+  // `countPaymentVariants` liczy RÓŻNE KSZTAŁTY płatności (deduplikacja po
+  // profilu źródła „kolory#ilość”), więc dwa identyczne lasy to JEDEN kształt,
+  // a jedno źródło przy koszcie, którego pula nie pokrywa, daje 0 albo 1 —
+  // w obu przypadkach wyboru nie ma i kreator jest zbędny.
+  const variants = countPaymentVariants(sources, poolMana, totalNeeded, requirements);
+  return variants >= 2;
+}
+
+/**
  * Model widoku kreatora w danym kroku: co jeszcze potrzeba i jakie źródła
  * zostały dostępne. Postęp many liczymy z RZECZYWISTEJ puli (po każdej
  * komendzie tap_for_mana/activate_ability pula rośnie o net zysk źródła).

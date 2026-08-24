@@ -23,7 +23,7 @@ import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, FACE_DOWN_LABEL } from './session.js';
 import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, renderPlayerMeta } from './render.js';
 import { installSwipeGesture, installTapGesture } from './gestures.js';
-import { paymentDescriptorOf, countPaymentVariants, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
+import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
 import { effectiveSpellManaCost } from '../engine/spells.js';
 import { expandManaPool } from '../engine/resources.js';
 import { getSourceForObject } from '../engine/mana-sources.js';
@@ -1332,8 +1332,14 @@ function bootstrapTable() {
     if (!descriptor) return null;
     const pool = (view.players ?? []).find((p) => p.id === HUMAN_ID)?.mana ?? 0;
     const sources = manaSourcesForPlayer(selfTapExclusionFor(cmd));
-    const variants = countPaymentVariants(sources, pool, descriptor.totalNeeded, descriptor.requirements);
-    if (variants < 2) return null;
+    // M202/O (uwaga właściciela, Horizon Spellbomb): kreator otwieramy tylko,
+    // gdy istnieje REALNY wybór płatności. Przy jednym użytecznym źródle i puli,
+    // która sama nie pokrywa kosztu, wyboru nie ma — kreator tylko klika się
+    // „dalej”, zamiast zapłacić. Reguła w `shouldOpenManaWizard` (testowalna).
+    if (!shouldOpenManaWizard({
+      sources, poolMana: pool, totalNeeded: descriptor.totalNeeded,
+      requirements: descriptor.requirements,
+    })) return null;
     return { ...descriptor, cmd };
   }
 
