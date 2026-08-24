@@ -31,7 +31,7 @@ Potem, w miarę potrzeby obszaru: `docs/PRODUCT.md`, `docs/ARCHITECTURE.md`,
 
 ## ⚠️ OBOWIĄZKOWY TRYB SESJI — ADR 0020 (po lekturze, nie zamiast niej)
 
-Trzy reguły obowiązują KAŻDĄ sesję bez wyjątku. Są **nadrzędne** wobec
+Cztery reguły obowiązują KAŻDĄ sesję bez wyjątku. Są **nadrzędne** wobec
 handoffów, startowego promptu Arena i planów w `docs/plans/`. Żaden inny
 dokument nie może ich wyłączyć. Szczegóły: ADR 0020.
 
@@ -47,6 +47,11 @@ dokument nie może ich wyłączyć. Szczegóły: ADR 0020.
 3. **Inkrementalne commity.** Każdy samodzielnie zielony krok (`npm test` +
    `npm run build`) jest commitem OSOBNO i od razu pushowany. Zakazany jest
    jeden wielki commit z całą sesją.
+
+4. **Tylko przyrostowo, nigdy force push** (ADR 0020 D). Praca ląduje na
+   gałęzi jako NOWE commity; force push jest zakazany na każdej gałęzi, a przed
+   pushem sprawdza się `HEAD` i różnicę wobec gałęzi zdalnej (procedura
+   odzyskiwania po resecie workspace: ADR 0020 D i `ENVIRONMENT.md` §2).
 
 Pytanie do właściciela wolno zadać wyłącznie gdy praca jest **zablokowana**
 decyzją, której agent nie może podjąć sam (nowy powód `limitations`, zmiana
@@ -124,7 +129,18 @@ Te reguły obowiązują każdego agenta bez wyjątku (szczegóły: `docs/WORKFLO
   commicie sprawdź `git log --oneline -1`. Procedura odzyskania po resecie:
   `docs/setup/ENVIRONMENT.md` §2.
 - Pracuj wyłącznie na gałęzi przypisanej do sesji; nigdy nie zapisuj zmian bezpośrednio w `main`.
-- Nie wykonuj push do `main` ani force push do `main` — ochrona i tak je odrzuci.
+- **Praca jest zapisywana WYŁĄCZNIE przyrostowo — nowymi commitami na końcu
+  gałęzi. Force push jest zakazany na KAŻDEJ gałęzi** (ADR 0020 D, zlecenie
+  właściciela 2026-08-24). Zdarzało się, że agent nie sprawdził `HEAD` po
+  resecie workspace albo źle policzył diff i „na siłę” commitował całość,
+  nadpisując wcześniejszą pracę — to grozi jej nieodwracalną utratą.
+  Przed każdym pushem: `git log --oneline -3` + `git status`, potem
+  `git fetch origin <gałąź>` i porównanie `HEAD..FETCH_HEAD` z
+  `FETCH_HEAD..HEAD`. Gdy zdalna gałąź jest przede mną: `git reset --hard
+  FETCH_HEAD` + `git cherry-pick` moich commitów (wcześniej `git branch
+  backup-…`). Odrzucony push (`non-fast-forward`) znaczy, że tego sprawdzenia
+  nie było — nie sięgaj po `--force`.
+- Nie wykonuj push do `main` — ochrona i tak go odrzuci.
 - Nie proś o dodanie kogokolwiek do bypass list i nie zmieniaj ustawień ochrony `main`
   bez wyraźnej decyzji właściciela.
 - Każdą zmianę zgłaszaj jako Pull Request do `main` z wypełnionym szablonem opisu.
