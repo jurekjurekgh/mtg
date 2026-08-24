@@ -14,6 +14,7 @@ import assert from 'node:assert/strict';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { BOT_ID, HUMAN_ID, createSession } from '../src/table/session.js';
 import { renderEnemyHand, renderWaitingExile, renderTableView } from '../src/table/render.js';
+import { CARD_BACK_URL } from '../src/table/card-images.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -33,6 +34,11 @@ const doc = {
 };
 globalThis.document = globalThis.document ?? doc;
 
+/** Kafle ręki (M202/A: rewers to pełny kafel, nie zaślepka CSS). */
+const tilesOf = (host) => host.descendants().filter((n) => /(?:^|\s)tile(?:\s|$)/.test(String(n.className)));
+/** Obrazy rewersów w kafelkach — każdy musi wskazywać wspólny tył karty. */
+const backImagesOf = (host) => host.descendants().filter((n) => n.tagName === 'img' && n.src === CARD_BACK_URL);
+
 function session2() {
   const decks = new Map([
     [HUMAN_ID, [...Array(10).fill('basic-swamp'), ...Array(10).fill('mindstab')]],
@@ -49,8 +55,12 @@ test('M201/B: sekcja ręki bota pokazuje LICZBĘ kart i tyle samo rewersów', ()
   const botCards = view.zones.hand.filter((o) => o.controllerId === BOT_ID).length;
   assert.ok(botCards > 0, 'bot ma karty w ręce');
   renderEnemyHand(host, label, view, session, BOT_ID);
-  const backs = host.descendants().filter((n) => /card-back/.test(n.className));
-  assert.equal(backs.length, botCards, 'jeden rewers na kartę w ręce bota');
+  const tiles = tilesOf(host);
+  assert.equal(tiles.length, botCards, 'jeden kafel na kartę w ręce bota');
+  assert.equal(backImagesOf(host).length, botCards,
+    'każdy kafel niesie rewers karty MTG ze Scryfall (M202/A — uwaga właściciela)');
+  assert.ok(tiles.every((tile) => tile.descendants().some((n) => /(?:^|\s)sm(?:\s|$)/.test(String(n.className)))),
+    'rewersy są w rozmiarze reszty ręki (size: sm = --card-w-hand)');
   assert.match(label.textContent, new RegExp(`${botCards}`), 'etykieta podaje liczbę kart');
 });
 
@@ -63,6 +73,10 @@ test('M201/B: rewersy nie zdradzają tożsamości kart bota (CR 402.2)', () => {
   for (const cardId of ['goblin-piker', 'Goblin Piker', 'Mountain']) {
     assert.ok(!text.includes(cardId), `rewers nie może zdradzać „${cardId}”`);
   }
+  // Ten sam adres dla KAŻDEJ karty — inaczej sam fakt pobrania pliku zdradzałby
+  // tożsamość (ADR 0003, komentarz przy CARD_BACK_URL).
+  const sources = new Set(backImagesOf(host).map((n) => n.src));
+  assert.deepEqual([...sources], [CARD_BACK_URL], 'jeden wspólny rewers dla wszystkich kart');
 });
 
 test('M201/B: pusta ręka bota = brak rewersów i uczciwa etykieta', () => {
@@ -72,7 +86,7 @@ test('M201/B: pusta ręka bota = brak rewersów i uczciwa etykieta', () => {
   const host = new MiniEl('div');
   const label = new MiniEl('div');
   renderEnemyHand(host, label, emptyView, session, BOT_ID);
-  assert.equal(host.descendants().filter((n) => /card-back/.test(n.className)).length, 0);
+  assert.equal(tilesOf(host).length, 0, 'pusta ręka = brak kafli');
   assert.match(label.textContent, /0/);
 });
 
@@ -165,8 +179,9 @@ test('M201/A2+B: renderTableView zapełnia rękę bota i poczekalnię na PRAWDZI
   }
   renderTableView({ els, session, play: () => {}, onCardClick: null });
 
-  const backs = els.handEnemy.descendants().filter((n) => /card-back/.test(n.className));
+  const backs = backImagesOf(els.handEnemy);
   assert.ok(backs.length > 0, 'ręka bota narysowana rewersami przez renderTableView');
+  assert.equal(tilesOf(els.handEnemy).length, backs.length, 'każdy rewers w pełnym kaflu');
   assert.match(els.handEnemyLabel.textContent, /Ręka przeciwnika: \d+/, 'etykieta z liczbą kart');
   assert.equal(els.waitingWrap.hidden, false, 'poczekalnia odsłonięta, bo karta czeka');
   assert.match(els.waitingZone.textContent, /Mindstab/, 'zawieszona karta na stole');

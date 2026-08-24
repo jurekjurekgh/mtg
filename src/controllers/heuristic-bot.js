@@ -28,6 +28,53 @@ import { normalizeHeuristicWeights } from './heuristic-weights.js';
 
 // M173/D: liczniki-keywordy (deathtouch, flying...) traktujemy jak
 // statystyczne — dają trwałą zdolność, nie zasób do konsumpcji.
+/**
+ * M202/H+N: czy którykolwiek z blokerów MOŻE zablokować tego atakującego
+ * (CR 509.1b). Wycena ataku porównywała atakującego z WSZYSTKIMI nietapniętymi
+ * stworami wroga, więc latający 4/4 przy zwykłym 5/5 dostawał karę „chump”
+ * (-10), choć nie może zostać zablokowany — a na plus wyciągała go dopiero
+ * premia wyścigu. Reguła generyczna po keywordach i `cantBeBlocked` z widoku.
+ */
+function attackerCanBeBlocked(attacker, blockers) {
+  if (!attacker) return false;
+  if (attacker.cantBeBlocked === true) return false;
+  const keywords = attacker.keywords ?? [];
+  const flying = keywords.includes('flying');
+  const able = (blockers ?? []).filter((b) => {
+    const kw = b?.keywords ?? [];
+    return !flying || kw.includes('flying') || kw.includes('reach');
+  });
+  if (keywords.includes('menace') && able.length < 2) return false;
+  return able.length > 0;
+}
+
+/**
+ * M202/N: czy atakujący pada, ZANIM cokolwiek zada, bo bloker ma first strike.
+ * CR 702.7/510.4: obrażenia first strike są w osobnym, wcześniejszym kroku —
+ * 2/1 w nietapniętego 3/1 z first strike to 0 obrażeń i strata stwora
+ * (zgłoszenie właściciela: „0% szans na sukces”).
+ */
+function diesBeforeDealingDamage(attacker, blockers) {
+  const kw = attacker?.keywords ?? [];
+  if (kw.includes('first_strike') || kw.includes('double_strike')) return false;
+  const toughness = attacker?.toughness ?? 0;
+  return (blockers ?? []).some((b) => {
+    const bkw = b?.keywords ?? [];
+    if (!bkw.includes('first_strike') && !bkw.includes('double_strike')) return false;
+    return (b?.power ?? 0) >= toughness;
+  });
+}
+
+/** Atakujący zadaje obrażenia PRZED blokerem (first/double strike, CR 702.7). */
+function attackerStrikesFirst(attacker, blockers) {
+  const kw = attacker?.keywords ?? [];
+  if (!kw.includes('first_strike') && !kw.includes('double_strike')) return false;
+  return !(blockers ?? []).some((b) => {
+    const bkw = b?.keywords ?? [];
+    return bkw.includes('first_strike') || bkw.includes('double_strike');
+  });
+}
+
 const KEYWORD_COUNTERS = new Set(['deathtouch', 'flying', 'first_strike', 'double_strike', 'lifelink', 'trample', 'vigilance', 'menace', 'reach', 'haste', 'hexproof', 'indestructible']);
 
 const NEVER = Number.NEGATIVE_INFINITY;
@@ -289,7 +336,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // jedynie zdjęcie blokera przed moim atakiem — i tylko dopóki blok jest
       // jeszcze możliwy (po deklaracji blokujących jest już za późno).
       if (['beginning_of_combat', 'declare_attackers'].includes(step)) return 6;
-      if (step === 'main' && (view.combat?.attackers?.length ?? 0) === 0) return 3;
+      // M202/F (uwaga właściciela, Twiddle): `step === 'main'` obejmuje ZARÓWNO
+      // fazę PRZED walką, jak i PO walce — TURN_STEPS ma dwa kroki o nazwie
+      // 'main' (precombat_main i postcombat_main). Tapnięcie zdąży zdjąć
+      // blokera tylko w precombat; po walce efekt wyparuje przy jego untapie,
+      // więc to okno „main2/end” z karami poniżej.
+      if (view.turn.phase === 'precombat_main' && step === 'main'
+        && (view.combat?.attackers?.length ?? 0) === 0) return 3;
       // main2/end: efekt wyparuje przy jego untapie, nic nie kupuje. Karzemy
       // TYLKO wtedy, gdy poczekanie na lepsze okno jest w ogóle wykonalne.
       // Sorcery (Aerith Rescue Mission) da się zagrać wyłącznie we własnej
@@ -300,7 +353,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     // Tura przeciwnika PO jego untap: stwór traci atak TERAZ i blok U MNIE.
     if (['upkeep', 'draw'].includes(step)) return 14;
-    if (step === 'main' && attackers.length === 0) return 12; // wciąż przed deklaracją
+    // M202/F: jak wyżej — tylko faza PRZED walką (po walce już zaatakował).
+    if (view.turn.phase === 'precombat_main' && step === 'main' && attackers.length === 0) return 12;
     // Po deklaracji atakujących tapnięcie nie cofa ataku (CR 506.4) —
     // zostaje sam zysk „nie zablokuje w mojej turze”.
     if (alreadyAttacking) return 1;
@@ -319,7 +373,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // Tapnięcie już tapniętego permanentu nic nie zmienia — poza efektem
     // blokującym odkręcanie, który dopiero wtedy pokazuje swoją wartość.
     if (target.tapped && !locking) return -12;
-    const base = 8 + 2 * (target.power ?? 0);
+    // M202/F (uwaga właściciela, Twiddle): tapnięcie LANDU nie jest „zdjęciem
+    // stworu z gry” — land nie atakuje i nie blokuje, a jego tapnięcie odbiera
+    // wyłącznie manę, i to tylko do najbliższego untapu. Dotąd dostawał bazę +8
+    // jak stwór, więc bot tapował ląd przeciwnika w swojej turze, choć ten nie
+    // miał jak tej many wydać („mimo, że nie mam many, żeby wykorzystać tą
+    // kartę”). Wartość landu wyznacza SAMO okno (tapTimingBonus): upkeep
+    // przeciwnika +14, main przed deklaracją +12, main2/end we własnej turze -4.
+    const isLand = target.kind === 'land' || (target.types ?? []).includes('Land');
+    const base = isLand ? 0 : 8 + 2 * (target.power ?? 0);
     const timing = tapTimingBonus(view, target, { canWait });
     // Efekt trzymający cel (Entrancing Lyre / Spectral Prison) działa przez
     // kolejne untapy, więc nie karzemy go za „złe” okno — ale premia za okno
@@ -497,6 +559,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    *    koszt, nie efekt, i nie przechodzi tą ścieżką,
    *  - efekt bez celu (globalny) nie jest tu oceniany.
    */
+  /**
+   * M202/G (uwaga właściciela, Fleeting Distraction): efekt `pump` jest
+   * PRZYJAZNY tylko przy dodatnich wartościach — „Target creature gets -1/-0
+   * until end of turn” to efekt WROGI. Klasyfikacja wyłącznie po TYPIE efektu
+   * (`pump` = przyjazny, +50) karała rzucenie debuffu we wroga i premiowała
+   * rzucenie go we WŁASNEGO stwora — dokładnie zgłoszenie: „Bot ma na stole
+   * kreatury, gracz nie ma. Bot rzuca ten czar na swoją kreaturę i debuffuje
+   * ją. Bez sensu.” Reguła generyczna po ZNAKU deskryptora (ADR 0002).
+   */
+  function isNegativePump(effect) {
+    if (effect?.type !== 'pump') return false;
+    return (effect.power ?? 0) < 0 || (effect.toughness ?? 0) < 0;
+  }
+
   function selfHarmPenalty(view, effects, cmd, target) {
     let penalty = 0;
     const targets = cmd.targets ?? [];
@@ -512,6 +588,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (victim && victim.controllerId === meId) {
           // Im cenniejszy własny permanent, tym gorzej.
           penalty += permCost + (victim.power ?? 0) + (victim.toughness ?? 0);
+        }
+      }
+      // M202/G: `pump` z ujemnymi wartościami jest efektem WROGIM, a mapa
+      // HOSTILE_PERMANENT_EFFECTS zna tylko `pump_negative` i `shrink` — więc
+      // debuff własnego stwora (Fleeting Distraction) był bezkarny.
+      if (isNegativePump(effect)) {
+        const slot = effect.targetIndex != null ? targets[effect.targetIndex] : null;
+        const victim = slot ? objectOnBoard(view, slot) : target;
+        if (victim && victim.controllerId === meId) {
+          penalty += 45 + (victim.power ?? 0) + (victim.toughness ?? 0);
         }
       }
       // 2. Efekt wymierzony w GRACZA — sprawdzamy, czy to my.
@@ -548,8 +634,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const enemyId = enemy(view)?.id ?? null;
     for (const effect of effects) {
       if (!effect?.type) continue;
-      const friendCost = FRIENDLY_TARGET_EFFECTS.get(effect.type)
-        ?? (effect.type === 'add_counter' && BENEFICIAL_COUNTERS.has(effect.counter ?? '+1/+1') ? 50 : null);
+      // M202/G: ujemny pump NIE jest efektem przyjaznym — bez tego wykluczenia
+      // rzucenie debuffu we wroga dostawało karę jak wzmacnianie przeciwnika.
+      const friendCost = isNegativePump(effect)
+        ? null
+        : (FRIENDLY_TARGET_EFFECTS.get(effect.type)
+          ?? (effect.type === 'add_counter' && BENEFICIAL_COUNTERS.has(effect.counter ?? '+1/+1') ? 50 : null));
       if (friendCost != null) {
         const slot = effect.targetIndex != null ? targets[effect.targetIndex] : null;
         const beneficiary = (slot ? objectOnBoard(view, slot) : null) ?? target;
@@ -653,7 +743,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent' || type === 'cast_adventure_creature') return 'permanent';
     if (type === 'cast_spell' || type === 'cast_cleave' || type === 'cast_adventure' || type === 'plot_card' || type === 'suspend_card' || type === 'warp_card' || type === 'draw_card') return 'spell';
-    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_undercity_route' || type === 'resolve_fabricate' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_library_placement' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_counter_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_satyr_look_choice' || type === 'resolve_epic_choice' || type === 'resolve_suspend_cast' || type === 'resolve_rebound_cast' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice' || type === 'resolve_copy_targets' || type === 'resolve_opponent_target' || type === 'resolve_damage_division' || type === 'resolve_grave_free_cast') return 'ability';
+    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_undercity_route' || type === 'resolve_fabricate' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_library_placement' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_counter_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_satyr_look_choice' || type === 'resolve_epic_choice' || type === 'resolve_suspend_cast' || type === 'resolve_rebound_cast' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice' || type === 'resolve_replacement_choice' || type === 'resolve_copy_targets' || type === 'resolve_opponent_target' || type === 'resolve_damage_division' || type === 'resolve_grave_free_cast') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
     return null;
@@ -1422,7 +1512,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             || effect.type === 'pump_by_creature_count'
             || effect.type === 'pump_enchanted_creature'
             || effect.type === 'pump_by_gates';
-          if (isPumpEffect && target && target.controllerId === view.playerId) {
+          // M202/G: ujemny pump na WROGIM stworze to debuff przeciwnika —
+          // realny zysk (Fleeting Distraction: „-1/-0 until end of turn”).
+          // Bez tej gałęzi efekt nie dostawał ŻADNEJ wartości (dodatnie pumpy
+          // wyceniała gałąź poniżej, a klamra M179/E tylko karała), więc bot
+          // w ogóle nie rzucał czaru.
+          if (isPumpEffect && isNegativePump(effect) && target
+            && target.controllerId !== view.playerId) {
+            score += 25 + 4 * Math.abs(effect.power ?? 0) + 4 * Math.abs(effect.toughness ?? 0);
+          }
+          if (isPumpEffect && !isNegativePump(effect) && target && target.controllerId === view.playerId) {
             // M146 (uwaga właściciela): pump „do końca tury" ma wartość tylko
             // w oknie, w którym zdąży pomóc. Bot rzucał Fake Your Own Death
             // w swoim upkeepie i passował — czysta strata. Okna:
@@ -1641,6 +1740,39 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // a sorcery” zagramy wyłącznie we własnej głównej fazie.
             const canWait = ability?.timing !== 'sorcery';
             score += tapTargetValue(view, target, { locking, canWait });
+          }
+          // M202/L (uwaga właściciela, Wishful Merfolk): „{1}{U}: This creature
+          // loses defender and becomes a Human until end of turn” ma wartość
+          // WYŁĄCZNIE we własnej turze PRZED walką i tylko gdy stwór jest
+          // odkręcony i może atakować — efekt wyparuje w cleanup, więc
+          // aktywowany w turze przeciwnika to czyste marnowanie many
+          // (klasa L42: efekt „do końca tury” wycenia się razem z zegarkiem).
+          // Reguła generyczna po deskryptorze `losesKeywords` (ADR 0002).
+          if ((effect.losesKeywords ?? []).includes('defender')) {
+            const self = objectOnBoard(view, cmd.objectId) ?? target;
+            const beforeCombat = myTurn(view)
+              && ['main', 'beginning_of_combat', 'declare_attackers'].includes(view.turn.step);
+            const canAttackNow2 = Boolean(self) && !self.tapped && !self.summoningSickness;
+            score += (beforeCombat && canAttackNow2) ? 10 + 2 * (self?.power ?? 0) : -20;
+          }
+          // M202/J (uwaga właściciela, Merfolk Mesmerist): „{U}, {T}: Target
+          // player mills two cards” TAPUJE źródło, więc mill za cenę blokera ma
+          // sens tylko, gdy (a) jest kim blokować BEZ niego i (b) przeciwnik
+          // realnie mieści się w wyścigu bibliotek. Bez bramek bot millował co
+          // turę swoim JEDYNYM stworem, mając 18 kart przy 30 u przeciwnika —
+          // „bot prędzej zginie niż opróżni mi bibliotekę”. Liczba kart
+          // w bibliotece jest informacją jawną (CR 402.1), więc oba warunki są
+          // policzalne z widoku (FoW nienaruszone). Kary muszą PRZEBIĆ premię
+          // za mill — inaczej są martwe (klasa L3); warunki właściciela są
+          // łącznikiem „i”, więc niespełnienie KTÓREGOKOLWIEK gasi zdolność.
+          if ((effect.type === 'mill_cards' || effect.type === 'mill_from_bottom')
+            && (cmd.targets ?? []).includes(enemy(view)?.id)) {
+            const source = objectOnBoard(view, cmd.objectId);
+            const otherBlockers = myCreatures(view).filter((o) => o.id !== cmd.objectId
+              && !o.tapped && (o.power ?? 0) > 0).length;
+            if (source && !source.tapped && otherBlockers === 0) score -= 60;
+            const foeLibrary = view.zones.library.filter((o) => o.controllerId !== view.playerId).length;
+            if (foeLibrary > myLibraryCount(view)) score -= 60;
           }
           // M146 (Twiddle — tryb Odkręcenie jako zdolność): jak przy czarach —
           // odkręcenie WŁASNEGO zatapniętego stwora ma wartość, cudzego to kara.
@@ -2134,7 +2266,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // albo ewazję, która realnie coś zmienia. Reguła generyczna (ADR
           // 0002): 0 mocy = 0 obrażeń bojowych.
           const dealsNoCombatDamage = (power ?? 0) <= 0 && drainOnAttack(id) === 0;
-          if (attackerImmuneThisTurn) {
+          const canBeBlocked = attackerCanBeBlocked(object, blockers);
+          if (!canBeBlocked && blockers.length > 0) {
+            // M202/H: nie może zostać zablokowany (flying bez odpowiedzi,
+            // menace przy jednym blokerze, cantBeBlocked) — atak jest warty
+            // tyle co atak w otwartego, a nie „chump”.
+            perAttacker = power + 3;
+          } else if (attackerImmuneThisTurn) {
             perAttacker = power + 3;
           } else if (dealsNoCombatDamage) {
             // 0/1 w otwartego: 0 obrażeń bojowych, a stwór tapnięty i wystawiony
@@ -2143,6 +2281,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             perAttacker = -12;
           } else if (blockers.length === 0) {
             perAttacker = power + 3; // otwarty — czysta presja
+          } else if (diesBeforeDealingDamage(object, blockers)) {
+            // M202/N: bloker z first strike zabija atakującego, zanim ten zada
+            // cokolwiek (CR 510.4) — atak ma 0% szans: 0 obrażeń i strata
+            // stwora. Jałowy, więc premia wyścigu go nie uratuje.
+            perAttacker = -(toughness + 8);
+            futileAttackers += 1;
+          } else if (attackerStrikesFirst(object, blockers) && power >= strongestBlockerToughness) {
+            // M202/N (symetrycznie): first strike atakującego zabija blokera,
+            // zanim ten odpowie — atakujący PRZEŻYWA, więc to nie wymiana
+            // (power - 1), a czysty zysk jak przy ataku w otwartego.
+            perAttacker = power + 3;
           } else if (toughness > strongestBlockerPower && power >= strongestBlockerToughness) {
             perAttacker = power + 3; // przeżyje I zabija blokera — realny zysk
           } else if (blockers.length >= 2 && toughness <= gangPower && power < weakestBlockerToughness) {
@@ -2166,6 +2315,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // -10. Bez tego bot atakował ⅔ w ⅚ w wyścigu (zgłoszenie
             // właściciela, 2026-08-14).
             perAttacker = -10;
+            // M202/H (zgłoszenie właściciela: „4/4 w moją nietapniętą 5/5,
+            // 0% szans — PO CO?”): kara -10 istniała, ale przy wrogim życiu
+            // <= 5 premia wyścigu wynosiła +20 i PRZEBIJAŁA karę (klasa L3:
+            // kara musi być liczona względem premii, inaczej jest martwa).
+            // Zgodnie z L3 POMIJAMY premię dla ataku jałowego — tak jak
+            // M188/C dla gałęzi „przeżyje, ale nic nie zabije”.
+            futileAttackers += 1;
           }
           score += perAttacker;
           // Evasion: latający atakujący omija blockerów bez flying/reach.
@@ -2622,6 +2778,28 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // M158/Batch 39 (Invasion of the Giants II): ujawnij Olbrzyma za 2
         // obrażenia przeciwnika — darmowy damage, prawie zawsze warto.
         return finish(cmd.cardId != null ? 40 + (cmd.amount ?? 2) * 4 : 0);
+      }
+      case 'resolve_discard_choice': {
+        // M202/I (uwaga właściciela, Nightsnare): „Target opponent reveals
+        // their hand. You may choose a nonland card from it. If you do, that
+        // player discards that card. If you don't, that player discards two
+        // cards.” Bot nie miał ŻADNEJ wyceny tej decyzji, więc wszystkie
+        // warianty remisowały i brał pierwszą ofertę z listy — „wybrał jakąś
+        // bezsensowną kartę z mojej ręki, miałem dużo lepsze”.
+        // Zgodnie ze wskazówką właściciela: gdy wybór jednej karty jest
+        // loterią, lepsza jest druga opcja (przeciwnik odrzuca dwie).
+        // Rozróżnienie, czyja to ręka, jest policzalne z widoku: karty MOJEJ
+        // ręki są w view.zones.hand (odrzucone jako koszt — wolę najtańsze),
+        // karty odsłoniętej ręki przeciwnika nie.
+        if (cmd.cardId == null) return finish(40);
+        const mine = (view.zones.hand ?? []).some((o) => o.id === cmd.cardId);
+        const value = view.zones.library.find((o) => o.id === cmd.cardId)?.manaCost
+          ?? (view.zones.hand ?? []).find((o) => o.id === cmd.cardId)?.manaCost ?? 0;
+        // Moja ręka (koszt): im tańsza karta, tym lepiej ją oddać.
+        if (mine) return finish(20 - Math.min(10, value));
+        // Ręka przeciwnika: wybranie drogiej karty ma wartość, ale dwie karty
+        // odrzucone bez wyboru są warte więcej — stąd poniżej progu rezygnacji.
+        return finish(10 + 3 * value);
       }
       case 'resolve_satyr_look_choice': {
         // Satyr Wayfinder: wzięcie lądu do ręki = pewna mana (zawsze lepsze niż

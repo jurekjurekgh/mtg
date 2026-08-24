@@ -51,11 +51,21 @@ export const WOREK_DECKS = Object.freeze({
   Eldraine: 'worek-basni', Lorwyn: 'worek-basni', Bloomburrow: 'worek-basni',
   Kamigawa: 'worek-basni', Moag: 'worek-basni', Core: 'worek-basni',
   Commander: 'worek-basni', 'Modern Horizons': 'worek-basni',
-  Theros: 'worek-legend', 'Śródziemie': 'worek-legend', Amonkhet: 'worek-legend',
-  Shandalar: 'worek-legend', Rabiah: 'worek-legend', Rath: 'worek-legend',
-  Arcavios: 'worek-legend',
-  Ixalan: 'worek-dziki', Kaladesh: 'worek-dziki', 'The Edge': 'worek-dziki',
-  'Thunder Junction': 'worek-dziki', Muraganda: 'worek-dziki',
+  // M202/A (zlecenie właściciela 2026-08-24): rezygnacja z niszowych planów
+  // na rzecz popularniejszych przesunęła 6 kart między planami. Skutek: Theros
+  // i Śródziemie dobiły do progu 15 wspieranych kart i WYSZŁY z worka jako
+  // własne talie (auto-awans M181), a worek-legend został z 5 kartami —
+  // poniżej minimum walidatora. Przesunięcie „The Edge” i „Thunder Junction”
+  // z worka-dzikiego domyka bilans (ADR 0023 §4): legend 21, dzikie 24.
+  // Wpisy Theros/Śródziemie usunięte — były martwe po awansie.
+  // Theros i Śródziemie są PO AWANSIE (mają własne talie) — wpisy zostają
+  // jako MARTWE, bo test m181-auto-awans.test.js dokumentuje na nich mechanizm
+  // auto-awansu, a generator i tak sprawdza próg przed mapą worków.
+  Theros: 'worek-legend', 'Śródziemie': 'worek-legend',
+  Amonkhet: 'worek-legend', Shandalar: 'worek-legend', Rabiah: 'worek-legend',
+  Rath: 'worek-legend', Arcavios: 'worek-legend',
+  'The Edge': 'worek-legend', 'Thunder Junction': 'worek-legend',
+  Ixalan: 'worek-dziki', Kaladesh: 'worek-dziki', Muraganda: 'worek-dziki',
   'Final Fantasy': 'worek-mroczny', Duskmourn: 'worek-mroczny',
   'New Capenna': 'worek-mroczny', Kaldheim: 'worek-mroczny',
   Ikoria: 'worek-mroczny', Phyrexia: 'worek-mroczny',

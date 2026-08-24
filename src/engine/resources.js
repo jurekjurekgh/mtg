@@ -137,9 +137,27 @@ export function consumeManaPool(player, amount, requirements) {
 }
 
 /**
- * M201 (znalezisko #3): `purpose` opisuje, NA CO idzie mana — potrzebne dla
- * many ograniczonej drukiem (Powerstone: „only to cast artifact spells").
- * Domyślnie pusty = mana ograniczona nie bierze udziału w płatności.
+ * M202/N1 (audyt PR #73): cel wydania many dla RZUTU CZARU. Druk many
+ * ograniczonej (Powerstone: "This mana can't be spent to cast a nonartifact
+ * spell") zabrania WYŁĄCZNIE płacenia za czar nie-artefaktowy. Zdolności
+ * aktywowane, koszty specjalne (plot, suspend) i czary-artefakty płacą nią
+ * normalnie, więc `castingSpell` musi być jawne — bez niego ograniczenie
+ * rozlewało się na każdą płatność i odbierało graczowi legalne aktywacje
+ * (klasa L44).
+ */
+export function spellManaPurpose(object) {
+  return { castingSpell: true, artifactSpell: (object?.types ?? []).includes('Artifact') };
+}
+
+/** Czy dla tego celu wydania mana ograniczona drukiem jest niedostępna. */
+function restrictedManaBlocked(purpose) {
+  return purpose?.castingSpell === true && purpose?.artifactSpell !== true;
+}
+
+/**
+ * `purpose` opisuje, NA CO idzie mana (M201, znalezisko #3). Domyślnie pusty =
+ * płatność NIE jest rzutem czaru, więc mana ograniczona drukiem jest dostępna
+ * (M202/N1 — wcześniej domyślnie blokowaliśmy ją dla każdej płatności).
  */
 export function spendMana(state, playerId, amount, requirements = [], purpose = {}) {
   if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Koszt many musi być nieujemną liczbą całkowitą');
@@ -209,7 +227,7 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
   // sprawdzamy produkowalną sumę — nieudana płatność nie zostawia tapniętych.
   // M201 (znalezisko #3): mana ograniczona w puli nie jest dostępna dla
   // niedozwolonego celu — auto-tap musi dobrać brakującą manę z innych źródeł.
-  const restrictedInPool = purpose.artifactSpell === true ? 0 : (player.artifactOnlyMana ?? 0);
+  const restrictedInPool = restrictedManaBlocked(purpose) ? (player.artifactOnlyMana ?? 0) : 0;
   if (((player.mana ?? 0) - restrictedInPool) < amount) {
     if (producibleMana(state, playerId, null, purpose) < amount) throw new Error('Niewystarczająca mana');
     const reqColors = new Set(requirements.flat());
@@ -256,9 +274,9 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
   //   w puli, bo `producibleMana` odejmuje go od stanu puli (bez tego
   //   oferta i płatność rozjeżdżają się — L48, złapane benchmarkiem).
   if ((player.artifactOnlyMana ?? 0) > 0) {
-    player.artifactOnlyMana = purpose.artifactSpell === true
-      ? Math.max(0, (player.artifactOnlyMana ?? 0) - amount)
-      : Math.min(player.artifactOnlyMana ?? 0, Math.max(0, player.mana ?? 0));
+    player.artifactOnlyMana = restrictedManaBlocked(purpose)
+      ? Math.min(player.artifactOnlyMana ?? 0, Math.max(0, player.mana ?? 0))
+      : Math.max(0, (player.artifactOnlyMana ?? 0) - amount);
   }
   state.lastManaSpend = { playerId, amount, treasure, colors: spentColors };
   const e = event('mana_changed', { playerId, amount: -amount, total: player.mana, treasureSpent: treasure });
@@ -403,7 +421,7 @@ export function untappedFreeManaSources(state, playerId, excludeSourceId = null,
       // płatność ma dozwolony cel. Deskryptor `spendOnly` zamiast warunku po
       // nazwie karty (ADR 0002); brak deskryptora = mana bez ograniczeń.
       const spendOnly = effects[0].spendOnly ?? null;
-      if (spendOnly === 'artifact' && purpose.artifactSpell !== true) break;
+      if (spendOnly === 'artifact' && restrictedManaBlocked(purpose)) break;
       if (spendOnly != null && spendOnly !== 'artifact') break; // nieznane ograniczenie = nie oferujemy
       out.push({ object, amount: effects[0].amount ?? 1, colors: effects[0].colors ?? src?.colors ?? [], spendOnly });
       break;
@@ -446,7 +464,7 @@ export function producibleMana(state, playerId, excludeSourceId = null, purpose 
   let fromFree = 0;
   for (const entry of untappedFreeManaSources(state, playerId, excludeSourceId, purpose)) fromFree += entry.amount;
   // Pula: mana ograniczona liczy się WYŁĄCZNIE, gdy cel wydania jest dozwolony.
-  const restrictedInPool = purpose.artifactSpell === true ? 0 : (player?.artifactOnlyMana ?? 0);
+  const restrictedInPool = restrictedManaBlocked(purpose) ? (player?.artifactOnlyMana ?? 0) : 0;
   return Math.max(0, (player?.mana ?? 0) - restrictedInPool) + fromLands + fromFree;
 }
 
@@ -577,7 +595,8 @@ export function canPayMadnessCost(state, playerId, object) {
   let cost = object.madness.cost ?? object.manaCost ?? 0;
   cost = reduceGenericCost(object.cardId, cost, costReductionForSpell(state, object) + conditionalCostReduction(state, object));
   const phyrexian = object.phyrexianManaCost ?? 0;
-  if (producibleMana(state, playerId) < cost + phyrexian) return false;
+  // M202/N1: madness to alternatywny koszt RZUCENIA czaru (CR 702.71).
+  if (producibleMana(state, playerId, null, spellManaPurpose(object)) < cost + phyrexian) return false;
   const requirements = (object.madness.colors ?? []).map((color) => [color]);
   return hasColorRequirements(state, playerId, requirements);
 }
@@ -700,7 +719,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // ma własną walidację (treasureManaAvailable) poniżej.
   // M201 (znalezisko #3): cel wydania many — druk Powerstone pozwala płacić
   // wyłącznie za czary-ARTEFAKTY (typ liczony z danych obiektu, nie z nazwy).
-  const manaPurpose = { artifactSpell: (object.types ?? []).includes('Artifact') };
+  const manaPurpose = spellManaPurpose(object);
   if (!treasureAltCost && producibleMana(state, playerId, null, manaPurpose) < totalMana) throw new Error('Niewystarczająca mana');
   if (2 * lifePaid > (player.life ?? 0)) throw new Error('Niewystarczające życie');
   // Kolorowa walidacja many: czy kontrolujesz źródła zdolne wyprodukować wymagane kolory?
@@ -923,7 +942,9 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
   const cost = bestow
     ? reduceAlternativeCost(state, object, object.bestow.cost ?? 0)
     : reduceGenericCost(object.cardId, object.manaCost ?? 0, costReductionForSpell(state, object));
-  if (producibleMana(state, playerId) < cost) throw new Error('Niewystarczająca mana');
+  // M202/N1: czar aury to rzut czaru — cel wydania liczony z danych karty.
+  const manaPurpose = spellManaPurpose(object);
+  if (producibleMana(state, playerId, null, manaPurpose) < cost) throw new Error('Niewystarczająca mana');
   if (!hasColorManaForObject(state, playerId, object, 0)) throw new Error('Brak kolorowego źródła many');
   // Walidacja CELU PRZED jakąkolwiek mutacją (CR 601.2h): nieudany rzut nie
   // może zostawić karty na stosie ani utraconej many.
@@ -994,7 +1015,7 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
       : (object.aura?.enchantType === 'creature_or_vehicle' ? 'creature_or_vehicle' : 'creature');
     spellTargets = Object.freeze([Object.freeze({ type: auraHostType })]);
   }
-  spendMana(state, playerId, cost, coloredPipsOf(object.cardId));
+  spendMana(state, playerId, cost, coloredPipsOf(object.cardId), manaPurpose);
   state.spellsCastThisTurn += 1;
   const stackId = `spell-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
@@ -1037,10 +1058,13 @@ export function legalAuraCasts(state, playerId) {
   if (!player) return out;
   // Oferta po manie produkowalnej — czar aury widać przed tapowaniem landów.
   // + walidacja kolorowa (Sweet Oblivion bug: 2 Plains nie mogą rzucić U)
-  const manaAvailable = producibleMana(state, playerId);
   for (const id of state.zones.hand) {
     const object = state.objects.get(id);
     if (object?.controllerId !== playerId) continue;
+    // M202/N1 (L48): budżet PER KARTA z celem wydania many — mana ograniczona
+    // drukiem nie opłaci czaru nie-artefaktowego, więc jedna wspólna liczba
+    // rozjeżdżałaby ofertę z walidacją.
+    const manaAvailable = producibleMana(state, playerId, null, spellManaPurpose(object));
     const options = [];
     if (object.aura && reduceGenericCost(object.cardId, object.manaCost ?? 0, costReductionForSpell(state, object)) <= manaAvailable && hasColorManaForObject(state, playerId, object, 0)) options.push(false);
     if (object.bestow && reduceAlternativeCost(state, object, object.bestow.cost ?? 0) <= manaAvailable && hasColorManaForObject(state, playerId, object, 0)) options.push(true);

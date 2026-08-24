@@ -1,7 +1,182 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-23 (M201: audyt PR #72 + zgłoszenia właściciela F/M/M2 — PR #73 otwarty)
-- **Poprzednia:** 2026-08-23 (M200: audyt PR #70 + uwagi właściciela A–R — PR #72 scalony)
+- **Ostatnia aktualizacja:** 2026-08-24 (M202: audyt PR #73 + poprawki A/B/C + brązowa odznaka 3/5 — PR #74 otwarty)
+- **Poprzednia:** 2026-08-23 (M201: audyt PR #72 + zgłoszenia właściciela F/M/M2 — PR #73 scalony)
+
+## M202 — audyt PR #73: 3 błędy reguł/oferty (2026-08-24, PR #74)
+
+Plan: `docs/plans/PLAN_2026-08-24-m202-audyt-pr73-petla-jakosci.md` · raport:
+`docs/audits/AUDYT_PR73_2026-08-24.md` · nowa lekcja: **L59**.
+
+Tryb sesji: ADR 0020 (PR #74 na starcie → audyt poprzedniego PR → commit na
+każdy samodzielnie zielony krok) + ADR 0021 (prompt „kontynuujemy” = pętla
+domyślna, bez pytania o kolejkę).
+
+**Baza zweryfikowana przed pracą:** `npm test` 3096/3096, build 53 moduły /
+2592.4 kB — zgodnie z tym plikiem. Diff PR #73 pobrany z GitHuba (`gh pr diff
+73`): klony Areny są spłaszczone do jednego commita, lokalna historia nie ma
+rodzica.
+
+**Naprawione (każde osobnym commitem, test RED→GREEN):**
+
+1. **N1 — BŁĄD REGUŁ wprowadzony przez PR #73.** Mana ograniczona drukiem
+   (Powerstone: „This mana can't be spent **to cast a nonartifact spell**”)
+   była traktowana jak „tylko do czarów-artefaktów”: `producibleMana` bez
+   `purpose` odejmował ją dla KAŻDEJ płatności, więc przy Powerstone jako
+   jedynym źródle many zdolność `{1}` nie miała oferty, a wymuszona komenda
+   była odrzucana (silnik odbierał legalną akcję — klasa L44). Fix: semantyka
+   celu wydania odwrócona do zgodnej z drukiem (`spellManaPurpose` +
+   `restrictedManaBlocked` w `resources.js`), jawny cel w ~25 ścieżkach
+   płatności i ofert (spells/resources/abilities/game-state), plot/suspend/
+   warp pozostają bez ograniczenia (akcje specjalne, nie rzuty). Strażnik
+   źródła pilnuje, żeby żadna przyszła funkcja `cast*`/`*Casts` nie zapomniała
+   o celu (mutacyjnie RED).
+2. **N2 — MARTWY DESKRYPTOR.** `prefer: 'opponent'` (Dementia Bat, znalezisko
+   #4 z M201) czytało wyłącznie `triggerTargetCandidates`; w
+   `targetCandidatesBySpec` pole było martwe (L21), a kolejność „przeciwnik
+   pierwszy” istniała przypadkiem (`state.players` + `unshift`). Fix w jednym
+   centralnym miejscu + piny kolejności i pierwszej oferty. Świadoma granica:
+   `legalActivatedAbilities` ma własną gałąź celów-graczy (6 zdolności) —
+   przepięcie jej odwróciłoby kolejność w UI, bo `playerView` dokłada oferty
+   aktywacji przez `unshift`; rozjazd konwencji (unshift vs push) opisany
+   w raporcie jako osobny temat.
+3. **N4 — BŁĄD OFERTY (znaleziony przy pisaniu pinów N3).** Permanent wygnany
+   impulsem z kosztem dodatkowym NA OBIEKCIE (Fear of Abduction, Makeshift
+   Mauler) dostawał ofertę `cast_permanent` BEZ `exileTargetId`, a walidacja ją
+   odrzucała (zmierzone: oferta jest, `execute` → `ok: false`; klasa L48).
+   Root cause: trzy gałęzie oferty liczyły koszty osobno, znała je jedna (L41).
+   Fix: wspólny `exileAdditionalCostCandidates` dla gałęzi z ręki, z flash
+   i z impulsu (CR 601.2h).
+
+**Zabezpieczone strażnikiem bez zmiany kodu:** **N3** — ścieżki darmowego rzutu
+czytają wyłącznie `obj.spell.additionalCost`, więc karta z kosztem dodatkowym
+na OBIEKCIE + suspend/rebound/madness poszłaby za darmo; test katalogowy
+czerwienieje w dniu wejścia pierwszej takiej karty (L52 §4).
+
+**Obserwacje bez zmian (O1–O4 w raporcie):** domyślne `beginning_of_combat`
+= „on your turn” (pilnowane strażnikiem katalogu z M201); `waiting` wysyła
+`kind`/`types` dla obiektów `faceDown` (dziś nieosiągalne); `commit-msg.txt`
+w katalogu głównym to leftover wbrew `ENVIRONMENT.md` §3 — do decyzji
+właściciela; `damage_dealt.sourceLki` niesie pełny snapshot źródła (dziś żaden
+opis ani widok go nie czyta).
+
+**Weryfikacja mutacyjna testów PR #73 (3/3 RED):** wyłączenie reguły SBA dla
+nie-stworów, wyłączenie grupowania `combat_damage_to_you`, `process.env`
+w heuristic-bocie. Pomiar: 32 partie headless / 17 816 komend / 0
+zduplikowanych zdarzeń w strumieniu komendy (wrapper `processTriggers` z M201).
+
+**Poprawki właściciela z rozgrywki (2026-08-24):**
+
+- **A** — ręka przeciwnika: prawdziwy rewers karty MTG ze Scryfall (ten sam
+  `CARD_BACK_URL` co zakryte permanenty) w pełnym kaflu `size: 'sm'`, czyli
+  w rozmiarze reszty ręki i stołu; zaślepka CSS usunięta. Tożsamość ukryta
+  (CR 402.2): jeden wspólny adres dla wszystkich kart — test pilnuje, że nie
+  ma ich kilku.
+- **B** — „Podejrzyj kartę” przy opcji podglądało kartę UŻYWAJĄCĄ zdolności
+  (Ghost Warden 4× ta sama karta). Root cause: `cardIdForChoiceOption` brał
+  `objectId` przed celami, a cała polityka żyła w domknięciu `bootstrapTable`
+  bez testu (L5). Fix: czysta `previewCardIdOfOption` (cele przed źródłem)
+  + 5 testów; przy okazji `resolve_trigger_target` (`targetIds`) zyskał lupę,
+  której nie miał wcale.
+- **C** (Żywy Tester) — etykiety triggerów na kaflach: „Trigger <fraza
+  rzeczownikowa>” dawało zdanie nie po polsku (15× w jednej partii); M80
+  pilnował tego na ręcznej liście 7 kart (L26). Fix + **strażnik całego
+  katalogu**; weryfikacja dwustronna na artefakcie 15 → 0.
+- **D** (zgłoszone, bez fixa) — pierwsza oferta aury wskazuje stwora
+  PRZECIWNIKA (bot liczy poprawnie, człowiek klika stratę). Trzecie wcielenie
+  klasy N2: `playerView` dokłada oferty przez `unshift` (prezentacja =
+  odwrotność enumeracji), a triggery przez `push`. Do decyzji właściciela:
+  jedna zmiana konwencji + pomiar benchmarku zamiast trzech łatek.
+
+**Środowisko:** `tools/table-tester` + `npm i` działa — **egress HTTPS NIE jest
+zablokowany**, wbrew `docs/setup/ENVIRONMENT.md` §4 (do korekty).
+
+**Brązowa odznaka (wyzwanie właściciela) — 2 z 5 znalezisk w tej rundzie:**
+
+1. **CR 704.5m + CR 104.4b — jednoczesny deck-out dawał zwycięzcę zamiast
+   remisu.** `drawPlayerCards` i `performDrawStepDraw` kończyły partię w miejscu
+   dobrania i ogłaszały zwycięzcą „drugiego gracza”, więc przy „You and target
+   opponent each draw two cards” (Strike a Deal) z dwiema pustymi bibliotekami
+   o wyniku decydowała kolejność przetwarzania. Zmierzone: `wygrany: p2` →
+   `wygrany: null, remis: true`. Fix u root cause: próba dobrania z pustej
+   biblioteki to ZNACZNIK dla akcji stanowej (`state.emptyLibraryDraw`),
+   rozstrzygany razem z życiem i trucizną (jedno źródło reguły, L41).
+   6 testów, mutacyjnie 6/6 RED.
+3. **CR 616.1 — silnik wybierał efekt zastępczy za gracza.** Stwór z licznikiem
+   tarczy (CR 122.1b) i tarczą regeneracji (CR 701.12) zawsze tracił licznik,
+   choć reguła mówi, że wybiera **kontroler**. Fix: nowa decyzja gracza
+   `resolve_replacement_choice` (pełne okablowanie: stan, fingerprint,
+   protokół, oba boty, etykiety i log). Uwaga z CR 704.3 („Then the process
+   repeats”): po wybraniu tarczy i tak dobija regeneracja — oba zabezpieczenia
+   przepadają, co jest dokładnie powodem, dla którego wybór należy do gracza.
+   8 testów, mutacyjnie 5/8 RED.
+2. **CR 702.170d — zaplotowana karta musi czekać na własną fazę main.** Bramka
+   timingu wisiała wyłącznie na `timing === 'sorcery'`, więc zaplotowany
+   INSTANT nie miał ograniczenia („Cast it **as a sorcery** on a later turn”).
+   Luka utajona (brak takiej karty w katalogu) — zamknięta teraz z bramką
+   `plottedCastAllowed` w walidacji i ofercie (L52, L48). 5 testów,
+   mutacyjnie 1 RED.
+
+**Zweryfikowane jako POPRAWNE w tym polowaniu (nie badać drugi raz):**
+trample + deathtouch (4 obrażenia przeniesione z 5/5 na gracza przez blokera
+3/3 — CR 702.19b), trample 5/5 i 6/6 vs dwóch blokerów (CR 510.1c), deathtouch
+z 0 obrażeń nie niszczy (CR 702.15b), bestow po śmierci gospodarza zostaje
+stworem (CR 702.103b), ochrona od koloru odpina equipment (CR 702.16d),
+hexproof nie chroni przed własnymi celami (CR 702.11b), menace (blok tylko
+2+), defender (nie atakuje, blokuje), tapnięty stwór nie atakuje i nie blokuje
+(CR 508.1a/509.1b), indestructible nie chroni przed poświęceniem (CR 702.21b),
+kasowanie par +1/+1 i −1/−1 (CR 704.5n), limit ręki w cleanup (CR 514.1),
+mana znika na końcu każdego kroku i fazy (CR 106.4), plot „późniejsza tura”
+(CR 702.170d), timing suspend (CR 702.62a/c), morph jako akcja specjalna poza
+stosem (CR 702.36e), land play raz na turę i tylko we własnej fazie main
+(CR 305.3), efekty „do końca tury” nie obejmują permanentów wchodzących później
+(CR 611.2c), deskryptory celów zgodne z Oracle (skan całego katalogu: 0
+rozjazdów), keyword-y wydrukowane zgodne z `keywords`/`station` (skan: 0
+rozjazdów). Fuzzer inwariantów: 18 partii, 8346 komend, **21 915 ofert
+sprawdzonych pod kątem „oferta = walidacja” — 0 naruszeń**, 0 naruszeń
+inwariantów stanu (strefy, tokeny, załączniki, walka, pula many).
+
+**Kandydaci 2 i 3 — zamknięte jako POPRAWNE (nie badać drugi raz):**
+- **CR 603.3b (APNAP)** — zweryfikowane na dwóch `dies` triggerach ginących
+  razem w walce: `state.zones.stack[length-1]` to WIERZCH, a stos był
+  `[p1(AP), p2(NAP)]`, więc trigger gracza NIEaktywnego rozstrzyga się
+  pierwszy — dokładnie jak wymaga reguła.
+- **CR 510.1c/d + 702.19b (przydział obrażeń)** — `validateDamageAssignment`
+  już pilnuje lethal dla każdego wcześniejszego blokera
+  (`illegal_damage_order`) i minimalnego lethal przy trample
+  (`trample_blocker_below_lethal`).
+
+**Druga transza poprawek właściciela (G, J, I, O — 2026-08-24):**
+
+- **G** — Fleeting Distraction debuffował WŁASNEGO stwora. Efekt to
+  `{ type: 'pump', power: −1 }`, a klasyfikacja przyjazności celów patrzyła
+  wyłącznie na TYP (`pump` → przyjazny, +50), więc wycena była odwrócona
+  o 180°: debuff wroga karany jak wzmacnianie przeciwnika, debuff własnego
+  stwora bezkarny, a przy wrogim celu czar nie dostawał żadnej wartości i bot
+  w ogóle go nie rzucał. Fix: `isNegativePump()` — klasyfikacja po ZNAKU
+  deskryptora (ADR 0002).
+- **J** — Merfolk Mesmerist millował co turę jedynym blokerem przy 18 vs 30
+  kart. Fix: dwie bramki ze zgłoszenia (brak innego nietapniętego stwora
+  o mocy > 0 → −60; biblioteka wroga większa niż własna → −60). Pierwsza próba
+  z −30/−20 nie zadziałała — kary nie przebijały premii za mill (L3).
+- **I** — Nightsnare: bot nie miał ŻADNEJ wyceny `resolve_discard_choice`, więc
+  warianty remisowały i brał pierwszą ofertę (L51). Fix: rezygnacja (wróg
+  odrzuca 2) warta więcej niż jedna karta wybrana na chybił trafił; przy własnej
+  ręce jako koszt oddaje najtańszą.
+- **O** — Horizon Spellbomb / kreator many: dochodzenie pokazało, że reguła
+  otwarcia (`countPaymentVariants >= 2`) w opisanym scenariuszu (jeden las,
+  koszt {G}) daje 1, czyli kreator NIE powinien się otworzyć — zgłoszenia nie
+  udało się odtworzyć. Reguła wydzielona do testowalnej `shouldOpenManaWizard`
+  i przypięta 6 testami (wcześniej inline, bez żadnego testu). Do domknięcia
+  potrzebny dokładny stan stołu z tamtej partii.
+
+Dwa testy scenariuszowe z zamrożonym seedem (`session-abilities-integration`,
+dług odsetkowy L53) przelosowane hunterem po zmianach zachowania bota
+(J: seed 2→4, I: seed 4→9; sprawdzone też 14, 20).
+
+**Stan:** `npm test` **3181/3181**, build **53 moduły / 2626.0 kB**, benchmark bota **9/9**.
+`node --test test/bot-benchmark.test.js` **9/9**. Pełna macierz B0 — tylko na
+komendę właściciela (ADR 0018).
 
 ## M201 — audyt PR #72 + zgłoszenia właściciela + BRĄZOWA ODZNAKA (2026-08-23, PR #73)
 

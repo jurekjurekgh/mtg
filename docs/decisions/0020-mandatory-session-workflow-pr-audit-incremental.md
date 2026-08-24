@@ -23,7 +23,8 @@ rozwiązać, bo handoff opisuje jedną sesję i traci aktualność.
 
 ## Decyzja
 
-Każda sesja agentska (bez wyjątku) działa w następującym obowiązkowym trybie:
+Każda sesja agentska (bez wyjątku) działa w następującym obowiązkowym trybie
+(A–D):
 
 ### A. Pull Request na starcie
 
@@ -59,9 +60,38 @@ przed pushowaniem ich jako jeden commit. Wyjątek: dokumentacja (plany, handoff,
 aktualizacje stanu projektu) może być dołączona do ostatniego commitu
 funkcjonalnego w sesji, ale tylko jeśli testy wciąż przechodzą.
 
+### D. Tylko przyrostowo, nigdy force push (2026-08-24, zlecenie właściciela)
+
+Jedynym dopuszczalnym sposobem zapisywania pracy jest **dodawanie nowych
+commitów** na końcu gałęzi. **Force push (`git push --force`,
+`--force-with-lease`) jest zakazany na KAŻDEJ gałęzi**, nie tylko na `main`.
+
+Powód (zdarzyło się wielokrotnie): agent nie sprawdził stanu `HEAD` po resecie
+workspace albo źle policzył diff i „na siłę” commitował całość, nadpisując
+cudzą lub własną wcześniejszą pracę. Takie działanie jest niepożądane i grozi
+**nieodwracalną utratą części pracy**.
+
+Obowiązkowa procedura przed każdym pushem:
+
+1. **Sprawdź `HEAD`**: `git log --oneline -3` i `git status`.
+2. **Porównaj z gałęzią zdalną**: `git fetch origin <gałąź>` oraz
+   `git log --oneline HEAD..FETCH_HEAD` (co jest zdalnie, a nie mam) i
+   `git log --oneline FETCH_HEAD..HEAD` (co mam tylko ja).
+3. **Gdy zdalna gałąź jest przede mną** (typowo po resecie workspace —
+   `git reflog` pokazuje wtedy `clone: from …`): odzyskaj historię
+   `git reset --hard FETCH_HEAD`, a swoją pracę przenieś `git cherry-pick`
+   (lub nałóż zmiany ponownie). Nigdy nie nadpisuj zdalnej historii.
+4. **Gdy push zostanie odrzucony** (`non-fast-forward`): to sygnał, że punkt 2
+   nie został zrobiony. Wróć do niego — nie sięgaj po `--force`.
+5. **Zabezpiecz pracę przed operacjami ryzykownymi**: `git branch backup-<opis>
+   <sha>` przed `reset --hard`.
+
+Wyjątku nie ma: jeśli jedyną drogą wydaje się force push, oznacza to, że
+historia nie została sprawdzona.
+
 ### Nadrzędność
 
-Powyższe trzy reguły (A, B, C) są nadrzędne wobec:
+Powyższe cztery reguły (A, B, C, D) są nadrzędne wobec:
 - treści handoffów (`docs/setup/HANDOFF_*.md`);
 - tekstu startowego promptu nowej sesji Arena;
 - wszelkich instrukcji w plikach `docs/plans/*.md`.

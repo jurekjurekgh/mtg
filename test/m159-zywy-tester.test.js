@@ -85,7 +85,10 @@ test('Z2: kafel Magmarcha mówi o martwym triggerze 1v1 zamiast „Gdy rzucisz c
     keywords: def.keywords ?? [], spell: null, equipment: null, plot: null,
   });
   assert.ok(!text.includes('Gdy rzucisz czar: .'), `pusty szum na kaflu: ${text}`);
-  assert.ok(text.includes('nieaktywny w grze 1v1'), `brak informacji o martwym triggerze: ${text}`);
+  // M202/C: brzmienie komunikatu zostało poprawione (bez zapożyczenia „Trigger”),
+  // więc sprawdzamy INTENCJĘ (kafel mówi o martwej zdolności w 1v1), nie rodzaj
+  // gramatyczny zaszyty w starej etykiecie.
+  assert.match(text, /nieaktywn[ya] w grze 1v1/, `brak informacji o martwym triggerze: ${text}`);
   assert.ok(text.includes('tarcza regeneracji'), `opis Regenerate zniknął: ${text}`);
 });
 

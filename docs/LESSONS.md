@@ -25,6 +25,58 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 ---
 
 
+## L59 (2026-08-24) — Ograniczenie zasobu i koszt dodatkowy żyją w WIELU ścieżkach: definiuj przez ZAKAZ i pilnuj strażnikiem każdej ścieżki
+
+**Objaw (M202, audyt PR #73 — dwa znaleziska jednej klasy):**
+
+1. **N1.** Druk tokenu Powerstone: „{T}: Add {C}. This mana can't be spent **to
+   cast a nonartifact spell**”. Implementacja (`purpose.artifactSpell`) opisała
+   regułę odwrotnie — „mana działa TYLKO przy czarze-artefakcie” — więc
+   `producibleMana` odejmował manę ograniczoną dla każdej płatności, a zdolność
+   `{1}: Add {U/R/W}` przy Powerstone jako jedynym źródle many nie miała oferty
+   i nie dała się aktywować. Silnik odbierał graczowi legalną akcję (L44).
+2. **N4.** „As an additional cost to cast this spell, exile a creature you
+   control” jest zapisane NA OBIEKCIE, a `payFreeCastAdditionalCost` (M201/U2)
+   czyta `obj.spell.additionalCost`. Gałąź impulsu w `playerView` nie wiedziała
+   o koszcie wcale: Fear of Abduction wygnany impulsem dostawał ofertę
+   `cast_permanent` bez `exileTargetId`, a `execute` ją odrzucał. Trzy gałęzie
+   tej samej oferty (z ręki, z flash, z impulsu) liczyły koszt osobno — znała go
+   jedna (L41).
+
+**Przyczyna (wspólna):** reguła „czego NIE wolno” została zakodowana jako
+„co wolno”, a katalog ścieżek, które o niej decydują, nie był znany w jednym
+miejscu. Ograniczenie many ma w silniku ~25 miejsc liczących budżet
+(`producibleMana`/`spendMana` w spells.js, resources.js, abilities.js,
+game-state.js, effects.js); koszt dodatkowy — kilka gałęzi enumeracji ofert.
+Ani jedno, ani drugie nie ma naturalnego choke pointa, więc każda nowa ścieżka
+dziedziczy domyślne (błędne) zachowanie.
+
+**Reguły:**
+
+1. **Ograniczenie definiuj przez to, czego druk ZAKAZUJE**, nie przez to, co
+   dozwolone: `restrictionApplies = purpose.castingSpell === true &&
+   purpose.artifactSpell !== true`. Wtedy domyślna płatność (zdolność, plot,
+   suspend, proliferate) jest z definicji legalna, a wyjątek jest JAWNY i
+   widoczny w sygnaturze wywołania.
+2. **Cel wydania jest częścią kontraktu każdej płatności.** Przy >10 ścieżkach
+   przegląd „które wywołanie zapomniało” nie jest zabezpieczeniem — jest nim
+   **strażnik źródła** (`test/m202-straznik-celu-wydania-many.test.js`): każda
+   funkcja `cast*`/`*Casts` musi pytać o manę z celem. Zweryfikowany
+   mutacyjnie (usunięcie `purpose` z `castPermanent` → RED).
+3. **Oferta i walidacja czytają JEDEN odczyt** (L48/L41): koszt dodatkowy na
+   obiekcie ma jedną funkcję (`exileAdditionalCostCandidates`) użytą przez
+   wszystkie gałęzie `cast_permanent`. Test pinujący to nie „test karty”, tylko
+   „test ścieżki”: wygnaj impulsem, sprawdź że oferta niesie cel albo nie
+   istnieje wcale.
+4. **Sygnał ostrzegawczy przy audycie diffa:** nowe pole `purpose`/`spendOnly`/
+   `additionalCost` + brak wyliczenia ścieżek, które go czytają. Zapytaj wtedy
+   wprost: „ile jest miejsc, które liczą ten budżet?” i policz je grepem
+   (5 sekund), zamiast zakładać, że autor zmienił wszystkie.
+5. **Testy pinujące zachowanie POPRZEDNIEJ sesji są sondą na tę sesję.** Piny
+   N3 pisałem jako „utwierdzenie dobrego zachowania” — dwa z trzech okazały się
+   RED, bo zachowanie wcale nie było dobre. Pin, który nigdy nie był RED, nie
+   dowodzi niczego (L13); pin, który jest RED w dniu pisania, to znalezisko.
+
 ## L58 (2026-08-23) — Kod stołu jedzie do PRZEGLĄDARKI: globalna Node w rdzeniu to awaria produktu, której testy nie widzą
 
 **Objaw (M201/N1, audyt PR #72):** w `scoreCommand` heuristic-bota została

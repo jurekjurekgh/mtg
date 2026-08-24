@@ -600,6 +600,13 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         }
         return null;
       }
+      // M202/odznaka #3 (CR 616.1): wybór efektu zastępczego — gracz musi
+      // wiedzieć, że decyduje (i co wybrał), bo inaczej zniknięcie tarczy albo
+      // tapnięcie stwora wyglądałoby na efekt cudzego czaru.
+      case 'replacement_choice_required':
+        return `${nameOfObject(e.objectId)}: zniszczenie można zastąpić tarczą albo regeneracją — wybiera ${whoN(e.playerId)}`;
+      case 'replacement_choice_resolved':
+        return `${whoN(e.playerId)} wybiera ${e.choice === 'shield' ? 'zdjęcie licznika tarczy' : 'regenerację'} dla ${nameOfObject(e.objectId)}`;
       case 'command_rejected': return `Odrzucono: ${e.reason ?? 'nielegalna komenda'}`;
       // M201 (znalezisko #1, CR 506.4c): permanent przestał być stworem i
       // wypadł z walki — gracz musi wiedzieć, dlaczego atak zniknął.
@@ -1516,7 +1523,11 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'springbloom_choice_required': return `${srcName(e)}${whoN(e.controllerId)} może poświęcić land`;
       // M201/C1: jeden czasownik po podmiocie (druga część jako fraza
       // rzeczownikowa) — inaczej „Poświęcasz land — szuka…”.
-      case 'springbloom_resolved': return `${srcName(e)}${whoN(e.controllerId)} poświęca land — szukanie do dwóch bazowych lądów`;
+      // M202/C (uwaga właściciela): log mówił tylko „poświęca land”, więc przy
+      // grze bota nie było wiadomo CZY i JAKI ląd padł. Nazwa lądu idzie
+      // z `sacrificedLandId` przez nameOfObject — ten ma pamięć LKI
+      // (CR 603.10), więc nazywa land, który jest już w grobie pod nowym id.
+      case 'springbloom_resolved': return `${srcName(e)}${whoN(e.controllerId)} poświęca ${e.sacrificedLandId ? nameOfObject(e.sacrificedLandId) : 'land'} — szukanie do dwóch bazowych lądów`;
       case 'springbloom_skipped': return `${srcName(e)}${whoN(e.controllerId)} nie poświęca landa`;
       case 'optional_draw_required': return `${whoN(e.playerId)} może dobrać kartę (potem odrzuci — Force Away)`;
       case 'optional_draw_resolved': return e.drew

@@ -14,7 +14,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createGameState, addObject, playerView, execute } from '../src/engine/game-state.js';
 import { applyEffect } from '../src/engine/effects.js';
-import { producibleMana } from '../src/engine/resources.js';
+import { producibleMana, spellManaPurpose } from '../src/engine/resources.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { TURN_STEPS, initialTurn } from '../src/engine/turn.js';
@@ -86,8 +86,15 @@ test('BUG3: mana z Powerstone NIE opłaca czaru nie-artefaktowego (druk tokenu)'
 
 test('BUG3: liczenie many rozróżnia cel wydania (oferta = płatność, L48)', () => {
   const { state } = stateWithPowerstone();
-  assert.equal(producibleMana(state, 'p1'), 0, 'domyślnie mana ograniczona się nie liczy');
-  assert.equal(producibleMana(state, 'p1', null, { artifactSpell: true }), 1, 'dla czaru-artefaktu liczy się');
+  // M202/N1 (audyt PR #73): ograniczenie druku dotyczy WYŁĄCZNIE rzutu czaru
+  // nie-artefaktowego. Płatność, która nie jest rzutem czaru (domyślny
+  // `purpose`) — zdolność aktywowana, plot, suspend — płaci tą maną normalnie;
+  // wcześniej odejmowaliśmy ją zawsze i odbieraliśmy graczowi legalne aktywacje.
+  assert.equal(producibleMana(state, 'p1'), 1, 'poza rzutem czaru mana ograniczona jest dostępna');
+  assert.equal(producibleMana(state, 'p1', null, spellManaPurpose({ types: ['Artifact'] })), 1,
+    'dla czaru-artefaktu liczy się');
+  assert.equal(producibleMana(state, 'p1', null, spellManaPurpose({ types: ['Creature'] })), 0,
+    'dla czaru nie-artefaktowego — niedostępna (druk tokenu)');
 });
 
 test('BUG3 (anty-over-fix): zwykły ląd płaci za wszystko', () => {
@@ -113,8 +120,10 @@ test('BUG3: ograniczenie działa też po RĘCZNYM tapnięciu (mana w puli)', () 
   assert.equal(execute(state, activate).ok, true);
   const player = state.players.find((p) => p.id === 'p1');
   assert.equal(player.mana, 1, 'mana trafiła do puli');
-  assert.equal(producibleMana(state, 'p1'), 0,
+  assert.equal(producibleMana(state, 'p1', null, spellManaPurpose({ types: ['Creature'] })), 0,
     'ale dla czaru nie-artefaktowego jest niedostępna (druk tokenu)');
-  assert.equal(producibleMana(state, 'p1', null, { artifactSpell: true }), 1,
+  assert.equal(producibleMana(state, 'p1', null, spellManaPurpose({ types: ['Artifact'] })), 1,
     'dla czaru-artefaktu — dostępna');
+  assert.equal(producibleMana(state, 'p1'), 1,
+    'M202/N1: dla zdolności aktywowanej (nie rzut czaru) — dostępna');
 });

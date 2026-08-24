@@ -64,6 +64,8 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_optional_trigger_choice: 'Efekt „you may"',
   resolve_enter_as_copy: 'Wejście jako kopia',
   resolve_destroy_equipment_choice: 'Zniszczenie equipmentu',
+  // M202/odznaka #3 (CR 616.1): wybór efektu zastępczego — tarcza albo regeneracja.
+  resolve_replacement_choice: 'Wybór efektu zastępczego',
   resolve_mulligan_choice: 'Mulligan (ręka startowa)',
   resolve_mulligan_bottom_choice: 'Odłożenie kart na spód',
   resolve_search_choice: 'Szukanie w bibliotece',
@@ -350,6 +352,7 @@ export function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_optional_trigger_choice') return 'resolve_optional_trigger_choice';
   if (command.type === 'resolve_enter_as_copy') return 'resolve_enter_as_copy';
   if (command.type === 'resolve_destroy_equipment_choice') return 'resolve_destroy_equipment_choice';
+  if (command.type === 'resolve_replacement_choice') return 'resolve_replacement_choice';
   if (command.type === 'resolve_discard_choice') return 'resolve_discard_choice';
   // M163/A (uwaga właściciela): decyzje wielowariantowe bez klucza renderują
   // się jako luźne przyciski z identycznymi etykietami (Exploit Butchera).
@@ -1256,7 +1259,8 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   // multiplayer („if another opponent…”) jest w 1v1 martwy z definicji
   // formatu — kafel mówi to wprost zamiast renderować pusty szum.
   if (trigger.condition?.anotherOpponentExists) {
-    return 'Trigger wymaga drugiego przeciwnika — nieaktywny w grze 1v1';
+    // M202/C: bez zapożyczenia „Trigger” — kafel ma mówić po polsku (oś 2 audytu).
+    return 'Wymaga drugiego przeciwnika — zdolność nieaktywna w grze 1v1';
   }
   if (trigger.event === 'dies') return `Gdy ta karta umrze: ${parts}.`;
   if (trigger.event === 'combat_damage_to_player') return `Gdy zada obrażenia graczowi: ${parts}.`;
@@ -1348,10 +1352,19 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   // surowych nazw zdarzeń triggerów (np. you_cast_noncreature_spell → "rzucenie czaru
   // niebędącego stworem"). Fallback na surową nazwę, gdy brak tłumaczenia.
   const eventLabel = TRIGGER_EVENT_LABELS[trigger.event] ?? trigger.event;
+  // M202/C (Żywy Tester, Chronic Flooding): etykiety w TRIGGER_EVENT_LABELS są
+  // FRAZAMI RZECZOWNIKOWYMI („śmierć stworu”, „zatapnięcie zaczarowanego
+  // permanentu”), więc szablon „Trigger <etykieta>: <skutek>” dawał zdanie
+  // niepo polsku („Trigger zatapnięcie zaczarowanego permanentu: mieli 3
+  // karty”). M80 usunął ten wzorzec dla siedmiu kart z ręcznej listy — reszta
+  // katalogu zostawała z tym samym błędem (klasa L26: strażnik z ręczną listą).
+  // Zamiast doklejać zdania per karta: fraza rzeczownikowa + dwukropek, bez
+  // zapożyczenia „Trigger” (spójnie z opisami zdarzeń w logu — oś 2 audytu).
+  const lead = eventLabel.charAt(0).toUpperCase() + eventLabel.slice(1);
   // Specjalne opisy dla triggerów z pustym efektem (mentor, itp.)
-  if (trigger.event === 'mentor_attacks') return `Trigger ${eventLabel}: cel dostaje licznik +1/+1.`;
-  if (!parts) return `Trigger ${eventLabel}.`;
-  return `Trigger ${eventLabel}: ${parts}.`;
+  if (trigger.event === 'mentor_attacks') return `${lead}: cel dostaje licznik +1/+1.`;
+  if (!parts) return `${lead}.`;
+  return `${lead}: ${parts}.`;
 }
 
 /** Tekst reguł do pola karty: keywordy, efekty czaru lub opis zdolności. */
@@ -1527,6 +1540,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_optional_trigger_choice: 'Efekt dobrowolny („you may")',
   resolve_enter_as_copy: 'Wejście jako kopia — który Ally?',
   resolve_destroy_equipment_choice: 'Zniszczyć equipment?',
+  resolve_replacement_choice: 'Tarcza czy regeneracja?',
   resolve_land_type_choice: 'Typ landa',
   resolve_library_placement: 'Wierzch czy spód biblioteki',
   resolve_pay_or_sacrifice: 'Zapłata albo poświęcenie',
@@ -1586,6 +1600,14 @@ function choiceSourceTitle(cmd, session, view) {
   // M87: tytuł idzie i do innerHTML przycisku, i do textContent nagłówka
   // modala — escapeHtml dawał „Hunter&#39;s Blowgun" w oknie wyboru.
   const name = session.nameOf(object.cardId);
+  // M202/D+M (zgłoszenie właściciela, Ruthless Invasion i Porcelain Legionnaire):
+  // warianty zapłaty many phyrexian ({W/P} — mana ALBO 2 życia) grupują się po
+  // karcie, ale tytuł spadał do generycznego „Wybierz: Zapłata: mana czy życie?”
+  // — gracz widział wybór, nie wiedząc KTÓREJ karty dotyczy. Nazwa karty jest
+  // w komendzie (objectId), więc tytuł może ją podać jak inne grupy.
+  if (cmd.phyrexianPayWithLife != null) {
+    return `${name} — zapłata: mana czy życie?`;
+  }
   if (cmd.type === 'cast_permanent' && cmd.targets?.length) {
     if (cmd.bestow) return `Bestow: ${name}`;
     if (object.aura) return `Aura: ${name}`;
@@ -2469,6 +2491,12 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_destroy_equipment_choice':
       return cmd.destroy ? 'Zniszcz equipment' : 'Zostaw equipment';
+    // M202/odznaka #3 (CR 616.1): wybór efektu zastępczego — etykieta nazywa
+    // kartę, żeby w modalu było widać, o który permanent chodzi.
+    case 'resolve_replacement_choice':
+      return cmd.choice === 'shield'
+        ? `Zdejmij licznik tarczy (${nameOfObjectId(cmd.objectId)})`
+        : `Regeneruj (${nameOfObjectId(cmd.objectId)})`;
     case 'resolve_opponent_target': {
       // Cuombajj Witches: to TY wskazujesz cel obrażeń przeciwnika.
       return `Wskaż cel obrażeń: ${nameOfObjectId(cmd.targetId)}`;
@@ -3688,7 +3716,21 @@ export function renderEnemyHand(host, label, view, session, enemyId) {
     div(host, 'zone-empty', 'Ręka przeciwnika pusta');
     return 0;
   }
-  for (let i = 0; i < count; i += 1) div(host, 'card-back', '');
+  // M202/A (uwaga właściciela 2026-08-24): rewers to PRAWDZIWY tył karty MTG
+  // ze Scryfall — ten sam `CARD_BACK_URL`, który noszą zakryte permanenty
+  // (morph) na stole — i pełny kafel w rozmiarze reszty ręki (`size: 'sm'`
+  // = `--card-w-hand`), a nie mała zaślepka z CSS.
+  //
+  // Tożsamość zostaje ukryta (CR 402.2): `faceDown` w `artOf` kieruje
+  // `tileImageSources` na JEDEN wspólny rewers, a kafel nie ma `cardId` ani
+  // danych karty — więc sam fakt pobrania obrazu nic nie zdradza (ADR 0003,
+  // komentarz przy `CARD_BACK_URL`).
+  for (let i = 0; i < count; i += 1) {
+    tile(host, {
+      objectId: `enemy-hand-${i}`, cardId: null, faceDown: true,
+      name: 'Karta przeciwnika', colors: [], kind: 'card', types: [],
+    }, { size: 'sm' });
+  }
   return count;
 }
 

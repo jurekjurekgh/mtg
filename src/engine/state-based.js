@@ -83,6 +83,10 @@ export function addRegenerationShield(state, objectId) {
  */
 export function runStateBasedActions(state) {
   const events = [];
+  // M202/odznaka #3 (CR 616.1): dopóki gracz nie rozstrzygnie wyboru efektu
+  // zastępczego (tarcza albo regeneracja), nie przetwarzamy kolejnych akcji
+  // stanowych — inaczej drugi przebieg rozstrzygnąłby za gracza.
+  if (state.pendingReplacementChoice) return events;
   // CR 506.4c (M201, znalezisko #1): „A permanent that's no longer a creature
   // is removed from combat.” Przyczyna bywa dowolna — koniec animacji
   // (Skilled Animator), utrata typu, zmiana charakterystyk — więc reguła
@@ -125,9 +129,22 @@ export function runStateBasedActions(state) {
     for (const player of state.players) {
       const isZeroLife = player.life <= 0;
       const isPoisoned = (player.poison ?? 0) >= 10;
-      if (!isZeroLife && !isPoisoned) continue;
-      losers.push({ playerId: player.id, reason: isPoisoned ? 'poison_ten' : 'life_zero' });
+      // M202 (CR 704.5m): gracz, który od ostatniego przebiegu akcji stanowych
+      // próbował dobrać kartę z pustej biblioteki, przegrywa. Rozstrzygamy to
+      // TUTAJ, razem z życiem i trucizną, bo dopiero wtedy wiadomo, czy
+      // przegranych jest więcej niż jeden — a wtedy CR 104.4b daje REMIS.
+      // Wcześniej ścieżki dobrania kończyły grę natychmiast, więc przy
+      // jednoczesnym deck-oucie („You and target opponent each draw two
+      // cards”) zwycięzcę wyznaczała kolejność przetwarzania.
+      const drewFromEmpty = Boolean(state.emptyLibraryDraw?.[player.id]);
+      if (!isZeroLife && !isPoisoned && !drewFromEmpty) continue;
+      losers.push({
+        playerId: player.id,
+        reason: drewFromEmpty ? 'empty_library' : (isPoisoned ? 'poison_ten' : 'life_zero'),
+      });
     }
+    // Znacznik dotyczy wyłącznie tego przebiegu akcji stanowych.
+    if (state.emptyLibraryDraw) state.emptyLibraryDraw = {};
     if (losers.length > 0) {
       // CR 104.4b: „If the game somehow enters a state in which all remaining
       // players lose simultaneously, the game is a draw." Wcześniej pętla
@@ -170,6 +187,28 @@ export function runStateBasedActions(state) {
     const killedByDamage = !isIndestructible && object.damage >= toughness;
     const killedByDeathtouch = !isIndestructible && object.damagedByDeathtouch && object.damage > 0;
     if (!killedByZeroToughness && !killedByDamage && !killedByDeathtouch) continue;
+    // M202/odznaka #3 (CR 616.1): gdy zniszczenie można zastąpić na DWA
+    // sposoby — licznikiem tarczy (CR 122.1b) albo tarczą regeneracji
+    // (CR 701.12) — wybiera KONTROLER permanenta, nie silnik. Dotąd tarcza
+    // była konsumowana zawsze, czyli gracz tracił licznik nawet wtedy, gdy
+    // wolał regenerację (która dodatkowo zdejmuje obrażenia i odpina od walki).
+    // Wytrzymałość <= 0 nie jest zniszczeniem, więc wybór tam nie istnieje.
+    const hasShieldCounter = (object.counters?.shield ?? 0) > 0;
+    const hasRegenerationShield = (state.regenerationShields ?? []).includes(object.id)
+      && !(state.cantBeRegeneratedThisTurn ?? []).includes(object.id);
+    if (!killedByZeroToughness && hasShieldCounter && hasRegenerationShield) {
+      state.pendingReplacementChoice = {
+        playerId: object.controllerId,
+        objectId: object.id,
+        cardId: object.cardId ?? null,
+      };
+      state.turn.priorityPlayerId = object.controllerId;
+      const required = event('replacement_choice_required', {
+        playerId: object.controllerId, objectId: object.id, cardId: object.cardId ?? null,
+      });
+      state.events.push(required); events.push(required);
+      return events;
+    }
     // Shield: zniszczenie z obrażeń zastąp zdjęciem tarczy (CR 122.1b).
     if (!killedByZeroToughness && (object.counters?.shield ?? 0) > 0) {
       const next = { ...(object.counters ?? {}) };

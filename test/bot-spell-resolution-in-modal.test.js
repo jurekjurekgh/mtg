@@ -127,10 +127,13 @@ test('M99: skutek czaru bota (+X/+X) też trafia do modala, nie tylko do logu', 
   // Seed 6 po Batchu 48 D (tarkir +Stampeding Elk Herd) — hunter.
   // Seed 10 po M197/K3 (dominaria -Reassembling Skeleton, landy przeliczone)
   // — hunter (kolejne sprawdzone: 7, 8, 9). Konwencja L25.
-  const session = makeSession(10);
+  // Seed 3 po M202/A (przypisanie 6 kart do popularniejszych planów: dominaria
+  // +Garruk's Companion, landy przeliczone) — hunter (kolejne sprawdzone: 6,
+  // 11, 13, 16, 17, 25). Konwencja L25; ten test to dług odsetkowy (L53).
+  const session = makeSession(3);
   const { modalTexts, log } = playCollectingModals(session);
   const pumpInLog = log.filter((t) => /dostaje \+\d+\/\+\d+/.test(t));
-  assert.ok(pumpInLog.length > 0, 'seed 10 miał produkować pump w logu');
+  assert.ok(pumpInLog.length > 0, 'seed 3 miał produkować pump w logu');
   const pumpInModal = modalTexts.filter((t) => /dostaje \+\d+\/\+\d+/.test(t));
   assert.ok(
     pumpInModal.length > 0,

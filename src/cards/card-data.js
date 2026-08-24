@@ -429,7 +429,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 307,
-    plan: 'Moag',
+    plan: 'Śródziemie',
     support: { status: 'supported', limitations: ['brak command zone w engine — liczba rzuceń commandera zawsze 0, więc ETB nie tworzy tokenów w tym formacie (mechanicznie poprawne); token Forest Dryad zdefiniowany i testowany'] },
     notes: ['land creatures to obiekty z typem Land i rodzajem creature (walczą i tapują się na manę)'],
   }),
@@ -708,6 +708,51 @@ export const REAL_CARDS = Object.freeze([
     keywords: ['vigilance'], power: 2, toughness: 2, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/b/f/bf9acfe1-de7a-48fe-aed3-28a72db6d1c0.jpg?1783940863',  // l12
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Selesnya Charm'] },
+  }),
+  // M202/K (zgłoszenie właściciela): token Phyrexian Mite renderował się jako
+  // syntetyczna zaślepka, bo NIE MIAŁ WPISU w katalogu — a to z wpisu kafel
+  // bierze `imageUri` (Scryfall) i tekst reguł. Sam token działał poprawnie:
+  // jest tworzony przez efekt `create_token` Crawling Chorus, który niesie
+  // jego cechy i `cantBlock` inline (ADR 0002 — reguła w jednym miejscu),
+  // więc ten wpis jest WYŁĄCZNIE danymi prezentacji: druk tokena + grafika.
+  // Obraz: Scryfall, set „tone” (Phyrexia: All Will Be One Tokens), karta
+  // „Phyrexian Mite” 1/1 colorless Artifact Creature — Phyrexian Mite.
+  defineCard({
+    id: 'token_phyrexian_mite', name: 'Phyrexian Mite', set: null,
+    types: ['Artifact', 'Creature', 'Token'], subtypes: ['Phyrexian', 'Mite'], colors: [],
+    keywords: ['toxic'], toxic: 1, power: 1, toughness: 1, manaCost: 0,
+    oracleText: 'Toxic 1 (Players dealt combat damage by this creature also get a poison counter.)\nThis creature can\'t block.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/6/96ec91a9-659a-455f-98e0-cd30b6c6c2a4.jpg?1783918166',  // tone
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Crawling Chorus'] },
+  }),
+  // M202/K cd. (ta sama przyczyna co Phyrexian Mite): tokeny tworzone przez
+  // Mysidian Elder, Chatter of the Squirrel i Call the Mountain Chocobo nie
+  // miały wpisów w katalogu, więc ich kafle renderowały syntetyczną zaślepkę
+  // zamiast grafiki. Wpisy są WYŁĄCZNIE danymi prezentacji (druk tokena +
+  // obraz Scryfall); reguły tokenów zostają inline w efektach `create_token`
+  // (ADR 0002 — jedno źródło reguły). Strażnik: test/m202-k-tokeny-wpisy.test.js.
+  defineCard({
+    id: 'token_wizard', name: 'Wizard', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Wizard'], colors: ['B'],
+    power: 0, toughness: 1, manaCost: 0,
+    oracleText: 'Whenever you cast a noncreature spell, this token deals 1 damage to each opponent.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/8/187fe54c-7d0c-4225-9d46-3affbead897d.jpg?1783906133',  // tfin
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Mysidian Elder'] },
+  }),
+  defineCard({
+    id: 'token_squirrel', name: 'Squirrel', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Squirrel'], colors: ['G'],
+    power: 1, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/5/a/5a6ec62e-0e9b-4312-bfe8-cc85d76fd9e0.jpg?1783909765',  // tblb
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Chatter of the Squirrel'] },
+  }),
+  defineCard({
+    id: 'token_bird_chocobo', name: 'Bird', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Bird'], colors: ['G'],
+    power: 2, toughness: 2, manaCost: 0,
+    oracleText: 'Whenever a land you control enters, this token gets +1/+0 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/f/1fbc471d-5948-47fc-b7cc-81cc13a4cd15.jpg?1783906133',  // tfin
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Call the Mountain Chocobo'] },
   }),
   defineCard({
     id: 'unstable-frontier', name: 'Unstable Frontier', set: 'CON',
@@ -2362,7 +2407,7 @@ export const REAL_CARDS = Object.freeze([
     oracleText: "Trample (This creature can deal excess combat damage to the player or planeswalker it's attacking.)",
     imageUri: 'https://cards.scryfall.io/large/front/8/6/863c9a10-d83f-415b-adf2-2d0f870410b2.jpg?1783941798',
     artId: 84,
-    plan: 'Shandalar',
+    plan: 'Dominaria',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -2460,7 +2505,7 @@ export const REAL_CARDS = Object.freeze([
       }],
     },
     artId: 252,
-    plan: 'Shandalar',
+    plan: 'Śródziemie',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -4656,7 +4701,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: { type: 'draw_cards', amount: 1 },
       }),
     ],
-    artId: 474, plan: 'Shandalar',
+    artId: 474, plan: 'Wiedźmin',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -5434,7 +5479,9 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       modes: [
         { name: 'Kontra', targets: [{ type: 'artifact_spell_on_stack' }],
           effects: [{ type: 'counter_spell' }] },
-        { name: 'Odbicie', targets: [{ type: 'artifact' }],
+        // M202/E (uwaga właściciela): „Odbicie” sugerowało kontrę; Oracle mówi
+        // „Return target artifact to its owner's hand” — więc „Zwrot do ręki”.
+        { name: 'Zwrot do ręki', targets: [{ type: 'artifact' }],
           effects: [{ type: 'bounce_permanent' }] },
       ],
     },
@@ -6105,7 +6152,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         ],
       }),
     ],
-    artId: 246, plan: 'Rabiah',
+    artId: 246, plan: 'Wiedźmin',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -7527,7 +7574,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       targets: [{ type: 'creature_or_vehicle' }],
       effects: [{ type: 'destroy_permanent' }],
     },
-    artId: 119, plan: 'Muraganda',
+    artId: 119, plan: 'Kaladesh',
     support: { status: 'supported', limitations: [] },
   }),
 

@@ -6,42 +6,26 @@
 1x Merchant's Dockhand
 1x Canonized in Blood
 1x Cathartic Reunion
-1x Emissary Escort
-1x Fake Your Own Death
-1x Illvoi Operative
 1x Lodestone Needle
 1x Silken Strength
 1x Stall Out
-1x Sterling Keykeeper
-1x Trained Arynx
-1x Tumbleweed Rising
 1x Welder Automaton
 1x Cogwork Assembler
-1x Diplomatic Relations
-1x Frontline War-Rager
-1x Gila Courser
 1x Glint-Sleeve Artisan
 1x Glitch Ghost Surveyor
-1x Moonlit Meditation
-1x Pain for All
-1x Ruinous Rampage
 1x Skilled Animator
 1x Spin Out
-1x Warmaker Gunship
 1x Bomat Bazaar Barge
 1x Cacophodon
 1x Fathom Fleet Cutthroat
 1x Geological Appraiser
 1x Reclusive Artificer
-1x Wedgelight Rammer
 1x Crested Herdcaller
 1x Dire Fleet Ravager
-1x Spinewoods Paladin
 1x Spreading Insurrection
 1x Seismic Monstrosaur
-1x Weftblade Enhancer
-3x Plains
-4x Island
+2x Plains
+2x Island
 3x Swamp
-6x Mountain
-4x Forest
+3x Mountain
+2x Forest

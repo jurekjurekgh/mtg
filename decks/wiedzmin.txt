@@ -6,6 +6,7 @@
 1x Floodhound
 1x Twiddle
 1x Village Rites
+1x Cuombajj Witches
 1x Dawntreader Elk
 1x Leafcrown Dryad
 1x Maritime Guard
@@ -16,6 +17,7 @@
 1x Chittering Rats
 1x Dread Warlock
 1x Nature's Embrace
+1x Scroll Thief
 1x Springbloom Druid
 1x Ballista Watcher
 1x Emerald Oryx
@@ -26,6 +28,6 @@
 1x Segmented Krotiq
 1x Howl of the Night Pack
 5x Island
-3x Swamp
+4x Swamp
 2x Mountain
 3x Forest
