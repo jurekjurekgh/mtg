@@ -20,7 +20,7 @@ Tryb: **ADR 0020** (PR → audyt poprzedniego PR → inkrementalne commity)
 zablokowany, a `ENVIRONMENT.md` §4 jest poprawny. Korekta `PROJECT_STATE.md`
 wchodzi w Etapie 1.
 
-## 1. Audyt PR #74 (ADR 0020 B / ADR 0016) — etap bieżący
+## 1. Audyt PR #74 (ADR 0020 B / ADR 0016) — WYKONANY
 
 Przegląd każdego zmienionego pliku pod kątem: zgodności z CR, ADR 0002 (brak
 przypadków po nazwie/ID karty w core), ADR 0003/0017 (FoW i kompletność
@@ -57,7 +57,19 @@ Obszary najwyższego ryzyka (nowa logika reguł w PR #74):
 Kryterium ukończenia: raport `docs/audits/AUDYT_PR74_2026-08-24.md` (znaleziska
 N*, obserwacje O*, lista „zweryfikowane jako poprawne") + commit + push.
 
-## 2. Naprawa znalezisk audytu (osobny commit na każdy fix)
+**Wykonanie:** raport napisany. Zweryfikowane jako POPRAWNE: N1, brąz 1
+(CR 704.5m), brąz 3 (CR 616.1), N2, N4 (szczegóły i numery linii w §1 raportu).
+Znaleziska: **N-NEW-1** (Halo Forager — darmowy rzut kosztuje manę; do decyzji
+właściciela), **O-NEW-1** (Żywy Tester — naprawione), **O-NEW-2** (egress —
+skorygowane), **O-NEW-3** (D z M202 — podtrzymane jako temat właściciela).
+
+## 2. Naprawa znalezisk audytu (osobny commit na każdy fix) — częściowo
+
+Wykonane: **O-NEW-1** (Żywy Tester — commit `03ebe2b`, test RED 4/6 → 7/7 GREEN,
+weryfikacja mutacyjna) oraz porządki z §3 (commit `cb6c0d1`).
+**N-NEW-1 (Halo Forager) NIE naprawiony** — wymaga decyzji właściciela
+(pełny fix z decyzją „wybierz X" albo `unsupported`); uzasadnienie w §2 raportu
+audytu i we wpisie M203 w `PROJECT_STATE.md`.
 
 Każdy fix: test RED (z weryfikacją mutacyjną — odwrócenie fixa musi dać FAIL)
 → naprawa u ROOT CAUSE (zakaz masek) → `npm test` + `npm run build` →
@@ -65,10 +77,10 @@ commit + push. Bez pełnego B0 (ADR 0018); do opisu PR wystarcza profil szybki.
 
 ## 3. Porządki rozstrzygnięte w tej sesji (nie wymagają decyzji właściciela)
 
-- [ ] **Korekta `PROJECT_STATE.md`** — wpis M202 o egress jest sprzeczny
+- [x] **Korekta `PROJECT_STATE.md`** — wpis M202 o egress jest sprzeczny
       z pomiarem i z `ENVIRONMENT.md` §4; `ENVIRONMENT.md` jest dokumentem
       trwałym dla ograniczeń środowiska (`AGENTS.md` §„Gdzie zapisać regułę").
-- [ ] **Usunięcie `commit-msg.txt`** z katalogu głównego — plik śledzony,
+- [x] **Usunięcie `commit-msg.txt`** z katalogu głównego — plik śledzony,
       jedyny commit, który go dotyka, to squash PR #74 (czyli wszedł
       przypadkiem przy squashu); reguła `ENVIRONMENT.md` §3 mówi wprost:
       komunikaty commitów pisz POZA repo. Znalezisko O3 z audytu PR #73.
@@ -86,13 +98,20 @@ commit + push. Bez pełnego B0 (ADR 0018); do opisu PR wystarcza profil szybki.
 
 ## 5. Zamknięcie sesji
 
-- [ ] `npm test` + `npm run build` zielone; `git status` czysty;
-      `git log origin/arena/01a03566-mtg..HEAD` puste.
-- [ ] `docs/PROJECT_STATE.md` (nowy wpis M203 + korekta egress).
-- [ ] `docs/setup/HANDOFF_2026-08-24-m203.md`.
-- [ ] Nowe lekcje w `docs/LESSONS.md` (format pilnowany przez
-      `test/docs-decisions.test.js`).
-- [ ] Opis PR #75 zaktualizowany kumulacyjnie; blok przekazania w czacie.
+- [x] `npm test` **3188/3188** + `npm run build` 53/2626.0 kB; `git status` czysty.
+- [x] `docs/PROJECT_STATE.md` (nowy wpis M203 + korekta egress).
+- [x] `docs/setup/HANDOFF_2026-08-24-m203.md`.
+- [x] Nowa lekcja **L60** w `docs/LESSONS.md` (`test/docs-decisions.test.js` 15/15).
+- [x] Opis PR #75 zaktualizowany kumulacyjnie; blok przekazania w czacie.
+
+## 4'. Pętla jakości — co faktycznie zrobione (ADR 0021 pkt 4)
+
+- (a) Żywy Tester uruchomiony (2 partie: `ravnica vs dominaria` seed 42,
+      `dominaria vs ravnica` seed 7) — **0 zgłoszeń detektorów**; za to
+      znaleziony i naprawiony błąd samego narzędzia (O-NEW-1).
+- (b) Polowanie na CR: prześwietlone wszystkie ścieżki płatności many (53
+      wywołania) i obie ścieżki dobrania kart; trafienie: N-NEW-1.
+- (c) Nowego batcha kart NIE dodano (ADR 0021).
 
 ## Ryzyka i pułapki
 

@@ -25,6 +25,45 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 ---
 
 
+## L60 (2026-08-24) — Narzędzie audytu, które milcząco przyjmuje złą konfigurację, produkuje audyty o czymś innym
+
+**Objaw (M203, audyt PR #74):** Żywy Tester stołu miał domyślne talie
+`--human green --bot red`. Takich talii nie ma od M178 (ADR 0023 — talie per
+plan, „stare nazwy talii … przestały istnieć"). Sterownik wybierał talię pętlą
+`for (const opt of select.options) if (opt.value === human) select.value = …`
+— **bez `else`**, więc nieistniejąca nazwa nie była błędem: partia startowała
+na tym, co artefakt miał wybrane domyślnie, a pierwsza linia transkryptu i tak
+głosiła `== NOWA PARTIA: gracz=green vs bot=red ==`. Audyt „green vs red"
+mierzył więc inną partię, niż zapowiadał — i żaden test ani detektor tego nie
+widział, bo narzędzie działało „poprawnie".
+
+**Dlaczego to groźne:** to L33 („narzędzie audytu, które porządkuje dane,
+kłamie o stanie gry") i L24 („cichy skutek to błąd informacyjny") w jednym.
+Narzędzie audytowe jest **źródłem dowodów** dla kolejnych decyzji; jeśli jego
+konfiguracja milcząco rozmija się z rzeczywistością, wnioski z audytu są
+nie do obrony, a wyglądają na zmierzone. W tym repo rozjazd przeżył ~25 sesji,
+bo nikt nie kwestionował nazw talii w dokumentacji narzędzia.
+
+**Reguła:**
+
+1. **Każdy parametr narzędzia audytu, który wskazuje dane w repozytorium,
+   musi być walidowany jawnie** — nieistniejąca nazwa to błąd z listą
+   dostępnych, nigdy cichy fallback. Pętla wyboru „jeśli pasuje, ustaw"
+   wymaga `else`, które rzuca.
+2. **Domyślne wartości nie mogą być przepisywane z dokumentacji** — bierze się
+   je z tego samego źródła, z którego czyta narzędzie (tu: `decks/*.txt` /
+   `BENCH_DECKS`), a listę w dokumentacji zastępuje komendą
+   (`--list-decks`). Lista przepisana ręcznie starzeje się przy każdym batchu.
+3. **Rozjazd nazw między dokumentacją a katalogiem danych dostaje strażnika**
+   (`test/m203-talie-testera-i-dokumentacji.test.js`) — L56: twierdzenie
+   o danych sprawdzasz grepem, a jeśli ma żyć w repo, pilnuje go test.
+4. **Sygnał ostrzegawczy:** narzędzie, które „działa" i zwraca sensowny
+   wynik przy parametrze wskazującym nieistniejący plik. Sprawdź to raz
+   celowo — koszt 10 sekund, a rozjazd bywa wielosesyjny.
+
+**Sformalizowane w:** M203 (walidacja talii w `parseArgs`, drugi bezpiecznik
+przy wyborze w DOM, `--list-decks`, strażnik dokumentacji).
+
 ## L59 (2026-08-24) — Ograniczenie zasobu i koszt dodatkowy żyją w WIELU ścieżkach: definiuj przez ZAKAZ i pilnuj strażnikiem każdej ścieżki
 
 **Objaw (M202, audyt PR #73 — dwa znaleziska jednej klasy):**

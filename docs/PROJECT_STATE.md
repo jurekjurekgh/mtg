@@ -1,7 +1,73 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-24 (M202: audyt PR #73 + poprawki A/B/C + brązowa odznaka 3/5 — PR #74 otwarty)
-- **Poprzednia:** 2026-08-23 (M201: audyt PR #72 + zgłoszenia właściciela F/M/M2 — PR #73 scalony)
+- **Ostatnia aktualizacja:** 2026-08-24 (M203: audyt PR #74 + naprawa narzędzia audytu — PR #75 otwarty)
+- **Poprzednia:** 2026-08-24 (M202: audyt PR #73 + poprawki A/B/C + brązowa odznaka 3/5 — PR #74 scalony)
+
+## M203 — audyt PR #74: narzędzie audytu kłamało o talii (2026-08-24, PR #75)
+
+Plan: `docs/plans/PLAN_2026-08-24-m203-audyt-pr74-petla-jakosci.md` · raport:
+`docs/audits/AUDYT_PR74_2026-08-24.md` · nowa lekcja: **L60**.
+
+Tryb sesji: ADR 0020 (PR #75 na starcie → audyt poprzedniego PR → commit na
+każdy samodzielnie zielony krok) + ADR 0021 (prompt „kontynuujemy" = pętla
+domyślna, bez pytania o kolejkę).
+
+**Baza zmierzona przed pracą:** `npm test` **3181/3181**, build **53 moduły /
+2626.0 kB**, `gh pr diff 74` = 57 plików / 4987 linii (klon Areny spłaszczony
+do jednego commita). Egress HTTPS **zablokowany** (pomiar: `curl
+api.scryfall.com` → `000`, `fetch` → `fetch failed`, `registry.npmjs.org` →
+`200`) — czyli `ENVIRONMENT.md` §4 poprawny; wpis M202 głoszący odwrotnie
+**skorygowany** (`cb6c0d1`).
+
+**Zweryfikowane jako POPRAWNE (nie badać drugi raz):** N1 mana ograniczona
+drukiem (prześwietlone wszystkie 27 `producibleMana` i 26 `spendMana` — cel
+wydania niesie każda ścieżka rzutu, a płatności nie-czarowe słusznie go nie
+mają), brąz 1 CR 704.5m/104.4b (znacznik `emptyLibraryDraw` w obu ścieżkach
+dobrania, kasowany w przebiegu SBA), brąz 3 CR 616.1 (pełne okablowanie
+`resolve_replacement_choice`: stan, `firstDecisionOwner`, bramka, oferta,
+`pass_priority`, fingerprint, protokół, oba boty, etykiety, log), N2
+`prefer: 'opponent'` (jedno centralne miejsce, CR 115.4), N4
+`exileAdditionalCostCandidates` (jeden helper, trzy gałęzie oferty: 5759 /
+5859 / 5944).
+
+**Znalezisko N-NEW-1 (BŁĄD REGUŁ, ADR 0022) — Halo Forager.** Oracle: „you may
+pay {X} … cast … with mana value X … **without paying its mana cost**".
+Zmierzone: silnik **pobiera MV many** za ten rzut (3 many → 2 po rzucie karty
+MV 1) i wcale nie wymaga X = MV (oferta = `MV ≤ budżet`), a zapłata {X}
+z triggera nie jest modelowana. Własny test repo (`m201-u2-…`) stwierdza
+regułę, której ta ścieżka nie stosuje: rzut „bez kosztu many" zwalnia
+WYŁĄCZNIE z many (CR 118.5/118.9a). Karta ma `supported` + puste `limitations`
+i `notes` deklarujące „MV = X" — czyli deklaruje zgodność, której nie ma.
+**Nie naprawione w tej sesji** (L57 + zakres): poprawny model wymaga decyzji
+„wybierz X" (protokół, oba boty, kreator w stole, testy); półśrodek utrwaliłby
+rozjazd w kodzie wyglądającym na naprawiony. **Do decyzji właściciela:**
+pełny fix albo `unsupported` (wpływ: 1 karta, `decks/worek-basni.txt` — poza
+`BENCH_DECKS`).
+
+**Naprawione (O-NEW-1, `03ebe2b`): Żywy Tester grał inną talią, niż
+zapowiadał.** Domyślne `green`/`red` nie istnieją od M178 (ADR 0023), a wybór
+talii był pętlą bez `else`, więc partia startowała na domyślnej talii artefaktu
+przy nagłówku transkryptu głoszącym nazwę podaną — audyt mierzył co innego,
+niż zapowiadał (L24/L33). Fix: walidacja nazw w `parseArgs` (jawny błąd
+z listą), drugi bezpiecznik przy wyborze w DOM, domyślne z `BENCH_DECKS`
+(dominaria/ravnica), nowa flaga `--list-decks` jako jedno źródło nazw,
+względna ścieżka `--out` liczona od katalogu narzędzia (transkrypt lądował
+w korzeniu repo, poza `.gitignore`). Dokumentacja (`TESTER_STOLU.md`,
+`tools/table-tester/README.md`, `decks/README.md` — w tym „9 talii" i „pula
+many bezbarwna", sprzeczne z ADR 0015/0023) przepisana; strażnik
+`test/m203-talie-testera-i-dokumentacji.test.js` (7 testów, RED 4/6 przed
+fiksem, weryfikacja mutacyjna). Smoke po fixie: `gracz=dominaria vs
+bot=ravnica`, 0 zgłoszeń detektorów.
+
+**Porządki:** usunięty `commit-msg.txt` z katalogu głównego (leftover squasha
+PR #74, `ENVIRONMENT.md` §3 — znalezisko O3 z audytu PR #73).
+
+**Do decyzji właściciela (podtrzymane):** **D** z M202 — jedna zmiana konwencji
+`unshift`/`push` w `playerView` + pomiar benchmarku zamiast trzech łatek
+(pierwsza oferta aury wskazuje stwora przeciwnika).
+
+**Wynik:** `npm test` **3188/3188** (3181 + 7 nowych), build 53/2626.0 kB.
+Pełne B0 nieuruchomione (ADR 0018).
 
 ## M202 — audyt PR #73: 3 błędy reguł/oferty (2026-08-24, PR #74)
 
