@@ -1256,7 +1256,8 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   // multiplayer („if another opponent…”) jest w 1v1 martwy z definicji
   // formatu — kafel mówi to wprost zamiast renderować pusty szum.
   if (trigger.condition?.anotherOpponentExists) {
-    return 'Trigger wymaga drugiego przeciwnika — nieaktywny w grze 1v1';
+    // M202/C: bez zapożyczenia „Trigger” — kafel ma mówić po polsku (oś 2 audytu).
+    return 'Wymaga drugiego przeciwnika — zdolność nieaktywna w grze 1v1';
   }
   if (trigger.event === 'dies') return `Gdy ta karta umrze: ${parts}.`;
   if (trigger.event === 'combat_damage_to_player') return `Gdy zada obrażenia graczowi: ${parts}.`;
@@ -1348,10 +1349,19 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   // surowych nazw zdarzeń triggerów (np. you_cast_noncreature_spell → "rzucenie czaru
   // niebędącego stworem"). Fallback na surową nazwę, gdy brak tłumaczenia.
   const eventLabel = TRIGGER_EVENT_LABELS[trigger.event] ?? trigger.event;
+  // M202/C (Żywy Tester, Chronic Flooding): etykiety w TRIGGER_EVENT_LABELS są
+  // FRAZAMI RZECZOWNIKOWYMI („śmierć stworu”, „zatapnięcie zaczarowanego
+  // permanentu”), więc szablon „Trigger <etykieta>: <skutek>” dawał zdanie
+  // niepo polsku („Trigger zatapnięcie zaczarowanego permanentu: mieli 3
+  // karty”). M80 usunął ten wzorzec dla siedmiu kart z ręcznej listy — reszta
+  // katalogu zostawała z tym samym błędem (klasa L26: strażnik z ręczną listą).
+  // Zamiast doklejać zdania per karta: fraza rzeczownikowa + dwukropek, bez
+  // zapożyczenia „Trigger” (spójnie z opisami zdarzeń w logu — oś 2 audytu).
+  const lead = eventLabel.charAt(0).toUpperCase() + eventLabel.slice(1);
   // Specjalne opisy dla triggerów z pustym efektem (mentor, itp.)
-  if (trigger.event === 'mentor_attacks') return `Trigger ${eventLabel}: cel dostaje licznik +1/+1.`;
-  if (!parts) return `Trigger ${eventLabel}.`;
-  return `Trigger ${eventLabel}: ${parts}.`;
+  if (trigger.event === 'mentor_attacks') return `${lead}: cel dostaje licznik +1/+1.`;
+  if (!parts) return `${lead}.`;
+  return `${lead}: ${parts}.`;
 }
 
 /** Tekst reguł do pola karty: keywordy, efekty czaru lub opis zdolności. */
