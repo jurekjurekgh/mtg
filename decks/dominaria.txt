@@ -7,6 +7,7 @@
 1x Blanchwood Prowler
 1x Enduring Sliver
 1x Evangel of Synthesis
+1x Garruk's Companion
 1x Goblin Picker
 1x Willbender
 1x Wormfang Newt
@@ -32,4 +33,4 @@
 2x Island
 5x Swamp
 2x Mountain
-2x Forest
+3x Forest

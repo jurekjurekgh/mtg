@@ -429,7 +429,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 307,
-    plan: 'Moag',
+    plan: 'Śródziemie',
     support: { status: 'supported', limitations: ['brak command zone w engine — liczba rzuceń commandera zawsze 0, więc ETB nie tworzy tokenów w tym formacie (mechanicznie poprawne); token Forest Dryad zdefiniowany i testowany'] },
     notes: ['land creatures to obiekty z typem Land i rodzajem creature (walczą i tapują się na manę)'],
   }),
@@ -2362,7 +2362,7 @@ export const REAL_CARDS = Object.freeze([
     oracleText: "Trample (This creature can deal excess combat damage to the player or planeswalker it's attacking.)",
     imageUri: 'https://cards.scryfall.io/large/front/8/6/863c9a10-d83f-415b-adf2-2d0f870410b2.jpg?1783941798',
     artId: 84,
-    plan: 'Shandalar',
+    plan: 'Dominaria',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -2460,7 +2460,7 @@ export const REAL_CARDS = Object.freeze([
       }],
     },
     artId: 252,
-    plan: 'Shandalar',
+    plan: 'Śródziemie',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -4656,7 +4656,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: { type: 'draw_cards', amount: 1 },
       }),
     ],
-    artId: 474, plan: 'Shandalar',
+    artId: 474, plan: 'Wiedźmin',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -6105,7 +6105,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         ],
       }),
     ],
-    artId: 246, plan: 'Rabiah',
+    artId: 246, plan: 'Wiedźmin',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -7527,7 +7527,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       targets: [{ type: 'creature_or_vehicle' }],
       effects: [{ type: 'destroy_permanent' }],
     },
-    artId: 119, plan: 'Muraganda',
+    artId: 119, plan: 'Kaladesh',
     support: { status: 'supported', limitations: [] },
   }),
 

@@ -82,7 +82,7 @@ Ilustracja,Nazwa Karty,Plan
 81TDM,Krotiq Nestguard,Tarkir
 82FUS,Echo of the Awakened Gear,Forgotten Realms
 83MM2,Gorehorn Minotaurs,Warhammer Fantasy
-84M11,Garruk's Companion,Shandalar
+84M11,Garruk's Companion,Dominaria
 85FUS,Debt Repaid in Bronze,Forgotten Realms
 86FIN,Cloudbound Moogle,Final Fantasy
 87ALA,Angelic Benediction,Alara
@@ -117,7 +117,7 @@ Ilustracja,Nazwa Karty,Plan
 116MM2,Wrap in Flames,Warhammer Fantasy
 117MID,Tireless Hauler,Innistrad
 118MID,Dire-Strain Brawler,Innistrad
-119DFT,Spin Out,Muraganda
+119DFT,Spin Out,Kaladesh
 120ORI,Returned Centaur,Theros
 121THB,Sea God's Scorn,Theros
 122ISD,Blazing Torch,Innistrad
@@ -244,13 +244,13 @@ Ilustracja,Nazwa Karty,Plan
 243DD2,Willbender,Dominaria
 244STO,Curse of the Werewolf,Innistrad
 245M10,Dread Warlock,Wiedźmin
-246CMR,Cuombajj Witches,Rabiah
+246CMR,Cuombajj Witches,Wiedźmin
 247STO,The Core of Mirrodin,Mirrodin
 248M19,Reassembling Skeleton,Warhammer Fantasy
 249_5ED,Feedback,Warhammer Fantasy
 250STO,Baldurian Patriar,Forgotten Realms
 251CLB,Stirring Bard,Forgotten Realms
-252CMR,Captain's Call,Shandalar
+252CMR,Captain's Call,Śródziemie
 253AFR,Inspiring Bard,Forgotten Realms
 254STO,Calamity Beast,Bloomburrow
 255STO,Great Book of Grudges,Warhammer Fantasy
@@ -305,7 +305,7 @@ Ilustracja,Nazwa Karty,Plan
 304RNA,Sagittars' Volley,Ravnica
 305ARB,Illusory Demon,Alara
 306WWK,Mysteries of the Deep,Zendikar
-307M3C,"Jyoti, Moag Ancient",Moag
+307M3C,"Jyoti, Moag Ancient",Śródziemie
 308CLB,Greatsword of Tyr,Forgotten Realms
 309ISD,Civilized Scholar,Innistrad
 310_2XM,Chatter of the Squirrel,Dominaria
@@ -472,7 +472,7 @@ Ilustracja,Nazwa Karty,Plan
 471M20,Healer of the Glade,Zendikar
 472_2XM,Kazuul's Toll Collector,Zendikar
 473OGW,Scion Summoner,Zendikar
-474M13,Scroll Thief,Shandalar
+474M13,Scroll Thief,Wiedźmin
 475EOE,Ruinous Rampage,The Edge
 476MBS,Banishment Decree,Mirrodin
 477KTK,Jeskai Windscout,Tarkir
