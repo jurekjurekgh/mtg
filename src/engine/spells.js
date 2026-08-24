@@ -942,6 +942,17 @@ function targetCandidatesBySpec(state, playerId, spec) {
       // M69 (Dreams of Steel and Oil — „Target opponent"): spec.opponent
       // ogranicza kandydatów do przeciwników rzucającego.
       if (spec?.opponent) return players.filter((id) => id !== playerId);
+      // M202/N2 (audyt PR #73): `prefer: 'opponent'` to deskryptor DANYCH
+      // (Dementia Bat — „Target player discards two cards”), który do tej pory
+      // czytało wyłącznie `triggerTargetCandidates`. Bez niego kolejność
+      // kandydatów była przypadkowa (porządek `state.players` + `unshift`
+      // w `playerView`), a pierwsza oferta stołu i wybór prostego bota zależały
+      // od kolejności tworzenia graczy. Preferencja jest tu jawna i generyczna:
+      // przeciwnik pierwszy, kontroler pozostaje legalnym celem (CR 115.4).
+      if (spec?.prefer === 'opponent') {
+        const opponentId = players.find((id) => id !== playerId) ?? null;
+        return opponentId ? [opponentId, ...players.filter((id) => id !== opponentId)] : players;
+      }
       return players;
     }
     case 'creature_card_in_graveyard': {
