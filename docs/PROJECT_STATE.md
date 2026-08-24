@@ -88,8 +88,15 @@ zduplikowanych zdarzeń w strumieniu komendy (wrapper `processTriggers` z M201).
   odwrotność enumeracji), a triggery przez `push`. Do decyzji właściciela:
   jedna zmiana konwencji + pomiar benchmarku zamiast trzech łatek.
 
-**Środowisko:** `tools/table-tester` + `npm i` działa — **egress HTTPS NIE jest
-zablokowany**, wbrew `docs/setup/ENVIRONMENT.md` §4 (do korekty).
+**Środowisko:** `tools/table-tester` + `npm i` działa, bo **rejestr npm nie jest
+zablokowany** — ale arbitralny egress HTTPS **jest zablokowany**, zgodnie
+z `docs/setup/ENVIRONMENT.md` §4. *(Sprostowanie M203, pomiar 2026-08-24:
+poprzedni zapis w tym miejscu głosił odwrotnie — „egress HTTPS NIE jest
+zablokowany, wbrew ENVIRONMENT.md §4 (do korekty)". Powtórny pomiar w świeżym
+sandboxie: `curl https://api.scryfall.com/...` → kod `000`, `fetch` w Node →
+`fetch failed`, `https://registry.npmjs.org/jsdom` → `200`. Czyli §4 był
+poprawny, a pomyłka wynikała z wniosku „`npm i` działa" → „sieć działa";
+dane kart nadal pobieramy narzędziem `fetch_page`, nie z sandboxa.)*
 
 **Brązowa odznaka (wyzwanie właściciela) — 2 z 5 znalezisk w tej rundzie:**
 
