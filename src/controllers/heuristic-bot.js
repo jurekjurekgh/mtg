@@ -336,7 +336,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // jedynie zdjęcie blokera przed moim atakiem — i tylko dopóki blok jest
       // jeszcze możliwy (po deklaracji blokujących jest już za późno).
       if (['beginning_of_combat', 'declare_attackers'].includes(step)) return 6;
-      if (step === 'main' && (view.combat?.attackers?.length ?? 0) === 0) return 3;
+      // M202/F (uwaga właściciela, Twiddle): `step === 'main'` obejmuje ZARÓWNO
+      // fazę PRZED walką, jak i PO walce — TURN_STEPS ma dwa kroki o nazwie
+      // 'main' (precombat_main i postcombat_main). Tapnięcie zdąży zdjąć
+      // blokera tylko w precombat; po walce efekt wyparuje przy jego untapie,
+      // więc to okno „main2/end” z karami poniżej.
+      if (view.turn.phase === 'precombat_main' && step === 'main'
+        && (view.combat?.attackers?.length ?? 0) === 0) return 3;
       // main2/end: efekt wyparuje przy jego untapie, nic nie kupuje. Karzemy
       // TYLKO wtedy, gdy poczekanie na lepsze okno jest w ogóle wykonalne.
       // Sorcery (Aerith Rescue Mission) da się zagrać wyłącznie we własnej
@@ -347,7 +353,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     // Tura przeciwnika PO jego untap: stwór traci atak TERAZ i blok U MNIE.
     if (['upkeep', 'draw'].includes(step)) return 14;
-    if (step === 'main' && attackers.length === 0) return 12; // wciąż przed deklaracją
+    // M202/F: jak wyżej — tylko faza PRZED walką (po walce już zaatakował).
+    if (view.turn.phase === 'precombat_main' && step === 'main' && attackers.length === 0) return 12;
     // Po deklaracji atakujących tapnięcie nie cofa ataku (CR 506.4) —
     // zostaje sam zysk „nie zablokuje w mojej turze”.
     if (alreadyAttacking) return 1;
@@ -366,7 +373,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // Tapnięcie już tapniętego permanentu nic nie zmienia — poza efektem
     // blokującym odkręcanie, który dopiero wtedy pokazuje swoją wartość.
     if (target.tapped && !locking) return -12;
-    const base = 8 + 2 * (target.power ?? 0);
+    // M202/F (uwaga właściciela, Twiddle): tapnięcie LANDU nie jest „zdjęciem
+    // stworu z gry” — land nie atakuje i nie blokuje, a jego tapnięcie odbiera
+    // wyłącznie manę, i to tylko do najbliższego untapu. Dotąd dostawał bazę +8
+    // jak stwór, więc bot tapował ląd przeciwnika w swojej turze, choć ten nie
+    // miał jak tej many wydać („mimo, że nie mam many, żeby wykorzystać tą
+    // kartę”). Wartość landu wyznacza SAMO okno (tapTimingBonus): upkeep
+    // przeciwnika +14, main przed deklaracją +12, main2/end we własnej turze -4.
+    const isLand = target.kind === 'land' || (target.types ?? []).includes('Land');
+    const base = isLand ? 0 : 8 + 2 * (target.power ?? 0);
     const timing = tapTimingBonus(view, target, { canWait });
     // Efekt trzymający cel (Entrancing Lyre / Spectral Prison) działa przez
     // kolejne untapy, więc nie karzemy go za „złe” okno — ale premia za okno
@@ -1688,6 +1703,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // a sorcery” zagramy wyłącznie we własnej głównej fazie.
             const canWait = ability?.timing !== 'sorcery';
             score += tapTargetValue(view, target, { locking, canWait });
+          }
+          // M202/L (uwaga właściciela, Wishful Merfolk): „{1}{U}: This creature
+          // loses defender and becomes a Human until end of turn” ma wartość
+          // WYŁĄCZNIE we własnej turze PRZED walką i tylko gdy stwór jest
+          // odkręcony i może atakować — efekt wyparuje w cleanup, więc
+          // aktywowany w turze przeciwnika to czyste marnowanie many
+          // (klasa L42: efekt „do końca tury” wycenia się razem z zegarkiem).
+          // Reguła generyczna po deskryptorze `losesKeywords` (ADR 0002).
+          if ((effect.losesKeywords ?? []).includes('defender')) {
+            const self = objectOnBoard(view, cmd.objectId) ?? target;
+            const beforeCombat = myTurn(view)
+              && ['main', 'beginning_of_combat', 'declare_attackers'].includes(view.turn.step);
+            const canAttackNow2 = Boolean(self) && !self.tapped && !self.summoningSickness;
+            score += (beforeCombat && canAttackNow2) ? 10 + 2 * (self?.power ?? 0) : -20;
           }
           // M146 (Twiddle — tryb Odkręcenie jako zdolność): jak przy czarach —
           // odkręcenie WŁASNEGO zatapniętego stwora ma wartość, cudzego to kara.
