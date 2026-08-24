@@ -729,9 +729,73 @@ function damageDivisionsOf(total, parts) {
   return out;
 }
 
+/**
+ * M201/U2 (CR 601.2h + CR 118.5): rzut „bez płacenia kosztu many” (Epic
+ * Experiment, suspend, rebound) zwalnia WYŁĄCZNIE z kosztu many — koszty
+ * DODATKOWE trzeba zapłacić normalnie. Zwraca warianty płatności (pusty
+ * obiekt = brak kosztu dodatkowego); PUSTA LISTA znaczy „czaru nie da się
+ * teraz rzucić” (nieopłacalny albo nieobsługiwany koszt dodatkowy) — wtedy
+ * oferty nie ma, a wymuszona komenda dostaje jawny reject (L52 §3).
+ */
+function freeCastAdditionalCostVariants(state, playerId, obj) {
+  const additional = obj?.spell?.additionalCost;
+  if (!additional) return [{}];
+  if (additional.sacrificeCreature) {
+    const variants = state.zones.battlefield
+      .filter((id) => {
+        const candidate = state.objects.get(id);
+        return candidate?.zone === 'battlefield' && candidate.kind === 'creature'
+          && candidate.controllerId === playerId;
+      })
+      .map((id) => ({ sacrificeTargetId: id }));
+    // Lash of the Balrog: „sacrifice a creature OR pay {4}" — wariant manowy
+    // jest legalny także przy darmowym rzucie (płacimy tylko dodatek).
+    if (additional.orPayMana != null && producibleMana(state, playerId) >= additional.orPayMana) {
+      variants.push({ payAltCost: true });
+    }
+    return variants;
+  }
+  // Koszt wymagający WYBORU kart w trakcie płacenia (Cathartic Reunion:
+  // „discard two cards") nie jest obsługiwany na ścieżce darmowego rzutu —
+  // zamiast pominąć koszt (złamanie reguł) nie oferujemy rzutu.
+  return [];
+}
+
+/**
+ * Płaci koszt dodatkowy darmowego rzutu zgodnie z wariantem z komendy.
+ * Zwraca `null` przy sukcesie albo powód odrzucenia (string).
+ */
+function payFreeCastAdditionalCost(state, playerId, obj, cmd) {
+  const additional = obj?.spell?.additionalCost;
+  if (!additional) return null;
+  if (!additional.sacrificeCreature) return 'additional_cost_unsupported';
+  if (cmd.payAltCost === true) {
+    const need = additional.orPayMana;
+    if (need == null || producibleMana(state, playerId) < need) return 'additional_cost_unpaid';
+    spendMana(state, playerId, need, []);
+    return null;
+  }
+  const sacrifice = state.objects.get(cmd.sacrificeTargetId);
+  if (!sacrifice || sacrifice.zone !== 'battlefield' || sacrifice.kind !== 'creature'
+    || sacrifice.controllerId !== playerId) return 'additional_cost_unpaid';
+  const toZone = sacrifice.unearthExile ? 'exile' : 'graveyard';
+  const destId = `${toZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, cmd.sacrificeTargetId, toZone, destId);
+  state.events.push(event('permanent_sacrificed', {
+    fromId: cmd.sacrificeTargetId, objectId: destId, playerId,
+    cardId: moved.cardId, additionalCost: true, toZone,
+  }));
+  return null;
+}
+
 function epicCastOffers(state, playerId, obj) {
   const spell = obj.spell ?? {};
   if (spell.fireball) return [];
+  // M201/U2: koszty dodatkowe (CR 601.2h) — każdy zestaw celów mnożymy przez
+  // warianty ich zapłaty; brak wariantów = czar niedostępny.
+  const costVariants = freeCastAdditionalCostVariants(state, playerId, obj);
+  if (costVariants.length === 0) return [];
+  const withCosts = (offers) => offers.flatMap((offer) => costVariants.map((cost) => ({ ...offer, ...cost })));
   if (spell.modes) {
     const offers = [];
     for (let modeIndex = 0; modeIndex < spell.modes.length; modeIndex += 1) {
@@ -748,13 +812,13 @@ function epicCastOffers(state, playerId, obj) {
         offers.push({ cardId: obj.id, targets: combo, modeIndex });
       }
     }
-    return offers;
+    return withCosts(offers);
   }
   const spec = spell.targets ?? [];
-  if (spec.length === 0) return [{ cardId: obj.id, targets: [] }];
+  if (spec.length === 0) return withCosts([{ cardId: obj.id, targets: [] }]);
   const pools = spec.map((entry) => legalTargetCandidates(state, playerId, entry));
   if (pools.some((pool) => pool.length === 0)) return [];
-  return cartesianTargetPools(pools).map((combo) => ({ cardId: obj.id, targets: combo }));
+  return withCosts(cartesianTargetPools(pools).map((combo) => ({ cardId: obj.id, targets: combo })));
 }
 
 /** Warianty rzutu zawieszonego czaru (suspend, CR 702.62): te same co epic,
@@ -1674,7 +1738,9 @@ export function execute(state, input) {
     if (cmd.skip && pending.mandatory) return reject('springbloom_sacrifice_mandatory');
     if (cmd.skip) {
       state.pendingSpringbloom = null;
-      state.events.push(event('springbloom_skipped', { controllerId: pending.controllerId }));
+      state.events.push(event('springbloom_skipped', {
+        controllerId: pending.controllerId, cardId: pending.cardId ?? null,
+      }));
       return accepted(state, cmd, { ok: true, events: state.events.slice(state.events.length - 1) });
     }
     const landId = cmd.sacrificeLandId;
@@ -1692,6 +1758,7 @@ export function execute(state, input) {
     state.pendingSpringbloom = null;
     state.events.push(event('springbloom_resolved', {
       controllerId: pending.controllerId, sacrificedLandId: landId,
+      cardId: pending.cardId ?? null,
     }));
     // „Search your library for up to two basic land cards, put them onto the
     // battlefield tapped, then shuffle" — liczba (0/1/2) i wybór kart należą
@@ -2080,7 +2147,10 @@ export function execute(state, input) {
     } catch {
       return reject('illegal_suspend_targets');
     }
-    // Rzut bez kosztu — czar idzie na stos (jak discover/epic free cast);
+    // M201/U2 (CR 601.2h): koszt dodatkowy płacony także przy rzucie suspend.
+    const suspendCostReason = payFreeCastAdditionalCost(state, pending.playerId, card, cmd);
+    if (suspendCostReason) return reject(suspendCostReason);
+    // Rzut bez kosztu MANY — czar idzie na stos (jak discover/epic free cast);
     // timing sorcery IGNOROWANY (CR 702.62c — rzut w trakcie rozpatrywania
     // zdolności, nawet w turze przeciwnika).
     const stackId = `spell-${state.objectSequence++}`;
@@ -2158,7 +2228,10 @@ export function execute(state, input) {
     } catch {
       return reject('illegal_rebound_targets');
     }
-    // Rzut bez kosztu — czar idzie na stos; timing sorcery IGNOROWANY
+    // M201/U2 (CR 601.2h): koszt dodatkowy płacony także przy rzucie rebound.
+    const reboundCostReason = payFreeCastAdditionalCost(state, pending.playerId, card, cmd);
+    if (reboundCostReason) return reject(reboundCostReason);
+    // Rzut bez kosztu MANY — czar idzie na stos; timing sorcery IGNOROWANY
     // (CR 702.97c — rzut z exile w trakcie rozpatrywania zdolności).
     const stackId = `spell-${state.objectSequence++}`;
     moveObjectDirectly(state, pending.objectId, 'stack', stackId);
@@ -2249,7 +2322,11 @@ export function execute(state, input) {
     } catch {
       return reject('illegal_epic_targets');
     }
-    // Rzuć bez kosztu — czar idzie na stos (jak discover free cast).
+    // M201/U2 (CR 601.2h): koszt dodatkowy płacony PRZED położeniem czaru na
+    // stosie — „bez kosztu many" nie znaczy „bez kosztów" (CR 118.5).
+    const epicCostReason = payFreeCastAdditionalCost(state, pending.playerId, exileObj, cmd);
+    if (epicCostReason) return reject(epicCostReason);
+    // Rzuć bez kosztu many — czar idzie na stos (jak discover free cast).
     const stackId = `spell-${state.objectSequence++}`;
     moveObjectDirectly(state, cardId, 'stack', stackId);
     const stacked = Object.freeze({
@@ -2800,7 +2877,7 @@ export function execute(state, input) {
       state.events.push(event('reveal_exile_hand_chosen', { playerId: pending.playerId, opponentId: pending.opponentId, cardId: cardId != null ? (state.objects.get(cardId)?.cardId ?? cardId) : null }));
       if (pending.graveIds.length > 0) {
         state.turn.priorityPlayerId = pending.playerId;
-        state.events.push(event('reveal_exile_grave_required', { playerId: pending.playerId, opponentId: pending.opponentId, graveCardIds: [...pending.graveIds] }));
+        state.events.push(event('reveal_exile_grave_required', { playerId: pending.playerId, opponentId: pending.opponentId, graveCardIds: [...pending.graveIds], cardId: pending.cardId ?? null }));
         return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
       }
     } else {
@@ -2823,7 +2900,7 @@ export function execute(state, input) {
       const moved = moveObjectDirectly(state, cardId, 'exile', exileId);
       state.events.push(event('object_exiled', { fromId: cardId, objectId: exileId, object: moved, cardId: moved.cardId, playerId: pending.playerId }));
     }
-    state.events.push(event('reveal_exile_resolved', { playerId: pending.playerId, opponentId: pending.opponentId }));
+    state.events.push(event('reveal_exile_resolved', { playerId: pending.playerId, opponentId: pending.opponentId, cardId: pending.cardId ?? null }));
     if (state.pendingSpell) {
       const spellPending = state.pendingSpell;
       state.pendingSpell = null;
@@ -4011,6 +4088,9 @@ export function execute(state, input) {
           player.mana = 0;
           player.manaPool = {};
           player.treasureMana = 0;
+          // M201 (znalezisko #3): licznik many ograniczonej znika razem z pulą
+          // (CR 106.4) — stały licznik blokowałby płatności w kolejnych krokach.
+          player.artifactOnlyMana = 0;
         }
         if (state.turn.step === 'cleanup') {
           clearMarkedDamage(state);
@@ -4659,7 +4739,38 @@ export function playerView(state, playerId) {
           triggerEvent: object.triggerEntry?.ability?.trigger?.event ?? null,
         };
       }
-      return { id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone, plotted: Boolean(object.plotted) };
+      // M201/A2 (zgłoszenie właściciela, Mindstab): karty „w poczekalni”
+      // (suspend, plot, impuls, rebound, madness) technicznie leżą w wygnaniu,
+      // ale gracz musi je WIDZIEĆ na stole razem z licznikami czasu —
+      // dotąd widok niósł sam cardId, więc stół nie miał z czego narysować
+      // kafla (ADR 0017: skutek widoczny w grze musi być widoczny na stole).
+      // CR 406.3: wygnanie jest domyślnie ODKRYTE, a suspend (CR 702.62a)
+      // i plot (CR 702.168a) nie wyganiają zakrytych — pola są publiczne dla
+      // OBU graczy. Zakryte wygnanie (`faceDown`) tożsamości nie ujawnia.
+      const waiting = {};
+      if (zone === 'exile') {
+        const hiddenIdentity = object.faceDown === true && object.controllerId !== playerId;
+        if (object.suspended) {
+          waiting.suspended = true;
+          waiting.timeCounters = object.timeCounters ?? 0;
+        }
+        if (object.plottedAtTurn != null) waiting.plottedAtTurn = object.plottedAtTurn;
+        if (object.playableWithoutPaying) waiting.playableWithoutPaying = true;
+        if (object.playableUntilTurn != null) waiting.playableUntilTurn = object.playableUntilTurn;
+        if (object.reboundReady) waiting.reboundReady = true;
+        if (object.madnessReady) waiting.madnessReady = true;
+        if (object.faceDown) waiting.faceDown = true;
+        if (Object.keys(object.counters ?? {}).length > 0) waiting.counters = { ...object.counters };
+        if (object.kind) waiting.kind = object.kind;
+        if ((object.types ?? []).length) waiting.types = [...object.types];
+        if (hiddenIdentity) {
+          return { id: object.id, controllerId: object.controllerId, zone: object.zone, ...waiting, cardId: null, hidden: true };
+        }
+      }
+      return {
+        id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
+        plotted: Boolean(object.plotted), ...waiting,
+      };
     });
   }
   const legalCommands = [];
@@ -5506,6 +5617,12 @@ export function playerView(state, playerId) {
   // (komenda pozostaje legalna w protokole — replaye i trigger ETB typu
   // „pay or sacrifice" korzystają z niej nadal).
   const manaAvailable = producibleMana(state, playerId);
+  // M201 (znalezisko #3): mana ograniczona drukiem (Powerstone — „only to cast
+  // artifact spells") liczy się WYŁĄCZNIE przy czarach-artefaktach. Oferta
+  // musi używać tego samego rachunku co płatność (L48), więc pytamy o budżet
+  // per KARTA, a nie raz na całą listę.
+  const manaAvailableFor = (object) => producibleMana(state, playerId, null,
+    { artifactSpell: (object?.types ?? []).includes('Artifact') });
   // Batch 47: te RECZNE lancuchy pendingow pomijaly kilka decyzji (m.in.
   // pendingUndercityRoute z M190/B i pendingFabricate), wiec oferta rzutow
   // pojawiala sie MIMO czekajacej decyzji, a execute odbijal ja bramka
@@ -5553,7 +5670,7 @@ export function playerView(state, playerId) {
       const grantedFlash = (state.subtypeFlashThisTurn ?? []).some((grant) => grant.controllerId === playerId
         && (object.subtypes ?? []).includes(grant.subtype));
       if (!(object.keywords ?? []).includes('flash') && !grantedFlash) continue;
-      if (effectiveSpellManaCost(state, object) > manaAvailable) continue;
+      if (effectiveSpellManaCost(state, object) > manaAvailableFor(object)) continue;
       if (!hasColorForCardId(state, playerId, object.cardId, 0)) continue;
       legalCommands.unshift(command('cast_permanent', playerId, { objectId: id }));
     }
@@ -5701,9 +5818,10 @@ export function playerView(state, playerId) {
       const symbols = object.phyrexianManaCost ?? 0;
       if (symbols === 0) return [null];
       const out = [];
+      const budget = manaAvailableFor(object);
       for (let k = 0; k <= symbols; k += 1) {
         const manaNeeded = (object.manaCost ?? 0) + (symbols - k);
-        if (manaNeeded > manaAvailable) continue;
+        if (manaNeeded > budget) continue;
         if (2 * k > (player.life ?? 0)) continue;
         out.push(k);
       }
@@ -5724,7 +5842,7 @@ export function playerView(state, playerId) {
             && candidate.controllerId === playerId;
         });
         for (const exileId of exilePool) {
-          if (effectiveSpellManaCost(state, object) > manaAvailable) continue;
+          if (effectiveSpellManaCost(state, object) > manaAvailableFor(object)) continue;
           if (!hasColorForCardId(state, playerId, object.cardId, 0)) continue;
           legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, exileTargetId: exileId }));
         }
@@ -5736,7 +5854,7 @@ export function playerView(state, playerId) {
           return candidate?.zone === 'battlefield' && candidate.kind === 'creature' && candidate.controllerId === playerId;
         });
         for (const exileId of exilePool) {
-          if (effectiveSpellManaCost(state, object) > manaAvailable) continue;
+          if (effectiveSpellManaCost(state, object) > manaAvailableFor(object)) continue;
           if (!hasColorForCardId(state, playerId, object.cardId, 0)) continue;
           legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, exileTargetId: exileId }));
         }
@@ -5765,7 +5883,7 @@ export function playerView(state, playerId) {
       // Podstawa kosztu zawsze z many — bez niej permanent nie jest grywalny.
       // Koszt efektywny: modyfikatory z permanentów (Etherium Sculptor) mogą
       // obniżyć część generyczną już na etapie OFERTY rzutu.
-      if (effectiveSpellManaCost(state, object) > manaAvailable) continue;
+      if (effectiveSpellManaCost(state, object) > manaAvailableFor(object)) continue;
       // Kolejność wariantów: unshift wkłada na początek, więc iterujemy od
       // najdroższego życiowo (k=max) do najtańszego (k=0) — manowy wariant
       // ląduje PIERWSZY (proste boty biorą najtańszy).
@@ -5782,7 +5900,7 @@ export function playerView(state, playerId) {
       // biorą najtańszy). Pipy kolorów kickera wchodzą do wymagań.
       if (object.kicker) {
         const kickerCost = object.kicker.cost ?? 0;
-        if (effectiveSpellManaCost(state, object) + kickerCost <= manaAvailable) {
+        if (effectiveSpellManaCost(state, object) + kickerCost <= manaAvailableFor(object)) {
           const kickerReqs = [...coloredPipsOf(object.cardId, 0), ...(object.kicker.colors ?? []).map((color) => [color])];
           if (canPayColoredCost(state, playerId, kickerReqs)) {
             legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, kicked: true }));

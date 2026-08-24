@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { moveObjectDirectly } from './objects.js';
+import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { deathZoneFor, effectiveKeywords, effectiveToughness } from './permanents.js';
 import { removeIllegalAttachments, detachAttachmentsFromHost } from './attachments.js';
 
@@ -83,6 +83,40 @@ export function addRegenerationShield(state, objectId) {
  */
 export function runStateBasedActions(state) {
   const events = [];
+  // CR 506.4c (M201, znalezisko #1): „A permanent that's no longer a creature
+  // is removed from combat.” Przyczyna bywa dowolna — koniec animacji
+  // (Skilled Animator), utrata typu, zmiana charakterystyk — więc reguła
+  // musi żyć w SBA, nie w gałęzi jednej mechaniki. Bez niej `state.combat`
+  // wskazuje nie-stwora i inwariant stanu wywraca komendę wyjątkiem.
+  if (state.combat) {
+    const inCombat = new Set([
+      ...state.combat.attackers,
+      ...[...state.combat.blockers.values()].flat(),
+    ]);
+    const attackingPlayerId = state.combat.attackingPlayerId ?? null;
+    const attackers = new Set(state.combat.attackers);
+    for (const id of inCombat) {
+      const object = state.objects.get(id);
+      const gone = !object || object.zone !== 'battlefield' || object.kind !== 'creature';
+      // M201 (znalezisko #5, CR 506.4): „A permanent is removed from combat …
+      // IF ITS CONTROLLER CHANGES”. Atakujący jest z definicji kontrolowany
+      // przez gracza atakującego, bloker — przez broniącego; każde odejście
+      // od tego znaczy, że kontrola się zmieniła (Awaken the Sleeper rzucone
+      // w oknie walki). Reguła obok utraty typu, bo obie mają jedno źródło
+      // (CR 506.4) i jeden skutek.
+      const controllerChanged = !gone && attackingPlayerId != null
+        && (attackers.has(id)
+          ? object.controllerId !== attackingPlayerId
+          : object.controllerId === attackingPlayerId);
+      if (!gone && !controllerChanged) continue;
+      if (removeFromCombat(state, id) && object) {
+        events.push(event('permanent_removed_from_combat', {
+          objectId: id, cardId: object.cardId ?? null,
+          reason: gone ? 'not_a_creature' : 'controller_changed',
+        }));
+      }
+    }
+  }
   // CR 704.5a/704.5c: przegrana z życia <= 0 i z 10+ znaczników trucizny jest
   // sprawdzana dla WSZYSTKICH graczy w tym samym przebiegu SBA — dopiero
   // komplet przegranych rozstrzyga wynik partii.

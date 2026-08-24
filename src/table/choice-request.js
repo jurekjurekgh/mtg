@@ -33,7 +33,15 @@ const CHOICE_TYPE_LABELS = Object.freeze({
   command: 'Działanie',
 });
 
-export function renderChoiceRequest(host, request, { labelForOption, onResponse, introLabel, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
+/**
+ * M201/C2 (zgłoszenie właściciela, Dreams of Steel and Oil): „karty możliwe
+ * do wybrania w modalu powinny być klikalne (img na całą stronę), bo mogę ich
+ * nie znać”. Opcja, która wskazuje KARTĘ, dostaje przycisk lupy otwierający
+ * pełny ekran — dokładnie ten sam, co przy scry/surveil. Rozpoznanie karty
+ * jest generyczne (`cardIdOfOption` dostarcza wywołujący, bo tylko on ma
+ * pełny stan sesji), więc działa dla każdej rodziny decyzji.
+ */
+export function renderChoiceRequest(host, request, { labelForOption, onResponse, introLabel, ignoredOptionKeys = null, onToggleIgnoredOption = null, onOpenCard = null, cardIdOfOption = null }) {
   clearChoiceElement(host);
   // introLabel (choiceGroupTitle) — opis wyboru jak w panelu akcji (uwaga A);
   // bez niego fallback na mapę typów.
@@ -90,6 +98,18 @@ export function renderChoiceRequest(host, request, { labelForOption, onResponse,
       const response = choiceResponse(request, option);
       onResponse?.(response);
     });
+    // M201/C2: podgląd karty przy opcji (osobny przycisk — klik w samą opcję
+    // ma nadal ZATWIERDZAĆ wybór, a nie otwierać obrazek).
+    const previewCardId = onOpenCard && cardIdOfOption ? cardIdOfOption(option) : null;
+    if (previewCardId) {
+      const peek = choiceNode(options, 'button', 'ghost-btn choice-request-peek', '🔍 Podgląd karty');
+      peek.type = 'button';
+      if (peek.dataset) peek.dataset.previewCardId = previewCardId;
+      peek.addEventListener('click', (event) => {
+        event?.stopPropagation?.();
+        onOpenCard(previewCardId);
+      });
+    }
   }
   if (request.options.length === 0) {
     choiceNode(host, 'div', 'zone-empty', 'Brak dostępnych wariantów.');

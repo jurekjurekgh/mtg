@@ -19,12 +19,13 @@ export function initializeResources(state) {
     // Pula many pochodzącej ze Skarbów (Marut: „mana from a Treasure was
     // spent to cast it"). Zeruje się razem z maną na starcie tury.
     player.treasureMana = 0;
+    player.artifactOnlyMana = 0;
     player.landPlays = 1;
   }
   return state;
 }
 
-export function addMana(state, playerId, amount, { colors = ['W', 'U', 'B', 'R', 'G'], fromTreasure = false } = {}) {
+export function addMana(state, playerId, amount, { colors = ['W', 'U', 'B', 'R', 'G'], fromTreasure = false, spendOnly = null } = {}) {
   if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Mana musi być nieujemną liczbą całkowitą');
   const player = state.players.find((entry) => entry.id === playerId);
   if (!player) throw new Error('Nieznany gracz');
@@ -39,7 +40,14 @@ export function addMana(state, playerId, amount, { colors = ['W', 'U', 'B', 'R',
   // śledzimy ją oddzielnym licznikiem, żeby spendMana mogła ją wydać w sposób
   // jawny dla efektów „if mana from a Treasure was spent".
   if (fromTreasure && amount > 0) player.treasureMana = (player.treasureMana ?? 0) + amount;
-  const e = event('mana_changed', { playerId, amount, total: player.mana, colors, fromTreasure: Boolean(fromTreasure) });
+  // M201 (znalezisko #3): mana OGRANICZONA drukiem (Powerstone — „only to cast
+  // artifact spells") musi być rozpoznawalna także PO trafieniu do puli:
+  // gracz może tapnąć źródło ręcznie (kreator many), a dopiero potem wybrać
+  // czar. Licznik działa jak `treasureMana` — jedna rodzina rozwiązania.
+  if (spendOnly === 'artifact' && amount > 0) {
+    player.artifactOnlyMana = (player.artifactOnlyMana ?? 0) + amount;
+  }
+  const e = event('mana_changed', { playerId, amount, total: player.mana, colors, fromTreasure: Boolean(fromTreasure), spendOnly: spendOnly ?? null });
   state.events.push(e);
   return e;
 }
@@ -128,7 +136,12 @@ export function consumeManaPool(player, amount, requirements) {
   return consumedColors;
 }
 
-export function spendMana(state, playerId, amount, requirements = []) {
+/**
+ * M201 (znalezisko #3): `purpose` opisuje, NA CO idzie mana — potrzebne dla
+ * many ograniczonej drukiem (Powerstone: „only to cast artifact spells").
+ * Domyślnie pusty = mana ograniczona nie bierze udziału w płatności.
+ */
+export function spendMana(state, playerId, amount, requirements = [], purpose = {}) {
   if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Koszt many musi być nieujemną liczbą całkowitą');
   const player = state.players.find((entry) => entry.id === playerId);
   if (!player) throw new Error('Nieznany gracz');
@@ -194,8 +207,11 @@ export function spendMana(state, playerId, amount, requirements = []) {
   // niepokrytych pipów `requirements`), potem resztę, by wyprodukowana mana
   // miała właściwe kolory (MtG: tapnięcie Wyspy daje {U}). CR 601.2h: najpierw
   // sprawdzamy produkowalną sumę — nieudana płatność nie zostawia tapniętych.
-  if ((player.mana ?? 0) < amount) {
-    if (producibleMana(state, playerId) < amount) throw new Error('Niewystarczająca mana');
+  // M201 (znalezisko #3): mana ograniczona w puli nie jest dostępna dla
+  // niedozwolonego celu — auto-tap musi dobrać brakującą manę z innych źródeł.
+  const restrictedInPool = purpose.artifactSpell === true ? 0 : (player.artifactOnlyMana ?? 0);
+  if (((player.mana ?? 0) - restrictedInPool) < amount) {
+    if (producibleMana(state, playerId, null, purpose) < amount) throw new Error('Niewystarczająca mana');
     const reqColors = new Set(requirements.flat());
     const sources = untappedLandManaSources(state, playerId).slice();
     sources.sort((a, b) => {
@@ -215,7 +231,7 @@ export function spendMana(state, playerId, amount, requirements = []) {
     }
     // M179/D: landy nie starczyły — dopłacamy z nielandowych źródeł
     // czystej many (producibleMana je liczy, więc oferta = płatność, L48).
-    for (const entry of untappedFreeManaSources(state, playerId)) {
+    for (const entry of untappedFreeManaSources(state, playerId, null, purpose)) {
       if ((player.mana ?? 0) >= amount) break;
       tapFreeManaSource(state, playerId, entry);
     }
@@ -233,6 +249,17 @@ export function spendMana(state, playerId, amount, requirements = []) {
   // 0005): Marut pyta, ILE many ze Skarba wydano na jego rzut.
   const treasure = Math.min(player.treasureMana ?? 0, amount);
   if (treasure > 0) player.treasureMana = (player.treasureMana ?? 0) - treasure;
+  // M201 (znalezisko #3): rozliczenie many OGRANICZONEJ po płatności.
+  // • czar-artefakt: wydajemy ją w pierwszej kolejności (deterministycznie,
+  //   ADR 0005) — inaczej zostawałaby w puli i blokowała kolejne rzuty;
+  // • inny czar: licznik nie może przekroczyć tego, co realnie zostało
+  //   w puli, bo `producibleMana` odejmuje go od stanu puli (bez tego
+  //   oferta i płatność rozjeżdżają się — L48, złapane benchmarkiem).
+  if ((player.artifactOnlyMana ?? 0) > 0) {
+    player.artifactOnlyMana = purpose.artifactSpell === true
+      ? Math.max(0, (player.artifactOnlyMana ?? 0) - amount)
+      : Math.min(player.artifactOnlyMana ?? 0, Math.max(0, player.mana ?? 0));
+  }
   state.lastManaSpend = { playerId, amount, treasure, colors: spentColors };
   const e = event('mana_changed', { playerId, amount: -amount, total: player.mana, treasureSpent: treasure });
   state.events.push(e);
@@ -245,6 +272,7 @@ export function resetTurnResources(state, playerId) {
   player.mana = 0;
   player.manaPool = {};
   player.treasureMana = 0;
+  player.artifactOnlyMana = 0;
   player.landPlays = 1;
   return player;
 }
@@ -349,7 +377,7 @@ export function untappedLandManaSources(state, playerId) {
  * (ręczna aktywacja jak dotąd). Stwór z chorobą przywołania nie użyje
  * {T} (CR 302.6).
  */
-export function untappedFreeManaSources(state, playerId, excludeSourceId = null) {
+export function untappedFreeManaSources(state, playerId, excludeSourceId = null, purpose = {}) {
   const excludedFree = excludeSourceId == null
     ? null
     : new Set(Array.isArray(excludeSourceId) ? excludeSourceId : [excludeSourceId]);
@@ -370,7 +398,14 @@ export function untappedFreeManaSources(state, playerId, excludeSourceId = null)
       const isCreature = object.kind === 'creature' || (object.types ?? []).includes('Creature');
       if (isCreature && object.summoningSickness && !effectiveKeywords(object, state).includes('haste')) continue;
       const src = getSourceForObject(object);
-      out.push({ object, amount: effects[0].amount ?? 1, colors: effects[0].colors ?? src?.colors ?? [] });
+      // M201 (znalezisko #3): mana OGRANICZONA (druk Powerstone: „This mana
+      // can't be spent to cast a nonartifact spell") liczy się WYŁĄCZNIE, gdy
+      // płatność ma dozwolony cel. Deskryptor `spendOnly` zamiast warunku po
+      // nazwie karty (ADR 0002); brak deskryptora = mana bez ograniczeń.
+      const spendOnly = effects[0].spendOnly ?? null;
+      if (spendOnly === 'artifact' && purpose.artifactSpell !== true) break;
+      if (spendOnly != null && spendOnly !== 'artifact') break; // nieznane ograniczenie = nie oferujemy
+      out.push({ object, amount: effects[0].amount ?? 1, colors: effects[0].colors ?? src?.colors ?? [], spendOnly });
       break;
     }
   }
@@ -384,13 +419,13 @@ export function tapFreeManaSource(state, playerId, entry) {
   state.objects.set(object.id, Object.freeze({ ...object, tapped: true }));
   const tappedEvent = event('object_tapped', { objectId: object.id, playerId, forMana: true });
   state.events.push(tappedEvent);
-  const mana = addMana(state, playerId, entry.amount, { colors: entry.colors });
+  const mana = addMana(state, playerId, entry.amount, { colors: entry.colors, spendOnly: entry.spendOnly ?? null });
   const produced = event('mana_produced', { playerId, source: object.id, amount: entry.amount, colors: [...entry.colors] });
   state.events.push(produced);
   return [tappedEvent, mana, produced];
 }
 
-export function producibleMana(state, playerId, excludeSourceId = null) {
+export function producibleMana(state, playerId, excludeSourceId = null, purpose = {}) {
   // M174/B (Immersturm Skullcairn, klasa L48): koszt zdolności z {T}
   // WŁASNEGO źródła many — źródło tapnięte kosztem nie zapłaci już many,
   // więc oferta liczy zdolność BEZ niego (excludeSourceId); płatność i tak
@@ -409,8 +444,10 @@ export function producibleMana(state, playerId, excludeSourceId = null) {
   }
   // M179/D: nielandowe źródła czystej many liczą się do oferty rzutów.
   let fromFree = 0;
-  for (const entry of untappedFreeManaSources(state, playerId, excludeSourceId)) fromFree += entry.amount;
-  return (player?.mana ?? 0) + fromLands + fromFree;
+  for (const entry of untappedFreeManaSources(state, playerId, excludeSourceId, purpose)) fromFree += entry.amount;
+  // Pula: mana ograniczona liczy się WYŁĄCZNIE, gdy cel wydania jest dozwolony.
+  const restrictedInPool = purpose.artifactSpell === true ? 0 : (player?.artifactOnlyMana ?? 0);
+  return Math.max(0, (player?.mana ?? 0) - restrictedInPool) + fromLands + fromFree;
 }
 
 /**
@@ -661,7 +698,10 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // Opłacalność liczona po MANIE PRODUKOWALNEJ (pula + nietapnięte landy) —
   // spendMana sam do-tapuje brakujące landy. Koszt alternatywny ze Skarbów
   // ma własną walidację (treasureManaAvailable) poniżej.
-  if (!treasureAltCost && producibleMana(state, playerId) < totalMana) throw new Error('Niewystarczająca mana');
+  // M201 (znalezisko #3): cel wydania many — druk Powerstone pozwala płacić
+  // wyłącznie za czary-ARTEFAKTY (typ liczony z danych obiektu, nie z nazwy).
+  const manaPurpose = { artifactSpell: (object.types ?? []).includes('Artifact') };
+  if (!treasureAltCost && producibleMana(state, playerId, null, manaPurpose) < totalMana) throw new Error('Niewystarczająca mana');
   if (2 * lifePaid > (player.life ?? 0)) throw new Error('Niewystarczające życie');
   // Kolorowa walidacja many: czy kontrolujesz źródła zdolne wyprodukować wymagane kolory?
   // Np. Sweet Oblivion {1}{U} nie może być rzucone z samych Plains (W).
@@ -721,7 +761,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     }
     if ((player.treasureMana ?? 0) < totalMana) throw new Error('Niewystarczająca mana ze Skarbów');
   }
-  spendMana(state, playerId, totalMana, requirements);
+  spendMana(state, playerId, totalMana, requirements, manaPurpose);
   if (lifePaid > 0) changeLife(state, playerId, -2 * lifePaid);
   state.spellsCastThisTurn += 1;
   if (exileCost) {

@@ -1408,7 +1408,25 @@ export function applyDayNightAtTurnStart(state, previousActivePlayerId) {
   return [];
 }
 
+/**
+ * M201/A1 (zgłoszenie właściciela, Mindstab — klasa L24/L6): skan triggerów
+ * dopisywał część zdarzeń WYŁĄCZNIE do `state.events` (zdjęcie licznika czasu
+ * suspend, gotowość rebound), a warstwa opisu czyta strumień KOMENDY — więc
+ * przez cztery tury zawieszenia log i „Rozgrywka” milczały. Zamiast łatać
+ * pojedyncze gałęzie (byłaby to trzecia kopia tej samej pomyłki) zamykamy
+ * lukę w JEDNYM miejscu: wszystko, co skan dopisał do stanu, wraca do
+ * wywołującego — w kolejności zapisu i bez duplikatów (zdarzenia są zamrożone,
+ * więc porównujemy tożsamościowo).
+ */
 export function processTriggers(state, recentEvents) {
+  const stateEventsStart = state.events.length;
+  const produced = processTriggersScan(state, recentEvents);
+  const fromState = state.events.slice(stateEventsStart);
+  const seen = new Set(fromState);
+  return [...fromState, ...produced.filter((e) => !seen.has(e))];
+}
+
+function processTriggersScan(state, recentEvents) {
   const events = [];
   // Kontrolerzy, których permanenty opuściły pole bitwy w tej komendzie —
   // trigger „one or more permanents you control leave the battlefield"
@@ -1417,6 +1435,10 @@ export function processTriggers(state, recentEvents) {
   // Kontrolerzy, których STWORY zadały w tej komendzie combat damage graczowi
   // (Disa the Restless — „one or more creatures you control").
   const anyCombatDamageControllers = new Set();
+  // Gracze, którzy w tej komendzie otrzymali combat damage — trigger
+  // „whenever you're dealt combat damage" (Contested Game Ball) odpala się
+  // RAZ na zadanie obrażeń, nie raz na atakującego (ruling WotC, M201/N2).
+  const combatDamagedPlayers = new Set();
   /**
    * „You descended this turn" (CR 700.x, Canonized in Blood): gdy PERMANENT
    * CARD (nie token, nie czar) trafia do grobu gracza z dowolnej strefy.
@@ -1684,22 +1706,29 @@ export function processTriggers(state, recentEvents) {
     // ev.amount > 0: w pełni zapobiegnięte obrażenia NIE są zadane (CR 119.3) —
     // triggery „deals combat damage" nie odpalają się przy 0 zadanych.
     if (ev.type === 'damage_dealt' && ev.combat !== false && isPlayerId(state, ev.target) && ev.amount > 0) {
-      const source = state.objects.get(ev.source);
-      // Uproszczenie: źródło musi wciąż być na polu bitwy (trigger „z grobu"
-      // dla źródła, które zginęło w tej samej komendzie, nie jest obsługiwany).
-      if (!source || source.zone !== 'battlefield') return;
+      // M201 (znalezisko #2, CR 603.10/603.10a): dotąd stała tu bramka
+      // „źródło musi wciąż być na polu bitwy” z instrukcją `return`, która
+      // przerywała przetwarzanie CAŁEGO zdarzenia. Gdy atakujący z trample
+      // ginął od blokera (obrażenia są jednoczesne — CR 510.2), przepadały
+      // naraz: trigger obrońcy („whenever you're dealt combat damage”),
+      // własny trigger źródła („deals combat damage to a player” — zdarzenie
+      // zaszło, gdy stwór jeszcze istniał), grupowy trigger kontrolera
+      // (Disa) i przejęcie inicjatywy (CR 725).
+      // Zdolności czytamy z LKI zdarzenia; brak jakiejkolwiek informacji
+      // o źródle = pomijamy WYŁĄCZNIE gałęzie źródła, nie całe zdarzenie.
+      const source = state.objects.get(ev.source) ?? ev.sourceLki ?? null;
       // Speed (DFT „Start your engines!"): wzrost raz na turę aktywnego gracza
       // przy obrażeniach combat przeciwnika (max 4) — patrz bumpSpeedIfOpponentDamaged.
-      bumpSpeedIfOpponentDamaged(state, source);
+      if (source) bumpSpeedIfOpponentDamaged(state, source);
       // Inicjatywa (CR 725): stwory zadające combat damage posiadaczowi
       // inicjatywy przejmują ją (karta The Initiative; podstawa Underdark
       // Explorer). Pierwsze objęcie inicjatywy = venture do lochu.
-      if (state.initiativePlayerId === ev.target && source.controllerId !== state.initiativePlayerId) {
+      if (source && state.initiativePlayerId === ev.target && source.controllerId !== state.initiativePlayerId) {
         const before = state.events.length;
         applyEffect(state, { type: 'take_initiative' }, source, []);
         events.push(...state.events.slice(before));
       }
-      for (const ability of effectiveAbilities(source)) {
+      for (const ability of effectiveAbilities(source ?? {})) {
         if (ability?.trigger?.event === 'combat_damage_to_player') {
           tryFire(state, ability, source, [], events, { damagedPlayerId: ev.target });
         }
@@ -1709,17 +1738,26 @@ export function processTriggers(state, recentEvents) {
       // GRACZA, KTÓRY OTRZYMAŁ obrażenia (trigger siedzi na artefakcie, nie na
       // stwora, który zadaje). Zdarzenie damage_dealt per obrażenie — trigger
       // odpala się per zdarzenie (CR 603.2: „whenever" na każdym zdarzeniu).
-      for (const candidate of state.objects.values()) {
-        if (candidate.zone !== 'battlefield' || candidate.controllerId !== ev.target) continue;
-        for (const ability of effectiveAbilities(candidate)) {
-          if (ability?.trigger?.event !== 'combat_damage_to_you') continue;
-          // Warunek intervening-if sprawdza tryFire z PEŁNYM extra (dane
-          // zdarzenia) — pre-check z pustym eventData cicho uciszałby warunki
-          // czytające dane zdarzenia (M200/O-N3; wzór: any_combat_damage).
-          // atkujący jechał w zdarzeniu (state.combat jest już null — end_of_combat).
-          tryFire(state, ability, candidate, [], events, {
-            damagedPlayerId: ev.target, attackingPlayerId: ev.attackingPlayerId ?? null,
-          });
+      // M201/N2 (audyt PR #72, ruling WotC 2023-11-10): trigger odpala się
+      // RAZ na zadanie obrażeń, „no matter how many creatures deal combat
+      // damage to you at the same time” — obrażenia bojowe są jednoczesne
+      // (CR 510.2), a strumień zdarzeń jest per źródło. Grupujemy po
+      // poszkodowanym graczu w obrębie komendy (wzór: Disa the Restless).
+      if (!combatDamagedPlayers.has(ev.target)) {
+        combatDamagedPlayers.add(ev.target);
+        for (const candidate of state.objects.values()) {
+          if (candidate.zone !== 'battlefield' || candidate.controllerId !== ev.target) continue;
+          for (const ability of effectiveAbilities(candidate)) {
+            if (ability?.trigger?.event !== 'combat_damage_to_you') continue;
+            // Warunek intervening-if sprawdza tryFire z PEŁNYM extra (dane
+            // zdarzenia) — pre-check z pustym eventData cicho uciszałby warunki
+            // czytające dane zdarzenia (M200/O-N3; wzór: any_combat_damage).
+            // Atakujący jedzie w zdarzeniu (state.combat jest już null po
+            // end_of_combat).
+            tryFire(state, ability, candidate, [], events, {
+              damagedPlayerId: ev.target, attackingPlayerId: ev.attackingPlayerId ?? null,
+            });
+          }
         }
       }
       // „Whenever one or more creatures you control deal combat damage to a
@@ -1727,7 +1765,7 @@ export function processTriggers(state, recentEvents) {
       // komendę, gdy DOWOLNY stwór kontrolera źródła zadał obrażenia graczowi
       // (grupowanie jak leftBattlefield — zdarzenie per stwór, trigger per
       // kontroler). Źródło triggera samo może być stworem lub nie (Disa).
-      if (!anyCombatDamageControllers.has(source.controllerId)) {
+      if (source && !anyCombatDamageControllers.has(source.controllerId)) {
         anyCombatDamageControllers.add(source.controllerId);
         for (const candidate of state.objects.values()) {
           if (candidate.zone !== 'battlefield' || candidate.controllerId !== source.controllerId) continue;
@@ -2486,7 +2524,17 @@ export function processTriggers(state, recentEvents) {
       for (const object of state.objects.values()) {
         if (object.zone !== 'battlefield') continue;
         for (const ability of effectiveAbilities(object)) {
-          if (ability?.trigger?.event === 'beginning_of_combat') tryFire(state, ability, object, [], events);
+          if (ability?.trigger?.event !== 'beginning_of_combat') continue;
+          // M201/E (zgłoszenie właściciela, Battle-Rattle Shaman): Oracle
+          // rozróżnia DWA brzmienia, a silnik miał jedno zdarzenie:
+          //  • „at the beginning of combat ON YOUR TURN” (Battle-Rattle
+          //    Shaman) — tylko tura KONTROLERA (domyślne, częstsze);
+          //  • „at the beginning of EACH combat” (Jyoti) — także tura
+          //    przeciwnika; deskryptor `eachCombat` w danych karty.
+          // Rozróżnienie deskryptorem, nie nazwą karty (ADR 0002); strażnik
+          // katalogu pilnuje zgodności deskryptora z Oracle (L56).
+          if (ability.trigger.eachCombat !== true && object.controllerId !== state.turn.activePlayerId) continue;
+          tryFire(state, ability, object, [], events);
         }
       }
     }

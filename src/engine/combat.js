@@ -67,6 +67,11 @@ function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amoun
     // musi jechać w zdarzeniu (L6: zdarzenie niesie dane, których opis
     // nie odtworzy).
     attackingPlayerId: state.combat?.attackingPlayerId ?? null,
+    // M201 (znalezisko #2, CR 603.10): obrażenia bojowe są JEDNOCZESNE, więc
+    // źródło może zginąć w tej samej komendzie (trampler dobity przez blokera).
+    // Skan triggerów musi wtedy pracować na ostatniej znanej informacji —
+    // wzorzec `targetLki`, który jest już w tym silniku dla celu obrażeń.
+    sourceLki: source ?? null,
   });
   state.events.push(damageEvent);
   // Zdarzenia tarcz (damage_prevented) dołączamy do strumienia komendy.

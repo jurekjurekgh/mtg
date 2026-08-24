@@ -5,6 +5,30 @@ import { detachAttachmentsFromHost } from './attachments.js';
 import { syncStationKind } from './counters.js';
 
 /**
+ * Rejestr LKI nazw (CR 603.10): identyfikator → ostatnia znana tożsamość
+ * obiektu, który przestał istnieć w tej strefie. Trzyma WYŁĄCZNIE dane
+ * potrzebne warstwie opisu (nazwa karty / tokenu, znacznik zakrycia), więc
+ * nie wpływa na reguły ani na odcisk stanu — jest pamięcią prezentacji,
+ * nie stanem gry.
+ *
+ * FoW (CR 708.2): dla obiektu zakrytego zapamiętujemy `faceDown: true`,
+ * a tożsamość zostaje przy właścicielu — warstwa opisu decyduje, komu
+ * wolno ją pokazać (jak dla żywego obiektu).
+ */
+export function rememberLastKnownObject(state, object) {
+  if (!state || !object?.id) return;
+  if (!state.lastKnownObjects) state.lastKnownObjects = new Map();
+  state.lastKnownObjects.set(object.id, Object.freeze({
+    cardId: object.cardId ?? null,
+    name: object.name ?? null,
+    faceDown: Boolean(object.faceDown),
+    controllerId: object.controllerId ?? null,
+    isToken: Boolean(object.isToken),
+    copyNumber: object.copyNumber ?? null,
+  }));
+}
+
+/**
  * Kontrolowana zmiana strefy obiektu gry (CR 400.7): stary obiekt przestaje
  * istnieć, a w docelowej strefie powstaje nowy obiekt z nowym id.
  *
@@ -12,6 +36,33 @@ import { syncStationKind } from './counters.js';
  * komend, tury ani PlayerView — dzięki temu moduł nie tworzy cykli z
  * game-state.js, które zablokowałyby sklejanie artefaktu (build.mjs).
  */
+/**
+ * CR 506.4/506.4c: obiekt przestaje być atakującym/blokującym. Jedno miejsce
+ * dla WSZYSTKICH przyczyn: zmiana strefy (poświęcenie, zniszczenie, bounce)
+ * oraz utrata typu stwora (koniec animacji — M201, znalezisko #1). Combat nie
+ * może trzymać wiszącego odwołania: inwariant stanu rzuca wtedy wyjątkiem
+ * w środku komendy, czyli wywraca stół w trakcie partii.
+ *
+ * Klucz mapy bloków i wpis `blockedAttackers` zostają, gdy znika BLOKER —
+ * atakujący pozostaje zablokowany (CR 509.1h), mimo że blokera już nie ma.
+ */
+export function removeFromCombat(state, objectId) {
+  if (!state?.combat) return false;
+  let changed = false;
+  if (state.combat.attackers.includes(objectId)) {
+    state.combat.attackers = state.combat.attackers.filter((id) => id !== objectId);
+    state.combat.blockers.delete(objectId);
+    state.combat.blockedAttackers?.delete(objectId);
+    changed = true;
+  }
+  for (const [attackerId, blockerIds] of state.combat.blockers) {
+    if (!blockerIds.includes(objectId)) continue;
+    state.combat.blockers.set(attackerId, blockerIds.filter((id) => id !== objectId));
+    changed = true;
+  }
+  return changed;
+}
+
 export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
   const object = state.objects.get(objectId);
   assertZone(toZone);
@@ -32,20 +83,7 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
   // sacrifice aktywowanego permanenta). Combat nie może zachować wiszącego
   // odwołania do starego obiektu — usuwamy go z atakujących i bloków przed
   // zmianą strefy, bez znajomości konkretnej karty.
-  if (object.zone === 'battlefield' && state.combat) {
-    const wasAttacker = state.combat.attackers.includes(object.id);
-    if (wasAttacker) {
-      state.combat.attackers = state.combat.attackers.filter((id) => id !== object.id);
-      state.combat.blockers.delete(object.id);
-      state.combat.blockedAttackers?.delete(object.id);
-    }
-    // If the object was a blocker, remove only its live object reference.
-    // The map key and blockedAttackers marker remain: the attacker is still
-    // blocked for combat damage even though the blocker is gone.
-    for (const [attackerId, blockerIds] of state.combat.blockers) {
-      state.combat.blockers.set(attackerId, blockerIds.filter((id) => id !== object.id));
-    }
-  }
+  if (object.zone === 'battlefield' && state.combat) removeFromCombat(state, object.id);
   state.zones[object.zone] = state.zones[object.zone].filter((id) => id !== object.id);
   state.zones[toZone].push(newObjectId);
   // CR 400.7: nowy obiekt nie pamięta stanu poprzedniego — modyfikatory
@@ -110,6 +148,16 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
     baseKind: null,
   });
   state.objects.delete(object.id); state.objects.set(newObjectId, moved);
+  // M201/M (zgłoszenie właściciela, CR 603.10 — last known information):
+  // stary identyfikator znika ze `state.objects`, a odwołania do niego ŻYJĄ
+  // dalej: cele czaru na stosie (Frightful Delusion kontruje cel PRZY
+  // rozstrzygnięciu, ale sam zostaje na stosie do czasu odrzucenia karty),
+  // wpisy logu, etykiety. Warstwa opisu pytała wtedy o obiekt, którego już
+  // nie ma, i pokazywała „cel: ?” (klasa L29: fallback-znak zapytania to
+  // wyciek, nie zabezpieczenie). Rejestr LKI jest zapisywany w JEDYNYM
+  // choke poincie zmian stref, więc obejmuje każdą ścieżkę (kontra, śmierć,
+  // wygnanie, bounce) bez wiedzy o karcie (ADR 0002).
+  rememberLastKnownObject(state, object);
   // Załączniki wskazujące odchodzący obiekt rozłączają się od razu —
   // attachedTo nigdy nie wskazuje obiektu spoza pola bitwy (inwariant).
   // Polityki zależą od rodziny: bestow znów jest stworem (CR 702.103b),
@@ -148,6 +196,10 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
           originalBeforeAnimation: null,
         });
         state.objects.set(targetId, reverted);
+        // M201 (znalezisko #1, CR 506.4c): permanent, który przestał być
+        // stworem, jest USUWANY Z WALKI. Bez tego `state.combat` wskazywał
+        // nie-stwora i inwariant wywracał komendę wyjątkiem.
+        if (reverted.kind !== 'creature') removeFromCombat(state, targetId);
         state.events.push(event('permanent_animation_ended', {
           objectId: targetId, cardId: reverted.cardId,
           sourceId: objectId, kind: reverted.kind,

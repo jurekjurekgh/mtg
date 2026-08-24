@@ -1,8 +1,100 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-23 (M200: audyt PR #70 + uwagi właściciela A–R — PR #72 otwarty)
-- **Poprzednia:** 2026-08-23 (M199: „Przebieg tur (dla AI)" w pełnym Fog of War — zapis opisuje obu graczy jak obserwator)
+- **Ostatnia aktualizacja:** 2026-08-23 (M201: audyt PR #72 + zgłoszenia właściciela F/M/M2 — PR #73 otwarty)
+- **Poprzednia:** 2026-08-23 (M200: audyt PR #70 + uwagi właściciela A–R — PR #72 scalony)
 
+## M201 — audyt PR #72 + zgłoszenia właściciela + BRĄZOWA ODZNAKA (2026-08-23, PR #73)
+
+### Odznaka wyłapywacza — 5 unikalnych błędów vs reguły MtG (zlecenie właściciela)
+
+Każdy zweryfikowany u źródła PRZED wdrożeniem (L57), każdy z testem RED→GREEN
+i anty-over-fixem, każdy naprawiony u root cause:
+
+1. **CR 506.4c — permanent, który przestał być stworem, zostawał w walce.**
+   Skilled Animator ożywia artefakt, artefakt atakuje, Animator ginie →
+   `state.combat` wskazywał nie-stwora i inwariant **rzucał wyjątkiem
+   w środku komendy** (padnięty stół w trakcie partii). Fix: wspólny
+   `removeFromCombat` + generyczny przemiat w SBA.
+2. **CR 603.10 — śmierć źródła obrażeń kasowała triggery całego zdarzenia.**
+   Trampler ginący od blokera zabierał ze sobą trigger OBROŃCY („whenever
+   you're dealt combat damage”), własny trigger („deals combat damage to
+   a player”), grupowy trigger kontrolera i przejęcie inicjatywy. Fix:
+   `sourceLki` w zdarzeniu (wzorzec `targetLki`) zamiast bramki „musi żyć”.
+3. **Token Powerstone nie produkował many** (druga połowa Static Net martwa),
+   a reguły many OGRANICZONEJ silnik nie znał wcale. Fix: wydrukowana
+   zdolność `{T}: Add {C}` z deskryptorem `spendOnly: 'artifact'` + pojęcie
+   CELU WYDANIA many w ofercie, płatności i puli (L48).
+4. **CR 115.4 — „target player” zawężone do przeciwnika** (Dementia Bat):
+   gracz nie mógł wskazać siebie. Fix danych + strażnik porównujący Oracle
+   z deskryptorem celu dla każdej karty (L56).
+5. **CR 506.4 — permanent po zmianie kontrolera zostawał w walce**: przejęty
+   atakujący bił gracza, który go właśnie przejął. Fix w tym samym przemiatu
+   SBA co #1 (jedno źródło reguły).
+
+Dodatkowo (poza pulą 5): **N1b** — wyjątek w pętli bota zabijał stół po cichu
+(brak renderu, brak wpisu w logu); teraz awaria trafia do logu i do komunikatu
+z „Rozumiem”, a sesja żyje dalej.
+
+**Stan:** `npm test` **3096/3096**, build **53 moduły / 2592.4 kB**,
+`node --test test/bot-benchmark.test.js` **9/9**.
+
+## M201 (część 1) — audyt PR #72 + zgłoszenia właściciela (2026-08-23, PR #73)
+
+Plan: `docs/plans/PLAN_2026-08-23-m201-audyt-pr72-petla-jakosci.md` · raport:
+`docs/audits/AUDYT_PR72_2026-08-23.md`.
+
+**Audyt PR #72 (32 pliki):**
+- **N1 — KRYTYCZNE:** w `heuristic-bot.js` została instrumentacja debug
+  `process.env.BOT_DEBUG_SCORES && cmd.objectId === 'slaad'`. `process` nie
+  istnieje w przeglądarce, więc sklejony artefakt (ADR 0011) rzucałby
+  `ReferenceError` przy PIERWSZEJ wycenie ruchu bota — stół właściciela
+  nie działałby od pierwszej tury, a testy w Node były zielone (L5/L58).
+  Fix + **generyczny strażnik grafu modułów artefaktu** (globalne Node,
+  instrumentacja debug, `process.env` w `dist`). Mutacyjnie 3/3 RED.
+- **N2:** `combat_damage_to_you` odpalało trigger raz na ATAKUJĄCEGO. Ruling
+  WotC (2023-11-10, zweryfikowany u źródła — L57): zdolność odpala się raz,
+  niezależnie od liczby stworów zadających obrażenia jednocześnie (CR 510.2).
+  Fix: grupowanie per poszkodowany gracz w komendzie (wzorzec Disa the
+  Restless) + 3 testy (w tym dwa anty-over-fix).
+- **O2 (obserwacja):** `turn.cantBlockRestrictions` wygasa przy tworzeniu
+  nowej tury zamiast w cleanup (CR 514.2) — bez skutku w grze.
+- Reszta zmian PR #72 (phyrexian w czarach, MANA_SOURCE_MAP, bramki
+  płatności, `any_creature_dies`, warstwa stołu) — sprawdzona, poprawna.
+
+**Zgłoszenia właściciela z rozgrywki:**
+- **M — PRAWDZIWY BŁĄD:** „Frightful Delusion → cel: ?” na stosie. Repro
+  fuzzem sesji (warhammer vs innistrad, seed 4): kontra rozstrzyga się,
+  cel opuszcza stos, a czar-kontra ZOSTAJE (czeka na odrzucenie karty), więc
+  etykieta pytała o obiekt, którego już nie ma (klasa L29). Root cause:
+  warstwa opisu nie miała pamięci LKI (CR 603.10). Fix w JEDYNYM choke
+  poincie zmian stref (`moveObjectDirectly` → `state.lastKnownObjects`)
+  + centralny odczyt w `nameOfObject`; FoW zachowany (faceDown maskuje).
+- **M2 — werdykt: silnik poprawny.** Zdolność aktywowana na stosie jest
+  wykluczona z oferty ORAZ z walidacji celu „target spell” (CR 701.5a) —
+  wymuszona komenda kończy się `illegal_spell`. Test pinuje oba poziomy.
+- **F — werdykt: silnik poprawny.** Reassembling Skeleton nie ma „Activate
+  only as a sorcery”, więc oferta jest w każdym oknie priorytetu — również
+  w end_of_combat i postcombat main TURY BOTA (zmierzone; fuzz 25 partii:
+  2165 okien, 0 braków). Jedyny warunek to możliwość zapłaty {1}{B}: przy
+  tapniętych lądach oferty nie ma (CR 602.2a), a pierwszym oknem po
+  odkręceniu jest upkeep — dokładnie to widział właściciel.
+
+**Kolejka po M200 — domknięta:**
+- **U2 (BŁĄD REGUŁ, naprawiony):** rzut „bez płacenia kosztu many” (Epic
+  Experiment, suspend, rebound) pomijał KOSZTY DODATKOWE (CR 601.2h/118.5) —
+  Village Rites, Bone Splinters, Severed Strands i Lash of the Balrog szły za
+  darmo, bez poświęcenia stwora. Fix: warianty zapłaty w `epicCastOffers`
+  (poświęcenie per własny stwór, wariant „albo zapłać {4}”) + wspólny
+  `payFreeCastAdditionalCost` w trzech ścieżkach wykonania; brak zapłaty =
+  jawny reject. Granica zakresu: koszt „discard N” (Cathartic Reunion) nie
+  jest oferowany na darmowej ścieżce (jawny reject zamiast łamania reguł).
+- **O1 — teza odrzucona u źródła (L57):** CR 702.19a mówi wprost, że trample
+  „has no effect when a creature with trample is blocking”. Obecne zachowanie
+  silnika jest poprawne; zamiast zmiany dwa testy pinujące.
+
+**Stan:** `npm test` **3043/3043**, build **53 moduły / 2567.8 kB**,
+`node --test test/bot-benchmark.test.js` **9/9**.
+Otwarte: pętla jakości Żywym Testerem (wymaga `npm i` w `tools/table-tester`).
 
 ## M200 — audyt PR #70 (M187–M199) + uwagi właściciela (2026-08-23, PR #72)
 

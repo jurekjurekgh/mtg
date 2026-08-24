@@ -760,13 +760,17 @@ test('Pilgrim\'s Eye: bez basic landów w bibliotece — brak znaleziska, tasowa
 // Dementia Bat — {4}{B}, poświęć: cel-gracz odrzuca 2 karty
 // =============================================================================
 
-test('Dementia Bat: materializacja — zdolność z kosztem sacrificeSelf i celem-oponentem', () => {
+test('Dementia Bat: materializacja — zdolność z kosztem sacrificeSelf i celem-GRACZEM', () => {
   const def = REGISTRY.get('dementia-bat');
   const data = gameObjectDataOf(def);
   assert.ok((def.keywords ?? []).includes('flying'));
   const ability = (data.abilities ?? []).find((a) => a.type === 'activated');
   assert.deepEqual(ability.cost, { mana: 5, sacrificeSelf: true, colors: ['B'] });
-  assert.deepEqual(ability.targets, [{ type: 'opponent' }]);
+  // M201 (znalezisko #4, CR 115.4): Oracle mówi „target PLAYER” — kontroler
+  // też jest legalnym celem. Dawny deskryptor `opponent` zawężał legalność
+  // celów (klasa M200/A: „legalny cel = zdolność musi móc go wskazać”);
+  // `prefer: 'opponent'` zachowuje dotychczasowy wybór botów.
+  assert.deepEqual(ability.targets, [{ type: 'player', prefer: 'opponent' }]);
   assert.deepEqual(ability.effect, [{ type: 'discard_cards', amount: 2, applyTo: 'target' }]);
 });
 

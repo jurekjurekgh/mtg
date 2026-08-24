@@ -25,6 +25,36 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 ---
 
 
+## L58 (2026-08-23) — Kod stołu jedzie do PRZEGLĄDARKI: globalna Node w rdzeniu to awaria produktu, której testy nie widzą
+
+**Objaw (M201/N1, audyt PR #72):** w `scoreCommand` heuristic-bota została
+z poprzedniej sesji instrumentacja:
+`if (process.env.BOT_DEBUG_SCORES && cmd.objectId === 'slaad') console.error(…)`.
+Pakiet testów był zielony (3023/3023), CI zielone, PR scalony — a w sklejonym
+artefakcie (`dist/mtg-table.html`, ADR 0011) ta linia wywala `ReferenceError:
+process is not defined` przy PIERWSZEJ wycenie ruchu bota. Czyli: stół
+właściciela przestaje działać w pierwszej turze, a repozytorium tego nie widzi.
+
+**Przyczyna:** testy i Żywy Tester chodzą w Node (i w jsdom NA Node), gdzie
+`process` jest globalne. Środowisko docelowe — przeglądarka z `file://` —
+nie ma ani `process`, ani `require`, ani `__dirname`. Różnica środowisk czyni
+całą pętlę zieloną przy zepsutym produkcie (klasa L5: test sprawdza funkcję,
+nie wiring). Dodatkowo instrumentacja niosła dwa mniejsze długi: warunek po ID
+karty w rdzeniu (ADR 0002) i debug w kodzie produkcyjnym (`ENVIRONMENT.md` §3).
+
+**Reguły:**
+1. Każdy moduł osiągalny z `src/table/main.js` jest **kodem przeglądarkowym** —
+   nie wolno mu dotknąć globali Node. Dotyczy to także `src/engine/**`
+   i `src/controllers/**`, bo wchodzą do artefaktu.
+2. Instrumentację diagnostyczną usuwa się **w tym samym commicie**, w którym
+   powstała; jeśli ma zostać, musi być bezpieczna w przeglądarce (`globalThis`)
+   i bezwarunkowo generyczna (bez nazw/ID kart).
+3. Zakaz egzekwuje **strażnik skanujący graf modułów artefaktu**
+   (`test/m201-audyt-pr72.test.js`, `collectModules`), a nie recenzja: to
+   różnica środowisk, więc pojedynczy test funkcji nigdy jej nie złapie.
+4. Sygnał ostrzegawczy przy audycie diffa: `process.`, `console.log/error`,
+   nazwa konkretnej karty w kodzie rdzenia — trzy niezależne powody do RED.
+
 ## L57 (2026-08-23) — Zgłoszenie właściciela weryfikujesz wobec Oracle/CR PRZED wdrożeniem; rozbieżność zgłaszasz, nie wdrażasz
 
 **Objaw (M200/A):** właściciel zgłosił: „bot wszedł do Forge i wzmacnia MÓJ stwór —

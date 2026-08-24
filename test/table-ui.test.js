@@ -58,6 +58,13 @@ class MiniEl {
 }
 
 function installMiniDom() {
+  // M201 (przy okazji zgłoszeń A/B właściciela): lista identyfikatorów była
+  // PRZEPISYWANA RĘCZNIE, więc każda nowa sekcja stołu wywracała harness
+  // („Mini-DOM: nieznane id hand-enemy”) zamiast testować zmianę — klasa L26
+  // (strażnik z ręczną listą). Bazę bierzemy teraz WPROST z `index.html`
+  // (jedno źródło prawdy o układzie), a lista niżej zostaje jako dopełnienie
+  // dla elementów tworzonych dynamicznie.
+  const htmlIds = [...fs.readFileSync('src/table/index.html', 'utf8').matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]);
   // M198/A+B: 'status' (pusty szary pasek) i 'table-note' (pas komunikatow)
   // usuniete z ukladu; komunikaty ida do warstwy 'notice'.
   const ids = ['selftest', 'seed', 'deck-human', 'deck-bot', 'new-game',
@@ -99,7 +106,7 @@ function installMiniDom() {
     // Batch 15: pasek narzędzi + biblioteka talii (IndexedDB).
     'deck-builder-add-filtered', 'deck-builder-clear', 'deck-builder-library-select',
     'deck-builder-load', 'deck-builder-save', 'deck-builder-save-as', 'deck-builder-delete'];
-  const registry = new Map(ids.map((id) => [id, new MiniEl(`#${id}`)]));
+  const registry = new Map([...new Set([...htmlIds, ...ids])].map((id) => [id, new MiniEl(`#${id}`)]));
   registry.get('seed').value = '13';
   const documentListeners = {};
   globalThis.document = {
