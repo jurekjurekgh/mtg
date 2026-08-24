@@ -28,6 +28,53 @@ import { normalizeHeuristicWeights } from './heuristic-weights.js';
 
 // M173/D: liczniki-keywordy (deathtouch, flying...) traktujemy jak
 // statystyczne — dają trwałą zdolność, nie zasób do konsumpcji.
+/**
+ * M202/H+N: czy którykolwiek z blokerów MOŻE zablokować tego atakującego
+ * (CR 509.1b). Wycena ataku porównywała atakującego z WSZYSTKIMI nietapniętymi
+ * stworami wroga, więc latający 4/4 przy zwykłym 5/5 dostawał karę „chump”
+ * (-10), choć nie może zostać zablokowany — a na plus wyciągała go dopiero
+ * premia wyścigu. Reguła generyczna po keywordach i `cantBeBlocked` z widoku.
+ */
+function attackerCanBeBlocked(attacker, blockers) {
+  if (!attacker) return false;
+  if (attacker.cantBeBlocked === true) return false;
+  const keywords = attacker.keywords ?? [];
+  const flying = keywords.includes('flying');
+  const able = (blockers ?? []).filter((b) => {
+    const kw = b?.keywords ?? [];
+    return !flying || kw.includes('flying') || kw.includes('reach');
+  });
+  if (keywords.includes('menace') && able.length < 2) return false;
+  return able.length > 0;
+}
+
+/**
+ * M202/N: czy atakujący pada, ZANIM cokolwiek zada, bo bloker ma first strike.
+ * CR 702.7/510.4: obrażenia first strike są w osobnym, wcześniejszym kroku —
+ * 2/1 w nietapniętego 3/1 z first strike to 0 obrażeń i strata stwora
+ * (zgłoszenie właściciela: „0% szans na sukces”).
+ */
+function diesBeforeDealingDamage(attacker, blockers) {
+  const kw = attacker?.keywords ?? [];
+  if (kw.includes('first_strike') || kw.includes('double_strike')) return false;
+  const toughness = attacker?.toughness ?? 0;
+  return (blockers ?? []).some((b) => {
+    const bkw = b?.keywords ?? [];
+    if (!bkw.includes('first_strike') && !bkw.includes('double_strike')) return false;
+    return (b?.power ?? 0) >= toughness;
+  });
+}
+
+/** Atakujący zadaje obrażenia PRZED blokerem (first/double strike, CR 702.7). */
+function attackerStrikesFirst(attacker, blockers) {
+  const kw = attacker?.keywords ?? [];
+  if (!kw.includes('first_strike') && !kw.includes('double_strike')) return false;
+  return !(blockers ?? []).some((b) => {
+    const bkw = b?.keywords ?? [];
+    return bkw.includes('first_strike') || bkw.includes('double_strike');
+  });
+}
+
 const KEYWORD_COUNTERS = new Set(['deathtouch', 'flying', 'first_strike', 'double_strike', 'lifelink', 'trample', 'vigilance', 'menace', 'reach', 'haste', 'hexproof', 'indestructible']);
 
 const NEVER = Number.NEGATIVE_INFINITY;
@@ -2134,7 +2181,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // albo ewazję, która realnie coś zmienia. Reguła generyczna (ADR
           // 0002): 0 mocy = 0 obrażeń bojowych.
           const dealsNoCombatDamage = (power ?? 0) <= 0 && drainOnAttack(id) === 0;
-          if (attackerImmuneThisTurn) {
+          const canBeBlocked = attackerCanBeBlocked(object, blockers);
+          if (!canBeBlocked && blockers.length > 0) {
+            // M202/H: nie może zostać zablokowany (flying bez odpowiedzi,
+            // menace przy jednym blokerze, cantBeBlocked) — atak jest warty
+            // tyle co atak w otwartego, a nie „chump”.
+            perAttacker = power + 3;
+          } else if (attackerImmuneThisTurn) {
             perAttacker = power + 3;
           } else if (dealsNoCombatDamage) {
             // 0/1 w otwartego: 0 obrażeń bojowych, a stwór tapnięty i wystawiony
@@ -2143,6 +2196,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             perAttacker = -12;
           } else if (blockers.length === 0) {
             perAttacker = power + 3; // otwarty — czysta presja
+          } else if (diesBeforeDealingDamage(object, blockers)) {
+            // M202/N: bloker z first strike zabija atakującego, zanim ten zada
+            // cokolwiek (CR 510.4) — atak ma 0% szans: 0 obrażeń i strata
+            // stwora. Jałowy, więc premia wyścigu go nie uratuje.
+            perAttacker = -(toughness + 8);
+            futileAttackers += 1;
+          } else if (attackerStrikesFirst(object, blockers) && power >= strongestBlockerToughness) {
+            // M202/N (symetrycznie): first strike atakującego zabija blokera,
+            // zanim ten odpowie — atakujący PRZEŻYWA, więc to nie wymiana
+            // (power - 1), a czysty zysk jak przy ataku w otwartego.
+            perAttacker = power + 3;
           } else if (toughness > strongestBlockerPower && power >= strongestBlockerToughness) {
             perAttacker = power + 3; // przeżyje I zabija blokera — realny zysk
           } else if (blockers.length >= 2 && toughness <= gangPower && power < weakestBlockerToughness) {
@@ -2166,6 +2230,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // -10. Bez tego bot atakował ⅔ w ⅚ w wyścigu (zgłoszenie
             // właściciela, 2026-08-14).
             perAttacker = -10;
+            // M202/H (zgłoszenie właściciela: „4/4 w moją nietapniętą 5/5,
+            // 0% szans — PO CO?”): kara -10 istniała, ale przy wrogim życiu
+            // <= 5 premia wyścigu wynosiła +20 i PRZEBIJAŁA karę (klasa L3:
+            // kara musi być liczona względem premii, inaczej jest martwa).
+            // Zgodnie z L3 POMIJAMY premię dla ataku jałowego — tak jak
+            // M188/C dla gałęzi „przeżyje, ale nic nie zabije”.
+            futileAttackers += 1;
           }
           score += perAttacker;
           // Evasion: latający atakujący omija blockerów bez flying/reach.
