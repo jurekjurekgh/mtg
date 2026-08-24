@@ -709,6 +709,22 @@ export const REAL_CARDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/b/f/bf9acfe1-de7a-48fe-aed3-28a72db6d1c0.jpg?1783940863',  // l12
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Selesnya Charm'] },
   }),
+  // M202/K (zgłoszenie właściciela): token Phyrexian Mite renderował się jako
+  // syntetyczna zaślepka, bo NIE MIAŁ WPISU w katalogu — a to z wpisu kafel
+  // bierze `imageUri` (Scryfall) i tekst reguł. Sam token działał poprawnie:
+  // jest tworzony przez efekt `create_token` Crawling Chorus, który niesie
+  // jego cechy i `cantBlock` inline (ADR 0002 — reguła w jednym miejscu),
+  // więc ten wpis jest WYŁĄCZNIE danymi prezentacji: druk tokena + grafika.
+  // Obraz: Scryfall, set „tone” (Phyrexia: All Will Be One Tokens), karta
+  // „Phyrexian Mite” 1/1 colorless Artifact Creature — Phyrexian Mite.
+  defineCard({
+    id: 'token_phyrexian_mite', name: 'Phyrexian Mite', set: null,
+    types: ['Artifact', 'Creature', 'Token'], subtypes: ['Phyrexian', 'Mite'], colors: [],
+    keywords: ['toxic'], toxic: 1, power: 1, toughness: 1, manaCost: 0,
+    oracleText: 'Toxic 1 (Players dealt combat damage by this creature also get a poison counter.)\nThis creature can\'t block.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/6/96ec91a9-659a-455f-98e0-cd30b6c6c2a4.jpg?1783918166',  // tone
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Crawling Chorus'] },
+  }),
   defineCard({
     id: 'unstable-frontier', name: 'Unstable Frontier', set: 'CON',
     types: ['Land'], colors: [],
