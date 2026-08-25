@@ -217,3 +217,71 @@ test('M210/#4 (CR 707.2): enter-as-copy kopiuje kartę, nie animację „until e
   assert.equal(copy.toughness, null, 'kopia nie dziedziczy P/T z animacji');
   assert.deepEqual(copy.types, ['Artifact'], 'kopia jest artefaktem, tak jak wydrukowana karta');
 });
+
+// ---- #5: obrażenia z delirium to ZWYKŁE obrażenia niecombatowe -------------
+//
+// Fear of Burning Alive: „…this creature deals that amount of damage to target
+// creature that player controls”. Ścieżka rozstrzygnięcia wołała markDamage
+// wprost, omijając NARAZ cztery reguły: ochronę (CR 702.16a), tarcze prewencji
+// (CR 615), infect (CR 702.90) i lifelink (CR 702.15).
+
+/** Stan z Fear of Burning Alive, ofiarą przeciwnika i grobem spełniającym delirium. */
+function deliriumSetup(sourceKeywords = []) {
+  const state = createGameState({ seed: 210, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = { ...state.turn, phase: 'main', step: 'main', activePlayerId: 'p1', priorityPlayerId: 'p1' };
+  addObject(state, {
+    id: 'fear', instanceId: 'i-fear', cardId: 'fear-of-burning-alive', controllerId: 'p1',
+    zone: 'battlefield', kind: 'creature', power: 3, toughness: 3, manaCost: 4,
+    abilities: [], keywords: sourceKeywords, subtypes: ['Nightmare'],
+    types: ['Enchantment', 'Creature'], colors: ['R'],
+  });
+  addObject(state, {
+    id: 'vic', instanceId: 'i-vic', cardId: 'highland-game', controllerId: 'p2',
+    zone: 'battlefield', kind: 'creature', power: 5, toughness: 5, manaCost: 2,
+    abilities: [], keywords: [], subtypes: [], types: ['Creature'],
+  });
+  // Delirium wymaga 4 różnych typów kart w grobie kontrolera.
+  for (const [id, type] of [['g1', 'Creature'], ['g2', 'Instant'], ['g3', 'Sorcery'], ['g4', 'Artifact']]) {
+    addObject(state, {
+      id, instanceId: `i-${id}`, cardId: 'highland-game', controllerId: 'p1', zone: 'graveyard',
+      kind: 'card', abilities: [], keywords: [], subtypes: [], types: [type],
+    });
+  }
+  state.pendingDeliriumTargets = [{
+    playerId: 'p1', opponentId: 'p2', sourceId: 'fear', amount: 4, restorePriorityTo: 'p1',
+  }];
+  return state;
+}
+
+const fireDelirium = (state) =>
+  execute(state, { type: 'resolve_delirium_target', playerId: 'p1', targetId: 'vic' });
+
+test('M210/#5 (CR 702.16a): obrażenia z delirium respektują protection', () => {
+  const state = deliriumSetup();
+  state.objects.set('vic', Object.freeze({ ...state.objects.get('vic'), protectionFromColors: ['R'] }));
+  assert.equal(fireDelirium(state).ok, true);
+  assert.equal(state.objects.get('vic').damage ?? 0, 0, 'czerwone źródło nie rani chronionego stwora');
+});
+
+test('M210/#5 (CR 615): obrażenia z delirium respektują tarcze prewencji', () => {
+  const state = deliriumSetup();
+  state.damageShields = [{ targetId: 'vic', remaining: 4, sourceCardId: null }];
+  assert.equal(fireDelirium(state).ok, true);
+  assert.equal(state.objects.get('vic').damage ?? 0, 0, 'tarcza pochłania obrażenia');
+});
+
+test('M210/#5 (CR 702.90): źródło z infect daje liczniki -1/-1, nie obrażenia', () => {
+  const state = deliriumSetup(['infect']);
+  assert.equal(fireDelirium(state).ok, true);
+  const victim = state.objects.get('vic');
+  assert.equal(victim.damage ?? 0, 0, 'infect nie znaczy obrażeń');
+  assert.equal((victim.counters ?? {})['-1/-1'] ?? 0, 4, 'infect daje 4 liczniki -1/-1');
+});
+
+test('M210/#5 (CR 702.15): źródło z lifelink zyskuje życie za obrażenia z delirium', () => {
+  const state = deliriumSetup(['lifelink']);
+  const before = state.players.find((p) => p.id === 'p1').life;
+  assert.equal(fireDelirium(state).ok, true);
+  assert.equal(state.objects.get('vic').damage, 4, 'obrażenia doszły');
+  assert.equal(state.players.find((p) => p.id === 'p1').life, before + 4, 'lifelink dodaje 4 życia');
+});

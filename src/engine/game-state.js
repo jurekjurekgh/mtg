@@ -3854,23 +3854,23 @@ export function execute(state, input) {
   // Oczekujący wybór celu triggera delirium (Fear of Burning Alive):
   // kontroler triggera wybiera stwora poszkodowanego gracza; źródło zadaje
   // mu obrażenia równe obrażeniom, które odpaliły trigger (snapshot amount).
-  // Lifelink/infect źródła respektuje generyczna ścieżka obrażeń (markDamage
-  // na stworze — tu bez lifelink, jak przy efekcie damage).
+  // Same obrażenia zadaje generyczna ścieżka dealNonCombatDamage, więc
+  // respektują ochronę, tarcze, infect i lifelink źródła (CR 702.15/16a/90).
   if (state.pendingDeliriumTargets.length > 0) {
     const pending = state.pendingDeliriumTargets[0];
     if (cmd.type !== 'resolve_delirium_target') return reject('delirium_target_unresolved');
     if (cmd.playerId !== pending.playerId) return reject('delirium_target_not_your_decision');
     if (!legalDeliriumTargetCandidates(state, pending).includes(cmd.targetId)) return reject('illegal_delirium_target');
     const before = state.events.length;
-    state.events.push(event('damage_dealt', {
-      source: pending.sourceId, target: cmd.targetId, amount: pending.amount, combat: false,
-      // M155 (audyt żywym testerem): LKI cardId — cel mógł zginąć w SBA tego
-      // samego rozstrzygnięcia; bez tego log pokazywał „(?)" (Fear of Burning
-      // Alive delirium: „zadaje 4 obrażenia (?)").
-      sourceCardId: state.objects.get(pending.sourceId)?.cardId ?? null,
-      targetCardId: state.objects.get(cmd.targetId)?.cardId ?? null,
-    }));
-    markDamage(state, cmd.targetId, pending.amount);
+    // CR 702.15/702.16a/702.90/615: obrażenia z delirium to ZWYKŁE obrażenia
+    // niecombatowe — podlegają ochronie, tarczom prewencji, infect i dają
+    // lifelink. Wcześniej ta ścieżka wołała markDamage wprost, więc omijała
+    // je wszystkie naraz (stwór z „protection from red" dostawał 4 obrażenia
+    // od czerwonego źródła). Generyczna ścieżka dealNonCombatDamage zna te
+    // reguły i emituje własne zdarzenie damage_dealt z LKI celu (M155/M166B).
+    const deliriumSource = state.objects.get(pending.sourceId)
+      ?? { id: pending.sourceId, cardId: pending.sourceCardId ?? null, controllerId: pending.playerId };
+    dealNonCombatDamage(state, deliriumSource, cmd.targetId, pending.amount);
     state.pendingDeliriumTargets.shift();
     state.events.push(event('delirium_target_resolved', {
       playerId: cmd.playerId, sourceId: pending.sourceId,
