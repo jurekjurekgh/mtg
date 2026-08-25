@@ -4631,6 +4631,14 @@ export function playerView(state, playerId) {
         // i celu). ADR 0017. Zakryty permanent nie ma cech (CR 708.2) — dla
         // przeciwnika koszt zostaje ukryty.
         if (!hiddenFromViewer) entry.manaCost = object.manaCost ?? 0;
+        // M209 (audyt M207, Guildscorn Ward): KOLORY permanentu to informacja
+        // publiczna wydrukowana na karcie (CR 105.2) — bez niej bot nie mial
+        // jak ocenic, czy „protection from multicolored" cokolwiek blokuje,
+        // i traktowal jalowa aure jak zwykly buff. Zakryty permanent jest
+        // BEZBARWNY dla przeciwnika (CR 708.2), wiec kolory ida wylacznie do
+        // widza, ktory kartę zna — tak samo jak manaCost/subtypes/types wyzej.
+        // ADR 0017: skutek widoczny w grze musi byc widoczny w widoku.
+        if (!hiddenFromViewer && (object.colors ?? []).length) entry.colors = [...object.colors];
         // Keywordy efektywne (własne + tymczasowe granty + nadane przez
         // załączniki) — publiczna informacja liczona tak samo jak w combat.
         // Zakryty stwór nie ma własnych keywordów (CR 708.2), ale MOŻE mieć
@@ -4794,6 +4802,11 @@ export function playerView(state, playerId) {
       return {
         id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
         plotted: Boolean(object.plotted), ...waiting,
+        // M209: kolory karty w strefach JAWNYCH (grob, wygnanie, stos) — grob
+        // jest publiczny (CR 400.2), a dla bota to jedyny legalny dowod, ze
+        // przeciwnik GRA kartami wielokolorowymi. Reka i biblioteka wracaja
+        // wyzej z `hidden: true`, wiec tu nie dotra (FoW zachowana).
+        ...((object.colors ?? []).length ? { colors: [...object.colors] } : {}),
       };
     });
   }

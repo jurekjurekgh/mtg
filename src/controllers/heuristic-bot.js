@@ -1,4 +1,5 @@
 import { createRng } from '../engine/rng.js';
+import { sourceHasProtectionQuality } from '../engine/attachments.js';
 import { createCardRegistry } from '../cards/card-data.js';
 import { probAtLeastOne } from '../engine/hypergeom.js';
 import { normalizeHeuristicWeights } from './heuristic-weights.js';
@@ -964,7 +965,45 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               : 55 + 2 * worth);         // unieruchamiam stwora wroga
           }
           if (!target || target.controllerId !== view.playerId) return finish(-50);
-          const pump = descriptor?.pump ?? { power: 0, toughness: 0 };
+          // M209 (audyt M207, Guildscorn Ward): aura, ktorej CALA wartoscia
+          // jest OCHRONA przed konkretna jakoscia (CR 702.16b-e), jest jalowa,
+          // gdy przeciwnik nie ma czym w nia uderzyc. Bot rzucal „protection
+          // from multicolored" przy przeciwniku majacym 1 karte wielokolorowa
+          // na 48 — placil karte i mane za nic. To ta sama klasa co M200/H
+          // (Grounded na stworze bez latania).
+          //
+          // Generycznie po deskryptorze (ADR 0002): reguła dotyczy aur BEZ
+          // pump i BEZ keywordow, o STAŁEJ jakosci ochrony. `chooseColor`
+          // (Benevolent Blessing) jest wykluczony — tam kolor dobiera sie pod
+          // przeciwnika przy wejsciu, wiec aura nigdy nie jest jalowa.
+          //
+          // Zasieg wiedzy = FoW bota (bez oszukiwania): pole bitwy przeciwnika
+          // + jego grob i wygnanie (strefy jawne, CR 400.2) — czyli to, co
+          // przeciwnik JUZ pokazal. Reka i biblioteka pozostaja ukryte.
+          const protectionQuality = descriptor?.protection ?? null;
+          const pumpDesc = descriptor?.pump ?? { power: 0, toughness: 0 };
+          const isPureProtection = protectionQuality
+            && !descriptor?.chooseColor
+            && (pumpDesc.power ?? 0) === 0 && (pumpDesc.toughness ?? 0) === 0
+            && (descriptor?.keywords ?? []).length === 0;
+          if (isPureProtection) {
+            const known = [
+              ...(view.zones.battlefield ?? []),
+              ...(view.zones.graveyard ?? []),
+              ...(view.zones.exile ?? []),
+            ].filter((o) => o.controllerId !== view.playerId);
+            // `sourceHasProtectionQuality` to ta sama funkcja, ktorej uzywa
+            // silnik przy rozstrzyganiu ochrony (L41: jedna reguła, jeden
+            // odczyt) — bot nie ma wlasnej kopii semantyki „multicolored".
+            const threats = known.filter((o) => sourceHasProtectionQuality(protectionQuality, o)).length;
+            // Kara musi PRZEBIC baze aury (~66) — inaczej jest dekoracja
+            // (L3/L54). Brak zagrozen = nie rzucaj, trzymaj karte w rece.
+            if (threats === 0) return finish(-40);
+            // Sa zagrozenia: wartosc rosnie z ich liczba, ale ochrona bez
+            // pumpa nie jest tempem — zostaje ponizej zwyklego buffa.
+            return finish(20 + 12 * threats + (target.power ?? 0));
+          }
+          const pump = pumpDesc;
           return finish(66 + 2 * ((target.power ?? 0) + pump.power) + ((target.toughness ?? 0) + pump.toughness));
         }
         const def = card ? cardDef(card.cardId) : undefined;
