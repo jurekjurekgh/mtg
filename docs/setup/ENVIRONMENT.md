@@ -123,6 +123,10 @@ sklejać znaczniki konfliktu.
   z `encoding='utf-8'`).
 - **Żywy Tester** wymaga `npm run build`, a przy pierwszym użyciu `npm i`
   w `tools/table-tester` (jsdom nie jest instalowany w katalogu głównym).
+  **Tester ładuje `dist/mtg-table.html`, nie `src/`.** Po każdej zmianie
+  w `src/` trzeba przebudować — inaczej mierzy się STARY kod i wygląda to
+  jak „naprawa nie działa" (M213: pierwszy przebieg po naprawie sondy dał
+  niezmienioną liczbę zgłoszeń właśnie dlatego).
 - **Testy UI** w `test/` korzystają z własnego mini-harnessu DOM, bo `jsdom`
   nie jest zależnością repozytorium — nie importuj go w testach core.
 

@@ -12,7 +12,43 @@
 >
 > Sesje dopisują tu swoją sekcję (ADR 0013) — nowe na górze.
 
-- **Ostatnia aktualizacja:** 2026-08-25 (M212: naprawy zgłoszeń z rozgrywki i audytu — PR #78)
+- **Ostatnia aktualizacja:** 2026-08-25 (M213: engine bez nazw kart — PR #78)
+
+## M213 — engine bez nazw kart; dwa znaleziska Żywego Testera (2026-08-25)
+
+Polecenie właściciela: „wyeliminuj te zamrożone nazwy kart z engine, niech to
+będzie czyste", a potem szukaj dalej błędów Testerem.
+
+**Dług spłacony do zera.** Wszystkie 21 zamrożonych odwołań (46 wystąpień)
+usunięte; lista `ZAMROZONE` jest pusta. Naprawa u root cause, nie przepisanie
+etykiet: zdarzenia nie niosły tożsamości źródła, więc UI zaszywało nazwę
+w literale. Pendingi i zdarzenia dostały `sourceCardId` (fertile_thicket,
+epic_experiment, index, graveyard_to_top, hand_creature, optional_draw),
+a warstwa stołu używa helpera `srcName(e)` z M201/F.
+
+Kluczowa obserwacja: strażnik nazw pilnuje tylko połowy umowy — że nazwy nie
+ma w kodzie — i jest spełnialny najgorszym sposobem, przez skasowanie nazwy
+z opisu (gracz dostaje anonimowe „Wybierz kartę"). Dlatego powstał
+`test/m213-nazwy-kart-z-danych.js`: nazwa nadal **dociera do gracza**, tylko
+z danych. Przy okazji strażnik językowy Z1c wyłapał dwa moje własne błędy
+(literówkę bez ogonka i czas przeszły niezgodny z resztą logu).
+
+**Żywy Tester — 23 partie na 17 taliach, 2 błędy.** Sonda no-op liczyła
+tapnięcie źródła (koszt) i tapnięcie celu (skutek) do jednego licznika, więc
+zdolność „{2}, {T}: Tap target creature" wyglądała na ofertę bez skutku —
+4 fałszywe alarmy przykrywające realne znaleziska (`c757528`). Drugi błąd to
+regresja z tej samej sesji: „5 karty" zamiast „5 kart", bo usuwając nazwę
+karty z nagłówka napisałem odmianę na dwie formy zamiast trzech (`8317701`).
+
+**Incydent infrastrukturalny:** sandbox został przeklonowany w trakcie pracy,
+przez co commit M213 powstał na punkcie odgałęzienia zamiast na czubku gałęzi.
+Rozwiązane bez force pusha: tag-kotwica, `reset --hard` na `origin`,
+`cherry-pick`, weryfikacja `git diff` że drzewo jest identyczne z przetestowanym.
+
+**Weryfikacja:** `npm test` **3316/0**, build 54 / 2690,7 kB, benchmark szybki
+heuristic 82,7 % (bez zmian). Nowe lekcje: **L75** (fałszywy alarm — napraw
+POMIAR, nie dopisuj wyjątku po nazwie), **L76** (Tester mierzy `dist/`, nie
+`src/` — bez `npm run build` mierzysz stary kod).
 
 ## M212 — naprawy zgłoszeń z rozgrywki + cała klasa błędu w wycenie darmowego rzutu (2026-08-25)
 

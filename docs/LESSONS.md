@@ -25,6 +25,46 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 ---
 
 
+## L75 (2026-08-25) — Fałszywy alarm detektora kosztuje więcej niż cisza; ale zanim go uciszysz, sprawdź POMIAR
+
+**Objaw (M213):** Żywy Tester zgłosił 4 no-opy na zdolności
+„{2}, {T}: Tap target creature" wycelowanej we własnego stwora. Zdolność
+działa poprawnie — sonda dowiodła, że silnik nie oferuje nawet tapowania
+już-tapniętego celu.
+
+**Przyczyna:** taka zdolność tapuje DWA permanenty naraz — źródło (koszt)
+i cel (skutek). Sonda liczyła oba do jednego licznika, więc warunek „jedyna
+zmiana to zapłacony koszt" wychodził prawdą. Rozróżnienie jest dostępne
+strukturalnie: obiekty płacące koszt wskazuje sama KOMENDA (`objectId` plus
+jawne `tapCreatureId`/`crewCreatureIds`/...), więc nie trzeba żadnej
+heurystyki po nazwie karty.
+
+**Reguła:** gdy detektor audytu oskarża kod, który po sprawdzeniu okazuje się
+poprawny, błąd leży w POMIARZE — i tam go napraw, zamiast dopisywać wyjątek
+na etykietę albo nazwę karty. Jeden licznik zbierający dwa różne zjawiska
+(koszt i skutek) zawsze będzie kłamał na przypadkach, gdzie występują razem.
+
+**Reguła druga:** po uciszeniu alarmu udowodnij, że detektor NADAL krzyczy na
+prawdziwym przypadku (L67). Tu: osobny test z realnym no-opem obok testu
+z poprawą oferty.
+
+
+## L76 (2026-08-25) — Żywy Tester mierzy `dist/`, nie `src/`
+
+**Objaw (M213):** po naprawie sondy partia kontrolna zwróciła **niezmienioną**
+liczbę zgłoszeń. Wyglądało to na „patch nie działa" i o mało nie doprowadziło
+do szukania drugiej przyczyny w kodzie, który był już poprawny.
+
+**Przyczyna:** `tools/table-tester/run-game.mjs` ładuje zbudowany artefakt
+`dist/mtg-table.html` (ADR 0011), a nie moduły z `src/`. Bez `npm run build`
+Tester mierzy poprzednią wersję aplikacji.
+
+**Reguła:** `npm run build` jest częścią pętli „popraw → zmierz" dla każdej
+zmiany w `src/`, nie tylko przed commitem. Gdy wynik pomiaru nie drgnął ani
+o jotę po realnej zmianie kodu, **najpierw podejrzewaj nieaktualny artefakt**,
+a dopiero potem własną diagnozę (L33 — najpierw podejrzewaj narzędzie).
+
+
 ## L71 (2026-08-25) — Zmiana strefy tworzy NOWY obiekt (CR 400.7); „ten sam” id to złudzenie
 
 **Objaw (M212):** naprawa wyceny darmowego rzutu wyglądała na działającą
