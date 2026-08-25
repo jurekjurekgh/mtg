@@ -1,6 +1,35 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-24 (M203: audyt PR #74, Halo Forager, konwencja kolejności ofert, układ stołu, pętla Żywym Testerem — PR #75 otwarty)
+- **Ostatnia aktualizacja:** 2026-08-25 (M204: audyt PR #75, zamknięcie #3, pętla jakości — PR #77)
+
+## M204 — audyt PR #75 + pętla jakości (2026-08-25)
+
+Audyt PR #75 (M203) zakończony — PR jest poprawny merytorycznie (Halo Forager
+pełny Oracle, konwencja `prezentacja = enumeracja`, układ stołu, poprawki
+testera, wygnanie zakryte). Dwie drobne usterki znalezione i naprawione:
+- **M204/1** (`9b0f0f0`): regresja wcięcia + zdublowany komentarz w bloku
+  buyback-phyrexian (`src/engine/spells.js`);
+- **M204/2** (`c7c2195`): brak testu regresyjnego dla M203/#3 — dwa testy
+  detektora (przedruk identycznego bloku modala = cicho; realne powtórzenie =
+  zgłoszenie). Seed 61 potwierdzony na żywo (0 zgłoszeń).
+
+Temat **#3 z HANDOFF M203b zamknięty** — to był artefakt testera
+(wielokrotny render modala z rosnącą listą wpisów), nie błąd reguł/UI.
+
+Pętla jakości: 4 partie po 400 kroków (pary talii z próbki benchmarku),
+0 crashy. Zidentyfikowano **znany szum detektora `detectNoResponseWindow`**
+przy instantach w turze bota (Courage in Crisis, Sagittars' Volley) — engine
+jest poprawny (auto-pass człowieka przy braku odpowiedzi, CR 117), ale
+transkrypt nie niesie dowodu auto-passa. Utwardzenie zaplanowane jako **M205**
+(jawny wpis „Auto-pass" w logu sesji + zbieranie go w `--quiet` + uznawanie
+przez detektor).
+
+Stan: `npm test` 3200/3200, build 54/~2637 kB. PR #77 otwarty, scalenie
+decyzją właściciela.
+
+---
+
+
 
 ## M203 cd. — decyzje właściciela: pełny fix, konwencja, układ stołu (2026-08-24)
 
