@@ -165,31 +165,79 @@ test('detectBotRepeats: licznik zeruje się między turami', () => {
 // (CR 602.2). Identyczny BLOK modala (od `[ROZGRYWKA]` do następnego takiego
 // nagłówka) to przedruk artefaktu testera, nie nowa akcja — detektor liczy go
 // raz. Prawdziwe powtórzenie (kolejny wpis w NOWYM bloku) jest nadal łapane.
-test('M203/#3: identyczny blok modala liczony raz (brak fałszywego alarmu)', () => {
-  const block = [
-    '  [ROZGRYWKA] Rozgrywka',
-    '  [ROZGRYWKA]   • Tura 7 — Nieprzyjaciel',
-    '  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Mountain',
+//
+// M205/1 (audyt PR #77): pierwsza wersja tych dwóch testów była ŚLEPA —
+// przechodziła identycznie z fiksem deduplikacji i po jego cofnięciu
+// (mutacja `if (text !== prevBlock) deduped.push(...)` → `deduped.push(...)`:
+// nadal 91/91 pass). Powód: przypadek sklejał bloki bez separatora i powtarzał
+// w każdym z nich linię `• Tura 7 — Nieprzyjaciel`, a ta linia SAMA zeruje
+// licznik (gałąź `turnMark` woła `flush()`), więc akcje nigdy nie sumowały się
+// do progu — test był zielony z niewłaściwego powodu (L1).
+//
+// Dowodowy jest kształt realnego transkryptu: między renderami modala stoi
+// nagłówek kroku ze `snapshot()` (`--- krok N | T. X ---`), który zamyka blok,
+// a wpis `• Tura N` pojawia się tylko wtedy, gdy modal akurat go pokazał.
+// Zmierzone (zgłoszenia z fiksem / bez fiksu): ten kształt 0 / 1 (łapie
+// regresję), kształt z PR #77 0 / 0 (ślepy).
+const REPEAT_STEP_SEPARATOR = '--- krok 12 | T. 7 | faza main1 ---';
+const REPEAT_MODAL_HEAD = '  [ROZGRYWKA] Rozgrywka';
+const REPEAT_ACTION = '  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Mountain';
+
+test('M203/#3: przedruk identycznego bloku modala liczony raz (brak fałszywego alarmu)', () => {
+  // Pięć renderów TEJ SAMEJ pauzy bota, rozdzielonych nagłówkiem kroku —
+  // czyli dokładnie to, co produkuje `run-game.mjs` przy `snapshot()` między
+  // krokami. Powtórzeń akcji w silniku jest ZERO (po `{T}` obiekt jest
+  // tapnięty, dalszych ofert brak — CR 602.2).
+  const reprint = [REPEAT_MODAL_HEAD, REPEAT_ACTION];
+  const lines = [
+    ...reprint, REPEAT_STEP_SEPARATOR,
+    ...reprint, REPEAT_STEP_SEPARATOR,
+    ...reprint, REPEAT_STEP_SEPARATOR,
+    ...reprint, REPEAT_STEP_SEPARATOR,
+    ...reprint,
   ];
-  // Ten sam blok przedrukowany 4× (render pauzy bota) — jak w transkrypcie
-  // seeda 61. Między blokami NIE ma nowej akcji.
-  const lines = [...block, ...block, ...block, ...block];
   const found = detectBotRepeats(lines);
   assert.deepEqual(found, [], `przedruk identycznego bloku nie jest powtórzeniem akcji: ${JSON.stringify(found)}`);
 });
 
-test('M203/#3 (kontrola): prawdziwe powtórzenie w RÓŻNYCH blokach nadal łapane', () => {
-  // Każdy blok ma O JEDEN wpis więcej — jak przy realnej aktywacji co turę,
-  // ale wszystkie w tej samej turze (brak nowego nagłówka tury).
+test('M203/#3 (kontrola): RÓŻNE bloki z realnymi akcjami nadal są zgłaszane', () => {
+  // Ten sam kształt transkryptu (bloki rozdzielone nagłówkiem kroku), ale
+  // każdy kolejny render dokłada NOWY wpis — tak wygląda prawdziwe powtórzenie
+  // (station, firebreathing, mill). Deduplikacja nie może go wyciszyć.
   const mk = (n) => [
-    '  [ROZGRYWKA] Rozgrywka',
-    '  [ROZGRYWKA]   • Tura 7 — Nieprzyjaciel',
-    ...Array.from({ length: n }, () => '  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Shiv\'s Embrace'),
+    REPEAT_MODAL_HEAD,
+    ...Array.from({ length: n }, () => "  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Shiv's Embrace"),
   ];
-  const lines = [...mk(1), ...mk(2), ...mk(3), ...mk(4), ...mk(5)];
+  const lines = [
+    ...mk(1), REPEAT_STEP_SEPARATOR,
+    ...mk(2), REPEAT_STEP_SEPARATOR,
+    ...mk(3), REPEAT_STEP_SEPARATOR,
+    ...mk(4),
+  ];
   const found = detectBotRepeats(lines);
-  assert.ok(found.length >= 1, `pięć REALNYCH aktywacji w jednej turze musi być zgłoszonych: ${JSON.stringify(found)}`);
-  assert.ok(found.some((f) => /5×/.test(f.message)), `zgłoszenie wymienia 5×: ${found.map((f) => f.message).join(' | ')}`);
+  assert.ok(found.length >= 1, `realne aktywacje w jednej turze muszą być zgłoszone: ${JSON.stringify(found)}`);
+});
+
+test('M205/1: nagłówek kroku zamyka blok, więc przedruk NIE maskuje realnego powtórzenia', () => {
+  // Strażnik odwrotnej pomyłki: deduplikacja porównuje wyłącznie SĄSIEDNIE
+  // bloki, więc przeplot „przedruk, nowa akcja, przedruk…" musi być policzony
+  // po treści, a nie wyciszony hurtem.
+  const other = '  [ROZGRYWKA]   • Nieprzyjaciel rzuca czar: Shock → cel: Gracz';
+  const lines = [
+    REPEAT_MODAL_HEAD, REPEAT_ACTION, REPEAT_STEP_SEPARATOR,
+    REPEAT_MODAL_HEAD, other, REPEAT_STEP_SEPARATOR,
+    REPEAT_MODAL_HEAD, REPEAT_ACTION, REPEAT_STEP_SEPARATOR,
+    REPEAT_MODAL_HEAD, other, REPEAT_STEP_SEPARATOR,
+    REPEAT_MODAL_HEAD, REPEAT_ACTION, REPEAT_STEP_SEPARATOR,
+    REPEAT_MODAL_HEAD, other, REPEAT_STEP_SEPARATOR,
+    REPEAT_MODAL_HEAD, REPEAT_ACTION, REPEAT_STEP_SEPARATOR,
+    REPEAT_MODAL_HEAD, other,
+  ];
+  const found = detectBotRepeats(lines);
+  assert.ok(
+    found.length >= 1,
+    `cztery różne bloki z tą samą akcją to realne powtórzenie: ${JSON.stringify(found)}`,
+  );
 });
 
 test('detectBotSelfTargeting: łapie bota celującego SZKODLIWYM efektem w siebie', () => {
