@@ -213,6 +213,31 @@ test('B49/A9: White Mage\u2019s Staff — job select tworzy Hero i przypina do n
   assert.equal(effectiveToughness(hero, state), 2);
 });
 
+test('B49/A10 (M212/Z4): White Mage\u2019s Staff — atak Hero DAJE 1 życie i NIE pyta o cel', () => {
+  // Audyt Żywym Testerem (/tmp/g6.txt): trigger „Whenever equipped creature
+  // attacks, you gain 1 life" prosił o cel („można odmówić"), gracz odmawiał
+  // i trigger kończył jako „bez efektu" — karta NIGDY nie dawała życia.
+  // Przyczyna: ścieżka `equipped_creature_attacks` wstawiała na sztywno spec
+  // celu Greatsword of Tyr każdej zdolności z tym eventem (ADR 0002).
+  const state = game('p1');
+  put(state, 'staff', 'white-mages-staff', 'p1', 'hand');
+  lands(state, 2, 'basic-plains');
+  execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'staff'));
+  resolveStack(state);
+  const hero = [...state.objects.values()]
+    .find((o) => o.cardId === 'token_hero' && o.zone === 'battlefield');
+  state.objects.set(hero.id, Object.freeze({ ...state.objects.get(hero.id), summoningSickness: false }));
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  const life0 = state.players.find((p) => p.id === 'p1').life;
+  assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: [hero.id] }).ok);
+  assert.equal(state.pendingTriggerTargets.length, 0,
+    'trigger bez celu w Oracle NIE otwiera decyzji celu');
+  resolveStack(state);
+  assert.equal(state.players.find((p) => p.id === 'p1').life, life0 + 1,
+    'atak wyposażonego Hero daje dokładnie 1 życie');
+});
+
 // ---- Transza B: karty wymagające rozszerzeń silnika ------------------------
 
 test('B49/B1: Kishla Village — dane karty i zdolności wg Oracle', () => {

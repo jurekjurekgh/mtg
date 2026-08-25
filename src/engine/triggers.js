@@ -2335,12 +2335,32 @@ function processTriggersScan(state, recentEvents) {
         for (const attachment of attachmentsWithAttackTrigger) {
           for (const ability of effectiveAbilities(attachment)) {
             if (ability?.trigger?.event !== 'equipped_creature_attacks') continue;
-            const candidates = triggerTargetCandidates(state, { type: 'creature_defending_player_controls' }, attachment, { defendingPlayerId });
+            // M212/Z4 (audyt Żywym Testerem): spec celu bierzemy z DESKRYPTORA
+            // triggera, a nie na sztywno. Wcześniej KAŻDY trigger
+            // „equipped creature attacks" dostawał cel Greatsword of Tyr
+            // („tap up to one target creature defending player controls") —
+            // więc White Mage's Staff („you gain 1 life", BEZ celu) pytał
+            // o cel, dostawał odmowę i kończył jako „trigger bez efektu":
+            // gracz nigdy nie dostawał życia (ADR 0002 — zero wiedzy o karcie
+            // w silniku).
+            const targetSpec = ability.trigger?.requiresTarget ?? null;
+            if (!targetSpec) {
+              // Trigger bez celu: odpala się wprost, z nosicielem jako
+              // źródłem kontekstu (CR 603.3) — jak każdy inny bezcelowy.
+              tryFire(state, ability, attachment, [attackerId], events);
+              continue;
+            }
+            const candidates = triggerTargetCandidates(state, targetSpec, attachment, { defendingPlayerId });
             // „Up to one": bez stworów obrońcy trigger i tak odpala (licznik
             // na nosicielu) — decyzja z allowNone i pustymi kandydatami.
             // Kontekst (defendingPlayerId) musi wędrować do rozstrzygnięcia —
             // legalTriggerTargetCandidates liczy kandydatów dynamicznie.
-            queueTargetDecision(state, ability, attachment, candidates, true, [attackerId], events, { defendingPlayerId }, { type: 'creature_defending_player_controls' });
+            // „up to one" (trigger obowiązkowy, cel opcjonalny — licznik ląduje mimo
+            // odmowy) ORAZ „you may ... when you do" (optional — odmowa kasuje
+            // całość) pozwalają odmówić; różnicę rozstrzyga game-state po
+            // `optional` przy resolve_trigger_target.
+            const allowNone = Boolean(targetSpec.upTo || targetSpec.optional);
+            queueTargetDecision(state, ability, attachment, candidates, allowNone, [attackerId], events, { defendingPlayerId }, targetSpec);
           }
         }
         // Mentor (CR 702.133, Boros Challenger): „Whenever this creature

@@ -2235,7 +2235,12 @@ export const REAL_CARDS = Object.freeze([
       // („up to one\" — obsługa w triggers.js, efekty po targetIndex).
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'equipped_creature_attacks' },
+        // M212/Z4: cel „up to one target creature defending player controls"
+        // jest DANĄ karty (deskryptor), nie wiedzą wbudowaną w silnik.
+        trigger: {
+          event: 'equipped_creature_attacks',
+          requiresTarget: { type: 'creature_defending_player_controls', upTo: true },
+        },
         effect: [
           { type: 'add_counter', counter: '+1/+1', amount: 1 },
           { type: 'tap_permanent', targetIndex: 1 },
