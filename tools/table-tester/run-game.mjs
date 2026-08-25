@@ -511,6 +511,9 @@ export async function runTableGame({
     return true;
   };
 
+  // M203/#3: ile wpisów modala pauzy bota już trafiło do transkryptu.
+  let loggedBotMoveEntries = 0;
+
   const resolveModal = async () => {
     if (await resolveManaWizard()) return true;
     const cr = $('#choice-request');
@@ -692,7 +695,18 @@ export async function runTableGame({
         text: (el.textContent ?? '').replace(/^\s+|\s+$/g, '').replace(/\s+/g, ' '),
       })).filter((e) => e.text);
       const lines = extractBotMoves({ title: title || '(bez tytułu)', entries });
-      for (const line of lines) logL(`  [ROZGRYWKA] ${line}`);
+      // M203/#3 (właściciel potwierdził w realnym UI: dubli NIE ma — to
+      // artefakt testera): modal pauzy bota bywa renderowany wielokrotnie
+      // z TĄ SAMĄ, rosnącą listą wpisów, a tester logował całą listę za
+      // każdym razem. W transkrypcie jedna aktywacja wyglądała więc na
+      // powtórzoną 4× i detektor osi 1 alarmował (Unstable Frontier, seed 61).
+      // Logujemy wyłącznie wpisy NOWE względem poprzedniego renderu — po
+      // INDEKSIE, nie po treści: prawdziwe powtórzenie (station, mill) to
+      // kolejny wpis o tym samym tekście i musi zostać policzony.
+      if (entries.length < loggedBotMoveEntries) loggedBotMoveEntries = 0; // lista zresetowana
+      const fresh = lines.slice(loggedBotMoveEntries);
+      loggedBotMoveEntries = lines.length;
+      for (const line of fresh) logL(`  [ROZGRYWKA] ${line}`);
       const ok = $('#bot-move-ok');
       if (ok) { ok.click(); await sleep(120); return true; }
     }
