@@ -30,23 +30,28 @@ Poprzednia sesja M203 (PR #75, scalony jako `9187fea`) zostawiła:
 - Kryterium: gałąź na GitHubie, PR widoczny.
 
 ### 1. Audyt PR #75 (ADR 0020 B)
-- [ ] Przegląd każdego zmienionego pliku z `gh pr diff 75` (z płaskiego
+- [x] Przegląd każdego zmienionego pliku z `gh pr diff 75` (z płaskiego
   squasha `9187fea`): Halo Forager, konwencja `prezentacja = enumeracja`,
   układ stołu, poprawki testera (kreator celów wielokrotnych), wygnanie
   zakryte w logu, detektor przedruków modala.
-- [ ] Weryfikacja: brak specjalnych przypadków po nazwie/ID karty w core
+- [x] Weryfikacja: brak specjalnych przypadków po nazwie/ID karty w core
   (ADR 0002), brak globali Node w kodzie przeglądarkowym (L58), pełny Oracle
   kart `supported` (ADR 0022).
-- [ ] `npm test` + `npm run build` zielone na bazie.
-- [ ] Raport w `docs/audits/AUDYT_PR75_2026-08-25.md`, wnioski w opisie PR.
+- [x] `npm test` + `npm run build` zielone na bazie (3198/3198, 54/2637,3 kB).
+- [x] Znalezisko M204/1 (kosmetyka buyback-phyrexian) — naprawione (`9b0f0f0`).
+- [x] Znalezisko M204/2 (brak testu regresyjnego M203/#3) — domknięte testem.
+- [x] Raport w `docs/audits/AUDYT_PR75_2026-08-25.md`, wnioski w opisie PR.
 
-### 2. Znalezisko #3 — duplikat ruchu bota w modalu
-- [ ] Odtworzenie (Żywy Tester, talia z Unstable Frontier, `--steps` 400+).
-- [ ] Diagnoza: czy `botMoves` jest czyszczone po „Wznów grę bota"? Czy modal
-  kumuluje wpisy z kolejnych renderów?
-- [ ] Decyzja: naprawa u root cause (UI sesji czy tester), test regresyjny
-  (RED→GREEN), aktualizacja detektora jeśli potrzeba.
-- [ ] Kryterium: seed 61 bez fałszywego alarmu; `npm test` zielony.
+### 2. Znalezisko #3 — duplikat ruchu bota w modalu — ZAMKNIĘTE
+- [x] Odtworzenie: `--human forgotten-realms --bot alara --seed 61 --steps 300`
+  → 0 zgłoszeń detektorów, partia kończy się poprawnie.
+- [x] Diagnoza: to BYŁ artefakt testera — pauza bota renderowała modal
+  wielokrotnie z rosnącą listą wpisów, a `run-game.mjs` logował całą listę
+  za każdym razem. M203 to naprawił (`loggedBotMoveEntries` loguje tylko NOWE
+  wpisy po indeksie), a `detectors.mjs` pomija przedruki identycznego bloku.
+- [x] Test regresyjny: `M203/#3` w `test/table-tester-detectors.test.js`
+  pinuje obie strony (przedruk = cicho; realne powtórzenie = zgłoszenie).
+- [x] Kryterium: seed 61 bez fałszywego alarmu; `npm test` 3200/3200 zielony.
 
 ### 3. Dalsze polowanie Żywym Testerem (cel: kolejne błędy)
 - [ ] Dłuższe partie (≥400 kroków), różne pary talii jednoplanowych, ręczne
