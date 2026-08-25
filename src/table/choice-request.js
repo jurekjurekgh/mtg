@@ -765,7 +765,31 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
 function objectOrPlayerName(view, session, id) {
   const player = view.players?.find((pl) => pl.id === id);
   if (player) return player.name ?? id;
-  return objectName(view, session, id);
+  return objectName(view, session, id) + controllerTag(view, id);
+}
+
+/**
+ * M206 (audyt Zywym Testerem): znacznik kontrolera przy nazwie permanentu na
+ * polu bitwy - " (Ty)" / " (Nieprzyjaciel)".
+ *
+ * Zwykle listy celow robia to od E (2026-08-11): "Rzuc: Brute Force -> cel:
+ * Rat (Ty)", "-> cel: Ghost Warden (Nieprzyjaciel)" (nameOfObjectId
+ * w render.js). Kreator wielocelowy tego nie dostal i przy lustrzanej planszy
+ * pokazywal dwa nierozroznialne wiersze ("[ ] Squirrel", "[ ] Squirrel" -
+ * jeden moj, jeden wroga). Przy Wrap in Flames ("1 obrazenie kazdemu z celow")
+ * to roznica miedzy zabiciem swojego a cudzego stwora, a wiersze roznia sie
+ * TYLKO ukrytym id obiektu.
+ *
+ * Pomijamy wlasny face-down: ma juz znacznik "(morph)", drugi nawias szumi
+ * (ta sama zasada co w render.js).
+ */
+function controllerTag(view, id) {
+  const object = (view?.zones?.battlefield ?? []).find((o) => o.id === id);
+  if (!object || object.controllerId == null) return '';
+  if (object.faceDown && object.cardId != null) return '';
+  if (!(view.players?.length > 1)) return '';
+  const controller = view.players.find((pl) => pl.id === object.controllerId);
+  return ` (${controller?.name ?? object.controllerId})`;
 }
 
 export function renderDamageWizard(host, { view, session, pending, defaultCommand, onComplete, onCancel, probeKeyFor = null }) {

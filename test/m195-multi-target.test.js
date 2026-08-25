@@ -345,3 +345,52 @@ test('M206: stan zaznaczenia jest widoczny w TEKŚCIE wiersza ([ ] / [x])', asyn
     assert.match(toggle.textContent, /^\[ \]/, 'ponowne kliknięcie odznacza');
   });
 });
+
+test('M206: wiersz celu mówi, CZYJ jest permanent (lustrzana plansza)', async () => {
+  const { renderMultiTargetWizard } = await import('../src/table/choice-request.js');
+  // Obie strony mają stwora o tej samej nazwie — bez znacznika kontrolera
+  // wiersze różnią się tylko ukrytym id obiektu.
+  const view = {
+    playerId: 'p1',
+    players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }],
+    zones: { battlefield: [
+      { id: 'c0', cardId: 'hill-giant', controllerId: 'p1', zone: 'battlefield' },
+      { id: 'c1', cardId: 'hill-giant', controllerId: 'p2', zone: 'battlefield' },
+      { id: 'c2', cardId: 'hill-giant', controllerId: 'p2', zone: 'battlefield' },
+    ] },
+  };
+  const session = { nameOf: () => 'Hill Giant', nameOfObject: (id) => id, faceDownName: () => 'morph' };
+  const commands = wrapCommands();
+  withMiniDom((host) => {
+    renderMultiTargetWizard(host, {
+      view, session, plan: multiTargetPlanOf(commands), commands,
+      sourceName: 'Wrap in Flames', onComplete: () => {}, onCancel: () => {},
+    });
+    const labels = host.findAll((n) => String(n.className).includes('multi-target-toggle'))
+      .map((n) => n.textContent);
+    assert.equal(labels[0], '[ ] Hill Giant (Ty)', `mój stwór oznaczony: ${labels[0]}`);
+    assert.equal(labels[1], '[ ] Hill Giant (Nieprzyjaciel)', `wrogi stwór oznaczony: ${labels[1]}`);
+    // Etykiety wrogich stworów są identyczne (to ta sama karta u tego samego
+    // gracza) — rozróżnia je pozycja, tak jak w zwykłych listach celów.
+    assert.equal(labels[1], labels[2]);
+  });
+});
+
+test('M206: gracz jako cel zostaje bez znacznika kontrolera', async () => {
+  const { renderMultiTargetWizard } = await import('../src/table/choice-request.js');
+  const commands = fireballCommands(); // cele: c0, c1, p2 (gracz)
+  withMiniDom((host) => {
+    renderMultiTargetWizard(host, {
+      view: VIEW, session: SESSION, plan: multiTargetPlanOf(commands), commands,
+      sourceName: 'Fireball', onComplete: () => {}, onCancel: () => {},
+    });
+    const labels = host.findAll((n) => String(n.className).includes('multi-target-toggle'))
+      .map((n) => n.textContent);
+    // VIEW.players: p2 → „Nieprzyjaciel"; gracz nie jest permanentem na polu
+    // bitwy, więc nie dostaje nawiasu z kontrolerem.
+    // Gracz nie jest permanentem na polu bitwy, więc nie dostaje nawiasu
+    // z kontrolerem — inaczej niż stwór wroga („hill-giant (Nieprzyjaciel)").
+    assert.deepEqual(labels, ['[ ] hill-giant (Ty)', '[ ] hill-giant (Nieprzyjaciel)', '[ ] Nieprzyjaciel'],
+      `stwory ze znacznikiem, gracz bez: ${JSON.stringify(labels)}`);
+  });
+});
