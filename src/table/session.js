@@ -1906,8 +1906,8 @@ export function createSession(config) {
   });
   // Etykieta fazy dla nagłówka „Faza: …" — BEZ słowa „faza" w środku, żeby
   // nie dublować prefiksu (audyt M83: „Faza: Faza główna").
-  const stepLabelOf = (e) => (e.step === 'main'
-    ? (e.phase === 'postcombat_main' ? 'Główna 2' : 'Główna 1')
+  const stepLabelOf = (e) => (e.step === 'main1' || e.step === 'main2'
+    ? (e.step === 'main2' ? 'Główna 2' : 'Główna 1')
     : (STEP_LABELS[e.step] ?? e.step));
 
   // card_drawn z draw_step to szum (krok tury) — pomijamy w modalu.

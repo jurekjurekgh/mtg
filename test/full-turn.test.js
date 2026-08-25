@@ -128,8 +128,11 @@ test('pełna tura przechodzi wszystkie kroki przez legalCommands', () => {
 
   // Cała sekwencja kroków została zgłoszona zdarzeniami w oczekiwanym porządku.
   assert.deepEqual(advancedSteps(state), [
-    'upkeep', 'draw', 'main', 'beginning_of_combat', 'declare_attackers',
-    'declare_blockers', 'combat_damage', 'end_of_combat', 'main', 'end', 'cleanup',
+    // M212/3: kroki obu faz głównych mają teraz rozróżnialne nazwy —
+    // wcześniej 'main' występował w tej liście DWUKROTNIE i nie dało się
+    // stwierdzić, o którą fazę chodzi (ani skoczyć do drugiej).
+    'upkeep', 'draw', 'main1', 'beginning_of_combat', 'declare_attackers',
+    'declare_blockers', 'combat_damage', 'end_of_combat', 'main2', 'end', 'cleanup',
     // Zawinięcie tury: wejście w untap i natychmiastowe przejście do upkeepu
     // nowej tury (CR 502.4 — brak priorytetu w untapie).
     'untap', 'upkeep',

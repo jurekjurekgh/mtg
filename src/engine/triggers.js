@@ -2535,7 +2535,7 @@ function processTriggersScan(state, recentEvents) {
     // AKTYWNEGO gracza dostaje licznik lore i odpala kolejny rozdział.
     // Temat 2 dla Sag: rozdziały z `requiresTarget` kolejkuja decyzję CELU
     // (resolve_trigger_target) zamiast iść od razu na stos.
-    if (ev.type === 'step_advanced' && ev.step === 'main' && ev.phase === 'precombat_main') {
+    if (ev.type === 'step_advanced' && ev.step === 'main1' && ev.phase === 'precombat_main') {
       for (const object of [...state.objects.values()]) {
         if (object.zone !== 'battlefield' || object.controllerId !== state.turn.activePlayerId || !object.saga) continue;
         addCounter(state, object.id, 'lore', 1);

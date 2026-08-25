@@ -353,7 +353,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // 'main' (precombat_main i postcombat_main). Tapnięcie zdąży zdjąć
       // blokera tylko w precombat; po walce efekt wyparuje przy jego untapie,
       // więc to okno „main2/end” z karami poniżej.
-      if (view.turn.phase === 'precombat_main' && step === 'main'
+      if (view.turn.phase === 'precombat_main' && step === 'main1'
         && (view.combat?.attackers?.length ?? 0) === 0) return 3;
       // main2/end: efekt wyparuje przy jego untapie, nic nie kupuje. Karzemy
       // TYLKO wtedy, gdy poczekanie na lepsze okno jest w ogóle wykonalne.
@@ -366,7 +366,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // Tura przeciwnika PO jego untap: stwór traci atak TERAZ i blok U MNIE.
     if (['upkeep', 'draw'].includes(step)) return 14;
     // M202/F: jak wyżej — tylko faza PRZED walką (po walce już zaatakował).
-    if (view.turn.phase === 'precombat_main' && step === 'main' && attackers.length === 0) return 12;
+    if (view.turn.phase === 'precombat_main' && step === 'main1' && attackers.length === 0) return 12;
     // Po deklaracji atakujących tapnięcie nie cofa ataku (CR 506.4) —
     // zostaje sam zysk „nie zablokuje w mojej turze”.
     if (alreadyAttacking) return 1;
@@ -1799,7 +1799,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // choć nic innego nie miał do roboty (M126/#10 — anty-over-fix).
             const manaContested = view.zones.hand
               .some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
-            if (view.turn.phase === 'postcombat_main' && step === 'main') score += 6;
+            if (view.turn.phase === 'postcombat_main' && step === 'main2') score += 6;
             else if (manaContested) score -= 12;
           } else if (!myTurn(view) && step === 'end') {
             // Okno optymalne: mana i tak przepadnie, dobranie tuż-tuż.
@@ -1924,7 +1924,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if ((effect.losesKeywords ?? []).includes('defender')) {
             const self = objectOnBoard(view, cmd.objectId) ?? target;
             const beforeCombat = myTurn(view)
-              && ['main', 'beginning_of_combat', 'declare_attackers'].includes(view.turn.step);
+              && ['main1', 'main2', 'beginning_of_combat', 'declare_attackers'].includes(view.turn.step);
             const canAttackNow2 = Boolean(self) && !self.tapped && !self.summoningSickness;
             score += (beforeCombat && canAttackNow2) ? 10 + 2 * (self?.power ?? 0) : -20;
           }
