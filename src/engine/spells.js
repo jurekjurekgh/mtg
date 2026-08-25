@@ -1196,14 +1196,31 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
   }
 }
 
-/** Iloczyn kartezjański list kandydatów (warianty celów czaru). */
+/**
+ * Iloczyn kartezjański list kandydatów (warianty celów czaru).
+ *
+ * M212/Z6 (audyt Żywym Testerem, CR 601.2c): TEN SAM obiekt nie może zostać
+ * wskazany w dwóch slotach celu tego samego czaru („two target nonblack
+ * creatures" wymaga DWÓCH różnych stworów). Dead Ringers jest pierwszą kartą
+ * w katalogu z dwoma slotami tego samego typu, więc dotąd kolizja była
+ * nieosiągalna i filtr nie istniał — gra oferowała „cel: Ainok Artillerist,
+ * Ainok Artillerist" przy jednym stworze na stole i niszczyła go pojedynczo.
+ *
+ * Filtr siedzi TUTAJ (a nie w opisie karty), bo dotyczy każdego czaru
+ * wielocelowego — sześć miejsc budujących oferty korzysta z tej funkcji.
+ * `null` (slot „up to one" / odmowa celu) powtarzać wolno — to brak celu,
+ * nie obiekt.
+ */
 function cartesian(pools) {
   if (pools.length === 0) return [[]];
   const [first, ...rest] = pools;
   const tails = cartesian(rest);
   const out = [];
   for (const head of first) {
-    for (const tail of tails) out.push([head, ...tail]);
+    for (const tail of tails) {
+      if (head !== null && head !== undefined && tail.includes(head)) continue;
+      out.push([head, ...tail]);
+    }
   }
   return out;
 }

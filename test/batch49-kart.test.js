@@ -384,7 +384,11 @@ test('B49/B10: Dead Ringers — RÓŻNE kolory: nie ginie ŻADEN cel', () => {
 test('B49/B11: Dead Ringers — czarny stwór NIE jest legalnym celem', () => {
   const state = game('p1');
   put(state, 'czarny', 'creakwood-safewright', 'p2', 'battlefield', { counters: {} });
+  // DWA nieczarne stwory: czar wymaga dwóch RÓŻNYCH celów (CR 601.2c), więc
+  // przy jednym białym nie byłoby żadnej legalnej oferty i asercja
+  // o wykluczeniu czarnego przechodziłaby pusto (M212/Z6).
   put(state, 'bialy', 'razorfoot-griffin', 'p2');
+  put(state, 'bialy2', 'gaelicat', 'p2');
   put(state, 'spell', 'dead-ringers', 'p1', 'hand');
   lands(state, 5, 'basic-swamp');
   const oferty = playerView(state, 'p1').legalCommands
@@ -392,6 +396,35 @@ test('B49/B11: Dead Ringers — czarny stwór NIE jest legalnym celem', () => {
   assert.ok(oferty.length > 0, 'jakieś oferty istnieją');
   assert.ok(oferty.every((c) => !(c.targets ?? []).includes('czarny')),
     'Oracle: „two target NONBLACK creatures” — czarny stwór poza ofertą');
+});
+
+test('B49/B11b (M212/Z6, CR 601.2c): ten sam stwór NIE może być obydwoma celami', () => {
+  // Audyt Żywym Testerem (dominaria vs tarkir, seed 101): gra zaoferowała
+  // „cel: Ainok Artillerist, Ainok Artillerist” przy JEDNYM stworze wroga
+  // i zniszczyła go pojedynczo. CR 601.2c: obiekt nie może być wskazany
+  // dwukrotnie w tym samym czarze.
+  const state = game('p1');
+  put(state, 'jedyny', 'razorfoot-griffin', 'p2');
+  put(state, 'spell', 'dead-ringers', 'p1', 'hand');
+  lands(state, 5, 'basic-swamp');
+  const oferty = playerView(state, 'p1').legalCommands
+    .filter((c) => c.type === 'cast_spell' && c.objectId === 'spell');
+  assert.equal(oferty.length, 0,
+    'jeden nieczarny stwór na stole = brak legalnej pary celów, zero ofert');
+
+  // Przy dwóch stworach oferty są, ale ŻADNA nie powtarza celu.
+  const state2 = game('p1');
+  put(state2, 'a', 'razorfoot-griffin', 'p2');
+  put(state2, 'b', 'gaelicat', 'p2');
+  put(state2, 'spell', 'dead-ringers', 'p1', 'hand');
+  lands(state2, 5, 'basic-swamp');
+  const oferty2 = playerView(state2, 'p1').legalCommands
+    .filter((c) => c.type === 'cast_spell' && c.objectId === 'spell');
+  assert.ok(oferty2.length > 0, 'dwa różne stwory = jest co celować');
+  for (const oferta of oferty2) {
+    assert.notEqual(oferta.targets[0], oferta.targets[1],
+      `oferta powtarza ten sam cel: ${JSON.stringify(oferta.targets)}`);
+  }
 });
 
 test('B49/B12: Dead Ringers — dwa bezbarwne stwory (puste zbiory) też giną', () => {
