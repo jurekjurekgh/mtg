@@ -14,6 +14,43 @@
 
 - **Ostatnia aktualizacja:** 2026-08-25 (M209: wycena aur ochronnych — bot widzi kolory — PR #78)
 
+## M210 — challenge „brązowa odznaka wyłapywacza błędów”: 5 niezgodności z CR (2026-08-25)
+
+Zadanie właściciela: przejrzeć istniejące karty i mechaniki, znaleźć i naprawić
+**5 unikalnych** błędów/uproszczeń względem zasad MtG pozostawionych przez
+wcześniejsze sesje. Każde znalezisko potwierdzone wobec Oracle + CR PRZED
+naprawą (L57), naprawione u root cause, test zweryfikowany mutacyjnie (L61).
+
+| # | CR | Rzecz | Naprawa |
+|---|---|---|---|
+| 1 | 202.2 | Landy miały `colors` opisujące PRODUKOWANĄ manę, więc animowany Swamp był czarnym stworem (obchodził protection, spełniał „except by black”) | `colors: []` dla 5 basiców i Immersturm Skullcairn; dopisany brakujący deskryptor `{T}: Add {B}` |
+| 2 | 708.2a | Zakryty (morph) permanent zachowywał kolory i podtypy karty pod spodem | nowa `effectiveColors` + gałąź `faceDown` w `effectiveSubtypes(OnBattlefield)`; podpięte w walce, protection i wyborze celów |
+| 3 | 303.4 / 704.5n | „Enchant artifact or creature YOU CONTROL” — warunek kontroli znała tylko walidacja rzutu, nie `isLegalAuraHost`; po przejęciu gospodarza aura zostawała na stole | `ownControlOnly` czytane też przez SBA |
+| 4 | 707.2 | `resolve_enter_as_copy` kopiował stan BIEŻĄCY: kopia ożywionego artefaktu zostawała trwałym stworem 5/5 | baza = `originalBeforeAnimation ?? target`, jak w token-kopii |
+| 5 | 702.15/16a/90, 615 | Obrażenia z delirium szły przez `markDamage` wprost — omijały ochronę, tarcze, infect i lifelink naraz | ścieżka woła `dealNonCombatDamage` |
+
+Wspólny mianownik #2, #3, #4 i #5 to **L48**: jedna reguła, dwie ścieżki, tylko
+jedna ją zna. Ścieżka „główna” (token-kopia, walidacja rzutu, generyczne
+obrażenia) była poprawna; ścieżka poboczna powielała logikę bez reguły.
+
+**Efekty uboczne naprawy #1 (świadome, nie obejścia):**
+- `decks/worek-mroczny.txt` przegenerowany — generator liczył land jako pip kolorowy.
+- Dwa testy poprawione, bo utrwalały błąd: B1b asertował `def.colors === ['B']`
+  jako „produkuje {B}”; `card-data.test.js` używał Mountaina jako świadka
+  propagacji kolorów (teraz Shatter — karta z kosztem many).
+
+**Odrzucone jako fałszywe tropy:** CR 601.2c (nieosiągalne — brak kart z dwoma
+slotami tego samego typu), kolorowe artefakty, phyrexian `manaCost`, kolorowe
+tokeny-landy (CR 111.4), summoning sickness animowanych landów (poprawne),
+`effects.js copy_creature` (martwy kod).
+
+**Lekcje:** L68 (sonda musi asertować `ok` komendy, nie sam stan końcowy),
+L69 (kolor obiektu vs. produkowana mana — dwa pojęcia w jednym polu),
+L70 (mutacja per gałąź wykrywa też kod nadmiarowy — gałąź „land → bezbarwny”
+w `effectiveColors` była martwa I błędna wobec Genju of the Spires).
+
+Testy: 3230 → **3242** (12 nowych, wszystkie zweryfikowane mutacyjnie).
+
 ## M209 — aura ochronna ma wartość tylko wobec realnego zagrożenia (2026-08-25)
 
 Nowa lekcja: **L67**. Commity `fb0d1b7`, `d1dcda0`.

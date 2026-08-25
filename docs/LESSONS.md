@@ -25,6 +25,67 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 ---
 
 
+## L68 (2026-08-25) — Sonda, która „nie znalazła błędu”, bo komenda została cicho odrzucona
+
+**Objaw (M210):** sonda sprawdzająca, czy obrażenia z delirium respektują
+`protection from red`, wypisała „OK — brak obrażeń”. Wniosek był fałszywy:
+komenda w ogóle się nie wykonała (`ok:false`, `unsupported_command`), bo
+`pending` nie miał pola `opponentId` i filtr kandydatów zwracał pustą listę.
+Brak skutku wziąłem za poprawny skutek.
+
+**Przyczyna:** sonda mierzyła STAN KOŃCOWY (`damage === 0`), nie sprawdzając,
+czy badana ścieżka w ogóle została wykonana. Każdy powód odrzucenia komendy —
+literówka w polu, brak wymaganego klucza, niespełniony warunek wejścia —
+produkuje ten sam „zielony” obraz co poprawna implementacja.
+
+**Reguła:** sonda silnika ZAWSZE asertuje najpierw, że komenda przeszła
+(`assert.equal(result.ok, true)`), a dopiero potem bada skutek. Gdy sonda ma
+udowodnić BŁĄD, musi też pokazać stan pośredni świadczący, że kod się wykonał
+(zdarzenie, licznik, zmiana pola). To samo dotyczy testów: `ok` komendy jest
+częścią asercji, nie tłem. Patrz też L13/L61 — dowód wymaga, żeby test potrafił
+być czerwony z właściwego powodu.
+
+
+## L69 (2026-08-25) — Dane karty i mechanika to dwa źródła prawdy o tym samym; kolor vs. produkowana mana
+
+**Objaw (M210):** podstawowe landy miały w danych `colors: ['R']` itd. — pole
+„kolor” zostało użyte do zapisania, JAKĄ MANĘ karta produkuje. Ponieważ kolor
+obiektu wyznacza jego koszt many (CR 202.2), a land kosztu nie ma, każdy land
+był w silniku kolorowy. Po animacji (Awaken) Swamp stawał się czarnym stworem:
+obchodził „protection from black” i spełniał „can't be blocked except by black”.
+Test regresyjny utrwalał pomyłkę, asertując `def.colors === ['B']` z komentarzem
+„produkuje {B}”.
+
+**Przyczyna:** dwa różne pojęcia (kolor obiektu / kolor produkowanej many)
+trafiły do jednego pola, bo dla landu „czarny” brzmi tak samo w obu znaczeniach.
+Ujawniło to dodatkowo, że Immersturm Skullcairn NIE MIAŁ deskryptora
+`{T}: Add {B}` — działał wyłącznie dzięki tej pomyłce.
+
+**Reguła:** gdy pole danych karty da się przeczytać na dwa sposoby, sprawdź,
+która ścieżka silnika je czyta i po co. Kolor obiektu = wyłącznie CR 202.2
+(koszt many, plus efekty nadające kolor); produkowana mana = deskryptor
+`add_mana`. Test, który cementuje takie pomieszanie, jest częścią błędu —
+poprawiamy go razem z kodem, nie „dostosowujemy” kodu do testu.
+
+
+## L70 (2026-08-25) — Weryfikacja mutacyjna wykrywa też kod NADMIAROWY, nie tylko brakujące testy
+
+**Objaw (M210):** nowa funkcja `effectiveColors` miała gałąź „obiekt typu Land
+→ kolor pusty” (CR 202.2). Mutacja tej gałęzi (wyłączenie jej) NIE uczyniła
+żadnego testu czerwonym, choć testy sprawdzały dokładnie ten scenariusz.
+
+**Przyczyna:** regułę egzekwowały już dane kart (landy mają `colors: []`),
+więc gałąź była martwa. Co gorsza, była też BŁĘDNA: efekt animujący może
+kolor nadać (Genju of the Spires — „becomes a 6/1 red Spirit creature land”,
+CR 613 warstwa 5), a zerowanie po typie by go zgubiło.
+
+**Reguła:** mutację robimy per GAŁĄŹ, nie per funkcja. Gałąź, której mutacja
+nie czerwieni żadnego testu, jest podejrzana z definicji: albo brakuje testu,
+albo gałąź jest zbędna. Zanim dopiszesz test, sprawdź najpierw, czy gałąź
+w ogóle powinna istnieć — usunięcie nadmiarowej reguły jest lepszą naprawą
+niż utrwalenie jej testem.
+
+
 ## L67 (2026-08-25) — Helper, który istnieje, ale nie jest wołany w gałęzi, gdzie miał chronić
 
 **Objaw (M209):** sweep audytowy Żywego Testera zaraportował partię
