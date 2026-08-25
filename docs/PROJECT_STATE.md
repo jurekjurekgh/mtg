@@ -1,6 +1,76 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-25 (M205: audyt PR #77, dowód auto-passa, ślepe testy — PR #78)
+- **Ostatnia aktualizacja:** 2026-08-25 (M206: audyt rozgrywek — kreator wielocelowy, opisy celów, timing bota — PR #78)
+
+## M206 — audyt rozgrywek Żywym Testerem (2026-08-25)
+
+Raport: `docs/audits/AUDYT_M206_ROZGRYWKI_2026-08-25.md` · nowe lekcje:
+**L63, L64**. Zlecenie właściciela: kilka partii Żywym Testerem, analiza pod
+kątem (a) efektywności czarów/zdolności bota, (b) grupowania i jednoznaczności
+opisów celów, (c) formy modala wielocelowego. Materiał: **19 przebiegów**
+na 9 taliach i 5 profilach.
+
+**Audyt nie działał i to był pierwszy znaleziony błąd (M206/1, `f191284`).**
+Sterownik testera szukał zaznaczeń jako `.choice-request-option
+input[type="checkbox"]`, a kreator wielocelowy renderuje PRZYCISKI
+`.multi-target-toggle` ze stanem w tekście („[ ]”/„[x]”). Selektor nie pasował
+do niczego → pusta lista zaznaczeń → „Zatwierdź” `disabled` → „Anuluj”
+odtwarzał to samo żądanie → **cicha pętla** (300 identycznych linii, zero
+ruchów) zakończona pogodnym `DETEKTORY: brak zgłoszeń`. Skutek: ŻADEN czar
+wielocelowy (Fireball, Wrap in Flames, Grave Exchange) ani mulligan
+z odłożeniem kart nie był nigdy przeklikany — dokładnie klasa (c) ze zlecenia.
+Drugi błąd tej gałęzi: regex `needed` nie pasował do intro mulligana.
+
+**(c) Mechanizm wielocelowości jest POPRAWNY — nie było czego naprawiać
+w produkcie.** `multiTargetPlanOf` daje listę celów z ptaszkiem + licznik X,
+`commandForSelection` wraca do komendy z `legalCommands` (L48). Sonda
+potwierdziła: Fireball → 3 wiersze + X 1–3; czar o STAŁYCH 2 celach też
+dostaje kreator (`sizes[0] > 1`); czar jednocelowy → `null` (zwykła lista, po
+wierszu na cel — zachowanie pożądane). Skan transkryptów pod kątem eksplozji
+kombinacji: jeden wynik (Terminal Agony ×10) i to poprawna lista celów.
+
+**(b) Dwa błędy opisów, oba naprawione.**
+- **M206/2 (`2ce785c`)** — wiersze kreatora nie mówiły, CZYJ jest permanent:
+  przy lustrzanej planszy „[ ] Squirrel” / „[ ] Squirrel” różniły się tylko
+  ukrytym id. Zwykłe listy dokleją kontrolera od E (2026-08-11)
+  (`→ cel: Rat (Ty)`), kreator z M195/C tej zasady nie odziedziczył. Dodany
+  `controllerTag` powtarza warunki oryginału (tylko pole bitwy, skip własnego
+  face-down, gracz bez nawiasu).
+- **M206/1** — „Mulligan: zaznacz **5 karty**”: intro składał warunek
+  dwuwartościowy zamiast `polishPluralCount` (której reszta stołu używa od
+  dawna). Mulligan do 6 kart jest osiągalny.
+
+**(a) Dwa błędy efektywności bota, oba naprawione u root cause.**
+- **M206/3 + M206/4 (`6808b98`, `056c3b7`) — pump w jałowych oknach.** Bramka
+  brzmiała `phase === 'combat'`, a `beginning_of_combat` NALEŻY do tej fazy
+  (`TURN_STEPS`) — komentarz nad warunkiem mówił „po deklaracji”, kod tego nie
+  egzekwował. Bot pompował Snarling Wolf w początku walki i nie atakował.
+  Pierwsze podejście (wykluczenie kroku po nazwie) tylko przesunęło problem
+  w koniec walki i upkeep przeciwnika; regułą jest STAN, nie etykieta kroku:
+  pump „do końca tury” ma wartość tylko przy realnym udziale w walce
+  (`attacking || blocking`). Efekt: aktywacje **5 → 1** w tej samej partii,
+  a pozostała jest w Głównej 1 przed atakiem.
+- **M206/3 — aura milląca własnego kontrolera na WŁASNYM landzie.** Bot płacił
+  `{1}{U}` za Chronic Flooding na swoim Islandzie i mielił sobie po 3 karty
+  przy każdym tapnięciu (5× w partii). `auraIsHostile` znało wrogość tylko
+  z deskryptora albo triggera WEJŚCIA i tylko dla efektów wrogich
+  PERMANENTOWI; ta aura bije w GRACZA i triggerem późniejszym. Rozpoznanie po
+  deskryptorze `applyTo: 'enchanted_controller'` + `HOSTILE_PLAYER_EFFECTS`
+  (ADR 0002 — bez nazw kart). Efekt: „Nieprzyjaciel mieli …” **4 → 0**.
+
+**Benchmark szybki (672 mecze):** heuristic ogółem **79,6% → 82,4%**,
+vs random **88,7% → 92,6%**, vs aggro **70,5% → 72,3%**.
+
+**Utwardzenie narzędzia (M206/4).** Gałąź kreatora liczy nieudane próby
+zamknięcia TEGO SAMEGO okna, loguje liczbę znalezionych wierszy i po piątej
+przerywa przebieg wyjątkiem — „Anuluj”, które odtwarza żądanie, nie jest
+wyjściem z pętli. Kontrakt DOM sterownika przypięty testem po stronie
+aplikacji (`test/m195-multi-target.test.js`).
+
+**Stan:** `npm test` **3217/3217**, build 54 / 2642,9 kB. Wszystkie nowe testy
+zweryfikowane mutacyjnie (L61).
+
+---
 
 ## M205 — audyt PR #77 + dowód auto-passa w transkrypcie (2026-08-25)
 

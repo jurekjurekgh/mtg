@@ -25,6 +25,83 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 ---
 
 
+## L63 (2026-08-25) — Selektor sterownika, który nie pasuje do niczego, nie daje błędu — daje CICHĄ PĘTLĘ i fałszywe „brak zgłoszeń”
+
+**Objaw (M206, audyt rozgrywek):** przebiegi Żywego Testera na części seedów
+nie kończyły się w limicie kroków. W transkrypcie 300 identycznych linii
+o tym samym oknie wyboru, zero wykonanych ruchów — i pogodne podsumowanie
+`== DETEKTORY: brak zgłoszeń ==`. Raport wyglądał jak czysty przebieg.
+
+**Przyczyna:** sterownik szukał zaznaczeń jako
+`.choice-request-option input[type="checkbox"]`, a kreator wielocelowy
+(M195/C) renderuje **przyciski** `.multi-target-toggle` ze stanem w tekście
+(„[ ]” / „[x]”). W tym modalu nie ma ani jednego `<input type=checkbox>`.
+`querySelectorAll` na nieistniejącym selektorze nie rzuca wyjątku — zwraca
+pustą listę. Lista pusta → nic nie zaznaczono → „Zatwierdź” został `disabled`
+→ „Anuluj” **odtworzył to samo żądanie wyboru** → pętla.
+
+**Dlaczego to gorsze niż crash:** narzędzie nadal raportowało sukces. Skutkiem
+ubocznym była luka w pokryciu, o której nikt nie wiedział: ŻADEN czar
+wielocelowy (Fireball, Wrap in Flames, Grave Exchange) ani mulligan
+z odłożeniem kart nie został nigdy przeklikany — czyli dokładnie ta klasa
+modali, którą właściciel kazał sprawdzić. Dwa błędy UI (nieodróżnialne wiersze
+celów, „zaznacz 5 karty”) czekały tam od wprowadzenia kreatora.
+
+**Reguła:** gałąź sterownika obsługująca modal musi (1) logować, ILE elementów
+sterujących znalazła — „opcji 0” w transkrypcie to alarm, nie szum; (2) mieć
+licznik nieudanych prób zamknięcia TEGO SAMEGO okna i przerywać głośno po
+progu, bo „Anuluj”, które odtwarza żądanie, nie jest wyjściem z pętli;
+(3) traktować `0 znalezionych elementów` jako podejrzenie zerwanego kontraktu
+DOM, nie jako legalny stan. Dodatkowo: kontrakt DOM, na którym opiera się
+sterownik (klasa, forma stanu), wart jest testu po stronie aplikacji —
+inaczej refaktor renderera zrywa narzędzie audytu bez jednego czerwonego testu.
+
+**Sformalizowane w:** `tools/table-tester/run-game.mjs` (licznik
+`MULTI_WIZARD_STUCK_LIMIT`, log liczby wierszy) oraz
+`test/m195-multi-target.test.js` (M206: kontrakt `.multi-target-toggle`,
+brak `<input>`, stan w tekście).
+
+---
+
+
+## L64 (2026-08-25) — Bramka na FAZĘ nie jest bramką na MOMENT: „phase === 'combat'” przepuszcza krok przed deklaracją
+
+**Objaw (M206):** bot aktywował pump „+2/+2 do końca tury” w kroku *Początek
+walki* i nie atakował — dwie many na efekt, który wygasał w cleanup. Powtarzał
+to w kolejnych turach tej samej partii. Warunek brzmiał
+`const inCombat = view.turn.phase === 'combat'`, a komentarz nad nim mówił
+wprost „pump ma sens po deklaracji atakujących/blokujących”.
+
+**Przyczyna:** `beginning_of_combat`, `declare_attackers`, `declare_blockers`,
+`combat_damage` i `end_of_combat` należą do TEJ SAMEJ fazy `combat`
+(`TURN_STEPS`). Sprawdzenie fazy przepuszczało więc kroki, w których nikt
+jeszcze (albo już) nie walczy. Ta sama pomyłka co M202/F, gdzie `step === 'main'`
+obejmował precombat i postcombat — tylko z drugiej strony: tam jedna nazwa
+kroku w dwóch fazach, tu jedna faza na pięć kroków.
+
+**Poprawka nie polegała na wykluczeniu kroku po nazwie.** Pierwsze podejście
+(`&& step !== 'beginning_of_combat'`) tylko przesunęło marnotrawstwo w dwa inne
+okna (koniec walki bez udziału w walce, upkeep przeciwnika). Regułą jest stan,
+nie etykieta kroku: efekt „do końca tury” kupuje coś tylko wtedy, gdy stwór
+REALNIE bierze udział w walce (`attacking || blocking`).
+
+**Reguła:** wyceniając efekt ulotny, pytaj o STAN, który ma na niego wpływ
+(czy stwór walczy, czy cel jest zadeklarowany), a nie o nazwę fazy czy kroku.
+Gdy już piszesz warunek na czas, sprawdź w `TURN_STEPS`, ile kroków obejmuje
+dana faza i ile faz nosi daną nazwę kroku. Objaw dobrze widać dopiero
+w transkrypcie rozgrywki — testy jednostkowe pytają zwykle o jedno okno.
+
+**Uwaga poboczna (ta sama sesja):** `attacking` NIE jest polem, które można
+ustawić na obiekcie w teście — `playerView` wyprowadza je z
+`state.combat.attackers`. Test, który ustawia je wprost, przechodzi z
+niewłaściwego powodu.
+
+**Sformalizowane w:** `test/m206-audyt-rozgrywek.test.js` (A1/A1b/A1c — trzy
+jałowe okna; A2 — kontrola, że pump w realnej wymianie bojowej zostaje).
+
+---
+
+
 ## L61 (2026-08-25) — Test regresyjny bez WERYFIKACJI MUTACYJNEJ bywa ślepy; „zielony" nie znaczy „pilnuje"
 
 **Objaw (M205, audyt PR #77):** poprzednia sesja dołożyła dwa testy opisane
