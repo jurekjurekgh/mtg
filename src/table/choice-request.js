@@ -1,5 +1,5 @@
 import { choiceResponse } from '../protocol/types.js';
-import { OPTION_IGNORABLE_TYPES } from './render.js';
+import { OPTION_IGNORABLE_TYPES, polishPluralCount } from './render.js';
 import { commandOptionKey, FACE_DOWN_LABEL } from './session.js';
 import { commandForSelection, commandForMulliganSelection } from './multi-target.js';
 
@@ -196,7 +196,7 @@ export function renderLookWizard(host, { kind, cards, onComplete, onCancel, prob
   const labels = kind === 'surveil'
     ? { intro: `Surveil ${list.length} — obejrzane karty:`, toBad: 'Na cmentarz', toGood: 'Na wierzch biblioteki', badMark: '→ cmentarz', goodMark: '→ wierzch' }
     : kind === 'index'
-      ? { intro: `Wierzch biblioteki — ${list.length} ${list.length === 1 ? 'karta' : 'karty'} (ułóż w dowolnej kolejności):`, toBad: '', toGood: '', badMark: '', goodMark: '' }
+      ? { intro: `Wierzch biblioteki — ${list.length} ${polishPluralCount(list.length, 'karta', 'karty', 'kart')} (ułóż w dowolnej kolejności):`, toBad: '', toGood: '', badMark: '', goodMark: '' }
       : { intro: `Scry ${list.length} — obejrzane karty:`, toBad: 'Na spód biblioteki', toGood: 'Zostaw na wierzchu', badMark: '→ spód', goodMark: '→ wierzch' };
   const badIds = []; // surveil: millIds · scry: bottomIds
   const keptIds = kind === 'index' ? list.map((card) => card.id) : []; // index: wszystkie zostają, liczy się kolejność

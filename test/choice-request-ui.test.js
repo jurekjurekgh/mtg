@@ -644,3 +644,21 @@ test('renderDamageWizard (M150/B): reorder blokerów pozwala zabić „później
     assignments: { atk: [{ blockerId: 'shaman', amount: 2 }, { blockerId: 'ember', amount: 0 }] },
   }], 'po reorderze można zabić Shaman jako pierwszego (CR 510.1d)');
 });
+
+test('M213: nagłówek kreatora odmienia rzeczownik wg liczby (1/3/5 kart)', () => {
+  // Żywy Tester (warhammer vs srodziemie, s=303): „Wierzch biblioteki — 5 karty”.
+  // Regresja z tej samej sesji: usuwając nazwę karty z nagłówka uprościłem
+  // odmianę do „karta/karty” i zgubiłem formę dla 5+ (L29 — polska odmiana
+  // to trzy formy, nie dwie).
+  const przypadki = [[1, 'karta'], [3, 'karty'], [5, 'kart'], [12, 'kart']];
+  for (const [ile, forma] of przypadki) {
+    const host = new ChoiceMiniEl('div');
+    renderLookWizard(host, {
+      kind: 'index',
+      cards: Array.from({ length: ile }, (_, i) => ({ id: `c${i}`, name: `Karta ${i}` })),
+      onComplete: () => {},
+    });
+    assert.ok(host.textContent.includes(`Wierzch biblioteki — ${ile} ${forma} (`),
+      `zła odmiana dla ${ile}: ${host.textContent.slice(0, 80)}`);
+  }
+});
