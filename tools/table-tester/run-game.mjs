@@ -947,6 +947,14 @@ export async function runTableGame({
     if (!quiet && (i % snapshotEvery === 0 || res === 'none')) snapshot(i);
     if (res === 'none') {
       const ti = text($('#turn-indicator'));
+      // M209: pusty panel akcji po ostatnim kliknieciu, ktore rozstrzygnelo
+      // partie, to koniec gry, a nie zaciecie testera. Bez tego sprawdzenia
+      // wygrana w ostatnim kroku raportowala sie jako [STOP] brak akcji.
+      if (isGameOver()) {
+        logL(`== KONIEC PARTII == ${ti}`);
+        snapshot(i + 1);
+        break;
+      }
       const actions = $$('#actions button.action').map((b) => text(b));
       logL(`  [STOP] brak akcji w kroku ${i} | ${ti} | akcje: ${actions.join(',') || '(puste)'}`);
       break;
