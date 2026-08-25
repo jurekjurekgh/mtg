@@ -545,6 +545,34 @@ export async function runTableGame({
       if (cancelBtn) { cancelBtn.click(); await sleep(60); }
       return true;
     }
+    // M203 (pętla jakości Żywym Testerem, innistrad vs wiedzmin seed 23):
+    // KREATOR CELÓW WIELOKROTNYCH (`.multi-target-confirm`, np. Grave Exchange
+    // „zaznacz cele (2)") nie miał żadnej gałęzi — tester renderował wizard
+    // w pętli i nie posuwał gry ani o krok (partia wisiała do limitu czasu,
+    // transkrypt w ogóle nie powstał, więc nie było czego audytować).
+    // Polityka gracza: zaznacz tyle opcji, ile żąda wizard (status „zaznacz
+    // cele (N)"), potem zatwierdź; gdy nie da się złożyć — anuluj.
+    const multiConfirm = $$('#choice-request button').find((b) => /multi-target-confirm/.test(String(b.className)));
+    if (multiConfirm) {
+      const needed = Number((intro.match(/zaznacz cele \((\d+)\)/) ?? [])[1] ?? 1);
+      const boxes = $$('#choice-request .choice-request-option input[type="checkbox"]')
+        .filter((i) => !i.disabled && !i.checked);
+      logL(`  [multi-target wizard] ${intro.slice(0, 90)} — opcji ${boxes.length}, potrzeba ${needed}`);
+      for (let i = 0; i < Math.min(needed, boxes.length); i += 1) {
+        const pick = profile === 'random' ? pickRandom(boxes) : boxes[i];
+        pick.click();
+        await sleep(20);
+      }
+      const confirmNow = $$('#choice-request button').find((b) => /multi-target-confirm/.test(String(b.className)));
+      if (confirmNow && !confirmNow.disabled) {
+        confirmNow.click();
+        await sleep(80);
+        return true;
+      }
+      const cancelMulti = $$('#choice-request button').find((b) => /multi-target-cancel/.test(String(b.className)));
+      if (cancelMulti) { cancelMulti.click(); await sleep(60); }
+      return true;
+    }
     const toggles = $$('#choice-request .combat-wizard-toggle');
     if (toggles.length > 0 && /(atakujących|blokujących)/.test(intro)) {
       // Atakujący: zaznacz WSZYSTKIE dostępne (dla „can't attack alone" potrzebny
