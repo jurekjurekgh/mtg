@@ -2969,7 +2969,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       case 'resolve_madness_cast': {
         // M158/Batch 39: rzut za koszt madness to niemal zawsze zysk (karta
         // za pół ceny); odmowa tylko gdy many brak.
-        return finish(cmd.cast ? 60 : 0);
+        if (!cmd.cast) return finish(0);
+        // M212/Z7 (ta sama klasa co suspend/rebound): madness też enumeruje
+        // ofertę PER ZESTAW CELÓW (epicCastOffers), więc stała wartość
+        // kazałaby botu brać pierwszy cel z brzegu — także własny stwór.
+        // Uwaga: oferta niesie objectId (obiekt w wygnaniu) ORAZ cardId
+        // (identyfikator karty) — deskryptor czaru wisi na OBIEKCIE.
+        const madnessCard = cmd.objectId
+          ? view.zones.exile.find((o) => o.id === cmd.objectId)
+          : null;
+        return finish(60 - freeCastTargetPenalty(view, madnessCard?.spell?.effects ?? [], cmd));
       }
       case 'resolve_reveal_choice': {
         // M158/Batch 39 (Invasion of the Giants II): ujawnij Olbrzyma za 2

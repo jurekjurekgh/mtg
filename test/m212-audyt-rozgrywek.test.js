@@ -264,3 +264,23 @@ test('M212/Z7: playerView ujawnia deskryptor czaru czekającego w wygnaniu', () 
   const uPrzeciwnika = playerView(state, 'p2').zones.exile.find((o) => o.id === 'breath');
   assert.ok(uPrzeciwnika?.spell, 'wygnanie jest strefą publiczną');
 });
+
+test('M212/Z7b: madness — czar niszczący celuje we WROGIEGO stwora, nie własnego', () => {
+  // Trzecia gałąź darmowego rzutu z tą samą ślepotą: `resolve_madness_cast`
+  // też enumeruje ofertę per zestaw celów (epicCastOffers), a wyceniał ją
+  // stały wynik 60 — bot brał pierwszą ofertę, czyli własnego stwora.
+  const state = game('p1', 'main1');
+  put(state, 'moj', 'trade-route-envoy', 'p1');
+  put(state, 'wrogi', 'razorfoot-griffin', 'p2');
+  // Koszt madness Terminal Agony to {1}{B}{R} — bez obu kolorów silnik
+  // nie wystawi oferty rzutu i test przechodziłby z braku wyboru.
+  for (let i = 0; i < 3; i += 1) put(state, `s${i}`, 'basic-swamp', 'p1');
+  for (let i = 0; i < 3; i += 1) put(state, `m${i}`, 'basic-mountain', 'p1');
+  wygnanyCzar(state, 'ta', 'terminal-agony', 'p1', { madnessReady: true });
+  state.pendingMadnessCast = { playerId: 'p1', objectId: 'ta', cardId: 'terminal-agony' };
+
+  const { chosen, oferty } = botWybiera(state, 'p1', 'resolve_madness_cast');
+  assert.ok(oferty.some((o) => o.targets?.[0] === 'moj'), 'oferta w mój stwór istnieje');
+  assert.ok(oferty.some((o) => o.targets?.[0] === 'wrogi'), 'oferta we wrogi stwór istnieje');
+  assert.equal(chosen.targets?.[0], 'wrogi', 'bot niszczy stwora PRZECIWNIKA');
+});
