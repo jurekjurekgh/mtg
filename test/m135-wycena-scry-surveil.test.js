@@ -84,7 +84,7 @@ test('M135: warianty scry NIE remisują już punktacją', () => {
   const bot = createHeuristicBot({ seed: 3 });
   bot.chooseCommand(view);
   const last = bot.trace().at(-1);
-  const scores = last.options.filter((o) => o.cmd === 'resolve_scry').map((o) => o.score);
+  const scores = last.options.filter((o) => String(o.cmd).startsWith('resolve_scry')).map((o) => o.score);
   assert.equal(scores.length, 2, 'dwa warianty scry');
   assert.notEqual(scores[0], scores[1],
     `warianty muszą się różnić punktacją, inaczej wybór jest przypadkowy: ${JSON.stringify(scores)}`);
@@ -150,20 +150,23 @@ test('M135: surveil jest OSTROŻNIEJSZY od scry (grób vs spód biblioteki)', ()
   // Ta sama karta, ten sam stół — różni się tylko rodzaj decyzji. Karta na
   // granicy opłacalności: scry może ją odłożyć, surveil powinien się wahać
   // bardziej. Sprawdzamy relację punktacji, nie konkretny wybór.
-  const scoreOf = (kind, cmdType, listField) => {
+  // M203/2: opcje w `trace()` są SORTOWANE po punktach, więc parowanie ich
+  // z `legalCommands` po indeksie przechodziło przypadkiem (dopóki obie
+  // kolejności się zgadzały). Parujemy po OPISIE wariantu w śladzie
+  // (`resolve_scry(bottom:…)` / `resolve_scry(keep)` — M203/2 w heuristic-bot).
+  const scoreOf = (kind, cmdType, listLabel) => {
     const { view, lookIds } = lookBoard({ look: ['woolly-loxodon'], lands: 3, kind });
     const bot = createHeuristicBot({ seed: 3 });
     bot.chooseCommand(view);
     const last = bot.trace().at(-1);
-    const opts = view.legalCommands
-      .map((cmd, i) => ({ cmd, score: last.options[i]?.score }))
-      .filter(({ cmd }) => cmd.type === cmdType);
-    const discard = opts.find(({ cmd }) => (cmd[listField] ?? []).length > 0);
-    const keep = opts.find(({ cmd }) => (cmd[listField] ?? []).length === 0);
-    return { discard: discard?.score, keep: keep?.score, lookIds };
+    const opts = last.options.filter((o) => String(o.cmd).startsWith(cmdType));
+    const discard = opts.find((o) => String(o.cmd).includes(`${listLabel}:`));
+    const keep = opts.find((o) => String(o.cmd).endsWith('(keep)'));
+    assert.ok(discard && keep, `ślad musi rozróżniać warianty ${cmdType}: ${JSON.stringify(opts)}`);
+    return { discard: discard.score, keep: keep.score, lookIds };
   };
-  const scry = scoreOf('scry', 'resolve_scry', 'bottomIds');
-  const surveil = scoreOf('surveil', 'resolve_surveil', 'millIds');
+  const scry = scoreOf('scry', 'resolve_scry', 'bottom');
+  const surveil = scoreOf('surveil', 'resolve_surveil', 'mill');
   const scryGain = scry.discard - scry.keep;
   const surveilGain = surveil.discard - surveil.keep;
   assert.ok(surveilGain < scryGain,

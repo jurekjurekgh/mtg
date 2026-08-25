@@ -25,32 +25,42 @@ Walidację wymusza `validateDeck` (`src/cards/deck-validation.js`) — domyślni
 `maxCopies=1`, `minNonland=15`. Format tekstowy i round-trip pilnuje
 `test/repo-decks.test.js`.
 
-## Bieżące talie (9, hybryda: kolor + setting)
+## Bieżące talie (16 plików = 12 jednoplanowych + 4 worki)
 
-- `green.txt`, `black.txt`, `red.txt` — talie mono-kolorowe (G/B/R) + karty
-  bezbarwne/wielokolorowe uzupełniające do 15 nielandowych;
-- `innistrad.txt` — setting Innistrad (gotycki horror, 5 kolorów);
-- `azorius.txt` — biało-niebieskie tempo (W/U);
-- `wiedzmin.txt` — Wiedźmin + Wschód (G/U/B);
-- `graveyard.txt` — cmentarz jako zasób (morbid, reanimacja, mill);
-- `spellslinger.txt` — niebiesko-czerwony potok czarów i prowess;
-- `tokens.txt` — generowanie tokenów + Moonlit Meditation.
+Talie **buduje generator** `tools/generate-plan-decks.mjs` — on jest źródłem
+prawdy przydziału karty do talii, a `test/repo-decks.test.js` pilnuje, że pliki
+w `decks/` są zgodne z generatorem (uruchomienie go nie może nic zmienić) oraz
+że każda wspierana karta nielandowa jest w DOKŁADNIE jednej talii.
 
-Po M54 (audyt + Batch 23) wszystkie wspierane karty nielandowe mają swoje
-miejsce w taliach (pilnuje test `repo-decks.test.js` „każda wspierana karta
-nielandowa jest w którejś talii"): Batch 22 i 23 weszły do talii — red
-dostał aggro/burn (Scorch Spitter, Stomping Slabs, Vandalize, Welder
-Automaton, Shiv's Embrace), green bestie/rampę (Healer of the Glade,
-Courage in Crisis, Deepwood Denizen, Vow of Wildness, Greater Tanuki),
-azorius tempo/kontrolę (Wormfang Newt, Thistledown Players, Feedback,
-Turn the Tide), black Expunge, tokens Raise the Alarm + Selesnya Charm,
-spellslinger Enter the Enigma, graveyard Cellar Door, innistrad
-Etherwrought Page.
+Zasady przydziału ([ADR 0023](../docs/decisions/0023-decks-per-plan-and-benchmark-sample.md)):
 
-Każda talia: 15–20 kart nielandowych (singleton) + lądy dopasowane do kolorów
-(po M33 talie rosną wraz z batchami realnych kart — nowe karty trafiają do
-swoich talii zamiast osobnych plików batchowych). Pula many engine jest
-bezbarwna, więc kolor lądu to kwestia smaku — liczy się LICZBA lądów.
+- **plan z ≥ 15 wspieranymi kartami = własna talia jednoplanowa** — obecnie:
+  `alara`, `dominaria`, `forgotten-realms`, `innistrad`, `mirrodin`, `ravnica`,
+  `srodziemie`, `tarkir`, `theros`, `warhammer`, `wiedzmin`, `zendikar`;
+- **mniejsze plany trafiają do jednego z 4 worków** (mapa `WOREK_DECKS`
+  w generatorze): `worek-basni`, `worek-dziki`, `worek-legend`,
+  `worek-mroczny`;
+- **awans z worka jest automatyczny**: gdy plan dobije do 15 kart, generator
+  przy najbliższym uruchomieniu daje mu własną talię i ostrzega o martwym
+  wpisie w mapie (M181). Gdyby worek spadł przez to poniżej minimum
+  walidatora, generator zatrzymuje się czytelnym błędem — przetasowanie planów
+  między workami to świadoma decyzja w mapie, nie automat;
+- **testy i benchmark używają wyłącznie talii jednoplanowych**; szybka próbka
+  benchmarku to `BENCH_DECKS` w `tools/benchmark.mjs` (6 talii), więc konwersja
+  worka nie wymusza rekalibracji progów.
+
+**Nie przepisuj listy talii do innych dokumentów** — przy każdym batchu kart
+generator potrafi ją zmienić. Aktualny stan wypisuje
+`node tools/table-tester/run-game.mjs --list-decks`, a rozjazd nazw między
+dokumentacją a `decks/` czerwieni
+`test/m203-talie-testera-i-dokumentacji.test.js` (M203; wcześniej w tym pliku,
+w `docs/setup/TESTER_STOLU.md` i w domyślnych talii testera żyły nazwy
+`green`/`red`/`azorius`/`tokens`…, które przestały istnieć w M178).
+
+Każda talia: singleton, `landy = ceil(liczba nielandów / 2)`, kolory landów
+proporcjonalnie do pipów w kosztach talii (każdy używany kolor ≥ 1). Pula many
+jest **kolorowa** (ADR 0015), więc kolor landu ma znaczenie regułowe — generator
+liczy go z pipów kart, a nie „dla smaku".
 
 ## Manabaza: reguła 2 : 1 (M132, zgłoszenie właściciela 2026-08-17)
 

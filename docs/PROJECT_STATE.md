@@ -1,7 +1,162 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-24 (M202: audyt PR #73 + poprawki A/B/C + brązowa odznaka 3/5 — PR #74 otwarty)
-- **Poprzednia:** 2026-08-23 (M201: audyt PR #72 + zgłoszenia właściciela F/M/M2 — PR #73 scalony)
+- **Ostatnia aktualizacja:** 2026-08-24 (M203: audyt PR #74, Halo Forager, konwencja kolejności ofert, układ stołu, pętla Żywym Testerem — PR #75 otwarty)
+
+## M203 cd. — decyzje właściciela: pełny fix, konwencja, układ stołu (2026-08-24)
+
+Właściciel rozstrzygnął trzy tematy z audytu PR #74 i dołożył zadanie układu
+stołu. Wszystko w PR #75, każdy krok samodzielnie zielony i wypchnięty.
+
+**1. Halo Forager — PEŁNY FIX (`4456577`).** X jest częścią decyzji gracza i
+musi równać się MV rzucanej karty (druk „with mana value X"); jedyną wydaną
+maną jest zapłata {X}, bo koszt many czaru wynosi {0} (CR 118.9a) — wcześniej
+silnik pobierał MV za rzut „without paying its mana cost" (pomiar: 3 many → 2
+po rzucie karty MV 1) i wcale nie sprawdzał X (`xValue: 3` przy MV 1 →
+`ok: true`). Zapłata {X} za czar nie-artefaktowy nie może pochodzić z many
+ograniczonej drukiem (M202/N1). 7 testów + wzmocniony E3 w batch41.
+
+**2. Jedna konwencja kolejności ofert (`6abca86`) — `prezentacja = enumeracja`.**
+128× `unshift` → `push`, usunięte wszystkie kompensacje odwrócenia (10 pętli
++ `ordered` proliferate + warianty phyrexian), `concede`/`pass_priority`
+dokładane NA KONIEC (przy remisie punktów stabilne sortowanie bota wybierało
+pass zamiast ataku/bloku — zmierzone na bot-opponent-model/B3 i m167/I1).
+Zasada w kodzie: decyzja „tak" przed „nie", odmowa ostatnia.
+Sama zamiana dała **36 czerwonych testów** — wszystkie naprawione u root cause,
+bez odwracania asercji. Przy okazji wyszły błędy merytoryczne:
+- **Liliana's Triumph**: `targets: [{ type: 'player' }]` przy druku „Each
+  opponent sacrifices a creature" — rzucający był legalnym celem własnego
+  czaru (CR 115.2). Poprawione na `opponent: true`; skan katalogu: więcej nie ma.
+- **Bring Low** oferował jako pierwszy cel WŁASNEGO stwora — kolejność celów
+  czaru wynika teraz z reguły (efekt przyjazny → własne, wrogi → przeciwnika),
+  klasyfikacja ta sama co dla triggerów (`orderedByEffect`).
+- **`simpleChoice`** (polityka symulacji) brał „pierwszą ofertę bloku", więc
+  TEN SAM atak lookahead wyceniał raz **−5**, raz **+19** (zmierzone oba).
+- Test m135 parował opcje śladu z `legalCommands` po indeksie, choć opcje są
+  **sortowane po punktach** — przechodził przypadkiem; `summarize` nazywa teraz
+  wariant scry/surveil.
+- Nowy moduł `src/engine/effect-intent.js` (klasyfikacja intencji efektu) —
+  wydzielony z `game-state.js`, żeby `spells.js` nie tworzył cyklu importów
+  (strażnik `test/import-cycles`); `game-state.js` re-eksportuje.
+Pomiar: `npm run test:all` **3204/3204**, benchmark 672 mecze / 0 crashy —
+heuristic **70,5 %** vs aggro, **88,4 %** vs random, razem **79,5 %**
+(progi bez zmian).
+
+**3. Układ stołu (`c68a486`, zlecenie właściciela).** Gracz z LEWEJ i u GÓRY,
+Bot z PRAWEJ i na DOLE: pasek życia/biblioteki, boksy stref i many (musiały
+jechać razem — od M198/C są per gracz pod swoim licznikiem) oraz sekcje:
+ręka Gracza → stół Gracza → Stos → stół Bota → zakryta ręka Bota.
+Kolejność zmierzona w zbudowanym artefakcie po indeksach. Strażnik M198/C
+pilnował starej kolejności — przepisany na nową (wymaganie zmienił właściciel)
+i rozszerzony o kolejność sekcji, której nikt wcześniej nie pilnował.
+
+**4. Pętla jakości Żywym Testerem — 9 partii, 9 par talii, 4 profile:**
+- **naprawione:** tester wisiał na kreatorze celów wielokrotnych
+  (`.multi-target-confirm`, Grave Exchange) — partia bez transkryptu, czyli
+  dowód przepadał (`9e092f4`);
+- **naprawione:** log świecił „? zostaje wygnany" przy wygnaniu ZAKRYTYM
+  (Pyxis of Pandemonium, CR 708 — brak `cardId` jest tu treścią reguły, a nie
+  brakiem danych): jawny opis bez zdradzania karty (`6deed40`), a strażnik
+  gramatyki Z1c złapał pierwszą, niegramatyczną formę opisu (`227e004`);
+- **OTWARTE (#3):** detektor [bot] „powtórzył akcję 4× w jednej turze" dla
+  Unstable Frontier to fałszywy alarm — zmierzone: po aktywacji `{T}` obiekt
+  jest tapnięty i dalszych ofert jest 0 (CR 602.2). `80bca30` usuwa jedno
+  źródło fałszywych alarmów (przedruki IDENTYCZNYCH bloków modala), ale alarm
+  z seeda 61 zostaje: ta sama akcja trafia do kilku RÓŻNYCH renderów modala.
+  Do rozstrzygnięcia: modal „Rozgrywka" pokazuje ponownie ten sam ruch po
+  „Wznów grę bota" (błąd UI — gracz widzi duplikat) czy to artefakt testera
+  (wznawianie bez czyszczenia `botMoves`). Bez tej decyzji nie ruszam ani
+  `session.js`, ani progów detektora.
+
+**Środowisko (potwierdzone w tej sesji):** workspace został zresetowany do
+świeżego klona W TRAKCIE pracy (`reflog`: `clone: from …`) — zawartość plików
+przetrwała, historia nie; odzyskanie przez `git fetch` + `git reset --mixed
+FETCH_HEAD` i ponowny commit (ADR 0020 D — bez force push). Reset kasuje też
+`tools/table-tester/node_modules` i `dist/`. `GH_TOKEN` wygasł raz w trakcie
+sesji (push po reconnect).
+
+**Nie dowiezione:** cel „10 błędów" Żywym Testerem — są **3 znaleziska**
+(2 naprawione, 1 częściowo). Pozostałe partie czyste (0 zgłoszeń detektorów),
+ale część sygnału to szum warstwy raportowania (#3), więc kolejne polowanie
+trzeba zacząć od rozstrzygnięcia #3 i od dłuższych partii z ręcznym czytaniem
+transkryptów, nie od samych detektorów.
+
+- **Poprzednia:** 2026-08-24 (M202: audyt PR #73 + poprawki A/B/C + brązowa odznaka 3/5 — PR #74 scalony)
+
+## M203 — audyt PR #74: narzędzie audytu kłamało o talii (2026-08-24, PR #75)
+
+Plan: `docs/plans/PLAN_2026-08-24-m203-audyt-pr74-petla-jakosci.md` · raport:
+`docs/audits/AUDYT_PR74_2026-08-24.md` · nowa lekcja: **L60**.
+
+Tryb sesji: ADR 0020 (PR #75 na starcie → audyt poprzedniego PR → commit na
+każdy samodzielnie zielony krok) + ADR 0021 (prompt „kontynuujemy" = pętla
+domyślna, bez pytania o kolejkę).
+
+**Baza zmierzona przed pracą:** `npm test` **3181/3181**, build **53 moduły /
+2626.0 kB**, `gh pr diff 74` = 57 plików / 4987 linii (klon Areny spłaszczony
+do jednego commita). Egress HTTPS **zablokowany** (pomiar: `curl
+api.scryfall.com` → `000`, `fetch` → `fetch failed`, `registry.npmjs.org` →
+`200`) — czyli `ENVIRONMENT.md` §4 poprawny; wpis M202 głoszący odwrotnie
+**skorygowany** (`cb6c0d1`).
+
+**Zweryfikowane jako POPRAWNE (nie badać drugi raz):** N1 mana ograniczona
+drukiem (prześwietlone wszystkie 27 `producibleMana` i 26 `spendMana` — cel
+wydania niesie każda ścieżka rzutu, a płatności nie-czarowe słusznie go nie
+mają), brąz 1 CR 704.5m/104.4b (znacznik `emptyLibraryDraw` w obu ścieżkach
+dobrania, kasowany w przebiegu SBA), brąz 3 CR 616.1 (pełne okablowanie
+`resolve_replacement_choice`: stan, `firstDecisionOwner`, bramka, oferta,
+`pass_priority`, fingerprint, protokół, oba boty, etykiety, log), N2
+`prefer: 'opponent'` (jedno centralne miejsce, CR 115.4), N4
+`exileAdditionalCostCandidates` (jeden helper, trzy gałęzie oferty: 5759 /
+5859 / 5944).
+
+**Znalezisko N-NEW-1 (BŁĄD REGUŁ, ADR 0022) — Halo Forager.** Oracle: „you may
+pay {X} … cast … with mana value X … **without paying its mana cost**".
+Zmierzone: silnik **pobiera MV many** za ten rzut (3 many → 2 po rzucie karty
+MV 1) i wcale nie wymaga X = MV (oferta = `MV ≤ budżet`), a zapłata {X}
+z triggera nie jest modelowana. Własny test repo (`m201-u2-…`) stwierdza
+regułę, której ta ścieżka nie stosuje: rzut „bez kosztu many" zwalnia
+WYŁĄCZNIE z many (CR 118.5/118.9a). Karta ma `supported` + puste `limitations`
+i `notes` deklarujące „MV = X" — czyli deklaruje zgodność, której nie ma.
+**Nie naprawione w tej sesji** (L57 + zakres): poprawny model wymaga decyzji
+„wybierz X" (protokół, oba boty, kreator w stole, testy); półśrodek utrwaliłby
+rozjazd w kodzie wyglądającym na naprawiony. **Do decyzji właściciela:**
+pełny fix albo `unsupported` (wpływ: 1 karta, `decks/worek-basni.txt` — poza
+`BENCH_DECKS`).
+
+**Naprawione (O-NEW-1, `03ebe2b`): Żywy Tester grał inną talią, niż
+zapowiadał.** Domyślne `green`/`red` nie istnieją od M178 (ADR 0023), a wybór
+talii był pętlą bez `else`, więc partia startowała na domyślnej talii artefaktu
+przy nagłówku transkryptu głoszącym nazwę podaną — audyt mierzył co innego,
+niż zapowiadał (L24/L33). Fix: walidacja nazw w `parseArgs` (jawny błąd
+z listą), drugi bezpiecznik przy wyborze w DOM, domyślne z `BENCH_DECKS`
+(dominaria/ravnica), nowa flaga `--list-decks` jako jedno źródło nazw,
+względna ścieżka `--out` liczona od katalogu narzędzia (transkrypt lądował
+w korzeniu repo, poza `.gitignore`). Dokumentacja (`TESTER_STOLU.md`,
+`tools/table-tester/README.md`, `decks/README.md` — w tym „9 talii" i „pula
+many bezbarwna", sprzeczne z ADR 0015/0023) przepisana; strażnik
+`test/m203-talie-testera-i-dokumentacji.test.js` (7 testów, RED 4/6 przed
+fiksem, weryfikacja mutacyjna). Smoke po fixie: `gracz=dominaria vs
+bot=ravnica`, 0 zgłoszeń detektorów.
+
+**Porządki:** usunięty `commit-msg.txt` z katalogu głównego (leftover squasha
+PR #74, `ENVIRONMENT.md` §3 — znalezisko O3 z audytu PR #73).
+
+**Do decyzji właściciela (podtrzymane):** **D** z M202 — jedna zmiana konwencji
+`unshift`/`push` w `playerView` + pomiar benchmarku zamiast trzech łatek
+(pierwsza oferta aury wskazuje stwora przeciwnika).
+
+**Poprawka po czerwonym CI (ta sama sesja):** pierwsza wersja strażnika M203
+była zielona lokalnie i **czerwona w CI** — test uruchamia CLI testera, a
+`run-game.mjs` importował `jsdom` statycznie, więc w CI (które nie robi `npm i`
+w `tools/table-tester`) padał `MODULE_NOT_FOUND`. Fix: leniwy
+`await import('jsdom')` w `boot()` — walidacja argumentów, `--help`
+i `--list-decks` nie potrzebują DOM-u. Zweryfikowane dwustronnie: test 7/7
+**bez** `node_modules` narzędzia (symulacja CI) i pełna partia z jsdom
+(0 zgłoszeń detektorów). Dopisane do L60 jako pułapka weryfikacji.
+
+**Wynik:** `npm test` **3188/3188** (3181 + 7 nowych), `npm run test:all`
+**3197/3197** (to samo co CI), build 53/2626.0 kB. Pełne B0 nieuruchomione
+(ADR 0018).
 
 ## M202 — audyt PR #73: 3 błędy reguł/oferty (2026-08-24, PR #74)
 
@@ -88,8 +243,15 @@ zduplikowanych zdarzeń w strumieniu komendy (wrapper `processTriggers` z M201).
   odwrotność enumeracji), a triggery przez `push`. Do decyzji właściciela:
   jedna zmiana konwencji + pomiar benchmarku zamiast trzech łatek.
 
-**Środowisko:** `tools/table-tester` + `npm i` działa — **egress HTTPS NIE jest
-zablokowany**, wbrew `docs/setup/ENVIRONMENT.md` §4 (do korekty).
+**Środowisko:** `tools/table-tester` + `npm i` działa, bo **rejestr npm nie jest
+zablokowany** — ale arbitralny egress HTTPS **jest zablokowany**, zgodnie
+z `docs/setup/ENVIRONMENT.md` §4. *(Sprostowanie M203, pomiar 2026-08-24:
+poprzedni zapis w tym miejscu głosił odwrotnie — „egress HTTPS NIE jest
+zablokowany, wbrew ENVIRONMENT.md §4 (do korekty)". Powtórny pomiar w świeżym
+sandboxie: `curl https://api.scryfall.com/...` → kod `000`, `fetch` w Node →
+`fetch failed`, `https://registry.npmjs.org/jsdom` → `200`. Czyli §4 był
+poprawny, a pomyłka wynikała z wniosku „`npm i` działa" → „sieć działa";
+dane kart nadal pobieramy narzędziem `fetch_page`, nie z sandboxa.)*
 
 **Brązowa odznaka (wyzwanie właściciela) — 2 z 5 znalezisk w tej rundzie:**
 

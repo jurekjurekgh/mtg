@@ -50,74 +50,16 @@ function commandIdentityKey(cmd) {
   return JSON.stringify(keys.map((k) => [k, cmd[k]]));
 }
 
-/**
- * M150/A — czy trigger celowany (resolve_trigger_target) jest PRZYJAZNY dla
- * celu (pump/licznik na WŁASNYM stworze — Battle-Rattle Shaman, ETB „put a
- * +1/+1 counter on target creature\") czy WROGI (obrażenia/usunięcie — Forge
- * Devil, Jill, Reclusive Artificer). Generyczne (ADR 0002): wyłącznie po
- * deskryptorach efektów, zero nazw kart. Bot wycenia cel na tej podstawie,
- * więc nie wybiera WROGIEGO stwora dla przyjaznego pumpu.
- */
-// Eksportowane dla strażnika klasyfikacji celów triggerów
-// (test/bot-trigger-target-classification-guard.test.js) — każdy typ efektu
-// w triggerze z celem musi być świadomie sklasyfikowany (wrogi / przyjazny /
-// przejrzany neutralny), inaczej remis wariantów u bota kieruje efekt
-// w zły cel (klasa L50 — 6 wystąpień: M96, M135, M138/Z1, M146, M156/F1, Q2).
-export const HOSTILE_TRIGGER_TARGET_EFFECTS = new Set([
-  // Batch 45 (Pain for All): obrażenia = moc zaczarowanego stwora — wrogi.
-  'damage_from_enchanted_power',
-  'damage', 'damage_from_target_power', 'damage_divided', 'damage_to_controller', 'destroy_permanent',
-  'destroy_if_least_power', 'destroy_artifact_gain_life_mana_value',
-  'exile_permanent', 'exile_target_creature', 'exile_opponent_creature',
-  'exile_nonland_permanent_linked', 'bounce_permanent', 'bounce_to_library_top',
-  'sacrifice_permanent', 'player_sacrifices_creature', 'tap_permanent', 'shrink',
-  'pump_negative', 'cant_block', 'mill_cards', 'dont_untap_next_untap_step',
-  // M177/E (Azorius Justiciar): detain odbiera celowi atak/blok/aktywacje.
-  'detain',
-]);
-// Liczniki wrogie dla obdarowanego (stun — nie odkręca; finality — śmierć
-// zamieniona na wygnanie). Pozostałe liczniki '+' są przyjazne (gałąź poniżej).
-const HOSTILE_COUNTERS = new Set(['stun', 'finality']);
+// M203/2: klasyfikacja intencji efektu mieszka w `effect-intent.js` (wspólne
+// źródło dla game-state.js i spells.js, bez cyklu importów). Import lokalny
+// + re-eksport zachowuje dotychczasowy kontrakt importu z tego modułu.
+import {
+  HOSTILE_TRIGGER_TARGET_EFFECTS,
+  triggerEffectIsHostile,
+  triggerTargetEffectFriendly,
+} from './effect-intent.js';
 
-/**
- * Pojedynczy efekt wrogi wobec swojego celu (M156 — wydzielone dla
- * strażnika klasyfikacji i triggerTargetEffectFriendly; JEDNA prawda,
- * nie trzy kopie — por. L41). Ujemny pump i wrogi licznik to efekty wrogie
- * mimo typu nieobecnego wprost w zbiorze.
- */
-export function triggerEffectIsHostile(effect) {
-  if (!effect?.type) return false;
-  if (HOSTILE_TRIGGER_TARGET_EFFECTS.has(effect.type)) return true;
-  if (effect.type === 'pump' && ((effect.power ?? 0) < 0 || (effect.toughness ?? 0) < 0)) return true;
-  if (effect.type === 'add_counter' && HOSTILE_COUNTERS.has(effect.counter)) return true;
-  return false;
-}
-// Keywordy SZKODLIWE dla obdarowanego (nadanie ich wrogowi to zysk, nie strata).
-// W katalogu dziś nie występują, ale klasyfikacja „każdy grant = przyjazny"
-// bez tego zbioru byłaby pułapką przy pierwszej karcie typu „gains defender".
-const HOSTILE_GRANTED_KEYWORDS = new Set(['defender', 'cant_block', 'cant_attack']);
-export function triggerTargetEffectFriendly(ability) {
-  const effs = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
-  if (effs.length === 0) return false;
-  if (effs.some(triggerEffectIsHostile)) return false;
-  // Przyjazny, gdy któryś efekt to pozytywny pump (power/toughness > 0) albo
-  // licznik +1/+1 (counter zaczyna się od '+') — celujemy własny stwór.
-  return effs.some((e) =>
-    (e?.type === 'pump' && (e.power ?? 0) >= 0 && (e.toughness ?? 0) >= 0
-      && (e.power ?? 0) + (e.toughness ?? 0) > 0)
-    || (e?.type === 'add_counter' && typeof e.counter === 'string' && e.counter.startsWith('+'))
-    // M156/F1 (Lotusguard Disciple): nadanie keywordów do końca tury jest
-    // przyjazne dla obdarowanego (lifelink, indestructible, flying...) — bez
-    // tej gałęzi friendly=false i bot obdarowywał NAJLEPSZEGO stwora wroga.
-    || (e?.type === 'grant_keywords_until_end_of_turn' && (e.keywords ?? []).length > 0
-      && !(e.keywords ?? []).some((k) => HOSTILE_GRANTED_KEYWORDS.has(k)))
-    // M156/Q2 (pętla jakości, Servant of the Scale): przeniesienie liczników
-    // +1/+1 na cel po śmierci źródła to efekt przyjazny — bez tej gałęzi
-    // friendly=false i bot obdarzał NAJSŁABSZEGO własnego stwora (kara
-    // -20-wartość zamiast premii 30+wartość).
-    || (e?.type === 'transfer_counters_on_dies' && typeof e.counter === 'string'
-      && e.counter.startsWith('+')));
-}
+export { HOSTILE_TRIGGER_TARGET_EFFECTS, triggerEffectIsHostile, triggerTargetEffectFriendly };
 
 // Re-eksport niskopoziomowych API dla kompatybilności istniejących konsumentów.
 export { moveObjectDirectly, changeLife };
@@ -2000,7 +1942,11 @@ export function execute(state, input) {
       && ['instant', 'sorcery'].includes(card.spell?.timing)
       && !card.spell?.additionalCost && !card.spell?.xCost && !card.spell?.fireball;
     if (!inScope) return reject('illegal_grave_free_cast');
+    // M203: X jest częścią KOMENDY (wybór gracza), a walidacja pilnuje druku —
+    // „card with mana value X". Wcześniej X było czytane z karty, więc komenda
+    // z dowolnym X przechodziła (zmierzone: xValue 3 przy karcie MV 1 → ok).
     const xValue = card.manaCost ?? 0;
+    if (!Number.isInteger(cmd.xValue) || cmd.xValue !== xValue) return reject('illegal_grave_free_cast_x');
     if (producibleMana(state, cmd.playerId, null, spellManaPurpose(card)) < xValue) return reject('illegal_grave_free_cast');
     // Cele/tryb jak przy Epic (walidacja przed płatnością — L4).
     const chosen = Array.isArray(cmd.targets) ? cmd.targets : [];
@@ -2028,6 +1974,10 @@ export function execute(state, input) {
     } catch {
       return reject('illegal_grave_free_cast_targets');
     }
+    // Zapłata {X} (CR 601.2h — koszt płacony przy rozstrzyganiu „you may pay
+    // {X}"); koszt many samego czaru wynosi {0} (CR 118.9a), więc nic więcej
+    // nie jest pobierane. Cel wydania = rzucana karta: {X} wydane na czar
+    // nie-artefaktowy nie może pochodzić z many ograniczonej drukiem.
     spendMana(state, cmd.playerId, xValue, [], spellManaPurpose(card));
     const stackId = `spell-${state.objectSequence++}`;
     moveObjectDirectly(state, cmd.objectId, 'stack', stackId);
@@ -4865,10 +4815,15 @@ export function playerView(state, playerId) {
   // Decyzje CELU triggera (Temat 2) — blokują tylko, gdy są ŻYWE (źródło na
   // polu bitwy/LKI + intervening-if + kandydaci); ślepe wpisy czyści execute.
   const triggerTargetsBlock = state.pendingTriggerTargets.some((p) => triggerTargetDecisionPending(state, p));
+  // M203/2: przy konwencji „prezentacja = enumeracja" kapitulacja i pass są
+  // DOKŁADANE NA KONIEC — inaczej przy remisie punktów stabilne sortowanie
+  // bota wybierało `pass_priority` zamiast ataku/bloku (zmierzone:
+  // bot-opponent-model/B3 i m167/I1 dostawały `pass_priority`).
+  const trailingCommands = [];
   if (state.status === 'active' && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom) {
     // Koncesję może zgłosić każdy gracz niezależnie od priorytetu; pass
     // oferujemy wyłącznie posiadaczowi priorytetu.
-    legalCommands.push(command('concede', playerId));
+    trailingCommands.push(command('concede', playerId));
     const hasPriority = state.turn.priorityPlayerId === playerId;
     // Pass jest niedostępny, gdy DOMYKAŁBY rundę w nierozstrzygniętym kroku
     // obrażeń combat — jedyna droga dalej to wtedy resolve_combat (albo
@@ -4877,7 +4832,7 @@ export function playerView(state, playerId) {
     const blockedByCombat = state.turn.step === 'combat_damage' && state.combat && state.zones.stack.length === 0
       && state.turn.passes + 1 >= state.players.length;
     if (hasPriority && !blockedByCombat && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
-      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingSuspendCast && !state.pendingReboundCast && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingDamageDivision && !state.pendingReplacementChoice) legalCommands.push(command('pass_priority', playerId));
+      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingSuspendCast && !state.pendingReboundCast && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingDamageDivision && !state.pendingReplacementChoice) trailingCommands.push(command('pass_priority', playerId));
   }
   // Oczekujące decyzje oferujemy SEKWENCYJNIE — w tej samej kolejności, w
   // jakiej bramki execute() je zamykają: scry → surveil → backup → clash →
@@ -4978,12 +4933,13 @@ export function playerView(state, playerId) {
   // decyzję — większe N i tak jest rzadkie).
   if (state.status === 'active' && !blockedByOthersDecision && state.pendingMulligans.length > 0
     && !state.pendingMulliganBottom && state.pendingMulligans[0] === playerId) {
-    // M100/E10 (P1): po 7. mulliganie ręka jest pusta — oferta już tylko keep
-    // (zgodne z bramką execute: mulligan_below_zero_hand, CR 103.4).
+    // M203/2: przy konwencji „prezentacja = enumeracja" keep idzie PIERWSZY
+    // (boty i gracz biorą pierwszą ofertę — domyślna sugestia to zatrzymanie
+    // ręki); dawniej wymuszało to odwrócenie przez unshift.
+    legalCommands.push(command('resolve_mulligan_choice', playerId, { keep: true }));
     if ((state.mulliganCounts[playerId] ?? 0) < 7) {
-      legalCommands.unshift(command('resolve_mulligan_choice', playerId, { keep: false }));
+      legalCommands.push(command('resolve_mulligan_choice', playerId, { keep: false }));
     }
-    legalCommands.unshift(command('resolve_mulligan_choice', playerId, { keep: true }));
   } else if (state.status === 'active' && !blockedByOthersDecision && state.pendingMulliganBottom
     && state.pendingMulliganBottom.playerId === playerId) {
     const pending = state.pendingMulliganBottom;
@@ -5021,8 +4977,8 @@ export function playerView(state, playerId) {
     }
     // unshift odwraca kolejność, więc wkładamy od tyłu — gracz widzi warianty
     // w tej samej kolejności, w jakiej je wyliczyliśmy.
-    for (const combo of [...unique].reverse()) {
-      legalCommands.unshift(command('resolve_mulligan_bottom_choice', playerId, { cardIds: combo }));
+    for (const combo of unique) {
+      legalCommands.push(command('resolve_mulligan_bottom_choice', playerId, { cardIds: combo }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeScry) {
     // Oczekująca decyzja scry (CR 701.18): warianty = podzbiór kart na SPÓD ×
@@ -5049,7 +5005,7 @@ export function playerView(state, playerId) {
       for (const order of orders) {
         const data = bottomIds.length > 0 ? { bottomIds } : {};
         if (order.length > 0) data.topOrder = order;
-        legalCommands.unshift(command('resolve_scry', playerId, data));
+        legalCommands.push(command('resolve_scry', playerId, data));
       }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeSurveil) {
@@ -5075,7 +5031,7 @@ export function playerView(state, playerId) {
       for (const order of orders) {
         const data = { millIds };
         if (order.length > 0) data.topOrder = order;
-        legalCommands.unshift(command('resolve_surveil', playerId, data));
+        legalCommands.push(command('resolve_surveil', playerId, data));
       }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeRevealOrder) {
@@ -5084,7 +5040,7 @@ export function playerView(state, playerId) {
     // pierwsza oferta dla botów; gracz widzi jedną komendę reorderu (ograniczenie
     // enumeracji: N! permutacji nie jest oferowanych, walidacja execute
     // przyjmuje każdą permutację cardIds).
-    legalCommands.unshift(command('resolve_reveal_order', playerId, { order: [...state.pendingRevealOrder.cardIds] }));
+    legalCommands.push(command('resolve_reveal_order', playerId, { order: [...state.pendingRevealOrder.cardIds] }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeProliferate) {
     // Proliferate (CR 701.27, Courage in Crisis): „choose any number of
     // permanents and/or players" — podzbiory kandydatów (permanenty z
@@ -5105,16 +5061,18 @@ export function playerView(state, playerId) {
     // subsets() generuje od najuboższych do najbogatszych (pełny ostatni) —
     // wtedy unshiftujemy w tej kolejności. Dla okrojonej wersji (duże pule)
     // pełny jest PIERWSZY, więc odwracamy, żeby znów lądował ostatni.
-    const ordered = cands.length <= 6 ? variants : [...variants].reverse();
+    // M203/2: dawniej odwracane dla okrojonej listy (unshift); przy
+    // „prezentacja = enumeracja" kolejność jest wprost z `variants`.
+    const ordered = variants;
     for (const chosen of ordered) {
-      legalCommands.unshift(command('resolve_proliferate', playerId, chosen.length > 0 ? { targetIds: chosen } : {}));
+      legalCommands.push(command('resolve_proliferate', playerId, chosen.length > 0 ? { targetIds: chosen } : {}));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeModalTrigger) {
     // Modalny trigger upkeep (Etherwrought Page): gracz wybiera tryb.
     // Boty biorą pierwszą ofertę = tryb 0 (jak deklaracja karty).
     const pending = state.pendingModalTrigger;
     const offersBefore = legalCommands.length;
-    for (let modeIndex = pending.modes.length - 1; modeIndex >= 0; modeIndex -= 1) {
+    for (let modeIndex = 0; modeIndex < pending.modes.length; modeIndex += 1) {  // M203/2: tryb 0 pierwszy
       const mode = pending.modes[modeIndex];
       const modeSpec = mode.targets?.[0];
       if (modeSpec) {
@@ -5123,16 +5081,16 @@ export function playerView(state, playerId) {
         // jest NIEDOSTĘPNY (jak modalny czar „choose one") — nie oferujemy go.
         const candidates = triggerTargetCandidates(state, modeSpec, state.objects.get(pending.sourceId), {});
         for (const targetId of candidates) {
-          legalCommands.unshift(command('resolve_modal_choice', playerId, { modeIndex, targetId }));
+          legalCommands.push(command('resolve_modal_choice', playerId, { modeIndex, targetId }));
         }
       } else {
-        legalCommands.unshift(command('resolve_modal_choice', playerId, { modeIndex }));
+        legalCommands.push(command('resolve_modal_choice', playerId, { modeIndex }));
       }
     }
     // M174/E-fix (L48): kandydaci wszystkich trybów zniknęli po kolejce —
     // jedyna legalna droga to skip (inaczej deadlock „tylko kapituluj").
     if (legalCommands.length === offersBefore) {
-      legalCommands.unshift(command('resolve_modal_choice', playerId, { skip: true }));
+      legalCommands.push(command('resolve_modal_choice', playerId, { skip: true }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeDamageTarget) {
     // Stomping Slabs — obrażenia 7 do „any target" (gracz albo stwór).
@@ -5144,8 +5102,8 @@ export function playerView(state, playerId) {
       const o = state.objects.get(id);
       return o && o.zone === 'battlefield';
     });
-    for (const targetId of [...live].reverse()) {
-      legalCommands.unshift(command('resolve_damage_target', playerId, { targetId }));
+    for (const targetId of live) {
+      legalCommands.push(command('resolve_damage_target', playerId, { targetId }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeRedirectChoice) {
     // Willbender — nowy cel czaru na stosie (kandydaci dynamicznie;
@@ -5155,31 +5113,31 @@ export function playerView(state, playerId) {
     if (spell && spell.zone === 'stack') {
       const legal = legalTargetCandidates(state, pending.spellControllerId, pending.spec)
         .filter((id) => id !== pending.currentTargetId);
-      for (const targetId of [...legal].reverse()) {
-        legalCommands.unshift(command('resolve_redirect_choice', playerId, { targetId }));
+      for (const targetId of legal) {
+        legalCommands.push(command('resolve_redirect_choice', playerId, { targetId }));
       }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeBackup) {
     for (const objectId of state.zones.battlefield) {
       const object = state.objects.get(objectId);
       if (object?.zone === 'battlefield' && object.kind === 'creature') {
-        legalCommands.unshift(command('resolve_backup', playerId, { targetId: objectId }));
+        legalCommands.push(command('resolve_backup', playerId, { targetId: objectId }));
       }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeClash) {
     // Oczekujący clash (CR 701.40): gracz, którego kolej, wybiera wierzch/spód
     // dla swojej odsłoniętej karty.
-    legalCommands.unshift(command('resolve_clash_choice', playerId, { putOnBottom: true }));
-    legalCommands.unshift(command('resolve_clash_choice', playerId, {}));
+    legalCommands.push(command('resolve_clash_choice', playerId, {}));
+    legalCommands.push(command('resolve_clash_choice', playerId, { putOnBottom: true }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeFabricate) {
     // Fabricate: dwa warianty (CR 702.122). Kolejność deterministyczna.
-    legalCommands.unshift(command('resolve_fabricate', playerId, { mode: 'tokens' }));
-    legalCommands.unshift(command('resolve_fabricate', playerId, { mode: 'counters' }));
+    legalCommands.push(command('resolve_fabricate', playerId, { mode: 'counters' }));
+    legalCommands.push(command('resolve_fabricate', playerId, { mode: 'tokens' }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeUndercityRoute) {
     // M190/B: wybór ścieżki lochu — kolejność ofert deterministyczna (ADR 0005),
     // taka jak w Oracle („Leads to: Forge, Lost Well").
-    for (const entry of [...state.pendingUndercityRoute.candidates].reverse()) {
-      legalCommands.unshift(command('resolve_undercity_route', playerId, {
+    for (const entry of state.pendingUndercityRoute.candidates) {
+      legalCommands.push(command('resolve_undercity_route', playerId, {
         room: entry.room, roomName: entry.name,
       }));
     }
@@ -5189,7 +5147,7 @@ export function playerView(state, playerId) {
     // utworzeniu kolejki — legalRoomTargetCandidates, ta sama lista co
     // walidacja w execute).
     for (const targetId of headRoomCandidates) {
-      legalCommands.unshift(command('resolve_room_target', playerId, { targetId }));
+      legalCommands.push(command('resolve_room_target', playerId, { targetId }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeSearchChoice) {
     // Szukanie w bibliotece (Temat 6): kandydaci w kolejności biblioteki +
@@ -5213,12 +5171,15 @@ export function playerView(state, playerId) {
         const key = `${candidate?.cardId ?? targetId}|${dest}`;
         if (seenSearchOption.has(key)) continue;
         seenSearchOption.add(key);
-        legalCommands.unshift(command('resolve_search_choice', playerId, { found: targetId, destination: dest }));
+        legalCommands.push(command('resolve_search_choice', playerId, { found: targetId, destination: dest }));
       }
     }
-    // M177/C: szukanie obowiązkowe (bez kryterium) nie oferuje rezygnacji.
+    // M177/C + M203/2: szukanie OBOWIĄZKOWE (Final Parting — „search your
+    // library for a card") nie oferuje rezygnacji (CR 701.19c); przy
+    // nieobowiązkowym „nie znajdź karty" jest OSTATNIĄ opcją — gracz i bot
+    // biorą pierwszą ofertę, a domyślnym zamiarem jest znalezienie karty.
     if (!state.pendingSearchChoice.mandatory) {
-      legalCommands.unshift(command('resolve_search_choice', playerId, { found: null }));
+      legalCommands.push(command('resolve_search_choice', playerId, { found: null }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activePayOrSacrifice) {
     // „Sacrifice it unless you pay {N}" (Rupture Spire, Temat 7): wybór
@@ -5230,8 +5191,8 @@ export function playerView(state, playerId) {
       cost: state.pendingPayOrSacrifice.amount ?? null,
       sourceId: state.pendingPayOrSacrifice.sourceId ?? null,
     };
-    legalCommands.unshift(command('resolve_pay_or_sacrifice', playerId, { pay: true, ...payOrSacInfo }));
-    legalCommands.unshift(command('resolve_pay_or_sacrifice', playerId, { pay: false, ...payOrSacInfo }));
+    legalCommands.push(command('resolve_pay_or_sacrifice', playerId, { pay: false, ...payOrSacInfo }));
+    legalCommands.push(command('resolve_pay_or_sacrifice', playerId, { pay: true, ...payOrSacInfo }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeCounterPay) {
     // Batch 44 (Frightful Delusion): zapłać {N} (czar zostaje) albo nie płać
     // (czar skontrowany). Boty płacą (pierwsza oferta) — czar na stosie jest
@@ -5241,10 +5202,11 @@ export function playerView(state, playerId) {
       sourceId: state.pendingCounterPay.sourceId ?? null,
       targetId: state.pendingCounterPay.targetId ?? null,
     };
-    legalCommands.unshift(command('resolve_counter_pay_choice', playerId, { pay: false, ...counterPayInfo }));
+  // M203/2: kolejność prezentacji = enumeracja (dawniej odwracał unshift).
     if ((state.pendingCounterPay.amount ?? 0) <= producibleMana(state, playerId)) {
-      legalCommands.unshift(command('resolve_counter_pay_choice', playerId, { pay: true, ...counterPayInfo }));
+      legalCommands.push(command('resolve_counter_pay_choice', playerId, { pay: true, ...counterPayInfo }));
     }
+    legalCommands.push(command('resolve_counter_pay_choice', playerId, { pay: false, ...counterPayInfo }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeOptionalPay) {
     // „You may pay ... When you do, ..." (Panic Spellbomb, Zoraline —
     // Temat 8): tak/nie. Boty płacą (pierwsza oferta).
@@ -5257,32 +5219,34 @@ export function playerView(state, playerId) {
       lifeCost: optionalPayTrigger.payLife ?? null,
       sourceId: state.pendingOptionalPay.sourceId ?? null,
     };
-    legalCommands.unshift(command('resolve_optional_pay_choice', playerId, { pay: true, ...optionalPayInfo }));
-    legalCommands.unshift(command('resolve_optional_pay_choice', playerId, { pay: false, ...optionalPayInfo }));
+    legalCommands.push(command('resolve_optional_pay_choice', playerId, { pay: true, ...optionalPayInfo }));
+    legalCommands.push(command('resolve_optional_pay_choice', playerId, { pay: false, ...optionalPayInfo }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeSuspendCast) {
     // Suspend (CR 702.62a): jednorazowa decyzja — rzuć zawieszony czar za
     // darmo (ignorując timing) albo zostaw w exile na stałe. Oferta per
     // legalny zestaw celów (i per tryb), jak epic.
     const pending = state.pendingSuspendCast;
     const obj = state.objects.get(pending.objectId);
-    legalCommands.unshift(command('resolve_suspend_cast', playerId, { cast: false }));
     if (obj && obj.zone === 'exile' && obj.suspended && obj.timeCounters === 0 && obj.kind === 'spell') {
       for (const offer of suspendCastOffers(state, playerId, obj)) {
-        legalCommands.unshift(command('resolve_suspend_cast', playerId, offer));
+        legalCommands.push(command('resolve_suspend_cast', playerId, offer));
       }
     }
+  // M203/2: kolejność prezentacji = enumeracja (dawniej odwracał unshift).
+    legalCommands.push(command('resolve_suspend_cast', playerId, { cast: false }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeReboundCast) {
     // Rebound (CR 702.97): jednorazowa decyzja na początku następnego upkeepu —
     // rzuć wygnany czar za darmo (ignorując timing) albo zostaw w exile.
     // Ta sama struktura ofert co suspend/epic (cele + tryb modalny).
     const pending = state.pendingReboundCast;
     const obj = state.objects.get(pending.objectId);
-    legalCommands.unshift(command('resolve_rebound_cast', playerId, { cast: false }));
     if (obj && obj.zone === 'exile' && obj.reboundReady && obj.kind === 'spell') {
       for (const offer of suspendCastOffers(state, playerId, obj)) {
-        legalCommands.unshift(command('resolve_rebound_cast', playerId, offer));
+        legalCommands.push(command('resolve_rebound_cast', playerId, offer));
       }
     }
+  // M203/2: kolejność prezentacji = enumeracja (dawniej odwracał unshift).
+    legalCommands.push(command('resolve_rebound_cast', playerId, { cast: false }));
 
   } else if (state.status === 'active' && !blockedByOthersDecision && activeOptionalTrigger) {
     // „You may" bez celu (Angel's Feather, M72 — Curiosity draw, Veiled cloak):
@@ -5297,25 +5261,27 @@ export function playerView(state, playerId) {
     const effs = Array.isArray(optionalAbility?.effect) ? optionalAbility.effect
       : (optionalAbility?.effect ? [optionalAbility.effect] : []);
     const selfMillEffect = effs.find((e) => e?.type === 'mill_cards' && !e.targetPlayerId && !e.applyTo);
-    legalCommands.unshift(command('resolve_optional_trigger_choice', playerId, {
+    legalCommands.push(command('resolve_optional_trigger_choice', playerId, {
       fire: true,
       ...(selfMillEffect ? { selfMill: selfMillEffect.amount ?? 0 } : {}),
     }));
-    legalCommands.unshift(command('resolve_optional_trigger_choice', playerId, { fire: false }));
+    legalCommands.push(command('resolve_optional_trigger_choice', playerId, { fire: false }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeEnterAsCopy) {
     // Enter as copy: najsilniejszy Ally pierwszy (boty / istniejący test),
     // potem słabsze, na końcu odmowa (0/0).
     const pending = state.pendingEnterAsCopy;
-    legalCommands.unshift(command('resolve_enter_as_copy', playerId, { targetId: null }));
-    for (const targetId of [...pending.candidateIds].reverse()) {
-      legalCommands.unshift(command('resolve_enter_as_copy', playerId, { targetId }));
+    for (const targetId of pending.candidateIds) {
+      legalCommands.push(command('resolve_enter_as_copy', playerId, { targetId }));
     }
+    // M203/2: „wejdź jako 0/0 (bez kopii)" jest OSTATNIĄ opcją — boty biorą
+    // pierwszą ofertę, a domyślnym zamiarem jest skopiowanie Ally.
+    legalCommands.push(command('resolve_enter_as_copy', playerId, { targetId: null }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeOpponentTarget) {
     // Cuombajj Witches: przeciwnik wskazuje cel obrażeń. Kolejność ofert
     // deterministyczna (ADR 0005): najpierw stwory AKTYWUJĄCEGO (naturalny
     // wybór), potem reszta, na końcu gracze.
-    for (const targetId of [...opponentTargetCandidates(state, state.pendingOpponentTarget)].reverse()) {
-      legalCommands.unshift(command('resolve_opponent_target', playerId, { targetId }));
+    for (const targetId of opponentTargetCandidates(state, state.pendingOpponentTarget)) {
+      legalCommands.push(command('resolve_opponent_target', playerId, { targetId }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeCopyTargets) {
     // Storm: cel dla PIERWSZEJ kopii z kolejki. Pierwsza oferta to cel
@@ -5328,16 +5294,18 @@ export function playerView(state, playerId) {
     const original = (copy?.chosenTargets ?? [])[targetIndex] ?? null;
     const candidates = legalTargetCandidates(state, playerId, spec, copy)
       .filter((id) => id !== original);
-    for (const targetId of [...candidates].reverse()) {
-      legalCommands.unshift(command('resolve_copy_targets', playerId, { targetId, copyId: copy?.id ?? null, targetIndex }));
-    }
+    // M203/2: „zostaw cel oryginału" jest PIERWSZĄ ofertą ( Storm: domyślny
+    // zamiar gracza i botów), dalej pozostali legalni kandydaci.
     if (original != null) {
-      legalCommands.unshift(command('resolve_copy_targets', playerId, { targetId: original, copyId: copy?.id ?? null, targetIndex }));
+      legalCommands.push(command('resolve_copy_targets', playerId, { targetId: original, copyId: copy?.id ?? null, targetIndex }));
+    }
+    for (const targetId of candidates) {
+      legalCommands.push(command('resolve_copy_targets', playerId, { targetId, copyId: copy?.id ?? null, targetIndex }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeDestroyEquipment) {
     // Awaken: destroy:true pierwsze (dotychczasowe auto-TAK / boty).
-    legalCommands.unshift(command('resolve_destroy_equipment_choice', playerId, { destroy: false }));
-    legalCommands.unshift(command('resolve_destroy_equipment_choice', playerId, { destroy: true }));
+    legalCommands.push(command('resolve_destroy_equipment_choice', playerId, { destroy: true }));
+    legalCommands.push(command('resolve_destroy_equipment_choice', playerId, { destroy: false }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeTriggerTarget) {
     // Temat 2 — cel triggera wybiera kontroler: kandydaci w kolejności dawnej
     // polityki (pierwszy = dawny wybór deterministyczny — boty biorą pierwszą
@@ -5370,36 +5338,38 @@ export function playerView(state, playerId) {
         combo(0, []);
       }
       if (multiSpecOffer.upTo) variants.push([]);
-      // unshift od końca — PIERWSZĄ ofertą jest pierwszy wariant pełnego
-      // rozmiaru (deterministycznie: najwcześniejsze kandydaty).
-      for (const targetIds of [...variants].reverse()) {
-        legalCommands.unshift(command('resolve_trigger_target', playerId, { targetIds: [...targetIds], friendly: triggerFriendly }));
+      // M203/2: warianty w kolejności enumeracji — PIERWSZĄ ofertą jest
+      // pierwszy wariant pełnego rozmiaru (deterministycznie: najwcześniejsze
+      // kandydaty), a wariant pusty („up to") idzie na koniec.
+      for (const targetIds of variants) {
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetIds: [...targetIds], friendly: triggerFriendly }));
       }
     } else {
-      if (triggerTargetHead.allowNone) {
-        legalCommands.unshift(command('resolve_trigger_target', playerId, { targetId: null, friendly: triggerFriendly }));
+      // M203/2 (konwencja „prezentacja = enumeracja"): kandydaci w kolejności
+      // dawnej polityki (pierwszy = dawny wybór deterministyczny — boty biorą
+      // pierwszą ofertę), a odmowa („up to one"/„you may") jest OSTATNIA —
+      // dawniej wymuszało to odwrócenie przez unshift.
+      for (const targetId of legal) {
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetId, friendly: triggerFriendly }));
       }
-      // unshift wkłada na początek — iterujemy ODWROTNIE, żeby PIERWSZA oferta
-      // była pierwszym kandydatem (dawny wybór deterministyczny — boty biorą
-      // pierwszą ofertę).
-      for (const targetId of [...legal].reverse()) {
-        legalCommands.unshift(command('resolve_trigger_target', playerId, { targetId, friendly: triggerFriendly }));
+      if (triggerTargetHead.allowNone) {
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetId: null, friendly: triggerFriendly }));
       }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeMoonlitChoice) {
     // Moonlit Meditation (Temat 9): „you may instead create copies" — tak/nie.
-    legalCommands.unshift(command('resolve_moonlit_choice', playerId, { replace: true }));
-    legalCommands.unshift(command('resolve_moonlit_choice', playerId, { replace: false }));
+    legalCommands.push(command('resolve_moonlit_choice', playerId, { replace: true }));
+    legalCommands.push(command('resolve_moonlit_choice', playerId, { replace: false }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeLandTypeChoice) {
     // Wybór podstawowego typu landa (Unstable Frontier): 5 opcji.
     for (const landType of ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest']) {
-      legalCommands.unshift(command('resolve_land_type_choice', playerId, { landType }));
+      legalCommands.push(command('resolve_land_type_choice', playerId, { landType }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeLibraryPlacement) {
     // M177/D (Vanish from Sight): właściciel wybiera wierzch albo spód
     // SWOJEJ biblioteki dla odsyłanego permanentu.
-    legalCommands.unshift(command('resolve_library_placement', playerId, { placement: 'bottom' }));
-    legalCommands.unshift(command('resolve_library_placement', playerId, { placement: 'top' }));
+    legalCommands.push(command('resolve_library_placement', playerId, { placement: 'bottom' }));
+    legalCommands.push(command('resolve_library_placement', playerId, { placement: 'top' }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeDiscardChoice) {
     // Oczekująca decyzja odrzucenia (Temat 4): decydent wybiera KARTĘ z ręki.
     // Kolejność ofert wg polityki (deterministycznej — ADR 0005): koszt →
@@ -5410,7 +5380,7 @@ export function playerView(state, playerId) {
     const valueOf = (id) => state.objects.get(id)?.manaCost ?? 0;
     const ordered = [...pending.handIds].sort((a, b) => (pending.purpose === 'cost' ? valueOf(a) - valueOf(b) : valueOf(b) - valueOf(a)));
     for (const cardId of ordered) {
-      legalCommands.unshift(command('resolve_discard_choice', playerId, { cardId }));
+      legalCommands.push(command('resolve_discard_choice', playerId, { cardId }));
     }
     // M109 (Nightsnare): „You MAY choose" — jawna oferta rezygnacji na końcu
     // listy (bot bierze pierwszą ofertę, więc domyślnie jednak wybiera kartę).
@@ -5425,46 +5395,46 @@ export function playerView(state, playerId) {
     const valueOf = (id) => state.objects.get(id)?.manaCost ?? 0;
     const ordered = [...pending.handIds].sort((a, b) => valueOf(a) - valueOf(b));
     for (const cardId of ordered) {
-      legalCommands.unshift(command('resolve_hand_top_choice', playerId, { cardId }));
+      legalCommands.push(command('resolve_hand_top_choice', playerId, { cardId }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeSacrifice) {
     // Oczekująca decyzja poświęcenia (Grave Exchange): cel wybiera stwora
     // do poświęcenia spośród kandydatów (resolve_sacrifice_choice).
     for (const targetId of state.pendingSacrifice.candidateIds) {
-      legalCommands.unshift(command('resolve_sacrifice_choice', playerId, { targetId }));
+      legalCommands.push(command('resolve_sacrifice_choice', playerId, { targetId }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeAmassChoice) {
     // Amass z wieloma armiami (CR 701.43): gracz wybiera, która Army dostaje
     // liczniki. Boty biorą pierwszą ofertę (pierwsza armia — zachowanie).
     for (const armyId of state.pendingAmass.armyIds) {
-      legalCommands.unshift(command('resolve_amass_choice', playerId, { armyId, amount: state.pendingAmass.amount }));
+      legalCommands.push(command('resolve_amass_choice', playerId, { armyId, amount: state.pendingAmass.amount }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeFoodChoice) {
     // Oczekująca decyzja poświęcenia Food (Insatiable Appetite):
     // poświęć Food (+5/+3) lub nie (+3/+3).
-    legalCommands.unshift(command('resolve_food_choice', playerId, { sacrifice: true }));
-    legalCommands.unshift(command('resolve_food_choice', playerId, { sacrifice: false }));
+    legalCommands.push(command('resolve_food_choice', playerId, { sacrifice: true }));
+    legalCommands.push(command('resolve_food_choice', playerId, { sacrifice: false }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeDiscover) {
     // Oczekująca decyzja Discover (Geological Appraiser): rzuć bez kosztu
     // albo weź do ręki.
-    legalCommands.unshift(command('resolve_discover_choice', playerId, { castFree: true }));
-    legalCommands.unshift(command('resolve_discover_choice', playerId, { castFree: false }));
+    legalCommands.push(command('resolve_discover_choice', playerId, { castFree: true }));
+    legalCommands.push(command('resolve_discover_choice', playerId, { castFree: false }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeExplore) {
     // Oczekująca decyzja Explore (Guidestone Compass): wierzch albo grób.
-    legalCommands.unshift(command('resolve_explore_choice', playerId, { putInGraveyard: true }));
-    legalCommands.unshift(command('resolve_explore_choice', playerId, { putInGraveyard: false }));
+    legalCommands.push(command('resolve_explore_choice', playerId, { putInGraveyard: true }));
+    legalCommands.push(command('resolve_explore_choice', playerId, { putInGraveyard: false }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeCraftExile) {
     // Oczekująca decyzja Craft exile (Lodestone Needle): wybór artefaktu
     // do wygnania (z battlefield lub graveyard).
     for (const targetId of state.pendingCraftExile.candidateIds) {
-      legalCommands.unshift(command('resolve_craft_exile', playerId, { targetId }));
+      legalCommands.push(command('resolve_craft_exile', playerId, { targetId }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeHandCreature) {
     // Oczekująca decyzja Dragon Arch: wybór wielokolorowego stwora z ręki
     // (resolve_hand_creature) albo nic — „you may" (targetId: null).
-    legalCommands.unshift(command('resolve_hand_creature', playerId, { targetId: null }));
+    legalCommands.push(command('resolve_hand_creature', playerId, { targetId: null }));
     for (const targetId of state.pendingHandCreature.candidateIds) {
-      legalCommands.unshift(command('resolve_hand_creature', playerId, { targetId }));
+      legalCommands.push(command('resolve_hand_creature', playerId, { targetId }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeExploit) {
     // M69 (Exploit): poświęć INNEGO stwora kontrolera (kandydaci żywi) albo skip.
@@ -5472,9 +5442,9 @@ export function playerView(state, playerId) {
     for (const targetId of pending.candidateIds) {
       const candidate = state.objects.get(targetId);
       if (!candidate || candidate.zone !== 'battlefield' || candidate.kind !== 'creature') continue;
-      legalCommands.unshift(command('resolve_exploit_choice', playerId, { targetId }));
+      legalCommands.push(command('resolve_exploit_choice', playerId, { targetId }));
     }
-    legalCommands.unshift(command('resolve_exploit_choice', playerId, { skip: true }));
+    legalCommands.push(command('resolve_exploit_choice', playerId, { skip: true }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeRevealExile) {
     // M69 (Dreams of Steel and Oil): najpierw wybór z ręki, potem z grobu.
     // Wybór jest OBOWIĄZKOWY („You choose an artifact or creature card from
@@ -5484,67 +5454,67 @@ export function playerView(state, playerId) {
     if (pending.stage === 'hand') {
       if (pending.handIds.length === 0) {
         // brak kart w ręce — etap pomijany (handler z null przechodzi do grobu)
-        legalCommands.unshift(command('resolve_reveal_exile_hand', playerId, { cardId: null }));
+        legalCommands.push(command('resolve_reveal_exile_hand', playerId, { cardId: null }));
       } else {
-        for (const handId of pending.handIds) legalCommands.unshift(command('resolve_reveal_exile_hand', playerId, { cardId: handId }));
+        for (const handId of pending.handIds) legalCommands.push(command('resolve_reveal_exile_hand', playerId, { cardId: handId }));
       }
     } else if (pending.stage === 'grave') {
       if (pending.graveIds.length === 0) {
-        legalCommands.unshift(command('resolve_reveal_exile_grave', playerId, { cardId: null }));
+        legalCommands.push(command('resolve_reveal_exile_grave', playerId, { cardId: null }));
       } else {
-        for (const graveId of pending.graveIds) legalCommands.unshift(command('resolve_reveal_exile_grave', playerId, { cardId: graveId }));
+        for (const graveId of pending.graveIds) legalCommands.push(command('resolve_reveal_exile_grave', playerId, { cardId: graveId }));
       }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeDevour) {
     // Oczekująca decyzja devour: po jednym kandydacie na krok (liczone
     // dynamicznie — poświęceni odpadają) albo zakończenie { done: true }.
     for (const targetId of legalDevourCandidates(state, state.pendingDevours[0])) {
-      legalCommands.unshift(command('resolve_devour_choice', playerId, { targetId }));
+      legalCommands.push(command('resolve_devour_choice', playerId, { targetId }));
     }
-    legalCommands.unshift(command('resolve_devour_choice', playerId, { done: true }));
+    legalCommands.push(command('resolve_devour_choice', playerId, { done: true }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeEndure) {
     // Oczekująca decyzja endure: liczniki (tylko gdy źródło wciąż stworem na
     // polu bitwy) albo token Spirit N/N biały (zawsze).
     const endureSource = state.objects.get(state.pendingEndures[0].sourceId);
     if (endureSource && endureSource.zone === 'battlefield' && endureSource.kind === 'creature') {
-      legalCommands.unshift(command('resolve_endure_choice', playerId, { mode: 'counters' }));
+      legalCommands.push(command('resolve_endure_choice', playerId, { mode: 'counters' }));
     }
-    legalCommands.unshift(command('resolve_endure_choice', playerId, { mode: 'token' }));
+    legalCommands.push(command('resolve_endure_choice', playerId, { mode: 'token' }));
   } else if (state.status === 'active' && !blockedByOthersDecision && pendingDeliriumHead && pendingDeliriumHead.playerId === playerId) {
     // Oczekujący wybór celu delirium: spośród stworów poszkodowanego gracza
     // (dynamicznie; ślepy wpis wyczyści execute — tu zostawiamy pustą ofertę).
     for (const targetId of legalDeliriumTargetCandidates(state, pendingDeliriumHead)) {
-      legalCommands.unshift(command('resolve_delirium_target', playerId, { targetId }));
+      legalCommands.push(command('resolve_delirium_target', playerId, { targetId }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && pendingMentorHead && pendingMentorHead.playerId === playerId) {
     // Oczekujący wybór celu mentora: atakujący stwory kontrolera o mniejszej
     // sile niż źródło (dynamicznie; ślepy wpis wyczyści execute).
     for (const targetId of legalMentorCandidates(state, pendingMentorHead)) {
-      legalCommands.unshift(command('resolve_mentor_target', playerId, { targetId }));
+      legalCommands.push(command('resolve_mentor_target', playerId, { targetId }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeGraveyardToTop) {
     // Oczekująca decyzja Forever Young: karta-stwora z grobu na wierzch
     // (dynamicznie — przeniesione odpadają) albo zakończenie { done: true }.
     for (const targetId of graveyardToTopCandidates(state, state.pendingGraveyardToTop.playerId, state.pendingGraveyardToTop.filter)) {
-      legalCommands.unshift(command('resolve_graveyard_top_choice', playerId, { targetId }));
+      legalCommands.push(command('resolve_graveyard_top_choice', playerId, { targetId }));
     }
-    legalCommands.unshift(command('resolve_graveyard_top_choice', playerId, { done: true }));
+    legalCommands.push(command('resolve_graveyard_top_choice', playerId, { done: true }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeLegendChoice) {
     // Oczekujący wybór prawa legend (CR 704.5j): kandydaci to duplikaty —
     // gracz wskazuje, który permanent o danej nazwie ZOSTAJE na polu bitwy.
     for (const keepId of state.pendingLegendChoice.candidateIds) {
-      legalCommands.unshift(command('resolve_legend_choice', playerId, { keepId }));
+      legalCommands.push(command('resolve_legend_choice', playerId, { keepId }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeIndex) {
     // Index (APC): reorder top 5 — warianty permutacji, pierwsza oferta = oryginalna kolejność
     const pending = state.pendingIndex;
     // Dla testów: oferujemy jedną komendę z oryginalną kolejnością; execute przyjmuje dowolną permutację
-    legalCommands.unshift(command('resolve_index_choice', playerId, { order: [...pending.objectIds] }));
+    legalCommands.push(command('resolve_index_choice', playerId, { order: [...pending.objectIds] }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeLookTopN) {
     // Gurmag Drowner: wybierz JEDNĄ z wierzchu do ręki (reszta do grobu).
     const pending = state.pendingLookTopN;
     for (const objectId of pending.objectIds) {
-      legalCommands.unshift(command('resolve_look_top_choice', playerId, { cardId: objectId }));
+      legalCommands.push(command('resolve_look_top_choice', playerId, { cardId: objectId }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeSatyrLook) {
     // Satyr Wayfinder: wybierz LĄD z odsłoniętych do ręki ALBO zrezygnuj
@@ -5553,17 +5523,17 @@ export function playerView(state, playerId) {
     // M184/Z3: Blanchwood Prowler — odmowa daje licznik +1/+1; komenda niesie
     // flagę, żeby UI opisało stawkę decyzji.
     const satyrExtra = pending.counterIfNoneSourceId ? { counterIfNone: true } : {};
-    legalCommands.unshift(command('resolve_satyr_look_choice', playerId, { pickId: null, ...satyrExtra }));
+    legalCommands.push(command('resolve_satyr_look_choice', playerId, { pickId: null, ...satyrExtra }));
     for (const landId of pending.landIds) {
-      legalCommands.unshift(command('resolve_satyr_look_choice', playerId, { pickId: landId, ...satyrExtra }));
+      legalCommands.push(command('resolve_satyr_look_choice', playerId, { pickId: landId, ...satyrExtra }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeRevealChoice) {
     // M158/Batch 39 (Invasion of the Giants II): „you may reveal a Giant
     // card from your hand" — warianty per karta podtypu + rezygnacja.
     const pending = state.pendingRevealChoice;
-    legalCommands.unshift(command('resolve_reveal_choice', playerId, { cardId: null }));
-    for (const id of [...pending.cardIds].reverse()) {
-      legalCommands.unshift(command('resolve_reveal_choice', playerId, { cardId: id }));
+    legalCommands.push(command('resolve_reveal_choice', playerId, { cardId: null }));
+    for (const id of pending.cardIds) {
+      legalCommands.push(command('resolve_reveal_choice', playerId, { cardId: id }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && state.pendingDamageDivision
     && state.pendingDamageDivision.playerId === playerId) {
@@ -5571,23 +5541,30 @@ export function playerView(state, playerId) {
     // total na N celów (przestrzeń miniaturowa, bez własnego wizarda).
     const pending = state.pendingDamageDivision;
     for (const amounts of damageDivisionsOf(pending.total, pending.targetIds.length)) {
-      legalCommands.unshift(command('resolve_damage_division', playerId, { amounts }));
+      legalCommands.push(command('resolve_damage_division', playerId, { amounts }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision
     && state.pendingGraveFreeCast && state.pendingGraveFreeCast.playerId === playerId) {
     // M174/E (Halo Forager): oferta = rezygnacja + rzut per (karta w
     // DOWOLNYM grobie, MV opłacalne, zestaw celów/tryb z epicCastOffers).
-    legalCommands.unshift(command('resolve_grave_free_cast', playerId, { decline: true }));
-    const budget = producibleMana(state, playerId);
+    // M203 (audyt PR #74, N-NEW-1): „you may pay {X} … cast … WITH MANA VALUE X
+    // … WITHOUT PAYING ITS MANA COST" — X jest WYBOREM gracza i musi równać się
+    // MV rzucanej karty, a jedyną wydaną maną jest zapłata {X} (koszt many
+    // czaru wynosi {0}, CR 118.9a). Budżet liczymy PER KARTA z celem wydania
+    // (M202/N1, L59): zapłata {X} za czar nie-artefaktowy nie może pochodzić
+    // z many ograniczonej drukiem (Powerstone), a jeden wspólny budżet
+    // rozjeżdżałby ofertę z walidacją (L48).
+    legalCommands.push(command('resolve_grave_free_cast', playerId, { decline: true }));
     for (const graveId of state.zones.graveyard) {
       const card = state.objects.get(graveId);
       if (!card || card.zone !== 'graveyard' || card.kind !== 'spell') continue;
       if (!['instant', 'sorcery'].includes(card.spell?.timing)) continue;
       if (card.spell?.additionalCost || card.spell?.xCost || card.spell?.fireball) continue;
-      if ((card.manaCost ?? 0) > budget) continue;
+      const xValue = card.manaCost ?? 0;
+      if (producibleMana(state, playerId, null, spellManaPurpose(card)) < xValue) continue;
       for (const offer of epicCastOffers(state, playerId, card)) {
-        legalCommands.unshift(command('resolve_grave_free_cast', playerId, {
-          objectId: graveId, cardId: card.cardId, xValue: card.manaCost ?? 0,
+        legalCommands.push(command('resolve_grave_free_cast', playerId, {
+          objectId: graveId, cardId: card.cardId, xValue,
           targets: offer.targets,
           ...(offer.modeIndex != null ? { modeIndex: offer.modeIndex } : {}),
         }));
@@ -5601,7 +5578,7 @@ export function playerView(state, playerId) {
     const madnessPending = state.pendingMadnessCast;
     const madnessObj = state.objects.get(madnessPending.objectId);
     const madnessIds = { objectId: madnessPending.objectId, cardId: madnessPending.cardId };
-    legalCommands.unshift(command('resolve_madness_cast', playerId, { cast: false, ...madnessIds }));
+    legalCommands.push(command('resolve_madness_cast', playerId, { cast: false, ...madnessIds }));
     if (madnessObj && madnessObj.zone === 'exile' && madnessObj.madnessReady
       && canPayMadnessCost(state, playerId, madnessObj)) {
       // M161/O1: instant/sorcery z madness — oferta per legalny zestaw celów
@@ -5612,14 +5589,14 @@ export function playerView(state, playerId) {
       if (madnessObj.kind === 'spell') {
         if (!madnessObj.spell?.additionalCost && !madnessObj.spell?.xCost) {
           for (const offer of epicCastOffers(state, playerId, madnessObj)) {
-            legalCommands.unshift(command('resolve_madness_cast', playerId, {
+            legalCommands.push(command('resolve_madness_cast', playerId, {
               cast: true, ...madnessIds, targets: offer.targets,
               ...(offer.modeIndex != null ? { modeIndex: offer.modeIndex } : {}),
             }));
           }
         }
       } else {
-        legalCommands.unshift(command('resolve_madness_cast', playerId, { cast: true, ...madnessIds }));
+        legalCommands.push(command('resolve_madness_cast', playerId, { cast: true, ...madnessIds }));
       }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeEpicExperiment) {
@@ -5627,43 +5604,43 @@ export function playerView(state, playerId) {
     // Oferta per legalny zestaw celów (i per tryb) — czar z celem bez
     // chosenTargets fizzluje CR 608.2b. Brak puli celów = pomijamy kartę.
     const pending = state.pendingEpicExperiment;
-    legalCommands.unshift(command('resolve_epic_choice', playerId, { done: true }));
+    legalCommands.push(command('resolve_epic_choice', playerId, { done: true }));
     for (const exileId of pending.exileIds) {
       const obj = state.objects.get(exileId);
       if (!obj || obj.zone !== 'exile') continue;
       const isSpell = obj.kind === 'spell' && (obj.spell?.timing === 'instant' || obj.spell?.timing === 'sorcery');
       if (!isSpell || (obj.manaCost ?? 0) > pending.maxMV) continue;
       for (const offer of epicCastOffers(state, playerId, obj)) {
-        legalCommands.unshift(command('resolve_epic_choice', playerId, offer));
+        legalCommands.push(command('resolve_epic_choice', playerId, offer));
       }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeOptionalDraw) {
     // M67 (Force Away): ferocious „you may draw a card. If you do, discard a
     // card." — dokładnie dwa warianty (tak/nie), bez kombinacji.
-    legalCommands.unshift(command('resolve_optional_draw', playerId, { draw: false }));
-    legalCommands.unshift(command('resolve_optional_draw', playerId, { draw: true }));
+    legalCommands.push(command('resolve_optional_draw', playerId, { draw: false }));
+    legalCommands.push(command('resolve_optional_draw', playerId, { draw: true }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeDamageAssignment) {
     // M66 (R): rozdzielanie obrażeń — DOKŁADNIE JEDEN wariant (deterministyczny
     // default = lethal-first w kolejności deklaracji, obecne zachowanie botów).
     // Kombinacji nie enumerujemy; gracz-człowiek dostaje wizard w UI, który
     // buduje własną, walidowaną przez execute komendę (CR 510.1c/d).
-    legalCommands.unshift(command('resolve_damage_assignment', playerId, {
+    legalCommands.push(command('resolve_damage_assignment', playerId, {
       assignments: buildDefaultDamageAssignments(state),
     }));
   } else if (state.status === 'active' && !blockedByOthersDecision
     && state.pendingReplacementChoice && state.pendingReplacementChoice.playerId === playerId) {
     // M202/odznaka #3 (CR 616.1): przy dwóch efektach zastępczych wybiera
     // kontroler permanenta. Dwie opcje — jak w kreatorze decyzji.
-    legalCommands.unshift(command('resolve_replacement_choice', playerId, { choice: 'regenerate' }));
-    legalCommands.unshift(command('resolve_replacement_choice', playerId, { choice: 'shield' }));
+    legalCommands.push(command('resolve_replacement_choice', playerId, { choice: 'regenerate' }));
+    legalCommands.push(command('resolve_replacement_choice', playerId, { choice: 'shield' }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeFertileThicket) {
     // Fertile Thicket (BFZ): ETB reveal — gracz wybiera 0 lub 1 basic land z top 5.
     // "You may" = can decline entirely.
     const pending = state.pendingFertileThicket;
-    legalCommands.unshift(command('resolve_fertile_thicket', playerId, { skip: true })); // decline
-    legalCommands.unshift(command('resolve_fertile_thicket', playerId, { chosenCardId: null })); // keep all on top
+    legalCommands.push(command('resolve_fertile_thicket', playerId, { skip: true })); // decline
+    legalCommands.push(command('resolve_fertile_thicket', playerId, { chosenCardId: null })); // keep all on top
     for (const landId of pending.basicLandIds) {
-      legalCommands.unshift(command('resolve_fertile_thicket', playerId, { chosenCardId: landId }));
+      legalCommands.push(command('resolve_fertile_thicket', playerId, { chosenCardId: landId }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeColorChoice) {
     // Benevolent Blessing: choose a color for protection.
@@ -5673,15 +5650,15 @@ export function playerView(state, playerId) {
     const excluded = state.pendingColorChoice.excludeColors ?? [];
     for (const color of COLORS) {
       if (excluded.includes(color)) continue;
-      legalCommands.unshift(command('resolve_color_choice', playerId, { color }));
+      legalCommands.push(command('resolve_color_choice', playerId, { color }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeSpringbloom) {
     // Springbloom Druid (MH1): ETB sacrifice land → search 2 basic lands tapped.
     const pending = state.pendingSpringbloom;
     // Rezygnacja tylko dla wariantu „you may" (Springbloom Druid).
-    if (!pending.mandatory) legalCommands.unshift(command('resolve_springbloom', playerId, { skip: true }));
+    if (!pending.mandatory) legalCommands.push(command('resolve_springbloom', playerId, { skip: true }));
     for (const landId of pending.landIds) {
-      legalCommands.unshift(command('resolve_springbloom', playerId, { sacrificeLandId: landId }));
+      legalCommands.push(command('resolve_springbloom', playerId, { sacrificeLandId: landId }));
     }
   }
   // M101/A (CR 504.1): dobranie w kroku dobierania jest AKCJĄ TUROWĄ —
@@ -5715,27 +5692,27 @@ export function playerView(state, playerId) {
   if (state.status === 'active' && firstDecisionOwner == null && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
       && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingSuspendCast && !state.pendingReboundCast && state.turn.priorityPlayerId === playerId && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingDamageDivision) {
     for (const cast of legalSpellCasts(state, playerId)) {
-      legalCommands.unshift(command('cast_spell', playerId, cast));
+      legalCommands.push(command('cast_spell', playerId, cast));
     }
     for (const cast of legalCleaveCasts(state, playerId)) {
-      legalCommands.unshift(command('cast_cleave', playerId, cast));
+      legalCommands.push(command('cast_cleave', playerId, cast));
     }
     // Escape (Sweet Oblivion): czary z grobu rzucane za koszt escape + wygnanie
     // kart z grobu — sorcery-speed, jak zwykłe czary.
     for (const cast of legalEscapeCasts(state, playerId)) {
-      legalCommands.unshift(command('cast_escape', playerId, cast));
+      legalCommands.push(command('cast_escape', playerId, cast));
     }
     for (const cast of legalFlashbackCasts(state, playerId)) {
-      legalCommands.unshift(command('cast_flashback', playerId, cast));
+      legalCommands.push(command('cast_flashback', playerId, cast));
     }
     // Adventure (CR 715, Gray Slaad): strona przygodowa z ręki — sorcery;
     // po rozstrzygnięciu karta idzie do exile („on an adventure"), skąd
     // cast_adventure_creature rzuca stronę-stwora (obaj w main phase).
     for (const cast of legalAdventureCasts(state, playerId)) {
-      legalCommands.unshift(command('cast_adventure', playerId, cast));
+      legalCommands.push(command('cast_adventure', playerId, cast));
     }
     for (const cast of legalAdventureCreatureCasts(state, playerId)) {
-      legalCommands.unshift(command('cast_adventure_creature', playerId, cast));
+      legalCommands.push(command('cast_adventure_creature', playerId, cast));
     }
     // Flash (CR 702.8): permanenty z flash można zagrać z priorytetem w każdej
     // fazie (jak instanty), nie tylko w main phase. Dodajemy je tuż po czarach.
@@ -5759,11 +5736,11 @@ export function playerView(state, playerId) {
       const flashExileCost = exileAdditionalCostCandidates(state, playerId, object);
       if (flashExileCost) {
         for (const exileId of flashExileCost) {
-          legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, exileTargetId: exileId }));
+          legalCommands.push(command('cast_permanent', playerId, { objectId: id, exileTargetId: exileId }));
         }
         continue;
       }
-      legalCommands.unshift(command('cast_permanent', playerId, { objectId: id }));
+      legalCommands.push(command('cast_permanent', playerId, { objectId: id }));
     }
     // Aura z flash (CR 702.8 + CR 303.4, Benevolent Blessing): rzut jak instant
     // — z priorytetem w każdej fazie — ale nadal wymaga legalnego gospodarza
@@ -5772,7 +5749,7 @@ export function playerView(state, playerId) {
     for (const { objectId, targetId, bestow } of legalAuraCasts(state, playerId)) {
       const object = state.objects.get(objectId);
       if (!(object?.keywords ?? []).includes('flash')) continue;
-      legalCommands.unshift(command('cast_permanent', playerId,
+      legalCommands.push(command('cast_permanent', playerId,
         bestow ? { objectId, bestow: true, targets: [targetId] } : { objectId, targets: [targetId] }));
     }
     // Plot jest specjalną akcją sorcery-speed z ręki: płaci koszt plot i
@@ -5789,7 +5766,7 @@ export function playerView(state, playerId) {
           // z walidacją plotCard.
           const plotColors = (object.plot.colors ?? []).map((c) => [c]);
           if (plotColors.length === 0 || canPayColoredCost(state, playerId, plotColors)) {
-            legalCommands.unshift(command('plot_card', playerId, { objectId: id }));
+            legalCommands.push(command('plot_card', playerId, { objectId: id }));
           }
         }
         // Suspend (CR 702.62, Mindstab): „jeśli możesz zacząć rzucać tę kartę
@@ -5799,7 +5776,7 @@ export function playerView(state, playerId) {
           && (object.suspend.cost ?? 0) <= manaAvailable) {
           const suspendColors = (object.suspend.colors ?? []).map((c) => [c]);
           if (suspendColors.length === 0 || canPayColoredCost(state, playerId, suspendColors)) {
-            legalCommands.unshift(command('suspend_card', playerId, { objectId: id }));
+            legalCommands.push(command('suspend_card', playerId, { objectId: id }));
           }
         }
         // Warp (EOE, Weftblade Enhancer): alternatywny koszt rzutu z ręki.
@@ -5809,7 +5786,7 @@ export function playerView(state, playerId) {
           && (object.warp.cost ?? 0) <= manaAvailable) {
           const warpColors = (object.warp.colors ?? []).map((c) => [c]);
           if (warpColors.length === 0 || canPayColoredCost(state, playerId, warpColors)) {
-            legalCommands.unshift(command('warp_card', playerId, { objectId: id }));
+            legalCommands.push(command('warp_card', playerId, { objectId: id }));
           }
         }
       }
@@ -5821,7 +5798,7 @@ export function playerView(state, playerId) {
           && (ex.warp?.cost ?? 0) <= manaAvailable) {
           const warpColors = (ex.warp.colors ?? []).map((c) => [c]);
           if (warpColors.length === 0 || canPayColoredCost(state, playerId, warpColors)) {
-            legalCommands.unshift(command('warp_card', playerId, { objectId: id }));
+            legalCommands.push(command('warp_card', playerId, { objectId: id }));
           }
         }
       }
@@ -5836,7 +5813,7 @@ export function playerView(state, playerId) {
           && (object.kind === 'creature' || object.kind === 'artifact' || object.kind === 'enchantment')
           // CR 702.136: "on a later turn" — don't offer cast on the same turn as plot
           && (object.plottedAtTurn == null || state.turn.number > object.plottedAtTurn)) {
-          legalCommands.unshift(command('cast_permanent', playerId, { objectId: id }));
+          legalCommands.push(command('cast_permanent', playerId, { objectId: id }));
         }
         // Batch 46/47 (Gila Courser, Caves of Chaos Adventurer): PERMANENT
         // wygnany IMPULSEM jest grywalny z exile do konca wskazanej tury.
@@ -5860,11 +5837,11 @@ export function playerView(state, playerId) {
           if (impulseExileCost) {
             if (affordable) {
               for (const exileId of impulseExileCost) {
-                legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, exileTargetId: exileId }));
+                legalCommands.push(command('cast_permanent', playerId, { objectId: id, exileTargetId: exileId }));
               }
             }
           } else if (affordable) {
-            legalCommands.unshift(command('cast_permanent', playerId, { objectId: id }));
+            legalCommands.push(command('cast_permanent', playerId, { objectId: id }));
           }
         }
       }
@@ -5893,7 +5870,7 @@ export function playerView(state, playerId) {
       // sprzęt — execute musi wiedzieć, że abilityIndex liczy się względem
       // equipment.grantedAbilities, nie object.abilities.
       if (grantedFromEquipment !== undefined) extra.grantedFromEquipment = grantedFromEquipment;
-      legalCommands.unshift(command('activate_ability', playerId, extra));
+      legalCommands.push(command('activate_ability', playerId, extra));
     }
   }
   if (state.status === 'active' && firstDecisionOwner == null && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
@@ -5910,7 +5887,7 @@ export function playerView(state, playerId) {
         // Aura z flash jest już oferowana w bloku flash powyżej (warunki tego
         // bloku to podzbiór tamtego) — bez duplikatów w swojej main phase.
         if ((state.objects.get(objectId)?.keywords ?? []).includes('flash')) continue;
-        legalCommands.unshift(command('cast_permanent', playerId,
+        legalCommands.push(command('cast_permanent', playerId,
           bestow ? { objectId, bestow: true, targets: [targetId] } : { objectId, targets: [targetId] }));
       }
     }
@@ -5946,7 +5923,7 @@ export function playerView(state, playerId) {
         for (const exileId of handExileCost) {
           if (effectiveSpellManaCost(state, object) > manaAvailableFor(object)) continue;
           if (!hasColorForCardId(state, playerId, object.cardId, 0)) continue;
-          legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, exileTargetId: exileId }));
+          legalCommands.push(command('cast_permanent', playerId, { objectId: id, exileTargetId: exileId }));
         }
         continue; // bez opłaconego kosztu dodatkowego czaru nie da się rzucić
       }
@@ -5954,7 +5931,7 @@ export function playerView(state, playerId) {
       // niezależnie od kosztu many karty (alternatywny koszt zagrania).
       if (object.kind === 'creature' && object.morph && (object.morph.cost ?? 0) <= manaAvailableFor(object)) {
         // Morph jest bezbarwny (CR 702.36) – nie wymaga kolorowego źródła
-        legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, faceDown: true }));
+        legalCommands.push(command('cast_permanent', playerId, { objectId: id, faceDown: true }));
       }
       // M69 (Security Rhox): „You may pay {R}{G} rather than pay this spell's
       // mana cost. Spend only mana produced by Treasures to cast it this way."
@@ -5967,21 +5944,22 @@ export function playerView(state, playerId) {
         const avail = treasureManaAvailable(state, playerId);
         if (avail >= altMana
           && matchColorRequirements(Array.from({ length: avail }, () => ['W', 'U', 'B', 'R', 'G']), altReqs)) {
-          legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, treasureAlt: true }));
+          legalCommands.push(command('cast_permanent', playerId, { objectId: id, treasureAlt: true }));
         }
       }
       // Podstawa kosztu zawsze z many — bez niej permanent nie jest grywalny.
       // Koszt efektywny: modyfikatory z permanentów (Etherium Sculptor) mogą
       // obniżyć część generyczną już na etapie OFERTY rzutu.
       if (effectiveSpellManaCost(state, object) > manaAvailableFor(object)) continue;
-      // Kolejność wariantów: unshift wkłada na początek, więc iterujemy od
-      // najdroższego życiowo (k=max) do najtańszego (k=0) — manowy wariant
-      // ląduje PIERWSZY (proste boty biorą najtańszy).
-      const variants = phyrexianVariants(object).slice().reverse();
+      // Kolejność wariantów (M203/2): przy konwencji „prezentacja =
+      // enumeracja" iterujemy wprost — wariant manowy (k=null) jest pierwszy
+      // w `phyrexianVariants`, więc i pierwszy na panelu (proste boty biorą
+      // najtańszy). Dawniej wymagało to odwrócenia przez unshift.
+      const variants = phyrexianVariants(object);
       for (const k of variants) {
         const payWithLife = k === null ? 0 : k;
         if (!hasColorForCardId(state, playerId, object.cardId, payWithLife)) continue;
-        legalCommands.unshift(command('cast_permanent', playerId,
+        legalCommands.push(command('cast_permanent', playerId,
           k === null ? { objectId: id } : { objectId: id, phyrexianPayWithLife: k }));
       }
       // Kicker (CR 702.33, Kor Sanctifiers): „You may pay an additional {W}"
@@ -5993,7 +5971,7 @@ export function playerView(state, playerId) {
         if (effectiveSpellManaCost(state, object) + kickerCost <= manaAvailableFor(object)) {
           const kickerReqs = [...coloredPipsOf(object.cardId, 0), ...(object.kicker.colors ?? []).map((color) => [color])];
           if (canPayColoredCost(state, playerId, kickerReqs)) {
-            legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, kicked: true }));
+            legalCommands.push(command('cast_permanent', playerId, { objectId: id, kicked: true }));
           }
         }
       }
@@ -6005,7 +5983,7 @@ export function playerView(state, playerId) {
     && state.zones.stack.length === 0 && (player.landPlays ?? 0) > 0) {
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
-      if (object?.controllerId === playerId && object.kind === 'land') legalCommands.unshift(command('play_land', playerId, { objectId: id }));
+      if (object?.controllerId === playerId && object.kind === 'land') legalCommands.push(command('play_land', playerId, { objectId: id }));
     }
   }
   if (state.status === 'active' && firstDecisionOwner == null && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
@@ -6016,7 +5994,7 @@ export function playerView(state, playerId) {
         const key = JSON.stringify(attackerIds);
         if (seen.has(key)) continue;
         seen.add(key);
-        legalCommands.unshift(command('declare_attackers', playerId, { attackerIds }));
+        legalCommands.push(command('declare_attackers', playerId, { attackerIds }));
       }
     }
     if (state.turn.step === 'declare_blockers' && state.combat && state.combat.attackingPlayerId !== playerId
@@ -6026,13 +6004,13 @@ export function playerView(state, playerId) {
         const key = JSON.stringify(assignments);
         if (seen.has(key)) continue;
         seen.add(key);
-        legalCommands.unshift(command('declare_blockers', playerId, { assignments }));
+        legalCommands.push(command('declare_blockers', playerId, { assignments }));
       }
     }
     if (state.turn.step === 'combat_damage' && state.combat && state.turn.activePlayerId === playerId
       && state.zones.stack.length === 0) {
       const defendingPlayerId = state.players.find((entry) => entry.id !== playerId).id;
-      legalCommands.unshift(command('resolve_combat', playerId, { defendingPlayerId }));
+      legalCommands.push(command('resolve_combat', playerId, { defendingPlayerId }));
     }
   }
   // Pula many i pozostałe zagrania lądu są jawną informacją stołową —
@@ -6220,6 +6198,8 @@ export function playerView(state, playerId) {
   // odzwierciedlać liczbę RÓŻNYCH decyzji (ta sama zasada co dedup wariantów
   // mulligana w M119/Z3 i ofert szukania w M122/#2). Identyczna komenda
   // dwa razy to zawsze błąd prezentacji, niezależnie od tego, kto ją dodał.
+  legalCommands.push(...trailingCommands);
+
   {
     const seenCommandKeys = new Set();
     const unique = [];

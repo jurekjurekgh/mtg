@@ -6668,7 +6668,11 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       timing: 'instant',
       // „Each opponent\" w formacie 1v1 = jedyny przeciwnik. Wybór poświęcanego
       // stwora należy do CELU (blokująca decyzja resolve_sacrifice_choice).
-      targets: [{ type: 'player' }],
+      // M203/2: deskryptor niesie `opponent: true` (jak Dreams of Steel and
+      // Oil) — bez niego rzucający był legalnym celem własnego „each
+      // opponent", czyli cel niezgodny z Oracle (CR 115.2: cel musi spełniać
+      // deskryptor celu). Dotąd „poprawny" cel brał się z kolejności ofert.
+      targets: [{ type: 'player', opponent: true }],
       effects: [
         { type: 'player_sacrifices_creature' },
         // Klauzula warunkowa (decyzja właściciela 2026-08-19): efekt kodujemy
@@ -7817,7 +7821,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     ],
     artId: 35, plan: 'Eldraine',
     support: { status: 'supported', limitations: [] },
-    notes: ['decyzja rzutu liczona żywo (dowolny grób, MV = X, budżet many); czar poza zakresem (koszt dodatkowy/X) nie jest oferowany'],
+    notes: ['M203: X jest częścią decyzji i musi równać się MV rzucanej karty (druk „with mana value X"); jedyną wydaną maną jest zapłata {X} — koszt many czaru wynosi {0} (CR 118.9a), a zapłata za czar nie-artefaktowy nie może pochodzić z many ograniczonej drukiem (M202/N1). Decyzja liczona żywo: dowolny grób, X = MV karty, budżet per karta. Czar z kosztem dodatkowym/X/Fireball pozostaje poza zakresem tej ścieżki'],
   }),
 
 

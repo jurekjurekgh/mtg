@@ -124,7 +124,13 @@ test('M100/E3: dobrana z EFEKTU karta człowieka trafia do modala (draw step zos
   // Seed 1 dołożony po Batchu 37 (azorius +Palace Familiar +Village Bell-Ringer),
   // seed 4 po Batchu 37 (azorius +Ojutai's Breath) — przelosowane hunterem.
   // M178: seedy przelosowane hunterem (FR vs dominaria).
-  for (const seed of [1, 2, 4, 5, 7, 9]) {
+  // M203/2: ponownie przelosowane hunterem — zmiana konwencji kolejności ofert
+  // (prezentacja = enumeracja) przesunęła wybory bota, więc stara lista seedów
+  // przestała produkować ten scenariusz (L25/L53: seed pełnej partii to dług,
+  // a nie reguła). Pomiar huntera (seedy 1–48): scenariusz pojawia się dla
+  // 12, 13, 19, 29, 30, 34, 35, 41, 45, 47 — i w każdym z nich modal NAZYWA
+  // dobraną kartę (0 rozjazdów log↔modal), czyli zachowanie jest poprawne.
+  for (const seed of [12, 13, 19, 29, 30, 34]) {
     const session = makeSession(seed);
     const { modalTexts, log } = playCollectingModals(session);
     for (let i = 0; i < log.length; i += 1) {

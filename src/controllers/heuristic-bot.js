@@ -2848,8 +2848,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const perm = first('cast_permanent');
     if (perm) return perm;
     // Block if can kill attacker (simple: assign all blockers to first attacker)
+    // M203/2: „pierwsza oferta bloku" była zależna od KOLEJNOŚCI enumeracji
+    // (przy konwencji unshift pierwsza = ostatnio wyliczona), więc ta polityka
+    // symulacji raz blokowała, raz nie — a lookahead wyceniał ten sam atak
+    // raz na −5, raz na +19 (zmierzone). Wybór musi wynikać z ZAMIARU
+    // polityki („blokuj, gdy możesz"), nie z pozycji na liście (L41/L48):
+    // preferujemy wariant, który faktycznie przypisuje blokery.
     const blockers = ofType('declare_blockers');
-    if (blockers.length > 0) return blockers[0];
+    if (blockers.length > 0) {
+      const blocking = blockers.find((c) => Object.keys(c.assignments ?? {}).length > 0);
+      return blocking ?? blockers[0];
+    }
     // Resolve combat
     const resolve = first('resolve_combat');
     if (resolve) return resolve;
@@ -2957,6 +2966,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   }
 
   function summarize(cmd) {
+    // M203/2: warianty scry/surveil były w śladzie nieodróżnialne (oba
+    // streszczały się do `resolve_scry`), więc diagnostyka i test wyceny
+    // musiały parować opcje z `legalCommands` PO INDEKSIE — a opcje w śladzie
+    // są SORTOWANE po punktach, więc takie parowanie przechodziło przypadkiem
+    // (klasa L34/L40). Ta sama lekcja co M195/B: opis w śladzie ma nazywać
+    // wariant, nie tylko typ decyzji.
+    if (cmd.type === 'resolve_scry') {
+      return `resolve_scry(${(cmd.bottomIds ?? []).length ? `bottom:${cmd.bottomIds.join('+')}` : 'keep'})`;
+    }
+    if (cmd.type === 'resolve_surveil') {
+      return `resolve_surveil(${(cmd.millIds ?? []).length ? `mill:${cmd.millIds.join('+')}` : 'keep'})`;
+    }
     if (cmd.type === 'declare_attackers') return `attack[${cmd.attackerIds.join(',')}]`;
     if (cmd.type === 'declare_blockers') return `block[${Object.entries(cmd.assignments ?? {}).map(([a, b]) => `${a}<${b.join('+')}`).join(' ')}]`;
     if (cmd.type === 'cast_spell' || cmd.type === 'cast_cleave' || cmd.type === 'cast_permanent' || cmd.type === 'cast_adventure' || cmd.type === 'cast_adventure_creature') return `${cmd.type}(${cmd.objectId}${cmd.targets ? '->' + cmd.targets.join('+') : ''})`;

@@ -462,9 +462,13 @@ test('E3: Forager — czar z kosztem dodatkowym poza zakresem (jawnie nie oferow
   addMana(state, 'p1', 1, { colors: [] });
   const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_grave_free_cast');
   assert.ok(!offers.some((c) => c.objectId === 'grites'), 'additionalCost poza zakresem — brak oferty');
-  // Ręczna komenda = jawny reject (nie ciche obejście — L52).
-  const r = execute(state, { type: 'resolve_grave_free_cast', playerId: 'p1', objectId: 'grites', targets: ['own'] });
+  // Ręczna komenda = jawny reject (nie ciche obejście — L52). M203: komenda
+  // niesie POPRAWNE X (= MV karty), więc powód odrzucenia musi dotyczyć
+  // zakresu, a nie X — inaczej test przeszedłby „przez przypadek".
+  const r = execute(state, { type: 'resolve_grave_free_cast', playerId: 'p1', objectId: 'grites', xValue: 2, targets: ['own'] });
   assert.equal(r.ok, false, 'jawny reject poza zakresem');
+  assert.equal(r.events?.find((e) => e.type === 'command_rejected')?.reason, 'illegal_grave_free_cast',
+    'odrzucone z powodu zakresu (additionalCost), nie z powodu X');
 });
 
 test('D2c (deadlock z B0): modalny ETB bez ŻADNEGO wybieralnego trybu nie wchodzi na stos', () => {

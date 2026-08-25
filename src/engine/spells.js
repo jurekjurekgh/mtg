@@ -1,4 +1,5 @@
 import { event } from '../protocol/types.js';
+import { triggerTargetEffectFriendly } from './effect-intent.js';
 import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaPurpose } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { deathZoneFor, effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource, transformedCharacteristics } from './permanents.js';
@@ -865,8 +866,8 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
  * oferta musi odrzucać te same cele co validateTargets, inaczej UI proponuje
  * ruch, który engine odrzuci (pułapka M82).
  */
-export function legalTargetCandidates(state, playerId, spec, sourceObject = null) {
-  const candidates = targetCandidatesBySpec(state, playerId, spec);
+export function legalTargetCandidates(state, playerId, spec, sourceObject = null, targetOrderPreference = null) {
+  const candidates = targetCandidatesBySpec(state, playerId, spec, targetOrderPreference);
   if (!sourceObject) return candidates;
   return candidates.filter((targetId) => {
     const target = state.objects.get(targetId);
@@ -886,15 +887,30 @@ export function legalTargetCandidates(state, playerId, spec, sourceObject = null
   });
 }
 
-function targetCandidatesBySpec(state, playerId, spec) {
+function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = null) {
   const players = state.players.map((entry) => entry.id);
   const battlefieldCreatures = state.zones.battlefield.filter((objectId) => {
     const target = state.objects.get(objectId);
     return target?.kind === 'creature' && target.zone === 'battlefield'
       && !hasHexproofAgainst(state, target, playerId);
   });
+  // M203/2: kolejność kandydatów jest TREŚCIĄ decyzji, nie szczegółem
+  // implementacji — pierwszą ofertę bierze gracz klikający „pierwszą sensowną"
+  // i każdy prosty bot. Przy konwencji „prezentacja = enumeracja" porządek
+  // musi wynikać z reguły, a nie z kolejności strefy (dotąd brał się
+  // z odwrócenia listy przez `unshift` w playerView, czyli z przypadku —
+  // po zmianie konwencji Bring Low oferował jako pierwszy cel WŁASNEGO stwora).
+  // Reguła: efekt przyjazny dla celu → najpierw stwory kontrolera; efekt
+  // wrogi → najpierw stwory przeciwników. Klasyfikacja ta sama, co dla celów
+  // triggerów (`triggerTargetEffectFriendly`), czyli jedno źródło (L41).
+  const orderedByEffect = (ids) => {
+    if (targetOrderPreference !== 'ownFirst' && targetOrderPreference !== 'opponentFirst') return ids;
+    const mine = ids.filter((objectId) => state.objects.get(objectId)?.controllerId === playerId);
+    const theirs = ids.filter((objectId) => state.objects.get(objectId)?.controllerId !== playerId);
+    return targetOrderPreference === 'ownFirst' ? [...mine, ...theirs] : [...theirs, ...mine];
+  };
   switch (spec.type) {
-    case 'creature': return battlefieldCreatures;
+    case 'creature': return orderedByEffect(battlefieldCreatures);
     // M154 (Batch 38): stwór albo Vehicle (artefakt z podtypem Vehicle).
     case 'creature_or_vehicle':
       return state.zones.battlefield.filter((objectId) => {
@@ -2112,9 +2128,10 @@ export function legalSpellCasts(state, playerId) {
     })();
     if (spellPhyrexianVariants.length === 0) continue;
     const pushSpellCast = (cast) => {
-      // Kolejność panelu: wariant manowy (k=0) PIERWSZY — playerView wstawia
-      // listę legalSpellCasts przez unshift (odwrotnie), jak tryby modalne.
-      for (const k of [...spellPhyrexianVariants].reverse()) {
+      // Kolejność panelu (M203/2): przy konwencji „prezentacja = enumeracja"
+      // wariant manowy (k=null) jest PIERWSZY wprost z tablicy wariantów —
+      // dawniej wymagało to odwrócenia, bo playerView wstawiał przez unshift.
+      for (const k of spellPhyrexianVariants) {
         casts.push(k == null ? cast : { ...cast, phyrexianPayWithLife: k });
       }
     };
@@ -2126,13 +2143,11 @@ export function legalSpellCasts(state, playerId) {
     // może obiecywać rzutu, który execute odrzuci (L48).
     if (!plottedCastAllowed(state, playerId, object)) continue;
     // Modal „Choose one" (Aerith Rescue Mission): każdy tryb enumerujemy osobno.
-    // M155 (audyt żywym testerem): playerView wstawia komendy przez `unshift`,
-    // więc kolejność widziana przez gracza jest ODWROTNA do `casts`. Iterujemy
-    // tryby OD KOŃCA, żeby na panelu/liście celów tryby pojawiły się w kolejności
-    // z Oracle (mode 0 pierwszy — domyślna sugestia; Fortify: Ofensywa przed
-    // Obroną zamiast odwrotnie).
     if (object.spell.modes) {
-      for (let modeIndex = object.spell.modes.length - 1; modeIndex >= 0; modeIndex -= 1) {
+      // M203/2: przy konwencji „prezentacja = enumeracja" (playerView doklada
+      // przez `push`) tryby wchodza wprost w kolejnosci z Oracle — mode 0
+      // pierwszy (domyslna sugestia; Fortify: Ofensywa przed Obroną).
+      for (let modeIndex = 0; modeIndex < object.spell.modes.length; modeIndex += 1) {
         for (const cast of legalModeCasts(state, playerId, id, modeIndex, object.spell.modes[modeIndex])) {
           casts.push(cast);
         }
@@ -2216,7 +2231,7 @@ export function legalSpellCasts(state, playerId) {
       if (object.spell.buyback && !object.plotted) {
         const baseCost = effectiveSpellManaCost(state, object);
         const bbCost = object.spell.buyback.cost ?? 0;
-        for (const k of [...spellPhyrexianVariants].reverse()) {
+      for (const k of spellPhyrexianVariants) {
           const pipMana = k == null ? 0 : (phyrexianSymbols - k);
           if (baseCost + bbCost + pipMana > manaAvailable(object)) continue;
           const cast2 = { objectId: id, targets: [], buyback: true };
@@ -2231,8 +2246,13 @@ export function legalSpellCasts(state, playerId) {
     // Batch 45 (Assert Perfection): pozycja celu z `optional: true` („up to
     // one target") enumeruje też wariant BEZ celu (null) — czar rzucalny
     // nawet przy braku kandydatów na tej pozycji.
+    // M203/2: `spell.effects` klasyfikujemy tym samym helperem co efekty
+    // zdolności (`triggerTargetEffectFriendly` czyta `.effect`, więc
+    // podajemy adapter) — bez drugiego, rozjeżdżającego się klasyfikatora.
+    const effectFriendly = triggerTargetEffectFriendly({ effect: object.spell.effects ?? [] });
+    const targetOrderPreference = effectFriendly ? 'ownFirst' : 'opponentFirst';
     const candidatePools = targetSpec.map((spec) => {
-      const pool = legalTargetCandidates(state, playerId, spec, object);
+      const pool = legalTargetCandidates(state, playerId, spec, object, targetOrderPreference);
       return spec?.optional ? [...pool, null] : pool;
     });
     if (candidatePools.some((pool) => pool.length === 0)) continue;
@@ -2252,12 +2272,12 @@ export function legalSpellCasts(state, playerId) {
   // bez żadnego efektu. Wariantu nie usuwamy (bywa świadomym zagraniem), ale
   // spychamy na KONIEC oferty — pierwsza pozycja jest domyślną sugestią UI
   // i to ją kliknął tester, tracąc Midnight Guard za darmo.
-  // Uwaga: playerView wstawia te komendy przez `unshift`, więc kolejność
-  // widziana przez gracza jest ODWROTNA — fizzle idą tu na POCZĄTEK, żeby
-  // w legalCommands wylądowały na końcu.
+  // M203/2: przy konwencji „prezentacja = enumeracja" (playerView dokłada
+  // przez `push`) sensowne warianty idą tu na POCZĄTEK, a fizzle na KONIEC —
+  // dawniej trzeba było odwrotnie, bo `unshift` odwracał całą listę.
   const fizzlesItself = (cast) => cast.sacrificeTargetId != null
     && (cast.targets ?? []).includes(cast.sacrificeTargetId);
-  return [...casts.filter(fizzlesItself), ...casts.filter((c) => !fizzlesItself(c))];
+  return [...casts.filter((c) => !fizzlesItself(c)), ...casts.filter(fizzlesItself)];
 }
 
 export function legalCleaveCasts(state, playerId) {

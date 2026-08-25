@@ -105,11 +105,39 @@ test('M198/C: boks danych gracza laczy JEGO strefy i JEGO pule many', () => {
   assert.match(playerText, new RegExp(`biblioteka \\[${libOf(me.id)}\\]`), 'biblioteka Gracza');
 });
 
-test('M198/C: HTML ma po jednym boksie na gracza, w kolejnosci Bot, Gracz', () => {
+// M203/A (zlecenie wlasciciela 2026-08-24): uklad odwrocony — GRACZ po lewej,
+// BOT po prawej, a sekcje stref ida od Gracza (reka, stol) przez wspolny Stos
+// do Bota (stol, zakryta reka). Straznik M198/C pilnowal starej kolejnosci,
+// wiec zostaje przepisany na NOWA (wymaganie zmienil wlasciciel, nie „obrocenie
+// asercji, zeby przeszlo") i rozszerzony o kolejnosc sekcji, ktorej wczesniej
+// nikt nie pilnowal — a to wlasnie ona byla trescia tego zlecenia.
+test('M203/A: HTML ma po jednym boksie na gracza, w kolejnosci Gracz, Bot', () => {
   assert.match(HTML_CODE, /id="meta-foe"/, 'boks przeciwnika');
   assert.match(HTML_CODE, /id="meta-own"/, 'boks gracza');
-  assert.ok(HTML_CODE.indexOf('id="meta-foe"') < HTML_CODE.indexOf('id="meta-own"'),
-    'Bot po lewej (jak licznik zycia), Gracz po prawej');
+  assert.ok(HTML_CODE.indexOf('id="meta-own"') < HTML_CODE.indexOf('id="meta-foe"'),
+    'Gracz po lewej (jak licznik zycia), Bot po prawej');
+  // Pasek zycia/biblioteki w tej samej kolejnosci co boksy (M198/C: boksy sa
+  // per gracz POD paskiem).
+  assert.ok(HTML_CODE.indexOf('id="life-own"') < HTML_CODE.indexOf('id="life-enemy"'),
+    'licznik Gracza przed licznikiem Bota');
+  // Kolejnosc sekcji stref: reka Gracza -> stol Gracza -> Stos -> stol Bota
+  // -> zakryta reka Bota.
+  const order = [
+    ['id="hand"', 'reka Gracza'],
+    ['id="bf-own"', 'stol Gracza'],
+    ['id="stack-zone"', 'Stos'],
+    ['id="bf-enemy"', 'stol Bota'],
+    ['id="hand-enemy"', 'reka Bota'],
+  ];
+  let prev = -1;
+  for (const [needle, label] of order) {
+    const at = HTML_CODE.indexOf(needle);
+    assert.ok(at > 0, `sekcja ${label} istnieje w HTML`);
+    assert.ok(at > prev, `sekcja ${label} jest PO poprzedniej (kolejnosc od Gracza do Bota)`);
+    prev = at;
+  }
+  // Ręka Gracza jest JEDNA (sekcja nie zostala zduplikowana przy przeprowadzce).
+  assert.equal(HTML_CODE.split('id="hand"').length - 1, 1, 'jedna sekcja reki Gracza');
   // Stare boksy „wg rodzaju danych" znikaja.
   assert.doesNotMatch(HTML_CODE, /id="zone-counters"/, 'stary wspolny boks stref usuniety');
   assert.doesNotMatch(HTML_CODE, /id="mana-pools"/, 'stary wspolny boks puli usuniety');

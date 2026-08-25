@@ -81,7 +81,37 @@ export function detectBotRepeats(lines, { threshold = REPEAT_THRESHOLD } = {}) {
     }
     counts.clear();
   };
+  // M203 (pętla jakości, forgotten-realms vs alara seed 61): transkrypt
+  // przedrukowuje TEN SAM modal „Rozgrywka" wiele razy — tester klika
+  // „Wznów grę bota", a pauza bota renderuje identyczną treść ponownie.
+  // Detektor liczył linie, więc jedna aktywacja Unstable Frontier ({T}: land
+  // staje się typem) wyglądała na „powtórzoną 4× w jednej turze", choć
+  // zmierzone w silniku: po aktywacji tapped=true i dalszych ofert jest 0
+  // (CR 602.2) — powtórka była fizycznie niemożliwa.
+  // Przedruk poznajemy po tym, że blok modala jest IDENTYCZNY jak poprzedni;
+  // prawdziwe powtórzenie (station, firebreathing, mill) dokłada do modala
+  // NOWY wpis, więc blok się różni i zostaje policzony.
+  const deduped = [];
+  let prevBlock = null;
+  let cur = null;
+  const closeBlock = () => {
+    if (cur === null) return;
+    const text = cur.join('\n');
+    if (text !== prevBlock) deduped.push(...cur);
+    prevBlock = text;
+    cur = null;
+  };
   for (const line of lines) {
+    if (/\[ROZGRYWKA\]/.test(line)) {
+      if (cur === null) cur = [];
+      cur.push(line);
+      continue;
+    }
+    closeBlock();
+    deduped.push(line);
+  }
+  closeBlock();
+  for (const line of deduped) {
     const turnMark = line.match(/•\s*Tura (\d+)/);
     if (turnMark) { flush(); turn = turnMark[1]; continue; }
     // M122/#9: granicę tury niosą też NAGŁÓWKI KROKÓW („--- krok 12 | T. 7 …”),
