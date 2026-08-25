@@ -25,6 +25,52 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 ---
 
 
+## L66 (2026-08-25) — Lektura obowiązkowa to BUDŻET: dokument bez limitu rośnie, aż zje kontekst
+
+**Objaw (M208):** obowiązkowa lektura startowa z `AGENTS.md` §0 ważyła ~605 kB
+(~194-258 tys. tokenów). Z tego **384 kB to `PROJECT_STATE.md`** — plik
+nazwany „bieżący stan projektu", który urósł do **125 sekcji sesji i 5904
+linii**, sięgając wstecz o ~80 sesji. Każda sesja czytała całą historię
+projektu, zanim dowiedziała się, co ma robić.
+
+**Przyczyna:** plik miał w nazwie „STATE", a w treści był dziennikiem. Każda
+sesja dopisywała swoją sekcję (słusznie, ADR 0013), nikt nic nie usuwał
+(też słusznie — historia bywa potrzebna), a **nikt nie pilnował sumy**, bo
+żadna reguła nie mówiła, ile lektura startowa MOŻE ważyć. Rozjazd nazwy
+z zawartością sprawił, że przez ~80 sesji nikt nie zakwestionował jego
+obecności na liście lektur.
+
+**Reguła:**
+1. **Lista lektur obowiązkowych ma budżet i strażnika.** Bez liczbowego progu
+   nie ma sygnału, kiedy zrobiło się źle — plik rośnie liniowo i cicho.
+   Tu: 100 tys. tokenów na `AGENTS` + ADR-y + `LESSONS` + `ENVIRONMENT`
+   (`test/dokumentacja-budzet-lektury.test.js`).
+2. **Rozdziel „zasady" od „dziennika".** Agent kontynuujący pracę potrzebuje
+   REGUŁ (co wolno, czego nie, jakie są pułapki) i PUNKTU ZACZEPIENIA
+   (ostatni PR, najnowszy handoff). Historia „kto co kiedy zrobił" jest
+   materiałem do **grepowania punktowego**, nie do czytania od góry.
+   Dziennik ma się nazywać dziennikiem (`PROJECT_HISTORY.md`) i mieć
+   w nagłówku jawne „to NIE jest lektura startowa".
+3. **Sygnał ostrzegawczy:** dokument z listy lektur, którego nazwa mówi
+   „bieżący/aktualny", a treść przyrasta monotonicznie. Sprawdź `grep -c '^## '`
+   i datę najstarszej sekcji — jeśli sięga dziesiątek sesji wstecz, to jest
+   archiwum, nie stan.
+4. **Zanim zaczniesz skracać, ZMIERZ rozkład.** Pierwotny plan tej sesji
+   („skondensujmy `LESSONS.md`") dotyczył pliku, który odpowiadał za **16%**
+   problemu — przy pełnym ryzyku zgubienia niuansu w 65 lekcjach. Pomiar
+   przekierował pracę na pozycję, która ważyła 2/3 całości i którą dało się
+   usunąć z listy **bez kasowania jednej linijki treści**. Optymalizacja bez
+   pomiaru trafia w to, co akurat rzuciło się w oczy.
+5. **Numery lekcji to API dokumentacji.** `L1`-`L65` są cytowane w kodzie
+   **~1150 razy w 242 plikach** (`// klasa L48`, `L21/L41`). Renumeracja
+   unieważniłaby je wszystkie **bez jednego czerwonego testu** — kondensując
+   rejestr zachowaj nagłówki `## L<nr>` jako stabilne kotwice.
+
+**Sformalizowane w:** M208 (`PROJECT_HISTORY.md`, `AGENTS.md` §0 z budżetem
+i blokiem „Czego NIE czytasz na start", `test/dokumentacja-budzet-lektury.test.js`).
+
+---
+
 ## L65 (2026-08-25) — Test, który przechodzi na przypadku odsianym przez WCZEŚNIEJSZY warunek, nie testuje tego warunku
 
 **Objaw (M207, weryfikacja mutacyjna):** funkcja `targetSlotsOf` rozbija cele

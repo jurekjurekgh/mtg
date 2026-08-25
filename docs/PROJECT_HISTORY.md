@@ -12,7 +12,38 @@
 >
 > Sesje dopisują tu swoją sekcję (ADR 0013) — nowe na górze.
 
-- **Ostatnia aktualizacja:** 2026-08-25 (M207: audyt rozgrywek — pozycje celu w kreatorze i na kaflu — PR #78)
+- **Ostatnia aktualizacja:** 2026-08-25 (M208: porządki w dokumentacji — ten plik przestał być lekturą startową — PR #78)
+
+## M208 — dokumentacja: koniec „Historii Powszechnej” na starcie sesji (2026-08-25)
+
+Nowa lekcja: **L66**. Commit `7c1d2c5`.
+
+Właściciel zlecił uporządkowanie dokumentacji pod kątem oszczędności tokenów.
+Pierwotny pomysł (mój) brzmiał „skondensujmy 65 lekcji do jednego manuala”.
+Pomiar go obalił: obowiązkowa lektura z `AGENTS.md` §0 ważyła **~605 kB
+(~194-258 tys. tokenów)**, z czego **`PROJECT_STATE.md` to 384 kB** — 125
+sekcji sesji, 5904 linie, sięgające wstecz do M125. `LESSONS.md` odpowiadał
+za 16% problemu, `PROJECT_STATE` za dwie trzecie.
+
+Właściciel rozstrzygnął: historia „kto co kiedy zrobił” jest **bezużyteczna
+dla agenta kontynuującego projekt** — ten potrzebuje zasad (AGENTS, ADR-y,
+LESSONS, ENVIRONMENT) i punktu zaczepienia (ostatni PR do audytu + najnowszy
+handoff). Plik przemianowany na `docs/PROJECT_HISTORY.md` i **usunięty
+z lektur obowiązkowych**; zostaje jako materiał do grepowania punktowego.
+
+- `AGENTS.md` §0: lektura obowiązkowa = poz. 1-4, poz. 5-6 to punkt
+  zaczepienia (ostatni PR, najnowszy handoff), nowy blok „Czego NIE czytasz
+  na start”, jawny **budżet 100 tys. tokenów**.
+- `test/dokumentacja-budzet-lektury.test.js` — mierzy poz. 1-4 (komunikat
+  z rozkładem per plik) i pilnuje, że dziennik nie wróci na listę lektur.
+  Zweryfikowany mutacyjnie dwustronnie.
+- **`LESSONS.md` celowo nietknięty:** numery L1-L65 są cytowane w kodzie
+  ~1150 razy w 242 plikach, więc renumeracja unieważniłaby je bez jednego
+  czerwonego testu. Ewentualna kondensacja musi zachować nagłówki `## L<nr>`.
+
+Rename rozpoznany przez gita jako `R100` (historia pliku zachowana), treść
+identyczna co do bajtu. Stan po zmianie: lektura startowa **~79,7k tokenów**.
+`npm test` 3224/3224, build 54 / 2648,5 kB.
 
 ## M207 — audyt rozgrywek Żywym Testerem, ciąg dalszy (2026-08-25)
 
