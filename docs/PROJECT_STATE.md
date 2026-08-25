@@ -1,6 +1,85 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-24 (M203: audyt PR #74 + naprawa narzędzia audytu — PR #75 otwarty)
+- **Ostatnia aktualizacja:** 2026-08-24 (M203: audyt PR #74, Halo Forager, konwencja kolejności ofert, układ stołu, pętla Żywym Testerem — PR #75 otwarty)
+
+## M203 cd. — decyzje właściciela: pełny fix, konwencja, układ stołu (2026-08-24)
+
+Właściciel rozstrzygnął trzy tematy z audytu PR #74 i dołożył zadanie układu
+stołu. Wszystko w PR #75, każdy krok samodzielnie zielony i wypchnięty.
+
+**1. Halo Forager — PEŁNY FIX (`4456577`).** X jest częścią decyzji gracza i
+musi równać się MV rzucanej karty (druk „with mana value X"); jedyną wydaną
+maną jest zapłata {X}, bo koszt many czaru wynosi {0} (CR 118.9a) — wcześniej
+silnik pobierał MV za rzut „without paying its mana cost" (pomiar: 3 many → 2
+po rzucie karty MV 1) i wcale nie sprawdzał X (`xValue: 3` przy MV 1 →
+`ok: true`). Zapłata {X} za czar nie-artefaktowy nie może pochodzić z many
+ograniczonej drukiem (M202/N1). 7 testów + wzmocniony E3 w batch41.
+
+**2. Jedna konwencja kolejności ofert (`6abca86`) — `prezentacja = enumeracja`.**
+128× `unshift` → `push`, usunięte wszystkie kompensacje odwrócenia (10 pętli
++ `ordered` proliferate + warianty phyrexian), `concede`/`pass_priority`
+dokładane NA KONIEC (przy remisie punktów stabilne sortowanie bota wybierało
+pass zamiast ataku/bloku — zmierzone na bot-opponent-model/B3 i m167/I1).
+Zasada w kodzie: decyzja „tak" przed „nie", odmowa ostatnia.
+Sama zamiana dała **36 czerwonych testów** — wszystkie naprawione u root cause,
+bez odwracania asercji. Przy okazji wyszły błędy merytoryczne:
+- **Liliana's Triumph**: `targets: [{ type: 'player' }]` przy druku „Each
+  opponent sacrifices a creature" — rzucający był legalnym celem własnego
+  czaru (CR 115.2). Poprawione na `opponent: true`; skan katalogu: więcej nie ma.
+- **Bring Low** oferował jako pierwszy cel WŁASNEGO stwora — kolejność celów
+  czaru wynika teraz z reguły (efekt przyjazny → własne, wrogi → przeciwnika),
+  klasyfikacja ta sama co dla triggerów (`orderedByEffect`).
+- **`simpleChoice`** (polityka symulacji) brał „pierwszą ofertę bloku", więc
+  TEN SAM atak lookahead wyceniał raz **−5**, raz **+19** (zmierzone oba).
+- Test m135 parował opcje śladu z `legalCommands` po indeksie, choć opcje są
+  **sortowane po punktach** — przechodził przypadkiem; `summarize` nazywa teraz
+  wariant scry/surveil.
+- Nowy moduł `src/engine/effect-intent.js` (klasyfikacja intencji efektu) —
+  wydzielony z `game-state.js`, żeby `spells.js` nie tworzył cyklu importów
+  (strażnik `test/import-cycles`); `game-state.js` re-eksportuje.
+Pomiar: `npm run test:all` **3204/3204**, benchmark 672 mecze / 0 crashy —
+heuristic **70,5 %** vs aggro, **88,4 %** vs random, razem **79,5 %**
+(progi bez zmian).
+
+**3. Układ stołu (`c68a486`, zlecenie właściciela).** Gracz z LEWEJ i u GÓRY,
+Bot z PRAWEJ i na DOLE: pasek życia/biblioteki, boksy stref i many (musiały
+jechać razem — od M198/C są per gracz pod swoim licznikiem) oraz sekcje:
+ręka Gracza → stół Gracza → Stos → stół Bota → zakryta ręka Bota.
+Kolejność zmierzona w zbudowanym artefakcie po indeksach. Strażnik M198/C
+pilnował starej kolejności — przepisany na nową (wymaganie zmienił właściciel)
+i rozszerzony o kolejność sekcji, której nikt wcześniej nie pilnował.
+
+**4. Pętla jakości Żywym Testerem — 9 partii, 9 par talii, 4 profile:**
+- **naprawione:** tester wisiał na kreatorze celów wielokrotnych
+  (`.multi-target-confirm`, Grave Exchange) — partia bez transkryptu, czyli
+  dowód przepadał (`9e092f4`);
+- **naprawione:** log świecił „? zostaje wygnany" przy wygnaniu ZAKRYTYM
+  (Pyxis of Pandemonium, CR 708 — brak `cardId` jest tu treścią reguły, a nie
+  brakiem danych): jawny opis bez zdradzania karty (`6deed40`), a strażnik
+  gramatyki Z1c złapał pierwszą, niegramatyczną formę opisu (`227e004`);
+- **OTWARTE (#3):** detektor [bot] „powtórzył akcję 4× w jednej turze" dla
+  Unstable Frontier to fałszywy alarm — zmierzone: po aktywacji `{T}` obiekt
+  jest tapnięty i dalszych ofert jest 0 (CR 602.2). `80bca30` usuwa jedno
+  źródło fałszywych alarmów (przedruki IDENTYCZNYCH bloków modala), ale alarm
+  z seeda 61 zostaje: ta sama akcja trafia do kilku RÓŻNYCH renderów modala.
+  Do rozstrzygnięcia: modal „Rozgrywka" pokazuje ponownie ten sam ruch po
+  „Wznów grę bota" (błąd UI — gracz widzi duplikat) czy to artefakt testera
+  (wznawianie bez czyszczenia `botMoves`). Bez tej decyzji nie ruszam ani
+  `session.js`, ani progów detektora.
+
+**Środowisko (potwierdzone w tej sesji):** workspace został zresetowany do
+świeżego klona W TRAKCIE pracy (`reflog`: `clone: from …`) — zawartość plików
+przetrwała, historia nie; odzyskanie przez `git fetch` + `git reset --mixed
+FETCH_HEAD` i ponowny commit (ADR 0020 D — bez force push). Reset kasuje też
+`tools/table-tester/node_modules` i `dist/`. `GH_TOKEN` wygasł raz w trakcie
+sesji (push po reconnect).
+
+**Nie dowiezione:** cel „10 błędów" Żywym Testerem — są **3 znaleziska**
+(2 naprawione, 1 częściowo). Pozostałe partie czyste (0 zgłoszeń detektorów),
+ale część sygnału to szum warstwy raportowania (#3), więc kolejne polowanie
+trzeba zacząć od rozstrzygnięcia #3 i od dłuższych partii z ręcznym czytaniem
+transkryptów, nie od samych detektorów.
+
 - **Poprzednia:** 2026-08-24 (M202: audyt PR #73 + poprawki A/B/C + brązowa odznaka 3/5 — PR #74 scalony)
 
 ## M203 — audyt PR #74: narzędzie audytu kłamało o talii (2026-08-24, PR #75)
