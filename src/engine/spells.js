@@ -384,6 +384,14 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       if (hasHexproofAgainst(state, object, casterId)) throw new Error(`Nielegalny cel: ${targetId} (hexproof)`);
       return object;
     }
+    if (spec?.type === 'nonblack_creature') {
+      // Dead Ringers (APC): „two target nonblack creatures" — w odróżnieniu
+      // od Expunge artefaktowe stwory SĄ legalnym celem (liczy się tylko kolor).
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
+      if (effectiveColors(object).includes('B')) throw new Error(`Nielegalny cel: ${targetId} (black)`);
+      if (hasHexproofAgainst(state, object, casterId)) throw new Error(`Nielegalny cel: ${targetId} (hexproof)`);
+      return object;
+    }
     if (spec?.type === 'nonartifact_nonblack_creature') {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
       const isArtifact = object.kind === 'artifact' || (object.types ?? []).includes('Artifact');
@@ -1150,6 +1158,15 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
         if (hasHexproofAgainst(state, object, playerId)) return false;
         const isEnchantment = object.kind === 'enchantment' || (object.types ?? []).includes('Enchantment');
         return isEnchantment;
+      });
+    }
+    // Dead Ringers (APC): nonblack creature — artefaktowe stwory dozwolone.
+    case 'nonblack_creature': {
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+        if (hasHexproofAgainst(state, object, playerId)) return false;
+        return !effectiveColors(object).includes('B');
       });
     }
     // Batch 23: Expunge — nonartifact, nonblack creature (CR 205.1, 300.1).

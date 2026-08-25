@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Time+to+Feed&set=ths&format=json",
+  "print": "ths",
+  "name": "Time to Feed",
+  "mana_cost": "{2}{G}",
+  "cmc": 3.0,
+  "type_line": "Sorcery",
+  "oracle_text": "Choose target creature an opponent controls. When that creature dies this turn, you gain 3 life. Target creature you control fights that creature. (Each deals damage equal to its power to the other.)",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Fight"
+  ],
+  "set": "ths",
+  "set_name": "Theros",
+  "collector_number": "181",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/9/799d08a6-d978-4731-98ad-38acd57f3196.jpg?1783939736"
+  },
+  "pobrano": "2026-08-25"
+}

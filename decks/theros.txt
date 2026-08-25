@@ -10,6 +10,7 @@
 1x Sweet Oblivion
 1x Entrancing Lyre
 1x Feral Invocation
+1x Time to Feed
 1x Wavecrash Triton
 1x Breaching Hippocamp
 1x Inspire Awe
@@ -20,4 +21,4 @@
 3x Island
 1x Swamp
 1x Mountain
-2x Forest
+3x Forest

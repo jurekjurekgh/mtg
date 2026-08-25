@@ -48,7 +48,12 @@ export const SINGLE_PLAN_DECKS = Object.freeze({
 
 /** Worki: plan → plik. NOWY PLAN dopisz tutaj (motyw + najmniejsza talia). */
 export const WOREK_DECKS = Object.freeze({
-  Eldraine: 'worek-basni', Lorwyn: 'worek-basni', Bloomburrow: 'worek-basni',
+  // Batch 49: Final Fantasy dobiło do 15 wspieranych kart i WYSZŁO z worka
+  // jako własna talia (auto-awans M181) — worek-mroczny spadł do 11 kart
+  // nielandowych, poniżej minimum walidatora. Lorwyn przechodzi z worka-baśni
+  // do mrocznego (ADR 0023 §4): motyw pasuje — nowy set to „Lorwyn Eclipsed”,
+  // mroczna strona planu (Shadowmoor). Bilans: baśnie 17, mroczny 20.
+  Eldraine: 'worek-basni', Bloomburrow: 'worek-basni',
   Kamigawa: 'worek-basni', Moag: 'worek-basni', Core: 'worek-basni',
   Commander: 'worek-basni', 'Modern Horizons': 'worek-basni',
   // M202/A (zlecenie właściciela 2026-08-24): rezygnacja z niszowych planów
@@ -67,6 +72,7 @@ export const WOREK_DECKS = Object.freeze({
   'The Edge': 'worek-legend', 'Thunder Junction': 'worek-legend',
   Ixalan: 'worek-dziki', Kaladesh: 'worek-dziki', Muraganda: 'worek-dziki',
   'Final Fantasy': 'worek-mroczny', Duskmourn: 'worek-mroczny',
+  Lorwyn: 'worek-mroczny',
   'New Capenna': 'worek-mroczny', Kaldheim: 'worek-mroczny',
   Ikoria: 'worek-mroczny', Phyrexia: 'worek-mroczny',
 });

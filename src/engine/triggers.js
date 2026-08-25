@@ -2,6 +2,7 @@ import { event } from '../protocol/types.js';
 import { singleTargetOfStackEntry } from './objects.js';
 import { applyEffect } from './effects.js';
 import { addCounter, hasCounter } from './counters.js';
+import { changeLife } from './players.js';
 import { effectiveAbilities, effectiveKeywords, effectivePower } from './permanents.js';
 import { moveObjectDirectly } from './objects.js';
 import { tapLandForMana, canPayColoredCost, spendMana, producibleMana } from './resources.js';
@@ -178,6 +179,25 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   // strefy). Trigger na stosie czyta z EXTRA, nie z żywego obiektu.
   if (condition.notBlocking) {
     return eventData.wasBlocking !== true;
+  }
+  // Creakwood Safewright (ECL): „…if there is an Elf card in your graveyard
+  // and this creature has a -1/-1 counter on it…" — intervening-if (CR 603.4)
+  // z DWÓCH deskryptorów; oba są danymi (podtyp, nazwa licznika), nie kodem
+  // karto-specyficznym (ADR 0002).
+  if (condition.subtypeCardInYourGraveyard) {
+    const ownerId = sourceObject?.controllerId;
+    const wanted = condition.subtypeCardInYourGraveyard;
+    const found = (state.zones.graveyard ?? []).some((id) => {
+      const card = state.objects.get(id);
+      if (!card || card.zone !== 'graveyard') return false;
+      if (card.ownerId !== ownerId && card.controllerId !== ownerId) return false;
+      return (card.subtypes ?? []).includes(wanted);
+    });
+    if (!found) return false;
+  }
+  if (condition.selfHasCounter) {
+    const live = state.objects.get(sourceObject?.id);
+    if (!hasCounter(live ?? sourceObject, condition.selfHasCounter)) return false;
   }
   // Frontline War-Rager (EOE): „At the beginning of your end step, if you
   // control two or more tapped creatures, put a +1/+1 counter on this
@@ -1473,9 +1493,29 @@ function processTriggersScan(state, recentEvents) {
     // legend). Wcześniej skan obejmował wyłącznie zgony SBA (creature_destroyed)
     // i object_moved — poświęcenia (Village Rites, devour) i zniszczenia
     // (Bone Splinters, Shatter) cicho gubiły triggery dies.
-    const fireDeathTriggers = (died, simultaneousFellows = []) => {
+    const fireDeathTriggers = (died, simultaneousFellows = [], formerId = null) => {
       markDescended(died);
       if (!died) return;
+      // Time to Feed (THS, CR 603.7a): opóźniony trigger „When that creature
+      // dies this turn, you gain N life" — znacznik założony przy rozstrzyganiu
+      // czaru na KONKRETNY obiekt. Odpala się raz, przy jego śmierci; wpis
+      // znika z listy (reszta znaczników czeka do cleanup).
+      // UWAGA (CR 400.7): obiekt w grobie to NOWY obiekt z NOWYM id, a znacznik
+      // trzyma id z pola bitwy — dlatego dopasowujemy też `formerId` (LKI).
+      const lifeMarks = state.gainLifeIfDiesThisTurn ?? [];
+      if (lifeMarks.length > 0) {
+        const deadIds = new Set([died.id, formerId].filter((id) => id != null));
+        const fired = lifeMarks.filter((entry) => deadIds.has(entry.objectId));
+        if (fired.length > 0) {
+          state.gainLifeIfDiesThisTurn = lifeMarks.filter((entry) => !deadIds.has(entry.objectId));
+          for (const entry of fired) {
+            if (!state.players.some((pl) => pl.id === entry.playerId)) continue;
+            // Jedyna droga zmiany życia (players.changeLife) — emituje
+            // life_changed, które czyta log stołu i SBA.
+            changeLife(state, entry.playerId, entry.amount);
+          }
+        }
+      }
       for (const ability of abilitiesOnDeath(died)) {
         // M108 (Murder of Crows): „whenever ANOTHER creature dies" — źródło
         // nie liczy własnej śmierci (excludeSelf w deskryptorze triggera).
@@ -1559,15 +1599,15 @@ function processTriggersScan(state, recentEvents) {
       // trupa z grobu) — bez fallbacku na LKI zdarzenia śmierć tokena była
       // NIEWIDZIALNA dla triggerów any_creature_dies (fireDeathTriggers
       // dostawał undefined i wychodził).
-      fireDeathTriggers(state.objects.get(ev.toId) ?? ev.object, fellows);
+      fireDeathTriggers(state.objects.get(ev.toId) ?? ev.object, fellows, ev.fromId);
     }
     if (ev.type === 'permanent_sacrificed') {
       if (ev.toZone === 'exile') return; // finality
-      fireDeathTriggers(state.objects.get(ev.objectId) ?? ev.object);
+      fireDeathTriggers(state.objects.get(ev.objectId) ?? ev.object, [], ev.objectId);
     }
     if (ev.type === 'permanent_destroyed') {
       if (ev.toZone === 'exile') return; // finality
-      fireDeathTriggers(state.objects.get(ev.objectId) ?? ev.object);
+      fireDeathTriggers(state.objects.get(ev.objectId) ?? ev.object, [], ev.objectId);
     }
     // „Whenever one or more permanents you control leave the battlefield"
     // (Nefarious Imp). Jedno zdarzenie = jedno odejście; CR 603.2 mówi
@@ -1600,7 +1640,7 @@ function processTriggersScan(state, recentEvents) {
     if (ev.type === 'object_moved' && ev.fromZone === 'battlefield' && ev.toZone === 'graveyard') {
       // Finality obsługują ścieżki zdarzeń z toZone (creature_destroyed itd.);
       // object_moved bez toZone-exile = zwykła śmierć (np. prawo legend).
-      fireDeathTriggers(state.objects.get(ev.object?.id));
+      fireDeathTriggers(state.objects.get(ev.object?.id), [], ev.fromId ?? ev.object?.id);
     }
     // Descended: permanent card wpada do grobu z ręki (odrzucenie), milla
     // albo poświęcenia — liczymy po kontrolerze docelowego obiektu.

@@ -401,4 +401,15 @@ export const MANA_COSTS = {
   "bone-shredder": "{2}{B}",
   "gila-courser": "{2}{R}",
   "rediscover-the-way": "{U}{R}{W}",
+
+  // Batch 49 (lista właściciela 557–566)
+  "shock": "{R}",
+  "razorfoot-griffin": "{3}{W}",
+  "gaelicat": "{2}{W}",
+  "mana-cylix": "{1}",
+  "koilos-roc": "{4}{U}",
+  "white-mages-staff": "{1}{W}",
+  "time-to-feed": "{2}{G}",
+  "creakwood-safewright": "{1}{B}",
+  "dead-ringers": "{4}{B}",
 };

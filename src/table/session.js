@@ -482,6 +482,8 @@ const DRUGA_OSOBA = Object.freeze({
   wzmacnia: 'wzmacniasz', zagłębia: 'zagłębiasz', zagrywa: 'zagrywasz',
   zatrzymuje: 'zatrzymujesz', zawiesza: 'zawieszasz', zdejmuje: 'zdejmujesz',
   znajduje: 'znajdujesz', zostawia: 'zostawiasz',
+  // Batch 49 (Time to Feed): „…gdy zginie w tej turze, Ty zyska 3 życia”.
+  zyska: 'zyskasz',
   zwiększa: 'zwiększasz',
 });
 
@@ -1089,6 +1091,16 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         return `${objectOrLki(e.objectId, e.cardId)} zatrzymany (detain): do następnej tury ${whoN(e.byPlayerId)} nie atakuje, nie blokuje i nie aktywuje zdolności`;
       case 'exile_if_dies_marked':
         return `${objectOrLki(e.objectId, e.cardId)}: jeśli umrze w tej turze, trafi na wygnanie zamiast do grobu`;
+      // Batch 49 (Time to Feed): opóźniony trigger „gdy ten stwór zginie".
+      case 'gain_life_if_dies_marked':
+        return `${objectOrLki(e.objectId, e.cardId)}: gdy zginie w tej turze, ${whoN(e.playerId)} zyska ${e.amount} życia`;
+      // Batch 49 (Dead Ringers): kontrola równości kolorów obu celów.
+      case 'destroy_pair_color_check': {
+        const fmt = (colors) => ((colors ?? []).length > 0 ? colors.join('') : 'bezbarwny');
+        return e.matched
+          ? `${nameOf(e.cardId)}: kolory celów zgodne (${fmt(e.colorsA)} = ${fmt(e.colorsB)}) — oba zostają zniszczone`
+          : `${nameOf(e.cardId)}: kolory celów różne (${fmt(e.colorsA)} vs ${fmt(e.colorsB)}) — żaden cel nie ginie`;
+      }
       case 'keyword_granted': {
         if (e.viaBackup) return null;
         const granted = (e.keywords ?? [])

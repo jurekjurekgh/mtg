@@ -1,5 +1,6 @@
 # Tarkir
 
+1x Kishla Village
 1x Coat with Venom
 1x Descendant of Storms
 1x Servant of the Scale
@@ -38,4 +39,4 @@
 3x Island
 3x Swamp
 3x Mountain
-6x Forest
+7x Forest

@@ -1328,6 +1328,35 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               score += (killsTheirs ? 25 + 2 * (theirs.power ?? 0) : 5) - (losesMine ? 20 : 0);
             }
           }
+          // Batch 49 (Time to Feed): znacznik „gdy ten stwór zginie w tej turze,
+          // zyskujesz N życia" jest DODATKIEM do walki z tego samego czaru —
+          // wart tyle, ile szansa, że cel faktycznie zginie. Nie karzemy braku
+          // celu (robi to już wycena fightu), żeby nie liczyć kary dwa razy.
+          if (effect.type === 'gain_life_if_target_dies_this_turn') {
+            const victim = objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 0]);
+            if (victim) score += Math.min(effect.amount ?? 1, 3);
+          }
+          // Batch 49 (Dead Ringers): podwójne removal, ale TYLKO gdy oba cele
+          // mają identyczne zbiory kolorów — inaczej czar nie robi NIC (kara
+          // musi przebić bazę, żeby bot nie palił karty na jałowy układ).
+          if (effect.type === 'destroy_pair_if_same_colors') {
+            const first = objectOnBoard(view, cmd.targets?.[effect.targetIndexA ?? 0]);
+            const second = objectOnBoard(view, cmd.targets?.[effect.targetIndexB ?? 1]);
+            if (!first || !second) score -= 60;
+            else {
+              const colorsA = [...(first.colors ?? [])].sort().join('');
+              const colorsB = [...(second.colors ?? [])].sort().join('');
+              if (colorsA !== colorsB) score -= 80;
+              else {
+                // Punktujemy każdy cel osobno: wrogi = zysk, własny = strata.
+                for (const victim of [first, second]) {
+                  score += victim.controllerId === view.playerId
+                    ? -90
+                    : 22 + 2 * ((victim.power ?? 0) + (victim.toughness ?? 0));
+                }
+              }
+            }
+          }
           if (effect.type === 'return_to_hand' && target && target.controllerId !== view.playerId) {
             score += 25 + (target.power ?? 0) * 2;
           }

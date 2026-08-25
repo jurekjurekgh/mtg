@@ -1224,6 +1224,21 @@ export function playLand(state, playerId, objectId) {
       }).length;
       if (islands >= (cond.amount ?? 3)) shouldEnterTapped = false;
     }
+    // Kishla Village (TDM): „enters tapped unless you control an Island or a
+    // Swamp" — wystarczy JEDEN land o KTÓRYMKOLWIEK z wymienionych podtypów.
+    // Wariant ogólny (lista podtypów, próg `amount`), nie karto-specyficzny:
+    // Oracle nie mówi „other", ale wchodzący land i tak nie ma tych podtypów.
+    if (cond.type === 'controls_land_subtype_any') {
+      const wanted = cond.subtypes ?? [];
+      const matching = state.zones.battlefield.filter((id) => {
+        if (id === newId) return false;
+        const obj = state.objects.get(id);
+        if (!obj || obj.zone !== 'battlefield' || obj.controllerId !== player.id) return false;
+        if (!(obj.kind === 'land' || (obj.types ?? []).includes('Land'))) return false;
+        return (obj.subtypes ?? []).some((subtype) => wanted.includes(subtype));
+      }).length;
+      if (matching >= (cond.amount ?? 1)) shouldEnterTapped = false;
+    }
     // Idyllic Grange (ELD): „enters tapped unless you control three or more
     // other Plains" — wchodzący land jest Plains, ale „inne" go wykluczają.
     if (cond.minOtherPlains) {

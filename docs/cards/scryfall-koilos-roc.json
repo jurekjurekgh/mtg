@@ -1,0 +1,32 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Koilos+Roc&set=bro&format=json",
+  "print": "bro",
+  "name": "Koilos Roc",
+  "mana_cost": "{4}{U}",
+  "cmc": 5.0,
+  "type_line": "Creature — Bird",
+  "oracle_text": "Flash\nFlying\nWhen this creature enters, create a tapped Powerstone token. (It's an artifact with \"{T}: Add {C}. This mana can't be spent to cast a nonartifact spell.\")",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Flying",
+    "Flash"
+  ],
+  "produced_mana": [
+    "C"
+  ],
+  "set": "bro",
+  "set_name": "The Brothers' War",
+  "collector_number": "55",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/b/ebdbcb87-c6ea-477f-a560-c175d99e21b8.jpg?1783920113"
+  },
+  "pobrano": "2026-08-25"
+}

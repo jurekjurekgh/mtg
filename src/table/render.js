@@ -166,6 +166,7 @@ const TARGET_TYPE_LABELS = Object.freeze({
   artifact_you_control: 'twój artefakt', land: 'ląd', land_you_control: 'twój ląd',
   enchantment: 'enchantment', nonland_permanent: 'permanent niebędący lądem',
   other_nonland_permanent: 'inny permanent niebędący lądem',
+  nonblack_creature: 'nieczarny stwór',
   nonartifact_nonblack_creature: 'stwór niebędący artefaktem ani czarnym',
   creature_you_control: 'twój stwór', creature_opponent_controls: 'stwór przeciwnika',
   creature_or_vehicle: 'stwór lub Vehicle',
@@ -950,6 +951,8 @@ function describeEffect(e) {
       const inner = (e.effects ?? []).map((ie) => describeEffect(ie)).filter(Boolean).join(' + ');
       return inner ? `${inner} (każdy z celów)` : 'ten sam efekt na każdym z celów';
     },
+    gain_life_if_target_dies_this_turn: () => `gdy ten stwór zginie w tej turze, zyskujesz ${e.amount ?? 1} życia`,
+    destroy_pair_if_same_colors: () => 'zniszcz oba cele, o ile mają identyczne kolory',
     reveal_subtype_deal_damage: () => 'możesz ujawnić kartę z ręki — obrażenia przeciwnika',
     next_spell_discount: () => 'następny czar podtypu tańszy w tej turze',
     return_card_from_graveyard_to_hand: () => 'zwrot karty z grobu do ręki',

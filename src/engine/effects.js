@@ -2371,6 +2371,30 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     return;
   }
+  if (effect.type === 'gain_life_if_target_dies_this_turn') {
+    // Time to Feed (THS): „When that creature dies this turn, you gain 3 life.”
+    // CR 603.7a — opóźniony trigger utworzony przy rozstrzyganiu czaru, czekający
+    // na śmierć KONKRETNEGO obiektu do końca tury. Wzorzec znacznika jak
+    // exile_if_dies_this_turn: lista na stanie, czyszczona w cleanup.
+    const targetId = targets[effect.targetIndex ?? 0];
+    if (targetId == null) return;
+    const marked = state.objects.get(targetId);
+    if (!marked || marked.zone !== 'battlefield') return;
+    state.gainLifeIfDiesThisTurn = [
+      ...(state.gainLifeIfDiesThisTurn ?? []),
+      Object.freeze({
+        objectId: targetId,
+        playerId: sourceObject.controllerId,
+        amount: effect.amount ?? 1,
+        sourceCardId: sourceObject.cardId ?? null,
+      }),
+    ];
+    state.events.push(event('gain_life_if_dies_marked', {
+      objectId: targetId, cardId: marked.cardId,
+      playerId: sourceObject.controllerId, amount: effect.amount ?? 1,
+    }));
+    return;
+  }
   if (effect.type === 'exile_if_dies_this_turn') {
     // M177/A (Agate Assault): „If that creature would die this turn, exile it
     // instead” — znacznik na id celu, konsumowany przez deathZoneFor we
@@ -3145,6 +3169,42 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
     state.objects.set(targetId, Object.freeze({ ...object, cantBeBlocked: true }));
     state.events.push(event('cant_be_blocked_granted', { objectId: targetId, cardId: object.cardId }));
+    return;
+  }
+  if (effect.type === 'destroy_pair_if_same_colors') {
+    // Dead Ringers (APC): „Destroy two target nonblack creatures UNLESS EITHER
+    // ONE IS A COLOR THE OTHER ISN'T. They can't be regenerated."
+    // Oracle = równość ZBIORÓW kolorów obu celów (CR 105.2): dwa zielone stwory
+    // tak, zielony vs zielono-biały nie, dwa bezbarwne (puste zbiory) tak.
+    // Efekt jest „wszystko albo nic" — jeśli kolory się różnią, NIC nie ginie.
+    const idA = targets[effect.targetIndexA ?? 0];
+    const idB = targets[effect.targetIndexB ?? 1];
+    if (idA == null || idB == null) return;
+    const objectA = state.objects.get(idA);
+    const objectB = state.objects.get(idB);
+    // CR 608.2b — jeśli którykolwiek cel zniknął, czar nie robi nic dla niego;
+    // przy porównaniu kolorów brak jednego celu = brak porównania = brak efektu.
+    if (!objectA || objectA.zone !== 'battlefield') return;
+    if (!objectB || objectB.zone !== 'battlefield') return;
+    const colorsA = [...effectiveColors(objectA)].sort();
+    const colorsB = [...effectiveColors(objectB)].sort();
+    const sameColors = colorsA.length === colorsB.length
+      && colorsA.every((color, index) => color === colorsB[index]);
+    state.events.push(event('destroy_pair_color_check', {
+      cardId: sourceObject?.cardId ?? null,
+      colorsA, colorsB, matched: sameColors,
+    }));
+    if (!sameColors) return;
+    // „They can't be regenerated" — znacznik PRZED zniszczeniem, żeby tarcza
+    // regeneracji nie uratowała celu (ta sama lista, co Rage of Purphoros).
+    for (const targetId of [idA, idB]) {
+      if (!(state.cantBeRegeneratedThisTurn ?? []).includes(targetId)) {
+        state.cantBeRegeneratedThisTurn = [...(state.cantBeRegeneratedThisTurn ?? []), targetId];
+      }
+    }
+    for (const targetId of [idA, idB]) {
+      applyEffect(state, { type: 'destroy_permanent', targetIndex: 0 }, sourceObject, [targetId]);
+    }
     return;
   }
   if (effect.type === 'cant_be_regenerated_this_turn') {

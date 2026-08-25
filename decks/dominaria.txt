@@ -19,18 +19,21 @@
 1x Simian Simulacrum
 1x Faceless Butcher
 1x Giant Spider
+1x Razorfoot Griffin
 1x Serra's Embrace
 1x Shiv's Embrace
 1x Static Net
 1x Undead Servant
 1x Academy Journeymage
 1x Altar of the Goyf
+1x Dead Ringers
 1x Disa the Restless
 1x Dragon Arch
 1x Final Parting
+1x Koilos Roc
 1x Mindstab
 3x Plains
 2x Island
-5x Swamp
+6x Swamp
 2x Mountain
 3x Forest

@@ -1,0 +1,24 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Shock&set=aer&format=json",
+  "print": "aer",
+  "name": "Shock",
+  "mana_cost": "{R}",
+  "cmc": 1.0,
+  "type_line": "Instant",
+  "oracle_text": "Shock deals 2 damage to any target.",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [],
+  "set": "aer",
+  "set_name": "Aether Revolt",
+  "collector_number": "98",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/0/00365412-41db-427c-9109-8f69c17c326d.jpg?1783936748"
+  },
+  "pobrano": "2026-08-25"
+}

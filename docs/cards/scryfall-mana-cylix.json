@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Mana+Cylix&set=con&format=json",
+  "print": "con",
+  "name": "Mana Cylix",
+  "mana_cost": "{1}",
+  "cmc": 1.0,
+  "type_line": "Artifact",
+  "oracle_text": "{1}, {T}: Add one mana of any color.",
+  "colors": [],
+  "color_identity": [],
+  "keywords": [],
+  "produced_mana": [
+    "B",
+    "G",
+    "R",
+    "U",
+    "W"
+  ],
+  "set": "con",
+  "set_name": "Conflux",
+  "collector_number": "138",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/8/68e25c75-5e20-4990-9b7e-9d04c94fee9f.jpg?1783942461"
+  },
+  "pobrano": "2026-08-25"
+}

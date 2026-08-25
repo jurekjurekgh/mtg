@@ -387,6 +387,7 @@ export function createGameState({ seed, players }) {
     // M177/A (Agate Assault): id permanentów „if it would die this turn,
     // exile it instead” — czyszczone w cleanup.
     exileIfDiesThisTurn: [],
+    gainLifeIfDiesThisTurn: [],
     // Animacje z linkiem do źródła (Skilled Animator — „as long as this
     // creature remains on the battlefield"): wpisy { sourceId, targetId };
     // cofane przy odejściu źródła z pola bitwy (objects.js).
@@ -4105,6 +4106,7 @@ export function execute(state, input) {
           state.cantBeRegeneratedThisTurn = [];
           // M177/A: znaczniki „exile zamiast śmierci” wygasają z końcem tury.
           state.exileIfDiesThisTurn = [];
+          state.gainLifeIfDiesThisTurn = [];
           // M158/Batch 39 (Invasion of the Giants III): rabat „this turn" wygasa.
           state.pendingSpellDiscounts = [];
           // CR 514.1 (limit ręki): w cleanup TYLKO AKTYWNY gracz odrzuca
