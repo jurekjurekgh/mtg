@@ -858,7 +858,7 @@
     <div class="seed-deck">
       <label for="seed">Ziarno:</label>
       <input type="number" id="seed" value="42" inputmode="numeric">
-      <label for="deck-human">Twoja talia:</label>
+      <label for="deck-human">Talia Gracza:</label>
       <select id="deck-human"></select>
       <label for="deck-bot">Talia bota:</label>
       <select id="deck-bot"></select>
@@ -914,12 +914,14 @@
          na końcu BOT (jego stół, potem zakryta ręka). Identyfikatory i
          zawartość bez zmian (render/main szukają po ID, nie po pozycji) —
          przestawiona jest wyłącznie kolejność. -->
+    <!-- M203/B (zlecenie właściciela): etykieta gracza NAD jego ręką — tag
+         „GRACZ ◆" opisuje całą strefę gracza, a nie samo pole bitwy. -->
+    <div class="side-meta"><span class="tag">GRACZ ◆</span></div>
     <section class="handwrap">
-      <div class="zone-label">Twoja ręka</div>
+      <div class="zone-label">RĘKA GRACZA</div>
       <div class="hand" id="hand"></div>
     </section>
     <section class="side side-own">
-      <div class="side-meta"><span class="tag">TY ◆</span></div>
       <div class="bfhost" id="bf-own"></div>
     </section>
     <div class="stackwrap">
@@ -933,12 +935,12 @@
       <div class="waiting-grid" id="waiting-zone"></div>
     </div>
     <section class="side side-enemy">
-      <div class="side-meta"><span class="tag">◆ PRZECIWNIK (Bot)</span></div>
+      <div class="side-meta"><span class="tag">◆ BOT</span></div>
       <!-- M201/B (zgłoszenie właściciela): ręka bota rewersami — tożsamość
            ukryta (CR 402.2), jawna tylko liczba kart. M203/A: sekcja Bota
            jest teraz na DOLE, więc jej ręka zamyka stół. -->
       <div class="bfhost" id="bf-enemy"></div>
-      <div class="zone-label" id="hand-enemy-label">Ręka przeciwnika</div>
+      <div class="zone-label" id="hand-enemy-label">RĘKA BOTA</div>
       <div class="hand hand-enemy" id="hand-enemy"></div>
     </section>
   </main>

@@ -61,7 +61,9 @@ test('M201/B: sekcja ręki bota pokazuje LICZBĘ kart i tyle samo rewersów', ()
     'każdy kafel niesie rewers karty MTG ze Scryfall (M202/A — uwaga właściciela)');
   assert.ok(tiles.every((tile) => tile.descendants().some((n) => /(?:^|\s)sm(?:\s|$)/.test(String(n.className)))),
     'rewersy są w rozmiarze reszty ręki (size: sm = --card-w-hand)');
-  assert.match(label.textContent, new RegExp(`${botCards}`), 'etykieta podaje liczbę kart');
+  // M203/B (zlecenie właściciela): etykieta NIE niesie liczby — liczbę widać
+  // po rewersach (asercje powyżej pilnują, że kafli jest tyle, co kart).
+  assert.doesNotMatch(label.textContent, /\d/, 'etykieta bez liczby kart')
 });
 
 test('M201/B: rewersy nie zdradzają tożsamości kart bota (CR 402.2)', () => {
@@ -87,7 +89,7 @@ test('M201/B: pusta ręka bota = brak rewersów i uczciwa etykieta', () => {
   const label = new MiniEl('div');
   renderEnemyHand(host, label, emptyView, session, BOT_ID);
   assert.equal(tilesOf(host).length, 0, 'pusta ręka = brak kafli');
-  assert.match(label.textContent, /0/);
+  assert.doesNotMatch(label.textContent, /\d/, 'pusta ręka: etykieta bez liczby')
 });
 
 test('M201/A2: poczekalnia pokazuje zawieszoną kartę z licznikami czasu', () => {
@@ -182,7 +184,10 @@ test('M201/A2+B: renderTableView zapełnia rękę bota i poczekalnię na PRAWDZI
   const backs = backImagesOf(els.handEnemy);
   assert.ok(backs.length > 0, 'ręka bota narysowana rewersami przez renderTableView');
   assert.equal(tilesOf(els.handEnemy).length, backs.length, 'każdy rewers w pełnym kaflu');
-  assert.match(els.handEnemyLabel.textContent, /Ręka przeciwnika: \d+/, 'etykieta z liczbą kart');
+  // M203/B (zlecenie właściciela): etykieta ręki bota jest stała i BEZ liczby
+  // kart — liczbę widać po rewersach.
+  assert.match(els.handEnemyLabel.textContent, /RĘKA BOTA/, 'etykieta ręki bota')
+  assert.doesNotMatch(els.handEnemyLabel.textContent, /\d/, 'bez liczby kart w etykiecie');
   assert.equal(els.waitingWrap.hidden, false, 'poczekalnia odsłonięta, bo karta czeka');
   assert.match(els.waitingZone.textContent, /Mindstab/, 'zawieszona karta na stole');
   assert.match(els.waitingZone.textContent, /licznik/, 'z licznikami czasu');

@@ -3671,7 +3671,7 @@ function renderBattlefield(host, view, session, controllerId, enemy, onCardClick
   const mine = view.zones.battlefield.filter((o) => o.controllerId === controllerId);
   if (mine.length === 0) {
     const row = div(host, 'bfrow empty');
-    div(row, 'zone-empty', enemy ? 'Brak permanentów przeciwnika' : 'Nie masz permanentów');
+    div(row, 'zone-empty', enemy ? 'Brak permanentów Bota' : 'Brak permanentów Gracza');
     return;
   }
   const lands = mine.filter((o) => o.kind === 'land');
@@ -3710,10 +3710,12 @@ function renderZonePile(host, view, session, controllerId, onCardClick, hover, o
  */
 export function renderEnemyHand(host, label, view, session, enemyId) {
   const count = (view.zones?.hand ?? []).filter((o) => o.controllerId === enemyId).length;
-  if (label) label.textContent = `Ręka przeciwnika: ${count} ${polishPluralCount(count, 'karta', 'karty', 'kart')}`;
+  // M203/B (zlecenie właściciela): etykieta bez liczby kart — liczbę widać
+  // po rewersach, a dublowanie jej tekstem nic nie dodaje.
+  if (label) label.textContent = 'RĘKA BOTA';
   if (!host) return count;
   if (count === 0) {
-    div(host, 'zone-empty', 'Ręka przeciwnika pusta');
+    div(host, 'zone-empty', 'Ręka Bota pusta');
     return 0;
   }
   // M202/A (uwaga właściciela 2026-08-24): rewers to PRAWDZIWY tył karty MTG
