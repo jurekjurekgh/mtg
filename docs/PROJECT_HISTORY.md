@@ -12,7 +12,51 @@
 >
 > Sesje dopisują tu swoją sekcję (ADR 0013) — nowe na górze.
 
-- **Ostatnia aktualizacja:** 2026-08-25 (M209: wycena aur ochronnych — bot widzi kolory — PR #78)
+- **Ostatnia aktualizacja:** 2026-08-25 (M212: naprawy zgłoszeń z rozgrywki i audytu — PR #78)
+
+## M212 — naprawy zgłoszeń z rozgrywki + cała klasa błędu w wycenie darmowego rzutu (2026-08-25)
+
+Sesja zaczęła się od audytu Żywym Testerem (13 partii, 4 potwierdzone
+ustalenia, 11 tropów odrzuconych jako poprawne zachowanie). Właściciel przerwał
+zbieranie zgłoszeń i polecił przejść do napraw.
+
+**Klasa błędu: darmowy rzut bez wyceny celu (3 gałęzie).** Zgłoszenie brzmiało
+wąsko — „bot stapuje własnego blokera”. Przyczyna okazała się strukturalna:
+silnik enumeruje ofertę **per zestaw celów**, a bot wyceniał wyłącznie TYP
+efektu, więc wszystkie warianty miały równy wynik i wygrywał pierwszy z brzegu.
+Naprawione w `resolve_rebound_cast` i `resolve_suspend_cast` (`54f2cb7`) oraz
+— po poleceniu „szukaj dalej” — w `resolve_madness_cast` (`76b4f1b`).
+Wspólny helper `freeCastTargetPenalty` (bez nazw kart, ADR 0002). Przy okazji
+`playerView` zaczął eksportować `spell` dla obiektów w jawnym wygnaniu — bez
+tego bot dostawał `undefined` i był ślepy nie z własnej winy.
+
+**Zgłoszenia z rozgrywki.** Holdout Settlement miał jedną zlepioną zdolność
+zamiast dwóch osobnych z Oracle (`dc2ea02`, przy okazji klasa „any color” —
+brak `effect.colors` daje cichy fallback na kolory karty). Roiling Regrowth
+pokazywał graczowi nazwę cudzej karty zaszytą w kodzie (`b620fef`); powstał
+strażnik `test/m212-brak-hardcodowanych-kart.test.js` z **zapadką** — lista
+`ZAMROZONE` (21 par) może się tylko skracać. Dwa kroki `TURN_STEPS` o tej samej
+nazwie rozróżnione na `main1`/`main2` (`e851a37`, `83cf6fd`).
+
+**Z rejestru audytu:** White Mage's Staff nie dawał życia (`ee4f381`), opis
+triggera `end_step` gubił intervening-if (`b620fef`), Dead Ringers celował
+w ten sam stwór dwa razy — CR 601.2c (`3dd6f86`).
+
+**Narzędzia.** Detektory przespały cały audyt tej klasy błędu: 0 zgłoszeń mimo
+błędu obecnego w transkrypcie. Powodem było sprzężenie detektora ze
+snapshotami tekstowymi, których pod `--quiet` niemal nie ma. Nowy
+`detectBotHarmsOwnPermanent` używa danych strukturalnych; jego żywotność
+udowodniono na archiwalnym transkrypcie i przez rozluźnienie warunku w realnym
+biegu (`79fb375`).
+
+**Weryfikacja:** `npm test` **3300/0**, build 54 / 2689,0 kB, benchmark szybki
+heuristic 82,7 % (556/672). Każda naprawa ma własną mutację i własny test —
+mutacja bliźniaczej gałęzi przeszła raz niewykryta, stąd reguła.
+
+Nowe lekcje: **L71** (CR 400.7 — zmiana strefy tworzy nowy obiekt; lookup po
+`cardId` bywa martwy), **L72** (jeden objaw, kilka bliźniąt — przegląd
+rodzeństwa), **L73** (detektor sprzężony z trybem logowania), **L74** (UI
+weryfikuj w DOM; nazwa mechaniki ≠ nazwa w etykiecie).
 
 ## M210 — challenge „brązowa odznaka wyłapywacza błędów”: 5 niezgodności z CR (2026-08-25)
 

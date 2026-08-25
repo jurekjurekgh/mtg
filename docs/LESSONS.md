@@ -25,6 +25,84 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 ---
 
 
+## L71 (2026-08-25) — Zmiana strefy tworzy NOWY obiekt (CR 400.7); „ten sam” id to złudzenie
+
+**Objaw (M212):** naprawa wyceny darmowego rzutu wyglądała na działającą
+(testy zielone), a była martwa. Helper szukał opisu czaru po `cmd.cardId`
+w `view.zones.exile` i zawsze dostawał `undefined`, więc kara za zły cel
+wynosiła 0 — dokładnie tyle, ile przed naprawą.
+
+**Przyczyna:** oferta darmowego rzutu niesie **dwa różne identyfikatory** —
+`cardId` (która to karta) i `objectId` (który to obiekt w strefie). Deskryptor
+`spell` wisi na OBIEKCIE, bo według CR 400.7 karta zmieniająca strefę staje się
+nowym obiektem i nie dziedziczy stanu poprzedniego. Lookup po `cardId` w strefie
+obiektów jest składniowo poprawny i semantycznie pusty.
+
+**Reguła:** przy pracy ze strefami rozróżniaj „tożsamość karty” od
+„tożsamości obiektu” i sprawdzaj, po którym kluczu indeksowana jest strefa.
+Gdy helper wyszukujący zwraca `null`/`undefined`, **kod nie jest neutralny —
+jest wyłączony**: asertuj w sondzie, że lookup COŚ znalazł, zanim uznasz
+naprawę za działającą (L68 — brak skutku bywa nieodróżnialny od poprawnego
+skutku).
+
+
+## L72 (2026-08-25) — Jeden objaw, kilka bliźniąt: naprawę kończy przegląd RODZEŃSTWA
+
+**Objaw (M212):** zgłoszenie „bot tapuje własnego blokera” dotyczyło rebounda.
+Po naprawie okazało się, że ta sama ślepota siedzi w `resolve_suspend_cast`,
+a po kolejnym przeglądzie — także w `resolve_madness_cast`. Trzy gniazda,
+jedna przyczyna: silnik enumeruje ofertę **per zestaw celów**, a bot wyceniał
+wyłącznie TYP efektu, więc wszystkie warianty miały identyczny wynik i wygrywał
+pierwszy z brzegu.
+
+**Reguła:** gdy przyczyną błędu jest **kształt interfejsu** („oferta niesie
+cele, konsument ich nie czyta”), znajdź WSZYSTKICH konsumentów tego kształtu,
+zanim uznasz temat za zamknięty — `grep` po nazwie komendy/rodzinie `case`.
+Naprawę wynieś do wspólnego helpera, żeby czwarte gniazdo rodziło się już
+poprawne. Każda gałąź potrzebuje **własnej** mutacji i **własnego** testu:
+mutacja bliźniaczej gałęzi (suspend) przeszła niewykryta przez test rebounda.
+
+
+## L73 (2026-08-25) — Detektor sprzężony z TRYBEM logowania milczy tam, gdzie audyt patrzy
+
+**Objaw (M212):** trzy partie Żywego Testera po naprawie dały 0 zgłoszeń.
+Zero było fałszywe: archiwalny transkrypt SPRZED naprawy zawierał wzorcowy
+przypadek (`Nieprzyjaciel rzuca Ojutai's Breath → cel: <własny stwór>`),
+a detektor `detectBotSelfHarmOnOwnPermanents` również go nie widział.
+
+**Przyczyna:** detektor ustalał właściciela celu, parsując snapshoty
+„MOJE POLA:” / „POLA WROGA:” z transkryptu. Audyt biega z `--quiet`, gdzie
+snapshotów niemal nie ma — w całym pliku był JEDEN, na końcu partii. Warunek
+„cel stoi po stronie bota” nigdy nie był spełniony, więc detektor był
+strukturalnie martwy w jedynym trybie, w którym go używano.
+
+**Reguła:** detektor opiera się na danych **strukturalnych** zbieranych przez
+sterownik (L40/M99), nigdy na tym, ile narzędzie akurat wypisało. A gdy
+detektor raportuje zero, udowodnij, że jest żywy: puść go na archiwalnym
+materiale z potwierdzonym błędem albo rozluźnij warunek i sprawdź, że
+zgłoszenie się pojawia. **Zero z martwego detektora wygląda identycznie jak
+zero z poprawnej gry.**
+
+
+## L74 (2026-08-25) — Ustalenie o UI weryfikuj w DOM, nie w spłaszczonym transkrypcie
+
+**Objaw (M212):** część „znalezisk” audytu brała się z czytania transkryptu,
+gdzie osobne elementy interfejsu są sklejane separatorem w jedną linię.
+Dwie różne opcje w panelu wyglądają tam jak jedna zlepiona etykieta —
+i odwrotnie, realny błąd sklejenia bywa nieodróżnialny od artefaktu zapisu.
+Z 13 partii 11 tropów okazało się poprawnym zachowaniem.
+
+**Reguła:** zanim zgłosisz błąd UI, sprawdź **strukturę DOM** (ile jest
+elementów `button.action`, jakie mają teksty), a nie jej spłaszczony zapis.
+Transkrypt służy do namierzenia miejsca, DOM — do rozstrzygnięcia.
+
+**Reguła druga (nazewnictwo):** nazwa karty w kodzie mechaniki (np. mechanika
+ochrzczona po karcie, która ją wprowadziła) **nie jest zgodą** na pokazanie
+tej nazwy w etykiecie UI. Gracz widzi wtedy w swoim panelu nazwę cudzej karty,
+której nie ma w talii. Deskryptor w interfejsie opisuje **czynność**
+(rzeczownik odczasownikowy), nigdy źródło implementacji (ADR 0002).
+
+
 ## L68 (2026-08-25) — Sonda, która „nie znalazła błędu”, bo komenda została cicho odrzucona
 
 **Objaw (M210):** sonda sprawdzająca, czy obrażenia z delirium respektują
