@@ -10,6 +10,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep, TURN_STEPS } from '../src/engine/turn.js';
 import { rulesText } from '../src/table/render.js';
+import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 import { readFileSync } from 'node:fs';
 
 const REGISTRY = createCardRegistry();
@@ -191,4 +192,75 @@ test('M212/B: playerView wystawia ŹRÓDŁO decyzji o poświęceniu lądu', () =
   assert.equal(view.pendingSpringbloom?.sourceCardId, 'roiling-regrowth');
   // Przeciwnik nie widzi cudzej decyzji (wzorzec pendingHandTopChoice).
   assert.equal(playerView(state, 'p2').pendingSpringbloom, null);
+});
+
+// --- M212/Z7: bot nie kieruje DARMOWEGO rzutu we własne rzeczy -------------
+// Zgłoszenie z audytu (dominaria vs tarkir): bot rzucił rebound Ojutai's
+// Breath (czar TAPUJĄCY) we WŁASNEGO Trade Route Envoy, choć na stole stał
+// stwór przeciwnika. Dwie przyczyny, obie konieczne do naprawy.
+
+function botWybiera(state, playerId, typKomendy) {
+  const view = playerView(state, playerId);
+  const bot = createHeuristicBot({ playerId, seed: 1 });
+  const chosen = bot.chooseCommand(view);
+  const oferty = view.legalCommands.filter((c) => c.type === typKomendy);
+  return { chosen, oferty, view };
+}
+
+function wygnanyCzar(state, id, cardId, controllerId, patch) {
+  const def = REGISTRY.get(cardId);
+  addObject(state, {
+    id, instanceId: `i-${id}`, cardId, controllerId, ownerId: controllerId, zone: 'exile',
+    ...gameObjectDataOf(def), types: def.types, subtypes: def.subtypes ?? [],
+    kind: 'spell', spell: def.spell,
+  });
+  state.objects.set(id, Object.freeze({ ...state.objects.get(id), ...patch }));
+}
+
+test('M212/Z7: rebound czaru tapującego celuje we WROGIEGO stwora, nie własnego', () => {
+  const state = game('p1', 'upkeep');
+  put(state, 'moj', 'trade-route-envoy', 'p1');
+  put(state, 'wrogi', 'razorfoot-griffin', 'p2');
+  wygnanyCzar(state, 'breath', 'ojutais-breath', 'p1', { reboundReady: true });
+  state.pendingReboundCast = { playerId: 'p1', objectId: 'breath' };
+
+  const { chosen, oferty } = botWybiera(state, 'p1', 'resolve_rebound_cast');
+  // Silnik enumeruje ofertę PER CEL — obie muszą istnieć, inaczej test
+  // przechodziłby z braku wyboru, a nie dzięki wycenie.
+  assert.ok(oferty.some((o) => o.targets?.[0] === 'moj'), 'oferta w mój stwór istnieje');
+  assert.ok(oferty.some((o) => o.targets?.[0] === 'wrogi'), 'oferta we wrogi stwór istnieje');
+  assert.equal(chosen.targets?.[0], 'wrogi', 'bot tapuje stwora PRZECIWNIKA');
+});
+
+test('M212/Z7: suspend czaru odrzucającego karty celuje w PRZECIWNIKA, nie w siebie', () => {
+  // Bliźniacza gałąź (L41) — ta sama ślepota, inna komenda.
+  const state = game('p1', 'upkeep');
+  wygnanyCzar(state, 'ms', 'mindstab', 'p1', { suspended: true, timeCounters: 0 });
+  state.pendingSuspendCast = { playerId: 'p1', objectId: 'ms' };
+  for (const pid of ['p1', 'p2']) {
+    for (let i = 0; i < 4; i += 1) put(state, `${pid}-h${i}`, 'basic-forest', pid, 'hand');
+  }
+
+  const { chosen, oferty } = botWybiera(state, 'p1', 'resolve_suspend_cast');
+  assert.ok(oferty.some((o) => o.targets?.[0] === 'p1'), 'oferta w siebie istnieje');
+  assert.ok(oferty.some((o) => o.targets?.[0] === 'p2'), 'oferta w przeciwnika istnieje');
+  assert.equal(chosen.targets?.[0], 'p2', 'bot każe odrzucać PRZECIWNIKOWI');
+});
+
+test('M212/Z7: playerView ujawnia deskryptor czaru czekającego w wygnaniu', () => {
+  // Druga przyczyna: bez `spell` w widoku wycena czytała pustą listę efektów,
+  // więc każdy cel dostawał identyczny wynik. Wygnanie jest strefą jawną
+  // (CR 406.3), a karta i tak pokazuje cardId — to nie jest informacja ukryta.
+  const state = game('p1', 'upkeep');
+  wygnanyCzar(state, 'breath', 'ojutais-breath', 'p1', { reboundReady: true });
+  const wygnane = playerView(state, 'p1').zones.exile.find((o) => o.id === 'breath');
+  assert.ok(wygnane, 'karta widoczna w wygnaniu');
+  assert.deepEqual(
+    (wygnane.spell?.effects ?? []).map((e) => e.type),
+    ['tap_permanent', 'dont_untap_next_untap_step'],
+    'deskryptor efektów dostępny dla kontrolera',
+  );
+  // Strefa jawna — przeciwnik widzi to samo (CR 406.3).
+  const uPrzeciwnika = playerView(state, 'p2').zones.exile.find((o) => o.id === 'breath');
+  assert.ok(uPrzeciwnika?.spell, 'wygnanie jest strefą publiczną');
 });

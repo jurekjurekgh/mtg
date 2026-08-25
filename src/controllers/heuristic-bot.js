@@ -669,6 +669,28 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   }
 
   /**
+   * M212/Z7 (audyt Żywym Testerem): kara za CEL przy rzucie DARMOWYM
+   * (suspend / rebound — CR 702.62a, 702.97).
+   *
+   * Root cause zgłoszenia: obie gałęzie wyceniały wyłącznie TYP efektu
+   * („czy czar jest ofensywny"), a silnik enumeruje ofertę PER ZESTAW CELÓW.
+   * Każda oferta dostawała więc identyczny wynik i bot brał pierwszą z brzegu
+   * — zmierzone (dominaria vs tarkir): rebound Ojutai's Breath tapnął
+   * WŁASNEGO Trade Route Envoy, choć na stole stał stwór przeciwnika.
+   * Ścieżka `cast_spell` liczy to od M121; te dwie były jej ślepą kopią
+   * (klasa L41 — bliźniacze gałęzie rozjeżdżają się w ciszy).
+   *
+   * Reguła generyczna po deskryptorze efektu (ADR 0002): efekt wrogi we
+   * własny permanent oraz efekt przyjazny we wrogi permanent są karane
+   * dokładnie tymi samymi tabelami co przy zwykłym rzucie.
+   */
+  function freeCastTargetPenalty(view, effects, cmd) {
+    const target = objectOnBoard(view, (cmd.targets ?? [])[0]) ?? null;
+    return selfHarmPenalty(view, effects, cmd, target)
+      + friendlyMisaimPenalty(view, effects, cmd, target);
+  }
+
+  /**
    * Czy AURA/załącznik jest wrogą kotwicą (unieruchamia, blokuje atak)?
    * Taka aura na WŁASNYM stworze to strzał we własną stopę — a wycena
    * `cast_permanent` premiowała ją jak buff (+66), bo patrzyła tylko na to,
@@ -887,6 +909,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (['damage', 'discard_cards', 'destroy_permanent', 'mill_cards'].includes(effect?.type)) score += 15;
           if (['draw_cards', 'gain_life'].includes(effect?.type)) score += 5;
         }
+        score -= freeCastTargetPenalty(view, effects, cmd);
         return finish(score);
       }
       case 'resolve_rebound_cast': {
@@ -902,6 +925,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (['damage', 'discard_cards', 'destroy_permanent', 'mill_cards'].includes(effect?.type)) score += 15;
           if (['draw_cards', 'gain_life'].includes(effect?.type)) score += 5;
         }
+        score -= freeCastTargetPenalty(view, effects, cmd);
         return finish(score);
       }
       case 'warp_card': {

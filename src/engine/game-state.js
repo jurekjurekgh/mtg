@@ -4813,6 +4813,16 @@ export function playerView(state, playerId) {
         if (Object.keys(object.counters ?? {}).length > 0) waiting.counters = { ...object.counters };
         if (object.kind) waiting.kind = object.kind;
         if ((object.types ?? []).length) waiting.types = [...object.types];
+        // M212/Z7: deskryptor czaru dla kart czekających na DARMOWY rzut
+        // (suspend CR 702.62a, rebound CR 702.97, madness, impuls). Bez niego
+        // kontroler oceniał ofertę „rzuć za darmo" nie wiedząc, CO czar robi:
+        // wycena bota czytała `spell.effects` z widoku i dostawała pustą
+        // listę, więc każdy zestaw celów miał identyczny wynik i bot brał
+        // pierwszy z brzegu (tapnął własnego stwora zamiast wrogiego).
+        // Wygnanie jest strefą JAWNĄ (CR 406.3), a karta i tak pokazuje
+        // cardId — deskryptor nie dokłada informacji ukrytej. Zakryte
+        // wygnanie wychodzi wyżej z `hidden: true` i tu nie dociera.
+        if (object.spell) waiting.spell = object.spell;
         if (hiddenIdentity) {
           return { id: object.id, controllerId: object.controllerId, zone: object.zone, ...waiting, cardId: null, hidden: true };
         }
