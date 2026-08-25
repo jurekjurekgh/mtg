@@ -61,14 +61,3 @@ export function jumpToStep(turn, stepName, priorityPlayerId = turn.activePlayerI
   if (index === -1) throw new RangeError(`Nieznany krok tury: ${stepName}`);
   return clearStepVolatiles({ ...turn, ...TURN_STEPS[index], stepIndex: index, priorityPlayerId, passes: 0 });
 }
-
-/**
- * M212/3: czy krok jest FAZĄ GŁÓWNĄ (dowolną z dwóch). Kod pytający „czy
- * wolno zagrać land / rzucić czar sorcery-speed" interesuje się rodzajem
- * kroku, nie tym, która to faza główna — bez tego pomocnika każde miejsce
- * musiałoby wypisywać `step === 'main1' || step === 'main2'` i o którymś
- * z nich prędzej czy później ktoś zapomni (klasa L14: dwie kopie reguły).
- */
-export function isMainStep(step) {
-  return step === 'main1' || step === 'main2';
-}

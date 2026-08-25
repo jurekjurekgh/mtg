@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { createGameState, addObject, playerView } from '../src/engine/game-state.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
-import { jumpToStep, isMainStep, TURN_STEPS } from '../src/engine/turn.js';
+import { jumpToStep, TURN_STEPS } from '../src/engine/turn.js';
 import { rulesText } from '../src/table/render.js';
 import { readFileSync } from 'node:fs';
 
@@ -141,14 +141,6 @@ test('M212/3: alias „main" wybiera fazę właściwą dla miejsca w turze', () 
   assert.equal(before.step, 'main1');
   const afterCombat = jumpToStep(jumpToStep(createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] }).turn, 'end_of_combat', 'p1'), 'main', 'p1');
   assert.equal(afterCombat.step, 'main2');
-});
-
-test('M212/3: isMainStep rozpoznaje obie fazy główne i nic poza nimi', () => {
-  assert.equal(isMainStep('main1'), true);
-  assert.equal(isMainStep('main2'), true);
-  for (const step of ['upkeep', 'draw', 'declare_attackers', 'end', 'main']) {
-    assert.equal(isMainStep(step), false, `${step} nie jest krokiem fazy głównej`);
-  }
 });
 
 // --- M212/A: Holdout Settlement — dwie odrębne zdolności manowe ------------
