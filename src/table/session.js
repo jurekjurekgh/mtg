@@ -1008,7 +1008,17 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       }
       case 'land_type_changed': return `${nameOfObject(e.objectId)} staje się typem ${e.subtype} do końca tury`;
       case 'control_changed': return `${nameOf(e.cardId)} przechodzi pod kontrolę gracza ${whoN(e.controllerId)}`;
-      case 'object_exiled': return `${nameOf(e.cardId)} zostaje wygnany${e.delayed ? ' (opóźniony trigger)' : ''}`;
+      case 'object_exiled': {
+        // M203 (pętla jakości Żywym Testerem, srodziemie vs theros seed 29):
+        // Pyxis of Pandemonium wygania wierzch ZAKRYTY (CR 708 — nikt jej nie
+        // zna, nawet właściciel), więc zdarzenie słusznie nie niesie `cardId`.
+        // Log renderował z tego „? zostaje wygnany" — placeholder wygląda jak
+        // brak danych (L29), a tu brak nazwy jest TREŚCIĄ reguły. Mówimy to
+        // wprost i nadal nie zdradzamy karty (ADR 0003 / L45).
+        if (e.faceDown) return `Zakryta karta ${whoN(e.playerId)} zostaje wygnana`;
+        const exiledName = e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId);
+        return `${exiledName} zostaje wygnany${e.delayed ? ' (opóźniony trigger)' : ''}`;
+      }
       case 'permanent_sacrificed': return `${nameOf(e.cardId)} zostaje poświęcony`;
       // Uwagi właściciela A (2026-08-10): fromId NIE istnieje już w objects
       // (śmierć = nowy obiekt w grobie/exile) — nazwa jedzie z cardId
