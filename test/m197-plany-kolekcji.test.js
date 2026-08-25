@@ -60,7 +60,7 @@ test('M197: dokumentacja nie oglasza „nowego planu", ktory juz istnial', () =>
   // Skanujemy dokumenty stanu i plany sesji: zdanie „nowy plan … <Nazwa>"
   // musi dotyczyc planu, ktorego repozytorium NIE zna.
   const files = [
-    'docs/PROJECT_STATE.md',
+    'docs/PROJECT_HISTORY.md',
     ...fs.readdirSync('docs/plans').map((name) => `docs/plans/${name}`),
   ];
   const offenders = [];

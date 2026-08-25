@@ -1,4 +1,16 @@
-# Bieżący stan projektu
+# Historia projektu (dziennik sesji)
+
+> **To NIE jest lektura startowa.** Plik jest archiwum przebiegu prac —
+> „kto, kiedy i co zrobił”. Do kontynuowania projektu **nie jest potrzebny**:
+> zasady są w `AGENTS.md`, ADR-ach, `docs/LESSONS.md` i
+> `docs/setup/ENVIRONMENT.md`, a bieżący punkt zaczepienia daje ostatni PR
+> (do zaudytowania) i najnowszy `docs/setup/HANDOFF_*.md`.
+>
+> Sięgaj tu **wyłącznie punktowo** — gdy szukasz kontekstu konkretnej,
+> historycznej decyzji (np. „dlaczego M182 zmieniło wycenę blokowania”).
+> Wtedy `grep`, nie czytanie od góry: plik ma ponad 5900 linii.
+>
+> Sesje dopisują tu swoją sekcję (ADR 0013) — nowe na górze.
 
 - **Ostatnia aktualizacja:** 2026-08-25 (M207: audyt rozgrywek — pozycje celu w kreatorze i na kaflu — PR #78)
 

@@ -36,7 +36,7 @@ z **czystego klona** i ma dostęp wyłącznie do:
 
 - **Commituj i pushuj często.** Praca istnieje dopiero po `git push`.
 - Wszystko, co ma przetrwać, zapisz **w repozytorium** — kod, testy, ADR,
-  `docs/LESSONS.md`, `PROJECT_STATE.md`, handoff sesji.
+  `docs/LESSONS.md`, handoff sesji.
 - Blok przekazania w czacie jest **kopią** wiedzy z repozytorium, nie jej
   jedynym nośnikiem (ADR 0013 §4). Jeśli coś jest tylko w czacie — przepadnie.
 - Nie zakładaj, że następna sesja „będzie pamiętać" ustalenie z rozmowy.
@@ -75,7 +75,7 @@ git reset --hard FETCH_HEAD
 git cherry-pick <sha-commita>            # konflikty w docs są normalne
 ```
 
-Konflikty w `docs/PROJECT_STATE.md` i handoffach przy cherry-picku są typowe
+Konflikty w `docs/PROJECT_HISTORY.md` i handoffach przy cherry-picku są typowe
 (commit powstał na starszej bazie): weź wersję z gałęzi
 (`git checkout HEAD -- <plik>`) i **nałóż zmiany ponownie**, zamiast ręcznie
 sklejać znaczniki konfliktu.
@@ -150,9 +150,9 @@ zawierające daną mechanikę (patrz lekcja L2 w `docs/LESSONS.md`).
 2. Otwórz PR gałęzi sesji (ADR 0020 A), nawet pusty po pierwszym commicie.
 3. Przeczytaj **w tej kolejności:** `AGENTS.md` (w tym trzy+czwartą regułę
    nadrzędną), **wszystkie ADR-y** w `docs/decisions/`, `docs/LESSONS.md`,
-   ten plik (pułapki), `docs/PROJECT_STATE.md`. Handoff jest skrótem, nie
+   ten plik (pułapki), najnowszy handoff. Handoff jest skrótem, nie
    źródłem prawdy.
-4. `npm test` i `npm run build` — porównaj z `PROJECT_STATE.md`.
+4. `npm test` i `npm run build` — porównaj z najnowszym handoffem.
 5. Audyt poprzedniego scalonego PR **zanim** nowa praca (ADR 0020 B).
 6. **Nie pytaj „co robimy?”.** Brak nazwanego tematu = ADR 0021 (pętla
    domyślna). „Pytaj, jeśli nie wiesz” = tylko decyzje blokujące.
@@ -163,7 +163,7 @@ zawierające daną mechanikę (patrz lekcja L2 w `docs/LESSONS.md`).
 1. `npm test` i `npm run build` zielone.
 2. Wszystko zacommitowane **i wypchnięte** (`git status` czysty,
    `git log origin/<gałąź>..HEAD` pusty).
-3. `docs/PROJECT_STATE.md` opisuje aktualny stan.
+3. Najnowszy `docs/setup/HANDOFF_*.md` opisuje aktualny stan.
 4. Handoff sesji (`docs/setup/HANDOFF_<data>.md`) — stan, kolejka, decyzje.
 5. Reguły trwałe trafiły do ADR / `docs/LESSONS.md` / `AGENTS.md`, a nie tylko
    do handoffu.

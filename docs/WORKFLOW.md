@@ -110,7 +110,7 @@ ale **czas życia PR jest inny** niż w klasycznym workflow:
   etapem po scaleniu** jest instrukcja przekazania: agent kończący sesję wypisuje w czacie
   jeden blok tekstu (stan projektu, kolejka zadań, zasady, pułapki), a Ty wklejasz go
   jako pierwszy prompt nowej sesji. Ta sama treść w części trwałej trafia do
-  `docs/PROJECT_STATE.md` i `docs/setup/HANDOFF_<data>.md` — repozytorium pozostaje
+  `docs/PROJECT_HISTORY.md` i `docs/setup/HANDOFF_<data>.md` — repozytorium pozostaje
   źródłem prawdy, blok w czacie jest tylko skrótem startowym.
 - Jednostką brzegową zakresu pozostaje **commit**: jeden commit = jeden temat.
   Historycznie istniała deklaracja „jeden PR = jeden mały jednorodny temat" —

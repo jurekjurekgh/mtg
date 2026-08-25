@@ -2,7 +2,7 @@
 
 ## Zanim zaczniesz
 
-Zapoznaj się z [bieżącym stanem projektu](docs/PROJECT_STATE.md), [architekturą](docs/ARCHITECTURE.md) i [decyzjami](docs/decisions/README.md). Jeżeli zadanie nie pasuje do aktualnego etapu roadmapy, opisz zależność lub powód zmiany priorytetu.
+Zapoznaj się z [historią projektu](docs/PROJECT_HISTORY.md), [architekturą](docs/ARCHITECTURE.md) i [decyzjami](docs/decisions/README.md). Jeżeli zadanie nie pasuje do aktualnego etapu roadmapy, opisz zależność lub powód zmiany priorytetu.
 
 Przeczytaj też [workflow pracy w repozytorium](docs/WORKFLOW.md) i [politykę bezpieczeństwa](SECURITY.md).
 

@@ -36,7 +36,7 @@ PR (ostatniego zmergowanego lub aktualnie otwartego w sesji):
 Audyt prowadzony jest **bez pełnego BO** (pełna macierz benchmarku bota może
 przekroczyć limit czasu sesji); dopuszczalne potwierdzenie to `npm test` oraz
 `node --test test/bot-benchmark.test.js`. Wnioski trafiają do roadmapy zadania
-(`docs/plans/PLAN_*.md`) i `docs/PROJECT_STATE.md`.
+(`docs/plans/PLAN_*.md`) i `docs/PROJECT_HISTORY.md`.
 
 ### B. Chirurgiczne patchowanie
 

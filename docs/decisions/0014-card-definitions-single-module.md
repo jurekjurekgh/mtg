@@ -13,7 +13,7 @@ od pierwszego batcha realnych kart (M8, 2026-08-01) definicje trafiają do
 pojedynczego modułu `src/cards/card-data.js`, a `src/cards/definitions/` nigdy nie
 powstał.
 
-Rozjazd został odnotowany w `docs/PROJECT_STATE.md` („Odstępstwo od ADR 0010 §1")
+Rozjazd został odnotowany w `docs/PROJECT_HISTORY.md` („Odstępstwo od ADR 0010 §1")
 z adnotacją: *„Aktualizacja ADR lub wydzielenie katalogu definicji do rozważenia
 przy większych partiach kart."*
 

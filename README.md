@@ -34,7 +34,7 @@ na stosie, cele triggerów jako wybór gracza (resolve_trigger_target), auto-tap
 maną, triggery na stosie, regeneracja.
 B0 harness (B1–B5 bota, tune-bot), ilustracje Scryfall, ChoiceRequest i benchmark.
 Bieżący stan: **2445/2445 testów** (`test:all`), artefakt **51 modułów / 2072 kB**. Szczegóły:
-[docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md) i [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md).
+[docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md) i [docs/PROJECT_HISTORY.md](docs/PROJECT_HISTORY.md).
 
 ```bash
 npm test          # node --test na test/**/*.test.js — bez DOM-u i sieci
@@ -55,7 +55,8 @@ i przewija okna, w których masz do wyboru wyłącznie pass. Zapis partii (seed 
 eksportujesz do pliku i importujesz w celu weryfikacji — replay odtwarza partię
 komenda po komendzie.
 
-Aktualny stan, następne kroki i otwarte pytania: **[docs/PROJECT_STATE.md](docs/PROJECT_STATE.md)**.
+Aktualny stan i rzeczy otwarte: **najnowszy [handoff sesji](docs/setup/)** oraz ostatni PR.
+Dziennik przebiegu prac (historia sesji): [docs/PROJECT_HISTORY.md](docs/PROJECT_HISTORY.md).
 
 ## Cel
 
@@ -89,7 +90,7 @@ Kontroler ani UI nie modyfikują bezpośrednio autorytatywnego stanu.
 - [Docelowa architektura](docs/ARCHITECTURE.md)
 - [Audyt istniejącej aplikacji](docs/AUDIT_LEGACY_APP.md)
 - [Roadmapa](docs/ROADMAP.md)
-- [Bieżący stan projektu](docs/PROJECT_STATE.md)
+- [Historia projektu (dziennik sesji)](docs/PROJECT_HISTORY.md)
 - [Rejestr decyzji architektonicznych](docs/decisions/README.md)
 - [Zasady współpracy](CONTRIBUTING.md)
 - [Workflow pracy w repozytorium](docs/WORKFLOW.md)
@@ -154,7 +155,7 @@ Kolejne kroki:
 2. Dalsze czyszczenie luk MtG: `any target` (Reliquary Dragon) i `Mesmerize` Sagi jako wybór gracza, pozostałe determinizmy kosztów (jeśli się pojawią).
 3. Ewentualne strojenie bota pod nowe mechaniki (Adventure/Kicker/Crew) i B0 0.78/0.57.
 
-Szczegóły kolejki i blokery: [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md), [docs/ROADMAP.md](docs/ROADMAP.md).
+Szczegóły kolejki i blokery: [docs/ROADMAP.md](docs/ROADMAP.md), najnowszy handoff sesji.
 
 ## Uwaga o pliku `card_viewer_12_10_for_Github.html`
 

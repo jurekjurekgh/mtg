@@ -8,7 +8,7 @@ import { CARD_BACK_URL } from '../src/table/card-images.js';
 import { renderCardPreview, renderHoverPreview, renderMiniFace, renderTableView } from '../src/table/render.js';
 
 /**
- * Ilustracje realnych kart na stole (poz. 10.1 PROJECT_STATE).
+ * Ilustracje realnych kart na stole (poz. 10.1 PROJECT_HISTORY).
  *
  * Kontrakt renderu:
  *  - kafel karty z realnym drukiem tworzy `<img class="card-img">` z adresem

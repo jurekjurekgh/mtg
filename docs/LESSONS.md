@@ -9,7 +9,7 @@ kolejne sesje powinny wiedzieć, zanim popełnią ten sam błąd po raz trzeci.
 |---|---|---|
 | `docs/setup/HANDOFF_*.md` | stan JEDNEJ sesji: co zrobiono, co dalej | jednorazowy, traci aktualność |
 | `docs/plans/PLAN_*.md` | roadmapa JEDNEGO zadania | jednorazowy |
-| `docs/PROJECT_STATE.md` | bieżący stan projektu | żywy, ale opisuje „teraz" |
+| `docs/PROJECT_HISTORY.md` | dziennik sesji (historia) | żywy, ale NIE jest lekturą startową |
 | `docs/decisions/*.md` (ADR) | wiążąca decyzja architektoniczna | trwała, formalna |
 | **`docs/LESSONS.md`** | **wniosek/heurystyka diagnostyczna** | **trwała, nieformalna** |
 

@@ -18,7 +18,7 @@
 
 - [ ] Zaktualizowano testy odpowiednio do zmiany.
 - [ ] Zaktualizowano dokumentację lub zmiana jej nie wymaga.
-- [ ] Zaktualizowano `docs/PROJECT_STATE.md`/roadmapę albo zmiana nie wpływa na status.
+- [ ] Zaktualizowano `docs/PROJECT_HISTORY.md`/roadmapę albo zmiana nie wpływa na status.
 - [ ] Dodano/zastąpiono ADR albo zmiana nie jest decyzją architektoniczną.
 - [ ] Sprawdzono granicę `GameState` → `PlayerView`, jeśli zmiana dotyczy danych gry.
 - [ ] Losowość przechodzi przez kontrolowane API, jeśli zmiana ją wprowadza.

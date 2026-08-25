@@ -7,7 +7,7 @@
 
 ## 0. Czytaj zanim cokolwiek zrobisz (także zanim napiszesz w czacie)
 
-Kolejność jest obowiązkowa. Nie skracaj jej do „przejrzałem PROJECT_STATE”.
+Kolejność jest obowiązkowa. Nie skracaj jej do „przejrzałem handoff”.
 Nie wybieraj „właściwych” ADR-ów — **czytasz wszystkie**.
 
 1. **Ten plik** (`AGENTS.md`) — do końca, nie tylko nagłówki.
@@ -19,12 +19,26 @@ Nie wybieraj „właściwych” ADR-ów — **czytasz wszystkie**.
    ani ADR 0002, 0007, 0013, 0016, 0018.
 3. **`docs/LESSONS.md`** — cały rejestr (powtarzalne pułapki).
 4. **`docs/setup/ENVIRONMENT.md`** — stałe ograniczenia sandboxa / gita / sieci.
-5. Dopiero potem stan: `docs/PROJECT_STATE.md`, najnowszy
-   `docs/setup/HANDOFF_*.md` (skrót jednej sesji, nie źródło zasad).
+5. **Ostatni PR** — ten, który masz zaudytować wg ADR 0020
+   (`gh pr list --limit 3`, potem `gh pr view <nr>` i jego diff). To jest
+   punkt zaczepienia bieżącej pracy.
+6. **Najnowszy `docs/setup/HANDOFF_*.md`** — skrót JEDNEJ sesji: stan na
+   koniec i rzeczy otwarte. Nie jest źródłem zasad.
 
 Po tej lekturze **wiesz, co robić** — jest to w ADR 0020, nie w pytaniu do
 właściciela. Prompt „kontynuujemy” / „pytaj, jeśli nie wiesz” nie zawiesza
 tego bloku.
+
+**Czego NIE czytasz na start:** `docs/PROJECT_HISTORY.md` (dziennik sesji,
+~5900 linii), `docs/plans/*`, `docs/audits/*`, starsze handoffy. To archiwum
+przebiegu prac, nie zasady — sięgasz tam **punktowo i grepem**, gdy potrzebny
+jest kontekst konkretnej historycznej decyzji. Zasady, których musisz
+przestrzegać, mieszkają wyłącznie w pozycjach 1–4.
+
+**Budżet lektury startowej:** pozycje 1–4 mają się mieścić w **100 tys.
+tokenów**. Pilnuje tego `test/dokumentacja-budzet-lektury.test.js`; gdy
+próg zostanie przekroczony, przepisanie/rozdzielenie dokumentów staje się
+obowiązkowym zadaniem sesji, a nie opcją.
 
 Potem, w miarę potrzeby obszaru: `docs/PRODUCT.md`, `docs/ARCHITECTURE.md`,
 `docs/WORKFLOW.md`, `SECURITY.md`, `docs/setup/TESTER_STOLU.md`.
@@ -92,7 +106,7 @@ szczegółowego audytu poprzedniego PR (ADR 0020 B / ADR 0016). Audyt obejmuje m
 Audyt wykonuje się **bez pełnego B0** (pełna macierz benchmarku bota może
 przekroczyć limit czasu sesji); dopuszczalne potwierdzenie to `npm test` oraz
 `node --test test/bot-benchmark.test.js`. Wnioski z audytu zapisuje się
-w roadmapie zadania i `docs/PROJECT_STATE.md`. Szczegóły: ADR 0016.
+w roadmapie zadania i `docs/PROJECT_HISTORY.md`. Szczegóły: ADR 0016.
 
 **Pełny benchmark B0 tylko na wyraźną komendę właściciela (ADR 0018).**
 Agent NIGDY nie odpala pełnej macierzy (23 400 meczów, ~40+ min) „przy
@@ -113,7 +127,7 @@ KAŻDĄ kartę rejestru strukturalnie.
 Repozytorium, testy i dokumentacja są źródłem prawdy. Historia czatu, opis zadania i komentarze mogą być niepełne. Jeżeli są sprzeczne:
 
 1. nie ukrywaj sprzeczności;
-2. sprawdź najnowsze ADR-y i `PROJECT_STATE.md`;
+2. sprawdź najnowsze ADR-y i najnowszy handoff;
 3. poproś właściciela o decyzję, jeśli zmiana jest nieodwracalna lub wpływa na zakres;
 4. zapisz rozstrzygnięcie w repozytorium.
 
@@ -169,7 +183,7 @@ Te reguły obowiązują każdego agenta bez wyjątku (szczegóły: `docs/WORKFLO
   *instrukcję przekazania projektu* dla następnego agenta (pierwsze kroki i oczekiwane
   wyniki `npm test`/`npm run build`, dokumenty do przeczytania, zasady nienegocjowalne,
   stan po scaleniu z wynikami benchmarku, kolejka zadań, pułapki środowiska).
-  Część trwałą tej treści zapisz w `docs/PROJECT_STATE.md` i `docs/setup/HANDOFF_<data>.md`.
+  Część trwałą tej treści zapisz w `docs/PROJECT_HISTORY.md` i `docs/setup/HANDOFF_<data>.md`.
   Blok przekazania jest sugestią dla następnej sesji — w razie rozbieżności wygrywa repozytorium.
 
 ## Nienegocjowalne granice
@@ -218,14 +232,14 @@ Te reguły obowiązują każdego agenta bez wyjątku (szczegóły: `docs/WORKFLO
 
 Przy zmianie kodu lub projektu sprawdź, czy należy zaktualizować:
 
-- `docs/PROJECT_STATE.md` — bieżąca faza, blokery, najbliższy krok;
+- `docs/PROJECT_HISTORY.md` — dziennik sesji (NIE lektura startowa; grep punktowo);
 - `docs/ROADMAP.md` — ukończone lub zmienione etapy;
 - `docs/WORKFLOW.md` i `SECURITY.md` — jeśli zmieniają się zasady pracy lub ochrona repozytorium;
 - ADR — nowa istotna decyzja lub zastąpienie poprzedniej;
 - dokumentację wsparcia kart/mechanik;
 - instrukcję uruchomienia i testów.
 
-Nie duplikuj bieżącego statusu w wielu miejscach. Szczegóły historyczne należą do commitów/ADR, a krótki stan bieżący do `PROJECT_STATE.md`.
+Nie duplikuj bieżącego statusu w wielu miejscach. Szczegóły historyczne należą do commitów/ADR i `docs/PROJECT_HISTORY.md`, a krótki stan bieżący do handoffu sesji.
 
 ### Gdzie zapisać regułę, żeby nie przepadła
 
