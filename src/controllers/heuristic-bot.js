@@ -675,11 +675,31 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // „enchanted creature doesn't untap"). Bez tego aura-kotwica wyglądała
     // dla bota jak zwykły buff za +66 pkt.
     const abilities = def?.abilities ?? [];
-    return abilities.some((ability) => {
+    if (abilities.some((ability) => {
       if (ability?.type !== 'triggered') return false;
       if (ability.trigger?.event !== 'enter_battlefield') return false;
       const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
       return effs.some((e) => e?.type && HOSTILE_PERMANENT_EFFECTS.has(e.type));
+    })) return true;
+    // M206 (audyt Zywym Testerem, Chronic Flooding): aura bywa wroga przez
+    // trigger DZIALAJACY POZNIEJ, ktory bije w KONTROLERA GOSPODARZA -
+    // „Whenever enchanted land becomes tapped, its controller mills three
+    // cards". Warunki wyzej patrza wylacznie na trigger wejscia i na efekty
+    // wrogie PERMANENTOWI, wiec taka aura wygladala jak zwykly buff:
+    // zmierzone (dominaria vs ravnica, seed 19) bot zaczarowal WLASNY Island
+    // i mielil sobie po 3 karty przy kazdym tapnieciu tego landu - piec razy
+    // w jednej partii („Nieprzyjaciel mieli Forced Landing do grobu",
+    // „... mieli Forest do grobu").
+    //
+    // Rozpoznajemy to po deskryptorze, nie po nazwie karty (ADR 0002):
+    // `applyTo: 'enchanted_controller'` mowi wprost, ze skutek spadnie na
+    // kontrolera zaczarowanego permanentu, a HOSTILE_PLAYER_EFFECTS zna liste
+    // efektow szkodzacych graczowi (mill, discard, utrata zycia...).
+    return abilities.some((ability) => {
+      if (ability?.type !== 'triggered') return false;
+      const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+      return effs.some((e) => e?.applyTo === 'enchanted_controller'
+        && e?.type && HOSTILE_PLAYER_EFFECTS.has(e.type));
     });
   }
   const hasKeyword = (object, keyword) => (object?.keywords ?? []).includes(keyword);
@@ -1694,7 +1714,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // M96: pump poza walką ma wartość tylko w turze przeciwnika
             // (bloker na jego atak). W mojej turze poza combatem to strata
             // (M146 — Fake Your Own Death w upkeepie).
-            const inCombat = view.turn.phase === 'combat';
+            // M206 (audyt Zywym Testerem): `beginning_of_combat` NALEZY do fazy
+            // `combat` (TURN_STEPS), wiec sam warunek `phase === 'combat'`
+            // przepuszczal pump ZANIM ktokolwiek zadeklarowal atak - dokladnie
+            // to, czemu komentarz wyzej mial zapobiegac („po deklaracji
+            // atakujacych/blokujacych").
+            //
+            // Zmierzone (warhammer vs innistrad, seed 8): bot aktywowal
+            // Snarling Wolf („{1}{G}: +2/+2, raz na ture") w poczatku walki
+            // i NIE atakowal - dwie many na efekt, ktory wygasl w cleanup.
+            // Powtorzone w turach 9 i 16 tej samej partii.
+            //
+            // W poczatku walki pump jest zawsze co najmniej przedwczesny:
+            // atakujacy nie sa zadeklarowani, wiec przyrost sily niczego nie
+            // przesadza, a przeciwnik dostaje priorytet i widzi powiekszonego
+            // stwora, zanim zdecyduje o blokach (CR 508.1). Czekanie nic nie
+            // kosztuje - te sama zdolnosc mozna aktywowac po deklaracjach.
+            const inCombat = view.turn.phase === 'combat'
+              && view.turn.step !== 'beginning_of_combat';
             if (!inCombat && myTurn(view)) value -= 26;
             if (recipient && recipient.controllerId === view.playerId) {
               // Combat trick tylko przy OBRONIE (declare_blockers w turze
