@@ -1121,3 +1121,45 @@ test('detectTokenRawId: milczy, gdy token ma czytelną nazwę (bez surowego id)'
   ];
   assert.equal(detectTokenRawId(ok).length, 0, 'czytelne nazwy to nie wyciek');
 });
+
+// --- M213: tap CELU efektem to skutek, nie zapłacony koszt -----------------
+//
+// Żywy Tester (worek-legend vs worek-mroczny, s=77) zgłosił 4 no-opy na
+// Sterling Keykeeper („{2}, {T}: Tap target non-Mount creature”) wycelowanym
+// we własne stwory. Zdolność działa poprawnie — sonda liczyła jednak tap
+// ŹRÓDŁA (koszt) i tap CELU (skutek) do jednego licznika `ownOtherTaps`,
+// więc „sam koszt” wychodziło prawdą i detektor krzyczał na dobrą ofertę.
+// Fałszywy alarm w narzędziu audytu jest kosztowny: przykrywa realne
+// znaleziska i uczy ignorować zgłoszenia (L12).
+
+test('M213/noop: tapnięcie WŁASNEGO permanentu EFEKTEM nie jest „samym kosztem\"', () => {
+  const found = detectNoEffectOffers([{
+    label: 'Aktywuj: Sterling Keykeeper (Ty) (koszt 2, T) — tap → cel: Robot (Ty)',
+    source: 'modal', scanned: true, applied: false,
+    probe: {
+      ok: true, changed: true, effectDiffs: [],
+      ownLandTaps: 2, ownOtherTaps: 1, ownEffectTaps: 1,
+      opponentTaps: 0, ownUntaps: 0, opponentUntaps: 0,
+      humanLifeDelta: 0, manaChanged: true,
+      costSignature: { mana: true, tap: true },
+    },
+  }]);
+  assert.deepEqual(found, [], 'tapnięcie celu zmienia stan stołu — to skutek, nie koszt');
+});
+
+test('M213/noop: REALNY no-op (koszt bez żadnego tapnięcia-skutku) nadal krzyczy', () => {
+  // Kontrola po uciszeniu alarmu (L67): naprawa, która przy okazji wyłącza
+  // detektor, jest gorsza od błędu, który naprawiała.
+  const found = detectNoEffectOffers([{
+    label: 'Aktywuj: Jakaś Zdolność (koszt 2, T)',
+    source: 'panel', scanned: true, applied: true,
+    probe: {
+      ok: true, changed: true, effectDiffs: [],
+      ownLandTaps: 2, ownOtherTaps: 1, ownEffectTaps: 0,
+      opponentTaps: 0, ownUntaps: 0, opponentUntaps: 0,
+      humanLifeDelta: 0, manaChanged: true,
+      costSignature: { mana: true, tap: true },
+    },
+  }]);
+  assert.equal(found.length, 1, 'oferta, która naprawdę nic nie robi, musi być zgłoszona');
+});

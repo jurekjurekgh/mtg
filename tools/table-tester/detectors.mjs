@@ -555,7 +555,12 @@ export function detectNoEffectOffers(probeRecords) {
       || (probe.costSignature?.removeCounter && Boolean(probe.costCounterPaid)));
     // Tapnięcia/untapnięcia permanentów przeciwnika oraz zysk życia to
     // SKUTKI, nie koszty — nie zgłaszamy, gdy cokolwiek takiego zaszło.
+    // M213: tapnięcie WŁASNEGO permanentu przez EFEKT (nie jako koszt) też
+    // jest skutkiem — Sterling Keykeeper („{2}, {T}: Tap target creature")
+    // wycelowany we własnego stwora zmienia stan stołu. Bez tego licznika
+    // koszt i skutek wpadały do jednego worka i oferta wyglądała na no-opa.
     const onlyCosts = (probe.opponentTaps ?? 0) === 0
+      && (probe.ownEffectTaps ?? 0) === 0
       && (probe.ownUntaps ?? 0) === 0
       && (probe.opponentUntaps ?? 0) === 0
       && (probe.humanLifeDelta ?? 0) <= 0;
