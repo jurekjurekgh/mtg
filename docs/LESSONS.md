@@ -25,6 +25,59 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 ---
 
 
+## L61 (2026-08-25) — Test regresyjny bez WERYFIKACJI MUTACYJNEJ bywa ślepy; „zielony" nie znaczy „pilnuje"
+
+**Objaw (M205, audyt PR #77):** poprzednia sesja dołożyła dwa testy opisane
+w PR jako regresja przypinająca fix deduplikacji przedruków modala. Oba były
+zielone. Po cofnięciu samego fiksu (`if (text !== prevBlock) deduped.push(...)`
+→ `deduped.push(...)`) plik testów nadal dawał **91/91 pass** — fix nie był
+pilnowany przez nic.
+
+**Przyczyna:** dane testowe nie miały kształtu, w którym fix w ogóle działa.
+Przypadek sklejał bloki bez separatora i powtarzał w każdym linię
+`• Tura 7 — Nieprzyjaciel`, a ta linia sama woła `flush()` w detektorze, więc
+licznik zerował się przed progiem — niezależnie od deduplikacji. Test mierzył
+`flush()`, nie fix. To L1 („test może być zielony z niewłaściwego powodu")
+w wariancie najgroźniejszym: test istnieje, ma poprawną nazwę i sensowny
+komentarz, więc następna sesja uzna temat za zabezpieczony.
+
+**Reguła:** test regresyjny liczy się dopiero, gdy pokazano, że **czerwienieje
+po cofnięciu naprawy**. Procedura (koszt: ~30 s):
+1. nałóż mutację odwracającą fix (jedna linia),
+2. uruchom plik testu — MUSI paść, i to ten właściwy test,
+3. cofnij mutację, potwierdź zielone,
+4. wynik obu pomiarów wpisz do komunikatu commita / raportu audytu.
+Jeśli mutacja nie czerwieni testu, dane testowe nie mają kształtu produkcyjnego
+— odtwórz kształt z REALNEGO artefaktu (tu: transkrypt ma między renderami
+modala nagłówek kroku `--- krok N | T. X ---`), zamiast pisać go „z głowy".
+
+**Sygnał:** w opisie PR pada „przypięte testem" bez podanego wyniku pomiaru
+przed/po. To zdanie do sprawdzenia, nie do przyjęcia na wiarę.
+
+## L62 (2026-08-25) — Kolejność renderu to część kontraktu: log rysowany od najnowszego łamie liczenie „nowych" po indeksie
+
+**Objaw (M205):** kolektor wpisów logu w Żywym Testerze — napisany dokładnie
+wg recepty z handoffu („odpytuj nowe linie `#log` po indeksie") — znajdował
+**0 wpisów**, mimo że sesja wpis generowała, a `session.log` go zawierał.
+
+**Przyczyna:** `render.js` rysuje log od NAJNOWSZEGO
+(`[...session.log].reverse()`), więc nowe wpisy dokładają się na POCZĄTKU
+listy DOM. Pętla `for (i = widzianeDotąd; i < entries.length; i++)` czytała
+więc najstarsze wpisy jako „nowe" i nigdy nie dochodziła do świeżych.
+Poprawnie: `entries.slice(0, nowe).reverse()`.
+
+**Reguła:** zanim oprzesz narzędzie na „nowe elementy = ogon listy", sprawdź
+w kodzie renderu, w którą stronę jest rysowana lista (`reverse()`,
+`prepend`, `insertBefore`, `flex-direction: column-reverse`). Kolejność
+renderu jest częścią kontraktu UI tak samo jak nazwy klas — i tak samo cicho
+psuje narzędzia czytające DOM.
+
+**Wariant tej samej klasy z tej samej sesji:** `--out katalog/plik.txt` do
+nieistniejącego katalogu wywracał zapis na ENOENT **dopiero po zakończeniu**
+~40-sekundowego przebiegu — cały transkrypt (i dowód audytu) przepadał.
+Narzędzie audytowe ma walidować miejsce zapisu ZANIM zacznie mierzyć, a nie
+po; inaczej koszt pomyłki to powtórzenie całego pomiaru (L33).
+
 ## L60 (2026-08-24) — Narzędzie audytu, które milcząco przyjmuje złą konfigurację, produkuje audyty o czymś innym
 
 **Objaw (M203, audyt PR #74):** Żywy Tester stołu miał domyślne talie

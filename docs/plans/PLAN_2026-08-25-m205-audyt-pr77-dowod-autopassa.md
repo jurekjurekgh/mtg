@@ -23,7 +23,7 @@ Brakuje **dowodu auto-passa w transkrypcie**.
 - [x] Baza zmierzona (`npm test` 3200/3200, build 54/2637,2 kB).
 - [x] Plan zapisany w `docs/plans/`.
 
-### 1. Audyt PR #77 (ADR 0020 B) — W TOKU
+### 1. Audyt PR #77 (ADR 0020 B) — ZAKOŃCZONY
 PR #77 to 6 plików (`src/engine/spells.js`, `test/table-tester-detectors.test.js`
 + 4 dokumenty). Przegląd każdego + weryfikacja mutacyjna testów.
 
@@ -33,8 +33,8 @@ PR #77 to 6 plików (`src/engine/spells.js`, `test/table-tester-detectors.test.j
   `phyrexianPayWithLife`, `casts.push`) nietknięta. Zgodne z ADR 0016.
 - [x] **ZNALEZISKO M205/1 (test ślepy)** — oba testy M203/#3 dodane w PR #77
   przechodzą IDENTYCZNIE z fiksem deduplikacji i bez niego. Pomiar niżej.
-- [ ] Raport w `docs/audits/AUDYT_PR77_2026-08-25.md`.
-- [ ] Naprawa M205/1: testy, które faktycznie czerwienieją po cofnięciu fiksu.
+- [x] Raport w `docs/audits/AUDYT_PR77_2026-08-25.md` (`273d1ce`).
+- [x] Naprawa M205/1 (`37e51cb`): mutacja daje 91/92 (RED), cofnięcie 92/92.
 
 #### Pomiar M205/1 (weryfikacja mutacyjna)
 
@@ -63,32 +63,54 @@ separatorem kroku (tak wygląda transkrypt: `snapshot()` wypisuje
 `--- krok N | T. X ---` między renderami modala), bez powtarzanej linii
 `• Tura N`, która maskuje pomiar.
 
-- [ ] Kryterium: nowy test czerwienieje po tej samej mutacji, zielony po jej
-  cofnięciu; `npm test` + build zielone.
+- [x] Kryterium SPEŁNIONE: nowy test czerwienieje po tej samej mutacji,
+  zielony po jej cofnięciu; `npm test` 3201/3201, build zielony.
 
-### 2. M205 — dowód auto-passa w transkrypcie
+### 2. M205 — dowód auto-passa w transkrypcie — ZAKOŃCZONY (`8204777`)
 Wg recepty z HANDOFF M204 (4 kroki), ale każdy krok potwierdzony pomiarem,
 nie przepisany na wiarę:
 
-- [ ] `src/table/session.js`: auto-pass człowieka przy **niepustym stosie**
-  zostawia jawny wpis w logu sesji (bez wymuszania pauzy — M204 zmierzył,
-  że pauza pogarsza inne przebiegi).
-- [ ] `tools/table-tester/run-game.mjs`: wpis trafia do transkryptu także
-  w `--quiet`.
-- [ ] `tools/table-tester/detectors.mjs`: `detectNoResponseWindow` uznaje go
+- [x] `src/table/session.js`: auto-pass człowieka przy **niepustym stosie**
+  zostawia jawny wpis w logu sesji (bez pauzy). Przy pustym stosie wpisu NIE
+  ma — inaczej log tonie w szumie passów fazowych.
+- [x] `tools/table-tester/run-game.mjs`: wpis trafia do transkryptu także
+  w `--quiet`. **Sprostowanie recepty M204:** liczenie „nowych" linii po
+  indeksie OD PRZODU nie działa — `render.js` rysuje log od najnowszego
+  (`reverse()`), więc świeże wpisy są na POCZĄTKU listy DOM (0 trafień
+  w pierwszej implementacji). Poprawnie: `slice(0, nowe).reverse()` (L62).
+- [x] `tools/table-tester/detectors.mjs`: `detectNoResponseWindow` uznaje go
   za dowód odzyskania kontroli.
-- [ ] `test/table-tester-detectors.test.js`: test pinuje obie strony
-  (jest dowód → cicho; brak dowodu → zgłoszenie), z weryfikacją mutacyjną.
-- [ ] Kryterium: partie z M204 (te same pary talii i seedy) przestają
-  zgłaszać szum, a `npm test` + build zielone.
+- [x] Testy pinują obie strony, każdy z weryfikacją mutacyjną:
+  `test/table-tester-detectors.test.js` (dowód → cicho; brak dowodu →
+  zgłoszenie) oraz `test/session-autopass.test.js` (wpis powstaje przy
+  niepustym stosie, NIE powstaje przy pustym — mutacje „nigdy" i „zawsze"
+  obie czerwienieją).
+- [x] Kryterium SPEŁNIONE: seed 42 **2 → 0 zgłoszeń**; cztery partie po 400
+  kroków (innistrad/tarkir 7, mirrodin/warhammer 13, ravnica/innistrad 21,
+  forgotten-realms/alara 61) — **0 zgłoszeń**, 15–37 dowodów auto-passa
+  w transkrypcie. Moc detektora potwierdzona kontrolnie: po cofnięciu wzorca
+  dowodowego zgłoszenia wracają (1 + 1). `npm test` 3205/3205, build zielony.
 
-### 3. Pętla jakości Żywym Testerem
-- [ ] Partie po naprawie; każde znalezisko: objaw z transkryptu → root cause →
-  test RED→GREEN → detektor, jeśli klasa powtarzalna.
+### 3. Pętla jakości Żywym Testerem — WYKONANA W ZAKRESIE SESJI
+- [x] 5 partii po naprawie (400 kroków, `--quiet`): 0 crashy, 0 zgłoszeń.
+- [x] Znalezisko poboczne naprawione u root cause: `--out` do nieistniejącego
+  katalogu tracił CAŁY transkrypt po ~40 s przebiegu (ENOENT dopiero przy
+  zapisie); katalog tworzony z góry, `.gitignore` rozszerzony o podkatalogi.
+- Uwaga dla następnej sesji: detektory na tych parach talii są ciche —
+  kolejne znaleziska wymagają dłuższych partii i RĘCZNEGO czytania
+  transkryptów (profile `explorer`/`random` są najmniej przeorane).
 
 ### 4. Zamknięcie sesji
-- [ ] `docs/PROJECT_STATE.md`, `docs/setup/HANDOFF_2026-08-25-m205.md`,
-  opis PR #78 kumulatywnie, `git status` czysty.
+- [x] `docs/PROJECT_STATE.md`, `docs/setup/HANDOFF_2026-08-25-m205.md`,
+  lekcje L61/L62, opis PR #78 kumulatywnie, `git status` czysty.
+
+## Podsumowanie wykonania
+
+Wszystkie etapy domknięte. Baza 3200 → **3205** testów (+5: 3 detektorowe,
+2 sesyjne), build 54 / 2638,1 kB. Zamknięty temat przekazany przez M204 jako
+„znany problem" oraz naprawiona usterka zastana w audycie (ślepe testy).
+Dwie nowe lekcje trwałe: **L61** (test bez weryfikacji mutacyjnej bywa ślepy),
+**L62** (kolejność renderu jest częścią kontraktu narzędzi czytających DOM).
 
 ## Ryzyka i pułapki
 

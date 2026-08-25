@@ -1,6 +1,51 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-25 (M204: audyt PR #75, zamknięcie #3, pętla jakości — PR #77)
+- **Ostatnia aktualizacja:** 2026-08-25 (M205: audyt PR #77, dowód auto-passa, ślepe testy — PR #78)
+
+## M205 — audyt PR #77 + dowód auto-passa w transkrypcie (2026-08-25)
+
+Plan: `docs/plans/PLAN_2026-08-25-m205-audyt-pr77-dowod-autopassa.md` ·
+raport: `docs/audits/AUDYT_PR77_2026-08-25.md` · nowe lekcje: **L61, L62**.
+
+**Audyt PR #77.** Poprawka w `src/engine/spells.js` (kosmetyka buyback-phyrexian)
+zweryfikowana linia po linii — czysto stylistyczna, logika nietknięta.
+Znaleziona jedna realna usterka:
+
+- **M205/1 (`37e51cb`) — testy regresyjne PR #77 były ŚLEPE.** Oba testy
+  M203/#3 przechodziły identycznie z fiksem deduplikacji i po jego cofnięciu
+  (mutacja → nadal 91/91 pass), bo dane testowe powtarzały linię `• Tura 7`,
+  która sama zeruje licznik detektora. Test mierzył `flush()`, nie fix.
+  Przepisane na realny kształt transkryptu (bloki rozdzielone nagłówkiem
+  kroku `--- krok N | T. X ---`) + trzeci test na odwrotną pomyłkę.
+  Po zmianie: mutacja daje **91/92 (RED)**, cofnięcie **92/92**.
+
+**M205/2 (`8204777`) — „znany problem" z HANDOFF M204 ZAMKNIĘTY.** Detektor
+`detectNoResponseWindow` zgłaszał czary bota jako rozstrzygnięte bez okna na
+odpowiedź. Instrumentacja potwierdziła diagnozę M204: w oknie przed
+rozstrzygnięciem Withstand `stos = 2, decyzja = nie` — człowiek realnie
+dostawał i oddawał priorytet (CR 117.3b/117.4). Brakowało wyłącznie ŚLADU
+(L24). Naprawa w trzech warstwach: sesja loguje auto-pass przy NIEPUSTYM
+stosie (bez pauzy; przy pustym stosie wpisu nie ma — inaczej log tonie
+w szumie), tester zbiera wpis także pod `--quiet`, detektor uznaje go za
+dowód. Pomiar: seed 42 **2 → 0 zgłoszeń**; cztery kolejne partie (400 kroków)
+**0 zgłoszeń** przy 15–37 dowodach auto-passa w transkrypcie. Moc detektora
+sprawdzona kontrolnie: po cofnięciu wzorca dowodowego zgłoszenia wracają.
+
+**Sprostowanie recepty M204:** handoff zalecał zbieranie wpisu „po indeksie"
+z `#log` — to nie działa, bo `render.js` rysuje log od NAJNOWSZEGO
+(`reverse()`), więc świeże wpisy są na POCZĄTKU listy DOM (L62). Pierwsza
+implementacja zgodna z receptą dawała 0 trafień.
+
+**Poboczne:** `--out` do nieistniejącego katalogu tracił cały transkrypt po
+~40 s przebiegu (ENOENT dopiero przy zapisie) — katalog tworzony z góry;
+`.gitignore` łapie teraz transkrypty w podkatalogach.
+
+Stan: `npm test` **3205/3205**, build 54 / 2638,1 kB. PR #78 otwarty,
+scalenie decyzją właściciela.
+
+---
+
+- **Poprzednia:** 2026-08-25 (M204: audyt PR #75, zamknięcie #3, pętla jakości — PR #77)
 
 ## M204 — audyt PR #75 + pętla jakości (2026-08-25)
 
