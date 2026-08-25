@@ -1118,13 +1118,21 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
           const bottomNames = (e.bottomCardIds ?? []).map((cid) => nameOf(cid)).filter(Boolean);
           const topNames = (e.topCardIds ?? []).map((cid) => nameOf(cid)).filter(Boolean);
           const parts = [];
-          if (bottomNames.length) parts.push(`na spód (${e.bottomCount}/${e.total}): ${bottomNames.join(', ')}`);
+          if (bottomNames.length) parts.push(`na spód: ${bottomNames.join(', ')}`);
           if (topNames.length) parts.push(`na wierzchu: ${topNames.join(', ')}`);
           return `${whoN(e.playerId)} kończy scry — ${parts.join('; ') || 'bez zmian'}`;
         }
-        return e.bottomCount > 0
-          ? `${whoN(e.playerId)} kończy scry — odkłada na spód biblioteki (${e.bottomCount}/${e.total})`
-          : `${whoN(e.playerId)} kończy scry — zostawia na wierzchu biblioteki`;
+        // Zgłoszenie właściciela (A2): zapis „(1/1)” czytało się jak SIŁA/WYTRZYMAŁOŚĆ
+        // odkładanej karty, czyli wyciek ukrytej informacji. To były liczby
+        // `bottomCount/total` — ile kart z ilu poszło na spód. Piszemy je słowami;
+        // przy scry 1 sama liczba nic nie wnosi (patrzył na jedną kartę), więc znika.
+        if (e.bottomCount > 0) {
+          const karty = polishPlural(e.bottomCount, 'kartę', 'karty', 'kart');
+          return e.total > 1
+            ? `${whoN(e.playerId)} kończy scry — odkłada na spód biblioteki ${e.bottomCount} z ${e.total} ${polishPlural(e.total, 'karty', 'kart', 'kart')}`
+            : `${whoN(e.playerId)} kończy scry — odkłada ${karty} na spód biblioteki`;
+        }
+        return `${whoN(e.playerId)} kończy scry — zostawia na wierzchu biblioteki`;
       }
       case 'surveil_started': {
         // M100/E10 (P4): jak przy scry — odmiana (było „patrzy na 2 kart",

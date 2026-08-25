@@ -96,6 +96,17 @@ export const IDEMPOTENT_EOT_EFFECTS = new Set([
 ]);
 
 /**
+ * M211/A1 (zgłoszenie właściciela, Seer's Lantern): efekty, których cała treść
+ * to „obejrzyj/ułóż wierzch WŁASNEJ biblioteki”. Nie zmieniają planszy ani
+ * życia — wpływają wyłącznie na to, co dobierzemy w najbliższym dobraniu.
+ * Skutek jest niezależny od chwili aktywacji, więc opłaca się je odkładać na
+ * moment, w którym mana i tak przepadnie (end step przeciwnika).
+ */
+export const DECK_ARRANGING_EFFECTS = new Set([
+  'scry', 'surveil', 'look_top_n', 'explore',
+]);
+
+/**
  * M179/B: efekty KUMULUJĄCE w zdolnościach aktywowanych bez {T} — dublowanie
  * na stosie jest legalne i bywa sensowne (pump +1/+0 ×N, liczniki, mana).
  * Strażnik test/m179 wymaga klasyfikacji KAŻDEGO typu efektu występującego
@@ -1728,6 +1739,47 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         score -= selfHarmPenalty(view, effects, cmd, target);
         // M179/E: symetria — efekt przyjazny wycelowany we wroga.
         score -= friendlyMisaimPenalty(view, effects, cmd, target);
+        // M211/A1 (zgłoszenie właściciela, Seer's Lantern): zdolność, której
+        // CAŁY efekt to „ułóż wierzch własnej biblioteki” (scry/surveil/
+        // look_top_n/explore), zmienia tylko to, co dobierzemy w NAJBLIŻSZYM
+        // dobraniu. Kiedy ją odpalić, jest więc obojętne dla skutku, ale NIE
+        // dla kosztu: mana wydana wcześniej mogła w międzyczasie opłacić czar.
+        //
+        // Optymalne okno to KOŃCÓWKA TURY PRZECIWNIKA (jego end step, tuż przed
+        // moim untapem): cała moja mana i tak wyparuje niewykorzystana, a scry
+        // zdąży ustawić moje najbliższe dobranie. Bot odpalał zdolność w
+        // pierwszym możliwym oknie (upkeep przeciwnika), przepalając manę,
+        // której potem brakowało na odpowiedź w jego turze.
+        //
+        // Reguła generyczna po treści efektu, bez nazw kart (ADR 0002).
+        // Zdolność sorcery-speed (Guidestone Compass) NIE może czekać na turę
+        // przeciwnika — dla niej najlepsze okno to własna main2, po walce,
+        // gdy wiadomo, że mana nie jest już potrzebna (wzorzec `canWait`
+        // z tapTimingBonus, M139/M202F).
+        const looksAtOwnLibraryOnly = effects.length > 0
+          && effects.every((e) => DECK_ARRANGING_EFFECTS.has(e?.type));
+        if (looksAtOwnLibraryOnly) {
+          const sorcerySpeed = ability?.timing === 'sorcery';
+          const step = view.turn.step;
+          if (sorcerySpeed) {
+            // Sorcery-speed (Guidestone Compass) NIE doczeka tury przeciwnika —
+            // jedyne legalne okno to własna główna faza. Po walce mana jest już
+            // wolna, więc to okno lepsze; przed walką odkładamy zdolność TYLKO
+            // wtedy, gdy mana ma realną konkurencję (jest co zagrać z ręki).
+            // Bez tego zastrzeżenia bot przestałby używać zdolności zupełnie,
+            // choć nic innego nie miał do roboty (M126/#10 — anty-over-fix).
+            const manaContested = view.zones.hand
+              .some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
+            if (view.turn.phase === 'postcombat_main' && step === 'main') score += 6;
+            else if (manaContested) score -= 12;
+          } else if (!myTurn(view) && step === 'end') {
+            // Okno optymalne: mana i tak przepadnie, dobranie tuż-tuż.
+            score += 10;
+          } else {
+            // Każde wcześniejsze okno wydaje manę, która mogła się przydać.
+            score -= 12;
+          }
+        }
         for (const effect of effects) {
           // M96 (audyt Żywym Testerem): `pump_enchanted_creature`
           // (firebreathing — Shiv's Embrace) NIE wpadało do tej gałęzi, więc
