@@ -872,16 +872,20 @@
        teraz do warstwy modala „notice" z guzikiem „Rozumiem" (niżej). -->
   <div id="banner"></div>
   <div class="players">
-    <div class="player foe">
-      <span class="pname">Bot</span>
-      <span class="plife" id="life-enemy">20</span>
-      <span class="plib">🎴 <b id="library-enemy">20</b></span>
-    </div>
+    <!-- M203/A (zlecenie właściciela 2026-08-24): Gracz z LEWEJ, Bot
+         z PRAWEJ (poprzednio odwrotnie). Boksy stref/many w `.table-meta`
+         są przypisane per gracz POD tym paskiem (M198/C), więc jadą w tej
+         samej kolejności. -->
     <!-- M197/A3C: „Ty" → „Gracz". -->
     <div class="player own">
       <span class="pname">Gracz</span>
       <span class="plife" id="life-own">20</span>
       <span class="plib">🎴 <b id="library-own">20</b></span>
+    </div>
+    <div class="player foe">
+      <span class="pname">Bot</span>
+      <span class="plife" id="life-enemy">20</span>
+      <span class="plib">🎴 <b id="library-enemy">20</b></span>
     </div>
   </div>
 
@@ -889,8 +893,8 @@
        rodzaju danych — pod licznikiem życia Bota stoją strefy i pula many
        Bota, po stronie Gracza jego własne. -->
   <div class="table-meta">
-    <div id="meta-foe" class="meta-box foe"></div>
     <div id="meta-own" class="meta-box own"></div>
+    <div id="meta-foe" class="meta-box foe"></div>
   </div>
   <!-- M198/D: inspektor stref jako osobny, wycentrowany element pod boksami. -->
   <div class="zone-inspector-bar">
@@ -905,13 +909,18 @@
   <div class="undercity-panel" id="undercity" hidden></div>
 
   <main class="board">
-    <section class="side side-enemy">
-      <div class="side-meta"><span class="tag">◆ PRZECIWNIK (Bot)</span></div>
-      <!-- M201/B (zgłoszenie właściciela): ręka bota rewersami, nad jego lądami —
-           tożsamość ukryta (CR 402.2), jawna tylko liczba kart. -->
-      <div class="zone-label" id="hand-enemy-label">Ręka przeciwnika</div>
-      <div class="hand hand-enemy" id="hand-enemy"></div>
-      <div class="bfhost" id="bf-enemy"></div>
+    <!-- M203/A (zlecenie właściciela 2026-08-24): kolejność sekcji odwrócona —
+         najpierw GRACZ (jego ręka, potem jego stół), potem wspólny STOS,
+         na końcu BOT (jego stół, potem zakryta ręka). Identyfikatory i
+         zawartość bez zmian (render/main szukają po ID, nie po pozycji) —
+         przestawiona jest wyłącznie kolejność. -->
+    <section class="handwrap">
+      <div class="zone-label">Twoja ręka</div>
+      <div class="hand" id="hand"></div>
+    </section>
+    <section class="side side-own">
+      <div class="side-meta"><span class="tag">TY ◆</span></div>
+      <div class="bfhost" id="bf-own"></div>
     </section>
     <div class="stackwrap">
       <div class="zone-label">Stos</div>
@@ -923,16 +932,16 @@
       <div class="zone-label">Wygnanie — karty w zawieszeniu</div>
       <div class="waiting-grid" id="waiting-zone"></div>
     </div>
-    <section class="side side-own">
-      <div class="bfhost" id="bf-own"></div>
-      <div class="side-meta" style="justify-content:flex-end;"><span class="tag">TY ◆</span></div>
+    <section class="side side-enemy">
+      <div class="side-meta"><span class="tag">◆ PRZECIWNIK (Bot)</span></div>
+      <!-- M201/B (zgłoszenie właściciela): ręka bota rewersami — tożsamość
+           ukryta (CR 402.2), jawna tylko liczba kart. M203/A: sekcja Bota
+           jest teraz na DOLE, więc jej ręka zamyka stół. -->
+      <div class="bfhost" id="bf-enemy"></div>
+      <div class="zone-label" id="hand-enemy-label">Ręka przeciwnika</div>
+      <div class="hand hand-enemy" id="hand-enemy"></div>
     </section>
   </main>
-
-  <section class="handwrap">
-    <div class="zone-label">Twoja ręka</div>
-    <div class="hand" id="hand"></div>
-  </section>
 
   <div class="panels">
     <details class="panel" id="deck-builder">
