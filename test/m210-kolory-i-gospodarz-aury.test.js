@@ -18,7 +18,7 @@
 // źródłowym czyni go czerwonym.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createGameState, addObject } from '../src/engine/game-state.js';
+import { createGameState, addObject, execute } from '../src/engine/game-state.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { declareBlockers } from '../src/engine/combat.js';
 import {
@@ -132,13 +132,12 @@ test('M210/#3 (CR 303.4): „enchant artifact or creature you control” odrzuca
     id: 'aura', instanceId: 'i-aura', cardId: 'moonlit-meditation', controllerId: 'p1',
     zone: 'battlefield', kind: 'enchantment', manaCost: 3,
     abilities: [], keywords: [], subtypes: ['Aura'], types: ['Enchantment'],
-    aura: { enchantType: 'artifact_or_creature' },
+    aura: REGISTRY.get('moonlit-meditation').aura,
   });
   const aura = state.objects.get('aura');
-  const descriptor = REGISTRY.get('moonlit-meditation').aura;
 
-  assert.equal(isLegalAuraHost(aura, mine, descriptor), true, 'własny stwór jest legalny');
-  assert.equal(isLegalAuraHost(aura, theirs, descriptor), false, 'cudzy stwór NIE jest legalny („you control”)');
+  assert.equal(isLegalAuraHost(aura, mine), true, 'własny stwór jest legalny');
+  assert.equal(isLegalAuraHost(aura, theirs), false, 'cudzy stwór NIE jest legalny („you control”)');
 });
 
 test('M210/#3 (CR 704.5n): po przejęciu gospodarza aura „you control” idzie do GROBU', () => {
@@ -148,7 +147,7 @@ test('M210/#3 (CR 704.5n): po przejęciu gospodarza aura „you control” idzie
     id: 'aura', instanceId: 'i-aura', cardId: 'moonlit-meditation', controllerId: 'p1',
     zone: 'battlefield', kind: 'enchantment', manaCost: 3,
     abilities: [], keywords: [], subtypes: ['Aura'], types: ['Enchantment'],
-    aura: { enchantType: 'artifact_or_creature' },
+    aura: REGISTRY.get('moonlit-meditation').aura,
   });
   attachAuraToCreature(state, 'aura', 'host');
   assert.equal(state.objects.get('aura').attachedTo, 'host', 'aura przypięta do własnego stwora');
@@ -174,12 +173,47 @@ test('M210/#3: aura BEZ „you control” (Clawing Torment) zostaje na cudzym st
     id: 'torment', instanceId: 'i-torment', cardId: 'clawing-torment', controllerId: 'p1',
     zone: 'battlefield', kind: 'enchantment', manaCost: 2,
     abilities: [], keywords: [], subtypes: ['Aura'], types: ['Enchantment'],
-    aura: { enchantType: 'creature' },
+    aura: REGISTRY.get('clawing-torment').aura,
   });
-  const descriptor = REGISTRY.get('clawing-torment').aura;
-  assert.equal(descriptor.ownControlOnly, false, 'Oracle nie mówi „you control”');
+  assert.equal(REGISTRY.get('clawing-torment').aura.ownControlOnly, false, 'Oracle nie mówi „you control”');
   assert.equal(
-    isLegalAuraHost(state.objects.get('torment'), theirs, descriptor), true,
+    isLegalAuraHost(state.objects.get('torment'), theirs), true,
     'aura bez „you control” może siedzieć na cudzym stworze',
   );
+});
+
+// ---- #4: CR 707.2 — kopiuje się WARTOŚCI KOPIOWALNE, nie stan bieżący -----
+
+test('M210/#4 (CR 707.2): enter-as-copy kopiuje kartę, nie animację „until end of turn”', () => {
+  const state = createGameState({ seed: 210, players: [{ id: 'p1' }, { id: 'p2' }] });
+  // Artefakt ożywiony do końca tury (Skilled Animator). Wartość KOPIOWALNA to
+  // wydrukowany artefakt bez P/T — animacja kopiowalna nie jest.
+  addObject(state, {
+    id: 'art', instanceId: 'i-art', cardId: 'great-furnace', controllerId: 'p2',
+    zone: 'battlefield', kind: 'artifact', power: null, toughness: null, manaCost: 2,
+    abilities: [], keywords: [], subtypes: [], types: ['Artifact'],
+  });
+  animatePermanentUntilEndOfTurn(state, 'art', {
+    power: 5, toughness: 5, typesAdd: ['Creature'], retainTypes: true,
+  });
+  assert.equal(state.objects.get('art').power, 5, 'oryginał JEST teraz stworem 5/5');
+
+  // Jwari Shapeshifter wchodzi jako kopia ożywionego artefaktu.
+  addObject(state, {
+    id: 'jwari', instanceId: 'i-jwari', cardId: 'jwari-shapeshifter', controllerId: 'p1',
+    zone: 'battlefield', kind: 'creature', power: 0, toughness: 0, manaCost: 2,
+    abilities: [], keywords: [], subtypes: ['Shapeshifter'], types: ['Creature'],
+  });
+  state.pendingEnterAsCopy = {
+    playerId: 'p1', sourceId: 'jwari', candidateIds: ['art'], restorePriorityTo: 'p1',
+  };
+  const result = execute(state, { type: 'resolve_enter_as_copy', playerId: 'p1', targetId: 'art' });
+  assert.equal(result.ok, true, 'kopiowanie się udaje');
+
+  const copy = state.objects.get('jwari');
+  // Gdyby kopiowany był stan bieżący, kopia zostałaby TRWAŁYM stworem 5/5 —
+  // po wygaśnięciu animacji oryginał wraca do bycia artefaktem, a kopia nie.
+  assert.equal(copy.power, null, 'kopia nie dziedziczy P/T z animacji');
+  assert.equal(copy.toughness, null, 'kopia nie dziedziczy P/T z animacji');
+  assert.deepEqual(copy.types, ['Artifact'], 'kopia jest artefaktem, tak jak wydrukowana karta');
 });

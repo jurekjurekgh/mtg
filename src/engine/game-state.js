@@ -2909,15 +2909,26 @@ export function execute(state, input) {
       if (chosen != null) {
         const target = state.objects.get(chosen);
         if (target && target.zone === 'battlefield' && target.kind === 'creature') {
+          // CR 707.2: kopiowane są WYŁĄCZNIE wartości kopiowalne, czyli te
+          // wydrukowane na karcie (plus efekty kopiowania i „as enters”).
+          // Efekt „until end of turn” zmieniający charakterystyki — animacja
+          // artefaktu na stwora (Skilled Animator) — kopiowalny NIE jest.
+          // Bez tego Jwari Shapeshifter kopiujący ożywiony artefakt rodził się
+          // jako stwór 5/5 i po wygaśnięciu animacji oryginału zostawał
+          // trwałym stworem, którym jego karta nigdy nie była. Ta sama
+          // poprawka co w token-kopii (effects.js) — jedna reguła, dwie
+          // ścieżki, więc muszą czytać tę samą bazę (L48).
+          const copyBase = target.originalBeforeAnimation ?? target;
           const updated = Object.freeze({
             ...src,
             enteringAsCopy: undefined,
-            power: target.power, toughness: target.toughness,
-            colors: [...(target.colors ?? [])],
-            types: [...(target.types ?? [])],
-            subtypes: [...(target.subtypes ?? [])],
-            keywords: [...(target.keywords ?? [])],
-            abilities: [...(target.abilities ?? [])],
+            power: copyBase.power ?? null, toughness: copyBase.toughness ?? null,
+            colors: [...(copyBase.colors ?? target.colors ?? [])],
+            types: [...(copyBase.types ?? target.types ?? [])],
+            subtypes: [...(copyBase.subtypes ?? target.subtypes ?? [])],
+            keywords: [...(copyBase.keywords ?? target.keywords ?? [])],
+            abilities: [...(copyBase.abilities ?? target.abilities ?? [])],
+            kind: copyBase.kind ?? target.kind,
             cardName: target.cardName ?? target.cardId,
             // M141/B (station/saga): kopia traciła deskryptory station/saga
             // (jak token-kopia). CR 707.2 — kopiowalne są WSZYSTKIE cechy.
