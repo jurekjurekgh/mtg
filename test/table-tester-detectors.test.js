@@ -476,6 +476,44 @@ test('M99: akcja gracza między rzuceniem a rozstrzygnięciem = okno BYŁO', () 
   assert.deepEqual(found, [], `fałszywy alarm: ${JSON.stringify(found)}`);
 });
 
+// --- M205: DOWÓD auto-passa w transkrypcie ---------------------------------
+// Audyt PR #77 (M204) zostawił „znany szum": detektor zgłaszał instanty
+// i sorcery rzucane w turze bota (Withstand, Toll of the Invasion, Courage
+// in Crisis) jako rozstrzygnięte bez okna na odpowiedź. Engine był poprawny —
+// człowiek dostawał priorytet i auto-pasował, bo nie miał czym odpowiedzieć
+// (CR 117.3b/117.4) — ale transkrypt nie niósł ŻADNEGO śladu tego passa,
+// więc detektor nie mógł odróżnić legalnego przebiegu od realnego pominięcia
+// okna. Zmierzone przed naprawą: seed 42 (dominaria vs ravnica) = 2 zgłoszenia,
+// po naprawie = 0, przy zachowanej mocy wykrywania (test niżej).
+//
+// Ślad zostawia sesja (`Auto-pass: …` w logu głównego stołu), zbiera go tester
+// (także pod `--quiet`, gdzie snapshotów nie ma wcale), a detektor uznaje za
+// dowód odzyskania kontroli.
+test('M205: wpis „Auto-pass" w logu jest dowodem, że gracz oddał priorytet', () => {
+  // Kształt zmierzony w transkrypcie seeda 42 — wpis stoi dokładnie między
+  // rzuceniem czaru a jego rozstrzygnięciem.
+  const found = detectNoResponseWindow([
+    '  [ROZGRYWKA] Rozgrywka',
+    '  [ROZGRYWKA]   • Nieprzyjaciel rzuca Withstand → cel: Nieprzyjaciel',
+    '  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga',
+    '  [ROZGRYWKA]   • Withstand zostaje rozstrzygnięty',
+  ]);
+  assert.deepEqual(found, [], `auto-pass jest legalnym oknem na odpowiedź: ${JSON.stringify(found)}`);
+});
+
+test('M205 (kontrola): BEZ wpisu o auto-passie ten sam przebieg jest nadal zgłaszany', () => {
+  // Mutacja poprzedniego przypadku: jedyna różnica to brak linii dowodowej.
+  // Gdyby detektor wyciszał czary bota z innego powodu, ten test byłby zielony
+  // mimo cofnięcia naprawy — i cała para nie pilnowałaby niczego (L1).
+  const found = detectNoResponseWindow([
+    '  [ROZGRYWKA] Rozgrywka',
+    '  [ROZGRYWKA]   • Nieprzyjaciel rzuca Withstand → cel: Nieprzyjaciel',
+    '  [ROZGRYWKA]   • Withstand zostaje rozstrzygnięty',
+  ]);
+  assert.equal(found.length, 1, 'brak dowodu na oddanie priorytetu = zgłoszenie zostaje');
+  assert.match(found[0].message, /Withstand/);
+});
+
 test('M99: prawdziwy brak okna (jeden blok modala) nadal jest zgłaszany', () => {
   const found = detectNoResponseWindow([
     '  [ROZGRYWKA] Rozgrywka',

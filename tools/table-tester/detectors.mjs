@@ -416,6 +416,15 @@ export function detectNoResponseWindow(lines) {
     /^\s*\[modal choice\]/,                              // decyzja gracza w modalu
     /^\s*\[combat wizard\]/,                             // wizard walki po stronie gracza
     /^\s*STOS:\s*(?!Stos pusty)/,                        // snapshot z niepustym stosem
+    // M205: JAWNY dowód z głównego logu — człowiek dostał priorytet przy
+    // niepustym stosie i go oddał (CR 117.3b/117.4). Bez tego wpisu detektor
+    // nie odróżniał legalnego auto-passa („nie mam odpowiedzi") od realnego
+    // pominięcia okna, więc zgłaszał poprawne rozstrzygnięcia czarów bota
+    // (Withstand, Toll of the Invasion, Courage in Crisis) jako podejrzane.
+    // Zmierzone na seedzie 42 (dominaria vs ravnica): wpis pojawia się
+    // dokładnie między „Nieprzyjaciel rzuca Withstand" a „Withstand zostaje
+    // rozstrzygnięty".
+    /^\s*LOG:\s*Auto-pass:/,
   ];
   let pendingCast = null;
   for (const line of lines) {

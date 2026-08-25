@@ -2324,8 +2324,22 @@ export function createSession(config) {
           continue;
         }
       }
+      // M205 (audyt PR #77): auto-pass przy NIEPUSTYM stosie to moment, w
+      // którym gracz formalnie dostał priorytet i go oddał (CR 117.3b/117.4) —
+      // czar bota rozstrzyga się dopiero po tym passie. Dotąd nie zostawiał
+      // po sobie ŻADNEGO śladu, więc z logu i transkryptu nie dało się
+      // odróżnić „gracz oddał priorytet, bo nie miał odpowiedzi" od „stół
+      // pominął okno na odpowiedź" — detektor `detectNoResponseWindow`
+      // zgłaszał to jako podejrzenie (Withstand, Toll of the Invasion,
+      // Courage in Crisis). Klasa L24: skutek bez śladu nie istnieje dla
+      // gracza. Notujemy wpis BEZ pauzy — pauza w tym miejscu pogarszała
+      // inne przebiegi (pomiar M204), a informacja i tak jest w logu.
+      const stackBeforePass = state.zones.stack.length;
       const pass = execute(state, { type: 'pass_priority', playerId: HUMAN_ID });
       if (!pass.ok) throw new Error(`Auto-pass odrzucony: ${pass.events[0]?.reason}`);
+      if (stackBeforePass > 0) {
+        sessionLog('event', 'Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga');
+      }
       // Uwaga E: auto-pass faz CZŁOWIEKA (koniec tury, cleanup) nie pauzuje —
       // „Brak akcji"/modale ruchu przeciwnika w środku własnej tury (audyt:
       // auto-pass zatrzymał się w Głównej 2 po wyciszeniu opcji).

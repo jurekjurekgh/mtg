@@ -223,6 +223,11 @@ export async function runTableGame({
   // `package.json`, poza zasięgiem `.gitignore` (który pilnuje tylko
   // `tools/table-tester/transcript.txt`).
   const outPath = path.isAbsolute(out) ? out : path.resolve(__dirname, out);
+  // M205: `--out audyt-m205/g1.txt` do NIEISTNIEJĄCEGO katalogu wywracało zapis
+  // (ENOENT) DOPIERO na końcu przebiegu — partia trwała ~40 s, po czym cały
+  // transkrypt przepadał, a z nim dowód audytu (klasa L24/L33: brak śladu =
+  // pomiar do powtórzenia). Katalog tworzymy z góry.
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
   const flush = () => fs.writeFileSync(outPath, lines.join('\n') + '\n', 'utf8');
 
   // --- M97: deterministyczna losowość polityki (ADR 0005 — bez Math.random) --
@@ -265,6 +270,10 @@ export async function runTableGame({
   // odrzuca komendę. To ARTEFAKT POLITYKI testera (jak double-tap profilu
   // `impatient`), nie błąd reguł — detektor klasyfikuje go osobno.
   let tickedThisWindow = false;
+  // Wpisy logu, które są DOWODEM przebiegu reguł (M205). Celowo wąska lista:
+  // transkrypt ma nie puchnąć od zwykłych zdarzeń, które i tak widać w modalu
+  // „Rozgrywka" i w snapshotach.
+  const MAIN_LOG_EVIDENCE = /^Auto-pass:/;
   const collectRejections = (action) => {
     const entries = $$('#log .log-rejection').map((e) => text(e).trim()).filter(Boolean);
     for (let i = rejectionsSeen; i < entries.length; i += 1) {
@@ -275,6 +284,34 @@ export async function runTableGame({
       });
     }
     rejectionsSeen = entries.length;
+  };
+  // M205 (audyt PR #77): niektóre wpisy głównego logu są DOWODEM na przebieg
+  // reguł, a nie ozdobą — auto-pass człowieka przy niepustym stosie mówi, że
+  // gracz dostał priorytet i go oddał (CR 117.3b/117.4). Pod `--quiet`
+  // snapshotów nie ma wcale, a linia `LOG:` w snapshocie niesie tylko OGON
+  // (ostatnie 6 wpisów), więc dowód gubił się między krokami i detektor
+  // `detectNoResponseWindow` zgłaszał legalne rozstrzygnięcie jako brak okna
+  // na odpowiedź. Zbieramy więc NOWE wpisy logu po indeksie — niezależnie od
+  // trybu snapshotów.
+  let mainLogSeen = 0;
+  const collectMainLog = () => {
+    const entries = $$('#log .log-event, #log .log-rejection, #log .log-system')
+      .map((e) => text(e).trim()).filter(Boolean);
+    // UWAGA: `render.js` rysuje log od NAJNOWSZEGO (`[...session.log].reverse()`),
+    // więc nowe wpisy dokładają się na POCZĄTKU listy DOM, nie na końcu.
+    // Liczenie indeksem od przodu czytałoby najstarsze wpisy jako „nowe" —
+    // pierwsza wersja tego kodu tak właśnie robiła i nie znalazła ani jednego
+    // wpisu (pomiar: 0 trafień w transkrypcie mimo obecności wpisu w logu).
+    if (entries.length < mainLogSeen) mainLogSeen = 0;  // log przycięty/przerysowany
+    const freshCount = entries.length - mainLogSeen;
+    // `slice(0, freshCount)` to nowe wpisy (od najnowszego) — odwracamy, żeby
+    // trafiły do transkryptu w kolejności chronologicznej.
+    const fresh = entries.slice(0, Math.max(0, freshCount)).reverse();
+    for (const entry of fresh) {
+      if (!MAIN_LOG_EVIDENCE.test(entry)) continue;
+      logL(`  LOG: ${entry.slice(0, 160)}`);
+    }
+    mainLogSeen = entries.length;
   };
   const normalize = (t) => t.replace(/\d+/g, 'N').replace(/\s+/g, ' ').trim().slice(0, 60);
 
@@ -734,6 +771,11 @@ export async function runTableGame({
   const isGameOver = () => /Koniec partii|wygrywa|wygrał|przegrał/.test(text($('#turn-indicator')));
 
   const step = async () => {
+    // M205: dowody z głównego logu (auto-pass) zbieramy na POCZĄTKU kroku —
+    // czyli po tym, jak sesja przewinęła grę w wyniku poprzedniego kliknięcia,
+    // a przed zamknięciem modala. Kolejność w transkrypcie jest wtedy zgodna
+    // z przebiegiem: „bot rzuca" → „Auto-pass" → „zostaje rozstrzygnięty".
+    collectMainLog();
     // M99: `impatient` z rozmysłem NIE zamyka modala ruchu bota od razu —
     // klika w panel akcji „przez" otwartą pauzę, tak jak gracz na telefonie.
     if (profile !== 'impatient' && await closeBotMove()) return 'botmove';
