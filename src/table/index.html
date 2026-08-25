@@ -64,6 +64,12 @@
     max-width: 96vw;
     pointer-events: none;
   }
+  /* M203/C (uwaga właściciela 2026-08-25): panel szybkich informacji
+     (.turn-indicator) jest warstwą `position: fixed` i nachodził na pola
+     ziarna oraz wyboru talii w pasku startu. Jeden pusty wiersz odstępu nad
+     tym paskiem robi mu miejsce — wysokość na dwa wiersze etykiet panelu
+     (flex-wrap) plus margines panelu od góry. */
+  .turn-indicator-clearance { height: 46px; }
   .turn-indicator .ti-player { color: #fff; }
   .turn-indicator .ti-phase { color: #cbd5e1; font-weight: 600; }
   .turn-indicator .ti-life { color: #86efac; font-weight: 600; }
@@ -852,6 +858,9 @@
 <body>
 <div id="turn-indicator" class="turn-indicator" aria-live="polite"></div>
 <div class="app">
+  <!-- M203/C (uwaga właściciela): pusty wiersz odstępu — patrz
+       .turn-indicator-clearance w CSS. -->
+  <div class="turn-indicator-clearance" aria-hidden="true"></div>
   <div class="topbar">
     <!-- M197/A6 (zlecenie właściciela): nagłówek „MTG · Wirtualny Stół (M20)"
          usunięty — zajmował miejsce, nic nie wnosząc. -->
