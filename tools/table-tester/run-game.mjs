@@ -632,15 +632,37 @@ export async function runTableGame({
       // a przy zakresie „N–M" wystarczy minimum.
       const needed = Number((intro.match(/zaznacz(?: cele)?\s*\(?(\d+)/) ?? [])[1] ?? 1);
       const isChecked = (b) => /^\s*\[x\]/.test(text(b));
-      logL(`  [multi-target wizard] ${intro.slice(0, 90)} — opcji ${rows.length}, potrzeba ${needed}`);
-      // Zaznaczaj aż „Zatwierdź" przestanie być wyłączony (silnik jest jedynym
-      // źródłem prawdy o legalności — L48), maksymalnie tyle, ile jest wierszy.
+      // M207: przy „up to N" (Wrap in Flames, You're Confronted by Robbers)
+      // dolna granica wynosi ZERO, więc „Zatwierdź" jest aktywny od razu.
+      // Warunek „klikaj, dopóki Zatwierdź wyłączony" kończył się wtedy po
+      // zerowej liczbie iteracji: tester rzucał czar BEZ CELÓW i audyt
+      // oglądał pusty przebieg („Wrap in Flames zostaje rozstrzygnięty" bez
+      // jednego obrażenia). Ścieżka zaznaczania celów pozostawała nietknięta
+      // mimo poprawnie otwartego kreatora.
+      //
+      // Docelowa liczba zaznaczeń: minimum wymagane przez silnik, a gdy ono
+      // wynosi 0 — górna granica z intro („(0–3)" → 3), przycięta liczbą
+      // dostępnych wierszy. Czar celowany ma być rzucony W CEL; to jedyny
+      // sposób, żeby audyt zobaczył jego skutek.
+      const upper = Number((intro.match(/zaznacz(?: cele)?\s*\(?\d+\s*[–-]\s*(\d+)/) ?? [])[1] ?? 0);
+      const want = Math.min(Math.max(needed, upper, 1), rows.length);
+      logL(`  [multi-target wizard] ${intro.slice(0, 90)} — opcji ${rows.length}, potrzeba ${needed}, celuję w ${want}`);
+      // Zaznaczaj aż uzbierasz `want` ORAZ „Zatwierdź" przestanie być
+      // wyłączony (silnik jest jedynym źródłem prawdy o legalności — L48).
       const order = profile === 'random' ? shuffleForPolicy(rows) : rows;
       for (const row of order) {
-        if (!multiConfirm.disabled) break;
+        const checkedNow = rows.filter(isChecked).length;
+        if (checkedNow >= want && !multiConfirm.disabled) break;
         if (isChecked(row)) continue;
         row.click();
         await sleep(20);
+        // Zaznaczenie ponad limit silnika cofa legalność (Zatwierdź gaśnie) —
+        // wtedy odznacz z powrotem i przestań dokładać.
+        if (multiConfirm.disabled && rows.filter(isChecked).length > (needed || 1)) {
+          row.click();
+          await sleep(20);
+          break;
+        }
       }
       const confirmNow = $$('#choice-request button').find((b) => /multi-target-confirm/.test(String(b.className)));
       if (confirmNow && !confirmNow.disabled) {
