@@ -1445,7 +1445,9 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'moonlit_choice_resolved': return e.replaced
         ? `${whoN(e.playerId)} tworzy kopie zaczarowanego permanentu`
         : `${whoN(e.playerId)} tworzy zwykłe tokeny`;
-      case 'land_type_choice_required': return `${whoN(e.playerId)} wybiera podstawowy typ landa (${e.sourceCardId ? nameOf(e.sourceCardId) : 'Unstable Frontier'})`;
+      // M212/B: bez znanego zrodla NIE zgadujemy nazwy karty — dopisanie
+      // drugiej karty z ta mechanika kazaloby jej klamac cudzym imieniem.
+      case 'land_type_choice_required': return `${whoN(e.playerId)} wybiera podstawowy typ lądu${e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : ''}`;
       case 'land_type_choice_resolved': return `${nameOfObject(e.targetId)} staje się typem ${e.landType} do końca tury`;
       // M116 (Cuombajj Witches): drugi cel wskazuje PRZECIWNIK (CR 601.2c).
       case 'opponent_target_required':

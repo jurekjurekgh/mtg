@@ -1718,8 +1718,13 @@ export function execute(state, input) {
     // Dwie kolejne decyzje resolve_search_choice (declinable); shuffle w
     // handlerze search (dystrybucyjnie równoważne pojedynczemu tasowaniu
     // po wyjęciu obu kart — biblioteka tasuje się seedem tak samo).
+    // M212/B (ta sama klasa co etykieta UI): gdy obiekt zrodla juz nie
+    // istnieje (czar zszedl ze stosu), fallback podstawial nazwe PIERWSZEJ
+    // karty z ta mechanika — Roiling Regrowth potrafil sie przedstawic jako
+    // Springbloom Druid. Pending niesie wlasne `cardId` (M201/F); literal
+    // nazwy karty nie ma prawa zyc w core (ADR 0002).
     const source = state.objects.get(pending.sourceId)
-      ?? { controllerId: pending.controllerId, cardId: 'springbloom-druid' };
+      ?? { controllerId: pending.controllerId, cardId: pending.cardId ?? null };
     queueSearchChoice(state, source, {
       qualifier: { types: ['Basic', 'Land'] },
       destination: 'battlefield',
