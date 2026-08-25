@@ -70,7 +70,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_mulligan_bottom_choice: 'Odłożenie kart na spód',
   resolve_search_choice: 'Szukanie w bibliotece',
   resolve_fertile_thicket: 'Fertile Thicket (wierzch biblioteki)',
-  resolve_springbloom: 'Springbloom Druid (poświęcenie landa)',
+  resolve_springbloom: 'Poświęcenie lądu',
   resolve_damage_assignment: 'Rozdzielenie obrażeń bojowych',
   resolve_color_choice: 'Wybór koloru',
   resolve_index_choice: 'Index (kolejność wierzchu)',
@@ -148,7 +148,7 @@ const TOUCH_DEVICE = isTouchDevice();
 
 /** Czytelna nazwa bieżącego kroku tury. */
 export function stepLabel(turn) {
-  if (turn.step === 'main') return turn.phase === 'postcombat_main' ? 'Druga faza główna' : 'Faza główna';
+  if (turn.step === 'main1' || turn.step === 'main2') return turn.step === 'main2' ? 'Druga faza główna' : 'Faza główna';
   return STEP_LABELS[turn.step] ?? turn.step;
 }
 
@@ -1316,9 +1316,26 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   }
   if (trigger.event === 'land_entered_under_opponent_control') return `Gdy land wchodzi pod kontrolą przeciwnika: ${parts}.`;
   if (trigger.event === 'end_step') {
-    const cond = trigger.condition?.minTappedCreaturesControlled
-      ? ` (gdy kontrolujesz ${trigger.condition.minTappedCreaturesControlled}+ zatapnięte stwory)` : '';
-    return `Na początku kroku końca${cond}: ${parts}.`;
+    // M212/Z5 (audyt Żywym Testerem): warunek intervening-if (CR 603.4) MUSI
+    // być w opisie — inaczej gracz czyta „usuń licznik -1/-1” jako zdolność
+    // bezwarunkową i nie rozumie, czemu nic się nie dzieje (Creakwood
+    // Safewright stał całą partię z trzema licznikami). Wcześniej gałąź znała
+    // WYŁĄCZNIE minTappedCreaturesControlled; każdy inny warunek znikał.
+    const cond = trigger.condition ?? {};
+    const czlony = [];
+    if (cond.minTappedCreaturesControlled) {
+      czlony.push(`kontrolujesz ${cond.minTappedCreaturesControlled}+ zatapnięte stwory`);
+    }
+    if (cond.subtypeCardInYourGraveyard) {
+      czlony.push(`w twoim grobie jest karta ${cond.subtypeCardInYourGraveyard}`);
+    }
+    if (cond.selfHasCounter) {
+      czlony.push(`ma licznik ${COUNTER_LABELS[cond.selfHasCounter] ?? cond.selfHasCounter}`);
+    }
+    if (cond.didntAttackThisTurn) czlony.push('nie atakował w tej turze');
+    if (cond.delirium) czlony.push('delirium');
+    const suffix = czlony.length > 0 ? ` (gdy ${czlony.join(' i ')})` : '';
+    return `Na początku kroku końca${suffix}: ${parts}.`;
   }
   if (trigger.event === 'exploits') return `Gdy ten stwór exploituje: ${parts}.`;
   if (trigger.event === 'equipped_creature_attacks') return `Gdy wyposażony stwór atakuje: ${parts}.`;
@@ -1529,7 +1546,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_mulligan_bottom_choice: 'Karty na spód biblioteki (mulligan)',
   resolve_search_choice: 'Szukanie w bibliotece',
   resolve_fertile_thicket: 'Fertile Thicket — wierzch biblioteki',
-  resolve_springbloom: 'Springbloom Druid — land do poświęcenia',
+  resolve_springbloom: 'Ląd do poświęcenia',
   resolve_backup: 'Backup — który stwór dostaje liczniki?',
   resolve_trigger_target: 'Cel wyzwalonej zdolności',
   resolve_grave_free_cast: 'Rzut z grobu za {X} (Halo Forager)',
@@ -1601,6 +1618,12 @@ function choiceSourceTitle(cmd, session, view) {
   // (karta publiczna na polu bitwy; pendingExploit w widoku tylko właściciela).
   if (cmd?.type === 'resolve_exploit_choice' && view?.pendingExploit?.sourceCardId) {
     return `${session.nameOf(view.pendingExploit.sourceCardId)} — Exploit (poświęć stwora)`;
+  }
+  // M212/B (zgłoszenie właściciela): „poświęć ląd" to mechanika wspólna dla
+  // kilku kart (Springbloom Druid, Roiling Regrowth) — nazwa źródła jedzie
+  // z pendingu, nigdy z nazwy karty zaszytej w warstwie opisu (ADR 0002).
+  if (cmd?.type === 'resolve_springbloom' && view?.pendingSpringbloom?.sourceCardId) {
+    return `${session.nameOf(view.pendingSpringbloom.sourceCardId)} — ląd do poświęcenia`;
   }
   // M166/D: Inferno Titan — tytuł grupy nazywa źródło i łączną kwotę.
   if (cmd?.type === 'resolve_damage_division' && view?.pendingDamageDivision?.sourceCardId) {
@@ -2318,8 +2341,8 @@ export function commandLabel(cmd, session, view) {
       // M102/U3: bez tej gałęzi wszystkie warianty spadały do `default`
       // i dostawały nazwę CAŁEJ decyzji („Springbloom Druid (poświęcenie
       // landa)") — cztery identyczne opcje, czyli wybór landa w ciemno.
-      if (cmd.skip) return 'Springbloom Druid — nie poświęcaj landa (rezygnuję)';
-      return `Poświęć land: ${escapeHtml(session.nameOfObject(cmd.sacrificeLandId))}`;
+      if (cmd.skip) return 'Nie poświęcaj lądu (rezygnuję)';
+      return `Poświęć ląd: ${escapeHtml(session.nameOfObject(cmd.sacrificeLandId))}`;
     }
     case 'resolve_mulligan_bottom_choice': {
       const ids = Array.isArray(cmd.cardIds) ? cmd.cardIds : [];

@@ -6261,6 +6261,13 @@ export function playerView(state, playerId) {
           total: state.pendingDamageDivision.total,
         }
       : null,
+    // M212/B (zgłoszenie właściciela): decyzję „poświęć ląd" wywołuje kilka
+    // kart (Springbloom Druid, Roiling Regrowth) — UI nazywało ją na sztywno
+    // pierwszą z nich. Źródło jedzie z pendingu do widoku (ten sam wzorzec co
+    // pendingHandTopChoice), więc etykieta może nazwać WŁAŚCIWĄ kartę.
+    pendingSpringbloom: activeSpringbloom
+      ? { sourceCardId: state.pendingSpringbloom.cardId ?? null }
+      : null,
     // M163/A (uwaga właściciela): Exploit (Silumgar Butcher) — tytuł grupy
     // nazywa źródło decyzji. sourceCardId = karta publiczna na polu bitwy;
     // TYLKO właściciel decyzji (ten sam wzorzec co pendingHandTopChoice).
