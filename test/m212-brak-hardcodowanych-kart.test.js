@@ -35,32 +35,10 @@ const DOZWOLONE_ID = new Set([
 // ma własnego strażnika M200/N1 pilnującego, by nie cieniowała deskryptorów.
 const PLIKI_DANYCH = new Set(['src/engine/mana-sources.js', 'src/table/deck-builder.js']);
 
-// ZAPADKA: stan zastany w chwili wprowadzenia strażnika (M212). Wyłącznie
-// etykiety UI i komunikaty błędów — żadne z tych miejsc nie rozgałęzia
-// ZACHOWANIA po karcie. Lista może się skracać, nigdy wydłużać.
-const ZAMROZONE = new Set([
-  'src/engine/spells.js|Fireball',
-  'src/engine/spells.js|Lash of the Balrog',
-  'src/table/choice-request.js|Index',
-  'src/table/render.js|Dreams of Steel and Oil',
-  'src/table/render.js|Epic Experiment',
-  'src/table/render.js|Fertile Thicket',
-  'src/table/render.js|Halo Forager',
-  'src/table/render.js|Index',
-  'src/table/render.js|Stomping Slabs',
-  'src/table/render.js|Underdark Explorer',
-  'src/table/render.js|Willbender',
-  'src/table/session.js|Dragon Arch',
-  'src/table/session.js|Epic Experiment',
-  'src/table/session.js|Fertile Thicket',
-  'src/table/session.js|Force Away',
-  'src/table/session.js|Forever Young',
-  'src/table/session.js|Index',
-  'src/table/session.js|Inspire Awe',
-  'src/table/session.js|Moonlit Meditation',
-  'src/table/session.js|Stomping Slabs',
-  'src/table/session.js|Willbender',
-]);
+// M213: lista długu (ZAMROZONE) jest PUSTA — wszystkie 21 zastanych odwołań
+// zostało spłaconych. Silnik i warstwa stołu nie zawierają już żadnej nazwy
+// karty. Nie przywracaj tej listy: nowe wystąpienie ma być błędem, nie wpisem.
+const ZAMROZONE = new Set([]);
 
 function plikiZrodlowe() {
   const out = [];

@@ -209,7 +209,8 @@ test('P4: scry 2 i Index 3 — odmiana „karty" także w wersji z nazwami', () 
   const scry = describeGameEvent({ type: 'scry_started', playerId: 'p1', amount: 2, cardIds: ['basic-island', 'curate'] }, HELPERS, NAMES);
   assert.match(scry, /scry \(patrzy na 2 karty: /, scry);
   const index = describeGameEvent({ type: 'index_started', playerId: 'p1', count: 3, cardIds: ['basic-island', 'curate', 'negate'] }, HELPERS, NAMES);
-  assert.match(index, /Index \(patrzy na 3 karty: /, index);
+  // M213: opis Index nie nazywa karty; liczy się odmiana liczebnika.
+  assert.match(index, /ogląda(sz)? wierzch biblioteki \(3 karty: /i, index);
 });
 
 // --- M100/E10 (P6): zwykła aura NIE jest „za koszt bestow" ----------------

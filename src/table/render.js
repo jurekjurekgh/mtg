@@ -69,11 +69,11 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_mulligan_choice: 'Mulligan (ręka startowa)',
   resolve_mulligan_bottom_choice: 'Odłożenie kart na spód',
   resolve_search_choice: 'Szukanie w bibliotece',
-  resolve_fertile_thicket: 'Fertile Thicket (wierzch biblioteki)',
+  resolve_fertile_thicket: 'Układanie wierzchu biblioteki',
   resolve_springbloom: 'Poświęcenie lądu',
   resolve_damage_assignment: 'Rozdzielenie obrażeń bojowych',
   resolve_color_choice: 'Wybór koloru',
-  resolve_index_choice: 'Index (kolejność wierzchu)',
+  resolve_index_choice: 'Kolejność kart na wierzchu',
   resolve_modal_choice: 'Tryb czaru („choose one")',
   resolve_redirect_choice: 'Przekierowanie obrażeń',
   resolve_proliferate: 'Proliferate (licznik)',
@@ -988,7 +988,7 @@ function describeEffect(e) {
         : 'kartę z grobu';
       return `możesz położyć ${what} na wierzch biblioteki`;
     },
-    index_look: () => 'zobacz wierzch biblioteki (Index)',
+    index_look: () => 'zobacz wierzch biblioteki i ułóż w dowolnej kolejności',
     look_top_put_one_hand_rest_grave: () => 'zobacz wierzch biblioteki, jedną do ręki, resztę do grobu',
     // M192/Z3 (petla jakosci): deskryptor NIESIE liczbe (Rediscover the Way:
     // amount 3), a opis pokazywal literalne „X" — placeholder z kodu na
@@ -1526,7 +1526,7 @@ const CHOICE_GROUP_TYPE_DESCRIPTORS = Object.freeze({
   damage_division: 'Podział obrażeń między cele',
   scry: 'Scry — co odłożyć na spód?',
   surveil: 'Surveil — karty do grobu',
-  index: 'Index — kolejność na wierzchu biblioteki',
+  index: 'Kolejność kart na wierzchu biblioteki',
   clash: 'Clash — wierzch czy spód?',
   sacrifice: 'Poświęcenie',
   value: 'Wartość X',
@@ -1545,11 +1545,11 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_mulligan_choice: 'Mulligan',
   resolve_mulligan_bottom_choice: 'Karty na spód biblioteki (mulligan)',
   resolve_search_choice: 'Szukanie w bibliotece',
-  resolve_fertile_thicket: 'Fertile Thicket — wierzch biblioteki',
+  resolve_fertile_thicket: 'Układanie wierzchu biblioteki',
   resolve_springbloom: 'Ląd do poświęcenia',
   resolve_backup: 'Backup — który stwór dostaje liczniki?',
   resolve_trigger_target: 'Cel wyzwalonej zdolności',
-  resolve_grave_free_cast: 'Rzut z grobu za {X} (Halo Forager)',
+  resolve_grave_free_cast: 'Rzut z grobu za {X}',
   resolve_delirium_target: 'Delirium — cel obrażeń',
   resolve_mentor_target: 'Mentor — kto dostaje licznik?',
   resolve_graveyard_top_choice: 'Karta z grobu na wierzch biblioteki',
@@ -1899,7 +1899,7 @@ export function commandLabel(cmd, session, view) {
     return parts.join(', ');
   };
   switch (cmd.type) {
-    case 'resolve_index_choice': return 'Index — przestaw karty na wierzchu biblioteki';
+    case 'resolve_index_choice': return 'Przestaw karty na wierzchu biblioteki';
     case 'resolve_damage_assignment': return 'Rozdziel obrażenia bojowe (domyślnie lethal-first)';
     case 'draw_card': return 'Dobierz kartę';
     case 'pass_priority': return 'Dalej (pass)';
@@ -2368,11 +2368,11 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_epic_choice': {
       // Epic Experiment — rzuć wygnany czar bez kosztu albo zakończ.
-      if (cmd.done) return 'Epic Experiment: zakończ (reszta kart do grobu)';
+      if (cmd.done) return 'Zakończ darmowe rzuty (reszta kart do grobu)';
       // M163/A (klasa M151/suspend): oferta per legalny zestaw celów — bez
       // celu w etykiecie warianty tej samej karty są nieodróżnialne.
       const epicTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
-      return `Epic Experiment: rzuć bez kosztu — ${nameOfObjectId(cmd.cardId)}${epicTargets ? ` → cel: ${epicTargets}` : ''}`;
+      return `Rzuć bez kosztu — ${nameOfObjectId(cmd.cardId)}${epicTargets ? ` → cel: ${epicTargets}` : ''}`;
     }
     case 'resolve_look_top_choice': {
       // Gurmag Drowner — wybierz kartę z wierzchu do ręki.
@@ -2468,7 +2468,7 @@ export function commandLabel(cmd, session, view) {
         objectIdToName.set(pendingReveal.cardIds[i], revealed[i]);
       }
       const namesList = order.map((oid) => session.nameOf(objectIdToName.get(oid))).join(', ');
-      return `Stomping Slabs: ułóż na spodzie (${namesList || 'karty'})`;
+      return `Ułóż na spodzie biblioteki (${namesList || 'karty'})`;
     }
     case 'resolve_proliferate': {
       // Proliferate (Courage in Crisis) — wybór dowolnej liczby celów.
@@ -2479,7 +2479,7 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_damage_target': {
       // Stomping Slabs — obrażenia 7 do wybranego celu.
-      return `Stomping Slabs: 7 obrażeń w ${nameOfObjectId(cmd.targetId)}`;
+      return `Obrażenia w ${nameOfObjectId(cmd.targetId)}`;
     }
     case 'resolve_modal_choice': {
       // Modalny trigger upkeep (Etherwrought Page) — wybór trybu.
@@ -2512,18 +2512,18 @@ export function commandLabel(cmd, session, view) {
       // Willbender — zmiana celu czaru na stosie.
       const pending = view.pendingRedirectChoice;
       const what = pending?.spellCardId ? session.nameOf(pending.spellCardId) : 'czaru';
-      return `Willbender: zmień cel ${what} na ${nameOfObjectId(cmd.targetId)}`;
+      return `Zmień cel ${what} na ${nameOfObjectId(cmd.targetId)}`;
     }
     case 'resolve_reveal_exile_hand': {
       // Dreams of Steel and Oil — wybór karty z ręki do wygnania. Nazwa po
       // session.nameOfObject (pełny stan), NIE nameOfObjectId: PlayerView
       // chowa cardId odsłoniętej karty ręki (FoW) i „?" (audyt diamentowy).
-      if (cmd.cardId == null) return 'Dreams of Steel and Oil — brak karty w ręce (pomijam)';
-      return `Dreams of Steel and Oil — wygnaj z ręki: ${session.nameOfObject(cmd.cardId)}`;
+      if (cmd.cardId == null) return 'Brak karty w ręce do wygnania (pomijam)';
+      return `Wygnaj z ręki: ${session.nameOfObject(cmd.cardId)}`;
     }
     case 'resolve_reveal_exile_grave': {
-      if (cmd.cardId == null) return 'Dreams of Steel and Oil — brak karty w grobie (pomijam)';
-      return `Dreams of Steel and Oil — wygnaj z grobu: ${session.nameOfObject(cmd.cardId)}`;
+      if (cmd.cardId == null) return 'Brak karty w grobie do wygnania (pomijam)';
+      return `Wygnaj z grobu: ${session.nameOfObject(cmd.cardId)}`;
     }
     case 'resolve_enter_as_copy': {
       if (cmd.targetId == null) return 'Wejdź jako 0/0 (bez kopii)';
@@ -2546,11 +2546,11 @@ export function commandLabel(cmd, session, view) {
       return `Kopia czaru — cel: ${nameOfObjectId(cmd.targetId)}`;
     }
     case 'resolve_fertile_thicket': {
-      if (cmd.skip) return 'Fertile Thicket — odłóż wszystko na spód (bez landa)';
+      if (cmd.skip) return 'Odłóż wszystko na spód (bez landa)';
       const landName = cmd.chosenCardId
         ? escapeHtml(session.nameOfObject(cmd.chosenCardId))
         : 'basic land';
-      return `Fertile Thicket — ${landName} na wierzch biblioteki`;
+      return `${landName} na wierzch biblioteki`;
     }
     default: return REASONING_ACTION_LABELS[cmd.type] ?? cmd.type;
   }
@@ -3602,7 +3602,7 @@ export function renderUndercity(els, session, view, { onClick = null, hover = nu
       : 'Loch ukończony');
   }
   if (view.initiativePlayerId == null) {
-    div(info, 'undercity-note', 'Inicjatywę obejmuje się combat damage na jej posiadacza albo efektem karty (np. Underdark Explorer).');
+    div(info, 'undercity-note', 'Inicjatywę obejmuje się combat damage na jej posiadacza albo efektem karty.');
   }
 }
 

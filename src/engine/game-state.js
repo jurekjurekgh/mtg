@@ -1437,6 +1437,7 @@ export function execute(state, input) {
     }
     state.events.push(event('reveal_order_resolved', {
       playerId: cmd.playerId, total: pending.cardIds.length, order: [...order],
+      sourceCardId: pending.sourceCardId ?? null,
     }));
     // applyEffect wykonuje reorder (CR 401.4) + opcjonalny damage z
     // `thenDamage` jeśli named „<effect.namedCard>" był w reveal
@@ -1647,6 +1648,7 @@ export function execute(state, input) {
       state.pendingFertileThicket = null;
       state.events.push(event('fertile_thicket_resolved', {
         controllerId: pending.controllerId, chosenCardId: null, skipped: true,
+        sourceCardId: pending.sourceCardId ?? null,
       }));
       return accepted(state, cmd, { ok: true, events: state.events.slice(state.events.length - 1) });
     }
@@ -1676,6 +1678,7 @@ export function execute(state, input) {
     state.pendingFertileThicket = null;
     state.events.push(event('fertile_thicket_resolved', {
       controllerId: pending.controllerId, chosenCardId: chosenId,
+      sourceCardId: pending.sourceCardId ?? null,
     }));
     return accepted(state, cmd, { ok: true, events: state.events.slice(state.events.length - 1) });
   }
@@ -1752,6 +1755,7 @@ export function execute(state, input) {
     }
     state.events.push(event('index_resolved', {
       playerId: pending.playerId, count: pending.objectIds.length, order: [...order],
+      sourceCardId: pending.sourceCardId ?? null,
       // M100/E4: ustalona kolejność = wiedza własna (opis nazywa tylko jej autorowi).
       orderCardIds: order.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
     }));
@@ -2242,7 +2246,7 @@ export function execute(state, input) {
       if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
         state.turn.priorityPlayerId = pending.restorePriorityTo;
       }
-      state.events.push(event('epic_experiment_resolved', { playerId: pending.playerId, count: pending.exileIds.length, restToGrave: rest.length }));
+      state.events.push(event('epic_experiment_resolved', { playerId: pending.playerId, count: pending.exileIds.length, restToGrave: rest.length, sourceCardId: pending.sourceCardId ?? null }));
       const resolvedEvents = state.events.slice(before);
       if (state.pendingSpell) {
         const spellPending = state.pendingSpell;
@@ -3754,9 +3758,9 @@ export function execute(state, input) {
         fromId: cmd.targetId, objectId: bfId, object: permanent, cardId: permanent.cardId,
         controllerId: pending.playerId, putFromHand: true,
       }));
-      state.events.push(event('hand_creature_choice_resolved', { playerId: pending.playerId, putCreature: true, cardId: permanent.cardId }));
+      state.events.push(event('hand_creature_choice_resolved', { playerId: pending.playerId, putCreature: true, cardId: permanent.cardId, sourceCardId: pending.sourceCardId ?? null }));
     } else {
-      state.events.push(event('hand_creature_choice_resolved', { playerId: pending.playerId, putCreature: false }));
+      state.events.push(event('hand_creature_choice_resolved', { playerId: pending.playerId, putCreature: false, sourceCardId: pending.sourceCardId ?? null }));
     }
     state.pendingHandCreature = null;
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {

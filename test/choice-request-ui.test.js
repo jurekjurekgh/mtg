@@ -216,7 +216,8 @@ test('renderLookWizard kind=index: lista kart, potem kolejność klikaną od gó
     cards: [{ id: 'c1', name: 'Swamp' }, { id: 'c2', name: 'Forest' }, { id: 'c3', name: 'Island' }],
     onComplete: (built) => calls.push(built),
   });
-  assert.match(host.textContent, /Index 3 — karty na wierzchu biblioteki/);
+  // M213: nagłówek kreatora nie nazywa karty — opisuje czynność.
+  assert.match(host.textContent, /Wierzch biblioteki — 3 karty/);
   assert.match(host.textContent, /1\. Swamp/);
   assert.match(host.textContent, /Ustaw nową kolejność od góry/);
   // klikamy kolejność: Island, Swamp, Forest (przyciski w zagnieżdżonych węzłach)

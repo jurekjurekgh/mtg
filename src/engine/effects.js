@@ -3371,11 +3371,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (candidates.length === 0) return;
     state.pendingGraveyardToTop = {
       playerId: ownerId,
+      sourceCardId: sourceObject?.cardId ?? null,
       candidateIds: [...candidates],
       restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.turn.priorityPlayerId = ownerId;
-    state.events.push(event('graveyard_top_choice_required', { playerId: ownerId, candidateIds: [...candidates] }));
+    state.events.push(event('graveyard_top_choice_required', { playerId: ownerId, candidateIds: [...candidates], sourceCardId: sourceObject?.cardId ?? null }));
     // Blokująca decyzja — rozstrzyganie czaru czeka (state.pendingSpell,
     // pozostałe efekty dokończy resolve_graveyard_top_choice{done:true}).
     return true;
@@ -3398,6 +3399,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (candidates.length === 0) return; // „may" bez kandydatow — brak decyzji
     state.pendingGraveyardToTop = {
       playerId: ownerId,
+      sourceCardId: sourceObject?.cardId ?? null,
       candidateIds: [...candidates],
       filter: effect.filter ?? null,
       maxCards: 1,
@@ -3494,6 +3496,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // MV <= X z wygnanych (bez kosztu) aż do zakończenia (done); reszta do grobu.
     state.pendingEpicExperiment = {
       playerId: controllerId,
+      sourceCardId: sourceObject?.cardId ?? null,
       exileIds,
       maxMV: X,
       restorePriorityTo: state.turn.priorityPlayerId,
@@ -3502,6 +3505,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.events.push(event('epic_experiment_started', {
       playerId: controllerId, count: exileIds.length,
       cardIds: exileIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
+      sourceCardId: sourceObject?.cardId ?? null,
     }));
     return true;
   }
@@ -3608,11 +3612,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     state.pendingHandCreature = {
       playerId: controllerId,
+      sourceCardId: sourceObject?.cardId ?? null,
       candidateIds: [...candidates],
       restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.turn.priorityPlayerId = controllerId;
-    state.events.push(event('hand_creature_choice_required', { playerId: controllerId, candidates: [...candidates] }));
+    state.events.push(event('hand_creature_choice_required', { playerId: controllerId, candidates: [...candidates], sourceCardId: sourceObject?.cardId ?? null }));
     return true;
   }
   if (effect.type === 'craft_transform') {
@@ -4322,6 +4327,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // can still decline). The resolve handler allows skip.
     state.pendingFertileThicket = {
       controllerId,
+      sourceCardId: sourceObject?.cardId ?? null,
       topCardIds: library.slice(0, count),
       basicLandIds: library.slice(0, count).map(id => {
         const obj = state.objects.get(id);
@@ -4331,6 +4337,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     };
     state.events.push(event('fertile_thicket_reveal_started', {
       controllerId, cardCount: count, basicLandCount: (state.pendingFertileThicket.basicLandIds).length,
+      sourceCardId: sourceObject?.cardId ?? null,
     }));
     return;
   }
@@ -4422,11 +4429,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (topIds.length === 0) return;
     state.pendingIndex = {
       playerId: controllerId,
+      sourceCardId: sourceObject?.cardId ?? null,
       objectIds: [...topIds],
       restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.turn.priorityPlayerId = controllerId;
-    state.events.push(event('index_started', { playerId: controllerId, count: topIds.length, cardIds: topIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean) }));
+    state.events.push(event('index_started', { playerId: controllerId, count: topIds.length, cardIds: topIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean), sourceCardId: sourceObject?.cardId ?? null }));
     return true;
   }
 
@@ -4568,7 +4576,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.turn.priorityPlayerId = ctrl;
-    state.events.push(event('optional_draw_required', { playerId: ctrl }));
+    state.events.push(event('optional_draw_required', { playerId: ctrl, sourceCardId: sourceObject?.cardId ?? null }));
     return true;
   }
 

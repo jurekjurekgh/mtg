@@ -478,7 +478,8 @@ const DRUGA_OSOBA = Object.freeze({
   rozdziela: 'rozdzielasz', rozstrzyga: 'rozstrzygasz', rzuca: 'rzucasz',
   szuka: 'szukasz', tworzy: 'tworzysz', układa: 'układasz', używa: 'używasz',
   wskazuje: 'wskazujesz', wybiera: 'wybierasz', wygrywa: 'wygrywasz',
-  wykonuje: 'wykonujesz',
+  wykonuje: 'wykonujesz', wygania: 'wyganiasz', przestawia: 'przestawiasz',
+  ustala: 'ustalasz',
   wzmacnia: 'wzmacniasz', zagłębia: 'zagłębiasz', zagrywa: 'zagrywasz',
   zatrzymuje: 'zatrzymujesz', zawiesza: 'zawieszasz', zdejmuje: 'zdejmujesz',
   znajduje: 'znajdujesz', zostawia: 'zostawiasz',
@@ -831,7 +832,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         // gracz wiedział, DLACZEGO obrażenia nie doszły (nie tylko „zniwelowane").
         let reason = '';
         if (e.protection) reason = ' (ochrona przed kolorem)';
-        else if (e.inspireAwe) reason = ' (Inspire Awe: prewencja obrażeń bojowych)';
+        else if (e.inspireAwe) reason = ' (prewencja obrażeń bojowych)';
         else if (e.shield) reason = ' (tarcza prewencji)';
         else reason = ' (prewencja)';
         return `Obrażenia (${e.amount}) do ${targetName} zapobiegnięte${reason}`;
@@ -1045,9 +1046,9 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const mode = e.modeName ? ` — tryb: ${e.modeName}` : '';
         return `${nameOf(e.cardId ?? nameOfObject(e.sourceId))} — gracz ${whoN(e.playerId)} wybiera tryb${mode}`;
       }
-      case 'hand_creature_choice_required': return `${whoN(e.playerId)} wybiera wielokolorowego stwora z ręki (Dragon Arch)`;
+      case 'hand_creature_choice_required': return `${srcName(e)}${whoN(e.playerId)} wybiera wielokolorowego stwora z ręki`;
       case 'hand_creature_choice_resolved': return e.putCreature
-        ? `${nameOf(e.cardId)} wchodzi na pole bitwy z ręki (Dragon Arch)`
+        ? `${srcName({ cardId: e.sourceCardId })}${nameOf(e.cardId)} wchodzi na pole bitwy z ręki`
         : `${whoN(e.playerId)} rezygnuje z położenia stwora`;
       case 'permanent_put_into_graveyard': return `${nameOf(e.cardId)} trafia do grobu (aura bez legalnego gospodarza)`;
       case 'card_discarded': return `${whoN(e.playerId)} odrzuca ${nameOf(e.cardId)}`;
@@ -1173,16 +1174,16 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'index_started': {
         if (e.cardIds?.length && seesHiddenOf(e.playerId)) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
-          return `${whoN(e.playerId)} wykonuje Index (patrzy na ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')}: ${names})`;
+          return `${srcName(e)}${whoN(e.playerId)} ogląda wierzch biblioteki (${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')}: ${names})`;
         }
-        return `${whoN(e.playerId)} wykonuje Index (patrzy na ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')})`;
+        return `${srcName(e)}${whoN(e.playerId)} ogląda wierzch biblioteki (${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')})`;
       }
       case 'index_resolved': {
         // M100/E4: ustalona kolejność to wiedza własna patrzącego.
         if (seesHiddenOf(e.playerId) && e.orderCardIds?.length) {
-          return `${whoN(e.playerId)} kończy Index — kolejność na wierzchu (od góry): ${e.orderCardIds.map((cid) => nameOf(cid)).join(', ')}`;
+          return `${srcName(e)}${whoN(e.playerId)} ustala kolejność na wierzchu (od góry): ${e.orderCardIds.map((cid) => nameOf(cid)).join(', ')}`;
         }
-        return `${whoN(e.playerId)} kończy Index — przestawia karty na wierzchu biblioteki`;
+        return `${srcName(e)}${whoN(e.playerId)} przestawia karty na wierzchu biblioteki`;
       }
       case 'look_top_started': {
         if (e.cardIds?.length && seesHiddenOf(e.playerId)) {
@@ -1219,9 +1220,9 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // nazwy dla obu graczy.
       case 'epic_experiment_started': {
         const exiled = (e.cardIds ?? []).map((cid) => nameOf(cid)).join(', ');
-        return `${whoN(e.playerId)} wykonuje Epic Experiment — wygnano ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki${exiled ? `: ${exiled}` : ''}`;
+        return `${srcName(e)}${whoN(e.playerId)} wygania ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki${exiled ? `: ${exiled}` : ''}`;
       }
-      case 'epic_experiment_resolved': return `${whoN(e.playerId)} kończy Epic Experiment (${e.restToGrave} ${polishPlural(e.restToGrave, 'karta', 'karty', 'kart')} do grobu)`;
+      case 'epic_experiment_resolved': return `${srcName(e)}${whoN(e.playerId)} kończy darmowe rzuty (${e.restToGrave} ${polishPlural(e.restToGrave, 'karta', 'karty', 'kart')} do grobu)`;
       case 'grave_free_cast_required':
         return `${whoN(e.playerId)} może zapłacić {X} i rzucić instant/sorcery o MV X z dowolnego grobu (${nameOf(e.sourceCardId)})`;
       case 'grave_free_cast_resolved':
@@ -1441,7 +1442,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'mulligan_bottom_required': return `${whoN(e.playerId)} — odłóż ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} na spód biblioteki (mulligan londyński)`;
       case 'mulligan_bottom_resolved': return `${whoN(e.playerId)} odkłada karty na spód po mulliganie`;
       case 'game_started': return 'Obie ręce zatrzymane — gra się zaczyna';
-      case 'moonlit_choice_required': return `${whoN(e.playerId)} — Moonlit Meditation: zastąpić tokeny kopiami zaczarowanego permanentu (${e.enchantedCardId ? nameOf(e.enchantedCardId) : ''})?`;
+      case 'moonlit_choice_required': return `${srcName({ cardId: e.sourceCardId })}${whoN(e.playerId)} — zastąpić tokeny kopiami zaczarowanego permanentu (${e.enchantedCardId ? nameOf(e.enchantedCardId) : ''})?`;
       case 'moonlit_choice_resolved': return e.replaced
         ? `${whoN(e.playerId)} tworzy kopie zaczarowanego permanentu`
         : `${whoN(e.playerId)} tworzy zwykłe tokeny`;
@@ -1517,7 +1518,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const card = (seesHiddenOf(e.playerId) && e.cardId) ? nameOf(e.cardId) : 'kartę';
         return `${whoN(e.playerId)} kładzie ${card} na wierzch biblioteki`;
       }
-      case 'graveyard_top_choice_required': return `${whoN(e.playerId)} wybiera karty-stwory z grobu na wierzch biblioteki (Forever Young)${e.candidateIds?.length ? ` — do wyboru ${e.candidateIds.length}` : ''}`;
+      case 'graveyard_top_choice_required': return `${srcName(e)}${whoN(e.playerId)} wybiera karty-stwory z grobu na wierzch biblioteki${e.candidateIds?.length ? ` — do wyboru ${e.candidateIds.length}` : ''}`;
       case 'graveyard_top_choice_resolved': return e.done
         ? `${whoN(e.playerId)} kończy wybieranie kart na wierzch biblioteki`
         : `${nameOf(e.cardId)} wraca z grobu na wierzch biblioteki`;
@@ -1550,10 +1551,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'exploit_choice_resolved': return e.skipped
         ? `Exploit: ${whoN(e.playerId)} nie poświęca — zdolność odpada`
         : null; // poświęcenie opisuje linia „exploited"
-      case 'fertile_thicket_reveal_started': return `Fertile Thicket: ${whoN(e.controllerId)} odsłania ${e.cardCount} ${polishPlural(e.cardCount, 'kartę', 'karty', 'kart')} z wierzchu biblioteki (bazowych landów: ${e.basicLandCount})`;
+      case 'fertile_thicket_reveal_started': return `${srcName(e)}${whoN(e.controllerId)} odsłania ${e.cardCount} ${polishPlural(e.cardCount, 'kartę', 'karty', 'kart')} z wierzchu biblioteki (bazowych landów: ${e.basicLandCount})`;
       case 'fertile_thicket_resolved': return e.skipped
-        ? `Fertile Thicket: ${whoN(e.controllerId)} odkłada wszystkie odsłonięte karty na spód`
-        : `Fertile Thicket: ${whoN(e.controllerId)} kładzie wybranego landa na wierzch, resztę na spód`;
+        ? `${srcName(e)}${whoN(e.controllerId)} odkłada wszystkie odsłonięte karty na spód`
+        : `${srcName(e)}${whoN(e.controllerId)} kładzie wybranego landa na wierzch, resztę na spód`;
       // M201/F (zgłoszenie właściciela): mechanika nazywa się po pierwszej
       // karcie (Springbloom Druid), ale używa jej też Roiling Regrowth —
       // log pisał więc cudzą nazwę („co to za druid?”). Nazwa idzie z danych
@@ -1567,7 +1568,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // (CR 603.10), więc nazywa land, który jest już w grobie pod nowym id.
       case 'springbloom_resolved': return `${srcName(e)}${whoN(e.controllerId)} poświęca ${e.sacrificedLandId ? nameOfObject(e.sacrificedLandId) : 'land'} — szukanie do dwóch bazowych lądów`;
       case 'springbloom_skipped': return `${srcName(e)}${whoN(e.controllerId)} nie poświęca landa`;
-      case 'optional_draw_required': return `${whoN(e.playerId)} może dobrać kartę (potem odrzuci — Force Away)`;
+      case 'optional_draw_required': return `${srcName(e)}${whoN(e.playerId)} może dobrać kartę (potem odrzuci)`;
       case 'optional_draw_resolved': return e.drew
         ? `${whoN(e.playerId)} dobiera kartę (i zaraz odrzuci)`
         : `${whoN(e.playerId)} nie dobiera karty`;
@@ -1580,10 +1581,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'proliferate_target_resolved': return e.count === 0
         ? `${whoN(e.playerId)} kończy proliferate bez celów`
         : null; // opisuje linia „proliferated"
-      case 'redirect_choice_required': return `Willbender: ${whoN(e.playerId)} może zmienić cel czaru ${nameOf(e.cardId)}`;
+      case 'redirect_choice_required': return `${whoN(e.playerId)} może zmienić cel czaru ${nameOf(e.cardId)}`;
       case 'redirect_choice_resolved': return e.toTarget == null
-        ? `Willbender: cel czaru ${nameOf(e.cardId)} zostaje bez zmian`
-        : `Willbender zmienia cel czaru ${nameOf(e.cardId)} na ${isPlayer(e.toTarget) ? whoN(e.toTarget) : nameOfObject(e.toTarget)}`;
+        ? `Cel czaru ${nameOf(e.cardId)} zostaje bez zmian`
+        : `Cel czaru ${nameOf(e.cardId)} zmienia się na ${isPlayer(e.toTarget) ? whoN(e.toTarget) : nameOfObject(e.toTarget)}`;
       case 'reveal_started': {
         const names = (e.cardIds ?? []).filter(Boolean).map((cid) => nameOf(cid)).join(', ');
         return names
@@ -1606,7 +1607,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         ? `${whoN(e.playerId)} wskazuje ${nameOf(e.cardId)} z grobu przeciwnika`
         : `${whoN(e.playerId)} nie wskazuje karty z grobu`;
       case 'reveal_exile_resolved': return `${srcName(e)}wybrane karty zostają wygnane`;
-      case 'reveal_order_resolved': return `Stomping Slabs: ${whoN(e.playerId)} układa odsłonięte karty na spodzie biblioteki`;
+      case 'reveal_order_resolved': return `${srcName(e)}${whoN(e.playerId)} układa odsłonięte karty na spodzie biblioteki`;
       case 'speed_changed': return `${whoN(e.playerId)} zwiększa prędkość (speed: ${e.speed})`;
       case 'turned_face_up': return `${nameOf(e.cardId)} zostaje obrócony twarzą do góry`;
       case 'enter_as_copy_resolved': return e.targetId

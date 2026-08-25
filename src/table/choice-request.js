@@ -196,7 +196,7 @@ export function renderLookWizard(host, { kind, cards, onComplete, onCancel, prob
   const labels = kind === 'surveil'
     ? { intro: `Surveil ${list.length} — obejrzane karty:`, toBad: 'Na cmentarz', toGood: 'Na wierzch biblioteki', badMark: '→ cmentarz', goodMark: '→ wierzch' }
     : kind === 'index'
-      ? { intro: `Index ${list.length} — karty na wierzchu biblioteki (ułóż w dowolnej kolejności):`, toBad: '', toGood: '', badMark: '', goodMark: '' }
+      ? { intro: `Wierzch biblioteki — ${list.length} ${list.length === 1 ? 'karta' : 'karty'} (ułóż w dowolnej kolejności):`, toBad: '', toGood: '', badMark: '', goodMark: '' }
       : { intro: `Scry ${list.length} — obejrzane karty:`, toBad: 'Na spód biblioteki', toGood: 'Zostaw na wierzchu', badMark: '→ spód', goodMark: '→ wierzch' };
   const badIds = []; // surveil: millIds · scry: bottomIds
   const keptIds = kind === 'index' ? list.map((card) => card.id) : []; // index: wszystkie zostają, liczy się kolejność

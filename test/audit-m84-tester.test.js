@@ -87,7 +87,8 @@ test('M84/5: Index/look_top — „1 kartę\"/„2 karty\" (odmiana)', async () 
   // przypadek RZECZOWNIKA (1 kartę / 2 karty), więc czasownik dopuszczamy w obu formach.
   assert.match(one, /patrz(ysz|y) na 1 kartę z wierzchu/i, one);
   assert.match(two, /patrz(ysz|y) na 2 karty z wierzchu/i, two);
-  assert.match(idx1, /patrz(ysz|y) na 1 kartę/i, idx1);
+  // M213: opis Index nie nazywa już karty — liczy się odmiana liczebnika.
+  assert.match(idx1, /1 kartę/i, idx1);
 });
 
 // --- 6. Fertile Thicket odmiana ---
@@ -100,7 +101,7 @@ test('M84/6: Fertile Thicket — „odsłania 1 kartę\" (odmiana)', async () =>
 });
 
 // --- 7. damage_prevented ma powód ---
-test('M84/7: damage_prevented podaje powód (protection / Inspire Awe / tarcza)', async () => {
+test('M84/7: damage_prevented podaje powód (protection / prewencja bojowa / tarcza)', async () => {
   const { describeGameEvent } = await import('../src/table/session.js');
   const helpers = { nameOf: (c) => c, nameOfObject: (o) => o, isPlayer: (id) => id === 'p1' };
   const names = { p1: 'Ty', p2: 'Nieprzyjaciel' };
@@ -108,7 +109,8 @@ test('M84/7: damage_prevented podaje powód (protection / Inspire Awe / tarcza)'
   const inspire = describeGameEvent({ type: 'damage_prevented', objectId: 'x', amount: 2, inspireAwe: true }, helpers, names);
   const shield = describeGameEvent({ type: 'damage_prevented', target: 'p1', amount: 2, shield: true }, helpers, names);
   assert.match(prot, /ochrona przed kolorem/, prot);
-  assert.match(inspire, /Inspire Awe/, inspire);
+  // M213: powód opisuje MECHANIKĘ, nie kartę, która ją wprowadziła.
+  assert.match(inspire, /prewencja obrażeń bojowych/, inspire);
   assert.match(shield, /tarcza prewencji/, shield);
   assert.ok(!prot.includes('zniwelowane'), 'nie „zniwelowane\": ' + prot);
 });
