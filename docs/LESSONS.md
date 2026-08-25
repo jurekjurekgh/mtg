@@ -25,6 +25,33 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 ---
 
 
+## L65 (2026-08-25) — Test, który przechodzi na przypadku odsianym przez WCZEŚNIEJSZY warunek, nie testuje tego warunku
+
+**Objaw (M207, weryfikacja mutacyjna):** funkcja `targetSlotsOf` rozbija cele
+czaru na pozycje i ma dwie bramki ochronne — (1) warianty muszą mieć równą
+długość, (2) pozycje nie mogą dzielić kandydatów (pula jednorodna). Test B2
+sprawdzał, że Fireball („up to three”) i „any number of targets” zostają
+płaską listą. Przechodził. Mutacja polegająca na **usunięciu bramki (2)**
+przeżyła — komplet 23 testów nadal zielony.
+
+**Przyczyna:** oba przypadki z B2 mają warianty o RÓŻNYCH długościach
+(`sizes = [1, 2]`), więc odpadały już na bramce (1) i do bramki (2) nigdy nie
+docierały. Test formalnie dotykał funkcji i asertował poprawny wynik, ale
+o badanym warunku nie mówił nic — jego zieloność była zasługą zupełnie innej
+linijki kodu.
+
+**Reguła na przyszłość:** pisząc test na konkretny warunek, sprawdź, czy
+przypadek testowy **dociera** do tego warunku — najprościej mutacją
+(skasuj warunek; jeśli testy nadal zielone, przypadek jest odsiewany
+wcześniej). Dla funkcji z łańcuchem bramek dobierz dane, które przechodzą
+wszystkie bramki poprzedzające i różnicują wyłącznie badaną: tu był to czar
+o STAŁEJ arności 2 z jednej puli (permutacje `a/b/c`), gdzie sama arność
+niczego nie wyklucza. Zasada obowiązuje wszędzie, gdzie funkcja ma kilka
+warunków `return` pod rząd — „mutacja przeżyła” zawsze znaczy „mam lukę
+w danych testowych”, nie „mutacja jest równoważna”.
+
+---
+
 ## L63 (2026-08-25) — Selektor sterownika, który nie pasuje do niczego, nie daje błędu — daje CICHĄ PĘTLĘ i fałszywe „brak zgłoszeń”
 
 **Objaw (M206, audyt rozgrywek):** przebiegi Żywego Testera na części seedów

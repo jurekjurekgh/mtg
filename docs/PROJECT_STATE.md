@@ -1,6 +1,57 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-25 (M206: audyt rozgrywek — kreator wielocelowy, opisy celów, timing bota — PR #78)
+- **Ostatnia aktualizacja:** 2026-08-25 (M207: audyt rozgrywek — pozycje celu w kreatorze i na kaflu — PR #78)
+
+## M207 — audyt rozgrywek Żywym Testerem, ciąg dalszy (2026-08-25)
+
+Raport: `docs/audits/AUDYT_M207_ROZGRYWKI_2026-08-25.md` · nowa lekcja: **L65**.
+To samo zlecenie co M206 (osie a/b/c), na naprawionym już testerze.
+Commity `87d4313`, `17082c9`, `6e8c3c5`.
+
+**Tester znowu mierzył nie to, co trzeba (M207/1, `87d4313`).** Sterownik
+zaznaczał cele w pętli „klikaj, dopóki »Zatwierdź« wyłączony”. Przy czarach
+**„up to N”** (`minTargets = 0`) przycisk jest aktywny od startu, więc tester
+zatwierdzał czar **bez ani jednego celu** — a detektory milczały, bo formalnie
+nic się nie psuło. Wszystkie 5 trafień sweepu miało w transkrypcie
+„potrzeba 0”; ścieżka „czar wielocelowy robi coś realnego” nie była testowana.
+Po naprawie `Wrap in Flames` zadaje obrażenia i blokuje blokowanie.
+
+**(c) Kreator wielocelowy — druga rodzina kart (M207/2, `17082c9`).**
+M195/C obsłużyło przypadek JEDNORODNY (Fireball, Wrap in Flames — lista
+z ptaszkiem zamiast kombinacji) i to działa. Ale czary o kilku RÓŻNYCH
+pozycjach celu trafiały do tej samej płaskiej listy: Grave Exchange pokazywał
+4 nierozróżnialne wiersze (2 karty z grobu + 2 graczy), pozwalał zaznaczyć
+dwie karty albo dwóch graczy (wybór nielegalny → `commandForSelection` `null`),
+a jedyną informacją zwrotną było wyszarzone „Zatwierdź”. Dotyczy **7 kart**.
+Teraz `targetSlotsOf` rozbija cele na pozycje po KOLEJNOŚCI w `targets[]`
+(indeks = pozycja z `spell.targets`; ADR 0002 — bez nazw kart), a kreator daje
+sekcję na pozycję z nagłówkiem z Oracle („1. karta-stwór w grobie:”,
+„2. gracz:”), wybór 1-z-N w obrębie pozycji i status „Brakuje: …”. Zwraca
+`null` (płaska lista) gdy warianty mają różne długości albo pozycje dzielą
+kandydatów — Fireball i Wrap in Flames zostają przy formie z M195/C.
+
+**(b) Kafel karty pokazywał połowę prawdy (M207/3, `6e8c3c5`).**
+`describeSpellEffects` opisywał tylko `spell.targets[0]`, więc
+`Knockout Maneuver · cel: twój stwór` sugerował, że czar nie dotyka stwora
+przeciwnika (Oracle: zadaje mu obrażenia). 5 kart. Teraz wymieniane są
+wszystkie pozycje; zachowany wyjątek M100/E10 („dowolny cel” bez pleonazmu
+„cel: dowolny cel”) — pierwsza wersja poprawki go zepsuła na 62 kartach.
+
+**(a) Timing i cele bota — sprawdzone, jeden problem ZOSTAWIONY świadomie.**
+Poprawne (nie zgłaszać): `Piercing Rays` w atakującego, `Expose to Daylight`
+zawsze w cudzy artefakt, `Courage in Crisis` zawsze na własnego stwora,
+`Chronic Flooding` na CUDZE landy (poprawka z M206 trzyma).
+**Otwarte:** `Guildscorn Ward` (protection from multicolored) — bot wycenia ją
+jak zwykły buff (+66), choć przeciwnik ma 1 kartę wielokolorową na 48, więc
+ochrona jest martwa. Naprawa wymaga `colors` w widoku pola bitwy
+(`playerView`, `game-state.js` ~ln 4596 ich nie wysyła — CR 708.2 każe ukrywać
+kolory zakrytych permanentów) + walidacji benchmarkiem. Osobny krok.
+
+**L65:** mutacja bramki jednorodności PRZEŻYŁA pierwsze podejście — test B2
+używał przypadków odsianych wcześniej przez warunek na długość wariantów.
+Test, który nie DOCIERA do badanego warunku, tego warunku nie testuje.
+
+Stan: `npm test` **3222/3222**, build 54 / 2648,5 kB, CI na PR #78 pass.
 
 ## M206 — audyt rozgrywek Żywym Testerem (2026-08-25)
 
