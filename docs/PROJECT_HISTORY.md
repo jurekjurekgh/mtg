@@ -12,7 +12,53 @@
 >
 > Sesje dopisują tu swoją sekcję (ADR 0013) — nowe na górze.
 
-- **Ostatnia aktualizacja:** 2026-08-25 (M208: porządki w dokumentacji — ten plik przestał być lekturą startową — PR #78)
+- **Ostatnia aktualizacja:** 2026-08-25 (M209: wycena aur ochronnych — bot widzi kolory — PR #78)
+
+## M209 — aura ochronna ma wartość tylko wobec realnego zagrożenia (2026-08-25)
+
+Nowa lekcja: **L67**. Commity `fb0d1b7`, `d1dcda0`.
+
+Domknięcie punktu otwartego świadomie w M207: bot rzucał `Guildscorn Ward`
+(*enchanted creature has protection from multicolored*) na własne stworzenie
+nawet wtedy, gdy przeciwnik nie miał ani jednej wielokolorowej karty — aura
+za 1 manę nie dawała nic. M207 nie naprawiło tego, bo diagnoza wskazała
+przyczynę poza heurystyką.
+
+**Root cause (L1 / ADR 0017 — ślepota przed głupotą):** `playerView` w ogóle
+nie wysyłał pola `colors`. Kontroler dostaje widok, nie stan, więc nie miał
+fizycznej możliwości sprawdzić, czy jakiekolwiek zagrożenie jest
+wielokolorowe. Strojenie wag wokół brakującej informacji byłoby maskowaniem.
+
+- `src/engine/game-state.js`: `colors` dodane w **obu** gałęziach budowy
+  widoku (pole bitwy + pozostałe strefy). Na polu bitwy pole przechodzi przez
+  istniejącą bramkę `hiddenFromViewer` (CR 708.2 — o karcie zakrytej nie
+  zdradzamy nic); strefy jawne (grób, wygnanie, stos) niosą kolory
+  (CR 400.2), ręka i biblioteka zostają `hidden: true`.
+- `src/controllers/heuristic-bot.js`: `auraIsHostile`/`cast_permanent`
+  rozpoznają jakość ochrony przez `sourceHasProtectionQuality`
+  z `src/engine/attachments.js` — **jedna reguła, jeden odczyt** (L41),
+  bez specjalnych przypadków po nazwie karty (ADR 0002). Aury z `chooseColor`
+  (Benevolent Blessing, Manor Gate) są z reguły wyłączone: kolor wybiera się
+  przy wejściu, więc taka aura nigdy nie jest jałowa.
+
+**Dowód braku regresji siły gry:** benchmark szybki 82,3% (baza 82,4%);
+benchmark ukierunkowany na talię z Ward (`--seeds 24 --decks ravnica,warhammer`,
+288 meczów) 86,5% vs 86,8% na bazie sprzed zmiany — różnica jednego meczu,
+czyli szum (L36). Bazę mierzono przez `git stash` → benchmark → `git stash pop`.
+
+**Dowód behawioralny (Żywy Tester, 13 partii w dwóch sweepach, 0 zgłoszeń
+detektorów):** `gw-41` — Ward zniknął z zagrań (wcześniej rzucany);
+`gw-29` — bot **odrzuca** Ward, gdy nie ma zagrożeń; `gw-17` i
+`w-srodziemie-ravnica-23` — Ward **rzucony zasadnie**, po tym jak przeciwnik
+wystawił kartę wielokolorową (`Terminal Agony` `["B","R"]`,
+`Jyoti, Moag Ancient` `["G","U"]`).
+
+**Poprawka narzędzia przy okazji audytu (`d1dcda0`):** sweep pokazał partię
+zaraportowaną jako `[STOP] brak akcji`, choć gra była rozstrzygnięta.
+`run-game.mjs` miał gotowy helper `isGameOver()`, ale nie wołał go w gałęzi
+pustego panelu akcji. Naprawione w testerze (braków testera się nie omija);
+ścieżka `[STOP]` nadal wykrywa realne zacięcia — w archiwum zostają 4 takie
+przypadki z niepustą listą akcji.
 
 ## M208 — dokumentacja: koniec „Historii Powszechnej” na starcie sesji (2026-08-25)
 
@@ -2929,7 +2975,7 @@ benchmark szybki 0 crashy: heuristic **67.5%** vs aggro / **92.6%** vs random
   zielonych, artefakt **42 moduły / 472.8 kB**.
 - **M26 (2026-08-03, tylko UX, zgłoszenie właściciela z iPada):** poprawka
   gestów dotyku — wspólny kontrakt `installTapGesture` w nowym module
-  `src/table/gestures.js` (kaflе stołu i warstwa pełnego ekranu). **Double-tap
+  `src/table/gestures.js` (kafle stołu i warstwa pełnego ekranu). **Double-tap
   znów otwiera pełny ekran:** iOS wysyła syntetyczny `click` po każdym
   tapnięciu i stary kod kończył zawsze „pojedynczym" (menu kontekstowe
   przykrywało pełny ekran); teraz pojedynczy klik na dotyku jest odroczony
@@ -2983,7 +3029,7 @@ benchmark szybki 0 crashy: heuristic **67.5%** vs aggro / **92.6%** vs random
   **limit aktywacji „once per turn"** (`oncePerTurn` w `createAbility`,
   tracking `state.abilityActivatedThisTurn`, reset co turę). Naprawiony
   przy okazji generyczny błąd odsłonięty przez nowe mechaniki: `castAuraSpell`
-  walidował cel stworа DOPIERO PO wydaniu many i przeniesieniu na stos —
+  walidował cel stwora DOPIERO PO wydaniu many i przeniesieniu na stos —
   teraz walidacja celu przed jakąkolwiek mutacją (CR 601.2h). Pełna macierz
   B0 (18 talii, 50 seedów, 51 300 meczów, 0 niedokończonych): heuristic
   **84.1% vs random**, **63.0% vs aggro**, aggro **81.0% vs random**; próbka

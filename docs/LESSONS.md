@@ -25,6 +25,35 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 ---
 
 
+## L67 (2026-08-25) — Helper, który istnieje, ale nie jest wołany w gałęzi, gdzie miał chronić
+
+**Objaw (M209):** sweep audytowy Żywego Testera zaraportował partię
+`srodziemie vs ravnica s=7` jako `[STOP] brak akcji w kroku 59` — czyli
+zacięcie narzędzia. W tej samej linii transkryptu stało jednak
+„Koniec partii — wygrywa Bot”. Podsumowanie sweepu policzyło tę partię jako
+niedokończoną (`koniec=0`), co fałszowało obraz audytu.
+
+**Przyczyna:** `run-game.mjs` miał helper `isGameOver()` z komentarzem
+opisującym dokładnie ten przypadek („panel akcji jest wtedy pusty
+prawidłowo”). Pętla kroków wołała go w dwóch miejscach — ale **nie w gałęzi
+`res === 'none'`**, czyli akurat tam, gdzie pusty panel jest objawem. Ochrona
+była napisana i nieużyta w jedynym miejscu, dla którego powstała.
+
+**Reguła:** gdy narzędzie diagnostyczne zgłasza awarię, sprawdź najpierw, czy
+w kodzie nie leży już gotowy warunek odróżniający awarię od stanu
+normalnego — i czy jest wołany na **każdej** ścieżce, która do tego stanu
+prowadzi. Nowy warunek dopisany obok istniejącego to druga definicja tej
+samej reguły (L41).
+
+**Reguła druga (kontrola po naprawie):** po uciszeniu fałszywego alarmu
+udowodnij, że alarm **nadal potrafi się odezwać**. Tu: w archiwalnych
+transkryptach zostały 4 przypadki `[STOP]` z niepustą listą akcji, czyli
+realne zacięcia; zmiana usunęła wyłącznie ten jeden fałszywy. Naprawa, która
+przy okazji wyłącza detektor, jest gorsza od błędu, który naprawiała
+(L13/L61).
+
+---
+
 ## L66 (2026-08-25) — Lektura obowiązkowa to BUDŻET: dokument bez limitu rośnie, aż zje kontekst
 
 **Objaw (M208):** obowiązkowa lektura startowa z `AGENTS.md` §0 ważyła ~605 kB
