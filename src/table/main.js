@@ -1618,3 +1618,33 @@ function bootstrapTable() {
 
 runSelfTest();
 bootstrapTable();
+
+// M203/C (uwaga właściciela 2026-08-25, druga próba): panel szybkich
+// informacji (#turn-indicator) jest warstwą `position: fixed`, więc nie
+// uczestniczy w przepływie dokumentu i nachodzi na pasek startu (ziarno,
+// talie, „Rozpocznij partię"). Poprzednia próba dała SZTYWNY odstęp 46 px
+// i nie wystarczyła — wysokość panelu zależy od treści i szerokości ekranu
+// (ma `flex-wrap`, więc na wąskim ekranie łamie się do dwóch/trzech wierszy).
+// Dlatego odstęp jest MIERZONY: tyle, ile panel faktycznie zajmuje, + zapas.
+(function syncTurnIndicatorClearance() {
+  // Ostrożnie: harness DOM w testach (`test/table-ui.test.js`) nie
+  // udostępnia `querySelector`, a ten kod jest wyłącznie kosmetyczny —
+  // brak któregoś elementu nie może wywracać modułu.
+  if (typeof document?.getElementById !== 'function' || typeof document?.querySelector !== 'function') return;
+  let indicator = null;
+  let clearance = null;
+  try {
+    indicator = document.getElementById('turn-indicator');
+    clearance = document.querySelector('.turn-indicator-clearance');
+  } catch {
+    return;
+  }
+  if (!indicator || !clearance) return;
+  const sync = () => {
+    const h = indicator.offsetHeight || 0;
+    clearance.style.height = `${h > 0 ? h + 10 : 0}px`;
+  };
+  if (typeof ResizeObserver === 'function') new ResizeObserver(sync).observe(indicator);
+  window.addEventListener('resize', sync);
+  sync();
+})();
