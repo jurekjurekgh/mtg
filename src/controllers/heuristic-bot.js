@@ -1730,9 +1730,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // przesadza, a przeciwnik dostaje priorytet i widzi powiekszonego
             // stwora, zanim zdecyduje o blokach (CR 508.1). Czekanie nic nie
             // kosztuje - te sama zdolnosc mozna aktywowac po deklaracjach.
+            //
+            // Ten sam pomiar pokazal dwa dalsze jalowe okna (te same partie,
+            // tury 14 i 17): pump w KONCU WALKI, gdy wilk w tej walce nie
+            // bral udzialu, i pump w PODTRZYMANIU przeciwnika, gdy nikt
+            // jeszcze nie atakowal. Regula generyczna, wspolna dla wszystkich
+            // trzech: „+X/+X do konca tury" kupuje cos tylko wtedy, gdy stwor
+            // REALNIE bierze udzial w walce (atakuje albo blokuje) - inaczej
+            // wygasa w cleanup (CR 514.2), a mana przepada. Dopoki
+            // deklaracji nie ma, zawsze mozna poczekac: zdolnosc pozostaje
+            // dostepna w kroku blokujacych i pozniej.
+            const participatesInCombat = Boolean(recipient?.attacking || recipient?.blocking);
             const inCombat = view.turn.phase === 'combat'
-              && view.turn.step !== 'beginning_of_combat';
+              && view.turn.step !== 'beginning_of_combat'
+              && participatesInCombat;
             if (!inCombat && myTurn(view)) value -= 26;
+            // Tura przeciwnika: pump poza walka byl dotad darmowy (kara wyzej
+            // dotyczy tylko wlasnej tury), wiec bot palil mane w jego upkeepie
+            // na stwora, ktory nikogo nie blokowal.
+            if (!inCombat && !myTurn(view)) value -= 26;
             if (recipient && recipient.controllerId === view.playerId) {
               // Combat trick tylko przy OBRONIE (declare_blockers w turze
               // przeciwnika): tam zatapiany bloker wciąż blokuje. W NASZYM

@@ -29,16 +29,24 @@ function boardWithPumpCreature(step, { attacking = false, blocker = false } = {}
     zone: 'battlefield', kind: 'creature', power: 1, toughness: 1, manaCost: 1,
     abilities: wolf.abilities ?? [], keywords: [], subtypes: ['Wolf'], types: ['Creature'], colors: ['G'],
   });
-  state.objects.set('wolf', Object.freeze({
-    ...state.objects.get('wolf'), summoningSickness: false, ...(attacking ? { attacking: true } : {}),
-  }));
+  state.objects.set('wolf', Object.freeze({ ...state.objects.get('wolf'), summoningSickness: false }));
   if (blocker) {
     addObject(state, {
       id: 'blk', instanceId: 'i-b', cardId: 'goblin-piker', controllerId: 'p1', ownerId: 'p1',
       zone: 'battlefield', kind: 'creature', power: 2, toughness: 2, manaCost: 2,
       abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: ['R'],
     });
-    state.objects.set('blk', Object.freeze({ ...state.objects.get('blk'), blocking: ['wolf'] }));
+  }
+  // Udzial w walce trzyma `state.combat` — playerView wyprowadza z niego pole
+  // `attacking` na obiekcie (game-state.js). Ustawianie `attacking` wprost na
+  // obiekcie NIC nie daje: widok i tak je nadpisze z `state.combat.attackers`.
+  if (attacking) {
+    state.combat = {
+      attackers: ['wolf'],
+      attackingPlayerId: 'p2',
+      blockers: blocker ? new Map([['wolf', ['blk']]]) : new Map(),
+      blockedAttackers: blocker ? new Set(['wolf']) : new Set(),
+    };
   }
   return state;
 }
@@ -72,6 +80,29 @@ test('M206/A2: pump zostaje dostępny po deklaracji bloków (nie przesadziliśmy
   const choice = createHeuristicBot({ seed: 7 }).chooseCommand(playerView(state, 'p2'), {});
   assert.ok(pumpsWolf(choice),
     `pump w obronie wymiany bojowej ma sens i ma być wybrany: ${JSON.stringify(choice)}`);
+});
+
+test('M206/A1b: bot nie pompuje w KOŃCU WALKI stwora, który w niej nie brał udziału', () => {
+  // Ten sam transkrypt, tura 14: „Faza: Koniec walki” + aktywacja pumpa,
+  // podczas gdy wilk nie atakował ani nie blokował. +2/+2 wygasa w cleanup
+  // (CR 514.2) i nie dotyka żadnych obrażeń — czysta strata dwóch many.
+  const view = playerView(boardWithPumpCreature('end_of_combat'), 'p2');
+  assert.ok((view.legalCommands ?? []).some(pumpsWolf), 'warunek wstępny: pump legalny');
+  const choice = createHeuristicBot({ seed: 7 }).chooseCommand(view, {});
+  assert.ok(!pumpsWolf(choice), `pump poza wymianą bojową: ${JSON.stringify(choice)}`);
+});
+
+test('M206/A1c: bot nie pompuje w PODTRZYMANIU przeciwnika (nikt jeszcze nie atakuje)', () => {
+  // Ten sam transkrypt, tura 17 (tura gracza): „Faza: Podtrzymanie” + pump.
+  // Kara za jałowe okno obejmowała dotąd wyłącznie WŁASNĄ turę, więc w turze
+  // przeciwnika pump poza walką był dla bota darmowy. Blok jeszcze nie
+  // istnieje — czekanie do kroku blokujących nic nie kosztuje.
+  const state = boardWithPumpCreature('upkeep');
+  state.turn.activePlayerId = 'p1'; // tura przeciwnika, priorytet u bota
+  const view = playerView(state, 'p2');
+  assert.ok((view.legalCommands ?? []).some(pumpsWolf), 'warunek wstępny: pump legalny');
+  const choice = createHeuristicBot({ seed: 7 }).chooseCommand(view, {});
+  assert.ok(!pumpsWolf(choice), `pump w upkeepie przeciwnika: ${JSON.stringify(choice)}`);
 });
 
 test('M206/A3: bot atakuje zamiast pompować, gdy stoi w początku walki', () => {

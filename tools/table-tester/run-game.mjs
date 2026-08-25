@@ -281,6 +281,16 @@ export async function runTableGame({
   // odrzuca komendę. To ARTEFAKT POLITYKI testera (jak double-tap profilu
   // `impatient`), nie błąd reguł — detektor klasyfikuje go osobno.
   let tickedThisWindow = false;
+  // M206 (lekcja z tej sesji): selektor sterownika, ktory nie pasuje do
+  // niczego, NIE daje bledu - daje cicha petle. Zly selektor kreatora
+  // wielocelowego kazal testerowi 300 razy otworzyc i anulowac to samo okno,
+  // a raport konczyl sie pogodnym „DETEKTORY: brak zgloszen", bo zaden krok
+  // gry sie nie wykonal. Liczymy, ile razy z rzedu NIE UDALO SIE zamknac tego
+  // samego okna wyborem; po progu przerywamy przebieg glosno, zamiast krecic
+  // sie do wyczerpania `--steps`.
+  const MULTI_WIZARD_STUCK_LIMIT = 5;
+  let multiWizardFailures = 0;
+  let multiWizardLastIntro = null;
   // Wpisy logu, które są DOWODEM przebiegu reguł (M205). Celowo wąska lista:
   // transkrypt ma nie puchnąć od zwykłych zdarzeń, które i tak widać w modalu
   // „Rozgrywka" i w snapshotach.
@@ -636,10 +646,21 @@ export async function runTableGame({
       if (confirmNow && !confirmNow.disabled) {
         confirmNow.click();
         await sleep(80);
+        multiWizardFailures = 0;
+        multiWizardLastIntro = null;
         return true;
       }
       // Nie dało się złożyć legalnego wyboru — odznacz wszystko i anuluj.
-      logL(`  [multi-target wizard] nie złożono legalnego wyboru (zaznaczonych ${rows.filter(isChecked).length}/${rows.length}) — anuluję`);
+      multiWizardFailures = intro === multiWizardLastIntro ? multiWizardFailures + 1 : 1;
+      multiWizardLastIntro = intro;
+      logL(`  [multi-target wizard] nie złożono legalnego wyboru (zaznaczonych ${rows.filter(isChecked).length}/${rows.length}, wierszy ${rows.length})`
+        + ` — anuluję (próba ${multiWizardFailures}/${MULTI_WIZARD_STUCK_LIMIT})`);
+      if (multiWizardFailures >= MULTI_WIZARD_STUCK_LIMIT) {
+        // „Anuluj" w tym kreatorze odtwarza to samo żądanie wyboru, więc bez
+        // tego progu przebieg nie ma jak się skończyć.
+        throw new Error(`Kreator wielocelowy nie do zamknięcia po ${multiWizardFailures} próbach `
+          + `(wierszy ${rows.length}): ${intro.slice(0, 120)}`);
+      }
       const cancelMulti = $$('#choice-request button').find((b) => /multi-target-cancel/.test(String(b.className)));
       if (cancelMulti) { cancelMulti.click(); await sleep(60); }
       return true;
