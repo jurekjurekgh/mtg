@@ -26,8 +26,8 @@
 1x Unbreakable Bond
 1x Fear of Abduction
 1x Fear of Burning Alive
-3x Plains
+4x Plains
 3x Island
-2x Swamp
+1x Swamp
 4x Mountain
 1x Forest

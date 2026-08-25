@@ -2,7 +2,7 @@ import { event } from '../protocol/types.js';
 import { triggerTargetEffectFriendly } from './effect-intent.js';
 import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaPurpose } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
-import { deathZoneFor, effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource, transformedCharacteristics } from './permanents.js';
+import { deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource, transformedCharacteristics } from './permanents.js';
 import { applyEffect, dealNonCombatDamage, maybeAddFaceDownFlyingCounter } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature, isLegalAuraHost, attachEquipmentToCreature } from './attachments.js';
@@ -880,7 +880,7 @@ export function legalTargetCandidates(state, playerId, spec, sourceObject = null
     // je odrzucał — bot wybierał nielegalną komendę (benchmark crash).
     const protColors = effectiveProtectionFromColors(state, target);
     if (protColors.length > 0) {
-      const srcColors = sourceObject.colors ?? [];
+      const srcColors = effectiveColors(sourceObject);
       if (srcColors.some((c) => protColors.includes(c))) return false;
     }
     return true;

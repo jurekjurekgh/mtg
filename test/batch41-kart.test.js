@@ -164,8 +164,21 @@ test('B1: Immersturm Skullcairn — {1}{B}{R}{R},{T},sac: 3 dmg w gracza + jego 
 test('B1b: Immersturm Skullcairn — wchodzi zatapiony i dodaje {B}', () => {
   const def = REGISTRY.get('immersturm-skullcairn');
   assert.equal(def.entersTapped, true, 'enters tapped');
-  assert.deepEqual(def.colors, ['B'], 'produkuje {B}');
   assert.deepEqual(def.types, ['Land']);
+  // CR 202.2: kolor obiektu wyznacza jego KOSZT MANY. Land go nie ma, więc
+  // jest bezbarwny — `colors` NIE jest miejscem na to, jaką manę produkuje
+  // (mylenie tych dwóch rzeczy pozwalało zakrytym/animowanym permanentom
+  // obchodzić „protection from [kolor]” i Dread Warlocka).
+  assert.deepEqual(def.colors, [], 'land jest bezbarwny (CR 202.2)');
+  // Produkcję {B} niesie DESKRYPTOR zdolności — to jego czyta silnik (M193/A).
+  const manaAbility = (def.abilities ?? []).find((a) => {
+    const effects = Array.isArray(a.effect) ? a.effect : [a.effect];
+    return effects.some((e) => e?.type === 'add_mana');
+  });
+  assert.ok(manaAbility, 'ma zdolność „{T}: Add {B}"');
+  const addMana = (Array.isArray(manaAbility.effect) ? manaAbility.effect : [manaAbility.effect])
+    .find((e) => e?.type === 'add_mana');
+  assert.deepEqual(addMana.colors, ['B'], 'produkuje {B}');
 });
 
 test('B2: Toll of the Invasion — reveal + OBOWIĄZKOWY wybór nonland + amass Zombies 1', () => {
@@ -279,11 +292,16 @@ test('B3 (L4/L48): Skullcairn bez drugiego czarnego źródła — brak oferty i 
   putCard(state, 'm1', 'basic-mountain', 'p1', 'battlefield');
   putCard(state, 'm2', 'basic-mountain', 'p1', 'battlefield');
   putCard(state, 'f1', 'basic-forest', 'p1', 'battlefield');
+  // Zdolność 0 to „{T}: Add {B}" (mana ability — legalna i oferowana).
+  // Sprawdzamy zdolność KOSZTOWNĄ (sacrifice, indeks 1): pip {B} pokrywa
+  // tylko sam Skullcairn, który tapuje się kosztem, więc oferty być nie może.
+  const sacrificeIndex = REGISTRY.get('immersturm-skullcairn').abilities
+    .findIndex((a) => a.cost?.sacrificeSelf);
   const offer = playerView(state, 'p1').legalCommands
-    .find((c) => c.type === 'activate_ability' && c.objectId === 'cairn');
+    .find((c) => c.type === 'activate_ability' && c.objectId === 'cairn' && c.abilityIndex === sacrificeIndex);
   assert.equal(offer, undefined, 'oferta wykluczona (źródło {B} tapowane kosztem — L48)');
   // Ręczna nielegalna komenda: odrzucona BEZ mutacji stanu (L4).
-  const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'cairn', abilityIndex: 0, targets: ['p2'] });
+  const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'cairn', abilityIndex: sacrificeIndex, targets: ['p2'] });
   assert.equal(r.ok, false, 'komenda odrzucona');
   assert.equal(state.objects.get('cairn').tapped, false, 'ląd NIE został tapnięty przy odrzuceniu');
 });

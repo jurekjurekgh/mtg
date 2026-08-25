@@ -3862,12 +3862,19 @@ export const UNDERCITY_DUNGEON = Object.freeze({
 const basicLandImage = (name) =>
   `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(name)}&format=image&version=normal`;
 
+// CR 202.2: kolor obiektu wyznacza jego koszt many. Land nie ma kosztu many,
+// wiec KAZDY land jest bezbarwny — takze podstawowy. Podtyp (Plains/Forest)
+// mowi, jaka mane produkuje, i to on steruje produkcja (mana-sources.js),
+// a nie pole `colors`. Kolor landa jest widoczny w regulach walki:
+// „protection from [kolor]”, intimidate i „can't be blocked except by
+// [kolor] creatures” patrza na colors blokera — animowany land (Silvanus's
+// Invoker) musi byc tam bezbarwny.
 export const VIRTUAL_BASIC_LANDS = Object.freeze([
-  defineCard({ id: 'basic-plains', name: 'Plains', set: null, types: ['Basic', 'Land'], subtypes: ['Plains'], colors: ['W'], imageUri: basicLandImage('Plains'), support: { status: 'supported' } }),
-  defineCard({ id: 'basic-island', name: 'Island', set: null, types: ['Basic', 'Land'], subtypes: ['Island'], colors: ['U'], imageUri: basicLandImage('Island'), support: { status: 'supported' } }),
-  defineCard({ id: 'basic-swamp', name: 'Swamp', set: null, types: ['Basic', 'Land'], subtypes: ['Swamp'], colors: ['B'], imageUri: basicLandImage('Swamp'), support: { status: 'supported' } }),
-  defineCard({ id: 'basic-mountain', name: 'Mountain', set: null, types: ['Basic', 'Land'], subtypes: ['Mountain'], colors: ['R'], imageUri: basicLandImage('Mountain'), support: { status: 'supported' } }),
-  defineCard({ id: 'basic-forest', name: 'Forest', set: null, types: ['Basic', 'Land'], subtypes: ['Forest'], colors: ['G'], imageUri: basicLandImage('Forest'), support: { status: 'supported' } }),
+  defineCard({ id: 'basic-plains', name: 'Plains', set: null, types: ['Basic', 'Land'], subtypes: ['Plains'], colors: [], imageUri: basicLandImage('Plains'), support: { status: 'supported' } }),
+  defineCard({ id: 'basic-island', name: 'Island', set: null, types: ['Basic', 'Land'], subtypes: ['Island'], colors: [], imageUri: basicLandImage('Island'), support: { status: 'supported' } }),
+  defineCard({ id: 'basic-swamp', name: 'Swamp', set: null, types: ['Basic', 'Land'], subtypes: ['Swamp'], colors: [], imageUri: basicLandImage('Swamp'), support: { status: 'supported' } }),
+  defineCard({ id: 'basic-mountain', name: 'Mountain', set: null, types: ['Basic', 'Land'], subtypes: ['Mountain'], colors: [], imageUri: basicLandImage('Mountain'), support: { status: 'supported' } }),
+  defineCard({ id: 'basic-forest', name: 'Forest', set: null, types: ['Basic', 'Land'], subtypes: ['Forest'], colors: [], imageUri: basicLandImage('Forest'), support: { status: 'supported' } }),
   // =========================================================================
   // Batch 24 (10 kart, 2026-08-08) — lista właściciela
   // Faceless Butcher, Unbreakable Bond, Spinewoods Paladin, Tome Scour,
@@ -7642,10 +7649,19 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   //    odrzuca kartę (discard_cards applyTo target — wzorzec Mindstab).
   defineCard({
     id: 'immersturm-skullcairn', name: 'Immersturm Skullcairn', set: 'KHM',
-    types: ['Land'], colors: ['B'], entersTapped: true,
+    // CR 202.2: land bez kosztu many jest BEZBARWNY (Scryfall: colors: []).
+    // Produkcje {B} niesie mana-sources.js, nie pole `colors`.
+    types: ['Land'], colors: [], entersTapped: true,
     oracleText: 'This land enters tapped.\n{T}: Add {B}.\n{1}{B}{R}{R}, {T}, Sacrifice this land: It deals 3 damage to target player. That player discards a card. Activate only as a sorcery.',
     imageUri: 'https://cards.scryfall.io/large/front/1/2/12ed97de-736d-43d8-977b-308ac54f88f4.jpg?1783928173',
     abilities: [
+      // „{T}: Add {B}" — deskryptor produkcji many wprost z Oracle (M193/A:
+      // kolory zna zdolność karty, nie pole `colors` ani ręczna mapa).
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['B'] },
+      }),
       createAbility({
         type: ABILITY_TYPE.activated,
         timing: 'sorcery',

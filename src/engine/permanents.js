@@ -1,11 +1,11 @@
 import { event } from '../protocol/types.js';
 import { assertZone } from './zones.js';
 import { addCounter, removeCounter, syncStationKind } from './counters.js';
-import { attachmentGrant, attachmentsAttachedTo, effectiveProtectionFromColors, effectiveProtectionQualities, isProtectedFromSource, sourceHasProtectionQuality } from './attachments.js';
+import { attachmentGrant, attachmentsAttachedTo, effectiveColors, effectiveProtectionFromColors, effectiveProtectionQualities, isProtectedFromSource, sourceHasProtectionQuality } from './attachments.js';
 // M110: helpery ochrony przed JAKOŚCIĄ mieszkają w attachments.js (razem
 // z ochroną kolorową); permanents.js re-eksportuje je, bo stamtąd biorą je
 // combat.js, effects.js i spells.js (i żeby nie robić cyklu importów).
-export { effectiveProtectionQualities, isProtectedFromSource, sourceHasProtectionQuality };
+export { effectiveColors, effectiveProtectionQualities, isProtectedFromSource, sourceHasProtectionQuality };
 
 export function replaceObject(state, object, patch) {
   const updated = Object.freeze({ ...object, ...patch });
@@ -567,6 +567,11 @@ export function activatableAbilities(state, object) {
  * podstawowe landa).
  */
 export function effectiveSubtypes(object) {
+  // CR 708.2a: permanent zakryty (morph/cloak) jest bezimiennym stworem 2/2
+  // BEZ podtypów — podtypy karty pod spodem są zakryte, tak samo jak keywordy
+  // (effectiveKeywords) i kolory (effectiveColors). Bez tego zakryty stwór
+  // dawał się trafić efektem „target [podtyp]” i wpadał w tribalne bonusy.
+  if (object?.faceDown) return [];
   const grant = object?.typeGrant;
   if (!grant) return object?.subtypes ?? [];
   const basics = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest'];
@@ -588,7 +593,9 @@ export function attachmentSubtypes(state, object) {
 
 /** Efektywne podtypy stwora na polu bitwy — własne + granty załączników. */
 export function effectiveSubtypesOnBattlefield(state, object) {
-  const own = object?.subtypes ?? [];
+  // CR 708.2a — jak wyżej: zakryty permanent nie ma własnych podtypów.
+  // Granty z załączników zostają (CR 122.1b/613 — efekty zewnętrzne działają).
+  const own = object?.faceDown ? [] : (object?.subtypes ?? []);
   const granted = attachmentSubtypes(state, object);
   return [...new Set([...own, ...granted])];
 }
@@ -800,7 +807,7 @@ export function isDamagePreventedByProtection(state, target, source) {
   if (isProtectedFromSource(state, target, source)) return true;
   const protColors = effectiveProtectionFromColors(state, target);
   if (protColors.length === 0) return false;
-  const sourceColors = source.colors ?? [];
+  const sourceColors = effectiveColors(source);
   return sourceColors.some(c => protColors.includes(c));
 }
 
