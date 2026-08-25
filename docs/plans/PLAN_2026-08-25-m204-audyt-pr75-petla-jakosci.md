@@ -53,11 +53,17 @@ Poprzednia sesja M203 (PR #75, scalony jako `9187fea`) zostawiła:
   pinuje obie strony (przedruk = cicho; realne powtórzenie = zgłoszenie).
 - [x] Kryterium: seed 61 bez fałszywego alarmu; `npm test` 3200/3200 zielony.
 
-### 3. Dalsze polowanie Żywym Testerem (cel: kolejne błędy)
-- [ ] Dłuższe partie (≥400 kroków), różne pary talii jednoplanowych, ręczne
-  czytanie transkryptów po trzech osiach z `TESTER_STOLU.md`:
-  (1) bezsensowne działania bota, (2) kompletność logu/modala,
-  (3) ptaszki auto-pass przy czarach/zdolnościach.
+### 3. Dalsze polowanie Żywym Testerem — CZĘŚCIOWO
+- [x] 4 partie po 400 kroków (dominaria/ravnica, innistrad/tarkir,
+  mirrodin/warhammer, ravnica/innistrad), 0 crashy.
+- [x] Diagnoza zgłoszeń `detectNoResponseWindow` dla instantów w turze bota:
+  **engine poprawny** (auto-pass człowieka przy braku odpowiedzi, CR 117),
+  brak błędu produktu — udokumentowane jako znany szum detektora
+  (`docs/audits/AUDYT_PR75_2026-08-25.md`).
+- [ ] **M205 — utwardzenie auto-passa**: sesja notuje auto-pass przy niepustym
+  stosie w głównym logu (bez pauzy); tester zbiera ten wpis w `--quiet`;
+  detektor uznaje go za dowód odzyskania kontroli.
+- [ ] Kolejne partie profilami explorer/random, ręczne czytanie po 3 osiach.
 - [ ] Każde znalezisko: objaw z transkryptu → naprawa u root cause →
   test regresyjny → nowy detektor jeśli klasa powtarzalna.
 - [ ] Kryterium: `npm test` + build zielone po każdym samodzielnym kroku.
