@@ -17,6 +17,7 @@ import assert from 'node:assert/strict';
 
 import {
   detectBotBuffsMyCreatures,
+  detectBotHarmsOwnPermanent,
   detectFalseNoEffect,
   detectLogNoiseLeak,
   detectTruncatedCardText,
@@ -191,4 +192,65 @@ test('M138: runDetectors uruchamia nowe detektory i przyjmuje myPermanentNames',
 test('M138: runDetectors bez myPermanentNames nie wywala się (zgodność wsteczna)', () => {
   const lines = ['  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: X → cel: Y', '  [ROZGRYWKA]   • Y zyskuje: zadeptywanie'];
   assert.doesNotThrow(() => runDetectors(lines));
+});
+
+// --- M212/Z7c: szkodliwy efekt bota we własny permanent --------------------
+//
+// POWÓD: audyt trzech partii po naprawie rebounda dał ZERO zgłoszeń, choć
+// transkrypt zawierał wzorcowy błąd („Nieprzyjaciel rzuca Ojutai\'s Breath
+// → cel: Trade Route Envoy”, czyli w swojego stwora). Istniejący
+// `detectBotSelfHarmOnOwnPermanents` czyta snapshoty „POLA WROGA:”, a pod
+// `--quiet` w całym transkrypcie był ich DWA — detektor nie znał stanu stołu
+// w chwili akcji i milczał. Nowy wariant bierze dane strukturalne.
+
+test('M212/Z7c: łapie szkodliwy czar bota skierowany we własny permanent', () => {
+  const lines = [
+    "  [ROZGRYWKA]   • Nieprzyjaciel rzuca Ojutai's Breath → cel: Trade Route Envoy",
+  ];
+  const found = detectBotHarmsOwnPermanent(
+    lines,
+    new Set(['Trade Route Envoy']),   // pola bota
+    new Set(['Academy Journeymage']), // moje pola
+    new Set(["Ojutai's Breath"]),     // karty szkodliwe wg rejestru
+  );
+  assert.equal(found.length, 1, 'bot tapuje własnego stwora — detektor musi zgłosić');
+  assert.match(found[0].message, /we WŁASNY permanent: Trade Route Envoy/);
+});
+
+test('M212/Z7c: milczy, gdy cel stoi po MOJEJ stronie (poprawne usuwanie)', () => {
+  const lines = [
+    "  [ROZGRYWKA]   • Nieprzyjaciel rzuca Ojutai's Breath → cel: Academy Journeymage",
+  ];
+  const found = detectBotHarmsOwnPermanent(
+    lines,
+    new Set(['Trade Route Envoy']),
+    new Set(['Academy Journeymage']),
+    new Set(["Ojutai's Breath"]),
+  );
+  assert.deepEqual(found, [], 'celowanie w permanent przeciwnika to poprawna gra');
+});
+
+test('M212/Z7c: milczy przy nazwie widocznej po OBU stronach stołu', () => {
+  const lines = [
+    '  [ROZGRYWKA]   • Nieprzyjaciel rzuca Shock → cel: Llanowar Elves',
+  ];
+  const found = detectBotHarmsOwnPermanent(
+    lines,
+    new Set(['Llanowar Elves']),
+    new Set(['Llanowar Elves']),
+    new Set(['Shock']),
+  );
+  assert.deepEqual(found, [], 'nie da się rozstrzygnąć czyj egzemplarz — cisza zamiast zgadywania');
+});
+
+test('M212/Z7c: runDetektory podpina nowy detektor', () => {
+  const lines = [
+    "  [ROZGRYWKA]   • Nieprzyjaciel rzuca Ojutai's Breath → cel: Trade Route Envoy",
+  ];
+  const findings = runDetectors(lines, {
+    enemyPermanentNames: new Set(['Trade Route Envoy']),
+    myPermanentNames: new Set(['Academy Journeymage']),
+    harmfulNames: new Set(["Ojutai's Breath"]),
+  });
+  assert.match(findings.map((f) => f.message).join(' | '), /we WŁASNY permanent/);
 });
