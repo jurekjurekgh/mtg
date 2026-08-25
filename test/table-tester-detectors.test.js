@@ -158,6 +158,40 @@ test('detectBotRepeats: licznik zeruje się między turami', () => {
   assert.deepEqual(detectBotRepeats(lines), [], 'po 2 aktywacje na turę to nie patologia');
 });
 
+// M203/#3 (audyt PR #75, seed 61 forgotten-realms vs alara): pauza bota bywa
+// renderowana wielokrotnie z TĄ SAMĄ, rosnącą listą wpisów, a tester logował
+// całą listę za każdym razem — jedna aktywacja Unstable Frontier ({T}) wyglądała
+// na powtórzoną 4× w jednej turze, choć po aktywacji tapped=true i ofert jest 0
+// (CR 602.2). Identyczny BLOK modala (od `[ROZGRYWKA]` do następnego takiego
+// nagłówka) to przedruk artefaktu testera, nie nowa akcja — detektor liczy go
+// raz. Prawdziwe powtórzenie (kolejny wpis w NOWYM bloku) jest nadal łapane.
+test('M203/#3: identyczny blok modala liczony raz (brak fałszywego alarmu)', () => {
+  const block = [
+    '  [ROZGRYWKA] Rozgrywka',
+    '  [ROZGRYWKA]   • Tura 7 — Nieprzyjaciel',
+    '  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Unstable Frontier → cel: Mountain',
+  ];
+  // Ten sam blok przedrukowany 4× (render pauzy bota) — jak w transkrypcie
+  // seeda 61. Między blokami NIE ma nowej akcji.
+  const lines = [...block, ...block, ...block, ...block];
+  const found = detectBotRepeats(lines);
+  assert.deepEqual(found, [], `przedruk identycznego bloku nie jest powtórzeniem akcji: ${JSON.stringify(found)}`);
+});
+
+test('M203/#3 (kontrola): prawdziwe powtórzenie w RÓŻNYCH blokach nadal łapane', () => {
+  // Każdy blok ma O JEDEN wpis więcej — jak przy realnej aktywacji co turę,
+  // ale wszystkie w tej samej turze (brak nowego nagłówka tury).
+  const mk = (n) => [
+    '  [ROZGRYWKA] Rozgrywka',
+    '  [ROZGRYWKA]   • Tura 7 — Nieprzyjaciel',
+    ...Array.from({ length: n }, () => '  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Shiv\'s Embrace'),
+  ];
+  const lines = [...mk(1), ...mk(2), ...mk(3), ...mk(4), ...mk(5)];
+  const found = detectBotRepeats(lines);
+  assert.ok(found.length >= 1, `pięć REALNYCH aktywacji w jednej turze musi być zgłoszonych: ${JSON.stringify(found)}`);
+  assert.ok(found.some((f) => /5×/.test(f.message)), `zgłoszenie wymienia 5×: ${found.map((f) => f.message).join(' | ')}`);
+});
+
 test('detectBotSelfTargeting: łapie bota celującego SZKODLIWYM efektem w siebie', () => {
   const found = detectBotSelfTargeting([
     '  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Cellar Door → cel: Nieprzyjaciel — mieli 1 kartę',
