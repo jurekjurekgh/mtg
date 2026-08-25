@@ -1015,7 +1015,13 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         // Log renderował z tego „? zostaje wygnany" — placeholder wygląda jak
         // brak danych (L29), a tu brak nazwy jest TREŚCIĄ reguły. Mówimy to
         // wprost i nadal nie zdradzamy karty (ADR 0003 / L45).
-        if (e.faceDown) return `Zakryta karta ${whoN(e.playerId)} zostaje wygnana`;
+        // Forma zdania: etykieta gracza + orzeczenie (wzór z innych wpisów,
+        // np. „X — trigger (...): zapłacono"). Strażnik Z1c (L29/L31) pilnuje,
+        // żeby po `${whoN(...)}` nie szedł czasownik bez formy 2. osoby — a tu
+        // podmiotem jest karta, nie gracz, więc „Zakryta karta <gracz>
+        // zostaje…" byłoby i nieodmienialne, i niegramatyczne („karta
+        // Nieprzyjaciel").
+        if (e.faceDown) return `${whoN(e.playerId)} — zakryta karta zostaje wygnana`;
         const exiledName = e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId);
         return `${exiledName} zostaje wygnany${e.delayed ? ' (opóźniony trigger)' : ''}`;
       }
