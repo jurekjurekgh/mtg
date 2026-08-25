@@ -10,6 +10,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { multiTargetPlanOf, commandForSelection } from '../src/table/multi-target.js';
+import { targetTypeLabel } from '../src/table/render.js';
 
 /** Warianty Fireball: 3 cele × X 1..3 (kartezjański iloczyn jak w silniku). */
 function fireballCommands() {
@@ -393,4 +394,135 @@ test('M206: gracz jako cel zostaje bez znacznika kontrolera', async () => {
     assert.deepEqual(labels, ['[ ] hill-giant (Ty)', '[ ] hill-giant (Nieprzyjaciel)', '[ ] Nieprzyjaciel'],
       `stwory ze znacznikiem, gracz bez: ${JSON.stringify(labels)}`);
   });
+});
+
+// ===========================================================================
+// M207 — audyt rozgrywek, oś (b)/(c): CZARY O KILKU RÓŻNYCH POZYCJACH CELU.
+//
+// Zgłoszenie właściciela dotyczyło formy modala przy wielu celach. M195/C
+// rozwiązało przypadek JEDNORODNY („dowolna liczba celów” — Fireball, Wrap in
+// Flames): lista celów z ptaszkiem zamiast iloczynu kombinacji. Ale czar
+// o kilku RÓŻNYCH pozycjach celu trafiał do tej samej płaskiej listy:
+//
+//   Grave Exchange — zaznacz cele (2):
+//     [ ] Hill Giant        <- karta z MOJEGO grobu
+//     [ ] Ty                <- gracz
+//     [ ] Nieprzyjaciel     <- gracz
+//     [ ] Goblin Piker      <- karta z grobu (kolejność z odkrywania!)
+//
+// Oracle: „Return target creature card from your graveyard to your hand.
+// Target player sacrifices a creature of their choice.” To DWIE niezależne
+// pozycje, a nie „dwa cele z jednego worka”. Gracz mógł zaznaczyć dwie karty
+// z grobu albo dwóch graczy — wybór był wtedy nielegalny
+// (`commandForSelection` → null), a jedyną informacją zwrotną pozostawało
+// wyszarzone „Zatwierdź”, bez słowa CZEGO brakuje.
+//
+// W bazie kart ten kształt ma 7 kart (m.in. Knockout Maneuver, Ivy Lane
+// Denizen, Assert Perfection — „target creature you control … target creature
+// an opponent controls”).
+
+const spellCmds = (list) => list.map((targets) => ({
+  type: 'cast_spell', playerId: 'p1', objectId: 'sp', targets,
+}));
+
+test('M207/B1: czar o różnych pozycjach celu dostaje ROZBICIE NA POZYCJE', () => {
+  const plan = multiTargetPlanOf(spellCmds([['gy1', 'p1'], ['gy1', 'p2'], ['gy2', 'p1'], ['gy2', 'p2']]));
+  assert.deepEqual(plan.slots, [['gy1', 'gy2'], ['p1', 'p2']],
+    'pozycja 0 = karty z grobu, pozycja 1 = gracze');
+});
+
+test('M207/B2: czar o JEDNORODNEJ liście celów zostaje płaską listą', () => {
+  // Kontrola: Fireball / Wrap in Flames („any number of targets”, „up to
+  // three”) mają cele wymienne — tam wór z ptaszkami jest formą POPRAWNĄ
+  // i rozbijanie go na pozycje byłoby regresją M195/C.
+  const upToThree = multiTargetPlanOf(spellCmds([[], ['a'], ['b'], ['c'], ['a', 'b'], ['a', 'c'], ['b', 'c'], ['a', 'b', 'c']]));
+  assert.equal(upToThree.slots, null, '„up to N” — pozycje wymienne');
+  const anyNumber = multiTargetPlanOf(spellCmds([['a'], ['b'], ['a', 'b']]));
+  assert.equal(anyNumber.slots, null, '„any number of targets” — lista jednorodna');
+
+  // Przypadek, w którym bramka JEDNORODNOŚCI jest jedyną obroną: czar
+  // o STAŁYCH dwóch celach z jednej puli („two target creatures” — każdy
+  // z każdym). Sama arność (2) niczego tu nie wyklucza, a rozbicie na
+  // pozycje pokazałoby te same stwory dwa razy, w dwóch sekcjach.
+  const twoFromOnePool = multiTargetPlanOf(spellCmds([
+    ['a', 'b'], ['a', 'c'], ['b', 'c'], ['b', 'a'], ['c', 'a'], ['c', 'b'],
+  ]));
+  assert.equal(twoFromOnePool.slots, null,
+    'wspólna pula kandydatów na obu pozycjach = lista, nie sekcje');
+});
+
+test('M207/B3: kreator rysuje SEKCJĘ NA POZYCJĘ z nazwą z Oracle', async () => {
+  const { renderMultiTargetWizard } = await import('../src/table/choice-request.js');
+  const view = {
+    playerId: 'p1',
+    players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }],
+    zones: {
+      battlefield: [],
+      graveyard: [
+        { id: 'gy1', cardId: 'hill-giant', controllerId: 'p1', zone: 'graveyard' },
+        { id: 'gy2', cardId: 'goblin-piker', controllerId: 'p1', zone: 'graveyard' },
+      ],
+    },
+  };
+  const session = { nameOf: (id) => id, nameOfObject: (id) => id, faceDownName: () => 'morph' };
+  const commands = spellCmds([['gy1', 'p1'], ['gy1', 'p2'], ['gy2', 'p1'], ['gy2', 'p2']]);
+  // Etykiety pozycji pochodzą z deskryptora Oracle karty (ADR 0002).
+  const labels = [targetTypeLabel({ type: 'creature_card_in_graveyard' }), targetTypeLabel({ type: 'player' })];
+  withMiniDom((host) => {
+    renderMultiTargetWizard(host, {
+      view, session, plan: multiTargetPlanOf(commands), commands, sourceName: 'Grave Exchange',
+      slotLabels: labels, onComplete: () => {}, onCancel: () => {},
+    });
+    const heads = host.findAll((n) => String(n.className).includes('multi-target-slot-label'))
+      .map((n) => n.textContent);
+    assert.deepEqual(heads, ['1. karta-stwór w grobie:', '2. gracz:'],
+      `nagłówki pozycji z Oracle: ${JSON.stringify(heads)}`);
+  });
+});
+
+test('M207/B4: w obrębie pozycji wybór jest JEDNOKROTNY, a status mówi czego brakuje', async () => {
+  const { renderMultiTargetWizard } = await import('../src/table/choice-request.js');
+  const view = {
+    playerId: 'p1',
+    players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }],
+    zones: {
+      battlefield: [],
+      graveyard: [
+        { id: 'gy1', cardId: 'hill-giant', controllerId: 'p1', zone: 'graveyard' },
+        { id: 'gy2', cardId: 'goblin-piker', controllerId: 'p1', zone: 'graveyard' },
+      ],
+    },
+  };
+  const session = { nameOf: (id) => id, nameOfObject: (id) => id, faceDownName: () => 'morph' };
+  const commands = spellCmds([['gy1', 'p1'], ['gy1', 'p2'], ['gy2', 'p1'], ['gy2', 'p2']]);
+  let submitted = null;
+  withMiniDom((host) => {
+    renderMultiTargetWizard(host, {
+      view, session, plan: multiTargetPlanOf(commands), commands, sourceName: 'Grave Exchange',
+      slotLabels: ['karta-stwór w grobie', 'gracz'],
+      onComplete: (cmd) => { submitted = cmd; }, onCancel: () => {},
+    });
+    const status = () => host.find((n) => String(n.className).includes('multi-target-status')).textContent;
+    const confirm = host.find((n) => String(n.className).includes('multi-target-confirm'));
+    const toggles = host.findAll((n) => String(n.className).includes('multi-target-toggle'));
+
+    assert.match(status(), /Brakuje: karta-stwór w grobie, gracz/,
+      'na starcie status WYMIENIA brakujące pozycje, nie milczy');
+    assert.equal(confirm.disabled, true);
+
+    toggles[0].click();                       // gy1 (pozycja 0)
+    assert.match(status(), /^Brakuje: gracz$/, `po wyborze karty: ${status()}`);
+    toggles[1].click();                       // gy2 — TA SAMA pozycja
+    assert.match(status(), /^Brakuje: gracz$/, 'druga karta zastępuje pierwszą, nie dokłada się');
+    assert.equal(toggles[0].textContent.startsWith('[ ]'), true, 'poprzedni wybór pozycji odznaczony');
+    assert.equal(toggles[1].textContent.startsWith('[x]'), true, 'nowy wybór pozycji zaznaczony');
+
+    toggles[3].click();                       // gracz p2 (pozycja 1)
+    assert.equal(confirm.disabled, false, 'komplet pozycji odblokowuje zatwierdzenie');
+    confirm.click();
+  });
+  assert.ok(submitted, 'zatwierdzenie musi oddać komendę');
+  assert.ok(commands.includes(submitted), 'i to komendę z legalCommands (L48)');
+  assert.deepEqual(submitted.targets, ['gy2', 'p2'],
+    'cele w KOLEJNOŚCI POZYCJI — pozycja 0 to karta, pozycja 1 to gracz');
 });

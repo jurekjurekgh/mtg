@@ -198,7 +198,7 @@ const TARGET_TYPE_LABELS = Object.freeze({
  *
  * Przyjmuje spec (obiekt) albo goły string typu — stare wywołania działają dalej.
  */
-const targetTypeLabel = (spec) => {
+export const targetTypeLabel = (spec) => {
   const type = typeof spec === 'string' ? spec : spec?.type;
   const base = TARGET_TYPE_LABELS[type] ?? type;
   if (typeof spec === 'string' || !spec) return base;

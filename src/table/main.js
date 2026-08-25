@@ -33,7 +33,7 @@ import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard } from './choice-request.js';
 import { multiTargetPlanOf, mulliganBottomPlanOf } from './multi-target.js';
-import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount } from './render.js';
+import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 
 function runEngineSmoke() {
   // Minimalny, odtwarzalny przebieg: kilka rund passów przez komendy z widoku.
@@ -357,6 +357,12 @@ function bootstrapTable() {
         plan: multiPlan,
         commands: request.options,
         sourceName: sourceObject?.cardId ? session.nameOf(sourceObject.cardId) : null,
+        // M207: nazwy POZYCJI celu prosto z Oracle karty („twój stwór”,
+        // „stwór przeciwnika”, „karta-stwór w grobie”, „gracz”). Kreator sam
+        // ich nie wymyśla — bierze deskryptor `spell.targets` (ADR 0002).
+        slotLabels: multiPlan.slots
+          ? (registry.get(sourceObject?.cardId)?.spell?.targets ?? []).map((spec) => targetTypeLabel(spec))
+          : null,
         onOpenCard: openCardFullscreen,
         onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
         onCancel: () => hideModal('choice-request'),

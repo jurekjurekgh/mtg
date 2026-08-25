@@ -678,7 +678,7 @@ export function renderDamageDivisionWizard(host, { view, session, candidateIds, 
  * legalność rozstrzyga silnik — UI nie wymyśla ruchów (L48). Przycisk
  * „Zatwierdź" jest wyłączony, dopóki wybór nie odpowiada żadnej komendzie.
  */
-export function renderMultiTargetWizard(host, { view, session, plan, commands, sourceName = null, intro = null, onComplete, onCancel, onOpenCard = null }) {
+export function renderMultiTargetWizard(host, { view, session, plan, commands, sourceName = null, intro = null, slotLabels: slotLabels_ = null, onComplete, onCancel, onOpenCard = null }) {
   clearChoiceElement(host);
   const xLabel = plan.hasX ? ` oraz wartość X (${plan.xMin}–${plan.xMax})` : '';
   const range = plan.minTargets === plan.maxTargets
@@ -687,8 +687,15 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   // M200/C: mulligan (odłożenie N kart na spód) używa tegoż ekranu — wiersz
   // na KARTĘ (nie kombinację), zatwierdzenie = komenda z legalCommands.
   const itemWord = plan.itemLabel ?? 'cele';
+  // M207: czar o RÓŻNYCH pozycjach celu dostaje sekcję na każdą pozycję,
+  // a nie jeden wór („zaznacz cele (2)"). Etykiety pozycji przekazuje
+  // wywołujący z Oracle (`spell.targets`); bez nich zostaje numeracja.
+  const slots = plan.slots ?? null;
+  const slotLabels = slots ? (slotLabels_ ?? []) : [];
   choiceNode(host, 'div', 'choice-request-intro',
-    intro ?? `${sourceName ? `${sourceName} — ` : ''}zaznacz ${itemWord} (${range})${xLabel}:\n`);
+    intro ?? (slots
+      ? `${sourceName ? `${sourceName} — ` : ''}wskaż po jednym celu dla każdej pozycji:\n`
+      : `${sourceName ? `${sourceName} — ` : ''}zaznacz ${itemWord} (${range})${xLabel}:\n`));
 
   const chosen = new Set();
   let xValue = plan.hasX ? plan.xMin : null;
@@ -698,20 +705,45 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   let statusEl = null;
   let xCounter = null;
 
+  // M207: w trybie pozycyjnym kolejnosc celow NIESIE ZNACZENIE (pozycja 0 to
+  // inny slot niz pozycja 1), wiec komende skladamy z wyborow per-pozycja,
+  // a nie ze zbioru `chosen`. `commandForSelection` porownuje zbiory
+  // (targetKey sortuje), wiec dla pozycji uzywamy dopasowania po kolejnosci.
+  const slotChoice = slots ? slots.map(() => null) : null;
+  const commandForSlots = () => {
+    if (slotChoice.some((id) => id == null)) return null;
+    return (commands ?? []).find((cmd) => Array.isArray(cmd.targets)
+      && cmd.targets.length === slotChoice.length
+      && cmd.targets.every((id, i) => id === slotChoice[i])) ?? null;
+  };
   const currentCommand = () => (plan.cardIdsMode
     ? commandForMulliganSelection(commands, [...chosen])
-    : commandForSelection(commands, { targets: [...chosen], xValue: plan.hasX ? xValue : null }));
+    : slots
+      ? commandForSlots()
+      : commandForSelection(commands, { targets: [...chosen], xValue: plan.hasX ? xValue : null }));
 
   const refresh = () => {
     for (const [id, node] of toggles) {
-      node.textContent = `${chosen.has(id) ? '[x]' : '[ ]'} ${objectOrPlayerName(view, session, id)}`;
+      const picked = slots ? slotChoice.includes(id) : chosen.has(id);
+      node.textContent = `${picked ? '[x]' : '[ ]'} ${objectOrPlayerName(view, session, id)}`;
     }
     if (xCounter) xCounter.textContent = String(xValue ?? '');
     const cmd = currentCommand();
     if (statusEl) {
-      statusEl.textContent = cmd
-        ? `Wybrano ${itemWord}: ${chosen.size}${plan.hasX ? ` · X = ${xValue}` : ''}`
-        : `Wybór niedozwolony (${itemWord}: ${chosen.size}${plan.hasX ? `, X = ${xValue}` : ''})`;
+      if (slots) {
+        // Pozycje bez wyboru trzeba WYMIENIC — samo wyszarzone „Zatwierdz"
+        // nie mowi graczowi, czego brakuje (to bylo sedno zgloszenia).
+        const missing = slotChoice
+          .map((id, i) => (id == null ? (slotLabels[i] ?? `cel ${i + 1}`) : null))
+          .filter(Boolean);
+        statusEl.textContent = missing.length === 0
+          ? (cmd ? 'Wybrano komplet celów' : 'Wybór niedozwolony')
+          : `Brakuje: ${missing.join(', ')}`;
+      } else {
+        statusEl.textContent = cmd
+          ? `Wybrano ${itemWord}: ${chosen.size}${plan.hasX ? ` · X = ${xValue}` : ''}`
+          : `Wybór niedozwolony (${itemWord}: ${chosen.size}${plan.hasX ? `, X = ${xValue}` : ''})`;
+      }
     }
     if (confirm) {
       confirm.disabled = !cmd;
@@ -719,20 +751,44 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     }
   };
 
-  for (const id of plan.targets) {
-    const row = choiceNode(list, 'div', 'multi-target-row');
-    const toggle = choiceNode(row, 'button', 'action multi-target-toggle');
-    toggle.type = 'button';
-    toggles.set(id, toggle);
-    toggle.addEventListener('click', () => {
-      if (chosen.has(id)) chosen.delete(id);
-      else chosen.add(id);
-      refresh();
+  const addPeek = (row, id) => {
+    if (!onOpenCard || view.players?.some((pl) => pl.id === id)) return;
+    const peek = choiceNode(row, 'button', 'ghost-btn multi-target-peek', 'Podgląd');
+    peek.type = 'button';
+    peek.addEventListener('click', () => onOpenCard(id));
+  };
+
+  if (slots) {
+    // Sekcja na KAZDA pozycje celu, z naglowkiem z Oracle („twoj stwor",
+    // „stwor przeciwnika", „karta-stwor w grobie", „gracz"). W obrebie
+    // pozycji wybor jest JEDNOKROTNY - kliniecie zastepuje poprzedni.
+    slots.forEach((ids, slotIndex) => {
+      const label = slotLabels[slotIndex] ?? `cel ${slotIndex + 1}`;
+      choiceNode(list, 'div', 'multi-target-slot-label', `${slotIndex + 1}. ${label}:`);
+      for (const id of ids) {
+        const row = choiceNode(list, 'div', 'multi-target-row multi-target-slot-row');
+        const toggle = choiceNode(row, 'button', 'action multi-target-toggle');
+        toggle.type = 'button';
+        toggles.set(id, toggle);
+        toggle.addEventListener('click', () => {
+          slotChoice[slotIndex] = slotChoice[slotIndex] === id ? null : id;
+          refresh();
+        });
+        addPeek(row, id);
+      }
     });
-    if (onOpenCard && !view.players?.some((pl) => pl.id === id)) {
-      const peek = choiceNode(row, 'button', 'ghost-btn multi-target-peek', 'Podgląd');
-      peek.type = 'button';
-      peek.addEventListener('click', () => onOpenCard(id));
+  } else {
+    for (const id of plan.targets) {
+      const row = choiceNode(list, 'div', 'multi-target-row');
+      const toggle = choiceNode(row, 'button', 'action multi-target-toggle');
+      toggle.type = 'button';
+      toggles.set(id, toggle);
+      toggle.addEventListener('click', () => {
+        if (chosen.has(id)) chosen.delete(id);
+        else chosen.add(id);
+        refresh();
+      });
+      addPeek(row, id);
     }
   }
 
