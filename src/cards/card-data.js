@@ -336,10 +336,20 @@ export const REAL_CARDS = Object.freeze([
     oracleText: '{T}: Add {C}. ({C} represents colorless mana.)\n{T}, Tap an untapped creature you control: Add one mana of any color.',
     imageUri: 'https://cards.scryfall.io/large/front/c/f/cf08c317-6f2d-47e3-ab5b-8af73fd3e404.jpg?1783937892',
     abilities: [
+      // M212/A (zgłoszenie właściciela): karta ma DWIE odrębne zdolności
+      // manowe. Wcześniej była jedna hybryda — koszt z drugiej („tapnij
+      // stwora") sklejony z efektem pierwszej (mana bezbarwna), więc gracz
+      // płacił stworem za {C} i nie miał wcale dostępu do many dowolnego
+      // koloru (precedens kodowania: Heap Gate).
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1 },
+      }),
       createAbility({
         type: ABILITY_TYPE.activated,
         cost: { tap: true, tapCreature: true },
-        effect: { type: 'add_mana', amount: 1 },
+        effect: { type: 'add_mana', amount: 1, colors: ['W', 'U', 'B', 'R', 'G'] },
       }),
     ],
     artId: 79,
@@ -1016,8 +1026,11 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
+        // M212/A (ta sama klasa co Holdout Settlement): „Add one mana of any
+        // color" bez jawnych kolorów spadało na fallback `src.colors`, czyli
+        // kolor KARTY — artefakt zielony dawał wyłącznie {G}.
         cost: { tap: true, tapCreature: true },
-        effect: { type: 'add_mana', amount: 1 },
+        effect: { type: 'add_mana', amount: 1, colors: ['W', 'U', 'B', 'R', 'G'] },
       }),
       createAbility({
         type: ABILITY_TYPE.activated,
