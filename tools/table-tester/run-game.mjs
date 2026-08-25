@@ -240,6 +240,17 @@ export async function runTableGame({
     return rngState / 0xffffffff;
   };
   const pickRandom = (arr) => (arr.length ? arr[Math.floor(rnd() * arr.length) % arr.length] : null);
+  // M206: deterministyczna kolejność losowa (Fisher-Yates na `rnd`, ADR 0005) —
+  // profil `random` ma odwiedzać INNE podzbiory celów kreatora wielocelowego
+  // niż „pierwsze N wierszy", ale przy tym samym --policy-seed powtarzalnie.
+  const shuffleForPolicy = (arr) => {
+    const out = [...arr];
+    for (let i = out.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(rnd() * (i + 1)) % (i + 1);
+      [out[i], out[j]] = [out[j], out[i]];
+    }
+    return out;
+  };
 
   // Pokrycie UI: co gracz już widział / kliknął (profil `explorer` i raport).
   const seenActions = new Set();     // etykiety akcji (bez wartości zmiennych)
@@ -594,13 +605,31 @@ export async function runTableGame({
     // cele (N)"), potem zatwierdź; gdy nie da się złożyć — anuluj.
     const multiConfirm = $$('#choice-request button').find((b) => /multi-target-confirm/.test(String(b.className)));
     if (multiConfirm) {
-      const needed = Number((intro.match(/zaznacz cele \((\d+)\)/) ?? [])[1] ?? 1);
-      const boxes = $$('#choice-request .choice-request-option input[type="checkbox"]')
-        .filter((i) => !i.disabled && !i.checked);
-      logL(`  [multi-target wizard] ${intro.slice(0, 90)} — opcji ${boxes.length}, potrzeba ${needed}`);
-      for (let i = 0; i < Math.min(needed, boxes.length); i += 1) {
-        const pick = profile === 'random' ? pickRandom(boxes) : boxes[i];
-        pick.click();
+      // M206: wiersze kreatora to PRZYCISKI `.multi-target-toggle` ze stanem
+      // w tekście („[ ] Mountain" / „[x] Mountain"), a NIE `<input
+      // type=checkbox>` w `.choice-request-option`. Poprzedni selektor nie
+      // pasował do niczego, więc `boxes` było zawsze puste: kreator nigdy nie
+      // dostawał zaznaczenia, „Zatwierdź" zostawał wyłączony, a „Anuluj"
+      // otwierał ten sam modal od nowa — tester kręcił się w kółko
+      // (zmierzone: 300 identycznych linii „opcji 0, potrzeba 1" i partia
+      // bez ani jednego kroku). Skutek uboczny: ŻADEN czar wielocelowy
+      // (Fireball, Wrap in Flames, Grave Exchange) ani mulligan z odłożeniem
+      // kart nie były nigdy testowane — a to jest właśnie ta klasa modali,
+      // którą właściciel kazał sprawdzić.
+      const rows = $$('#choice-request .multi-target-toggle').filter((b) => !b.disabled);
+      // Ile pozycji trzeba zaznaczyć: „zaznacz cele (2)", „zaznacz cele (1–3)"
+      // albo „Mulligan: zaznacz 2 karty…". Bierzemy pierwszą liczbę z intro,
+      // a przy zakresie „N–M" wystarczy minimum.
+      const needed = Number((intro.match(/zaznacz(?: cele)?\s*\(?(\d+)/) ?? [])[1] ?? 1);
+      const isChecked = (b) => /^\s*\[x\]/.test(text(b));
+      logL(`  [multi-target wizard] ${intro.slice(0, 90)} — opcji ${rows.length}, potrzeba ${needed}`);
+      // Zaznaczaj aż „Zatwierdź" przestanie być wyłączony (silnik jest jedynym
+      // źródłem prawdy o legalności — L48), maksymalnie tyle, ile jest wierszy.
+      const order = profile === 'random' ? shuffleForPolicy(rows) : rows;
+      for (const row of order) {
+        if (!multiConfirm.disabled) break;
+        if (isChecked(row)) continue;
+        row.click();
         await sleep(20);
       }
       const confirmNow = $$('#choice-request button').find((b) => /multi-target-confirm/.test(String(b.className)));
@@ -609,6 +638,8 @@ export async function runTableGame({
         await sleep(80);
         return true;
       }
+      // Nie dało się złożyć legalnego wyboru — odznacz wszystko i anuluj.
+      logL(`  [multi-target wizard] nie złożono legalnego wyboru (zaznaczonych ${rows.filter(isChecked).length}/${rows.length}) — anuluję`);
       const cancelMulti = $$('#choice-request button').find((b) => /multi-target-cancel/.test(String(b.className)));
       if (cancelMulti) { cancelMulti.click(); await sleep(60); }
       return true;

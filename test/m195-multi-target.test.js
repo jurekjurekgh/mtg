@@ -287,3 +287,61 @@ test('M195/C: zatwierdzenie jest ZABLOKOWANE, gdy wybór nielegalny', async () =
     assert.equal(confirm.disabled, true, 'bez zaznaczonego celu nie da się zatwierdzić');
   });
 });
+
+// ---------------------------------------------------------------------------
+// M206 (audyt Żywym Testerem, zlecenie właściciela): kontrakt DOM kreatora.
+//
+// Objaw: sterownik testera szukał zaznaczeń jako
+// `.choice-request-option input[type="checkbox"]`, a kreator rysuje PRZYCISKI
+// `.multi-target-toggle` ze stanem w tekście („[ ] Mountain" / „[x] Mountain").
+// Selektor nie pasował do niczego, więc lista zaznaczeń była zawsze pusta:
+// „Zatwierdź" zostawał wyłączony, „Anuluj" otwierał ten sam modal od nowa
+// i tester kręcił się w kółko (zmierzone: 300 identycznych linii
+// „opcji 0, potrzeba 1", partia bez ani jednego kroku).
+//
+// Konsekwencja była poważniejsza niż zawieszony przebieg: ŻADEN czar
+// wielocelowy (Fireball, Wrap in Flames, Grave Exchange) ani mulligan
+// z odłożeniem kart nie był nigdy przeklikany przez audyt — klasa modali
+// wprowadzona w M195/C i M200/C pozostawała poza zasięgiem narzędzia.
+//
+// Te testy pinują KONTRAKT, na którym opiera się sterownik: wiersz wyboru
+// jest klikalny, niesie stan w tekście i reaguje na kliknięcie.
+test('M206: wiersz wyboru to klikalny przycisk .multi-target-toggle (kontrakt testera)', async () => {
+  const { renderMultiTargetWizard } = await import('../src/table/choice-request.js');
+  const commands = wrapCommands();
+  const plan = multiTargetPlanOf(commands);
+  withMiniDom((host) => {
+    renderMultiTargetWizard(host, {
+      view: VIEW, session: SESSION, plan, commands, sourceName: 'Wrap in Flames',
+      onComplete: () => {}, onCancel: () => {},
+    });
+    const toggles = host.findAll((n) => String(n.className).includes('multi-target-toggle'));
+    assert.equal(toggles.length, plan.targets.length,
+      'każdy cel ma własny przycisk zaznaczenia');
+    for (const toggle of toggles) {
+      assert.equal(typeof toggle.click, 'function', 'wiersz musi być klikalny');
+    }
+    // Kreator NIE używa <input type=checkbox> — sterownik testera nie może
+    // ich szukać (to była przyczyna zawieszania się przebiegów).
+    const inputs = host.findAll((n) => String(n.tagName).toLowerCase() === 'input');
+    assert.equal(inputs.length, 0,
+      'zaznaczenia w kreatorze to przyciski ze stanem w tekście, nie <input type=checkbox>');
+  });
+});
+
+test('M206: stan zaznaczenia jest widoczny w TEKŚCIE wiersza ([ ] / [x])', async () => {
+  const { renderMultiTargetWizard } = await import('../src/table/choice-request.js');
+  const commands = wrapCommands();
+  withMiniDom((host) => {
+    renderMultiTargetWizard(host, {
+      view: VIEW, session: SESSION, plan: multiTargetPlanOf(commands), commands,
+      sourceName: 'Wrap in Flames', onComplete: () => {}, onCancel: () => {},
+    });
+    const toggle = host.find((n) => String(n.className).includes('multi-target-toggle'));
+    assert.match(toggle.textContent, /^\[ \]/, 'niezaznaczony wiersz zaczyna się od „[ ]”');
+    toggle.click();
+    assert.match(toggle.textContent, /^\[x\]/, 'po kliknięciu wiersz pokazuje „[x]”');
+    toggle.click();
+    assert.match(toggle.textContent, /^\[ \]/, 'ponowne kliknięcie odznacza');
+  });
+});

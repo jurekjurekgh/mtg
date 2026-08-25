@@ -33,7 +33,7 @@ import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard } from './choice-request.js';
 import { multiTargetPlanOf, mulliganBottomPlanOf } from './multi-target.js';
-import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions } from './render.js';
+import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount } from './render.js';
 
 function runEngineSmoke() {
   // Minimalny, odtwarzalny przebieg: kilka rund passów przez komendy z widoku.
@@ -335,7 +335,10 @@ function bootstrapTable() {
         session,
         plan: mulliganPlan,
         commands: request.options,
-        intro: `Mulligan: zaznacz ${mulliganPlan.count} ${mulliganPlan.count === 1 ? 'kartę' : 'karty'} do odłożenia na spód biblioteki:`,
+        // M206: odmiana przez `polishPluralCount` — warunek `count === 1 ?
+        // 'kartę' : 'karty'` dawał „zaznacz 5 karty" i „zaznacz 6 karty"
+        // (zmierzone w kreatorze mulligana: liczby 1–6 są tam normalne).
+        intro: `Mulligan: zaznacz ${mulliganPlan.count} ${polishPluralCount(mulliganPlan.count, 'kartę', 'karty', 'kart')} do odłożenia na spód biblioteki:`,
         onOpenCard: openCardFullscreen,
         onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
         onCancel: () => hideModal('choice-request'),

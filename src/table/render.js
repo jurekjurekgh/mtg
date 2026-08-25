@@ -759,7 +759,7 @@ function dynamicAmount(val) {
 function signed(n) { return (Number(n) >= 0 ? '+' : '') + n; }
 
 /** Odmiana polska rzeczownika wg liczby: (1 → one, 2-4 → few, 5+ → many). */
-function polishPluralCount(n, one, few, many) {
+export function polishPluralCount(n, one, few, many) {
   const mod10 = n % 10;
   const mod100 = n % 100;
   if (n === 1) return one;

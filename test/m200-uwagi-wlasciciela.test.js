@@ -594,3 +594,20 @@ test('M200/R: przy obu opłacalnych — bot stawia Gray Slaada (4/1), nie „mil
     `bot stawia 4/1 na planszy (korpus > 4 nieznane karty), nie milluje się: ${JSON.stringify(chosen)}`);
 });
 
+// M206 (audyt Żywym Testerem): odmiana liczebnika w intro mulligana.
+//
+// Objaw zmierzony w transkrypcie (mirrodin vs dominaria, seed 37): kolejne
+// mulligany pokazywały „Mulligan: zaznacz 5 karty do odłożenia…" i „zaznacz
+// 6 karty…". Intro składał warunek dwuwartościowy (count === 1 ? 'kartę'
+// : 'karty'), choć projekt ma już `polishPluralCount` z trzecią formą
+// dopełniaczową — reszta stołu (dobieranie, mielenie, odrzucanie) używa jej
+// od dawna. Mulligan do 6 kart jest osiągalny, więc forma „kart" jest realna.
+test('M206: intro mulligana odmienia liczebnik (1 kartę / 2-4 karty / 5+ kart)', async () => {
+  const { polishPluralCount } = await import('../src/table/render.js');
+  const intro = (n) => `Mulligan: zaznacz ${n} ${polishPluralCount(n, 'kartę', 'karty', 'kart')} do odłożenia na spód biblioteki:`;
+  assert.match(intro(1), /zaznacz 1 kartę /);
+  assert.match(intro(2), /zaznacz 2 karty /);
+  assert.match(intro(4), /zaznacz 4 karty /);
+  assert.match(intro(5), /zaznacz 5 kart /, 'piąty mulligan: forma dopełniaczowa');
+  assert.match(intro(6), /zaznacz 6 kart /, 'szósty mulligan: forma dopełniaczowa');
+});
