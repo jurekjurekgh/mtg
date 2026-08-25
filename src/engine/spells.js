@@ -2224,14 +2224,12 @@ export function legalSpellCasts(state, playerId) {
       }
       if (payAltAvailable) pushSpellCast({ objectId: id, targets: [], payAltCost: true });
       // Buyback (CR 702.26): wariant z dodatkowym kosztem — czar wraca do ręki
-      // po rozstrzygnięciu zamiast do grobu. Enumerujemy osobną komendę.
-      // Buyback (CR 702.26): wariant z dodatkowym kosztem — czar wraca do ręki
       // po rozstrzygnięciu zamiast do grobu. Enumerujemy osobną komendę
       // tylko gdy gracz ma dość many na bazę + buyback.
       if (object.spell.buyback && !object.plotted) {
         const baseCost = effectiveSpellManaCost(state, object);
         const bbCost = object.spell.buyback.cost ?? 0;
-      for (const k of spellPhyrexianVariants) {
+        for (const k of spellPhyrexianVariants) {
           const pipMana = k == null ? 0 : (phyrexianSymbols - k);
           if (baseCost + bbCost + pipMana > manaAvailable(object)) continue;
           const cast2 = { objectId: id, targets: [], buyback: true };
