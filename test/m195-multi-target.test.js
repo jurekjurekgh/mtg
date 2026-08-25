@@ -10,7 +10,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { multiTargetPlanOf, commandForSelection } from '../src/table/multi-target.js';
-import { targetTypeLabel } from '../src/table/render.js';
+import { targetTypeLabel, describeSpellEffects } from '../src/table/render.js';
+import { createCardRegistry } from '../src/cards/card-data.js';
 
 /** Warianty Fireball: 3 cele × X 1..3 (kartezjański iloczyn jak w silniku). */
 function fireballCommands() {
@@ -525,4 +526,28 @@ test('M207/B4: w obrębie pozycji wybór jest JEDNOKROTNY, a status mówi czego 
   assert.ok(commands.includes(submitted), 'i to komendę z legalCommands (L48)');
   assert.deepEqual(submitted.targets, ['gy2', 'p2'],
     'cele w KOLEJNOŚCI POZYCJI — pozycja 0 to karta, pozycja 1 to gracz');
+});
+
+// ---------------------------------------------------------------------------
+// M207/B5 — kafel karty wymienia WSZYSTKIE pozycje celu
+//
+// Znalezione podczas audytu rozgrywek: `describeSpellEffects` opisywał tylko
+// `spell.targets[0]`, więc Knockout Maneuver na ręce pokazywał „cel: twój
+// stwór" i wyglądał, jakby nie dotykał stwora przeciwnika.
+// ---------------------------------------------------------------------------
+test('M207/B5: kafel czaru wymienia wszystkie pozycje celu, any_target bez pleonazmu', () => {
+  const registry = createCardRegistry();
+
+  const knockout = describeSpellEffects(registry.get('knockout-maneuver').spell);
+  assert.match(knockout, /cel: tw\u00f3j stw\u00f3r \+ stw\u00f3r przeciwnika/,
+    'obie pozycje Knockout Maneuver w kolejności z Oracle');
+
+  const grave = describeSpellEffects(registry.get('grave-exchange').spell);
+  assert.match(grave, /cel: karta-stw\u00f3r w grobie \+ gracz/,
+    'Grave Exchange: karta z grobu ORAZ gracz poświęcający stwora');
+
+  // Wyjątek M100/E10 zostaje: samotne „any target" nie dostaje „cel:".
+  const withstand = describeSpellEffects(registry.get('withstand').spell);
+  assert.match(withstand, /dowolny cel/);
+  assert.doesNotMatch(withstand, /cel: dowolny cel/, 'bez pleonazmu „cel: dowolny cel”');
 });

@@ -255,9 +255,22 @@ export function describeSpellEffects(spell) {
     }
     return describeEffect(effect);
   });
-  const target = (spell.targets ?? []).length
-    ? (spell.targets[0].type === 'any_target' ? 'dowolny cel' : `cel: ${targetTypeLabel(spell.targets[0])}`)
-    : '';
+  // M207 (audyt rozgrywek): kafel opisywał WYŁĄCZNIE pierwszą pozycję celu
+  // (`spell.targets[0]`), więc czary o dwóch RÓŻNYCH pozycjach gubiły połowę
+  // treści. Knockout Maneuver („put a +1/+1 counter on target creature you
+  // control, then it deals damage … to target creature an opponent controls")
+  // pokazywał „cel: twój stwór" — z kafla wynikało, że czar dotyka tylko
+  // mojego stwora. Wymieniamy wszystkie pozycje w kolejności z Oracle.
+  //
+  // Zachowany wyjątek M100/E10: samotne „any target" to „dowolny cel" BEZ
+  // przedrostka „cel:" (etykieta już zawiera to słowo — inaczej wychodzi
+  // pleonazm „cel: dowolny cel").
+  const targetSpecs = spell.targets ?? [];
+  const target = targetSpecs.length === 0
+    ? ''
+    : (targetSpecs.length === 1 && targetSpecs[0].type === 'any_target')
+      ? 'dowolny cel'
+      : `cel: ${targetSpecs.map((spec) => (spec.type === 'any_target' ? 'dowolny cel' : targetTypeLabel(spec))).join(' + ')}`;
   return [parts.join(' + '), target].filter(Boolean).join(' \u00b7 ');
 }
 
