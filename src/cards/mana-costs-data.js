@@ -412,4 +412,6 @@ export const MANA_COSTS = {
   "time-to-feed": "{2}{G}",
   "creakwood-safewright": "{1}{B}",
   "dead-ringers": "{4}{B}",
+  "dimir-guildgate": "",
+  "vow-of-flight": "{2}{U}",
 };

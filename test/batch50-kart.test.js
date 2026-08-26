@@ -14,6 +14,8 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
+import { attachAuraToCreature } from '../src/engine/attachments.js';
+import { effectivePower, effectiveToughness, effectiveKeywords } from '../src/engine/permanents.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -81,4 +83,40 @@ test('B50: Dimir Guildgate — wchodzi zatapnięty (entersTapped)', () => {
   const onBoard = [...state.objects.values()].find((o) => o.cardId === 'dimir-guildgate' && o.zone === 'battlefield');
   assert.ok(onBoard, 'ląd na polu bitwy');
   assert.equal(onBoard.tapped, true, 'ląd wchodzi zatapniety');
+});
+
+// ---- Vow of Flight ----------------------------------------------------------
+
+test('B50: Vow of Flight — dane Oracle zgadzają się z definicją (aura +2/+2, flying, cantAttackYou)', () => {
+  const def = REGISTRY.get('vow-of-flight');
+  assert.deepEqual(def.types, ['Enchantment']);
+  assert.deepEqual(def.subtypes, ['Aura']);
+  assert.deepEqual(def.colors, ['U']);
+  assert.equal(def.aura.cantAttackYou, true);
+  assert.deepEqual(def.aura.pump, { power: 2, toughness: 2 });
+  assert.deepEqual(def.aura.keywords, ['flying']);
+  assert.equal(def.artId, 571);
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+});
+
+test('B50: Vow of Flight — zaczarowany stwór dostaje +2/+2 i flying', () => {
+  const state = game('p1', 'main');
+  const creature = put(state, 'bear', 'highland-game', 'p2', 'battlefield');
+  put(state, 'vow', 'vow-of-flight', 'p1', 'battlefield');
+  attachAuraToCreature(state, 'vow', 'bear');
+  const host = state.objects.get('bear');
+  assert.equal(effectivePower(host, state), (creature.power ?? 0) + 2, '+2 mocy');
+  assert.equal(effectiveToughness(host, state), (creature.toughness ?? 0) + 2, '+2 wytrzymałości');
+  assert.ok(effectiveKeywords(host, state).includes('flying'), 'flying nadane');
+});
+
+test('B50: Vow of Flight — zaczarowany stwór przeciwnika NIE może atakować (1v1, CR cantAttackYou)', () => {
+  const state = game('p2', 'declare_attackers');
+  put(state, 'bear', 'highland-game', 'p2', 'battlefield', { summoningSickness: false });
+  put(state, 'vow', 'vow-of-flight', 'p1', 'battlefield');
+  attachAuraToCreature(state, 'vow', 'bear');
+  const view = playerView(state, 'p2');
+  const attack = view.legalCommands.find((c) => c.type === 'declare_attackers' && (c.attackerIds ?? []).includes('bear'));
+  assert.ok(!attack, 'stwór z Vow of Flight nie może zostać zadeklarowany do ataku na właściciela aury');
 });

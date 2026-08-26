@@ -9834,6 +9834,20 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // Vow of Flight (CMR) {2}{U} Aura — +2/+2, flying, can't attack you.
+  // Bliźniak Vow of Wildness (ten sam cykl) — zero nowych mechanik.
+  defineCard({
+    id: 'vow-of-flight', name: 'Vow of Flight', set: 'CMR',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['U'], manaCost: 3,
+    oracleText: "Enchant creature\nEnchanted creature gets +2/+2, has flying, and can't attack you or planeswalkers you control.",
+    imageUri: 'https://cards.scryfall.io/large/front/c/9/c9887121-6206-44bb-a1b4-520f28a61a17.jpg?1783928847',
+    aura: { pump: { power: 2, toughness: 2 }, keywords: ['flying'], cantAttackYou: true },
+    artId: 571,
+    plan: 'Fiora',
+    support: { status: 'supported', limitations: [] },
+    notes: ['can\'t attack you — w 1v1 stwór przeciwnika z Vow nie może atakować (jedyny przeciwnik to Ty)'],
+  }),
+
 ]);
 
 /**

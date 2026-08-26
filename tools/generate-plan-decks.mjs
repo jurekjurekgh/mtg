@@ -70,6 +70,8 @@ export const WOREK_DECKS = Object.freeze({
   Amonkhet: 'worek-legend', Shandalar: 'worek-legend', Rabiah: 'worek-legend',
   Rath: 'worek-legend', Arcavios: 'worek-legend',
   'The Edge': 'worek-legend', 'Thunder Junction': 'worek-legend',
+  // Batch 50: Fiora (świat Commander Legends — intrygi/szlachta) → legendy.
+  Fiora: 'worek-legend',
   Ixalan: 'worek-dziki', Kaladesh: 'worek-dziki', Muraganda: 'worek-dziki',
   'Final Fantasy': 'worek-mroczny', Duskmourn: 'worek-mroczny',
   Lorwyn: 'worek-mroczny',
