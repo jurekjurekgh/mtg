@@ -1,0 +1,17 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Manifest+Dread",
+  "print": "dsk",
+  "name": "Manifest Dread",
+  "mana_cost": "{1}{G}",
+  "cmc": 2,
+  "type_line": "Sorcery",
+  "oracle_text": "Manifest dread. (Look at the top two cards of your library. Put one onto the battlefield face down as a 2/2 creature and the other into your graveyard. Turn it face up any time for its mana cost if it's a creature card.)",
+  "colors": ["G"],
+  "keywords": ["Manifest", "Manifest dread"],
+  "set": "dsk",
+  "set_name": "Duskmourn: House of Horror",
+  "collector_number": "189",
+  "rarity": "common",
+  "image_uris": { "large": "https://cards.scryfall.io/large/front/a/6/a649265b-6c32-49e7-b6cb-6086c40d26e8.jpg?1783909451" },
+  "pobrano": "2026-08-26"
+}
