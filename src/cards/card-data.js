@@ -9814,6 +9814,26 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['„unless either one is a color the other isn\'t” = równość ZBIORÓW kolorów (CR 105.2); przy różnicy nie ginie żaden z celów', 'dwa bezbarwne stwory (puste zbiory) są legalnym, skutecznym celem'],
   }),
 
+  // ===== Batch 49 (2026-08-26) =====================================
+
+  // Dimir Guildgate (GRN) Land — Gate: enters tapped, {T}: Add {U} or {B}.
+  // Zero nowych mechanik — wzorzec Dismal Backwater / Heap Gate bez lifegain.
+  defineCard({
+    id: 'dimir-guildgate', name: 'Dimir Guildgate', set: 'GRN',
+    types: ['Land'], subtypes: ['Gate'], colors: [], entersTapped: true,
+    oracleText: 'This land enters tapped.\n{T}: Add {U} or {B}.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/7/b7129bdf-de02-4ed2-b5de-f774b8a7d302.jpg?1783934104',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['U', 'B'] },
+      }),
+    ],
+    artId: 570, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 /**

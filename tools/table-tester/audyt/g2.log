@@ -1,0 +1,379 @@
+== NOWA PARTIA: gracz=innistrad vs bot=wiedzmin, seed=7, profil=defensive, policy-seed=2, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Karty na spód biblioteki (mulligan) (7 opcji)
+  RĘKA: Thraben Valiant · 2 · Creature — Human Soldier · Czujność · 2/1 | Frightful Delusion · 3 · Instant · skontruj czar, chyba że kontroler zapłaci {1}; ten gracz odrzuca kartę · cel: czar na stosie | Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4 | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · 1/1 | Farbog Explorer · 3 · Creature — Human Scout · 2/3 | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Frightful Delusion ⏎ Dobierasz: Thraben Valiant ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Selhoff Occultist, Forest, Chill of the Grave, Island, Midnight Guard, Gather the Townsfolk ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Thraben Valiant
+  [ROZGRYWKA]   • Dobierasz: Frightful Delusion
+  [ROZGRYWKA]   • Dobierasz: Armored Skaab
+  [ROZGRYWKA]   • Dobierasz: Makeshift Mauler
+  [ROZGRYWKA]   • Dobierasz: Snarling Wolf
+  [ROZGRYWKA]   • Dobierasz: Farbog Explorer
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Wybierz: Karty na spód biblioteki (mulligan) (7 opcji)
+  [multi-target wizard] Mulligan: zaznacz 1 kartę do odłożenia na spód biblioteki:[ ] Thraben ValiantPodgląd[ ] Fr — opcji 7, potrzeba 1, celuję w 1
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 6 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 6 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+
+--- krok 3 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Karty na spód biblioteki (mulligan) (9 opcji)
+  RĘKA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). · 4/4
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Frightful Delusion ⏎ Dobierasz: Thraben Valiant ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Selhoff Occultist, Forest, Chill of the Grave, Island, Midnight Guard, Gather the Townsfolk ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Grizzled Outcasts
+  >> Wybierz: Karty na spód biblioteki (mulligan) (9 opcji)
+  [multi-target wizard] Mulligan: zaznacz 2 karty do odłożenia na spód biblioteki:[ ] IslandPodgląd[ ] PlainsPodgl — opcji 7, potrzeba 2, celuję w 2
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 5 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 5 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+
+--- krok 6 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Karty na spód biblioteki (mulligan) (25 opcji)
+  RĘKA: Dream Twist · 1 · Instant · mieli 3 karty (do grobu) · cel: gracz | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Predator's Gambit · 1 · Enchantment — Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) | Plains · Basic Land — Plains · T: dodaj 1 manę | Grounded · 2 · Enchantment — Aura · stwór traci: Latanie | Frightful Delusion · 3 · Instant · skontruj czar, chyba że kontroler zapłaci {1}; ten gracz odrzuca kartę · cel: czar na stosie
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Frightful Delusion ⏎ Dobierasz: Thraben Valiant ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Selhoff Occultist, Forest, Chill of the Grave, Island, Midnight Guard, Gather the Townsfolk ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Dream Twist
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Predator's Gambit
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Grounded
+  [ROZGRYWKA]   • Dobierasz: Frightful Delusion
+  >> Wybierz: Karty na spód biblioteki (mulligan) (25 opcji)
+  [multi-target wizard] Mulligan: zaznacz 3 karty do odłożenia na spód biblioteki:[ ] Dream TwistPodgląd[ ] Island — opcji 7, potrzeba 3, celuję w 3
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 4 karty) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 4 karty)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+
+--- krok 9 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Karty na spód biblioteki (mulligan) (18 opcji)
+  RĘKA: Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Grounded · 2 · Enchantment — Aura · stwór traci: Latanie | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Frightful Delusion ⏎ Dobierasz: Thraben Valiant ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Selhoff Occultist, Forest, Chill of the Grave, Island, Midnight Guard, Gather the Townsfolk ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Grounded
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Makeshift Mauler
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Wybierz: Karty na spód biblioteki (mulligan) (18 opcji)
+  [multi-target wizard] Mulligan: zaznacz 4 karty do odłożenia na spód biblioteki:[ ] PlainsPodgląd[ ] ForestPodgl — opcji 7, potrzeba 4, celuję w 4
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 3 karty) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 3 karty)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+
+--- krok 12 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Karty na spód biblioteki (mulligan) (16 opcji)
+  RĘKA: Forest · Basic Land — Forest · T: dodaj 1 manę | Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Caravan Vigil · 1 · Sorcery · szukaj basic landa (morbid) | Spare from Evil · 2 · Instant · ochrona do końca tury
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Frightful Delusion ⏎ Dobierasz: Thraben Valiant ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Selhoff Occultist, Forest, Chill of the Grave, Island, Midnight Guard, Gather the Townsfolk ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Tireless Hauler
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Caravan Vigil
+  [ROZGRYWKA]   • Dobierasz: Spare from Evil
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Wybierz: Karty na spód biblioteki (mulligan) (16 opcji)
+  [multi-target wizard] Mulligan: zaznacz 5 kart do odłożenia na spód biblioteki:[ ] ForestPodgląd[ ] Tireless Hau — opcji 7, potrzeba 5, celuję w 5
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 2 karty) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 2 karty)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+
+--- krok 15 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Karty na spód biblioteki (mulligan) (7 opcji)
+  RĘKA: Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Thornhide Wolves · 5 · Creature — Wolf · 4/5 | Plains · Basic Land — Plains · T: dodaj 1 manę | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). · 4/4 | Scorned Villager · 2 · Creature — Human Werewolf · Transform · {T}: dodaj 1 manę zieloną · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). · 1/1 | Selhoff Occultist · 3 · Creature — Human Rogue · Gdy jakiekolwiek stworzenie umrze: mieli 1 kartę (do grobu). · 2/3
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Frightful Delusion ⏎ Dobierasz: Thraben Valiant ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Selhoff Occultist, Forest, Chill of the Grave, Island, Midnight Guard, Gather the Townsfolk ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Tireless Hauler
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Thornhide Wolves
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Grizzled Outcasts
+  [ROZGRYWKA]   • Dobierasz: Scorned Villager
+  [ROZGRYWKA]   • Dobierasz: Selhoff Occultist
+  >> Wybierz: Karty na spód biblioteki (mulligan) (7 opcji)
+  [multi-target wizard] Mulligan: zaznacz 6 kart do odłożenia na spód biblioteki:[ ] Tireless HaulerPodgląd[ ] Mou — opcji 7, potrzeba 6, celuję w 6
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 1 kartę) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 1 kartę)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+
+--- krok 18 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Mulligan — odłóż na spód (7): Plains, Plains, Plains, Ghoulcaller's Bell, Spectral Prison, Island, Forest
+  RĘKA: Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Spectral Prison · 2 · Enchantment · Gdy wejdzie na pole bitwy: blokada odkręcania (póki źródło zatapnięte). · Gdy zaczarowany stwór staje się celem czaru: poświęć ten permanent. | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Frightful Delusion ⏎ Dobierasz: Thraben Valiant ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Selhoff Occultist, Forest, Chill of the Grave, Island, Midnight Guard, Gather the Townsfolk ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Ghoulcaller's Bell
+  [ROZGRYWKA]   • Dobierasz: Spectral Prison
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Mulligan — odłóż na spód (7): Plains, Plains, Plains, Ghoulcaller's Bell, Spectral Prison, Island, Forest
+  >> Mulligan: Zatrzymaj tę rękę (keep — 0 kart)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+
+--- krok 21 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  MOJE POLA: (puste)
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  LOG: Dobierasz: Frightful Delusion ⏎ Dobierasz: Thraben Valiant ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Selhoff Occultist, Forest, Chill of the Grave, Island, Midnight Guard, Gather the Townsfolk ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Thornhide Wolves
+
+--- krok 24 | T. 7GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Thornhide Wolves · 5 · Creature — Wolf · 4/5 | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1
+  MOJE POLA: Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  LOG: Dobierasz: Frightful Delusion ⏎ Dobierasz: Thraben Valiant ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Selhoff Occultist, Forest, Chill of the Grave, Island, Midnight Guard, Gather the Townsfolk ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Civilized Scholar
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Wishful Merfolk
+
+--- krok 27 | T. 9GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Thornhide Wolves · 5 · Creature — Wolf · 4/5 | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1 | Spare from Evil · 2 · Instant · ochrona do końca tury
+  MOJE POLA: Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Wishful Merfolk · 2 · Creature — Merfolk · Obrońca · {1}, {U}: zmiana podtypu i utrata keyworda do końca tury · choroba · 3/2
+  LOG: Dobierasz: Frightful Delusion ⏎ Dobierasz: Thraben Valiant ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Selhoff Occultist, Forest, Chill of the Grave, Island, Midnight Guard, Gather the Townsfolk ⏎ Nowa partia (seed 7). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Wishful Merfolk zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Spare from Evil
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Emerald Oryx
+
+--- krok 30 | T. 11GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Thornhide Wolves · 5 · Creature — Wolf · 4/5 | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1 | Spare from Evil · 2 · Instant · ochrona do końca tury | Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5
+  MOJE POLA: Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Wishful Merfolk · 2 · Creature — Merfolk · Obrońca · {1}, {U}: zmiana podtypu i utrata keyworda do końca tury · 3/2 | Emerald Oryx · 4 · Creature — Antelope · choroba · 2/3
+  LOG: Dobierasz: Frightful Delusion ⏎ Dobierasz: Thraben Valiant ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Selhoff Occultist, Forest, Chill of the Grave, Island, Midnight Guard, Gather the Townsfolk ⏎ Nowa partia (seed 7). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Emerald Oryx zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Tireless Hauler
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Nightshade Harvester
+
+--- krok 33 | T. 13GraczGracz: 18 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Thornhide Wolves · 5 · Creature — Wolf · 4/5 | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1 | Spare from Evil · 2 · Instant · ochrona do końca tury | Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Blazing Torch · 1 · Artifact — Equipment · Equip {1}
+  MOJE POLA: Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Wishful Merfolk · 2 · Creature — Merfolk · Obrońca · {1}, {U}: zmiana podtypu i utrata keyworda do końca tury · 3/2 | Emerald Oryx · 4 · Creature — Antelope · 2/3 | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · choroba · 2/2
+  LOG: Dobierasz: Frightful Delusion ⏎ Dobierasz: Thraben Valiant ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Selhoff Occultist, Forest, Chill of the Grave, Island, Midnight Guard, Gather the Townsfolk ⏎ Nowa partia (seed 7). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nightshade Harvester zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Emerald Oryx
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Emerald Oryx zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 18
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Blazing Torch
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+
+--- krok 36 | T. 14BotGracz: 18 ż.Bot: 20 ż.Główna 1Stos — Maritime Guard ---
+  STOS: Maritime Guard (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Thornhide Wolves · 5 · Creature — Wolf · 4/5 | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1 | Spare from Evil · 2 · Instant · ochrona do końca tury | Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Blazing Torch · 1 · Artifact — Equipment · Equip {1}
+  MOJE POLA: Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Wishful Merfolk · 2 · Creature — Merfolk · Obrońca · {1}, {U}: zmiana podtypu i utrata keyworda do końca tury · 3/2 | Emerald Oryx · 4 · Creature — Antelope · 2/3 | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · 2/2
+  LOG: Dobierasz: Frightful Delusion ⏎ Dobierasz: Thraben Valiant ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Selhoff Occultist, Forest, Chill of the Grave, Island, Midnight Guard, Gather the Townsfolk ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Maritime Guard
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Wishful Merfolk
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Maritime Guard wchodzi na pole bitwy
+  [ROZGRYWKA]   • Maritime Guard zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Wishful Merfolk, Emerald Oryx, Nightshade Harvester
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Wishful Merfolk zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 15
+  [ROZGRYWKA]   • Emerald Oryx zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 15 → 13
+  [ROZGRYWKA]   • Nightshade Harvester zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 11
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Elgaud Inquisitor
+
+--- krok 39 | T. 15GraczGracz: 11 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Blazing Torch (koszt 1)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Thornhide Wolves · 5 · Creature — Wolf · 4/5 | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1 | Spare from Evil · 2 · Instant · ochrona do końca tury | Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2
+  MOJE POLA: Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Wishful Merfolk · 2 · Creature — Merfolk · Obrońca · {1}, {U}: zmiana podtypu i utrata keyworda do końca tury · 3/2 | Emerald Oryx · 4 · Creature — Antelope · 2/3 | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · 2/2 | Maritime Guard · 2 · Creature — Merfolk Soldier · choroba · 1/3
+  LOG: Dobierasz: Frightful Delusion ⏎ Dobierasz: Thraben Valiant ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Selhoff Occultist, Forest, Chill of the Grave, Island, Midnight Guard, Gather the Townsfolk ⏎ Nowa partia (seed 7). Powodzenia!
+  >> Dalej (pass)
+  >> Zagraj: Blazing Torch (koszt 1)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 2
+  [ROZGRYWKA]   • Zagrywasz Blazing Torch
+  [ROZGRYWKA]   • Blazing Torch wchodzi na pole bitwy
+  [ROZGRYWKA]   • Blazing Torch zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Village Rites
+  [ROZGRYWKA]   • Maritime Guard zostaje poświęcony
+
+--- krok 42 | T. 16BotGracz: 11 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Thornhide Wolves · 5 · Creature — Wolf · 4/5 | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1 | Spare from Evil · 2 · Instant · ochrona do końca tury | Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Wishful Merfolk · 2 · Creature — Merfolk · Obrońca · {1}, {U}: zmiana podtypu i utrata keyworda do końca tury · 3/2 | Emerald Oryx · 4 · Creature — Antelope · 2/3 | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · 2/2
+  LOG: Dobierasz: Frightful Delusion ⏎ Dobierasz: Thraben Valiant ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Selhoff Occultist, Forest, Chill of the Grave, Island, Midnight Guard, Gather the Townsfolk ⏎ Nowa partia (seed 7). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Ballista Watcher
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Wishful Merfolk
+
+--- krok 45 | T. 17GraczGracz: 4 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Thornhide Wolves · 5 · Creature — Wolf · 4/5 | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1 | Spare from Evil · 2 · Instant · ochrona do końca tury | Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2 | Grounded · 2 · Enchantment — Aura · stwór traci: Latanie
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Wishful Merfolk · 2 · Creature — Merfolk · Obrońca · {1}, {U}: zmiana podtypu i utrata keyworda do końca tury · 3/2 | Emerald Oryx · 4 · Creature — Antelope · 2/3 | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · 2/2 | Ballista Watcher · 4 · Creature — Human Soldier Werewolf · Daybound · {2}, {R}, {T}: dowolny cel — 1 obrażenie · choroba · 4/3
+  LOG: Dobierasz: Frightful Delusion ⏎ Dobierasz: Thraben Valiant ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Selhoff Occultist, Forest, Chill of the Grave, Island, Midnight Guard, Gather the Townsfolk ⏎ Nowa partia (seed 7). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Ballista Watcher wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ballista Watcher zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Wishful Merfolk, Emerald Oryx, Nightshade Harvester
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Wishful Merfolk zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 8
+  [ROZGRYWKA]   • Emerald Oryx zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 8 → 6
+  [ROZGRYWKA]   • Nightshade Harvester zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 6 → 4
+  [ROZGRYWKA]   • Tura 17 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Grounded
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Odkręcenie
+  [ROZGRYWKA]   • Zapada noc — karty z daybound/nightbound obracają się
+  [ROZGRYWKA]   • Ballista Watcher przemienia się w Ballista Wielder
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Dawntreader Elk
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Wishful Merfolk
+
+--- krok 48 | T. 18BotGracz: 4 ż.Bot: 20 ż.Główna 1Stos — Ballista Wielder ---
+  STOS: Dawntreader Elk (rzuca: Nieprzyjaciel) | Wishful Merfolk (rzuca: Nieprzyjaciel) | Ballista Wielder (rzuca: Nieprzyjaciel) → cel: Ty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Thornhide Wolves · 5 · Creature — Wolf · 4/5 | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1 | Spare from Evil · 2 · Instant · ochrona do końca tury | Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2 | Grounded · 2 · Enchantment — Aura · stwór traci: Latanie
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Wishful Merfolk · 2 · Creature — Merfolk · Obrońca · {1}, {U}: zmiana podtypu i utrata keyworda do końca tury · 3/2 | Emerald Oryx · 4 · Creature — Antelope · 2/3 | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · 2/2 | Ballista Wielder · 4 · Creature — Werewolf · Nightbound · {2}, {R}: dowolny cel — 1 obrażenie + nie może blokować · 5/5
+  LOG: Dobierasz: Frightful Delusion ⏎ Dobierasz: Thraben Valiant ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Selhoff Occultist, Forest, Chill of the Grave, Island, Midnight Guard, Gather the Townsfolk ⏎ Nowa partia (seed 7). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Ballista Wielder — obrażenia w cel, docelowy stwór nie może blokować do końca tury → cel: Ty
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 50 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Thornhide Wolves · 5 · Creature — Wolf · 4/5 | Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1 | Spare from Evil · 2 · Instant · ochrona do końca tury | Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2 | Grounded · 2 · Enchantment — Aura · stwór traci: Latanie
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Wishful Merfolk · 2 · Creature — Human · Obrońca · {1}, {U}: zmiana podtypu i utrata keyworda do końca tury · bez: Obrońca · 3/2 | Emerald Oryx · 4 · Creature — Antelope · 2/3 | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · 2/2 | Ballista Wielder · 4 · Creature — Werewolf · Nightbound · {2}, {R}: dowolny cel — 1 obrażenie + nie może blokować · 5/5 | Dawntreader Elk · 2 · Creature — Elk · {G}, poświęć: szukaj w bibliotece na pole bitwy · choroba · 2/2
+  LOG: Dobierasz: Frightful Delusion ⏎ Dobierasz: Thraben Valiant ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Selhoff Occultist, Forest, Chill of the Grave, Island, Midnight Guard, Gather the Townsfolk ⏎ Nowa partia (seed 7). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 7, kliknięte: 10, modale: 1, sondy noop: 32 (panel 25, modal 7)
+== DETEKTORY: brak zgłoszeń ==
+Transkrypt zapisany: /home/user/mtg/tools/table-tester/audyt/g2.txt | zgłoszeń detektorów: 0
