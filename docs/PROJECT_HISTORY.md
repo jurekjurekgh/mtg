@@ -12,7 +12,57 @@
 >
 > Sesje dopisują tu swoją sekcję (ADR 0013) — nowe na górze.
 
-- **Ostatnia aktualizacja:** 2026-08-25 (M213: engine bez nazw kart — PR #78)
+- **Ostatnia aktualizacja:** 2026-08-26 (M217: exploit — CR 702.110 (brak kandydatów nie przerywa ETB), PR #78)
+
+## M214–M217 — srebrna odznaka „wyłapywacza błędów”: 5 unikalnych błędów vs MtG (2026-08-26)
+
+Polecenie właściciela: znaleźć i naprawić **5 unikalnych błędów/uproszczeń**
+vs zasady MtG w istniejących kartach/mechanikach (weryfikowalne wobec CR,
+naprawa u root cause), a równolegle doprowadzić czerwone CI (`4fecec7`,
+`737f3ca`) do zieleni przed kontynuacją. Cel osiągnięty: PR #78 zielony
+(HEAD `ee0b6c1`), wszystkie commity pushowane przyrostowo bez force pusha.
+
+**Znalezione i naprawione (kolejność chronologiczna):**
+
+1. **M214 — mana ograniczona drukiem (CR 106.x, Powerstone).**
+   `restrictedPool` trzymana osobno; `spendMana` liczy dostępność jako
+   `player.mana − restrictedInPool`; `consumeManaPool` bez throw; `addMana`
+   kieruje jednostkę do właściwej puli po `spendOnly`. Testy:
+   `test/m201-bug3-powerstone.test.js`, `test/m214-restricted-pool-bookkeeping.test.js`.
+
+2. **M214 — deathtouch przy obrażeniach niecombatowych (CR 702.2).**
+   Niecombatowa śmierć ofiary zdarzenia zadającego obrażenia nie zabijała
+   stwora (deathtouch działa przy każdym źródle obrażeń). Test:
+   `test/m214-deathtouch-niecombat.test.js`.
+
+3. **M214 — Hunter's Blowgun (CR 109.5).** Warunkowe keywordy
+   (deathtouch/reach) zależały od kontrolera KARTY, nie kontrolera
+   ZAŁĄCZNIKA (equipment). Test:
+   `test/m214-blowgun-conditional-keywords.test.js`.
+
+4. **M216 — devour (CR 702.82a, Gorger Wurm).** Trigger ETB odpalał w tym
+   samym przebiegu, w którym kolejkowała się decyzja devour — Impact Tremors
+   widział stwora przed licznikami. Devour to ZASTĘPCZY efekt: liczniki są na
+   permanencie przed jakimkolwiek triggerem ETB. Naprawa: wspólna ścieżka
+   `fireEnterBattlefieldTriggers` + `state.pendingDevourEtbs` — triggery
+   czekają na opróżnienie kolejki decyzji. Test:
+   `test/m216-bug4-devour-etb.test.js`.
+
+5. **M217 — exploit (CR 702.110, Gurmag Drowner / Silumgar Butcher).**
+   `return` przy braku kandydatów przerywał przetwarzanie zdarzenia wejścia —
+   pomijały się WSZYSTKIE triggery wejścia (również cudze, np. Impact
+   Tremors). Naprawa: `if` obejmuje tylko kolejkowanie decyzji;
+   przetwarzanie biegnie dalej. Test: `test/m217-bug5-exploit-etb.test.js`.
+
+**Odrzucone po weryfikacji (zgłoszenie ≠ reguła — L57):** Insatiable
+Appetite („odmowa z Food" działa: +3/+3, Food zostaje, czar kończy się;
+koszt {1}{G} wymusza zieloną manę). Morph/megamorph przeglądnięty — oferta,
+walidacja i obrót twarzą w górę spójne (M127, audit M83, morph-label).
+
+**Weryfikacja:** pełny runner (`node tools/run-tests.mjs all`) **3345/3345**,
+build 54 / 2698,8 kB, CI zielony dla każdego commitu (M215 naprawił czerwone
+`4fecec7`/`737f3ca`). Nowa lekcja: **L77** (wejście to zdarzenie o wielu
+następstwach — decyzja blokująca ani `return` nie mogą wycinać reszty).
 
 ## M213 — engine bez nazw kart; dwa znaleziska Żywego Testera (2026-08-25)
 

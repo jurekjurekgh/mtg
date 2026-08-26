@@ -25,6 +25,36 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 ---
 
 
+## L77 (2026-08-26) — Wejście na pole bitwy to ZDARZENIE o wielu następstwach: decyzja blokująca ani `return` nie mogą wycinać reszty
+
+**Objaw (M216/M217):** dwa błędy tej samej klasy, znalezione w tej samej sesji:
+
+- **Devour (Gorger Wurm, CR 702.82a):** trigger ETB (Impact Tremors) odpalał w
+  tym samym przebiegu skanu, w którym do kolejki trafiała decyzja devour —
+  więc widział stwora PRZED licznikami. Devour to ZASTĘPCZY efekt wejścia:
+  liczniki są na permanencie, zanim odpali się jakikolwiek trigger ETB.
+- **Exploit (Gurmag Drowner, CR 702.110a):** `return` przy braku kandydatów
+  przerywał przetwarzanie CAŁEGO zdarzenia wejścia — pomijały się też
+  triggery niezwiązane z exploitem („creature_you_control_enters",
+  „another_creature_enters", landfall…).
+
+**Przyczyna:** blok wejścia traktował „kolejkuj decyzję" i „odpal triggery"
+jako jedną niepodzielną jednostkę — pierwszy warunek mógł wstrzymać dalszy
+bieg (devour) albo go całkiem uciąć (exploit). Tymczasem to niezależne
+następstwa jednego faktu: permanent WSZEDŁ na pole bitwy niezależnie od tego,
+czy gracz ma co poświęcić i co wybierze.
+
+**Reguła:** w przetwarzaniu zdarzenia wejścia każda blokująca decyzja
+(devour/exploit/endure…) i każdy warunek „brak wyboru" pomija TYLKO własne
+następstwo; dalsze następstwa (własne ETB, triggery innych permanentów, saga,
+liczniki) muszą biec dalej. Kontrolne pytanie przy patchu: „czy ta gałąź
+(`return` / `push` decyzji) wycina coś, co zdarzyło się niezależnie od tej
+decyzji?" — jeśli tak, to `if` wokół decyzji, nie `return` z funkcji. Ta sama
+klasa obejmuje też „kolejkuj, ale kontynuuj skan" — kolejność następstw
+względem decyzji też jest częścią reguł (replacement przed triggerem —
+devour; trigger przed decyzją — exploit).
+
+
 ## L75 (2026-08-25) — Fałszywy alarm detektora kosztuje więcej niż cisza; ale zanim go uciszysz, sprawdź POMIAR
 
 **Objaw (M213):** Żywy Tester zgłosił 4 no-opy na zdolności
