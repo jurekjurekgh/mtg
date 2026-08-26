@@ -2056,20 +2056,24 @@ function processTriggersScan(state, recentEvents) {
         });
         // Bez innych stworów „you may sacrifice a creature" nie ma wyboru —
         // decyzji nie kolejkujemy (jak devour), trigger „exploits" i tak nie
-        // odpali (nic nie poświęcono).
-        if (exploitCandidates.length === 0) return;
-        state.pendingExploits.push({
-          playerId: entered.controllerId,
-          sourceId: entered.id,
-          candidateIds: exploitCandidates,
-          restorePriorityTo: state.turn.priorityPlayerId,
-        });
-        state.turn.priorityPlayerId = entered.controllerId;
-        const required = event('exploit_choice_required', {
-          playerId: entered.controllerId, sourceId: entered.id,
-          cardId: entered.cardId, candidateIds: [...exploitCandidates],
-        });
-        state.events.push(required); events.push(required);
+        // odpali (nic nie poświęcono). To NIE przerywa przetwarzania wejścia:
+        // exploit to zdolność triggerowana (CR 702.110a — „When this creature
+        // enters"), wejście nastąpiło niezależnie od dostępności kandydatów,
+        // więc triggery wejścia (własne i innych permanentów) muszą odpalić.
+        if (exploitCandidates.length > 0) {
+          state.pendingExploits.push({
+            playerId: entered.controllerId,
+            sourceId: entered.id,
+            candidateIds: exploitCandidates,
+            restorePriorityTo: state.turn.priorityPlayerId,
+          });
+          state.turn.priorityPlayerId = entered.controllerId;
+          const required = event('exploit_choice_required', {
+            playerId: entered.controllerId, sourceId: entered.id,
+            cardId: entered.cardId, candidateIds: [...exploitCandidates],
+          });
+          state.events.push(required); events.push(required);
+        }
       }
       // Endure (TDM, Kin-Tree Nurturer): „When this creature enters, it
       // endures N" — wybór gracza: N liczników +1/+1 na źródle ALBO token
