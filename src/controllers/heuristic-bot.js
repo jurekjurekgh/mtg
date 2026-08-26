@@ -3052,6 +3052,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             perAttacker = -12;
           } else if (blockers.length === 0) {
             perAttacker = power + 3; // otwarty — czysta presja
+          } else if (object.cantBlock && attackers.length > blockers.length) {
+            // M221/G (zgłoszenie właściciela, token Phyrexian Mite „can't
+            // block"): stwór, który NIE MOŻE blokować, nie ma wartości
+            // obronnej — trzymanie go w tyle to zmarnowany potencjał. W ataku
+            // liczniejszym niż blokerzy przeciwnika obrońca blokuje większe
+            // zagrożenia, więc mały cantBlock (zwykle token 1/1) przechodzi
+            // i dokłada obrażenia (tu jeszcze toxic). Brak kosztu alternatywy:
+            // i tak nigdy nie zablokuje. Reguła po deskryptorze cantBlock
+            // z PlayerView (ADR 0002/0017), nie po nazwie karty.
+            perAttacker = power + 3;
           } else if (diesBeforeDealingDamage(object, blockers)) {
             // M202/N: bloker z first strike zabija atakującego, zanim ten zada
             // cokolwiek (CR 510.4) — atak ma 0% szans: 0 obrażeń i strata

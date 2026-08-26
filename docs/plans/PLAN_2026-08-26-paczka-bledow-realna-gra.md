@@ -116,15 +116,23 @@ Oracle: `{2},{T},Remove charge: -1/-1 na cel` + `{B}{B},{T}: dołóż charge`.
 - [x] Test RED→GREEN (`test/m221f-trigon-debuff-counter.test.js`, 2 testy);
       `npm test` 3400, build 54/2733.1 kB, benchmark 9/9.
 
-### Etap G — Phyrexian Mite (cantBlock token): atakuj nim (czysty atakujący)
-- [ ] Attack scoring: stwór z `cantBlock` NIE ma wartości obronnej — trzymanie
-      go w tyle to strata; premia do ataku (nie ma kosztu alternatywnego bloku).
-- [ ] Uwaga: nie kolidować z Etapem E (jeśli Mite atakuje w protekcję —
-      to inna sprawa; tu chodzi o to, że cantBlock ma atakować, gdy sensowne).
-- [ ] Rodzeństwo: inne `cantBlock`/`defender`-podobne — spójność.
-- [ ] Test RED→GREEN; `npm test`+build+benchmark; commit+push.
+### Etap G — Phyrexian Mite (cantBlock token): atakuj nim (czysty atakujący) ✅ DONE (commit M221/G)
+- [x] Attack scoring: stwór z `cantBlock` w ataku LICZNIEJSZYM niż blokerzy
+      przeciwnika (obrońca blokuje większe zagrożenia) przechodzi i dokłada
+      obrażenia → `perAttacker = power + 3` (jak atak w otwartego). Brak kosztu
+      alternatywy — i tak nie zablokuje. Po deskryptorze cantBlock (ADR 0002/0017).
+- [x] Nie koliduje z Etapem E: gałąź `neutralizedByProtection` jest WYŻEJ, więc
+      cantBlock atakujący w protekcję dalej jałowy; `blockers.length === 0`
+      i `!canBeBlocked` też wcześniej. cantBlock wchodzi tylko dla przewagi
+      liczebnej.
+- [x] Anty-over-fix: SOLO cantBlock 1/1 w większego blokera dalej chump
+      (1 atakujący nie > 1 bloker) — poniżej passu.
+- [x] Test RED→GREEN (`test/m221g-cantblock-attacks.test.js`, 3 testy);
+      `npm test` 3403, build 54/2733.8 kB, benchmark 9/9.
 
 ### Etap końcowy
+- [x] Wszystkie 7 zgłoszeń (A–G) naprawione u root cause z testami RED→GREEN.
+- [x] Każdy błąd = osobny commit; `npm test`+build+benchmark zielone po każdym.
 - [ ] Audyt Żywym Testerem talii z tymi kartami (weryfikacja na artefakcie, L76).
 - [ ] Aktualizacja `docs/PROJECT_HISTORY.md` + handoff; podsumowanie w PR.
 
