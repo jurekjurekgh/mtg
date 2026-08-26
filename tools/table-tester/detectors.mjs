@@ -634,15 +634,21 @@ export function detectPolishPluralErrors(lines) {
       // UWAGA: \\b nie działa po polskich znakach („kartę” kończy się literą
       // spoza [A-Za-z0-9_], więc \\b dopasowałoby przedrostek „kart”).
       // Granicę wyrazu sprawdzamy jawnie: po rzeczowniku nie może stać litera.
-      const pattern = new RegExp(`\\+?(\\d+)\\s+(${forms.map(escapeRe).join('|')})(?![\\p{L}])`, 'gu');
+      // M223 (audyt Batch 50): liczebnik po przyimku „z" to konstrukcja
+      // DOPEŁNIACZOWA („2 z 3 kart", „z 7 kart") — rzeczownik jest wtedy
+      // w dopełniaczu (zawsze „kart"), nie w mianowniku, którego pilnuje ta
+      // reguła. Bez wyjątku detektor fałszywie żądał „3 karty" dla poprawnego
+      // „z 3 kart" (L75: błąd w POMIARZE, nie w poprawnym kodzie).
+      const pattern = new RegExp(`(z\\s+)?\\+?(\\d+)\\s+(${forms.map(escapeRe).join('|')})(?![\\p{L}])`, 'gu');
       let match;
       while ((match = pattern.exec(line)) !== null) {
-        const n = Number(match[1]);
+        if (match[1]) continue; // „z N …" — dopełniacz, pomijamy
+        const n = Number(match[2]);
         if (!Number.isFinite(n)) continue;
         const want = expectedPolishForm(n, rule);
-        if (match[2] !== want) {
+        if (match[3] !== want) {
           push(found, 'info',
-            `Błędna odmiana: „${match[1]} ${match[2]}" — powinno być „${match[1]} ${want}"`,
+            `Błędna odmiana: „${match[2]} ${match[3]}" — powinno być „${match[2]} ${want}"`,
             line);
         }
       }

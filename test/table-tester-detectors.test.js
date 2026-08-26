@@ -939,8 +939,21 @@ test('M119: detektor odmiany NIE zgłasza poprawnych form (bez fałszywek)', asy
     '  [ROZGRYWKA]   • Obiekt dostaje +1 licznik +1/+1 (razem 1)',
     '  [ROZGRYWKA]   • Obiekt dostaje +12 liczników (razem 12)',
     '  [ROZGRYWKA]   • Obiekt dostaje +22 liczniki (razem 22)',
+    // M223 (audyt Batch 50): dopełniacz po „z" — „z 3 kart" jest POPRAWNE
+    // (out of N cards), nie mianownik „3 karty". Nie zgłaszamy.
+    '  [ROZGRYWKA]   • Nieprzyjaciel kończy scry — odkłada na spód biblioteki 2 z 3 kart',
+    '  [ROZGRYWKA]   • Bierze kartę z wierzchu do ręki (2 z 7 kart do grobu)',
   ]);
   assert.deepEqual(found, [], `fałszywe alarmy: ${found.map((f) => f.message).join(' | ')}`);
+});
+
+test('M223: detektor odmiany NADAL łapie błąd mianownikowy „3 kart" (bez „z")', async () => {
+  const { detectPolishPluralErrors } = await import('../tools/table-tester/detectors.mjs');
+  const found = detectPolishPluralErrors([
+    '  [ROZGRYWKA]   • Odłóż 3 kart na spód biblioteki',
+  ]);
+  assert.equal(found.length, 1, `wciąż łapie błąd mianownikowy: ${found.map((f) => f.message).join(' | ')}`);
+  assert.match(found[0].message, /„3 kart\" — powinno być „3 karty\"/);
 });
 
 test('M119: detektor łapie modal z nieodróżnialnymi opcjami', async () => {

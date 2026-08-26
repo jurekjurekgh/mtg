@@ -450,6 +450,13 @@ export async function runTableGame({
     const mandatory = by(/Dobierz kartę/)
       || by(/^Odrzuć:/)
       || by(/^Poświęć:/)
+      // M223 (audyt Batch 50): decyzja „ląd do poświęcenia" (resolve_springbloom
+      // — Roiling Regrowth, Springbloom Druid) blokowała testera („[STOP]"),
+      // bo brakowało wzorca; to obowiązkowe domknięcie efektu, nie pomijamy.
+      || by(/ląd do poświęcenia|Ląd do poświęcenia/)
+      // Manifest Dread (Batch 50): wybór którą kartę zmanifestować to decyzja
+      // blokująca — bez wzorca tester utknąłby na tej mechanice.
+      || by(/^Zmanifestuj:/)
       || by(/^Weź ląd do ręki:/)
       || by(/^Nie bierz lądu/)
       || by(/^Rzuć z odbiciem:/)
