@@ -25,6 +25,32 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 ---
 
 
+## L80 (2026-08-26) — „Dubel na stosie" to nie to samo co „efekt już zastosowany": strażnik idempotencji musi patrzeć na STAN, nie tylko na stos
+
+**Objaw (M220, pętla jakości Żywym Testerem, h9):** bot aktywował Saddle na
+Trained Arynx (efekt `set_saddled`, idempotentny do końca tury) 3× z rzędu
+w jednej turze, tapując kolejne stwory za nic. `set_saddled` był w
+`IDEMPOTENT_EOT_EFFECTS`, a mimo to bot dublował aktywację.
+
+**Przyczyna:** strażnik idempotencji (`pendingTwin`, M179/B) sprawdzał tylko,
+czy IDENTYCZNA aktywacja WISI NA STOSIE. Gdy pierwsza już się rozstrzygnęła
+i nadała trwały-do-EOT stan, na stosie nic nie wisiało — a stan `saddled`
+siedział na permanencie na polu bitwy. Strażnik pilnował KOLEJKI, nie SKUTKU.
+
+**Reguła:** dla efektu idempotentnego do EOT, który nadaje ODCZYTYWALNĄ flagę
+stanu (`saddled`, `cantBlock`, `monstrous`…), strażnik musi mieć DWIE nogi:
+(1) brak bliźniaka na stosie (`pendingTwin`) ORAZ (2) cel/źródło nie ma jeszcze
+tej flagi w PlayerView. Sam warunek (1) chroni tylko w oknie, gdy pierwsza
+kopia jeszcze się nie rozstrzygnęła; po rozstrzygnięciu chroni wyłącznie (2).
+Flagę czytaj z widoku (ADR 0017), rozpoznawaj po TYPIE efektu i deskryptorze
+stanu, nie po nazwie karty (ADR 0002). Anty-over-fix: pierwsza aktywacja
+(flaga jeszcze nieustawiona) musi zostać legalna — pilnuj tego osobnym testem.
+
+**Sformalizowane w:** `src/controllers/heuristic-bot.js` (`set_saddled` +
+`source.saddled` → −10), `test/m219-bot-resaddle-noop.test.js` (RED→GREEN
++ anty-over-fix).
+
+
 ## L79 (2026-08-26) — Decyzja `resolve_*` emitująca dwa zdarzenia o tej samej treści dubluje wpis w logu
 
 **Objaw (M219, pętla jakości Żywym Testerem, g9):** aktywacja Unstable
