@@ -1,0 +1,122 @@
+{
+  "version": 1,
+  "overallHash": "79f28ded783f43550fccc66ec5f3b5045db84abbf8bf6b84c69cdad52bb63a3c",
+  "matches": [
+    {
+      "pair": "ravnica|innistrad",
+      "seed": 1000,
+      "hash": "1f6eed8694701345893cfa3ad49b9294ee777304f4413afac8644e188012011a",
+      "decisions": 266,
+      "scoreSum": 1839.4,
+      "chosenKinds": {
+        "activate_ability": 1,
+        "attack": 11,
+        "block": 5,
+        "cast_permanent": 4,
+        "cast_spell": 4,
+        "pass_priority": 216,
+        "play_land": 6,
+        "resolve_combat": 11,
+        "resolve_damage_assignment": 1,
+        "resolve_mulligan_choice": 1,
+        "resolve_proliferate": 1,
+        "resolve_scry": 1,
+        "resolve_trigger_target": 4
+      }
+    },
+    {
+      "pair": "ravnica|innistrad",
+      "seed": 1001,
+      "hash": "13aedc04a0f75d17a61601fc1a85e51545851cd0165f1a4310ade1b6252f177f",
+      "decisions": 169,
+      "scoreSum": 2545.4,
+      "chosenKinds": {
+        "attack": 7,
+        "block": 1,
+        "cast_permanent": 4,
+        "cast_spell": 1,
+        "pass_priority": 138,
+        "play_land": 6,
+        "resolve_combat": 7,
+        "resolve_discard_choice": 1,
+        "resolve_mulligan_choice": 1,
+        "resolve_optional_trigger_choice": 3
+      }
+    },
+    {
+      "pair": "dominaria|mirrodin",
+      "seed": 1000,
+      "hash": "7e09d256e28fddda4e96ec1cc227f8228182129a9f5de946615c94d17b4571d1",
+      "decisions": 46,
+      "scoreSum": 380,
+      "chosenKinds": {
+        "attack": 2,
+        "block": 2,
+        "cast_spell": 1,
+        "concede": 1,
+        "pass_priority": 34,
+        "play_land": 2,
+        "resolve_combat": 2,
+        "resolve_mulligan_choice": 1,
+        "resolve_reveal_exile_hand": 1
+      }
+    },
+    {
+      "pair": "dominaria|mirrodin",
+      "seed": 1001,
+      "hash": "25b281bc1f4727b6d81594d854b3721b5f9c0add7f5bf7d555b529095da86f31",
+      "decisions": 275,
+      "scoreSum": 3042.4,
+      "chosenKinds": {
+        "activate_ability": 1,
+        "attack": 12,
+        "block": 7,
+        "cast_permanent": 5,
+        "cast_spell": 3,
+        "pass_priority": 222,
+        "play_land": 7,
+        "resolve_combat": 12,
+        "resolve_mulligan_choice": 1,
+        "resolve_reveal_exile_grave": 1,
+        "resolve_reveal_exile_hand": 1,
+        "resolve_search_choice": 2,
+        "resolve_trigger_target": 1
+      }
+    },
+    {
+      "pair": "tarkir|warhammer",
+      "seed": 1000,
+      "hash": "983907daabb97701629209ae676a7c54e82a4b2a19a004b3e9c53ca54e430511",
+      "decisions": 156,
+      "scoreSum": 2330.1,
+      "chosenKinds": {
+        "attack": 7,
+        "block": 2,
+        "cast_permanent": 5,
+        "pass_priority": 129,
+        "play_land": 5,
+        "resolve_combat": 7,
+        "resolve_mulligan_choice": 1
+      }
+    },
+    {
+      "pair": "tarkir|warhammer",
+      "seed": 1001,
+      "hash": "279d918051dbbdbdcad7e1449e89331879c0688e8c4a3765d8448d4647c2ecc6",
+      "decisions": 336,
+      "scoreSum": 4461.1,
+      "chosenKinds": {
+        "activate_ability": 4,
+        "attack": 14,
+        "block": 8,
+        "cast_permanent": 9,
+        "cast_spell": 1,
+        "pass_priority": 275,
+        "play_land": 8,
+        "resolve_combat": 14,
+        "resolve_mulligan_choice": 1,
+        "resolve_surveil": 2
+      }
+    }
+  ]
+}
