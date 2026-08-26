@@ -241,6 +241,16 @@ Te reguły obowiązują każdego agenta bez wyjątku (szczegóły: `docs/WORKFLO
 - Wyniki audytów zgłaszaj jak inne (wzorzec M54/M65/M73): opis objawu
   z transkryptu → naprawa u root cause → test regresyjny.
 
+- **Strojenie Bota** — `tools/tune-card.mjs` + `tools/tune-bot.mjs` (offline,
+  czysty JS): dostraja PARAMETRY wyceny bota metodą evolucyjną (hill-climbing),
+  nie zmieniając reguł gry. Instrukcja: `docs/setup/STROJENIE_BOTA.md`
+  (Etap B6). Osobny typ zadania: podczas gdy Żywy Tester szuka BŁĘDÓW
+  poprawności, Strojenie Bota szuka lepszych WYCEN zagrań (bot ma grać mądrzej).
+  Parametry deskryptorowe (ADR 0002), determinizm (ADR 0005), zero zależności ML
+  (ADR 0008). Golden-master `test/bot-scoring-snapshot.test.js` pilnuje, że
+  refaktor przy domyślnych parametrach nie zmienia zachowania bota bit w bit;
+  przyjęcie nowych wartości WYMAGA pełnego benchmarku (jak B4).
+
 ## Jak dokumentować pracę
 
 Przy zmianie kodu lub projektu sprawdź, czy należy zaktualizować:

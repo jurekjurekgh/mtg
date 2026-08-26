@@ -332,6 +332,55 @@ iPadzie/iPhonie bez instalowania czegokolwiek.
   render + licznik, brak kontenera nie psuje renderu, panel domyślnie
   zwinięty).
 
+## B6 — Strojenie deskryptorowe (rozpoczęte 2026-08-26)
+
+Pogłębienie B4: zamiast 7 grubych wag rodzin, drobnoziarniste parametry wyceny
+pogrupowane po DESKRYPTORACH (ADR 0002). Nowy typ zadania sesji „Strojenie Bota"
+— pełna instrukcja: `docs/setup/STROJENIE_BOTA.md`.
+
+Motywacja (analiza teoretyczna z właścicielem): B4 jest zbyt gruboziarnisty
+(mnożnik `spell` rusza naraz wszystkie czary). Chcemy stroić konkretną
+kartę/mechanikę („weź na warsztat jedną kartę, graj wiele partii, różnicuj
+scoring") — ale bez overfittingu (pula seedów, nie jeden) i bez łamania ADR 0002
+(tuner offline zna kartę, bot w runtime scoruje po deskryptorach). Świadomie
+NIE wchodzimy w RL/deep learning: kosztowny, niedeterministyczny, wymaga
+zależności ML (ADR 0008) i psuje interpretowalność bota (część metody
+wykrywania błędów).
+
+### T0 — golden-master ✅ (2026-08-26)
+
+`tools/bot-scoring-snapshot.mjs` + `test/bot-scoring-snapshot.test.js` +
+fixture. Zamraża ślad decyzji bota na 6 partiach; dowodzi, że refaktor przy
+parametrach domyślnych nie zmienia zachowania bit w bit. Sieć bezpieczeństwa
+całego etapu.
+
+### T1 — parametryzacja deskryptorowa (w toku, rodzina po rodzinie)
+
+`src/controllers/heuristic-params.js` (bliźniak `heuristic-weights.js`).
+Zrobiona rodzina wzorcowa „wyceny bazowe": `creatureBase` (70),
+`creaturePowerWeight` (2), `creatureToughnessWeight` (1), `spellBase` (50).
+Kolejne rodziny (removal, aura, sacrifice, ETB-self-damage, surge, manifest…)
+to praca kolejnych sesji — każda osobnym commitem, golden-master zielony po
+ekstrakcji.
+
+### T4 — „tryb jednej karty" ✅ szkielet (2026-08-26)
+
+`tools/tune-card.mjs`: wykrywa deskryptory karty, mapuje na parametry
+(`DESCRIPTOR_PARAMS`), zawęża talie do zawierających kartę, uruchamia
+deterministyczny hill-climbing na ustalonej puli seedów. Uczciwie raportuje
+deskryptory bez wyciągniętych parametrów. CLI: `npm run tune-card -- --card <id>`.
+
+### Do zrobienia (kolejne sesje)
+
+- **T1 (ciąg dalszy):** wyciągać kolejne rodziny stałych z `scoreCommand`.
+- **T2 — gęstszy sygnał (proxy reward):** funkcja celu tunera obok win-rate
+  uwzględni przewagę materialną/tempo w oknie tur (credit assignment taniej niż
+  RL). Domyślnie waga proxy = 0, więc regresja B4 nietknięta.
+- **T3 — upgrade wyszukiwania:** uogólnienie na ~30 parametrów; opcjonalnie
+  deterministyczny CMA-ES/(μ,λ)-ES w czystym JS.
+- **Adopcja:** przyjęcie parametrów jak w B4 — pełny benchmark, regeneracja
+  golden-mastera, progi „−15 p.p., tylko w górę".
+
 ## Ograniczenia architektoniczne (nie łamać)
 
 - ADR 0004: kontrolery są wymienne — bot implementuje ten sam interfejs co
