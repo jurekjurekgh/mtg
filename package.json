@@ -9,6 +9,7 @@
     "build": "node tools/build.mjs",
     "benchmark": "node tools/benchmark.mjs",
     "tune-bot": "node tools/tune-bot.mjs",
+    "tune-card": "node tools/tune-card.mjs",
     "serve": "python3 -m http.server --directory dist 8000",
     "test:slow": "node tools/run-tests.mjs slow",
     "test:all": "node tools/run-tests.mjs all",
