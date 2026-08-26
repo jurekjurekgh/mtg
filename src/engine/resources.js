@@ -280,7 +280,14 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
       return am - bm;
     });
     for (const source of sources) {
-      if ((player.mana ?? 0) >= amount) break;
+      // M215 (root cause CI na M214): warunek przerwania musi liczyć WYŁĄCZNIE
+      // manę dostępną dla tego celu. `player.mana` to SUMA pul (wolnej
+      // i ograniczonej drukiem), więc przy czarze nie-artefaktowym porównanie
+      // `player.mana >= amount` zatrzymywało auto-tap za wcześnie — ląd nie
+      // był tapnięty, konsumpcja zjadała mniej jednostek niż kwota, a
+      // księgowanie puli się rozjeżdżało (mana → 0 mimo niedostępnej jednostki
+      // Powerstone w restrictedPool; kolejna oferta i płatność liczyły inaczej).
+      if (((player.mana ?? 0) - restrictedInPool) >= amount) break;
       const grant = grantManaOnLand(state, source.id);
       const need = [...reqColors].find((c) => ['W', 'U', 'B', 'R', 'G'].includes(c));
       const srcColors = getSourceForObject(source)?.colors ?? [];
@@ -290,7 +297,7 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
     // M179/D: landy nie starczyły — dopłacamy z nielandowych źródeł
     // czystej many (producibleMana je liczy, więc oferta = płatność, L48).
     for (const entry of untappedFreeManaSources(state, playerId, null, purpose)) {
-      if ((player.mana ?? 0) >= amount) break;
+      if (((player.mana ?? 0) - restrictedInPool) >= amount) break;
       tapFreeManaSource(state, playerId, entry);
     }
   }
