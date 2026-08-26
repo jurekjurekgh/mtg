@@ -559,11 +559,24 @@ export function detectNoEffectOffers(probeRecords) {
     // jest skutkiem — Sterling Keykeeper („{2}, {T}: Tap target creature")
     // wycelowany we własnego stwora zmienia stan stołu. Bez tego licznika
     // koszt i skutek wpadały do jednego worka i oferta wyglądała na no-opa.
+    //
+    // M219 (pętla jakości, h10 wiedzmin vs forgotten-realms s=15): strata
+    // życia GRACZA jest kosztem TYLKO wtedy, gdy zdolność MA koszt życiowy
+    // (`costSignature.life`). Ballista Watcher („{2}{R},{T}: 1 obrażenie
+    // dowolnemu celowi") wycelowany we WŁASNĄ twarz zabiera 1 życia jako
+    // SKUTEK, a bez tego warunku detektor liczył to jako „sam zapłacony
+    // koszt" i zgłaszał poprawną (choć samobójczą) ofertę jako no-opa
+    // (L18/L75 — jeden licznik conflating koszt i skutek zawsze kłamie tam,
+    // gdzie oba to życie gracza). Sam wybór „strzel we własną twarz" bywa
+    // głupi, ale to decyzja PROFILU testera, nie no-op oferty; jeśli chcemy
+    // to piętnować, to osią „bezsensowne działania", nie „oferta bez skutku".
+    const ownLifeLossIsCost = Boolean(probe.costSignature?.life);
     const onlyCosts = (probe.opponentTaps ?? 0) === 0
       && (probe.ownEffectTaps ?? 0) === 0
       && (probe.ownUntaps ?? 0) === 0
       && (probe.opponentUntaps ?? 0) === 0
-      && (probe.humanLifeDelta ?? 0) <= 0;
+      && ((probe.humanLifeDelta ?? 0) === 0
+        || (ownLifeLossIsCost && (probe.humanLifeDelta ?? 0) < 0));
     // M122/#4: PRODUKCJA many to skutek, a rozpoznawaliśmy ją wyłącznie po
     // polskim tekście etykiety (MANA_ABILITY). Etykieta GRUPY w panelu brzmi
     // „Aktywuj: Dragonbroods' Relic (5 opcji)" — nie ma w niej słowa „mana",

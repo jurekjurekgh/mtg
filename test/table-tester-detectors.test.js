@@ -695,6 +695,21 @@ test('noop: utrata życia jako JEDYNA zmiana (koszt życiem) jest zgłaszana', (
   assert.match(found[0].message, /koszt/i);
 });
 
+test('M219: utrata życia gracza BEZ kosztu życiowego to SKUTEK, nie no-op', () => {
+  // Pętla jakości Żywym Testerem (h10 wiedzmin vs forgotten-realms s=15):
+  // Ballista Watcher „{2}{R},{T}: 1 obrażenie dowolnemu celowi" wycelowany
+  // we WŁASNĄ twarz zabiera 1 życia — to SKUTEK zadanych obrażeń, nie koszt.
+  // Detektor liczył humanLifeDelta<=0 jako koszt niezależnie od kosztu
+  // życiowego zdolności i zgłaszał poprawną (choć samobójczą) ofertę jako
+  // no-opa (L18/L75). Koszt {2}{R},{T} nie ma składnika `life`.
+  const found = detectNoEffectOffers([{
+    label: 'Aktywuj: Ballista Watcher (koszt 2R, T) — 1 obrażenie → cel: Ty',
+    applied: true,
+    probe: probeOf({ changed: true, humanLifeDelta: -1, ownOtherTaps: 1, costSignature: { mana: true, tap: true } }),
+  }]);
+  assert.equal(found.length, 0, 'strata życia gracza bez kosztu życiowego = skutek, nie zgłaszaj no-opa');
+});
+
 test('noop: runDetectors włącza nową kategorię do kompletnego przebiegu', () => {
   const found = runDetectors(['  >> Wyposaż: X → Y'], {
     actionRecords: [], windowRecords: null, profile: 'greedy',
