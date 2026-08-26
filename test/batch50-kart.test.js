@@ -16,7 +16,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { attachAuraToCreature } from '../src/engine/attachments.js';
 import { effectivePower, effectiveToughness, effectiveKeywords, tapObject } from '../src/engine/permanents.js';
-import { rulesText } from '../src/table/render.js';
+import { rulesText, commandLabel } from '../src/table/render.js';
 import { processTriggers } from '../src/engine/triggers.js';
 
 const REGISTRY = createCardRegistry();
@@ -207,6 +207,20 @@ test('B50: Jwar Isle Avenger — surge OFEROWANY po rzucie innego czaru, brak be
   const v2 = playerView(withSpell, 'p1');
   assert.ok(v2.legalCommands.some((c) => c.type === 'cast_permanent' && c.objectId === 'jwar' && c.surgeCast),
     'po rzucie innego czaru surge jest legalny');
+});
+
+test('B50: Jwar Isle Avenger — etykieta surge różni się od zwykłego rzutu (oś 2)', () => {
+  const def = REGISTRY.get('jwar-isle-avenger');
+  const view = {
+    zones: { hand: [{ id: 'j', cardId: 'jwar-isle-avenger', surge: def.surge }], battlefield: [], stack: [], graveyard: [], library: [] },
+    players: [{ id: 'p1' }, { id: 'p2' }],
+  };
+  const session = { nameOf: (id) => REGISTRY.get(id)?.name ?? id, nameOfObject: () => '?' };
+  const strip = (s) => s.replace(/<[^>]+>/g, '');
+  const surge = strip(commandLabel({ type: 'cast_permanent', objectId: 'j', surgeCast: true }, session, view));
+  const normal = strip(commandLabel({ type: 'cast_permanent', objectId: 'j' }, session, view));
+  assert.match(surge, /^Rzuć za surge: Jwar Isle Avenger/, `etykieta surge: ${surge}`);
+  assert.notEqual(surge, normal, 'surge musi być odróżnialny od zwykłego rzutu');
 });
 
 test('B50: Jwar Isle Avenger — surge kosztuje {2}{U} (3), a nie {4}{U} (5)', () => {

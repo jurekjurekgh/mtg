@@ -2013,6 +2013,17 @@ export function commandLabel(cmd, session, view) {
         return `Zagraj aurę: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)}) → zaczaruj ${host}`;
       }
       if (cmd.faceDown) return `Zagraj: ${nameOfObjectId(cmd.objectId)} twarzą w dół (2/2, koszt ${card?.morph?.cost != null ? escapeHtml(String(card.morph.cost)) : '?'})`;
+      // M223 (audyt Batch 50, Jwar Isle Avenger): surge to alternatywny,
+      // TAŃSZY koszt — bez własnej etykiety wyglądał identycznie jak zwykły
+      // rzut, więc gracz nie odróżniał wariantów (oś 2 audytu). Format jak warp.
+      if (cmd.surgeCast) {
+        const sc = card?.surge;
+        const costStr = sc
+          ? `${(sc.colors ?? []).map((c) => `{${c}}`).join('')}${Math.max(0, (sc.cost ?? 0) - (sc.colors ?? []).length) > 0 ? `{${Math.max(0, (sc.cost ?? 0) - (sc.colors ?? []).length)}}` : ''}`
+          : null;
+        const cost = costStr != null ? manaCostHtml(costStr) : '?';
+        return `Rzuć za surge: ${nameOfObjectId(cmd.objectId)} (koszt ${cost})`;
+      }
       // Phyrexian mana (CR 118.9): gracz wybiera, ile symboli {W/P} opłaci
       // 2 życiem (reszta z many) — wariant komendy cast_permanent.
       if (cmd.phyrexianPayWithLife != null) {

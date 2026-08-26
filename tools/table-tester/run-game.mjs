@@ -470,7 +470,7 @@ export async function runTableGame({
     // M155 (audyt żywym testerem): „Rzuć za warp:" (Weftblade Enhancer — nowa
     // mechanika Batch 38) to rzut PERMANENTA; bez wzorca tester nigdy nie
     // ćwiczył warp. Dokładamy do puli ruchów i priorytetów greedy.
-    const plays = all(/Zagraj ląd|^Rzuć:|^Rzuć za warp:|^Zagraj:|^Aktywuj:|^Cycling:|^Wyposaż:|^Flashback:|^Cel czaru|^Cel zdolności:|^Bestow:|^Aura:|^Wybierz:|cel triggera|podziel \d+ obrażeni?[ae]?/);
+    const plays = all(/Zagraj ląd|^Rzuć:|^Rzuć za warp:|^Rzuć za surge:|^Zagraj:|^Aktywuj:|^Cycling:|^Wyposaż:|^Flashback:|^Cel czaru|^Cel zdolności:|^Bestow:|^Aura:|^Wybierz:|cel triggera|podziel \d+ obrażeni?[ae]?/);
     const decisions = all(/Odrzucenie karty|Poświęcenie|Zapłata|Dopłata|Karta z ręki|Wybór koloru|Wybór typu|Kolejność|Proliferate|Cel obrażeń|Rozdzielenie|Wybierz tryb|wybór trybu|Moonlit|Przekierowanie|Dobrowolna|Index|Rozstrzygnij|Pokój|wybierz cel|Karta do ręki|Szukanie|Wybór efektu|Karta na wierzch|Karty do grobu|Surveil|Stomping|odsłonięte|reveal_exile|Craft:|wygnaj|pomijam|brak karty/);
     const pass = by(/Dalej|pass/);
 
