@@ -73,15 +73,16 @@ gdy bot ATAKUJE (po deklaracji atakujących), a cel MÓGŁBY zablokować atakuj�
 - [x] Test RED→GREEN (`test/m221c-protection-badge.test.js`, 3 testy);
       `npm test` 3392, build 54/2727.5 kB.
 
-### Etap D — Bladed Sentinel: `vigilance` tylko we własnym oknie ataku
-Sens: wykupić w SWOJEJ turze przed deklaracją atakujących, gdy stwór ma
-zaatakować i jest odkręcony. Inaczej marnotrawstwo (i bez sensu na tapniętym).
-- [ ] `keywordGrantWindowValue` gałąź `vigilance` (dziś „pozostałe": +1 w każdym
-      oknie walki): premia tylko `myTurn` + przed/na deklaracji atakujących +
-      `canAttackNow(recipient)`; inaczej kara. Bez nazw kart.
-- [ ] Rodzeństwo: pozostałe keywordy z gałęzi „else" (hexproof…) — czy nie
-      dziedziczą tej samej ślepoty.
-- [ ] Test RED→GREEN; `npm test`+build+benchmark; commit+push.
+### Etap D — Bladed Sentinel: `vigilance` tylko we własnym oknie ataku ✅ DONE (commit M221/D)
+- [x] `keywordGrantWindowValue` — nowa gałąź `vigilance`: premia (2+toughness)
+      tylko gdy atakuje ALBO moja tura + gotowy do ataku (odkręcony, main1/
+      beginning_of_combat/declare_attackers); inaczej −10. Po STANIE, nie po
+      nazwie kroku (L42/L64), bez nazw kart.
+- [x] Rodzeństwo: gałąź `else` została dla hexproof itp.; vigilance ma teraz
+      własną, bo jako jedyna z tej grupy zależy od gotowości do ATAKU. Helper
+      wspólny dla czarów i zdolności (L41) — spell +1/+0+vigilance też objęty.
+- [x] Test RED→GREEN (`test/m221d-vigilance-window.test.js`, 3 testy);
+      `npm test` 3395, build 54/2728.7 kB, benchmark 9/9.
 
 ### Etap E — świadomość protekcji: nie atakuj/buffuj stwora blokowanego przez protection jego koloru
 - [ ] Helper `attackerBlockedByProtection(view, attacker)`: istnieje nietapnięty

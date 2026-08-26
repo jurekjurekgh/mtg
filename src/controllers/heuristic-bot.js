@@ -1179,8 +1179,28 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         else if (myTurn(view) && canAttackNow(recipient)
           && ['precombat_main', 'combat'].includes(view.turn.phase)) value += 2 + (recipient.power ?? 0);
         else value -= 10;
+      } else if (kw === 'vigilance') {
+        // M221/D (zgłoszenie właściciela, Bladed Sentinel „{W}: vigilance do
+        // końca tury"): vigilance = „nie tapuje się, gdy atakuje" (CR 702.21).
+        // Ma sens WYŁĄCZNIE, gdy stwór zaraz zaatakuje w MOJEJ turze i jest
+        // odkręcony — wtedy zachowa blok po ataku. Bot wykupywał ją w turze
+        // przeciwnika (gdzie nie atakuje) i nawet na ZATAPNIĘTYM stworze —
+        // podwójne marnotrawstwo many. Reguła po STANIE (moja tura + zaraz
+        // atak + odkręcony), nie po nazwie kroku (L42/L64), bez nazw kart.
+        if (attacking) {
+          // Już atakuje — jeśli jeszcze nietapnięty, vigilance zatrzyma go
+          // odkręconego do obrony; wartość rośnie z jego wytrzymałością.
+          value += !recipient.tapped ? 2 + (recipient.toughness ?? 0) : -10;
+        } else if (myTurn(view) && canAttackNow(recipient)
+          && ['precombat_main', 'combat'].includes(view.turn.phase)
+          && ['main1', 'beginning_of_combat', 'declare_attackers'].includes(view.turn.step)) {
+          // Przed własnym atakiem, stwór gotowy — vigilance kupuje blok po ataku.
+          value += 2 + (recipient.toughness ?? 0);
+        } else {
+          value -= 10;
+        }
       } else {
-        // Pozostałe (vigilance, hexproof...): tylko w oknach walki.
+        // Pozostałe (hexproof...): tylko w oknach walki.
         value += ['declare_attackers', 'declare_blockers', 'combat_damage'].includes(view.turn.step) ? 1 : -8;
       }
     }
