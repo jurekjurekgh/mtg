@@ -1009,7 +1009,18 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const src = e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId);
         return `${src} — trigger (${triggerLabel})`;
       }
-      case 'land_type_changed': return `${nameOfObject(e.objectId)} staje się typem ${e.subtype} do końca tury`;
+      // Pętla jakości Żywym Testerem (2026-08-26, g9 ravnica-bot Unstable
+      // Frontier): rozstrzygnięcie wyboru typu lądu emituje DWA zdarzenia —
+      // `land_type_changed` (niska warstwa: sama mutacja typu, jak licznik/tap)
+      // ORAZ `land_type_choice_resolved` (narracja decyzji, niżej) — i OBA
+      // renderowały identyczne zdanie, więc gracz widział je dwa razy na jedną
+      // aktywację (L24/L6: opis dubluje się, gdy dwa zdarzenia o tej samej
+      // treści trafiają do logu). `grantBasicLandTypeUntilEndOfTurn` woła się
+      // WYŁĄCZNIE z resolve tej decyzji, więc `land_type_changed` jest zawsze
+      // sparowany z `..._resolved` — opis tego drugiego jest kompletny.
+      // Wyciszamy więc mechaniczny `land_type_changed` w warstwie opisu (samo
+      // zdarzenie zostaje dla determinizmu/fingerprintu i innych konsumentów).
+      case 'land_type_changed': return null;
       case 'control_changed': return `${nameOf(e.cardId)} przechodzi pod kontrolę gracza ${whoN(e.controllerId)}`;
       case 'object_exiled': {
         // M203 (pętla jakości Żywym Testerem, srodziemie vs theros seed 29):
