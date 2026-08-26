@@ -66,6 +66,7 @@ wykonujemy w Etapie 5 (audyt katalogowy; nie blokuje Etapów 1–4).
 - [ ] Commit + push (osobny, tylko dokument).
 
 ### 1. Wspólny helper okien walki + naprawa A1/A2 (L64 w czarach) ✅
+[zamknięty w poprzedniej sesji — commit f744408, `npm test` 3346/3346, build OK]
 Kryteria: testy RED→GREEN w stylu M206, ale dla CZARÓW (nie zdolności).
 Cel: `beginning_of_combat`/`end_of_combat`/`upkeep`/`main2` — brak pumpu;
 `declare_blockers` z udziałem w walce — pump.
