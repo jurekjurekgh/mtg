@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { addCounter } from './counters.js';
-import { attachmentRestrictions, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, isProtectedFromSource, markDamage, markDealtDamageThisTurn, preventDamageTo, tapObject } from './permanents.js';
+import { attachmentRestrictions, creatureCantBlock, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveSubtypes, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, isProtectedFromSource, markDamage, markDealtDamageThisTurn, preventDamageTo, tapObject } from './permanents.js';
 import { attachmentsAttachedTo } from './attachments.js';
 import { effectiveProtectionFromColors } from './attachments.js';
 
@@ -211,13 +211,13 @@ export function declareBlockers(state, playerId, assignments) {
     const ids = blockerIds.map((id) => getCreature(state, id));
     // Dread Warlock: „can't be blocked except by black creatures".
     const blockColors = attackerBlockColorRestriction(state, attacker);
-    if (blockColors && ids.some((b) => !((b.colors ?? []).some((c) => blockColors.includes(c))))) {
+    if (blockColors && ids.some((b) => !(effectiveColors(b).some((c) => blockColors.includes(c))))) {
       throw new Error('Stwora z „can\'t be blocked except by [kolor]" może blokować tylko stwór tego koloru');
     }
     // Blazing Torch: „can't be blocked by Vampires or Zombies" — spójnie
     // z ofertą (canBlock), bo execute musi odrzucić złą komendę (L48).
     const blockSubtypes = attackerBlockSubtypeRestriction(state, attacker);
-    if (blockSubtypes && ids.some((b) => blockSubtypes.some((sub) => (b.subtypes ?? []).includes(sub)))) {
+    if (blockSubtypes && ids.some((b) => blockSubtypes.some((sub) => effectiveSubtypes(b).includes(sub)))) {
       throw new Error('Stwora z „can\'t be blocked by [podtyp]" nie może blokować stwór tego podtypu');
     }
     // Landwalk (forestwalk): obrońca kontrolujący Forest nie może blokować.
@@ -248,7 +248,7 @@ export function declareBlockers(state, playerId, assignments) {
     if (hasKeyword(state, attacker, 'intimidate')) {
       for (const blocker of ids) {
         const blockerIsArtifact = (blocker.types ?? []).includes('Artifact');
-        const sharesColor = (blocker.colors ?? []).some((c) => (attacker.colors ?? []).includes(c));
+        const sharesColor = effectiveColors(blocker).some((c) => effectiveColors(attacker).includes(c));
         if (!blockerIsArtifact && !sharesColor) {
           throw new Error('Intimidate: blokują tylko artefaktowe stwory albo stwory o wspólnym kolorze');
         }
@@ -264,7 +264,7 @@ export function declareBlockers(state, playerId, assignments) {
     const attackerProtection = effectiveProtectionFromColors(state, attacker);
     if (attackerProtection.length > 0) {
       for (const blocker of ids) {
-        const blockerColors = blocker.colors ?? [];
+        const blockerColors = effectiveColors(blocker);
         if (blockerColors.some(c => attackerProtection.includes(c))) {
           throw new Error('Chroniony stwór nie może być blokowany przez stwora tego koloru');
         }
@@ -871,7 +871,7 @@ function canBlock(state, attacker, blocker) {
   // musi mieć jeden z dozwolonych kolorów.
   const blockColors = attackerBlockColorRestriction(state, attacker);
   if (blockColors) {
-    const blockerColors = blocker.colors ?? [];
+    const blockerColors = effectiveColors(blocker);
     if (!blockerColors.some((c) => blockColors.includes(c))) return false;
   }
   // Blazing Torch (CR): „can't be blocked by Vampires or Zombies" — bloker
@@ -892,7 +892,7 @@ function canBlock(state, attacker, blocker) {
   // z nim kolor.
   if (hasKeyword(state, attacker, 'intimidate')) {
     const blockerIsArtifact = (blocker.types ?? []).includes('Artifact');
-    const sharesColor = (blocker.colors ?? []).some((c) => (attacker.colors ?? []).includes(c));
+    const sharesColor = effectiveColors(blocker).some((c) => effectiveColors(attacker).includes(c));
     if (!blockerIsArtifact && !sharesColor) return false;
   }
   if (hasKeyword(state, attacker, 'flying') && !hasKeyword(state, blocker, 'flying') && !hasKeyword(state, blocker, 'reach')) return false;
@@ -901,7 +901,7 @@ function canBlock(state, attacker, blocker) {
   // vs kolory blokera (nie odwrotnie).
   const attackerProt = effectiveProtectionFromColors(state, attacker);
   if (attackerProt.length > 0) {
-    const blockerColors = blocker.colors ?? [];
+    const blockerColors = effectiveColors(blocker);
     if (blockerColors.some(c => attackerProt.includes(c))) return false;
   }
   // M109 (CR 702.16e): ochrona przed jakością blokera (Spare from Evil).

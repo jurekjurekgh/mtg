@@ -1,6 +1,428 @@
-# Bieżący stan projektu
+# Historia projektu (dziennik sesji)
 
-- **Ostatnia aktualizacja:** 2026-08-25 (M204: audyt PR #75, zamknięcie #3, pętla jakości — PR #77)
+> **To NIE jest lektura startowa.** Plik jest archiwum przebiegu prac —
+> „kto, kiedy i co zrobił”. Do kontynuowania projektu **nie jest potrzebny**:
+> zasady są w `AGENTS.md`, ADR-ach, `docs/LESSONS.md` i
+> `docs/setup/ENVIRONMENT.md`, a bieżący punkt zaczepienia daje ostatni PR
+> (do zaudytowania) i najnowszy `docs/setup/HANDOFF_*.md`.
+>
+> Sięgaj tu **wyłącznie punktowo** — gdy szukasz kontekstu konkretnej,
+> historycznej decyzji (np. „dlaczego M182 zmieniło wycenę blokowania”).
+> Wtedy `grep`, nie czytanie od góry: plik ma ponad 5900 linii.
+>
+> Sesje dopisują tu swoją sekcję (ADR 0013) — nowe na górze.
+
+- **Ostatnia aktualizacja:** 2026-08-26 (M217: exploit — CR 702.110 (brak kandydatów nie przerywa ETB), PR #78)
+
+## M214–M217 — srebrna odznaka „wyłapywacza błędów”: 5 unikalnych błędów vs MtG (2026-08-26)
+
+Polecenie właściciela: znaleźć i naprawić **5 unikalnych błędów/uproszczeń**
+vs zasady MtG w istniejących kartach/mechanikach (weryfikowalne wobec CR,
+naprawa u root cause), a równolegle doprowadzić czerwone CI (`4fecec7`,
+`737f3ca`) do zieleni przed kontynuacją. Cel osiągnięty: PR #78 zielony
+(HEAD `ee0b6c1`), wszystkie commity pushowane przyrostowo bez force pusha.
+
+**Znalezione i naprawione (kolejność chronologiczna):**
+
+1. **M214 — mana ograniczona drukiem (CR 106.x, Powerstone).**
+   `restrictedPool` trzymana osobno; `spendMana` liczy dostępność jako
+   `player.mana − restrictedInPool`; `consumeManaPool` bez throw; `addMana`
+   kieruje jednostkę do właściwej puli po `spendOnly`. Testy:
+   `test/m201-bug3-powerstone.test.js`, `test/m214-restricted-pool-bookkeeping.test.js`.
+
+2. **M214 — deathtouch przy obrażeniach niecombatowych (CR 702.2).**
+   Niecombatowa śmierć ofiary zdarzenia zadającego obrażenia nie zabijała
+   stwora (deathtouch działa przy każdym źródle obrażeń). Test:
+   `test/m214-deathtouch-niecombat.test.js`.
+
+3. **M214 — Hunter's Blowgun (CR 109.5).** Warunkowe keywordy
+   (deathtouch/reach) zależały od kontrolera KARTY, nie kontrolera
+   ZAŁĄCZNIKA (equipment). Test:
+   `test/m214-blowgun-conditional-keywords.test.js`.
+
+4. **M216 — devour (CR 702.82a, Gorger Wurm).** Trigger ETB odpalał w tym
+   samym przebiegu, w którym kolejkowała się decyzja devour — Impact Tremors
+   widział stwora przed licznikami. Devour to ZASTĘPCZY efekt: liczniki są na
+   permanencie przed jakimkolwiek triggerem ETB. Naprawa: wspólna ścieżka
+   `fireEnterBattlefieldTriggers` + `state.pendingDevourEtbs` — triggery
+   czekają na opróżnienie kolejki decyzji. Test:
+   `test/m216-bug4-devour-etb.test.js`.
+
+5. **M217 — exploit (CR 702.110, Gurmag Drowner / Silumgar Butcher).**
+   `return` przy braku kandydatów przerywał przetwarzanie zdarzenia wejścia —
+   pomijały się WSZYSTKIE triggery wejścia (również cudze, np. Impact
+   Tremors). Naprawa: `if` obejmuje tylko kolejkowanie decyzji;
+   przetwarzanie biegnie dalej. Test: `test/m217-bug5-exploit-etb.test.js`.
+
+**Odrzucone po weryfikacji (zgłoszenie ≠ reguła — L57):** Insatiable
+Appetite („odmowa z Food" działa: +3/+3, Food zostaje, czar kończy się;
+koszt {1}{G} wymusza zieloną manę). Morph/megamorph przeglądnięty — oferta,
+walidacja i obrót twarzą w górę spójne (M127, audit M83, morph-label).
+
+**Weryfikacja:** pełny runner (`node tools/run-tests.mjs all`) **3345/3345**,
+build 54 / 2698,8 kB, CI zielony dla każdego commitu (M215 naprawił czerwone
+`4fecec7`/`737f3ca`). Nowa lekcja: **L77** (wejście to zdarzenie o wielu
+następstwach — decyzja blokująca ani `return` nie mogą wycinać reszty).
+
+## M213 — engine bez nazw kart; dwa znaleziska Żywego Testera (2026-08-25)
+
+Polecenie właściciela: „wyeliminuj te zamrożone nazwy kart z engine, niech to
+będzie czyste", a potem szukaj dalej błędów Testerem.
+
+**Dług spłacony do zera.** Wszystkie 21 zamrożonych odwołań (46 wystąpień)
+usunięte; lista `ZAMROZONE` jest pusta. Naprawa u root cause, nie przepisanie
+etykiet: zdarzenia nie niosły tożsamości źródła, więc UI zaszywało nazwę
+w literale. Pendingi i zdarzenia dostały `sourceCardId` (fertile_thicket,
+epic_experiment, index, graveyard_to_top, hand_creature, optional_draw),
+a warstwa stołu używa helpera `srcName(e)` z M201/F.
+
+Kluczowa obserwacja: strażnik nazw pilnuje tylko połowy umowy — że nazwy nie
+ma w kodzie — i jest spełnialny najgorszym sposobem, przez skasowanie nazwy
+z opisu (gracz dostaje anonimowe „Wybierz kartę"). Dlatego powstał
+`test/m213-nazwy-kart-z-danych.js`: nazwa nadal **dociera do gracza**, tylko
+z danych. Przy okazji strażnik językowy Z1c wyłapał dwa moje własne błędy
+(literówkę bez ogonka i czas przeszły niezgodny z resztą logu).
+
+**Żywy Tester — 23 partie na 17 taliach, 2 błędy.** Sonda no-op liczyła
+tapnięcie źródła (koszt) i tapnięcie celu (skutek) do jednego licznika, więc
+zdolność „{2}, {T}: Tap target creature" wyglądała na ofertę bez skutku —
+4 fałszywe alarmy przykrywające realne znaleziska (`c757528`). Drugi błąd to
+regresja z tej samej sesji: „5 karty" zamiast „5 kart", bo usuwając nazwę
+karty z nagłówka napisałem odmianę na dwie formy zamiast trzech (`8317701`).
+
+**Incydent infrastrukturalny:** sandbox został przeklonowany w trakcie pracy,
+przez co commit M213 powstał na punkcie odgałęzienia zamiast na czubku gałęzi.
+Rozwiązane bez force pusha: tag-kotwica, `reset --hard` na `origin`,
+`cherry-pick`, weryfikacja `git diff` że drzewo jest identyczne z przetestowanym.
+
+**Weryfikacja:** `npm test` **3316/0**, build 54 / 2690,7 kB, benchmark szybki
+heuristic 82,7 % (bez zmian). Nowe lekcje: **L75** (fałszywy alarm — napraw
+POMIAR, nie dopisuj wyjątku po nazwie), **L76** (Tester mierzy `dist/`, nie
+`src/` — bez `npm run build` mierzysz stary kod).
+
+## M212 — naprawy zgłoszeń z rozgrywki + cała klasa błędu w wycenie darmowego rzutu (2026-08-25)
+
+Sesja zaczęła się od audytu Żywym Testerem (13 partii, 4 potwierdzone
+ustalenia, 11 tropów odrzuconych jako poprawne zachowanie). Właściciel przerwał
+zbieranie zgłoszeń i polecił przejść do napraw.
+
+**Klasa błędu: darmowy rzut bez wyceny celu (3 gałęzie).** Zgłoszenie brzmiało
+wąsko — „bot stapuje własnego blokera”. Przyczyna okazała się strukturalna:
+silnik enumeruje ofertę **per zestaw celów**, a bot wyceniał wyłącznie TYP
+efektu, więc wszystkie warianty miały równy wynik i wygrywał pierwszy z brzegu.
+Naprawione w `resolve_rebound_cast` i `resolve_suspend_cast` (`54f2cb7`) oraz
+— po poleceniu „szukaj dalej” — w `resolve_madness_cast` (`76b4f1b`).
+Wspólny helper `freeCastTargetPenalty` (bez nazw kart, ADR 0002). Przy okazji
+`playerView` zaczął eksportować `spell` dla obiektów w jawnym wygnaniu — bez
+tego bot dostawał `undefined` i był ślepy nie z własnej winy.
+
+**Zgłoszenia z rozgrywki.** Holdout Settlement miał jedną zlepioną zdolność
+zamiast dwóch osobnych z Oracle (`dc2ea02`, przy okazji klasa „any color” —
+brak `effect.colors` daje cichy fallback na kolory karty). Roiling Regrowth
+pokazywał graczowi nazwę cudzej karty zaszytą w kodzie (`b620fef`); powstał
+strażnik `test/m212-brak-hardcodowanych-kart.test.js` z **zapadką** — lista
+`ZAMROZONE` (21 par) może się tylko skracać. Dwa kroki `TURN_STEPS` o tej samej
+nazwie rozróżnione na `main1`/`main2` (`e851a37`, `83cf6fd`).
+
+**Z rejestru audytu:** White Mage's Staff nie dawał życia (`ee4f381`), opis
+triggera `end_step` gubił intervening-if (`b620fef`), Dead Ringers celował
+w ten sam stwór dwa razy — CR 601.2c (`3dd6f86`).
+
+**Narzędzia.** Detektory przespały cały audyt tej klasy błędu: 0 zgłoszeń mimo
+błędu obecnego w transkrypcie. Powodem było sprzężenie detektora ze
+snapshotami tekstowymi, których pod `--quiet` niemal nie ma. Nowy
+`detectBotHarmsOwnPermanent` używa danych strukturalnych; jego żywotność
+udowodniono na archiwalnym transkrypcie i przez rozluźnienie warunku w realnym
+biegu (`79fb375`).
+
+**Weryfikacja:** `npm test` **3300/0**, build 54 / 2689,0 kB, benchmark szybki
+heuristic 82,7 % (556/672). Każda naprawa ma własną mutację i własny test —
+mutacja bliźniaczej gałęzi przeszła raz niewykryta, stąd reguła.
+
+Nowe lekcje: **L71** (CR 400.7 — zmiana strefy tworzy nowy obiekt; lookup po
+`cardId` bywa martwy), **L72** (jeden objaw, kilka bliźniąt — przegląd
+rodzeństwa), **L73** (detektor sprzężony z trybem logowania), **L74** (UI
+weryfikuj w DOM; nazwa mechaniki ≠ nazwa w etykiecie).
+
+## M210 — challenge „brązowa odznaka wyłapywacza błędów”: 5 niezgodności z CR (2026-08-25)
+
+Zadanie właściciela: przejrzeć istniejące karty i mechaniki, znaleźć i naprawić
+**5 unikalnych** błędów/uproszczeń względem zasad MtG pozostawionych przez
+wcześniejsze sesje. Każde znalezisko potwierdzone wobec Oracle + CR PRZED
+naprawą (L57), naprawione u root cause, test zweryfikowany mutacyjnie (L61).
+
+| # | CR | Rzecz | Naprawa |
+|---|---|---|---|
+| 1 | 202.2 | Landy miały `colors` opisujące PRODUKOWANĄ manę, więc animowany Swamp był czarnym stworem (obchodził protection, spełniał „except by black”) | `colors: []` dla 5 basiców i Immersturm Skullcairn; dopisany brakujący deskryptor `{T}: Add {B}` |
+| 2 | 708.2a | Zakryty (morph) permanent zachowywał kolory i podtypy karty pod spodem | nowa `effectiveColors` + gałąź `faceDown` w `effectiveSubtypes(OnBattlefield)`; podpięte w walce, protection i wyborze celów |
+| 3 | 303.4 / 704.5n | „Enchant artifact or creature YOU CONTROL” — warunek kontroli znała tylko walidacja rzutu, nie `isLegalAuraHost`; po przejęciu gospodarza aura zostawała na stole | `ownControlOnly` czytane też przez SBA |
+| 4 | 707.2 | `resolve_enter_as_copy` kopiował stan BIEŻĄCY: kopia ożywionego artefaktu zostawała trwałym stworem 5/5 | baza = `originalBeforeAnimation ?? target`, jak w token-kopii |
+| 5 | 702.15/16a/90, 615 | Obrażenia z delirium szły przez `markDamage` wprost — omijały ochronę, tarcze, infect i lifelink naraz | ścieżka woła `dealNonCombatDamage` |
+
+Wspólny mianownik #2, #3, #4 i #5 to **L48**: jedna reguła, dwie ścieżki, tylko
+jedna ją zna. Ścieżka „główna” (token-kopia, walidacja rzutu, generyczne
+obrażenia) była poprawna; ścieżka poboczna powielała logikę bez reguły.
+
+**Efekty uboczne naprawy #1 (świadome, nie obejścia):**
+- `decks/worek-mroczny.txt` przegenerowany — generator liczył land jako pip kolorowy.
+- Dwa testy poprawione, bo utrwalały błąd: B1b asertował `def.colors === ['B']`
+  jako „produkuje {B}”; `card-data.test.js` używał Mountaina jako świadka
+  propagacji kolorów (teraz Shatter — karta z kosztem many).
+
+**Odrzucone jako fałszywe tropy:** CR 601.2c (nieosiągalne — brak kart z dwoma
+slotami tego samego typu), kolorowe artefakty, phyrexian `manaCost`, kolorowe
+tokeny-landy (CR 111.4), summoning sickness animowanych landów (poprawne),
+`effects.js copy_creature` (martwy kod).
+
+**Lekcje:** L68 (sonda musi asertować `ok` komendy, nie sam stan końcowy),
+L69 (kolor obiektu vs. produkowana mana — dwa pojęcia w jednym polu),
+L70 (mutacja per gałąź wykrywa też kod nadmiarowy — gałąź „land → bezbarwny”
+w `effectiveColors` była martwa I błędna wobec Genju of the Spires).
+
+Testy: 3230 → **3242** (12 nowych, wszystkie zweryfikowane mutacyjnie).
+
+## M209 — aura ochronna ma wartość tylko wobec realnego zagrożenia (2026-08-25)
+
+Nowa lekcja: **L67**. Commity `fb0d1b7`, `d1dcda0`.
+
+Domknięcie punktu otwartego świadomie w M207: bot rzucał `Guildscorn Ward`
+(*enchanted creature has protection from multicolored*) na własne stworzenie
+nawet wtedy, gdy przeciwnik nie miał ani jednej wielokolorowej karty — aura
+za 1 manę nie dawała nic. M207 nie naprawiło tego, bo diagnoza wskazała
+przyczynę poza heurystyką.
+
+**Root cause (L1 / ADR 0017 — ślepota przed głupotą):** `playerView` w ogóle
+nie wysyłał pola `colors`. Kontroler dostaje widok, nie stan, więc nie miał
+fizycznej możliwości sprawdzić, czy jakiekolwiek zagrożenie jest
+wielokolorowe. Strojenie wag wokół brakującej informacji byłoby maskowaniem.
+
+- `src/engine/game-state.js`: `colors` dodane w **obu** gałęziach budowy
+  widoku (pole bitwy + pozostałe strefy). Na polu bitwy pole przechodzi przez
+  istniejącą bramkę `hiddenFromViewer` (CR 708.2 — o karcie zakrytej nie
+  zdradzamy nic); strefy jawne (grób, wygnanie, stos) niosą kolory
+  (CR 400.2), ręka i biblioteka zostają `hidden: true`.
+- `src/controllers/heuristic-bot.js`: `auraIsHostile`/`cast_permanent`
+  rozpoznają jakość ochrony przez `sourceHasProtectionQuality`
+  z `src/engine/attachments.js` — **jedna reguła, jeden odczyt** (L41),
+  bez specjalnych przypadków po nazwie karty (ADR 0002). Aury z `chooseColor`
+  (Benevolent Blessing, Manor Gate) są z reguły wyłączone: kolor wybiera się
+  przy wejściu, więc taka aura nigdy nie jest jałowa.
+
+**Dowód braku regresji siły gry:** benchmark szybki 82,3% (baza 82,4%);
+benchmark ukierunkowany na talię z Ward (`--seeds 24 --decks ravnica,warhammer`,
+288 meczów) 86,5% vs 86,8% na bazie sprzed zmiany — różnica jednego meczu,
+czyli szum (L36). Bazę mierzono przez `git stash` → benchmark → `git stash pop`.
+
+**Dowód behawioralny (Żywy Tester, 13 partii w dwóch sweepach, 0 zgłoszeń
+detektorów):** `gw-41` — Ward zniknął z zagrań (wcześniej rzucany);
+`gw-29` — bot **odrzuca** Ward, gdy nie ma zagrożeń; `gw-17` i
+`w-srodziemie-ravnica-23` — Ward **rzucony zasadnie**, po tym jak przeciwnik
+wystawił kartę wielokolorową (`Terminal Agony` `["B","R"]`,
+`Jyoti, Moag Ancient` `["G","U"]`).
+
+**Poprawka narzędzia przy okazji audytu (`d1dcda0`):** sweep pokazał partię
+zaraportowaną jako `[STOP] brak akcji`, choć gra była rozstrzygnięta.
+`run-game.mjs` miał gotowy helper `isGameOver()`, ale nie wołał go w gałęzi
+pustego panelu akcji. Naprawione w testerze (braków testera się nie omija);
+ścieżka `[STOP]` nadal wykrywa realne zacięcia — w archiwum zostają 4 takie
+przypadki z niepustą listą akcji.
+
+## M208 — dokumentacja: koniec „Historii Powszechnej” na starcie sesji (2026-08-25)
+
+Nowa lekcja: **L66**. Commit `7c1d2c5`.
+
+Właściciel zlecił uporządkowanie dokumentacji pod kątem oszczędności tokenów.
+Pierwotny pomysł (mój) brzmiał „skondensujmy 65 lekcji do jednego manuala”.
+Pomiar go obalił: obowiązkowa lektura z `AGENTS.md` §0 ważyła **~605 kB
+(~194-258 tys. tokenów)**, z czego **`PROJECT_STATE.md` to 384 kB** — 125
+sekcji sesji, 5904 linie, sięgające wstecz do M125. `LESSONS.md` odpowiadał
+za 16% problemu, `PROJECT_STATE` za dwie trzecie.
+
+Właściciel rozstrzygnął: historia „kto co kiedy zrobił” jest **bezużyteczna
+dla agenta kontynuującego projekt** — ten potrzebuje zasad (AGENTS, ADR-y,
+LESSONS, ENVIRONMENT) i punktu zaczepienia (ostatni PR do audytu + najnowszy
+handoff). Plik przemianowany na `docs/PROJECT_HISTORY.md` i **usunięty
+z lektur obowiązkowych**; zostaje jako materiał do grepowania punktowego.
+
+- `AGENTS.md` §0: lektura obowiązkowa = poz. 1-4, poz. 5-6 to punkt
+  zaczepienia (ostatni PR, najnowszy handoff), nowy blok „Czego NIE czytasz
+  na start”, jawny **budżet 100 tys. tokenów**.
+- `test/dokumentacja-budzet-lektury.test.js` — mierzy poz. 1-4 (komunikat
+  z rozkładem per plik) i pilnuje, że dziennik nie wróci na listę lektur.
+  Zweryfikowany mutacyjnie dwustronnie.
+- **`LESSONS.md` celowo nietknięty:** numery L1-L65 są cytowane w kodzie
+  ~1150 razy w 242 plikach, więc renumeracja unieważniłaby je bez jednego
+  czerwonego testu. Ewentualna kondensacja musi zachować nagłówki `## L<nr>`.
+
+Rename rozpoznany przez gita jako `R100` (historia pliku zachowana), treść
+identyczna co do bajtu. Stan po zmianie: lektura startowa **~79,7k tokenów**.
+`npm test` 3224/3224, build 54 / 2648,5 kB.
+
+## M207 — audyt rozgrywek Żywym Testerem, ciąg dalszy (2026-08-25)
+
+Raport: `docs/audits/AUDYT_M207_ROZGRYWKI_2026-08-25.md` · nowa lekcja: **L65**.
+To samo zlecenie co M206 (osie a/b/c), na naprawionym już testerze.
+Commity `87d4313`, `17082c9`, `6e8c3c5`.
+
+**Tester znowu mierzył nie to, co trzeba (M207/1, `87d4313`).** Sterownik
+zaznaczał cele w pętli „klikaj, dopóki »Zatwierdź« wyłączony”. Przy czarach
+**„up to N”** (`minTargets = 0`) przycisk jest aktywny od startu, więc tester
+zatwierdzał czar **bez ani jednego celu** — a detektory milczały, bo formalnie
+nic się nie psuło. Wszystkie 5 trafień sweepu miało w transkrypcie
+„potrzeba 0”; ścieżka „czar wielocelowy robi coś realnego” nie była testowana.
+Po naprawie `Wrap in Flames` zadaje obrażenia i blokuje blokowanie.
+
+**(c) Kreator wielocelowy — druga rodzina kart (M207/2, `17082c9`).**
+M195/C obsłużyło przypadek JEDNORODNY (Fireball, Wrap in Flames — lista
+z ptaszkiem zamiast kombinacji) i to działa. Ale czary o kilku RÓŻNYCH
+pozycjach celu trafiały do tej samej płaskiej listy: Grave Exchange pokazywał
+4 nierozróżnialne wiersze (2 karty z grobu + 2 graczy), pozwalał zaznaczyć
+dwie karty albo dwóch graczy (wybór nielegalny → `commandForSelection` `null`),
+a jedyną informacją zwrotną było wyszarzone „Zatwierdź”. Dotyczy **7 kart**.
+Teraz `targetSlotsOf` rozbija cele na pozycje po KOLEJNOŚCI w `targets[]`
+(indeks = pozycja z `spell.targets`; ADR 0002 — bez nazw kart), a kreator daje
+sekcję na pozycję z nagłówkiem z Oracle („1. karta-stwór w grobie:”,
+„2. gracz:”), wybór 1-z-N w obrębie pozycji i status „Brakuje: …”. Zwraca
+`null` (płaska lista) gdy warianty mają różne długości albo pozycje dzielą
+kandydatów — Fireball i Wrap in Flames zostają przy formie z M195/C.
+
+**(b) Kafel karty pokazywał połowę prawdy (M207/3, `6e8c3c5`).**
+`describeSpellEffects` opisywał tylko `spell.targets[0]`, więc
+`Knockout Maneuver · cel: twój stwór` sugerował, że czar nie dotyka stwora
+przeciwnika (Oracle: zadaje mu obrażenia). 5 kart. Teraz wymieniane są
+wszystkie pozycje; zachowany wyjątek M100/E10 („dowolny cel” bez pleonazmu
+„cel: dowolny cel”) — pierwsza wersja poprawki go zepsuła na 62 kartach.
+
+**(a) Timing i cele bota — sprawdzone, jeden problem ZOSTAWIONY świadomie.**
+Poprawne (nie zgłaszać): `Piercing Rays` w atakującego, `Expose to Daylight`
+zawsze w cudzy artefakt, `Courage in Crisis` zawsze na własnego stwora,
+`Chronic Flooding` na CUDZE landy (poprawka z M206 trzyma).
+**Otwarte:** `Guildscorn Ward` (protection from multicolored) — bot wycenia ją
+jak zwykły buff (+66), choć przeciwnik ma 1 kartę wielokolorową na 48, więc
+ochrona jest martwa. Naprawa wymaga `colors` w widoku pola bitwy
+(`playerView`, `game-state.js` ~ln 4596 ich nie wysyła — CR 708.2 każe ukrywać
+kolory zakrytych permanentów) + walidacji benchmarkiem. Osobny krok.
+
+**L65:** mutacja bramki jednorodności PRZEŻYŁA pierwsze podejście — test B2
+używał przypadków odsianych wcześniej przez warunek na długość wariantów.
+Test, który nie DOCIERA do badanego warunku, tego warunku nie testuje.
+
+Stan: `npm test` **3222/3222**, build 54 / 2648,5 kB, CI na PR #78 pass.
+
+## M206 — audyt rozgrywek Żywym Testerem (2026-08-25)
+
+Raport: `docs/audits/AUDYT_M206_ROZGRYWKI_2026-08-25.md` · nowe lekcje:
+**L63, L64**. Zlecenie właściciela: kilka partii Żywym Testerem, analiza pod
+kątem (a) efektywności czarów/zdolności bota, (b) grupowania i jednoznaczności
+opisów celów, (c) formy modala wielocelowego. Materiał: **19 przebiegów**
+na 9 taliach i 5 profilach.
+
+**Audyt nie działał i to był pierwszy znaleziony błąd (M206/1, `f191284`).**
+Sterownik testera szukał zaznaczeń jako `.choice-request-option
+input[type="checkbox"]`, a kreator wielocelowy renderuje PRZYCISKI
+`.multi-target-toggle` ze stanem w tekście („[ ]”/„[x]”). Selektor nie pasował
+do niczego → pusta lista zaznaczeń → „Zatwierdź” `disabled` → „Anuluj”
+odtwarzał to samo żądanie → **cicha pętla** (300 identycznych linii, zero
+ruchów) zakończona pogodnym `DETEKTORY: brak zgłoszeń`. Skutek: ŻADEN czar
+wielocelowy (Fireball, Wrap in Flames, Grave Exchange) ani mulligan
+z odłożeniem kart nie był nigdy przeklikany — dokładnie klasa (c) ze zlecenia.
+Drugi błąd tej gałęzi: regex `needed` nie pasował do intro mulligana.
+
+**(c) Mechanizm wielocelowości jest POPRAWNY — nie było czego naprawiać
+w produkcie.** `multiTargetPlanOf` daje listę celów z ptaszkiem + licznik X,
+`commandForSelection` wraca do komendy z `legalCommands` (L48). Sonda
+potwierdziła: Fireball → 3 wiersze + X 1–3; czar o STAŁYCH 2 celach też
+dostaje kreator (`sizes[0] > 1`); czar jednocelowy → `null` (zwykła lista, po
+wierszu na cel — zachowanie pożądane). Skan transkryptów pod kątem eksplozji
+kombinacji: jeden wynik (Terminal Agony ×10) i to poprawna lista celów.
+
+**(b) Dwa błędy opisów, oba naprawione.**
+- **M206/2 (`2ce785c`)** — wiersze kreatora nie mówiły, CZYJ jest permanent:
+  przy lustrzanej planszy „[ ] Squirrel” / „[ ] Squirrel” różniły się tylko
+  ukrytym id. Zwykłe listy dokleją kontrolera od E (2026-08-11)
+  (`→ cel: Rat (Ty)`), kreator z M195/C tej zasady nie odziedziczył. Dodany
+  `controllerTag` powtarza warunki oryginału (tylko pole bitwy, skip własnego
+  face-down, gracz bez nawiasu).
+- **M206/1** — „Mulligan: zaznacz **5 karty**”: intro składał warunek
+  dwuwartościowy zamiast `polishPluralCount` (której reszta stołu używa od
+  dawna). Mulligan do 6 kart jest osiągalny.
+
+**(a) Dwa błędy efektywności bota, oba naprawione u root cause.**
+- **M206/3 + M206/4 (`6808b98`, `056c3b7`) — pump w jałowych oknach.** Bramka
+  brzmiała `phase === 'combat'`, a `beginning_of_combat` NALEŻY do tej fazy
+  (`TURN_STEPS`) — komentarz nad warunkiem mówił „po deklaracji”, kod tego nie
+  egzekwował. Bot pompował Snarling Wolf w początku walki i nie atakował.
+  Pierwsze podejście (wykluczenie kroku po nazwie) tylko przesunęło problem
+  w koniec walki i upkeep przeciwnika; regułą jest STAN, nie etykieta kroku:
+  pump „do końca tury” ma wartość tylko przy realnym udziale w walce
+  (`attacking || blocking`). Efekt: aktywacje **5 → 1** w tej samej partii,
+  a pozostała jest w Głównej 1 przed atakiem.
+- **M206/3 — aura milląca własnego kontrolera na WŁASNYM landzie.** Bot płacił
+  `{1}{U}` za Chronic Flooding na swoim Islandzie i mielił sobie po 3 karty
+  przy każdym tapnięciu (5× w partii). `auraIsHostile` znało wrogość tylko
+  z deskryptora albo triggera WEJŚCIA i tylko dla efektów wrogich
+  PERMANENTOWI; ta aura bije w GRACZA i triggerem późniejszym. Rozpoznanie po
+  deskryptorze `applyTo: 'enchanted_controller'` + `HOSTILE_PLAYER_EFFECTS`
+  (ADR 0002 — bez nazw kart). Efekt: „Nieprzyjaciel mieli …” **4 → 0**.
+
+**Benchmark szybki (672 mecze):** heuristic ogółem **79,6% → 82,4%**,
+vs random **88,7% → 92,6%**, vs aggro **70,5% → 72,3%**.
+
+**Utwardzenie narzędzia (M206/4).** Gałąź kreatora liczy nieudane próby
+zamknięcia TEGO SAMEGO okna, loguje liczbę znalezionych wierszy i po piątej
+przerywa przebieg wyjątkiem — „Anuluj”, które odtwarza żądanie, nie jest
+wyjściem z pętli. Kontrakt DOM sterownika przypięty testem po stronie
+aplikacji (`test/m195-multi-target.test.js`).
+
+**Stan:** `npm test` **3217/3217**, build 54 / 2642,9 kB. Wszystkie nowe testy
+zweryfikowane mutacyjnie (L61).
+
+---
+
+## M205 — audyt PR #77 + dowód auto-passa w transkrypcie (2026-08-25)
+
+Plan: `docs/plans/PLAN_2026-08-25-m205-audyt-pr77-dowod-autopassa.md` ·
+raport: `docs/audits/AUDYT_PR77_2026-08-25.md` · nowe lekcje: **L61, L62**.
+
+**Audyt PR #77.** Poprawka w `src/engine/spells.js` (kosmetyka buyback-phyrexian)
+zweryfikowana linia po linii — czysto stylistyczna, logika nietknięta.
+Znaleziona jedna realna usterka:
+
+- **M205/1 (`37e51cb`) — testy regresyjne PR #77 były ŚLEPE.** Oba testy
+  M203/#3 przechodziły identycznie z fiksem deduplikacji i po jego cofnięciu
+  (mutacja → nadal 91/91 pass), bo dane testowe powtarzały linię `• Tura 7`,
+  która sama zeruje licznik detektora. Test mierzył `flush()`, nie fix.
+  Przepisane na realny kształt transkryptu (bloki rozdzielone nagłówkiem
+  kroku `--- krok N | T. X ---`) + trzeci test na odwrotną pomyłkę.
+  Po zmianie: mutacja daje **91/92 (RED)**, cofnięcie **92/92**.
+
+**M205/2 (`8204777`) — „znany problem" z HANDOFF M204 ZAMKNIĘTY.** Detektor
+`detectNoResponseWindow` zgłaszał czary bota jako rozstrzygnięte bez okna na
+odpowiedź. Instrumentacja potwierdziła diagnozę M204: w oknie przed
+rozstrzygnięciem Withstand `stos = 2, decyzja = nie` — człowiek realnie
+dostawał i oddawał priorytet (CR 117.3b/117.4). Brakowało wyłącznie ŚLADU
+(L24). Naprawa w trzech warstwach: sesja loguje auto-pass przy NIEPUSTYM
+stosie (bez pauzy; przy pustym stosie wpisu nie ma — inaczej log tonie
+w szumie), tester zbiera wpis także pod `--quiet`, detektor uznaje go za
+dowód. Pomiar: seed 42 **2 → 0 zgłoszeń**; cztery kolejne partie (400 kroków)
+**0 zgłoszeń** przy 15–37 dowodach auto-passa w transkrypcie. Moc detektora
+sprawdzona kontrolnie: po cofnięciu wzorca dowodowego zgłoszenia wracają.
+
+**Sprostowanie recepty M204:** handoff zalecał zbieranie wpisu „po indeksie"
+z `#log` — to nie działa, bo `render.js` rysuje log od NAJNOWSZEGO
+(`reverse()`), więc świeże wpisy są na POCZĄTKU listy DOM (L62). Pierwsza
+implementacja zgodna z receptą dawała 0 trafień.
+
+**Poboczne:** `--out` do nieistniejącego katalogu tracił cały transkrypt po
+~40 s przebiegu (ENOENT dopiero przy zapisie) — katalog tworzony z góry;
+`.gitignore` łapie teraz transkrypty w podkatalogach.
+
+Stan: `npm test` **3205/3205**, build 54 / 2638,1 kB. PR #78 otwarty,
+scalenie decyzją właściciela.
+
+---
+
+- **Poprzednia:** 2026-08-25 (M204: audyt PR #75, zamknięcie #3, pętla jakości — PR #77)
 
 ## M204 — audyt PR #75 + pętla jakości (2026-08-25)
 
@@ -2720,7 +3142,7 @@ benchmark szybki 0 crashy: heuristic **67.5%** vs aggro / **92.6%** vs random
   zielonych, artefakt **42 moduły / 472.8 kB**.
 - **M26 (2026-08-03, tylko UX, zgłoszenie właściciela z iPada):** poprawka
   gestów dotyku — wspólny kontrakt `installTapGesture` w nowym module
-  `src/table/gestures.js` (kaflе stołu i warstwa pełnego ekranu). **Double-tap
+  `src/table/gestures.js` (kafle stołu i warstwa pełnego ekranu). **Double-tap
   znów otwiera pełny ekran:** iOS wysyła syntetyczny `click` po każdym
   tapnięciu i stary kod kończył zawsze „pojedynczym" (menu kontekstowe
   przykrywało pełny ekran); teraz pojedynczy klik na dotyku jest odroczony
@@ -2774,7 +3196,7 @@ benchmark szybki 0 crashy: heuristic **67.5%** vs aggro / **92.6%** vs random
   **limit aktywacji „once per turn"** (`oncePerTurn` w `createAbility`,
   tracking `state.abilityActivatedThisTurn`, reset co turę). Naprawiony
   przy okazji generyczny błąd odsłonięty przez nowe mechaniki: `castAuraSpell`
-  walidował cel stworа DOPIERO PO wydaniu many i przeniesieniu na stos —
+  walidował cel stwora DOPIERO PO wydaniu many i przeniesieniu na stos —
   teraz walidacja celu przed jakąkolwiek mutacją (CR 601.2h). Pełna macierz
   B0 (18 talii, 50 seedów, 51 300 meczów, 0 niedokończonych): heuristic
   **84.1% vs random**, **63.0% vs aggro**, aggro **81.0% vs random**; próbka

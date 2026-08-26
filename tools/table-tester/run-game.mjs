@@ -223,6 +223,11 @@ export async function runTableGame({
   // `package.json`, poza zasięgiem `.gitignore` (który pilnuje tylko
   // `tools/table-tester/transcript.txt`).
   const outPath = path.isAbsolute(out) ? out : path.resolve(__dirname, out);
+  // M205: `--out audyt-m205/g1.txt` do NIEISTNIEJĄCEGO katalogu wywracało zapis
+  // (ENOENT) DOPIERO na końcu przebiegu — partia trwała ~40 s, po czym cały
+  // transkrypt przepadał, a z nim dowód audytu (klasa L24/L33: brak śladu =
+  // pomiar do powtórzenia). Katalog tworzymy z góry.
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
   const flush = () => fs.writeFileSync(outPath, lines.join('\n') + '\n', 'utf8');
 
   // --- M97: deterministyczna losowość polityki (ADR 0005 — bez Math.random) --
@@ -235,6 +240,17 @@ export async function runTableGame({
     return rngState / 0xffffffff;
   };
   const pickRandom = (arr) => (arr.length ? arr[Math.floor(rnd() * arr.length) % arr.length] : null);
+  // M206: deterministyczna kolejność losowa (Fisher-Yates na `rnd`, ADR 0005) —
+  // profil `random` ma odwiedzać INNE podzbiory celów kreatora wielocelowego
+  // niż „pierwsze N wierszy", ale przy tym samym --policy-seed powtarzalnie.
+  const shuffleForPolicy = (arr) => {
+    const out = [...arr];
+    for (let i = out.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(rnd() * (i + 1)) % (i + 1);
+      [out[i], out[j]] = [out[j], out[i]];
+    }
+    return out;
+  };
 
   // Pokrycie UI: co gracz już widział / kliknął (profil `explorer` i raport).
   const seenActions = new Set();     // etykiety akcji (bez wartości zmiennych)
@@ -265,6 +281,20 @@ export async function runTableGame({
   // odrzuca komendę. To ARTEFAKT POLITYKI testera (jak double-tap profilu
   // `impatient`), nie błąd reguł — detektor klasyfikuje go osobno.
   let tickedThisWindow = false;
+  // M206 (lekcja z tej sesji): selektor sterownika, ktory nie pasuje do
+  // niczego, NIE daje bledu - daje cicha petle. Zly selektor kreatora
+  // wielocelowego kazal testerowi 300 razy otworzyc i anulowac to samo okno,
+  // a raport konczyl sie pogodnym „DETEKTORY: brak zgloszen", bo zaden krok
+  // gry sie nie wykonal. Liczymy, ile razy z rzedu NIE UDALO SIE zamknac tego
+  // samego okna wyborem; po progu przerywamy przebieg glosno, zamiast krecic
+  // sie do wyczerpania `--steps`.
+  const MULTI_WIZARD_STUCK_LIMIT = 5;
+  let multiWizardFailures = 0;
+  let multiWizardLastIntro = null;
+  // Wpisy logu, które są DOWODEM przebiegu reguł (M205). Celowo wąska lista:
+  // transkrypt ma nie puchnąć od zwykłych zdarzeń, które i tak widać w modalu
+  // „Rozgrywka" i w snapshotach.
+  const MAIN_LOG_EVIDENCE = /^Auto-pass:/;
   const collectRejections = (action) => {
     const entries = $$('#log .log-rejection').map((e) => text(e).trim()).filter(Boolean);
     for (let i = rejectionsSeen; i < entries.length; i += 1) {
@@ -275,6 +305,34 @@ export async function runTableGame({
       });
     }
     rejectionsSeen = entries.length;
+  };
+  // M205 (audyt PR #77): niektóre wpisy głównego logu są DOWODEM na przebieg
+  // reguł, a nie ozdobą — auto-pass człowieka przy niepustym stosie mówi, że
+  // gracz dostał priorytet i go oddał (CR 117.3b/117.4). Pod `--quiet`
+  // snapshotów nie ma wcale, a linia `LOG:` w snapshocie niesie tylko OGON
+  // (ostatnie 6 wpisów), więc dowód gubił się między krokami i detektor
+  // `detectNoResponseWindow` zgłaszał legalne rozstrzygnięcie jako brak okna
+  // na odpowiedź. Zbieramy więc NOWE wpisy logu po indeksie — niezależnie od
+  // trybu snapshotów.
+  let mainLogSeen = 0;
+  const collectMainLog = () => {
+    const entries = $$('#log .log-event, #log .log-rejection, #log .log-system')
+      .map((e) => text(e).trim()).filter(Boolean);
+    // UWAGA: `render.js` rysuje log od NAJNOWSZEGO (`[...session.log].reverse()`),
+    // więc nowe wpisy dokładają się na POCZĄTKU listy DOM, nie na końcu.
+    // Liczenie indeksem od przodu czytałoby najstarsze wpisy jako „nowe" —
+    // pierwsza wersja tego kodu tak właśnie robiła i nie znalazła ani jednego
+    // wpisu (pomiar: 0 trafień w transkrypcie mimo obecności wpisu w logu).
+    if (entries.length < mainLogSeen) mainLogSeen = 0;  // log przycięty/przerysowany
+    const freshCount = entries.length - mainLogSeen;
+    // `slice(0, freshCount)` to nowe wpisy (od najnowszego) — odwracamy, żeby
+    // trafiły do transkryptu w kolejności chronologicznej.
+    const fresh = entries.slice(0, Math.max(0, freshCount)).reverse();
+    for (const entry of fresh) {
+      if (!MAIN_LOG_EVIDENCE.test(entry)) continue;
+      logL(`  LOG: ${entry.slice(0, 160)}`);
+    }
+    mainLogSeen = entries.length;
   };
   const normalize = (t) => t.replace(/\d+/g, 'N').replace(/\s+/g, ' ').trim().slice(0, 60);
 
@@ -557,20 +615,73 @@ export async function runTableGame({
     // cele (N)"), potem zatwierdź; gdy nie da się złożyć — anuluj.
     const multiConfirm = $$('#choice-request button').find((b) => /multi-target-confirm/.test(String(b.className)));
     if (multiConfirm) {
-      const needed = Number((intro.match(/zaznacz cele \((\d+)\)/) ?? [])[1] ?? 1);
-      const boxes = $$('#choice-request .choice-request-option input[type="checkbox"]')
-        .filter((i) => !i.disabled && !i.checked);
-      logL(`  [multi-target wizard] ${intro.slice(0, 90)} — opcji ${boxes.length}, potrzeba ${needed}`);
-      for (let i = 0; i < Math.min(needed, boxes.length); i += 1) {
-        const pick = profile === 'random' ? pickRandom(boxes) : boxes[i];
-        pick.click();
+      // M206: wiersze kreatora to PRZYCISKI `.multi-target-toggle` ze stanem
+      // w tekście („[ ] Mountain" / „[x] Mountain"), a NIE `<input
+      // type=checkbox>` w `.choice-request-option`. Poprzedni selektor nie
+      // pasował do niczego, więc `boxes` było zawsze puste: kreator nigdy nie
+      // dostawał zaznaczenia, „Zatwierdź" zostawał wyłączony, a „Anuluj"
+      // otwierał ten sam modal od nowa — tester kręcił się w kółko
+      // (zmierzone: 300 identycznych linii „opcji 0, potrzeba 1" i partia
+      // bez ani jednego kroku). Skutek uboczny: ŻADEN czar wielocelowy
+      // (Fireball, Wrap in Flames, Grave Exchange) ani mulligan z odłożeniem
+      // kart nie były nigdy testowane — a to jest właśnie ta klasa modali,
+      // którą właściciel kazał sprawdzić.
+      const rows = $$('#choice-request .multi-target-toggle').filter((b) => !b.disabled);
+      // Ile pozycji trzeba zaznaczyć: „zaznacz cele (2)", „zaznacz cele (1–3)"
+      // albo „Mulligan: zaznacz 2 karty…". Bierzemy pierwszą liczbę z intro,
+      // a przy zakresie „N–M" wystarczy minimum.
+      const needed = Number((intro.match(/zaznacz(?: cele)?\s*\(?(\d+)/) ?? [])[1] ?? 1);
+      const isChecked = (b) => /^\s*\[x\]/.test(text(b));
+      // M207: przy „up to N" (Wrap in Flames, You're Confronted by Robbers)
+      // dolna granica wynosi ZERO, więc „Zatwierdź" jest aktywny od razu.
+      // Warunek „klikaj, dopóki Zatwierdź wyłączony" kończył się wtedy po
+      // zerowej liczbie iteracji: tester rzucał czar BEZ CELÓW i audyt
+      // oglądał pusty przebieg („Wrap in Flames zostaje rozstrzygnięty" bez
+      // jednego obrażenia). Ścieżka zaznaczania celów pozostawała nietknięta
+      // mimo poprawnie otwartego kreatora.
+      //
+      // Docelowa liczba zaznaczeń: minimum wymagane przez silnik, a gdy ono
+      // wynosi 0 — górna granica z intro („(0–3)" → 3), przycięta liczbą
+      // dostępnych wierszy. Czar celowany ma być rzucony W CEL; to jedyny
+      // sposób, żeby audyt zobaczył jego skutek.
+      const upper = Number((intro.match(/zaznacz(?: cele)?\s*\(?\d+\s*[–-]\s*(\d+)/) ?? [])[1] ?? 0);
+      const want = Math.min(Math.max(needed, upper, 1), rows.length);
+      logL(`  [multi-target wizard] ${intro.slice(0, 90)} — opcji ${rows.length}, potrzeba ${needed}, celuję w ${want}`);
+      // Zaznaczaj aż uzbierasz `want` ORAZ „Zatwierdź" przestanie być
+      // wyłączony (silnik jest jedynym źródłem prawdy o legalności — L48).
+      const order = profile === 'random' ? shuffleForPolicy(rows) : rows;
+      for (const row of order) {
+        const checkedNow = rows.filter(isChecked).length;
+        if (checkedNow >= want && !multiConfirm.disabled) break;
+        if (isChecked(row)) continue;
+        row.click();
         await sleep(20);
+        // Zaznaczenie ponad limit silnika cofa legalność (Zatwierdź gaśnie) —
+        // wtedy odznacz z powrotem i przestań dokładać.
+        if (multiConfirm.disabled && rows.filter(isChecked).length > (needed || 1)) {
+          row.click();
+          await sleep(20);
+          break;
+        }
       }
       const confirmNow = $$('#choice-request button').find((b) => /multi-target-confirm/.test(String(b.className)));
       if (confirmNow && !confirmNow.disabled) {
         confirmNow.click();
         await sleep(80);
+        multiWizardFailures = 0;
+        multiWizardLastIntro = null;
         return true;
+      }
+      // Nie dało się złożyć legalnego wyboru — odznacz wszystko i anuluj.
+      multiWizardFailures = intro === multiWizardLastIntro ? multiWizardFailures + 1 : 1;
+      multiWizardLastIntro = intro;
+      logL(`  [multi-target wizard] nie złożono legalnego wyboru (zaznaczonych ${rows.filter(isChecked).length}/${rows.length}, wierszy ${rows.length})`
+        + ` — anuluję (próba ${multiWizardFailures}/${MULTI_WIZARD_STUCK_LIMIT})`);
+      if (multiWizardFailures >= MULTI_WIZARD_STUCK_LIMIT) {
+        // „Anuluj" w tym kreatorze odtwarza to samo żądanie wyboru, więc bez
+        // tego progu przebieg nie ma jak się skończyć.
+        throw new Error(`Kreator wielocelowy nie do zamknięcia po ${multiWizardFailures} próbach `
+          + `(wierszy ${rows.length}): ${intro.slice(0, 120)}`);
       }
       const cancelMulti = $$('#choice-request button').find((b) => /multi-target-cancel/.test(String(b.className)));
       if (cancelMulti) { cancelMulti.click(); await sleep(60); }
@@ -734,6 +845,11 @@ export async function runTableGame({
   const isGameOver = () => /Koniec partii|wygrywa|wygrał|przegrał/.test(text($('#turn-indicator')));
 
   const step = async () => {
+    // M205: dowody z głównego logu (auto-pass) zbieramy na POCZĄTKU kroku —
+    // czyli po tym, jak sesja przewinęła grę w wyniku poprzedniego kliknięcia,
+    // a przed zamknięciem modala. Kolejność w transkrypcie jest wtedy zgodna
+    // z przebiegiem: „bot rzuca" → „Auto-pass" → „zostaje rozstrzygnięty".
+    collectMainLog();
     // M99: `impatient` z rozmysłem NIE zamyka modala ruchu bota od razu —
     // klika w panel akcji „przez" otwartą pauzę, tak jak gracz na telefonie.
     if (profile !== 'impatient' && await closeBotMove()) return 'botmove';
@@ -831,6 +947,14 @@ export async function runTableGame({
     if (!quiet && (i % snapshotEvery === 0 || res === 'none')) snapshot(i);
     if (res === 'none') {
       const ti = text($('#turn-indicator'));
+      // M209: pusty panel akcji po ostatnim kliknieciu, ktore rozstrzygnelo
+      // partie, to koniec gry, a nie zaciecie testera. Bez tego sprawdzenia
+      // wygrana w ostatnim kroku raportowala sie jako [STOP] brak akcji.
+      if (isGameOver()) {
+        logL(`== KONIEC PARTII == ${ti}`);
+        snapshot(i + 1);
+        break;
+      }
       const actions = $$('#actions button.action').map((b) => text(b));
       logL(`  [STOP] brak akcji w kroku ${i} | ${ti} | akcje: ${actions.join(',') || '(puste)'}`);
       break;

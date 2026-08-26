@@ -40,9 +40,13 @@ test('materializacja przenosi statystyki permanentów z definicji do obiektu gry
   const registry = createCardRegistry();
   // Kolory karty trafiają na obiekt gry (publiczne dane — trigger „a player
   // casts a white spell" czyta je z obiektu czaru; ADR 0002).
+  // Specimen z KOSZTEM MANY — bo to koszt wyznacza kolor (CR 202.2).
+  const shatter = gameObjectDataOf(registry.get('shatter'));
+  assert.deepEqual(shatter.colors, ['R'], 'kolor karty trafia na obiekt gry');
+  // Land nie ma kosztu many, więc jest bezbarwny; `kind` nadal się przenosi.
   const mountain = gameObjectDataOf(registry.get('basic-mountain'));
   assert.equal(mountain.kind, 'land');
-  assert.deepEqual(mountain.colors, ['R']);
+  assert.deepEqual(mountain.colors, [], 'land jest bezbarwny (CR 202.2)');
   const highland = gameObjectDataOf(registry.get('highland-game'));
   assert.deepEqual({ kind: highland.kind, power: highland.power, toughness: highland.toughness, manaCost: highland.manaCost }, { kind: 'creature', power: 2, toughness: 1, manaCost: 2 });
   assert.throws(() => gameObjectDataOf(null), /Nieznana/);

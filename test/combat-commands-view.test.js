@@ -68,7 +68,9 @@ test('po komendach combat pass kontynuuje automat od end_of_combat bez cofania',
   assert.equal(state.turn.step, 'end_of_combat');
   assert.equal(state.turn.stepIndex, 8);
   for (let i = 0; i < 2; i += 1) execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
-  assert.equal(state.turn.step, 'main');
+  // M212/3: druga faza główna nazywa się `main2` (wcześniej obie nazywały
+  // się `main`, przez co nie dało się jej odróżnić ani do niej skoczyć).
+  assert.equal(state.turn.step, 'main2');
   assert.equal(state.turn.phase, 'postcombat_main');
   assert.equal(state.combat, null);
 });

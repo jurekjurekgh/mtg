@@ -107,7 +107,15 @@ export function isLegalAuraHost(attachment, host) {
     return host.kind === 'enchantment' || (host.types ?? []).includes('Enchantment');
   }
   if (enchantKind === 'artifact_or_creature') {
-    return host.kind === 'creature' || host.kind === 'artifact' || (host.types ?? []).includes('Artifact');
+    const isArtOrCreature = host.kind === 'creature' || host.kind === 'artifact' || (host.types ?? []).includes('Artifact');
+    if (!isArtOrCreature) return false;
+    // „Enchant artifact or creature YOU CONTROL” (Moonlit Meditation) vs
+    // „Enchant artifact or creature” (Clawing Torment). Rozróżnia deskryptor
+    // `ownControlOnly` — dokładnie ten sam, którego używa walidacja rzucania
+    // w resources.js. Wcześniej czytała go TYLKO tamta ścieżka, więc SBA
+    // (CR 704.5n) nie zrzucała aury po zmianie kontroli gospodarza.
+    if (descriptor?.ownControlOnly === false) return true;
+    return host.controllerId === attachment.controllerId;
   }
   // Chronic Flooding (RTR): „Enchant land" — gospodarzem jest LAND.
   if (enchantKind === 'land') {
@@ -276,6 +284,38 @@ export function detachAttachmentsFromHost(state, hostId) {
  * (detachAttachmentsFromHost).
  */
 /**
+ * Efektywne KOLORY obiektu (CR 105 / 202.2 / 708.2a).
+ *
+ * Kolor jest cechą czytaną przy odczycie, jak keywordy — nie wolno brać go
+ * wprost z `object.colors`, bo dwa stany permanentu zmieniają go na polu
+ * bitwy:
+ *
+ *  - CR 708.2a: permanent ZAKRYTY (morph/megamorph/cloak) jest bezimiennym
+ *    stworem 2/2 BEZ kolorów i bez podtypów — kolory karty pod spodem są
+ *    zakryte. Odsłonięcie (turnFaceUp) przywraca je z nietkniętego pola
+ *    `colors`, tak samo jak robi to effectiveKeywords dla keywordów.
+ *  - CR 202.2: kolor wyznacza koszt many. Land go nie ma, więc każdy land
+ *    jest bezbarwny — także wtedy, gdy zostanie animowany w stwora
+ *    („It's still a land” — Silvanus's Invoker). Podtyp Swamp mówi tylko,
+ *    jaką manę produkuje.
+ *
+ * Kolor jest cechą REGUŁOWĄ: patrzą na nią „protection from [kolor]”
+ * (CR 702.16), intimidate (CR 702.13) i „can't be blocked except by [kolor]
+ * creatures” (Dread Warlock). Dlatego jeden odczyt, jedna reguła (L41).
+ */
+export function effectiveColors(object) {
+  if (!object) return [];
+  // CR 708.2a — zakryty permanent nie ma kolorów.
+  if (object.faceDown) return [];
+  // CR 202.2 (land jest bezbarwny) egzekwują DANE KARTY — landy mają
+  // `colors: []` w card-data.js. Nie zerujemy tu koloru po typie Land,
+  // bo efekt animujący MOŻE nadać kolor (Genju of the Spires: „becomes a
+  // 6/1 RED Spirit creature land” — CR 613, warstwa 5) i takiego koloru
+  // nie wolno zgubić. Tak samo token-land z kolorem od efektu (CR 111.4).
+  return object.colors ?? [];
+}
+
+/**
  * Protection from colors (CR 702.16): lista kolorów, przed którymi obiekt
  * jest chroniony — z pól obiektu (protectionFromColors) i z załączników
  * (aura z chosenColor). Nie modyfikuje zamrożonego obiektu.
@@ -323,10 +363,13 @@ export function sourceHasProtectionQuality(quality, source) {
   }
   if (quality.subtype && !(source.subtypes ?? []).includes(quality.subtype)) return false;
   if (quality.notSubtype && (source.subtypes ?? []).includes(quality.notSubtype)) return false;
-  if (Array.isArray(quality.colors) && !quality.colors.some((c) => (source.colors ?? []).includes(c))) return false;
+  // Kolory ŹRÓDŁA czytamy przez effectiveColors — zakryte źródło (CR 708.2a)
+  // i land (CR 202.2) są bezbarwne, więc nie mają jakości „kolor”.
+  const sourceColors = effectiveColors(source);
+  if (Array.isArray(quality.colors) && !quality.colors.some((c) => sourceColors.includes(c))) return false;
   // Batch 46 (Guildscorn Ward, CR 702.16e): „protection from multicolored" —
   // źródłem jest obiekt o DWÓCH lub więcej kolorach (CR 105.4).
-  if (quality.multicolored && (source.colors ?? []).length < 2) return false;
+  if (quality.multicolored && sourceColors.length < 2) return false;
   return true;
 }
 

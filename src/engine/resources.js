@@ -16,6 +16,15 @@ export function initializeResources(state) {
     // manaUnitKey, np. 'U', 'UR', 'WUBRG' dowolny, '' bezbarwna). Suma wartości
     // == player.mana. player.mana zostaje liczbą (total) dla amount/widoku.
     player.manaPool = {};
+    // M214: pula many OGRANICZONEJ drukiem (Powerstone — „only to cast
+    // artifact spells") trzymana OSOBNO, po tym samym profilu kolorów.
+    // Wcześniej ograniczenie było wyłącznie licznikiem `artifactOnlyMana`
+    // rozliczanym PO zapłacie — consumeManaPool nie znała pochodzenia
+    // jednostek i wydawała manę Powerstone na generic czaru nie-artefaktowego,
+    // a licznik zostawał wiszący na zwykłej {W} (producibleMana dla legalnego
+    // czaru spadała do 0 mimo many w puli). Osobna mapa = pochodzenie jest
+    // znane od wejścia do puli (CR 106 / druk Powerstone).
+    player.restrictedPool = {};
     // Pula many pochodzącej ze Skarbów (Marut: „mana from a Treasure was
     // spent to cast it"). Zeruje się razem z maną na starcie tury.
     player.treasureMana = 0;
@@ -35,7 +44,14 @@ export function addMana(state, playerId, amount, { colors = ['W', 'U', 'B', 'R',
   // (brak colors) = dowolny kolor — wygoda TESTÓW (realna gra ZAWSZE podaje
   // jawny colors z tapLandForMana/efektów; jawne colors:[] = bezbarwna).
   const key = manaUnitKey(colors);
-  player.manaPool[key] = (player.manaPool[key] ?? 0) + amount;
+  // M214: jednostki ograniczone drukiem lądują w OSOBNEJ puli — konsumpcja
+  // przy zabronionym celu (czar nie-artefaktowy) ich nie zobaczy. Suma obu
+  // pul == player.mana. Mana ze Skarbu pozostaje oznaczona osobno (treasureMana).
+  if (spendOnly === 'artifact') {
+    player.restrictedPool[key] = (player.restrictedPool[key] ?? 0) + amount;
+  } else {
+    player.manaPool[key] = (player.manaPool[key] ?? 0) + amount;
+  }
   // Mana wytworzona przez Skarb jest identyfikowalna w puli (CR 106 i Marut) —
   // śledzimy ją oddzielnym licznikiem, żeby spendMana mogła ją wydać w sposób
   // jawny dla efektów „if mana from a Treasure was spent".
@@ -68,9 +84,19 @@ export function expandManaPool(manaPool) {
  * gwarantuje pokrycie), resztę (`amount` − pipy) konsumuje od jednostek o
  * NAJMNIEJSZEJ liczbie kolorów (bezb. najpierw — zachowuje kolorowe na później).
  * Mutuje player.manaPool (nie player.mana — tym zajmuje się spendMana).
+ *
+ * M214: `restricted` = czy cel wydania DOZWAŁA many ograniczonej drukiem
+ * (czar-artefakt / zdolność aktywowana). Przy FALSE konsumujemy wyłącznie
+ * `player.manaPool` — jednostki z `player.restrictedPool` nie są nawet
+ * widoczne, więc manę Powerstone da się wydać wyłącznie na dozwolony cel.
+ * Przy TRUE jednostki ograniczone zużywamy w pierwszej kolejności
+ * (deterministycznie, jak mana ze Skarbów — ADR 0005), żeby nie zalegały
+ * w puli i nie blokowały kolejnych płatności.
  */
-export function consumeManaPool(player, amount, requirements) {
-  const units = expandManaPool(player.manaPool);
+export function consumeManaPool(player, amount, requirements, restricted = false) {
+  const freeUnits = expandManaPool(player.manaPool);
+  const restrictedUnits = restricted ? expandManaPool(player.restrictedPool ?? {}) : [];
+  const units = [...freeUnits, ...restrictedUnits];
   const n = units.length;
   const pipUsed = new Array(n).fill(false);
   // M166/C (Adamant) + M171/N1 (audyt PR #68): kolory MANY WYDANEJ.
@@ -109,13 +135,21 @@ export function consumeManaPool(player, amount, requirements) {
   for (let i = 0; i < n && toConsume > 0; i += 1) if (pipUsed[i]) { consume[i] = true; toConsume -= 1; }
   const genericOrder = [];
   for (let i = 0; i < n; i += 1) if (!pipUsed[i]) genericOrder.push(i);
-  genericOrder.sort((a, b) => units[a].length - units[b].length);
+  // M214: przy dozwolonym celu jednostki ograniczone (indeksy >= freeUnits.length)
+  // idą NA PIERW — inaczej zostawałyby w puli mimo legalnego użycia.
+  genericOrder.sort((a, b) => {
+    const ra = a >= freeUnits.length ? 0 : 1;
+    const rb = b >= freeUnits.length ? 0 : 1;
+    if (ra !== rb) return ra - rb;
+    return units[a].length - units[b].length;
+  });
   for (const i of genericOrder) {
     if (toConsume <= 0) break;
     consume[i] = true;
     toConsume -= 1;
   }
   const newPool = {};
+  const newRestrictedPool = {};
   const consumedColors = [];
   for (let i = 0; i < n; i += 1) {
     if (consume[i]) {
@@ -130,9 +164,15 @@ export function consumeManaPool(player, amount, requirements) {
       continue;
     }
     const key = manaUnitKey(units[i]);
-    newPool[key] = (newPool[key] ?? 0) + 1;
+    if (i >= freeUnits.length) newRestrictedPool[key] = (newRestrictedPool[key] ?? 0) + 1;
+    else newPool[key] = (newPool[key] ?? 0) + 1;
   }
   player.manaPool = newPool;
+  // M214: przy zabronionym celu jednostki ograniczone nie były widoczne
+  // w `units`, więc `newRestrictedPool` jest budowane wyłącznie z nich Gdy
+  // `restricted=false`, pula ograniczona zostaje nietknięta — inaczej
+  // nadpisalibyśmy ją pustą mapą i mana Powerstone zniknęłaby z księgowania.
+  if (restricted) player.restrictedPool = newRestrictedPool;
   return consumedColors;
 }
 
@@ -240,7 +280,14 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
       return am - bm;
     });
     for (const source of sources) {
-      if ((player.mana ?? 0) >= amount) break;
+      // M215 (root cause CI na M214): warunek przerwania musi liczyć WYŁĄCZNIE
+      // manę dostępną dla tego celu. `player.mana` to SUMA pul (wolnej
+      // i ograniczonej drukiem), więc przy czarze nie-artefaktowym porównanie
+      // `player.mana >= amount` zatrzymywało auto-tap za wcześnie — ląd nie
+      // był tapnięty, konsumpcja zjadała mniej jednostek niż kwota, a
+      // księgowanie puli się rozjeżdżało (mana → 0 mimo niedostępnej jednostki
+      // Powerstone w restrictedPool; kolejna oferta i płatność liczyły inaczej).
+      if (((player.mana ?? 0) - restrictedInPool) >= amount) break;
       const grant = grantManaOnLand(state, source.id);
       const need = [...reqColors].find((c) => ['W', 'U', 'B', 'R', 'G'].includes(c));
       const srcColors = getSourceForObject(source)?.colors ?? [];
@@ -250,14 +297,17 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
     // M179/D: landy nie starczyły — dopłacamy z nielandowych źródeł
     // czystej many (producibleMana je liczy, więc oferta = płatność, L48).
     for (const entry of untappedFreeManaSources(state, playerId, null, purpose)) {
-      if ((player.mana ?? 0) >= amount) break;
+      if (((player.mana ?? 0) - restrictedInPool) >= amount) break;
       tapFreeManaSource(state, playerId, entry);
     }
   }
   // Konsumpcja z kolorowej puli: pipy do pasujących jednostek, reszta (generic)
   // od bezbarwnych — MtG: każdy pip koloru opłacony maną tego koloru.
   // Przy koszcie 0 pomijamy konsumpcję (nic nie jest wydawane).
-  const consumedColors = payNothing ? [] : consumeManaPool(player, amount, requirements);
+  // M214: `restricted` = czy cel wydania dozWALA many ograniczonej drukiem.
+  // Przy czarze nie-artefaktowym konsumpcja widzi wyłącznie wolną pulę —
+  // manę Powerstone da się wtedy wydać tylko na dozwolony cel.
+  const consumedColors = payNothing ? [] : consumeManaPool(player, amount, requirements, !restrictedManaBlocked(purpose));
   player.mana -= amount;
   // M166/C: kolory wydanej many (Adamant — „at least three <color> mana was
   // spent to cast this spell"). Czytane przez castPermanent/castSpell
@@ -267,17 +317,12 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
   // 0005): Marut pyta, ILE many ze Skarba wydano na jego rzut.
   const treasure = Math.min(player.treasureMana ?? 0, amount);
   if (treasure > 0) player.treasureMana = (player.treasureMana ?? 0) - treasure;
-  // M201 (znalezisko #3): rozliczenie many OGRANICZONEJ po płatności.
-  // • czar-artefakt: wydajemy ją w pierwszej kolejności (deterministycznie,
-  //   ADR 0005) — inaczej zostawałaby w puli i blokowała kolejne rzuty;
-  // • inny czar: licznik nie może przekroczyć tego, co realnie zostało
-  //   w puli, bo `producibleMana` odejmuje go od stanu puli (bez tego
-  //   oferta i płatność rozjeżdżają się — L48, złapane benchmarkiem).
-  if ((player.artifactOnlyMana ?? 0) > 0) {
-    player.artifactOnlyMana = restrictedManaBlocked(purpose)
-      ? Math.min(player.artifactOnlyMana ?? 0, Math.max(0, player.mana ?? 0))
-      : Math.max(0, (player.artifactOnlyMana ?? 0) - amount);
-  }
+  // M201 (znalezisko #3): licznik many OGRANICZONEJ zawsze równa się sumie
+  // jednostek w `player.restrictedPool` — konsumpcja zaktualizowała mapę,
+  // więc licznik idzie za nią (M214: wcześniej „rozliczenie po fakcie”
+  // zostawiało ograniczenie na ZŁEJ jednostce i producibleMana dla legalnego
+  // czaru spadała do 0 mimo zwykłej many w puli).
+  player.artifactOnlyMana = Object.values(player.restrictedPool ?? {}).reduce((a, b) => a + b, 0);
   state.lastManaSpend = { playerId, amount, treasure, colors: spentColors };
   const e = event('mana_changed', { playerId, amount: -amount, total: player.mana, treasureSpent: treasure });
   state.events.push(e);
@@ -289,6 +334,7 @@ export function resetTurnResources(state, playerId) {
   if (!player) throw new Error('Nieznany gracz');
   player.mana = 0;
   player.manaPool = {};
+  player.restrictedPool = {};
   player.treasureMana = 0;
   player.artifactOnlyMana = 0;
   player.landPlays = 1;
@@ -1223,6 +1269,21 @@ export function playLand(state, playerId, objectId) {
           && (obj.subtypes ?? []).includes('Island');
       }).length;
       if (islands >= (cond.amount ?? 3)) shouldEnterTapped = false;
+    }
+    // Kishla Village (TDM): „enters tapped unless you control an Island or a
+    // Swamp" — wystarczy JEDEN land o KTÓRYMKOLWIEK z wymienionych podtypów.
+    // Wariant ogólny (lista podtypów, próg `amount`), nie karto-specyficzny:
+    // Oracle nie mówi „other", ale wchodzący land i tak nie ma tych podtypów.
+    if (cond.type === 'controls_land_subtype_any') {
+      const wanted = cond.subtypes ?? [];
+      const matching = state.zones.battlefield.filter((id) => {
+        if (id === newId) return false;
+        const obj = state.objects.get(id);
+        if (!obj || obj.zone !== 'battlefield' || obj.controllerId !== player.id) return false;
+        if (!(obj.kind === 'land' || (obj.types ?? []).includes('Land'))) return false;
+        return (obj.subtypes ?? []).some((subtype) => wanted.includes(subtype));
+      }).length;
+      if (matching >= (cond.amount ?? 1)) shouldEnterTapped = false;
     }
     // Idyllic Grange (ELD): „enters tapped unless you control three or more
     // other Plains" — wchodzący land jest Plains, ale „inne" go wykluczają.

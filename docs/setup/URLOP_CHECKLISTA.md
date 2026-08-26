@@ -127,5 +127,5 @@ Uczciwa lista, żeby nie było niespodzianek:
 ## Powiązania
 
 - [ADR 0011 — modularne źródła, jednoplikowy artefakt, dwa tryby uruchomienia](../decisions/0011-modular-sources-single-file-artifact.md)
-- [Bieżący stan projektu](../PROJECT_STATE.md)
+- [Historia projektu (dziennik sesji)](../PROJECT_HISTORY.md)
 - [Roadmapa, Etap 0b](../ROADMAP.md)

@@ -62,11 +62,58 @@ export function multiTargetPlanOf(commands) {
     hasX,
     xMin: hasX ? xValues[0] : null,
     xMax: hasX ? xValues[xValues.length - 1] : null,
+    // M207: rozbicie na POZYCJE CELU (patrz `targetSlotsOf`) albo null, gdy
+    // czar bierze jednorodną listę („dowolna liczba celów").
+    slots: targetSlotsOf(list, sizes),
     // Wspólne pola komendy — UI potrzebuje ich do opisu (nazwa karty, tryb).
     objectId: list[0].objectId,
     type: list[0].type,
     modeIndex: list[0].modeIndex ?? null,
   };
+}
+
+/**
+ * M207 (audyt rozgrywek): czar o KILKU RÓŻNYCH pozycjach celu — „target
+ * creature you control … target creature an opponent controls" (Knockout
+ * Maneuver), „target creature card from your graveyard … target player"
+ * (Grave Exchange).
+ *
+ * Silnik enumeruje iloczyn kartezjański pozycji, więc pozycja jest zapisana
+ * w KOLEJNOŚCI tablicy `targets` (indeks = numer pozycji z `spell.targets`).
+ * Płaska lista „zaznacz cele (2)" tę informację gubiła: gracz dostawał jeden
+ * wór z kartą z grobu i dwoma graczami, w kolejności wynikającej z porządku
+ * odkrywania, i mógł zaznaczyć dwie pozycje z tej samej szufladki. Wybór był
+ * wtedy nielegalny (`commandForSelection` → null), a jedyną informacją zwrotną
+ * pozostawało wyszarzone „Zatwierdź" — bez słowa, CZEGO brakuje.
+ *
+ * Zwraca tablicę zbiorów kandydatów (po jednym na pozycję) albo null, gdy
+ * rozbicie nie ma sensu:
+ *  - warianty mają RÓŻNE długości („up to three" — pozycje są wymienne),
+ *  - któraś pozycja dzieli kandydatów z inną (lista jednorodna: Fireball
+ *    „any number of targets" — tam wór jest poprawną formą).
+ */
+function targetSlotsOf(list, sizes) {
+  if (sizes.length !== 1) return null;          // „up to N" — pozycje wymienne
+  const arity = sizes[0];
+  if (arity < 2) return null;
+  const slots = [];
+  for (let i = 0; i < arity; i += 1) {
+    const ids = [];
+    for (const cmd of list) {
+      const id = cmd.targets[i];
+      if (id != null && !ids.includes(id)) ids.push(id);
+    }
+    slots.push(ids);
+  }
+  // Jednorodne (te same kandydatury na każdej pozycji) = zwykła lista celów.
+  const seen = new Set();
+  for (const ids of slots) {
+    for (const id of ids) {
+      if (seen.has(id)) return null;
+      seen.add(id);
+    }
+  }
+  return slots;
 }
 
 /**

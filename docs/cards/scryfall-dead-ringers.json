@@ -1,0 +1,24 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Dead+Ringers&set=apc&format=json",
+  "print": "apc",
+  "name": "Dead Ringers",
+  "mana_cost": "{4}{B}",
+  "cmc": 5.0,
+  "type_line": "Sorcery",
+  "oracle_text": "Destroy two target nonblack creatures unless either one is a color the other isn't. They can't be regenerated.",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [],
+  "set": "apc",
+  "set_name": "Apocalypse",
+  "collector_number": "37",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/9/b/9b78028c-3ebd-432d-b628-e1fa284f08f3.jpg?1783945349"
+  },
+  "pobrano": "2026-08-25"
+}

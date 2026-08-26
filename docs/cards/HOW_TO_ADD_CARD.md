@@ -15,7 +15,7 @@ Układ definicji opisuje [ADR 0014](../decisions/0014-card-definitions-single-mo
 
 - Pracujesz na gałęzi sesji (`arena/...`) i zgłaszasz zmianę jako **Pull Request**
   (ADR 0007, `AGENTS.md`). Nie commituj wprost do `main`, nie scalaj sam.
-- Przeczytaj kolejno `README.md`, `docs/PROJECT_STATE.md`, `AGENTS.md`,
+- Przeczytaj kolejno `README.md`, `AGENTS.md`,
   ADR 0010, ADR 0014 i odpowiedni fragment `docs/ENGINE_MILESTONES.md`
   (najnowszy batch jako wzorzec).
 - Ustal **listę kart od właściciela** (nazwa + set). Zwykle 5 kart na batch,
@@ -167,7 +167,7 @@ pełna macierz w opisie PR, próbka regresji w `npm test`.
 
 ## Krok 8 — aktualizacja dokumentacji
 
-- `docs/PROJECT_STATE.md` — nowy wpis o batchu, liczby testów/artefaktu,
+- `docs/PROJECT_HISTORY.md` — nowy wpis o batchu, liczby testów/artefaktu,
   aktualny stan i najbliższy krok.
 - `docs/ENGINE_MILESTONES.md` — nowy milestone (M27…) z zakresem, generycznymi
   mechanikami, świadomymi ograniczeniami i wynikiem pomiaru.
@@ -194,5 +194,5 @@ Wynik podaj w opisie PR (liczba testów, liczba modułów i rozmiar artefaktu).
 - [ ] testy `test/real-cards-batchN.test.js` (legalny + nielegalny + sanity danych)
 - [ ] generyczne mechaniki w engine (jeśli nowe), bez warunków na nazwę
 - [ ] B0 + progi `test/bot-benchmark.test.js`, jeśli zmieniał się bot
-- [ ] `PROJECT_STATE.md` i `ENGINE_MILESTONES.md` zaktualizowane
+- [ ] `PROJECT_HISTORY.md` i `ENGINE_MILESTONES.md` zaktualizowane
 - [ ] `npm test` zielone, `npm run build` podaje liczby w opisie PR

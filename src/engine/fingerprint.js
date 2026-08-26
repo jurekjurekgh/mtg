@@ -12,6 +12,7 @@ const PENDING_DECISION_FIELDS = Object.freeze([
   'pendingCraftExile', 'pendingDamageAssignment', 'pendingDamageTarget',
   'pendingDestroyEquipment', 'pendingDiscardChoice', 'pendingDiscover',
   'pendingEnterAsCopy', 'pendingEpicExperiment', 'pendingExploits',
+  'pendingDevourEtbs',
   'pendingExplore', 'pendingFertileThicket', 'pendingFoodChoice',
   'pendingHandCreature', 'pendingHandTopChoice', 'pendingIndex',
   'pendingLandTypeChoice', 'pendingLibraryPlacement', 'pendingLookTopN', 'pendingSatyrLook', 'pendingRevealChoice', 'pendingMadnessCast', 'pendingModalTrigger',
@@ -108,6 +109,7 @@ export function stateFingerprint(state) {
     regenerationShields: [...(state.regenerationShields ?? [])],
     cantBeRegeneratedThisTurn: [...(state.cantBeRegeneratedThisTurn ?? [])],
     exileIfDiesThisTurn: [...(state.exileIfDiesThisTurn ?? [])],
+    gainLifeIfDiesThisTurn: (state.gainLifeIfDiesThisTurn ?? []).map((entry) => ({ ...entry })),
     untilEndOfTurnProtections: (state.untilEndOfTurnProtections ?? []).map((g) => ({
       controllerId: g.controllerId,
       objectIds: Array.isArray(g.objectIds) ? [...g.objectIds] : null,

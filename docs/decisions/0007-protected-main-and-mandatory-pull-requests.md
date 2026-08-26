@@ -20,7 +20,7 @@ Ryzyka na tym etapie:
 
 Jednocześnie projekt ma realnie jednego decydenta. Wymaganie approvals od osób trzecich
 zablokowałoby pracę, a wymaganie przechodzących status checks nie ma dziś sensu,
-bo nie istnieje żaden CI ani wybrany toolchain (zob. ADR 0006 i `docs/PROJECT_STATE.md`).
+bo nie istnieje żaden CI ani wybrany toolchain (zob. ADR 0006 i `docs/PROJECT_HISTORY.md`).
 
 ## Decyzja
 
@@ -101,6 +101,6 @@ Ten ADR należy przejrzeć i ewentualnie zastąpić, gdy:
 - [Polityka bezpieczeństwa](../../SECURITY.md)
 - [Zasady współpracy](../../CONTRIBUTING.md)
 - [Instrukcja dla agentów](../../AGENTS.md)
-- [Bieżący stan](../PROJECT_STATE.md)
+- [Historia projektu](../PROJECT_HISTORY.md)
 - [Roadmapa — Etap 0](../ROADMAP.md#etap-0--repozytorium-i-audyt)
 - [ADR 0006 — Audyt przed wydzieleniem Wirtualnego Stołu](0006-audit-before-table-extraction.md)

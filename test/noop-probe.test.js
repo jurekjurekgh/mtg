@@ -298,3 +298,30 @@ test('M104: licznik DOŁOŻONY (Trigon — charge) nadal jest skutkiem', () => {
   assert.ok(probe.ok);
   assert.ok(probe.effectDiffs.length > 0, 'dołożenie licznika to zmiana stanu poza kosztem');
 });
+
+// --- M213: koszt „{T}" ŹRÓDŁA vs tapnięcie CELU efektem -------------------
+//
+// Sterling Keykeeper: „{2}, {T}: Tap target non-Mount creature." Wycelowany
+// we WŁASNEGO stwora tapuje dwa permanenty naraz — źródło (koszt) i cel
+// (skutek). Oba wpadały do `ownOtherTaps`, więc detektor „oferta bez skutku"
+// widział sam koszt i zgłaszał poprawną zdolność jako no-opa (Żywy Tester,
+// worek-legend vs worek-mroczny, s=77 → 4 fałszywe alarmy).
+//
+// Rozróżnienie jest strukturalne, nie po nazwie karty: obiekty płacące koszt
+// wskazuje sama KOMENDA (objectId + jawne pola tapCreatureId/crew/...).
+
+test('M213: tap ŹRÓDŁA to koszt, a tap CELU tym samym efektem to skutek', () => {
+  const state = newState();
+  addRealCard(state, 'sk', 'sterling-keykeeper', 'p1', 'battlefield');
+  addRealCard(state, 'mine', 'frontline-war-rager', 'p1', 'battlefield');
+  state.objects.set('sk', Object.freeze({ ...state.objects.get('sk'), summoningSickness: false }));
+  state.objects.set('mine', Object.freeze({ ...state.objects.get('mine'), summoningSickness: false }));
+  addMana(state, 'p1', 3, { colors: ['W', 'U', 'R'] });
+
+  const probe = probeCommandEffect(state, {
+    type: 'activate_ability', playerId: 'p1', objectId: 'sk', abilityIndex: 0, targets: ['mine'],
+  });
+  assert.ok(probe.ok, 'sonda musi wykonać komendę');
+  assert.equal(probe.ownOtherTaps, 1, 'tapnięcie źródła = zapłacony koszt');
+  assert.equal(probe.ownEffectTaps, 1, 'tapnięcie celu = SKUTEK, nie koszt');
+});

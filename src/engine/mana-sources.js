@@ -9,10 +9,12 @@ import { effectiveSubtypes } from './permanents.js';
  * - colors = ['W','U','B','R','G'] = any-color
  * - amount = ile many daje (domyślnie 1, Apprentice Wizard daje 3)
  *
- * Dla lądów, które mają dwie zdolności (np. Holdout Settlement: {T}: Add {C} oraz
- * {T}, Tap creature: Add any), traktujemy je jako any-color, bo druga zdolność
- * pozwala na dowolny kolor (wymaga stworа, ale dla checku kolorów przyjmujemy
- * że może dać any).
+ * UWAGA (M193, strażnik M200/N1): karty, których zdolności many są opisane
+ * DESKRYPTOREM (`{ type: 'add_mana', colors: [...] }`), do tej mapy NIE
+ * wchodzą — gałąź deskryptora w getSourceForObject ma pierwszeństwo, więc
+ * taki wpis byłby martwym cieniem drugiej kopii tej samej reguły (L41).
+ * Mapa obsługuje wyłącznie produkcję IMPLIKOWANĄ, bez deskryptora
+ * (basicki, tron Urzy, tokeny).
  */
 
 const MANA_SOURCE_MAP = Object.freeze({
@@ -26,7 +28,6 @@ const MANA_SOURCE_MAP = Object.freeze({
   // Non-basic lands
   'rupture-spire': { colors: ['W', 'U', 'B', 'R', 'G'], amount: 1 }, // any
   'prismari-campus': { colors: ['U', 'R'], amount: 1 },
-  'holdout-settlement': { colors: ['W', 'U', 'B', 'R', 'G'], amount: 1 }, // ma any via druga zdolność
   'unstable-frontier': { colors: [], amount: 1 }, // tylko {C}
   'secluded-steppe': { colors: ['W'], amount: 1 },
   'raucous-carnival': { colors: ['R', 'W'], amount: 1 },
@@ -44,8 +45,9 @@ const MANA_SOURCE_MAP = Object.freeze({
   'apprentice-wizard': { colors: [], amount: 3 }, // {C}{C}{C}
   'token_treasure': { colors: ['W', 'U', 'B', 'R', 'G'], amount: 1 },
   // Static Net (BRO): Powerstone — „{T}: Add {C} — Spend this mana only to
-  // cast artifact spells.\" Restrykcja artefaktowa nieimplementowana (engine
-  // nie zna ograniczeń użycia many poza fromTreasure); produkuje bezbarwną {C}.
+  // cast artifact spells.\" Produkuje bezbarwną {C}; ograniczenie niesie
+  // deskryptor zdolności (spendOnly:'artifact') z karty/tokenu i jest
+  // respektowane przez resources.js (restrictedPool — M214).
   'token_powerstone': { colors: [], amount: 1 },
   // Karty Z DARMOWĄ zdolnością „{T}: Add …" NIE wchodzą do mapy —
   // kolory/ilość czytane są z deskryptora (manaAbilityColors/Amount),

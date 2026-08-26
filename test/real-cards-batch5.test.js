@@ -157,26 +157,45 @@ test('Midnight Guard: wejście landa NIE odkręca (tylko stwory)', () => {
 // --- Holdout Settlement: {T} + tap stwora = mana ---------------------------
 
 test('Holdout Settlement: aktywacja {T}+tap stwora dodaje manę i tapuje oba', () => {
+  // M212/A (zgłoszenie właściciela): karta ma DWIE zdolności — {T}: Add {C}
+  // oraz {T}, tapnij stwora: Add any. Zdolność „ze stworem" to indeks 1.
   const state = mainPhase(game());
-  const settlement = addRealCard(state, 'hold', 'holdout-settlement', 'p1', 'battlefield');
+  addRealCard(state, 'hold', 'holdout-settlement', 'p1', 'battlefield');
   addSimpleCreature(state, 'dork', 'p1', { summoningSickness: false });
   const view = playerView(state, 'p1');
-  const cmd = view.legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'hold');
-  assert.ok(cmd, 'widok oferuje aktywację Holdout Settlement');
-  const result = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'hold', abilityIndex: 0 });
+  const cmd = view.legalCommands.find((c) => c.type === 'activate_ability'
+    && c.objectId === 'hold' && c.tapCreatureId != null);
+  assert.ok(cmd, 'widok oferuje aktywację z tapnięciem stwora');
+  const result = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'hold', abilityIndex: 1 });
   assert.ok(result.ok, JSON.stringify(result.events[0]));
   assert.equal(state.players[0].mana, 1, 'mana dodana do puli');
   assert.equal(state.objects.get('hold').tapped, true, 'land zatapiany jako koszt');
   assert.equal(state.objects.get('dork').tapped, true, 'stwór zatapiany jako dodatkowy koszt');
 });
 
-test('Holdout Settlement: bez nietapniętego stwora zdolność jest niedostępna', () => {
+test('Holdout Settlement: bez nietapniętego stwora zostaje tylko {T}: Add {C}', () => {
+  // Przed M212/A karta miała jedną, hybrydową zdolność, więc bez stwora nie
+  // dawała NIC — wbrew Oracle, gdzie {T}: Add {C} jest bezwarunkowe.
   const state = mainPhase(game());
   addRealCard(state, 'hold', 'holdout-settlement', 'p1', 'battlefield');
   addSimpleCreature(state, 'dork', 'p1', { tapped: true, summoningSickness: false });
   const view = playerView(state, 'p1');
   const cmds = view.legalCommands.filter((c) => c.type === 'activate_ability' && c.objectId === 'hold');
-  assert.equal(cmds.length, 0, 'brak nietapniętego stwora → brak aktywacji');
+  assert.equal(cmds.some((c) => c.tapCreatureId != null), false,
+    'brak nietapniętego stwora → brak wariantu „any color"');
+});
+
+test('M212/A: Holdout Settlement — {T}: Add {C} nie tapuje stwora (zgłoszenie A)', () => {
+  // Objaw zgłoszony przez właściciela: jedyna oferta brzmiała „(koszt T,
+  // tapnij swojego stwora) — dodaj 1 manę bezbarwną", czyli koszt drugiej
+  // zdolności sklejony z efektem pierwszej. Klik tapował stwora za {C}.
+  const state = mainPhase(game());
+  addRealCard(state, 'hold', 'holdout-settlement', 'p1', 'battlefield');
+  addSimpleCreature(state, 'dork', 'p1', { summoningSickness: false });
+  const result = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'hold', abilityIndex: 0 });
+  assert.ok(result.ok, JSON.stringify(result.events[0]));
+  assert.equal(state.objects.get('hold').tapped, true, 'land zatapiany jako koszt');
+  assert.equal(state.objects.get('dork').tapped, false, 'stwór NIE jest kosztem zdolności {C}');
 });
 
 test('Holdout Settlement: zwykłe {T}: Add {C} nadal działa (domyślny land)', () => {

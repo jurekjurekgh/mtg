@@ -2,7 +2,7 @@ import { event } from '../protocol/types.js';
 import { triggerTargetEffectFriendly } from './effect-intent.js';
 import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaPurpose } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
-import { deathZoneFor, effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource, transformedCharacteristics } from './permanents.js';
+import { deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource, transformedCharacteristics } from './permanents.js';
 import { applyEffect, dealNonCombatDamage, maybeAddFaceDownFlyingCounter } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature, isLegalAuraHost, attachEquipmentToCreature } from './attachments.js';
@@ -384,6 +384,14 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       if (hasHexproofAgainst(state, object, casterId)) throw new Error(`Nielegalny cel: ${targetId} (hexproof)`);
       return object;
     }
+    if (spec?.type === 'nonblack_creature') {
+      // Dead Ringers (APC): „two target nonblack creatures" — w odróżnieniu
+      // od Expunge artefaktowe stwory SĄ legalnym celem (liczy się tylko kolor).
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
+      if (effectiveColors(object).includes('B')) throw new Error(`Nielegalny cel: ${targetId} (black)`);
+      if (hasHexproofAgainst(state, object, casterId)) throw new Error(`Nielegalny cel: ${targetId} (hexproof)`);
+      return object;
+    }
     if (spec?.type === 'nonartifact_nonblack_creature') {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
       const isArtifact = object.kind === 'artifact' || (object.types ?? []).includes('Artifact');
@@ -467,7 +475,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   }
   if (sacrificeCost && payAltCost) {
     if (orPayMana == null || effectiveSpellManaCost(state, object) + orPayMana > producibleMana(state, playerId, null, spellManaPurpose(object))) {
-      throw new Error('Za mało many na alternatywny koszt Lash of the Balrog');
+      throw new Error('Za mało many na alternatywny koszt dodatkowy');
     }
   }
   // Batch 46 (Cathartic Reunion): koszt „discard two cards" — walidacja PRZED
@@ -702,7 +710,7 @@ export function castMadnessSpell(state, playerId, objectId, targets, modeIndex) 
 function castFireball(state, playerId, objectId, targets, xValue) {
   const object = state.objects.get(objectId);
   if (!object || object.controllerId !== playerId || object.zone !== 'hand' || object.kind !== 'spell' || !object.spell?.fireball) {
-    throw new Error('To nie jest rzucalny Fireball z ręki');
+    throw new Error('To nie jest rzucalny czar X z dowolną liczbą celów z ręki');
   }
   if (object.spell.timing === 'sorcery') {
     const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
@@ -719,24 +727,24 @@ function castFireball(state, playerId, objectId, targets, xValue) {
   // czaru — CR 702.16b) i/lub gracze. Brak górnego limitu poza opłacalnością.
   const seen = new Set();
   for (const tId of chosen) {
-    if (seen.has(tId)) throw new Error('Cel Fireball nie może się powtarzać');
+    if (seen.has(tId)) throw new Error('Cel czaru X nie może się powtarzać');
     seen.add(tId);
     const target = state.objects.get(tId);
     const isPlayer = state.players.some((p) => p.id === tId);
     if (isPlayer) continue;
-    if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') throw new Error(`Nielegalny cel Fireball: ${tId}`);
-    if (hasHexproofAgainst(state, target, playerId)) throw new Error(`Nielegalny cel Fireball (hexproof): ${tId}`);
+    if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') throw new Error(`Nielegalny cel czaru X: ${tId}`);
+    if (hasHexproofAgainst(state, target, playerId)) throw new Error(`Nielegalny cel czaru X (hexproof): ${tId}`);
     // Protection (CR 702.16b): permanent z protection od koloru czaru nie może
     // być celem. Fireball to {R} — kolory źródła = kolory karty.
     const protColors = effectiveProtectionFromColors(state, target);
     if ((object.colors ?? []).some((c) => protColors.includes(c))) {
-      throw new Error(`Nielegalny cel Fireball (protection): ${tId}`);
+      throw new Error(`Nielegalny cel czaru X (protection): ${tId}`);
     }
   }
   // Koszt: {X} + {R} + {1} za każdy cel ponad pierwszy.
   const extraTargets = Math.max(0, chosen.length - 1);
   const totalCost = X + (object.manaCost ?? 0) + extraTargets;
-  if (!object.plotted && totalCost > producibleMana(state, playerId, null, spellManaPurpose(object))) throw new Error('Niewystarczająca mana na Fireball');
+  if (!object.plotted && totalCost > producibleMana(state, playerId, null, spellManaPurpose(object))) throw new Error('Niewystarczająca mana na czar X');
   if (!object.plotted && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
   const manaSpent = object.plotted ? 0 : totalCost;
   spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId), spellManaPurpose(object));
@@ -880,7 +888,7 @@ export function legalTargetCandidates(state, playerId, spec, sourceObject = null
     // je odrzucał — bot wybierał nielegalną komendę (benchmark crash).
     const protColors = effectiveProtectionFromColors(state, target);
     if (protColors.length > 0) {
-      const srcColors = sourceObject.colors ?? [];
+      const srcColors = effectiveColors(sourceObject);
       if (srcColors.some((c) => protColors.includes(c))) return false;
     }
     return true;
@@ -1152,6 +1160,15 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
         return isEnchantment;
       });
     }
+    // Dead Ringers (APC): nonblack creature — artefaktowe stwory dozwolone.
+    case 'nonblack_creature': {
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+        if (hasHexproofAgainst(state, object, playerId)) return false;
+        return !effectiveColors(object).includes('B');
+      });
+    }
     // Batch 23: Expunge — nonartifact, nonblack creature (CR 205.1, 300.1).
     case 'nonartifact_nonblack_creature': {
       return state.zones.battlefield.filter((objectId) => {
@@ -1179,14 +1196,31 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
   }
 }
 
-/** Iloczyn kartezjański list kandydatów (warianty celów czaru). */
+/**
+ * Iloczyn kartezjański list kandydatów (warianty celów czaru).
+ *
+ * M212/Z6 (audyt Żywym Testerem, CR 601.2c): TEN SAM obiekt nie może zostać
+ * wskazany w dwóch slotach celu tego samego czaru („two target nonblack
+ * creatures" wymaga DWÓCH różnych stworów). Dead Ringers jest pierwszą kartą
+ * w katalogu z dwoma slotami tego samego typu, więc dotąd kolizja była
+ * nieosiągalna i filtr nie istniał — gra oferowała „cel: Ainok Artillerist,
+ * Ainok Artillerist" przy jednym stworze na stole i niszczyła go pojedynczo.
+ *
+ * Filtr siedzi TUTAJ (a nie w opisie karty), bo dotyczy każdego czaru
+ * wielocelowego — sześć miejsc budujących oferty korzysta z tej funkcji.
+ * `null` (slot „up to one" / odmowa celu) powtarzać wolno — to brak celu,
+ * nie obiekt.
+ */
 function cartesian(pools) {
   if (pools.length === 0) return [[]];
   const [first, ...rest] = pools;
   const tails = cartesian(rest);
   const out = [];
   for (const head of first) {
-    for (const tail of tails) out.push([head, ...tail]);
+    for (const tail of tails) {
+      if (head !== null && head !== undefined && tail.includes(head)) continue;
+      out.push([head, ...tail]);
+    }
   }
   return out;
 }

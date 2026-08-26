@@ -330,6 +330,12 @@ export function createGameState({ seed, players }) {
     // liczników +1/+1 na źródło; resolve_devour_choice{done:true} kończy.
     // Wpis: { playerId, sourceId, counters, candidateIds, restorePriorityTo }.
     pendingDevours: [],
+    // Odłożone triggery wejścia stwora z devour (CR 702.82a — devour to
+    // ZASTĘPCZY efekt: liczniki są na permanencie zanim odpali się jakikolwiek
+    // trigger ETB). Decyzja jest blokująca, więc triggery wejścia czekają na
+    // opróżnienie pendingDevours i odpala je processTriggersScan. Wpis:
+    // { objectId, cardId, enteredTapped }.
+    pendingDevourEtbs: [],
     // Kolejka decyzji endure (TDM — Kin-Tree Nurturer): „endures N" to wybór
     // gracza: N liczników +1/+1 na źródle ALBO token Spirit N/N biały.
     // Wpis: { playerId, sourceId, counters, restorePriorityTo }.
@@ -387,6 +393,7 @@ export function createGameState({ seed, players }) {
     // M177/A (Agate Assault): id permanentów „if it would die this turn,
     // exile it instead” — czyszczone w cleanup.
     exileIfDiesThisTurn: [],
+    gainLifeIfDiesThisTurn: [],
     // Animacje z linkiem do źródła (Skilled Animator — „as long as this
     // creature remains on the battlefield"): wpisy { sourceId, targetId };
     // cofane przy odejściu źródła z pola bitwy (objects.js).
@@ -1436,6 +1443,7 @@ export function execute(state, input) {
     }
     state.events.push(event('reveal_order_resolved', {
       playerId: cmd.playerId, total: pending.cardIds.length, order: [...order],
+      sourceCardId: pending.sourceCardId ?? null,
     }));
     // applyEffect wykonuje reorder (CR 401.4) + opcjonalny damage z
     // `thenDamage` jeśli named „<effect.namedCard>" był w reveal
@@ -1646,6 +1654,7 @@ export function execute(state, input) {
       state.pendingFertileThicket = null;
       state.events.push(event('fertile_thicket_resolved', {
         controllerId: pending.controllerId, chosenCardId: null, skipped: true,
+        sourceCardId: pending.sourceCardId ?? null,
       }));
       return accepted(state, cmd, { ok: true, events: state.events.slice(state.events.length - 1) });
     }
@@ -1675,6 +1684,7 @@ export function execute(state, input) {
     state.pendingFertileThicket = null;
     state.events.push(event('fertile_thicket_resolved', {
       controllerId: pending.controllerId, chosenCardId: chosenId,
+      sourceCardId: pending.sourceCardId ?? null,
     }));
     return accepted(state, cmd, { ok: true, events: state.events.slice(state.events.length - 1) });
   }
@@ -1717,8 +1727,13 @@ export function execute(state, input) {
     // Dwie kolejne decyzje resolve_search_choice (declinable); shuffle w
     // handlerze search (dystrybucyjnie równoważne pojedynczemu tasowaniu
     // po wyjęciu obu kart — biblioteka tasuje się seedem tak samo).
+    // M212/B (ta sama klasa co etykieta UI): gdy obiekt zrodla juz nie
+    // istnieje (czar zszedl ze stosu), fallback podstawial nazwe PIERWSZEJ
+    // karty z ta mechanika — Roiling Regrowth potrafil sie przedstawic jako
+    // Springbloom Druid. Pending niesie wlasne `cardId` (M201/F); literal
+    // nazwy karty nie ma prawa zyc w core (ADR 0002).
     const source = state.objects.get(pending.sourceId)
-      ?? { controllerId: pending.controllerId, cardId: 'springbloom-druid' };
+      ?? { controllerId: pending.controllerId, cardId: pending.cardId ?? null };
     queueSearchChoice(state, source, {
       qualifier: { types: ['Basic', 'Land'] },
       destination: 'battlefield',
@@ -1746,6 +1761,7 @@ export function execute(state, input) {
     }
     state.events.push(event('index_resolved', {
       playerId: pending.playerId, count: pending.objectIds.length, order: [...order],
+      sourceCardId: pending.sourceCardId ?? null,
       // M100/E4: ustalona kolejność = wiedza własna (opis nazywa tylko jej autorowi).
       orderCardIds: order.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
     }));
@@ -2236,7 +2252,7 @@ export function execute(state, input) {
       if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
         state.turn.priorityPlayerId = pending.restorePriorityTo;
       }
-      state.events.push(event('epic_experiment_resolved', { playerId: pending.playerId, count: pending.exileIds.length, restToGrave: rest.length }));
+      state.events.push(event('epic_experiment_resolved', { playerId: pending.playerId, count: pending.exileIds.length, restToGrave: rest.length, sourceCardId: pending.sourceCardId ?? null }));
       const resolvedEvents = state.events.slice(before);
       if (state.pendingSpell) {
         const spellPending = state.pendingSpell;
@@ -2909,15 +2925,26 @@ export function execute(state, input) {
       if (chosen != null) {
         const target = state.objects.get(chosen);
         if (target && target.zone === 'battlefield' && target.kind === 'creature') {
+          // CR 707.2: kopiowane są WYŁĄCZNIE wartości kopiowalne, czyli te
+          // wydrukowane na karcie (plus efekty kopiowania i „as enters”).
+          // Efekt „until end of turn” zmieniający charakterystyki — animacja
+          // artefaktu na stwora (Skilled Animator) — kopiowalny NIE jest.
+          // Bez tego Jwari Shapeshifter kopiujący ożywiony artefakt rodził się
+          // jako stwór 5/5 i po wygaśnięciu animacji oryginału zostawał
+          // trwałym stworem, którym jego karta nigdy nie była. Ta sama
+          // poprawka co w token-kopii (effects.js) — jedna reguła, dwie
+          // ścieżki, więc muszą czytać tę samą bazę (L48).
+          const copyBase = target.originalBeforeAnimation ?? target;
           const updated = Object.freeze({
             ...src,
             enteringAsCopy: undefined,
-            power: target.power, toughness: target.toughness,
-            colors: [...(target.colors ?? [])],
-            types: [...(target.types ?? [])],
-            subtypes: [...(target.subtypes ?? [])],
-            keywords: [...(target.keywords ?? [])],
-            abilities: [...(target.abilities ?? [])],
+            power: copyBase.power ?? null, toughness: copyBase.toughness ?? null,
+            colors: [...(copyBase.colors ?? target.colors ?? [])],
+            types: [...(copyBase.types ?? target.types ?? [])],
+            subtypes: [...(copyBase.subtypes ?? target.subtypes ?? [])],
+            keywords: [...(copyBase.keywords ?? target.keywords ?? [])],
+            abilities: [...(copyBase.abilities ?? target.abilities ?? [])],
+            kind: copyBase.kind ?? target.kind,
             cardName: target.cardName ?? target.cardId,
             // M141/B (station/saga): kopia traciła deskryptory station/saga
             // (jak token-kopia). CR 707.2 — kopiowalne są WSZYSTKIE cechy.
@@ -3737,9 +3764,9 @@ export function execute(state, input) {
         fromId: cmd.targetId, objectId: bfId, object: permanent, cardId: permanent.cardId,
         controllerId: pending.playerId, putFromHand: true,
       }));
-      state.events.push(event('hand_creature_choice_resolved', { playerId: pending.playerId, putCreature: true, cardId: permanent.cardId }));
+      state.events.push(event('hand_creature_choice_resolved', { playerId: pending.playerId, putCreature: true, cardId: permanent.cardId, sourceCardId: pending.sourceCardId ?? null }));
     } else {
-      state.events.push(event('hand_creature_choice_resolved', { playerId: pending.playerId, putCreature: false }));
+      state.events.push(event('hand_creature_choice_resolved', { playerId: pending.playerId, putCreature: false, sourceCardId: pending.sourceCardId ?? null }));
     }
     state.pendingHandCreature = null;
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
@@ -3843,23 +3870,23 @@ export function execute(state, input) {
   // Oczekujący wybór celu triggera delirium (Fear of Burning Alive):
   // kontroler triggera wybiera stwora poszkodowanego gracza; źródło zadaje
   // mu obrażenia równe obrażeniom, które odpaliły trigger (snapshot amount).
-  // Lifelink/infect źródła respektuje generyczna ścieżka obrażeń (markDamage
-  // na stworze — tu bez lifelink, jak przy efekcie damage).
+  // Same obrażenia zadaje generyczna ścieżka dealNonCombatDamage, więc
+  // respektują ochronę, tarcze, infect i lifelink źródła (CR 702.15/16a/90).
   if (state.pendingDeliriumTargets.length > 0) {
     const pending = state.pendingDeliriumTargets[0];
     if (cmd.type !== 'resolve_delirium_target') return reject('delirium_target_unresolved');
     if (cmd.playerId !== pending.playerId) return reject('delirium_target_not_your_decision');
     if (!legalDeliriumTargetCandidates(state, pending).includes(cmd.targetId)) return reject('illegal_delirium_target');
     const before = state.events.length;
-    state.events.push(event('damage_dealt', {
-      source: pending.sourceId, target: cmd.targetId, amount: pending.amount, combat: false,
-      // M155 (audyt żywym testerem): LKI cardId — cel mógł zginąć w SBA tego
-      // samego rozstrzygnięcia; bez tego log pokazywał „(?)" (Fear of Burning
-      // Alive delirium: „zadaje 4 obrażenia (?)").
-      sourceCardId: state.objects.get(pending.sourceId)?.cardId ?? null,
-      targetCardId: state.objects.get(cmd.targetId)?.cardId ?? null,
-    }));
-    markDamage(state, cmd.targetId, pending.amount);
+    // CR 702.15/702.16a/702.90/615: obrażenia z delirium to ZWYKŁE obrażenia
+    // niecombatowe — podlegają ochronie, tarczom prewencji, infect i dają
+    // lifelink. Wcześniej ta ścieżka wołała markDamage wprost, więc omijała
+    // je wszystkie naraz (stwór z „protection from red" dostawał 4 obrażenia
+    // od czerwonego źródła). Generyczna ścieżka dealNonCombatDamage zna te
+    // reguły i emituje własne zdarzenie damage_dealt z LKI celu (M155/M166B).
+    const deliriumSource = state.objects.get(pending.sourceId)
+      ?? { id: pending.sourceId, cardId: pending.sourceCardId ?? null, controllerId: pending.playerId };
+    dealNonCombatDamage(state, deliriumSource, cmd.targetId, pending.amount);
     state.pendingDeliriumTargets.shift();
     state.events.push(event('delirium_target_resolved', {
       playerId: cmd.playerId, sourceId: pending.sourceId,
@@ -4045,6 +4072,9 @@ export function execute(state, input) {
         for (const player of state.players) {
           player.mana = 0;
           player.manaPool = {};
+          // M214: pula many ograniczonej drukiem znika razem z resztą puli
+          // (CR 106.4) — bez tego osierocone jednostki zalegałyby w księgowaniu.
+          player.restrictedPool = {};
           player.treasureMana = 0;
           // M201 (znalezisko #3): licznik many ograniczonej znika razem z pulą
           // (CR 106.4) — stały licznik blokowałby płatności w kolejnych krokach.
@@ -4094,6 +4124,7 @@ export function execute(state, input) {
           state.cantBeRegeneratedThisTurn = [];
           // M177/A: znaczniki „exile zamiast śmierci” wygasają z końcem tury.
           state.exileIfDiesThisTurn = [];
+          state.gainLifeIfDiesThisTurn = [];
           // M158/Batch 39 (Invasion of the Giants III): rabat „this turn" wygasa.
           state.pendingSpellDiscounts = [];
           // CR 514.1 (limit ręki): w cleanup TYLKO AKTYWNY gracz odrzuca
@@ -4631,6 +4662,14 @@ export function playerView(state, playerId) {
         // i celu). ADR 0017. Zakryty permanent nie ma cech (CR 708.2) — dla
         // przeciwnika koszt zostaje ukryty.
         if (!hiddenFromViewer) entry.manaCost = object.manaCost ?? 0;
+        // M209 (audyt M207, Guildscorn Ward): KOLORY permanentu to informacja
+        // publiczna wydrukowana na karcie (CR 105.2) — bez niej bot nie mial
+        // jak ocenic, czy „protection from multicolored" cokolwiek blokuje,
+        // i traktowal jalowa aure jak zwykly buff. Zakryty permanent jest
+        // BEZBARWNY dla przeciwnika (CR 708.2), wiec kolory ida wylacznie do
+        // widza, ktory kartę zna — tak samo jak manaCost/subtypes/types wyzej.
+        // ADR 0017: skutek widoczny w grze musi byc widoczny w widoku.
+        if (!hiddenFromViewer && (object.colors ?? []).length) entry.colors = [...object.colors];
         // Keywordy efektywne (własne + tymczasowe granty + nadane przez
         // załączniki) — publiczna informacja liczona tak samo jak w combat.
         // Zakryty stwór nie ma własnych keywordów (CR 708.2), ale MOŻE mieć
@@ -4787,6 +4826,16 @@ export function playerView(state, playerId) {
         if (Object.keys(object.counters ?? {}).length > 0) waiting.counters = { ...object.counters };
         if (object.kind) waiting.kind = object.kind;
         if ((object.types ?? []).length) waiting.types = [...object.types];
+        // M212/Z7: deskryptor czaru dla kart czekających na DARMOWY rzut
+        // (suspend CR 702.62a, rebound CR 702.97, madness, impuls). Bez niego
+        // kontroler oceniał ofertę „rzuć za darmo" nie wiedząc, CO czar robi:
+        // wycena bota czytała `spell.effects` z widoku i dostawała pustą
+        // listę, więc każdy zestaw celów miał identyczny wynik i bot brał
+        // pierwszy z brzegu (tapnął własnego stwora zamiast wrogiego).
+        // Wygnanie jest strefą JAWNĄ (CR 406.3), a karta i tak pokazuje
+        // cardId — deskryptor nie dokłada informacji ukrytej. Zakryte
+        // wygnanie wychodzi wyżej z `hidden: true` i tu nie dociera.
+        if (object.spell) waiting.spell = object.spell;
         if (hiddenIdentity) {
           return { id: object.id, controllerId: object.controllerId, zone: object.zone, ...waiting, cardId: null, hidden: true };
         }
@@ -4794,6 +4843,11 @@ export function playerView(state, playerId) {
       return {
         id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
         plotted: Boolean(object.plotted), ...waiting,
+        // M209: kolory karty w strefach JAWNYCH (grob, wygnanie, stos) — grob
+        // jest publiczny (CR 400.2), a dla bota to jedyny legalny dowod, ze
+        // przeciwnik GRA kartami wielokolorowymi. Reka i biblioteka wracaja
+        // wyzej z `hidden: true`, wiec tu nie dotra (FoW zachowana).
+        ...((object.colors ?? []).length ? { colors: [...object.colors] } : {}),
       };
     });
   }
@@ -6022,9 +6076,12 @@ export function playerView(state, playerId) {
   // z czego rysować. `manaPool` to mapa profil-kolorów → liczba jednostek
   // (klucz `manaUnitKey`: 'U', 'UR', '' = bezbarwna). Pula jest jawną
   // informacją stołową (jak `mana`), więc trafia do widoku OBU graczy.
-  const players = state.players.map(({ id, name, life, mana, landPlays, poison, manaPool }) => ({
+  const players = state.players.map(({ id, name, life, mana, landPlays, poison, manaPool, restrictedPool }) => ({
     id, name, life, mana: mana ?? 0, landPlays: landPlays ?? 0, poison: poison ?? 0,
     manaPool: { ...(manaPool ?? {}) },
+    // M214: jednostki many ograniczonej drukiem (Powerstone) — UI/audyt widzi
+    // je osobno, żeby nie liczyć ich jako „mana na wszystko".
+    restrictedPool: { ...(restrictedPool ?? {}) },
   }));
   // Fog of War scry: patrzący (właściciel decyzji) widzi treść kart (jak rękę),
   // przeciwnik dowiaduje się wyłącznie, że decyzja trwa i ile kart obejrzano.
@@ -6234,6 +6291,13 @@ export function playerView(state, playerId) {
           targetIds: Object.freeze([...state.pendingDamageDivision.targetIds]),
           total: state.pendingDamageDivision.total,
         }
+      : null,
+    // M212/B (zgłoszenie właściciela): decyzję „poświęć ląd" wywołuje kilka
+    // kart (Springbloom Druid, Roiling Regrowth) — UI nazywało ją na sztywno
+    // pierwszą z nich. Źródło jedzie z pendingu do widoku (ten sam wzorzec co
+    // pendingHandTopChoice), więc etykieta może nazwać WŁAŚCIWĄ kartę.
+    pendingSpringbloom: activeSpringbloom
+      ? { sourceCardId: state.pendingSpringbloom.cardId ?? null }
       : null,
     // M163/A (uwaga właściciela): Exploit (Silumgar Butcher) — tytuł grupy
     // nazywa źródło decyzji. sourceCardId = karta publiczna na polu bitwy;

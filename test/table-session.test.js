@@ -311,7 +311,9 @@ test('log opisuje wybór kart z grobu na wierzch biblioteki (Forever Young)', ()
     assert.ok(engineExecute(state, { type: 'resolve_graveyard_top_choice', playerId: 'p2', done: true }).ok);
   }
   const texts = scenarioTexts(state, registry);
-  assert.ok(texts.some((t) => /wybiera karty-stwory z grobu na wierzch biblioteki \(Forever Young\)/.test(t)),
+  // M213: nazwa karty NADAL jest w logu, ale pochodzi z danych zdarzenia
+  // (sourceCardId → srcName), nie z literalu w kodzie — więc prefiks, nie nawias.
+  assert.ok(texts.some((t) => /^Forever Young: .*wybiera karty-stwory z grobu na wierzch biblioteki/.test(t)),
     `brak etykiety wymagania graveyard-top: ${texts.filter((t) => t.includes('wierzch')).join(' | ')}`);
   assert.ok(texts.some((t) => /kończy wybieranie kart na wierzch biblioteki/.test(t))
     || texts.some((t) => /wraca z grobu na wierzch biblioteki/.test(t)),

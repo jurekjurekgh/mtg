@@ -1180,7 +1180,8 @@ test('Diament 5: etykieta wyboru wygnania Dreams jest czytelna', async () => {
   const session = minisession(registry, view);
   const label = commandLabel({ type: 'resolve_reveal_exile_hand', playerId: 'p1', cardId: 'h1' }, session, view);
   assert.ok(!label.includes('resolve_reveal_exile_hand'), `surowy slug: ${label}`);
-  assert.match(label, /Dreams of Steel and Oil — wygnaj z ręki/, label);
+  // M213: etykieta opisuje CZYNNOŚĆ, nie nazywa karty źródłowej (ADR 0002).
+  assert.match(label, /Wygnaj z ręki/, label);
 });
 
 test('Diament 6: koszt pozamany zdolności (odrzuć/poświęć) nie daje „(koszt )"', async () => {

@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Razorfoot+Griffin&set=inv&format=json",
+  "print": "inv",
+  "name": "Razorfoot Griffin",
+  "mana_cost": "{3}{W}",
+  "cmc": 4.0,
+  "type_line": "Creature — Griffin",
+  "oracle_text": "Flying (This creature can't be blocked except by creatures with flying or reach.)\nFirst strike (This creature deals combat damage before creatures without first strike.)",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [
+    "Flying",
+    "First strike"
+  ],
+  "set": "inv",
+  "set_name": "Invasion",
+  "collector_number": "29",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/8/1/819e2046-9b78-4fd0-92f8-798bfac51195.jpg?1783945714"
+  },
+  "pobrano": "2026-08-25"
+}

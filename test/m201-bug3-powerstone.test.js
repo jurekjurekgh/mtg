@@ -14,7 +14,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createGameState, addObject, playerView, execute } from '../src/engine/game-state.js';
 import { applyEffect } from '../src/engine/effects.js';
-import { producibleMana, spellManaPurpose } from '../src/engine/resources.js';
+import { addMana, producibleMana, spellManaPurpose } from '../src/engine/resources.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { TURN_STEPS, initialTurn } from '../src/engine/turn.js';
@@ -126,4 +126,37 @@ test('BUG3: ograniczenie działa też po RĘCZNYM tapnięciu (mana w puli)', () 
     'dla czaru-artefaktu — dostępna');
   assert.equal(producibleMana(state, 'p1'), 1,
     'M202/N1: dla zdolności aktywowanej (nie rzut czaru) — dostępna');
+});
+
+// M215 — CI czerwone na M214 (seed 2032): cast_permanent stwora {2} z WOLNĄ
+// jednostką many w puli + nietapniętym landem, przy JEDNOCZEŚNIE manie
+// Powerstone w puli. Oferta mówi TAK (produkujemy lądem), a płatność:
+//  • pętla auto-tapu porównywała `player.mana` (z maną ograniczoną) zamiast
+//    `player.mana − restrictedInPool` — land NIE był tapnięty, choć był
+//    potrzebny; konsumpcja zjadała mniej jednostek niż kwota, a
+//    `player.mana -= amount` rozjeżdżało księgowanie (pula + res ≠ mana);
+//  • w efekcie kolejna płatność (academy-journeymage w biegu 2032) liczyła
+//    producible z przekłamanej sumy i PADAŁA „Niewystarczająca mana” mimo
+//    oferty — łamanie L48 (oferta = walidacja) i CR 601.2h.
+test('BUG3/M215: auto-tap do-tapuje ląd, gdy w puli jest też mana Powerstone', () => {
+  const { state, tokenId } = stateWithPowerstone();
+  // Mana Powerstone do puli (kreator many).
+  const activate = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'activate_ability' && c.objectId === tokenId);
+  assert.equal(execute(state, activate).ok, true);
+  // Jedna WOLNA jednostka many + nietapnięty ląd: bez ograniczenia razem {2}.
+  addMana(state, 'p1', 1, { colors: [] });
+  put(state, 'forest', 'basic-forest', 'p1');
+  // Stwór {2} bez pipów (welder-automaton) jako CZYSTY Creature — cel bez
+  // dozwolonej many ograniczonej (druk Powerstone).
+  put(state, 'cre', 'welder-automaton', 'p1', 'hand', { types: ['Creature'], kind: 'creature', manaCost: 2 });
+  const cast = playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_permanent' && c.objectId === 'cre');
+  assert.ok(cast, 'oferta: 1 wolna z puli + 1 ląd = {2} (mana Powerstone wykluczona)');
+  const result = execute(state, cast);
+  assert.equal(result.ok, true, `płatność nie może paść — oferta = walidacja (L48), reason=${result.events[0]?.reason}`);
+  const p1 = state.players.find((p) => p.id === 'p1');
+  assert.equal(state.objects.get('forest').tapped, true,
+    'auto-tap musi dobrać ląd pomimo many Powerstone w puli (CR 601.2h)');
+  assert.equal(p1.mana, 1, 'w puli zostaje wyłącznie niedostępna mana Powerstone');
+  assert.deepEqual(p1.restrictedPool, { '': 1 }, 'mana ograniczona nietknięta');
 });

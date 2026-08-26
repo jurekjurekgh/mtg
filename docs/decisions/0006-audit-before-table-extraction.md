@@ -39,5 +39,5 @@ Standalone Wirtualny Stół będzie wydzielany etapami przez adaptery i stabilne
 
 ## Powiązania
 
-- [Bieżący stan](../PROJECT_STATE.md)
+- [Historia projektu](../PROJECT_HISTORY.md)
 - [Roadmapa — Etap 0](../ROADMAP.md#etap-0--repozytorium-i-audyt)

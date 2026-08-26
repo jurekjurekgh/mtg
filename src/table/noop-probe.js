@@ -231,8 +231,24 @@ export function probeCommandEffect(state, cmd, { maxCommands = MAX_PROBE_COMMAND
   const manaOf = (players, index) => JSON.stringify([players[index]?.mana ?? null, players[index]?.manaPool ?? null]);
   const manaChanged = playerIndex >= 0 && manaOf(before.players, playerIndex) !== manaOf(after.players, playerIndex);
 
+  // M213 (Żywy Tester, worek-legend s=66): tapnięcie ŹRÓDŁA to KOSZT
+  // („{2}, {T}: ..."), ale tapnięcie CELU tym samym efektem to SKUTEK.
+  // Oba trafiały do jednego licznika `ownOtherTaps`, więc zdolność
+  // tapująca własnego stwora wyglądała na „sam zapłacony koszt" i detektor
+  // zgłaszał poprawną ofertę jako no-opa. Obiekty płacące koszt znamy
+  // z KOMENDY (źródło + jawne id kosztowe), więc rozdzielamy je strukturalnie.
+  const costTapIds = new Set([
+    cmd?.objectId,
+    cmd?.tapCreatureId,
+    cmd?.tapOtherCreatureId,
+    cmd?.tapPermanentCostId,
+    ...(Array.isArray(cmd?.crewCreatureIds) ? cmd.crewCreatureIds : []),
+    ...(Array.isArray(cmd?.tapArtifactIds) ? cmd.tapArtifactIds : []),
+  ].filter((id) => id != null));
+
   let ownLandTaps = 0;
   let ownOtherTaps = 0;
+  let ownEffectTaps = 0;
   let opponentTaps = 0;
   let ownUntaps = 0;
   let opponentUntaps = 0;
@@ -251,7 +267,8 @@ export function probeCommandEffect(state, cmd, { maxCommands = MAX_PROBE_COMMAND
       const isLand = (beforeObj?.types ?? []).some((t) => String(t).toLowerCase() === 'land');
       if (afterObj?.tapped === true && beforeObj?.tapped !== true) {
         if (own && isLand) ownLandTaps += 1;
-        else if (own) ownOtherTaps += 1;
+        else if (own && costTapIds.has(beforeObj?.id)) ownOtherTaps += 1;
+        else if (own) ownEffectTaps += 1;   // własny permanent tapnięty przez EFEKT
         else opponentTaps += 1;
       } else if (afterObj?.tapped === false && beforeObj?.tapped === true) {
         if (own) ownUntaps += 1;
@@ -295,6 +312,7 @@ export function probeCommandEffect(state, cmd, { maxCommands = MAX_PROBE_COMMAND
     effectDiffs: effectDiffs.slice(0, 24),
     ownLandTaps,
     ownOtherTaps,
+    ownEffectTaps,
     opponentTaps,
     ownUntaps,
     opponentUntaps,

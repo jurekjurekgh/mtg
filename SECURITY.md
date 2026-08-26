@@ -96,7 +96,7 @@ To wymaganie produktowe, ale traktujemy je jako element bezpieczeństwa:
   do klienta, który nie ma prawa ich znać;
 - każdy PR dotykający danych gry musi to sprawdzić — punkt jest w szablonie PR;
 - docelowy poziom ochrony (UI-only kontra backend) pozostaje otwartym pytaniem
-  w [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md) i zostanie rozstrzygnięty osobnym ADR.
+  w [docs/PROJECT_HISTORY.md](docs/PROJECT_HISTORY.md) i zostanie rozstrzygnięty osobnym ADR.
 
 Zob. [ADR 0003 — Widoki graczy i Fog of War](docs/decisions/0003-player-specific-views-and-fow.md).
 
@@ -114,4 +114,4 @@ Nie traktujemy jako podatności:
 - błędów reguł gry i niepoprawnych rozstrzygnięć — to zwykłe zgłoszenia błędów engine;
 - braków w obsłudze kart — zakres jest świadomie ograniczony (ADR 0001);
 - widoczności obu rąk w **obecnej**, ręcznej aplikacji kolekcjonerskiej — to znany stan
-  wyjściowy opisany w `docs/PROJECT_STATE.md`.
+  wyjściowy opisany w `docs/PROJECT_HISTORY.md`.

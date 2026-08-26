@@ -37,7 +37,7 @@ zależeć od pamięci pojedynczej sesji.
    - kolejkę zadań z priorytetami i decyzjami właściciela;
    - pułapki środowiska (blokady egressu, ograniczenia tokena, znane problemy z gitem).
 4. Ta sama treść, w części trwałej (stan, kolejka, decyzje), ląduje **w repozytorium**:
-   `docs/PROJECT_STATE.md` oraz `docs/setup/HANDOFF_<data>.md`. Blok w czacie jest
+   `docs/PROJECT_HISTORY.md` oraz `docs/setup/HANDOFF_<data>.md`. Blok w czacie jest
    wygodą operacyjną; źródłem prawdy pozostaje repozytorium.
 5. Agent rozpoczynający sesję traktuje otrzymany blok jako **sugestię**, a rozbieżności
    z repozytorium rozstrzyga na korzyść repozytorium (zasada „Źródło prawdy” z `AGENTS.md`).
@@ -52,7 +52,7 @@ zależeć od pamięci pojedynczej sesji.
 
 ### Koszty i ryzyka
 
-- Każda sesja kończy się dodatkową pracą dokumentacyjną (handoff + `PROJECT_STATE`).
+- Każda sesja kończy się dodatkową pracą dokumentacyjną (handoff + `PROJECT_HISTORY`).
 - Blok przekazania może się zdezaktualizować, jeśli po jego napisaniu wejdą kolejne
   zmiany — dlatego pisze się go jako ostatni krok sesji i uzupełnia po scaleniu.
 

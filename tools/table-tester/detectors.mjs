@@ -416,6 +416,15 @@ export function detectNoResponseWindow(lines) {
     /^\s*\[modal choice\]/,                              // decyzja gracza w modalu
     /^\s*\[combat wizard\]/,                             // wizard walki po stronie gracza
     /^\s*STOS:\s*(?!Stos pusty)/,                        // snapshot z niepustym stosem
+    // M205: JAWNY dowód z głównego logu — człowiek dostał priorytet przy
+    // niepustym stosie i go oddał (CR 117.3b/117.4). Bez tego wpisu detektor
+    // nie odróżniał legalnego auto-passa („nie mam odpowiedzi") od realnego
+    // pominięcia okna, więc zgłaszał poprawne rozstrzygnięcia czarów bota
+    // (Withstand, Toll of the Invasion, Courage in Crisis) jako podejrzane.
+    // Zmierzone na seedzie 42 (dominaria vs ravnica): wpis pojawia się
+    // dokładnie między „Nieprzyjaciel rzuca Withstand" a „Withstand zostaje
+    // rozstrzygnięty".
+    /^\s*LOG:\s*Auto-pass:/,
   ];
   let pendingCast = null;
   for (const line of lines) {
@@ -546,7 +555,12 @@ export function detectNoEffectOffers(probeRecords) {
       || (probe.costSignature?.removeCounter && Boolean(probe.costCounterPaid)));
     // Tapnięcia/untapnięcia permanentów przeciwnika oraz zysk życia to
     // SKUTKI, nie koszty — nie zgłaszamy, gdy cokolwiek takiego zaszło.
+    // M213: tapnięcie WŁASNEGO permanentu przez EFEKT (nie jako koszt) też
+    // jest skutkiem — Sterling Keykeeper („{2}, {T}: Tap target creature")
+    // wycelowany we własnego stwora zmienia stan stołu. Bez tego licznika
+    // koszt i skutek wpadały do jednego worka i oferta wyglądała na no-opa.
     const onlyCosts = (probe.opponentTaps ?? 0) === 0
+      && (probe.ownEffectTaps ?? 0) === 0
       && (probe.ownUntaps ?? 0) === 0
       && (probe.opponentUntaps ?? 0) === 0
       && (probe.humanLifeDelta ?? 0) <= 0;
@@ -788,6 +802,46 @@ export function detectBotBuffsMyCreatures(lines, myPermanentNames = new Set(), e
  * górę wroga w swoim upkeepie (audyt Żywym Testerem M146). Ta sama matryca
  * co detectBotBuffsMyCreatures, tylko dla efektu odkręcającego.
  */
+/**
+ * M212/Z7 — bot kieruje SZKODLIWY efekt we WŁASNY permanent.
+ *
+ * `detectBotSelfHarmOnOwnPermanents` (oś 1) rozwiązuje to samo pytanie, ale
+ * czyta snapshoty „MOJE POLA:” / „POLA WROGA:” z transkryptu — a pod
+ * `--quiet` snapshotów nie ma prawie wcale, więc detektor milczał dokładnie
+ * tam, gdzie audyt szukał błędów (zmierzone: transkrypt z realnym błędem
+ * rebounda zawierał JEDEN snapshot, na samym końcu partii).
+ *
+ * Ta wersja używa danych STRUKTURALNYCH zbieranych w każdym kroku
+ * (myPermanentNames / enemyPermanentNames) — ta sama matryca co
+ * detectBotBuffsMyCreatures, tylko dla efektu szkodliwego skierowanego
+ * w SIEBIE. Nazwy widziane po obu stronach stołu pomijamy: fałszywy alarm
+ * jest gorszy niż cisza (L33 — najpierw podejrzewaj narzędzie).
+ */
+export function detectBotHarmsOwnPermanent(lines, enemyPermanentNames = new Set(), myPermanentNames = new Set(), harmfulNames = new Set()) {
+  const found = [];
+  const seen = new Set();
+  for (const line of lines) {
+    if (!/\[ROZGRYWKA\]|LOG:/.test(line)) continue;
+    if (!/Nieprzyjaciel (?:rzuca|aktywuje zdolność:)/.test(line)) continue;
+    const action = /Nieprzyjaciel (?:rzuca|aktywuje zdolność:)\s*(.+?)\s*→ cel:\s*([^⏎|]+?)\s*$/.exec(line);
+    if (!action) continue;
+    const cardName = action[1].trim();
+    const target = action[2].trim();
+    // Gracze („Ty”, „Nieprzyjaciel”) należą do detectBotSelfTargeting.
+    if (target === 'Ty' || target === 'Nieprzyjaciel') continue;
+    if (!harmfulNames.has(cardName)) continue;
+    // Cel musi stać po stronie BOTA i nie może być dwuznaczny.
+    if (!enemyPermanentNames.has(target) || myPermanentNames.has(target)) continue;
+    const key = `${cardName}|${target}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    push(found, 'bot',
+      `Bot kieruje szkodliwy efekt („${cardName}”) we WŁASNY permanent: ${target}`,
+      line.trim());
+  }
+  return found;
+}
+
 export function detectBotUntapsMyPermanent(lines, myPermanentNames = new Set(), enemyPermanentNames = new Set()) {
   const found = [];
   const UNTAP = /tryb: Odkręcenie|odkręć/i;
@@ -1012,6 +1066,7 @@ export function runDetectors(lines, { actionRecords = [], windowRecords = null, 
     // ręczne czytanie transkryptu dziesięć znalezisk (L27).
     ...detectBotBuffsMyCreatures(lines, myPermanentNames, enemyPermanentNames),
     ...detectBotUntapsMyPermanent(lines, myPermanentNames, enemyPermanentNames),
+    ...detectBotHarmsOwnPermanent(lines, enemyPermanentNames, myPermanentNames, harmfulNames),
     ...detectFalseNoEffect(lines),
     ...detectTruncatedCardText(lines),
     ...detectLogNoiseLeak(lines),

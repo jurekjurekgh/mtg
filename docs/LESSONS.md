@@ -9,7 +9,7 @@ kolejne sesje powinny wiedzieć, zanim popełnią ten sam błąd po raz trzeci.
 |---|---|---|
 | `docs/setup/HANDOFF_*.md` | stan JEDNEJ sesji: co zrobiono, co dalej | jednorazowy, traci aktualność |
 | `docs/plans/PLAN_*.md` | roadmapa JEDNEGO zadania | jednorazowy |
-| `docs/PROJECT_STATE.md` | bieżący stan projektu | żywy, ale opisuje „teraz" |
+| `docs/PROJECT_HISTORY.md` | dziennik sesji (historia) | żywy, ale NIE jest lekturą startową |
 | `docs/decisions/*.md` (ADR) | wiążąca decyzja architektoniczna | trwała, formalna |
 | **`docs/LESSONS.md`** | **wniosek/heurystyka diagnostyczna** | **trwała, nieformalna** |
 
@@ -24,6 +24,447 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 
 ---
 
+
+## L77 (2026-08-26) — Wejście na pole bitwy to ZDARZENIE o wielu następstwach: decyzja blokująca ani `return` nie mogą wycinać reszty
+
+**Objaw (M216/M217):** dwa błędy tej samej klasy, znalezione w tej samej sesji:
+
+- **Devour (Gorger Wurm, CR 702.82a):** trigger ETB (Impact Tremors) odpalał w
+  tym samym przebiegu skanu, w którym do kolejki trafiała decyzja devour —
+  więc widział stwora PRZED licznikami. Devour to ZASTĘPCZY efekt wejścia:
+  liczniki są na permanencie, zanim odpali się jakikolwiek trigger ETB.
+- **Exploit (Gurmag Drowner, CR 702.110a):** `return` przy braku kandydatów
+  przerywał przetwarzanie CAŁEGO zdarzenia wejścia — pomijały się też
+  triggery niezwiązane z exploitem („creature_you_control_enters",
+  „another_creature_enters", landfall…).
+
+**Przyczyna:** blok wejścia traktował „kolejkuj decyzję" i „odpal triggery"
+jako jedną niepodzielną jednostkę — pierwszy warunek mógł wstrzymać dalszy
+bieg (devour) albo go całkiem uciąć (exploit). Tymczasem to niezależne
+następstwa jednego faktu: permanent WSZEDŁ na pole bitwy niezależnie od tego,
+czy gracz ma co poświęcić i co wybierze.
+
+**Reguła:** w przetwarzaniu zdarzenia wejścia każda blokująca decyzja
+(devour/exploit/endure…) i każdy warunek „brak wyboru" pomija TYLKO własne
+następstwo; dalsze następstwa (własne ETB, triggery innych permanentów, saga,
+liczniki) muszą biec dalej. Kontrolne pytanie przy patchu: „czy ta gałąź
+(`return` / `push` decyzji) wycina coś, co zdarzyło się niezależnie od tej
+decyzji?" — jeśli tak, to `if` wokół decyzji, nie `return` z funkcji. Ta sama
+klasa obejmuje też „kolejkuj, ale kontynuuj skan" — kolejność następstw
+względem decyzji też jest częścią reguł (replacement przed triggerem —
+devour; trigger przed decyzją — exploit).
+
+
+## L75 (2026-08-25) — Fałszywy alarm detektora kosztuje więcej niż cisza; ale zanim go uciszysz, sprawdź POMIAR
+
+**Objaw (M213):** Żywy Tester zgłosił 4 no-opy na zdolności
+„{2}, {T}: Tap target creature" wycelowanej we własnego stwora. Zdolność
+działa poprawnie — sonda dowiodła, że silnik nie oferuje nawet tapowania
+już-tapniętego celu.
+
+**Przyczyna:** taka zdolność tapuje DWA permanenty naraz — źródło (koszt)
+i cel (skutek). Sonda liczyła oba do jednego licznika, więc warunek „jedyna
+zmiana to zapłacony koszt" wychodził prawdą. Rozróżnienie jest dostępne
+strukturalnie: obiekty płacące koszt wskazuje sama KOMENDA (`objectId` plus
+jawne `tapCreatureId`/`crewCreatureIds`/...), więc nie trzeba żadnej
+heurystyki po nazwie karty.
+
+**Reguła:** gdy detektor audytu oskarża kod, który po sprawdzeniu okazuje się
+poprawny, błąd leży w POMIARZE — i tam go napraw, zamiast dopisywać wyjątek
+na etykietę albo nazwę karty. Jeden licznik zbierający dwa różne zjawiska
+(koszt i skutek) zawsze będzie kłamał na przypadkach, gdzie występują razem.
+
+**Reguła druga:** po uciszeniu alarmu udowodnij, że detektor NADAL krzyczy na
+prawdziwym przypadku (L67). Tu: osobny test z realnym no-opem obok testu
+z poprawą oferty.
+
+
+## L76 (2026-08-25) — Żywy Tester mierzy `dist/`, nie `src/`
+
+**Objaw (M213):** po naprawie sondy partia kontrolna zwróciła **niezmienioną**
+liczbę zgłoszeń. Wyglądało to na „patch nie działa" i o mało nie doprowadziło
+do szukania drugiej przyczyny w kodzie, który był już poprawny.
+
+**Przyczyna:** `tools/table-tester/run-game.mjs` ładuje zbudowany artefakt
+`dist/mtg-table.html` (ADR 0011), a nie moduły z `src/`. Bez `npm run build`
+Tester mierzy poprzednią wersję aplikacji.
+
+**Reguła:** `npm run build` jest częścią pętli „popraw → zmierz" dla każdej
+zmiany w `src/`, nie tylko przed commitem. Gdy wynik pomiaru nie drgnął ani
+o jotę po realnej zmianie kodu, **najpierw podejrzewaj nieaktualny artefakt**,
+a dopiero potem własną diagnozę (L33 — najpierw podejrzewaj narzędzie).
+
+
+## L71 (2026-08-25) — Zmiana strefy tworzy NOWY obiekt (CR 400.7); „ten sam” id to złudzenie
+
+**Objaw (M212):** naprawa wyceny darmowego rzutu wyglądała na działającą
+(testy zielone), a była martwa. Helper szukał opisu czaru po `cmd.cardId`
+w `view.zones.exile` i zawsze dostawał `undefined`, więc kara za zły cel
+wynosiła 0 — dokładnie tyle, ile przed naprawą.
+
+**Przyczyna:** oferta darmowego rzutu niesie **dwa różne identyfikatory** —
+`cardId` (która to karta) i `objectId` (który to obiekt w strefie). Deskryptor
+`spell` wisi na OBIEKCIE, bo według CR 400.7 karta zmieniająca strefę staje się
+nowym obiektem i nie dziedziczy stanu poprzedniego. Lookup po `cardId` w strefie
+obiektów jest składniowo poprawny i semantycznie pusty.
+
+**Reguła:** przy pracy ze strefami rozróżniaj „tożsamość karty” od
+„tożsamości obiektu” i sprawdzaj, po którym kluczu indeksowana jest strefa.
+Gdy helper wyszukujący zwraca `null`/`undefined`, **kod nie jest neutralny —
+jest wyłączony**: asertuj w sondzie, że lookup COŚ znalazł, zanim uznasz
+naprawę za działającą (L68 — brak skutku bywa nieodróżnialny od poprawnego
+skutku).
+
+
+## L72 (2026-08-25) — Jeden objaw, kilka bliźniąt: naprawę kończy przegląd RODZEŃSTWA
+
+**Objaw (M212):** zgłoszenie „bot tapuje własnego blokera” dotyczyło rebounda.
+Po naprawie okazało się, że ta sama ślepota siedzi w `resolve_suspend_cast`,
+a po kolejnym przeglądzie — także w `resolve_madness_cast`. Trzy gniazda,
+jedna przyczyna: silnik enumeruje ofertę **per zestaw celów**, a bot wyceniał
+wyłącznie TYP efektu, więc wszystkie warianty miały identyczny wynik i wygrywał
+pierwszy z brzegu.
+
+**Reguła:** gdy przyczyną błędu jest **kształt interfejsu** („oferta niesie
+cele, konsument ich nie czyta”), znajdź WSZYSTKICH konsumentów tego kształtu,
+zanim uznasz temat za zamknięty — `grep` po nazwie komendy/rodzinie `case`.
+Naprawę wynieś do wspólnego helpera, żeby czwarte gniazdo rodziło się już
+poprawne. Każda gałąź potrzebuje **własnej** mutacji i **własnego** testu:
+mutacja bliźniaczej gałęzi (suspend) przeszła niewykryta przez test rebounda.
+
+
+## L73 (2026-08-25) — Detektor sprzężony z TRYBEM logowania milczy tam, gdzie audyt patrzy
+
+**Objaw (M212):** trzy partie Żywego Testera po naprawie dały 0 zgłoszeń.
+Zero było fałszywe: archiwalny transkrypt SPRZED naprawy zawierał wzorcowy
+przypadek (`Nieprzyjaciel rzuca Ojutai's Breath → cel: <własny stwór>`),
+a detektor `detectBotSelfHarmOnOwnPermanents` również go nie widział.
+
+**Przyczyna:** detektor ustalał właściciela celu, parsując snapshoty
+„MOJE POLA:” / „POLA WROGA:” z transkryptu. Audyt biega z `--quiet`, gdzie
+snapshotów niemal nie ma — w całym pliku był JEDEN, na końcu partii. Warunek
+„cel stoi po stronie bota” nigdy nie był spełniony, więc detektor był
+strukturalnie martwy w jedynym trybie, w którym go używano.
+
+**Reguła:** detektor opiera się na danych **strukturalnych** zbieranych przez
+sterownik (L40/M99), nigdy na tym, ile narzędzie akurat wypisało. A gdy
+detektor raportuje zero, udowodnij, że jest żywy: puść go na archiwalnym
+materiale z potwierdzonym błędem albo rozluźnij warunek i sprawdź, że
+zgłoszenie się pojawia. **Zero z martwego detektora wygląda identycznie jak
+zero z poprawnej gry.**
+
+
+## L74 (2026-08-25) — Ustalenie o UI weryfikuj w DOM, nie w spłaszczonym transkrypcie
+
+**Objaw (M212):** część „znalezisk” audytu brała się z czytania transkryptu,
+gdzie osobne elementy interfejsu są sklejane separatorem w jedną linię.
+Dwie różne opcje w panelu wyglądają tam jak jedna zlepiona etykieta —
+i odwrotnie, realny błąd sklejenia bywa nieodróżnialny od artefaktu zapisu.
+Z 13 partii 11 tropów okazało się poprawnym zachowaniem.
+
+**Reguła:** zanim zgłosisz błąd UI, sprawdź **strukturę DOM** (ile jest
+elementów `button.action`, jakie mają teksty), a nie jej spłaszczony zapis.
+Transkrypt służy do namierzenia miejsca, DOM — do rozstrzygnięcia.
+
+**Reguła druga (nazewnictwo):** nazwa karty w kodzie mechaniki (np. mechanika
+ochrzczona po karcie, która ją wprowadziła) **nie jest zgodą** na pokazanie
+tej nazwy w etykiecie UI. Gracz widzi wtedy w swoim panelu nazwę cudzej karty,
+której nie ma w talii. Deskryptor w interfejsie opisuje **czynność**
+(rzeczownik odczasownikowy), nigdy źródło implementacji (ADR 0002).
+
+
+## L68 (2026-08-25) — Sonda, która „nie znalazła błędu”, bo komenda została cicho odrzucona
+
+**Objaw (M210):** sonda sprawdzająca, czy obrażenia z delirium respektują
+`protection from red`, wypisała „OK — brak obrażeń”. Wniosek był fałszywy:
+komenda w ogóle się nie wykonała (`ok:false`, `unsupported_command`), bo
+`pending` nie miał pola `opponentId` i filtr kandydatów zwracał pustą listę.
+Brak skutku wziąłem za poprawny skutek.
+
+**Przyczyna:** sonda mierzyła STAN KOŃCOWY (`damage === 0`), nie sprawdzając,
+czy badana ścieżka w ogóle została wykonana. Każdy powód odrzucenia komendy —
+literówka w polu, brak wymaganego klucza, niespełniony warunek wejścia —
+produkuje ten sam „zielony” obraz co poprawna implementacja.
+
+**Reguła:** sonda silnika ZAWSZE asertuje najpierw, że komenda przeszła
+(`assert.equal(result.ok, true)`), a dopiero potem bada skutek. Gdy sonda ma
+udowodnić BŁĄD, musi też pokazać stan pośredni świadczący, że kod się wykonał
+(zdarzenie, licznik, zmiana pola). To samo dotyczy testów: `ok` komendy jest
+częścią asercji, nie tłem. Patrz też L13/L61 — dowód wymaga, żeby test potrafił
+być czerwony z właściwego powodu.
+
+
+## L69 (2026-08-25) — Dane karty i mechanika to dwa źródła prawdy o tym samym; kolor vs. produkowana mana
+
+**Objaw (M210):** podstawowe landy miały w danych `colors: ['R']` itd. — pole
+„kolor” zostało użyte do zapisania, JAKĄ MANĘ karta produkuje. Ponieważ kolor
+obiektu wyznacza jego koszt many (CR 202.2), a land kosztu nie ma, każdy land
+był w silniku kolorowy. Po animacji (Awaken) Swamp stawał się czarnym stworem:
+obchodził „protection from black” i spełniał „can't be blocked except by black”.
+Test regresyjny utrwalał pomyłkę, asertując `def.colors === ['B']` z komentarzem
+„produkuje {B}”.
+
+**Przyczyna:** dwa różne pojęcia (kolor obiektu / kolor produkowanej many)
+trafiły do jednego pola, bo dla landu „czarny” brzmi tak samo w obu znaczeniach.
+Ujawniło to dodatkowo, że Immersturm Skullcairn NIE MIAŁ deskryptora
+`{T}: Add {B}` — działał wyłącznie dzięki tej pomyłce.
+
+**Reguła:** gdy pole danych karty da się przeczytać na dwa sposoby, sprawdź,
+która ścieżka silnika je czyta i po co. Kolor obiektu = wyłącznie CR 202.2
+(koszt many, plus efekty nadające kolor); produkowana mana = deskryptor
+`add_mana`. Test, który cementuje takie pomieszanie, jest częścią błędu —
+poprawiamy go razem z kodem, nie „dostosowujemy” kodu do testu.
+
+
+## L70 (2026-08-25) — Weryfikacja mutacyjna wykrywa też kod NADMIAROWY, nie tylko brakujące testy
+
+**Objaw (M210):** nowa funkcja `effectiveColors` miała gałąź „obiekt typu Land
+→ kolor pusty” (CR 202.2). Mutacja tej gałęzi (wyłączenie jej) NIE uczyniła
+żadnego testu czerwonym, choć testy sprawdzały dokładnie ten scenariusz.
+
+**Przyczyna:** regułę egzekwowały już dane kart (landy mają `colors: []`),
+więc gałąź była martwa. Co gorsza, była też BŁĘDNA: efekt animujący może
+kolor nadać (Genju of the Spires — „becomes a 6/1 red Spirit creature land”,
+CR 613 warstwa 5), a zerowanie po typie by go zgubiło.
+
+**Reguła:** mutację robimy per GAŁĄŹ, nie per funkcja. Gałąź, której mutacja
+nie czerwieni żadnego testu, jest podejrzana z definicji: albo brakuje testu,
+albo gałąź jest zbędna. Zanim dopiszesz test, sprawdź najpierw, czy gałąź
+w ogóle powinna istnieć — usunięcie nadmiarowej reguły jest lepszą naprawą
+niż utrwalenie jej testem.
+
+
+## L67 (2026-08-25) — Helper, który istnieje, ale nie jest wołany w gałęzi, gdzie miał chronić
+
+**Objaw (M209):** sweep audytowy Żywego Testera zaraportował partię
+`srodziemie vs ravnica s=7` jako `[STOP] brak akcji w kroku 59` — czyli
+zacięcie narzędzia. W tej samej linii transkryptu stało jednak
+„Koniec partii — wygrywa Bot”. Podsumowanie sweepu policzyło tę partię jako
+niedokończoną (`koniec=0`), co fałszowało obraz audytu.
+
+**Przyczyna:** `run-game.mjs` miał helper `isGameOver()` z komentarzem
+opisującym dokładnie ten przypadek („panel akcji jest wtedy pusty
+prawidłowo”). Pętla kroków wołała go w dwóch miejscach — ale **nie w gałęzi
+`res === 'none'`**, czyli akurat tam, gdzie pusty panel jest objawem. Ochrona
+była napisana i nieużyta w jedynym miejscu, dla którego powstała.
+
+**Reguła:** gdy narzędzie diagnostyczne zgłasza awarię, sprawdź najpierw, czy
+w kodzie nie leży już gotowy warunek odróżniający awarię od stanu
+normalnego — i czy jest wołany na **każdej** ścieżce, która do tego stanu
+prowadzi. Nowy warunek dopisany obok istniejącego to druga definicja tej
+samej reguły (L41).
+
+**Reguła druga (kontrola po naprawie):** po uciszeniu fałszywego alarmu
+udowodnij, że alarm **nadal potrafi się odezwać**. Tu: w archiwalnych
+transkryptach zostały 4 przypadki `[STOP]` z niepustą listą akcji, czyli
+realne zacięcia; zmiana usunęła wyłącznie ten jeden fałszywy. Naprawa, która
+przy okazji wyłącza detektor, jest gorsza od błędu, który naprawiała
+(L13/L61).
+
+---
+
+## L66 (2026-08-25) — Lektura obowiązkowa to BUDŻET: dokument bez limitu rośnie, aż zje kontekst
+
+**Objaw (M208):** obowiązkowa lektura startowa z `AGENTS.md` §0 ważyła ~605 kB
+(~194-258 tys. tokenów). Z tego **384 kB to `PROJECT_STATE.md`** — plik
+nazwany „bieżący stan projektu", który urósł do **125 sekcji sesji i 5904
+linii**, sięgając wstecz o ~80 sesji. Każda sesja czytała całą historię
+projektu, zanim dowiedziała się, co ma robić.
+
+**Przyczyna:** plik miał w nazwie „STATE", a w treści był dziennikiem. Każda
+sesja dopisywała swoją sekcję (słusznie, ADR 0013), nikt nic nie usuwał
+(też słusznie — historia bywa potrzebna), a **nikt nie pilnował sumy**, bo
+żadna reguła nie mówiła, ile lektura startowa MOŻE ważyć. Rozjazd nazwy
+z zawartością sprawił, że przez ~80 sesji nikt nie zakwestionował jego
+obecności na liście lektur.
+
+**Reguła:**
+1. **Lista lektur obowiązkowych ma budżet i strażnika.** Bez liczbowego progu
+   nie ma sygnału, kiedy zrobiło się źle — plik rośnie liniowo i cicho.
+   Tu: 100 tys. tokenów na `AGENTS` + ADR-y + `LESSONS` + `ENVIRONMENT`
+   (`test/dokumentacja-budzet-lektury.test.js`).
+2. **Rozdziel „zasady" od „dziennika".** Agent kontynuujący pracę potrzebuje
+   REGUŁ (co wolno, czego nie, jakie są pułapki) i PUNKTU ZACZEPIENIA
+   (ostatni PR, najnowszy handoff). Historia „kto co kiedy zrobił" jest
+   materiałem do **grepowania punktowego**, nie do czytania od góry.
+   Dziennik ma się nazywać dziennikiem (`PROJECT_HISTORY.md`) i mieć
+   w nagłówku jawne „to NIE jest lektura startowa".
+3. **Sygnał ostrzegawczy:** dokument z listy lektur, którego nazwa mówi
+   „bieżący/aktualny", a treść przyrasta monotonicznie. Sprawdź `grep -c '^## '`
+   i datę najstarszej sekcji — jeśli sięga dziesiątek sesji wstecz, to jest
+   archiwum, nie stan.
+4. **Zanim zaczniesz skracać, ZMIERZ rozkład.** Pierwotny plan tej sesji
+   („skondensujmy `LESSONS.md`") dotyczył pliku, który odpowiadał za **16%**
+   problemu — przy pełnym ryzyku zgubienia niuansu w 65 lekcjach. Pomiar
+   przekierował pracę na pozycję, która ważyła 2/3 całości i którą dało się
+   usunąć z listy **bez kasowania jednej linijki treści**. Optymalizacja bez
+   pomiaru trafia w to, co akurat rzuciło się w oczy.
+5. **Numery lekcji to API dokumentacji.** `L1`-`L65` są cytowane w kodzie
+   **~1150 razy w 242 plikach** (`// klasa L48`, `L21/L41`). Renumeracja
+   unieważniłaby je wszystkie **bez jednego czerwonego testu** — kondensując
+   rejestr zachowaj nagłówki `## L<nr>` jako stabilne kotwice.
+
+**Sformalizowane w:** M208 (`PROJECT_HISTORY.md`, `AGENTS.md` §0 z budżetem
+i blokiem „Czego NIE czytasz na start", `test/dokumentacja-budzet-lektury.test.js`).
+
+---
+
+## L65 (2026-08-25) — Test, który przechodzi na przypadku odsianym przez WCZEŚNIEJSZY warunek, nie testuje tego warunku
+
+**Objaw (M207, weryfikacja mutacyjna):** funkcja `targetSlotsOf` rozbija cele
+czaru na pozycje i ma dwie bramki ochronne — (1) warianty muszą mieć równą
+długość, (2) pozycje nie mogą dzielić kandydatów (pula jednorodna). Test B2
+sprawdzał, że Fireball („up to three”) i „any number of targets” zostają
+płaską listą. Przechodził. Mutacja polegająca na **usunięciu bramki (2)**
+przeżyła — komplet 23 testów nadal zielony.
+
+**Przyczyna:** oba przypadki z B2 mają warianty o RÓŻNYCH długościach
+(`sizes = [1, 2]`), więc odpadały już na bramce (1) i do bramki (2) nigdy nie
+docierały. Test formalnie dotykał funkcji i asertował poprawny wynik, ale
+o badanym warunku nie mówił nic — jego zieloność była zasługą zupełnie innej
+linijki kodu.
+
+**Reguła na przyszłość:** pisząc test na konkretny warunek, sprawdź, czy
+przypadek testowy **dociera** do tego warunku — najprościej mutacją
+(skasuj warunek; jeśli testy nadal zielone, przypadek jest odsiewany
+wcześniej). Dla funkcji z łańcuchem bramek dobierz dane, które przechodzą
+wszystkie bramki poprzedzające i różnicują wyłącznie badaną: tu był to czar
+o STAŁEJ arności 2 z jednej puli (permutacje `a/b/c`), gdzie sama arność
+niczego nie wyklucza. Zasada obowiązuje wszędzie, gdzie funkcja ma kilka
+warunków `return` pod rząd — „mutacja przeżyła” zawsze znaczy „mam lukę
+w danych testowych”, nie „mutacja jest równoważna”.
+
+---
+
+## L63 (2026-08-25) — Selektor sterownika, który nie pasuje do niczego, nie daje błędu — daje CICHĄ PĘTLĘ i fałszywe „brak zgłoszeń”
+
+**Objaw (M206, audyt rozgrywek):** przebiegi Żywego Testera na części seedów
+nie kończyły się w limicie kroków. W transkrypcie 300 identycznych linii
+o tym samym oknie wyboru, zero wykonanych ruchów — i pogodne podsumowanie
+`== DETEKTORY: brak zgłoszeń ==`. Raport wyglądał jak czysty przebieg.
+
+**Przyczyna:** sterownik szukał zaznaczeń jako
+`.choice-request-option input[type="checkbox"]`, a kreator wielocelowy
+(M195/C) renderuje **przyciski** `.multi-target-toggle` ze stanem w tekście
+(„[ ]” / „[x]”). W tym modalu nie ma ani jednego `<input type=checkbox>`.
+`querySelectorAll` na nieistniejącym selektorze nie rzuca wyjątku — zwraca
+pustą listę. Lista pusta → nic nie zaznaczono → „Zatwierdź” został `disabled`
+→ „Anuluj” **odtworzył to samo żądanie wyboru** → pętla.
+
+**Dlaczego to gorsze niż crash:** narzędzie nadal raportowało sukces. Skutkiem
+ubocznym była luka w pokryciu, o której nikt nie wiedział: ŻADEN czar
+wielocelowy (Fireball, Wrap in Flames, Grave Exchange) ani mulligan
+z odłożeniem kart nie został nigdy przeklikany — czyli dokładnie ta klasa
+modali, którą właściciel kazał sprawdzić. Dwa błędy UI (nieodróżnialne wiersze
+celów, „zaznacz 5 karty”) czekały tam od wprowadzenia kreatora.
+
+**Reguła:** gałąź sterownika obsługująca modal musi (1) logować, ILE elementów
+sterujących znalazła — „opcji 0” w transkrypcie to alarm, nie szum; (2) mieć
+licznik nieudanych prób zamknięcia TEGO SAMEGO okna i przerywać głośno po
+progu, bo „Anuluj”, które odtwarza żądanie, nie jest wyjściem z pętli;
+(3) traktować `0 znalezionych elementów` jako podejrzenie zerwanego kontraktu
+DOM, nie jako legalny stan. Dodatkowo: kontrakt DOM, na którym opiera się
+sterownik (klasa, forma stanu), wart jest testu po stronie aplikacji —
+inaczej refaktor renderera zrywa narzędzie audytu bez jednego czerwonego testu.
+
+**Sformalizowane w:** `tools/table-tester/run-game.mjs` (licznik
+`MULTI_WIZARD_STUCK_LIMIT`, log liczby wierszy) oraz
+`test/m195-multi-target.test.js` (M206: kontrakt `.multi-target-toggle`,
+brak `<input>`, stan w tekście).
+
+---
+
+
+## L64 (2026-08-25) — Bramka na FAZĘ nie jest bramką na MOMENT: „phase === 'combat'” przepuszcza krok przed deklaracją
+
+**Objaw (M206):** bot aktywował pump „+2/+2 do końca tury” w kroku *Początek
+walki* i nie atakował — dwie many na efekt, który wygasał w cleanup. Powtarzał
+to w kolejnych turach tej samej partii. Warunek brzmiał
+`const inCombat = view.turn.phase === 'combat'`, a komentarz nad nim mówił
+wprost „pump ma sens po deklaracji atakujących/blokujących”.
+
+**Przyczyna:** `beginning_of_combat`, `declare_attackers`, `declare_blockers`,
+`combat_damage` i `end_of_combat` należą do TEJ SAMEJ fazy `combat`
+(`TURN_STEPS`). Sprawdzenie fazy przepuszczało więc kroki, w których nikt
+jeszcze (albo już) nie walczy. Ta sama pomyłka co M202/F, gdzie `step === 'main'`
+obejmował precombat i postcombat — tylko z drugiej strony: tam jedna nazwa
+kroku w dwóch fazach, tu jedna faza na pięć kroków.
+
+**Poprawka nie polegała na wykluczeniu kroku po nazwie.** Pierwsze podejście
+(`&& step !== 'beginning_of_combat'`) tylko przesunęło marnotrawstwo w dwa inne
+okna (koniec walki bez udziału w walce, upkeep przeciwnika). Regułą jest stan,
+nie etykieta kroku: efekt „do końca tury” kupuje coś tylko wtedy, gdy stwór
+REALNIE bierze udział w walce (`attacking || blocking`).
+
+**Reguła:** wyceniając efekt ulotny, pytaj o STAN, który ma na niego wpływ
+(czy stwór walczy, czy cel jest zadeklarowany), a nie o nazwę fazy czy kroku.
+Gdy już piszesz warunek na czas, sprawdź w `TURN_STEPS`, ile kroków obejmuje
+dana faza i ile faz nosi daną nazwę kroku. Objaw dobrze widać dopiero
+w transkrypcie rozgrywki — testy jednostkowe pytają zwykle o jedno okno.
+
+**Uwaga poboczna (ta sama sesja):** `attacking` NIE jest polem, które można
+ustawić na obiekcie w teście — `playerView` wyprowadza je z
+`state.combat.attackers`. Test, który ustawia je wprost, przechodzi z
+niewłaściwego powodu.
+
+**Sformalizowane w:** `test/m206-audyt-rozgrywek.test.js` (A1/A1b/A1c — trzy
+jałowe okna; A2 — kontrola, że pump w realnej wymianie bojowej zostaje).
+
+---
+
+
+## L61 (2026-08-25) — Test regresyjny bez WERYFIKACJI MUTACYJNEJ bywa ślepy; „zielony" nie znaczy „pilnuje"
+
+**Objaw (M205, audyt PR #77):** poprzednia sesja dołożyła dwa testy opisane
+w PR jako regresja przypinająca fix deduplikacji przedruków modala. Oba były
+zielone. Po cofnięciu samego fiksu (`if (text !== prevBlock) deduped.push(...)`
+→ `deduped.push(...)`) plik testów nadal dawał **91/91 pass** — fix nie był
+pilnowany przez nic.
+
+**Przyczyna:** dane testowe nie miały kształtu, w którym fix w ogóle działa.
+Przypadek sklejał bloki bez separatora i powtarzał w każdym linię
+`• Tura 7 — Nieprzyjaciel`, a ta linia sama woła `flush()` w detektorze, więc
+licznik zerował się przed progiem — niezależnie od deduplikacji. Test mierzył
+`flush()`, nie fix. To L1 („test może być zielony z niewłaściwego powodu")
+w wariancie najgroźniejszym: test istnieje, ma poprawną nazwę i sensowny
+komentarz, więc następna sesja uzna temat za zabezpieczony.
+
+**Reguła:** test regresyjny liczy się dopiero, gdy pokazano, że **czerwienieje
+po cofnięciu naprawy**. Procedura (koszt: ~30 s):
+1. nałóż mutację odwracającą fix (jedna linia),
+2. uruchom plik testu — MUSI paść, i to ten właściwy test,
+3. cofnij mutację, potwierdź zielone,
+4. wynik obu pomiarów wpisz do komunikatu commita / raportu audytu.
+Jeśli mutacja nie czerwieni testu, dane testowe nie mają kształtu produkcyjnego
+— odtwórz kształt z REALNEGO artefaktu (tu: transkrypt ma między renderami
+modala nagłówek kroku `--- krok N | T. X ---`), zamiast pisać go „z głowy".
+
+**Sygnał:** w opisie PR pada „przypięte testem" bez podanego wyniku pomiaru
+przed/po. To zdanie do sprawdzenia, nie do przyjęcia na wiarę.
+
+## L62 (2026-08-25) — Kolejność renderu to część kontraktu: log rysowany od najnowszego łamie liczenie „nowych" po indeksie
+
+**Objaw (M205):** kolektor wpisów logu w Żywym Testerze — napisany dokładnie
+wg recepty z handoffu („odpytuj nowe linie `#log` po indeksie") — znajdował
+**0 wpisów**, mimo że sesja wpis generowała, a `session.log` go zawierał.
+
+**Przyczyna:** `render.js` rysuje log od NAJNOWSZEGO
+(`[...session.log].reverse()`), więc nowe wpisy dokładają się na POCZĄTKU
+listy DOM. Pętla `for (i = widzianeDotąd; i < entries.length; i++)` czytała
+więc najstarsze wpisy jako „nowe" i nigdy nie dochodziła do świeżych.
+Poprawnie: `entries.slice(0, nowe).reverse()`.
+
+**Reguła:** zanim oprzesz narzędzie na „nowe elementy = ogon listy", sprawdź
+w kodzie renderu, w którą stronę jest rysowana lista (`reverse()`,
+`prepend`, `insertBefore`, `flex-direction: column-reverse`). Kolejność
+renderu jest częścią kontraktu UI tak samo jak nazwy klas — i tak samo cicho
+psuje narzędzia czytające DOM.
+
+**Wariant tej samej klasy z tej samej sesji:** `--out katalog/plik.txt` do
+nieistniejącego katalogu wywracał zapis na ENOENT **dopiero po zakończeniu**
+~40-sekundowego przebiegu — cały transkrypt (i dowód audytu) przepadał.
+Narzędzie audytowe ma walidować miejsce zapisu ZANIM zacznie mierzyć, a nie
+po; inaczej koszt pomyłki to powtórzenie całego pomiaru (L33).
 
 ## L60 (2026-08-24) — Narzędzie audytu, które milcząco przyjmuje złą konfigurację, produkuje audyty o czymś innym
 

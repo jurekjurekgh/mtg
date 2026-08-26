@@ -12,9 +12,11 @@ test('PlayerView zawiera publiczne życie i nazwy graczy', () => {
   // M157/F: projekcja niesie też jawne liczniki trucizny (ADR 0017).
   // M197/A3B: oraz KOLOROWĄ pulę many — stół rysuje ją graficznie („ile
   // i jaka"), a sam licznik `mana` nie niósł kolorów.
+  // M214: pula many ograniczonej drukiem (Powerstone) jest częścią publicznej
+  // puli gracza — eksponowana obok manaPool (CR 106 — gracze widzą pulę).
   assert.deepEqual(view.players, [
-    { id: 'p1', name: 'Alice', life: 20, mana: 0, landPlays: 1, poison: 0, manaPool: {} },
-    { id: 'p2', name: 'Bob', life: 16, mana: 0, landPlays: 1, poison: 0, manaPool: {} },
+    { id: 'p1', name: 'Alice', life: 20, mana: 0, landPlays: 1, poison: 0, manaPool: {}, restrictedPool: {} },
+    { id: 'p2', name: 'Bob', life: 16, mana: 0, landPlays: 1, poison: 0, manaPool: {}, restrictedPool: {} },
   ]);
   assert.equal(JSON.stringify(view).includes('objects'), false);
   assert.equal(JSON.stringify(view).includes('commands'), false);

@@ -11,7 +11,7 @@ jest rozpoznanie". Nic z tego pliku nie jest podejmowane bez decyzji
 właściciela; sesja bierze się za pozycję dopiero, gdy zostanie wskazana.
 
 Zadania na bieżącą sesję przychodzą wprost od właściciela w czacie, a ich
-ślad zostaje w `docs/PROJECT_STATE.md`, planie sesji i commicie.
+ślad zostaje w `docs/PROJECT_HISTORY.md`, planie sesji i commicie.
 
 Plik jest trwałą pamięcią pomysłów — czat i kontekst sesji bywają
 kompaktowane, repo nie.

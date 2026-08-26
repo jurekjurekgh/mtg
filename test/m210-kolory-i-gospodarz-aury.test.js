@@ -1,0 +1,287 @@
+// M210 — challenge „brązowa odznaka wyłapywacza błędów”.
+// Trzy niezgodności z CR znalezione w istniejącym kodzie i naprawione u źródła:
+//
+//   #1 CR 202.2  — kolor obiektu wyznacza jego KOSZT MANY. Land kosztu nie ma,
+//                  więc jest bezbarwny. Podstawowe landy miały `colors: ['R']`
+//                  itd., co po animacji (Nissa, Awaken) robiło z nich kolorowe
+//                  stwory: obchodziły „protection from red” i spełniały
+//                  „can't be blocked except by [kolor]”.
+//   #2 CR 708.2a — permanent zakryty (morph/cloak) jest bezimiennym stworem
+//                  2/2 BEZ kolorów i BEZ podtypów. Silnik czytał `colors`
+//                  i `subtypes` karty pod spodem.
+//   #3 CR 303.4/704.5n — „Enchant artifact or creature YOU CONTROL”: warunek
+//                  kontroli sprawdzała tylko walidacja rzucania, a NIE
+//                  isLegalAuraHost, więc po przejęciu gospodarza aura zostawała
+//                  na stole zamiast pójść do grobu (SBA).
+//
+// Każdy test był weryfikowany mutacyjnie (L61): cofnięcie naprawy w kodzie
+// źródłowym czyni go czerwonym.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { createGameState, addObject, execute } from '../src/engine/game-state.js';
+import { createCardRegistry } from '../src/cards/card-data.js';
+import { declareBlockers } from '../src/engine/combat.js';
+import {
+  animatePermanentUntilEndOfTurn,
+  effectiveColors,
+  effectiveSubtypes,
+} from '../src/engine/permanents.js';
+import { attachAuraToCreature, isLegalAuraHost, removeIllegalAttachments } from '../src/engine/attachments.js';
+
+const REGISTRY = createCardRegistry();
+
+function creature(state, id, cardId, controllerId, extra = {}) {
+  addObject(state, {
+    id, instanceId: `i-${id}`, cardId, controllerId, zone: 'battlefield',
+    kind: 'creature', power: 2, toughness: 2, manaCost: 2,
+    abilities: [], keywords: [], subtypes: [], types: ['Creature'], ...extra,
+  });
+  return state.objects.get(id);
+}
+
+/** Ustawia krok deklaracji blokujących (kolejność pól ma znaczenie). */
+function combatAt(state, attackerId) {
+  state.turn = { ...state.turn, phase: 'combat', step: 'declare_blockers', activePlayerId: 'p1' };
+  state.combat = {
+    attackingPlayerId: 'p1',
+    attackers: [attackerId],
+    blockers: new Map(),
+    blockedAttackers: new Set(),
+  };
+}
+
+// ---- #1: CR 202.2 — landy są bezbarwne -------------------------------------
+
+test('M210/#1 (CR 202.2): podstawowe landy w rejestrze są BEZBARWNE', () => {
+  for (const id of ['basic-plains', 'basic-island', 'basic-swamp', 'basic-mountain', 'basic-forest']) {
+    assert.deepEqual(REGISTRY.get(id).colors, [], `${id} nie ma kosztu many, więc jest bezbarwny`);
+  }
+});
+
+test('M210/#1 (CR 202.2): ANIMOWANY Swamp nie może blokować Dread Warlocka', () => {
+  const state = createGameState({ seed: 210, players: [{ id: 'p1' }, { id: 'p2' }] });
+  // Dread Warlock: „can't be blocked except by black creatures”.
+  creature(state, 'warlock', 'dread-warlock', 'p1', {
+    colors: ['B'],
+    abilities: [{ type: 'static', cantBeBlockedExceptByColors: ['B'] }],
+  });
+  addObject(state, {
+    id: 'swamp', instanceId: 'i-swamp', cardId: 'basic-swamp', controllerId: 'p2',
+    zone: 'battlefield', kind: 'land', abilities: [], keywords: [], subtypes: ['Swamp'], types: ['Land'],
+  });
+  // Animacja lądu (Awaken/Nissa) — nadal jest lądem, więc nadal bezbarwny.
+  animatePermanentUntilEndOfTurn(state, 'swamp', {
+    power: 3, toughness: 3, typesAdd: ['Creature'], retainTypes: true,
+  });
+  assert.deepEqual(effectiveColors(state.objects.get('swamp')), [], 'animowany land pozostaje bezbarwny');
+
+  combatAt(state, 'warlock');
+  assert.throws(
+    () => declareBlockers(state, 'p2', { warlock: ['swamp'] }),
+    /może blokować tylko stwór tego koloru/,
+    'bezbarwny land NIE może blokować „except by black”',
+  );
+});
+
+// ---- #2: CR 708.2a — zakryty permanent jest bezbarwny i bez podtypów -------
+
+test('M210/#2 (CR 708.2a): ZAKRYTY stwór jest bezbarwny — nie może blokować Dread Warlocka', () => {
+  const state = createGameState({ seed: 210, players: [{ id: 'p1' }, { id: 'p2' }] });
+  creature(state, 'warlock', 'dread-warlock', 'p1', {
+    colors: ['B'],
+    abilities: [{ type: 'static', cantBeBlockedExceptByColors: ['B'] }],
+  });
+  creature(state, 'morph', 'segmented-krotiq', 'p2', { colors: ['B'], subtypes: ['Insect'] });
+  // Zakrycie: pola spoza kontraktu addObject ustawiamy wprost na obiekcie.
+  state.objects.set('morph', Object.freeze({ ...state.objects.get('morph'), faceDown: true }));
+
+  const morph = state.objects.get('morph');
+  assert.deepEqual(effectiveColors(morph), [], 'zakryty permanent nie ma kolorów');
+  assert.deepEqual(effectiveSubtypes(morph), [], 'zakryty permanent nie ma podtypów');
+
+  combatAt(state, 'warlock');
+  assert.throws(
+    () => declareBlockers(state, 'p2', { warlock: ['morph'] }),
+    /może blokować tylko stwór tego koloru/,
+    'zakryty (bezbarwny) stwór NIE może blokować „except by black”',
+  );
+});
+
+test('M210/#2 (CR 708.2a): ODKRYTY czarny stwór blokuje Dread Warlocka normalnie', () => {
+  // Kontrola przeciwna: naprawa nie może zabraniać blokad legalnych.
+  const state = createGameState({ seed: 210, players: [{ id: 'p1' }, { id: 'p2' }] });
+  creature(state, 'warlock', 'dread-warlock', 'p1', {
+    colors: ['B'],
+    abilities: [{ type: 'static', cantBeBlockedExceptByColors: ['B'] }],
+  });
+  creature(state, 'blk', 'segmented-krotiq', 'p2', { colors: ['B'] });
+
+  combatAt(state, 'warlock');
+  const e = declareBlockers(state, 'p2', { warlock: ['blk'] });
+  assert.equal(e.type, 'blockers_declared', 'czarny odkryty stwór blokuje bez przeszkód');
+  assert.deepEqual(state.combat.blockers.get('warlock'), ['blk'], 'blok zapisany');
+});
+
+// ---- #3: CR 303.4 / 704.5n — „enchant … you control” -----------------------
+
+test('M210/#3 (CR 303.4): „enchant artifact or creature you control” odrzuca CUDZEGO gospodarza', () => {
+  const state = createGameState({ seed: 210, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const mine = creature(state, 'mine', 'highland-game', 'p1');
+  const theirs = creature(state, 'theirs', 'highland-game', 'p2');
+  addObject(state, {
+    id: 'aura', instanceId: 'i-aura', cardId: 'moonlit-meditation', controllerId: 'p1',
+    zone: 'battlefield', kind: 'enchantment', manaCost: 3,
+    abilities: [], keywords: [], subtypes: ['Aura'], types: ['Enchantment'],
+    aura: REGISTRY.get('moonlit-meditation').aura,
+  });
+  const aura = state.objects.get('aura');
+
+  assert.equal(isLegalAuraHost(aura, mine), true, 'własny stwór jest legalny');
+  assert.equal(isLegalAuraHost(aura, theirs), false, 'cudzy stwór NIE jest legalny („you control”)');
+});
+
+test('M210/#3 (CR 704.5n): po przejęciu gospodarza aura „you control” idzie do GROBU', () => {
+  const state = createGameState({ seed: 210, players: [{ id: 'p1' }, { id: 'p2' }] });
+  creature(state, 'host', 'highland-game', 'p1');
+  addObject(state, {
+    id: 'aura', instanceId: 'i-aura', cardId: 'moonlit-meditation', controllerId: 'p1',
+    zone: 'battlefield', kind: 'enchantment', manaCost: 3,
+    abilities: [], keywords: [], subtypes: ['Aura'], types: ['Enchantment'],
+    aura: REGISTRY.get('moonlit-meditation').aura,
+  });
+  attachAuraToCreature(state, 'aura', 'host');
+  assert.equal(state.objects.get('aura').attachedTo, 'host', 'aura przypięta do własnego stwora');
+
+  // Przeciwnik przejmuje kontrolę nad gospodarzem (Mind Control itp.).
+  state.objects.set('host', Object.freeze({ ...state.objects.get('host'), controllerId: 'p2' }));
+  const events = removeIllegalAttachments(state);
+
+  assert.ok(
+    events.some((e) => e.type === 'permanent_put_into_graveyard'),
+    'SBA zrzuca aurę bez legalnego gospodarza',
+  );
+  const inGraveyard = state.zones.graveyard
+    .some((id) => state.objects.get(id)?.cardId === 'moonlit-meditation');
+  assert.equal(inGraveyard, true, 'aura leży w grobie, nie na stole');
+});
+
+test('M210/#3: aura BEZ „you control” (Clawing Torment) zostaje na cudzym stworze', () => {
+  // Kontrola przeciwna: ownControlOnly:false musi dalej pozwalać na obcy cel.
+  const state = createGameState({ seed: 210, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const theirs = creature(state, 'theirs', 'highland-game', 'p2');
+  addObject(state, {
+    id: 'torment', instanceId: 'i-torment', cardId: 'clawing-torment', controllerId: 'p1',
+    zone: 'battlefield', kind: 'enchantment', manaCost: 2,
+    abilities: [], keywords: [], subtypes: ['Aura'], types: ['Enchantment'],
+    aura: REGISTRY.get('clawing-torment').aura,
+  });
+  assert.equal(REGISTRY.get('clawing-torment').aura.ownControlOnly, false, 'Oracle nie mówi „you control”');
+  assert.equal(
+    isLegalAuraHost(state.objects.get('torment'), theirs), true,
+    'aura bez „you control” może siedzieć na cudzym stworze',
+  );
+});
+
+// ---- #4: CR 707.2 — kopiuje się WARTOŚCI KOPIOWALNE, nie stan bieżący -----
+
+test('M210/#4 (CR 707.2): enter-as-copy kopiuje kartę, nie animację „until end of turn”', () => {
+  const state = createGameState({ seed: 210, players: [{ id: 'p1' }, { id: 'p2' }] });
+  // Artefakt ożywiony do końca tury (Skilled Animator). Wartość KOPIOWALNA to
+  // wydrukowany artefakt bez P/T — animacja kopiowalna nie jest.
+  addObject(state, {
+    id: 'art', instanceId: 'i-art', cardId: 'great-furnace', controllerId: 'p2',
+    zone: 'battlefield', kind: 'artifact', power: null, toughness: null, manaCost: 2,
+    abilities: [], keywords: [], subtypes: [], types: ['Artifact'],
+  });
+  animatePermanentUntilEndOfTurn(state, 'art', {
+    power: 5, toughness: 5, typesAdd: ['Creature'], retainTypes: true,
+  });
+  assert.equal(state.objects.get('art').power, 5, 'oryginał JEST teraz stworem 5/5');
+
+  // Jwari Shapeshifter wchodzi jako kopia ożywionego artefaktu.
+  addObject(state, {
+    id: 'jwari', instanceId: 'i-jwari', cardId: 'jwari-shapeshifter', controllerId: 'p1',
+    zone: 'battlefield', kind: 'creature', power: 0, toughness: 0, manaCost: 2,
+    abilities: [], keywords: [], subtypes: ['Shapeshifter'], types: ['Creature'],
+  });
+  state.pendingEnterAsCopy = {
+    playerId: 'p1', sourceId: 'jwari', candidateIds: ['art'], restorePriorityTo: 'p1',
+  };
+  const result = execute(state, { type: 'resolve_enter_as_copy', playerId: 'p1', targetId: 'art' });
+  assert.equal(result.ok, true, 'kopiowanie się udaje');
+
+  const copy = state.objects.get('jwari');
+  // Gdyby kopiowany był stan bieżący, kopia zostałaby TRWAŁYM stworem 5/5 —
+  // po wygaśnięciu animacji oryginał wraca do bycia artefaktem, a kopia nie.
+  assert.equal(copy.power, null, 'kopia nie dziedziczy P/T z animacji');
+  assert.equal(copy.toughness, null, 'kopia nie dziedziczy P/T z animacji');
+  assert.deepEqual(copy.types, ['Artifact'], 'kopia jest artefaktem, tak jak wydrukowana karta');
+});
+
+// ---- #5: obrażenia z delirium to ZWYKŁE obrażenia niecombatowe -------------
+//
+// Fear of Burning Alive: „…this creature deals that amount of damage to target
+// creature that player controls”. Ścieżka rozstrzygnięcia wołała markDamage
+// wprost, omijając NARAZ cztery reguły: ochronę (CR 702.16a), tarcze prewencji
+// (CR 615), infect (CR 702.90) i lifelink (CR 702.15).
+
+/** Stan z Fear of Burning Alive, ofiarą przeciwnika i grobem spełniającym delirium. */
+function deliriumSetup(sourceKeywords = []) {
+  const state = createGameState({ seed: 210, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = { ...state.turn, phase: 'main', step: 'main', activePlayerId: 'p1', priorityPlayerId: 'p1' };
+  addObject(state, {
+    id: 'fear', instanceId: 'i-fear', cardId: 'fear-of-burning-alive', controllerId: 'p1',
+    zone: 'battlefield', kind: 'creature', power: 3, toughness: 3, manaCost: 4,
+    abilities: [], keywords: sourceKeywords, subtypes: ['Nightmare'],
+    types: ['Enchantment', 'Creature'], colors: ['R'],
+  });
+  addObject(state, {
+    id: 'vic', instanceId: 'i-vic', cardId: 'highland-game', controllerId: 'p2',
+    zone: 'battlefield', kind: 'creature', power: 5, toughness: 5, manaCost: 2,
+    abilities: [], keywords: [], subtypes: [], types: ['Creature'],
+  });
+  // Delirium wymaga 4 różnych typów kart w grobie kontrolera.
+  for (const [id, type] of [['g1', 'Creature'], ['g2', 'Instant'], ['g3', 'Sorcery'], ['g4', 'Artifact']]) {
+    addObject(state, {
+      id, instanceId: `i-${id}`, cardId: 'highland-game', controllerId: 'p1', zone: 'graveyard',
+      kind: 'card', abilities: [], keywords: [], subtypes: [], types: [type],
+    });
+  }
+  state.pendingDeliriumTargets = [{
+    playerId: 'p1', opponentId: 'p2', sourceId: 'fear', amount: 4, restorePriorityTo: 'p1',
+  }];
+  return state;
+}
+
+const fireDelirium = (state) =>
+  execute(state, { type: 'resolve_delirium_target', playerId: 'p1', targetId: 'vic' });
+
+test('M210/#5 (CR 702.16a): obrażenia z delirium respektują protection', () => {
+  const state = deliriumSetup();
+  state.objects.set('vic', Object.freeze({ ...state.objects.get('vic'), protectionFromColors: ['R'] }));
+  assert.equal(fireDelirium(state).ok, true);
+  assert.equal(state.objects.get('vic').damage ?? 0, 0, 'czerwone źródło nie rani chronionego stwora');
+});
+
+test('M210/#5 (CR 615): obrażenia z delirium respektują tarcze prewencji', () => {
+  const state = deliriumSetup();
+  state.damageShields = [{ targetId: 'vic', remaining: 4, sourceCardId: null }];
+  assert.equal(fireDelirium(state).ok, true);
+  assert.equal(state.objects.get('vic').damage ?? 0, 0, 'tarcza pochłania obrażenia');
+});
+
+test('M210/#5 (CR 702.90): źródło z infect daje liczniki -1/-1, nie obrażenia', () => {
+  const state = deliriumSetup(['infect']);
+  assert.equal(fireDelirium(state).ok, true);
+  const victim = state.objects.get('vic');
+  assert.equal(victim.damage ?? 0, 0, 'infect nie znaczy obrażeń');
+  assert.equal((victim.counters ?? {})['-1/-1'] ?? 0, 4, 'infect daje 4 liczniki -1/-1');
+});
+
+test('M210/#5 (CR 702.15): źródło z lifelink zyskuje życie za obrażenia z delirium', () => {
+  const state = deliriumSetup(['lifelink']);
+  const before = state.players.find((p) => p.id === 'p1').life;
+  assert.equal(fireDelirium(state).ok, true);
+  assert.equal(state.objects.get('vic').damage, 4, 'obrażenia doszły');
+  assert.equal(state.players.find((p) => p.id === 'p1').life, before + 4, 'lifelink dodaje 4 życia');
+});

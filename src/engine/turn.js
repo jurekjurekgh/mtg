@@ -3,13 +3,13 @@ export const TURN_STEPS = Object.freeze([
   Object.freeze({ phase: 'beginning', step: 'untap' }),
   Object.freeze({ phase: 'beginning', step: 'upkeep' }),
   Object.freeze({ phase: 'beginning', step: 'draw' }),
-  Object.freeze({ phase: 'precombat_main', step: 'main' }),
+  Object.freeze({ phase: 'precombat_main', step: 'main1' }),
   Object.freeze({ phase: 'combat', step: 'beginning_of_combat' }),
   Object.freeze({ phase: 'combat', step: 'declare_attackers' }),
   Object.freeze({ phase: 'combat', step: 'declare_blockers' }),
   Object.freeze({ phase: 'combat', step: 'combat_damage' }),
   Object.freeze({ phase: 'combat', step: 'end_of_combat' }),
-  Object.freeze({ phase: 'postcombat_main', step: 'main' }),
+  Object.freeze({ phase: 'postcombat_main', step: 'main2' }),
   Object.freeze({ phase: 'ending', step: 'end' }),
   Object.freeze({ phase: 'ending', step: 'cleanup' }),
 ]);
@@ -46,7 +46,18 @@ export function nextTurnStep(turn, players) {
  * pass_priority kontynuowały automat od właściwego miejsca.
  */
 export function jumpToStep(turn, stepName, priorityPlayerId = turn.activePlayerId) {
-  const index = TURN_STEPS.findIndex((entry) => entry.step === stepName);
+  // M212/3 (uwaga właściciela): obie fazy główne nazywały się `main`, więc
+  // `findIndex` zawsze trafiał w PIERWSZĄ — do drugiej fazy głównej nie dało
+  // się skoczyć w ogóle (cichy błąd: skok „do main2" cofał turę do main1).
+  // Kroki nazywają się teraz `main1`/`main2`; samo `main` zostaje aliasem
+  // zgodności: rozwiązuje się na fazę główną WŁAŚCIWĄ dla bieżącego miejsca
+  // w turze (po combacie → main2), a nie na pierwszą z brzegu.
+  const wanted = stepName === 'main'
+    ? (TURN_STEPS[turn.stepIndex ?? 0]?.phase === 'postcombat_main'
+      || (turn.stepIndex ?? 0) >= TURN_STEPS.findIndex((entry) => entry.step === 'end_of_combat')
+      ? 'main2' : 'main1')
+    : stepName;
+  const index = TURN_STEPS.findIndex((entry) => entry.step === wanted);
   if (index === -1) throw new RangeError(`Nieznany krok tury: ${stepName}`);
   return clearStepVolatiles({ ...turn, ...TURN_STEPS[index], stepIndex: index, priorityPlayerId, passes: 0 });
 }

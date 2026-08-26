@@ -10,6 +10,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { multiTargetPlanOf, commandForSelection } from '../src/table/multi-target.js';
+import { targetTypeLabel, describeSpellEffects } from '../src/table/render.js';
+import { createCardRegistry } from '../src/cards/card-data.js';
 
 /** Warianty Fireball: 3 cele × X 1..3 (kartezjański iloczyn jak w silniku). */
 function fireballCommands() {
@@ -286,4 +288,266 @@ test('M195/C: zatwierdzenie jest ZABLOKOWANE, gdy wybór nielegalny', async () =
     const confirm = host.find((n) => String(n.className).includes('multi-target-confirm'));
     assert.equal(confirm.disabled, true, 'bez zaznaczonego celu nie da się zatwierdzić');
   });
+});
+
+// ---------------------------------------------------------------------------
+// M206 (audyt Żywym Testerem, zlecenie właściciela): kontrakt DOM kreatora.
+//
+// Objaw: sterownik testera szukał zaznaczeń jako
+// `.choice-request-option input[type="checkbox"]`, a kreator rysuje PRZYCISKI
+// `.multi-target-toggle` ze stanem w tekście („[ ] Mountain" / „[x] Mountain").
+// Selektor nie pasował do niczego, więc lista zaznaczeń była zawsze pusta:
+// „Zatwierdź" zostawał wyłączony, „Anuluj" otwierał ten sam modal od nowa
+// i tester kręcił się w kółko (zmierzone: 300 identycznych linii
+// „opcji 0, potrzeba 1", partia bez ani jednego kroku).
+//
+// Konsekwencja była poważniejsza niż zawieszony przebieg: ŻADEN czar
+// wielocelowy (Fireball, Wrap in Flames, Grave Exchange) ani mulligan
+// z odłożeniem kart nie był nigdy przeklikany przez audyt — klasa modali
+// wprowadzona w M195/C i M200/C pozostawała poza zasięgiem narzędzia.
+//
+// Te testy pinują KONTRAKT, na którym opiera się sterownik: wiersz wyboru
+// jest klikalny, niesie stan w tekście i reaguje na kliknięcie.
+test('M206: wiersz wyboru to klikalny przycisk .multi-target-toggle (kontrakt testera)', async () => {
+  const { renderMultiTargetWizard } = await import('../src/table/choice-request.js');
+  const commands = wrapCommands();
+  const plan = multiTargetPlanOf(commands);
+  withMiniDom((host) => {
+    renderMultiTargetWizard(host, {
+      view: VIEW, session: SESSION, plan, commands, sourceName: 'Wrap in Flames',
+      onComplete: () => {}, onCancel: () => {},
+    });
+    const toggles = host.findAll((n) => String(n.className).includes('multi-target-toggle'));
+    assert.equal(toggles.length, plan.targets.length,
+      'każdy cel ma własny przycisk zaznaczenia');
+    for (const toggle of toggles) {
+      assert.equal(typeof toggle.click, 'function', 'wiersz musi być klikalny');
+    }
+    // Kreator NIE używa <input type=checkbox> — sterownik testera nie może
+    // ich szukać (to była przyczyna zawieszania się przebiegów).
+    const inputs = host.findAll((n) => String(n.tagName).toLowerCase() === 'input');
+    assert.equal(inputs.length, 0,
+      'zaznaczenia w kreatorze to przyciski ze stanem w tekście, nie <input type=checkbox>');
+  });
+});
+
+test('M206: stan zaznaczenia jest widoczny w TEKŚCIE wiersza ([ ] / [x])', async () => {
+  const { renderMultiTargetWizard } = await import('../src/table/choice-request.js');
+  const commands = wrapCommands();
+  withMiniDom((host) => {
+    renderMultiTargetWizard(host, {
+      view: VIEW, session: SESSION, plan: multiTargetPlanOf(commands), commands,
+      sourceName: 'Wrap in Flames', onComplete: () => {}, onCancel: () => {},
+    });
+    const toggle = host.find((n) => String(n.className).includes('multi-target-toggle'));
+    assert.match(toggle.textContent, /^\[ \]/, 'niezaznaczony wiersz zaczyna się od „[ ]”');
+    toggle.click();
+    assert.match(toggle.textContent, /^\[x\]/, 'po kliknięciu wiersz pokazuje „[x]”');
+    toggle.click();
+    assert.match(toggle.textContent, /^\[ \]/, 'ponowne kliknięcie odznacza');
+  });
+});
+
+test('M206: wiersz celu mówi, CZYJ jest permanent (lustrzana plansza)', async () => {
+  const { renderMultiTargetWizard } = await import('../src/table/choice-request.js');
+  // Obie strony mają stwora o tej samej nazwie — bez znacznika kontrolera
+  // wiersze różnią się tylko ukrytym id obiektu.
+  const view = {
+    playerId: 'p1',
+    players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }],
+    zones: { battlefield: [
+      { id: 'c0', cardId: 'hill-giant', controllerId: 'p1', zone: 'battlefield' },
+      { id: 'c1', cardId: 'hill-giant', controllerId: 'p2', zone: 'battlefield' },
+      { id: 'c2', cardId: 'hill-giant', controllerId: 'p2', zone: 'battlefield' },
+    ] },
+  };
+  const session = { nameOf: () => 'Hill Giant', nameOfObject: (id) => id, faceDownName: () => 'morph' };
+  const commands = wrapCommands();
+  withMiniDom((host) => {
+    renderMultiTargetWizard(host, {
+      view, session, plan: multiTargetPlanOf(commands), commands,
+      sourceName: 'Wrap in Flames', onComplete: () => {}, onCancel: () => {},
+    });
+    const labels = host.findAll((n) => String(n.className).includes('multi-target-toggle'))
+      .map((n) => n.textContent);
+    assert.equal(labels[0], '[ ] Hill Giant (Ty)', `mój stwór oznaczony: ${labels[0]}`);
+    assert.equal(labels[1], '[ ] Hill Giant (Nieprzyjaciel)', `wrogi stwór oznaczony: ${labels[1]}`);
+    // Etykiety wrogich stworów są identyczne (to ta sama karta u tego samego
+    // gracza) — rozróżnia je pozycja, tak jak w zwykłych listach celów.
+    assert.equal(labels[1], labels[2]);
+  });
+});
+
+test('M206: gracz jako cel zostaje bez znacznika kontrolera', async () => {
+  const { renderMultiTargetWizard } = await import('../src/table/choice-request.js');
+  const commands = fireballCommands(); // cele: c0, c1, p2 (gracz)
+  withMiniDom((host) => {
+    renderMultiTargetWizard(host, {
+      view: VIEW, session: SESSION, plan: multiTargetPlanOf(commands), commands,
+      sourceName: 'Fireball', onComplete: () => {}, onCancel: () => {},
+    });
+    const labels = host.findAll((n) => String(n.className).includes('multi-target-toggle'))
+      .map((n) => n.textContent);
+    // VIEW.players: p2 → „Nieprzyjaciel"; gracz nie jest permanentem na polu
+    // bitwy, więc nie dostaje nawiasu z kontrolerem.
+    // Gracz nie jest permanentem na polu bitwy, więc nie dostaje nawiasu
+    // z kontrolerem — inaczej niż stwór wroga („hill-giant (Nieprzyjaciel)").
+    assert.deepEqual(labels, ['[ ] hill-giant (Ty)', '[ ] hill-giant (Nieprzyjaciel)', '[ ] Nieprzyjaciel'],
+      `stwory ze znacznikiem, gracz bez: ${JSON.stringify(labels)}`);
+  });
+});
+
+// ===========================================================================
+// M207 — audyt rozgrywek, oś (b)/(c): CZARY O KILKU RÓŻNYCH POZYCJACH CELU.
+//
+// Zgłoszenie właściciela dotyczyło formy modala przy wielu celach. M195/C
+// rozwiązało przypadek JEDNORODNY („dowolna liczba celów” — Fireball, Wrap in
+// Flames): lista celów z ptaszkiem zamiast iloczynu kombinacji. Ale czar
+// o kilku RÓŻNYCH pozycjach celu trafiał do tej samej płaskiej listy:
+//
+//   Grave Exchange — zaznacz cele (2):
+//     [ ] Hill Giant        <- karta z MOJEGO grobu
+//     [ ] Ty                <- gracz
+//     [ ] Nieprzyjaciel     <- gracz
+//     [ ] Goblin Piker      <- karta z grobu (kolejność z odkrywania!)
+//
+// Oracle: „Return target creature card from your graveyard to your hand.
+// Target player sacrifices a creature of their choice.” To DWIE niezależne
+// pozycje, a nie „dwa cele z jednego worka”. Gracz mógł zaznaczyć dwie karty
+// z grobu albo dwóch graczy — wybór był wtedy nielegalny
+// (`commandForSelection` → null), a jedyną informacją zwrotną pozostawało
+// wyszarzone „Zatwierdź”, bez słowa CZEGO brakuje.
+//
+// W bazie kart ten kształt ma 7 kart (m.in. Knockout Maneuver, Ivy Lane
+// Denizen, Assert Perfection — „target creature you control … target creature
+// an opponent controls”).
+
+const spellCmds = (list) => list.map((targets) => ({
+  type: 'cast_spell', playerId: 'p1', objectId: 'sp', targets,
+}));
+
+test('M207/B1: czar o różnych pozycjach celu dostaje ROZBICIE NA POZYCJE', () => {
+  const plan = multiTargetPlanOf(spellCmds([['gy1', 'p1'], ['gy1', 'p2'], ['gy2', 'p1'], ['gy2', 'p2']]));
+  assert.deepEqual(plan.slots, [['gy1', 'gy2'], ['p1', 'p2']],
+    'pozycja 0 = karty z grobu, pozycja 1 = gracze');
+});
+
+test('M207/B2: czar o JEDNORODNEJ liście celów zostaje płaską listą', () => {
+  // Kontrola: Fireball / Wrap in Flames („any number of targets”, „up to
+  // three”) mają cele wymienne — tam wór z ptaszkami jest formą POPRAWNĄ
+  // i rozbijanie go na pozycje byłoby regresją M195/C.
+  const upToThree = multiTargetPlanOf(spellCmds([[], ['a'], ['b'], ['c'], ['a', 'b'], ['a', 'c'], ['b', 'c'], ['a', 'b', 'c']]));
+  assert.equal(upToThree.slots, null, '„up to N” — pozycje wymienne');
+  const anyNumber = multiTargetPlanOf(spellCmds([['a'], ['b'], ['a', 'b']]));
+  assert.equal(anyNumber.slots, null, '„any number of targets” — lista jednorodna');
+
+  // Przypadek, w którym bramka JEDNORODNOŚCI jest jedyną obroną: czar
+  // o STAŁYCH dwóch celach z jednej puli („two target creatures” — każdy
+  // z każdym). Sama arność (2) niczego tu nie wyklucza, a rozbicie na
+  // pozycje pokazałoby te same stwory dwa razy, w dwóch sekcjach.
+  const twoFromOnePool = multiTargetPlanOf(spellCmds([
+    ['a', 'b'], ['a', 'c'], ['b', 'c'], ['b', 'a'], ['c', 'a'], ['c', 'b'],
+  ]));
+  assert.equal(twoFromOnePool.slots, null,
+    'wspólna pula kandydatów na obu pozycjach = lista, nie sekcje');
+});
+
+test('M207/B3: kreator rysuje SEKCJĘ NA POZYCJĘ z nazwą z Oracle', async () => {
+  const { renderMultiTargetWizard } = await import('../src/table/choice-request.js');
+  const view = {
+    playerId: 'p1',
+    players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }],
+    zones: {
+      battlefield: [],
+      graveyard: [
+        { id: 'gy1', cardId: 'hill-giant', controllerId: 'p1', zone: 'graveyard' },
+        { id: 'gy2', cardId: 'goblin-piker', controllerId: 'p1', zone: 'graveyard' },
+      ],
+    },
+  };
+  const session = { nameOf: (id) => id, nameOfObject: (id) => id, faceDownName: () => 'morph' };
+  const commands = spellCmds([['gy1', 'p1'], ['gy1', 'p2'], ['gy2', 'p1'], ['gy2', 'p2']]);
+  // Etykiety pozycji pochodzą z deskryptora Oracle karty (ADR 0002).
+  const labels = [targetTypeLabel({ type: 'creature_card_in_graveyard' }), targetTypeLabel({ type: 'player' })];
+  withMiniDom((host) => {
+    renderMultiTargetWizard(host, {
+      view, session, plan: multiTargetPlanOf(commands), commands, sourceName: 'Grave Exchange',
+      slotLabels: labels, onComplete: () => {}, onCancel: () => {},
+    });
+    const heads = host.findAll((n) => String(n.className).includes('multi-target-slot-label'))
+      .map((n) => n.textContent);
+    assert.deepEqual(heads, ['1. karta-stwór w grobie:', '2. gracz:'],
+      `nagłówki pozycji z Oracle: ${JSON.stringify(heads)}`);
+  });
+});
+
+test('M207/B4: w obrębie pozycji wybór jest JEDNOKROTNY, a status mówi czego brakuje', async () => {
+  const { renderMultiTargetWizard } = await import('../src/table/choice-request.js');
+  const view = {
+    playerId: 'p1',
+    players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }],
+    zones: {
+      battlefield: [],
+      graveyard: [
+        { id: 'gy1', cardId: 'hill-giant', controllerId: 'p1', zone: 'graveyard' },
+        { id: 'gy2', cardId: 'goblin-piker', controllerId: 'p1', zone: 'graveyard' },
+      ],
+    },
+  };
+  const session = { nameOf: (id) => id, nameOfObject: (id) => id, faceDownName: () => 'morph' };
+  const commands = spellCmds([['gy1', 'p1'], ['gy1', 'p2'], ['gy2', 'p1'], ['gy2', 'p2']]);
+  let submitted = null;
+  withMiniDom((host) => {
+    renderMultiTargetWizard(host, {
+      view, session, plan: multiTargetPlanOf(commands), commands, sourceName: 'Grave Exchange',
+      slotLabels: ['karta-stwór w grobie', 'gracz'],
+      onComplete: (cmd) => { submitted = cmd; }, onCancel: () => {},
+    });
+    const status = () => host.find((n) => String(n.className).includes('multi-target-status')).textContent;
+    const confirm = host.find((n) => String(n.className).includes('multi-target-confirm'));
+    const toggles = host.findAll((n) => String(n.className).includes('multi-target-toggle'));
+
+    assert.match(status(), /Brakuje: karta-stwór w grobie, gracz/,
+      'na starcie status WYMIENIA brakujące pozycje, nie milczy');
+    assert.equal(confirm.disabled, true);
+
+    toggles[0].click();                       // gy1 (pozycja 0)
+    assert.match(status(), /^Brakuje: gracz$/, `po wyborze karty: ${status()}`);
+    toggles[1].click();                       // gy2 — TA SAMA pozycja
+    assert.match(status(), /^Brakuje: gracz$/, 'druga karta zastępuje pierwszą, nie dokłada się');
+    assert.equal(toggles[0].textContent.startsWith('[ ]'), true, 'poprzedni wybór pozycji odznaczony');
+    assert.equal(toggles[1].textContent.startsWith('[x]'), true, 'nowy wybór pozycji zaznaczony');
+
+    toggles[3].click();                       // gracz p2 (pozycja 1)
+    assert.equal(confirm.disabled, false, 'komplet pozycji odblokowuje zatwierdzenie');
+    confirm.click();
+  });
+  assert.ok(submitted, 'zatwierdzenie musi oddać komendę');
+  assert.ok(commands.includes(submitted), 'i to komendę z legalCommands (L48)');
+  assert.deepEqual(submitted.targets, ['gy2', 'p2'],
+    'cele w KOLEJNOŚCI POZYCJI — pozycja 0 to karta, pozycja 1 to gracz');
+});
+
+// ---------------------------------------------------------------------------
+// M207/B5 — kafel karty wymienia WSZYSTKIE pozycje celu
+//
+// Znalezione podczas audytu rozgrywek: `describeSpellEffects` opisywał tylko
+// `spell.targets[0]`, więc Knockout Maneuver na ręce pokazywał „cel: twój
+// stwór" i wyglądał, jakby nie dotykał stwora przeciwnika.
+// ---------------------------------------------------------------------------
+test('M207/B5: kafel czaru wymienia wszystkie pozycje celu, any_target bez pleonazmu', () => {
+  const registry = createCardRegistry();
+
+  const knockout = describeSpellEffects(registry.get('knockout-maneuver').spell);
+  assert.match(knockout, /cel: tw\u00f3j stw\u00f3r \+ stw\u00f3r przeciwnika/,
+    'obie pozycje Knockout Maneuver w kolejności z Oracle');
+
+  const grave = describeSpellEffects(registry.get('grave-exchange').spell);
+  assert.match(grave, /cel: karta-stw\u00f3r w grobie \+ gracz/,
+    'Grave Exchange: karta z grobu ORAZ gracz poświęcający stwora');
+
+  // Wyjątek M100/E10 zostaje: samotne „any target" nie dostaje „cel:".
+  const withstand = describeSpellEffects(registry.get('withstand').spell);
+  assert.match(withstand, /dowolny cel/);
+  assert.doesNotMatch(withstand, /cel: dowolny cel/, 'bez pleonazmu „cel: dowolny cel”');
 });

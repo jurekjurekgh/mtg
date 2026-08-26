@@ -336,10 +336,20 @@ export const REAL_CARDS = Object.freeze([
     oracleText: '{T}: Add {C}. ({C} represents colorless mana.)\n{T}, Tap an untapped creature you control: Add one mana of any color.',
     imageUri: 'https://cards.scryfall.io/large/front/c/f/cf08c317-6f2d-47e3-ab5b-8af73fd3e404.jpg?1783937892',
     abilities: [
+      // M212/A (zgłoszenie właściciela): karta ma DWIE odrębne zdolności
+      // manowe. Wcześniej była jedna hybryda — koszt z drugiej („tapnij
+      // stwora") sklejony z efektem pierwszej (mana bezbarwna), więc gracz
+      // płacił stworem za {C} i nie miał wcale dostępu do many dowolnego
+      // koloru (precedens kodowania: Heap Gate).
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1 },
+      }),
       createAbility({
         type: ABILITY_TYPE.activated,
         cost: { tap: true, tapCreature: true },
-        effect: { type: 'add_mana', amount: 1 },
+        effect: { type: 'add_mana', amount: 1, colors: ['W', 'U', 'B', 'R', 'G'] },
       }),
     ],
     artId: 79,
@@ -1016,8 +1026,11 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
+        // M212/A (ta sama klasa co Holdout Settlement): „Add one mana of any
+        // color" bez jawnych kolorów spadało na fallback `src.colors`, czyli
+        // kolor KARTY — artefakt zielony dawał wyłącznie {G}.
         cost: { tap: true, tapCreature: true },
-        effect: { type: 'add_mana', amount: 1 },
+        effect: { type: 'add_mana', amount: 1, colors: ['W', 'U', 'B', 'R', 'G'] },
       }),
       createAbility({
         type: ABILITY_TYPE.activated,
@@ -2235,7 +2248,12 @@ export const REAL_CARDS = Object.freeze([
       // („up to one\" — obsługa w triggers.js, efekty po targetIndex).
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'equipped_creature_attacks' },
+        // M212/Z4: cel „up to one target creature defending player controls"
+        // jest DANĄ karty (deskryptor), nie wiedzą wbudowaną w silnik.
+        trigger: {
+          event: 'equipped_creature_attacks',
+          requiresTarget: { type: 'creature_defending_player_controls', upTo: true },
+        },
         effect: [
           { type: 'add_counter', counter: '+1/+1', amount: 1 },
           { type: 'tap_permanent', targetIndex: 1 },
@@ -3862,12 +3880,19 @@ export const UNDERCITY_DUNGEON = Object.freeze({
 const basicLandImage = (name) =>
   `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(name)}&format=image&version=normal`;
 
+// CR 202.2: kolor obiektu wyznacza jego koszt many. Land nie ma kosztu many,
+// wiec KAZDY land jest bezbarwny — takze podstawowy. Podtyp (Plains/Forest)
+// mowi, jaka mane produkuje, i to on steruje produkcja (mana-sources.js),
+// a nie pole `colors`. Kolor landa jest widoczny w regulach walki:
+// „protection from [kolor]”, intimidate i „can't be blocked except by
+// [kolor] creatures” patrza na colors blokera — animowany land (Silvanus's
+// Invoker) musi byc tam bezbarwny.
 export const VIRTUAL_BASIC_LANDS = Object.freeze([
-  defineCard({ id: 'basic-plains', name: 'Plains', set: null, types: ['Basic', 'Land'], subtypes: ['Plains'], colors: ['W'], imageUri: basicLandImage('Plains'), support: { status: 'supported' } }),
-  defineCard({ id: 'basic-island', name: 'Island', set: null, types: ['Basic', 'Land'], subtypes: ['Island'], colors: ['U'], imageUri: basicLandImage('Island'), support: { status: 'supported' } }),
-  defineCard({ id: 'basic-swamp', name: 'Swamp', set: null, types: ['Basic', 'Land'], subtypes: ['Swamp'], colors: ['B'], imageUri: basicLandImage('Swamp'), support: { status: 'supported' } }),
-  defineCard({ id: 'basic-mountain', name: 'Mountain', set: null, types: ['Basic', 'Land'], subtypes: ['Mountain'], colors: ['R'], imageUri: basicLandImage('Mountain'), support: { status: 'supported' } }),
-  defineCard({ id: 'basic-forest', name: 'Forest', set: null, types: ['Basic', 'Land'], subtypes: ['Forest'], colors: ['G'], imageUri: basicLandImage('Forest'), support: { status: 'supported' } }),
+  defineCard({ id: 'basic-plains', name: 'Plains', set: null, types: ['Basic', 'Land'], subtypes: ['Plains'], colors: [], imageUri: basicLandImage('Plains'), support: { status: 'supported' } }),
+  defineCard({ id: 'basic-island', name: 'Island', set: null, types: ['Basic', 'Land'], subtypes: ['Island'], colors: [], imageUri: basicLandImage('Island'), support: { status: 'supported' } }),
+  defineCard({ id: 'basic-swamp', name: 'Swamp', set: null, types: ['Basic', 'Land'], subtypes: ['Swamp'], colors: [], imageUri: basicLandImage('Swamp'), support: { status: 'supported' } }),
+  defineCard({ id: 'basic-mountain', name: 'Mountain', set: null, types: ['Basic', 'Land'], subtypes: ['Mountain'], colors: [], imageUri: basicLandImage('Mountain'), support: { status: 'supported' } }),
+  defineCard({ id: 'basic-forest', name: 'Forest', set: null, types: ['Basic', 'Land'], subtypes: ['Forest'], colors: [], imageUri: basicLandImage('Forest'), support: { status: 'supported' } }),
   // =========================================================================
   // Batch 24 (10 kart, 2026-08-08) — lista właściciela
   // Faceless Butcher, Unbreakable Bond, Spinewoods Paladin, Tome Scour,
@@ -6811,7 +6836,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     ],
     artId: 497, plan: 'Dominaria',
     support: { status: 'supported', limitations: [] },
-    notes: ['exile linked: id wygnanego zapisane na źródle (exiledCardIds), LTB przywraca (jak Faceless Butcher); Powerstone produkuje {C} (restrykcja „tylko czary artefaktów\" nieimplementowana — patrz MANA_SOURCE_MAP)'],
+    notes: ['exile linked: id wygnanego zapisane na źródle (exiledCardIds), LTB przywraca (jak Faceless Butcher); Powerstone produkuje {C} z restrykcją „only to cast artifact spells\" (M214 — restrictedPool)'],
   }),
 
   // Token Powerstone (BRO): artefakt „{T}: Add {C} — spend only to cast
@@ -6823,7 +6848,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Artifact', 'Token'], subtypes: ['Powerstone'], colors: [],
     manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Static Net'] },
-    notes: ['{T}: Add {C}; restrykcja „tylko czary artefaktów\" nieimplementowana'],
+    notes: ['{T}: Add {C}; restrykcja „only to cast artifact spells\" (M214 — restrictedPool)'],
   }),
 
   // 4. Satyr Wayfinder (M15) {1}{G} 1/1 Satyr —
@@ -7642,10 +7667,19 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   //    odrzuca kartę (discard_cards applyTo target — wzorzec Mindstab).
   defineCard({
     id: 'immersturm-skullcairn', name: 'Immersturm Skullcairn', set: 'KHM',
-    types: ['Land'], colors: ['B'], entersTapped: true,
+    // CR 202.2: land bez kosztu many jest BEZBARWNY (Scryfall: colors: []).
+    // Produkcje {B} niesie mana-sources.js, nie pole `colors`.
+    types: ['Land'], colors: [], entersTapped: true,
     oracleText: 'This land enters tapped.\n{T}: Add {B}.\n{1}{B}{R}{R}, {T}, Sacrifice this land: It deals 3 damage to target player. That player discards a card. Activate only as a sorcery.',
     imageUri: 'https://cards.scryfall.io/large/front/1/2/12ed97de-736d-43d8-977b-308ac54f88f4.jpg?1783928173',
     abilities: [
+      // „{T}: Add {B}" — deskryptor produkcji many wprost z Oracle (M193/A:
+      // kolory zna zdolność karty, nie pole `colors` ani ręczna mapa).
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['B'] },
+      }),
       createAbility({
         type: ABILITY_TYPE.activated,
         timing: 'sorcery',
@@ -9554,6 +9588,230 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     artId: 554, plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: [] },
     notes: ['efekt dotyczy PRZYSZŁYCH czarów w tej turze — pozwolenie żyje w stanie tury (subtypeFlashThisTurn), nie na karcie', 'podtyp jest deskryptorem, więc ta sama ścieżka obsłuży przyszłe „Angel spells"'],
+  }),
+
+
+  // ==== Batch 49 (lista właściciela 557–566) ====
+
+  // 1. Shock (AER) {R} Instant — 2 obrażenia w dowolny cel.
+  defineCard({
+    id: 'shock', name: 'Shock', set: 'AER',
+    types: ['Instant'], colors: ['R'], manaCost: 1,
+    oracleText: 'Shock deals 2 damage to any target.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/0/00365412-41db-427c-9109-8f69c17c326d.jpg?1783936748',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'any_target' }],
+      effects: [{ type: 'damage', amount: 2 }],
+    },
+    artId: 562, plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Razorfoot Griffin (INV) {3}{W} 2/2 — flying + first strike.
+  defineCard({
+    id: 'razorfoot-griffin', name: 'Razorfoot Griffin', set: 'INV',
+    types: ['Creature'], subtypes: ['Griffin'], colors: ['W'],
+    power: 2, toughness: 2, manaCost: 4,
+    keywords: ['flying', 'first_strike'],
+    oracleText: 'Flying (This creature can\'t be blocked except by creatures with flying or reach.)\\nFirst strike (This creature deals combat damage before creatures without first strike.)',
+    imageUri: 'https://cards.scryfall.io/large/front/8/1/819e2046-9b78-4fd0-92f8-798bfac51195.jpg?1783945714',
+    artId: 564, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Gaelicat (FIN) {2}{W} 1/3 — flying, vigilance; +2/+0 przy 2+ artefaktach.
+  defineCard({
+    id: 'gaelicat', name: 'Gaelicat', set: 'FIN',
+    types: ['Creature'], subtypes: ['Cat'], colors: ['W'],
+    power: 1, toughness: 3, manaCost: 3,
+    keywords: ['flying', 'vigilance'],
+    oracleText: 'Flying, vigilance\nAs long as you control two or more artifacts, this creature gets +2/+0.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/9/29606c49-e1a4-49c3-883b-9122c08bbbc7.jpg?1783906648',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { minArtifactsControlled: 2 },
+        pump: { power: 2, toughness: 0 },
+      }),
+    ],
+    artId: 559, plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. Mana Cylix (CON) {1} Artifact — filtr many na dowolny kolor.
+  defineCard({
+    id: 'mana-cylix', name: 'Mana Cylix', set: 'CON',
+    types: ['Artifact'], colors: [], manaCost: 1,
+    oracleText: '{1}, {T}: Add one mana of any color.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/8/68e25c75-5e20-4990-9b7e-9d04c94fee9f.jpg?1783942461',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['W', 'U', 'B', 'R', 'G'] },
+      }),
+    ],
+    artId: 565, plan: 'Alara',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Koilos Roc (BRO) {4}{U} 3/3 — flash, flying, ETB tapped Powerstone.
+  defineCard({
+    id: 'koilos-roc', name: 'Koilos Roc', set: 'BRO',
+    types: ['Creature'], subtypes: ['Bird'], colors: ['U'],
+    power: 3, toughness: 3, manaCost: 5,
+    keywords: ['flash', 'flying'],
+    oracleText: 'Flash\nFlying\nWhen this creature enters, create a tapped Powerstone token. (It\'s an artifact with "{T}: Add {C}. This mana can\'t be spent to cast a nonartifact spell.")',
+    imageUri: 'https://cards.scryfall.io/large/front/e/b/ebdbcb87-c6ea-477f-a560-c175d99e21b8.jpg?1783920113',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{
+          type: 'create_token', cardId: 'token_powerstone', name: 'Powerstone',
+          kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Powerstone'],
+          abilities: [createAbility({
+            type: ABILITY_TYPE.activated,
+            cost: { tap: true },
+            effect: { type: 'add_mana', amount: 1, colors: [], spendOnly: 'artifact' },
+          })],
+          tapped: true,
+        }],
+      }),
+    ],
+    artId: 563, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+    notes: ['token Powerstone wchodzi ZATAPNIĘTY (tapped: true) — jak w druku BRO'],
+  }),
+
+  // 6. Kishla Village (TDM) Land — ETB tapped, chyba że kontrolujesz Island
+  //    lub Swamp; {T}: Add {G}; {3}{G}, {T}: Surveil 2.
+  defineCard({
+    id: 'kishla-village', name: 'Kishla Village', set: 'TDM',
+    types: ['Land'], colors: [],
+    entersTapped: true,
+    entersTappedCondition: { type: 'controls_land_subtype_any', subtypes: ['Island', 'Swamp'], amount: 1 },
+    oracleText: 'This land enters tapped unless you control an Island or a Swamp.\n{T}: Add {G}.\n{3}{G}, {T}: Surveil 2. (Look at the top two cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order.)',
+    imageUri: 'https://cards.scryfall.io/large/front/9/f/9f0ff90d-7312-44df-afc5-29c768fa7758.jpg?1783907278',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['G'] },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 4, tap: true },
+        effect: { type: 'surveil', amount: 2 },
+      }),
+    ],
+    artId: 557, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+    notes: ['warunek ETB to wariant danych (controls_land_subtype_any), nie kod karto-specyficzny — Oracle nie wymaga „other”, a sam land nie ma tych podtypów'],
+  }),
+
+  // 7. White Mage's Staff (FIN) {1}{W} Equipment — Job select; +1/+1, trigger
+  //    ataku (1 życie) i typ Cleric; Equip {3}.
+  defineCard({
+    id: 'white-mages-staff', name: "White Mage's Staff", set: 'FIN',
+    types: ['Artifact'], subtypes: ['Equipment'], colors: ['W'], manaCost: 2,
+    equipment: { equip: 3, pump: { power: 1, toughness: 1 }, subtypes: ['Cleric'] },
+    oracleText: 'Job select (When this Equipment enters, create a 1/1 colorless Hero creature token, then attach this to it.)\nEquipped creature gets +1/+1, has "Whenever this creature attacks, you gain 1 life," and is a Cleric in addition to its other types.\nEquip {3} ({3}: Attach to target creature you control. Equip only as a sorcery.)',
+    imageUri: 'https://cards.scryfall.io/large/front/3/0/30db372e-0b4c-4e16-9667-bf3fda666f72.jpg?1783906642',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'job_select' },
+      }),
+      // Trigger nadany nosicielowi siedzi na EQUIPMENCIE (wzorzec Greatsword
+      // of Tyr): odpala się przy deklaracji ataku wyposażonego stwora.
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'equipped_creature_attacks' },
+        effect: [{ type: 'gain_life', amount: 1 }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'equip',
+        cost: { mana: 3 },
+        effect: [],
+      }),
+    ],
+    artId: 558, plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Time to Feed (THS) {2}{G} Sorcery — fight + opóźniony trigger „gdy ten
+  //    stwór zginie w tej turze, zyskujesz 3 życia".
+  defineCard({
+    id: 'time-to-feed', name: 'Time to Feed', set: 'THS',
+    types: ['Sorcery'], colors: ['G'], manaCost: 3,
+    oracleText: 'Choose target creature an opponent controls. When that creature dies this turn, you gain 3 life. Target creature you control fights that creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/9/799d08a6-d978-4731-98ad-38acd57f3196.jpg?1783939736',
+    spell: {
+      timing: 'sorcery',
+      targets: [
+        { type: 'creature_opponent_controls' },
+        { type: 'creature_you_control' },
+      ],
+      effects: [
+        // Kolejność Oracle: znacznik śmierci PRZED walką — stwór zabity
+        // w tej właśnie walce też daje 3 życia (CR 603.7a).
+        { type: 'gain_life_if_target_dies_this_turn', targetIndex: 0, amount: 3 },
+        { type: 'fight', targetIndexA: 1, targetIndexB: 0 },
+      ],
+    },
+    artId: 561, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+    notes: ['znacznik zakładany przed fightem, więc stwór zabity w tej walce także daje 3 życia'],
+  }),
+
+  // 9. Creakwood Safewright (ECL) {1}{B} 5/5 — wchodzi z trzema -1/-1;
+  //    w end stepie zdejmuje licznik, jeśli w grobie jest Elf.
+  defineCard({
+    id: 'creakwood-safewright', name: 'Creakwood Safewright', set: 'ECL',
+    types: ['Creature'], subtypes: ['Elf', 'Warrior'], colors: ['B'],
+    power: 5, toughness: 5, manaCost: 2,
+    entersWithCounters: { '-1/-1': 3 },
+    oracleText: 'This creature enters with three -1/-1 counters on it.\nAt the beginning of your end step, if there is an Elf card in your graveyard and this creature has a -1/-1 counter on it, remove a -1/-1 counter from this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/b/3bcc24cf-776a-4182-bf77-a611ad90b28f.jpg?1783904467',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'end_step',
+          condition: { subtypeCardInYourGraveyard: 'Elf', selfHasCounter: '-1/-1' },
+        },
+        effect: [{ type: 'remove_counter', counter: '-1/-1', amount: 1 }],
+      }),
+    ],
+    artId: 566, plan: 'Lorwyn',
+    support: { status: 'supported', limitations: [] },
+    notes: ['intervening-if (CR 603.4): oba warunki sprawdzane przy odpaleniu i ponownie przy rozstrzyganiu'],
+  }),
+
+  // 10. Dead Ringers (APC) {4}{B} Sorcery — niszczy DWA nieczarne stwory
+  //     tylko wtedy, gdy mają identyczne zbiory kolorów.
+  defineCard({
+    id: 'dead-ringers', name: 'Dead Ringers', set: 'APC',
+    types: ['Sorcery'], colors: ['B'], manaCost: 5,
+    oracleText: 'Destroy two target nonblack creatures unless either one is a color the other isn\'t. They can\'t be regenerated.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/b/9b78028c-3ebd-432d-b628-e1fa284f08f3.jpg?1783945349',
+    spell: {
+      timing: 'sorcery',
+      targets: [
+        { type: 'nonblack_creature' },
+        { type: 'nonblack_creature' },
+      ],
+      effects: [
+        { type: 'destroy_pair_if_same_colors', targetIndexA: 0, targetIndexB: 1 },
+      ],
+    },
+    artId: 560, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+    notes: ['„unless either one is a color the other isn\'t” = równość ZBIORÓW kolorów (CR 105.2); przy różnicy nie ginie żaden z celów', 'dwa bezbarwne stwory (puste zbiory) są legalnym, skutecznym celem'],
   }),
 
 ]);

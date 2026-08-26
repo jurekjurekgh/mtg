@@ -4,6 +4,7 @@
 1x Hunter's Blowgun
 1x Malamet Battle Glyph
 1x Merchant's Dockhand
+1x Shock
 1x Canonized in Blood
 1x Cathartic Reunion
 1x Lodestone Needle
@@ -24,8 +25,8 @@
 1x Dire Fleet Ravager
 1x Spreading Insurrection
 1x Seismic Monstrosaur
-2x Plains
-2x Island
+1x Plains
+3x Island
 3x Swamp
-3x Mountain
+4x Mountain
 2x Forest

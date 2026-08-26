@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
+import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { spendMana, addMana, producibleMana } from './resources.js';
@@ -511,7 +511,7 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
     }
     const protColors = effectiveProtectionFromColors(state, targetObject);
     if (protColors.length > 0) {
-      const srcColors = sourceObject.colors ?? [];
+      const srcColors = effectiveColors(sourceObject);
       if (srcColors.some(c => protColors.includes(c))) {
         state.events.push(event('damage_prevented', {
           objectId: targetId, amount: rawAmount, cardId: targetObject.cardId, protection: true,
@@ -551,6 +551,19 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
     changeLife(state, targetId, -dealt);
   } else {
     markDamage(state, targetId, dealt);
+  }
+  // Deathtouch (CR 702.4b): „Any amount of damage this deals to a creature is
+  // enough to destroy it" — dotyczy WSZYSTKICH obrażeń, także niecombatowych
+  // (fight, „deals damage equal to its power", triggery). Wcześniej oznaczenie
+  // damagedByDeathtouch ustawiał wyłącznie combat.js — stwór 1/2 z deathtouch
+  // zadający 1 obrażenie w fight nie zabijał 4/4 (SBA nie miała flagi, a
+  // obrażenia < wytrzymałości). Prewencja/protection kasują obrażenia przed
+  // oznaczeniem — CR 702.4b: bez zadanych obrażeń nie ma śmierci.
+  if (!targetIsPlayer && dealt > 0 && effectiveKeywords(sourceObject, state).includes('deathtouch')) {
+    const current = state.objects.get(targetId);
+    if (current && current.zone === 'battlefield') {
+      state.objects.set(targetId, Object.freeze({ ...current, damagedByDeathtouch: true }));
+    }
   }
   // Lifelink (CR 702.15): zysk życia równy obrażeniom ZADANYM (po prewencji).
   if (effectiveKeywords(sourceObject, state).includes('lifelink')) {
@@ -2371,6 +2384,30 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     return;
   }
+  if (effect.type === 'gain_life_if_target_dies_this_turn') {
+    // Time to Feed (THS): „When that creature dies this turn, you gain 3 life.”
+    // CR 603.7a — opóźniony trigger utworzony przy rozstrzyganiu czaru, czekający
+    // na śmierć KONKRETNEGO obiektu do końca tury. Wzorzec znacznika jak
+    // exile_if_dies_this_turn: lista na stanie, czyszczona w cleanup.
+    const targetId = targets[effect.targetIndex ?? 0];
+    if (targetId == null) return;
+    const marked = state.objects.get(targetId);
+    if (!marked || marked.zone !== 'battlefield') return;
+    state.gainLifeIfDiesThisTurn = [
+      ...(state.gainLifeIfDiesThisTurn ?? []),
+      Object.freeze({
+        objectId: targetId,
+        playerId: sourceObject.controllerId,
+        amount: effect.amount ?? 1,
+        sourceCardId: sourceObject.cardId ?? null,
+      }),
+    ];
+    state.events.push(event('gain_life_if_dies_marked', {
+      objectId: targetId, cardId: marked.cardId,
+      playerId: sourceObject.controllerId, amount: effect.amount ?? 1,
+    }));
+    return;
+  }
   if (effect.type === 'exile_if_dies_this_turn') {
     // M177/A (Agate Assault): „If that creature would die this turn, exile it
     // instead” — znacznik na id celu, konsumowany przez deathZoneFor we
@@ -3147,6 +3184,42 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.events.push(event('cant_be_blocked_granted', { objectId: targetId, cardId: object.cardId }));
     return;
   }
+  if (effect.type === 'destroy_pair_if_same_colors') {
+    // Dead Ringers (APC): „Destroy two target nonblack creatures UNLESS EITHER
+    // ONE IS A COLOR THE OTHER ISN'T. They can't be regenerated."
+    // Oracle = równość ZBIORÓW kolorów obu celów (CR 105.2): dwa zielone stwory
+    // tak, zielony vs zielono-biały nie, dwa bezbarwne (puste zbiory) tak.
+    // Efekt jest „wszystko albo nic" — jeśli kolory się różnią, NIC nie ginie.
+    const idA = targets[effect.targetIndexA ?? 0];
+    const idB = targets[effect.targetIndexB ?? 1];
+    if (idA == null || idB == null) return;
+    const objectA = state.objects.get(idA);
+    const objectB = state.objects.get(idB);
+    // CR 608.2b — jeśli którykolwiek cel zniknął, czar nie robi nic dla niego;
+    // przy porównaniu kolorów brak jednego celu = brak porównania = brak efektu.
+    if (!objectA || objectA.zone !== 'battlefield') return;
+    if (!objectB || objectB.zone !== 'battlefield') return;
+    const colorsA = [...effectiveColors(objectA)].sort();
+    const colorsB = [...effectiveColors(objectB)].sort();
+    const sameColors = colorsA.length === colorsB.length
+      && colorsA.every((color, index) => color === colorsB[index]);
+    state.events.push(event('destroy_pair_color_check', {
+      cardId: sourceObject?.cardId ?? null,
+      colorsA, colorsB, matched: sameColors,
+    }));
+    if (!sameColors) return;
+    // „They can't be regenerated" — znacznik PRZED zniszczeniem, żeby tarcza
+    // regeneracji nie uratowała celu (ta sama lista, co Rage of Purphoros).
+    for (const targetId of [idA, idB]) {
+      if (!(state.cantBeRegeneratedThisTurn ?? []).includes(targetId)) {
+        state.cantBeRegeneratedThisTurn = [...(state.cantBeRegeneratedThisTurn ?? []), targetId];
+      }
+    }
+    for (const targetId of [idA, idB]) {
+      applyEffect(state, { type: 'destroy_permanent', targetIndex: 0 }, sourceObject, [targetId]);
+    }
+    return;
+  }
   if (effect.type === 'cant_be_regenerated_this_turn') {
     // Rage of Purphoros (THS): „It can't be regenerated this turn." Flaga
     // trwała do końca tury ustawiana na celu — tryRegenerate w state-based.js
@@ -3311,11 +3384,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (candidates.length === 0) return;
     state.pendingGraveyardToTop = {
       playerId: ownerId,
+      sourceCardId: sourceObject?.cardId ?? null,
       candidateIds: [...candidates],
       restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.turn.priorityPlayerId = ownerId;
-    state.events.push(event('graveyard_top_choice_required', { playerId: ownerId, candidateIds: [...candidates] }));
+    state.events.push(event('graveyard_top_choice_required', { playerId: ownerId, candidateIds: [...candidates], sourceCardId: sourceObject?.cardId ?? null }));
     // Blokująca decyzja — rozstrzyganie czaru czeka (state.pendingSpell,
     // pozostałe efekty dokończy resolve_graveyard_top_choice{done:true}).
     return true;
@@ -3338,6 +3412,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (candidates.length === 0) return; // „may" bez kandydatow — brak decyzji
     state.pendingGraveyardToTop = {
       playerId: ownerId,
+      sourceCardId: sourceObject?.cardId ?? null,
       candidateIds: [...candidates],
       filter: effect.filter ?? null,
       maxCards: 1,
@@ -3434,6 +3509,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // MV <= X z wygnanych (bez kosztu) aż do zakończenia (done); reszta do grobu.
     state.pendingEpicExperiment = {
       playerId: controllerId,
+      sourceCardId: sourceObject?.cardId ?? null,
       exileIds,
       maxMV: X,
       restorePriorityTo: state.turn.priorityPlayerId,
@@ -3442,6 +3518,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.events.push(event('epic_experiment_started', {
       playerId: controllerId, count: exileIds.length,
       cardIds: exileIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
+      sourceCardId: sourceObject?.cardId ?? null,
     }));
     return true;
   }
@@ -3548,11 +3625,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     state.pendingHandCreature = {
       playerId: controllerId,
+      sourceCardId: sourceObject?.cardId ?? null,
       candidateIds: [...candidates],
       restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.turn.priorityPlayerId = controllerId;
-    state.events.push(event('hand_creature_choice_required', { playerId: controllerId, candidates: [...candidates] }));
+    state.events.push(event('hand_creature_choice_required', { playerId: controllerId, candidates: [...candidates], sourceCardId: sourceObject?.cardId ?? null }));
     return true;
   }
   if (effect.type === 'craft_transform') {
@@ -4262,6 +4340,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // can still decline). The resolve handler allows skip.
     state.pendingFertileThicket = {
       controllerId,
+      sourceCardId: sourceObject?.cardId ?? null,
       topCardIds: library.slice(0, count),
       basicLandIds: library.slice(0, count).map(id => {
         const obj = state.objects.get(id);
@@ -4271,6 +4350,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     };
     state.events.push(event('fertile_thicket_reveal_started', {
       controllerId, cardCount: count, basicLandCount: (state.pendingFertileThicket.basicLandIds).length,
+      sourceCardId: sourceObject?.cardId ?? null,
     }));
     return;
   }
@@ -4362,11 +4442,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (topIds.length === 0) return;
     state.pendingIndex = {
       playerId: controllerId,
+      sourceCardId: sourceObject?.cardId ?? null,
       objectIds: [...topIds],
       restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.turn.priorityPlayerId = controllerId;
-    state.events.push(event('index_started', { playerId: controllerId, count: topIds.length, cardIds: topIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean) }));
+    state.events.push(event('index_started', { playerId: controllerId, count: topIds.length, cardIds: topIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean), sourceCardId: sourceObject?.cardId ?? null }));
     return true;
   }
 
@@ -4508,7 +4589,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.turn.priorityPlayerId = ctrl;
-    state.events.push(event('optional_draw_required', { playerId: ctrl }));
+    state.events.push(event('optional_draw_required', { playerId: ctrl, sourceCardId: sourceObject?.cardId ?? null }));
     return true;
   }
 

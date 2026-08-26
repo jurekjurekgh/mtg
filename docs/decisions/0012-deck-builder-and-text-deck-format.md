@@ -61,4 +61,4 @@ syntetycznych obiektach testowych, bez UI kreatora.
 
 - [ADR 0010 — dane reguł kart w repozytorium](0010-card-rules-data-in-repository.md)
 - [ADR 0011 — talie wersjonowane i brak trwałości localStorage](0011-modular-sources-single-file-artifact.md)
-- [PROJECT_STATE](../PROJECT_STATE.md)
+- [PROJECT_HISTORY](../PROJECT_HISTORY.md)

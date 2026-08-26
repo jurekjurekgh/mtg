@@ -22,3 +22,6 @@ Thumbs.db
 # artefakty przebiegu. M203: ścieżka względna --out jest liczona od katalogu
 # narzędzia, więc wszystkie lądują tutaj, a nie w korzeniu repo.
 tools/table-tester/*.txt
+# ...także transkrypty grupowane w podkatalogi audytu (M205: `--out
+# audyt-m205/g1.txt`) — wzorzec z jedną gwiazdką ich nie obejmował.
+tools/table-tester/**/*.txt

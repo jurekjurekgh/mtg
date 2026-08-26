@@ -69,11 +69,11 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_mulligan_choice: 'Mulligan (ręka startowa)',
   resolve_mulligan_bottom_choice: 'Odłożenie kart na spód',
   resolve_search_choice: 'Szukanie w bibliotece',
-  resolve_fertile_thicket: 'Fertile Thicket (wierzch biblioteki)',
-  resolve_springbloom: 'Springbloom Druid (poświęcenie landa)',
+  resolve_fertile_thicket: 'Układanie wierzchu biblioteki',
+  resolve_springbloom: 'Poświęcenie lądu',
   resolve_damage_assignment: 'Rozdzielenie obrażeń bojowych',
   resolve_color_choice: 'Wybór koloru',
-  resolve_index_choice: 'Index (kolejność wierzchu)',
+  resolve_index_choice: 'Kolejność kart na wierzchu',
   resolve_modal_choice: 'Tryb czaru („choose one")',
   resolve_redirect_choice: 'Przekierowanie obrażeń',
   resolve_proliferate: 'Proliferate (licznik)',
@@ -148,7 +148,7 @@ const TOUCH_DEVICE = isTouchDevice();
 
 /** Czytelna nazwa bieżącego kroku tury. */
 export function stepLabel(turn) {
-  if (turn.step === 'main') return turn.phase === 'postcombat_main' ? 'Druga faza główna' : 'Faza główna';
+  if (turn.step === 'main1' || turn.step === 'main2') return turn.step === 'main2' ? 'Druga faza główna' : 'Faza główna';
   return STEP_LABELS[turn.step] ?? turn.step;
 }
 
@@ -166,9 +166,11 @@ const TARGET_TYPE_LABELS = Object.freeze({
   artifact_you_control: 'twój artefakt', land: 'ląd', land_you_control: 'twój ląd',
   enchantment: 'enchantment', nonland_permanent: 'permanent niebędący lądem',
   other_nonland_permanent: 'inny permanent niebędący lądem',
+  nonblack_creature: 'nieczarny stwór',
   nonartifact_nonblack_creature: 'stwór niebędący artefaktem ani czarnym',
   creature_you_control: 'twój stwór', creature_opponent_controls: 'stwór przeciwnika',
   creature_or_vehicle: 'stwór lub Vehicle',
+  creature_defending_player_controls: 'stwór broniącego się gracza',
   creature_with_subtypes: 'stwór z podtypem', creature_with_power_at_least: 'stwór o sile ≥',
   creature_card_in_graveyard: 'karta-stwór w grobie', creature_card_in_opponent_graveyard: 'karta-stwór w grobie przeciwnika',
   card_in_graveyard: 'karta w grobie', permanent_card_in_graveyard: 'karta-permanent w grobie',
@@ -198,7 +200,7 @@ const TARGET_TYPE_LABELS = Object.freeze({
  *
  * Przyjmuje spec (obiekt) albo goły string typu — stare wywołania działają dalej.
  */
-const targetTypeLabel = (spec) => {
+export const targetTypeLabel = (spec) => {
   const type = typeof spec === 'string' ? spec : spec?.type;
   const base = TARGET_TYPE_LABELS[type] ?? type;
   if (typeof spec === 'string' || !spec) return base;
@@ -255,9 +257,22 @@ export function describeSpellEffects(spell) {
     }
     return describeEffect(effect);
   });
-  const target = (spell.targets ?? []).length
-    ? (spell.targets[0].type === 'any_target' ? 'dowolny cel' : `cel: ${targetTypeLabel(spell.targets[0])}`)
-    : '';
+  // M207 (audyt rozgrywek): kafel opisywał WYŁĄCZNIE pierwszą pozycję celu
+  // (`spell.targets[0]`), więc czary o dwóch RÓŻNYCH pozycjach gubiły połowę
+  // treści. Knockout Maneuver („put a +1/+1 counter on target creature you
+  // control, then it deals damage … to target creature an opponent controls")
+  // pokazywał „cel: twój stwór" — z kafla wynikało, że czar dotyka tylko
+  // mojego stwora. Wymieniamy wszystkie pozycje w kolejności z Oracle.
+  //
+  // Zachowany wyjątek M100/E10: samotne „any target" to „dowolny cel" BEZ
+  // przedrostka „cel:" (etykieta już zawiera to słowo — inaczej wychodzi
+  // pleonazm „cel: dowolny cel").
+  const targetSpecs = spell.targets ?? [];
+  const target = targetSpecs.length === 0
+    ? ''
+    : (targetSpecs.length === 1 && targetSpecs[0].type === 'any_target')
+      ? 'dowolny cel'
+      : `cel: ${targetSpecs.map((spec) => (spec.type === 'any_target' ? 'dowolny cel' : targetTypeLabel(spec))).join(' + ')}`;
   return [parts.join(' + '), target].filter(Boolean).join(' \u00b7 ');
 }
 
@@ -759,7 +774,7 @@ function dynamicAmount(val) {
 function signed(n) { return (Number(n) >= 0 ? '+' : '') + n; }
 
 /** Odmiana polska rzeczownika wg liczby: (1 → one, 2-4 → few, 5+ → many). */
-function polishPluralCount(n, one, few, many) {
+export function polishPluralCount(n, one, few, many) {
   const mod10 = n % 10;
   const mod100 = n % 100;
   if (n === 1) return one;
@@ -937,6 +952,8 @@ function describeEffect(e) {
       const inner = (e.effects ?? []).map((ie) => describeEffect(ie)).filter(Boolean).join(' + ');
       return inner ? `${inner} (każdy z celów)` : 'ten sam efekt na każdym z celów';
     },
+    gain_life_if_target_dies_this_turn: () => `gdy ten stwór zginie w tej turze, zyskujesz ${e.amount ?? 1} życia`,
+    destroy_pair_if_same_colors: () => 'zniszcz oba cele, o ile mają identyczne kolory',
     reveal_subtype_deal_damage: () => 'możesz ujawnić kartę z ręki — obrażenia przeciwnika',
     next_spell_discount: () => 'następny czar podtypu tańszy w tej turze',
     return_card_from_graveyard_to_hand: () => 'zwrot karty z grobu do ręki',
@@ -971,7 +988,7 @@ function describeEffect(e) {
         : 'kartę z grobu';
       return `możesz położyć ${what} na wierzch biblioteki`;
     },
-    index_look: () => 'zobacz wierzch biblioteki (Index)',
+    index_look: () => 'zobacz wierzch biblioteki i ułóż w dowolnej kolejności',
     look_top_put_one_hand_rest_grave: () => 'zobacz wierzch biblioteki, jedną do ręki, resztę do grobu',
     // M192/Z3 (petla jakosci): deskryptor NIESIE liczbe (Rediscover the Way:
     // amount 3), a opis pokazywal literalne „X" — placeholder z kodu na
@@ -1299,9 +1316,26 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   }
   if (trigger.event === 'land_entered_under_opponent_control') return `Gdy land wchodzi pod kontrolą przeciwnika: ${parts}.`;
   if (trigger.event === 'end_step') {
-    const cond = trigger.condition?.minTappedCreaturesControlled
-      ? ` (gdy kontrolujesz ${trigger.condition.minTappedCreaturesControlled}+ zatapnięte stwory)` : '';
-    return `Na początku kroku końca${cond}: ${parts}.`;
+    // M212/Z5 (audyt Żywym Testerem): warunek intervening-if (CR 603.4) MUSI
+    // być w opisie — inaczej gracz czyta „usuń licznik -1/-1” jako zdolność
+    // bezwarunkową i nie rozumie, czemu nic się nie dzieje (Creakwood
+    // Safewright stał całą partię z trzema licznikami). Wcześniej gałąź znała
+    // WYŁĄCZNIE minTappedCreaturesControlled; każdy inny warunek znikał.
+    const cond = trigger.condition ?? {};
+    const czlony = [];
+    if (cond.minTappedCreaturesControlled) {
+      czlony.push(`kontrolujesz ${cond.minTappedCreaturesControlled}+ zatapnięte stwory`);
+    }
+    if (cond.subtypeCardInYourGraveyard) {
+      czlony.push(`w twoim grobie jest karta ${cond.subtypeCardInYourGraveyard}`);
+    }
+    if (cond.selfHasCounter) {
+      czlony.push(`ma licznik ${COUNTER_LABELS[cond.selfHasCounter] ?? cond.selfHasCounter}`);
+    }
+    if (cond.didntAttackThisTurn) czlony.push('nie atakował w tej turze');
+    if (cond.delirium) czlony.push('delirium');
+    const suffix = czlony.length > 0 ? ` (gdy ${czlony.join(' i ')})` : '';
+    return `Na początku kroku końca${suffix}: ${parts}.`;
   }
   if (trigger.event === 'exploits') return `Gdy ten stwór exploituje: ${parts}.`;
   if (trigger.event === 'equipped_creature_attacks') return `Gdy wyposażony stwór atakuje: ${parts}.`;
@@ -1492,7 +1526,7 @@ const CHOICE_GROUP_TYPE_DESCRIPTORS = Object.freeze({
   damage_division: 'Podział obrażeń między cele',
   scry: 'Scry — co odłożyć na spód?',
   surveil: 'Surveil — karty do grobu',
-  index: 'Index — kolejność na wierzchu biblioteki',
+  index: 'Kolejność kart na wierzchu biblioteki',
   clash: 'Clash — wierzch czy spód?',
   sacrifice: 'Poświęcenie',
   value: 'Wartość X',
@@ -1511,11 +1545,11 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_mulligan_choice: 'Mulligan',
   resolve_mulligan_bottom_choice: 'Karty na spód biblioteki (mulligan)',
   resolve_search_choice: 'Szukanie w bibliotece',
-  resolve_fertile_thicket: 'Fertile Thicket — wierzch biblioteki',
-  resolve_springbloom: 'Springbloom Druid — land do poświęcenia',
+  resolve_fertile_thicket: 'Układanie wierzchu biblioteki',
+  resolve_springbloom: 'Ląd do poświęcenia',
   resolve_backup: 'Backup — który stwór dostaje liczniki?',
   resolve_trigger_target: 'Cel wyzwalonej zdolności',
-  resolve_grave_free_cast: 'Rzut z grobu za {X} (Halo Forager)',
+  resolve_grave_free_cast: 'Rzut z grobu za {X}',
   resolve_delirium_target: 'Delirium — cel obrażeń',
   resolve_mentor_target: 'Mentor — kto dostaje licznik?',
   resolve_graveyard_top_choice: 'Karta z grobu na wierzch biblioteki',
@@ -1584,6 +1618,12 @@ function choiceSourceTitle(cmd, session, view) {
   // (karta publiczna na polu bitwy; pendingExploit w widoku tylko właściciela).
   if (cmd?.type === 'resolve_exploit_choice' && view?.pendingExploit?.sourceCardId) {
     return `${session.nameOf(view.pendingExploit.sourceCardId)} — Exploit (poświęć stwora)`;
+  }
+  // M212/B (zgłoszenie właściciela): „poświęć ląd" to mechanika wspólna dla
+  // kilku kart (Springbloom Druid, Roiling Regrowth) — nazwa źródła jedzie
+  // z pendingu, nigdy z nazwy karty zaszytej w warstwie opisu (ADR 0002).
+  if (cmd?.type === 'resolve_springbloom' && view?.pendingSpringbloom?.sourceCardId) {
+    return `${session.nameOf(view.pendingSpringbloom.sourceCardId)} — ląd do poświęcenia`;
   }
   // M166/D: Inferno Titan — tytuł grupy nazywa źródło i łączną kwotę.
   if (cmd?.type === 'resolve_damage_division' && view?.pendingDamageDivision?.sourceCardId) {
@@ -1859,7 +1899,7 @@ export function commandLabel(cmd, session, view) {
     return parts.join(', ');
   };
   switch (cmd.type) {
-    case 'resolve_index_choice': return 'Index — przestaw karty na wierzchu biblioteki';
+    case 'resolve_index_choice': return 'Przestaw karty na wierzchu biblioteki';
     case 'resolve_damage_assignment': return 'Rozdziel obrażenia bojowe (domyślnie lethal-first)';
     case 'draw_card': return 'Dobierz kartę';
     case 'pass_priority': return 'Dalej (pass)';
@@ -2301,8 +2341,8 @@ export function commandLabel(cmd, session, view) {
       // M102/U3: bez tej gałęzi wszystkie warianty spadały do `default`
       // i dostawały nazwę CAŁEJ decyzji („Springbloom Druid (poświęcenie
       // landa)") — cztery identyczne opcje, czyli wybór landa w ciemno.
-      if (cmd.skip) return 'Springbloom Druid — nie poświęcaj landa (rezygnuję)';
-      return `Poświęć land: ${escapeHtml(session.nameOfObject(cmd.sacrificeLandId))}`;
+      if (cmd.skip) return 'Nie poświęcaj lądu (rezygnuję)';
+      return `Poświęć ląd: ${escapeHtml(session.nameOfObject(cmd.sacrificeLandId))}`;
     }
     case 'resolve_mulligan_bottom_choice': {
       const ids = Array.isArray(cmd.cardIds) ? cmd.cardIds : [];
@@ -2328,11 +2368,11 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_epic_choice': {
       // Epic Experiment — rzuć wygnany czar bez kosztu albo zakończ.
-      if (cmd.done) return 'Epic Experiment: zakończ (reszta kart do grobu)';
+      if (cmd.done) return 'Zakończ darmowe rzuty (reszta kart do grobu)';
       // M163/A (klasa M151/suspend): oferta per legalny zestaw celów — bez
       // celu w etykiecie warianty tej samej karty są nieodróżnialne.
       const epicTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
-      return `Epic Experiment: rzuć bez kosztu — ${nameOfObjectId(cmd.cardId)}${epicTargets ? ` → cel: ${epicTargets}` : ''}`;
+      return `Rzuć bez kosztu — ${nameOfObjectId(cmd.cardId)}${epicTargets ? ` → cel: ${epicTargets}` : ''}`;
     }
     case 'resolve_look_top_choice': {
       // Gurmag Drowner — wybierz kartę z wierzchu do ręki.
@@ -2428,7 +2468,7 @@ export function commandLabel(cmd, session, view) {
         objectIdToName.set(pendingReveal.cardIds[i], revealed[i]);
       }
       const namesList = order.map((oid) => session.nameOf(objectIdToName.get(oid))).join(', ');
-      return `Stomping Slabs: ułóż na spodzie (${namesList || 'karty'})`;
+      return `Ułóż na spodzie biblioteki (${namesList || 'karty'})`;
     }
     case 'resolve_proliferate': {
       // Proliferate (Courage in Crisis) — wybór dowolnej liczby celów.
@@ -2439,7 +2479,7 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_damage_target': {
       // Stomping Slabs — obrażenia 7 do wybranego celu.
-      return `Stomping Slabs: 7 obrażeń w ${nameOfObjectId(cmd.targetId)}`;
+      return `Obrażenia w ${nameOfObjectId(cmd.targetId)}`;
     }
     case 'resolve_modal_choice': {
       // Modalny trigger upkeep (Etherwrought Page) — wybór trybu.
@@ -2472,18 +2512,18 @@ export function commandLabel(cmd, session, view) {
       // Willbender — zmiana celu czaru na stosie.
       const pending = view.pendingRedirectChoice;
       const what = pending?.spellCardId ? session.nameOf(pending.spellCardId) : 'czaru';
-      return `Willbender: zmień cel ${what} na ${nameOfObjectId(cmd.targetId)}`;
+      return `Zmień cel ${what} na ${nameOfObjectId(cmd.targetId)}`;
     }
     case 'resolve_reveal_exile_hand': {
       // Dreams of Steel and Oil — wybór karty z ręki do wygnania. Nazwa po
       // session.nameOfObject (pełny stan), NIE nameOfObjectId: PlayerView
       // chowa cardId odsłoniętej karty ręki (FoW) i „?" (audyt diamentowy).
-      if (cmd.cardId == null) return 'Dreams of Steel and Oil — brak karty w ręce (pomijam)';
-      return `Dreams of Steel and Oil — wygnaj z ręki: ${session.nameOfObject(cmd.cardId)}`;
+      if (cmd.cardId == null) return 'Brak karty w ręce do wygnania (pomijam)';
+      return `Wygnaj z ręki: ${session.nameOfObject(cmd.cardId)}`;
     }
     case 'resolve_reveal_exile_grave': {
-      if (cmd.cardId == null) return 'Dreams of Steel and Oil — brak karty w grobie (pomijam)';
-      return `Dreams of Steel and Oil — wygnaj z grobu: ${session.nameOfObject(cmd.cardId)}`;
+      if (cmd.cardId == null) return 'Brak karty w grobie do wygnania (pomijam)';
+      return `Wygnaj z grobu: ${session.nameOfObject(cmd.cardId)}`;
     }
     case 'resolve_enter_as_copy': {
       if (cmd.targetId == null) return 'Wejdź jako 0/0 (bez kopii)';
@@ -2506,11 +2546,11 @@ export function commandLabel(cmd, session, view) {
       return `Kopia czaru — cel: ${nameOfObjectId(cmd.targetId)}`;
     }
     case 'resolve_fertile_thicket': {
-      if (cmd.skip) return 'Fertile Thicket — odłóż wszystko na spód (bez landa)';
+      if (cmd.skip) return 'Odłóż wszystko na spód (bez landa)';
       const landName = cmd.chosenCardId
         ? escapeHtml(session.nameOfObject(cmd.chosenCardId))
         : 'basic land';
-      return `Fertile Thicket — ${landName} na wierzch biblioteki`;
+      return `${landName} na wierzch biblioteki`;
     }
     default: return REASONING_ACTION_LABELS[cmd.type] ?? cmd.type;
   }
@@ -3562,7 +3602,7 @@ export function renderUndercity(els, session, view, { onClick = null, hover = nu
       : 'Loch ukończony');
   }
   if (view.initiativePlayerId == null) {
-    div(info, 'undercity-note', 'Inicjatywę obejmuje się combat damage na jej posiadacza albo efektem karty (np. Underdark Explorer).');
+    div(info, 'undercity-note', 'Inicjatywę obejmuje się combat damage na jej posiadacza albo efektem karty.');
   }
 }
 

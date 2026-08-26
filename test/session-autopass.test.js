@@ -439,3 +439,75 @@ test('E: wyciszony rzut w main nie zostawia auto-passu w martwym oknie (Brak akc
   assert.ok(after.turn.activePlayerId === BOT_ID || after.status === 'finished',
     `auto-pass nie opuścił tury człowieka (aktywny ${after.turn.activePlayerId})`);
 });
+
+/**
+ * M205 (audyt PR #77) — AUTO-PASS PRZY NIEPUSTYM STOSIE ZOSTAWIA ŚLAD.
+ *
+ * Objaw: Żywy Tester zgłaszał czary bota (Withstand, Toll of the Invasion,
+ * Courage in Crisis) jako „rozstrzygnięte bez okna na odpowiedź gracza".
+ * Engine był poprawny — człowiek dostawał priorytet i oddawał go auto-passem,
+ * bo nie miał czym odpowiedzieć (CR 117.3b: po rozstrzygnięciu priorytet wraca
+ * do aktywnego gracza; CR 117.4: pełna runda passów rozstrzyga wierzch stosu).
+ * Brakowało natomiast ŚLADU: log nie odnotowywał passa, więc z transkryptu nie
+ * dało się odróżnić legalnego przebiegu od realnie pominiętego okna.
+ * Klasa L24 — skutek bez śladu nie istnieje dla gracza.
+ *
+ * Reguła pinowana tutaj: auto-pass CZŁOWIEKA przy NIEPUSTYM stosie zostawia
+ * wpis w logu; auto-pass przy pustym stosie (przewijanie faz: untap, upkeep,
+ * cleanup) NIE zostawia — inaczej log utonąłby w szumie kilkudziesięciu passów
+ * na turę.
+ */
+test('M205: auto-pass przy niepustym stosie zostawia wpis w logu (dowód oddania priorytetu)', () => {
+  const registry = createCardRegistry();
+  const decks = new Map([
+    [HUMAN_ID, Array.from({ length: 6 }, () => 'basic-plains')],
+    [BOT_ID, Array.from({ length: 6 }, () => 'basic-mountain')],
+  ]);
+  const session = createSession({ seed: 5, registry, decks });
+  const mull = session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice');
+  if (mull) session.apply({ ...mull, keep: true });
+  const state = session.state;
+
+  // Stan wyjściowy: człowiek ma priorytet, stos PUSTY, w ręce nic wykonalnego.
+  state.turn = jumpToStep(state.turn, 'main', HUMAN_ID);
+  state.turn.activePlayerId = HUMAN_ID;
+  state.turn.priorityPlayerId = HUMAN_ID;
+  const logBefore = session.log.length;
+  session.apply({ type: 'pass_priority', playerId: HUMAN_ID });
+  const emptyStackEntries = session.log.slice(logBefore).filter((e) => /^Auto-pass:/.test(e.text));
+  assert.deepEqual(
+    emptyStackEntries.map((e) => e.text), [],
+    'przewijanie faz przy PUSTYM stosie nie może zaśmiecać logu wpisami o auto-passie',
+  );
+});
+
+test('M205: pełna partia — każdy wpis „Auto-pass" odpowiada realnemu oddaniu priorytetu', () => {
+  // Pomiar na prawdziwych taliach (ta sama para co w audycie Żywym Testerem):
+  // wpisy MUSZĄ się pojawić, bo bot rzuca czary, przy których człowiek pasuje.
+  const registry = createCardRegistry();
+  const deckOf = (name) => parseDeckText(fs.readFileSync(new URL(`../decks/${name}.txt`, import.meta.url), 'utf8'), registry).cardIds;
+  const session = createSession({ seed: 42, registry, decks: new Map([[HUMAN_ID, deckOf('dominaria')], [BOT_ID, deckOf('ravnica')]]) });
+  const mull = session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice');
+  if (mull) session.apply({ ...mull, keep: true });
+  for (let i = 0; i < 400; i += 1) {
+    if (session.state.status !== 'active') break;
+    const view = session.view();
+    // Człowiek musi RZUCAĆ czary, nie tylko grać landy: zmierzone na tej
+    // parze talii — polityka „tylko landy + pass" daje 0 wpisów, bo wtedy
+    // pełną rundę passów domyka bot i stos rozstrzyga się poza gałęzią
+    // auto-passu człowieka; polityka rzucająca czary daje 10 wpisów.
+    const cmd = view.legalCommands.find((c) => c.type === 'cast_spell')
+      ?? view.legalCommands.find((c) => c.type === 'play_land')
+      ?? view.legalCommands.find((c) => String(c.type).startsWith('resolve_'))
+      ?? view.legalCommands.find((c) => c.type === 'pass_priority');
+    if (!cmd) break;
+    if (!session.apply(cmd).ok) break;
+  }
+  const entries = session.log.filter((e) => /^Auto-pass:/.test(e.text));
+  assert.ok(entries.length > 0, 'w pełnej partii człowiek auto-pasuje przy niepustym stosie co najmniej raz');
+  // Treść wpisu jest komunikatem DLA GRACZA (2. osoba, bez identyfikatorów).
+  for (const entry of entries) {
+    assert.equal(entry.kind, 'event', 'auto-pass to zdarzenie rozgrywki, nie odrzucenie/systemowy');
+    assert.match(entry.text, /oddajesz priorytet/, `komunikat w 2. osobie: ${entry.text}`);
+  }
+});

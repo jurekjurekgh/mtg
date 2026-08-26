@@ -1,4 +1,5 @@
 import { createRng } from '../engine/rng.js';
+import { sourceHasProtectionQuality } from '../engine/attachments.js';
 import { createCardRegistry } from '../cards/card-data.js';
 import { probAtLeastOne } from '../engine/hypergeom.js';
 import { normalizeHeuristicWeights } from './heuristic-weights.js';
@@ -75,6 +76,207 @@ function attackerStrikesFirst(attacker, blockers) {
   });
 }
 
+/**
+ * M218/1 (zlecenie właściciela 2026-08-26): czy `recipient` REALNIE bierze
+ * udział w walce — atakuje (deklaracja atakujących, CR 508) albo blokuje
+ * (deklaracja blokujących, CR 509). To jest STAN, nie nazwa kroku: bramka
+ * `phase === 'combat'` obejmuje beginning_of_combat i end_of_combat, gdzie
+ * nikt nie walczy (L64 — M206 naprawił to tylko w activate_ability; L41:
+ * bliźniacza gałąź cast_spell zachowała stary warunek).
+ * Odczyt wyłącznie z `view.combat` (ADR 0017): `state.combat` tworzy się przy
+ * deklaracji atakujących i gaśnie po rozstrzygnięciu obrażeń, więc nie-null
+ * = deklaracje istnieją. UWAGA: widok NIE wystawia `entry.blocking` — M206
+ * czytał `recipient?.blocking`, które jest zawsze undefined; blokerów czytamy
+ * z mapy `combat.blockers` (jak w keywordGrantWindowValue).
+ */
+function combatTrickWindow(view, recipient) {
+  const combat = view.combat ?? null;
+  if (!combat) return false;
+  const id = recipient?.id;
+  if (!id) return false;
+  if ((combat.attackers ?? []).includes(id)) return true;
+  return Object.values(combat.blockers ?? {}).some((ids) => (ids ?? []).includes(id));
+}
+
+/**
+ * M218/2 (kryterium właściciela: „jeśli atakuje kreatura 1/1 i blokuje ją
+ * kreatura 5/5, to pompowanie atakującego +2/+2 nie ma żadnego sensu bo nie
+ * zmienia wyniku walki ani o jotę”): wynik POJEDYNCZEJ walki stwora z widoku
+ * combat, przed i po modyfikacji statystyk.
+ *
+ * Czytamy WYŁĄCZNIE PlayerView (ADR 0017): atakujących z `combat.attackers`,
+ * blokerów z mapy `combat.blockers`, statystyki/keywordy z kafli pola bitwy.
+ * Zero stanu silnika, zero nazw kart (ADR 0002).
+ *
+ * Model CR 510 w wymiarze minimalnym, wystarczającym do porównania „czy
+ * wynik walki się zmienia”:
+ *  - dwa przebiegi obrażeń: first/double strike (CR 702.7), potem regularny,
+ *    z SBA między przebiegami (CR 510.2 — martwy nie zadaje w następnym);
+ *  - deathtouch (CR 702.4): każde zadane ≥1 obrażenie jest śmiertelne —
+ *    dotyczy progu śmierci ODBIORCY (dającego źródła), nie ilości zadanej;
+ *  - atakujący rozdziela moc lethal-first (CR 510.1b), nadmiar: trample →
+ *    twarz (CR 702.19), inaczej → ostatni bloker (overkill);
+ *  - lifelink (CR 702.15) liczony jako obrażenia zadane;
+ *  - niezablokowany atakujący zadaje pełną moc na twarz w każdym przebiegu,
+ *    w którym uczestniczy (double strike = dwie fale).
+ *
+ * Wynik to SUFICJENTNA statystyka: przeżycie, lista zabitych po stronie
+ * przeciwnika, obrażenia na twarz, przyrost życia z lifelinku. Dwa wyniki
+ * są równoważne, gdy wszystkie te składowe są identyczne — wtedy pump/debuff
+ * nie zmienia gry i wartość = 0.
+ */
+
+/** Statystyki bojowe stwora z widoku + delta (pump/debuff) do symulacji. */
+function duelStats(object, { power = 0, toughness = 0 } = {}) {
+  const kw = object?.keywords ?? [];
+  return {
+    id: object?.id,
+    power: Math.max(0, (object?.power ?? 0) + power),
+    // Efektywna wytrzymałość: bazowa minus już zadane obrażenia.
+    toughness: Math.max(0, (object?.toughness ?? 0) - (object?.damage ?? 0) + toughness),
+    deathtouch: kw.includes('deathtouch'),
+    trample: kw.includes('trample'),
+    firstStrike: kw.includes('first_strike'),
+    doubleStrike: kw.includes('double_strike'),
+    lifelink: kw.includes('lifelink'),
+  };
+}
+
+/**
+ * Symulacja walki atakującego z blokerami (CR 510). Wynik wg kontraktu
+ * `combatOutcome` — porównywany przed/po pumpie.
+ */
+function simulateCombat(attacker, blockers) {
+  const fighters = (blockers ?? []).map((b) => ({ ...b, damageTaken: 0, hitByDeathtouch: false, alive: true }));
+  const a = { ...attacker, damageTaken: 0, hitByDeathtouch: false, alive: true };
+  const unblocked = fighters.length === 0;
+  let faceDamage = 0;
+  let attackerLifeGain = 0;
+  let blockerLifeGain = 0;
+  // lane 0 = first/double strike, lane 1 = regularny (double strike w obu).
+  const inLane = (s, lane) => (lane === 0
+    ? (s.firstStrike || s.doubleStrike)
+    : (!s.firstStrike || s.doubleStrike));
+  for (const lane of [0, 1]) {
+    if (!a.alive) break; // CR 510.2 — martwy nie zadaje w następnym kroku
+    const aActive = inLane(a, lane);
+    if (aActive) {
+      let remaining = a.power;
+      const aliveFighters = fighters.filter((b) => b.alive);
+      let dealt = 0;
+      for (const b of aliveFighters) {
+        if (remaining <= 0) break;
+        // Lethal-first (CR 510.1b): deathtouch czyni 1 obrażenie śmiertelnym.
+        const give = Math.min(remaining, a.deathtouch ? 1 : b.toughness);
+        b.damageTaken += give;
+        if (a.deathtouch && give > 0) b.hitByDeathtouch = true;
+        dealt += give;
+        remaining -= give;
+      }
+      if (unblocked) {
+        faceDamage += a.power;
+        dealt += a.power;
+      } else if (a.trample) {
+        // CR 702.19 — nadmiar po przydziale lethal idzie na twarz.
+        faceDamage += Math.max(0, remaining);
+        dealt += Math.max(0, remaining);
+      } else if (aliveFighters.length > 0 && remaining > 0) {
+        // CR 510.1b — bez trample nadmiar wpada w ostatniego blokera (overkill).
+        aliveFighters[aliveFighters.length - 1].damageTaken += remaining;
+        dealt += remaining;
+      }
+      if (a.lifelink) attackerLifeGain += dealt;
+    }
+    for (const b of fighters) {
+      if (!b.alive || !inLane(b, lane)) continue;
+      a.damageTaken += b.power;
+      if (b.deathtouch && b.power > 0) a.hitByDeathtouch = true;
+      if (b.lifelink) blockerLifeGain += b.power;
+    }
+    // SBA po przebiegu (CR 510.2): śmiertelność wg źródła z deathtouch.
+    if (a.damageTaken > 0 && (a.hitByDeathtouch || a.damageTaken >= a.toughness)) a.alive = false;
+    for (const b of fighters) {
+      if (b.alive && b.damageTaken > 0 && (b.hitByDeathtouch || b.damageTaken >= b.toughness)) b.alive = false;
+    }
+  }
+  return {
+    attackerDies: !a.alive,
+    deadBlockers: fighters.filter((b) => !b.alive).map((b) => b.id),
+    faceDamage,
+    attackerLifeGain,
+    blockerLifeGain,
+  };
+}
+
+/**
+ * Wynik walki, w której bierze udział `recipient`, z uwzględnieniem delty
+ * (pump/debuff) na tym stworze. Null, gdy stwór nie uczestniczy w walce.
+ */
+function combatOutcome(view, recipient, delta = {}) {
+  const combat = view.combat ?? null;
+  const id = recipient?.id;
+  if (!combat || !id) return null;
+  const battlefield = view.zones.battlefield ?? [];
+  const viewObject = (oid) => battlefield.find((o) => o.id === oid) ?? null;
+  const blockersOf = (attackerId) => (combat.blockers ?? {})[attackerId] ?? [];
+  const attackerId = (combat.attackers ?? []).includes(id) ? id : null;
+  if (attackerId) {
+    const attacker = viewObject(attackerId);
+    if (!attacker) return null;
+    const blockers = blockersOf(attackerId)
+      .map((oid) => viewObject(oid))
+      .filter(Boolean)
+      .map((b) => duelStats(b));
+    const stats = duelStats(attacker, attackerId === id ? delta : {});
+    return simulateCombat(stats, blockers);
+  }
+  // Bloker: znajdujemy atakującego, dla którego został zadeklarowany.
+  const blockedFor = Object.keys(combat.blockers ?? {})
+    .find((aid) => (blockersOf(aid) ?? []).includes(id));
+  if (!blockedFor) return null;
+  const foe = viewObject(blockedFor);
+  if (!foe) return null;
+  const blockers = blockersOf(blockedFor)
+    .map((oid) => viewObject(oid))
+    .filter(Boolean)
+    .map((b) => duelStats(b, b.id === id ? delta : {}));
+  return simulateCombat(duelStats(foe), blockers);
+}
+
+/**
+ * M218/2 — czy pump/debuff o delcie { power, toughness } ZMIENIA wynik
+ * walki, w której recipient bierze udział. True oznacza „ma wartość"
+ * (albo natychmiastowa śmierć z SBA przy wytrzymałości ≤0 — CR 704.5f,
+ * niezależnie od walki); false = okno jest, ale skutek będzie zerowy.
+ */
+function pumpChangesOutcome(view, recipient, delta = {}) {
+  if (!recipient) return false;
+  const stats = duelStats(recipient, delta);
+  // Natychmiastowa SBA (CR 704.5f): wytrzymałość spada do 0 — cel umiera
+  // zaraz po rozstrzygnięciu, to realna zmiana stanu gry.
+  if (stats.toughness <= 0) return true;
+  const before = combatOutcome(view, recipient, {});
+  const after = combatOutcome(view, recipient, delta);
+  if (!before || !after) return false;
+  return JSON.stringify(before) !== JSON.stringify(after);
+}
+
+/** Rozmiar pumpu wg deskryptora (dynamiczne X z widoku — ADR 0017). */
+function pumpDelta(view, effect) {
+  if (effect.type === 'pump_by_creature_count') {
+    const n = (view.zones.battlefield ?? [])
+      .filter((o) => o.controllerId === view.playerId && o.kind === 'creature').length
+      * (effect.perCreature ?? 1);
+    return { power: n, toughness: n };
+  }
+  if (effect.type === 'pump_by_gates') {
+    const n = (view.zones.battlefield ?? [])
+      .filter((o) => o.controllerId === view.playerId && (o.subtypes ?? []).includes('Gate')).length;
+    return { power: n, toughness: n };
+  }
+  return { power: effect.power ?? 0, toughness: effect.toughness ?? 0 };
+}
+
 const KEYWORD_COUNTERS = new Set(['deathtouch', 'flying', 'first_strike', 'double_strike', 'lifelink', 'trample', 'vigilance', 'menace', 'reach', 'haste', 'hexproof', 'indestructible']);
 
 const NEVER = Number.NEGATIVE_INFINITY;
@@ -92,6 +294,17 @@ export const IDEMPOTENT_EOT_EFFECTS = new Set([
   'becomes_subtype_until_end_of_turn', 'animate_permanent_until_end_of_turn',
   'lock_untap', 'dont_untap_next_untap_step', 'tap_permanent', 'untap_permanent',
   'set_saddled',
+]);
+
+/**
+ * M211/A1 (zgłoszenie właściciela, Seer's Lantern): efekty, których cała treść
+ * to „obejrzyj/ułóż wierzch WŁASNEJ biblioteki”. Nie zmieniają planszy ani
+ * życia — wpływają wyłącznie na to, co dobierzemy w najbliższym dobraniu.
+ * Skutek jest niezależny od chwili aktywacji, więc opłaca się je odkładać na
+ * moment, w którym mana i tak przepadnie (end step przeciwnika).
+ */
+export const DECK_ARRANGING_EFFECTS = new Set([
+  'scry', 'surveil', 'look_top_n', 'explore',
 ]);
 
 /**
@@ -341,7 +554,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // 'main' (precombat_main i postcombat_main). Tapnięcie zdąży zdjąć
       // blokera tylko w precombat; po walce efekt wyparuje przy jego untapie,
       // więc to okno „main2/end” z karami poniżej.
-      if (view.turn.phase === 'precombat_main' && step === 'main'
+      if (view.turn.phase === 'precombat_main' && step === 'main1'
         && (view.combat?.attackers?.length ?? 0) === 0) return 3;
       // main2/end: efekt wyparuje przy jego untapie, nic nie kupuje. Karzemy
       // TYLKO wtedy, gdy poczekanie na lepsze okno jest w ogóle wykonalne.
@@ -354,7 +567,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // Tura przeciwnika PO jego untap: stwór traci atak TERAZ i blok U MNIE.
     if (['upkeep', 'draw'].includes(step)) return 14;
     // M202/F: jak wyżej — tylko faza PRZED walką (po walce już zaatakował).
-    if (view.turn.phase === 'precombat_main' && step === 'main' && attackers.length === 0) return 12;
+    if (view.turn.phase === 'precombat_main' && step === 'main1' && attackers.length === 0) return 12;
     // Po deklaracji atakujących tapnięcie nie cofa ataku (CR 506.4) —
     // zostaje sam zysk „nie zablokuje w mojej turze”.
     if (alreadyAttacking) return 1;
@@ -657,6 +870,28 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   }
 
   /**
+   * M212/Z7 (audyt Żywym Testerem): kara za CEL przy rzucie DARMOWYM
+   * (suspend / rebound — CR 702.62a, 702.97).
+   *
+   * Root cause zgłoszenia: obie gałęzie wyceniały wyłącznie TYP efektu
+   * („czy czar jest ofensywny"), a silnik enumeruje ofertę PER ZESTAW CELÓW.
+   * Każda oferta dostawała więc identyczny wynik i bot brał pierwszą z brzegu
+   * — zmierzone (dominaria vs tarkir): rebound Ojutai's Breath tapnął
+   * WŁASNEGO Trade Route Envoy, choć na stole stał stwór przeciwnika.
+   * Ścieżka `cast_spell` liczy to od M121; te dwie były jej ślepą kopią
+   * (klasa L41 — bliźniacze gałęzie rozjeżdżają się w ciszy).
+   *
+   * Reguła generyczna po deskryptorze efektu (ADR 0002): efekt wrogi we
+   * własny permanent oraz efekt przyjazny we wrogi permanent są karane
+   * dokładnie tymi samymi tabelami co przy zwykłym rzucie.
+   */
+  function freeCastTargetPenalty(view, effects, cmd) {
+    const target = objectOnBoard(view, (cmd.targets ?? [])[0]) ?? null;
+    return selfHarmPenalty(view, effects, cmd, target)
+      + friendlyMisaimPenalty(view, effects, cmd, target);
+  }
+
+  /**
    * Czy AURA/załącznik jest wrogą kotwicą (unieruchamia, blokuje atak)?
    * Taka aura na WŁASNYM stworze to strzał we własną stopę — a wycena
    * `cast_permanent` premiowała ją jak buff (+66), bo patrzyła tylko na to,
@@ -675,11 +910,31 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // „enchanted creature doesn't untap"). Bez tego aura-kotwica wyglądała
     // dla bota jak zwykły buff za +66 pkt.
     const abilities = def?.abilities ?? [];
-    return abilities.some((ability) => {
+    if (abilities.some((ability) => {
       if (ability?.type !== 'triggered') return false;
       if (ability.trigger?.event !== 'enter_battlefield') return false;
       const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
       return effs.some((e) => e?.type && HOSTILE_PERMANENT_EFFECTS.has(e.type));
+    })) return true;
+    // M206 (audyt Zywym Testerem, Chronic Flooding): aura bywa wroga przez
+    // trigger DZIALAJACY POZNIEJ, ktory bije w KONTROLERA GOSPODARZA -
+    // „Whenever enchanted land becomes tapped, its controller mills three
+    // cards". Warunki wyzej patrza wylacznie na trigger wejscia i na efekty
+    // wrogie PERMANENTOWI, wiec taka aura wygladala jak zwykly buff:
+    // zmierzone (dominaria vs ravnica, seed 19) bot zaczarowal WLASNY Island
+    // i mielil sobie po 3 karty przy kazdym tapnieciu tego landu - piec razy
+    // w jednej partii („Nieprzyjaciel mieli Forced Landing do grobu",
+    // „... mieli Forest do grobu").
+    //
+    // Rozpoznajemy to po deskryptorze, nie po nazwie karty (ADR 0002):
+    // `applyTo: 'enchanted_controller'` mowi wprost, ze skutek spadnie na
+    // kontrolera zaczarowanego permanentu, a HOSTILE_PLAYER_EFFECTS zna liste
+    // efektow szkodzacych graczowi (mill, discard, utrata zycia...).
+    return abilities.some((ability) => {
+      if (ability?.type !== 'triggered') return false;
+      const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+      return effs.some((e) => e?.applyTo === 'enchanted_controller'
+        && e?.type && HOSTILE_PLAYER_EFFECTS.has(e.type));
     });
   }
   const hasKeyword = (object, keyword) => (object?.keywords ?? []).includes(keyword);
@@ -855,6 +1110,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (['damage', 'discard_cards', 'destroy_permanent', 'mill_cards'].includes(effect?.type)) score += 15;
           if (['draw_cards', 'gain_life'].includes(effect?.type)) score += 5;
         }
+        score -= freeCastTargetPenalty(view, effects, cmd);
         return finish(score);
       }
       case 'resolve_rebound_cast': {
@@ -870,6 +1126,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (['damage', 'discard_cards', 'destroy_permanent', 'mill_cards'].includes(effect?.type)) score += 15;
           if (['draw_cards', 'gain_life'].includes(effect?.type)) score += 5;
         }
+        score -= freeCastTargetPenalty(view, effects, cmd);
         return finish(score);
       }
       case 'warp_card': {
@@ -944,7 +1201,45 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               : 55 + 2 * worth);         // unieruchamiam stwora wroga
           }
           if (!target || target.controllerId !== view.playerId) return finish(-50);
-          const pump = descriptor?.pump ?? { power: 0, toughness: 0 };
+          // M209 (audyt M207, Guildscorn Ward): aura, ktorej CALA wartoscia
+          // jest OCHRONA przed konkretna jakoscia (CR 702.16b-e), jest jalowa,
+          // gdy przeciwnik nie ma czym w nia uderzyc. Bot rzucal „protection
+          // from multicolored" przy przeciwniku majacym 1 karte wielokolorowa
+          // na 48 — placil karte i mane za nic. To ta sama klasa co M200/H
+          // (Grounded na stworze bez latania).
+          //
+          // Generycznie po deskryptorze (ADR 0002): reguła dotyczy aur BEZ
+          // pump i BEZ keywordow, o STAŁEJ jakosci ochrony. `chooseColor`
+          // (Benevolent Blessing) jest wykluczony — tam kolor dobiera sie pod
+          // przeciwnika przy wejsciu, wiec aura nigdy nie jest jalowa.
+          //
+          // Zasieg wiedzy = FoW bota (bez oszukiwania): pole bitwy przeciwnika
+          // + jego grob i wygnanie (strefy jawne, CR 400.2) — czyli to, co
+          // przeciwnik JUZ pokazal. Reka i biblioteka pozostaja ukryte.
+          const protectionQuality = descriptor?.protection ?? null;
+          const pumpDesc = descriptor?.pump ?? { power: 0, toughness: 0 };
+          const isPureProtection = protectionQuality
+            && !descriptor?.chooseColor
+            && (pumpDesc.power ?? 0) === 0 && (pumpDesc.toughness ?? 0) === 0
+            && (descriptor?.keywords ?? []).length === 0;
+          if (isPureProtection) {
+            const known = [
+              ...(view.zones.battlefield ?? []),
+              ...(view.zones.graveyard ?? []),
+              ...(view.zones.exile ?? []),
+            ].filter((o) => o.controllerId !== view.playerId);
+            // `sourceHasProtectionQuality` to ta sama funkcja, ktorej uzywa
+            // silnik przy rozstrzyganiu ochrony (L41: jedna reguła, jeden
+            // odczyt) — bot nie ma wlasnej kopii semantyki „multicolored".
+            const threats = known.filter((o) => sourceHasProtectionQuality(protectionQuality, o)).length;
+            // Kara musi PRZEBIC baze aury (~66) — inaczej jest dekoracja
+            // (L3/L54). Brak zagrozen = nie rzucaj, trzymaj karte w rece.
+            if (threats === 0) return finish(-40);
+            // Sa zagrozenia: wartosc rosnie z ich liczba, ale ochrona bez
+            // pumpa nie jest tempem — zostaje ponizej zwyklego buffa.
+            return finish(20 + 12 * threats + (target.power ?? 0));
+          }
+          const pump = pumpDesc;
           return finish(66 + 2 * ((target.power ?? 0) + pump.power) + ((target.toughness ?? 0) + pump.toughness));
         }
         const def = card ? cardDef(card.cardId) : undefined;
@@ -1258,6 +1553,35 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               score += (killsTheirs ? 25 + 2 * (theirs.power ?? 0) : 5) - (losesMine ? 20 : 0);
             }
           }
+          // Batch 49 (Time to Feed): znacznik „gdy ten stwór zginie w tej turze,
+          // zyskujesz N życia" jest DODATKIEM do walki z tego samego czaru —
+          // wart tyle, ile szansa, że cel faktycznie zginie. Nie karzemy braku
+          // celu (robi to już wycena fightu), żeby nie liczyć kary dwa razy.
+          if (effect.type === 'gain_life_if_target_dies_this_turn') {
+            const victim = objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 0]);
+            if (victim) score += Math.min(effect.amount ?? 1, 3);
+          }
+          // Batch 49 (Dead Ringers): podwójne removal, ale TYLKO gdy oba cele
+          // mają identyczne zbiory kolorów — inaczej czar nie robi NIC (kara
+          // musi przebić bazę, żeby bot nie palił karty na jałowy układ).
+          if (effect.type === 'destroy_pair_if_same_colors') {
+            const first = objectOnBoard(view, cmd.targets?.[effect.targetIndexA ?? 0]);
+            const second = objectOnBoard(view, cmd.targets?.[effect.targetIndexB ?? 1]);
+            if (!first || !second) score -= 60;
+            else {
+              const colorsA = [...(first.colors ?? [])].sort().join('');
+              const colorsB = [...(second.colors ?? [])].sort().join('');
+              if (colorsA !== colorsB) score -= 80;
+              else {
+                // Punktujemy każdy cel osobno: wrogi = zysk, własny = strata.
+                for (const victim of [first, second]) {
+                  score += victim.controllerId === view.playerId
+                    ? -90
+                    : 22 + 2 * ((victim.power ?? 0) + (victim.toughness ?? 0));
+                }
+              }
+            }
+          }
           if (effect.type === 'return_to_hand' && target && target.controllerId !== view.playerId) {
             score += 25 + (target.power ?? 0) * 2;
           }
@@ -1416,12 +1740,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Blindness −4/−0, Turn the Tide, Angel of the Dawn +1/+1) to
           // SZTUCZKI BOJOWE — poza walką wygasają, zanim cokolwiek zrobią.
           // Bot rzucał je we własnym upkeepie (audyt: 2 partie z 7).
+          // M218/1: bramka `phase === 'combat'` obejmowała też początek
+          // i koniec walki (L64 — M206 naprawił tylko activate_ability);
+          // okno liczymy z UCZESTNICTWA (combatTrickWindow na dowolnym
+          // dotkniętym stworze — atakuje albo blokuje). Sorcery (Rush of
+          // Battle) nie poczeka na combat: jedyne sensowne okno to Główna 1
+          // przed własnym atakiem (jak M179/C dla pojedynczego pumpu).
           if (effect.type === 'buff_opponents_creatures' || effect.type === 'buff_creatures_you_control') {
             const targetsOpponents = effect.type === 'buff_opponents_creatures';
-            const affected = (targetsOpponents ? enemyCreatures(view) : myCreatures(view)).length;
-            const inCombat = view.turn.phase === 'combat';
+            const pool = targetsOpponents ? enemyCreatures(view) : myCreatures(view);
+            const affected = pool.length;
+            // M218/2: uczestnictwo w walce to warunek konieczny, nie
+            // wystarczający — masowy pump/debuff, który nie zmienia wyniku
+            // ŻADNEJ toczącej się wymiany (np. −4/−0 na 5/5 blokowanym po
+            // cichu przez 1/1), jest skutkiem zerowym.
+            const anyChange = pool.some((entry) => pumpChangesOutcome(view, entry, pumpDelta(view, effect)));
             if (affected === 0) score -= 30;          // nie ma na kogo działać
-            else if (!inCombat) score -= 25;          // wygaśnie przed walką
+            else if (card?.spell?.timing === 'sorcery') {
+              score += (myTurn(view) && view.turn.phase === 'precombat_main'
+                && pool.some((entry) => canAttackNow(entry))) ? 6 * affected : -60;
+            } else if (!anyChange) score -= 25;       // wygaśnie przed walką / nic nie zmieni
             else score += 6 * affected;
           }
           // Dobranie kart z czaru to przewaga kartowa.
@@ -1519,7 +1857,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // w ogóle nie rzucał czaru.
           if (isPumpEffect && isNegativePump(effect) && target
             && target.controllerId !== view.playerId) {
-            score += 25 + 4 * Math.abs(effect.power ?? 0) + 4 * Math.abs(effect.toughness ?? 0);
+            // M218/2 (kryterium właściciela): debuff „do końca tury" jest
+            // sensowny wyłącznie w sytuacji bojowej, w której realnie zmienia
+            // wynik — 5/5 atakujący po −1/−0 ginie od 4/4, a 5/5 vs 1/1
+            // dalej zabija i przeżywa (skutek zerowy). Symulujemy przed/po.
+            const changes = pumpChangesOutcome(view, target, pumpDelta(view, effect));
+            if (changes) {
+              score += 25 + 4 * Math.abs(effect.power ?? 0) + 4 * Math.abs(effect.toughness ?? 0);
+            } else {
+              score -= 75; // karta na nic — kara klasy „okno poza walką" (L3)
+            }
           }
           if (isPumpEffect && !isNegativePump(effect) && target && target.controllerId === view.playerId) {
             // M146 (uwaga właściciela): pump „do końca tury" ma wartość tylko
@@ -1530,15 +1877,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             //                     końca JEGO tury),
             //  moja main przed atakiem → 6 (pump na atak),
             //  upkeep/draw/end/main2  → -20 (pump nie zdąży pomóc).
-            const inCombat = view.turn.phase === 'combat';
+            const inCombat = combatTrickWindow(view, target);
             const myTurnNow = myTurn(view);
             let trick;
             // M96: pump „do końca tury" sensowny TYLKO w combacie (po deklaracji
             // atakujących/blokujących) albo na tura przeciwnika (bloker na jego
             // atak). W mojej fazie głównej wróg zdąży zareagować, a efekt może
             // wygasnąć bez skutku — M146 (Fake Your Own Death w upkeepie).
+            // M218/1 (zlecenie właściciela): okno liczone z UCZESTNICTWA
+            // (combatTrickWindow — view.combat), nie z nazwy fazy. Stary
+            // `phase === 'combat'` przepuszczał beginning_of_combat
+            // i end_of_combat (L64 — M206 naprawił tylko activate_ability),
+            // a bezwarunkowe `!myTurnNow → 12` trzymało przy życiu pump
+            // w upkeepie/draw przeciwnika na stwora, który nikogo nie
+            // blokuje (M206/A1c dla zdolności wykazał ten sam błąd).
             if (inCombat) trick = 18;
-            else if (!myTurnNow) trick = 12;
             else if (['upkeep', 'draw', 'end', 'cleanup'].includes(view.turn.step)) trick = -60;
             else if (card?.spell?.timing === 'sorcery') {
               // M179/C (zlecenie właściciela): SORCERY nie poczeka na combat
@@ -1553,6 +1906,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // (właściwe okno instantów — zlecenie A1 właściciela).
               trick = -75;
             }
+            // M218/2 (kryterium właściciela: „1/1 atakująca blokowana przez
+            // 5/5 — pompowanie +2/+2 nie ma żadnego sensu, bo nie zmienia
+            // wyniku walki ani o jotę"): okno walki to warunek konieczny,
+            // nie wystarczający. Po kaskadzie okien symulujemy wynik walki
+            // przed/po — bez zmiany pump dostaje karę klasy „okno poza
+            // walką" (−75), bo karta i mana idą na nic. Inne efekty tego
+            // czaru (dober, keywordy) wyceniają się w swoich gałęziach —
+            // kara dotyczy tylko samego pumpu.
+            if (inCombat && !pumpChangesOutcome(view, target, pumpDelta(view, effect))) trick = -75;
             score += trick + (target.power ?? 0);
           } else if (isPumpEffect) {
             score -= 60; // wzmacnianie przeciwnika bez powodu jest błędem
@@ -1669,6 +2031,47 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         score -= selfHarmPenalty(view, effects, cmd, target);
         // M179/E: symetria — efekt przyjazny wycelowany we wroga.
         score -= friendlyMisaimPenalty(view, effects, cmd, target);
+        // M211/A1 (zgłoszenie właściciela, Seer's Lantern): zdolność, której
+        // CAŁY efekt to „ułóż wierzch własnej biblioteki” (scry/surveil/
+        // look_top_n/explore), zmienia tylko to, co dobierzemy w NAJBLIŻSZYM
+        // dobraniu. Kiedy ją odpalić, jest więc obojętne dla skutku, ale NIE
+        // dla kosztu: mana wydana wcześniej mogła w międzyczasie opłacić czar.
+        //
+        // Optymalne okno to KOŃCÓWKA TURY PRZECIWNIKA (jego end step, tuż przed
+        // moim untapem): cała moja mana i tak wyparuje niewykorzystana, a scry
+        // zdąży ustawić moje najbliższe dobranie. Bot odpalał zdolność w
+        // pierwszym możliwym oknie (upkeep przeciwnika), przepalając manę,
+        // której potem brakowało na odpowiedź w jego turze.
+        //
+        // Reguła generyczna po treści efektu, bez nazw kart (ADR 0002).
+        // Zdolność sorcery-speed (Guidestone Compass) NIE może czekać na turę
+        // przeciwnika — dla niej najlepsze okno to własna main2, po walce,
+        // gdy wiadomo, że mana nie jest już potrzebna (wzorzec `canWait`
+        // z tapTimingBonus, M139/M202F).
+        const looksAtOwnLibraryOnly = effects.length > 0
+          && effects.every((e) => DECK_ARRANGING_EFFECTS.has(e?.type));
+        if (looksAtOwnLibraryOnly) {
+          const sorcerySpeed = ability?.timing === 'sorcery';
+          const step = view.turn.step;
+          if (sorcerySpeed) {
+            // Sorcery-speed (Guidestone Compass) NIE doczeka tury przeciwnika —
+            // jedyne legalne okno to własna główna faza. Po walce mana jest już
+            // wolna, więc to okno lepsze; przed walką odkładamy zdolność TYLKO
+            // wtedy, gdy mana ma realną konkurencję (jest co zagrać z ręki).
+            // Bez tego zastrzeżenia bot przestałby używać zdolności zupełnie,
+            // choć nic innego nie miał do roboty (M126/#10 — anty-over-fix).
+            const manaContested = view.zones.hand
+              .some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
+            if (view.turn.phase === 'postcombat_main' && step === 'main2') score += 6;
+            else if (manaContested) score -= 12;
+          } else if (!myTurn(view) && step === 'end') {
+            // Okno optymalne: mana i tak przepadnie, dobranie tuż-tuż.
+            score += 10;
+          } else {
+            // Każde wcześniejsze okno wydaje manę, która mogła się przydać.
+            score -= 12;
+          }
+        }
         for (const effect of effects) {
           // M96 (audyt Żywym Testerem): `pump_enchanted_creature`
           // (firebreathing — Shiv's Embrace) NIE wpadało do tej gałęzi, więc
@@ -1694,8 +2097,53 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // M96: pump poza walką ma wartość tylko w turze przeciwnika
             // (bloker na jego atak). W mojej turze poza combatem to strata
             // (M146 — Fake Your Own Death w upkeepie).
-            const inCombat = view.turn.phase === 'combat';
+            // M206 (audyt Zywym Testerem): `beginning_of_combat` NALEZY do fazy
+            // `combat` (TURN_STEPS), wiec sam warunek `phase === 'combat'`
+            // przepuszczal pump ZANIM ktokolwiek zadeklarowal atak - dokladnie
+            // to, czemu komentarz wyzej mial zapobiegac („po deklaracji
+            // atakujacych/blokujacych").
+            //
+            // Zmierzone (warhammer vs innistrad, seed 8): bot aktywowal
+            // Snarling Wolf („{1}{G}: +2/+2, raz na ture") w poczatku walki
+            // i NIE atakowal - dwie many na efekt, ktory wygasl w cleanup.
+            // Powtorzone w turach 9 i 16 tej samej partii.
+            //
+            // W poczatku walki pump jest zawsze co najmniej przedwczesny:
+            // atakujacy nie sa zadeklarowani, wiec przyrost sily niczego nie
+            // przesadza, a przeciwnik dostaje priorytet i widzi powiekszonego
+            // stwora, zanim zdecyduje o blokach (CR 508.1). Czekanie nic nie
+            // kosztuje - te sama zdolnosc mozna aktywowac po deklaracjach.
+            //
+            // Ten sam pomiar pokazal dwa dalsze jalowe okna (te same partie,
+            // tury 14 i 17): pump w KONCU WALKI, gdy wilk w tej walce nie
+            // bral udzialu, i pump w PODTRZYMANIU przeciwnika, gdy nikt
+            // jeszcze nie atakowal. Regula generyczna, wspolna dla wszystkich
+            // trzech: „+X/+X do konca tury" kupuje cos tylko wtedy, gdy stwor
+            // REALNIE bierze udzial w walce (atakuje albo blokuje) - inaczej
+            // wygasa w cleanup (CR 514.2), a mana przepada. Dopoki
+            // deklaracji nie ma, zawsze mozna poczekac: zdolnosc pozostaje
+            // dostepna w kroku blokujacych i pozniej.
+            // M218/1 (L41): M206 czytał tu `recipient?.attacking || recipient?.blocking`,
+            // a playerView NIE wystawia `blocking` (game-state.js zna tylko
+            // `entry.attacking` z state.combat.attackers) — bloker wyglądał
+            // na nieuczestniczącego i pump w obronie wymiany był tłumiony.
+            // Wspólny helper czyta obie strony z `view.combat` (ADR 0017):
+            // atakujących z listy, blokerów z mapy — jedna reguła dla czarów
+            // i zdolności (L41).
+            const participatesInCombat = combatTrickWindow(view, recipient);
+            const inCombat = view.turn.phase === 'combat'
+              && view.turn.step !== 'beginning_of_combat'
+              && participatesInCombat;
+            // M218/2 (kryterium właściciela): ta sama meaningfulność co dla
+            // czarów — zdolność pompująca w oknie walki, ale bez zmiany
+            // wyniku (1/1 vs 5/5), nie kupuje nic. Kara proporcjonalna do
+            // wagi (L3 — musi przebić bazę ~2–10), nie karze pustych pomp.
+            if (inCombat && !pumpChangesOutcome(view, recipient, pumpDelta(view, effect))) value -= 26 + pGain;
             if (!inCombat && myTurn(view)) value -= 26;
+            // Tura przeciwnika: pump poza walka byl dotad darmowy (kara wyzej
+            // dotyczy tylko wlasnej tury), wiec bot palil mane w jego upkeepie
+            // na stwora, ktory nikogo nie blokowal.
+            if (!inCombat && !myTurn(view)) value -= 26;
             if (recipient && recipient.controllerId === view.playerId) {
               // Combat trick tylko przy OBRONIE (declare_blockers w turze
               // przeciwnika): tam zatapiany bloker wciąż blokuje. W NASZYM
@@ -1721,7 +2169,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // bierze udział w walce (atakuje albo blokuje). Inaczej +X/+X
               // wygaśnie w cleanup, a stwór zostanie zatapiany.
               const selfPump = source && recipient && source.id === recipient.id;
-              const fightsNow = Boolean(recipient?.attacking || recipient?.blocking);
+              const fightsNow = combatTrickWindow(view, recipient);
               if (selfPump && taps && !fightsNow) value -= 30;
             } else {
               value -= 4; // pump na wrogu bez powodu
@@ -1751,7 +2199,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if ((effect.losesKeywords ?? []).includes('defender')) {
             const self = objectOnBoard(view, cmd.objectId) ?? target;
             const beforeCombat = myTurn(view)
-              && ['main', 'beginning_of_combat', 'declare_attackers'].includes(view.turn.step);
+              && ['main1', 'main2', 'beginning_of_combat', 'declare_attackers'].includes(view.turn.step);
             const canAttackNow2 = Boolean(self) && !self.tapped && !self.summoningSickness;
             score += (beforeCombat && canAttackNow2) ? 10 + 2 * (self?.power ?? 0) : -20;
           }
@@ -2772,7 +3220,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       case 'resolve_madness_cast': {
         // M158/Batch 39: rzut za koszt madness to niemal zawsze zysk (karta
         // za pół ceny); odmowa tylko gdy many brak.
-        return finish(cmd.cast ? 60 : 0);
+        if (!cmd.cast) return finish(0);
+        // M212/Z7 (ta sama klasa co suspend/rebound): madness też enumeruje
+        // ofertę PER ZESTAW CELÓW (epicCastOffers), więc stała wartość
+        // kazałaby botu brać pierwszy cel z brzegu — także własny stwór.
+        // Uwaga: oferta niesie objectId (obiekt w wygnaniu) ORAZ cardId
+        // (identyfikator karty) — deskryptor czaru wisi na OBIEKCIE.
+        const madnessCard = cmd.objectId
+          ? view.zones.exile.find((o) => o.id === cmd.objectId)
+          : null;
+        return finish(60 - freeCastTargetPenalty(view, madnessCard?.spell?.effects ?? [], cmd));
       }
       case 'resolve_reveal_choice': {
         // M158/Batch 39 (Invasion of the Giants II): ujawnij Olbrzyma za 2
