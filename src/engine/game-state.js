@@ -25,7 +25,7 @@ import { addCounter } from './counters.js';
 import { runStateBasedActions, tryRegenerate } from './state-based.js';
 import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds } from './triggers.js';
 import { moveObjectDirectly } from './objects.js';
-import { detachAttachmentsFromHost } from './attachments.js';
+import { detachAttachmentsFromHost, effectiveProtectionQualities } from './attachments.js';
 import { createBattlefieldToken } from './tokens.js';
 import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom } from './effects.js';
 import { changeLife } from './players.js';
@@ -4724,6 +4724,18 @@ export function playerView(state, playerId) {
         // widoczny na stole).
         if (creatureCantBlock(object, state) || attachmentRestrictions(state, object).cantBlock) entry.cantBlock = true;
         if (object.cantBeBlocked === true) entry.cantBeBlocked = true;
+        // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona
+        // permanentu (CR 702.16) jest informacją PUBLICZNĄ wydrukowaną skutkiem
+        // rozstrzygniętej aury/efektu — kafel musi ją pokazać osobnym badge'em
+        // („Ochrona przed: {B}"), a bot musi ją czytać (E: nie atakować w
+        // blokera z protekcją od koloru atakującego). Widok niósł tylko nazwę
+        // aury, więc ani gracz, ani kontroler nie znali KOLORU ochrony (klasa
+        // L1/ADR 0017). Qualities z effectiveProtectionQualities — deskryptory,
+        // nie nazwy kart (ADR 0002).
+        {
+          const protQualities = effectiveProtectionQualities(state, object);
+          if (protQualities.length > 0) entry.protection = protQualities.map((q) => ({ ...q }));
+        }
         // M186/Z1 (Żywy Tester, ravnica vs innistrad s9): „can't attack/block
         // alone" JAWNIE w widoku — wizard walki walidował po entry.abilities,
         // których playerView NIGDY nie wysyłał (klasa L48/L1: martwa walidacja

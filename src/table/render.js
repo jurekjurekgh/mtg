@@ -1812,6 +1812,32 @@ function abilityFizzlesOnHand(ability, view) {
   });
 }
 
+/** Polskie nazwy kolorów many (do badge'y ochrony). */
+const PROTECTION_COLOR_NAMES = { W: 'Biały', U: 'Niebieski', B: 'Czarny', R: 'Czerwony', G: 'Zielony' };
+
+/**
+ * M221/C — badge'e ochrony na kaflu permanentu (CR 702.16). Jeden badge na
+ * jakość: „Ochrona przed: Czarny" (kolor), „Ochrona przed wielokolorowymi",
+ * „Ochrona przed: <podtyp>". Reguła po deskryptorze jakości, bez nazw kart
+ * (ADR 0002). Zwraca listę gotowych etykiet.
+ */
+export function protectionBadges(protection) {
+  const out = [];
+  for (const q of protection ?? []) {
+    if (!q) continue;
+    const parts = [];
+    if (Array.isArray(q.colors) && q.colors.length) {
+      parts.push(q.colors.map((c) => PROTECTION_COLOR_NAMES[c] ?? c).join('/'));
+    }
+    if (q.multicolored) parts.push('wielokolorowymi');
+    if (q.subtype) parts.push(q.subtype);
+    if (q.notSubtype) parts.push(`spoza: ${q.notSubtype}`);
+    if (parts.length === 0 && q.kind === 'creature') parts.push('stworami');
+    out.push(parts.length ? `Ochrona przed: ${parts.join(', ')}` : 'Ochrona');
+  }
+  return out;
+}
+
 /** Opis JAKOŚCI ochrony (CR 702.16b–e) po deskryptorze — bez nazw kart. */
 export function protectionQualityLabel(quality) {
   if (!quality) return 'wybranym źródłem';
@@ -2699,6 +2725,9 @@ export function cardInfo(session, object, combat = null) {
     lostKeywordsUntilEOT: faceDown ? [] : [...(object.lostKeywordsUntilEOT ?? [])],
     cantBlockNow: Boolean(object.cantBlock || object.cantBlockPrinted),
     cantBeBlockedNow: Boolean(object.cantBeBlocked),
+    // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona (CR 702.16)
+    // jako osobny badge — kolor/jakość widoczne wprost, nie schowane w nazwie aury.
+    protection: faceDown ? [] : [...(object.protection ?? [])],
     // M173/C: czasowe stany z widoku (saddle/untap-lock/kontrola/regeneracja).
     saddledNow: Boolean(object.saddled),
     untapLockedNow: Boolean(object.untapLocked || object.dontUntapNextUntapStep),
@@ -2956,6 +2985,12 @@ export function buildStateOverlay(visual, info) {
     }
     if (info.cantBlockNow) flags.push(['kw', 'nie może blokować']);
     if (info.cantBeBlockedNow) flags.push(['kw', 'nie do zablokowania']);
+    // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona jako
+    // WŁASNY badge — kolor/jakość wprost na kaflu, nie schowane w „zaczarowany:
+    // <aura>". Etykieta po deskryptorze jakości (CR 702.16), bez nazw kart.
+    for (const badge of protectionBadges(info.protection)) {
+      flags.push(['kw', badge]);
+    }
     // M173/C: pozostałe czasowe stany z efektów — audyt na wniosek
     // właściciela (Panic Spellbomb — klasa objęta już przez cantBlockNow).
     if (info.saddledNow) flags.push(['kw', 'osiodłany']);

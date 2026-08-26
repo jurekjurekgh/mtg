@@ -61,14 +61,17 @@ gdy bot ATAKUJE (po deklaracji atakujących), a cel MÓGŁBY zablokować atakuj�
 - [x] Test RED→GREEN (`test/m221b-optional-trigger-label.test.js`, 3 testy
       + FoW); `npm test` 3389, build 54/2725.2 kB.
 
-### Etap C — Benevolent Blessing: badge „Ochrona przed: <kolor>"
-- [ ] `playerView`: wystaw `protectionFromColors`/jakość na kaflu permanentu
-      (jeśli nieobecne) — informacja publiczna (CR 702.16).
-- [ ] `render.js`: osobny badge „Ochrona przed: <kolor>" na permanencie
-      (nie tylko w opisie aury), i na aurze.
-- [ ] Rodzeństwo: Guildscorn Ward (multicolored), Spare from Evil (subtype),
-      morph protekcje — spójność `protectionQualityLabel`.
-- [ ] Test render/DOM RED→GREEN; `npm test`+build; commit+push.
+### Etap C — Benevolent Blessing: badge „Ochrona przed: <kolor>" ✅ DONE (commit M221/C)
+- [x] `playerView`: kafel permanentu niesie `protection` (jakości z
+      `effectiveProtectionQualities`) — informacja publiczna (CR 702.16),
+      tylko gdy niepusta (bez szumu).
+- [x] `render.js`: helper `protectionBadges` + osobny badge „Ochrona przed:
+      Czarny" na kaflu (tileInfo `protection` → flags).
+- [x] Rodzeństwo: badge generyczny po deskryptorze jakości — kolor, multicolored,
+      subtype, notSubtype (Guildscorn Ward/Spare from Evil/morph obsłużone tym
+      samym kodem).
+- [x] Test RED→GREEN (`test/m221c-protection-badge.test.js`, 3 testy);
+      `npm test` 3392, build 54/2727.5 kB.
 
 ### Etap D — Bladed Sentinel: `vigilance` tylko we własnym oknie ataku
 Sens: wykupić w SWOJEJ turze przed deklaracją atakujących, gdy stwór ma
