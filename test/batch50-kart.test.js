@@ -16,6 +16,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { attachAuraToCreature } from '../src/engine/attachments.js';
 import { effectivePower, effectiveToughness, effectiveKeywords, tapObject } from '../src/engine/permanents.js';
+import { rulesText } from '../src/table/render.js';
 import { processTriggers } from '../src/engine/triggers.js';
 
 const REGISTRY = createCardRegistry();
@@ -134,6 +135,16 @@ test('B50: Nanoform Sentinel — dane Oracle i trigger self_becomes_tapped (once
   assert.equal(trig.oncePerTurn, true);
   assert.deepEqual(trig.requiresTarget, { type: 'permanent', notSelf: true });
   assert.equal(def.artId, 568);
+});
+
+test('B50: Nanoform Sentinel — opis kafla nazywa CEL („odkręć docelowy inny permanent")', () => {
+  // M223 (audyt Batch 50): kafel mówił „Zatapnięcie tego permanentu: odkręć"
+  // — bez „docelowy", więc gracz nie wiedział, że odkręca INNY permanent.
+  const def = REGISTRY.get('nanoform-sentinel');
+  const text = rulesText({ abilities: def.abilities, faceDown: false });
+  assert.match(text, /zostaje zatapnięty/, `opis triggera: ${text}`);
+  assert.match(text, /docelowy inny permanent/, `opis musi nazwać cel: ${text}`);
+  assert.match(text, /raz na turę/, `opis musi wspomnieć limit: ${text}`);
 });
 
 function tapAndProcess(state, id) {

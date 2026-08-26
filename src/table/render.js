@@ -1339,6 +1339,17 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
     const suffix = czlony.length > 0 ? ` (gdy ${czlony.join(' i ')})` : '';
     return `Na początku kroku końca${suffix}: ${parts}.`;
   }
+  // M223 (audyt Batch 50, Nanoform Sentinel): „Whenever this creature becomes
+  // tapped, untap another target permanent." Opis musi nazwać CEL — inaczej
+  // kafel mówił „Zatapnięcie tego permanentu: odkręć" (bez „docelowy"), więc
+  // gracz nie wiedział, że odkręca INNY permanent (oś 2 audytu).
+  if (trigger.event === 'self_becomes_tapped') {
+    const rew = trigger.requiresTarget && effects.some((e) => e.type === 'untap_permanent')
+      ? effects.map((e) => (e.type === 'untap_permanent' ? 'odkręć docelowy inny permanent' : describeEffect(e))).join(' i ')
+      : parts;
+    const once = trigger.oncePerTurn ? ' (raz na turę)' : '';
+    return `Gdy ten permanent zostaje zatapnięty${once}: ${rew}.`;
+  }
   if (trigger.event === 'exploits') return `Gdy ten stwór exploituje: ${parts}.`;
   if (trigger.event === 'equipped_creature_attacks') return `Gdy wyposażony stwór atakuje: ${parts}.`;
   if (trigger.event === 'aura_host_targeted_by_spell') return `Gdy zaczarowany stwór staje się celem czaru: ${parts}.`;
