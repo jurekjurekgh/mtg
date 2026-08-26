@@ -647,7 +647,7 @@ export function canPayMadnessCost(state, playerId, object) {
   return hasColorRequirements(state, playerId, requirements);
 }
 
-export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, treasureAlt = false, warpCast = false, madnessCast = false } = {}) {
+export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, treasureAlt = false, warpCast = false, madnessCast = false, surgeCast = false } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   // Zaplotowana karta leży w exile (plotted: true) i rzuca się BEZ kosztu many
@@ -692,9 +692,23 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   if (!hasFlash && !madnessCast && state.zones.stack.length > 0) throw new Error('Zagranie przy niepustym stosie');
   if (warpCast && !object.warp) throw new Error('Ta karta nie ma mechaniki warp');
   if (madnessCast && !object.madness) throw new Error('Ta karta nie ma mechaniki madness');
+  // Surge (CR 702.111): koszt ALTERNATYWNY rzutu z ręki, legalny gdy ty (lub
+  // sojusznik — w 1v1 tylko ty) rzuciłeś inny czar w tej turze. Płaci się
+  // NORMALNĄ maną (inaczej niż treasureAlt). Gate liczony PRZED zagraniem tego
+  // czaru: spellsCastThisTurnByPlayer > 0. Wyklucza inne warianty kosztu.
+  if (surgeCast) {
+    if (!object.surge) throw new Error('Ta karta nie ma mechaniki surge');
+    if (faceDown || kicked || treasureAlt || warpCast || madnessCast || phyrexianPayWithLife > 0) {
+      throw new Error('Koszt surge wyklucza morph/kicker/phyrexian/skarby/warp/madness');
+    }
+    if ((state.spellsCastThisTurnByPlayer?.[playerId] ?? 0) < 1) {
+      throw new Error('Surge: wymaga rzucenia innego czaru w tej turze');
+    }
+  }
   if (warpCast && (faceDown || kicked || treasureAlt || phyrexianPayWithLife > 0)) throw new Error('Koszt warp wyklucza morph/kicker/phyrexian/skarby');
   let cost = (plotted || freeImpulse) ? 0 : (warpCast ? (object.warp?.cost ?? object.manaCost ?? 0)
-    : (madnessCast ? (object.madness?.cost ?? object.manaCost ?? 0) : (object.manaCost ?? 0)));
+    : (madnessCast ? (object.madness?.cost ?? object.manaCost ?? 0)
+      : (surgeCast ? (object.surge?.cost ?? object.manaCost ?? 0) : (object.manaCost ?? 0))));
   if (faceDown) {
     if (!object.morph || object.morph.cost == null) throw new Error('Ta karta nie może być zagrana twarzą w dół');
     // M111 (CR 601.2f + 708.2): rzut zakryty to czar-STWÓR bez innych typów,
@@ -744,7 +758,9 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     ? (object.madness?.colors ?? []).map((color) => [color])
     : warpCast
       ? (object.warp?.colors ?? []).map((color) => [color])
-      : null;
+      : surgeCast
+        ? (object.surge?.colors ?? []).map((color) => [color])
+        : null;
   if (!plotted && !freeImpulse && !faceDown && !treasureAltCost) {
     const colorGateOk = altCostColors
       ? hasColorRequirements(state, playerId, altCostColors)

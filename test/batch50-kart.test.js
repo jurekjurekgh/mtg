@@ -33,10 +33,10 @@ function put(state, id, cardId, controllerId, zone = 'battlefield', patch = {}) 
   const data = gameObjectDataOf(def);
   addObject(state, {
     id, instanceId: `i-${id}`, cardId, controllerId, ownerId: controllerId, zone,
-    kind: data.kind, power: data.power, toughness: data.toughness, manaCost: data.manaCost,
+    kind: data.kind, power: data.power, toughness: data.toughness, manaCost: def.manaCost ?? data.manaCost,
     spell: data.spell, abilities: data.abilities ?? [], keywords: def.keywords ?? [],
     subtypes: def.subtypes ?? [], types: def.types ?? [], colors: def.colors ?? [],
-    entersTapped: def.entersTapped ?? false, aura: data.aura ?? null,
+    entersTapped: def.entersTapped ?? false, aura: data.aura ?? null, surge: def.surge ?? null,
   });
   if (Object.keys(patch).length) {
     state.objects.set(id, Object.freeze({ ...state.objects.get(id), ...patch }));
@@ -167,6 +167,54 @@ test('B50: Nanoform Sentinel — „another\" NIE celuje w siebie', () => {
   const view = playerView(state, 'p1');
   const selfPick = view.legalCommands.find((c) => c.type === 'resolve_trigger_target' && c.targetId === 'nano');
   assert.ok(!selfPick, 'notSelf: własne źródło nie jest legalnym celem („another")');
+});
+
+// ---- Jwar Isle Avenger (Surge) ----------------------------------------------
+
+test('B50: Jwar Isle Avenger — dane Oracle + deskryptor surge', () => {
+  const def = REGISTRY.get('jwar-isle-avenger');
+  assert.deepEqual(def.types, ['Creature']);
+  assert.equal(def.power, 3);
+  assert.equal(def.toughness, 3);
+  assert.deepEqual(def.keywords, ['flying']);
+  assert.deepEqual(def.surge, { cost: 3, colors: ['U'] });
+  assert.equal(def.artId, 567);
+});
+
+test('B50: Jwar Isle Avenger — surge OFEROWANY po rzucie innego czaru, brak bez niego', () => {
+  const withoutSpell = game('p1', 'main');
+  addMana(withoutSpell, 'p1', 10);
+  put(withoutSpell, 'jwar', 'jwar-isle-avenger', 'p1', 'hand');
+  const v1 = playerView(withoutSpell, 'p1');
+  assert.ok(!v1.legalCommands.some((c) => c.type === 'cast_permanent' && c.objectId === 'jwar' && c.surgeCast),
+    'bez rzuconego wcześniej czaru surge NIE jest legalny');
+
+  const withSpell = game('p1', 'main');
+  addMana(withSpell, 'p1', 10);
+  withSpell.spellsCastThisTurnByPlayer = { p1: 1 };
+  put(withSpell, 'jwar', 'jwar-isle-avenger', 'p1', 'hand');
+  const v2 = playerView(withSpell, 'p1');
+  assert.ok(v2.legalCommands.some((c) => c.type === 'cast_permanent' && c.objectId === 'jwar' && c.surgeCast),
+    'po rzucie innego czaru surge jest legalny');
+});
+
+test('B50: Jwar Isle Avenger — surge kosztuje {2}{U} (3), a nie {4}{U} (5)', () => {
+  const state = game('p1', 'main');
+  addMana(state, 'p1', 3); // dokładnie koszt surge
+  state.spellsCastThisTurnByPlayer = { p1: 1 };
+  put(state, 'jwar', 'jwar-isle-avenger', 'p1', 'hand');
+  const view = playerView(state, 'p1');
+  const surge = view.legalCommands.find((c) => c.type === 'cast_permanent' && c.objectId === 'jwar' && c.surgeCast);
+  const normal = view.legalCommands.find((c) => c.type === 'cast_permanent' && c.objectId === 'jwar' && !c.surgeCast);
+  assert.ok(surge, 'surge oferowany przy 3 manie');
+  assert.ok(!normal, 'normalny rzut (koszt 5) NIE jest opłacalny przy 3 manie');
+  const r = execute(state, surge);
+  assert.ok(r.ok, `surge cast odrzucony: ${r.events?.[0]?.reason}`);
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+  const onBoard = [...state.objects.values()].find((o) => o.cardId === 'jwar-isle-avenger' && o.zone === 'battlefield');
+  assert.ok(onBoard, 'Jwar Isle Avenger wchodzi na pole bitwy po surge');
+  assert.ok(effectiveKeywords(onBoard, state).includes('flying'), 'ma flying po wejściu');
 });
 
 test('B50: Nanoform Sentinel — triggers only once each turn', () => {

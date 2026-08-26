@@ -97,6 +97,12 @@ export function defineCard(data) {
       cost: data.warp.cost,
       colors: Object.freeze([...(data.warp.colors ?? [])]),
     }) : null,
+    // Batch 50 (Jwar Isle Avenger, CR 702.111): Surge — alternatywny koszt
+    // rzutu z ręki, gdy rzucono inny czar w tej turze. Koszt normalną maną.
+    surge: data.surge ? Object.freeze({
+      cost: data.surge.cost,
+      colors: Object.freeze([...(data.surge.colors ?? [])]),
+    }) : null,
     entersWithCounters: data.entersWithCounters ? Object.freeze({ ...data.entersWithCounters }) : null,
     // M108 (Somberwald Spider): liczniki wejścia WARUNKOWE (morbid, CR 614.1c).
     entersWithCountersIf: data.entersWithCountersIf ? Object.freeze({

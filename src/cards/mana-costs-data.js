@@ -415,4 +415,5 @@ export const MANA_COSTS = {
   "dimir-guildgate": "",
   "vow-of-flight": "{2}{U}",
   "nanoform-sentinel": "{2}{U}",
+  "jwar-isle-avenger": "{4}{U}",
 };

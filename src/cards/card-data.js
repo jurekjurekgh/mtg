@@ -9874,6 +9874,21 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['„triggers only once each turn” — kolejne tapnięcia w tej samej turze nie odpalają triggera (triggerFiredThisTurn)'],
   }),
 
+  // Jwar Isle Avenger (OGW) {4}{U} 3/3 Sphinx — Flying, Surge {2}{U}.
+  // Nowa mechanika generyczna: surge (alt-cost rzutu z ręki, gdy rzucono inny
+  // czar w tej turze; płatność normalną maną).
+  defineCard({
+    id: 'jwar-isle-avenger', name: 'Jwar Isle Avenger', set: 'OGW',
+    types: ['Creature'], subtypes: ['Sphinx'], colors: ['U'],
+    power: 3, toughness: 3, manaCost: 5, keywords: ['flying'],
+    surge: { cost: 3, colors: ['U'] },
+    oracleText: 'Surge {2}{U} (You may cast this spell for its surge cost if you or a teammate has cast another spell this turn.)\nFlying',
+    imageUri: 'https://cards.scryfall.io/large/front/0/a/0a5b059f-2fa3-474f-9c74-6d4021703add.jpg?1783937918',
+    artId: 567, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+    notes: ['surge {2}{U}: alternatywny koszt rzutu z ręki, gdy rzuciłeś inny czar w tej turze (w 1v1 „teammate” nie występuje)'],
+  }),
+
 ]);
 
 /**

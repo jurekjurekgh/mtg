@@ -466,7 +466,7 @@ export const ADD_OBJECT_FIELDS = Object.freeze([
   'exploit', 'treasureAltCost', 'cardName', 'name', 'bloodthirst', 'additionalCost',
   'kicker', 'costReduction', 'adventure', 'buyback', 'protectionFromColors',
   'plottedAtTurn', 'enterAsCopy', 'suspend', 'suspended', 'timeCounters', 'suspendReady',
-  'warp', 'warpReady',
+  'warp', 'warpReady', 'surge',
   'rebound', 'reboundCast', 'reboundReady',
   'subtypesBeforeOverride', 'lostKeywordsUntilEOT', 'madness', 'madnessReady',
 ]);
@@ -529,12 +529,12 @@ function assertAddObjectContract(config) {
 
 export function addObject(state, config) {
   assertAddObjectContract(config);
-  const { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false } = config;
+  const { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, surge = null, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false } = config;
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, toxic, echo, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, additionalCost, kicker, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, toxic, echo, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, additionalCost, kicker, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, surge, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady });
   const placed = zone === 'battlefield'
     // Batch 46 (Bone Shredder): permanent z echem wchodzi z nieopłaconym echem
     // — pierwszy WŁASNY upkeep po wejściu zapyta o zapłatę (CR 702.29).
@@ -4311,6 +4311,7 @@ export function execute(state, input) {
         exileTargetId: cmd.exileTargetId ?? null,
         kicked: Boolean(cmd.kicked),
         treasureAlt: Boolean(cmd.treasureAlt),
+        surgeCast: Boolean(cmd.surgeCast),
       });
       // Zdarzenie główne (permanent_cast) pozostaje pierwsze; dokładamy
       // zdarzenia zagnieżdżone (np. counter_added przy wejściu z licznikiem).
@@ -6016,6 +6017,19 @@ export function playerView(state, playerId) {
         if (avail >= altMana
           && matchColorRequirements(Array.from({ length: avail }, () => ['W', 'U', 'B', 'R', 'G']), altReqs)) {
           legalCommands.push(command('cast_permanent', playerId, { objectId: id, treasureAlt: true }));
+        }
+      }
+      // Surge (Jwar Isle Avenger, CR 702.111): alternatywny koszt rzutu z ręki,
+      // gdy rzuciłeś inny czar w tej turze. Płatność NORMALNĄ maną — oferta
+      // liczona z producibleMana i kolorów kosztu surge (jak warp/madness, ale
+      // z ręki). Gate: spellsCastThisTurnByPlayer > 0 (ten sam odczyt co
+      // castPermanent — L48: oferta i płatność znają tę samą regułę).
+      if (object.surge && (state.spellsCastThisTurnByPlayer?.[playerId] ?? 0) >= 1) {
+        const surgeMana = object.surge.cost ?? 0;
+        const surgeReqs = (object.surge.colors ?? []).map((color) => [color]);
+        if (producibleMana(state, playerId, null, spellManaPurpose(object)) >= surgeMana
+          && canPayColoredCost(state, playerId, surgeReqs)) {
+          legalCommands.push(command('cast_permanent', playerId, { objectId: id, surgeCast: true }));
         }
       }
       // Podstawa kosztu zawsze z many — bez niej permanent nie jest grywalny.
