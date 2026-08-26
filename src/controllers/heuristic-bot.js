@@ -2159,6 +2159,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             && entry.sourceId === cmd.objectId && entry.abilityIndex === (cmd.abilityIndex ?? 0)
             && sameTargets(entry));
           if (pendingTwin) return finish(-10);
+          // M219 (pętla jakości Żywym Testerem, h9 zendikar vs worek-legend
+          // s=44): pendingTwin łapie tylko drugą kopię NA STOSIE. Gdy pierwsza
+          // aktywacja już się ROZSTRZYGNĘŁA i nadała trwały-do-EOT stan
+          // (saddled), źródło nosi go na polu bitwy, a bot i tak aktywował
+          // Trained Arynx (Saddle 2) 3× z rzędu w jednej turze — każde
+          // kolejne osiodłanie tapuje inny stwór za nic (L51: efekt
+          // idempotentny już zastosowany). Generycznie po flagach STANU
+          // czytanych z PlayerView (ADR 0017), nie po nazwie karty (ADR 0002).
+          if (abilityEffectTypes.includes('set_saddled') && source?.saddled === true) {
+            return finish(-10);
+          }
+          // M219 (pętla jakości Żywym Testerem, h9 zendikar vs worek-legend
+          // s=44): pendingTwin łapie tylko drugą kopię NA STOSIE. Gdy pierwsza
+          // aktywacja już się ROZSTRZYGNĘŁA i nadała trwały-do-EOT stan
+          // (saddled), źródło nosi go na polu bitwy, a bot i tak aktywował
+          // Trained Arynx (Saddle 2) 3× z rzędu w jednej turze — każde
+          // kolejne osiodłanie tapuje inny stwór za nic (L51: efekt
+          // idempotentny już zastosowany). Generycznie po flagach STANU
+          // czytanych z PlayerView (ADR 0017), nie po nazwie karty (ADR 0002).
         }
         // Patologia B1: aktywacja kosztem tapu we własnym untap zostawiłaby
         // stwora zatapianego całą turę (bot stał w miejscu i deck-outował).
