@@ -100,15 +100,21 @@ gdy bot ATAKUJE (po deklaracji atakujących), a cel MÓGŁBY zablokować atakuj�
       kolor atakującego / inny kolor / brak protekcji); `npm test` 3398,
       build 54/2731.7 kB, benchmark 9/9.
 
-### Etap F — Trigon of Corruption: używaj −1/−1 (i doładowuj) gdy wolna mana
+### Etap F — Trigon of Corruption: używaj −1/−1 (i doładowuj) gdy wolna mana ✅ DONE (commit M221/F)
 Oracle: `{2},{T},Remove charge: -1/-1 na cel` + `{B}{B},{T}: dołóż charge`.
-- [ ] Wycena `add_counter` (`-1/-1`) na WROGIM stworze: czysty zysk (osłabienie/
-      zabicie), premia rosnąca przy zabiciu (toughness po counterze ≤ 0).
-- [ ] Gdy brak celów / brak charge: doładowanie (`{B}{B}` charge) ma wartość,
-      jeśli mana wolna (nie kosztem lepszego zagrania).
-- [ ] Rodzeństwo: inne `add_counter` `-1/-1`/wither/`remove charge` (Trigon
-      family, Serrated Arrows itp.).
-- [ ] Test RED→GREEN; `npm test`+build+benchmark; commit+push.
+- [x] Wycena `add_counter` DEBUFF (`-1/-1`, `-0/-1`, `-1/0`, `stun`) na WROGIM
+      stworze: czysty zysk (osłabienie 10+4·amount, zabicie 30+2·power gdy
+      licznik obniża toughness ≤ pozostała). Na WŁASNYM: −90. Wcześniej `-1/-1`
+      wpadał w gałąź liczników zasobowych bez konsumenta → −25 (bot nigdy nie
+      używał zdolności).
+- [x] Doładowanie (`add_counter charge`) ma bazę +2 (nad passem) i jest jedyną
+      ofertą, gdy brak wrogich celów — bot recharge'uje przy wolnej manie.
+- [x] Rodzeństwo: reguła generyczna po deskryptorze (minus/stun w nazwie
+      licznika) — obejmuje wszystkie karty add_counter -1/-1 i stun (1740,
+      1896, 7623). `stun`/`-1/0` NIE liczone jako lethal (nie zmniejszają
+      toughness).
+- [x] Test RED→GREEN (`test/m221f-trigon-debuff-counter.test.js`, 2 testy);
+      `npm test` 3400, build 54/2733.1 kB, benchmark 9/9.
 
 ### Etap G — Phyrexian Mite (cantBlock token): atakuj nim (czysty atakujący)
 - [ ] Attack scoring: stwór z `cantBlock` NIE ma wartości obronnej — trzymanie

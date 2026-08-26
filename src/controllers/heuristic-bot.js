@@ -2600,11 +2600,32 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // uzupełnianie po walce (postcombat), nie kosztem ataku/bloku.
           if (effect.type === 'add_counter') {
             const counterName = effect.counter ?? '+1/+1';
+            // M221/F (zgłoszenie właściciela, Trigon of Corruption): licznik
+            // DEBUFF (`-1/-1`, `-1/0`, `-0/-1`) na WROGIM stworze to czysty zysk
+            // (osłabienie/zabicie), a wycena traktowała go jak licznik zasobowy
+            // bez konsumenta → kara −25, więc bot NIGDY nie używał zdolności
+            // „{2},{T},usuń charge: -1/-1 na cel". Rozpoznanie po deskryptorze
+            // (minus w nazwie licznika, CR 122), bez nazw kart (ADR 0002).
+            const DEBUFF_COUNTERS = new Set(['-1/-1', '-1/0', '-0/-1', 'stun']);
             const statCounter = ['+1/+1', '+1/+0', '+0/+1', 'shield'].includes(counterName)
               || KEYWORD_COUNTERS.has(counterName);
             const tgt = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : source;
             const amount = Math.max(1, effect.amount ?? 1);
-            if (statCounter) {
+            if (DEBUFF_COUNTERS.has(counterName)) {
+              // Debuff na wrogim stworze = wartość; kill (toughness ≤ amount)
+              // premiowany. Na WŁASNYM to samobój — twarda kara (L3).
+              if (tgt && tgt.controllerId !== view.playerId) {
+                // Tylko liczniki obniżające WYTRZYMAŁOŚĆ mogą zabić (CR 704.5f).
+                // `stun`/`-1/0` nie zmniejszają toughness — osłabiają/blokują,
+                // ale nie liczymy ich jako lethal.
+                const reducesToughness = counterName === '-1/-1' || counterName === '-0/-1';
+                const toughLeft = (tgt.toughness ?? 0) - (tgt.damage ?? 0);
+                const kills = reducesToughness && toughLeft <= amount;
+                score += kills ? 30 + (tgt.power ?? 0) * 2 : 10 + 4 * amount;
+              } else {
+                score -= 90;
+              }
+            } else if (statCounter) {
               if (tgt?.controllerId === view.playerId) score += 8 + 4 * amount;
               else score -= 90;
             } else if (counterName !== 'charge') { // charge wycenia station_counters
