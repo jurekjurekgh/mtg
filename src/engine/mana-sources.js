@@ -45,8 +45,9 @@ const MANA_SOURCE_MAP = Object.freeze({
   'apprentice-wizard': { colors: [], amount: 3 }, // {C}{C}{C}
   'token_treasure': { colors: ['W', 'U', 'B', 'R', 'G'], amount: 1 },
   // Static Net (BRO): Powerstone — „{T}: Add {C} — Spend this mana only to
-  // cast artifact spells.\" Restrykcja artefaktowa nieimplementowana (engine
-  // nie zna ograniczeń użycia many poza fromTreasure); produkuje bezbarwną {C}.
+  // cast artifact spells.\" Produkuje bezbarwną {C}; ograniczenie niesie
+  // deskryptor zdolności (spendOnly:'artifact') z karty/tokenu i jest
+  // respektowane przez resources.js (restrictedPool — M214).
   'token_powerstone': { colors: [], amount: 1 },
   // Karty Z DARMOWĄ zdolnością „{T}: Add …" NIE wchodzą do mapy —
   // kolory/ilość czytane są z deskryptora (manaAbilityColors/Amount),

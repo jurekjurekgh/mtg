@@ -552,6 +552,19 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
   } else {
     markDamage(state, targetId, dealt);
   }
+  // Deathtouch (CR 702.4b): „Any amount of damage this deals to a creature is
+  // enough to destroy it" — dotyczy WSZYSTKICH obrażeń, także niecombatowych
+  // (fight, „deals damage equal to its power", triggery). Wcześniej oznaczenie
+  // damagedByDeathtouch ustawiał wyłącznie combat.js — stwór 1/2 z deathtouch
+  // zadający 1 obrażenie w fight nie zabijał 4/4 (SBA nie miała flagi, a
+  // obrażenia < wytrzymałości). Prewencja/protection kasują obrażenia przed
+  // oznaczeniem — CR 702.4b: bez zadanych obrażeń nie ma śmierci.
+  if (!targetIsPlayer && dealt > 0 && effectiveKeywords(sourceObject, state).includes('deathtouch')) {
+    const current = state.objects.get(targetId);
+    if (current && current.zone === 'battlefield') {
+      state.objects.set(targetId, Object.freeze({ ...current, damagedByDeathtouch: true }));
+    }
+  }
   // Lifelink (CR 702.15): zysk życia równy obrażeniom ZADANYM (po prewencji).
   if (effectiveKeywords(sourceObject, state).includes('lifelink')) {
     changeLife(state, sourceObject.controllerId, dealt);

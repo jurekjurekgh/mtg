@@ -4066,6 +4066,9 @@ export function execute(state, input) {
         for (const player of state.players) {
           player.mana = 0;
           player.manaPool = {};
+          // M214: pula many ograniczonej drukiem znika razem z resztą puli
+          // (CR 106.4) — bez tego osierocone jednostki zalegałyby w księgowaniu.
+          player.restrictedPool = {};
           player.treasureMana = 0;
           // M201 (znalezisko #3): licznik many ograniczonej znika razem z pulą
           // (CR 106.4) — stały licznik blokowałby płatności w kolejnych krokach.
@@ -6067,9 +6070,12 @@ export function playerView(state, playerId) {
   // z czego rysować. `manaPool` to mapa profil-kolorów → liczba jednostek
   // (klucz `manaUnitKey`: 'U', 'UR', '' = bezbarwna). Pula jest jawną
   // informacją stołową (jak `mana`), więc trafia do widoku OBU graczy.
-  const players = state.players.map(({ id, name, life, mana, landPlays, poison, manaPool }) => ({
+  const players = state.players.map(({ id, name, life, mana, landPlays, poison, manaPool, restrictedPool }) => ({
     id, name, life, mana: mana ?? 0, landPlays: landPlays ?? 0, poison: poison ?? 0,
     manaPool: { ...(manaPool ?? {}) },
+    // M214: jednostki many ograniczonej drukiem (Powerstone) — UI/audyt widzi
+    // je osobno, żeby nie liczyć ich jako „mana na wszystko".
+    restrictedPool: { ...(restrictedPool ?? {}) },
   }));
   // Fog of War scry: patrzący (właściciel decyzji) widzi treść kart (jak rękę),
   // przeciwnik dowiaduje się wyłącznie, że decyzja trwa i ile kart obejrzano.

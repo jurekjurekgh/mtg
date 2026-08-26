@@ -6836,7 +6836,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     ],
     artId: 497, plan: 'Dominaria',
     support: { status: 'supported', limitations: [] },
-    notes: ['exile linked: id wygnanego zapisane na źródle (exiledCardIds), LTB przywraca (jak Faceless Butcher); Powerstone produkuje {C} (restrykcja „tylko czary artefaktów\" nieimplementowana — patrz MANA_SOURCE_MAP)'],
+    notes: ['exile linked: id wygnanego zapisane na źródle (exiledCardIds), LTB przywraca (jak Faceless Butcher); Powerstone produkuje {C} z restrykcją „only to cast artifact spells\" (M214 — restrictedPool)'],
   }),
 
   // Token Powerstone (BRO): artefakt „{T}: Add {C} — spend only to cast
@@ -6848,7 +6848,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Artifact', 'Token'], subtypes: ['Powerstone'], colors: [],
     manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Static Net'] },
-    notes: ['{T}: Add {C}; restrykcja „tylko czary artefaktów\" nieimplementowana'],
+    notes: ['{T}: Add {C}; restrykcja „only to cast artifact spells\" (M214 — restrictedPool)'],
   }),
 
   // 4. Satyr Wayfinder (M15) {1}{G} 1/1 Satyr —
