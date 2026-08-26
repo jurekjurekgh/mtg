@@ -84,16 +84,21 @@ gdy bot ATAKUJE (po deklaracji atakujących), a cel MÓGŁBY zablokować atakuj�
 - [x] Test RED→GREEN (`test/m221d-vigilance-window.test.js`, 3 testy);
       `npm test` 3395, build 54/2728.7 kB, benchmark 9/9.
 
-### Etap E — świadomość protekcji: nie atakuj/buffuj stwora blokowanego przez protection jego koloru
-- [ ] Helper `attackerBlockedByProtection(view, attacker)`: istnieje nietapnięty
-      wrogi bloker z protekcją od koloru atakującego, który MOŻE go zablokować
-      (`sourceHasProtectionQuality`, kolory atakującego). Wymaga protekcji
-      blokera w `PlayerView`.
-- [ ] Attack scoring: taki atakujący = futile (0 obrażeń, tylko tapnięcie).
-- [ ] Buff/equip/aura na atakującym, którego jedyny sens to obrażenia: kara,
-      gdy jest zablokowany przez protekcję (dopóki protekcja żyje).
-- [ ] Rodzeństwo: pump (`modify_stats`), grant keywords ofensywne, equip.
-- [ ] Test RED→GREEN; `npm test`+build+benchmark; commit+push.
+### Etap E — świadomość protekcji: nie atakuj/buffuj stwora blokowanego przez protection jego koloru ✅ DONE (commit M221/E)
+- [x] Helper `attackerNeutralizedByProtection(attacker, blockers)`: nietapnięty
+      wrogi bloker z protekcją od koloru atakującego, mogący go zablokować
+      (`sourceHasProtectionQuality`, kolory z widoku). Korzysta z pola
+      `protection` w PlayerView dodanego w Etapie C.
+- [x] Attack scoring: taki atakujący = futile (perAttacker −2, futileAttackers++)
+      — pierwsza gałąź, przed `!canBeBlocked`/immune.
+- [x] Equip: kara −8 za equipment na neutralizowanym atakującym, chyba że daje
+      EWAZJĘ omijającą blokera (flying vs nielatające).
+- [x] Rodzeństwo: pump — `pumpChangesOutcome`/`simulateCombat` nie modelują
+      protekcji; główny objaw (atak+equip) pokryty. Pump w protekcję to temat
+      na osobny krok, jeśli wróci w audycie (odnotowane).
+- [x] Test RED→GREEN (`test/m221e-protection-awareness.test.js`, 3 testy:
+      kolor atakującego / inny kolor / brak protekcji); `npm test` 3398,
+      build 54/2731.7 kB, benchmark 9/9.
 
 ### Etap F — Trigon of Corruption: używaj −1/−1 (i doładowuj) gdy wolna mana
 Oracle: `{2},{T},Remove charge: -1/-1 na cel` + `{B}{B},{T}: dołóż charge`.

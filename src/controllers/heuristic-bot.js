@@ -50,6 +50,33 @@ function attackerCanBeBlocked(attacker, blockers) {
 }
 
 /**
+ * M221/E (zgłoszenie właściciela): czy `attacker` jest bezradny wobec obrony,
+ * bo przeciwnik ma NIETAPNIĘTEGO blokera z ochroną od koloru atakującego
+ * (CR 702.16e), który MOŻE go zablokować. Taki bloker zablokuje bez strat:
+ * atakujący nie zada obrażeń (ani graczowi, ani blokerowi) i nie zginie —
+ * atak, pump, equipment na tym atakującym są jałowe, dopóki protekcja żyje.
+ *
+ * Reguła po deskryptorach z PlayerView (kolory atakującego + qualities
+ * ochrony blokera z effectiveProtectionQualities), bez nazw kart (ADR 0002).
+ * `blockers` to nietapnięci wrodzy stwory z widoku.
+ */
+function attackerNeutralizedByProtection(attacker, blockers) {
+  if (!attacker) return false;
+  const attackerColors = attacker.colors ?? [];
+  if (attackerColors.length === 0) return false; // bezbarwny — protekcja koloru nie działa
+  return (blockers ?? []).some((b) => {
+    if (!b || b.tapped || b.cantBlock) return false;
+    // Bloker musi móc zablokować tego atakującego (flying/menace, CR 509.1b).
+    if (!attackerCanBeBlocked(attacker, [b])) return false;
+    const qualities = b.protection ?? [];
+    // Bloker chroniony od któregokolwiek koloru atakującego = atak jałowy:
+    // obrażenia bojowe od atakującego są zapobiegane (CR 702.16c), a bloker
+    // przeżywa. `sourceHasProtectionQuality` liczy kolory ze `source`.
+    return qualities.some((q) => sourceHasProtectionQuality(q, attacker));
+  });
+}
+
+/**
  * M202/N: czy atakujący pada, ZANIM cokolwiek zada, bo bloker ma first strike.
  * CR 702.7/510.4: obrażenia first strike są w osobnym, wcześniejszym kroku —
  * 2/1 w nietapniętego 3/1 z first strike to 0 obrażeń i strata stwora
@@ -2864,9 +2891,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               if (delta >= 2) score += 4 + delta;
               else score -= 6;
             } else {
-              score += 10 + 2 * (target.power ?? 0);
-              if (grants.includes('flying') && untappedEnemyBlockers(view).every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'))) score += 8;
-              if (grants.includes('haste') && target.summoningSickness) score += 6;
+              // M221/E (zgłoszenie właściciela): equipment zwiększający siłę
+              // ofensywną stwora, który jest NEUTRALIZOWANY przez blokera
+              // z ochroną od jego koloru, to marnotrawstwo — obrażenia i tak
+              // nie przejdą (bot nakładał equipment na 7/7 blokowanego przez
+              // token 1/1 z protection). Chyba że equipment daje EWAZJĘ, która
+              // omija tego blokera (flying, gdy blokery nie latają). Reguła po
+              // deskryptorach (ADR 0002): kolory celu vs protekcja blokera.
+              const blockersNow = untappedEnemyBlockers(view);
+              const grantsEvasion = grants.includes('flying')
+                && blockersNow.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'));
+              const neutralized = attackerNeutralizedByProtection(target, blockersNow);
+              if (neutralized && !grantsEvasion) {
+                score -= 8; // pompowanie bezradnego atakującego — nic nie zmienia
+              } else {
+                score += 10 + 2 * (target.power ?? 0);
+                if (grantsEvasion) score += 8;
+                if (grants.includes('haste') && target.summoningSickness) score += 6;
+              }
             }
           }
         }
@@ -2965,7 +3007,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // 0002): 0 mocy = 0 obrażeń bojowych.
           const dealsNoCombatDamage = (power ?? 0) <= 0 && drainOnAttack(id) === 0;
           const canBeBlocked = attackerCanBeBlocked(object, blockers);
-          if (!canBeBlocked && blockers.length > 0) {
+          // M221/E (zgłoszenie właściciela): przeciwnik ma nietapniętego blokera
+          // z ochroną od koloru atakującego (np. token 1/1 z protection from
+          // black blokujący 7/7 czarnego). Taki bloker zablokuje bez strat —
+          // atakujący zada 0 obrażeń (CR 702.16c), nie zginie, tylko tapnie się.
+          // Atak co turę w tego blokera to marnotrawstwo (dokładnie objaw E).
+          // Jałowy niezależnie od wyścigu (jak M188/C), więc premia go nie ratuje.
+          const neutralizedByProtection = attackerNeutralizedByProtection(object, blockers);
+          if (neutralizedByProtection) {
+            perAttacker = -2;
+            futileAttackers += 1;
+          } else if (!canBeBlocked && blockers.length > 0) {
             // M202/H: nie może zostać zablokowany (flying bez odpowiedzi,
             // menace przy jednym blokerze, cantBeBlocked) — atak jest warty
             // tyle co atak w otwartego, a nie „chump”.
