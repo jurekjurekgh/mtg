@@ -2757,9 +2757,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (ability?.cost?.sacrificeSelf) score -= source?.kind === 'creature' ? 4 : 1;
           }
           if (effect.type === 'become_basic_land_type') {
-            // Zmiana typu podstawowego landa nie zmienia produkcji many w tym
-            // engine (pula bezbarwna) — wartość marginalna, a koszt to tap.
-            score -= 2;
+            // Pętla jakości Żywym Testerem (2026-08-26, g9): bot aktywował
+            // Unstable Frontier ({T}: cel — twój ląd staje się podstawowym
+            // typem do końca tury) CO TURĘ, bo wynik wychodził 0 — baza +2 za
+            // „legalne zagranie" i kara −2 znosiły się dokładnie, więc zdolność
+            // remisowała z passem i wygrywała po kolejności (L3: kara MUSI
+            // przebić premię, inaczej jest martwa). Bot nie modeluje jedynej
+            // realnej korzyści z tej zmiany (mana-fixing pod kolor, którego
+            // nie umie wyprodukować — pula jest kolorowa od ADR 0015), więc
+            // domyślnie to zmarnowany tap. Kara musi zepchnąć wariant poniżej
+            // passu (0): baza 2 − 8 = −6.
+            // NOTE: wycena „zmiana typu odblokowuje rzut czaru pod brakujący
+            // kolor" to możliwe przyszłe usprawnienie (wymaga modelu
+            // castability po kolorze); dziś bez niej — deskryptorem, nie nazwą
+            // karty (ADR 0002).
+            score -= 8;
           }
         }
         if (cmd.xValue != null) score -= Math.min(cmd.xValue ?? 0, 2) * 0.5; // koszt {X} — drobna kara
