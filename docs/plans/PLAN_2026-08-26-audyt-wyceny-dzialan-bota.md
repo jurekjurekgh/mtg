@@ -65,17 +65,26 @@ wykonujemy w Etapie 5 (audyt katalogowy; nie blokuje Etapów 1–4).
 - [x] Plan zapisany w `docs/plans/PLAN_2026-08-26-audyt-wyceny-dzialan-bota.md`.
 - [ ] Commit + push (osobny, tylko dokument).
 
-### 1. Wspólny helper okien walki + naprawa A1/A2 (L64 w czarach)
+### 1. Wspólny helper okien walki + naprawa A1/A2 (L64 w czarach) ✅
 Kryteria: testy RED→GREEN w stylu M206, ale dla CZARÓW (nie zdolności).
 Cel: `beginning_of_combat`/`end_of_combat`/`upkeep`/`main2` — brak pumpu;
 `declare_blockers` z udziałem w walce — pump.
-- [ ] Helper `combatTrickWindow(view, recipient)` — stan (`attacking||blocking`
-  z `view.combat`, jak l. 1887–1891), nie nazwa fazy; wspólny dla
-  `cast_spell` i `activate_ability` (L41: jedna reguła, jeden odczyt).
-- [ ] `cast_spell` pump (l. 1656) → helper.
-- [ ] `cast_spell` mass buff (l. 1545) → helper + rozróżnienie instant/sorcery.
-- [ ] Testy: `test/m2xx-audyt-wyceny-pumpow.test.js` — 4 scenariusze RED→GREEN.
-- [ ] `npm test` + `npm run build` zielone → commit + push.
+- [x] Helper `combatTrickWindow(view, recipient)` — uczestnictwo z
+  `view.combat` (atakujący z listy, blokerzy z mapy `blockers`), nie nazwa
+  fazy; wspólny dla `cast_spell` i `activate_ability` (L41: jedna reguła,
+  jeden odczyt).
+- [x] `cast_spell` pump → helper; usunięte bezwarunkowe `!myTurnNow → 12`
+  (upkeep wroga = jałowe okno; M206/A1c dla zdolności).
+- [x] `cast_spell` mass buff (`buff_*`) → helper + rozróżnienie instant/sorcery
+  (sorcery: Główna 1 przed atakiem, inaczej −60).
+- [x] `activate_ability`: M206 czytał `recipient?.blocking`, którego widok NIE
+  wystawia (tylko `entry.attacking` z `state.combat.attackers`) — bloker
+  wyglądał na nieuczestniczącego; przesiadka na wspólny helper (1i: bloker
+  1/1 vs 2/2 → pump).
+- [x] Testy: `test/m218-audyt-wyceny-pumpow.test.js` — 10 scenariuszy
+  RED→GREEN (1a–1e czar-pump, 1f–1h masowy debuff, 1i–1j zdolność/bloker).
+- [x] `npm test` **3346/3346** (3336 + 10 nowych) + build **54 modułów /
+  2701,5 kB** → commit M218/1 + push.
 
 ### 2. Meaningfulness pumpów (A3 + A8)
 Kryterium właściciela: pump niezmieniający wyniku walki = 0 wartości.

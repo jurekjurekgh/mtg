@@ -76,6 +76,28 @@ function attackerStrikesFirst(attacker, blockers) {
   });
 }
 
+/**
+ * M218/1 (zlecenie właściciela 2026-08-26): czy `recipient` REALNIE bierze
+ * udział w walce — atakuje (deklaracja atakujących, CR 508) albo blokuje
+ * (deklaracja blokujących, CR 509). To jest STAN, nie nazwa kroku: bramka
+ * `phase === 'combat'` obejmuje beginning_of_combat i end_of_combat, gdzie
+ * nikt nie walczy (L64 — M206 naprawił to tylko w activate_ability; L41:
+ * bliźniacza gałąź cast_spell zachowała stary warunek).
+ * Odczyt wyłącznie z `view.combat` (ADR 0017): `state.combat` tworzy się przy
+ * deklaracji atakujących i gaśnie po rozstrzygnięciu obrażeń, więc nie-null
+ * = deklaracje istnieją. UWAGA: widok NIE wystawia `entry.blocking` — M206
+ * czytał `recipient?.blocking`, które jest zawsze undefined; blokerów czytamy
+ * z mapy `combat.blockers` (jak w keywordGrantWindowValue).
+ */
+function combatTrickWindow(view, recipient) {
+  const combat = view.combat ?? null;
+  if (!combat) return false;
+  const id = recipient?.id;
+  if (!id) return false;
+  if ((combat.attackers ?? []).includes(id)) return true;
+  return Object.values(combat.blockers ?? {}).some((ids) => (ids ?? []).includes(id));
+}
+
 const KEYWORD_COUNTERS = new Set(['deathtouch', 'flying', 'first_strike', 'double_strike', 'lifelink', 'trample', 'vigilance', 'menace', 'reach', 'haste', 'hexproof', 'indestructible']);
 
 const NEVER = Number.NEGATIVE_INFINITY;
@@ -1539,12 +1561,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Blindness −4/−0, Turn the Tide, Angel of the Dawn +1/+1) to
           // SZTUCZKI BOJOWE — poza walką wygasają, zanim cokolwiek zrobią.
           // Bot rzucał je we własnym upkeepie (audyt: 2 partie z 7).
+          // M218/1: bramka `phase === 'combat'` obejmowała też początek
+          // i koniec walki (L64 — M206 naprawił tylko activate_ability);
+          // okno liczymy z UCZESTNICTWA (combatTrickWindow na dowolnym
+          // dotkniętym stworze — atakuje albo blokuje). Sorcery (Rush of
+          // Battle) nie poczeka na combat: jedyne sensowne okno to Główna 1
+          // przed własnym atakiem (jak M179/C dla pojedynczego pumpu).
           if (effect.type === 'buff_opponents_creatures' || effect.type === 'buff_creatures_you_control') {
             const targetsOpponents = effect.type === 'buff_opponents_creatures';
-            const affected = (targetsOpponents ? enemyCreatures(view) : myCreatures(view)).length;
-            const inCombat = view.turn.phase === 'combat';
+            const pool = targetsOpponents ? enemyCreatures(view) : myCreatures(view);
+            const affected = pool.length;
+            const anyFights = pool.some((entry) => combatTrickWindow(view, entry));
             if (affected === 0) score -= 30;          // nie ma na kogo działać
-            else if (!inCombat) score -= 25;          // wygaśnie przed walką
+            else if (card?.spell?.timing === 'sorcery') {
+              score += (myTurn(view) && view.turn.phase === 'precombat_main'
+                && pool.some((entry) => canAttackNow(entry))) ? 6 * affected : -60;
+            } else if (!anyFights) score -= 25;       // wygaśnie przed walką
             else score += 6 * affected;
           }
           // Dobranie kart z czaru to przewaga kartowa.
@@ -1653,15 +1685,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             //                     końca JEGO tury),
             //  moja main przed atakiem → 6 (pump na atak),
             //  upkeep/draw/end/main2  → -20 (pump nie zdąży pomóc).
-            const inCombat = view.turn.phase === 'combat';
+            const inCombat = combatTrickWindow(view, target);
             const myTurnNow = myTurn(view);
             let trick;
             // M96: pump „do końca tury" sensowny TYLKO w combacie (po deklaracji
             // atakujących/blokujących) albo na tura przeciwnika (bloker na jego
             // atak). W mojej fazie głównej wróg zdąży zareagować, a efekt może
             // wygasnąć bez skutku — M146 (Fake Your Own Death w upkeepie).
+            // M218/1 (zlecenie właściciela): okno liczone z UCZESTNICTWA
+            // (combatTrickWindow — view.combat), nie z nazwy fazy. Stary
+            // `phase === 'combat'` przepuszczał beginning_of_combat
+            // i end_of_combat (L64 — M206 naprawił tylko activate_ability),
+            // a bezwarunkowe `!myTurnNow → 12` trzymało przy życiu pump
+            // w upkeepie/draw przeciwnika na stwora, który nikogo nie
+            // blokuje (M206/A1c dla zdolności wykazał ten sam błąd).
             if (inCombat) trick = 18;
-            else if (!myTurnNow) trick = 12;
             else if (['upkeep', 'draw', 'end', 'cleanup'].includes(view.turn.step)) trick = -60;
             else if (card?.spell?.timing === 'sorcery') {
               // M179/C (zlecenie właściciela): SORCERY nie poczeka na combat
@@ -1884,7 +1922,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // wygasa w cleanup (CR 514.2), a mana przepada. Dopoki
             // deklaracji nie ma, zawsze mozna poczekac: zdolnosc pozostaje
             // dostepna w kroku blokujacych i pozniej.
-            const participatesInCombat = Boolean(recipient?.attacking || recipient?.blocking);
+            // M218/1 (L41): M206 czytał tu `recipient?.attacking || recipient?.blocking`,
+            // a playerView NIE wystawia `blocking` (game-state.js zna tylko
+            // `entry.attacking` z state.combat.attackers) — bloker wyglądał
+            // na nieuczestniczącego i pump w obronie wymiany był tłumiony.
+            // Wspólny helper czyta obie strony z `view.combat` (ADR 0017):
+            // atakujących z listy, blokerów z mapy — jedna reguła dla czarów
+            // i zdolności (L41).
+            const participatesInCombat = combatTrickWindow(view, recipient);
             const inCombat = view.turn.phase === 'combat'
               && view.turn.step !== 'beginning_of_combat'
               && participatesInCombat;
@@ -1918,7 +1963,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // bierze udział w walce (atakuje albo blokuje). Inaczej +X/+X
               // wygaśnie w cleanup, a stwór zostanie zatapiany.
               const selfPump = source && recipient && source.id === recipient.id;
-              const fightsNow = Boolean(recipient?.attacking || recipient?.blocking);
+              const fightsNow = combatTrickWindow(view, recipient);
               if (selfPump && taps && !fightsNow) value -= 30;
             } else {
               value -= 4; // pump na wrogu bez powodu
