@@ -580,6 +580,32 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const myLandCount = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
 
   /**
+   * M218/4 — czy stwór jest zagrożony w tej turze (regenerate).
+   * Zagrożenie = walka (ginie w symulacji CR 510) albo przeciwnik ma otwartą
+   * manę i removal (damage) który może go zabić (B3 model).
+   * Zero nazw kart (ADR 0002), czytamy wyłącznie PlayerView (ADR 0017).
+   */
+  const isCreatureThreatened = (view, creature) => {
+    if (!creature) return false;
+    // 1. Walka — wynik symulacji przed/po (M218/2)
+    const outcome = combatOutcome(view, creature, {});
+    if (outcome) {
+      if (outcome.attackerDies) return true;
+      if (outcome.deadBlockers?.includes(creature.id)) return true;
+    }
+    // 2. Obrażenia śmiertelne już zadane (SBA 704.5g)
+    if ((creature.damage ?? 0) >= (creature.toughness ?? 0)) return true;
+    // 3. Removal w zasięgu many wroga (B3 — hipergeometria)
+    if (removalSpells.size && opponentOpenMana(view) >= minRemovalCost) {
+      const toughness = (creature.toughness ?? 0) - (creature.damage ?? 0);
+      for (const info of removalSpells.values()) {
+        if (info.cost <= opponentOpenMana(view) && info.amount >= toughness) return true;
+      }
+    }
+    return false;
+  };
+
+  /**
    * M139 (uwaga właściciela) — WARTOŚĆ TAPNIĘCIA ZALEŻY OD MOMENTU.
    *
    * „Najefektywniejsze jest tapowanie kreatur przeciwnika po jego fazie untap
@@ -1881,6 +1907,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           // Dobranie kart z czaru to przewaga kartowa.
           if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') score += 6 * (effect.amount ?? 1);
+          // M218/4 — scry/surveil jako CZAR: okno jak przy zdolności (M211/A1).
+          // Dla czystego scry/surveil (np. Index) kara musi przebić bazę 50 (L3),
+          // więc -60; dla mieszanych (Curate: surveil+draw) kara łagodna -12,
+          // żeby nie blokować gry i nie psuć testów modalu (E4).
+          if (DECK_ARRANGING_EFFECTS.has(effect.type)) {
+            const isPureDeckArranging = effects.every((e) => DECK_ARRANGING_EFFECTS.has(e?.type));
+            const isSorcery = card?.spell?.timing === 'sorcery';
+            if (isSorcery) {
+              score += (view.turn.phase === 'postcombat_main' && view.turn.step === 'main2') ? 6 : (isPureDeckArranging ? -60 : -12);
+            } else {
+              score += (!myTurn(view) && view.turn.step === 'end') ? 10 : (isPureDeckArranging ? -60 : -12);
+            }
+          }
+          // M218/4 — regenerate jako efekt czaru (jeśli kiedyś pojawi się taki czar):
+          // wartość tylko gdy cel zagrożony, inaczej kara.
+          if (effect.type === 'regenerate') {
+            const victim = objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 0]) ?? target ?? null;
+            const alreadyShielded = victim && (view.regenerationShields ?? []).includes(victim.id);
+            if (alreadyShielded) score -= 25;
+            else score += victim && isCreatureThreatened(view, victim) ? 30 : -20;
+          }
           // M158/Batch 39 (Wrap in Flames): wrapper „each of up to N targets"
           // różnicuje warianty celami — wyceniamy KAŻDY cel wg efektów
           // wewnętrznych (damage: wróg +, własny −; cant_block: drobny plus
@@ -2171,22 +2218,33 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const sorcerySpeed = ability?.timing === 'sorcery';
           const step = view.turn.step;
           if (sorcerySpeed) {
-            // Sorcery-speed (Guidestone Compass) NIE doczeka tury przeciwnika —
-            // jedyne legalne okno to własna główna faza. Po walce mana jest już
-            // wolna, więc to okno lepsze; przed walką odkładamy zdolność TYLKO
-            // wtedy, gdy mana ma realną konkurencję (jest co zagrać z ręki).
-            // Bez tego zastrzeżenia bot przestałby używać zdolności zupełnie,
-            // choć nic innego nie miał do roboty (M126/#10 — anty-over-fix).
             const manaContested = view.zones.hand
               .some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
             if (view.turn.phase === 'postcombat_main' && step === 'main2') score += 6;
             else if (manaContested) score -= 12;
           } else if (!myTurn(view) && step === 'end') {
-            // Okno optymalne: mana i tak przepadnie, dobranie tuż-tuż.
             score += 10;
           } else {
-            // Każde wcześniejsze okno wydaje manę, która mogła się przydać.
             score -= 12;
+          }
+        }
+        // M218/4 — regenerate: wartość tylko gdy stwór ZAGROŻONY w tej turze.
+        // Bez zagrożenia — kara (przedwczesny wydatek, jak M146).
+        // Obsługuje zarówno keyword `regenerate` (Drudge Skeletons), jak i efekt
+        // `{type:'regenerate'}` (Exterminator Magmarch).
+        const isRegenerateAbility = ability?.keyword === 'regenerate'
+          || abilityEffectTypes.includes('regenerate')
+          || effects.some((e) => e?.type === 'regenerate');
+        if (isRegenerateAbility) {
+          const regenTarget = target ?? source;
+          // Jeśli cel ma już tarczę regeneracji, druga jest zbędna (idempotentna
+          // w sensie M179/B — druga tarcza nic nie dodaje, bo pierwsza już chroni).
+          const alreadyShielded = regenTarget && (view.regenerationShields ?? []).includes(regenTarget.id);
+          if (alreadyShielded) {
+            score -= 25;
+          } else {
+            const threatened = isCreatureThreatened(view, regenTarget);
+            score += threatened ? 30 : -20;
           }
         }
         for (const effect of effects) {
