@@ -46,6 +46,20 @@ test('M138/detektor Z1: NIE zgłasza buffa na własnym stworze bota', () => {
   assert.deepEqual(detectBotBuffsMyCreatures(lines, new Set(['Giant Spider'])), []);
 });
 
+test('M223/detektor Z1: NIE zgłasza removalu, gdy obok przeplata się CUDZA korzyść (Piercing Rays vs Mentor)', () => {
+  // Audyt Batch 50 (k1): Piercing Rays (Exile target tapped creature) w mój
+  // stwór, a w oknie ±3 linii przeplata się trigger Mentora dający +1/+1
+  // INNEMU stworowi bota. Ślepe okno łapało cudzą korzyść i fałszywie
+  // oskarżało removal. Korzyść musi dotyczyć TEGO celu (L61).
+  const lines = [
+    '  [ROZGRYWKA]   • Nieprzyjaciel rzuca Piercing Rays → cel: Relic Robber',
+    '  [ROZGRYWKA]   • Mentor (Boros Challenger): Nieprzyjaciel wybiera swojego atakującego o sile mniejszej niż 2 — dostanie licznik +1/+1',
+    '  [ROZGRYWKA]   • Boros Challenger — trigger (atak mentora)',
+  ];
+  assert.deepEqual(detectBotBuffsMyCreatures(lines, new Set(['Relic Robber'])), [],
+    'removal w mój permanent + przeplot cudzej korzyści nie może być fałszywym alarmem');
+});
+
 test('M138/detektor Z1: NIE zgłasza efektu SZKODLIWEGO w mój permanent (to poprawna gra)', () => {
   const lines = [
     "  [ROZGRYWKA]   • Nieprzyjaciel rzuca Shatter → cel: Great Furnace",

@@ -803,7 +803,13 @@ export function detectBotBuffsMyCreatures(lines, myPermanentNames = new Set(), e
     // detektor milczał na dokładnie tym kształcie, dla którego powstał.
     const context = lines.slice(i, i + 3).join(' ⏎ ');
     if (HARMFUL.test(context)) continue;   // removal w mój permanent to poprawna gra
-    if (!BENEFIT.test(context)) continue;
+    // M223 (audyt Batch 50, false positive): przy przeplocie triggerów na
+    // stosie (np. Piercing Rays — EXILE — obok wpisu Mentora „dostanie
+    // licznik +1/+1” od INNEGO stwora) ślepe okno łapało cudzą korzyść i
+    // fałszywie oskarżało removal (L61: okno miesza niezależne zdarzenia).
+    // Korzyść musi dotyczyć TEGO celu: linia z BENEFIT ma też nazywać target.
+    const benefitLine = lines.slice(i, i + 3).find((l) => BENEFIT.test(l) && l.includes(target));
+    if (!benefitLine) continue;
     const key = `${target}|${line.slice(0, 60)}`;
     if (seen.has(key)) continue;
     seen.add(key);
