@@ -3,6 +3,7 @@ import { sourceHasProtectionQuality } from '../engine/attachments.js';
 import { createCardRegistry } from '../cards/card-data.js';
 import { probAtLeastOne } from '../engine/hypergeom.js';
 import { normalizeHeuristicWeights } from './heuristic-weights.js';
+import { normalizeHeuristicParams } from './heuristic-params.js';
 
 /**
  * Bot heurystyczny (Etap 4, B1): punktuje wszystkie legalne komendy z PlayerView
@@ -533,7 +534,7 @@ export const UNDERCITY_ROOM_LINKS = Object.freeze({
   'Throne of the Dead Three': [],
 });
 
-export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null, weights = undefined, registry: registryOverride = undefined }) {
+export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null, weights = undefined, params = undefined, registry: registryOverride = undefined }) {
   if (!Number.isInteger(seed)) throw new TypeError('Bot wymaga całkowitego seeda');
   if (typeof randomness !== 'number' || randomness < 0 || randomness > 1) throw new RangeError('randomness ma być w [0, 1]');
   const rng = createRng(seed);
@@ -541,6 +542,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const history = [];
   const enabled = lookahead > 0;
   const scoreWeights = normalizeHeuristicWeights(weights);
+  // B6 T1 — parametry deskryptorowe wyceny (dawne „magiczne liczby"). Wartości
+  // domyślne == dawne stałe, więc golden-master (bot-scoring-snapshot) zostaje
+  // zielony po ekstrakcji; tuner offline zmienia je świadomie.
+  const P = normalizeHeuristicParams(params);
 
   // B3 — modelowanie przeciwnika: znana talia przeciwnika (decks/*.txt) +
   // hipergeometria. Klasyfikujemy karty przeciwnika generycznie po efektach
@@ -1326,7 +1331,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const card = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
         const def = card ? cardDef(card.cardId) : undefined;
         if (!card?.warp) return finish(-20);
-        let score = 70 + (card?.power ?? 0) * 2 + (card?.toughness ?? 0);
+        let score = P.creatureBase + (card?.power ?? 0) * P.creaturePowerWeight + (card?.toughness ?? 0) * P.creatureToughnessWeight;
         // Wygnanie w końcowym kroku to realna wada (stracimy stwora zaraz
         // potem) — kara za tymczasowość, niższa od zysku z wejścia (ETB).
         score -= 15;
@@ -1433,7 +1438,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           return finish(66 + 2 * ((target.power ?? 0) + pump.power) + ((target.toughness ?? 0) + pump.toughness));
         }
         const def = card ? cardDef(card.cardId) : undefined;
-        let score = 70 + (card?.power ?? 0) * 2 + (card?.toughness ?? 0);
+        let score = P.creatureBase + (card?.power ?? 0) * P.creaturePowerWeight + (card?.toughness ?? 0) * P.creatureToughnessWeight;
         // M146 (Jwari Shapeshifter): enterAsCopy bez celu na stole = 0/0,
         // który ginie od SBA zanim ETB się odpali (CR 704.5e). Nie zagrywaj.
         if (def?.enterAsCopy?.subtype) {
@@ -1539,7 +1544,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // M106/Z2b: czar, którego CAŁA treść jest teraz pusta (0 tokenów, brak
         // stworów do osłabienia, pusty grób), to wyrzucona karta — nie rzucamy.
         if (allEffectsInertNow(view, effects, cmd)) return finish(-70);
-        let score = 50;
+        let score = P.spellBase;
         // Phyrexian mana (CR 118.9): jak gałąź cast_permanent — bot woli manę
         // (wariant k=0 jest najtańszy; życiowe dostępne, gdy życie wytrzymuje).
         if (cmd.phyrexianPayWithLife != null && cmd.phyrexianPayWithLife > 0) {

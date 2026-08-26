@@ -63,6 +63,7 @@ export const BENCH_BOT_FACTORIES = Object.freeze({
     seed,
     opponentDeck: ctx?.opponentDeck,
     weights: ctx?.heuristicWeights,
+    params: ctx?.heuristicParams,
   }),
   random: (seed) => createRandomBot({ seed, allowConcede: false }),
 });
@@ -162,7 +163,7 @@ export function defaultPairs(botNames, selfPlay) {
  * Jeden mecz headless: botA gra talią deckA jako p1 (zaczyna), botB talią deckB
  * jako p2. Zwraca wynik surowy (bez identyfikatorów — agregat ma być mały).
  */
-function playBenchMatch({ firstBot, firstDeck, secondBot, secondDeck, seed, deckLists, registry, maxCommands, heuristicWeights }) {
+function playBenchMatch({ firstBot, firstDeck, secondBot, secondDeck, seed, deckLists, registry, maxCommands, heuristicWeights, heuristicParams }) {
   const state = setupCardMatch({
     seed,
     players: [{ id: 'p1' }, { id: 'p2' }],
@@ -177,10 +178,12 @@ function playBenchMatch({ firstBot, firstDeck, secondBot, secondDeck, seed, deck
       ['p1', createController(firstBot, seed + 1, {
         opponentDeck: deckLists.get(secondDeck),
         heuristicWeights,
+        heuristicParams,
       })],
       ['p2', createController(secondBot, seed + 2, {
         opponentDeck: deckLists.get(firstDeck),
         heuristicWeights,
+        heuristicParams,
       })],
     ]),
     maxCommands,
@@ -236,6 +239,7 @@ export function runBenchmark({
   selfPlay = false,
   decksDir = 'decks',
   heuristicWeights = undefined,
+  heuristicParams = undefined,
 } = {}) {
   const registry = createCardRegistry();
   const deckNames = (decks ?? listRepoDeckNames(decksDir)).slice().sort();
@@ -271,7 +275,7 @@ export function runBenchmark({
             legs.push({ firstBot: botB, firstDeck: deckY, secondBot: botA, secondDeck: deckX });
           }
           for (const leg of legs) {
-            const match = playBenchMatch({ ...leg, seed, deckLists, registry, maxCommands, heuristicWeights });
+            const match = playBenchMatch({ ...leg, seed, deckLists, registry, maxCommands, heuristicWeights, heuristicParams });
             recordMatch(aggregate.board, match);
             recordMatch(deckBoard, match);
             recordMatch(totals.get(botA), match);
@@ -303,6 +307,7 @@ export function runBenchmark({
       maxCommands,
       selfPlay,
       ...(heuristicWeights ? { heuristicWeights: { ...heuristicWeights } } : {}),
+      ...(heuristicParams ? { heuristicParams: { ...heuristicParams } } : {}),
     },
     pairs: pairsResult,
     totals: totalsResult,
