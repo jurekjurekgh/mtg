@@ -1856,10 +1856,24 @@ export function protectionQualityLabel(quality) {
 }
 
 export function commandLabel(cmd, session, view) {
+  // M223 (audyt Batch 50): karty ujawnione decydentowi przez blokującą decyzję
+  // (scry / look_top / manifest dread) są w BIBLIOTECE (ukrytej), więc etykieta
+  // celu nie znajdowała ich w strefach i pokazywała „?". Ich tożsamość jedzie
+  // w `pending*.cards` (tylko do decydenta) — dokładamy je do wyszukiwania.
+  // Naprawia też pre-istniejący „Weź do ręki: ?" (resolve_look_top_choice).
+  const revealedCards = [
+    ...(view.pendingScry?.cards ?? []),
+    ...(view.pendingLookTopN?.cards ?? []),
+    ...(view.pendingManifestDread?.cards ?? []),
+  ];
   const obj = (id) => view.zones.hand.find((o) => o.id === id)
     ?? view.zones.battlefield.find((o) => o.id === id)
     ?? view.zones.stack.find((o) => o.id === id)
     ?? view.zones.graveyard.find((o) => o.id === id)
+    // Karty ujawnione decydentowi (scry/look_top/manifest) PRZED strefą
+    // biblioteki: wpis biblioteki jest `{ id, hidden:true }` bez cardId i
+    // wygrywałby dopasowanie, dając „?" mimo znanej tożsamości.
+    ?? revealedCards.find((o) => o?.id === id)
     ?? view.zones.library.find((o) => o.id === id)
     ?? view.zones.exile?.find((o) => o.id === id);
   const playerNameOf = (id) => PLAYER_NAMES[id] ?? view.players?.find((p) => p.id === id)?.name ?? id;

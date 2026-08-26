@@ -291,6 +291,27 @@ test('B50: Manifest Dread — obrót twarzą do góry KARTY STWORA za koszt many
   assert.equal(up.cardId, 'razorfoot-griffin', 'ujawniona właściwa karta');
 });
 
+test('B50: Manifest Dread — po rozstrzygnięciu czar OPUSZCZA stos (brak pendingSpell, bez crasha)', () => {
+  // M223 (audyt Batch 50, g8 worek-mroczny): rozstrzygnięcie decyzji manifest
+  // zostawiało czar na stosie z pendingSpell → crash „Pending spell odwołuje
+  // się do nieistniejącego czaru". Manifest Dread to CZAR — musi się dokończyć.
+  const state = game('p1', 'main');
+  addMana(state, 'p1', 10);
+  putLibTop(state, 'creat', 'razorfoot-griffin', 'p1');
+  putLibTop(state, 'noncreat', 'shock', 'p1');
+  state.zones.library = ['creat', 'noncreat', ...state.zones.library.filter((id) => id !== 'creat' && id !== 'noncreat')];
+  castManifestDread(state);
+  execute(state, { type: 'resolve_manifest_dread', playerId: 'p1', cardId: 'creat' });
+  assert.equal(state.pendingSpell, null, 'wstrzymany czar dokończony (brak pendingSpell)');
+  const mdOnStack = state.zones.stack.some((id) => state.objects.get(id)?.cardId === 'manifest-dread');
+  assert.ok(!mdOnStack, 'Manifest Dread opuścił stos po rozstrzygnięciu');
+  const mdInGrave = [...state.objects.values()].some((o) => o.cardId === 'manifest-dread' && o.zone === 'graveyard');
+  assert.ok(mdInGrave, 'Manifest Dread w grobie (sorcery po rozstrzygnięciu)');
+  // Gra toczy się dalej — gracz ma normalne akcje, nie tylko „Poddaj partię".
+  const view = playerView(state, 'p1');
+  assert.ok(view.legalCommands.some((c) => c.type !== 'concede'), 'gracz ma legalne ruchy poza koncesją');
+});
+
 test('B50: Manifest Dread — karta NIE-stwór zmanifestowana NIE da się obrócić', () => {
   const state = game('p1', 'main');
   addMana(state, 'p1', 10);

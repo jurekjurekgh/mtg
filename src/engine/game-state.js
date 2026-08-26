@@ -1852,6 +1852,18 @@ export function execute(state, input) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
     state.events.push(event('manifest_dread_resolved', { playerId: pending.playerId, pickId }));
+    // Manifest Dread to CZAR (sorcery): jego efekt zawiesił się na blokującej
+    // decyzji, więc po jej rozstrzygnięciu dokańczamy wstrzymany czar — inaczej
+    // zostaje na stosie z pendingSpell na zawsze (crash „Pending spell odwołuje
+    // się do nieistniejącego czaru"). Ten sam wzorzec co scry/surveil/look_top.
+    if (state.pendingSpell) {
+      const spellPending = state.pendingSpell;
+      state.pendingSpell = null;
+      // finishPendingSpell dopisuje zdarzenia do state.events SAMO (kontrakt
+      // Z1c) — zbieramy je przez state.events.slice(before), nie wpychamy z
+      // powrotem, żeby uniknąć duplikatów.
+      finishPendingSpell(state, spellPending.stackId, spellPending.effects);
+    }
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
   // Satyr Wayfinder (M15): odsłoń 4 z wierzchu, MÓŻ wziąć ląd do ręki
@@ -6336,6 +6348,22 @@ export function playerView(state, playerId) {
       })
       : null,
   } : null;
+  // M223 (audyt Batch 50): decyzja manifest dread ujawnia DWIE karty z wierzchu
+  // TYLKO decydentowi (CR 701.34a „look at" — informacja własna, jak scry/look_top).
+  // Bez tego etykieta „Zmanifestuj: ?" nie znała nazwy karty (biblioteka ukryta).
+  const pendingManifestDreadView = state.pendingManifestDread ? {
+    playerId: state.pendingManifestDread.playerId,
+    count: state.pendingManifestDread.objectIds.length,
+    cards: state.pendingManifestDread.playerId === playerId
+      ? state.pendingManifestDread.objectIds.map((id) => {
+        const object = state.objects.get(id);
+        return {
+          id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
+          kind: object.kind, power: object.power, toughness: object.toughness, manaCost: object.manaCost, spell: object.spell,
+        };
+      })
+      : null,
+  } : null;
   const pendingEpicExperimentView = state.pendingEpicExperiment ? {
     playerId: state.pendingEpicExperiment.playerId,
     maxMV: state.pendingEpicExperiment.maxMV,
@@ -6375,6 +6403,7 @@ export function playerView(state, playerId) {
     zones, legalCommands, pendingScry, pendingSurveil, pendingBackup: pendingBackupView,
     pendingClash, pendingRoomTarget, pendingLegendChoice: pendingLegendChoiceView,
     pendingLookTopN: pendingLookTopNView,
+    pendingManifestDread: pendingManifestDreadView,
     pendingEpicExperiment: pendingEpicExperimentView,
     pendingModalTrigger: pendingModalTriggerView, pendingProliferate: pendingProliferateView,
     // M162/C (uwaga właściciela): Chittering Rats — tytuł modala
