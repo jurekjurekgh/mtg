@@ -1438,6 +1438,86 @@ export function applyDayNightAtTurnStart(state, previousActivePlayerId) {
  * wywołującego — w kolejności zapisu i bez duplikatów (zdarzenia są zamrożone,
  * więc porównujemy tożsamościowo).
  */
+/**
+ * Triggery wejścia wchodzącego permanentu — wspólna ścieżka dla zwykłego
+ * wejścia (odpala od razu) i wejścia z devour (CR 702.82a: devour to
+ * ZASTĘPCZY efekt — liczniki lądują na permanencie, zanim odpali się
+ * jakikolwiek trigger ETB; triggery wchodzą więc po rozstrzygnięciu
+ * decyzji, patrz deferredDevourEtb w processTriggersScan):
+ * 1) własne „enter_battlefield" (firePayOrSacrifice dla obowiązkowej
+ *    płatności sacrifice-unless-you-pay, tryFire dla reszty);
+ * 2) triggery INNYCH permanentów (another_creature_enters, landfall,
+ *    creature_you_control_enters — Impact Tremors — itd.).
+ */
+function fireEnterBattlefieldTriggers(state, entered, events, context = {}) {
+  for (const ability of effectiveAbilities(entered)) {
+    if (ability?.trigger?.event !== 'enter_battlefield') continue;
+    // Obowiązkowa płatność typu „sacrifice unless you pay" to nie „you may"
+    // — osobna, deterministyczna ścieżka (firePayOrSacrifice).
+    if (ability.trigger?.sacrificeIfUnpaid) {
+      firePayOrSacrifice(state, ability, entered, events);
+      continue;
+    }
+    // Batch 24 (Mystic Sanctuary): „When this land enters UNTAPPED" —
+    // kontekst zdarzenia niesie stan wejścia (tapped) do conditionHolds.
+    tryFire(state, ability, entered, [], events, { enteredTapped: context.enteredTapped ?? Boolean(entered.tapped) });
+  }
+  // Triggery innych permanentów na wejście obiektu:
+  // - „another_creature_enters" (Midnight Guard): wejście INNEGO stwora
+  //   odkręca źródło (CR 603.2d — źródło nie jest tym, które weszło);
+  // - „land_entered_under_your_control" (landfall, np. Skyclave Geopede):
+  //   wejście landa pod kontrolą źródła.
+  for (const source of state.objects.values()) {
+    if (source.zone !== 'battlefield') continue;
+    for (const ability of effectiveAbilities(source)) {
+      const triggerEvent = ability?.trigger?.event;
+      if (triggerEvent === 'another_creature_enters') {
+        // Batch 45 (Ivy Lane Denizen): deskryptor może zawężać trigger do
+        // stworów KONTROLERA źródła (youControl) i/lub koloru
+        // (colorsInclude) — Midnight Guard bez pól działa jak dotąd.
+        const tt = ability.trigger ?? {};
+        const controlOk = !tt.youControl || entered.controllerId === source.controllerId;
+        const colorOk = !tt.colorsInclude?.length
+          || (entered.colors ?? []).some((c) => tt.colorsInclude.includes(c));
+        if (entered.kind === 'creature' && source.id !== entered.id && controlOk && colorOk) {
+          tryFire(state, ability, source, [], events);
+        }
+      } else if (triggerEvent === 'land_entered_under_your_control') {
+        if (entered.kind === 'land' && entered.controllerId === source.controllerId) {
+          tryFire(state, ability, source, [], events);
+        }
+      } else if (triggerEvent === 'creature_you_control_enters') {
+        // Impact Tremors: „Whenever a creature you control enters" — dowolny
+        // stwór wchodzący pod kontrolą źródła (źródło to enchantment).
+        if (entered.kind === 'creature' && entered.controllerId === source.controllerId) {
+          tryFire(state, ability, source, [], events);
+        }
+      } else if (triggerEvent === 'enchantment_you_control_enters') {
+        // Constellation (CR 702.131): enchantment you control enters.
+        const isEnch = entered.kind === 'enchantment' || (entered.types ?? []).includes('Enchantment');
+        if (isEnch && entered.controllerId === source.controllerId) {
+          tryFire(state, ability, source, [], events);
+        }
+      } else if (triggerEvent === 'artifact_you_control_enters') {
+        // Steelfin Whale: „Whenever an artifact you control enters, untap
+        // this creature" — dowolny artefakt wchodzący pod kontrolą źródła
+        // (także artifact creature i samo źródło, gdy jest artefaktem).
+        const isArt = entered.kind === 'artifact' || (entered.types ?? []).includes('Artifact');
+        if (isArt && entered.controllerId === source.controllerId) {
+          tryFire(state, ability, source, [], events);
+        }
+      } else if (triggerEvent === 'land_entered_under_opponent_control') {
+        // Nightshade Harvester: „Whenever a land an opponent controls
+        // enters, that player loses 1 life" — kontroler wchodzącego landa
+        // (nie kontroler źródła) trafia w kontekście zdarzenia.
+        if (entered.kind === 'land' && entered.controllerId !== source.controllerId) {
+          tryFire(state, ability, source, [], events, { enteredControllerId: entered.controllerId });
+        }
+      }
+    }
+  }
+}
+
 export function processTriggers(state, recentEvents) {
   const stateEventsStart = state.events.length;
   const produced = processTriggersScan(state, recentEvents);
@@ -1945,12 +2025,23 @@ function processTriggersScan(state, recentEvents) {
             candidateIds: [...devourCandidates],
           });
           state.events.push(required); events.push(required);
+          // CR 702.82a: devour to ZASTĘPCZY efekt wejścia — „This permanent
+          // enters with N +1/+1 counters on it for each creature sacrificed
+          // this way". Liczniki są na permanencie, zanim odpali się
+          // jakikolwiek trigger ETB, więc triggery wejścia (własne i cudze,
+          // np. Impact Tremors) odkładamy do opróżnienia kolejki decyzji.
+          state.pendingDevourEtbs = state.pendingDevourEtbs ?? [];
+          state.pendingDevourEtbs.push({
+            objectId: entered.id, cardId: entered.cardId,
+            enteredTapped: Boolean(entered.tapped),
+          });
+        } else {
+          const fired = event('ability_triggered', {
+            objectId: entered.id, cardId: entered.cardId,
+            trigger: 'enter_battlefield', devour: true,
+          });
+          state.events.push(fired); events.push(fired);
         }
-        const fired = event('ability_triggered', {
-          objectId: entered.id, cardId: entered.cardId,
-          trigger: 'enter_battlefield', devour: true,
-        });
-        state.events.push(fired); events.push(fired);
       }
       // Exploit (CR 702.110, Silumgar Butcher): „When this creature enters,
       // you may sacrifice a creature. When this creature exploits a creature,
@@ -2016,71 +2107,14 @@ function processTriggersScan(state, recentEvents) {
       // (Veiled Ascension „face-down enter with flying counter" realizowane
       // w samym efekcie cloak — patrz effects.js, generyczna zdolność
       // statyczna; nie dublujemy tutaj, żeby licznik nie był nakładany 2×).
-      for (const ability of effectiveAbilities(entered)) {
-        if (ability?.trigger?.event !== 'enter_battlefield') continue;
-        // Obowiązkowa płatność typu „sacrifice unless you pay" to nie „you may"
-        // — osobna, deterministyczna ścieżka (firePayOrSacrifice).
-        if (ability.trigger?.sacrificeIfUnpaid) {
-          firePayOrSacrifice(state, ability, entered, events);
-          continue;
-        }
-        // Batch 24 (Mystic Sanctuary): „When this land enters UNTAPPED" —
-        // kontekst zdarzenia niesie stan wejścia (tapped) do conditionHolds.
-        tryFire(state, ability, entered, [], events, { enteredTapped: Boolean(entered.tapped) });
-      }
-      // Triggery innych permanentów na wejście obiektu:
-      // - „another_creature_enters" (Midnight Guard): wejście INNEGO stwora
-      //   odkręca źródło (CR 603.2d — źródło nie jest tym, które weszło);
-      // - „land_entered_under_your_control" (landfall, np. Skyclave Geopede):
-      //   wejście landa pod kontrolą źródła.
-      for (const source of state.objects.values()) {
-        if (source.zone !== 'battlefield') continue;
-        for (const ability of effectiveAbilities(source)) {
-          const triggerEvent = ability?.trigger?.event;
-          if (triggerEvent === 'another_creature_enters') {
-            // Batch 45 (Ivy Lane Denizen): deskryptor może zawężać trigger do
-            // stworów KONTROLERA źródła (youControl) i/lub koloru
-            // (colorsInclude) — Midnight Guard bez pól działa jak dotąd.
-            const tt = ability.trigger ?? {};
-            const controlOk = !tt.youControl || entered.controllerId === source.controllerId;
-            const colorOk = !tt.colorsInclude?.length
-              || (entered.colors ?? []).some((c) => tt.colorsInclude.includes(c));
-            if (entered.kind === 'creature' && source.id !== entered.id && controlOk && colorOk) {
-              tryFire(state, ability, source, [], events);
-            }
-          } else if (triggerEvent === 'land_entered_under_your_control') {
-            if (entered.kind === 'land' && entered.controllerId === source.controllerId) {
-              tryFire(state, ability, source, [], events);
-            }
-          } else if (triggerEvent === 'creature_you_control_enters') {
-            // Impact Tremors: „Whenever a creature you control enters" — dowolny
-            // stwór wchodzący pod kontrolą źródła (źródło to enchantment).
-            if (entered.kind === 'creature' && entered.controllerId === source.controllerId) {
-              tryFire(state, ability, source, [], events);
-            }
-          } else if (triggerEvent === 'enchantment_you_control_enters') {
-            // Constellation (CR 702.131): enchantment you control enters.
-            const isEnch = entered.kind === 'enchantment' || (entered.types ?? []).includes('Enchantment');
-            if (isEnch && entered.controllerId === source.controllerId) {
-              tryFire(state, ability, source, [], events);
-            }
-          } else if (triggerEvent === 'artifact_you_control_enters') {
-            // Steelfin Whale: „Whenever an artifact you control enters, untap
-            // this creature" — dowolny artefakt wchodzący pod kontrolą źródła
-            // (także artifact creature i samo źródło, gdy jest artefaktem).
-            const isArt = entered.kind === 'artifact' || (entered.types ?? []).includes('Artifact');
-            if (isArt && entered.controllerId === source.controllerId) {
-              tryFire(state, ability, source, [], events);
-            }
-          } else if (triggerEvent === 'land_entered_under_opponent_control') {
-            // Nightshade Harvester: „Whenever a land an opponent controls
-            // enters, that player loses 1 life" — kontroler wchodzącego landa
-            // (nie kontroler źródła) trafia w kontekście zdarzenia.
-            if (entered.kind === 'land' && entered.controllerId !== source.controllerId) {
-              tryFire(state, ability, source, [], events, { enteredControllerId: entered.controllerId });
-            }
-          }
-        }
+      // CR 702.82a — devour (ZASTĘPCZY efekt) musi rozstrzygnąć się PRZED
+      // triggerami wejścia: dopóki dla tego obiektu wisi odłożony wpis,
+      // oba zbiory triggerów (własne i innych permanentów) czekają i
+      // odpalają się dopiero po opróżnieniu kolejki pendingDevours
+      // (patrz deferredDevourEtb w processTriggersScan).
+      const devourEtbDeferred = (state.pendingDevourEtbs ?? []).some((m) => m.objectId === entered.id);
+      if (!devourEtbDeferred) {
+        fireEnterBattlefieldTriggers(state, entered, events, { enteredTapped: Boolean(entered.tapped) });
       }
     }
     // Rzucenie czaru (spell_cast — instant/sorcery), zagranie permanentu
@@ -2625,6 +2659,28 @@ function processTriggersScan(state, recentEvents) {
         }
       }
       for (let j = beforeAggregate; j < events.length; j += 1) queue.push(events[j]);
+    }
+  }
+  // CR 702.82a — odłożone triggery wejścia stwora z devour: devour to
+  // ZASTĘPCZY efekt („This permanent enters with N +1/+1 counters on it for
+  // each creature sacrificed this way"), więc liczniki są na permanencie,
+  // ZANIM na stos wejdzie jakikolwiek trigger ETB (własny albo cudzy —
+  // np. Impact Tremors). Decyzja devour jest blokująca, więc triggery
+  // czekają na opróżnienie kolejki — niezależnie od tego, czy zrobiło to
+  // resolve_devour_choice ({done:true} albo auto-close po poświęceniu
+  // ostatniego kandydata), czy pruneDeadPendingDecisions.
+  if ((state.pendingDevours?.length ?? 0) === 0 && (state.pendingDevourEtbs?.length ?? 0) > 0) {
+    const deferred = state.pendingDevourEtbs;
+    state.pendingDevourEtbs = [];
+    for (const marker of deferred) {
+      const entered = state.objects.get(marker.objectId);
+      if (!entered) continue;
+      const fired = event('ability_triggered', {
+        objectId: entered.id, cardId: marker.cardId,
+        trigger: 'enter_battlefield', devour: true,
+      });
+      state.events.push(fired); events.push(fired);
+      fireEnterBattlefieldTriggers(state, entered, events, { enteredTapped: marker.enteredTapped });
     }
   }
   // Uwaga: zdarzenia triggerów są JUŻ w state.events — fireTrigger i bloki

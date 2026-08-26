@@ -330,6 +330,12 @@ export function createGameState({ seed, players }) {
     // liczników +1/+1 na źródło; resolve_devour_choice{done:true} kończy.
     // Wpis: { playerId, sourceId, counters, candidateIds, restorePriorityTo }.
     pendingDevours: [],
+    // Odłożone triggery wejścia stwora z devour (CR 702.82a — devour to
+    // ZASTĘPCZY efekt: liczniki są na permanencie zanim odpali się jakikolwiek
+    // trigger ETB). Decyzja jest blokująca, więc triggery wejścia czekają na
+    // opróżnienie pendingDevours i odpala je processTriggersScan. Wpis:
+    // { objectId, cardId, enteredTapped }.
+    pendingDevourEtbs: [],
     // Kolejka decyzji endure (TDM — Kin-Tree Nurturer): „endures N" to wybór
     // gracza: N liczników +1/+1 na źródle ALBO token Spirit N/N biały.
     // Wpis: { playerId, sourceId, counters, restorePriorityTo }.

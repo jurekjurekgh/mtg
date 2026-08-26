@@ -12,6 +12,7 @@ const PENDING_DECISION_FIELDS = Object.freeze([
   'pendingCraftExile', 'pendingDamageAssignment', 'pendingDamageTarget',
   'pendingDestroyEquipment', 'pendingDiscardChoice', 'pendingDiscover',
   'pendingEnterAsCopy', 'pendingEpicExperiment', 'pendingExploits',
+  'pendingDevourEtbs',
   'pendingExplore', 'pendingFertileThicket', 'pendingFoodChoice',
   'pendingHandCreature', 'pendingHandTopChoice', 'pendingIndex',
   'pendingLandTypeChoice', 'pendingLibraryPlacement', 'pendingLookTopN', 'pendingSatyrLook', 'pendingRevealChoice', 'pendingMadnessCast', 'pendingModalTrigger',
