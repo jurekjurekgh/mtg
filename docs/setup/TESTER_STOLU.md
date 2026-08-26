@@ -55,8 +55,28 @@ dostępnych — tester nie gra już „czymkolwiek" (M203).
 
 Przykłady kombinacji do audytu: `dominaria vs ravnica`, `innistrad vs
 wiedzmin` (wilkołaki i transformy), `tarkir vs mirrodin`, `worek-dziki vs
-worek-mroczny`. Próbkę benchmarku (`BENCH_DECKS` w `tools/benchmark.mjs`)
-warto audytować w pierwszej kolejności — to na niej mierzone są progi bota.
+worek-mroczny`.
+
+### Priorytet doboru talii (decyzja właściciela, 2026-08-26)
+
+Audyt „z perspektywy gracza" ma świadomie iść tam, gdzie błędy są NAJmniej
+przeczesane. Kolejność priorytetów przy wyborze talii:
+
+1. **Talie, które ostatnio dostały nowe karty** — świeży kod/dane najczęściej
+   niosą nowe klasy błędów. Ustal je grepem po historii, np.
+   `git log --oneline -5 -- decks/<talia>.txt` albo diffem ostatniego batcha
+   (`git show <sha> -- decks/`).
+2. **Talie, które NIE biorą udziału w benchmarku** (spoza `BENCH_DECKS`
+   w `tools/benchmark.mjs`) — są mniej przebadane. Próbka benchmarku
+   (`BENCH_DECKS`) jest odgrywana w każdej regresji bota (`bot-benchmark`),
+   więc jej ścieżki są nieustannie przeczesywane; talie spoza niej bywają
+   tygodniami nieodwiedzane na żywym stole.
+
+Dopiero po nich sięgaj po talie z próbki benchmarku (to na niej mierzone są
+progi bota — warto je audytować, ale mają najmniejszą szansę na świeży błąd).
+`BENCH_DECKS` sprawdź w kodzie (`grep BENCH_DECKS tools/benchmark.mjs`), a listę
+wszystkich talii — `node run-game.mjs --list-decks`; nie przepisuj ich tutaj,
+bo generator (ADR 0023) zmienia skład przy każdym batchu.
 
 ### Jak czytać transkrypt
 
