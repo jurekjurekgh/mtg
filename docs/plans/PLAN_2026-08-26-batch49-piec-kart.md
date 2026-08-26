@@ -68,7 +68,16 @@
 - [ ] test RED→GREEN (surge legalny po 1. czarze, nielegalny bez; koszt normalny zawsze)
 - [ ] `npm test`+build → commit+push
 
-### Etap 5 — Manifest Dread (sorcery, nowa mechanika manifest)
+### Etap 5 — Manifest Dread ✅ DONE (commit M222/5, re-implementacja po resecie workspace)
+DONE: efekt `manifest_dread` (look top 2 → decyzja `resolve_manifest_dread` →
+face-down 2/2 przez `manifestCardFaceDown`, druga do grobu); obrót
+`turn_manifest_face_up` (specjalna akcja, koszt many, tylko karty stworów).
+Reuse infra faceDown/turnFaceUp/faceDownOriginal. Nowe: pendingManifestDread,
+manifestReady/manifestTurnUpCost (identity/game-state/fingerprint/ADD_OBJECT_FIELDS),
+COMMAND_TYPES + EVENT_TYPES, etykiety PL + DRUGA_OSOBA. Plan Duskmourn.
+Testy batch50 (5). npm test 3420, benchmark 9/9, build 54/2751.6 kB.
+
+### Etap 5 (oryginalny opis)
 - [ ] Mechanika generyczna `manifest_dread`: look top 2, decyzja gracza która
       karta na pole bitwy face-down jako 2/2 (bez cech karty, CR 701.34), druga
       do grobu; face-down można obrócić za koszt many, jeśli to karta stwora.

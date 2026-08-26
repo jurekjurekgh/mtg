@@ -9889,6 +9889,24 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['surge {2}{U}: alternatywny koszt rzutu z ręki, gdy rzuciłeś inny czar w tej turze (w 1v1 „teammate” nie występuje)'],
   }),
 
+  // Manifest Dread (DSK) {1}{G} Sorcery — manifest dread.
+  // Nowa mechanika generyczna: manifest_dread (look top 2, jedna face-down 2/2,
+  // druga do grobu; obrót twarzą do góry za koszt many, jeśli karta stwora).
+  defineCard({
+    id: 'manifest-dread', name: 'Manifest Dread', set: 'DSK',
+    types: ['Sorcery'], colors: ['G'], manaCost: 2,
+    oracleText: 'Manifest dread. (Look at the top two cards of your library. Put one onto the battlefield face down as a 2/2 creature and the other into your graveyard. Turn it face up any time for its mana cost if it\'s a creature card.)',
+    imageUri: 'https://cards.scryfall.io/large/front/a/6/a649265b-6c32-49e7-b6cb-6086c40d26e8.jpg?1783909451',
+    spell: {
+      timing: 'sorcery',
+      targets: [],
+      effects: [{ type: 'manifest_dread' }],
+    },
+    artId: 569, plan: 'Duskmourn',
+    support: { status: 'supported', limitations: [] },
+    notes: ['manifest dread: wybór którą z 2 kart z wierzchu zmanifestować (2/2 face-down), druga do grobu; obrót za koszt many tylko dla kart stworów (CR 701.34)'],
+  }),
+
 ]);
 
 /**

@@ -469,7 +469,7 @@ const DRUGA_OSOBA = Object.freeze({
   dostaje: 'dostajesz',
   kieruje: 'kierujesz', kopiuje: 'kopiujesz', korzysta: 'korzystasz',
   kładzie: 'kładziesz', kończy: 'kończysz', mieli: 'mielisz',
-  dzieli: 'dzielisz',
+  dzieli: 'dzielisz', manifestuje: 'manifestujesz',
   mulliganuje: 'mulliganujesz', może: 'możesz', niszczy: 'niszczysz',
   obejmuje: 'obejmujesz', odkłada: 'odkładasz', odrzuca: 'odrzucasz',
   odsłania: 'odsłaniasz', ogląda: 'oglądasz', otrzymuje: 'otrzymujesz',
@@ -1197,6 +1197,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         }
         return `${srcName(e)}${whoN(e.playerId)} przestawia karty na wierzchu biblioteki`;
       }
+      case 'manifest_dread_required':
+        return `${whoN(e.playerId)} — manifest dread: wybór, którą z 2 kart z wierzchu zmanifestować`;
+      case 'manifest_dread_resolved':
+        return `${whoN(e.playerId)} manifestuje kartę (2/2 twarzą w dół), drugą do grobu`;
       case 'look_top_started': {
         if (e.cardIds?.length && seesHiddenOf(e.playerId)) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');

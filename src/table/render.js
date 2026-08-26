@@ -398,6 +398,7 @@ export function choiceRequestGroupKey(command) {
   // Pozostałe decyzje wielowariantowe bez klucza (znalezione strażnikiem
   // M201/D): podgląd kart i kopiowanie celów też są jednym wyborem.
   if (command.type === 'resolve_look_top_choice') return 'resolve_look_top_choice';
+  if (command.type === 'resolve_manifest_dread') return 'resolve_manifest_dread';
   if (command.type === 'resolve_satyr_look_choice') return 'resolve_satyr_look_choice';
   if (command.type === 'resolve_copy_targets') return 'resolve_copy_targets';
   if (command.type === 'resolve_reveal_choice') return 'resolve_reveal_choice';
@@ -990,6 +991,7 @@ function describeEffect(e) {
     },
     index_look: () => 'zobacz wierzch biblioteki i ułóż w dowolnej kolejności',
     look_top_put_one_hand_rest_grave: () => 'zobacz wierzch biblioteki, jedną do ręki, resztę do grobu',
+    manifest_dread: () => 'manifest dread: zobacz 2 z wierzchu, jedną zmanifestuj (2/2 twarzą w dół), drugą do grobu',
     // M192/Z3 (petla jakosci): deskryptor NIESIE liczbe (Rediscover the Way:
     // amount 3), a opis pokazywal literalne „X" — placeholder z kodu na
     // kaflu karty. Gdy liczba pochodzi z kosztu ({X} Merchant's Dockhand),
@@ -2415,6 +2417,14 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_look_top_choice': {
       // Gurmag Drowner — wybierz kartę z wierzchu do ręki.
       return `Weź do ręki: ${nameOfObjectId(cmd.cardId)}`;
+    }
+    case 'resolve_manifest_dread': {
+      // Manifest Dread — wybierz, którą kartę zmanifestować (2/2 twarzą w dół).
+      return `Zmanifestuj: ${nameOfObjectId(cmd.cardId)}`;
+    }
+    case 'turn_manifest_face_up': {
+      // Manifest — obróć twarzą do góry za koszt many.
+      return `Obróć twarzą do góry: ${nameOfObjectId(cmd.objectId)}`;
     }
     case 'resolve_hand_top_choice': {
       // M162/C (uwaga właściciela): Chittering Rats u bota otwierał modal

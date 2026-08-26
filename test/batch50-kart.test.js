@@ -217,6 +217,94 @@ test('B50: Jwar Isle Avenger — surge kosztuje {2}{U} (3), a nie {4}{U} (5)', (
   assert.ok(effectiveKeywords(onBoard, state).includes('flying'), 'ma flying po wejściu');
 });
 
+// ---- Manifest Dread ---------------------------------------------------------
+
+function putLibTop(state, id, cardId, controllerId) {
+  const def = REGISTRY.get(cardId);
+  const data = gameObjectDataOf(def);
+  addObject(state, {
+    id, instanceId: `i-${id}`, cardId, controllerId, ownerId: controllerId, zone: 'library',
+    kind: data.kind, power: data.power, toughness: data.toughness, spell: data.spell,
+    abilities: data.abilities ?? [], keywords: def.keywords ?? [], subtypes: def.subtypes ?? [],
+    types: def.types ?? [], colors: def.colors ?? [], manaCost: def.manaCost,
+  });
+  return state.objects.get(id);
+}
+
+test('B50: Manifest Dread — dane Oracle (sorcery, {1}{G}, effect manifest_dread)', () => {
+  const def = REGISTRY.get('manifest-dread');
+  assert.deepEqual(def.types, ['Sorcery']);
+  assert.deepEqual(def.colors, ['G']);
+  assert.equal(def.spell.effects[0].type, 'manifest_dread');
+  assert.equal(def.artId, 569);
+  assert.equal(def.support.status, 'supported');
+});
+
+function castManifestDread(state) {
+  put(state, 'md', 'manifest-dread', 'p1', 'hand');
+  const cast = playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'md');
+  assert.ok(cast, 'Manifest Dread można rzucić');
+  assert.ok(execute(state, cast).ok, 'rzut ok');
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+}
+
+test('B50: Manifest Dread — wybór z 2 kart: jedna face-down 2/2, druga do grobu', () => {
+  const state = game('p1', 'main');
+  addMana(state, 'p1', 10);
+  putLibTop(state, 'creat', 'razorfoot-griffin', 'p1');
+  putLibTop(state, 'noncreat', 'shock', 'p1');
+  state.zones.library = ['creat', 'noncreat', ...state.zones.library.filter((id) => id !== 'creat' && id !== 'noncreat')];
+  castManifestDread(state);
+
+  const view = playerView(state, 'p1');
+  const choices = view.legalCommands.filter((c) => c.type === 'resolve_manifest_dread').map((c) => c.cardId);
+  assert.deepEqual(choices.sort(), ['creat', 'noncreat'], 'obie karty z wierzchu do wyboru');
+  const r = execute(state, { type: 'resolve_manifest_dread', playerId: 'p1', cardId: 'creat' });
+  assert.ok(r.ok, `resolve odrzucone: ${r.events?.[0]?.reason}`);
+
+  const facedown = [...state.objects.values()].find((o) => o.faceDown && o.zone === 'battlefield');
+  assert.ok(facedown, 'karta zmanifestowana na polu bitwy');
+  assert.equal(facedown.power, 2);
+  assert.equal(facedown.toughness, 2);
+  assert.equal(facedown.cardName, null, 'face-down bez nazwy (CR 708.2)');
+  const graveCards = [...state.objects.values()].filter((o) => o.zone === 'graveyard').map((o) => o.cardId);
+  assert.ok(graveCards.includes('shock'), 'druga karta do grobu');
+});
+
+test('B50: Manifest Dread — obrót twarzą do góry KARTY STWORA za koszt many', () => {
+  const state = game('p1', 'main');
+  addMana(state, 'p1', 10);
+  putLibTop(state, 'creat', 'razorfoot-griffin', 'p1');
+  putLibTop(state, 'noncreat', 'shock', 'p1');
+  state.zones.library = ['creat', 'noncreat', ...state.zones.library.filter((id) => id !== 'creat' && id !== 'noncreat')];
+  castManifestDread(state);
+  execute(state, { type: 'resolve_manifest_dread', playerId: 'p1', cardId: 'creat' });
+  const facedown = [...state.objects.values()].find((o) => o.faceDown && o.zone === 'battlefield');
+  assert.equal(facedown.manifestReady, true, 'karta stwora może być obrócona');
+  const flip = playerView(state, 'p1').legalCommands.find((c) => c.type === 'turn_manifest_face_up' && c.objectId === facedown.id);
+  assert.ok(flip, 'oferta obrotu twarzą do góry');
+  const r = execute(state, flip);
+  assert.ok(r.ok, `obrót odrzucony: ${r.events?.[0]?.reason}`);
+  const up = state.objects.get(facedown.id);
+  assert.equal(up.faceDown, false, 'stwór odkryty');
+  assert.equal(up.cardId, 'razorfoot-griffin', 'ujawniona właściwa karta');
+});
+
+test('B50: Manifest Dread — karta NIE-stwór zmanifestowana NIE da się obrócić', () => {
+  const state = game('p1', 'main');
+  addMana(state, 'p1', 10);
+  putLibTop(state, 'noncreat', 'shock', 'p1');
+  putLibTop(state, 'creat', 'razorfoot-griffin', 'p1');
+  state.zones.library = ['noncreat', 'creat', ...state.zones.library.filter((id) => id !== 'creat' && id !== 'noncreat')];
+  castManifestDread(state);
+  execute(state, { type: 'resolve_manifest_dread', playerId: 'p1', cardId: 'noncreat' });
+  const facedown = [...state.objects.values()].find((o) => o.faceDown && o.zone === 'battlefield');
+  assert.equal(facedown.manifestReady, false, 'nie-stwór: brak możliwości obrotu (CR 701.34e)');
+  const flip = playerView(state, 'p1').legalCommands.find((c) => c.type === 'turn_manifest_face_up' && c.objectId === facedown.id);
+  assert.ok(!flip, 'brak oferty obrotu dla nie-stwora');
+});
+
 test('B50: Nanoform Sentinel — triggers only once each turn', () => {
   const state = game('p1', 'main');
   put(state, 'nano', 'nanoform-sentinel', 'p1', 'battlefield', { summoningSickness: false });

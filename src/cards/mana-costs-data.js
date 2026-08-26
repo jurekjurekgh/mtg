@@ -416,4 +416,5 @@ export const MANA_COSTS = {
   "vow-of-flight": "{2}{U}",
   "nanoform-sentinel": "{2}{U}",
   "jwar-isle-avenger": "{4}{U}",
+  "manifest-dread": "{1}{G}",
 };

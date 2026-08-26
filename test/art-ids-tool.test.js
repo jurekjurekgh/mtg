@@ -114,7 +114,7 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // niego niewidzialnych — mimo że słownik znał ich numery (pułapka L23).
   // Brak numeru pilnuje teraz test/m197-plany-kolekcji.test.js; tutaj zostaje
   // sama liczba, już bez kart-widm.
-  assert.equal(withArt.length, 427, 'wszystkie realne karty mają artId (Batche 1–50)');
+  assert.equal(withArt.length, 428, 'wszystkie realne karty mają artId (Batche 1–50)');
   const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   for (const card of withArt) {
     const entries = byName.get(card.name.toLowerCase()) ?? [];
