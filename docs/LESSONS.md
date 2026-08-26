@@ -25,6 +25,34 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 ---
 
 
+## L79 (2026-08-26) — Decyzja `resolve_*` emitująca dwa zdarzenia o tej samej treści dubluje wpis w logu
+
+**Objaw (M219, pętla jakości Żywym Testerem, g9):** aktywacja Unstable
+Frontier pokazywała w modalu „Rozgrywka" i logu DWA identyczne wiersze na
+jedną akcję: „Swamp staje się typem Plains do końca tury" ×2.
+
+**Przyczyna:** rozstrzygnięcie decyzji `resolve_land_type_choice` emituje dwa
+zdarzenia — `land_type_changed` (niska warstwa: sama mutacja typu, jak
+licznik/tap) ORAZ `land_type_choice_resolved` (narracja decyzji) — a
+`describeGameEvent` renderował OBA tym samym zdaniem. To wariant L24/L6:
+warstwa opisu dostała dwa zdarzenia niosące tę samą TREŚĆ dla gracza. Klasa
+pokrewna L41 (jedna informacja, dwa źródła), ale po stronie zdarzeń, nie kopii
+kodu.
+
+**Reguła:** gdy jedna decyzja emituje parę „zdarzenie mechaniczne + zdarzenie
+narracyjne" (mutacja stanu + `*_resolved`), TYLKO JEDNO ma renderować zdanie
+dla gracza — zwykle to narracyjne (`*_resolved`), bo niesie komplet kontekstu.
+Drugie wycisz w warstwie opisu (`return null`), ale ZOSTAW zdarzenie
+w strumieniu: jest potrzebne do determinizmu/fingerprintu i innym konsumentom
+(tu `real-cards-batch7` sprawdza OBECNOŚĆ `land_type_changed`). Kontrolne
+pytanie przy dodawaniu `*_resolved`: „czy niższa warstwa już emituje zdarzenie
+z tą samą treścią?" — jeśli tak, jedno z nich nie może mieć opisu.
+
+**Sformalizowane w:** `src/table/session.js` (`land_type_changed` → null),
+`test/m219-log-land-type-duplikat.test.js` (integracja: dwa zdarzenia, opis
+raz).
+
+
 ## L78 (2026-08-26) — Lektura obowiązkowa czytana fragmentami to lektura NIEwykonana
 
 **Objaw:** sesja „przeczytała” lekturę startową, ale `docs/LESSONS.md`
