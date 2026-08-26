@@ -254,3 +254,170 @@ test('M218/1j: bot NIE pompuje ZDOLNOŚCIĄ w PODTRZYMANIU przeciwnika, gdy stw�
   assert.ok(!pumpsWolfAbility(choice),
     `pump w upkeepie przeciwnika: ${JSON.stringify(choice)}`);
 });
+
+// ---------------------------------------------------------------------------
+// M218/2 — MEANINGFULNESS (kryterium właściciela, 2026-08-26):
+// „jeśli atakuje kreatura 1/1 i blokuje ją kreatura 5/5, to pompowanie
+// atakującego +2/+2 nie ma żadnego sensu, bo nie zmienia wyniku walki ani
+// o jotę”. Okno walki (Etap 1) to warunek KONIECZNY, nie wystarczający —
+// pump/debuff, który nie zmienia wyniku toczonej wymiany, ma wartość zero.
+// Każdy scenariusz symuluje wynik walki przed/po (simulateCombat).
+// ---------------------------------------------------------------------------
+
+/**
+ * Pojedynek 1v1 w kroku declare_blockers: `bot` (p2) kontra `foe` (p1).
+ * `botAttacks=true` → bot atakuje, wróg blokuje; false → wróg atakuje,
+ * bot blokuje. Parametry P/T i keywordy jawne, ręka bota według `hand`
+ * (null = brak czaru, tylko zdolność wilka).
+ */
+function duelBoard({ botAttacks, botPower, botToughness, botKeywords = [], foePower, foeToughness, foeKeywords = [], hand = 'brute-force', wolfAbilities = [] }) {
+  const state = createGameState({ seed: 23, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const active = botAttacks ? 'p2' : 'p1';
+  state.turn = jumpToStep(state.turn, 'declare_blockers', active);
+  state.turn.activePlayerId = active;
+  state.turn.priorityPlayerId = 'p2';
+  addMana(state, 'p2', 10);
+  const wolf = REGISTRY.get('snarling-wolf');
+  addObject(state, {
+    id: 'wolf', instanceId: 'i-w3', cardId: 'snarling-wolf', controllerId: 'p2', ownerId: 'p2',
+    zone: 'battlefield', kind: 'creature', power: botPower, toughness: botToughness, manaCost: 1,
+    abilities: wolfAbilities, keywords: botKeywords, subtypes: ['Wolf'], types: ['Creature'], colors: ['G'],
+  });
+  state.objects.set('wolf', Object.freeze({ ...state.objects.get('wolf'), summoningSickness: false }));
+  addObject(state, {
+    id: 'foe', instanceId: 'i-f3', cardId: 'goblin-piker', controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', kind: 'creature', power: foePower, toughness: foeToughness, manaCost: 2,
+    abilities: [], keywords: foeKeywords, subtypes: [], types: ['Creature'], colors: ['R'],
+  });
+  if (hand) {
+    const def = REGISTRY.get(hand);
+    addObject(state, {
+      id: hand, instanceId: `i-${hand}`, cardId: hand, controllerId: 'p2', ownerId: 'p2',
+      zone: 'hand', kind: 'spell', manaCost: def.manaCost ?? 1, spell: def.spell ?? null,
+      types: ['Instant'], colors: ['U'],
+    });
+  }
+  state.combat = botAttacks
+    ? { attackers: ['wolf'], attackingPlayerId: 'p2', blockers: new Map([['wolf', ['foe']]]), blockedAttackers: new Set(['wolf']) }
+    : { attackers: ['foe'], attackingPlayerId: 'p1', blockers: new Map([['foe', ['wolf']]]), blockedAttackers: new Set(['foe']) };
+  return state;
+}
+
+const castsHand = (cmd, handId) => cmd?.type === 'cast_spell' && cmd.objectId === handId;
+
+test('M218/2a: pump +3/+3 NIE rzucany, gdy atakujący 1/1 i tak ginie od 5/5 (przykład właściciela)', () => {
+  // Przykład wprost z kryterium: 1/1 atakuje, blokuje 5/5. Bez pumpu: 1/1
+  // ginie, 5/5 przeżywa, 0 na twarz. Z +3/+3: 4/4 ginie (5 ≥ 4), 5/5 przeżywa
+  // — dokładnie ten sam wynik walki. Zero wartości → NIE rzuca.
+  const state = duelBoard({ botAttacks: true, botPower: 1, botToughness: 1, foePower: 5, foeToughness: 5 });
+  const view = playerView(state, 'p2');
+  assert.ok((view.legalCommands ?? []).some((c) => castsHand(c, 'brute-force')), 'warunek wstępny: czar legalny');
+  const choice = createHeuristicBot({ seed: 23 }).chooseCommand(view, {});
+  assert.ok(!castsHand(choice, 'brute-force'),
+    `pump bez zmiany wyniku walki: ${JSON.stringify(choice)}`);
+});
+
+test('M218/2b: pump +3/+3 rzucany, gdy 2/2 atakuje 4/4 (zmienia wynik na zysk)', () => {
+  // Bez pumpu 2/2 ginie, bloker przeżywa. Z +3/+3: 5/5 zabija 4/4 i przeżywa
+  // — wynik walki realnie się zmienia (wymiana na korzyść).
+  const state = duelBoard({ botAttacks: true, botPower: 2, botToughness: 2, foePower: 4, foeToughness: 4 });
+  const choice = createHeuristicBot({ seed: 23 }).chooseCommand(playerView(state, 'p2'), {});
+  assert.ok(castsHand(choice, 'brute-force'),
+    `pump zmieniający wynik walki ma być wybrany: ${JSON.stringify(choice)}`);
+});
+
+test('M218/2c: pump NIE rzucany, gdy nasz bloker 1/1 i tak ginie od 5/5', () => {
+  // Symetrycznie: bronimy się 1/1 przed 5/5. +3/+3 daje 4/4 — atakujący
+  // wciąż zadaje 5 ≥ 4 i zabija; nasz bloker dalej ginie, atakujący przeżywa.
+  const state = duelBoard({ botAttacks: false, botPower: 1, botToughness: 1, foePower: 5, foeToughness: 5 });
+  const choice = createHeuristicBot({ seed: 23 }).chooseCommand(playerView(state, 'p2'), {});
+  assert.ok(!castsHand(choice, 'brute-force'),
+    `pump blokera bez zmiany wyniku: ${JSON.stringify(choice)}`);
+});
+
+test('M218/2d: pump na 1/1 deathtouch+trample vs 5/5 rzucany (face 0→3)', () => {
+  // Deathtouch: 1 obrażenie wystarcza na zabicie blokera (CR 702.4), więc
+  // nadmiar z trample po lethal idzie na twarz (CR 702.19). Bez pumpu: 1/1
+  // zadaje 1 (5/5 ginie od deathtouch), ale sam ginie od 5 — face 0.
+  // Z +3/+3: 4/4 — lethal nadal 1, nadmiar 3 na twarz, ginie od 5 → face 3.
+  const state = duelBoard({ botAttacks: true, botPower: 1, botToughness: 1, botKeywords: ['deathtouch', 'trample'], foePower: 5, foeToughness: 5 });
+  const choice = createHeuristicBot({ seed: 23 }).chooseCommand(playerView(state, 'p2'), {});
+  assert.ok(castsHand(choice, 'brute-force'),
+    `trample+deathtouch ma realny efekt — pump wybrany: ${JSON.stringify(choice)}`);
+});
+
+test('M218/2e: pump na 3/3 trample vs 2/2 rzucany (face 1→4)', () => {
+  // Bez pumpu: lethal 2, nadmiar 1 na twarz — 3/3 przeżywa (otrzyma 2).
+  // Z +3/+3: face 4 → realna zmiana.
+  const state = duelBoard({ botAttacks: true, botPower: 3, botToughness: 3, botKeywords: ['trample'], foePower: 2, foeToughness: 2 });
+  const choice = createHeuristicBot({ seed: 23 }).chooseCommand(playerView(state, 'p2'), {});
+  assert.ok(castsHand(choice, 'brute-force'),
+    `trample nadmiarowy: ${JSON.stringify(choice)}`);
+});
+
+test('M218/2f: pump na 3/3 BEZ trample vs 2/2 NIE rzucany (wynik bez zmian)', () => {
+  // Brak trample: nadmiar po lethal wpada w blokera (CR 510.1b) — bloker
+  // i tak ginie, 3/3 przeżywa, face 0. Z +3/+3 wynik identyczny.
+  const state = duelBoard({ botAttacks: true, botPower: 3, botToughness: 3, foePower: 2, foeToughness: 2 });
+  const choice = createHeuristicBot({ seed: 23 }).chooseCommand(playerView(state, 'p2'), {});
+  assert.ok(!castsHand(choice, 'brute-force'),
+    `pump bez trample nie zmienia wyniku: ${JSON.stringify(choice)}`);
+});
+
+test('M218/2g: pump na naszym blokerze 2/2 vs 4/4 rzucany (bloker przeżywa, atakujący ginie)', () => {
+  // Bez pumpu: 4/4 zadaje 4 ≥ 2 → nasz bloker ginie; bloker zadaje 2, wróg
+  // przeżywa. Z +3/+3: 5/5 przyjmuje 4 < 5 → przeżywa i zabija 4/4 (5 ≥ 4).
+  const state = duelBoard({ botAttacks: false, botPower: 2, botToughness: 2, foePower: 4, foeToughness: 4 });
+  const choice = createHeuristicBot({ seed: 23 }).chooseCommand(playerView(state, 'p2'), {});
+  assert.ok(castsHand(choice, 'brute-force'),
+    `pump blokera zmieniający wynik: ${JSON.stringify(choice)}`);
+});
+
+test('M218/2h: masowy debuff −2/−0 NIE rzucany, gdy 5/5 atakuje nasz 1/1', () => {
+  // Turn the Tide: −2/−0 na wszystkich wrogich stworach. 5/5 → 3/5, ale
+  // wobec 1/1 wynik walki identyczny: bloker ginie (3 ≥ 1), face 0.
+  const state = duelBoard({ botAttacks: false, botPower: 1, botToughness: 1, foePower: 5, foeToughness: 5, hand: 'turn-the-tide' });
+  const view = playerView(state, 'p2');
+  const castsTide2 = (cmd) => castsHand(cmd, 'turn-the-tide');
+  assert.ok((view.legalCommands ?? []).some(castsTide2), 'warunek wstępny: czar legalny');
+  const choice = createHeuristicBot({ seed: 23 }).chooseCommand(view, {});
+  assert.ok(!castsTide2(choice),
+    `debuff bez zmiany wyniku: ${JSON.stringify(choice)}`);
+});
+
+test('M218/2i: masowy debuff −2/−0 rzucany, gdy 5/5 atakuje nasz 4/4', () => {
+  // Bez debuffu: 5 ≥ 4 → bloker ginie, 4 ≥ 5? nie — atakujący przeżywa.
+  // Z −2/−0: 3/5 zadaje 3 < 4 → bloker przeżywa. Wynik się zmienia.
+  const state = duelBoard({ botAttacks: false, botPower: 4, botToughness: 4, foePower: 5, foeToughness: 5, hand: 'turn-the-tide', wolfAbilities: [] });
+  const choice = createHeuristicBot({ seed: 23 }).chooseCommand(playerView(state, 'p2'), {});
+  assert.ok(castsHand(choice, 'turn-the-tide'),
+    `debuff zmieniający wynik: ${JSON.stringify(choice)}`);
+});
+
+test('M218/2j: debuff −1/−0 rzucany, gdy 5/5 atakuje nasz 4/5 (bloker przestaje ginąć)', () => {
+  // Fleeting Distraction: −1/−0. Bez: 5 ≥ 5 → 4/5 ginie. Z: 4/5 zadaje 4 < 5
+  // → przeżywa. Realna zmiana.
+  const state = duelBoard({ botAttacks: false, botPower: 4, botToughness: 5, foePower: 5, foeToughness: 5, hand: 'fleeting-distraction', wolfAbilities: [] });
+  const choice = createHeuristicBot({ seed: 23 }).chooseCommand(playerView(state, 'p2'), {});
+  assert.ok(castsHand(choice, 'fleeting-distraction'),
+    `debuff ratujący blokera: ${JSON.stringify(choice)}`);
+});
+
+test('M218/2k: debuff −1/−0 NIE rzucany, gdy 5/5 atakuje nasz 1/1 (wciąż ginie)', () => {
+  // 5/5 → 4/5, ale 4 ≥ 1 — bloker dalej ginie, wynik bez zmian.
+  const state = duelBoard({ botAttacks: false, botPower: 1, botToughness: 1, foePower: 5, foeToughness: 5, hand: 'fleeting-distraction', wolfAbilities: [] });
+  const choice = createHeuristicBot({ seed: 23 }).chooseCommand(playerView(state, 'p2'), {});
+  assert.ok(!castsHand(choice, 'fleeting-distraction'),
+    `debuff bez zmiany wyniku: ${JSON.stringify(choice)}`);
+});
+
+test('M218/2l: zdolność +2/+2 (Snarling Wolf) NIE aktywowana, gdy bloker 1/1 i tak ginie od 5/5', () => {
+  // Kolejność z 2a–2c przez gałąź ZDOLNOŚCI (Etap 1 pokrył tylko okno):
+  // +2/+2 daje 3/3, atakujący 5/5 wciąż zabija (5 ≥ 3) — zero wartości.
+  const state = duelBoard({ botAttacks: false, botPower: 1, botToughness: 1, foePower: 5, foeToughness: 5, hand: null, wolfAbilities: REGISTRY.get('snarling-wolf').abilities ?? [] });
+  const view = playerView(state, 'p2');
+  assert.ok((view.legalCommands ?? []).some(pumpsWolfAbility), 'warunek wstępny: zdolność legalna');
+  const choice = createHeuristicBot({ seed: 23 }).chooseCommand(view, {});
+  assert.ok(!pumpsWolfAbility(choice),
+    `zdolność bez zmiany wyniku: ${JSON.stringify(choice)}`);
+});

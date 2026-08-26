@@ -25,9 +25,16 @@ import { TURN_STEPS, initialTurn } from '../src/engine/turn.js';
 
 const REGISTRY = createCardRegistry();
 
-function setup({ enemyCreature }) {
+function setup({ enemyCreature, combat = false }) {
   const state = createGameState({ seed: 9, players: [{ id: 'p1' }, { id: 'p2' }] });
-  state.turn = { ...initialTurn('p1'), ...TURN_STEPS[3], stepIndex: 3, number: 4, activePlayerId: 'p1', priorityPlayerId: 'p1', passes: 0 };
+  // M218/2: debuff „-1/-0 until end of turn” ma wartość TYLKO w sytuacji
+  // bojowej, w której realnie zmienia wynik walki (kryterium właściciela
+  // 2026-08-26). Setup domyślny: Główna 1 bez walki (test 1 — kontrola
+  // celu). Z `combat: true`: p2 atakuje 2/2 nieblokowanego, p1 odpowiada
+  // w declare_attackers — −1/−0 redukuje obrażenia na twarz 2 → 1.
+  state.turn = combat
+    ? { ...initialTurn('p2'), ...TURN_STEPS[5], stepIndex: 5, number: 4, activePlayerId: 'p2', priorityPlayerId: 'p1', passes: 0 }
+    : { ...initialTurn('p1'), ...TURN_STEPS[3], stepIndex: 3, number: 4, activePlayerId: 'p1', priorityPlayerId: 'p1', passes: 0 };
   const put = (id, cardId, controllerId, zone = 'battlefield') => {
     const def = REGISTRY.get(cardId);
     addObject(state, {
@@ -40,6 +47,15 @@ function setup({ enemyCreature }) {
   put('fd', 'fleeting-distraction', 'p1', 'hand');
   put('mine', 'hill-giant', 'p1');
   if (enemyCreature) put('theirs', 'goblin-piker', 'p2');
+  if (combat && enemyCreature) {
+    // Wróg atakuje nieblokowany — jedyne sensowne okno debuffu „do końca tury”.
+    state.combat = {
+      attackers: ['theirs'],
+      attackingPlayerId: 'p2',
+      blockers: new Map(),
+      blockedAttackers: new Set(),
+    };
+  }
   addMana(state, 'p1', 4, { colors: ['U', 'U', 'U', 'U'] });
   return state;
 }
@@ -55,7 +71,10 @@ test('M202/G: Fleeting Distraction NIE debuffuje własnego stwora, gdy wróg nie
 });
 
 test('M202/G: przy wrogim stworze debuff idzie w NIEGO, nie we własnego stwora', () => {
-  const state = setup({ enemyCreature: true });
+  // M218/2: −1/−0 „do końca tury” ma sens wyłącznie w oknie walki, w którym
+  // zmienia wynik — dlatego setup przeniesiony do declare_attackers (wróg
+  // 2/2 atakuje nieblokowany: face 2 → 1). Reguły M202/G nie cofamy.
+  const state = setup({ enemyCreature: true, combat: true });
   const cmd = pick(state);
   assert.equal(cmd?.type, 'cast_spell', `bot wybrał ${JSON.stringify(cmd)}`);
   assert.equal(cmd.objectId, 'fd');

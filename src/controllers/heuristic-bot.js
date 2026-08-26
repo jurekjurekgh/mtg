@@ -98,6 +98,185 @@ function combatTrickWindow(view, recipient) {
   return Object.values(combat.blockers ?? {}).some((ids) => (ids ?? []).includes(id));
 }
 
+/**
+ * M218/2 (kryterium właściciela: „jeśli atakuje kreatura 1/1 i blokuje ją
+ * kreatura 5/5, to pompowanie atakującego +2/+2 nie ma żadnego sensu bo nie
+ * zmienia wyniku walki ani o jotę”): wynik POJEDYNCZEJ walki stwora z widoku
+ * combat, przed i po modyfikacji statystyk.
+ *
+ * Czytamy WYŁĄCZNIE PlayerView (ADR 0017): atakujących z `combat.attackers`,
+ * blokerów z mapy `combat.blockers`, statystyki/keywordy z kafli pola bitwy.
+ * Zero stanu silnika, zero nazw kart (ADR 0002).
+ *
+ * Model CR 510 w wymiarze minimalnym, wystarczającym do porównania „czy
+ * wynik walki się zmienia”:
+ *  - dwa przebiegi obrażeń: first/double strike (CR 702.7), potem regularny,
+ *    z SBA między przebiegami (CR 510.2 — martwy nie zadaje w następnym);
+ *  - deathtouch (CR 702.4): każde zadane ≥1 obrażenie jest śmiertelne —
+ *    dotyczy progu śmierci ODBIORCY (dającego źródła), nie ilości zadanej;
+ *  - atakujący rozdziela moc lethal-first (CR 510.1b), nadmiar: trample →
+ *    twarz (CR 702.19), inaczej → ostatni bloker (overkill);
+ *  - lifelink (CR 702.15) liczony jako obrażenia zadane;
+ *  - niezablokowany atakujący zadaje pełną moc na twarz w każdym przebiegu,
+ *    w którym uczestniczy (double strike = dwie fale).
+ *
+ * Wynik to SUFICJENTNA statystyka: przeżycie, lista zabitych po stronie
+ * przeciwnika, obrażenia na twarz, przyrost życia z lifelinku. Dwa wyniki
+ * są równoważne, gdy wszystkie te składowe są identyczne — wtedy pump/debuff
+ * nie zmienia gry i wartość = 0.
+ */
+
+/** Statystyki bojowe stwora z widoku + delta (pump/debuff) do symulacji. */
+function duelStats(object, { power = 0, toughness = 0 } = {}) {
+  const kw = object?.keywords ?? [];
+  return {
+    id: object?.id,
+    power: Math.max(0, (object?.power ?? 0) + power),
+    // Efektywna wytrzymałość: bazowa minus już zadane obrażenia.
+    toughness: Math.max(0, (object?.toughness ?? 0) - (object?.damage ?? 0) + toughness),
+    deathtouch: kw.includes('deathtouch'),
+    trample: kw.includes('trample'),
+    firstStrike: kw.includes('first_strike'),
+    doubleStrike: kw.includes('double_strike'),
+    lifelink: kw.includes('lifelink'),
+  };
+}
+
+/**
+ * Symulacja walki atakującego z blokerami (CR 510). Wynik wg kontraktu
+ * `combatOutcome` — porównywany przed/po pumpie.
+ */
+function simulateCombat(attacker, blockers) {
+  const fighters = (blockers ?? []).map((b) => ({ ...b, damageTaken: 0, hitByDeathtouch: false, alive: true }));
+  const a = { ...attacker, damageTaken: 0, hitByDeathtouch: false, alive: true };
+  const unblocked = fighters.length === 0;
+  let faceDamage = 0;
+  let attackerLifeGain = 0;
+  let blockerLifeGain = 0;
+  // lane 0 = first/double strike, lane 1 = regularny (double strike w obu).
+  const inLane = (s, lane) => (lane === 0
+    ? (s.firstStrike || s.doubleStrike)
+    : (!s.firstStrike || s.doubleStrike));
+  for (const lane of [0, 1]) {
+    if (!a.alive) break; // CR 510.2 — martwy nie zadaje w następnym kroku
+    const aActive = inLane(a, lane);
+    if (aActive) {
+      let remaining = a.power;
+      const aliveFighters = fighters.filter((b) => b.alive);
+      let dealt = 0;
+      for (const b of aliveFighters) {
+        if (remaining <= 0) break;
+        // Lethal-first (CR 510.1b): deathtouch czyni 1 obrażenie śmiertelnym.
+        const give = Math.min(remaining, a.deathtouch ? 1 : b.toughness);
+        b.damageTaken += give;
+        if (a.deathtouch && give > 0) b.hitByDeathtouch = true;
+        dealt += give;
+        remaining -= give;
+      }
+      if (unblocked) {
+        faceDamage += a.power;
+        dealt += a.power;
+      } else if (a.trample) {
+        // CR 702.19 — nadmiar po przydziale lethal idzie na twarz.
+        faceDamage += Math.max(0, remaining);
+        dealt += Math.max(0, remaining);
+      } else if (aliveFighters.length > 0 && remaining > 0) {
+        // CR 510.1b — bez trample nadmiar wpada w ostatniego blokera (overkill).
+        aliveFighters[aliveFighters.length - 1].damageTaken += remaining;
+        dealt += remaining;
+      }
+      if (a.lifelink) attackerLifeGain += dealt;
+    }
+    for (const b of fighters) {
+      if (!b.alive || !inLane(b, lane)) continue;
+      a.damageTaken += b.power;
+      if (b.deathtouch && b.power > 0) a.hitByDeathtouch = true;
+      if (b.lifelink) blockerLifeGain += b.power;
+    }
+    // SBA po przebiegu (CR 510.2): śmiertelność wg źródła z deathtouch.
+    if (a.damageTaken > 0 && (a.hitByDeathtouch || a.damageTaken >= a.toughness)) a.alive = false;
+    for (const b of fighters) {
+      if (b.alive && b.damageTaken > 0 && (b.hitByDeathtouch || b.damageTaken >= b.toughness)) b.alive = false;
+    }
+  }
+  return {
+    attackerDies: !a.alive,
+    deadBlockers: fighters.filter((b) => !b.alive).map((b) => b.id),
+    faceDamage,
+    attackerLifeGain,
+    blockerLifeGain,
+  };
+}
+
+/**
+ * Wynik walki, w której bierze udział `recipient`, z uwzględnieniem delty
+ * (pump/debuff) na tym stworze. Null, gdy stwór nie uczestniczy w walce.
+ */
+function combatOutcome(view, recipient, delta = {}) {
+  const combat = view.combat ?? null;
+  const id = recipient?.id;
+  if (!combat || !id) return null;
+  const battlefield = view.zones.battlefield ?? [];
+  const viewObject = (oid) => battlefield.find((o) => o.id === oid) ?? null;
+  const blockersOf = (attackerId) => (combat.blockers ?? {})[attackerId] ?? [];
+  const attackerId = (combat.attackers ?? []).includes(id) ? id : null;
+  if (attackerId) {
+    const attacker = viewObject(attackerId);
+    if (!attacker) return null;
+    const blockers = blockersOf(attackerId)
+      .map((oid) => viewObject(oid))
+      .filter(Boolean)
+      .map((b) => duelStats(b));
+    const stats = duelStats(attacker, attackerId === id ? delta : {});
+    return simulateCombat(stats, blockers);
+  }
+  // Bloker: znajdujemy atakującego, dla którego został zadeklarowany.
+  const blockedFor = Object.keys(combat.blockers ?? {})
+    .find((aid) => (blockersOf(aid) ?? []).includes(id));
+  if (!blockedFor) return null;
+  const foe = viewObject(blockedFor);
+  if (!foe) return null;
+  const blockers = blockersOf(blockedFor)
+    .map((oid) => viewObject(oid))
+    .filter(Boolean)
+    .map((b) => duelStats(b, b.id === id ? delta : {}));
+  return simulateCombat(duelStats(foe), blockers);
+}
+
+/**
+ * M218/2 — czy pump/debuff o delcie { power, toughness } ZMIENIA wynik
+ * walki, w której recipient bierze udział. True oznacza „ma wartość"
+ * (albo natychmiastowa śmierć z SBA przy wytrzymałości ≤0 — CR 704.5f,
+ * niezależnie od walki); false = okno jest, ale skutek będzie zerowy.
+ */
+function pumpChangesOutcome(view, recipient, delta = {}) {
+  if (!recipient) return false;
+  const stats = duelStats(recipient, delta);
+  // Natychmiastowa SBA (CR 704.5f): wytrzymałość spada do 0 — cel umiera
+  // zaraz po rozstrzygnięciu, to realna zmiana stanu gry.
+  if (stats.toughness <= 0) return true;
+  const before = combatOutcome(view, recipient, {});
+  const after = combatOutcome(view, recipient, delta);
+  if (!before || !after) return false;
+  return JSON.stringify(before) !== JSON.stringify(after);
+}
+
+/** Rozmiar pumpu wg deskryptora (dynamiczne X z widoku — ADR 0017). */
+function pumpDelta(view, effect) {
+  if (effect.type === 'pump_by_creature_count') {
+    const n = (view.zones.battlefield ?? [])
+      .filter((o) => o.controllerId === view.playerId && o.kind === 'creature').length
+      * (effect.perCreature ?? 1);
+    return { power: n, toughness: n };
+  }
+  if (effect.type === 'pump_by_gates') {
+    const n = (view.zones.battlefield ?? [])
+      .filter((o) => o.controllerId === view.playerId && (o.subtypes ?? []).includes('Gate')).length;
+    return { power: n, toughness: n };
+  }
+  return { power: effect.power ?? 0, toughness: effect.toughness ?? 0 };
+}
+
 const KEYWORD_COUNTERS = new Set(['deathtouch', 'flying', 'first_strike', 'double_strike', 'lifelink', 'trample', 'vigilance', 'menace', 'reach', 'haste', 'hexproof', 'indestructible']);
 
 const NEVER = Number.NEGATIVE_INFINITY;
@@ -1571,12 +1750,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const targetsOpponents = effect.type === 'buff_opponents_creatures';
             const pool = targetsOpponents ? enemyCreatures(view) : myCreatures(view);
             const affected = pool.length;
-            const anyFights = pool.some((entry) => combatTrickWindow(view, entry));
+            // M218/2: uczestnictwo w walce to warunek konieczny, nie
+            // wystarczający — masowy pump/debuff, który nie zmienia wyniku
+            // ŻADNEJ toczącej się wymiany (np. −4/−0 na 5/5 blokowanym po
+            // cichu przez 1/1), jest skutkiem zerowym.
+            const anyChange = pool.some((entry) => pumpChangesOutcome(view, entry, pumpDelta(view, effect)));
             if (affected === 0) score -= 30;          // nie ma na kogo działać
             else if (card?.spell?.timing === 'sorcery') {
               score += (myTurn(view) && view.turn.phase === 'precombat_main'
                 && pool.some((entry) => canAttackNow(entry))) ? 6 * affected : -60;
-            } else if (!anyFights) score -= 25;       // wygaśnie przed walką
+            } else if (!anyChange) score -= 25;       // wygaśnie przed walką / nic nie zmieni
             else score += 6 * affected;
           }
           // Dobranie kart z czaru to przewaga kartowa.
@@ -1674,7 +1857,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // w ogóle nie rzucał czaru.
           if (isPumpEffect && isNegativePump(effect) && target
             && target.controllerId !== view.playerId) {
-            score += 25 + 4 * Math.abs(effect.power ?? 0) + 4 * Math.abs(effect.toughness ?? 0);
+            // M218/2 (kryterium właściciela): debuff „do końca tury" jest
+            // sensowny wyłącznie w sytuacji bojowej, w której realnie zmienia
+            // wynik — 5/5 atakujący po −1/−0 ginie od 4/4, a 5/5 vs 1/1
+            // dalej zabija i przeżywa (skutek zerowy). Symulujemy przed/po.
+            const changes = pumpChangesOutcome(view, target, pumpDelta(view, effect));
+            if (changes) {
+              score += 25 + 4 * Math.abs(effect.power ?? 0) + 4 * Math.abs(effect.toughness ?? 0);
+            } else {
+              score -= 75; // karta na nic — kara klasy „okno poza walką" (L3)
+            }
           }
           if (isPumpEffect && !isNegativePump(effect) && target && target.controllerId === view.playerId) {
             // M146 (uwaga właściciela): pump „do końca tury" ma wartość tylko
@@ -1714,6 +1906,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // (właściwe okno instantów — zlecenie A1 właściciela).
               trick = -75;
             }
+            // M218/2 (kryterium właściciela: „1/1 atakująca blokowana przez
+            // 5/5 — pompowanie +2/+2 nie ma żadnego sensu, bo nie zmienia
+            // wyniku walki ani o jotę"): okno walki to warunek konieczny,
+            // nie wystarczający. Po kaskadzie okien symulujemy wynik walki
+            // przed/po — bez zmiany pump dostaje karę klasy „okno poza
+            // walką" (−75), bo karta i mana idą na nic. Inne efekty tego
+            // czaru (dober, keywordy) wyceniają się w swoich gałęziach —
+            // kara dotyczy tylko samego pumpu.
+            if (inCombat && !pumpChangesOutcome(view, target, pumpDelta(view, effect))) trick = -75;
             score += trick + (target.power ?? 0);
           } else if (isPumpEffect) {
             score -= 60; // wzmacnianie przeciwnika bez powodu jest błędem
@@ -1933,6 +2134,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const inCombat = view.turn.phase === 'combat'
               && view.turn.step !== 'beginning_of_combat'
               && participatesInCombat;
+            // M218/2 (kryterium właściciela): ta sama meaningfulność co dla
+            // czarów — zdolność pompująca w oknie walki, ale bez zmiany
+            // wyniku (1/1 vs 5/5), nie kupuje nic. Kara proporcjonalna do
+            // wagi (L3 — musi przebić bazę ~2–10), nie karze pustych pomp.
+            if (inCombat && !pumpChangesOutcome(view, recipient, pumpDelta(view, effect))) value -= 26 + pGain;
             if (!inCombat && myTurn(view)) value -= 26;
             // Tura przeciwnika: pump poza walka byl dotad darmowy (kara wyzej
             // dotyczy tylko wlasnej tury), wiec bot palil mane w jego upkeepie
