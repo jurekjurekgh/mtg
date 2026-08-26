@@ -283,7 +283,7 @@ const HANDLED_TRIGGER_EVENTS = new Set([
   // more permanents" — incubate 2.
   'you_cast_spell_targeting_permanent',
   // M114 (Chronic Flooding): „whenever enchanted land becomes tapped".
-  'enchanted_permanent_tapped',
+  'enchanted_permanent_tapped', 'self_becomes_tapped',
   // M166/B (Batch 40, Cacophodon): „Whenever this creature is dealt damage".
   'dealt_damage',
   // Batch 45 (Pain for All): trigger na AURZE — host dostał obrażenia.

@@ -150,6 +150,7 @@ export function stateFingerprint(state) {
       : null,
     descendedThisTurn: { ...(state.descendedThisTurn ?? {}) },
     abilityActivatedThisTurn: { ...(state.abilityActivatedThisTurn ?? {}) },
+    triggerFiredThisTurn: { ...(state.triggerFiredThisTurn ?? {}) },
     delayedTriggers: (state.delayedTriggers ?? []).map((entry) => ({ ...entry })),
     pendingBackups: (state.pendingBackups ?? []).map((pending) => ({
       playerId: pending.playerId, sourceId: pending.sourceId, counters: pending.counters,

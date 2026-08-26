@@ -414,4 +414,5 @@ export const MANA_COSTS = {
   "dead-ringers": "{4}{B}",
   "dimir-guildgate": "",
   "vow-of-flight": "{2}{U}",
+  "nanoform-sentinel": "{2}{U}",
 };

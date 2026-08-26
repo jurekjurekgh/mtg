@@ -304,6 +304,9 @@ export function createGameState({ seed, players }) {
     // each turn" (Snarling Wolf): klucz `${objectId}:${abilityIndex}` → true.
     // Zerowane przy zmianie tury, jak cardsDrawnThisTurn.
     abilityActivatedThisTurn: {},
+    // „This ability triggers only once each turn\" (Nanoform Sentinel) —
+    // klucz `objectId:abilityIndex` → true; zerowane przy zmianie tury.
+    triggerFiredThisTurn: {},
     // Oczekująca decyzja poświęcenia Food (Insatiable Appetite):
     // blokująca decyzja jak scry/surveil.
     pendingFoodChoice: null,
@@ -4173,6 +4176,8 @@ export function execute(state, input) {
           // „Activate only once each turn" (Snarling Wolf) — limit aktywacji
           // zeruje się z nową turą, jak licznik dobrań.
           state.abilityActivatedThisTurn = {};
+          // „Triggers only once each turn" (Nanoform Sentinel) — zeruje się z turą.
+          state.triggerFiredThisTurn = {};
           // „Descended this turn" (Canonized in Blood) — znacznik zeruje się
           // z nową turą, jak licznik dobrań.
           state.descendedThisTurn = {};

@@ -9848,6 +9848,32 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['can\'t attack you — w 1v1 stwór przeciwnika z Vow nie może atakować (jedyny przeciwnik to Ty)'],
   }),
 
+  // Nanoform Sentinel (EOE) {2}{U} 3/2 Artifact Creature — Robot.
+  // „Whenever this creature becomes tapped, untap another target permanent.
+  //  This ability triggers only once each turn.\" — nowa mechanika generyczna:
+  // trigger `self_becomes_tapped` z celem (permanent, notSelf) + oncePerTurn.
+  defineCard({
+    id: 'nanoform-sentinel', name: 'Nanoform Sentinel', set: 'EOE',
+    types: ['Artifact', 'Creature'], subtypes: ['Robot'], colors: ['U'],
+    power: 3, toughness: 2, manaCost: 3,
+    oracleText: 'Whenever this creature becomes tapped, untap another target permanent. This ability triggers only once each turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/e/3eeae8c3-7939-4c79-92f0-fbdb9c1b71d3.jpg?1783905976',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'self_becomes_tapped',
+          oncePerTurn: true,
+          requiresTarget: { type: 'permanent', notSelf: true },
+        },
+        effect: [{ type: 'untap_permanent' }],
+      }),
+    ],
+    artId: 568, plan: 'The Edge',
+    support: { status: 'supported', limitations: [] },
+    notes: ['„triggers only once each turn” — kolejne tapnięcia w tej samej turze nie odpalają triggera (triggerFiredThisTurn)'],
+  }),
+
 ]);
 
 /**

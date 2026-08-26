@@ -14,6 +14,7 @@
 1x Gila Courser
 1x Lotusguard Disciple
 1x Moonlit Meditation
+1x Nanoform Sentinel
 1x Pain for All
 1x Ruinous Rampage
 1x Vow of Flight
@@ -22,8 +23,8 @@
 1x Spinewoods Paladin
 1x Weftblade Enhancer
 1x Sifter Wurm
-2x Plains
-2x Island
-2x Swamp
+3x Plains
+3x Island
+1x Swamp
 3x Mountain
 2x Forest
