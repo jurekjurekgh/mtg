@@ -37,15 +37,18 @@
 - [x] Plan zapisany
 - [ ] Commit + push planu (ADR 0020 A)
 
-### Etap A — Panic Spellbomb: `cant_block` jako combat trick tylko przy realnym ataku
+### Etap A — Panic Spellbomb: `cant_block` jako combat trick tylko przy realnym ataku ✅ DONE (commit M221/A)
 Oracle: `{T},Sacrifice: Target creature can't block this turn.` Sens: użyć,
 gdy bot ATAKUJE (po deklaracji atakujących), a cel MÓGŁBY zablokować atakującego.
-- [ ] Wycena `cant_block` (activated single-effect): premia tylko gdy bot ma
-      zadeklarowanego atakującego, którego `target` mógłby zablokować; inaczej
-      kara (poniżej passu). Okno: `declare_attackers`+ z własnym atakiem.
-- [ ] Rodzeństwo: `apply_to_each_target`→`cant_block` (Wrap in Flames),
-      `creatures_cant_block_this_turn` (Ruthless Invasion) — sprawdzić spójność.
-- [ ] Test RED→GREEN; `npm test`+build+benchmark; commit+push.
+- [x] Wycena `cant_block` (activated single-effect): premia +8 tylko gdy bot ma
+      zadeklarowanego atakującego, którego cel mógłby zablokować; inaczej −20
+      (poniżej passu). Odczyt z `view.combat` (ADR 0017), bez nazw kart.
+- [x] Rodzeństwo: `creatures_cant_block_this_turn` (Ruthless Invasion) — już
+      poprawne (wymaga `readyPower>0`, inaczej −8). `apply_to_each_target`→
+      `cant_block` (Wrap in Flames) — wrapper z damage; +8 za wroga jest drobne
+      i zdominowane wartością obrażeń, karta nie jest jałowa — zostawione.
+- [x] Test RED→GREEN (`test/m221a-panic-spellbomb-cant-block.test.js`);
+      `npm test` 3386, build 54/2723.6 kB, benchmark 9/9.
 
 ### Etap B — Angel's Feather: etykieta „you may" bez nazwy karty/efektu
 - [ ] `playerView`: wystaw `pendingOptionalTrigger { sourceCardId, effect? }`

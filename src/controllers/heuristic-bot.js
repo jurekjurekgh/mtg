@@ -2267,6 +2267,30 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
         }
         for (const effect of effects) {
+          // M221/A (zgłoszenie właściciela, Panic Spellbomb): „{T}, poświęć:
+          // docelowy stwór nie może blokować w tej turze" to COMBAT TRICK
+          // ofensywny — ma sens WYŁĄCZNIE, gdy bot realnie atakuje w tej turze
+          // i cel MÓGŁBY zablokować któregoś z jego atakujących. Bot wystawiał
+          // Spellbomba i w tej samej głównej fazie (bez ani jednego atakującego)
+          // poświęcał go, zabierając blok mojemu stworowi — efekt jałowy. Bez
+          // własnej deklaracji ataku `cant_block` niczego nie kupuje (L42:
+          // efekt „do końca tury" wyceniamy z oknem; L3: kara przebija bazę +2).
+          // Reguła generyczna po TYPIE efektu i STANIE walki z PlayerView
+          // (ADR 0002/0017), nie po nazwie karty.
+          if (effect.type === 'cant_block') {
+            const victim = target ?? (cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null);
+            const combat = view.combat ?? null;
+            const botAttacks = Boolean(combat) && combat.attackingPlayerId === view.playerId
+              && (combat.attackers ?? []).length > 0;
+            const victimIsEnemy = Boolean(victim) && victim.controllerId !== view.playerId;
+            const victimCouldBlock = victimIsEnemy && !victim.tapped && !victim.cantBlock;
+            const removesRealBlocker = botAttacks && victimCouldBlock
+              && (combat.attackers ?? []).some((aid) => {
+                const attacker = objectOnBoard(view, aid);
+                return attacker && attackerCanBeBlocked(attacker, [victim]);
+              });
+            score += removesRealBlocker ? 8 : -20;
+          }
           // M96 (audyt Żywym Testerem): `pump_enchanted_creature`
           // (firebreathing — Shiv's Embrace) NIE wpadało do tej gałęzi, więc
           // zdolność dostawała gołe `score = 2` i bot pompował ją 10× w Głównej
