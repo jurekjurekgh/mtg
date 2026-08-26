@@ -32,9 +32,12 @@ test('deskryptory: manifest sorcery daje spell + manifest', () => {
   assert.ok(d.includes('manifest'));
 });
 
-test('mapowanie: creature → parametry bazowe stwora, surge → brak (jeszcze)', () => {
+test('mapowanie: creature → parametry stwora (baza + agresja), surge → brak (jeszcze)', () => {
   const { keys, withoutParams } = paramsForDescriptors(['creature', 'surge']);
-  assert.deepEqual(keys.sort(), ['creatureBase', 'creaturePowerWeight', 'creatureToughnessWeight']);
+  assert.deepEqual(keys.sort(), [
+    'attackEvasionBonus', 'attackOpenBoardBonus', 'attackThroughBonus',
+    'creatureBase', 'creaturePowerWeight', 'creatureToughnessWeight',
+  ]);
   assert.deepEqual(withoutParams, ['surge']); // uczciwie: surge nie ma jeszcze parametrów
 });
 

@@ -22,6 +22,10 @@ test('params: wartości domyślne są dokładnie dawnymi stałymi', () => {
   assert.equal(DEFAULT_HEURISTIC_PARAMS.creaturePowerWeight, 2);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.creatureToughnessWeight, 1);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.spellBase, 50);
+  // Rodzina „premie agresji w ataku".
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.attackThroughBonus, 3);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.attackOpenBoardBonus, 8);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.attackEvasionBonus, 3);
 });
 
 test('params: normalize bez nadpisań zwraca zamrożone defaulty', () => {
@@ -83,4 +87,33 @@ test('params: creatureBase realnie przepływa do wyceny cast_permanent', () => {
   assert.ok(base != null && bumped != null, 'oba boty muszą widzieć cast_permanent');
   // +20 bazy → +20 wyceny (przed pomnożeniem przez wagę rodziny 'permanent'=0.9).
   assert.ok(bumped > base, `podbita baza ma zwiększyć wycenę (${bumped} > ${base})`);
+});
+
+test('params: attackOpenBoardBonus realnie przepływa do wyceny declare_attackers', () => {
+  // Scena: własny 2/2 w kroku deklaracji atakujących, przeciwnik ma PUSTĄ
+  // planszę (żaden bloker). Premia za atak w otwartą planszę wchodzi w grę.
+  // Podbicie attackOpenBoardBonus musi zwiększyć wycenę ataku — dowód, że
+  // pokrętło działa (nie atrapa).
+  const build = () => {
+    const state = createGameState({ seed: 7, players: [{ id: 'p1' }, { id: 'p2' }] });
+    initializeResources(state);
+    state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+    addObject(state, {
+      id: 'a', instanceId: 'ia', cardId: 'A', controllerId: 'p1',
+      zone: 'battlefield', kind: 'creature', power: 2, toughness: 2,
+    });
+    return playerView(state, 'p1');
+  };
+  const scoreOf = (bot) => {
+    const view = build();
+    bot.chooseCommand(view);
+    const entry = bot.trace().at(-1);
+    // Wariant atakujący naszym stworem (nie pusty attack[]).
+    const atk = entry.options.find((o) => o.cmd.startsWith('attack') && o.cmd.includes('a'));
+    return atk ? atk.score : null;
+  };
+  const base = scoreOf(createHeuristicBot({ seed: 1 }));
+  const bumped = scoreOf(createHeuristicBot({ seed: 1, params: { attackOpenBoardBonus: 40 } }));
+  assert.ok(base != null && bumped != null, 'oba boty muszą widzieć wariant ataku');
+  assert.ok(bumped > base, `podbita premia otwartej planszy ma zwiększyć wycenę ataku (${bumped} > ${base})`);
 });

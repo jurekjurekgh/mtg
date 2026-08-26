@@ -25,6 +25,13 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'creaturePowerWeight',     // mnożnik mocy w wycenie stwora (dawniej *2)
   'creatureToughnessWeight', // mnożnik wytrzymałości w wycenie stwora (dawniej *1)
   'spellBase',               // baza za rzucenie czaru niebędącego permanentem (dawniej 50)
+  // Rodzina „premie agresji w ataku" (B6 T1) — jak chętnie bot przepycha
+  // obrażenia. Same PREMIE (dodatnie) — progi/kary za złe ataki zostają
+  // twardymi stałymi (mają siedzieć poniżej passu). Wpływa wyłącznie na
+  // declare_attackers.
+  'attackThroughBonus',      // premia, gdy atakujący bezpiecznie zadaje moc (dawniej +3 w power+3)
+  'attackOpenBoardBonus',    // premia za atak w pustą planszę przeciwnika (dawniej +8)
+  'attackEvasionBonus',      // premia za ewazję latania omijającą blokerów (dawniej +3)
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -32,6 +39,9 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   creaturePowerWeight: 2,
   creatureToughnessWeight: 1,
   spellBase: 50,
+  attackThroughBonus: 3,
+  attackOpenBoardBonus: 8,
+  attackEvasionBonus: 3,
 });
 
 /**

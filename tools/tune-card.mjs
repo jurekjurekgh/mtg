@@ -43,7 +43,11 @@ import { summarizeTuningResult, tuningObjective } from './tune-bot.mjs';
  * deskryptora. Klucze muszą istnieć w HEURISTIC_PARAM_KEYS (walidacja niżej).
  */
 export const DESCRIPTOR_PARAMS = Object.freeze({
-  creature: Object.freeze(['creatureBase', 'creaturePowerWeight', 'creatureToughnessWeight']),
+  creature: Object.freeze([
+    'creatureBase', 'creaturePowerWeight', 'creatureToughnessWeight',
+    // Premie agresji w ataku dotyczą stworów (to one atakują).
+    'attackThroughBonus', 'attackOpenBoardBonus', 'attackEvasionBonus',
+  ]),
   spell: Object.freeze(['spellBase']),
   // Rodziny mechanik czekające na własne parametry (kolejne sesje T1):
   // surge:   ['surgeBias'],

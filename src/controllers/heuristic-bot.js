@@ -3047,16 +3047,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // M202/H: nie może zostać zablokowany (flying bez odpowiedzi,
             // menace przy jednym blokerze, cantBeBlocked) — atak jest warty
             // tyle co atak w otwartego, a nie „chump”.
-            perAttacker = power + 3;
+            perAttacker = power + P.attackThroughBonus;
           } else if (attackerImmuneThisTurn) {
-            perAttacker = power + 3;
+            perAttacker = power + P.attackThroughBonus;
           } else if (dealsNoCombatDamage) {
             // 0/1 w otwartego: 0 obrażeń bojowych, a stwór tapnięty i wystawiony
             // na bloki — wartość NIE może zostać podratowana premią „otwartej
             // presji" (+8), dlatego tak nisko (poniżej passu).
             perAttacker = -12;
           } else if (blockers.length === 0) {
-            perAttacker = power + 3; // otwarty — czysta presja
+            perAttacker = power + P.attackThroughBonus; // otwarty — czysta presja
           } else if (object.cantBlock && attackers.length > blockers.length) {
             // M221/G (zgłoszenie właściciela, token Phyrexian Mite „can't
             // block"): stwór, który NIE MOŻE blokować, nie ma wartości
@@ -3066,7 +3066,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // i dokłada obrażenia (tu jeszcze toxic). Brak kosztu alternatywy:
             // i tak nigdy nie zablokuje. Reguła po deskryptorze cantBlock
             // z PlayerView (ADR 0002/0017), nie po nazwie karty.
-            perAttacker = power + 3;
+            perAttacker = power + P.attackThroughBonus;
           } else if (diesBeforeDealingDamage(object, blockers)) {
             // M202/N: bloker z first strike zabija atakującego, zanim ten zada
             // cokolwiek (CR 510.4) — atak ma 0% szans: 0 obrażeń i strata
@@ -3077,9 +3077,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // M202/N (symetrycznie): first strike atakującego zabija blokera,
             // zanim ten odpowie — atakujący PRZEŻYWA, więc to nie wymiana
             // (power - 1), a czysty zysk jak przy ataku w otwartego.
-            perAttacker = power + 3;
+            perAttacker = power + P.attackThroughBonus;
           } else if (toughness > strongestBlockerPower && power >= strongestBlockerToughness) {
-            perAttacker = power + 3; // przeżyje I zabija blokera — realny zysk
+            perAttacker = power + P.attackThroughBonus; // przeżyje I zabija blokera — realny zysk
           } else if (blockers.length >= 2 && toughness <= gangPower && power < weakestBlockerToughness) {
             // M167/I: ginie od GANGU blokerów i nie zabija ŻADNEGO — czysta
             // strata stwora (2/4 w 1/3 + 3/3). Kara ponad wagę wyścigu.
@@ -3111,12 +3111,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           score += perAttacker;
           // Evasion: latający atakujący omija blockerów bez flying/reach.
-          if (hasKeyword(object, 'flying') && blockers.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'))) score += 3;
+          if (hasKeyword(object, 'flying') && blockers.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'))) score += P.attackEvasionBonus;
           // Drenaż z triggera ataku przechodzi niezależnie od bloków.
           score += 3 * drainOnAttack(id);
         }
         // Presja: atak w otwartego, lethal i przewaga liczebna premiowane.
-        if (blockers.length === 0 && attackers.length > 0) score += 8;
+        if (blockers.length === 0 && attackers.length > 0) score += P.attackOpenBoardBonus;
         const totalPower = attackers.reduce((sum, id) => sum + (objectOnBoard(view, id)?.power ?? 0), 0);
         // M169/J+L (uwaga właściciela): lethal musi przejść PRZEZ blokerów.
         // Surowy totalPower premiował atak 6/7 w samotnego 7/10 (+100 za
