@@ -50,13 +50,15 @@ handoffów, startowego promptu Arena i planów w `docs/plans/`. Żaden inny
 dokument nie może ich wyłączyć. Szczegóły: ADR 0020.
 
 1. **Pull Request na starcie.** PR musi istnieć na GitHubie PRZED jakimkolwiek
-   kodowaniem. Może być pusty (tylko tytuł i opis), ale gałąź musi być na
+   kodowaniem. Może zawierać tylko plan audytu opisanego w pkt 2, ale gałąź musi być na
    GitHubie.
 
 2. **Audyt poprzedniego PR przed kodowaniem.** Przed rozpoczęciem nowej pracy
    sesja przegląda każdy zmieniony plik poprzedniego scalonego PR pod kątem
-   zgodności z CR, ADR 0002 i testów RED→GREEN. Wynik w `docs/audits/`
+   logiki i sensowności zmiany, zgodności z CR MtG, ADR 0002 i testów RED→GREEN. Wynik w `docs/audits/`
    i w opisie PR.
+   UWAGA! Audyt nie może być jedynie zaraportowaniem zmian i wyniku testów, a powinien być dokładnym
+   sprawdzeniem wprowadzonych zmian czyli stanem projektu po poprzednim PR, a stanem na jego starcie.
 
 3. **Inkrementalne commity.** Każdy samodzielnie zielony krok (`npm test` +
    `npm run build`) jest commitem OSOBNO i od razu pushowany. Zakazany jest
