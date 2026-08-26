@@ -25,6 +25,39 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 ---
 
 
+## L78 (2026-08-26) — Lektura obowiązkowa czytana fragmentami to lektura NIEwykonana
+
+**Objaw:** sesja „przeczytała” lekturę startową, ale `docs/LESSONS.md`
+(1930 linii) i część ADR-ów zostały obejrzane tylko we fragmentach — kilka
+najnowszych lekcji plus nagłówki, bo narzędzie czytające zwracało pliki
+z ucięciem (`truncated`/`hasMore`) i agent nie dobrał reszty. Właściciel
+wychwycił to od razu: „jeśli jakiś plik z obowiązkowej lektury nie został
+przeczytany w całości, to należy go pobrać tak, żeby przeczytać go w całości”.
+
+**Przyczyna:** narzędzia czytające (fetch/read/„head”) często zwracają tylko
+kawałek dużego pliku i sygnalizują to flagą, którą łatwo przeoczyć. „Zielony”
+odczyt jednego chunku wygląda identycznie jak przeczytanie całości —
+dokładnie jak L68 (brak skutku nieodróżnialny od poprawnego skutku), tylko
+w warstwie dokumentacji. AGENTS.md §0 mówiło „czytasz wszystkie [ADR-y]”
+i „cały rejestr”, ale nie nazywało wprost, że pojedynczy plik też ma być
+przeczytany od pierwszej do ostatniej linii, i co zrobić z ucięciem.
+
+**Reguła:**
+1. Plik z lektury obowiązkowej uznajesz za przeczytany dopiero, gdy dotarłeś
+   do jego OSTATNIEJ linii. Sprawdź `wc -l` i potwierdź, że pomiar objął cały
+   zakres — dla `LESSONS.md` znaczy to WSZYSTKIE lekcje `L1…`, nie tylko te
+   z góry/dołu.
+2. Każdy sygnał fragmentacji (`truncated`, `hasMore`, `stdout_truncated`,
+   stronicowanie, twardy limit bajtów) to polecenie „dobierz następny
+   fragment”, nie koniec czytania. Czytaj po zakresach linii (`sed -n`),
+   aż wyczerpiesz plik.
+3. „Przejrzałem / streściłem / doczytałem ostatnie wpisy” NIE jest
+   przeczytaniem i nie zwalnia z pkt 1–2.
+
+**Sformalizowane w:** `AGENTS.md` §0 (blok „Każdy plik lektury obowiązkowej
+czytasz W CAŁOŚCI…” + doprecyzowanie pozycji 2 i 3 listy lektur).
+
+
 ## L77 (2026-08-26) — Wejście na pole bitwy to ZDARZENIE o wielu następstwach: decyzja blokująca ani `return` nie mogą wycinać reszty
 
 **Objaw (M216/M217):** dwa błędy tej samej klasy, znalezione w tej samej sesji:
