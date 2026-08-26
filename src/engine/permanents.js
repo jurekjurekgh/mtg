@@ -402,13 +402,18 @@ function attachmentBonuses(state, object) {
 
     // Conditional keywords (Hunter's Blowgun): different keywords granted
     // based on whose turn it is (evaluated at read time with game state).
+    // CR 109.5: „you"/„your" w tekście karty odnoszą się do KONTROLERA TEJ
+    // KARTY — dla załącznika to `attachment.controllerId`, a NIE kontroler
+    // nosiciela. Przy rozdzielonych kontrolach (np. Awaken the Sleeper
+    // przejmuje stwora, a Equipment zostaje u poprzedniego kontrolera)
+    // „during your turn" = tura kontrolera Blowguna (M214, znalezisko #3).
     for (const ck of (grant.conditionalKeywords ?? [])) {
       const cond = ck.condition ?? {};
       let active = false;
       if (cond.activePlayerIsController === true) {
-        active = state.turn.activePlayerId === object.controllerId;
+        active = state.turn.activePlayerId === attachment.controllerId;
       } else if (cond.activePlayerIsController === false) {
-        active = state.turn.activePlayerId !== object.controllerId;
+        active = state.turn.activePlayerId !== attachment.controllerId;
       } else if (cond.controlsNoOtherCreatures === true) {
         // M174/D (Predator's Gambit): „as long as its controller controls
         // no other creatures" — poza samym nosicielem.
