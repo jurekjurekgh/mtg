@@ -1614,6 +1614,18 @@ function choiceSourceTitle(cmd, session, view) {
   if (cmd?.type === 'resolve_hand_top_choice' && view?.pendingHandTopChoice?.sourceCardId) {
     return `${session.nameOf(view.pendingHandTopChoice.sourceCardId)} — karta z ręki na wierzch biblioteki`;
   }
+  // M221/B (zgłoszenie właściciela, Angel's Feather): decyzja „you may" musi
+  // nazywać KARTĘ i CO robi — samo „Efekt dobrowolny (you may)" nic nie mówi.
+  // Źródło i typ efektu jadą z pendingOptionalTrigger w widoku (informacja
+  // publiczna, tylko właściciel decyzji). Opis efektu przez describeEffect
+  // (bez nazw kart w warstwie opisu — ADR 0002).
+  if (cmd?.type === 'resolve_optional_trigger_choice' && view?.pendingOptionalTrigger?.sourceCardId) {
+    const src = session.nameOf(view.pendingOptionalTrigger.sourceCardId);
+    const effLabel = view.pendingOptionalTrigger.effect
+      ? describeEffect(view.pendingOptionalTrigger.effect)
+      : '';
+    return effLabel ? `${src} — ${effLabel} (możesz)` : `${src} — efekt dobrowolny (możesz)`;
+  }
   // M163/A: Exploit (Silumgar Butcher) — tytuł grupy nazywa źródło decyzji
   // (karta publiczna na polu bitwy; pendingExploit w widoku tylko właściciela).
   if (cmd?.type === 'resolve_exploit_choice' && view?.pendingExploit?.sourceCardId) {

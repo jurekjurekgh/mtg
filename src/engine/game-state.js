@@ -6283,6 +6283,22 @@ export function playerView(state, playerId) {
     pendingHandTopChoice: activeHandTopChoice
       ? { sourceCardId: state.pendingHandTopChoice.sourceCardId ?? null }
       : null,
+    // M221/B: źródło i główny efekt decyzji „you may" — do etykiety modala.
+    // sourceCardId z obiektu-źródła (pole bitwy), effect (płytka kopia) z
+    // ability/rozstrzygnięcia (trigger niesie `ability`, spell — `resolveEffect`),
+    // żeby describeEffect umiał podać także kwotę (np. „zyskaj 1 życia").
+    pendingOptionalTrigger: activeOptionalTrigger
+      ? {
+          sourceCardId: state.objects.get(state.pendingOptionalTrigger.sourceId)?.cardId
+            ?? state.pendingOptionalTrigger.cardId ?? null,
+          effect: (() => {
+            const p = state.pendingOptionalTrigger;
+            const eff = p.resolveEffect
+              ?? (Array.isArray(p.ability?.effect) ? p.ability.effect[0] : p.ability?.effect);
+            return eff && typeof eff.type === 'string' ? { ...eff } : null;
+          })(),
+        }
+      : null,
     // M166/D: kwoty podziału obrażeń — TYLKO właściciel decyzji (cele
     // wybrane jawnie, źródło publiczne; kwoty i tak widzi w ofertach).
     pendingDamageDivision: (state.pendingDamageDivision && state.pendingDamageDivision.playerId === playerId)

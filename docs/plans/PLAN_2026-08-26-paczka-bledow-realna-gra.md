@@ -50,14 +50,16 @@ gdy bot ATAKUJE (po deklaracji atakujących), a cel MÓGŁBY zablokować atakuj�
 - [x] Test RED→GREEN (`test/m221a-panic-spellbomb-cant-block.test.js`);
       `npm test` 3386, build 54/2723.6 kB, benchmark 9/9.
 
-### Etap B — Angel's Feather: etykieta „you may" bez nazwy karty/efektu
-- [ ] `playerView`: wystaw `pendingOptionalTrigger { sourceCardId, effect? }`
-      właścicielowi decyzji (wzorzec `pendingHandTopChoice`).
-- [ ] `render.js`: `choiceSourceTitle` gałąź `resolve_optional_trigger_choice`
-      → „<Nazwa> — <opis efektu (you may)>"; etykiety opcji nazwane.
-- [ ] Rodzeństwo: inne `optional_trigger_required` (spells.js, triggers.js) —
-      Demon's Horn/inne „Feather", gain_life „you may".
-- [ ] Test (describe/label) RED→GREEN; `npm test`+build; commit+push.
+### Etap B — Angel's Feather: etykieta „you may" bez nazwy karty/efektu ✅ DONE (commit M221/B)
+- [x] `playerView`: wystaw `pendingOptionalTrigger { sourceCardId, effect }`
+      właścicielowi decyzji (wzorzec `pendingHandTopChoice`) + FoW dla przeciwnika.
+- [x] `render.js`: `choiceSourceTitle` gałąź `resolve_optional_trigger_choice`
+      → „<Nazwa> — <opis efektu> (możesz)" (describeEffect, bez nazw kart).
+- [x] Rodzeństwo: fix jest GENERYCZNY — każdy `optional_trigger_required`
+      (dowolne źródło) dostaje etykietę z tego samego pola widoku, więc cała
+      rodzina „you may" naprawiona jednym patchem.
+- [x] Test RED→GREEN (`test/m221b-optional-trigger-label.test.js`, 3 testy
+      + FoW); `npm test` 3389, build 54/2725.2 kB.
 
 ### Etap C — Benevolent Blessing: badge „Ochrona przed: <kolor>"
 - [ ] `playerView`: wystaw `protectionFromColors`/jakość na kaflu permanentu
