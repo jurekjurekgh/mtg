@@ -277,6 +277,75 @@ function pumpDelta(view, effect) {
   return { power: effect.power ?? 0, toughness: effect.toughness ?? 0 };
 }
 
+/**
+ * M218/3 — wynik walki z dodatkowymi keywordami na recipient (np. first_strike, flying, reach, deathtouch).
+ * Model jak w pumpChangesOutcome, ale zamiast delty P/T dodajemy keywordy.
+ */
+function duelStatsWithExtraKeywords(object, extraKeywords = [], delta = {}) {
+  if (!object) return null;
+  const baseKw = object.keywords ?? [];
+  const merged = extraKeywords.length ? [...new Set([...baseKw, ...extraKeywords])] : baseKw;
+  const copy = { ...object, keywords: merged };
+  return duelStats(copy, delta);
+}
+
+function combatOutcomeWithKeywords(view, recipient, extraKeywords = []) {
+  const combat = view.combat ?? null;
+  const id = recipient?.id;
+  if (!combat || !id) return null;
+  const battlefield = view.zones.battlefield ?? [];
+  const viewObject = (oid) => battlefield.find((o) => o.id === oid) ?? null;
+  const blockersOf = (attackerId) => (combat.blockers ?? {})[attackerId] ?? [];
+  const attackerId = (combat.attackers ?? []).includes(id) ? id : null;
+  if (attackerId) {
+    const attacker = viewObject(attackerId);
+    if (!attacker) return null;
+    const blockers = blockersOf(attackerId)
+      .map((oid) => viewObject(oid))
+      .filter(Boolean)
+      .map((b) => (b.id === id ? duelStatsWithExtraKeywords(b, extraKeywords, {}) : duelStats(b)));
+    const stats = duelStatsWithExtraKeywords(attacker, extraKeywords, {});
+    return simulateCombat(stats, blockers);
+  }
+  const blockedFor = Object.keys(combat.blockers ?? {}).find((aid) => (blockersOf(aid) ?? []).includes(id));
+  if (!blockedFor) return null;
+  const foe = viewObject(blockedFor);
+  if (!foe) return null;
+  const blockers = blockersOf(blockedFor)
+    .map((oid) => viewObject(oid))
+    .filter(Boolean)
+    .map((b) => (b.id === id ? duelStatsWithExtraKeywords(b, extraKeywords, {}) : duelStats(b)));
+  return simulateCombat(duelStats(foe), blockers);
+}
+
+function keywordChangesOutcome(view, recipient, extraKeywords = []) {
+  if (!recipient || !extraKeywords.length) return false;
+  const before = combatOutcome(view, recipient, {});
+  const after = combatOutcomeWithKeywords(view, recipient, extraKeywords);
+  if (!before || !after) return false;
+  return JSON.stringify(before) !== JSON.stringify(after);
+}
+
+function enemyHasUntappedFlyingOrReachBlocker(view) {
+  return (view.zones.battlefield ?? []).some(
+    (o) =>
+      o.controllerId !== view.playerId &&
+      !o.tapped &&
+      !o.cantBlock &&
+      ((o.keywords ?? []).includes('flying') || (o.keywords ?? []).includes('reach')),
+  );
+}
+
+function enemyHasFlyingAttackers(view) {
+  const combat = view.combat ?? null;
+  if (!combat || combat.attackingPlayerId === view.playerId) return false;
+  const battlefield = view.zones.battlefield ?? [];
+  return (combat.attackers ?? []).some((attackerId) => {
+    const obj = battlefield.find((o) => o.id === attackerId);
+    return obj && (obj.keywords ?? []).includes('flying');
+  });
+}
+
 const KEYWORD_COUNTERS = new Set(['deathtouch', 'flying', 'first_strike', 'double_strike', 'lifelink', 'trample', 'vigilance', 'menace', 'reach', 'haste', 'hexproof', 'indestructible']);
 
 const NEVER = Number.NEGATIVE_INFINITY;
@@ -509,6 +578,32 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const wastefulStep = (view) => myTurn(view) && ['untap', 'upkeep', 'draw', 'end', 'cleanup'].includes(view.turn.step);
   const myLibraryCount = (view) => view.zones.library.filter((o) => o.controllerId === view.playerId).length;
   const myLandCount = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
+
+  /**
+   * M218/4 — czy stwór jest zagrożony w tej turze (regenerate).
+   * Zagrożenie = walka (ginie w symulacji CR 510) albo przeciwnik ma otwartą
+   * manę i removal (damage) który może go zabić (B3 model).
+   * Zero nazw kart (ADR 0002), czytamy wyłącznie PlayerView (ADR 0017).
+   */
+  const isCreatureThreatened = (view, creature) => {
+    if (!creature) return false;
+    // 1. Walka — wynik symulacji przed/po (M218/2)
+    const outcome = combatOutcome(view, creature, {});
+    if (outcome) {
+      if (outcome.attackerDies) return true;
+      if (outcome.deadBlockers?.includes(creature.id)) return true;
+    }
+    // 2. Obrażenia śmiertelne już zadane (SBA 704.5g)
+    if ((creature.damage ?? 0) >= (creature.toughness ?? 0)) return true;
+    // 3. Removal w zasięgu many wroga (B3 — hipergeometria)
+    if (removalSpells.size && opponentOpenMana(view) >= minRemovalCost) {
+      const toughness = (creature.toughness ?? 0) - (creature.damage ?? 0);
+      for (const info of removalSpells.values()) {
+        if (info.cost <= opponentOpenMana(view) && info.amount >= toughness) return true;
+      }
+    }
+    return false;
+  };
 
   /**
    * M139 (uwaga właściciela) — WARTOŚĆ TAPNIĘCIA ZALEŻY OD MOMENTU.
@@ -1005,33 +1100,81 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
 
   /**
-   * M179/A1 (zlecenie właściciela): wartość grantu keywordów-do-EOT dla
-   * WŁASNEGO stwora we właściwym oknie walki — WSPÓLNE dla zdolności
-   * aktywowanych (M173/E) i CZARÓW-trików (dotąd czary grantujące keywordy
-   * nie miały tej wyceny wcale).
+   * M179/A1 + M218/3 (zlecenie właściciela 2026-08-26): wartość grantu
+   * keywordów-do-EOT dla WŁASNEGO stwora — WSPÓLNE dla zdolności i czarów.
+   *
+   * Kryteria właściciela (etap 3):
+   * - flying na atakujących, gdy przeciwnik NIE MA latających/reach (wtedy
+   *   stwór staje się nieblokowalny — CR 509.1b);
+   * - reach tylko na blokujących PRZED ustaleniem bloków, gdy nadlatuje
+   *   atak z flying, i tylko gdy stwór MOŻE blokować (nie tapped, nie
+   *   cantBlock);
+   * - first_strike/double_strike/deathtouch tylko gdy zmienia wynik walki
+   *   (helper keywordChangesOutcome z Etapu 2).
    */
   function keywordGrantWindowValue(view, recipient, fresh) {
     const combat = view.combat ?? null;
     const attacking = Boolean(combat?.attackers?.includes(recipient.id));
     const blocking = Object.values(combat?.blockers ?? {}).some((ids) => (ids ?? []).includes(recipient.id));
-    const enemyAttackDeclared = Boolean(combat) && combat.attackingPlayerId !== view.playerId;
-    const enemyFlyerAttacks = enemyAttackDeclared && (combat.attackers ?? []).some((id) => {
-      const attacker = objectOnBoard(view, id);
-      return attacker && (attacker.keywords ?? []).includes('flying');
-    });
+    const hasFlyingAttackers = enemyHasFlyingAttackers(view);
+    const hasUntappedFlyingBlocker = enemyHasUntappedFlyingOrReachBlocker(view);
     let value = 0;
     for (const kw of fresh) {
       if (kw === 'reach') {
-        // OBRONNY: sens tylko, gdy nadlatuje atak z flying, a stwór może
-        // jeszcze zablokować (przed deklaracją bloków, nietapnięty).
-        value += (enemyFlyerAttacks && !recipient.tapped
+        // M218/3: reach ma sens wyłącznie defensywnie, PRZED blokami,
+        // gdy przeciwnik atakuje z powietrza, a nasz stwór MOŻE blokować.
+        // M173/E2 już to sprawdzał, ale pomijał `cantBlock` (l. 827 tylko
+        // `tapped`). Teraz generycznie po deskryptorze (ADR 0002).
+        const canBlock = !recipient.tapped && !recipient.cantBlock;
+        value += (hasFlyingAttackers && canBlock
           && view.turn.step === 'declare_blockers' && !blocking) ? 8 : -10;
-      } else if (['deathtouch', 'first_strike', 'double_strike', 'lifelink', 'indestructible'].includes(kw)) {
-        // TRICK STARCIA: dopiero gdy stwór FAKTYCZNIE bierze udział w walce.
-        value += (attacking || blocking) ? (kw === 'deathtouch' ? 8 : 4) : -10;
-      } else if (['trample', 'flying', 'menace', 'haste'].includes(kw)) {
-        // EVASION/AGRESJA: nasz atak — zadeklarowany atakujący albo tuż
-        // przed deklaracją. Postcombat main i cudza tura = strata.
+      } else if (kw === 'flying') {
+        // M218/3: flying na ATAKUJĄCYCH gdy wróg NIE MA latających/reach —
+        // wtedy atakujący staje się nieblokowalny (CR 702.9 + 509.1b).
+        // Na BLOKUJĄCYCH — jak reach: tylko gdy nadlatuje flying.
+        if (attacking) {
+          // Już atakuje: jeśli wróg ma flyera/reach, który może zablokować,
+          // latanie nie czyni go nieblokowalnym — brak wartości (kara, żeby
+          // nie palić many na efekt jałowy — L3).
+          value += hasUntappedFlyingBlocker ? -10 : 2 + (recipient.power ?? 0);
+        } else if (blocking) {
+          // Już blokuje — za późno na nadanie reach/flying.
+          value += -10;
+        } else if (view.turn.step === 'declare_blockers' && hasFlyingAttackers) {
+          // Okno obrony: nie jest jeszcze blokerem, ale może nim zostać.
+          const canBlock = !recipient.tapped && !recipient.cantBlock;
+          value += canBlock ? 8 : -10;
+        } else if (myTurn(view) && canAttackNow(recipient)
+          && ['precombat_main', 'combat'].includes(view.turn.phase)) {
+          // Przed własnym atakiem: latanie ma sens tylko gdy wróg nie ma
+          // odpowiedzi w powietrzu.
+          value += hasUntappedFlyingBlocker ? -2 : 2 + (recipient.power ?? 0);
+        } else {
+          value -= 10;
+        }
+      } else if (['first_strike', 'double_strike', 'deathtouch', 'trample'].includes(kw)) {
+        // M218/3: first strike / double strike / deathtouch / trample mają
+        // wartość tylko gdy ZMIENIAJĄ wynik toczącej się wymiany (helper
+        // z Etapu 2). Np. 2/1 w 3/1 z FS — bez FS ginie przed zadaniem
+        // obrażeń (CR 510.4), z FS zabija i przeżywa.
+        if (!(attacking || blocking)) {
+          value += -10;
+        } else if (keywordChangesOutcome(view, recipient, [kw])) {
+          value += kw === 'deathtouch' ? 8 : kw === 'trample' ? 2 + (recipient.power ?? 0) : 6;
+        } else {
+          // Okno jest, ale skutek zerowy — jak pump 1/1 vs 5/5 (kryterium
+          // właściciela). Kara musi przebić premię, żeby nie remisować z
+          // passem (L3).
+          value += -10;
+        }
+      } else if (['lifelink', 'indestructible'].includes(kw)) {
+        // Trick starcia: dopiero gdy stwór bierze udział w walce.
+        // Dla lifelink/indestructible nie liczymy meaningfulness tak
+        // rygorystycznie (lifelink zawsze daje życie przy obrażeniach),
+        // ale okno musi być bojowe.
+        value += (attacking || blocking) ? (kw === 'lifelink' ? 4 : 6) : -10;
+      } else if (['menace', 'haste'].includes(kw)) {
+        // Evasion/agresja: nasz atak — zadeklarowany albo tuż przed.
         if (attacking) value += 2 + (recipient.power ?? 0);
         else if (myTurn(view) && canAttackNow(recipient)
           && ['precombat_main', 'combat'].includes(view.turn.phase)) value += 2 + (recipient.power ?? 0);
@@ -1764,6 +1907,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           // Dobranie kart z czaru to przewaga kartowa.
           if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') score += 6 * (effect.amount ?? 1);
+          // M218/4 — scry/surveil jako CZAR: okno jak przy zdolności (M211/A1).
+          // Dla czystego scry/surveil (np. Index) kara musi przebić bazę 50 (L3),
+          // więc -60; dla mieszanych (Curate: surveil+draw) kara łagodna -12,
+          // żeby nie blokować gry i nie psuć testów modalu (E4).
+          if (DECK_ARRANGING_EFFECTS.has(effect.type)) {
+            const isPureDeckArranging = effects.every((e) => DECK_ARRANGING_EFFECTS.has(e?.type));
+            const isSorcery = card?.spell?.timing === 'sorcery';
+            if (isSorcery) {
+              score += (view.turn.phase === 'postcombat_main' && view.turn.step === 'main2') ? 6 : (isPureDeckArranging ? -60 : -12);
+            } else {
+              score += (!myTurn(view) && view.turn.step === 'end') ? 10 : (isPureDeckArranging ? -60 : -12);
+            }
+          }
+          // M218/4 — regenerate jako efekt czaru (jeśli kiedyś pojawi się taki czar):
+          // wartość tylko gdy cel zagrożony, inaczej kara.
+          if (effect.type === 'regenerate') {
+            const victim = objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 0]) ?? target ?? null;
+            const alreadyShielded = victim && (view.regenerationShields ?? []).includes(victim.id);
+            if (alreadyShielded) score -= 25;
+            else score += victim && isCreatureThreatened(view, victim) ? 30 : -20;
+          }
           // M158/Batch 39 (Wrap in Flames): wrapper „each of up to N targets"
           // różnicuje warianty celami — wyceniamy KAŻDY cel wg efektów
           // wewnętrznych (damage: wróg +, własny −; cant_block: drobny plus
@@ -2054,22 +2218,33 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const sorcerySpeed = ability?.timing === 'sorcery';
           const step = view.turn.step;
           if (sorcerySpeed) {
-            // Sorcery-speed (Guidestone Compass) NIE doczeka tury przeciwnika —
-            // jedyne legalne okno to własna główna faza. Po walce mana jest już
-            // wolna, więc to okno lepsze; przed walką odkładamy zdolność TYLKO
-            // wtedy, gdy mana ma realną konkurencję (jest co zagrać z ręki).
-            // Bez tego zastrzeżenia bot przestałby używać zdolności zupełnie,
-            // choć nic innego nie miał do roboty (M126/#10 — anty-over-fix).
             const manaContested = view.zones.hand
               .some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
             if (view.turn.phase === 'postcombat_main' && step === 'main2') score += 6;
             else if (manaContested) score -= 12;
           } else if (!myTurn(view) && step === 'end') {
-            // Okno optymalne: mana i tak przepadnie, dobranie tuż-tuż.
             score += 10;
           } else {
-            // Każde wcześniejsze okno wydaje manę, która mogła się przydać.
             score -= 12;
+          }
+        }
+        // M218/4 — regenerate: wartość tylko gdy stwór ZAGROŻONY w tej turze.
+        // Bez zagrożenia — kara (przedwczesny wydatek, jak M146).
+        // Obsługuje zarówno keyword `regenerate` (Drudge Skeletons), jak i efekt
+        // `{type:'regenerate'}` (Exterminator Magmarch).
+        const isRegenerateAbility = ability?.keyword === 'regenerate'
+          || abilityEffectTypes.includes('regenerate')
+          || effects.some((e) => e?.type === 'regenerate');
+        if (isRegenerateAbility) {
+          const regenTarget = target ?? source;
+          // Jeśli cel ma już tarczę regeneracji, druga jest zbędna (idempotentna
+          // w sensie M179/B — druga tarcza nic nie dodaje, bo pierwsza już chroni).
+          const alreadyShielded = regenTarget && (view.regenerationShields ?? []).includes(regenTarget.id);
+          if (alreadyShielded) {
+            score -= 25;
+          } else {
+            const threatened = isCreatureThreatened(view, regenTarget);
+            score += threatened ? 30 : -20;
           }
         }
         for (const effect of effects) {
