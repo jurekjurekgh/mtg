@@ -1025,11 +1025,21 @@ function describeEffect(e) {
     conditional: () => {
       const thenDesc = e.then ? describeEffect(e.then) : '';
       const elseDesc = e.else ? describeEffect(e.else) : '';
+      // M229 (audyt nowych talii, Sarkhan's Rage): warunki opisujemy po polsku;
+      // część niesie parametr `subtype` (np. „no Dragons"). Bez wpisu w mapie
+      // na kafel wyciekał surowy identyfikator (controlsNoCreatureSubtype).
       const CONDITIONS = {
         controlsCreatureWithCounter: 'kontrolujesz stwora z licznikiem',
         landEnteredThisTurn: 'land wchodził pod twoją kontrolą w tej turze (Landfall)',
+        controlsNoCreatureSubtype: `nie kontrolujesz stworów typu ${e.subtype ?? '?'}`,
+        controlsCreatureSubtype: `kontrolujesz stwora typu ${e.subtype ?? '?'}`,
       };
-      return `jeśli ${CONDITIONS[e.condition] ?? e.condition}: ${thenDesc}; w przeciwnym razie: ${elseDesc}`;
+      const cond = CONDITIONS[e.condition] ?? e.condition;
+      // M229: gałąź „w przeciwnym razie" tylko GDY istnieje — inaczej kafel
+      // kończył się urwanym „; w przeciwnym razie:" (pusty opis).
+      return elseDesc
+        ? `jeśli ${cond}: ${thenDesc}; w przeciwnym razie: ${elseDesc}`
+        : `jeśli ${cond}: ${thenDesc}`;
     },
     pump_enchanted_creature: () => `${signed(e.power ?? 0)}/${signed(e.toughness ?? 0)} do końca tury`,
     pump_food_result: () => `${signed(e.power ?? 0)}/${signed(e.toughness ?? 0)} do końca tury`,

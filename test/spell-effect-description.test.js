@@ -85,3 +85,40 @@ test('describeEffect: create_token z amount > 1 dostaje "N×" (Sailor of Means i
   const desc = describeSpellEffects(spell);
   assert.ok(desc.includes('×3'), `expected "×3" prefix from same logic, got: ${desc}`);
 });
+
+// =============================================================================
+// M229 (audyt nowych talii, Sarkhan's Rage) — efekt `conditional`:
+//  1. warunek `controlsNoCreatureSubtype` wyciekał jako surowy identyfikator;
+//  2. brak gałęzi `else` dawał urwane „; w przeciwnym razie:" (pusty opis).
+// =============================================================================
+
+test('M229: conditional bez else nie zostawia urwanego „w przeciwnym razie"', () => {
+  const spell = {
+    effects: [
+      { type: 'damage', amount: 5 },
+      {
+        type: 'conditional', condition: 'controlsNoCreatureSubtype', subtype: 'Dragon',
+        then: { type: 'damage_to_controller', amount: 2 },
+      },
+    ],
+    targets: [{ type: 'any_target' }],
+  };
+  const desc = describeSpellEffects(spell);
+  assert.doesNotMatch(desc, /controlsNoCreatureSubtype/, 'surowy identyfikator nie może wyciekać');
+  assert.match(desc, /nie kontrolujesz stworów typu Dragon/, 'warunek po polsku z podtypem');
+  assert.doesNotMatch(desc, /w przeciwnym razie:\s*($|·)/, 'brak urwanej gałęzi else');
+});
+
+test('M229: conditional z else opisuje obie gałęzie', () => {
+  const spell = {
+    effects: [
+      {
+        type: 'conditional', condition: 'controlsCreatureWithCounter',
+        then: { type: 'draw_cards', amount: 1 },
+        else: { type: 'damage_to_controller', amount: 1 },
+      },
+    ],
+    targets: [],
+  };
+  assert.match(describeSpellEffects(spell), /w przeciwnym razie:/);
+});
