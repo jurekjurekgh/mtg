@@ -210,9 +210,21 @@ import {
  * (312/336) vs random, 75.3% (253/336) vs aggro, 0 niedokończonych.
  * Reguła „zmierzone −15 p.p., tylko w górę”: vs aggro 75.3 → 0.60
  * (podniesiony z 0.57); vs random 92.9 → 0.779 — zostaje 0.78.
+ *
+ * M228 (ADR 0024, podział talii + AUTO-PRÓBKA benchmarku): BENCH_DECKS to teraz
+ * deterministyczny wybór 6 pierwszych talii jednoplanowych (selectBenchDecks) —
+ * po podziale 5 dużych talii na połówki próbka to alara, dominaria-brg,
+ * dominaria-wu, final-fantasy, forgotten-realms, innistrad-brg. To ŚWIADOMA
+ * zmiana „środowiska” (rotująca próbka). Pomiar na nowej próbce (672 mecze):
+ * heuristic 90.8% (305/336) vs random, 77.1% (259/336) vs aggro, 0
+ * niedokończonych. Reguła „zmierzone −15 p.p., tylko w górę”: vs aggro
+ * 77.1 → 0.621 → próg 0.62 (podniesiony z 0.60); vs random 90.8 → 0.758,
+ * ale zasada „tylko w górę” zostawia 0.78 (już poniżej zmierzonego).
+ * Rotująca próbka odkryła też dwa pre-istniejące błędy silnika (M228/2 pass
+ * podczas undercity/fabricate; M228/3 modal impuls z exile) — naprawione.
  */
 const MIN_WIN_RATE_VS_RANDOM = 0.78;
-const MIN_WIN_RATE_VS_AGGRO = 0.60;
+const MIN_WIN_RATE_VS_AGGRO = 0.62;
 
 function gamesWon(board, bot) {
   return board.wins[bot] ?? 0;
@@ -221,7 +233,7 @@ function gamesWon(board, bot) {
 test('harness jest deterministyczny: dwa przebiegi dają identyczny wynik', () => {
   const config = {
     bots: ['aggro', 'heuristic'],
-    decks: ['tarkir', 'warhammer'],
+    decks: ['tarkir-bg', 'warhammer-brg'],
     seedsCount: 2,
     seedBase: 11,
     maxCommands: 5000,
@@ -235,7 +247,7 @@ test('rejestr botów benchmarku pokrywa się z domyślną macierzą par', () => 
   assert.deepEqual(Object.keys(BENCH_BOT_FACTORIES).sort(), ['aggro', 'heuristic', 'random']);
   assert.deepEqual(defaultPairs(['heuristic', 'random'], false), [['heuristic', 'random']]);
   assert.deepEqual(defaultPairs(['heuristic', 'random'], true), [['heuristic', 'heuristic'], ['heuristic', 'random'], ['random', 'random']]);
-  assert.ok(listRepoDeckNames().includes('tarkir'), 'harness powinien widzieć talie z decks/*.txt');
+  assert.ok(listRepoDeckNames().includes('tarkir-bg'), 'harness powinien widzieć talie z decks/*.txt');
 });
 
 test('argumenty CLI: walidacja i odrzucanie nieznanych opcji', () => {
@@ -311,7 +323,7 @@ test('bot heurystyczny nie jest słabszy niż próg regresji vs aggro', () => {
 test('raport tekstowy zawiera macierz i wyniki par (smoke formatowania)', () => {
   const result = runBenchmark({
     bots: ['heuristic', 'random'],
-    decks: ['tarkir', 'warhammer'],
+    decks: ['tarkir-bg', 'warhammer-brg'],
     seedsCount: 1,
     seedBase: 5,
     maxCommands: 5000,
@@ -320,5 +332,5 @@ test('raport tekstowy zawiera macierz i wyniki par (smoke formatowania)', () => 
   assert.match(report, /Benchmark botów \(B0\)/);
   assert.match(report, /Macierz win-rate/);
   assert.match(report, /== heuristic vs random ==/);
-  assert.match(report, /tarkir | warhammer/);
+  assert.match(report, /tarkir-bg | warhammer-brg/);
 });
