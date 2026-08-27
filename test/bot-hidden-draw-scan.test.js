@@ -29,7 +29,7 @@ import { BOT_ID, HUMAN_ID, createSession } from '../src/table/session.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 
-function buildDecks(humanFile = 'innistrad.txt', botFile = 'dominaria.txt') {
+function buildDecks(humanFile = 'innistrad-brg.txt', botFile = 'dominaria-brg.txt') {
   const registry = createCardRegistry();
   const decks = new Map([
     [HUMAN_ID, parseDeckText(fs.readFileSync(`decks/${humanFile}`, 'utf8'), registry).cardIds],

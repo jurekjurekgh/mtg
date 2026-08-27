@@ -22,8 +22,8 @@ const REGISTRY = createCardRegistry();
 
 test('A: odkrycie morpha nazywa zdolność — log „aktywuje Morph: …"', () => {
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), REGISTRY).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer.txt', 'utf8'), REGISTRY).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), REGISTRY).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer-brg.txt', 'utf8'), REGISTRY).cardIds],
   ]);
   // M197/K3: seed 20 -> 22. Plany 8 kart zsynchronizowane z arkuszem kolekcji
   // (m.in. warhammer +Lab Rats +Reassembling Skeleton), wiec tasowanie sie

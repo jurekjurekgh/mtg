@@ -12,7 +12,7 @@ import { parseDeckText } from '../src/cards/deck-text.js';
  * bez wycieku surowych typów zdarzeń do logu.
  */
 
-function buildDecks(humanFile = 'tarkir.txt', botFile = 'warhammer.txt') {
+function buildDecks(humanFile = 'tarkir-bg.txt', botFile = 'warhammer-brg.txt') {
   const registry = createCardRegistry();
   const decks = new Map([
     [HUMAN_ID, parseDeckText(fs.readFileSync(`decks/${humanFile}`, 'utf8'), registry).cardIds],

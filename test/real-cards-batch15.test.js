@@ -174,10 +174,10 @@ test('Batch 15: wszystkie karty mają artId i status supported', () => {
   }
 });
 
-test('Batch 15: talia warhammer.txt przechodzi walidację (M178: talie per plan)', async () => {
+test('Batch 15: talia warhammer-brg.txt przechodzi walidację (M178: talie per plan)', async () => {
   const { parseDeckText } = await import('../src/cards/deck-text.js');
   const { validateDeck } = await import('../src/cards/deck-validation.js');
-  const deckText = fs.readFileSync('decks/'+`warhammer.txt`,'utf8');
+  const deckText = fs.readFileSync('decks/'+`warhammer-brg.txt`,'utf8');
   const parsed = parseDeckText(deckText, REGISTRY);
   const result = validateDeck(parsed.cardIds, REGISTRY);
   assert.ok(result.valid, `Talia nieprawidłowa: ${(result.errors || []).join(', ')}`);

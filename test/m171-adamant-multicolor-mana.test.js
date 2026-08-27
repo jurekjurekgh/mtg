@@ -5,7 +5,7 @@
 // (1) jednostka dopasowana do pipa {B} została wydana JAKO czarna,
 // (2) jednostka wielokolorowa wydana na generic liczy się jako wildcard
 //     (gracz mógł wybrać kolor pod adamant).
-// Scenariusz osiągalny w decks/dominaria.txt: Fake Your Own Death (Skarb)
+// Scenariusz osiągalny w decks/dominaria-brg.txt: Fake Your Own Death (Skarb)
 // + Locthwain Paladin ({3}{B}, Adamant — 3 czarne = +1/+1).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

@@ -46,7 +46,7 @@ export function parseArgs(argv) {
     // istnieć, a tester grał wtedy tym, co artefakt miał wybrane domyślnie,
     // nagłówkując transkrypt podaną nazwą (cichy fałsz). Domyślne = pierwsza
     // i czwarta talia stałej próbki benchmarku (tools/benchmark.mjs).
-    human: 'dominaria',
+    human: 'dominaria-brg',
     bot: 'ravnica',
     seed: 42,
     steps: 300,
@@ -105,7 +105,7 @@ Użycie:
   node run-game.mjs [opcje]
 
 Opcje:
-  --human <talia>        talia gracza (nazwa pliku decks/*.txt bez .txt) [dominaria]
+  --human <talia>        talia gracza (nazwa pliku decks/*.txt bez .txt) [dominaria-brg]
   --bot <talia>          talia bota                                              [ravnica]
   --seed <n>             seed partii                                            [42]
   --steps <n>            limit kroków gry                                      [300]

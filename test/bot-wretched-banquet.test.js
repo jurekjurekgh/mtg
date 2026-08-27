@@ -1,5 +1,5 @@
 // M147 — audyt PR #64, F1 (L50/M121): `destroy_if_least_power` (Wretched
-// Banquet, w decks/dominaria.txt) nie było w tabeli efektów wrogich bota.
+// Banquet, w decks/dominaria-brg.txt) nie było w tabeli efektów wrogich bota.
 //
 // Root cause: efekt nie znajdował się ani w HOSTILE_PERMANENT_EFFECTS, ani
 // w REMOVAL_EFFECTS `cast_spell`, więc wszystkie warianty celu miały ten sam

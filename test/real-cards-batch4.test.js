@@ -310,7 +310,7 @@ test('Backup: każdy bot rozstrzyga decyzję akceptowalną komendą (kontrakt Pl
 // --- Swampcycling -----------------------------------------------------------
 
 test('Swampcycling: zapłać {2}, odrzuć Maulera, znajdź Swampa do ręki (reveal) i potasuj', () => {
-  const state = matchState('mirrodin', 11);
+  const state = matchState('mirrodin-brg', 11);
   // Normalizacja ręki otwarcia: usuwamy trafione tam Swampy, żeby licznik
   // końcowy był przewidywalny niezależnie od rozdania.
   for (const id of [...state.zones.hand]) {
@@ -371,12 +371,12 @@ test('Swampcycling: zapłać {2}, odrzuć Maulera, znajdź Swampa do ręki (reve
   assert.ok(searched?.shuffled);
   assert.equal(state.zones.library.length, libraryBefore - 1);
   // Kolejność biblioteki po tasowaniu nadal deterministyczna (ten sam seed).
-  const state2 = matchState('innistrad', 11);
+  const state2 = matchState('innistrad-brg', 11);
   assert.doesNotThrow(() => playerView(state2, 'p1'));
 });
 
 test('Swampcycling: bez Swampa w bibliotece — tylko tasowanie, brak karty (fail to find)', () => {
-  const state = matchState('mirrodin', 12);
+  const state = matchState('mirrodin-brg', 12);
   const swampIds = state.zones.library.filter((id) => state.objects.get(id)?.cardId === 'basic-swamp' && state.objects.get(id)?.controllerId === 'p1');
   state.zones.library = state.zones.library.filter((id) => !swampIds.includes(id));
   for (const id of swampIds) state.objects.delete(id);

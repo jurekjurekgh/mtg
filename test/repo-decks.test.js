@@ -30,18 +30,18 @@ for (const file of deckFiles) {
   });
 }
 
-test('M178: talia Innistrad streszcza się przewidywalnie (kolory i landy)', () => {
-  // Następca testu „talia red”: talie per PLAN (ADR 0023) — Innistrad to
-  // największa talia jednoplanowa; landy = ceil(nielandów/2) z generatora.
+test('M228 (ADR 0024): Innistrad po podziale kolorystycznym — dwie talie ≥15', () => {
+  // Innistrad (35 kart nielandowych) przekroczyło próg 30 i zostało PODZIELONE
+  // na innistrad-wu i innistrad-brg (ADR 0024). Każda połowa: landy =
+  // ceil(nielandów/2). Suma nielandów = 35 (żadna karta nie zginęła).
   const registry = createCardRegistry();
-  const deck = parseDeckText(fs.readFileSync('decks/innistrad.txt', 'utf8'), registry);
-  const summary = summarizeDeck(deck.cardIds, registry);
-  // M197/K3: 36 -> 35. Ballista Watcher i Ballista Wielder (VOW) mialy plan
-  // zgadniety po secie („Innistrad”); arkusz kolekcji przypisuje im „Wiedźmin”,
-  // wiec obie karty przeszly do talii wiedzmin (zgloszenie wlasciciela).
-  assert.equal(summary.spells, 35, '35 wspieranych kart planu Innistrad');
-  assert.equal(summary.lands, 18, 'ceil(35/2) = 18 landów');
-  assert.equal(summary.total, 53);
+  const wu = summarizeDeck(parseDeckText(fs.readFileSync('decks/innistrad-wu.txt', 'utf8'), registry).cardIds, registry);
+  const brg = summarizeDeck(parseDeckText(fs.readFileSync('decks/innistrad-brg.txt', 'utf8'), registry).cardIds, registry);
+  assert.ok(wu.spells >= 15, `innistrad-wu ma ${wu.spells} nielandów (>=15)`);
+  assert.ok(brg.spells >= 15, `innistrad-brg ma ${brg.spells} nielandów (>=15)`);
+  assert.equal(wu.spells + brg.spells, 35, 'suma nielandów obu połówek = 35');
+  assert.equal(wu.lands, Math.ceil(wu.spells / 2), 'wu: landy = ceil(nielandów/2)');
+  assert.equal(brg.lands, Math.ceil(brg.spells / 2), 'brg: landy = ceil(nielandów/2)');
 });
 
 test('M178 (ADR 0023): każda wspierana karta jest w DOKŁADNIE jednej talii', () => {

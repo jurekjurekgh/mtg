@@ -22,8 +22,8 @@ const REGISTRY = createCardRegistry();
 /** Sesja stołu na taliach jednoplanowych (ADR 0023 §5) — do warstwy opisu. */
 function tableSession() {
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), REGISTRY).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer.txt', 'utf8'), REGISTRY).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), REGISTRY).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer-brg.txt', 'utf8'), REGISTRY).cardIds],
   ]);
   return createSession({ seed: 3, registry: REGISTRY, decks });
 }

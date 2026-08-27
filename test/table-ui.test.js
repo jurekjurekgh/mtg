@@ -182,8 +182,8 @@ function pickActionButton(actions) {
 // (seed wejściowy jest stały, więc każdy restart jest deterministyczny).
 const dom = installMiniDom();
 globalThis.REPO_DECKS = {
-  green: fs.readFileSync('decks/tarkir.txt', 'utf8'),
-  red: fs.readFileSync('decks/warhammer.txt', 'utf8'),
+  green: fs.readFileSync('decks/tarkir-bg.txt', 'utf8'),
+  red: fs.readFileSync('decks/warhammer-brg.txt', 'utf8'),
   // Dwukolorowa talia pod kreator many (E.3a): 2 kolory lądów + tanie czary
   // z kolorowym wymaganiem (Curate {1}{U}) — gwarantuje niejednoznaczne
   // pokrycie kosztu (Wyspa+Wyspa+Równina, seed 1).

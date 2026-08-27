@@ -130,8 +130,8 @@ test('M200/B: sesja eksponuje cardIdByName, a log partii rendery linkowane nazwy
   const { renderTableView } = await import('../src/table/render.js');
   const registry = createCardRegistry();
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/innistrad.txt', 'utf8'), registry).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/dominaria.txt', 'utf8'), registry).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/innistrad-brg.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/dominaria-brg.txt', 'utf8'), registry).cardIds],
   ]);
   const session = createSession({ seed: 3, registry, decks });
   assert.ok(session.cardIdByName instanceof Map, 'mapa nazwa→cardId na sesji (root cause B)');
@@ -364,8 +364,8 @@ test('M200/F: sesja zatrzymuje się na opłacalnej reanimacji w postcombat bota'
   const { parseDeckText } = await import('../src/cards/deck-text.js');
   const registry = createCardRegistry();
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/innistrad.txt', 'utf8'), registry).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/dominaria.txt', 'utf8'), registry).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/innistrad-brg.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/dominaria-brg.txt', 'utf8'), registry).cardIds],
   ]);
   const session = createSession({ seed: 77, registry, decks });
   // Domykamy mulligany (obaj zatrzymują ręce) aż do statusu active.
@@ -508,8 +508,8 @@ test('M200/M+M2: Delusion — cel wyłącznie czar; cel ma nazwę na stosie (nie
   const { parseDeckText } = await import('../src/cards/deck-text.js');
   const registry = createCardRegistry();
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/innistrad.txt', 'utf8'), registry).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/dominaria.txt', 'utf8'), registry).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/innistrad-brg.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/dominaria-brg.txt', 'utf8'), registry).cardIds],
   ]);
   const session = createSession({ seed: 88, registry, decks });
   for (let i = 0; i < 30 && (session.state.pendingMulligans?.length ?? 0) > 0; i += 1) {

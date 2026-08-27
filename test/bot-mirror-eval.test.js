@@ -8,7 +8,7 @@ import { mirrorEval } from '../tools/mirror-eval.mjs';
  * parametry → 0.5 w rozstrzygniętych), determinizm i że kontrakt wyniku trzyma.
  */
 
-const SMALL = { decks: ['tarkir'], seedsCount: 2, seedBase: 3000, maxCommands: 8000 };
+const SMALL = { decks: ['tarkir-bg'], seedsCount: 2, seedBase: 3000, maxCommands: 8000 };
 
 test('mirror: identyczne parametry dają dokładnie 0.5 w rozstrzygniętych', () => {
   // Kandydat == baseline (oba undefined = defaulty). Lustro (obie strony)

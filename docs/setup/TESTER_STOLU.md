@@ -28,14 +28,14 @@ telefonie (jsdom nie renderuje layoutu/obrazów — patrz „Ograniczenia").
 ```bash
 npm run build                      # 1. zbuduj artefakt (wymagany)
 cd tools/table-tester && npm i     # 2. zainstaluj jsdom (jedyna zależność)
-node run-game.mjs --human dominaria --bot ravnica --seed 42 --steps 300 --out g1.txt
+node run-game.mjs --human dominaria-brg --bot ravnica --seed 42 --steps 300 --out g1.txt
 ```
 
 Opcje:
 
 | Opcja | Znaczenie | Domyślnie |
 |---|---|---|
-| `--human <talia>` | talia gracza (nazwa z `decks/*.txt` bez `.txt`) | `dominaria` |
+| `--human <talia>` | talia gracza (nazwa z `decks/*.txt` bez `.txt`) | `dominaria-brg` |
 | `--bot <talia>` | talia bota | `ravnica` |
 | `--seed <n>` | seed partii | `42` |
 | `--steps <n>` | limit kroków gry | `300` |

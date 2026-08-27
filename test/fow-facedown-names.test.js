@@ -233,7 +233,7 @@ test('BUG A: wizard podziału obrażeń pokazuje „morph" (i dalej P/T), nie na
 function makeMorphSession(seed) {
   const registry = createCardRegistry();
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/innistrad.txt', 'utf8'), registry).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/innistrad-brg.txt', 'utf8'), registry).cardIds],
     [BOT_ID, parseDeckText('# Talia morphu (test BUG A)\n15x Segmented Krotiq\n25x Forest', registry).cardIds],
   ]);
   return createSession({ registry, decks, seed, pauseOnBotMoves: true });

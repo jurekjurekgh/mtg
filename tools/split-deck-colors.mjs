@@ -23,8 +23,22 @@ const COLORS = ['W', 'U', 'B', 'R', 'G'];
 export const SPLIT_THRESHOLD = 30; // >= tylu kart nielandowych → obowiązkowy podział
 export const MIN_NONLAND = 15;     // minimum kart nielandowych na talię (ADR 0012)
 
-/** Kolory karty (mono/multi/bezkolorowa) — z pola colors[]. */
-function cardColors(card) {
+/**
+ * Tożsamość kolorystyczna karty do podziału.
+ *
+ * Dla NIE-lądów: pole colors[] (mono/multi/bezkolorowa).
+ *
+ * Dla NON-BASIC LĄDÓW (poprawka właściciela): kolor wynika z many, jaką ląd
+ * PRODUKUJE, nie z colors[] (te są puste). Ląd dający konkretny kolor/kolory
+ * ma tożsamość i idzie do talii z tym kolorem (Dimir Guildgate → U/B, Great
+ * Furnace → R, Kishla Village → G). Ląd bezbarwny ({C}), any-color (Rupture
+ * Spire) albo nieprodukujący many → BEZKOLOROWY wypełniacz (jak artefakty).
+ *
+ * `colorsOf` wstrzykiwane przez generator (używa engine'owego
+ * getSourceForObject — L41: jedna reguła produkcji many, jeden odczyt).
+ * Domyślnie: samo colors[] (dla testów syntetycznych bez lądów).
+ */
+export function defaultColorsOf(card) {
   return Array.isArray(card.colors) ? card.colors.filter((c) => COLORS.includes(c)) : [];
 }
 
@@ -34,8 +48,8 @@ function cardColors(card) {
  * gwarantuje, że sufiksy obu stron są ROZŁĄCZNE (każdy kolor po jednej stronie).
  * Strona bez kart kolorowych (same bezkolorowe) → 'c'.
  */
-function sideSuffix(assignedColors, sideCards) {
-  const used = assignedColors.filter((c) => sideCards.some((card) => cardColors(card).includes(c)));
+function sideSuffix(assignedColors, sideCards, colorsOf) {
+  const used = assignedColors.filter((c) => sideCards.some((card) => colorsOf(card).includes(c)));
   return used.join('').toLowerCase() || 'c';
 }
 
@@ -60,9 +74,16 @@ function sideSuffix(assignedColors, sideCards) {
  * @param {Array} nonlandCards karty nielandowe planu (obiekty z .colors)
  * @returns {null | { a, b, suffixA, suffixB }} części + sufiksy kolorów
  */
-export function splitPlanByColors(nonlandCards) {
-  const filler = nonlandCards.filter((c) => cardColors(c).length === 0);
-  const colored = nonlandCards.filter((c) => cardColors(c).length > 0);
+export function splitPlanByColors(nonlandCards, colorsOf = defaultColorsOf) {
+  // „Bezkolorowy wypełniacz" = brak koloru ALBO wszystkie 5 (any-color, np.
+  // Rupture Spire) — ląd dający dowolny kolor nie ma preferencji strony, więc
+  // balansuje jak artefakt. Karta o 1-4 KONKRETNYCH kolorach ma tożsamość.
+  const isFiller = (c) => {
+    const n = colorsOf(c).length;
+    return n === 0 || n === COLORS.length;
+  };
+  const filler = nonlandCards.filter(isFiller);
+  const colored = nonlandCards.filter((c) => !isFiller(c));
 
   let best = null;
   for (let mask = 1; mask < 31; mask += 1) {
@@ -72,7 +93,7 @@ export function splitPlanByColors(nonlandCards) {
     const b = [];
     let leak = 0;
     for (const card of colored) {
-      const cs = cardColors(card);
+      const cs = colorsOf(card);
       const inCountA = cs.filter((c) => setA.has(c)).length;
       const inCountB = cs.length - inCountA;
       if (inCountA > 0 && inCountB > 0) leak += 1; // karta rozdarta między strony
@@ -114,8 +135,8 @@ export function splitPlanByColors(nonlandCards) {
   return {
     a,
     b,
-    suffixA: sideSuffix(best.assignedA, best.coloredA),
-    suffixB: sideSuffix(assignedB, best.coloredB),
+    suffixA: sideSuffix(best.assignedA, best.coloredA, colorsOf),
+    suffixB: sideSuffix(assignedB, best.coloredB, colorsOf),
     leak: best.leak,
     imbalance: best.imbalance,
   };

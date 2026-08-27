@@ -69,8 +69,8 @@ test('M83/2: stepLabelOf zwraca „Główna 1\"/„Główna 2\" (bez słowa faza
   const fs = await import('node:fs');
   const { parseDeckText } = await import('../src/cards/deck-text.js');
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), REGISTRY).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer.txt', 'utf8'), REGISTRY).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), REGISTRY).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer-brg.txt', 'utf8'), REGISTRY).cardIds],
   ]);
   const session = createSession({ seed: 1, registry: REGISTRY, decks });
   // Przewiń do fazy głównej bota — nagłówek modala nie może mieć „Faza: Faza".
@@ -98,8 +98,8 @@ test('M83/3: brak bloków przeciwnika nie trafia do modala (szum)', async () => 
   const fs = await import('node:fs');
   const { parseDeckText } = await import('../src/cards/deck-text.js');
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), REGISTRY).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer.txt', 'utf8'), REGISTRY).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), REGISTRY).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer-brg.txt', 'utf8'), REGISTRY).cardIds],
   ]);
   const session = createSession({ seed: 1, registry: REGISTRY, decks, pauseOnBotMoves: true });
   let sawBrakBlokow = false;

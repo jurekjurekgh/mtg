@@ -76,14 +76,27 @@ export const BENCH_BOT_FACTORIES = Object.freeze({
  * powinna podnieść progi (instrukcja w teście).
  */
 /**
- * M178 (ADR 0023): STAŁA próbka talii benchmarku — WYŁĄCZNIE talie
- * jednoplanowe (decyzja właściciela). Worki są przejściowe: gdy plan uzbiera
- * 15+ kart, wychodzi z worka do własnej talii — benchmark NIE może zależeć
- * od ich składu, inaczej każda taka konwersja wymusza rekalibrację progów.
- * Zestaw dobrany różnorodnie kolorystycznie z 6 największych talii
- * jednoplanowych; zmiana zestawu = rekalibracja progów w bot-benchmark.test.
+ * M228 (ADR 0024): AUTO-PRÓBKA talii benchmarku — deterministycznie wybierana
+ * z katalogu, a nie zamrożona ręcznie. Reguła podziału talii (≥30 → dwie talie)
+ * zmienia zestaw talii z czasem; benchmark celowo pozwala „środowisku” się
+ * odświeżać wraz z rozwojem katalogu (decyzja właściciela). Zmiana składu
+ * próbki = jednorazowa rekalibracja progów w test/bot-benchmark.test.js
+ * regułą „zmierzone −15 p.p., tylko w górę”.
+ *
+ * Wybór: talie jednoplanowe (bez worków — przejściowe, ADR 0023), posortowane
+ * alfabetycznie, pierwsze BENCH_SAMPLE_SIZE. Sortowanie + stała liczba czynią
+ * wybór DETERMINISTYCZNYM (ADR 0005): ten sam katalog → ta sama próbka.
  */
-export const BENCH_DECKS = Object.freeze(['dominaria', 'innistrad', 'mirrodin', 'ravnica', 'tarkir', 'warhammer']);
+export const BENCH_SAMPLE_SIZE = 6;
+
+export function selectBenchDecks(decksDir = 'decks') {
+  return listRepoDeckNames(decksDir)
+    .filter((name) => !name.startsWith('worek'))
+    .sort()
+    .slice(0, BENCH_SAMPLE_SIZE);
+}
+
+export const BENCH_DECKS = Object.freeze(selectBenchDecks());
 
 export const REGRESSION_CONFIG = Object.freeze({
   bots: ['aggro', 'heuristic', 'random'],
