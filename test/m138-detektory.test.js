@@ -21,8 +21,10 @@ import {
   detectFalseNoEffect,
   detectLogNoiseLeak,
   detectTruncatedCardText,
+  harmfulCardNames,
   runDetectors,
 } from '../tools/table-tester/detectors.mjs';
+import { createCardRegistry } from '../src/cards/card-data.js';
 
 // --- Z1: bot wzmacnia moje stwory -----------------------------------------
 
@@ -67,6 +69,33 @@ test('M138/detektor Z1: NIE zgłasza efektu SZKODLIWEGO w mój permanent (to pop
   ];
   assert.deepEqual(detectBotBuffsMyCreatures(lines, new Set(['Great Furnace'])), [],
     'usuwanie moich permanentów to sens gry, nie błąd — detektor nie może hałasować');
+});
+
+test('M229/detektor Z1: NIE zgłasza PRZEJĘCIA KONTROLI jako buffa (Awaken the Sleeper)', () => {
+  // Audyt nowych talii (warhammer-brg vs mirrodin-brg, seed 23): bot rzuca
+  // Awaken the Sleeper na Hill Giant gracza — PRZEJMUJE kontrolę (kradzież,
+  // poprawna gra), przejęty stwór dostaje haste („zyskuje: pośpiech" → BENEFIT).
+  // Karta jest w harmfulNames (gain_control_until_end_of_turn), więc detektor
+  // milczy. Log-level-independent: nazwa karty jest wprost we wpisie rzutu.
+  const lines = [
+    '  [ROZGRYWKA]   • Nieprzyjaciel rzuca Awaken the Sleeper → cel: Hill Giant',
+    '  [ROZGRYWKA]   • Hill Giant zyskuje: pośpiech',
+  ];
+  // BEZ harmfulNames: detektor (słusznie z jego perspektywy) widziałby buff.
+  assert.equal(detectBotBuffsMyCreatures(lines, new Set(['Hill Giant'])).length, 1,
+    'bez klasyfikacji karty „zyskuje: pośpiech" wygląda jak buff — to dowód, że test mierzy właściwą ścieżkę');
+  // Z harmfulNames (rejestr klasyfikuje Awaken jako wrogą) — cisza.
+  assert.deepEqual(
+    detectBotBuffsMyCreatures(lines, new Set(['Hill Giant']), new Set(), new Set(['Awaken the Sleeper'])),
+    [],
+    'przejęcie kontroli to poprawna gra przeciw graczowi, nie buff — detektor milczy');
+});
+
+test('M229: harmfulCardNames klasyfikuje przejęcie kontroli jako wrogie', () => {
+  const registry = createCardRegistry();
+  const names = harmfulCardNames(registry);
+  assert.ok(names.has('Awaken the Sleeper'),
+    'gain_control_until_end_of_turn = efekt szkodliwy dla celu (utrata stwora)');
 });
 
 // --- Z4: fałszywe „nic się nie wydarzyło” ---------------------------------

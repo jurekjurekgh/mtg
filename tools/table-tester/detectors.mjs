@@ -163,6 +163,9 @@ const HARMFUL_PERMANENT_EFFECTS = new Set([
   'exile_target_creature', 'exile_all', 'bounce_permanent', 'bounce_to_library_top',
   'sacrifice_permanent', 'player_sacrifices_creature', 'tap_permanent',
   'tap_permanents', 'lock_untap', 'dont_untap_next_untap_step', 'shrink', 'pump_negative',
+  // M229: przejęcie kontroli (Awaken the Sleeper) SZKODZI graczowi, który
+  // traci stwora — to poprawna, wroga gra, nie „buff dla przeciwnika".
+  'gain_control_until_end_of_turn',
 ]);
 
 /**
@@ -780,7 +783,7 @@ export function detectHiddenCardLeak(lines, knownCardNames = new Set()) {
  * sterownik (`myPermanentNames`) — po deskryptorze „czyj to obiekt”, nie po
  * nazwie karty (ADR 0002).
  */
-export function detectBotBuffsMyCreatures(lines, myPermanentNames = new Set(), enemyPermanentNames = new Set()) {
+export function detectBotBuffsMyCreatures(lines, myPermanentNames = new Set(), enemyPermanentNames = new Set(), harmfulNames = new Set()) {
   const found = [];
   const BENEFIT = /zyskuje:|dostaje \+[0-9]|otrzymuje \+[0-9]|licznik \+1\/\+1|nadanie słów kluczowych|zdobądź|\+[0-9]+\/\+[0-9]+/i;
   const HARMFUL = /obrażeni|zniszcz|wygna|zabij|poświęc|odrzuc|mieli|-1\/-1|traci/i;
@@ -798,6 +801,15 @@ export function detectBotBuffsMyCreatures(lines, myPermanentNames = new Set(), e
     // egzemplarz. Milczymy zamiast zgadywać (fałszywy alarm gorszy od ciszy
     // w narzędziu, które ma budować zaufanie do zgłoszeń).
     if (enemyPermanentNames.has(target)) continue;
+    // M229 (audyt nowych talii, Awaken the Sleeper — false positive): czar/
+    // zdolność SZKODLIWA dla celu (removal, a także PRZEJĘCIE KONTROLI —
+    // gain_control_until_end_of_turn) to poprawna gra przeciw graczowi, nie
+    // „buff". Klasyfikacja po REJESTRZE (harmfulNames = harmfulCardNames),
+    // niezależna od poziomu logowania i odległości wpisów (M99): nazwa
+    // rzucanej karty jest wprost w tym wpisie. Awaken daje celowi haste
+    // (BENEFIT łapał „zyskuje: pośpiech"), ale karta jako całość jest wroga.
+    const castCard = (/Nieprzyjaciel (?:aktywuje|rzuca) (.+?) →/.exec(line) ?? [])[1]?.trim();
+    if (castCard && harmfulNames.has(castCard)) continue;
     // Korzyść bywa opisana w NASTĘPNYM wpisie („X zyskuje: zadeptywanie”),
     // więc oceniamy wpis aktywacji RAZEM z najbliższym sąsiedztwem. Bez tego
     // detektor milczał na dokładnie tym kształcie, dla którego powstał.
@@ -1089,7 +1101,7 @@ export function runDetectors(lines, { actionRecords = [], windowRecords = null, 
     // M138 (audyt „wcielam się w gracza”) — trzy klasy, które przeszły przez
     // komplet dotychczasowych detektorów: 22 partie dały ZERO zgłoszeń, a
     // ręczne czytanie transkryptu dziesięć znalezisk (L27).
-    ...detectBotBuffsMyCreatures(lines, myPermanentNames, enemyPermanentNames),
+    ...detectBotBuffsMyCreatures(lines, myPermanentNames, enemyPermanentNames, harmfulNames),
     ...detectBotUntapsMyPermanent(lines, myPermanentNames, enemyPermanentNames),
     ...detectBotHarmsOwnPermanent(lines, enemyPermanentNames, myPermanentNames, harmfulNames),
     ...detectFalseNoEffect(lines),
