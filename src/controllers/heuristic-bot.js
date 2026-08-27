@@ -1840,7 +1840,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
           }
         }
-        for (const effect of effects) {
+        // M237/1 (audyt Żywym Testerem, Consume Spirit): czar X-cost niesie
+        // efekty z dynamiczną ilością `amount: 'X'` (damage/gain_life). Wycena
+        // czytała `effect.amount` jako nie-liczbę → traktowała jako 0, więc
+        // WSZYSTKIE warianty X miały tę samą ocenę i bot brał X=0 (0 obrażeń,
+        // 0 życia — 2 many za nic). Rozwiązujemy `'X'` do wybranego `cmd.xValue`
+        // ZANIM efekty trafią do wyceny (damage/gain_life same policzą lethal/
+        // wartość). Generycznie po deskryptorze X (ADR 0002), nie po nazwie.
+        const xResolved = cmd.xValue ?? 0;
+        const scoredEffects = (effects ?? []).map((e) => (
+          e && e.amount === 'X' ? { ...e, amount: xResolved } : e
+        ));
+        for (const effect of scoredEffects) {
           // M91 (uwaga C właściciela): efekty USUWAJĄCE permanent (destroy,
           // exile, bounce) nie miały ŻADNEJ wyceny — czar dostawał domyślne
           // 50 pkt niezależnie od tego, czyj jest cel, więc bot niszczył
@@ -2008,7 +2019,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 + (damageIsOnlyValue ? P.spellBase + 12 : 12);
             }
           } else if (effect.type === 'damage') {
-            score -= 60; // lanie we własne stwory bez powodu jest marnotrawstwem
+            // M237/1 (audyt Żywym Testerem, Consume Spirit): obrażenia w GRACZA
+            // (cel-gracz nie jest obiektem pola bitwy → `target` null). Wycena
+            // jak twarz Fireballa (M236/4): dobicie = zawsze, istotny cios
+            // (≥ 1/3 życia) = premia, trywialny chip = trzymaj. Obrażenia we
+            // WŁASNEGO gracza / własnego stwora zostają karą.
+            const ids = cmd.targets ?? [];
+            const foeId = enemy(view)?.id;
+            const amount = Number.isInteger(effect.amount) ? effect.amount : 0;
+            if (foeId != null && ids.includes(foeId) && !ids.includes(view.playerId)) {
+              const foeLife = enemy(view)?.life ?? 20;
+              const significantFace = Math.max(3, Math.ceil(foeLife / 3));
+              if (amount >= foeLife) score += 1000;                 // dobicie gracza
+              else if (amount >= significantFace) score += 20 + amount; // istotny cios
+              else score -= 60;                                     // chip w twarz — trzymaj
+            } else {
+              score -= 60; // lanie w SIEBIE / własnego stwora bez powodu — strata
+            }
           }
           // M139 (uwaga właściciela): CZAR tapujący nie miał wyceny pozytywnej
           // w ogóle — ścieżka zdolności ją miała, ścieżka czarów nie (kolejny
