@@ -4815,6 +4815,10 @@ export function playerView(state, playerId) {
         // każdy widoczny skutek efektu ma być badge'em na kaflu; te pola
         // istniały tylko w stanie (klasa L1/ADR 0017).
         if (object.saddled === true) entry.saddled = true;
+        // M230 (audyt talii spoza podziału, Bomat Bazaar Barge): pojazd JUŻ
+        // animowany do EOT (crew rozstrzygnięty) nosi originalBeforeAnimation.
+        // Widoczny stan → badge/decyzja bota (nie re-crewuj), ADR 0017.
+        if (object.originalBeforeAnimation != null) entry.animatedUntilEOT = true;
         if ((object.untapLockedBy ?? []).length > 0) entry.untapLocked = true; // pusta tablica = brak blokady
         if (object.dontUntapNextUntapStep) entry.dontUntapNextUntapStep = true;
         if (object.tempControlUntilTurn != null) entry.tempControlUntilEOT = true;

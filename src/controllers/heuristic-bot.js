@@ -2222,6 +2222,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (abilityEffectTypes.includes('set_saddled') && source?.saddled === true) {
             return finish(-10);
           }
+          // M230 (audyt Żywym Testerem, Bomat Bazaar Barge): crew animuje pojazd
+          // do EOT (animate_permanent_until_end_of_turn). Gdy pojazd JUŻ jest
+          // animowany (source.animatedUntilEOT z PlayerView), kolejne załogowanie
+          // niczego nie zmienia, a TAPUJE kolejne stwory za nic — bot crewował
+          // Bomat do 11× w jednej turze. Flaga stanu z widoku (ADR 0017), nie
+          // nazwa karty (ADR 0002).
+          if (abilityEffectTypes.includes('animate_permanent_until_end_of_turn') && source?.animatedUntilEOT === true) {
+            return finish(-10);
+          }
           // M219 (pętla jakości Żywym Testerem, h9 zendikar vs worek-legend
           // s=44): pendingTwin łapie tylko drugą kopię NA STOSIE. Gdy pierwsza
           // aktywacja już się ROZSTRZYGNĘŁA i nadała trwały-do-EOT stan
