@@ -85,6 +85,13 @@ JEDNA rodzina = JEDEN commit (ADR 0020, zakaz wielkiego commita).
    ```
    Ustalona pula seedów + wszystkie talie z tą kartą. Wynik: proponowane
    `params` + historia ewaluacji.
+   Gdy win-rate jest NASYCONY (kandydaci wychodzą identyczni — patrz M225),
+   dodaj gęstszy sygnał proxy (B6 T2):
+   ```
+   node tools/tune-card.mjs --card <cardId> --seeds 12 --rounds 2 --proxy-weight 0.5
+   ```
+   Funkcja celu miesza wtedy (1−β)·winRate + β·proxy (pozycyjna przewaga
+   próbkowana co turę: materiał + karty + życie). β=0 to czysty win-rate.
 3. Jeśli karty nie ma w żadnej talii — dodaj ją do talii planu (patrz
    `tools/generate-plan-decks.mjs`) i powtórz.
 
@@ -111,9 +118,11 @@ Tuner NICZEGO nie przyjmuje sam. Nowe wartości wchodzą do
   wycenę pod jedną rozdaną rękę. Zawsze pula seedów (domyślnie 6, przed
   przyjęciem 12+).
 - **Credit assignment** — czysty win-rate to słaby sygnał na pojedyncze zagranie
-  (tonie w szumie kilkudziesięciu innych decyzji). Kolejny etap (T2) doda gęstsze
-  proxy (przewaga materialna/tempo w oknie tur) do funkcji celu; do tego czasu
-  strój rodziny o wyraźnym wpływie i większą pulą seedów.
+  (tonie w szumie kilkudziesięciu innych decyzji), a na nasyconym benchmarku bywa
+  ZUPEŁNIE płaski (M225: wszystkie warianty = ten sam wynik). Rozwiązanie (B6 T2,
+  ZREALIZOWANE): proxy reward — pozycyjna przewaga (materiał + karty + życie)
+  próbkowana co turę, mieszana z win-rate przez `--proxy-weight β`. Gdy strojenie
+  win-rate stoi w miejscu, włącz β>0.
 - **Detektor to hipoteza (L74/L75)** — „tuner podniósł wynik" na małej próbce to
   hipoteza, nie werdykt. Weryfikuj pełnym benchmarkiem przed przyjęciem.
 
@@ -126,6 +135,9 @@ Tuner NICZEGO nie przyjmuje sam. Nowe wartości wchodzą do
 - `tools/tune-bot.mjs` — strojenie wag rodzin (B4).
 - `tools/bot-scoring-snapshot.mjs` + `test/fixtures/bot-scoring-snapshot.json` —
   golden-master.
-- `tools/benchmark.mjs` — harness win-rate (przepływa `heuristicParams`).
+- `tools/proxy-reward.mjs` — gęstszy sygnał (proxy: materiał + karty + życie), B6 T2.
+- `tools/benchmark.mjs` — harness win-rate (przepływa `heuristicParams`,
+  opcjonalnie `collectProxy`).
 - `test/bot-scoring-snapshot.test.js`, `test/bot-params.test.js`,
-  `test/bot-tune-card.test.js` — testy B6.
+  `test/bot-tune-card.test.js`, `test/bot-proxy-reward.test.js`,
+  `test/bot-proxy-benchmark.test.js` — testy B6.

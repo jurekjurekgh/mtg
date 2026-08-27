@@ -412,9 +412,16 @@ deskryptory bez wyciągniętych parametrów. CLI: `npm run tune-card -- --card <
 ### Do zrobienia (kolejne sesje)
 
 - **T1 (ciąg dalszy):** wyciągać kolejne rodziny stałych z `scoreCommand`.
-- **T2 — gęstszy sygnał (proxy reward):** funkcja celu tunera obok win-rate
-  uwzględni przewagę materialną/tempo w oknie tur (credit assignment taniej niż
-  RL). Domyślnie waga proxy = 0, więc regresja B4 nietknięta.
+- **T2 — gęstszy sygnał (proxy reward): ✅ ZREALIZOWANE (2026-08-27, M226/1-3).**
+  Proxy = pozycyjna przewaga gracza `heuristic` (materiał Σ P+T, przewaga kart,
+  różnica życia) próbkowana co turę i znormalizowana do (0,1). Wpięte OPT-IN:
+  `runSimulation({ onStep })` hak; `runBenchmark({ collectProxy })` agreguje
+  proxyMean per para; `tuningObjective(result, { proxyWeight β })` miesza
+  (1−β)·winRate + β·proxy; `tune-card.mjs --proxy-weight β`. Domyślnie β=0 →
+  regresja B4/B6 i golden-master nietknięte. Weryfikacja (sonda 4 seedy): proxy
+  DODAJE rozdzielczość tam, gdzie win-rate jest nasycony (np. creatureBase 120
+  ma ten sam win-rate 75.60% co default, ale różny proxy 0.53281 vs 0.53092).
+  Pliki: `tools/proxy-reward.mjs`, testy `test/bot-proxy-*.test.js`.
 - **T3 — upgrade wyszukiwania:** uogólnienie na ~30 parametrów; opcjonalnie
   deterministyczny CMA-ES/(μ,λ)-ES w czystym JS.
 - **Adopcja:** przyjęcie parametrów jak w B4 — pełny benchmark, regeneracja
