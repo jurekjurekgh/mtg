@@ -1,0 +1,246 @@
+== NOWA PARTIA: gracz=tarkir-wur vs bot=ravnica, seed=19, profil=defensive, policy-seed=5, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Monastery Flock
+  [ROZGRYWKA]   • Dobierasz: Descendant of Storms
+  [ROZGRYWKA]   • Dobierasz: Rush of Battle
+  [ROZGRYWKA]   • Dobierasz: Palace Familiar
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Vandalize
+  >> Wybierz: Karty na spód biblioteki (mulligan) (7 opcji)
+  [multi-target wizard] Mulligan: zaznacz 1 kartę do odłożenia na spód biblioteki:[ ] Monastery FlockPodgląd[ ] De — opcji 7, potrzeba 1, celuję w 1
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 6 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 6 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Impact Tremors
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Rush of Battle
+  [ROZGRYWKA]   • Dobierasz: Ainok Tracker
+  [ROZGRYWKA]   • Dobierasz: Sarkhan's Rage
+  [ROZGRYWKA]   • Dobierasz: Bring Low
+  >> Wybierz: Karty na spód biblioteki (mulligan) (21 opcji)
+  [multi-target wizard] Mulligan: zaznacz 2 karty do odłożenia na spód biblioteki:[ ] PlainsPodgląd[ ] Impact Trem — opcji 7, potrzeba 2, celuję w 2
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 5 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 5 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Palace Familiar
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Ojutai's Breath
+  [ROZGRYWKA]   • Dobierasz: Impact Tremors
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Monastery Flock
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Wybierz: Karty na spód biblioteki (mulligan) (32 opcje)
+  [multi-target wizard] Mulligan: zaznacz 3 karty do odłożenia na spód biblioteki:[ ] Palace FamiliarPodgląd[ ] Mo — opcji 7, potrzeba 3, celuję w 3
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 4 karty) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 4 karty)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Gurmag Drowner
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Ojutai's Breath
+  [ROZGRYWKA]   • Dobierasz: Ainok Tracker
+  [ROZGRYWKA]   • Dobierasz: Force Away
+  [ROZGRYWKA]   • Dobierasz: Bring Low
+  >> Wybierz: Karty na spód biblioteki (mulligan) (32 opcje)
+  [multi-target wizard] Mulligan: zaznacz 4 karty do odłożenia na spód biblioteki:[ ] Gurmag DrownerPodgląd[ ] Mou — opcji 7, potrzeba 4, celuję w 4
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 3 karty) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 3 karty)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Monastery Flock
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Rediscover the Way
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Ainok Tracker
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Force Away
+  >> Wybierz: Karty na spód biblioteki (mulligan) (16 opcji)
+  [multi-target wizard] Mulligan: zaznacz 5 kart do odłożenia na spód biblioteki:[ ] Monastery FlockPodgląd[ ] Isl — opcji 7, potrzeba 5, celuję w 5
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 2 karty) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 2 karty)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Ojutai's Breath
+  [ROZGRYWKA]   • Dobierasz: Jeskai Windscout
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Furious Forebear
+  [ROZGRYWKA]   • Dobierasz: Ainok Tracker
+  [ROZGRYWKA]   • Dobierasz: Descendant of Storms
+  >> Wybierz: Karty na spód biblioteki (mulligan) (6 opcji)
+  [multi-target wizard] Mulligan: zaznacz 6 kart do odłożenia na spód biblioteki:[ ] Ojutai's BreathPodgląd[ ] Jes — opcji 7, potrzeba 6, celuję w 6
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 1 kartę) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 1 kartę)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Rediscover the Way
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Ainok Tracker
+  [ROZGRYWKA]   • Dobierasz: Furious Forebear
+  [ROZGRYWKA]   • Dobierasz: Force Away
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Mulligan — odłóż na spód (7): Mountain, Rediscover the Way, Island, Ainok Tracker, Furious Forebear, Force Awa
+  >> Mulligan: Zatrzymaj tę rękę (keep — 0 kart)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Jeskai Devotee
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Vandalize
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Dimir Guildgate (wchodzi zatapnięty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Gurmag Drowner
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Liliana's Triumph → cel: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Liliana's Triumph zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Rush of Battle
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Tenth District Veteran
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Tenth District Veteran zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Descendant of Storms
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Trostani Discordant
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Trostani Discordant zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Trostani Discordant — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Soldier (2/2)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Soldier (2/2)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Trostani Discordant — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Tenth District Veteran
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Tenth District Veteran — wybierz cel triggera (wymagany)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tenth District Veteran — trigger (atak)
+  [ROZGRYWKA]   • Tenth District Veteran — cel: Trostani Discordant
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Tenth District Veteran zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 17
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Trostani Discordant — trigger (krok końca tury)
+  [ROZGRYWKA]   • Trostani Discordant — trigger bez efektu (nie było czego wykonać)
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Toll of the Invasion → cel: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Odrzucasz kartę z ręki
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Zombie Army (1/1)
+  [ROZGRYWKA]   • Zombie Army wchodzi na pole bitwy
+  [ROZGRYWKA]   • Zombie Army dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Toll of the Invasion zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Tenth District Veteran, Trostani Discordant, Soldier, Soldier
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Tenth District Veteran — wybierz cel triggera (wymagany)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tenth District Veteran — trigger (atak)
+  [ROZGRYWKA]   • Tenth District Veteran — cel: Trostani Discordant
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Tenth District Veteran zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 14
+  [ROZGRYWKA]   • Trostani Discordant zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 13
+  [ROZGRYWKA]   • Soldier zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 11
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 22
+  [ROZGRYWKA]   • Soldier zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 9
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 22 → 24
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Trostani Discordant — trigger (krok końca tury)
+  [ROZGRYWKA]   • Trostani Discordant — trigger bez efektu (nie było czego wykonać)
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA]   • Atak: Tenth District Veteran, Trostani Discordant, Soldier, Soldier, Zombie Army
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Tenth District Veteran — wybierz cel triggera (wymagany)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tenth District Veteran — trigger (atak)
+  [ROZGRYWKA]   • Tenth District Veteran — cel: Trostani Discordant
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 48 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj 1 manę niebieską, czerwoną lub białą · 2/2 | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · 2/4 | Rush of Battle · 4 · Sorcery · +2/+1 dla twoich stworów do końca tury + +0/+0 dla twoich stworów do końca tury | Descendant of Storms · 1 · Creature — Human Soldier · Gdy atakuje: zapłać 2 many, endure X (liczniki +1/+1 albo token Spirit). · 2/1
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Tenth District Veteran · 3 · Creature — Human Soldier · Czujność · Gdy atakuje: odkręć. · +1/+1 · 3/4 | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4 | Soldier · 0 · Creature — Soldier · Dotykanie życia · +1/+1 · 2/2 ×2 | Zombie Army · 0 · Creature — Zombie Army · +1/+1 · 1x +1/+1 · 2/2
+  LOG: Dobierasz: Descendant of Storms ⏎ Dobierasz: Monastery Flock ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Plains, Furious Forebear, Mountain, Sarkhan's Rage, Plains, Bring Low, Impact Tremors ⏎ Nowa partia (seed 19). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 9, kliknięte: 11, modale: 1, sondy noop: 32 (panel 25, modal 7)
+== DETEKTORY: brak zgłoszeń ==

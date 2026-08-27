@@ -31,7 +31,7 @@ import { parseManaCost } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
-import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard } from './choice-request.js';
+import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard } from './choice-request.js';
 import { multiTargetPlanOf, mulliganBottomPlanOf } from './multi-target.js';
 import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 
@@ -453,6 +453,36 @@ function bootstrapTable() {
           if (targetIds.length >= 2 && session.view().pendingDamageDivision) {
             play({ type: 'resolve_damage_division', playerId: pt.playerId, amounts });
           }
+        },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+    // M241 (zgłoszenie J): koszt Escape wybiera się ptaszkami z listy
+    // kandydatów (jak resztę multiselektów), bez enumeracji podzbiorów.
+    // Zatwierdzenie składa resolve_escape_exile z wybranych identyfikatorów.
+    if (request.type === 'escape_exile') {
+      const pending = choiceView.pendingEscapeExile;
+      if (!pending || pending.sourceCardId == null || !Array.isArray(pending.candidateIds)) {
+        hideModal('choice-request');
+        play(request.options[0]);
+        return;
+      }
+      const cards = pending.candidateIds.map((id) => {
+        const object = session.state?.objects?.get(id);
+        return { id, cardId: object?.cardId ?? null, name: session.nameOfObject(id) ?? id };
+      });
+      renderEscapeExileWizard(els.choiceRequestBody, {
+        candidates: cards,
+        exileCount: pending.exileCount,
+        sourceName: pending.sourceCardId ? session.nameOf(pending.sourceCardId) : null,
+        manaCost: pending.manaCost ?? null,
+        playerId: choiceView.playerId,
+        onOpenCard: (cardId) => openCardFullscreenByCardId(cardId),
+        onComplete: (exileIds) => {
+          hideModal('choice-request');
+          play({ type: 'resolve_escape_exile', playerId: choiceView.playerId, exileIds });
         },
         onCancel: () => hideModal('choice-request'),
       });

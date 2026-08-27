@@ -554,6 +554,20 @@ export const UNDERCITY_ROOM_LINKS = Object.freeze({
   'Throne of the Dead Three': [],
 });
 
+/**
+ * M241: wycena jednej karty grobu dla kosztu wygnania Escape. Stwór wyceniany
+ * wyżej niż inny typ karty (jak dawniej w M103/D: +10 + 2×P + T), inny typ
+ * karty to stałe 6. Dane po deskryptorze rejestru, nie nazwie (ADR 0002),
+ * bo widok grobu redaguje pola obiektów.
+ */
+function escapeExileCostOf(view, object) {
+  const def = object?.cardId ? createCardRegistry().get(object.cardId) : undefined;
+  const isCreature = (def?.types ?? []).includes('Creature')
+    || (def?.power != null && def?.toughness != null);
+  if (isCreature) return 10 + 2 * (def.power ?? 0) + (def.toughness ?? 0);
+  return 6;
+}
+
 export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null, weights = undefined, params = undefined, registry: registryOverride = undefined }) {
   if (!Number.isInteger(seed)) throw new TypeError('Bot wymaga całkowitego seeda');
   if (typeof randomness !== 'number' || randomness < 0 || randomness > 1) throw new RangeError('randomness ma być w [0, 1]');
@@ -1746,6 +1760,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         return finish(score);
       }
+      case 'resolve_escape_exile': {
+        const costSum = (cmd.exileIds ?? []).reduce((sum, exId) => {
+          const o = view.zones.graveyard.find((entry) => entry.id === exId);
+          return sum + (o ? escapeExileCostOf(view, o) : 0);
+        }, 0);
+        return finish(-costSum);
+      }
       case 'cast_spell':
       case 'cast_cleave':
       case 'cast_escape':
@@ -1806,16 +1827,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // wariantem niszczącym własny cmentarz, bo wszystkie warianty miały
         // ten sam wynik wyceny.
         if (cmd.type === 'cast_escape') {
-          for (const exId of cmd.escapeExileIds ?? []) {
-            const exiled = zoneCard(view, exId) ?? view.zones.graveyard.find((o) => o.id === exId);
-            if (!exiled) continue;
-            // Widok grobu redaguje pola — cechy wygnanej karty bierzemy
-            // z rejestru po cardId (jak wyżej przy deskryptorze czaru).
-            const def = exiled.cardId ? cardDef(exiled.cardId) : undefined;
-            const isCreature = (def?.types ?? []).includes('Creature')
-              || (def?.power != null && def?.toughness != null);
-            if (isCreature) score -= 10 + 2 * (def.power ?? 0) + (def.toughness ?? 0);
-            else score -= 6;
+          // M241/M103/D: koszt kosztu wygnania nie leci już W komendzie
+          // (zgłoszenie J — enumeracja podzbiorów zniknęła), więc kary liczymy
+          // od PLANOWANEGO wyboru kosztu: N najtańszych kandydatów z własnego
+          // grobu. Bot, który miałby wypłacić 4 dobrych stworów za mill 4,
+          // nadal schodzi poniżej passu (anti-over-fix antyD).
+          const escapeDef = spell?.escape ?? null;
+          const candidates = view.zones.graveyard
+            .filter((o) => o.id !== cmd.objectId && o.controllerId === view.playerId);
+          const values = candidates.map((o) => escapeExileCostOf(view, o)).sort((a, b) => a - b);
+          const need = escapeDef?.exileCount ?? 0;
+          if (need > 0 && values.length >= need) {
+            score -= values.slice(0, need).reduce((sum, v) => sum + v, 0);
           }
         }
         // M120 (decyzja właściciela po audycie M119/Z7): kontrczar wycelowany

@@ -1,0 +1,199 @@
+== NOWA PARTIA: gracz=theros vs bot=ravnica, seed=31, profil=explorer, policy-seed=2, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Island (1 z 2)
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Sea God's Scorn
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Chronic Flooding → cel: Island
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Chronic Flooding wchodzi na pole bitwy
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Setessan Skirmisher
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Zagraj: Breaching Hippocamp (koszt 3U)
+  [ROZGRYWKA]   • Mielisz Glaring Aegis do grobu
+  [ROZGRYWKA]   • Mielisz Inspire Awe do grobu
+  [ROZGRYWKA]   • Mielisz Rage of Purphoros do grobu
+  [ROZGRYWKA]   • Chronic Flooding — trigger się rozstrzyga
+  [ROZGRYWKA]   • Breaching Hippocamp wchodzi na pole bitwy
+  [ROZGRYWKA]   • Breaching Hippocamp zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Breaching Hippocamp — trigger bez efektu (brak legalnych celów)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Toll of the Invasion → cel: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Odrzucasz kartę z ręki
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Zombie Army (0/0)
+  [ROZGRYWKA]   • Zombie Army wchodzi na pole bitwy
+  [ROZGRYWKA]   • Zombie Army dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Toll of the Invasion zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Entrancing Lyre
+  >> Zagraj: Setessan Skirmisher (koszt 1G)
+  [kreator many] Płatność 1G — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: GTapnij: Island (U)Tapnij: Swamp (B)Tapnij: I — źródła: 4
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Setessan Skirmisher
+  [ROZGRYWKA]   • Setessan Skirmisher wchodzi na pole bitwy
+  [ROZGRYWKA]   • Setessan Skirmisher zostaje rozstrzygnięty
+  >> Cel czaru: Sleep of the Dead (3 opcje)
+  [modal choice] Cel czaru: Sleep of the Dead Rzuć: Sleep of the Dead (koszt U) → cel: Zombie Army (Nieprzyjaciel)🔍 Podgląd karty Rzuć: Sleep of the Dead (koszt U) → cel: Breaching Hippocamp (Ty)🔍 Podgląd karty Rzuć: Sleep of the Dead (koszt U) → cel: Setessan Skirmisher (Ty)🔍 Podgląd karty
+  [modal choice]   ▶ Rzuć: Sleep of the Dead (koszt U) → cel: Zombie Army (Nieprzyjaciel)
+  [modal choice]     Rzuć: Sleep of the Dead (koszt U) → cel: Breaching Hippocamp (Ty)
+  [modal choice]     Rzuć: Sleep of the Dead (koszt U) → cel: Setessan Skirmisher (Ty)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Sleep of the Dead → cel: Zombie Army
+  [ROZGRYWKA]   • Sleep of the Dead zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Breaching Hippocamp zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 17
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Ivy Lane Denizen
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Ivy Lane Denizen zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Returned Centaur
+  >> Zagraj: Entrancing Lyre (koszt 3)
+  [kreator many] Płatność 3 — tapuj źródła po jednympozostało 3 manyTapnij: Island (U)Tapnij: Swamp (B)Tapnij: Island (U)Tapnij: Forest ( — źródła: 4
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Island (U)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Entrancing Lyre
+  [ROZGRYWKA]   • Entrancing Lyre wchodzi na pole bitwy
+  [ROZGRYWKA]   • Entrancing Lyre zostaje rozstrzygnięty
+  >> Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=1) → cel: Zo
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Entrancing Lyre — cel nie odtapuje podczas następnego untap kontrolera (X=1) → cel: Zombie Army
+  [ROZGRYWKA]   • Ty: zdolność Entrancing Lyre rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Ivy Lane Denizen blokuje Setessan Skirmisher
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Breaching Hippocamp zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 17 → 14
+  [ROZGRYWKA]   • Setessan Skirmisher zadaje 2 obrażenia (Ivy Lane Denizen)
+  [ROZGRYWKA]   • Ivy Lane Denizen zadaje 2 obrażenia (Setessan Skirmisher)
+  [ROZGRYWKA]   • Setessan Skirmisher ginie
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Azorius Justiciar
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Azorius Justiciar zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Azorius Justiciar — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Azorius Justiciar — cel: Breaching Hippocamp
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Ivy Lane Denizen zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 18
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Feral Invocation
+  >> Aura: Feral Invocation (4 opcje)
+  [modal choice] Aura: Feral Invocation Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Breaching Hippocamp (Ty)🔍 Podgląd karty Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Zombie Army (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Ivy Lane Denizen (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Azorius Justiciar (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]   ▶ Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Breaching Hippocamp (Ty)
+  [modal choice]     Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Zombie Army (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Ivy Lane Denizen (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Azorius Justiciar (Nieprzyjaciel)
+  [kreator many] Płatność 2G — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: GTapnij: Island (U)Tapnij: Swamp (B)Tapnij: I — źródła: 4
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Swamp (B)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Feral Invocation → cel: Breaching Hippocamp
+  [ROZGRYWKA]   • Feral Invocation zaczarowuje Breaching Hippocamp
+  [ROZGRYWKA]   • Feral Invocation wchodzi na pole bitwy
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Chronic Flooding — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Zagraj: Anthem of Champions (koszt GW)
+  [ROZGRYWKA]   • Anthem of Champions zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Azorius Justiciar blokuje Breaching Hippocamp
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Breaching Hippocamp zadaje 6 obrażeń (Azorius Justiciar)
+  [ROZGRYWKA]   • Azorius Justiciar zadaje 2 obrażenia (Breaching Hippocamp)
+  [ROZGRYWKA]   • Azorius Justiciar ginie
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Guildscorn Ward → cel: Ivy Lane Denizen
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 41 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 2/4
+  MOJE POLA: Breaching Hippocamp · 4 · Creature — Horse Fish · Flash (błysk) · Gdy wejdzie na pole bitwy: odkręć. · +3/+3 · zaczarowana: Feral Invocation · 6/5 | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Feral Invocation · 3 · Enchantment Aura · Flash (błysk) · stwór: +2/+2 · aura → Breaching Hippocamp | Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Island · Basic Land — Island · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Chronic Flooding · 2 · Enchantment Aura · Zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Island | Zombie Army · 0 · Creature — Zombie Army · nie odtapuje się · 1x +1/+1 · 1/1 | Ivy Lane Denizen · 4 · Creature — Elf Warrior · Gdy inny zielony stwór pod twoją kontrolą wchodzi na pole bitwy: połóż licznik +1/+1. · Ochrona przed: wielokolorowymi · zaczarowana: Guildscorn Ward · 2/3 | Guildscorn Ward · 1 · Enchantment Aura · zaczarowany ma ochronę przed wielokolorowymi · aura → Ivy Lane Denizen
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Swamp, Sleep of the Dead, Titan's Strength, Anthem of Champions, Breaching Hippocamp, Island ⏎ Nowa partia (seed 31). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 18, kliknięte: 18, modale: 3, sondy noop: 47 (panel 36, modal 11)
+== DETEKTORY: brak zgłoszeń ==

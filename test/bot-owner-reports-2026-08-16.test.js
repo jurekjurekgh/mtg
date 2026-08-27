@@ -13,7 +13,7 @@
 // Testy RED→GREEN; wyceny generyczne, bez nazw kart (ADR 0002).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { addObject, createGameState, playerView } from '../src/engine/game-state.js';
+import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
@@ -137,15 +137,28 @@ test('D: Escape z kosztem 4 STWORÓW z grobu jest za drogi — bot nie ucieka (a
 // D2 — cap enumeracji wariantów Escape (perf + UX modala)
 // ---------------------------------------------------------------------------
 
-test('D2: Escape z dużym grobem oferuje max 32 podzbiory wygnania (cap jak crew/combat)', () => {
+test('D2: Escape z dużym grobem — oferty bez wybuchu: cast tylko po celach,'
+  + ' wygnanie jako pending z capowanymi ofertami (jak crew/combat)', () => {
   const state = botTurn();
   put(state, { id: 'oblivion', cardId: 'sweet-oblivion', controllerId: 'p2', zone: 'graveyard', kind: 'spell' });
-  // 10 innych kart w grobie → C(10,4)=210 podzbiorów × 2 cele = 420 wariantów
-  // bez capa; modal dla gracza i wycena bota były bezużyteczne.
+  // 10 innych kart w grobie → dawny kształt to C(10,4)=210 podzbiorów × 2 cele
+  // = 420 wariantów (M103/D capował na 64); M241 usuwa eksplozję z deklaracji:
+  // rzut mówi tylko o celu (+1/J), a wybór wygnania to osobna decyzja
+  // pending (M241) z capowanymi ofertami dla botów.
   for (let i = 0; i < 10; i += 1) {
     put(state, { id: `g${i}`, cardId: 'basic-swamp', controllerId: 'p2', zone: 'graveyard', kind: 'land' });
   }
   const view = playerView(state, 'p2');
-  const escapes = view.legalCommands.filter((c) => c.type === 'cast_escape');
-  assert.equal(escapes.length, 64, '2 cele × 32 podzbiory (cap)');
+  const casts = view.legalCommands.filter((c) => c.type === 'cast_escape');
+  assert.equal(casts.length, 2, `rzuty TYLKO po celach (bez mnożenia podzbiorów): ${casts.length}`);
+  assert.ok(casts.every((c) => !('escapeExileIds' in c) || (c.escapeExileIds ?? []).length === 0),
+    'komenda rzutu nie niesie już pre-baked podzbioru wygnania');
+  const first = execute(state, casts[0]);
+  assert.ok(first.ok, 'deklaracja kolejkuje pending wygnania');
+  assert.ok(state.pendingEscapeExile, 'pending Escape jest');
+  const view2 = playerView(state, 'p2');
+  const exiles = view2.legalCommands.filter((c) => c.type === 'resolve_escape_exile');
+  assert.ok(exiles.length <= 32,
+    `enumeracja podzbiorów dla bota nadal capowana do 32 (jak M103/D): ${exiles.length}`);
+  assert.ok(exiles.length > 0, 'bot ma oferty resolve_escape_exile');
 });

@@ -1525,6 +1525,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
           : 'efektem';
         return `${whoN(e.playerId)} wybiera, którą kartę odrzucić ${why}${source}`;
       }
+      // M241 (zgłoszenie K): koszt Escape — komunikat nazywa czar i liczbę.
+      case 'escape_exile_required': {
+        const n = e.exileCount ?? 0;
+        return `${nameOf(e.cardId)} — ${whoN(e.playerId)} wybiera ${n} ${polishPlural(n, 'kartę', 'karty', 'kart')} do wygnania (koszt Escape)`;
+      }
+      // Zdarzenie pary: object_moved+escape już nazywają przeniesione karty —
+      // resolved to dublet informacji (Uwaga D: świadome pominięcie).
+      case 'escape_exile_resolved': return null;
       case 'discard_choice_resolved': return e.purpose === 'cost'
         ? `${whoN(e.playerId)} odrzuca kartę (koszt zdolności)`
         : `${whoN(e.playerId)} odrzuca kartę z ręki`;

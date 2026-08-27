@@ -317,10 +317,14 @@ export function choiceRequestGroupKey(command) {
   if (command.type === 'cast_permanent' && command.targets?.length) {
     return `permanent:${command.objectId}:${Boolean(command.bestow)}`;
   }
-  // Phyrexian mana (CR 118.9): warianty płatności {W/P} — maną albo 2 życiem.
-  if (command.type === 'cast_escape' && command.escapeExileIds?.length) {
+  // M241 (zgłoszenie J/K/L): karta z Escape = jedna grupa; warianty CELU
+  // mieszczą się w środku (modal z rzędami per cel), a karty do wygnania
+  // wybiera osobny wizard (pendingEscapeExile) — góra-ebergeracja podzbiorów
+  // zniknęła całkowicie.
+  if (command.type === 'cast_escape') {
     return `escape:${command.objectId}`;
   }
+  if (command.type === 'resolve_escape_exile') return 'resolve_escape_exile';
   if (command.type === 'cast_permanent' && command.phyrexianPayWithLife != null) {
     return `permanent-x:${command.objectId}`;
   }
@@ -408,6 +412,7 @@ export function choiceRequestGroupKey(command) {
 function choiceRequestType(commands) {
   const first = commands[0];
   if (first.type === 'cast_escape') return 'escape';
+  if (first.type === 'resolve_escape_exile') return 'escape_exile';
   if (first.type === 'cast_flashback') return 'flashback';
   if (first.type === 'resolve_scry') return 'scry';
   if (first.type === 'resolve_surveil') return 'surveil';
@@ -2573,6 +2578,12 @@ export function commandLabel(cmd, session, view) {
         return `Weź ląd do ręki: ${escapeHtml(session.nameOfObject(cmd.pickId))}`;
       }
       return `Weź ląd do ręki: ${nameOfObjectId(cmd.pickId)}`;
+    }
+    case 'resolve_escape_exile': {
+      // M241: to dwuetapowy wariant wyboru — gracz widzi wizard multiselect
+      // (ptaszki + Zatwierdź); etykieta dotyczy kształtu protokołu (L48).
+      const count = Array.isArray(cmd.exileIds) ? cmd.exileIds.length : 0;
+      return `Ucieczka (Escape): wygnij ${count} ${polishPluralCount(count, 'kartę', 'karty', 'kart')}`;
     }
     case 'resolve_discard_choice': {
       // M109 (Nightsnare): „You may choose" — rezygnacja z wyboru.

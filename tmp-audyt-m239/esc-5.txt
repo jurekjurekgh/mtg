@@ -1,0 +1,276 @@
+== NOWA PARTIA: gracz=theros vs bot=theros, seed=5, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Setessan Skirmisher
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Zagraj: Setessan Skirmisher (koszt 1G)
+  [ROZGRYWKA]   • Setessan Skirmisher zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Sweet Oblivion → cel: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Mielisz Island do grobu
+  [ROZGRYWKA]   • Mielisz Forest do grobu
+  [ROZGRYWKA]   • Mielisz Forest do grobu
+  [ROZGRYWKA]   • Sweet Oblivion zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Glaring Aegis
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Setessan Skirmisher
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Setessan Skirmisher zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 18
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Sleep of the Dead → cel: Setessan Skirmisher
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Sleep of the Dead zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Feral Invocation
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Entrancing Lyre
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Wavecrash Triton
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Wybierasz, którą kartę odrzucić przy limicie ręki
+  >> Wybierz: Karta do odrzucenia (8 opcji)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Rage of Purphoros🔍 Podgląd karty Odrzuć: Inspire Awe🔍 Podgląd karty Odrzuć: Time to Feed🔍 Podgląd karty Odrzuć: Feral Invocation🔍 Podgląd karty Odrzuć: Wavecrash Triton🔍 Podgląd karty Odrzuć: Sweet Oblivion🔍 Podgląd karty Odrzuć: Anthem of Champions🔍 Podgląd karty Odrzuć: Glaring Aegis🔍 Podgląd karty
+  [modal choice]   ▶ Odrzuć: Rage of Purphoros
+  [modal choice]     Odrzuć: Inspire Awe
+  [modal choice]     Odrzuć: Time to Feed
+  [modal choice]     Odrzuć: Feral Invocation
+  [modal choice]     Odrzuć: Wavecrash Triton
+  [modal choice]     Odrzuć: Sweet Oblivion
+  [modal choice]     Odrzuć: Anthem of Champions
+  [modal choice]     Odrzuć: Glaring Aegis
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Breaching Hippocamp
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Breaching Hippocamp zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Breaching Hippocamp — trigger bez efektu (brak legalnych celów)
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Rzuć: Time to Feed (koszt 2G) → cel: Breaching Hippocamp (Nieprzyjaciel), Setessan Skirmisher (Ty)
+  [ROZGRYWKA]   • Setessan Skirmisher zadaje 2 obrażenia (Breaching Hippocamp)
+  [ROZGRYWKA]   • Breaching Hippocamp zadaje 3 obrażenia (Setessan Skirmisher)
+  [ROZGRYWKA]   • Time to Feed zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Setessan Skirmisher ginie
+  [ROZGRYWKA]   • Breaching Hippocamp ginie
+  [ROZGRYWKA]   • Ty: życie 20 → 23
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Setessan Skirmisher
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Setessan Skirmisher zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Titan's Strength
+  >> Dalej (pass)
+  >> Zagraj: Wavecrash Triton (koszt 2U)
+  [ROZGRYWKA]   • Wavecrash Triton wchodzi na pole bitwy
+  [ROZGRYWKA]   • Wavecrash Triton zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Entrancing Lyre — cel nie odtapuje podczas następnego untap kontrolera (X=1) → cel: Wavecrash Triton
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Entrancing Lyre rozstrzygnięta
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Feral Invocation → cel: Setessan Skirmisher
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Setessan Skirmisher
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Setessan Skirmisher zadaje 5 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 23 → 18
+  [ROZGRYWKA]   • Tura 15 — Ty
+  >> Aura: Feral Invocation (2 opcje)
+  [modal choice] Aura: Feral Invocation Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Setessan Skirmisher (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Wavecrash Triton (Ty)🔍 Podgląd karty
+  [modal choice]   ▶ Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Setessan Skirmisher (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Wavecrash Triton (Ty)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Feral Invocation → cel: Setessan Skirmisher
+  [ROZGRYWKA]   • Feral Invocation zaczarowuje Setessan Skirmisher
+  [ROZGRYWKA]   • Feral Invocation wchodzi na pole bitwy
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Sea God's Scorn
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Sea God's Scorn — tryb: Wzgarda boga mórz → cel: Wavecrash Triton, Feral Invocation
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Setessan Skirmisher
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Setessan Skirmisher zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 14
+  [ROZGRYWKA]   • Tura 17 — Ty
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Entrancing Lyre
+  >> Dalej (pass)
+  >> Zagraj: Wavecrash Triton (koszt 2U)
+  [ROZGRYWKA]   • Wavecrash Triton wchodzi na pole bitwy
+  [ROZGRYWKA]   • Wavecrash Triton zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Wybierasz, którą kartę odrzucić przy limicie ręki
+  >> Wybierz: Karta do odrzucenia (8 opcji)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Sea God's Scorn🔍 Podgląd karty Odrzuć: Inspire Awe🔍 Podgląd karty Odrzuć: Feral Invocation🔍 Podgląd karty Odrzuć: Entrancing Lyre🔍 Podgląd karty Odrzuć: Sweet Oblivion🔍 Podgląd karty Odrzuć: Anthem of Champions🔍 Podgląd karty Odrzuć: Glaring Aegis🔍 Podgląd karty Odrzuć: Titan's Strength🔍 Podgląd karty
+  [modal choice]   ▶ Odrzuć: Sea God's Scorn
+  [modal choice]     Odrzuć: Inspire Awe
+  [modal choice]     Odrzuć: Feral Invocation
+  [modal choice]     Odrzuć: Entrancing Lyre
+  [modal choice]     Odrzuć: Sweet Oblivion
+  [modal choice]     Odrzuć: Anthem of Champions
+  [modal choice]     Odrzuć: Glaring Aegis
+  [modal choice]     Odrzuć: Titan's Strength
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Time to Feed → cel: Wavecrash Triton, Setessan Skirmisher
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 16 → 19
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Setessan Skirmisher
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Setessan Skirmisher zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 10
+  [ROZGRYWKA]   • Tura 19 — Ty
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Dalej (pass)
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Rzuć: Inspire Awe (koszt 3G)
+  [ROZGRYWKA]   • Wykonujesz scry (patrzy na 2 karty: Breaching Hippocamp, Pyxis of Pandemonium)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Scry — co odłożyć na spód? (5 opcji)
+  [modal choice] Scry 2 — obejrzane karty: 1. Breaching Hippocamp 2. Pyxis of PandemoniumKarta 1 z 2: Breaching HippocampNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [modal choice] Scry 2 — obejrzane karty: 1. Breaching Hippocamp → spód 2. Pyxis of PandemoniumKarta 2 z 2: Pyxis of PandemoniumNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Returned Centaur
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Returned Centaur wchodzi na pole bitwy
+  [ROZGRYWKA]   • Returned Centaur zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Returned Centaur — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Returned Centaur — cel: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Returned Centaur — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Satyr Wayfinder
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel: Forest — biblioteka → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel: Pyxis of Pandemonium — biblioteka → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel bierze żadnego lądu z wierzchu do ręki (reszta do grobu)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA]   • Atak: Setessan Skirmisher
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Setessan Skirmisher zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 10 → 6
+  [ROZGRYWKA]   • Tura 21 — Ty
+  >> Aura: Feral Invocation (3 opcje)
+  [modal choice] Aura: Feral Invocation Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Setessan Skirmisher (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Returned Centaur (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Satyr Wayfinder (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]   ▶ Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Setessan Skirmisher (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Returned Centaur (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Satyr Wayfinder (Nieprzyjaciel)
+  [kreator many] Płatność 2G — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: GTapnij: Swamp (B)Tapnij: Forest (G)Tapnij: I — źródła: 4
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Feral Invocation → cel: Setessan Skirmisher
+  >> Cel czaru: Titan's Strength (3 opcje)
+  [modal choice] Cel czaru: Titan's Strength Rzuć: Titan's Strength (koszt R) → cel: Setessan Skirmisher (Nieprzyjaciel)🔍 Podgląd karty Rzuć: Titan's Strength (koszt R) → cel: Returned Centaur (Nieprzyjaciel)🔍 Podgląd karty Rzuć: Titan's Strength (koszt R) → cel: Satyr Wayfinder (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]   ▶ Rzuć: Titan's Strength (koszt R) → cel: Setessan Skirmisher (Nieprzyjaciel)
+  [modal choice]     Rzuć: Titan's Strength (koszt R) → cel: Returned Centaur (Nieprzyjaciel)
+  [modal choice]     Rzuć: Titan's Strength (koszt R) → cel: Satyr Wayfinder (Nieprzyjaciel)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Wykonujesz scry (patrzy na 1 kartę: Breaching Hippocamp)
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [modal choice] Scry 1 — obejrzane karty: 1. Breaching HippocampKarta 1 z 1: Breaching HippocampNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Feral Invocation zaczarowuje Setessan Skirmisher
+  [ROZGRYWKA]   • Feral Invocation wchodzi na pole bitwy
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Pyxis of Pandemonium
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Wavecrash Triton
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Atak: Setessan Skirmisher, Returned Centaur, Satyr Wayfinder
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Titan's Strength → cel: Setessan Skirmisher
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 65 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Sweet Oblivion · 2 · Sorcery · mieli 4 karty (do grobu) · cel: gracz | Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Glaring Aegis · 1 · Enchantment — Aura · stwór: +1/+3 · Gdy wejdzie na pole bitwy: tap. | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Pyxis of Pandemonium · 1 · Artifact · {T}: każdy gracz wygania wierzch swojej biblioteki zakryty · {7}, {T}, poświęć: odkryj karty wygnane tym artefaktem — permanenty spośród nich wchodzą na pole bitwy
+  MOJE POLA: Feral Invocation · 3 · Enchantment Aura · Flash (błysk) · stwór: +2/+2 · aura → Setessan Skirmisher | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Setessan Skirmisher · 2 · Creature — Human Warrior · Konstelacja — gdy twój enchantment wchodzi: +1/+1 do końca tury. · +3/+1 · +4/+4 · zaczarowana: Feral Invocation · zaczarowana: Feral Invocation · 9/6 | Feral Invocation · 3 · Enchantment Aura · Flash (błysk) · stwór: +2/+2 · aura → Setessan Skirmisher | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 2/4 | Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. · choroba · 1/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sweet Oblivion, Inspire Awe, Anthem of Champions, Time to Feed, Rage of Purphoros, Swamp, Forest ⏎ Nowa partia (seed 5). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 22, kliknięte: 22, modale: 8, sondy noop: 66 (panel 48, modal 18)
+== DETEKTORY: brak zgłoszeń ==
