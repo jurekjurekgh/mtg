@@ -58,10 +58,10 @@ function castScores(state, params) {
   return out;
 }
 
-test('M234 params: defaulty rodziny efektywności removalu są 0 (golden-master)', () => {
-  assert.equal(DEFAULT_HEURISTIC_PARAMS.removalTmcWeight, 0);
-  assert.equal(DEFAULT_HEURISTIC_PARAMS.removalDeathtouchBonus, 0);
-  assert.equal(DEFAULT_HEURISTIC_PARAMS.removalProtectionBonus, 0);
+test('M234 params: rodzina efektywności removalu jest WŁĄCZONA (zlecenie właściciela)', () => {
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.removalTmcWeight, 2);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.removalDeathtouchBonus, 14);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.removalProtectionBonus, 18);
 });
 
 test('M234/TMC: waga TMC podnosi wycenę zdjęcia DROŻSZEGO celu', () => {
@@ -91,7 +91,8 @@ test('M234/deathtouch: premia podnosi wycenę zdjęcia taniego stwora z deathtou
     put(s, 'dt', 'guildsworn-prowler', 'p1', 'battlefield'); // 2 TMC, deathtouch
     return s;
   };
-  const base = castScores(build(), undefined);
+  // Baseline z ZEROWĄ premią (defaulty są teraz włączone) — izolujemy sam knob.
+  const base = castScores(build(), { removalDeathtouchBonus: 0 });
   const tuned = castScores(build(), { removalDeathtouchBonus: 30 });
   assert.equal(tuned['cast_spell(spell->dt)'] - base['cast_spell(spell->dt)'], 30,
     'premia deathtouch (30) ma wprost podnieść wycenę zdjęcia tego celu');
@@ -110,7 +111,7 @@ test('M234/protekcja: premia podnosi wycenę zdjęcia stwora z protekcją od moj
     })];
     return s;
   };
-  const base = castScores(build(), undefined);
+  const base = castScores(build(), { removalProtectionBonus: 0 });
   const tuned = castScores(build(), { removalProtectionBonus: 40 });
   assert.equal(tuned['cast_spell(spell->prot)'] - base['cast_spell(spell->prot)'], 40,
     'premia protekcji (40) ma wprost podnieść wycenę zdjęcia celu nie do przejścia w walce');

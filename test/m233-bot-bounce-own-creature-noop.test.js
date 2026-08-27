@@ -48,10 +48,16 @@ function scornScores(state) {
   bot.chooseCommand(playerView(state, 'p2'), {});
   const trace = bot.trace()[0];
   const pass = trace.options.find((o) => o.cmd === 'pass_priority')?.score ?? 0;
-  const byTarget = (tid) => trace.options
-    .filter((o) => o.cmd.startsWith('cast_spell(s') && o.cmd.includes(tid))
+  // Wariant CZYSTO własny: zawiera 'mine', ale NIE 'foe' (warianty łączone
+  // mine+foe premiuje część wroga — nie o nich ten test). Wariant z wrogiem:
+  // zawiera 'foe'.
+  const own = trace.options
+    .filter((o) => o.cmd.startsWith('cast_spell(s') && o.cmd.includes('mine') && !o.cmd.includes('foe'))
     .map((o) => o.score);
-  return { pass, own: byTarget('mine'), foe: byTarget('foe') };
+  const foe = trace.options
+    .filter((o) => o.cmd.startsWith('cast_spell(s') && o.cmd.includes('foe'))
+    .map((o) => o.score);
+  return { pass, own, foe };
 }
 
 test('M233/2: bot NIE odbija WŁASNEGO stwora (Sea God\'s Scorn), gdy brak celu wroga', () => {

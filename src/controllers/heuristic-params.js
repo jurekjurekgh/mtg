@@ -72,12 +72,19 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   damageCreaturePowerWeight: 3,
   damageLethalBonus: 15,
   drawCardValue: 6,
-  // M234 — domyślne zachowanie SPRZED zlecenia: 0, więc golden-master
-  // (bot-scoring-snapshot) zostaje zielony po ekstrakcji. Strojenie/właściciel
-  // podnosi je świadomie (niżej włączone wprost jako część zlecenia).
-  removalTmcWeight: 0,
-  removalDeathtouchBonus: 0,
-  removalProtectionBonus: 0,
+  // M234 — WŁĄCZONE wprost jako część zlecenia właściciela (efektywność
+  // removalu). Wartości dobrane pomiarem (ordering + mirror-eval + divergence):
+  //  - TMC*2: 6-drop dostaje +12, 1-drop +2 → wyraźna preferencja drogich celów
+  //    (proxy „ma zdolności", bo PlayerView nie niesie `abilities`, ADR 0017);
+  //  - deathtouch +14 (~7 pkt worth): tani deathtoucher przeskakuje równorzędne
+  //    vanilla, ale nie przebija realnie większego zagrożenia;
+  //  - protekcja od mojego koloru +18: stwór nie do przejścia w walce staje się
+  //    priorytetem czaru.
+  // Zmiana zachowania jest ŚWIADOMA → golden-master (bot-scoring-snapshot)
+  // zregenerowany razem z tym commitem; mirror-eval i bot-benchmark bez regresji.
+  removalTmcWeight: 2,
+  removalDeathtouchBonus: 14,
+  removalProtectionBonus: 18,
 });
 
 /**

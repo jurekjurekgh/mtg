@@ -38,6 +38,10 @@ test('params: wartości domyślne są dokładnie dawnymi stałymi', () => {
   assert.equal(DEFAULT_HEURISTIC_PARAMS.damageCreaturePowerWeight, 3);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.damageLethalBonus, 15);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.drawCardValue, 6);
+  // Rodzina „efektywność removalu" (M234) — WŁĄCZONA wprost (zlecenie właściciela).
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.removalTmcWeight, 2);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.removalDeathtouchBonus, 14);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.removalProtectionBonus, 18);
 });
 
 test('params: normalize bez nadpisań zwraca zamrożone defaulty', () => {
