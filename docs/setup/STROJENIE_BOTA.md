@@ -123,6 +123,14 @@ Tuner NICZEGO nie przyjmuje sam. Nowe wartości wchodzą do
   ZREALIZOWANE): proxy reward — pozycyjna przewaga (materiał + karty + życie)
   próbkowana co turę, mieszana z win-rate przez `--proxy-weight β`. Gdy strojenie
   win-rate stoi w miejscu, włącz β>0.
+- **Słaby przeciwnik maskuje różnice** — vs random/aggro lepszy timing removalu
+  nie jest nagradzany (przeciwnik i tak przegrywa), więc parametr wrażliwy
+  (przełącza setki decyzji) może dać płaski win-rate. Rozwiązanie: `mirrorEval`
+  (`tools/mirror-eval.mjs`) — kandydat vs baseline, OBAJ `heuristic`, obie strony
+  stołu. To najczulszy dostępny sygnał (równy przeciwnik). UWAGA (runda 4):
+  nawet lustro pokazało PLATEAU dla skalarnych stałych wyceny — jeśli i ono daje
+  ~50%, parametr naprawdę nie jest dźwignią jakości i trzeba szukać gdzie indziej
+  (nowe mechaniki, decyzje strukturalne, lookahead).
 - **Detektor to hipoteza (L74/L75)** — „tuner podniósł wynik" na małej próbce to
   hipoteza, nie werdykt. Weryfikuj pełnym benchmarkiem przed przyjęciem.
 
@@ -138,6 +146,8 @@ Tuner NICZEGO nie przyjmuje sam. Nowe wartości wchodzą do
 - `tools/proxy-reward.mjs` — gęstszy sygnał (proxy: materiał + karty + życie), B6 T2.
 - `tools/benchmark.mjs` — harness win-rate (przepływa `heuristicParams`,
   opcjonalnie `collectProxy`).
+- `tools/mirror-eval.mjs` — ewaluacja lustrzana kandydat vs baseline (obaj
+  heuristic) — najczulszy sygnał różnicy parametrów.
 - `test/bot-scoring-snapshot.test.js`, `test/bot-params.test.js`,
   `test/bot-tune-card.test.js`, `test/bot-proxy-reward.test.js`,
   `test/bot-proxy-benchmark.test.js` — testy B6.

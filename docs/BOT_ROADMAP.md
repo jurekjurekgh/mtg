@@ -395,6 +395,30 @@ całego etapu.
   rundy: rodziny jeszcze NIE wyciągnięte (removal/damage/draw — częste w
   cast_spell), które mogą być gorzej skalibrowane niż baza.
 
+- **Runda 4 (2026-08-27) — rodzina „removal/obrażenia/dobór" + ewaluacja
+  LUSTRZANA: potwierdzone plateau trzema sygnałami.** Wyciągnięto rodzinę
+  (M226/6). Sonda: `removalEnemyBase` PRZEŁĄCZA 336 decyzji (wrażliwa!), ale
+  win-rate vs random/aggro płaski (75.60%). Hipoteza: to problem próbki (słaby
+  przeciwnik). Zbudowano ewaluację lustrzaną (M227/1: kandydat vs baseline,
+  obaj `heuristic`, obie strony stołu) — TRUDNIEJSZY przeciwnik, gdzie removal
+  decyduje. Wynik lustra (6 talii × 8 seedów × 2 strony = 96 meczów/wariant):
+  removalEnemyBase 60/40 → 48-48 (50.00%), 10 → 49-47 (szum), damageCreatureBase
+  20 → 50.00%, drawCardValue 12 → 50.00%. WNIOSEK: trzy niezależne sygnały
+  (win-rate, proxy, lustro) zgodnie pokazują ODPORNE PLATEAU — zmiany
+  skalarnych stałych przełączają setki decyzji, ale nie zmieniają WYNIKÓW,
+  bo dotyczą wyborów między niemal równoważnymi opcjami. Bot jest dobrze
+  skalibrowany na obecnym katalogu. NIE przyjęto zmian.
+
+- **Rewizja wniosku strategicznego (po rundzie 4):** dźwignia „skalarne wagi
+  wyceny" jest wyczerpana na BENCH_DECKS (ręczna kalibracja właściciela +
+  golden-master trzymają bota w optimum). Realny zysk leży teraz gdzie indziej:
+  (a) NOWE mechaniki/karty bez wyceny (surge/manifest) — ale wymagają talii
+  z tymi kartami w benchmarku (dziś ich nie ma); (b) decyzje STRUKTURALNE, nie
+  skalarne (np. które cele/tryby wybrać, nie ile punktów dać) — te nie są
+  „magicznymi liczbami" do wyciągnięcia, tylko logiką; (c) lookahead (B2).
+  Framework B6 (parametry + proxy + lustro + golden-master) jest kompletny
+  i gotowy — czeka na materiał, na którym da realny zysk.
+
 - **Wniosek strategiczny dla kolejnych sesji:** benchmark jest blisko nasycenia
   (heuristic wygrywa ~85% overall, 90.8% vs random), więc czysty win-rate ma
   MAŁO pola do poprawy jako sygnał — dokładnie problem „credit assignment"
