@@ -55,6 +55,13 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'removalDeathtouchBonus',  // premia za zdjęcie stwora z deathtouch (nie do przejścia w walce)
   'removalProtectionBonus',  // premia za zdjęcie stwora z protekcją od mojego koloru
   'removalCombatHandledPenalty', // kara za marnowanie removalu na TANI cel, którego bloker i tak zabije w walce
+  // Rodzina „timing aury-sztuczki" (M235, zlecenie właściciela po audycie).
+  // Aura FLASH, której cała wartość jest bojowa (czysta ochrona), to combat
+  // trick — jej wartość zależy od OKNA: sensowna w walce (ochrona atakującego
+  // przed blokerami danego koloru / bezstratny blok w turze przeciwnika), a we
+  // własnym upkeepie/kroku bez walki to zmarnowana elastyczność (lepiej trzymać
+  // kartę do właściwego okna). Deskryptor: flash + pure-protection (ADR 0002).
+  'flashProtectionAuraOffWindowPenalty', // kara za rzut flash-aury ochronnej poza oknem walki
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -91,6 +98,13 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // NIE ma przebijać passu przy dobrym celu — działa tylko na TANIE, nieewazyjne
   // cele bez deathtouch/protekcji, gdy mam blokera zabijającego bez straty.
   removalCombatHandledPenalty: 12,
+  // M235 — aura FLASH o czystej wartości ochronnej rzucona POZA oknem walki
+  // (własny upkeep/draw/end, postcombat, tura przeciwnika przed deklaracją
+  // ataków) marnuje elastyczność instanta. Kara musi przebić bazę takiej aury
+  // (do ~66 + 2·moc + wytrzymałość gospodarza), żeby wariant zszedł PONIŻEJ
+  // passu (0) — bot trzyma kartę do właściwego okna. W oknie walki kara nie
+  // działa, więc aura nadal wygrywa.
+  flashProtectionAuraOffWindowPenalty: 120,
 });
 
 /**

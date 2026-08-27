@@ -1512,6 +1512,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             && !descriptor?.chooseColor
             && (pumpDesc.power ?? 0) === 0 && (pumpDesc.toughness ?? 0) === 0
             && (descriptor?.keywords ?? []).length === 0;
+          // M235 (zlecenie właściciela): aura FLASH, której cała wartość jest
+          // OCHRONNĄ sztuczką bojową — pure-protection (stała jakość) ALBO
+          // chooseColor-protection (Benevolent Blessing, kolor dobierany przy
+          // wejściu) — bez pumpa i keywordów. Taka aura NIC nie robi poza walką
+          // (nikt nie atakuje/blokuje), więc rzucona w upkeepie/kroku bez walki
+          // marnuje elastyczność instanta. Reguła po deskryptorze (ADR 0002).
+          const cardIsFlash = (cardDef(card?.cardId)?.keywords ?? card?.keywords ?? []).includes('flash');
+          // Ochrona pochodzi z jawnej `protection` (stała jakość) ALBO z
+          // `chooseColor` (Benevolent Blessing — kolor dobierany przy wejściu).
+          const grantsProtection = Boolean(protectionQuality) || Boolean(descriptor?.chooseColor);
+          const isProtectionTrick = grantsProtection
+            && (pumpDesc.power ?? 0) === 0 && (pumpDesc.toughness ?? 0) === 0
+            && (descriptor?.keywords ?? []).length === 0;
+          // Okno użyteczne dla aury-sztuczki ochronnej:
+          //  - walka z udziałem gospodarza (atakuje/blokuje teraz), LUB
+          //  - moja Główna 1 z gospodarzem gotowym do ataku (ustawiam atak).
+          const protectionTrickHasWindow = combatTrickWindow(view, target)
+            || (myTurn(view) && view.turn.phase === 'precombat_main' && canAttackNow(target));
+          const offWindowFlashProtectionPenalty = (cardIsFlash && isProtectionTrick && !protectionTrickHasWindow)
+            ? P.flashProtectionAuraOffWindowPenalty : 0;
           if (isPureProtection) {
             const known = [
               ...(view.zones.battlefield ?? []),
@@ -1527,10 +1547,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (threats === 0) return finish(-40);
             // Sa zagrozenia: wartosc rosnie z ich liczba, ale ochrona bez
             // pumpa nie jest tempem — zostaje ponizej zwyklego buffa.
-            return finish(20 + 12 * threats + (target.power ?? 0));
+            // M235: flash-aura ochronna poza oknem walki — kara (trzymaj kartę).
+            return finish(20 + 12 * threats + (target.power ?? 0) - offWindowFlashProtectionPenalty);
           }
           const pump = pumpDesc;
-          return finish(66 + 2 * ((target.power ?? 0) + pump.power) + ((target.toughness ?? 0) + pump.toughness));
+          // M235: chooseColor-protection (Benevolent Blessing) trafia tu (nie do
+          // isPureProtection) — kara okna dotyczy też jej, gdy jest flash i poza walką.
+          return finish(66 + 2 * ((target.power ?? 0) + pump.power) + ((target.toughness ?? 0) + pump.toughness)
+            - offWindowFlashProtectionPenalty);
         }
         const def = card ? cardDef(card.cardId) : undefined;
         let score = P.creatureBase + (card?.power ?? 0) * P.creaturePowerWeight + (card?.toughness ?? 0) * P.creatureToughnessWeight;
