@@ -644,6 +644,40 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return false;
   };
 
+  // M236/2 (KOREKTA właściciela): permanent jest „skazany w tej turze" — więc
+  // poświęcenie go (np. za życie) jest praktycznie DARMOWE — gdy:
+  //  (a) to zadeklarowany BLOKER, który i tak zginie w tej walce, NIE zabijając
+  //      atakującego (blok zostaje, permanent i tak pada), ALBO
+  //  (b) jest CELEM czaru/zdolności PRZECIWNIKA na stosie, który go zniszczy/
+  //      wygna/zada mu śmiertelne obrażenia (usunięcie i tak nastąpi).
+  // Czytamy WYŁĄCZNIE PlayerView (ADR 0017): combat + stos z celami; zero nazw
+  // kart (ADR 0002). NIE używamy spekulacji „removal w ręce" (B3) — to za mało
+  // pewne, by uznać permanent za skazany.
+  const permanentDoomedThisTurn = (view, obj) => {
+    if (!obj) return false;
+    // (a) bloker ginący w walce
+    const outcome = combatOutcome(view, obj);
+    if (outcome && (outcome.deadBlockers ?? []).includes(obj.id) && !outcome.attackerDies) return true;
+    // (b) cel wrogiego czaru/zdolności usuwającej na stosie
+    const REMOVE_ON_STACK = new Set(['destroy_permanent', 'exile_permanent', 'exile_target_creature',
+      'destroy_if_least_power', 'destroy_artifact_gain_life_mana_value']);
+    for (const entry of (view.zones.stack ?? [])) {
+      if (entry.controllerId === view.playerId) continue;
+      const targets = entry.targets ?? [];
+      if (!targets.includes(obj.id)) continue;
+      const effs = [
+        ...((entry.spell?.effects) ?? []),
+        ...((entry.spell?.modes ?? []).flatMap((m) => m.effects ?? [])),
+      ];
+      if (effs.some((e) => REMOVE_ON_STACK.has(e?.type))) return true;
+      // obrażenia śmiertelne z czaru na stosie
+      const dmg = effs.find((e) => e?.type === 'damage');
+      if (dmg && Number.isInteger(dmg.amount)
+        && dmg.amount >= ((obj.toughness ?? 0) - (obj.damage ?? 0))) return true;
+    }
+    return false;
+  };
+
   // M234 (zlecenie właściciela — efektywność removalu). Kolory MOICH stworów
   // z pola bitwy: potrzebne, by ocenić, czy wrogi stwór ma protekcję od koloru,
   // którym mógłbym w niego uderzyć w walce (wtedy jest „nie do przejścia" i wart
@@ -1730,30 +1764,44 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (ownTarget) score -= 60;
         }
         if (spell.fireball) {
+          // M236/4 (audyt + KOREKTA właściciela): Fireball to zasób SKALUJĄCY
+          // z maną — dzieli X po równo (zaokr. w dół) między cele. Zasada jak
+          // przy zwykłym spaleniu (M236/5): trzymaj go na cel, który DOBIJESZ
+          // (stwór ginie / gracz umiera), albo na gracza gdy zadasz ISTOTNĄ
+          // ilość obrażeń. Trywialny chip = trzymaj (schodzi poniżej passu).
+          // Wycena per-cel z widoku (ADR 0017), zero nazw kart (ADR 0002).
           const ids = cmd.targets ?? [];
           const foeId = enemy(view)?.id;
-          const hitsSelf = ids.includes(view.playerId);
-          const hitsFoe = foeId != null && ids.includes(foeId);
-          if (hitsSelf && !hitsFoe) return finish(-80);
-          if (hitsSelf) score -= 50;
-          if (hitsFoe) {
-            // M236/4 (audyt Żywym Testerem): Fireball (i inne skalujące X w twarz)
-            // to zasób, który ROŚNIE z maną. Bot spalał go za X=1 (19→18) w 2.
-            // turze — wyrzucał potencjalne dobicie za chip. Reguła: strzał w
-            // TWARZ opłaca się, gdy jest LETALNY albo zbiera dużą część życia
-            // przeciwnika; przy trywialnym X trzymaj czar (schodzi poniżej passu,
-            // chyba że to jedyny cel — inne gałęzie celu creature wyceniają się
-            // osobno). Dzielenie na wiele celów liczy X na cel (ids.length).
-            const x = cmd.xValue ?? 0;
-            const foeLife = enemy(view)?.life ?? 20;
-            const perTarget = Math.floor(x / Math.max(1, ids.length));
-            // Dobicie = zawsze. Poza tym wartość rośnie z zadanym cięciem, ale
-            // TRYWIALNY chip w twarz (≤2, i daleko od dobicia) to wyrzucony
-            // skalujący zasób — kara schodzi poniżej passu, bot trzyma czar.
-            if (perTarget >= foeLife) score += 25 + 1000;            // dobicie
-            else if (perTarget <= 2 && perTarget < foeLife - 4) score -= 80; // chip: trzymaj
-            else score += 25 + perTarget;                            // realne cięcie życia
+          const x = cmd.xValue ?? 0;
+          const perTarget = Math.floor(x / Math.max(1, ids.length));
+          const foeLife = enemy(view)?.life ?? 20;
+          // Istotny cios w gracza = dobicie ALBO ≥ 1/3 aktualnego życia wroga.
+          const significantFace = Math.max(3, Math.ceil(foeLife / 3));
+          let fbScore = 0;
+          for (const tid of ids) {
+            if (tid === view.playerId) {
+              fbScore -= 200; // obrażenia w SIEBIE — nigdy
+            } else if (tid === foeId) {
+              if (perTarget >= foeLife) fbScore += 1000;              // dobicie gracza
+              else if (perTarget >= significantFace) fbScore += 20 + perTarget; // istotny cios
+              else fbScore -= 60;                                     // chip w twarz — trzymaj
+            } else {
+              // Cel-stwór: dobicie = zysk removalu (skalowany wartością), chip
+              // nieletalny = strata (jak M236/5 — trzymaj na cel, który zabijesz).
+              const t = objectOnBoard(view, tid);
+              if (!t) continue;
+              const remain = (t.toughness ?? 0) - (t.damage ?? 0);
+              if (perTarget >= remain) {
+                fbScore += P.removalEnemyBase + P.removalWorthWeight * ((t.power ?? 0) + (t.toughness ?? 0))
+                  + enemyRemovalTargetBonus(view, t);
+              } else {
+                fbScore -= 40; // nieletalne — nie pal skalującego zasobu na chip
+              }
+            }
           }
+          // Kara za PRZEPŁACENIE X ponad potrzebę (dobiłbym mniejszym X): drobna,
+          // żeby przy równej wartości bot wolał tańszy wariant.
+          score += fbScore;
         }
         // M121: generyczna bramka „nie strzelaj do siebie" — obejmuje KAŻDY
         // efekt ofensywny z tabeli, także te dodane w przyszłości.
@@ -2746,40 +2794,48 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
           }
           if (effect.type === 'gain_life') {
-            // M236 (audyt Żywym Testerem, Instant Ramen): zysk życia z
-            // AKTYWOWANEJ zdolności ma wartość zależną od SYTUACJI, nie płaską.
-            // Przy zdrowym życiu 3 życia to prawie nic; przy niskim — ratunek.
-            // Bot aktywował Instant Ramen ({2},{T},poświęć: zyskaj 3) przy 22
-            // życia i przewadze (przeciwnik na 13), wyrzucając permanent-Food
-            // za marginalne życie.
+            // M236/2+3 (audyt Żywym Testerem + KOREKTA właściciela): życie
+            // POWYŻEJ 20 NIE marnuje się — to bufor (21, 22…). Zysk życia jest
+            // więc ZAWSZE małą wartością dodatnią, większą gdy nisko/pod
+            // naciskiem. Różnica jest w KOSZCIE:
+            //  - „{T}: zyskaj życie" (tap, bez poświęcenia) jest praktycznie
+            //    DARMOWE → rób to w nieskończoność (bufor), CHYBA że stwór jest
+            //    potrzebny do bloku w tej turze (wtedy trzymaj go nietapniętego);
+            //  - „poświęć permanent: zyskaj życie" to realna STRATA karty →
+            //    opłaca się tylko gdy (a) życie krytyczne (ratunek), (b)
+            //    poświęcany permanent i tak zginie w tej turze (zadeklarowany
+            //    bloker ginący bez zabicia atakującego / cel removalu na stosie
+            //    — „darmowe" poświęcenie), albo (c) permanent jest bardzo tani
+            //    (TMC ≤ 1). Inaczej trzymaj.
             const amount = effect.amount ?? 0;
             const life = myLife(view);
-            const pressure = enemyAttackPower(view); // realny nacisk (atakujący/plansza wroga)
-            // Wartość życia: pełna gdy nisko/pod naciskiem, znikoma gdy wysoko
-            // i bezpiecznie. Progi jak w innych regułach życia (≤5 krytyczne).
+            const pressure = enemyAttackPower(view);
+            // Bufor życia: zawsze dodatni, skalowany sytuacją (krytyczne życie
+            // albo realny nacisk podnoszą wartość).
             let lifeValue;
-            if (life <= 5) lifeValue = 2 + amount;              // krytycznie — pełna wartość
+            if (life <= 5) lifeValue = 2 + amount;                       // ratunek
             else if (life <= 10 || pressure >= life - 5) lifeValue = 1 + Math.min(amount, 3);
-            else lifeValue = 0;                                 // wysoko i bezpiecznie — życie bez wartości
+            else lifeValue = Math.min(1 + Math.floor(amount / 2), 3);    // bufor — mała, ale dodatnia
             score += lifeValue;
-            // Koszt poświęcenia SIEBIE za samo życie (Instant Ramen): przy
-            // bezpiecznym życiu to strata permanentu — kara schodzi poniżej
-            // passu, bot trzyma artefakt na później. Bez życiowej korzyści
-            // (lifeValue==0) poświęcanie permanentu jest jałowe.
-            if (ability?.cost?.sacrificeSelf && lifeValue === 0) {
-              score -= source?.kind === 'creature' ? 8 : 4;
-            }
-            // M236/3 (audyt Żywym Testerem, Soulmender): pure „{T}: zyskaj 1
-            // życia" przy bezpiecznym życiu to zmarnowany tap — bot leczył się
-            // z 20 do 21 co turę, tapując stwora (którym mógłby atakować/
-            // blokować). Gdy jedynym efektem zdolności jest gain_life bez
-            // wartości (lifeValue==0), aktywacja ma zejść PONIŻEJ passu, żeby
-            // bazowe `score=2` za legalne zagranie nie wygrało z czekaniem.
-            // Ostrzej, gdy tapuje zdolnego do walki stwora (koszt alternatywny).
-            const onlyGainLife = abilityEffectTypes.length === 1 && abilityEffectTypes[0] === 'gain_life';
-            if (onlyGainLife && lifeValue === 0) {
-              const tapsUsableCreature = source?.kind === 'creature' && canAttackNow(source);
-              score -= tapsUsableCreature ? 8 : 4;
+            if (ability?.cost?.sacrificeSelf) {
+              // Poświęcenie permanentu za życie: strata karty. Uzasadnione tylko
+              // gdy ratunek / permanent i tak ginie w tej turze / bardzo tani.
+              const lifeCritical = life <= 5 || pressure >= life;
+              const doomedAnyway = permanentDoomedThisTurn(view, source);
+              const cheapPermanent = (source?.manaCost ?? cardDef(source?.cardId)?.manaCost ?? 99) <= 1;
+              if (!(lifeCritical || doomedAnyway || cheapPermanent)) {
+                // Kara przebija bufor + bazę zdolności, żeby wariant zszedł
+                // poniżej passu (trzymaj permanent na później).
+                score -= lifeValue + (source?.kind === 'creature' ? 12 : 8) + 6;
+              }
+            } else if (ability?.cost?.tap && source?.kind === 'creature') {
+              // Tap-za-życie DARMOWY: zostaw stwora nietapniętego, jeśli jest
+              // realnie potrzebny do bloku w tej turze (przeciwnik atakuje
+              // i ten stwór mógłby zablokować). Inaczej bufor jest OK.
+              const attackers = view.combat && view.combat.attackingPlayerId !== view.playerId
+                ? (view.combat.attackers ?? []) : [];
+              const neededToBlock = attackers.length > 0 && !source.tapped && canAttackNow(source);
+              if (neededToBlock) score -= lifeValue + 8; // trzymaj bloker
             }
           }
           // M157/L28 (Mournful Zombie „{W},{T}: Target player gains 1 life"):

@@ -1,14 +1,15 @@
-// M236/2 — audyt Żywym Testerem (2026-08-27), partia forgotten-realms (gracz)
-// vs final-fantasy (bot), seed 73: bot aktywował Instant Ramen
-// ({2},{T},poświęć: zyskaj 3 życia) przy 22 życia i PRZEWADZE (przeciwnik na
-// 13) — wyrzucił permanent-Food za marginalne, niepotrzebne życie.
+// M236/2+3 — audyt Żywym Testerem (2026-08-27) + KOREKTA właściciela.
 //
-// Oś 1 audytu (nieoptymalne użycie zdolności). Root cause: wycena aktywowanego
-// `gain_life` była PŁASKA (2 + amount), bez progu życia i bez kary za koszt
-// poświęcenia siebie. Fix: wartość życia zależy od sytuacji (nisko/pod
-// naciskiem = ratunek, wysoko i bezpiecznie = ~0), a sacrificeSelf bez korzyści
-// życiowej schodzi poniżej passu. Reguła po myLife/enemyAttackPower i koszcie
-// (ADR 0017), zero nazw kart (ADR 0002).
+// Obserwacje: bot aktywował Instant Ramen ({2},{T},poświęć: 3 życia) przy 22
+// życia i Soulmender ({T}: 1 życia) 6× przy 20+ życia.
+//
+// KOREKTA właściciela: życie POWYŻEJ 20 NIE marnuje się — to bufor (21, 22…).
+// Różnica jest w KOSZCIE:
+//  - „{T}: zyskaj życie" (tap, bez poświęcenia) jest DARMOWE → rób bufor bez
+//    końca, CHYBA że stwór jest potrzebny do bloku w tej turze;
+//  - „poświęć permanent: zyskaj życie" to strata karty → tylko gdy życie
+//    krytyczne, permanent i tak ginie w tej turze (bloker/cel removalu na
+//    stosie), albo permanent bardzo tani (TMC ≤ 1).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { addObject, createGameState, playerView } from '../src/engine/game-state.js';
@@ -34,77 +35,77 @@ function put(state, id, cardId, controllerId, zone, extra = {}) {
   return state.objects.get(id);
 }
 
-function ramenState(botLife) {
+function botMain(botLife) {
   const state = createGameState({ seed: 236, players: [{ id: 'p1' }, { id: 'p2' }] });
   state.turn = jumpToStep(state.turn, 'main', 'p2');
   state.turn.activePlayerId = 'p2';
   state.turn.priorityPlayerId = 'p2';
   addMana(state, 'p2', 10);
   state.players.find((p) => p.id === 'p2').life = botLife;
-  put(state, 'ramen', 'instant-ramen', 'p2', 'battlefield');
   return state;
 }
 
-function ramenScore(state) {
+function scoreOf(state, objId) {
   const bot = createHeuristicBot({ seed: 236 });
   bot.chooseCommand(playerView(state, 'p2'), {});
   const opts = bot.trace()[0].options;
   return {
-    ramen: opts.find((o) => o.cmd.startsWith('activate_ability(ramen'))?.score,
+    act: opts.find((o) => o.cmd.startsWith(`activate_ability(${objId}`))?.score,
     pass: opts.find((o) => o.cmd === 'pass_priority')?.score ?? 0,
   };
 }
 
-test('M236/2: bot NIE poświęca Food za życie przy zdrowym życiu (22)', () => {
-  const choice = createHeuristicBot({ seed: 236 }).chooseCommand(playerView(ramenState(22), 'p2'), {});
-  assert.notEqual(choice.type === 'activate_ability' && choice.objectId === 'ramen' ? 'act' : 'inne', 'act',
-    `przy 22 życia bot nie powinien poświęcać Food za 3 życia: ${JSON.stringify(choice)}`);
+// --- Poświęcenie permanentu za życie (Instant Ramen) ---
+
+test('M236/2: bot NIE poświęca Food za życie przy bezpiecznym życiu (22)', () => {
+  const s = botMain(22);
+  put(s, 'ramen', 'instant-ramen', 'p2', 'battlefield');
+  const { act, pass } = scoreOf(s, 'ramen');
+  assert.ok(act < pass, `sac-za-życie przy 22 ż. (${act}) musi być < pass (${pass}) — trzymaj permanent`);
 });
 
-test('M236/2: zysk życia z poświęcenia przy zdrowym życiu < pass', () => {
-  const { ramen, pass } = ramenScore(ramenState(22));
-  assert.ok(ramen < pass, `sac-za-życie przy 22 ż. (${ramen}) musi być < pass (${pass})`);
+test('M236/2: przy KRYTYCZNYM życiu (4) poświęcenie za życie jest warte aktywacji', () => {
+  const s = botMain(4);
+  put(s, 'ramen', 'instant-ramen', 'p2', 'battlefield');
+  const { act, pass } = scoreOf(s, 'ramen');
+  assert.ok(act > pass, `sac-za-życie przy 4 ż. (${act}) ma być > pass (${pass}) — ratunek`);
 });
 
-test('M236/2: przy KRYTYCZNYM życiu (4) zysk życia jest wart aktywacji (> pass)', () => {
-  const { ramen, pass } = ramenScore(ramenState(4));
-  assert.ok(ramen > pass, `sac-za-życie przy 4 ż. (${ramen}) ma być > pass (${pass}) — ratunek`);
+test('M236/2: poświęcenie DARMOWE, gdy permanent jest celem destroy na stosie (nawet przy 22 ż.)', () => {
+  const s = botMain(22);
+  s.turn = jumpToStep(s.turn, 'main', 'p1'); // tura przeciwnika, my mamy priorytet
+  s.turn.activePlayerId = 'p1';
+  s.turn.priorityPlayerId = 'p2';
+  addMana(s, 'p2', 10);
+  s.players.find((p) => p.id === 'p2').life = 22;
+  put(s, 'ramen', 'instant-ramen', 'p2', 'battlefield');
+  put(s, 'destroyer', 'shatter', 'p1', 'stack');
+  s.objects.set('destroyer', Object.freeze({ ...s.objects.get('destroyer'), chosenTargets: ['ramen'] }));
+  const { act, pass } = scoreOf(s, 'ramen');
+  assert.ok(act > pass, `permanent skazany (cel destroy na stosie) → sac darmowy (${act}) > pass (${pass})`);
 });
 
-// M236/3 — Soulmender ({T}: zyskaj 1 życia): pure tap-za-życie przy bezpiecznym
-// życiu to zmarnowany tap stwora (bot leczył się z 20 co turę zamiast trzymać
-// stwora do walki). Ta sama klasa co Instant Ramen, ale bez sacrifice — kara za
-// jałową aktywację (lifeValue==0) i za tap zdolnego do walki stwora.
-function soulmenderState(botLife) {
-  const state = createGameState({ seed: 236, players: [{ id: 'p1' }, { id: 'p2' }] });
-  state.turn = jumpToStep(state.turn, 'main', 'p2');
-  state.turn.activePlayerId = 'p2';
-  state.turn.priorityPlayerId = 'p2';
-  addMana(state, 'p2', 10);
-  state.players.find((p) => p.id === 'p2').life = botLife;
-  put(state, 'soul', 'soulmender', 'p2', 'battlefield');
-  return state;
-}
+// --- Tap za życie (Soulmender): DARMOWE, bufor jest OK ---
 
-function soulScore(state) {
-  const bot = createHeuristicBot({ seed: 236 });
-  bot.chooseCommand(playerView(state, 'p2'), {});
-  const opts = bot.trace()[0].options;
-  return {
-    soul: opts.find((o) => o.cmd.startsWith('activate_ability(soul'))?.score,
-    pass: opts.find((o) => o.cmd === 'pass_priority')?.score ?? 0,
-  };
-}
-
-test('M236/3: bot NIE tapuje Soulmender za życie przy zdrowym życiu (20)', () => {
-  const choice = createHeuristicBot({ seed: 236 }).chooseCommand(playerView(soulmenderState(20), 'p2'), {});
-  assert.notEqual(choice.type === 'activate_ability' && choice.objectId === 'soul' ? 'act' : 'inne', 'act',
-    `przy 20 życia bot nie powinien tapować Soulmender za 1 życie: ${JSON.stringify(choice)}`);
+test('M236/3: bot LECZY się tapem za życie przy 20 ż. (bufor jest wartościowy)', () => {
+  const s = botMain(20);
+  put(s, 'soul', 'soulmender', 'p2', 'battlefield');
+  const { act, pass } = scoreOf(s, 'soul');
+  assert.ok(act > pass, `tap-za-życie (bufor) przy 20 ż. (${act}) ma być > pass (${pass}) — to darmowe`);
 });
 
-test('M236/3: jałowy tap-za-życie < pass; przy krytycznym życiu > pass', () => {
-  const safe = soulScore(soulmenderState(20));
-  const crit = soulScore(soulmenderState(4));
-  assert.ok(safe.soul < safe.pass, `Soulmender przy 20 ż. (${safe.soul}) musi być < pass (${safe.pass})`);
-  assert.ok(crit.soul > crit.pass, `Soulmender przy 4 ż. (${crit.soul}) ma być > pass (${crit.pass})`);
+test('M236/3: bot NIE tapuje Soulmender za życie, gdy jest potrzebny do BLOKU', () => {
+  const s = createGameState({ seed: 236, players: [{ id: 'p1' }, { id: 'p2' }] });
+  s.turn = jumpToStep(s.turn, 'main', 'p1'); // tura przeciwnika
+  s.turn.activePlayerId = 'p1';
+  s.turn.priorityPlayerId = 'p2';
+  s.turn.step = 'declare_attackers';
+  s.turn.phase = 'combat';
+  addMana(s, 'p2', 10);
+  s.players.find((p) => p.id === 'p2').life = 20;
+  put(s, 'soul', 'soulmender', 'p2', 'battlefield'); // mój jedyny potencjalny bloker
+  put(s, 'atk', 'hill-giant', 'p1', 'battlefield');
+  s.combat = { attackers: ['atk'], blockers: new Map(), attackingPlayerId: 'p1' };
+  const { act, pass } = scoreOf(s, 'soul');
+  assert.ok(act < pass, `tap Soulmendera potrzebnego do bloku (${act}) musi być < pass (${pass})`);
 });

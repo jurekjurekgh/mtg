@@ -1,13 +1,10 @@
-// M236/4 — audyt Żywym Testerem (2026-08-27), partia innistrad-brg (gracz) vs
-// warhammer-brg (bot), seed 91: bot rzucił Fireball (X obrażeń, skalujący) za
-// X=1 w twarz gracza (19→18) w 2. turze — spalił potencjalne DOBICIE za chip.
-// Fireball rośnie z maną, więc dumpowanie go za 1 obrażenie to strata zasobu.
+// M236/4 — audyt Żywym Testerem (2026-08-27) + KOREKTA właściciela.
+// innistrad-brg vs warhammer-brg, seed 91: bot rzucił Fireball (skalujący X)
+// za X=1 w twarz gracza (19→18) w 2. turze — spalił potencjalne dobicie za chip.
 //
-// Oś 1 audytu (nieoptymalny timing/wartość czaru). Root cause: wycena fireball
-// w twarz dawała płaskie +25+X niezależnie od tego, jak mały jest cios. Fix:
-// dobicie = zawsze; trywialny chip (≤2, daleko od dobicia) schodzi poniżej
-// passu (bot trzyma czar); realne cięcie życia wciąż premiowane. Reguła po
-// xValue/życiu wroga z widoku (ADR 0017), zero nazw kart (ADR 0002).
+// Zasada (jak M236/5): trzymaj Fireball na cel, który DOBIJESZ (stwór ginie /
+// gracz umiera), albo na gracza gdy zadasz ISTOTNĄ ilość obrażeń (≥ 1/3 życia).
+// Trywialny chip = trzymaj. Wycena per-cel z widoku (ADR 0017).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { addObject, createGameState, playerView } from '../src/engine/game-state.js';
@@ -33,7 +30,7 @@ function put(state, id, cardId, controllerId, zone) {
   return state.objects.get(id);
 }
 
-function fireballChoice(mana, foeLife) {
+function fireballChoice(mana, foeLife, enemyCreature) {
   const state = createGameState({ seed: 236, players: [{ id: 'p1' }, { id: 'p2' }] });
   state.turn = jumpToStep(state.turn, 'main', 'p2');
   state.turn.activePlayerId = 'p2';
@@ -41,19 +38,36 @@ function fireballChoice(mana, foeLife) {
   addMana(state, 'p2', mana);
   state.players.find((p) => p.id === 'p1').life = foeLife;
   put(state, 'fb', 'fireball', 'p2', 'hand');
+  if (enemyCreature) put(state, 'foe', enemyCreature, 'p1', 'battlefield');
   return createHeuristicBot({ seed: 236 }).chooseCommand(playerView(state, 'p2'), {});
 }
 
 test('M236/4: bot NIE pali Fireballa za trywialny chip (X=1) w twarz', () => {
-  const c = fireballChoice(2, 19); // mana 2 → tylko X=1 w twarz
+  const c = fireballChoice(2, 19);
   assert.notEqual(c.type === 'cast_spell' && c.objectId === 'fb' ? 'cast' : 'inne', 'cast',
-    `Fireball X=1 w twarz przy 19 ż. to zmarnowany skalujący zasób — trzymaj: ${JSON.stringify(c)}`);
+    `Fireball X=1 w twarz przy 19 ż. to zmarnowany zasób — trzymaj: ${JSON.stringify(c)}`);
 });
 
-test('M236/4: bot RZUCA Fireballa, gdy X=lethal', () => {
-  const c = fireballChoice(6, 5); // mana 6 → X do 5, wróg na 5 = dobicie
-  assert.ok(c.type === 'cast_spell' && c.objectId === 'fb',
-    `Fireball lethal (X=5 vs 5 ż.) musi zostać rzucony: ${JSON.stringify(c)}`);
-  assert.deepEqual(c.targets, ['p1']);
-  assert.ok((c.xValue ?? 0) >= 5, `X ma być dobijające (≥5), było ${c.xValue}`);
+test('M236/4: bot NIE pali Fireballa w twarz za NIEistotny X (5 vs 20 ż.)', () => {
+  const c = fireballChoice(6, 20);
+  assert.notEqual(c.type === 'cast_spell' && c.objectId === 'fb' && (c.targets ?? []).includes('p1') ? 'faceChip' : 'inne', 'faceChip',
+    `X=5 vs 20 ż. (<1/3) to nieistotny cios — trzymaj: ${JSON.stringify(c)}`);
+});
+
+test('M236/4: bot RZUCA Fireballa, gdy X=lethal w gracza', () => {
+  const c = fireballChoice(6, 5);
+  assert.ok(c.type === 'cast_spell' && c.objectId === 'fb' && (c.targets ?? [])[0] === 'p1',
+    `Fireball lethal (X=5 vs 5 ż.) musi zostać rzucony w gracza: ${JSON.stringify(c)}`);
+});
+
+test('M236/4: bot woli ZABIĆ stwora niż chipować twarz (ad 4)', () => {
+  const c = fireballChoice(6, 20, 'chained-throatseeker'); // 5/5 wroga; x=5 zabija
+  assert.ok(c.type === 'cast_spell' && c.objectId === 'fb' && (c.targets ?? [])[0] === 'foe',
+    `Fireball ma dobić stwora 5/5, nie chipować twarz: ${JSON.stringify(c)}`);
+});
+
+test('M236/4: bot RZUCA Fireballa w twarz za ISTOTNY cios (X=5 vs 12 ż., ≥1/3)', () => {
+  const c = fireballChoice(6, 12);
+  assert.ok(c.type === 'cast_spell' && c.objectId === 'fb' && (c.targets ?? [])[0] === 'p1',
+    `X=5 vs 12 ż. (≥1/3) to istotny cios — rzuć: ${JSON.stringify(c)}`);
 });
