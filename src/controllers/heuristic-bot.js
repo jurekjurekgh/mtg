@@ -494,6 +494,13 @@ function effectIsInertNow(view, effect, cmd) {
         && o.kind === 'creature' && (o.colors ?? []).length >= 2);
     case 'add_counter':
       return (effect.amount ?? 1) <= 0;
+    // M233 (audyt Żywym Testerem, Wrap in Flames): wrapper „każdemu z max N
+    // celów" aplikuje efekty wewnętrzne do KAŻDEGO celu — zero celów = zero
+    // efektu. Gdy variableTargets ma min:0, a na stole nie ma żadnego stwora,
+    // jedyny legalny wariant rzutu idzie BEZ celów: 4 many i cała karta za nic.
+    // Generycznie po pustej liście celów komendy (ADR 0002), nie po nazwie.
+    case 'apply_to_each_target':
+      return (cmd?.targets ?? []).length === 0;
     case 'reanimate_under_your_control': {
       // Puppeteer Clique: „put target creature card from an OPPONENT'S
       // graveyard onto the battlefield". Cel jawny w komendzie znaczy, że
