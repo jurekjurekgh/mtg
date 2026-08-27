@@ -1668,6 +1668,12 @@ export function createSession(config) {
   // nie przerywają auto-passu. Zbiór współdzielony z UI (main.js) — sesja
   // tylko czyta, UI mutuje.
   const ignoredOptionKeys = config.ignoredOptionKeys ?? new Set();
+  // M232 — tryb wysoko-graficzny: opcjonalny obserwator RZUCENIA czaru /
+  // wystawienia non-basic lądu (moment zagrania, nie rozstrzygnięcia). UI
+  // (main.js) rejestruje callback i przy włączonym trybie pokazuje pełnoekranową
+  // warstwę z ilustracjami. Sesja tylko GO WOŁA — decyzję o wyświetleniu i cały
+  // DOM trzyma UI. Zero wpływu na przebieg gry (obserwator, nie mutator).
+  const onCast = typeof config.onCast === 'function' ? config.onCast : null;
   if (!(decks instanceof Map) || decks.size !== 2) throw new TypeError('Sesja wymaga dwóch talii (Map)');
   if (!decks.has(HUMAN_ID) || !decks.has(BOT_ID)) throw new TypeError('Talia musi istnieć dla gracza i bota');
   const botFactory = config.botFactory ?? defaultBotFactory;
@@ -1882,6 +1888,26 @@ export function createSession(config) {
 
   /** M73d (D): polskie nazwy zdarzeń triggerów — log i stos (audyt żywym testerem). */
 
+
+  /**
+   * M232 — powiadamia obserwatora trybu wysoko-graficznego o RZUCENIU czaru /
+   * wystawieniu non-basic lądu. Wołane z obu ścieżek zdarzeń (ruch gracza
+   * `apply` i ruchy bota `streamAutoEvents`), więc warstwa pokazuje się dla
+   * kart OBU stron. Filtr: czary/permanenty/aury zawsze; land TYLKO gdy
+   * NIE jest basic (basic-lądy są nieciekawe wizualnie i nie mają artId).
+   */
+  const CAST_EVENT_TYPES = new Set(['spell_cast', 'permanent_cast', 'aura_spell_cast', 'land_played']);
+  function emitCastEvent(e) {
+    if (!onCast || !CAST_EVENT_TYPES.has(e.type)) return;
+    const cardId = e.cardId ?? e.object?.cardId ?? null;
+    if (!cardId) return;
+    if (e.type === 'land_played') {
+      const card = registry.get(cardId);
+      const isBasic = (card?.types ?? []).includes('Basic') || cardId.startsWith('basic-');
+      if (isBasic) return;
+    }
+    onCast({ cardId, playerId: e.playerId ?? null, eventType: e.type });
+  }
 
 /** Opis zdarzenia przez modułowego czytelnika (wstrzyknięte nazwy stanu). */
   function describeEvent(e, names = PLAYER_NAMES, options = {}) {
@@ -2284,6 +2310,7 @@ export function createSession(config) {
       if (text) sessionLog('event', text);
       noteBotMove(e);
       recordTurnEvent(e);
+      emitCastEvent(e);
       if (BOT_PAUSE_EVENTS.has(e.type)) significant = true;
       // M157/D: koniec blokady stun ma być WIDOCZNY na stole. (a) zdjęcie
       // licznika stun = pauza (gracz widzi zejście licznika na kaflu);
@@ -2575,6 +2602,7 @@ export function createSession(config) {
         // ląd) filtruje ta sama bramka co dotychczas.
         noteBotMove(e);
         recordTurnEvent(e);
+        emitCastEvent(e);
         // M100/E8: własne dobranie (klik „dobierz kartę" w kroku dobierania
         // albo dobranie z efektu rozstrzygniętego w tej komendzie) ma dać
         // komunikat w „Rozgrywka" (UX właściciela 2026-08-15).

@@ -755,6 +755,27 @@
     text-align: center; color: #e4e4e7; font-size: 13px;
   }
 
+  /* --- M232: tryb wysoko-graficzny (pełnoekranowe FOT+KON) ------------ */
+  /* Czarne tło, dwie ilustracje jedna pod drugą, wycentrowane, wypełniają
+     ekran w pionie i poziomie BEZ scrolla. z-index nad card-fullscreen. */
+  .hi-gfx-toggle { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+  .hi-gfx-toggle input { cursor: pointer; }
+  .art-showcase {
+    display: none; position: fixed; inset: 0; z-index: 2700; background: #000;
+    touch-action: manipulation; cursor: pointer; overflow: hidden;
+    flex-direction: column; align-items: center; justify-content: center; gap: 1.5vh;
+    padding: 1.5vh 1.5vw;
+  }
+  .art-showcase.active { display: flex; }
+  /* Każda z dwóch ilustracji dostaje połowę wysokości; szerokość i wysokość
+     ograniczone tak, by obie zmieściły się bez pasków przewijania. */
+  .art-showcase .showcase-art {
+    display: block; max-width: 97vw; max-height: 47vh;
+    width: auto; height: auto; object-fit: contain; border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0,0,0,.7);
+  }
+  .art-showcase .showcase-art.is-loading { opacity: 0; }
+
   /* --- Ruch bota ----------------------------------------------------- */
   .bot-move-card { max-width: 420px; margin: auto; }
   .bot-move-art { display: flex; justify-content: center; margin-bottom: 10px; }
@@ -873,6 +894,12 @@
       <select id="deck-bot"></select>
       <button id="new-game">Rozpocznij partię</button>
       <button id="shuffle-seed" title="Losowe ziarno tasowania">Tasuj talię 🎲</button>
+      <!-- M232 (zlecenie właściciela): tryb wysoko-graficzny. Domyślnie
+           wyłączony. Włączenie pokazuje pełnoekranowe ilustracje (FOT+KON)
+           przy każdym rzuceniu czaru / wystawieniu non-basic lądu. -->
+      <label class="hi-gfx-toggle" for="hi-gfx" title="Pełnoekranowe ilustracje przy rzucaniu kart">
+        <input type="checkbox" id="hi-gfx"> Tryb wysoko-graficzny
+      </label>
     </div>
   </div>
 
@@ -1172,6 +1199,11 @@
   <button id="card-fullscreen-close" class="fullscreen-close" aria-label="Zamknij">✕</button>
   <div class="fullscreen-body" id="card-fullscreen-body"></div>
 </div>
+
+<!-- M232: warstwa trybu wysoko-graficznego — dwie zmaksymalizowane
+     ilustracje rzucanej karty (FOT nad KON). Klik/tap w dowolnym miejscu
+     zamyka TĘ warstwę i wraca do tego, co pod spodem. -->
+<div id="art-showcase" class="art-showcase" aria-hidden="true"></div>
 
 <!-- Warstwa: ruch bota (modal potwierdzany przyciskiem) -->
 <div id="bot-move" class="modal">

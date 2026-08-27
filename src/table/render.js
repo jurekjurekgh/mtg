@@ -1,6 +1,6 @@
 import {
   IMAGE_MODE, cardImageSources, hoverImageSources, hoverModeLabel, hoverPreviewShape,
-  nextHoverMode, HOVER_MODES, tileImageSources,
+  nextHoverMode, HOVER_MODES, tileImageSources, localArtUrl,
 } from './card-images.js';
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
@@ -3199,6 +3199,47 @@ export function renderCardFullscreen(host, info, { positionText = null } = {}) {
   if (positionText) div(host, 'fullscreen-position', positionText);
   div(host, 'fullscreen-hint', 'Dotknij ✕ lub w dowolnym miejscu, żeby zamknąć · przesuń w lewo/prawo, by zmienić kartę');
   return host;
+}
+
+/**
+ * M232 — tryb wysoko-graficzny (zlecenie właściciela): pełnoekranowa warstwa
+ * z DWIEMA zmaksymalizowanymi ilustracjami rzucanej karty — panoramiczną (FOT)
+ * u góry i bestiariusz (KON) pod nią. Wywoływana w momencie RZUCENIA czaru /
+ * wystawienia non-basic lądu (nie rozstrzygnięcia). Klik/tap w dowolnym miejscu
+ * zamyka warstwę (obsługa w main.js).
+ *
+ * Obie ilustracje to lokalne pliki `img/<artId>{FOT,KON}.png` (localArtUrl).
+ * Obraz, który się nie wczyta (brak pliku / brak artId), jest chowany — warstwa
+ * pokazuje wtedy tę, która istnieje; gdy żadna, host zostaje pusty (caller
+ * może wtedy w ogóle nie otwierać warstwy — patrz cardHasShowcaseArt).
+ *
+ * @param {HTMLElement} host kontener warstwy (czyszczony)
+ * @param {object} card definicja karty z rejestru (potrzebne: artId, name)
+ */
+export function renderCardArtShowcase(host, card) {
+  clear(host);
+  if (!host || !card) return host;
+  for (const variant of ['fot', 'kon']) {
+    const url = localArtUrl(card, variant);
+    if (!url) continue;
+    const img = document.createElement('img');
+    img.className = `showcase-art showcase-${variant} is-loading`;
+    img.alt = `${card.name ?? 'Karta'} — ${variant.toUpperCase()}`;
+    img.decoding = 'async';
+    // Obraz, którego nie ma na dysku (404), chowamy — nie zostawiamy pustej
+    // ramki. Ten sam wzorzec co attachImageWithFallback, ale bez syntetycznej
+    // twarzy: showcase pokazuje wyłącznie realne ilustracje FOT/KON.
+    img.addEventListener('error', () => { img.style.display = 'none'; });
+    img.addEventListener('load', () => { img.className = img.className.replace(/\s*is-loading/, ''); });
+    img.src = url;
+    host.appendChild(img);
+  }
+  return host;
+}
+
+/** Czy karta ma lokalne ilustracje FOT/KON (artId) do trybu wysoko-graficznego. */
+export function cardHasShowcaseArt(card) {
+  return Boolean(card && card.artId != null && card.artId !== '');
 }
 
 /**
