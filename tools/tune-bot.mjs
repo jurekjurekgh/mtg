@@ -46,23 +46,36 @@ function winRate(entry, bot) {
 export function summarizeTuningResult(result) {
   const vsRandom = pairEntry(result, 'heuristic', 'random');
   const vsAggro = pairEntry(result, 'heuristic', 'aggro');
+  // B6 T2 — proxy (średnia pozycyjna przewaga heurystyki) jest opcjonalne:
+  // pojawia się tylko przy runBenchmark({ collectProxy:true }). Uśredniamy po
+  // parach, w których wystąpiło. null → brak (klasyczny tryb win-rate).
+  const proxies = [vsRandom.proxyMean, vsAggro.proxyMean].filter((x) => x != null);
   return {
     vsRandom: winRate(vsRandom, 'heuristic'),
     vsAggro: winRate(vsAggro, 'heuristic'),
     unfinished: vsRandom.unfinished + vsAggro.unfinished,
     games: vsRandom.games + vsAggro.games,
+    proxyMean: proxies.length > 0 ? proxies.reduce((a, b) => a + b, 0) / proxies.length : null,
   };
 }
 
 /**
- * Funkcja celu: średnia win-rate przeciwko RandomBotowi i aggro.
- * Niedokończona partia dyskwalifikuje kandydata, zamiast sztucznie pomagać mu
- * przez brak przegranej.
+ * Funkcja celu: średnia win-rate przeciwko RandomBotowi i aggro, opcjonalnie
+ * WZBOGACONA o sygnał proxy (B6 T2). `proxyWeight` (β) domyślnie 0 → zachowanie
+ * IDENTYCZNE jak przed T2 (regresja B4/B6 nietknięta). Przy β>0 cel to
+ * (1−β)·winRate + β·proxy — gęstszy sygnał rozróżnia warianty tam, gdzie
+ * win-rate jest nasycony (credit assignment). Proxy działa tylko, gdy benchmark
+ * je zebrał (collectProxy:true); inaczej β jest ignorowane (brak danych).
+ * Niedokończona partia dyskwalifikuje kandydata.
  */
-export function tuningObjective(result) {
+export function tuningObjective(result, { proxyWeight = 0 } = {}) {
   const summary = summarizeTuningResult(result);
   if (summary.unfinished > 0) return Number.NEGATIVE_INFINITY;
-  return (summary.vsRandom + summary.vsAggro) / 2;
+  const winRateObjective = (summary.vsRandom + summary.vsAggro) / 2;
+  if (proxyWeight > 0 && summary.proxyMean != null) {
+    return (1 - proxyWeight) * winRateObjective + proxyWeight * summary.proxyMean;
+  }
+  return winRateObjective;
 }
 
 function notWorseThanBaseline(candidate, baseline) {

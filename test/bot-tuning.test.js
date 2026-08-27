@@ -56,6 +56,7 @@ test('funkcja celu B4 uwzględnia obie pary i dyskwalifikuje niedokończone mecz
     vsAggro: 0.6,
     unfinished: 0,
     games: 200,
+    proxyMean: null, // B6 T2: null gdy benchmark nie zbierał proxy (collectProxy=false)
   });
   assert.equal(tuningObjective(result), 0.7);
   assert.equal(tuningObjective(resultFor(1, 1, 1)), Number.NEGATIVE_INFINITY);

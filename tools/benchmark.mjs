@@ -45,6 +45,7 @@ import { createAggroBot } from '../src/controllers/aggro-bot.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { setupCardMatch } from '../src/cards/materialize.js';
+import { createProxySampler } from './proxy-reward.mjs';
 
 /**
  * Rejestr botów mierzonych harnessen. Fabryka dostaje seed (ADR 0005); aggro
@@ -163,13 +164,18 @@ export function defaultPairs(botNames, selfPlay) {
  * Jeden mecz headless: botA gra talią deckA jako p1 (zaczyna), botB talią deckB
  * jako p2. Zwraca wynik surowy (bez identyfikatorów — agregat ma być mały).
  */
-function playBenchMatch({ firstBot, firstDeck, secondBot, secondDeck, seed, deckLists, registry, maxCommands, heuristicWeights, heuristicParams }) {
+function playBenchMatch({ firstBot, firstDeck, secondBot, secondDeck, seed, deckLists, registry, maxCommands, heuristicWeights, heuristicParams, collectProxy = false }) {
   const state = setupCardMatch({
     seed,
     players: [{ id: 'p1' }, { id: 'p2' }],
     decks: new Map([['p1', deckLists.get(firstDeck)], ['p2', deckLists.get(secondDeck)]]),
     registry,
   });
+  // B6 T2 — proxy reward: próbkujemy pozycyjną przewagę gracza `heuristic`
+  // (jeśli w meczu gra). Hak onStep jest OPCJONALNY i deterministyczny
+  // (ADR 0005) — bez collectProxy zachowanie harnessu jest niezmienione.
+  const heuristicPlayer = firstBot === 'heuristic' ? 'p1' : secondBot === 'heuristic' ? 'p2' : null;
+  const sampler = (collectProxy && heuristicPlayer) ? createProxySampler(heuristicPlayer) : null;
   const { state: finalState, results } = runSimulation({
     state,
     controllers: new Map([
@@ -187,6 +193,7 @@ function playBenchMatch({ firstBot, firstDeck, secondBot, secondDeck, seed, deck
       })],
     ]),
     maxCommands,
+    onStep: sampler ? (s) => sampler.sample(s) : null,
   });
   const winnerBot = finalState.winnerId === 'p1' ? firstBot
     : finalState.winnerId === 'p2' ? secondBot
@@ -196,17 +203,23 @@ function playBenchMatch({ firstBot, firstDeck, secondBot, secondDeck, seed, deck
     winnerBot,
     turns: finalState.turn.number,
     commands: results.length,
+    proxyMean: sampler ? sampler.mean() : null,
   };
 }
 
 function emptyScoreboard() {
-  return { games: 0, unfinished: 0, wins: {}, turns: 0, commands: 0 };
+  return { games: 0, unfinished: 0, wins: {}, turns: 0, commands: 0, proxySum: 0, proxyCount: 0 };
 }
 
 function recordMatch(scoreboard, match) {
   scoreboard.games += 1;
   scoreboard.turns += match.turns;
   scoreboard.commands += match.commands;
+  // B6 T2 — akumulacja proxy (tylko gdy mecz je zebrał; null pomijamy).
+  if (match.proxyMean != null) {
+    scoreboard.proxySum += match.proxyMean;
+    scoreboard.proxyCount += 1;
+  }
   if (!match.finished) {
     scoreboard.unfinished += 1;
     return;
@@ -221,6 +234,11 @@ function finalizeScoreboard(scoreboard) {
     wins: scoreboard.wins,
     avgTurns: scoreboard.games > 0 ? Number((scoreboard.turns / scoreboard.games).toFixed(2)) : 0,
     avgCommands: scoreboard.games > 0 ? Number((scoreboard.commands / scoreboard.games).toFixed(1)) : 0,
+    // proxyMean == null, gdy proxy nie zbierano (collectProxy=false) — wtedy
+    // pole nie istnieje, żeby nie zaśmiecać wyników domyślnego benchmarku.
+    ...(scoreboard.proxyCount > 0
+      ? { proxyMean: Number((scoreboard.proxySum / scoreboard.proxyCount).toFixed(6)) }
+      : {}),
   };
 }
 
@@ -240,6 +258,7 @@ export function runBenchmark({
   decksDir = 'decks',
   heuristicWeights = undefined,
   heuristicParams = undefined,
+  collectProxy = false,
 } = {}) {
   const registry = createCardRegistry();
   const deckNames = (decks ?? listRepoDeckNames(decksDir)).slice().sort();
@@ -275,7 +294,7 @@ export function runBenchmark({
             legs.push({ firstBot: botB, firstDeck: deckY, secondBot: botA, secondDeck: deckX });
           }
           for (const leg of legs) {
-            const match = playBenchMatch({ ...leg, seed, deckLists, registry, maxCommands, heuristicWeights, heuristicParams });
+            const match = playBenchMatch({ ...leg, seed, deckLists, registry, maxCommands, heuristicWeights, heuristicParams, collectProxy });
             recordMatch(aggregate.board, match);
             recordMatch(deckBoard, match);
             recordMatch(totals.get(botA), match);
