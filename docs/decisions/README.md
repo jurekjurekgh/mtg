@@ -37,6 +37,7 @@ ADR zapisują decyzje, których nie powinno się odtwarzać z historii czatu. Ka
 | [0021](0021-default-session-work-no-queue-question.md) | Domyślna praca sesji — nie pytaj właściciela o kolejkę | Zaakceptowana |
 | [0022](0022-full-oracle-or-unsupported.md) | Katalog kart — pełny Oracle albo brak wsparcia (zastępuje interpretację M111 o „świadomym długu") | Zaakceptowana |
 | [0023](0023-decks-per-plan-and-benchmark-sample.md) | Talie per PLAN (worki dla małych planów), singleton, landy 1:2; testy i benchmark na stałej próbce talii jednoplanowych | Zaakceptowana |
+| [0024](0024-deck-split-by-colors-and-rotating-benchmark.md) | Podział talii planowej ≥30 kart nielandowych po kolorach (tożsamość bezkolorowych z produkcji many); rotująca auto-próbka benchmarku | Zaakceptowana |
 
 ## Gdzie zapisać regułę (ADR vs LESSONS vs handoff)
 

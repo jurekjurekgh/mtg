@@ -97,6 +97,54 @@ Kontroler ani UI nie modyfikują bezpośrednio autorytatywnego stanu.
 - [Polityka bezpieczeństwa](SECURITY.md)
 - [Instrukcja dla agentów](AGENTS.md)
 
+## Talie
+
+Talie **buduje generator** `tools/generate-plan-decks.mjs` (źródło prawdy
+przydziału karty do talii); `test/repo-decks.test.js` pilnuje zgodności plików
+w `decks/` z generatorem. Zasady: talie per PLAN
+([ADR 0023](docs/decisions/0023-decks-per-plan-and-benchmark-sample.md)),
+obowiązkowy podział kolorystyczny talii ≥30 kart nielandowych
+([ADR 0024](docs/decisions/0024-deck-split-by-colors-and-rotating-benchmark.md)).
+Zasady nadrzędne: singleton (1× karta poza basic-landami), basic-lądy ~2:1 do
+reszty, min. 15 kart nielandowych na talię.
+
+**Ta lista jest aktualizowana przy każdej zmianie zestawu talii** (liczności
+liczone z plików `decks/*.txt`).
+
+### Talie jednoplanowe
+
+| Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | nielandowych |
+|---|---|---|---:|---:|---:|
+| `alara` | Alara | WUBRG | 33 | 11 | 22 |
+| `dominaria-brg` | Dominaria (BRG) | BRG | 24 | 8 | 16 |
+| `dominaria-wu` | Dominaria (WU) | WUB | 24 | 8 | 16 |
+| `final-fantasy` | Final Fantasy | WUBRG | 23 | 8 | 15 |
+| `forgotten-realms` | Forgotten Realms | WUBRG | 35 | 12 | 23 |
+| `innistrad-brg` | Innistrad (BRG) | BRG | 26 | 9 | 17 |
+| `innistrad-wu` | Innistrad (WU) | WU | 27 | 9 | 18 |
+| `mirrodin-brg` | Mirrodin (BRG) | BRG | 26 | 9 | 17 |
+| `mirrodin-wu` | Mirrodin (WU) | WU | 26 | 9 | 17 |
+| `ravnica` | Ravnica | WUBRG | 35 | 12 | 23 |
+| `srodziemie` | Śródziemie | WUBRG | 24 | 8 | 16 |
+| `tarkir-bg` | Tarkir (BG) | UBG | 29 | 10 | 19 |
+| `tarkir-wur` | Tarkir (WUR) | WUR | 24 | 8 | 16 |
+| `theros` | Theros | WUBRG | 26 | 9 | 17 |
+| `warhammer-brg` | Warhammer Fantasy (BRG) | BRG | 24 | 8 | 16 |
+| `warhammer-wu` | Warhammer Fantasy (WU) | WUB | 24 | 8 | 16 |
+| `wiedzmin` | Wiedźmin | UBRG | 41 | 14 | 27 |
+| `zendikar` | Zendikar | WURG | 29 | 10 | 19 |
+
+### Worki (małe plany — przejściowe, ADR 0023)
+
+| Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | nielandowych |
+|---|---|---|---:|---:|---:|
+| `worek-basni` | Worek: Baśnie | WUBRG | 29 | 10 | 19 |
+| `worek-dziki` | Worek: Dzikie Światy | WUBRG | 38 | 13 | 25 |
+| `worek-legend` | Worek: Legendy | WUBRG | 35 | 12 | 23 |
+| `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 35 | 12 | 23 |
+
+Szczegóły formatu i manabazy: [`decks/README.md`](decks/README.md).
+
 ## Jak wprowadzamy zmiany
 
 Gałąź `main` jest chroniona. Każda zmiana — także dokumentacyjna i także wykonana przez agenta —
