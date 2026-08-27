@@ -362,6 +362,7 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   // card-data.js go nie widział, a w logu gracza świeciło „trigger (delayed)".
   delayed: 'opóźniony trigger',
   enchanted_permanent_tapped: 'zatapnięcie zaczarowanego permanentu',
+  self_becomes_tapped: 'zatapnięcie tego permanentu',
   // M166/B (Batch 40, Cacophodon): Enrage.
   dealt_damage: 'otrzymanie obrażeń',
   enchanted_creature_dealt_damage: 'zaczarowany stwór otrzymał obrażenia',
@@ -468,7 +469,7 @@ const DRUGA_OSOBA = Object.freeze({
   dostaje: 'dostajesz',
   kieruje: 'kierujesz', kopiuje: 'kopiujesz', korzysta: 'korzystasz',
   kładzie: 'kładziesz', kończy: 'kończysz', mieli: 'mielisz',
-  dzieli: 'dzielisz',
+  dzieli: 'dzielisz', manifestuje: 'manifestujesz',
   mulliganuje: 'mulliganujesz', może: 'możesz', niszczy: 'niszczysz',
   obejmuje: 'obejmujesz', odkłada: 'odkładasz', odrzuca: 'odrzucasz',
   odsłania: 'odsłaniasz', ogląda: 'oglądasz', otrzymuje: 'otrzymujesz',
@@ -1009,7 +1010,18 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const src = e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId);
         return `${src} — trigger (${triggerLabel})`;
       }
-      case 'land_type_changed': return `${nameOfObject(e.objectId)} staje się typem ${e.subtype} do końca tury`;
+      // Pętla jakości Żywym Testerem (2026-08-26, g9 ravnica-bot Unstable
+      // Frontier): rozstrzygnięcie wyboru typu lądu emituje DWA zdarzenia —
+      // `land_type_changed` (niska warstwa: sama mutacja typu, jak licznik/tap)
+      // ORAZ `land_type_choice_resolved` (narracja decyzji, niżej) — i OBA
+      // renderowały identyczne zdanie, więc gracz widział je dwa razy na jedną
+      // aktywację (L24/L6: opis dubluje się, gdy dwa zdarzenia o tej samej
+      // treści trafiają do logu). `grantBasicLandTypeUntilEndOfTurn` woła się
+      // WYŁĄCZNIE z resolve tej decyzji, więc `land_type_changed` jest zawsze
+      // sparowany z `..._resolved` — opis tego drugiego jest kompletny.
+      // Wyciszamy więc mechaniczny `land_type_changed` w warstwie opisu (samo
+      // zdarzenie zostaje dla determinizmu/fingerprintu i innych konsumentów).
+      case 'land_type_changed': return null;
       case 'control_changed': return `${nameOf(e.cardId)} przechodzi pod kontrolę gracza ${whoN(e.controllerId)}`;
       case 'object_exiled': {
         // M203 (pętla jakości Żywym Testerem, srodziemie vs theros seed 29):
@@ -1185,6 +1197,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         }
         return `${srcName(e)}${whoN(e.playerId)} przestawia karty na wierzchu biblioteki`;
       }
+      case 'manifest_dread_required':
+        return `${whoN(e.playerId)} — manifest dread: wybór, którą z 2 kart z wierzchu zmanifestować`;
+      case 'manifest_dread_resolved':
+        return `${whoN(e.playerId)} manifestuje kartę (2/2 twarzą w dół), drugą do grobu`;
       case 'look_top_started': {
         if (e.cardIds?.length && seesHiddenOf(e.playerId)) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
@@ -1652,6 +1668,12 @@ export function createSession(config) {
   // nie przerywają auto-passu. Zbiór współdzielony z UI (main.js) — sesja
   // tylko czyta, UI mutuje.
   const ignoredOptionKeys = config.ignoredOptionKeys ?? new Set();
+  // M232 — tryb wysoko-graficzny: opcjonalny obserwator RZUCENIA czaru /
+  // wystawienia non-basic lądu (moment zagrania, nie rozstrzygnięcia). UI
+  // (main.js) rejestruje callback i przy włączonym trybie pokazuje pełnoekranową
+  // warstwę z ilustracjami. Sesja tylko GO WOŁA — decyzję o wyświetleniu i cały
+  // DOM trzyma UI. Zero wpływu na przebieg gry (obserwator, nie mutator).
+  const onCast = typeof config.onCast === 'function' ? config.onCast : null;
   if (!(decks instanceof Map) || decks.size !== 2) throw new TypeError('Sesja wymaga dwóch talii (Map)');
   if (!decks.has(HUMAN_ID) || !decks.has(BOT_ID)) throw new TypeError('Talia musi istnieć dla gracza i bota');
   const botFactory = config.botFactory ?? defaultBotFactory;
@@ -1866,6 +1888,26 @@ export function createSession(config) {
 
   /** M73d (D): polskie nazwy zdarzeń triggerów — log i stos (audyt żywym testerem). */
 
+
+  /**
+   * M232 — powiadamia obserwatora trybu wysoko-graficznego o RZUCENIU czaru /
+   * wystawieniu non-basic lądu. Wołane z obu ścieżek zdarzeń (ruch gracza
+   * `apply` i ruchy bota `streamAutoEvents`), więc warstwa pokazuje się dla
+   * kart OBU stron. Filtr: czary/permanenty/aury zawsze; land TYLKO gdy
+   * NIE jest basic (basic-lądy są nieciekawe wizualnie i nie mają artId).
+   */
+  const CAST_EVENT_TYPES = new Set(['spell_cast', 'permanent_cast', 'aura_spell_cast', 'land_played']);
+  function emitCastEvent(e) {
+    if (!onCast || !CAST_EVENT_TYPES.has(e.type)) return;
+    const cardId = e.cardId ?? e.object?.cardId ?? null;
+    if (!cardId) return;
+    if (e.type === 'land_played') {
+      const card = registry.get(cardId);
+      const isBasic = (card?.types ?? []).includes('Basic') || cardId.startsWith('basic-');
+      if (isBasic) return;
+    }
+    onCast({ cardId, playerId: e.playerId ?? null, eventType: e.type });
+  }
 
 /** Opis zdarzenia przez modułowego czytelnika (wstrzyknięte nazwy stanu). */
   function describeEvent(e, names = PLAYER_NAMES, options = {}) {
@@ -2268,6 +2310,7 @@ export function createSession(config) {
       if (text) sessionLog('event', text);
       noteBotMove(e);
       recordTurnEvent(e);
+      emitCastEvent(e);
       if (BOT_PAUSE_EVENTS.has(e.type)) significant = true;
       // M157/D: koniec blokady stun ma być WIDOCZNY na stole. (a) zdjęcie
       // licznika stun = pauza (gracz widzi zejście licznika na kaflu);
@@ -2559,6 +2602,7 @@ export function createSession(config) {
         // ląd) filtruje ta sama bramka co dotychczas.
         noteBotMove(e);
         recordTurnEvent(e);
+        emitCastEvent(e);
         // M100/E8: własne dobranie (klik „dobierz kartę" w kroku dobierania
         // albo dobranie z efektu rozstrzygniętego w tej komendzie) ma dać
         // komunikat w „Rozgrywka" (UX właściciela 2026-08-15).

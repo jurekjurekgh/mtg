@@ -695,6 +695,21 @@ test('noop: utrata życia jako JEDYNA zmiana (koszt życiem) jest zgłaszana', (
   assert.match(found[0].message, /koszt/i);
 });
 
+test('M219: utrata życia gracza BEZ kosztu życiowego to SKUTEK, nie no-op', () => {
+  // Pętla jakości Żywym Testerem (h10 wiedzmin vs forgotten-realms s=15):
+  // Ballista Watcher „{2}{R},{T}: 1 obrażenie dowolnemu celowi" wycelowany
+  // we WŁASNĄ twarz zabiera 1 życia — to SKUTEK zadanych obrażeń, nie koszt.
+  // Detektor liczył humanLifeDelta<=0 jako koszt niezależnie od kosztu
+  // życiowego zdolności i zgłaszał poprawną (choć samobójczą) ofertę jako
+  // no-opa (L18/L75). Koszt {2}{R},{T} nie ma składnika `life`.
+  const found = detectNoEffectOffers([{
+    label: 'Aktywuj: Ballista Watcher (koszt 2R, T) — 1 obrażenie → cel: Ty',
+    applied: true,
+    probe: probeOf({ changed: true, humanLifeDelta: -1, ownOtherTaps: 1, costSignature: { mana: true, tap: true } }),
+  }]);
+  assert.equal(found.length, 0, 'strata życia gracza bez kosztu życiowego = skutek, nie zgłaszaj no-opa');
+});
+
 test('noop: runDetectors włącza nową kategorię do kompletnego przebiegu', () => {
   const found = runDetectors(['  >> Wyposaż: X → Y'], {
     actionRecords: [], windowRecords: null, profile: 'greedy',
@@ -924,8 +939,21 @@ test('M119: detektor odmiany NIE zgłasza poprawnych form (bez fałszywek)', asy
     '  [ROZGRYWKA]   • Obiekt dostaje +1 licznik +1/+1 (razem 1)',
     '  [ROZGRYWKA]   • Obiekt dostaje +12 liczników (razem 12)',
     '  [ROZGRYWKA]   • Obiekt dostaje +22 liczniki (razem 22)',
+    // M223 (audyt Batch 50): dopełniacz po „z" — „z 3 kart" jest POPRAWNE
+    // (out of N cards), nie mianownik „3 karty". Nie zgłaszamy.
+    '  [ROZGRYWKA]   • Nieprzyjaciel kończy scry — odkłada na spód biblioteki 2 z 3 kart',
+    '  [ROZGRYWKA]   • Bierze kartę z wierzchu do ręki (2 z 7 kart do grobu)',
   ]);
   assert.deepEqual(found, [], `fałszywe alarmy: ${found.map((f) => f.message).join(' | ')}`);
+});
+
+test('M223: detektor odmiany NADAL łapie błąd mianownikowy „3 kart" (bez „z")', async () => {
+  const { detectPolishPluralErrors } = await import('../tools/table-tester/detectors.mjs');
+  const found = detectPolishPluralErrors([
+    '  [ROZGRYWKA]   • Odłóż 3 kart na spód biblioteki',
+  ]);
+  assert.equal(found.length, 1, `wciąż łapie błąd mianownikowy: ${found.map((f) => f.message).join(' | ')}`);
+  assert.match(found[0].message, /„3 kart\" — powinno być „3 karty\"/);
 });
 
 test('M119: detektor łapie modal z nieodróżnialnymi opcjami', async () => {

@@ -18,7 +18,7 @@ import { stateFingerprint } from '../src/engine/fingerprint.js';
  * w oknie z prawdziwą decyzją. Testy są headless — bez DOM-u.
  */
 
-function buildDecks(humanFile = 'tarkir.txt', botFile = 'warhammer.txt') {
+function buildDecks(humanFile = 'tarkir-bg.txt', botFile = 'warhammer-brg.txt') {
   const registry = createCardRegistry();
   const decks = new Map([
     [HUMAN_ID, parseDeckText(fs.readFileSync(`decks/${humanFile}`, 'utf8'), registry).cardIds],
@@ -158,7 +158,7 @@ test('sesje z tym samym seedem przebiegają identycznie (bez Math.random)', () =
 });
 
 test('partia z czarami przechodzi przez stos i event log to opisuje', () => {
-  const { registry, decks } = buildDecks('tarkir.txt', 'warhammer.txt');
+  const { registry, decks } = buildDecks('tarkir-bg.txt', 'warhammer-brg.txt');
   // Seed 4 po Batch 35 E3 (green +Trade Route Envoy, red bez zmian) —
   // przelosowane hunterem (kolejne trafienia: 17, 32).
   const session = createSession({ seed: 4, registry, decks });

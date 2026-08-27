@@ -1,6 +1,6 @@
 import {
   IMAGE_MODE, cardImageSources, hoverImageSources, hoverModeLabel, hoverPreviewShape,
-  nextHoverMode, HOVER_MODES, tileImageSources,
+  nextHoverMode, HOVER_MODES, tileImageSources, localArtUrl,
 } from './card-images.js';
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
@@ -398,6 +398,7 @@ export function choiceRequestGroupKey(command) {
   // Pozostałe decyzje wielowariantowe bez klucza (znalezione strażnikiem
   // M201/D): podgląd kart i kopiowanie celów też są jednym wyborem.
   if (command.type === 'resolve_look_top_choice') return 'resolve_look_top_choice';
+  if (command.type === 'resolve_manifest_dread') return 'resolve_manifest_dread';
   if (command.type === 'resolve_satyr_look_choice') return 'resolve_satyr_look_choice';
   if (command.type === 'resolve_copy_targets') return 'resolve_copy_targets';
   if (command.type === 'resolve_reveal_choice') return 'resolve_reveal_choice';
@@ -838,7 +839,13 @@ function describeEffect(e) {
       const noun = DYNAMIC_AMOUNT_NOUNS[amt];
       return noun ? `zada tyle obrażeń, ile ${noun}` : `${dynamicAmount(amt)} obrażeń`;
     },
-    gain_life: () => `zyskaj ${lifeCount(e.amount)}`,
+    gain_life: () => {
+      // M230 (audyt talii spoza podziału, Severed Strands): ilość życia bywa
+      // DYNAMICZNA (= wytrzymałość poświęconego stwora) — bez `amount`. Bez tej
+      // gałęzi kafel pokazywał „zyskaj undefined życia".
+      if (e.amountFromSacrificedToughness) return 'zyskaj życie = wytrzymałość poświęconego stwora';
+      return `zyskaj ${lifeCount(e.amount ?? 0)}`;
+    },
     gain_life_target: () => `cel zyskuje ${lifeCount(e.amount)}`,
     remove_counter: () => `usuń licznik ${e.counter}`,
     add_counter: () => `połóż licznik ${e.counter}`,
@@ -990,6 +997,7 @@ function describeEffect(e) {
     },
     index_look: () => 'zobacz wierzch biblioteki i ułóż w dowolnej kolejności',
     look_top_put_one_hand_rest_grave: () => 'zobacz wierzch biblioteki, jedną do ręki, resztę do grobu',
+    manifest_dread: () => 'manifest dread: zobacz 2 z wierzchu, jedną zmanifestuj (2/2 twarzą w dół), drugą do grobu',
     // M192/Z3 (petla jakosci): deskryptor NIESIE liczbe (Rediscover the Way:
     // amount 3), a opis pokazywal literalne „X" — placeholder z kodu na
     // kaflu karty. Gdy liczba pochodzi z kosztu ({X} Merchant's Dockhand),
@@ -1023,11 +1031,23 @@ function describeEffect(e) {
     conditional: () => {
       const thenDesc = e.then ? describeEffect(e.then) : '';
       const elseDesc = e.else ? describeEffect(e.else) : '';
+      // M229 (audyt nowych talii, Sarkhan's Rage): warunki opisujemy po polsku;
+      // część niesie parametr `subtype` (np. „no Dragons"). Bez wpisu w mapie
+      // na kafel wyciekał surowy identyfikator (controlsNoCreatureSubtype).
       const CONDITIONS = {
         controlsCreatureWithCounter: 'kontrolujesz stwora z licznikiem',
         landEnteredThisTurn: 'land wchodził pod twoją kontrolą w tej turze (Landfall)',
+        controlsNoCreatureSubtype: `nie kontrolujesz stworów typu ${e.subtype ?? '?'}`,
+        controlsCreatureSubtype: `kontrolujesz stwora typu ${e.subtype ?? '?'}`,
+        // M230 (audyt talii spoza podziału, Liliana's Triumph).
+        controlsPlaneswalkerWithSubtype: `kontrolujesz planeswalkera ${e.subtype ?? '?'}`,
       };
-      return `jeśli ${CONDITIONS[e.condition] ?? e.condition}: ${thenDesc}; w przeciwnym razie: ${elseDesc}`;
+      const cond = CONDITIONS[e.condition] ?? e.condition;
+      // M229: gałąź „w przeciwnym razie" tylko GDY istnieje — inaczej kafel
+      // kończył się urwanym „; w przeciwnym razie:" (pusty opis).
+      return elseDesc
+        ? `jeśli ${cond}: ${thenDesc}; w przeciwnym razie: ${elseDesc}`
+        : `jeśli ${cond}: ${thenDesc}`;
     },
     pump_enchanted_creature: () => `${signed(e.power ?? 0)}/${signed(e.toughness ?? 0)} do końca tury`,
     pump_food_result: () => `${signed(e.power ?? 0)}/${signed(e.toughness ?? 0)} do końca tury`,
@@ -1337,6 +1357,17 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
     const suffix = czlony.length > 0 ? ` (gdy ${czlony.join(' i ')})` : '';
     return `Na początku kroku końca${suffix}: ${parts}.`;
   }
+  // M223 (audyt Batch 50, Nanoform Sentinel): „Whenever this creature becomes
+  // tapped, untap another target permanent." Opis musi nazwać CEL — inaczej
+  // kafel mówił „Zatapnięcie tego permanentu: odkręć" (bez „docelowy"), więc
+  // gracz nie wiedział, że odkręca INNY permanent (oś 2 audytu).
+  if (trigger.event === 'self_becomes_tapped') {
+    const rew = trigger.requiresTarget && effects.some((e) => e.type === 'untap_permanent')
+      ? effects.map((e) => (e.type === 'untap_permanent' ? 'odkręć docelowy inny permanent' : describeEffect(e))).join(' i ')
+      : parts;
+    const once = trigger.oncePerTurn ? ' (raz na turę)' : '';
+    return `Gdy ten permanent zostaje zatapnięty${once}: ${rew}.`;
+  }
   if (trigger.event === 'exploits') return `Gdy ten stwór exploituje: ${parts}.`;
   if (trigger.event === 'equipped_creature_attacks') return `Gdy wyposażony stwór atakuje: ${parts}.`;
   if (trigger.event === 'aura_host_targeted_by_spell') return `Gdy zaczarowany stwór staje się celem czaru: ${parts}.`;
@@ -1404,7 +1435,16 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
 /** Tekst reguł do pola karty: keywordy, efekty czaru lub opis zdolności. */
 export function rulesText(info) {
   if (info.faceDown) return '';
-  const keywordLine = (info.keywords ?? []).map((kw) => KEYWORD_LABELS[kw] ?? kw).join(' ');
+  // M229 (audyt Żywym Testerem, Awaken the Sleeper): keywordy NADANE (granty do
+  // EOT, załączniki) mają własny badge na kaflu (info.grantedKeywords, render
+  // ~3026). Linia reguł pokazuje więc tylko keywordy WYDRUKOWANE — inaczej
+  // keyword nadany (np. haste na przejętym Hill Giant) dublował się: raz w
+  // linii reguł, raz jako badge („Pośpiech · Pośpiech"). `keywords` z widoku
+  // jest EFEKTYWNE (z grantami), więc odejmujemy granty.
+  const granted = new Set(info.grantedKeywords ?? []);
+  const keywordLine = (info.keywords ?? [])
+    .filter((kw) => !granted.has(kw))
+    .map((kw) => KEYWORD_LABELS[kw] ?? kw).join(' ');
   const abilityLine = info.abilities && info.abilities.length
     ? info.abilities.map((a) => {
       if (a.type === 'triggered') return describeTriggered(a, info.controllerId);
@@ -1614,6 +1654,18 @@ function choiceSourceTitle(cmd, session, view) {
   if (cmd?.type === 'resolve_hand_top_choice' && view?.pendingHandTopChoice?.sourceCardId) {
     return `${session.nameOf(view.pendingHandTopChoice.sourceCardId)} — karta z ręki na wierzch biblioteki`;
   }
+  // M221/B (zgłoszenie właściciela, Angel's Feather): decyzja „you may" musi
+  // nazywać KARTĘ i CO robi — samo „Efekt dobrowolny (you may)" nic nie mówi.
+  // Źródło i typ efektu jadą z pendingOptionalTrigger w widoku (informacja
+  // publiczna, tylko właściciel decyzji). Opis efektu przez describeEffect
+  // (bez nazw kart w warstwie opisu — ADR 0002).
+  if (cmd?.type === 'resolve_optional_trigger_choice' && view?.pendingOptionalTrigger?.sourceCardId) {
+    const src = session.nameOf(view.pendingOptionalTrigger.sourceCardId);
+    const effLabel = view.pendingOptionalTrigger.effect
+      ? describeEffect(view.pendingOptionalTrigger.effect)
+      : '';
+    return effLabel ? `${src} — ${effLabel} (możesz)` : `${src} — efekt dobrowolny (możesz)`;
+  }
   // M163/A: Exploit (Silumgar Butcher) — tytuł grupy nazywa źródło decyzji
   // (karta publiczna na polu bitwy; pendingExploit w widoku tylko właściciela).
   if (cmd?.type === 'resolve_exploit_choice' && view?.pendingExploit?.sourceCardId) {
@@ -1800,6 +1852,32 @@ function abilityFizzlesOnHand(ability, view) {
   });
 }
 
+/** Polskie nazwy kolorów many (do badge'y ochrony). */
+const PROTECTION_COLOR_NAMES = { W: 'Biały', U: 'Niebieski', B: 'Czarny', R: 'Czerwony', G: 'Zielony' };
+
+/**
+ * M221/C — badge'e ochrony na kaflu permanentu (CR 702.16). Jeden badge na
+ * jakość: „Ochrona przed: Czarny" (kolor), „Ochrona przed wielokolorowymi",
+ * „Ochrona przed: <podtyp>". Reguła po deskryptorze jakości, bez nazw kart
+ * (ADR 0002). Zwraca listę gotowych etykiet.
+ */
+export function protectionBadges(protection) {
+  const out = [];
+  for (const q of protection ?? []) {
+    if (!q) continue;
+    const parts = [];
+    if (Array.isArray(q.colors) && q.colors.length) {
+      parts.push(q.colors.map((c) => PROTECTION_COLOR_NAMES[c] ?? c).join('/'));
+    }
+    if (q.multicolored) parts.push('wielokolorowymi');
+    if (q.subtype) parts.push(q.subtype);
+    if (q.notSubtype) parts.push(`spoza: ${q.notSubtype}`);
+    if (parts.length === 0 && q.kind === 'creature') parts.push('stworami');
+    out.push(parts.length ? `Ochrona przed: ${parts.join(', ')}` : 'Ochrona');
+  }
+  return out;
+}
+
 /** Opis JAKOŚCI ochrony (CR 702.16b–e) po deskryptorze — bez nazw kart. */
 export function protectionQualityLabel(quality) {
   if (!quality) return 'wybranym źródłem';
@@ -1816,10 +1894,24 @@ export function protectionQualityLabel(quality) {
 }
 
 export function commandLabel(cmd, session, view) {
+  // M223 (audyt Batch 50): karty ujawnione decydentowi przez blokującą decyzję
+  // (scry / look_top / manifest dread) są w BIBLIOTECE (ukrytej), więc etykieta
+  // celu nie znajdowała ich w strefach i pokazywała „?". Ich tożsamość jedzie
+  // w `pending*.cards` (tylko do decydenta) — dokładamy je do wyszukiwania.
+  // Naprawia też pre-istniejący „Weź do ręki: ?" (resolve_look_top_choice).
+  const revealedCards = [
+    ...(view.pendingScry?.cards ?? []),
+    ...(view.pendingLookTopN?.cards ?? []),
+    ...(view.pendingManifestDread?.cards ?? []),
+  ];
   const obj = (id) => view.zones.hand.find((o) => o.id === id)
     ?? view.zones.battlefield.find((o) => o.id === id)
     ?? view.zones.stack.find((o) => o.id === id)
     ?? view.zones.graveyard.find((o) => o.id === id)
+    // Karty ujawnione decydentowi (scry/look_top/manifest) PRZED strefą
+    // biblioteki: wpis biblioteki jest `{ id, hidden:true }` bez cardId i
+    // wygrywałby dopasowanie, dając „?" mimo znanej tożsamości.
+    ?? revealedCards.find((o) => o?.id === id)
     ?? view.zones.library.find((o) => o.id === id)
     ?? view.zones.exile?.find((o) => o.id === id);
   const playerNameOf = (id) => PLAYER_NAMES[id] ?? view.players?.find((p) => p.id === id)?.name ?? id;
@@ -1948,6 +2040,17 @@ export function commandLabel(cmd, session, view) {
         return `Zagraj aurę: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)}) → zaczaruj ${host}`;
       }
       if (cmd.faceDown) return `Zagraj: ${nameOfObjectId(cmd.objectId)} twarzą w dół (2/2, koszt ${card?.morph?.cost != null ? escapeHtml(String(card.morph.cost)) : '?'})`;
+      // M223 (audyt Batch 50, Jwar Isle Avenger): surge to alternatywny,
+      // TAŃSZY koszt — bez własnej etykiety wyglądał identycznie jak zwykły
+      // rzut, więc gracz nie odróżniał wariantów (oś 2 audytu). Format jak warp.
+      if (cmd.surgeCast) {
+        const sc = card?.surge;
+        const costStr = sc
+          ? `${(sc.colors ?? []).map((c) => `{${c}}`).join('')}${Math.max(0, (sc.cost ?? 0) - (sc.colors ?? []).length) > 0 ? `{${Math.max(0, (sc.cost ?? 0) - (sc.colors ?? []).length)}}` : ''}`
+          : null;
+        const cost = costStr != null ? manaCostHtml(costStr) : '?';
+        return `Rzuć za surge: ${nameOfObjectId(cmd.objectId)} (koszt ${cost})`;
+      }
       // Phyrexian mana (CR 118.9): gracz wybiera, ile symboli {W/P} opłaci
       // 2 życiem (reszta z many) — wariant komendy cast_permanent.
       if (cmd.phyrexianPayWithLife != null) {
@@ -2378,6 +2481,14 @@ export function commandLabel(cmd, session, view) {
       // Gurmag Drowner — wybierz kartę z wierzchu do ręki.
       return `Weź do ręki: ${nameOfObjectId(cmd.cardId)}`;
     }
+    case 'resolve_manifest_dread': {
+      // Manifest Dread — wybierz, którą kartę zmanifestować (2/2 twarzą w dół).
+      return `Zmanifestuj: ${nameOfObjectId(cmd.cardId)}`;
+    }
+    case 'turn_manifest_face_up': {
+      // Manifest — obróć twarzą do góry za koszt many.
+      return `Obróć twarzą do góry: ${nameOfObjectId(cmd.objectId)}`;
+    }
     case 'resolve_hand_top_choice': {
       // M162/C (uwaga właściciela): Chittering Rats u bota otwierał modal
       // „Karta z ręki na wierzch (1 z 5)…" — ten case w ogóle nie istniał,
@@ -2687,6 +2798,9 @@ export function cardInfo(session, object, combat = null) {
     lostKeywordsUntilEOT: faceDown ? [] : [...(object.lostKeywordsUntilEOT ?? [])],
     cantBlockNow: Boolean(object.cantBlock || object.cantBlockPrinted),
     cantBeBlockedNow: Boolean(object.cantBeBlocked),
+    // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona (CR 702.16)
+    // jako osobny badge — kolor/jakość widoczne wprost, nie schowane w nazwie aury.
+    protection: faceDown ? [] : [...(object.protection ?? [])],
     // M173/C: czasowe stany z widoku (saddle/untap-lock/kontrola/regeneracja).
     saddledNow: Boolean(object.saddled),
     untapLockedNow: Boolean(object.untapLocked || object.dontUntapNextUntapStep),
@@ -2944,6 +3058,12 @@ export function buildStateOverlay(visual, info) {
     }
     if (info.cantBlockNow) flags.push(['kw', 'nie może blokować']);
     if (info.cantBeBlockedNow) flags.push(['kw', 'nie do zablokowania']);
+    // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona jako
+    // WŁASNY badge — kolor/jakość wprost na kaflu, nie schowane w „zaczarowany:
+    // <aura>". Etykieta po deskryptorze jakości (CR 702.16), bez nazw kart.
+    for (const badge of protectionBadges(info.protection)) {
+      flags.push(['kw', badge]);
+    }
     // M173/C: pozostałe czasowe stany z efektów — audyt na wniosek
     // właściciela (Panic Spellbomb — klasa objęta już przez cantBlockNow).
     if (info.saddledNow) flags.push(['kw', 'osiodłany']);
@@ -3079,6 +3199,47 @@ export function renderCardFullscreen(host, info, { positionText = null } = {}) {
   if (positionText) div(host, 'fullscreen-position', positionText);
   div(host, 'fullscreen-hint', 'Dotknij ✕ lub w dowolnym miejscu, żeby zamknąć · przesuń w lewo/prawo, by zmienić kartę');
   return host;
+}
+
+/**
+ * M232 — tryb wysoko-graficzny (zlecenie właściciela): pełnoekranowa warstwa
+ * z DWIEMA zmaksymalizowanymi ilustracjami rzucanej karty — panoramiczną (FOT)
+ * u góry i bestiariusz (KON) pod nią. Wywoływana w momencie RZUCENIA czaru /
+ * wystawienia non-basic lądu (nie rozstrzygnięcia). Klik/tap w dowolnym miejscu
+ * zamyka warstwę (obsługa w main.js).
+ *
+ * Obie ilustracje to lokalne pliki `img/<artId>{FOT,KON}.png` (localArtUrl).
+ * Obraz, który się nie wczyta (brak pliku / brak artId), jest chowany — warstwa
+ * pokazuje wtedy tę, która istnieje; gdy żadna, host zostaje pusty (caller
+ * może wtedy w ogóle nie otwierać warstwy — patrz cardHasShowcaseArt).
+ *
+ * @param {HTMLElement} host kontener warstwy (czyszczony)
+ * @param {object} card definicja karty z rejestru (potrzebne: artId, name)
+ */
+export function renderCardArtShowcase(host, card) {
+  clear(host);
+  if (!host || !card) return host;
+  for (const variant of ['fot', 'kon']) {
+    const url = localArtUrl(card, variant);
+    if (!url) continue;
+    const img = document.createElement('img');
+    img.className = `showcase-art showcase-${variant} is-loading`;
+    img.alt = `${card.name ?? 'Karta'} — ${variant.toUpperCase()}`;
+    img.decoding = 'async';
+    // Obraz, którego nie ma na dysku (404), chowamy — nie zostawiamy pustej
+    // ramki. Ten sam wzorzec co attachImageWithFallback, ale bez syntetycznej
+    // twarzy: showcase pokazuje wyłącznie realne ilustracje FOT/KON.
+    img.addEventListener('error', () => { img.style.display = 'none'; });
+    img.addEventListener('load', () => { img.className = img.className.replace(/\s*is-loading/, ''); });
+    img.src = url;
+    host.appendChild(img);
+  }
+  return host;
+}
+
+/** Czy karta ma lokalne ilustracje FOT/KON (artId) do trybu wysoko-graficznego. */
+export function cardHasShowcaseArt(card) {
+  return Boolean(card && card.artId != null && card.artId !== '');
 }
 
 /**

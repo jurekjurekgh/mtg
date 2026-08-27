@@ -163,6 +163,9 @@ const HARMFUL_PERMANENT_EFFECTS = new Set([
   'exile_target_creature', 'exile_all', 'bounce_permanent', 'bounce_to_library_top',
   'sacrifice_permanent', 'player_sacrifices_creature', 'tap_permanent',
   'tap_permanents', 'lock_untap', 'dont_untap_next_untap_step', 'shrink', 'pump_negative',
+  // M229: przejęcie kontroli (Awaken the Sleeper) SZKODZI graczowi, który
+  // traci stwora — to poprawna, wroga gra, nie „buff dla przeciwnika".
+  'gain_control_until_end_of_turn',
 ]);
 
 /**
@@ -559,11 +562,24 @@ export function detectNoEffectOffers(probeRecords) {
     // jest skutkiem — Sterling Keykeeper („{2}, {T}: Tap target creature")
     // wycelowany we własnego stwora zmienia stan stołu. Bez tego licznika
     // koszt i skutek wpadały do jednego worka i oferta wyglądała na no-opa.
+    //
+    // M219 (pętla jakości, h10 wiedzmin vs forgotten-realms s=15): strata
+    // życia GRACZA jest kosztem TYLKO wtedy, gdy zdolność MA koszt życiowy
+    // (`costSignature.life`). Ballista Watcher („{2}{R},{T}: 1 obrażenie
+    // dowolnemu celowi") wycelowany we WŁASNĄ twarz zabiera 1 życia jako
+    // SKUTEK, a bez tego warunku detektor liczył to jako „sam zapłacony
+    // koszt" i zgłaszał poprawną (choć samobójczą) ofertę jako no-opa
+    // (L18/L75 — jeden licznik conflating koszt i skutek zawsze kłamie tam,
+    // gdzie oba to życie gracza). Sam wybór „strzel we własną twarz" bywa
+    // głupi, ale to decyzja PROFILU testera, nie no-op oferty; jeśli chcemy
+    // to piętnować, to osią „bezsensowne działania", nie „oferta bez skutku".
+    const ownLifeLossIsCost = Boolean(probe.costSignature?.life);
     const onlyCosts = (probe.opponentTaps ?? 0) === 0
       && (probe.ownEffectTaps ?? 0) === 0
       && (probe.ownUntaps ?? 0) === 0
       && (probe.opponentUntaps ?? 0) === 0
-      && (probe.humanLifeDelta ?? 0) <= 0;
+      && ((probe.humanLifeDelta ?? 0) === 0
+        || (ownLifeLossIsCost && (probe.humanLifeDelta ?? 0) < 0));
     // M122/#4: PRODUKCJA many to skutek, a rozpoznawaliśmy ją wyłącznie po
     // polskim tekście etykiety (MANA_ABILITY). Etykieta GRUPY w panelu brzmi
     // „Aktywuj: Dragonbroods' Relic (5 opcji)" — nie ma w niej słowa „mana",
@@ -621,15 +637,21 @@ export function detectPolishPluralErrors(lines) {
       // UWAGA: \\b nie działa po polskich znakach („kartę” kończy się literą
       // spoza [A-Za-z0-9_], więc \\b dopasowałoby przedrostek „kart”).
       // Granicę wyrazu sprawdzamy jawnie: po rzeczowniku nie może stać litera.
-      const pattern = new RegExp(`\\+?(\\d+)\\s+(${forms.map(escapeRe).join('|')})(?![\\p{L}])`, 'gu');
+      // M223 (audyt Batch 50): liczebnik po przyimku „z" to konstrukcja
+      // DOPEŁNIACZOWA („2 z 3 kart", „z 7 kart") — rzeczownik jest wtedy
+      // w dopełniaczu (zawsze „kart"), nie w mianowniku, którego pilnuje ta
+      // reguła. Bez wyjątku detektor fałszywie żądał „3 karty" dla poprawnego
+      // „z 3 kart" (L75: błąd w POMIARZE, nie w poprawnym kodzie).
+      const pattern = new RegExp(`(z\\s+)?\\+?(\\d+)\\s+(${forms.map(escapeRe).join('|')})(?![\\p{L}])`, 'gu');
       let match;
       while ((match = pattern.exec(line)) !== null) {
-        const n = Number(match[1]);
+        if (match[1]) continue; // „z N …" — dopełniacz, pomijamy
+        const n = Number(match[2]);
         if (!Number.isFinite(n)) continue;
         const want = expectedPolishForm(n, rule);
-        if (match[2] !== want) {
+        if (match[3] !== want) {
           push(found, 'info',
-            `Błędna odmiana: „${match[1]} ${match[2]}" — powinno być „${match[1]} ${want}"`,
+            `Błędna odmiana: „${match[2]} ${match[3]}" — powinno być „${match[2]} ${want}"`,
             line);
         }
       }
@@ -761,7 +783,7 @@ export function detectHiddenCardLeak(lines, knownCardNames = new Set()) {
  * sterownik (`myPermanentNames`) — po deskryptorze „czyj to obiekt”, nie po
  * nazwie karty (ADR 0002).
  */
-export function detectBotBuffsMyCreatures(lines, myPermanentNames = new Set(), enemyPermanentNames = new Set()) {
+export function detectBotBuffsMyCreatures(lines, myPermanentNames = new Set(), enemyPermanentNames = new Set(), harmfulNames = new Set()) {
   const found = [];
   const BENEFIT = /zyskuje:|dostaje \+[0-9]|otrzymuje \+[0-9]|licznik \+1\/\+1|nadanie słów kluczowych|zdobądź|\+[0-9]+\/\+[0-9]+/i;
   const HARMFUL = /obrażeni|zniszcz|wygna|zabij|poświęc|odrzuc|mieli|-1\/-1|traci/i;
@@ -779,12 +801,27 @@ export function detectBotBuffsMyCreatures(lines, myPermanentNames = new Set(), e
     // egzemplarz. Milczymy zamiast zgadywać (fałszywy alarm gorszy od ciszy
     // w narzędziu, które ma budować zaufanie do zgłoszeń).
     if (enemyPermanentNames.has(target)) continue;
+    // M229 (audyt nowych talii, Awaken the Sleeper — false positive): czar/
+    // zdolność SZKODLIWA dla celu (removal, a także PRZEJĘCIE KONTROLI —
+    // gain_control_until_end_of_turn) to poprawna gra przeciw graczowi, nie
+    // „buff". Klasyfikacja po REJESTRZE (harmfulNames = harmfulCardNames),
+    // niezależna od poziomu logowania i odległości wpisów (M99): nazwa
+    // rzucanej karty jest wprost w tym wpisie. Awaken daje celowi haste
+    // (BENEFIT łapał „zyskuje: pośpiech"), ale karta jako całość jest wroga.
+    const castCard = (/Nieprzyjaciel (?:aktywuje|rzuca) (.+?) →/.exec(line) ?? [])[1]?.trim();
+    if (castCard && harmfulNames.has(castCard)) continue;
     // Korzyść bywa opisana w NASTĘPNYM wpisie („X zyskuje: zadeptywanie”),
     // więc oceniamy wpis aktywacji RAZEM z najbliższym sąsiedztwem. Bez tego
     // detektor milczał na dokładnie tym kształcie, dla którego powstał.
     const context = lines.slice(i, i + 3).join(' ⏎ ');
     if (HARMFUL.test(context)) continue;   // removal w mój permanent to poprawna gra
-    if (!BENEFIT.test(context)) continue;
+    // M223 (audyt Batch 50, false positive): przy przeplocie triggerów na
+    // stosie (np. Piercing Rays — EXILE — obok wpisu Mentora „dostanie
+    // licznik +1/+1” od INNEGO stwora) ślepe okno łapało cudzą korzyść i
+    // fałszywie oskarżało removal (L61: okno miesza niezależne zdarzenia).
+    // Korzyść musi dotyczyć TEGO celu: linia z BENEFIT ma też nazywać target.
+    const benefitLine = lines.slice(i, i + 3).find((l) => BENEFIT.test(l) && l.includes(target));
+    if (!benefitLine) continue;
     const key = `${target}|${line.slice(0, 60)}`;
     if (seen.has(key)) continue;
     seen.add(key);
@@ -1064,7 +1101,7 @@ export function runDetectors(lines, { actionRecords = [], windowRecords = null, 
     // M138 (audyt „wcielam się w gracza”) — trzy klasy, które przeszły przez
     // komplet dotychczasowych detektorów: 22 partie dały ZERO zgłoszeń, a
     // ręczne czytanie transkryptu dziesięć znalezisk (L27).
-    ...detectBotBuffsMyCreatures(lines, myPermanentNames, enemyPermanentNames),
+    ...detectBotBuffsMyCreatures(lines, myPermanentNames, enemyPermanentNames, harmfulNames),
     ...detectBotUntapsMyPermanent(lines, myPermanentNames, enemyPermanentNames),
     ...detectBotHarmsOwnPermanent(lines, enemyPermanentNames, myPermanentNames, harmfulNames),
     ...detectFalseNoEffect(lines),

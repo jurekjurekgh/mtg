@@ -332,6 +332,204 @@ iPadzie/iPhonie bez instalowania czegokolwiek.
   render + licznik, brak kontenera nie psuje renderu, panel domyślnie
   zwinięty).
 
+## B6 — Strojenie deskryptorowe (rozpoczęte 2026-08-26)
+
+Pogłębienie B4: zamiast 7 grubych wag rodzin, drobnoziarniste parametry wyceny
+pogrupowane po DESKRYPTORACH (ADR 0002). Nowy typ zadania sesji „Strojenie Bota"
+— pełna instrukcja: `docs/setup/STROJENIE_BOTA.md`.
+
+Motywacja (analiza teoretyczna z właścicielem): B4 jest zbyt gruboziarnisty
+(mnożnik `spell` rusza naraz wszystkie czary). Chcemy stroić konkretną
+kartę/mechanikę („weź na warsztat jedną kartę, graj wiele partii, różnicuj
+scoring") — ale bez overfittingu (pula seedów, nie jeden) i bez łamania ADR 0002
+(tuner offline zna kartę, bot w runtime scoruje po deskryptorach). Świadomie
+NIE wchodzimy w RL/deep learning: kosztowny, niedeterministyczny, wymaga
+zależności ML (ADR 0008) i psuje interpretowalność bota (część metody
+wykrywania błędów).
+
+### T0 — golden-master ✅ (2026-08-26)
+
+`tools/bot-scoring-snapshot.mjs` + `test/bot-scoring-snapshot.test.js` +
+fixture. Zamraża ślad decyzji bota na 6 partiach; dowodzi, że refaktor przy
+parametrach domyślnych nie zmienia zachowania bit w bit. Sieć bezpieczeństwa
+całego etapu.
+
+### T1 — parametryzacja deskryptorowa (w toku, rodzina po rodzinie)
+
+**Rundy strojenia (log wyników):**
+
+- **Runda 1 (2026-08-27) — „premie agresji w ataku" (attackThroughBonus=3,
+  attackOpenBoardBonus=8, attackEvasionBonus=3): NIEWRAŻLIWA na BENCH_DECKS.**
+  Wybór rodziny oparty o pomiar częstości (walka = najczęstsza decyzja bota:
+  attack 707 + block 354 + resolve_combat 707). Wyciągnięta (M225/1), ale
+  hill-climbing (8 seedów, baza 3000) dał identyczny win-rate dla WSZYSTKICH
+  kandydatów. Weryfikacja skrajna (L74/L75 — detektor to hipoteza): premie
+  0/0/0 vs 40/40/40 dają IDENTYCZNY wynik (vsRandom 90.8%, vsAggro 68.5%), a na
+  2292 decyzjach bota ZERO przełączeń wyboru. Powód strukturalny: przy otwartej
+  planszy atak i tak wygrywa (człony penetratingPower≥życie=+1000, moc, racing
+  dominują premię); przy blokerach premia otwartej planszy nie wchodzi.
+  Wniosek: premie są poprawne semantycznie i tunowalne dla przyszłych
+  talii/mechanik, ale na obecnym benchmarku nie są dźwignią jakości. Ekstrakcja
+  zostaje (rodzina nazwana, gotowa). NIE przyjęto zmian domyślnych.
+
+  Sonda wrażliwości innych rodzin (skrajne wartości, liczba przełączeń decyzji
+  na 2292): `creatureBase` 30→533, 140→375; `spellBase` 10→77, 120→338 — te
+  rodziny SĄ wrażliwe (kandydaci do strojenia w kolejnej rundzie).
+
+- **Runda 2 (2026-08-27) — rodzina bazowa (creatureBase, spellBase):
+  LOKALNE OPTIMUM, brak poprawy.** Ta rodzina JEST wrażliwa (przełącza setki
+  decyzji), więc strojona hill-climbingiem (krok 10, zakres 20–140, 2 rundy,
+  8 seedów baza 3000). WSZYSTKIE kandydaty ≤ baseline (79.61%): creatureBase
+  60→79.32%, 80→79.17%; spellBase 40→79.17%, 60→79.32%. Wartości domyślne
+  (70/50 — ręcznie dostrojone przez właściciela w poprzednich sesjach) są
+  lokalnym optimum na BENCH_DECKS. NIE przyjęto zmian.
+
+- **Runda 3 (2026-08-27) — rodzina bazowa Z PROXY (β=0.5): potwierdzone
+  OPTIMUM, brak ulepszenia.** Test tezy T2 („proxy znajdzie ulepszenie,
+  którego win-rate nie widział"). Strojenie creatureBase/spellBase z β=0.5
+  (miks win-rate + proxy, 8 seedów baza 3000, krok 10). WSZYSCY kandydaci
+  obj < baseline (66.63–66.69% vs 66.84%). Proxy POTWIERDZIŁ werdykt win-rate:
+  wartości domyślne 70/50 są optimum wg OBU sygnałów. Różnice między wariantami
+  ~0.1 p.p. — w granicach szumu. Wniosek: baza jest solidnie skalibrowana; T2
+  działa jako narzędzie (gładszy sygnał), ale tu nie ma czego zbierać. Kolejne
+  rundy: rodziny jeszcze NIE wyciągnięte (removal/damage/draw — częste w
+  cast_spell), które mogą być gorzej skalibrowane niż baza.
+
+- **Runda 4 (2026-08-27) — rodzina „removal/obrażenia/dobór" + ewaluacja
+  LUSTRZANA: potwierdzone plateau trzema sygnałami.** Wyciągnięto rodzinę
+  (M226/6). Sonda: `removalEnemyBase` PRZEŁĄCZA 336 decyzji (wrażliwa!), ale
+  win-rate vs random/aggro płaski (75.60%). Hipoteza: to problem próbki (słaby
+  przeciwnik). Zbudowano ewaluację lustrzaną (M227/1: kandydat vs baseline,
+  obaj `heuristic`, obie strony stołu) — TRUDNIEJSZY przeciwnik, gdzie removal
+  decyduje. Wynik lustra (6 talii × 8 seedów × 2 strony = 96 meczów/wariant):
+  removalEnemyBase 60/40 → 48-48 (50.00%), 10 → 49-47 (szum), damageCreatureBase
+  20 → 50.00%, drawCardValue 12 → 50.00%. WNIOSEK: trzy niezależne sygnały
+  (win-rate, proxy, lustro) zgodnie pokazują ODPORNE PLATEAU — zmiany
+  skalarnych stałych przełączają setki decyzji, ale nie zmieniają WYNIKÓW,
+  bo dotyczą wyborów między niemal równoważnymi opcjami. Bot jest dobrze
+  skalibrowany na obecnym katalogu. NIE przyjęto zmian.
+
+- **Rewizja wniosku strategicznego (po rundzie 4):** dźwignia „skalarne wagi
+  wyceny" jest wyczerpana na BENCH_DECKS (ręczna kalibracja właściciela +
+  golden-master trzymają bota w optimum). Realny zysk leży teraz gdzie indziej:
+  (a) NOWE mechaniki/karty bez wyceny (surge/manifest) — ale wymagają talii
+  z tymi kartami w benchmarku (dziś ich nie ma); (b) decyzje STRUKTURALNE, nie
+  skalarne (np. które cele/tryby wybrać, nie ile punktów dać) — te nie są
+  „magicznymi liczbami" do wyciągnięcia, tylko logiką; (c) lookahead (B2).
+  Framework B6 (parametry + proxy + lustro + golden-master) jest kompletny
+  i gotowy — czeka na materiał, na którym da realny zysk.
+
+- **Runda 5 (2026-08-27) — M234: WYBÓR CELU removalu (decyzja STRUKTURALNA,
+  nie skalar): PRZYJĘTO.** Zlecenie właściciela po audycie M233 — dokładnie
+  klasa (b) z rewizji wyżej: nie „ile punktów", tylko „KTÓRY cel". Model
+  właściciela: maksymalizuj wartość zdejmowanego stwora.
+  - **TMC jako proxy zdolności** (`removalTmcWeight=2`): PlayerView NIE niesie
+    `abilities` (ADR 0017), więc koszt many to jedyny publiczny sygnał, że
+    kreatura ma tekst (mana/życie/prewencja) — droższy cel = warto zdjąć.
+  - **Cele NIE DO PRZEJŚCIA w walce** premiowane nawet przy niskich statystykach:
+    deathtouch (`removalDeathtouchBonus=14`) i protekcja od MOJEGO koloru
+    (`removalProtectionBonus=18`, po kolorach moich stworów +
+    sourceHasProtectionQuality).
+  - **Cel OGARNIĘTY walką** karany (`removalCombatHandledPenalty=12`): tani
+    (TMC≤3), nieewazyjny cel, którego mój bloker i tak zabije bez straty
+    (symulacja walki) — oszczędzaj removal. Twarde wykluczenia:
+    deathtouch/protekcja/ewazja/drogie cele.
+  - **Pomiar:** mirror-eval na 10 taliach × 6 seedów = 60/60 (0.5000 — decki
+    benchmarku RZADKO dają WYBÓR celu, to samo plateau próbki co rundy 1-4);
+    divergence 8/16378 decyzji (0.05%) BEZ błędów silnika. Win-rate/lustro NIE
+    mierzą tej poprawy (jakość decyzji ≠ wynik przeciw słabemu/równemu), dlatego
+    dowód jest KONSTRUKCYJNY: testy jednostkowe RED→GREEN per knob + weryfikacja
+    ordering (drogi/deathtouch/chroniony/ograny cel). Golden-master zregenerowany
+    (świadoma zmiana), bot-benchmark 9/9 bez regresji. Commity M234/1-3.
+
+- **Runda 6 (2026-08-27) — M235: TIMING flash-aury ochronnej (decyzja
+  STRUKTURALNA — KIEDY, nie ile): PRZYJĘTO.** Metodologia właściciela:
+  audyt z typowaniem mechaniki częstej ∧ nieoptymalnej. Pomiar częstości
+  (bot-vs-bot, 22 talie) pokazał cast_permanent jako #1 decyzję „wydania"
+  zasobu; ręczna lektura wyłapała, że gałąź aur NIE korzysta z okien walki
+  (M218), przez co Benevolent Blessing (aura protekcji z flash) szła w upkeepie.
+  - Korekta diagnozy właściciela: to NIE „aura na tokenie" (token to
+    pełnoprawna kreatura). Błąd = TIMING sztuczki bojowej: aura ochronna z
+    flash ma wartość tylko w oknie walki (ochrona atakującego / bezstratny
+    blok), a w upkeepie to zmarnowana elastyczność instanta.
+  - Fix: `flashProtectionAuraOffWindowPenalty=120` dla aur flash o czystej
+    wartości ochronnej (protection ALBO chooseColor, bez pumpa/keywordów) poza
+    oknem walki (combatTrickWindow albo Główna 1 z gotowym atakującym). Zakres
+    ograniczony: pump-aury (Feral Invocation, Silken Strength) mają wartość
+    trwałą, więc granie w main jest OK — nie karane.
+  - Dowód KONSTRUKCYJNY (testy per okno RED→GREEN: upkeep < pass, Główna 1 i
+    walka > pass). Golden-master bez zmian (snapshot nie ma tej sytuacji),
+    bot-benchmark 9/9. Commit M235/1.
+
+- **Runda 7 (2026-08-27) — M236: nieoptymalne rzucanie czarów/zdolności
+  (6 napraw): PRZYJĘTO.** Kontynuacja audytu Żywym Testerem (zlecenie: do
+  wyczerpania budżetu, nie przerywać po 1. znalezisku). ~25 partii + 3 skany
+  strukturalne bot-vs-bot; 0 zgłoszeń detektorów, wszystko z ręcznej lektury/
+  skanu. Rodzina „timing/wartość spalenia i lifegainu" była najsłabiej
+  skalibrowana:
+  - M236/1 fog przed deklaracją ataku (Inspire Awe) — kara poza oknem walki;
+  - M236/2 poświęcenie permanentu za życie przy bezpiecznym życiu (Instant
+    Ramen) — wartość życia zależna od sytuacji;
+  - M236/3 jałowy tap-za-życie (Soulmender) — pure gain_life bez wartości < pass;
+  - M236/4 skalujący Fireball za trywialny chip w twarz — dobicie=zawsze, chip
+    ≤2 < pass;
+  - M236/5 nieletalne spalenie w stwora poza walką (Shock w 2/3) < pass;
+  - M236/6 zakopywanie karty z grobu na spód (Barkform Harvester) — jałowy churn.
+  Każda RED→GREEN + mutacja, generyczna po deskryptorze (ADR 0002), tylko widok
+  (ADR 0017). npm test 3542/3542, bot-benchmark 9/9, golden-master bez zmian.
+  Commity M236/1–6. Raport: docs/audits/AUDYT_M236_ZYWY_TESTER_2026-08-27.md.
+
+- **Runda 7b (2026-08-27) — M236/8 KOREKTA właściciela.** Trzy naprawy z rundy
+  7 skorygowane: (ad 2&3) życie >20 to BUFOR — tap-za-życie jest darmowe, rób go
+  bez końca (chyba że stwór potrzebny do bloku); M236/3 (Soulmender) było
+  błędnym znaleziskiem, cofnięte. (ad 2) poświęcenie permanentu za życie tylko
+  gdy krytyczne / permanent i tak ginie (bloker/cel removalu na stosie — helper
+  permanentDoomedThisTurn) / TMC ≤ 1. (ad 4) Fireball → model M236/5: dobij
+  stwora albo zadaj istotny cios (≥1/3 życia) w gracza, nie chipuj. Commit M236/8.
+
+- **Wniosek strategiczny dla kolejnych sesji:** benchmark jest blisko nasycenia
+  (heuristic wygrywa ~85% overall, 90.8% vs random), więc czysty win-rate ma
+  MAŁO pola do poprawy jako sygnał — dokładnie problem „credit assignment"
+  z dokumentacji. Zanim strojenie kolejnych rodzin da mierzalny zysk, warto
+  najpierw zrobić **T2 (gęstszy proxy reward: przewaga materialna/tempo)** albo
+  poszerzyć próbkę o trudniejsze pary (silniejszy przeciwnik niż random/aggro,
+  np. heuristic vs heuristic z różnymi wagami). Rodziny WRAŻLIWE ale bez zysku
+  na win-rate (baza) i rodziny NIEWRAŻLIWE (premie ataku) to dwa różne sufity:
+  pierwsza potrzebuje lepszego SYGNAŁU, druga — trudniejszych SYTUACJI.
+
+
+`src/controllers/heuristic-params.js` (bliźniak `heuristic-weights.js`).
+Zrobiona rodzina wzorcowa „wyceny bazowe": `creatureBase` (70),
+`creaturePowerWeight` (2), `creatureToughnessWeight` (1), `spellBase` (50).
+Kolejne rodziny (removal, aura, sacrifice, ETB-self-damage, surge, manifest…)
+to praca kolejnych sesji — każda osobnym commitem, golden-master zielony po
+ekstrakcji.
+
+### T4 — „tryb jednej karty" ✅ szkielet (2026-08-26)
+
+`tools/tune-card.mjs`: wykrywa deskryptory karty, mapuje na parametry
+(`DESCRIPTOR_PARAMS`), zawęża talie do zawierających kartę, uruchamia
+deterministyczny hill-climbing na ustalonej puli seedów. Uczciwie raportuje
+deskryptory bez wyciągniętych parametrów. CLI: `npm run tune-card -- --card <id>`.
+
+### Do zrobienia (kolejne sesje)
+
+- **T1 (ciąg dalszy):** wyciągać kolejne rodziny stałych z `scoreCommand`.
+- **T2 — gęstszy sygnał (proxy reward): ✅ ZREALIZOWANE (2026-08-27, M226/1-3).**
+  Proxy = pozycyjna przewaga gracza `heuristic` (materiał Σ P+T, przewaga kart,
+  różnica życia) próbkowana co turę i znormalizowana do (0,1). Wpięte OPT-IN:
+  `runSimulation({ onStep })` hak; `runBenchmark({ collectProxy })` agreguje
+  proxyMean per para; `tuningObjective(result, { proxyWeight β })` miesza
+  (1−β)·winRate + β·proxy; `tune-card.mjs --proxy-weight β`. Domyślnie β=0 →
+  regresja B4/B6 i golden-master nietknięte. Weryfikacja (sonda 4 seedy): proxy
+  DODAJE rozdzielczość tam, gdzie win-rate jest nasycony (np. creatureBase 120
+  ma ten sam win-rate 75.60% co default, ale różny proxy 0.53281 vs 0.53092).
+  Pliki: `tools/proxy-reward.mjs`, testy `test/bot-proxy-*.test.js`.
+- **T3 — upgrade wyszukiwania:** uogólnienie na ~30 parametrów; opcjonalnie
+  deterministyczny CMA-ES/(μ,λ)-ES w czystym JS.
+- **Adopcja:** przyjęcie parametrów jak w B4 — pełny benchmark, regeneracja
+  golden-mastera, progi „−15 p.p., tylko w górę".
+
 ## Ograniczenia architektoniczne (nie łamać)
 
 - ADR 0004: kontrolery są wymienne — bot implementuje ten sam interfejs co

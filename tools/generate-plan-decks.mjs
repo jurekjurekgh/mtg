@@ -15,8 +15,40 @@ import fs from 'node:fs';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 import { writeDeckText } from '../src/cards/deck-text.js';
+import { splitPlanByColors, needsSplit, SPLIT_THRESHOLD } from './split-deck-colors.mjs';
+import { getSourceForObject } from '../src/engine/mana-sources.js';
 
 const SINGLE_PLAN_MIN = 15;
+
+/** Karta liczy się do progu podziału i minimum 15, o ile NIE jest basic-landem. */
+function isNonBasic(card) {
+  return !card.id.startsWith('basic-');
+}
+
+/**
+ * Tożsamość kolorystyczna karty dla podziału (ADR 0024, poprawki właściciela):
+ *  1. Karta z kolorami w definicji (colors[]) → te kolory (zwykłe czary/stwory).
+ *  2. Karta BEZKOLOROWA (ląd, artefakt-„mana rock", stwór devoid) → kolory
+ *     MANY, jaką PRODUKUJE, z engine'owego getSourceForObject (L41: jedna
+ *     reguła produkcji many, jeden odczyt). Dotyczy WSZYSTKICH kart, nie tylko
+ *     lądów: Mind Stone-owy artefakt dający {U} idzie do talii z U tak samo jak
+ *     Dimir Guildgate.
+ *  3. Źródło bezbarwne ({C}), any-color albo NIE-źródło many → pusta lista →
+ *     wypełniacz (balansuje strony, bez tożsamości koloru).
+ */
+function splitColorsOf(card) {
+  const declared = Array.isArray(card.colors) ? card.colors.filter((c) => 'WUBRG'.includes(c)) : [];
+  if (declared.length > 0) return declared;
+  // Bezkolorowa: sprawdź produkcję many (ląd / artefakt / devoid — bez różnicy).
+  const kind = (card.types ?? []).includes('Land') ? 'land'
+    : (card.types ?? []).includes('Creature') ? 'creature' : 'artifact';
+  const src = getSourceForObject({
+    id: card.id, cardId: card.id, kind,
+    types: card.types ?? [], subtypes: card.subtypes ?? [],
+    abilities: card.abilities ?? [], colors: [],
+  }, null);
+  return src?.colors ?? [];
+}
 
 /**
  * M181 (ADR 0023 §2/§4, zlecenie właściciela): slug pliku talii z nazwy
@@ -70,6 +102,8 @@ export const WOREK_DECKS = Object.freeze({
   Amonkhet: 'worek-legend', Shandalar: 'worek-legend', Rabiah: 'worek-legend',
   Rath: 'worek-legend', Arcavios: 'worek-legend',
   'The Edge': 'worek-legend', 'Thunder Junction': 'worek-legend',
+  // Batch 50: Fiora (świat Commander Legends — intrygi/szlachta) → legendy.
+  Fiora: 'worek-legend',
   Ixalan: 'worek-dziki', Kaladesh: 'worek-dziki', Muraganda: 'worek-dziki',
   'Final Fantasy': 'worek-mroczny', Duskmourn: 'worek-mroczny',
   Lorwyn: 'worek-mroczny',
@@ -184,8 +218,41 @@ export function buildDecks(registry = createCardRegistry()) {
         + `(minimum ${SINGLE_PLAN_MIN}) — przetasuj plany w WOREK_DECKS (ADR 0023 §4).`);
     }
   }
+
+  // M228 (ADR 0024): OBOWIĄZKOWY podział kolorystyczny talii jednoplanowej,
+  // która osiągnęła próg (>= SPLIT_THRESHOLD kart nielandowych, tzn. poza
+  // basic-landami). Worki są przejściowe (ADR 0023) — ich nie dzielimy;
+  // zamiast tego plan awansuje z worka do własnej talii i DOPIERO wtedy może
+  // podlegać podziałowi. „Nieland" = wszystko poza basic-landami (spójnie
+  // z validateDeck: karty utility-land liczą się do progu i minimum 15).
+  const splitDecks = new Map();
+  for (const [file, entry] of decks) {
+    if (file.startsWith('worek')) { splitDecks.set(file, entry); continue; }
+    const nonBasic = entry.cards.filter(isNonBasic);
+    if (!needsSplit(nonBasic.length)) { splitDecks.set(file, entry); continue; }
+    const split = splitPlanByColors(nonBasic, splitColorsOf);
+    if (!split) {
+      // Fallback (decyzja właściciela „fill_then_keep"): plan zbyt jednokolorowy,
+      // by dać dwie talie >=15 — ZOSTAW jedną talię i ostrzeż. Nie tworzymy
+      // sztucznej, niespójnej talii.
+      console.warn(`[generator] UWAGA: plan „${entry.name}” ma ${nonBasic.length} kart nielandowych `
+        + `(>= ${SPLIT_THRESHOLD}), ale nie da się go podzielić kolorystycznie na dwie talie `
+        + `>=${SINGLE_PLAN_MIN} — zostaje jedną talią (ADR 0024, fallback).`);
+      splitDecks.set(file, entry);
+      continue;
+    }
+    // Dwie talie: <slug>-<koloryA> i <slug>-<koloryB>. Nazwa czytelna z kolorami.
+    const nameA = `${entry.name} (${split.suffixA.toUpperCase()})`;
+    const nameB = `${entry.name} (${split.suffixB.toUpperCase()})`;
+    splitDecks.set(`${file}-${split.suffixA}`, { name: nameA, cards: split.a });
+    splitDecks.set(`${file}-${split.suffixB}`, { name: nameB, cards: split.b });
+    console.warn(`[generator] PODZIAŁ: „${entry.name}” (${nonBasic.length} kart) → `
+      + `„${file}-${split.suffixA}” (${split.a.length}) + „${file}-${split.suffixB}” (${split.b.length}) `
+      + `[leak ${split.leak}, imbalance ${split.imbalance}] (ADR 0024).`);
+  }
+
   const files = new Map();
-  for (const [file, { name, cards }] of [...decks.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+  for (const [file, { name, cards }] of [...splitDecks.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
     cards.sort((a, b) => ((a.manaCost ?? 0) - (b.manaCost ?? 0)) || a.name.localeCompare(b.name));
     const lands = landSplit(cards);
     const cardIds = [...cards.map((c) => c.id)];

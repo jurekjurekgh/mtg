@@ -9,7 +9,7 @@ import { BOT_ID, HUMAN_ID, createSession } from '../src/table/session.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 
-function buildSession(seed, humanFile = 'worek-dziki.txt', botFile = 'tarkir.txt') {
+function buildSession(seed, humanFile = 'worek-dziki.txt', botFile = 'tarkir-bg.txt') {
   const registry = createCardRegistry();
   const decks = new Map([
     [HUMAN_ID, parseDeckText(fs.readFileSync(`decks/${humanFile}`, 'utf8'), registry).cardIds],
@@ -58,10 +58,10 @@ function collectBotMoves({ seeds = 30, maxMoves = 500, human, bot } = {}) {
  */
 function collectMovesAcrossDecks() {
   const PAIRS = [
-    ['worek-dziki.txt', 'tarkir.txt'],
+    ['worek-dziki.txt', 'tarkir-bg.txt'],
     ['theros.txt', 'worek-mroczny.txt'],
-    ['mirrodin.txt', 'ravnica.txt'],
-    ['innistrad.txt', 'wiedzmin.txt'],
+    ['mirrodin-brg.txt', 'ravnica.txt'],
+    ['innistrad-brg.txt', 'wiedzmin.txt'],
   ];
   const all = [];
   for (const [human, bot] of PAIRS) {

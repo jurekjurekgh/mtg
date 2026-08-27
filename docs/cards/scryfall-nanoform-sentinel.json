@@ -1,0 +1,19 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Nanoform+Sentinel",
+  "print": "eoe",
+  "name": "Nanoform Sentinel",
+  "mana_cost": "{2}{U}",
+  "cmc": 3,
+  "type_line": "Artifact Creature — Robot",
+  "oracle_text": "Whenever this creature becomes tapped, untap another target permanent. This ability triggers only once each turn.",
+  "power": "3",
+  "toughness": "2",
+  "colors": ["U"],
+  "keywords": [],
+  "set": "eoe",
+  "set_name": "Edge of Eternities",
+  "collector_number": "71",
+  "rarity": "common",
+  "image_uris": { "large": "https://cards.scryfall.io/large/front/3/e/3eeae8c3-7939-4c79-92f0-fbdb9c1b71d3.jpg?1783905976" },
+  "pobrano": "2026-08-26"
+}

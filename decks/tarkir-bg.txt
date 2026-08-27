@@ -1,42 +1,24 @@
-# Tarkir
+# Tarkir (BG)
 
 1x Kishla Village
 1x Coat with Venom
-1x Descendant of Storms
 1x Servant of the Scale
 1x Delta Bloodflies
 1x Dragonbroods' Relic
-1x Force Away
-1x Furious Forebear
 1x Highland Game
-1x Impact Tremors
-1x Jeskai Devotee
 1x Krumar Initiate
-1x Palace Familiar
 1x Ainok Artillerist
 1x Awaken the Bear
 1x Colossodon Yearling
-1x Jeskai Windscout
 1x Kin-Tree Nurturer
 1x Knockout Maneuver
 1x Krotiq Nestguard
-1x Monastery Flock
-1x Ojutai's Breath
-1x Rediscover the Way
 1x Vow of Wildness
-1x Bring Low
-1x Gurmag Drowner
-1x Rush of Battle
 1x Trade Route Envoy
 1x Rakshasa Vizier
-1x Sarkhan's Rage
 1x Silumgar Butcher
 1x Stampeding Elk Herd
-1x Vandalize
-1x Ainok Tracker
 1x Woolly Loxodon
-2x Plains
-3x Island
-3x Swamp
-3x Mountain
+1x Island
+2x Swamp
 7x Forest

@@ -46,7 +46,7 @@ export function parseArgs(argv) {
     // istnieć, a tester grał wtedy tym, co artefakt miał wybrane domyślnie,
     // nagłówkując transkrypt podaną nazwą (cichy fałsz). Domyślne = pierwsza
     // i czwarta talia stałej próbki benchmarku (tools/benchmark.mjs).
-    human: 'dominaria',
+    human: 'dominaria-brg',
     bot: 'ravnica',
     seed: 42,
     steps: 300,
@@ -105,7 +105,7 @@ Użycie:
   node run-game.mjs [opcje]
 
 Opcje:
-  --human <talia>        talia gracza (nazwa pliku decks/*.txt bez .txt) [dominaria]
+  --human <talia>        talia gracza (nazwa pliku decks/*.txt bez .txt) [dominaria-brg]
   --bot <talia>          talia bota                                              [ravnica]
   --seed <n>             seed partii                                            [42]
   --steps <n>            limit kroków gry                                      [300]
@@ -450,6 +450,13 @@ export async function runTableGame({
     const mandatory = by(/Dobierz kartę/)
       || by(/^Odrzuć:/)
       || by(/^Poświęć:/)
+      // M223 (audyt Batch 50): decyzja „ląd do poświęcenia" (resolve_springbloom
+      // — Roiling Regrowth, Springbloom Druid) blokowała testera („[STOP]"),
+      // bo brakowało wzorca; to obowiązkowe domknięcie efektu, nie pomijamy.
+      || by(/ląd do poświęcenia|Ląd do poświęcenia/)
+      // Manifest Dread (Batch 50): wybór którą kartę zmanifestować to decyzja
+      // blokująca — bez wzorca tester utknąłby na tej mechanice.
+      || by(/^Zmanifestuj:/)
       || by(/^Weź ląd do ręki:/)
       || by(/^Nie bierz lądu/)
       || by(/^Rzuć z odbiciem:/)
@@ -463,7 +470,7 @@ export async function runTableGame({
     // M155 (audyt żywym testerem): „Rzuć za warp:" (Weftblade Enhancer — nowa
     // mechanika Batch 38) to rzut PERMANENTA; bez wzorca tester nigdy nie
     // ćwiczył warp. Dokładamy do puli ruchów i priorytetów greedy.
-    const plays = all(/Zagraj ląd|^Rzuć:|^Rzuć za warp:|^Zagraj:|^Aktywuj:|^Cycling:|^Wyposaż:|^Flashback:|^Cel czaru|^Cel zdolności:|^Bestow:|^Aura:|^Wybierz:|cel triggera|podziel \d+ obrażeni?[ae]?/);
+    const plays = all(/Zagraj ląd|^Rzuć:|^Rzuć za warp:|^Rzuć za surge:|^Zagraj:|^Aktywuj:|^Cycling:|^Wyposaż:|^Flashback:|^Cel czaru|^Cel zdolności:|^Bestow:|^Aura:|^Wybierz:|cel triggera|podziel \d+ obrażeni?[ae]?/);
     const decisions = all(/Odrzucenie karty|Poświęcenie|Zapłata|Dopłata|Karta z ręki|Wybór koloru|Wybór typu|Kolejność|Proliferate|Cel obrażeń|Rozdzielenie|Wybierz tryb|wybór trybu|Moonlit|Przekierowanie|Dobrowolna|Index|Rozstrzygnij|Pokój|wybierz cel|Karta do ręki|Szukanie|Wybór efektu|Karta na wierzch|Karty do grobu|Surveil|Stomping|odsłonięte|reveal_exile|Craft:|wygnaj|pomijam|brak karty/);
     const pass = by(/Dalej|pass/);
 

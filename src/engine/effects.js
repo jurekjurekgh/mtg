@@ -144,6 +144,56 @@ function thronePutChosenCreature(state, pending, targetId) {
  * Wykonuje WYBRANY cel pokoju (komenda resolve_room_target, game-state.js).
  * Zwraca zdarzenia zakończonego wyboru (dopisane do state.events).
  */
+/**
+ * Manifest (CR 701.34): przenosi kartę z biblioteki na pole bitwy jako face-down
+ * stwór 2/2 bez nazwy/typów/kosztu (jak morph face-down, CR 708.2). Zapisuje
+ * `faceDownOriginal` (cechy karty) i `manifestReady` — jeśli karta jest kartą
+ * STWORA, można ją obrócić twarzą do góry za jej koszt many (turnFaceUp).
+ * Generyczne, bez nazw kart (ADR 0002).
+ */
+export function manifestCardFaceDown(state, cardObjectId, controllerId) {
+  const card = state.objects.get(cardObjectId);
+  if (!card) return null;
+  const isCreatureCard = card.kind === 'creature' || (card.types ?? []).includes('Creature');
+  const newId = `permanent-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, cardObjectId, 'battlefield', newId);
+  const manifested = Object.freeze({
+    ...moved,
+    faceDown: true,
+    summoningSickness: true,
+    tapped: false,
+    kind: 'creature',
+    power: 2,
+    toughness: 2,
+    // CR 708.2 — face-down bez cech karty; oryginał chowamy do obrotu.
+    colors: [],
+    subtypes: [],
+    types: ['Creature'],
+    keywords: [],
+    manaCost: 0,
+    cardName: null,
+    abilities: [],
+    originalAbilities: card.abilities ?? [],
+    faceDownOriginal: Object.freeze({
+      colors: Object.freeze([...(card.colors ?? [])]),
+      subtypes: Object.freeze([...(card.subtypes ?? [])]),
+      types: Object.freeze([...(card.types ?? [])]),
+      keywords: Object.freeze([...(card.keywords ?? [])]),
+      manaCost: card.manaCost ?? 0,
+      cardName: card.cardName ?? null,
+    }),
+    // „Turn it face up any time for its mana cost if it's a creature card":
+    // koszt obrotu = koszt many karty; tylko dla kart stworów (CR 701.34e).
+    manifestReady: isCreatureCard,
+    manifestTurnUpCost: isCreatureCard ? (card.manaCost ?? 0) : null,
+  });
+  state.objects.set(newId, manifested);
+  state.events.push(event('object_moved', {
+    fromId: cardObjectId, object: manifested, fromZone: 'library', toZone: 'battlefield', manifested: true,
+  }));
+  return newId;
+}
+
 export function applyRoomTargetChoice(state, pending, targetId) {
   if (pending.kind === 'player') {
     changeLife(state, targetId, -(pending.params.amount ?? 5));
@@ -4473,6 +4523,35 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.turn.priorityPlayerId = controllerId;
     state.events.push(event('look_top_started', {
       playerId: controllerId, count: topIds.length,
+      cardIds: topIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
+    }));
+    return true;
+  }
+  // Manifest Dread (DSK, CR 701.34): „Look at the top two cards of your library.
+  // Put one onto the battlefield face down as a 2/2 creature and the other into
+  // your graveyard." Blokująca decyzja kontrolera (pendingManifestDread,
+  // resolve_manifest_dread). Generyczne (ADR 0002) — bez nazw kart.
+  if (effect.type === 'manifest_dread') {
+    const controllerId = sourceObject.controllerId;
+    const topIds = state.zones.library
+      .filter((id) => state.objects.get(id)?.controllerId === controllerId)
+      .slice(0, 2);
+    if (topIds.length === 0) return;
+    if (topIds.length === 1) {
+      // Tylko jedna karta w bibliotece: manifestujemy ją bez wyboru (CR 701.34c
+      // — „as many as possible"), nic do grobu.
+      manifestCardFaceDown(state, topIds[0], controllerId);
+      return true;
+    }
+    state.pendingManifestDread = {
+      playerId: controllerId,
+      objectIds: [...topIds],
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('manifest_dread_required', {
+      playerId: controllerId,
+      objectIds: [...topIds],
       cardIds: topIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
     }));
     return true;

@@ -10,14 +10,25 @@
 Kolejność jest obowiązkowa. Nie skracaj jej do „przejrzałem handoff”.
 Nie wybieraj „właściwych” ADR-ów — **czytasz wszystkie**.
 
+**Każdy plik lektury obowiązkowej czytasz W CAŁOŚCI — od pierwszej do
+ostatniej linii, nie tylko nagłówki, początek ani „kilka ostatnich wpisów”.**
+Dotyczy to zwłaszcza `docs/LESSONS.md` (WSZYSTKIE lekcje L1–L…, nie tylko
+najnowsze) i każdego ADR-a. Jeżeli narzędzie zwróci plik pofragmentowany
+(ucięcie, `truncated`, `hasMore`, stronicowanie, limit bajtów) — **dobierasz
+kolejne fragmenty aż do końca pliku** i dopiero wtedy uznajesz go za
+przeczytany. „Przejrzałem”, „doczytałem ostatnie” czy „streściłem” NIE jest
+przeczytaniem. Kontrola dla siebie: znasz `wc -l` pliku i wiesz, że dotarłeś
+do ostatniej linii.
+
 1. **Ten plik** (`AGENTS.md`) — do końca, nie tylko nagłówki.
 2. **Wszystkie ADR-y** w `docs/decisions/` — najpierw
    [README rejestru](docs/decisions/README.md), potem **każdy** plik
-   `NNNN-*.md`. Szczególnie nie pomijaj
+   `NNNN-*.md` **przeczytany do końca** (nie sam nagłówek ani „Decyzja”).
+   Szczególnie nie pomijaj
    [ADR 0020](docs/decisions/0020-mandatory-session-workflow-pr-audit-incremental.md)
    (co sesja **robi**: PR → audyt poprzedniego PR → inkrementalne commity)
    ani ADR 0002, 0007, 0013, 0016, 0018.
-3. **`docs/LESSONS.md`** — cały rejestr (powtarzalne pułapki).
+3. **`docs/LESSONS.md`** — CAŁY rejestr, wszystkie lekcje do ostatniej (powtarzalne pułapki); nie zatrzymuj się na kilku najnowszych.
 4. **`docs/setup/ENVIRONMENT.md`** — stałe ograniczenia sandboxa / gita / sieci.
 5. **Ostatni PR** — ten, który masz zaudytować wg ADR 0020
    (`gh pr list --limit 3`, potem `gh pr view <nr>` i jego diff). To jest
@@ -229,6 +240,16 @@ Te reguły obowiązują każdego agenta bez wyjątku (szczegóły: `docs/WORKFLO
     nie pomijasz fragmentu gry i nie zawężasz audytu.
 - Wyniki audytów zgłaszaj jak inne (wzorzec M54/M65/M73): opis objawu
   z transkryptu → naprawa u root cause → test regresyjny.
+
+- **Strojenie Bota** — `tools/tune-card.mjs` + `tools/tune-bot.mjs` (offline,
+  czysty JS): dostraja PARAMETRY wyceny bota metodą evolucyjną (hill-climbing),
+  nie zmieniając reguł gry. Instrukcja: `docs/setup/STROJENIE_BOTA.md`
+  (Etap B6). Osobny typ zadania: podczas gdy Żywy Tester szuka BŁĘDÓW
+  poprawności, Strojenie Bota szuka lepszych WYCEN zagrań (bot ma grać mądrzej).
+  Parametry deskryptorowe (ADR 0002), determinizm (ADR 0005), zero zależności ML
+  (ADR 0008). Golden-master `test/bot-scoring-snapshot.test.js` pilnuje, że
+  refaktor przy domyślnych parametrach nie zmienia zachowania bota bit w bit;
+  przyjęcie nowych wartości WYMAGA pełnego benchmarku (jak B4).
 
 ## Jak dokumentować pracę
 

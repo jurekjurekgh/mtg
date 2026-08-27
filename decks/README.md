@@ -25,7 +25,7 @@ Walidację wymusza `validateDeck` (`src/cards/deck-validation.js`) — domyślni
 `maxCopies=1`, `minNonland=15`. Format tekstowy i round-trip pilnuje
 `test/repo-decks.test.js`.
 
-## Bieżące talie (16 plików = 12 jednoplanowych + 4 worki)
+## Bieżące talie (22 pliki = 18 jednoplanowych + 4 worki)
 
 Talie **buduje generator** `tools/generate-plan-decks.mjs` — on jest źródłem
 prawdy przydziału karty do talii, a `test/repo-decks.test.js` pilnuje, że pliki
@@ -34,9 +34,12 @@ w `decks/` są zgodne z generatorem (uruchomienie go nie może nic zmienić) ora
 
 Zasady przydziału ([ADR 0023](../docs/decisions/0023-decks-per-plan-and-benchmark-sample.md)):
 
-- **plan z ≥ 15 wspieranymi kartami = własna talia jednoplanowa** — obecnie:
-  `alara`, `dominaria`, `forgotten-realms`, `innistrad`, `mirrodin`, `ravnica`,
-  `srodziemie`, `tarkir`, `theros`, `warhammer`, `wiedzmin`, `zendikar`;
+- **plan z ≥ 15 wspieranymi kartami = własna talia jednoplanowa**;
+- **talia jednoplanowa z ≥ 30 kartami nielandowymi jest DZIELONA kolorystycznie**
+  na dwie (`<plan>-<kolory>`, np. `innistrad-wu` / `innistrad-brg`) —
+  [ADR 0024](../docs/decisions/0024-deck-split-by-colors-and-rotating-benchmark.md).
+  Aktualna lista wszystkich talii (nazwa, kolory, liczność) jest utrzymywana
+  w sekcji „Talie” głównego [README](../README.md) (na życzenie właściciela);
 - **mniejsze plany trafiają do jednego z 4 worków** (mapa `WOREK_DECKS`
   w generatorze): `worek-basni`, `worek-dziki`, `worek-legend`,
   `worek-mroczny`;
@@ -46,8 +49,9 @@ Zasady przydziału ([ADR 0023](../docs/decisions/0023-decks-per-plan-and-benchma
   walidatora, generator zatrzymuje się czytelnym błędem — przetasowanie planów
   między workami to świadoma decyzja w mapie, nie automat;
 - **testy i benchmark używają wyłącznie talii jednoplanowych**; szybka próbka
-  benchmarku to `BENCH_DECKS` w `tools/benchmark.mjs` (6 talii), więc konwersja
-  worka nie wymusza rekalibracji progów.
+  benchmarku to `BENCH_DECKS` w `tools/benchmark.mjs` — od ADR 0024 to ROTUJĄCA
+  auto-próbka (`selectBenchDecks`: 6 pierwszych talii jednoplanowych), więc
+  podział talii z próbki wymaga jednorazowej rekalibracji progów.
 
 **Nie przepisuj listy talii do innych dokumentów** — przy każdym batchu kart
 generator potrafi ją zmienić. Aktualny stan wypisuje
@@ -57,7 +61,8 @@ dokumentacją a `decks/` czerwieni
 w `docs/setup/TESTER_STOLU.md` i w domyślnych talii testera żyły nazwy
 `green`/`red`/`azorius`/`tokens`…, które przestały istnieć w M178).
 
-Każda talia: singleton, `landy = ceil(liczba nielandów / 2)`, kolory landów
+Każda talia (także połówka po podziale ADR 0024): singleton,
+`landy = ceil(liczba nielandów / 2)`, kolory landów
 proporcjonalnie do pipów w kosztach talii (każdy używany kolor ≥ 1). Pula many
 jest **kolorowa** (ADR 0015), więc kolor landu ma znaczenie regułowe — generator
 liczy go z pipów kart, a nie „dla smaku".

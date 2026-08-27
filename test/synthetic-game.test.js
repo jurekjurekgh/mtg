@@ -18,8 +18,8 @@ import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 
 const registry = createCardRegistry();
 const deckLists = new Map([
-  ['p1', parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), registry).cardIds],
-  ['p2', parseDeckText(fs.readFileSync('decks/warhammer.txt', 'utf8'), registry).cardIds],
+  ['p1', parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), registry).cardIds],
+  ['p2', parseDeckText(fs.readFileSync('decks/warhammer-brg.txt', 'utf8'), registry).cardIds],
 ]);
 
 function createMatch(seed) {
@@ -69,7 +69,7 @@ test('partia syntetyczna jest w pełni odtwarzalna z zapisu komend', () => {
 
 function createSpellMatch(seed) {
   const decks = new Map([
-    ['p1', parseDeckText(fs.readFileSync('decks/innistrad.txt', 'utf8'), registry).cardIds],
+    ['p1', parseDeckText(fs.readFileSync('decks/innistrad-brg.txt', 'utf8'), registry).cardIds],
     ['p2', parseDeckText(fs.readFileSync('decks/wiedzmin.txt', 'utf8'), registry).cardIds],
   ]);
   return setupCardMatch({ seed, players: [{ id: 'p1' }, { id: 'p2' }], decks, registry });

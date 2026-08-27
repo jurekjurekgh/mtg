@@ -2440,7 +2440,17 @@ function resolveModalEffectTargets(state, effect, object, liveChosen) {
  */
 function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTargetId) {
   const object = state.objects.get(objectId);
-  if (!object || object.controllerId !== playerId || !['hand', 'exile'].includes(object.zone) || object.kind !== 'spell' || (object.zone === 'exile' && !object.plotted)) {
+  // M228/3 (błąd odkryty przez rotującą próbkę benchmarku): czar MODALNY
+  // z exile jest rzucalny nie tylko gdy `plotted`, ale też jako suspend-ready
+  // i jako IMPULSE (playableUntilTurn). Bez tego oferta (legalSpellCasts)
+  // enumerowała tryby impulse-czaru z exile (Your Temple Is Under Attack po
+  // ukończonym lochu), a execute je odrzucał — rozjazd oferty i wykonania
+  // (L48/L41). Mirror gałęzi z requireSpell.
+  const impulse = object?.zone === 'exile' && object.playableUntilTurn != null
+    && state.turn.number <= object.playableUntilTurn;
+  const plottedLike = object?.zone === 'exile' && (object.plotted || object.suspendReady);
+  if (!object || object.controllerId !== playerId || !['hand', 'exile'].includes(object.zone)
+    || object.kind !== 'spell' || (object.zone === 'exile' && !plottedLike && !impulse)) {
     throw new Error('To nie jest rzucalny czar z ręki albo zaplotowany z exile');
   }
   if (!object.spell?.modes) throw new Error('Ten czar nie jest modalny');
@@ -2451,9 +2461,13 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   // Opłacalność po manie produkowalnej — spendMana sam do-tapuje landy.
   // M111 (CR 601.2f): czar MODALNY też podlega obniżkom kosztu — wybór trybu
   // nie zmienia kosztu rzutu, więc nie ma powodu, by omijał Etherium Sculptor.
-  const modalCost = object.plotted ? 0 : effectiveSpellManaCost(state, object);
+  // Rzut bez płacenia (plot albo impulse „without paying its mana cost" po
+  // ukończonym lochu) kosztuje 0; zwykły impulse — pełny koszt.
+  const freeCast = object.plotted || object.suspendReady
+    || (object.zone === 'exile' && object.playableWithoutPaying === true);
+  const modalCost = freeCast ? 0 : effectiveSpellManaCost(state, object);
   if (modalCost > producibleMana(state, playerId, null, spellManaPurpose(object))) throw new Error('Niewystarczająca mana');
-  if (!object.plotted && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
+  if (!freeCast && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
   if (object.spell.timing === 'sorcery') {
     const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
     if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) {

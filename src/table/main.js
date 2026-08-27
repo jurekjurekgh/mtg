@@ -21,7 +21,7 @@ import { stateFingerprint } from '../engine/fingerprint.js';
 import { createCardRegistry, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, FACE_DOWN_LABEL } from './session.js';
-import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, renderPlayerMeta } from './render.js';
+import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt } from './render.js';
 import { installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
 import { effectiveSpellManaCost } from '../engine/spells.js';
@@ -140,6 +140,8 @@ function bootstrapTable() {
     actionsFab: el('actions-fab'),
     actionsFabCount: el('actions-fab-count'),
     actionsDrawerClose: el('actions-drawer-close'),
+    hiGfxToggle: el('hi-gfx'),
+    artShowcase: el('art-showcase'),
     cardFullscreen: el('card-fullscreen'),
     cardFullscreenBody: el('card-fullscreen-body'),
     botMove: el('bot-move'),
@@ -513,6 +515,32 @@ function bootstrapTable() {
       },
     });
     showModal('choice-request');
+  }
+
+  /**
+   * M232 — tryb wysoko-graficzny: pełnoekranowa warstwa z ilustracjami (FOT+KON)
+   * rzucanej karty. Otwierana z obserwatora `onCast` sesji (moment rzucenia).
+   * Klik/tap w dowolnym miejscu zamyka TYLKO tę warstwę (obsługa niżej, przy
+   * pozostałych warstwach). Pokazujemy wyłącznie karty z lokalnymi
+   * ilustracjami (artId) — inaczej warstwa byłaby pusta.
+   */
+  let artShowcaseOpenedAt = 0;
+  function openArtShowcase(cardId) {
+    if (!session || !els.artShowcase) return;
+    if (!els.hiGfxToggle?.checked) return;
+    const card = session.cardDetails(cardId);
+    if (!cardHasShowcaseArt(card)) return;
+    renderCardArtShowcase(els.artShowcase, card);
+    els.artShowcase.className = 'art-showcase active';
+    els.artShowcase.setAttribute('aria-hidden', 'false');
+    artShowcaseOpenedAt = Date.now();
+  }
+
+  function closeArtShowcase() {
+    if (!els.artShowcase) return;
+    els.artShowcase.className = 'art-showcase';
+    els.artShowcase.setAttribute('aria-hidden', 'true');
+    els.artShowcase.textContent = '';
   }
 
   /**
@@ -1448,7 +1476,12 @@ function bootstrapTable() {
         [HUMAN_ID, parseDeckText(windowAllDecks[humanKey] ?? repoDecks[humanKey], registry).cardIds],
         [BOT_ID, parseDeckText(windowAllDecks[botKey] ?? repoDecks[botKey], registry).cardIds],
       ]);
-      session = createSession({ seed, registry, decks, pauseOnBotMoves: true, ignoredOptionKeys });
+      session = createSession({
+        seed, registry, decks, pauseOnBotMoves: true, ignoredOptionKeys,
+        // M232: obserwator rzutu — otwiera warstwę wysoko-graficzną (jeśli tryb
+        // włączony). Zero wpływu na przebieg gry.
+        onCast: ({ cardId }) => openArtShowcase(cardId),
+      });
       // Nowa gra unieważnia wstrzymany rzut kreatora many (E.3a): deskryptor
       // odnosił się do starej sesji, więc zamykamy modal i zapominamy komendę.
       closeManaWizard();
@@ -1573,6 +1606,23 @@ function bootstrapTable() {
           if (e.key === 'ArrowRight') cycleFullscreenCard(1);
           else if (e.key === 'ArrowLeft') cycleFullscreenCard(-1);
           else if (e.key === 'Escape') closeCardFullscreen();
+        });
+      }
+    }
+    // M232: warstwa wysoko-graficzna — klik/tap w dowolnym miejscu zamyka
+    // TYLKO tę warstwę i wraca do tego, co pod spodem. Bramka „odprysku\"
+    // (350 ms), żeby gest, który ją otworzył (np. tapnięcie akcji rzutu),
+    // nie zamknął jej natychmiast.
+    if (els.artShowcase) {
+      installTapGesture(els.artShowcase, {
+        onTap: closeArtShowcase,
+        onDoubleTap: closeArtShowcase,
+        ignoreClick: () => Date.now() - artShowcaseOpenedAt < 350,
+        ignoreTouch: () => Date.now() - artShowcaseOpenedAt < 350,
+      });
+      if (typeof document.addEventListener === 'function') {
+        document.addEventListener('keydown', (e) => {
+          if (els.artShowcase.className === 'art-showcase active' && e.key === 'Escape') closeArtShowcase();
         });
       }
     }

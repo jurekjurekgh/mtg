@@ -128,8 +128,8 @@ test('C0: dane Skilled AnimatoRA mówią „as long as", nie „until end of tur
 test('D: pauza i render przy zejściu stunów i pierwszym untapie po stunie', () => {
   const registry = REGISTRY;
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), registry).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/dominaria.txt', 'utf8'), registry).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/dominaria-brg.txt', 'utf8'), registry).cardIds],
   ]);
   const session = createSession({ seed: 5, registry, decks, pauseOnBotMoves: true });
   // Stwór BOTA zatapowany z 2 licznikami stun (stan jak po Lodestone Needle).

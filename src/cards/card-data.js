@@ -9814,6 +9814,99 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['„unless either one is a color the other isn\'t” = równość ZBIORÓW kolorów (CR 105.2); przy różnicy nie ginie żaden z celów', 'dwa bezbarwne stwory (puste zbiory) są legalnym, skutecznym celem'],
   }),
 
+  // ===== Batch 49 (2026-08-26) =====================================
+
+  // Dimir Guildgate (GRN) Land — Gate: enters tapped, {T}: Add {U} or {B}.
+  // Zero nowych mechanik — wzorzec Dismal Backwater / Heap Gate bez lifegain.
+  defineCard({
+    id: 'dimir-guildgate', name: 'Dimir Guildgate', set: 'GRN',
+    types: ['Land'], subtypes: ['Gate'], colors: [], entersTapped: true,
+    oracleText: 'This land enters tapped.\n{T}: Add {U} or {B}.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/7/b7129bdf-de02-4ed2-b5de-f774b8a7d302.jpg?1783934104',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['U', 'B'] },
+      }),
+    ],
+    artId: 570, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Vow of Flight (CMR) {2}{U} Aura — +2/+2, flying, can't attack you.
+  // Bliźniak Vow of Wildness (ten sam cykl) — zero nowych mechanik.
+  defineCard({
+    id: 'vow-of-flight', name: 'Vow of Flight', set: 'CMR',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['U'], manaCost: 3,
+    oracleText: "Enchant creature\nEnchanted creature gets +2/+2, has flying, and can't attack you or planeswalkers you control.",
+    imageUri: 'https://cards.scryfall.io/large/front/c/9/c9887121-6206-44bb-a1b4-520f28a61a17.jpg?1783928847',
+    aura: { pump: { power: 2, toughness: 2 }, keywords: ['flying'], cantAttackYou: true },
+    artId: 571,
+    plan: 'Fiora',
+    support: { status: 'supported', limitations: [] },
+    notes: ['can\'t attack you — w 1v1 stwór przeciwnika z Vow nie może atakować (jedyny przeciwnik to Ty)'],
+  }),
+
+  // Nanoform Sentinel (EOE) {2}{U} 3/2 Artifact Creature — Robot.
+  // „Whenever this creature becomes tapped, untap another target permanent.
+  //  This ability triggers only once each turn.\" — nowa mechanika generyczna:
+  // trigger `self_becomes_tapped` z celem (permanent, notSelf) + oncePerTurn.
+  defineCard({
+    id: 'nanoform-sentinel', name: 'Nanoform Sentinel', set: 'EOE',
+    types: ['Artifact', 'Creature'], subtypes: ['Robot'], colors: ['U'],
+    power: 3, toughness: 2, manaCost: 3,
+    oracleText: 'Whenever this creature becomes tapped, untap another target permanent. This ability triggers only once each turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/e/3eeae8c3-7939-4c79-92f0-fbdb9c1b71d3.jpg?1783905976',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'self_becomes_tapped',
+          oncePerTurn: true,
+          requiresTarget: { type: 'permanent', notSelf: true },
+        },
+        effect: [{ type: 'untap_permanent' }],
+      }),
+    ],
+    artId: 568, plan: 'The Edge',
+    support: { status: 'supported', limitations: [] },
+    notes: ['„triggers only once each turn” — kolejne tapnięcia w tej samej turze nie odpalają triggera (triggerFiredThisTurn)'],
+  }),
+
+  // Jwar Isle Avenger (OGW) {4}{U} 3/3 Sphinx — Flying, Surge {2}{U}.
+  // Nowa mechanika generyczna: surge (alt-cost rzutu z ręki, gdy rzucono inny
+  // czar w tej turze; płatność normalną maną).
+  defineCard({
+    id: 'jwar-isle-avenger', name: 'Jwar Isle Avenger', set: 'OGW',
+    types: ['Creature'], subtypes: ['Sphinx'], colors: ['U'],
+    power: 3, toughness: 3, manaCost: 5, keywords: ['flying'],
+    surge: { cost: 3, colors: ['U'] },
+    oracleText: 'Surge {2}{U} (You may cast this spell for its surge cost if you or a teammate has cast another spell this turn.)\nFlying',
+    imageUri: 'https://cards.scryfall.io/large/front/0/a/0a5b059f-2fa3-474f-9c74-6d4021703add.jpg?1783937918',
+    artId: 567, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+    notes: ['surge {2}{U}: alternatywny koszt rzutu z ręki, gdy rzuciłeś inny czar w tej turze (w 1v1 „teammate” nie występuje)'],
+  }),
+
+  // Manifest Dread (DSK) {1}{G} Sorcery — manifest dread.
+  // Nowa mechanika generyczna: manifest_dread (look top 2, jedna face-down 2/2,
+  // druga do grobu; obrót twarzą do góry za koszt many, jeśli karta stwora).
+  defineCard({
+    id: 'manifest-dread', name: 'Manifest Dread', set: 'DSK',
+    types: ['Sorcery'], colors: ['G'], manaCost: 2,
+    oracleText: 'Manifest dread. (Look at the top two cards of your library. Put one onto the battlefield face down as a 2/2 creature and the other into your graveyard. Turn it face up any time for its mana cost if it\'s a creature card.)',
+    imageUri: 'https://cards.scryfall.io/large/front/a/6/a649265b-6c32-49e7-b6cb-6086c40d26e8.jpg?1783909451',
+    spell: {
+      timing: 'sorcery',
+      targets: [],
+      effects: [{ type: 'manifest_dread' }],
+    },
+    artId: 569, plan: 'Duskmourn',
+    support: { status: 'supported', limitations: [] },
+    notes: ['manifest dread: wybór którą z 2 kart z wierzchu zmanifestować (2/2 face-down), druga do grobu; obrót za koszt many tylko dla kart stworów (CR 701.34)'],
+  }),
+
 ]);
 
 /**

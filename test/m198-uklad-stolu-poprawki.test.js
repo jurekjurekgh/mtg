@@ -42,8 +42,8 @@ globalThis.document = { createElement: (tag) => new MiniEl(tag) };
 
 function sessionAfterSteps(steps = 60) {
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), REGISTRY).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer.txt', 'utf8'), REGISTRY).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), REGISTRY).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer-brg.txt', 'utf8'), REGISTRY).cardIds],
   ]);
   const session = createSession({ seed: 3, registry: REGISTRY, decks });
   for (let i = 0; i < steps; i += 1) {

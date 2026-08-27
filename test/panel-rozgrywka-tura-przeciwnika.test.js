@@ -36,10 +36,10 @@ import { BOT_ID, HUMAN_ID, createSession } from '../src/table/session.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 
-function makeSession(seed, botDeck = 'dominaria.txt') {
+function makeSession(seed, botDeck = 'dominaria-brg.txt') {
   const registry = createCardRegistry();
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/innistrad.txt', 'utf8'), registry).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/innistrad-brg.txt', 'utf8'), registry).cardIds],
     [BOT_ID, parseDeckText(fs.readFileSync(`decks/${botDeck}`, 'utf8'), registry).cardIds],
   ]);
   return createSession({ registry, decks, seed, pauseOnBotMoves: true });

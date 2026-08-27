@@ -9,6 +9,7 @@
 1x Assert Perfection
 1x Creakwood Safewright
 1x Invasion of the Giants
+1x Manifest Dread
 1x Release the Ants
 1x Soulbright Flamekin
 1x Crew Captain
@@ -25,5 +26,5 @@
 3x Plains
 1x Island
 2x Swamp
-3x Mountain
+4x Mountain
 2x Forest

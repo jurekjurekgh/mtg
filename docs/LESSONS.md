@@ -25,6 +25,93 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 ---
 
 
+## L80 (2026-08-26) — „Dubel na stosie" to nie to samo co „efekt już zastosowany": strażnik idempotencji musi patrzeć na STAN, nie tylko na stos
+
+**Objaw (M220, pętla jakości Żywym Testerem, h9):** bot aktywował Saddle na
+Trained Arynx (efekt `set_saddled`, idempotentny do końca tury) 3× z rzędu
+w jednej turze, tapując kolejne stwory za nic. `set_saddled` był w
+`IDEMPOTENT_EOT_EFFECTS`, a mimo to bot dublował aktywację.
+
+**Przyczyna:** strażnik idempotencji (`pendingTwin`, M179/B) sprawdzał tylko,
+czy IDENTYCZNA aktywacja WISI NA STOSIE. Gdy pierwsza już się rozstrzygnęła
+i nadała trwały-do-EOT stan, na stosie nic nie wisiało — a stan `saddled`
+siedział na permanencie na polu bitwy. Strażnik pilnował KOLEJKI, nie SKUTKU.
+
+**Reguła:** dla efektu idempotentnego do EOT, który nadaje ODCZYTYWALNĄ flagę
+stanu (`saddled`, `cantBlock`, `monstrous`…), strażnik musi mieć DWIE nogi:
+(1) brak bliźniaka na stosie (`pendingTwin`) ORAZ (2) cel/źródło nie ma jeszcze
+tej flagi w PlayerView. Sam warunek (1) chroni tylko w oknie, gdy pierwsza
+kopia jeszcze się nie rozstrzygnęła; po rozstrzygnięciu chroni wyłącznie (2).
+Flagę czytaj z widoku (ADR 0017), rozpoznawaj po TYPIE efektu i deskryptorze
+stanu, nie po nazwie karty (ADR 0002). Anty-over-fix: pierwsza aktywacja
+(flaga jeszcze nieustawiona) musi zostać legalna — pilnuj tego osobnym testem.
+
+**Sformalizowane w:** `src/controllers/heuristic-bot.js` (`set_saddled` +
+`source.saddled` → −10), `test/m219-bot-resaddle-noop.test.js` (RED→GREEN
++ anty-over-fix).
+
+
+## L79 (2026-08-26) — Decyzja `resolve_*` emitująca dwa zdarzenia o tej samej treści dubluje wpis w logu
+
+**Objaw (M219, pętla jakości Żywym Testerem, g9):** aktywacja Unstable
+Frontier pokazywała w modalu „Rozgrywka" i logu DWA identyczne wiersze na
+jedną akcję: „Swamp staje się typem Plains do końca tury" ×2.
+
+**Przyczyna:** rozstrzygnięcie decyzji `resolve_land_type_choice` emituje dwa
+zdarzenia — `land_type_changed` (niska warstwa: sama mutacja typu, jak
+licznik/tap) ORAZ `land_type_choice_resolved` (narracja decyzji) — a
+`describeGameEvent` renderował OBA tym samym zdaniem. To wariant L24/L6:
+warstwa opisu dostała dwa zdarzenia niosące tę samą TREŚĆ dla gracza. Klasa
+pokrewna L41 (jedna informacja, dwa źródła), ale po stronie zdarzeń, nie kopii
+kodu.
+
+**Reguła:** gdy jedna decyzja emituje parę „zdarzenie mechaniczne + zdarzenie
+narracyjne" (mutacja stanu + `*_resolved`), TYLKO JEDNO ma renderować zdanie
+dla gracza — zwykle to narracyjne (`*_resolved`), bo niesie komplet kontekstu.
+Drugie wycisz w warstwie opisu (`return null`), ale ZOSTAW zdarzenie
+w strumieniu: jest potrzebne do determinizmu/fingerprintu i innym konsumentom
+(tu `real-cards-batch7` sprawdza OBECNOŚĆ `land_type_changed`). Kontrolne
+pytanie przy dodawaniu `*_resolved`: „czy niższa warstwa już emituje zdarzenie
+z tą samą treścią?" — jeśli tak, jedno z nich nie może mieć opisu.
+
+**Sformalizowane w:** `src/table/session.js` (`land_type_changed` → null),
+`test/m219-log-land-type-duplikat.test.js` (integracja: dwa zdarzenia, opis
+raz).
+
+
+## L78 (2026-08-26) — Lektura obowiązkowa czytana fragmentami to lektura NIEwykonana
+
+**Objaw:** sesja „przeczytała” lekturę startową, ale `docs/LESSONS.md`
+(1930 linii) i część ADR-ów zostały obejrzane tylko we fragmentach — kilka
+najnowszych lekcji plus nagłówki, bo narzędzie czytające zwracało pliki
+z ucięciem (`truncated`/`hasMore`) i agent nie dobrał reszty. Właściciel
+wychwycił to od razu: „jeśli jakiś plik z obowiązkowej lektury nie został
+przeczytany w całości, to należy go pobrać tak, żeby przeczytać go w całości”.
+
+**Przyczyna:** narzędzia czytające (fetch/read/„head”) często zwracają tylko
+kawałek dużego pliku i sygnalizują to flagą, którą łatwo przeoczyć. „Zielony”
+odczyt jednego chunku wygląda identycznie jak przeczytanie całości —
+dokładnie jak L68 (brak skutku nieodróżnialny od poprawnego skutku), tylko
+w warstwie dokumentacji. AGENTS.md §0 mówiło „czytasz wszystkie [ADR-y]”
+i „cały rejestr”, ale nie nazywało wprost, że pojedynczy plik też ma być
+przeczytany od pierwszej do ostatniej linii, i co zrobić z ucięciem.
+
+**Reguła:**
+1. Plik z lektury obowiązkowej uznajesz za przeczytany dopiero, gdy dotarłeś
+   do jego OSTATNIEJ linii. Sprawdź `wc -l` i potwierdź, że pomiar objął cały
+   zakres — dla `LESSONS.md` znaczy to WSZYSTKIE lekcje `L1…`, nie tylko te
+   z góry/dołu.
+2. Każdy sygnał fragmentacji (`truncated`, `hasMore`, `stdout_truncated`,
+   stronicowanie, twardy limit bajtów) to polecenie „dobierz następny
+   fragment”, nie koniec czytania. Czytaj po zakresach linii (`sed -n`),
+   aż wyczerpiesz plik.
+3. „Przejrzałem / streściłem / doczytałem ostatnie wpisy” NIE jest
+   przeczytaniem i nie zwalnia z pkt 1–2.
+
+**Sformalizowane w:** `AGENTS.md` §0 (blok „Każdy plik lektury obowiązkowej
+czytasz W CAŁOŚCI…” + doprecyzowanie pozycji 2 i 3 listy lektur).
+
+
 ## L77 (2026-08-26) — Wejście na pole bitwy to ZDARZENIE o wielu następstwach: decyzja blokująca ani `return` nie mogą wycinać reszty
 
 **Objaw (M216/M217):** dwa błędy tej samej klasy, znalezione w tej samej sesji:

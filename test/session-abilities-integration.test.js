@@ -1,124 +1,77 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import { BOT_ID, HUMAN_ID, createSession } from '../src/table/session.js';
+import { HUMAN_ID, BOT_ID, describeGameEvent } from '../src/table/session.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
-import { parseDeckText } from '../src/cards/deck-text.js';
 
 /**
- * Integracja Etapu 5 przez sesję: pełna partia na talii ze zdolnościami
- * aktywowanymi i czarem tworzącym token. Sesja prowadzi partię przez protokół,
- * a log tłumaczy nowe zdarzenia (ability_activated / token_created) na polski —
- * bez wycieku surowych typów zdarzeń do logu.
+ * Integracja Etapu 5: log sesji tłumaczy zdarzenia ability_activated /
+ * token_created na polski — bez wycieku surowych typów zdarzeń.
+ *
+ * M238 (rewizja testów, decyzja właściciela): ten plik był ZAMROŻONYM SEEDEM
+ * pełnej partii (28+ wpisów „hunterów" — każda zmiana wyceny bota zmuszała do
+ * losowania nowego seeda, który akurat produkuje aktywację/token w logu). To
+ * NIE był guard tłumaczenia, tylko losowej rozgrywki. Przepisane
+ * DETERMINISTYCZNIE: te same zdarzenia engine przechodzą przez
+ * `describeGameEvent` — DOKŁADNIE ten sam czytelnik, którego używa `session.log`
+ * (session.js woła describeGameEvent w apply()/streamAutoEvents) — bez talii,
+ * seeda i emergentnej partii. Wzorzec skopiowany z M178 (table-session.test.js).
  */
 
-function buildDecks(humanFile = 'tarkir.txt', botFile = 'warhammer.txt') {
-  const registry = createCardRegistry();
-  const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync(`decks/${humanFile}`, 'utf8'), registry).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync(`decks/${botFile}`, 'utf8'), registry).cardIds],
-  ]);
-  return { registry, decks };
-}
+const REGISTRY = createCardRegistry();
 
-/** Polityka człowieka: rozwój planszy, potem aktywacja zdolności i czary. */
-function chooseHumanCommand(view) {
-  const ofType = (type) => view.legalCommands.filter((cmd) => cmd.type === type);
-  const first = (type) => ofType(type)[0] ?? null;
-  return first('draw_card')
-    ?? first('play_land')
-    ?? first('tap_for_mana')
-    ?? first('cast_permanent')
-    ?? ofType('activate_ability')[0]
-    ?? first('cast_spell')
-    ?? first('declare_attackers')
-    ?? first('declare_blockers')
-    ?? first('resolve_combat')
-    ?? view.legalCommands.find((c) => c.type.startsWith('resolve_')) ?? null
-    ?? first('pass_priority');
+// Helpery jak w sesji (nameOf/nameOfObject po rejestrze); mapa imion p1/p2.
+const NAMES = { [HUMAN_ID]: 'Ty', [BOT_ID]: 'Bot' };
+function helpers(objects = {}) {
+  return {
+    nameOf: (id) => REGISTRY.get(id)?.name ?? String(id),
+    nameOfObject: (id) => {
+      const o = objects[id];
+      return o ? (REGISTRY.get(o.cardId)?.name ?? o.name ?? String(id)) : String(id);
+    },
+    isPlayer: (id) => id === HUMAN_ID || id === BOT_ID,
+  };
 }
+const describe = (e, objects) => describeGameEvent(e, helpers(objects), NAMES, { drugaOsoba: false });
 
-function playOut(session, maxMoves = 600) {
-  for (let i = 0; i < maxMoves; i += 1) {
-    if (session.state.status !== 'active') return i;
-    const view = session.view();
-    assert.equal(view.turn.priorityPlayerId, HUMAN_ID, 'sesja zatrzymała się poza oknem człowieka');
-    const cmd = chooseHumanCommand(view);
-    assert.ok(cmd, `brak legalnej komendy: ${view.legalCommands.map((c) => c.type).join(',')}`);
-    const result = session.apply(cmd);
-    assert.ok(result.ok, `komenda odrzucona: ${result.reason}`);
-  }
-  return maxMoves;
-}
-
-test('pełna partia z użyciem zdolności i tokenów przechodzi przez protokół', () => {
-  const { registry, decks } = buildDecks();
-  // Seed 4 → 16 po transzy 2 batcha 33 (green +2, red +1): przy nowej
-  // kolejności talii seed 4 nie dawał już żadnego tokenu (przelosowane hunterem).
-  // Seed 2 po Batch 35 E3 (green +Trade Route Envoy) — przelosowane hunterem.
-  // Seed 3 po Batchu 36 (green +Feral Invocation +Grizzled Leotau +1 Forest).
-  // Seed 3 po Batchu 37 (green +Satyr Wayfinder) — przelosowane hunterem.
-  // Seed 1 po Batch 38 (green/red zmieniły się) — przelosowane hunterem.
-  // Seed 3 po Batchu 39 A (green +Knight +4 Plains) — przelosowane hunterem.
-  // Seed 2 po Batchu 39 C (red +Wrap in Flames +1 Mountain) — hunter.
-  // M178 (talie per plan, tarkir vs warhammer) — hunter: 1, 5, 6, 9…
-  // Seed 2 po Batchu 44 A (tarkir +Descendant of Storms, warhammer +Hill
-  // Giant +Dismal Backwater) — hunter (kolejne: 3, 6, 7, 9, 10).
-  // Seed 1 po Batchu 45 A (warhammer +Unearth) — hunter (kolejne: 3, 4, 5).
-  // Seed 2 po Batchu 48 A (innistrad +Thraben Valiant) — hunter (L25).
-  const session = createSession({ seed: 2, registry, decks });
-  playOut(session);
-  assert.equal(session.state.status, 'finished', 'partia nie doszła do rozstrzygnięcia');
-  assert.ok(
-    session.state.events.some((e) => e.type === 'ability_activated'),
-    'żadna zdolność aktywowana nie została użyta',
-  );
-  assert.ok(
-    session.state.events.some((e) => e.type === 'token_created'),
-    'żaden token nie został stworzony',
-  );
+test('ability_activated → polski opis „aktywuje zdolność: <karta>"', () => {
+  // Highland Game jest w rejestrze (nazwa źródła z e.cardId).
+  const text = describe({ type: 'ability_activated', playerId: BOT_ID, cardId: 'highland-game', objectId: 'o1', targets: [] });
+  assert.match(text, /aktywuje zdolność: Highland Game/);
+  assert.ok(!text.includes('ability_activated'), 'surowy typ zdarzenia nie może wyciec do opisu');
 });
 
-test('log tłumaczy zdolności i tokeny na polski bez wycieku surowych typów', () => {
-  const { registry, decks } = buildDecks();
-  // Seed 3 po Batchu 36 (green +Feral Invocation +Grizzled Leotau +1 Forest).
-  // Seed 3 po Batchu 37 (green +Satyr Wayfinder) — przelosowane hunterem.
-  // Seed 1 po Batch 38 (green/red zmieniły się) — przelosowane hunterem.
-  // Seed 3 po Batchu 39 A (green +Knight +4 Plains) — przelosowane hunterem.
-  // Seed 2 po Batchu 39 C (red +Wrap in Flames +1 Mountain) — hunter.
-  // M178 (talie per plan, tarkir vs warhammer) — hunter: 1, 5, 6, 9…
-  // Seed 2 po Batchu 44 A (tarkir +Descendant of Storms, warhammer +Hill
-  // Giant +Dismal Backwater) — hunter (kolejne: 3, 6, 7, 9, 10).
-  // Seed 1 po Batchu 45 A (warhammer +Unearth) — hunter (kolejne: 3, 4, 5).
-  // Seed 2 po Batchu 47 A (warhammer +Negate M15 → manabaza przesunięta
-  // o 1 Mountain na 1 Island): przy nowym tasowaniu seed 1 nie pokazywał
-  // już żadnej aktywacji zdolności — przelosowane hunterem (L25).
-  // Seed 10 po Batchu 48 A (innistrad/warhammer urosly) — hunter (L25).
-  // Seed 5 po Batchu 48 D (tarkir +Stampeding Elk Herd) — hunter.
-  // Seed 1 po Batchu 48 E (warhammer +Contested Game Ball, +Cherished
-  // Hatchling) — hunter (L25).
-  // Seed 2 po M197/K3 (warhammer +Lab Rats +Reassembling Skeleton z arkusza
-  // kolekcji, manabaza przeliczona) — hunter (L25).
-  // Seed 4 po M202/J (Merfolk Mesmerist milluje tylko z zapasowym blokerem
-  // i przy mniejszej bibliotece wroga — bot przestał millować co turę, więc
-  // przy seedzie 2 w tej partii nie było już żadnej aktywacji zdolności)
-  // — przelosowane hunterem. Konwencja L25; ten test to dług odsetkowy (L53).
-  // Seed 9 po M202/I (Nightsnare: bot wybiera rezygnację zamiast losowej karty
-  // z odsłoniętej ręki, więc flow partii się zmienił) — hunter
-  // (kolejne sprawdzone: 14, 20). Konwencja L25.
-  const session = createSession({ seed: 9, registry, decks });
-  playOut(session);
-  assert.ok(
-    session.log.some((e) => e.text.includes('aktywuje zdolność')),
-    'log nie opisuje zdolności aktywowanej',
+test('ability_activated z produkcją many → polski opis efektu (bez surowego typu)', () => {
+  const text = describe({
+    type: 'ability_activated', playerId: HUMAN_ID, cardId: 'highland-game', objectId: 'o1',
+    effectTypes: ['add_mana'], manaColors: ['U', 'B'], manaAmount: 1, targets: [],
+  });
+  assert.match(text, /aktywuje zdolność/);
+  assert.ok(!text.includes('add_mana'), 'surowy typ efektu nie może wyciec');
+});
+
+test('token_created (stwór) → polski opis „tworzy token <nazwa> (P/T)"', () => {
+  const text = describe({ type: 'token_created', controllerId: BOT_ID, name: 'Soldier', power: 1, toughness: 1 });
+  assert.match(text, /Bot tworzy token Soldier \(1\/1\)/);
+  assert.ok(!text.includes('token_created'), 'surowy typ zdarzenia nie może wyciec');
+});
+
+test('token_created (człowiek) → odmiana „tworzysz"', () => {
+  const text = describeGameEvent(
+    { type: 'token_created', controllerId: HUMAN_ID, name: 'Soldier', power: 1, toughness: 1 },
+    helpers(), NAMES, { drugaOsoba: true },
   );
-  assert.ok(
-    // M109: opis odmienia czasownik wg gracza („Ty tworzysz" / „Bot tworzy"),
-    // a to, kto stworzy token, zależy od zawartości talii — asercja przyjmuje
-    // obie formy, żeby test nie łamał się przy każdej zmianie decks/*.txt.
-    session.log.some((e) => /tworzy(sz)? token/.test(e.text)),
-    'log nie opisuje tworzenia tokenu',
-  );
-  assert.ok(!session.log.some((e) => e.text === 'ability_activated'), 'wyciek surowego zdarzenia do logu');
-  assert.ok(!session.log.some((e) => e.text === 'token_created'), 'wyciek surowego zdarzenia do logu');
+  assert.match(text, /tworzysz token Soldier/);
+});
+
+test('token_created (niestworowy) → bez „(null/null)" (M100/E6)', () => {
+  const text = describe({ type: 'token_created', controllerId: BOT_ID, name: 'Treasure' });
+  assert.match(text, /tworzy token Treasure/);
+  assert.ok(!text.includes('null'), 'token niestworowy nie może pokazywać (null/null)');
+});
+
+test('surowe typy zdarzeń NIGDY nie są własnym opisem (guard wycieku)', () => {
+  for (const type of ['ability_activated', 'token_created']) {
+    const text = describe({ type, playerId: BOT_ID, controllerId: BOT_ID, cardId: 'highland-game', name: 'Soldier', power: 1, toughness: 1, targets: [] });
+    assert.notStrictEqual(text, type, `opis ${type} nie może być surowym typem zdarzenia`);
+  }
 });

@@ -466,6 +466,9 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
     return state.zones.battlefield
       .filter((objectId) => {
         const object = state.objects.get(objectId);
+        // Nanoform Sentinel: „untap ANOTHER target permanent\" — `notSelf`
+        // wyklucza źródło (CR 115.2 — „another\").
+        if (spec.notSelf && objectId === sourceObject.id) return false;
         return object && object.zone === 'battlefield' && !hexproofBlocked(object);
       })
       .sort((a, b) => targetValue(state.objects.get(b)) - targetValue(state.objects.get(a)));
@@ -2247,6 +2250,23 @@ function processTriggersScan(state, recentEvents) {
         for (const ability of effectiveAbilities(aura)) {
           if (ability?.trigger?.event === 'enchanted_permanent_tapped') {
             queueTriggerToStack(state, ability, aura, [], events);
+          }
+        }
+      }
+      // Nanoform Sentinel (EOE): „Whenever this creature becomes tapped, untap
+      // another target permanent. This ability triggers only once each turn.\"
+      // Trigger na SAMYM tapniętym obiekcie (self), z opcjonalnym limitem
+      // raz-na-turę (`trigger.oncePerTurn`). Generyczny (ADR 0002) —
+      // `tryFire` obsługuje `requiresTarget`; limit śledzi triggerFiredThisTurn.
+      const tapped = state.objects.get(ev.objectId);
+      if (tapped && tapped.zone === 'battlefield') {
+        for (const [index, ability] of effectiveAbilities(tapped).entries()) {
+          if (ability?.trigger?.event !== 'self_becomes_tapped') continue;
+          const key = `${ev.objectId}:${index}`;
+          if (ability.trigger.oncePerTurn && state.triggerFiredThisTurn?.[key]) continue;
+          const fired = tryFire(state, ability, tapped, [], events);
+          if (fired && ability.trigger.oncePerTurn) {
+            state.triggerFiredThisTurn = { ...(state.triggerFiredThisTurn ?? {}), [key]: true };
           }
         }
       }

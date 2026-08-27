@@ -38,8 +38,8 @@ import { parseDeckText } from '../src/cards/deck-text.js';
 function makeSession(seed) {
   const registry = createCardRegistry();
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/dominaria.txt', 'utf8'), registry).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/tarkir.txt', 'utf8'), registry).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/dominaria-brg.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), registry).cardIds],
   ]);
   return createSession({ registry, decks, seed, pauseOnBotMoves: true });
 }
@@ -133,7 +133,11 @@ test('M99: skutek czaru bota (+X/+X) też trafia do modala, nie tylko do logu', 
   // Seed 2 po Batchu 49 (10 nowych kart: tarkir +Kishla Village, dominaria
   // +Razorfoot Griffin +Koilos Roc, landy przeliczone) — hunter (kolejne
   // sprawdzone: 7, 11, 16, 17, 19, 20, 21). Konwencja L25.
-  const session = makeSession(2);
+  // Seed 3 po M228 (ADR 0024: podział talii — dominaria→dominaria-brg,
+  // tarkir→tarkir-bg; Awaken the Bear jest po zielonej stronie tarkir-bg) —
+  // hunter (kolejne sprawdzone z pump w modalu: 8, 9, 10, 16, 17, 21, 23).
+  // Konwencja L25.
+  const session = makeSession(3);
   const { modalTexts, log } = playCollectingModals(session);
   const pumpInLog = log.filter((t) => /dostaje \+\d+\/\+\d+/.test(t));
   assert.ok(pumpInLog.length > 0, 'seed 3 miał produkować pump w logu');

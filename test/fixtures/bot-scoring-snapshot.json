@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "overallHash": "c28e6a254a55eae762951a810ee438ea369fcd89eda152318595ef5ffa092a6b",
+  "matches": [
+    {
+      "pair": "ravnica|innistrad-wu",
+      "seed": 1000,
+      "hash": "8af93bf89852d67243ce87c4d354743cddf17175d875d6ba54a3d1e6bd8813ea",
+      "decisions": 262,
+      "scoreSum": 1753.3,
+      "chosenKinds": {
+        "attack": 11,
+        "block": 8,
+        "cast_permanent": 5,
+        "cast_spell": 1,
+        "pass_priority": 212,
+        "play_land": 5,
+        "resolve_combat": 11,
+        "resolve_mulligan_choice": 1,
+        "resolve_optional_trigger_choice": 4,
+        "resolve_scry": 1,
+        "resolve_trigger_target": 3
+      }
+    },
+    {
+      "pair": "ravnica|innistrad-wu",
+      "seed": 1001,
+      "hash": "74ad977d24546871982ad07db737d8b8ec7fd3c7368ab16fb84be1f4c214065a",
+      "decisions": 320,
+      "scoreSum": 3491.1,
+      "chosenKinds": {
+        "activate_ability": 3,
+        "attack": 12,
+        "block": 7,
+        "cast_permanent": 5,
+        "cast_spell": 2,
+        "pass_priority": 259,
+        "play_land": 9,
+        "resolve_combat": 12,
+        "resolve_discard_choice": 1,
+        "resolve_mulligan_choice": 1,
+        "resolve_optional_trigger_choice": 8,
+        "resolve_trigger_target": 1
+      }
+    },
+    {
+      "pair": "dominaria-brg|mirrodin-wu",
+      "seed": 1000,
+      "hash": "8941244fe2ae4e635702a3fe668016f651ab597338a851422b028f8967213dde",
+      "decisions": 210,
+      "scoreSum": 2645.2,
+      "chosenKinds": {
+        "attack": 9,
+        "block": 6,
+        "cast_permanent": 8,
+        "pass_priority": 172,
+        "play_land": 5,
+        "resolve_combat": 9,
+        "resolve_mulligan_choice": 1
+      }
+    },
+    {
+      "pair": "dominaria-brg|mirrodin-wu",
+      "seed": 1001,
+      "hash": "fb0caafb9159508e174e488084051e7e92056915be28bca8f8daa20b7b4422d4",
+      "decisions": 101,
+      "scoreSum": 853.4,
+      "chosenKinds": {
+        "activate_ability": 1,
+        "attack": 4,
+        "block": 1,
+        "cast_flashback": 1,
+        "cast_permanent": 1,
+        "cast_spell": 1,
+        "concede": 1,
+        "pass_priority": 80,
+        "play_land": 4,
+        "resolve_combat": 4,
+        "resolve_discard_choice": 1,
+        "resolve_mulligan_choice": 1,
+        "suspend_card": 1
+      }
+    },
+    {
+      "pair": "tarkir-bg|warhammer-brg",
+      "seed": 1000,
+      "hash": "27c70d37064e9c0f02c922ce66cbf8df34a5722a009004f3a86ce717670fb886",
+      "decisions": 243,
+      "scoreSum": 2931.1,
+      "chosenKinds": {
+        "activate_ability": 3,
+        "attack": 10,
+        "block": 6,
+        "cast_permanent": 7,
+        "cast_spell": 3,
+        "pass_priority": 194,
+        "play_land": 6,
+        "resolve_combat": 10,
+        "resolve_damage_assignment": 1,
+        "resolve_exploit_choice": 1,
+        "resolve_mulligan_choice": 1,
+        "resolve_trigger_target": 1
+      }
+    },
+    {
+      "pair": "tarkir-bg|warhammer-brg",
+      "seed": 1001,
+      "hash": "2edbbbef74f636d7a08327ec13fe2f95d50f6e6c94a7f507374c99057bbe9a15",
+      "decisions": 171,
+      "scoreSum": 2711.5,
+      "chosenKinds": {
+        "activate_ability": 3,
+        "attack": 7,
+        "block": 1,
+        "cast_permanent": 5,
+        "cast_spell": 1,
+        "pass_priority": 137,
+        "play_land": 7,
+        "resolve_combat": 7,
+        "resolve_endure_choice": 2,
+        "resolve_mulligan_choice": 1
+      }
+    }
+  ]
+}

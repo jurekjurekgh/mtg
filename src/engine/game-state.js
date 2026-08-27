@@ -20,17 +20,17 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, legalEscapeCasts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell } from './spells.js';
 import { legalActivatedAbilities, activateAbility, performActivation } from './abilities.js';
-import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, untapObject } from './permanents.js';
+import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject } from './permanents.js';
 import { addCounter } from './counters.js';
 import { runStateBasedActions, tryRegenerate } from './state-based.js';
 import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds } from './triggers.js';
 import { moveObjectDirectly } from './objects.js';
-import { detachAttachmentsFromHost } from './attachments.js';
+import { detachAttachmentsFromHost, effectiveProtectionQualities } from './attachments.js';
 import { createBattlefieldToken } from './tokens.js';
 import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom } from './effects.js';
 import { changeLife } from './players.js';
 import { shuffle } from './shuffle.js';
-import { applyRoomTargetChoice, applyEffect, drawPlayerCards } from './effects.js';
+import { applyRoomTargetChoice, applyEffect, drawPlayerCards, manifestCardFaceDown } from './effects.js';
 
 /**
  * Limit ofert „odłóż N kart na spód” przy mulliganie londyńskim (M119/Z3).
@@ -166,6 +166,9 @@ export function createGameState({ seed, players }) {
     // extra, restorePriorityTo }.
     pendingModalTrigger: null,
     pendingLookTopN: null,
+    // Manifest Dread (DSK): blokująca decyzja — którą z 2 kart z wierzchu
+    // zmanifestować (druga do grobu). resolve_manifest_dread.
+    pendingManifestDread: null,
     pendingSatyrLook: null,
     // M158/Batch 39 (Invasion of the Giants II): opcjonalne ujawnienie karty
     // podtypu z ręki (Giant) za 2 obrażenia przeciwnika. Wpis:
@@ -304,6 +307,9 @@ export function createGameState({ seed, players }) {
     // each turn" (Snarling Wolf): klucz `${objectId}:${abilityIndex}` → true.
     // Zerowane przy zmianie tury, jak cardsDrawnThisTurn.
     abilityActivatedThisTurn: {},
+    // „This ability triggers only once each turn\" (Nanoform Sentinel) —
+    // klucz `objectId:abilityIndex` → true; zerowane przy zmianie tury.
+    triggerFiredThisTurn: {},
     // Oczekująca decyzja poświęcenia Food (Insatiable Appetite):
     // blokująca decyzja jak scry/surveil.
     pendingFoodChoice: null,
@@ -463,7 +469,7 @@ export const ADD_OBJECT_FIELDS = Object.freeze([
   'exploit', 'treasureAltCost', 'cardName', 'name', 'bloodthirst', 'additionalCost',
   'kicker', 'costReduction', 'adventure', 'buyback', 'protectionFromColors',
   'plottedAtTurn', 'enterAsCopy', 'suspend', 'suspended', 'timeCounters', 'suspendReady',
-  'warp', 'warpReady',
+  'warp', 'warpReady', 'surge', 'manifestReady', 'manifestTurnUpCost',
   'rebound', 'reboundCast', 'reboundReady',
   'subtypesBeforeOverride', 'lostKeywordsUntilEOT', 'madness', 'madnessReady',
 ]);
@@ -526,12 +532,12 @@ function assertAddObjectContract(config) {
 
 export function addObject(state, config) {
   assertAddObjectContract(config);
-  const { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false } = config;
+  const { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false } = config;
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, toxic, echo, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, additionalCost, kicker, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, toxic, echo, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, additionalCost, kicker, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, surge, manifestReady, manifestTurnUpCost, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady });
   const placed = zone === 'battlefield'
     // Batch 46 (Bone Shredder): permanent z echem wchodzi z nieopłaconym echem
     // — pierwszy WŁASNY upkeep po wejściu zapyta o zapłatę (CR 702.29).
@@ -1021,6 +1027,7 @@ function firstPendingDecisionPlayerId(state) {
   if (state.pendingProliferate) return state.pendingProliferate.playerId;
   if (state.pendingModalTrigger) return state.pendingModalTrigger.playerId;
   if (state.pendingLookTopN) return state.pendingLookTopN.playerId;
+  if (state.pendingManifestDread) return state.pendingManifestDread.playerId;
   if (state.pendingSatyrLook) return state.pendingSatyrLook.playerId;
   if (state.pendingRevealChoice) return state.pendingRevealChoice.playerId;
   if (state.pendingMadnessCast) return state.pendingMadnessCast.playerId;
@@ -1823,6 +1830,41 @@ export function execute(state, input) {
     }));
     const resolved = state.events.slice(state.events.length - (rest.length + 2));
     return accepted(state, cmd, { ok: true, events: resolved });
+  }
+  // Manifest Dread (DSK): wybór, którą z dwóch kart z wierzchu zmanifestować
+  // (face-down 2/2); druga do grobu (CR 701.34/702.111).
+  if (state.pendingManifestDread) {
+    if (cmd.type !== 'resolve_manifest_dread') return reject('manifest_dread_unresolved');
+    if (cmd.playerId !== state.pendingManifestDread.playerId) return reject('manifest_dread_not_your_decision');
+    const pending = state.pendingManifestDread;
+    const pickId = cmd.cardId;
+    if (!pending.objectIds.includes(pickId)) return reject('illegal_manifest_dread_choice');
+    const before = state.events.length;
+    manifestCardFaceDown(state, pickId, pending.playerId);
+    // Druga karta do grobu (CR 701.34b).
+    for (const id of pending.objectIds.filter((oid) => oid !== pickId)) {
+      const graveId = `grave-${state.objectSequence++}`;
+      const movedGrave = moveObjectDirectly(state, id, 'graveyard', graveId);
+      state.events.push(event('object_moved', { fromId: id, object: movedGrave, fromZone: 'library', toZone: 'graveyard', milled: true }));
+    }
+    state.pendingManifestDread = null;
+    if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+    state.events.push(event('manifest_dread_resolved', { playerId: pending.playerId, pickId }));
+    // Manifest Dread to CZAR (sorcery): jego efekt zawiesił się na blokującej
+    // decyzji, więc po jej rozstrzygnięciu dokańczamy wstrzymany czar — inaczej
+    // zostaje na stosie z pendingSpell na zawsze (crash „Pending spell odwołuje
+    // się do nieistniejącego czaru"). Ten sam wzorzec co scry/surveil/look_top.
+    if (state.pendingSpell) {
+      const spellPending = state.pendingSpell;
+      state.pendingSpell = null;
+      // finishPendingSpell dopisuje zdarzenia do state.events SAMO (kontrakt
+      // Z1c) — zbieramy je przez state.events.slice(before), nie wpychamy z
+      // powrotem, żeby uniknąć duplikatów.
+      finishPendingSpell(state, spellPending.stackId, spellPending.effects);
+    }
+    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
   // Satyr Wayfinder (M15): odsłoń 4 z wierzchu, MÓŻ wziąć ląd do ręki
   // (resolve_satyr_look_choice { pickId } albo { pickId: null } = rezygnacja),
@@ -4173,6 +4215,8 @@ export function execute(state, input) {
           // „Activate only once each turn" (Snarling Wolf) — limit aktywacji
           // zeruje się z nową turą, jak licznik dobrań.
           state.abilityActivatedThisTurn = {};
+          // „Triggers only once each turn" (Nanoform Sentinel) — zeruje się z turą.
+          state.triggerFiredThisTurn = {};
           // „Descended this turn" (Canonized in Blood) — znacznik zeruje się
           // z nową turą, jak licznik dobrań.
           state.descendedThisTurn = {};
@@ -4286,6 +4330,28 @@ export function execute(state, input) {
     }
   }
 
+  // Manifest — obrót twarzą do góry (CR 701.34e): specjalna akcja, nie używa
+  // stosu (jak morph). Tylko karta STWORA (manifestReady), za koszt many karty.
+  if (cmd.type === 'turn_manifest_face_up') {
+    const object = state.objects.get(cmd.objectId);
+    if (!object || object.zone !== 'battlefield' || !object.faceDown || !object.manifestReady) {
+      return reject('illegal_manifest_turn_up');
+    }
+    if (object.controllerId !== cmd.playerId) return reject('manifest_not_your_permanent');
+    const cardId = object.cardId;
+    const cost = object.manifestTurnUpCost ?? 0;
+    const purpose = spellManaPurpose(object);
+    if (producibleMana(state, cmd.playerId, null, purpose) < cost) return reject('manifest_turn_up_insufficient_mana');
+    if (!canPayColoredCost(state, cmd.playerId, coloredPipsOf(cardId, 0))) return reject('manifest_turn_up_no_colored_source');
+    const before = state.events.length;
+    spendMana(state, cmd.playerId, cost, coloredPipsOf(cardId, 0), purpose);
+    turnFaceUp(state, cmd.objectId);
+    // Zdejmujemy znaczniki manifestu — po obrocie to zwykły stwór.
+    const flipped = state.objects.get(cmd.objectId);
+    if (flipped) state.objects.set(cmd.objectId, Object.freeze({ ...flipped, manifestReady: false, manifestTurnUpCost: null }));
+    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+  }
+
   if (cmd.type === 'cast_permanent') {
     try {
       // Czary aur (bestow CR 702.103 oraz czyste aury CR 303.4): ten sam typ
@@ -4306,6 +4372,7 @@ export function execute(state, input) {
         exileTargetId: cmd.exileTargetId ?? null,
         kicked: Boolean(cmd.kicked),
         treasureAlt: Boolean(cmd.treasureAlt),
+        surgeCast: Boolean(cmd.surgeCast),
       });
       // Zdarzenie główne (permanent_cast) pozostaje pierwsze; dokładamy
       // zdarzenia zagnieżdżone (np. counter_added przy wejściu z licznikiem).
@@ -4724,6 +4791,18 @@ export function playerView(state, playerId) {
         // widoczny na stole).
         if (creatureCantBlock(object, state) || attachmentRestrictions(state, object).cantBlock) entry.cantBlock = true;
         if (object.cantBeBlocked === true) entry.cantBeBlocked = true;
+        // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona
+        // permanentu (CR 702.16) jest informacją PUBLICZNĄ wydrukowaną skutkiem
+        // rozstrzygniętej aury/efektu — kafel musi ją pokazać osobnym badge'em
+        // („Ochrona przed: {B}"), a bot musi ją czytać (E: nie atakować w
+        // blokera z protekcją od koloru atakującego). Widok niósł tylko nazwę
+        // aury, więc ani gracz, ani kontroler nie znali KOLORU ochrony (klasa
+        // L1/ADR 0017). Qualities z effectiveProtectionQualities — deskryptory,
+        // nie nazwy kart (ADR 0002).
+        {
+          const protQualities = effectiveProtectionQualities(state, object);
+          if (protQualities.length > 0) entry.protection = protQualities.map((q) => ({ ...q }));
+        }
         // M186/Z1 (Żywy Tester, ravnica vs innistrad s9): „can't attack/block
         // alone" JAWNIE w widoku — wizard walki walidował po entry.abilities,
         // których playerView NIGDY nie wysyłał (klasa L48/L1: martwa walidacja
@@ -4736,6 +4815,10 @@ export function playerView(state, playerId) {
         // każdy widoczny skutek efektu ma być badge'em na kaflu; te pola
         // istniały tylko w stanie (klasa L1/ADR 0017).
         if (object.saddled === true) entry.saddled = true;
+        // M230 (audyt talii spoza podziału, Bomat Bazaar Barge): pojazd JUŻ
+        // animowany do EOT (crew rozstrzygnięty) nosi originalBeforeAnimation.
+        // Widoczny stan → badge/decyzja bota (nie re-crewuj), ADR 0017.
+        if (object.originalBeforeAnimation != null) entry.animatedUntilEOT = true;
         if ((object.untapLockedBy ?? []).length > 0) entry.untapLocked = true; // pusta tablica = brak blokady
         if (object.dontUntapNextUntapStep) entry.dontUntapNextUntapStep = true;
         if (object.tempControlUntilTurn != null) entry.tempControlUntilEOT = true;
@@ -4879,6 +4962,20 @@ export function playerView(state, playerId) {
     // oferujemy wyłącznie posiadaczowi priorytetu.
     trailingCommands.push(command('concede', playerId));
     const hasPriority = state.turn.priorityPlayerId === playerId;
+    // Manifest (CR 701.34e): obrót twarzą do góry to specjalna akcja „any time"
+    // (gdy masz priorytet), za koszt many karty; tylko karty stworów
+    // (manifestReady). Oferta gdy stać na koszt + kolorowe źródła.
+    if (hasPriority) {
+      for (const objId of state.zones.battlefield) {
+        const obj = state.objects.get(objId);
+        if (!obj || obj.zone !== 'battlefield' || !obj.faceDown || !obj.manifestReady) continue;
+        if (obj.controllerId !== playerId) continue;
+        const cost = obj.manifestTurnUpCost ?? 0;
+        if (producibleMana(state, playerId, null, spellManaPurpose(obj)) < cost) continue;
+        if (!canPayColoredCost(state, playerId, coloredPipsOf(obj.cardId, 0))) continue;
+        legalCommands.push(command('turn_manifest_face_up', playerId, { objectId: objId }));
+      }
+    }
     // Pass jest niedostępny, gdy DOMYKAŁBY rundę w nierozstrzygniętym kroku
     // obrażeń combat — jedyna droga dalej to wtedy resolve_combat (albo
     // koncesja). M172/C (CR 509.4, L48 oferta=walidacja): pojedynczy pass
@@ -4886,7 +4983,7 @@ export function playerView(state, playerId) {
     const blockedByCombat = state.turn.step === 'combat_damage' && state.combat && state.zones.stack.length === 0
       && state.turn.passes + 1 >= state.players.length;
     if (hasPriority && !blockedByCombat && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
-      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingSuspendCast && !state.pendingReboundCast && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingDamageDivision && !state.pendingReplacementChoice) trailingCommands.push(command('pass_priority', playerId));
+      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingSuspendCast && !state.pendingReboundCast && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingDamageDivision && !state.pendingReplacementChoice && !state.pendingUndercityRoute && !state.pendingFabricate) trailingCommands.push(command('pass_priority', playerId));
   }
   // Oczekujące decyzje oferujemy SEKWENCYJNIE — w tej samej kolejności, w
   // jakiej bramki execute() je zamykają: scry → surveil → backup → clash →
@@ -4962,6 +5059,7 @@ export function playerView(state, playerId) {
   const activeSpringbloom = state.pendingSpringbloom && state.pendingSpringbloom.controllerId === playerId;
   const activeIndex = state.pendingIndex && state.pendingIndex.playerId === playerId;
   const activeLookTopN = state.pendingLookTopN && state.pendingLookTopN.playerId === playerId;
+  const activeManifestDread = state.pendingManifestDread && state.pendingManifestDread.playerId === playerId;
   const activeSatyrLook = state.pendingSatyrLook && state.pendingSatyrLook.playerId === playerId;
   const activeRevealChoice = state.pendingRevealChoice && state.pendingRevealChoice.playerId === playerId;
   const activeMadnessCast = state.pendingMadnessCast && state.pendingMadnessCast.playerId === playerId;
@@ -5570,6 +5668,12 @@ export function playerView(state, playerId) {
     for (const objectId of pending.objectIds) {
       legalCommands.push(command('resolve_look_top_choice', playerId, { cardId: objectId }));
     }
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeManifestDread) {
+    // Manifest Dread: wybierz, którą z 2 kart zmanifestować (druga do grobu).
+    const pending = state.pendingManifestDread;
+    for (const objectId of pending.objectIds) {
+      legalCommands.push(command('resolve_manifest_dread', playerId, { cardId: objectId }));
+    }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeSatyrLook) {
     // Satyr Wayfinder: wybierz LĄD z odsłoniętych do ręki ALBO zrezygnuj
     // (pickId: null — „you may\"). Reszta i tak idzie do grobu.
@@ -6001,6 +6105,19 @@ export function playerView(state, playerId) {
           legalCommands.push(command('cast_permanent', playerId, { objectId: id, treasureAlt: true }));
         }
       }
+      // Surge (Jwar Isle Avenger, CR 702.111): alternatywny koszt rzutu z ręki,
+      // gdy rzuciłeś inny czar w tej turze. Płatność NORMALNĄ maną — oferta
+      // liczona z producibleMana i kolorów kosztu surge (jak warp/madness, ale
+      // z ręki). Gate: spellsCastThisTurnByPlayer > 0 (ten sam odczyt co
+      // castPermanent — L48: oferta i płatność znają tę samą regułę).
+      if (object.surge && (state.spellsCastThisTurnByPlayer?.[playerId] ?? 0) >= 1) {
+        const surgeMana = object.surge.cost ?? 0;
+        const surgeReqs = (object.surge.colors ?? []).map((color) => [color]);
+        if (producibleMana(state, playerId, null, spellManaPurpose(object)) >= surgeMana
+          && canPayColoredCost(state, playerId, surgeReqs)) {
+          legalCommands.push(command('cast_permanent', playerId, { objectId: id, surgeCast: true }));
+        }
+      }
       // Podstawa kosztu zawsze z many — bez niej permanent nie jest grywalny.
       // Koszt efektywny: modyfikatory z permanentów (Etherium Sculptor) mogą
       // obniżyć część generyczną już na etapie OFERTY rzutu.
@@ -6235,6 +6352,22 @@ export function playerView(state, playerId) {
       })
       : null,
   } : null;
+  // M223 (audyt Batch 50): decyzja manifest dread ujawnia DWIE karty z wierzchu
+  // TYLKO decydentowi (CR 701.34a „look at" — informacja własna, jak scry/look_top).
+  // Bez tego etykieta „Zmanifestuj: ?" nie znała nazwy karty (biblioteka ukryta).
+  const pendingManifestDreadView = state.pendingManifestDread ? {
+    playerId: state.pendingManifestDread.playerId,
+    count: state.pendingManifestDread.objectIds.length,
+    cards: state.pendingManifestDread.playerId === playerId
+      ? state.pendingManifestDread.objectIds.map((id) => {
+        const object = state.objects.get(id);
+        return {
+          id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
+          kind: object.kind, power: object.power, toughness: object.toughness, manaCost: object.manaCost, spell: object.spell,
+        };
+      })
+      : null,
+  } : null;
   const pendingEpicExperimentView = state.pendingEpicExperiment ? {
     playerId: state.pendingEpicExperiment.playerId,
     maxMV: state.pendingEpicExperiment.maxMV,
@@ -6274,6 +6407,7 @@ export function playerView(state, playerId) {
     zones, legalCommands, pendingScry, pendingSurveil, pendingBackup: pendingBackupView,
     pendingClash, pendingRoomTarget, pendingLegendChoice: pendingLegendChoiceView,
     pendingLookTopN: pendingLookTopNView,
+    pendingManifestDread: pendingManifestDreadView,
     pendingEpicExperiment: pendingEpicExperimentView,
     pendingModalTrigger: pendingModalTriggerView, pendingProliferate: pendingProliferateView,
     // M162/C (uwaga właściciela): Chittering Rats — tytuł modala
@@ -6282,6 +6416,22 @@ export function playerView(state, playerId) {
     // decyzji (precedens pendingTriggerTarget — uwagi B/C 2026-08-10).
     pendingHandTopChoice: activeHandTopChoice
       ? { sourceCardId: state.pendingHandTopChoice.sourceCardId ?? null }
+      : null,
+    // M221/B: źródło i główny efekt decyzji „you may" — do etykiety modala.
+    // sourceCardId z obiektu-źródła (pole bitwy), effect (płytka kopia) z
+    // ability/rozstrzygnięcia (trigger niesie `ability`, spell — `resolveEffect`),
+    // żeby describeEffect umiał podać także kwotę (np. „zyskaj 1 życia").
+    pendingOptionalTrigger: activeOptionalTrigger
+      ? {
+          sourceCardId: state.objects.get(state.pendingOptionalTrigger.sourceId)?.cardId
+            ?? state.pendingOptionalTrigger.cardId ?? null,
+          effect: (() => {
+            const p = state.pendingOptionalTrigger;
+            const eff = p.resolveEffect
+              ?? (Array.isArray(p.ability?.effect) ? p.ability.effect[0] : p.ability?.effect);
+            return eff && typeof eff.type === 'string' ? { ...eff } : null;
+          })(),
+        }
       : null,
     // M166/D: kwoty podziału obrażeń — TYLKO właściciel decyzji (cele
     // wybrane jawnie, źródło publiczne; kwoty i tak widzi w ofertach).
