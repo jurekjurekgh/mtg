@@ -1762,6 +1762,36 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           });
           if (ownTarget && !foeTarget) return finish(-90);
           if (ownTarget) score -= 60;
+          // M237/2 (audyt Żywym Testerem): kontrujemy WROGI czar, ale wartość
+          // kontry zależy od tego, CO powstrzymuje. Bot kontrował trywialne
+          // czary 1-many (Twiddle, Dream Twist — self-mill, samotny tap) tak
+          // samo chętnie jak Fireball czy removal — marnował kontrę, która
+          // mogłaby zatrzymać realne zagrożenie. Reguła: gdy kontrowany czar
+          // NISKIEGO WPŁYWU (brak groźnych efektów wg deskryptora), trzymaj
+          // kontrę (schodzi poniżej passu). Deskryptor z widoku stosu
+          // (spell.effects/modes), zero nazw kart (ADR 0002).
+          if (foeTarget && !ownTarget) {
+            const HIGH_IMPACT = new Set([
+              'destroy_permanent', 'destroy_if_least_power', 'exile_permanent',
+              'exile_target_creature', 'bounce_permanent', 'return_to_hand',
+              'damage', 'fireball_resolve', 'draw_cards', 'create_token',
+              'gain_control_until_end_of_turn', 'counter_spell', 'discard_cards',
+              'pump', 'apply_to_each_target', 'reanimate_under_your_control',
+            ]);
+            const targetImpactful = targets.some((id) => {
+              const entry = stack.find((item) => item.id === id && item.controllerId !== view.playerId);
+              if (!entry) return false;
+              // Duży czar (TMC ≥ 3) uznajemy za wart kontry niezależnie od efektu.
+              if ((entry.manaCost ?? 0) >= 3) return true;
+              const effs = [
+                ...((entry.spell?.effects) ?? []),
+                ...((entry.spell?.modes ?? []).flatMap((m) => m.effects ?? [])),
+              ];
+              // Sam tap/untap/self-mill/scry jednego permanentu = niski wpływ.
+              return effs.some((e) => HIGH_IMPACT.has(e?.type));
+            });
+            if (!targetImpactful) score -= 60; // trywialny cel — trzymaj kontrę
+          }
         }
         if (spell.fireball) {
           // M236/4 (audyt + KOREKTA właściciela): Fireball to zasób SKALUJĄCY
