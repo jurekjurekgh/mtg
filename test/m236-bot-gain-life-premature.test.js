@@ -70,3 +70,41 @@ test('M236/2: przy KRYTYCZNYM życiu (4) zysk życia jest wart aktywacji (> pass
   const { ramen, pass } = ramenScore(ramenState(4));
   assert.ok(ramen > pass, `sac-za-życie przy 4 ż. (${ramen}) ma być > pass (${pass}) — ratunek`);
 });
+
+// M236/3 — Soulmender ({T}: zyskaj 1 życia): pure tap-za-życie przy bezpiecznym
+// życiu to zmarnowany tap stwora (bot leczył się z 20 co turę zamiast trzymać
+// stwora do walki). Ta sama klasa co Instant Ramen, ale bez sacrifice — kara za
+// jałową aktywację (lifeValue==0) i za tap zdolnego do walki stwora.
+function soulmenderState(botLife) {
+  const state = createGameState({ seed: 236, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p2');
+  state.turn.activePlayerId = 'p2';
+  state.turn.priorityPlayerId = 'p2';
+  addMana(state, 'p2', 10);
+  state.players.find((p) => p.id === 'p2').life = botLife;
+  put(state, 'soul', 'soulmender', 'p2', 'battlefield');
+  return state;
+}
+
+function soulScore(state) {
+  const bot = createHeuristicBot({ seed: 236 });
+  bot.chooseCommand(playerView(state, 'p2'), {});
+  const opts = bot.trace()[0].options;
+  return {
+    soul: opts.find((o) => o.cmd.startsWith('activate_ability(soul'))?.score,
+    pass: opts.find((o) => o.cmd === 'pass_priority')?.score ?? 0,
+  };
+}
+
+test('M236/3: bot NIE tapuje Soulmender za życie przy zdrowym życiu (20)', () => {
+  const choice = createHeuristicBot({ seed: 236 }).chooseCommand(playerView(soulmenderState(20), 'p2'), {});
+  assert.notEqual(choice.type === 'activate_ability' && choice.objectId === 'soul' ? 'act' : 'inne', 'act',
+    `przy 20 życia bot nie powinien tapować Soulmender za 1 życie: ${JSON.stringify(choice)}`);
+});
+
+test('M236/3: jałowy tap-za-życie < pass; przy krytycznym życiu > pass', () => {
+  const safe = soulScore(soulmenderState(20));
+  const crit = soulScore(soulmenderState(4));
+  assert.ok(safe.soul < safe.pass, `Soulmender przy 20 ż. (${safe.soul}) musi być < pass (${safe.pass})`);
+  assert.ok(crit.soul > crit.pass, `Soulmender przy 4 ż. (${crit.soul}) ma być > pass (${crit.pass})`);
+});

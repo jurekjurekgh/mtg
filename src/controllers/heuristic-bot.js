@@ -2733,6 +2733,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (ability?.cost?.sacrificeSelf && lifeValue === 0) {
               score -= source?.kind === 'creature' ? 8 : 4;
             }
+            // M236/3 (audyt Żywym Testerem, Soulmender): pure „{T}: zyskaj 1
+            // życia" przy bezpiecznym życiu to zmarnowany tap — bot leczył się
+            // z 20 do 21 co turę, tapując stwora (którym mógłby atakować/
+            // blokować). Gdy jedynym efektem zdolności jest gain_life bez
+            // wartości (lifeValue==0), aktywacja ma zejść PONIŻEJ passu, żeby
+            // bazowe `score=2` za legalne zagranie nie wygrało z czekaniem.
+            // Ostrzej, gdy tapuje zdolnego do walki stwora (koszt alternatywny).
+            const onlyGainLife = abilityEffectTypes.length === 1 && abilityEffectTypes[0] === 'gain_life';
+            if (onlyGainLife && lifeValue === 0) {
+              const tapsUsableCreature = source?.kind === 'creature' && canAttackNow(source);
+              score -= tapsUsableCreature ? 8 : 4;
+            }
           }
           // M157/L28 (Mournful Zombie „{W},{T}: Target player gains 1 life"):
           // cel-gracz bez wyceny = remis → bot mógł LECZYĆ PRZECIWNIKA.
