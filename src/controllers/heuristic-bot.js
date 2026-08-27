@@ -2492,7 +2492,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const source = cmd.objectId ? objectOnBoard(view, cmd.objectId) : null;
         const abilityObject = source ?? handCard(view, cmd.objectId);
         const def = abilityObject ? cardDef(abilityObject.cardId) : undefined;
-        const ability = def?.abilities?.[cmd.abilityIndex ?? 0];
+        // M237/3 (audyt Żywym Testerem, Blazing Torch): zdolność NADANA przez
+        // equipment (grantedFromEquipment) ma index względem
+        // `equipment.grantedAbilities`, NIE `abilities` — inaczej ability było
+        // undefined i efekty (np. „{T},poświęć: 2 obrażenia") w ogóle nie były
+        // wyceniane (każdy cel dostawał gołe score=2, bot celował w twarz/siebie
+        // zamiast zabić stwora). Spójnie z silnikiem (abilities.js).
+        const ability = cmd.grantedFromEquipment
+          ? (def?.equipment?.grantedAbilities ?? [])[cmd.abilityIndex ?? 0]
+          : def?.abilities?.[cmd.abilityIndex ?? 0];
         const taps = Boolean(ability?.cost?.tap);
         const tapsCreature = Boolean(ability?.cost?.tapCreature);
         const effects = Array.isArray(ability?.effect) ? ability.effect : ability?.effect ? [ability.effect] : [];
@@ -2930,8 +2938,38 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
             if (effect.type === 'damage' || effect.type === 'lose_life') {
               const amount = effect.amount ?? 0;
-              score += hitsSelf ? -30 - 2 * amount : 10 + 3 * amount;
+              // M237/3: obrażenia w GRACZA jak twarz Fireballa (M236/4) — dobicie
+              // = zawsze, istotny cios (≥1/3 życia) = premia, chip = trzymaj.
+              // W siebie: zawsze kara.
+              if (hitsSelf) {
+                score += -30 - 2 * amount;
+              } else {
+                const foeLife = enemy(view)?.life ?? 20;
+                const significant = Math.max(3, Math.ceil(foeLife / 3));
+                if (amount >= foeLife) score += 1000;
+                else if (amount >= significant) score += 10 + 3 * amount;
+                else score -= 8; // chip w twarz z aktywacji — raczej trzymaj na cel
+              }
             }
+          }
+          // M237/3 (audyt Żywym Testerem, Blazing Torch): obrażenia z AKTYWOWANEJ
+          // zdolności w STWORA — jak M236/5 dla czarów: dobicie = wartość
+          // removalu (skalowana wartością + M234), nieletalne poza walką = kara
+          // (trzymaj na cel, którego dobijesz). Wcześniej ścieżka zdolności
+          // wyceniała tylko cel-gracza, więc bot nie umiał zabić stwora
+          // aktywacją (Blazing Torch: {T},poświęć: 2 obrażenia).
+          if (effect.type === 'damage' && target && target.controllerId !== view.playerId
+            && target.kind === 'creature') {
+            const amount = effect.amount ?? 0;
+            const remain = (target.toughness ?? 0) - (target.damage ?? 0);
+            if (amount >= remain) {
+              score += P.removalEnemyBase + P.removalWorthWeight * ((target.power ?? 0) + (target.toughness ?? 0))
+                + enemyRemovalTargetBonus(view, target);
+            } else if (!combatTrickWindow(view, target)) {
+              score -= 8; // nieletalny chip poza walką — trzymaj
+            }
+          } else if (effect.type === 'damage' && target && target.controllerId === view.playerId) {
+            score -= 60; // obrażenia we własnego stwora — strata
           }
           // M162/B (uwaga właściciela, Ghoulcaller's Bell): symetryczny mill
           // bez celu („each player mills") — ta sama wycena wyścigu bibliotek
