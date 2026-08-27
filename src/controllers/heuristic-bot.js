@@ -1996,13 +1996,28 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const inner = Array.isArray(effect.effects) ? effect.effects : [];
             const hasDamage = inner.some((x) => x?.type === 'damage');
             const hasCantBlock = inner.some((x) => x?.type === 'cant_block');
-            if (hasDamage || hasCantBlock) {
+            // M233/2 (audyt Żywym Testerem, Sea God's Scorn): wrapper może nieść
+            // efekt USUWAJĄCY permanent (bounce/destroy/exile). Bez wyceny celu
+            // odbicie WŁASNEGO stwora zostawało na bazie 50 i bot odbijał
+            // swojego stwora na rękę (strata tempa). Reguła jak górny
+            // REMOVAL_EFFECTS: cel własny = strata, wroga = zysk (ADR 0002).
+            const WRAP_REMOVAL = new Set([
+              'bounce_permanent', 'bounce_to_library_top', 'bounce_to_library_bottom',
+              'destroy_permanent', 'exile_permanent', 'exile_target_creature',
+            ]);
+            const hasRemoval = inner.some((x) => WRAP_REMOVAL.has(x?.type));
+            if (hasDamage || hasCantBlock || hasRemoval) {
               for (const slot of cmd.targets ?? []) {
                 const t3 = objectOnBoard(view, slot);
                 if (!t3) continue;
                 const mine = t3.controllerId === view.playerId;
                 if (hasDamage) score += mine ? -60 : 12 + (t3.power ?? 0) * 2;
                 else if (hasCantBlock) score += mine ? -10 : 8;
+                if (hasRemoval) {
+                  score += mine
+                    ? -90
+                    : P.removalEnemyBase + P.removalWorthWeight * ((t3.power ?? 0) + (t3.toughness ?? 0));
+                }
               }
             }
           }
