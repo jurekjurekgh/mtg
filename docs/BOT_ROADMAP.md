@@ -497,6 +497,32 @@ całego etapu.
   na win-rate (baza) i rodziny NIEWRAŻLIWE (premie ataku) to dwa różne sufity:
   pierwsza potrzebuje lepszego SYGNAŁU, druga — trudniejszych SYTUACJI.
 
+- **Runda 8 (2026-08-27) — M237 (użycie removalu/damage/discounterów życia)
+  dokumentacja po fakcie + M239 (audyt PR #83: trample przez protekcję,
+  martwe pokrętła).**
+  (M237, sesja arena/01a03e9e) Cztery poprawki jakościowe decyzji czarów:
+  /1 X-cost drain (Profane Command pattern) wyceniany SZTABEM życia
+  wroga — bot nie rzuca drainu za mniej niż 25% życia celu;
+  /2 kontry wg WPŁYWU rzucanego (nie kontruje Twiddle'a/self-milla,
+  kontruje Fireballa/dobór 3+); /3 granted damage (Torch) celowany
+  w stwora (zabójstwo), NIGDY we własny; /4 damageTargetValue → MODEL
+  PER-CEL (bezpieczny blok → wycena wartości przeciwnika, juba lethal
+  od połowy wytrzymałości). Spot-mutacje sesji M239: kara /2 (60 pkt)
+  pali m237-bot-counter-value gdy wyłączona; próg 25% z /4 pali
+  m237-bot-xcost-drain — obie zmiany nadają się i są przypięte (L61).
+  (M238) Pokrycie src/ 97.3/85.0/92.0 (wiersze/gałęzie/funkcje) — luki
+  wyłącznie UI/IO, świadome; bez „rzezi" testów pod liczby.
+  (M239, audyt PR #83 wg ADR 0020 B — szczegóły w
+  docs/audits/AUDYT_PR83_2026-08-27.md) Trzy znaleziska, wszystkie
+  naprawione: Z1 duplikat komentarza M219 (kosmetyczne); Z2 fix M221/E
+  za szeroki dla TRAMPLE — CR 702.19b test lethal ignoruje prewencję,
+  nadmiar trample przechodzi przez blok z protekcją na gracza (sonda
+  silnikowa: poprawne; dziura wyłącznie w wycenie bota; fix w pomocniku
+  attackerNeutralizedByProtection + test m239-trample-through-protection
+  z mutacją); Z3 rodzina damageCreature*/damageLethalBonus była MARTWA
+  po M237/4, a tune-card ją stroił — wycięta z params, DESCRIPTOR_PARAMS
+  i asercji (bez zmiany zachowania, golden-master/snapshot zielone).
+
 
 `src/controllers/heuristic-params.js` (bliźniak `heuristic-weights.js`).
 Zrobiona rodzina wzorcowa „wyceny bazowe": `creatureBase` (70),
