@@ -4613,6 +4613,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       playerId: controllerId,
       objectIds: [...topIds],
       landIds: [...landIds],
+      // M240/B (zgłoszenie): tytuł decyzji nazywa ŹRÓDŁO (karta na polu
+      // bitwy — informacja publiczna). Bez tego modal mówił „Wybierz:
+      // Wariant (N opcji)” — gracz nie wiedział, jakiej to karty decyzja.
+      sourceCardId: sourceObject.cardId ?? null,
       ...(effect.counterIfNone ? { counterIfNoneSourceId: sourceObject.id } : {}),
       restorePriorityTo: state.turn.priorityPlayerId,
     };

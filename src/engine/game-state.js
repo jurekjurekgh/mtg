@@ -6288,6 +6288,10 @@ export function playerView(state, playerId) {
     ? {
         playerId: state.pendingProliferate.playerId,
         sourceId: state.pendingProliferate.sourceId,
+        // M240/K-audyt: tytuł decyzji proliferate nazywa kartę źródła
+        // (obiekt na stosie/polu bitwy — informacja publiczna).
+        sourceCardId: state.objects.get(state.pendingProliferate.sourceId)?.cardId
+          ?? state.pendingProliferate.sourceCardId ?? null,
         candidateIds: [...state.pendingProliferate.candidateIds],
       }
     : null;
@@ -6416,6 +6420,11 @@ export function playerView(state, playerId) {
     // decyzji (precedens pendingTriggerTarget — uwagi B/C 2026-08-10).
     pendingHandTopChoice: activeHandTopChoice
       ? { sourceCardId: state.pendingHandTopChoice.sourceCardId ?? null }
+      : null,
+    // M240/B (zgłoszenie): jak M162/C — tytuł modala ETB-look nazywa kartę
+    // źródła (na polu bitwy; informacja publiczna, tylko właściciel decyzji).
+    pendingSatyrLook: activeSatyrLook
+      ? { sourceCardId: state.pendingSatyrLook.sourceCardId ?? null }
       : null,
     // M221/B: źródło i główny efekt decyzji „you may" — do etykiety modala.
     // sourceCardId z obiektu-źródła (pole bitwy), effect (płytka kopia) z

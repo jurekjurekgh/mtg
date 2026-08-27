@@ -1681,6 +1681,12 @@ function choiceSourceTitle(cmd, session, view) {
   if (cmd?.type === 'resolve_damage_division' && view?.pendingDamageDivision?.sourceCardId) {
     return `${session.nameOf(view.pendingDamageDivision.sourceCardId)} — podziel ${view.pendingDamageDivision.total} obrażeń`;
   }
+  // M240/B (zgłoszenie): ETB Satyr Wayfinder — „Wybierz: Wariant (N opcji)”
+  // bez podpisu. Źródło jadę z pendingu jak u M162/C (karta na polu bitwy —
+  // publiczna), nie z nazwy zaszytej w warstwie opisu.
+  if (cmd?.type === 'resolve_satyr_look_choice' && view?.pendingSatyrLook?.sourceCardId) {
+    return `${session.nameOf(view.pendingSatyrLook.sourceCardId)} — bierz ląd z odsłoniętych kart`;
+  }
   if (!cmd || cmd.objectId == null) return null;
   const zones = ['hand', 'battlefield', 'stack', 'graveyard', 'library'];
   let object = null;
@@ -1714,6 +1720,13 @@ function choiceSourceTitle(cmd, session, view) {
     return mode?.name ? `Cel czaru: ${name} — ${mode.name}` : `Cel czaru: ${name}`;
   }
   if (cmd.type === 'cast_cleave' && cmd.targets?.length) return `Cel czaru (Cleave): ${name}`;
+  // M240/K (zgłoszenie): rzut przez Escape — tytuł musi nazywać CZAR,
+  // bo przy dwóch kartach z Escape w grobie oba wiersze „Ucieczka —
+  // karty do wygnania (N opcji)” były nierozróżnialne. Deskryptor
+  // (koszt wygnania) zostaje — decyzja na końcóweczę dotyczy kart.
+  if (cmd.type === 'cast_escape') {
+    return `${name} — Ucieczka (Escape): karty do wygnania`;
+  }
   // M106/Z5 (audyt stołu): equip grupował się jako „Cel zdolności: Sprzęt",
   // a opcje w środku mówiły „Wyposaż: Sprzęt → stwór" — dwie różne nazwy tej
   // samej akcji. Nazwa keyworda jest w deskryptorze, więc grupa może nazwać
@@ -1742,6 +1755,15 @@ function choiceSourceTitle(cmd, session, view) {
  * „Wybierz: wybierz (N opcji)".
  */
 /** Tytuł grupy BEZ licznika — nagłówek modala wyboru (main.js introLabel). */
+// M240/K (audyt właściciela): gdy żadna doprecyzowana gałąź nie mówi,
+// a oczekująca decyzja zna swoją kartę-źródło (sourceCardId jest jawne),
+// deskryptor dostaje NAZWĘ KARTY zamiast bezznacznikowego „Wybierz: …”
+// (który bywał nierozróżnialny — dwie karty z Escape w grobie dały dwa
+// identyczne wiersze „Ucieczka (Escape) — karty do wygnania”).
+const CHOICE_GROUP_PENDING_SOURCE = Object.freeze({
+  resolve_proliferate: (view) => view?.pendingProliferate?.sourceCardId ?? null,
+});
+
 export function choiceGroupTitle(request, session, view) {
   const options = request?.options ?? [];
   const titled = choiceSourceTitle(options[0], session, view);
@@ -1749,6 +1771,8 @@ export function choiceGroupTitle(request, session, view) {
   const descriptor = CHOICE_GROUP_TYPE_DESCRIPTORS[request?.type]
     ?? CHOICE_GROUP_COMMAND_DESCRIPTORS[options[0]?.type]
     ?? (request?.type === 'target' ? 'Cel' : 'Wariant');
+  const sourceCardId = CHOICE_GROUP_PENDING_SOURCE[options[0]?.type]?.(view) ?? null;
+  if (sourceCardId) return `${session.nameOf(sourceCardId)} — ${descriptor}`;
   return `Wybierz: ${descriptor}`;
 }
 
