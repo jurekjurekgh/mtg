@@ -1940,6 +1940,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
             const lethal = (effect.amount ?? 0) >= (target.toughness ?? 0) - (target.damage ?? 0);
             score += P.damageCreatureBase + P.damageCreaturePowerWeight * (target.power ?? 0) + (lethal ? P.damageLethalBonus : 0);
+            // M236/5 (audyt Żywym Testerem, Shock w 2/3): obrażenia, które NIE
+            // zabijają celu, to zwykle wyrzucona karta — cel zostaje na stole,
+            // a obrażenia znikną przy sprzątaniu (CR 514.2), o ile nie kończą
+            // walki TERAZ. Kara, gdy nie-letalnie i poza oknem walki (bot ma
+            // trzymać spalenie na cel, którego dobije, albo na twarz). Wyjątek:
+            // w walce z udziałem celu chip może zmienić wynik (osobna logika
+            // pumpów/combat to liczy) — tam nie karzemy. Reguła generyczna po
+            // wytrzymałości celu i view.combat (ADR 0002/0017).
+            const targetInCombat = combatTrickWindow(view, target);
+            if (!lethal && !targetInCombat) {
+              // Kara znosi premię obrażeń ORAZ bazę czaru (spellBase), gdy
+              // obrażenia są JEDYNĄ ofensywną treścią czaru — inaczej goła baza
+              // 50 wygrywa z passem i bot chip-uje w kółko. Gdy czar ma też inne
+              // efekty (dober, scry) znosimy tylko premię obrażeń (reszta wyceni
+              // się w swoich gałęziach i może uzasadnić rzut).
+              const damageIsOnlyValue = effects.filter((e) => e && e.type !== 'damage').length === 0;
+              score -= P.damageCreatureBase + P.damageCreaturePowerWeight * (target.power ?? 0)
+                + (damageIsOnlyValue ? P.spellBase + 12 : 12);
+            }
           } else if (effect.type === 'damage') {
             score -= 60; // lanie we własne stwory bez powodu jest marnotrawstwem
           }
