@@ -48,10 +48,16 @@ test('M236/4: bot NIE pali Fireballa za trywialny chip (X=1) w twarz', () => {
     `Fireball X=1 w twarz przy 19 ż. to zmarnowany zasób — trzymaj: ${JSON.stringify(c)}`);
 });
 
-test('M236/4: bot NIE pali Fireballa w twarz za NIEistotny X (5 vs 20 ż.)', () => {
-  const c = fireballChoice(6, 20);
+test('M236/4: bot NIE pali skalującego Fireballa w twarz za < 25% życia (X=4 vs 20 ż.)', () => {
+  const c = fireballChoice(5, 20); // mana5 → X do 4; 4/20 = 20% < 25%
   assert.notEqual(c.type === 'cast_spell' && c.objectId === 'fb' && (c.targets ?? []).includes('p1') ? 'faceChip' : 'inne', 'faceChip',
-    `X=5 vs 20 ż. (<1/3) to nieistotny cios — trzymaj: ${JSON.stringify(c)}`);
+    `X=4 vs 20 ż. (<25%) to za mało — trzymaj skalujący zasób: ${JSON.stringify(c)}`);
+});
+
+test('M236/4: bot RZUCA skalującego Fireballa w twarz za ≥ 25% życia (X=5 vs 20 ż.)', () => {
+  const c = fireballChoice(6, 20); // mana6 → X do 5; 5/20 = 25%
+  assert.ok(c.type === 'cast_spell' && c.objectId === 'fb' && (c.targets ?? [])[0] === 'p1',
+    `X=5 vs 20 ż. (=25%) to istotny cios — rzuć: ${JSON.stringify(c)}`);
 });
 
 test('M236/4: bot RZUCA Fireballa, gdy X=lethal w gracza', () => {

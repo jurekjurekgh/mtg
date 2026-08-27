@@ -45,10 +45,14 @@ function shockState(enemyCardId) {
   return state;
 }
 
-test('M236/5: bot NIE rzuca Shock w stwora, którego NIE zabija (2/3), poza walką', () => {
+test('M236/5: bot NIE celuje Shockiem w stwora, którego NIE zabija (2/3), poza walką', () => {
+  // Cel-STWÓR nieletalny poza walką to czysta strata; bot może chcieć trafić
+  // twarz (stałe obrażenia, model właściciela), ale NIGDY nieletalnie w stwora.
   const choice = createHeuristicBot({ seed: 236 }).chooseCommand(playerView(shockState('cogwork-assembler'), 'p2'), {});
-  assert.notEqual(choice.type === 'cast_spell' && choice.objectId === 'shock' ? 'cast' : 'inne', 'cast',
-    `Shock 2 w 2/3 nie zabija — bot ma trzymać spalenie: ${JSON.stringify(choice)}`);
+  const hitsCreature = choice.type === 'cast_spell' && choice.objectId === 'shock'
+    && (choice.targets ?? [])[0] === 'foe';
+  assert.ok(!hitsCreature,
+    `Shock 2 w 2/3 nie zabija — bot nie może celować w tego stwora: ${JSON.stringify(choice)}`);
 });
 
 test('M236/5: bot RZUCA Shock w stwora, którego zabija (2/2)', () => {

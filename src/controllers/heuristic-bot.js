@@ -928,6 +928,74 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const shieldedAmount = (view, targetId) => (view.damageShields ?? [])
     .filter((shield) => shield.targetId === targetId)
     .reduce((sum, shield) => sum + (shield.remaining ?? 0), 0);
+  /**
+   * M237/4 (model właściciela) — WARTOŚĆ zadania `amount` obrażeń w cel
+   * (stwór/gracz). JEDNO źródło prawdy dla czarów i zdolności (L41).
+   *
+   * `scaling` = czar SKALUJĄCY X z maną (Fireball, Consume Spirit): premium
+   * zasób, którego nie wolno marnować. Reguła właściciela: rzucamy go (X≥1,
+   * nigdy 0) TYLKO gdy zabija stwora o TMC ≥ 3 (albo nie-do-przejścia:
+   * deathtouch/protekcja) ALBO zdejmuje ≥ 25% życia gracza (albo dobija).
+   *
+   * Czar/zdolność o STAŁYCH obrażeniach (Shock, Blazing Torch): prostszy model
+   * — dobicie dowolnego stwora = removal; obrażenia w gracza proporcjonalne do
+   * % zjedzonego życia (generalnie OK); nieletalny chip w stwora poza walką =
+   * czysta strata (zakaz).
+   *
+   * Wspólne: „letalność" liczona z POZOSTAŁEGO życia (toughness − damage) —
+   * dobicie pod-rannego małym ciosem premiowane. SIEBIE/własny stwór = zakaz.
+   * Pełna prewencja / tarcza pochłaniająca cios = 0 zadanych → strata.
+   */
+  const damageTargetValue = (view, targetId, amount, scaling = false) => {
+    const amt = Number.isInteger(amount) ? amount : 0;
+    const foe = enemy(view);
+    if (targetId === view.playerId) return -60 - 2 * amt;   // w SIEBIE — zakaz
+    if (foe && targetId === foe.id) {
+      if (amt <= 0) return -60;
+      const foeLife = foe.life ?? 20;
+      if (amt >= foeLife) return 1000;                      // dobicie gracza
+      const pct = amt / foeLife;
+      if (scaling) {
+        // Skalujący: wart tylko przy ≥25% życia (inaczej trzymaj na dobicie).
+        return pct >= 0.25 ? Math.round(10 + 40 * pct) : -60;
+      }
+      // Stały: proporcjonalnie do % zjedzonego życia (generalnie pozytywne).
+      return Math.round(6 + 40 * pct);
+    }
+    const t = objectOnBoard(view, targetId);
+    if (!t) return 0;
+    if (t.controllerId === view.playerId) return -90;       // WŁASNY stwór — zakaz
+    if (damageFullyPrevented(view, t) || (amt > 0 && shieldedAmount(view, t.id) >= amt)) return -70;
+    const remaining = (t.toughness ?? 0) - (t.damage ?? 0); // POZOSTAŁE życie
+    const lethal = amt >= remaining && remaining > 0;
+    if (lethal) {
+      if (scaling) {
+        // Skalujący zasób (Fireball, Consume Spirit) marnujemy tylko na TANIEGO
+        // chumpa BEZ znaczenia. Wart zabicia (model właściciela), gdy:
+        //  - TMC ≥ 2 (obniżony próg), ALBO
+        //  - deathtouch (blokuje/odstrasza mój atak), ALBO
+        //  - protekcja od mojego koloru (nie do przejścia w walce), ALBO
+        //  - flying/reach, a JA mam latacza, którego ten stwór może blokować.
+        const tmc = t.manaCost ?? cardDef(t.cardId)?.manaCost ?? 0;
+        const kw = t.keywords ?? [];
+        const blocksMyFlyers = (kw.includes('flying') || kw.includes('reach'))
+          && (view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId
+            && o.kind === 'creature' && (o.keywords ?? []).includes('flying'));
+        const worth = tmc >= 2 || kw.includes('deathtouch')
+          || enemyCreatureUnbeatableInCombat(view, t) || blocksMyFlyers;
+        // Kara musi PRZEBIĆ bazę czaru (spellBase ~50) + ewentualny rider
+        // (gain_life przy drenach), żeby wariant zszedł poniżej passu — bot
+        // trzyma skalujący zasób zamiast marnować go na tani chumpa.
+        if (!worth) return -90;
+      }
+      return P.removalEnemyBase + P.removalWorthWeight * ((t.power ?? 0) + (t.toughness ?? 0))
+        + enemyRemovalTargetBonus(view, t);
+    }
+    // Nieletalny cios: w oknie walki neutralny (może zmienić wynik — liczone
+    // osobno); poza walką CZYSTA STRATA — zakaz.
+    return combatTrickWindow(view, t) ? 0 : -80;
+  };
+
   // Cel przeżyje „destroy", bo ma tarczę regeneracji, której nic nie blokuje.
   const willRegenerate = (view, targetId) => (view.regenerationShields ?? []).includes(targetId)
     && !(view.cantBeRegeneratedThisTurn ?? []).includes(targetId);
@@ -1800,38 +1868,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // (stwór ginie / gracz umiera), albo na gracza gdy zadasz ISTOTNĄ
           // ilość obrażeń. Trywialny chip = trzymaj (schodzi poniżej passu).
           // Wycena per-cel z widoku (ADR 0017), zero nazw kart (ADR 0002).
+          // M237/4: Fireball dzieli X po równo (zaokr. w dół) między cele —
+          // każdy cel wyceniamy wspólnym damageTargetValue (stwór wg pozostałego
+          // życia, gracz proporcjonalnie do %, SIEBIE/własny = zakaz). Jedno
+          // źródło prawdy z czarami/zdolnościami (L41).
           const ids = cmd.targets ?? [];
-          const foeId = enemy(view)?.id;
-          const x = cmd.xValue ?? 0;
-          const perTarget = Math.floor(x / Math.max(1, ids.length));
-          const foeLife = enemy(view)?.life ?? 20;
-          // Istotny cios w gracza = dobicie ALBO ≥ 1/3 aktualnego życia wroga.
-          const significantFace = Math.max(3, Math.ceil(foeLife / 3));
-          let fbScore = 0;
-          for (const tid of ids) {
-            if (tid === view.playerId) {
-              fbScore -= 200; // obrażenia w SIEBIE — nigdy
-            } else if (tid === foeId) {
-              if (perTarget >= foeLife) fbScore += 1000;              // dobicie gracza
-              else if (perTarget >= significantFace) fbScore += 20 + perTarget; // istotny cios
-              else fbScore -= 60;                                     // chip w twarz — trzymaj
-            } else {
-              // Cel-stwór: dobicie = zysk removalu (skalowany wartością), chip
-              // nieletalny = strata (jak M236/5 — trzymaj na cel, który zabijesz).
-              const t = objectOnBoard(view, tid);
-              if (!t) continue;
-              const remain = (t.toughness ?? 0) - (t.damage ?? 0);
-              if (perTarget >= remain) {
-                fbScore += P.removalEnemyBase + P.removalWorthWeight * ((t.power ?? 0) + (t.toughness ?? 0))
-                  + enemyRemovalTargetBonus(view, t);
-              } else {
-                fbScore -= 40; // nieletalne — nie pal skalującego zasobu na chip
-              }
-            }
-          }
-          // Kara za PRZEPŁACENIE X ponad potrzebę (dobiłbym mniejszym X): drobna,
-          // żeby przy równej wartości bot wolał tańszy wariant.
-          score += fbScore;
+          const perTarget = Math.floor((cmd.xValue ?? 0) / Math.max(1, ids.length));
+          for (const tid of ids) score += damageTargetValue(view, tid, perTarget, true);
         }
         // M121: generyczna bramka „nie strzelaj do siebie" — obejmuje KAŻDY
         // efekt ofensywny z tabeli, także te dodane w przyszłości.
@@ -2017,55 +2060,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score += P.bounceEnemyBase + (target.power ?? 0) * P.bounceEnemyPowerWeight;
             score += enemyRemovalTargetBonus(view, target); // M234
           }
-          if (effect.type === 'damage' && target && target.controllerId !== view.playerId) {
-            // M92 (audyt PlayerView): obrażenia w cel objęty pełną prewencją
-            // (Ethersworn Shieldmage) albo pochłonięte w całości przez tarczę
-            // (Withstand) to zmarnowana karta — 0 zadanych obrażeń.
+          if (effect.type === 'damage') {
+            // M237/4 (model właściciela) — JEDNO źródło prawdy wyceny obrażeń
+            // (damageTargetValue): stwór wroga dobity wg POZOSTAŁEGO życia,
+            // nieletalny chip poza walką = zakaz; gracz proporcjonalnie do %
+            // życia (dobicie najwyżej); SIEBIE/własny stwór = zakaz. Efekt
+            // celuje WŁASNY slot (`targetIndex`, domyślnie 0) — nie wszystkie
+            // cele czaru (spell może mieć osobne sloty per efekt damage).
+            const slot = cmd.targets?.[effect.targetIndex ?? 0];
             const amount = Number.isInteger(effect.amount) ? effect.amount : 0;
-            const absorbed = shieldedAmount(view, target.id);
-            if (damageFullyPrevented(view, target) || (amount > 0 && absorbed >= amount)) {
-              score -= 70;
-              continue;
-            }
-            const lethal = (effect.amount ?? 0) >= (target.toughness ?? 0) - (target.damage ?? 0);
-            score += P.damageCreatureBase + P.damageCreaturePowerWeight * (target.power ?? 0) + (lethal ? P.damageLethalBonus : 0);
-            // M236/5 (audyt Żywym Testerem, Shock w 2/3): obrażenia, które NIE
-            // zabijają celu, to zwykle wyrzucona karta — cel zostaje na stole,
-            // a obrażenia znikną przy sprzątaniu (CR 514.2), o ile nie kończą
-            // walki TERAZ. Kara, gdy nie-letalnie i poza oknem walki (bot ma
-            // trzymać spalenie na cel, którego dobije, albo na twarz). Wyjątek:
-            // w walce z udziałem celu chip może zmienić wynik (osobna logika
-            // pumpów/combat to liczy) — tam nie karzemy. Reguła generyczna po
-            // wytrzymałości celu i view.combat (ADR 0002/0017).
-            const targetInCombat = combatTrickWindow(view, target);
-            if (!lethal && !targetInCombat) {
-              // Kara znosi premię obrażeń ORAZ bazę czaru (spellBase), gdy
-              // obrażenia są JEDYNĄ ofensywną treścią czaru — inaczej goła baza
-              // 50 wygrywa z passem i bot chip-uje w kółko. Gdy czar ma też inne
-              // efekty (dober, scry) znosimy tylko premię obrażeń (reszta wyceni
-              // się w swoich gałęziach i może uzasadnić rzut).
-              const damageIsOnlyValue = effects.filter((e) => e && e.type !== 'damage').length === 0;
-              score -= P.damageCreatureBase + P.damageCreaturePowerWeight * (target.power ?? 0)
-                + (damageIsOnlyValue ? P.spellBase + 12 : 12);
-            }
-          } else if (effect.type === 'damage') {
-            // M237/1 (audyt Żywym Testerem, Consume Spirit): obrażenia w GRACZA
-            // (cel-gracz nie jest obiektem pola bitwy → `target` null). Wycena
-            // jak twarz Fireballa (M236/4): dobicie = zawsze, istotny cios
-            // (≥ 1/3 życia) = premia, trywialny chip = trzymaj. Obrażenia we
-            // WŁASNEGO gracza / własnego stwora zostają karą.
-            const ids = cmd.targets ?? [];
-            const foeId = enemy(view)?.id;
-            const amount = Number.isInteger(effect.amount) ? effect.amount : 0;
-            if (foeId != null && ids.includes(foeId) && !ids.includes(view.playerId)) {
-              const foeLife = enemy(view)?.life ?? 20;
-              const significantFace = Math.max(3, Math.ceil(foeLife / 3));
-              if (amount >= foeLife) score += 1000;                 // dobicie gracza
-              else if (amount >= significantFace) score += 20 + amount; // istotny cios
-              else score -= 60;                                     // chip w twarz — trzymaj
-            } else {
-              score -= 60; // lanie w SIEBIE / własnego stwora bez powodu — strata
-            }
+            const scaling = Boolean(spell?.xCost); // Consume Spirit itp. — X z maną
+            if (slot != null) score += damageTargetValue(view, slot, amount, scaling);
+            else score -= 60; // efekt obrażeń bez celu — nic nie robi
           }
           // M139 (uwaga właściciela): CZAR tapujący nie miał wyceny pozytywnej
           // w ogóle — ścieżka zdolności ją miała, ścieżka czarów nie (kolejny
@@ -2929,47 +2935,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // player mills 1", token Zombie i tak dostaje kontroler). Ta sama
           // logika co w scoringu `cast_spell` (mill/damage per cel) — tu
           // brakowało jej dla ścieżki zdolności aktywowanych.
+          // M96 (audyt Żywym Testerem): mielenie celujące w GRACZA — mielenie
+          // siebie przybliża deck-out, wroga to zysk.
           const playerTarget = (cmd.targets ?? []).find((id) => id === view.playerId || id === enemy(view)?.id);
-          if (playerTarget) {
-            const hitsSelf = playerTarget === view.playerId;
-            if (effect.type === 'mill_cards' || effect.type === 'mill_from_bottom') {
-              // Mielenie siebie przybliża własny deck-out; mielenie wroga to zysk.
-              score += hitsSelf ? -25 : 6 + 2 * (effect.amount ?? 1);
-            }
-            if (effect.type === 'damage' || effect.type === 'lose_life') {
-              const amount = effect.amount ?? 0;
-              // M237/3: obrażenia w GRACZA jak twarz Fireballa (M236/4) — dobicie
-              // = zawsze, istotny cios (≥1/3 życia) = premia, chip = trzymaj.
-              // W siebie: zawsze kara.
-              if (hitsSelf) {
-                score += -30 - 2 * amount;
-              } else {
-                const foeLife = enemy(view)?.life ?? 20;
-                const significant = Math.max(3, Math.ceil(foeLife / 3));
-                if (amount >= foeLife) score += 1000;
-                else if (amount >= significant) score += 10 + 3 * amount;
-                else score -= 8; // chip w twarz z aktywacji — raczej trzymaj na cel
-              }
-            }
+          if (playerTarget && (effect.type === 'mill_cards' || effect.type === 'mill_from_bottom')) {
+            score += playerTarget === view.playerId ? -25 : 6 + 2 * (effect.amount ?? 1);
           }
-          // M237/3 (audyt Żywym Testerem, Blazing Torch): obrażenia z AKTYWOWANEJ
-          // zdolności w STWORA — jak M236/5 dla czarów: dobicie = wartość
-          // removalu (skalowana wartością + M234), nieletalne poza walką = kara
-          // (trzymaj na cel, którego dobijesz). Wcześniej ścieżka zdolności
-          // wyceniała tylko cel-gracza, więc bot nie umiał zabić stwora
-          // aktywacją (Blazing Torch: {T},poświęć: 2 obrażenia).
-          if (effect.type === 'damage' && target && target.controllerId !== view.playerId
-            && target.kind === 'creature') {
-            const amount = effect.amount ?? 0;
-            const remain = (target.toughness ?? 0) - (target.damage ?? 0);
-            if (amount >= remain) {
-              score += P.removalEnemyBase + P.removalWorthWeight * ((target.power ?? 0) + (target.toughness ?? 0))
-                + enemyRemovalTargetBonus(view, target);
-            } else if (!combatTrickWindow(view, target)) {
-              score -= 8; // nieletalny chip poza walką — trzymaj
-            }
-          } else if (effect.type === 'damage' && target && target.controllerId === view.playerId) {
-            score -= 60; // obrażenia we własnego stwora — strata
+          // M237/3+4 (Blazing Torch + model właściciela): obrażenia/utrata życia
+          // z AKTYWOWANEJ zdolności — ta sama wycena co czary (damageTargetValue):
+          // stwór wroga wg pozostałego życia (dobicie = removal, nieletalny chip
+          // poza walką = zakaz), gracz proporcjonalnie do % życia, SIEBIE/własny
+          // stwór = zakaz. Jedno źródło prawdy (L41).
+          if (effect.type === 'damage' || effect.type === 'lose_life') {
+            const slot = cmd.targets?.[effect.targetIndex ?? 0];
+            const amount = Number.isInteger(effect.amount) ? effect.amount : 0;
+            // Zdolność, która POŚWIĘCA źródło/permanent, by zadać obrażenia
+            // (Blazing Torch: {T},poświęć: 2 dmg), to zasób LIMITOWANY — traktuj
+            // jak skalujący (dobij wartościowy cel albo ≥25% życia gracza, nie
+            // marnuj na chip w zdrową twarz). Zwykła zdolność bez poświęcenia
+            // (np. wielorazowy ping) używa prostszego modelu.
+            const scaling = Boolean(ability?.cost?.sacrificeSelf || ability?.cost?.sacrifice);
+            if (slot != null) score += damageTargetValue(view, slot, amount, scaling);
           }
           // M162/B (uwaga właściciela, Ghoulcaller's Bell): symetryczny mill
           // bez celu („each player mills") — ta sama wycena wyścigu bibliotek

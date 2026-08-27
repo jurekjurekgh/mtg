@@ -66,8 +66,8 @@ test('M237/1: bot NIE pali X-drain za trywialny chip w twarz (X mały vs 20 ż.)
     `X-drain chip (X=1 vs 20 ż.) — trzymaj: ${JSON.stringify(c)}`);
 });
 
-test('M237/1: bot rzuca X-drain w twarz przy ISTOTNYM ciosie (X≥1/3 życia)', () => {
-  // mana 6 → X do 4; foe 9 → 1/3 = 3, X=4 ≥ 3 istotny
+test('M237/1: bot rzuca X-drain w twarz przy ISTOTNYM ciosie (X≥25% życia)', () => {
+  // mana 6 → X do 4; foe 9 → 25% = 3, X=4 (44%) istotny
   const c = createHeuristicBot({ seed: 237 }).chooseCommand(playerView(csState(6, 9), 'p2'), {});
   assert.ok(c.type === 'cast_spell' && c.objectId === 'cs' && (c.targets ?? [])[0] === 'p1',
     `X-drain istotny w twarz (X=4 vs 9 ż.): ${JSON.stringify(c)}`);

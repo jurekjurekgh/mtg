@@ -106,7 +106,11 @@ test('log tłumaczy zdolności i tokeny na polski bez wycieku surowych typów', 
   // Seed 9 po M202/I (Nightsnare: bot wybiera rezygnację zamiast losowej karty
   // z odsłoniętej ręki, więc flow partii się zmienił) — hunter
   // (kolejne sprawdzone: 14, 20). Konwencja L25.
-  const session = createSession({ seed: 9, registry, decks });
+  // Seed 3 po M237/4 (przebudowa wyceny obrażeń: bot inaczej dobiera cele
+  // spaleń/dreny — przy seedzie 9 nie było już aktywacji zdolności w tej
+  // partii) — przelosowane hunterem (kolejne z ability+token: 4, 5, 7, 11).
+  // Konwencja L25; ten test to dług odsetkowy (L53).
+  const session = createSession({ seed: 3, registry, decks });
   playOut(session);
   assert.ok(
     session.log.some((e) => e.text.includes('aktywuje zdolność')),
