@@ -1736,7 +1736,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const hitsFoe = foeId != null && ids.includes(foeId);
           if (hitsSelf && !hitsFoe) return finish(-80);
           if (hitsSelf) score -= 50;
-          if (hitsFoe) score += 25 + (cmd.xValue ?? 0);
+          if (hitsFoe) {
+            // M236/4 (audyt Żywym Testerem): Fireball (i inne skalujące X w twarz)
+            // to zasób, który ROŚNIE z maną. Bot spalał go za X=1 (19→18) w 2.
+            // turze — wyrzucał potencjalne dobicie za chip. Reguła: strzał w
+            // TWARZ opłaca się, gdy jest LETALNY albo zbiera dużą część życia
+            // przeciwnika; przy trywialnym X trzymaj czar (schodzi poniżej passu,
+            // chyba że to jedyny cel — inne gałęzie celu creature wyceniają się
+            // osobno). Dzielenie na wiele celów liczy X na cel (ids.length).
+            const x = cmd.xValue ?? 0;
+            const foeLife = enemy(view)?.life ?? 20;
+            const perTarget = Math.floor(x / Math.max(1, ids.length));
+            // Dobicie = zawsze. Poza tym wartość rośnie z zadanym cięciem, ale
+            // TRYWIALNY chip w twarz (≤2, i daleko od dobicia) to wyrzucony
+            // skalujący zasób — kara schodzi poniżej passu, bot trzyma czar.
+            if (perTarget >= foeLife) score += 25 + 1000;            // dobicie
+            else if (perTarget <= 2 && perTarget < foeLife - 4) score -= 80; // chip: trzymaj
+            else score += 25 + perTarget;                            // realne cięcie życia
+          }
         }
         // M121: generyczna bramka „nie strzelaj do siebie" — obejmuje KAŻDY
         // efekt ofensywny z tabeli, także te dodane w przyszłości.
