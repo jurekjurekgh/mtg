@@ -44,6 +44,16 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'damageCreaturePowerWeight', // waga mocy trafianego stwora (dawniej *3)
   'damageLethalBonus',       // premia, gdy obrażenia są śmiertelne (dawniej +15)
   'drawCardValue',           // wartość jednej dobranej karty (dawniej *6)
+  // Rodzina „efektywność removalu" (B6 T1 — M234, zlecenie właściciela). Bot ma
+  // maksymalizować wartość zdejmowanego stwora: preferować DROŻSZE cele (TMC to
+  // publiczny proxy „ma unikalne zdolności" — PlayerView NIE niesie `abilities`,
+  // ADR 0017, więc koszt many jest jedynym sygnałem tekstu karty), a przy tanich
+  // celach zdejmować przede wszystkim te NIE DO PRZEJŚCIA w walce (deathtouch,
+  // protekcja od mojego koloru). Deskryptory z widoku (manaCost, keywords,
+  // protection), zero nazw kart (ADR 0002).
+  'removalTmcWeight',        // waga TMC celu w wycenie usunięcia (proxy zdolności)
+  'removalDeathtouchBonus',  // premia za zdjęcie stwora z deathtouch (nie do przejścia w walce)
+  'removalProtectionBonus',  // premia za zdjęcie stwora z protekcją od mojego koloru
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -62,6 +72,12 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   damageCreaturePowerWeight: 3,
   damageLethalBonus: 15,
   drawCardValue: 6,
+  // M234 — domyślne zachowanie SPRZED zlecenia: 0, więc golden-master
+  // (bot-scoring-snapshot) zostaje zielony po ekstrakcji. Strojenie/właściciel
+  // podnosi je świadomie (niżej włączone wprost jako część zlecenia).
+  removalTmcWeight: 0,
+  removalDeathtouchBonus: 0,
+  removalProtectionBonus: 0,
 });
 
 /**

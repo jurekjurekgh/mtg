@@ -644,6 +644,60 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return false;
   };
 
+  // M234 (zlecenie właściciela — efektywność removalu). Kolory MOICH stworów
+  // z pola bitwy: potrzebne, by ocenić, czy wrogi stwór ma protekcję od koloru,
+  // którym mógłbym w niego uderzyć w walce (wtedy jest „nie do przejścia" i wart
+  // zdjęcia czarem nawet przy niskich statystykach). Czytamy wyłącznie widok
+  // (ADR 0017): kolory własnych stworów są publiczne.
+  const myCreatureColors = (view) => {
+    const colors = new Set();
+    for (const o of myCreatures(view)) for (const c of (o.colors ?? [])) colors.add(c);
+    return colors;
+  };
+
+  /**
+   * M234 — czy wrogi stwór jest „nie do przejścia" w walce moimi stworami:
+   * ma protekcję od koloru któregokolwiek z moich stworów (CR 702.16 — mój
+   * atakujący/bloker nie zada mu obrażeń, on przeżyje). Reguła po deskryptorach
+   * z PlayerView (protection quality celu + kolory moich stworów), zero nazw
+   * kart (ADR 0002). Gdy nie mam stworów w danym kolorze — protekcja nie ma
+   * znaczenia dla walki, więc nie premiujemy.
+   */
+  const enemyCreatureUnbeatableInCombat = (view, creature) => {
+    const qualities = creature?.protection ?? [];
+    if (qualities.length === 0) return false;
+    const myColors = myCreatureColors(view);
+    if (myColors.size === 0) return false;
+    for (const color of myColors) {
+      // sourceHasProtectionQuality liczy kolory ŹRÓDŁA (mojego stwora) —
+      // symulujemy jednokolorowe źródło, by sprawdzić każdy mój kolor osobno.
+      if (qualities.some((q) => sourceHasProtectionQuality(q, { kind: 'creature', types: ['Creature'], colors: [color] }))) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  /**
+   * M234 — dodatkowa wartość zdjęcia CZAREM konkretnego wrogiego stwora,
+   * ponad bazę+statystyki. Realizuje model właściciela:
+   *  - preferuj DROŻSZE cele (TMC = publiczny proxy „ma unikalne zdolności",
+   *    bo PlayerView nie niesie `abilities` — ADR 0017);
+   *  - przy tanich celach premiuj te NIE DO PRZEJŚCIA w walce: deathtouch
+   *    (każde obrażenie śmiertelne — wymiana zawsze na jego korzyść) oraz
+   *    protekcja od mojego koloru (mój stwór go nie tknie).
+   * Zwraca liczbę punktów do DODANIA (0 dla celu własnego — obsługuje go kara
+   * wyżej). Deskryptory z widoku, zero nazw kart (ADR 0002).
+   */
+  const enemyRemovalTargetBonus = (view, target) => {
+    if (!target || target.controllerId === view.playerId) return 0;
+    let bonus = P.removalTmcWeight * (target.manaCost ?? 0);
+    const kw = target.keywords ?? [];
+    if (kw.includes('deathtouch')) bonus += P.removalDeathtouchBonus;
+    if (enemyCreatureUnbeatableInCombat(view, target)) bonus += P.removalProtectionBonus;
+    return bonus;
+  };
+
   /**
    * M139 (uwaga właściciela) — WARTOŚĆ TAPNIĘCIA ZALEŻY OD MOMENTU.
    *
@@ -1696,6 +1750,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             } else {
               const worth = (target.power ?? 0) + (target.toughness ?? 0);
               score += P.removalEnemyBase + P.removalWorthWeight * worth;
+              // M234 — efektywność removalu: TMC (proxy zdolności) + cele „nie
+              // do przejścia" w walce (deathtouch, protekcja od mojego koloru).
+              score += enemyRemovalTargetBonus(view, target);
             }
           }
           // M91 (uwaga A2): globalna prewencja obrażeń bojowych („fog" —
@@ -1786,6 +1843,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           if (effect.type === 'return_to_hand' && target && target.controllerId !== view.playerId) {
             score += P.bounceEnemyBase + (target.power ?? 0) * P.bounceEnemyPowerWeight;
+            score += enemyRemovalTargetBonus(view, target); // M234
           }
           if (effect.type === 'damage' && target && target.controllerId !== view.playerId) {
             // M92 (audyt PlayerView): obrażenia w cel objęty pełną prewencją
@@ -2016,7 +2074,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 if (hasRemoval) {
                   score += mine
                     ? -90
-                    : P.removalEnemyBase + P.removalWorthWeight * ((t3.power ?? 0) + (t3.toughness ?? 0));
+                    : P.removalEnemyBase + P.removalWorthWeight * ((t3.power ?? 0) + (t3.toughness ?? 0))
+                      + enemyRemovalTargetBonus(view, t3); // M234
                 }
               }
             }
