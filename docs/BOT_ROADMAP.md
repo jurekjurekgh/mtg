@@ -419,6 +419,29 @@ całego etapu.
   Framework B6 (parametry + proxy + lustro + golden-master) jest kompletny
   i gotowy — czeka na materiał, na którym da realny zysk.
 
+- **Runda 5 (2026-08-27) — M234: WYBÓR CELU removalu (decyzja STRUKTURALNA,
+  nie skalar): PRZYJĘTO.** Zlecenie właściciela po audycie M233 — dokładnie
+  klasa (b) z rewizji wyżej: nie „ile punktów", tylko „KTÓRY cel". Model
+  właściciela: maksymalizuj wartość zdejmowanego stwora.
+  - **TMC jako proxy zdolności** (`removalTmcWeight=2`): PlayerView NIE niesie
+    `abilities` (ADR 0017), więc koszt many to jedyny publiczny sygnał, że
+    kreatura ma tekst (mana/życie/prewencja) — droższy cel = warto zdjąć.
+  - **Cele NIE DO PRZEJŚCIA w walce** premiowane nawet przy niskich statystykach:
+    deathtouch (`removalDeathtouchBonus=14`) i protekcja od MOJEGO koloru
+    (`removalProtectionBonus=18`, po kolorach moich stworów +
+    sourceHasProtectionQuality).
+  - **Cel OGARNIĘTY walką** karany (`removalCombatHandledPenalty=12`): tani
+    (TMC≤3), nieewazyjny cel, którego mój bloker i tak zabije bez straty
+    (symulacja walki) — oszczędzaj removal. Twarde wykluczenia:
+    deathtouch/protekcja/ewazja/drogie cele.
+  - **Pomiar:** mirror-eval na 10 taliach × 6 seedów = 60/60 (0.5000 — decki
+    benchmarku RZADKO dają WYBÓR celu, to samo plateau próbki co rundy 1-4);
+    divergence 8/16378 decyzji (0.05%) BEZ błędów silnika. Win-rate/lustro NIE
+    mierzą tej poprawy (jakość decyzji ≠ wynik przeciw słabemu/równemu), dlatego
+    dowód jest KONSTRUKCYJNY: testy jednostkowe RED→GREEN per knob + weryfikacja
+    ordering (drogi/deathtouch/chroniony/ograny cel). Golden-master zregenerowany
+    (świadoma zmiana), bot-benchmark 9/9 bez regresji. Commity M234/1-3.
+
 - **Wniosek strategiczny dla kolejnych sesji:** benchmark jest blisko nasycenia
   (heuristic wygrywa ~85% overall, 90.8% vs random), więc czysty win-rate ma
   MAŁO pola do poprawy jako sygnał — dokładnie problem „credit assignment"
