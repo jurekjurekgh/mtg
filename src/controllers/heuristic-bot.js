@@ -1824,7 +1824,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // pełnej bibliotece dawały remis z passem, a remis wybierał
             // czar — bot rzucał fog we własnej turze).
             if (myTurn) score -= 300;
-            else score += attackingEnemyPower(view) > 0 ? 15 : -20;
+            // M236 (audyt Żywym Testerem, Inspire Awe): „fog" to instant —
+            // wartość ma DOPIERO gdy przeciwnik ZADEKLAROWAŁ atakujących
+            // (attackingEnemyPower liczy z view.combat). Rzucony w upkeepie/
+            // przed deklaracją (albo gdy wróg nie ma czym atakować) prewencja
+            // nic nie zapobiega — to przedwczesne spalenie instanta. Kara musi
+            // przebić bazę czaru + ewentualny scry, żeby bot POCZEKAŁ na okno
+            // deklaracji (wtedy attackingEnemyPower>0 → premia). Zgłoszenie:
+            // bot rzucił Inspire Awe w turze gracza, który nie miał stworów.
+            else score += attackingEnemyPower(view) > 0 ? 15 : -75;
           }
           // M109 (Spare from Evil): ochrona do końca tury to SZTUCZKA BOJOWA.
           // Poza walką (brak atakujących po którejkolwiek stronie) rzucenie
