@@ -479,6 +479,14 @@ całego etapu.
   (ADR 0017). npm test 3542/3542, bot-benchmark 9/9, golden-master bez zmian.
   Commity M236/1–6. Raport: docs/audits/AUDYT_M236_ZYWY_TESTER_2026-08-27.md.
 
+- **Runda 7b (2026-08-27) — M236/8 KOREKTA właściciela.** Trzy naprawy z rundy
+  7 skorygowane: (ad 2&3) życie >20 to BUFOR — tap-za-życie jest darmowe, rób go
+  bez końca (chyba że stwór potrzebny do bloku); M236/3 (Soulmender) było
+  błędnym znaleziskiem, cofnięte. (ad 2) poświęcenie permanentu za życie tylko
+  gdy krytyczne / permanent i tak ginie (bloker/cel removalu na stosie — helper
+  permanentDoomedThisTurn) / TMC ≤ 1. (ad 4) Fireball → model M236/5: dobij
+  stwora albo zadaj istotny cios (≥1/3 życia) w gracza, nie chipuj. Commit M236/8.
+
 - **Wniosek strategiczny dla kolejnych sesji:** benchmark jest blisko nasycenia
   (heuristic wygrywa ~85% overall, 90.8% vs random), więc czysty win-rate ma
   MAŁO pola do poprawy jako sygnał — dokładnie problem „credit assignment"

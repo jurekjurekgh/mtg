@@ -54,6 +54,25 @@ near-zero wartość (zdolność niszowa) → kara poniżej passu.
 - Withstand (prewencja + dober) — cantrip, rzut dla karty jest uzasadniony.
 - Fireball/Shock w cel LETALNY — poprawne removal (także 1/1 recursive).
 
+## KOREKTA po uwagach właściciela (M236/8)
+
+Trzy naprawy wymagały korekty modelu:
+
+- **ad 2&3 — życie to BUFOR.** Życie powyżej 20 nie marnuje się (21, 22…).
+  Zysk życia jest zawsze małą wartością dodatnią. „{T}: zyskaj życie" (tap bez
+  poświęcenia) jest DARMOWE → bot buduje bufor bez końca, chyba że stwór jest
+  potrzebny do bloku. **M236/3 (Soulmender) było BŁĘDNYM znaleziskiem** —
+  cofnięte; tap-za-życie jest OK.
+- **ad 2 — poświęcenie permanentu** za życie tylko gdy: życie krytyczne,
+  permanent i tak ginie w tej turze (bloker ginący bez zabicia atakującego /
+  cel destroy/exile/lethal na stosie — helper `permanentDoomedThisTurn` czyta
+  combat+stos z widoku, nie spekulację „removal w ręce"), albo TMC ≤ 1.
+- **ad 4 — Fireball** przerobiony na model M236/5: pełna wycena per-cel
+  (dobicie stwora = removal, dobicie gracza = 1000, istotny cios ≥1/3 życia =
+  premia, chip = trzymaj). Bot woli zabić stwora niż chipować twarz.
+
+Commit M236/8.
+
 ## Weryfikacja braku regresji
 Po KAŻDEJ naprawie: `npm test` zielony (finalnie **3542/3542**),
 `bot-benchmark` **9/9** (progi 0.78/0.62), golden-master bez zmian, build 55
