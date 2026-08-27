@@ -356,6 +356,45 @@ całego etapu.
 
 ### T1 — parametryzacja deskryptorowa (w toku, rodzina po rodzinie)
 
+**Rundy strojenia (log wyników):**
+
+- **Runda 1 (2026-08-27) — „premie agresji w ataku" (attackThroughBonus=3,
+  attackOpenBoardBonus=8, attackEvasionBonus=3): NIEWRAŻLIWA na BENCH_DECKS.**
+  Wybór rodziny oparty o pomiar częstości (walka = najczęstsza decyzja bota:
+  attack 707 + block 354 + resolve_combat 707). Wyciągnięta (M225/1), ale
+  hill-climbing (8 seedów, baza 3000) dał identyczny win-rate dla WSZYSTKICH
+  kandydatów. Weryfikacja skrajna (L74/L75 — detektor to hipoteza): premie
+  0/0/0 vs 40/40/40 dają IDENTYCZNY wynik (vsRandom 90.8%, vsAggro 68.5%), a na
+  2292 decyzjach bota ZERO przełączeń wyboru. Powód strukturalny: przy otwartej
+  planszy atak i tak wygrywa (człony penetratingPower≥życie=+1000, moc, racing
+  dominują premię); przy blokerach premia otwartej planszy nie wchodzi.
+  Wniosek: premie są poprawne semantycznie i tunowalne dla przyszłych
+  talii/mechanik, ale na obecnym benchmarku nie są dźwignią jakości. Ekstrakcja
+  zostaje (rodzina nazwana, gotowa). NIE przyjęto zmian domyślnych.
+
+  Sonda wrażliwości innych rodzin (skrajne wartości, liczba przełączeń decyzji
+  na 2292): `creatureBase` 30→533, 140→375; `spellBase` 10→77, 120→338 — te
+  rodziny SĄ wrażliwe (kandydaci do strojenia w kolejnej rundzie).
+
+- **Runda 2 (2026-08-27) — rodzina bazowa (creatureBase, spellBase):
+  LOKALNE OPTIMUM, brak poprawy.** Ta rodzina JEST wrażliwa (przełącza setki
+  decyzji), więc strojona hill-climbingiem (krok 10, zakres 20–140, 2 rundy,
+  8 seedów baza 3000). WSZYSTKIE kandydaty ≤ baseline (79.61%): creatureBase
+  60→79.32%, 80→79.17%; spellBase 40→79.17%, 60→79.32%. Wartości domyślne
+  (70/50 — ręcznie dostrojone przez właściciela w poprzednich sesjach) są
+  lokalnym optimum na BENCH_DECKS. NIE przyjęto zmian.
+
+- **Wniosek strategiczny dla kolejnych sesji:** benchmark jest blisko nasycenia
+  (heuristic wygrywa ~85% overall, 90.8% vs random), więc czysty win-rate ma
+  MAŁO pola do poprawy jako sygnał — dokładnie problem „credit assignment"
+  z dokumentacji. Zanim strojenie kolejnych rodzin da mierzalny zysk, warto
+  najpierw zrobić **T2 (gęstszy proxy reward: przewaga materialna/tempo)** albo
+  poszerzyć próbkę o trudniejsze pary (silniejszy przeciwnik niż random/aggro,
+  np. heuristic vs heuristic z różnymi wagami). Rodziny WRAŻLIWE ale bez zysku
+  na win-rate (baza) i rodziny NIEWRAŻLIWE (premie ataku) to dwa różne sufity:
+  pierwsza potrzebuje lepszego SYGNAŁU, druga — trudniejszych SYTUACJI.
+
+
 `src/controllers/heuristic-params.js` (bliźniak `heuristic-weights.js`).
 Zrobiona rodzina wzorcowa „wyceny bazowe": `creatureBase` (70),
 `creaturePowerWeight` (2), `creatureToughnessWeight` (1), `spellBase` (50).
