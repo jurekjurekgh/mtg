@@ -122,3 +122,27 @@ test('M229: conditional z else opisuje obie gałęzie', () => {
   };
   assert.match(describeSpellEffects(spell), /w przeciwnym razie:/);
 });
+
+// =============================================================================
+// M230 (audyt talii spoza podziału, Severed Strands) — gain_life z DYNAMICZNĄ
+// ilością (= wytrzymałość poświęconego stwora): kafel pokazywał „zyskaj
+// undefined życia" (brak statycznego `amount`).
+// =============================================================================
+
+test('M230: gain_life dynamiczne (amountFromSacrificedToughness) bez „undefined"', () => {
+  const spell = {
+    effects: [
+      { type: 'gain_life', amountFromSacrificedToughness: true },
+      { type: 'destroy_permanent' },
+    ],
+    targets: [{ type: 'creature_opponent_controls' }],
+  };
+  const desc = describeSpellEffects(spell);
+  assert.doesNotMatch(desc, /undefined/, 'brak wycieku undefined');
+  assert.match(desc, /wytrzymałość poświęconego stwora/, 'opis dynamicznej ilości życia');
+});
+
+test('M230: gain_life ze statyczną ilością działa jak dotąd', () => {
+  assert.match(describeSpellEffects({ effects: [{ type: 'gain_life', amount: 3 }], targets: [] }), /zyskaj 3 życia/);
+  assert.match(describeSpellEffects({ effects: [{ type: 'gain_life', amount: 1 }], targets: [] }), /zyskaj 1 życie/);
+});

@@ -839,7 +839,13 @@ function describeEffect(e) {
       const noun = DYNAMIC_AMOUNT_NOUNS[amt];
       return noun ? `zada tyle obrażeń, ile ${noun}` : `${dynamicAmount(amt)} obrażeń`;
     },
-    gain_life: () => `zyskaj ${lifeCount(e.amount)}`,
+    gain_life: () => {
+      // M230 (audyt talii spoza podziału, Severed Strands): ilość życia bywa
+      // DYNAMICZNA (= wytrzymałość poświęconego stwora) — bez `amount`. Bez tej
+      // gałęzi kafel pokazywał „zyskaj undefined życia".
+      if (e.amountFromSacrificedToughness) return 'zyskaj życie = wytrzymałość poświęconego stwora';
+      return `zyskaj ${lifeCount(e.amount ?? 0)}`;
+    },
     gain_life_target: () => `cel zyskuje ${lifeCount(e.amount)}`,
     remove_counter: () => `usuń licznik ${e.counter}`,
     add_counter: () => `połóż licznik ${e.counter}`,
