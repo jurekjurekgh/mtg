@@ -2980,6 +2980,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               && (o.types ?? []).includes('Artifact')).length;
             score += artifactsInGrave > 0 ? 10 + artifactsInGrave * 3 : -8;
           }
+          // M236/6 (audyt Żywym Testerem, Barkform Harvester): „{2}: włóż kartę
+          // z grobu na SPÓD biblioteki". Zakopanie własnej karty na spód to
+          // near-zero wartość — bot robił to 3×/turę w main2, paląc po 2 many za
+          // nic. To zdolność niszowa (odpowiedź na grób-hate/synergia biblioteki,
+          // której bot nie modeluje), nie proaktywne zagranie. Kara schodzi
+          // poniżej passu — bot trzyma manę. Reguła po typie efektu (ADR 0002).
+          if (effect.type === 'put_graveyard_card_on_bottom') {
+            score -= 10;
+          }
           // ---- Batch 48 (L50/L51): wycena nowych efektow -----------------
           if (effect.type === 'creatures_cant_block_this_turn') {
             // Ruthless Invasion: warte tyle, ile obrazen przepusci. Liczymy
