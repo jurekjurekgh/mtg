@@ -48,7 +48,14 @@ export const DESCRIPTOR_PARAMS = Object.freeze({
     // Premie agresji w ataku dotyczą stworów (to one atakują).
     'attackThroughBonus', 'attackOpenBoardBonus', 'attackEvasionBonus',
   ]),
-  spell: Object.freeze(['spellBase']),
+  spell: Object.freeze([
+    'spellBase',
+    // Removal / obrażenia / dobór — najczęstsze efekty czarów.
+    'removalEnemyBase', 'removalWorthWeight',
+    'bounceEnemyBase', 'bounceEnemyPowerWeight',
+    'damageCreatureBase', 'damageCreaturePowerWeight', 'damageLethalBonus',
+    'drawCardValue',
+  ]),
   // Rodziny mechanik czekające na własne parametry (kolejne sesje T1):
   // surge:   ['surgeBias'],
   // manifest:['manifestEarlyBias'],

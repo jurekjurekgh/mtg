@@ -9,6 +9,9 @@ import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 import { addObject, createGameState, playerView } from '../src/engine/game-state.js';
 import { initializeResources, addMana } from '../src/engine/resources.js';
 import { jumpToStep } from '../src/engine/turn.js';
+import { createCardRegistry } from '../src/cards/card-data.js';
+
+const registry = createCardRegistry();
 
 /**
  * B6 T1 — parametry deskryptorowe wyceny (rodzina „wyceny bazowe").
@@ -26,6 +29,15 @@ test('params: wartości domyślne są dokładnie dawnymi stałymi', () => {
   assert.equal(DEFAULT_HEURISTIC_PARAMS.attackThroughBonus, 3);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.attackOpenBoardBonus, 8);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.attackEvasionBonus, 3);
+  // Rodzina „removal, obrażenia i przewaga kartowa".
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.removalEnemyBase, 22);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.removalWorthWeight, 2);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceEnemyBase, 25);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceEnemyPowerWeight, 2);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.damageCreatureBase, 10);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.damageCreaturePowerWeight, 3);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.damageLethalBonus, 15);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.drawCardValue, 6);
 });
 
 test('params: normalize bez nadpisań zwraca zamrożone defaulty', () => {
@@ -116,4 +128,36 @@ test('params: attackOpenBoardBonus realnie przepływa do wyceny declare_attacker
   const bumped = scoreOf(createHeuristicBot({ seed: 1, params: { attackOpenBoardBonus: 40 } }));
   assert.ok(base != null && bumped != null, 'oba boty muszą widzieć wariant ataku');
   assert.ok(bumped > base, `podbita premia otwartej planszy ma zwiększyć wycenę ataku (${bumped} > ${base})`);
+});
+
+test('params: removalEnemyBase realnie przepływa do wyceny czaru usuwającego', () => {
+  // Scena: czar „zniszcz stwora" (spin-out) w ręce + mana, wrogi stwór na stole.
+  // Podbicie removalEnemyBase musi zwiększyć wycenę rzutu w cel wroga — dowód,
+  // że pokrętło działa (nie atrapa).
+  const build = () => {
+    const state = creatureOnHandState();
+    const spell = registry.get('spin-out').spell;
+    addObject(state, {
+      id: 's', instanceId: 'is', cardId: 'spin-out', controllerId: 'p1',
+      zone: 'hand', kind: 'spell', power: null, toughness: null, manaCost: 3,
+      spell, abilities: [], keywords: [], subtypes: [], types: ['Instant'],
+    });
+    addObject(state, {
+      id: 'foe', instanceId: 'ifoe', cardId: 'F', controllerId: 'p2',
+      zone: 'battlefield', kind: 'creature', power: 3, toughness: 3,
+    });
+    addMana(state, 'p1', 3); // {1}{B}{B}
+    return playerView(state, 'p1');
+  };
+  const scoreOf = (bot) => {
+    const view = build();
+    bot.chooseCommand(view);
+    const entry = bot.trace().at(-1);
+    const cast = entry.options.find((o) => o.cmd.startsWith('cast_spell'));
+    return cast ? cast.score : null;
+  };
+  const base = scoreOf(createHeuristicBot({ seed: 1, registry }));
+  const bumped = scoreOf(createHeuristicBot({ seed: 1, params: { removalEnemyBase: 80 }, registry }));
+  assert.ok(base != null && bumped != null, 'oba boty muszą widzieć wariant rzutu removalu');
+  assert.ok(bumped > base, `podbita baza removalu ma zwiększyć wycenę (${bumped} > ${base})`);
 });

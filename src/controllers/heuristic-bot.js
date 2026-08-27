@@ -1688,7 +1688,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               score -= 90;
             } else {
               const worth = (target.power ?? 0) + (target.toughness ?? 0);
-              score += 22 + 2 * worth;
+              score += P.removalEnemyBase + P.removalWorthWeight * worth;
             }
           }
           // M91 (uwaga A2): globalna prewencja obrażeń bojowych („fog" —
@@ -1778,7 +1778,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
           }
           if (effect.type === 'return_to_hand' && target && target.controllerId !== view.playerId) {
-            score += 25 + (target.power ?? 0) * 2;
+            score += P.bounceEnemyBase + (target.power ?? 0) * P.bounceEnemyPowerWeight;
           }
           if (effect.type === 'damage' && target && target.controllerId !== view.playerId) {
             // M92 (audyt PlayerView): obrażenia w cel objęty pełną prewencją
@@ -1791,7 +1791,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               continue;
             }
             const lethal = (effect.amount ?? 0) >= (target.toughness ?? 0) - (target.damage ?? 0);
-            score += 10 + 3 * (target.power ?? 0) + (lethal ? 15 : 0);
+            score += P.damageCreatureBase + P.damageCreaturePowerWeight * (target.power ?? 0) + (lethal ? P.damageLethalBonus : 0);
           } else if (effect.type === 'damage') {
             score -= 60; // lanie we własne stwory bez powodu jest marnotrawstwem
           }
@@ -1958,7 +1958,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             else score += 6 * affected;
           }
           // Dobranie kart z czaru to przewaga kartowa.
-          if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') score += 6 * (effect.amount ?? 1);
+          if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') score += P.drawCardValue * (effect.amount ?? 1);
           // M218/4 — scry/surveil jako CZAR: okno jak przy zdolności (M211/A1).
           // Dla czystego scry/surveil (np. Index) kara musi przebić bazę 50 (L3),
           // więc -60; dla mieszanych (Curate: surveil+draw) kara łagodna -12,

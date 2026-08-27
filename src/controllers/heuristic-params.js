@@ -32,6 +32,18 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'attackThroughBonus',      // premia, gdy atakujący bezpiecznie zadaje moc (dawniej +3 w power+3)
   'attackOpenBoardBonus',    // premia za atak w pustą planszę przeciwnika (dawniej +8)
   'attackEvasionBonus',      // premia za ewazję latania omijającą blokerów (dawniej +3)
+  // Rodzina „removal, obrażenia i przewaga kartowa" (B6 T1) — wycena efektów
+  // czarów najczęstszych w cast_spell. Same PREMIE za trafienie CELU WROGA
+  // (kary za zły cel/własny permanent zostają twardymi stałymi). Deskryptory
+  // efektu (destroy/exile/bounce, damage, draw), zero nazw kart (ADR 0002).
+  'removalEnemyBase',        // baza za usunięcie permanentu wroga (dawniej +22)
+  'removalWorthWeight',      // waga (power+toughness) usuwanego permanentu (dawniej *2)
+  'bounceEnemyBase',         // baza za odbicie permanentu wroga do ręki (dawniej +25)
+  'bounceEnemyPowerWeight',  // waga mocy odbijanego permanentu (dawniej *2)
+  'damageCreatureBase',      // baza za obrażenia w stwora wroga (dawniej +10)
+  'damageCreaturePowerWeight', // waga mocy trafianego stwora (dawniej *3)
+  'damageLethalBonus',       // premia, gdy obrażenia są śmiertelne (dawniej +15)
+  'drawCardValue',           // wartość jednej dobranej karty (dawniej *6)
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -42,6 +54,14 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   attackThroughBonus: 3,
   attackOpenBoardBonus: 8,
   attackEvasionBonus: 3,
+  removalEnemyBase: 22,
+  removalWorthWeight: 2,
+  bounceEnemyBase: 25,
+  bounceEnemyPowerWeight: 2,
+  damageCreatureBase: 10,
+  damageCreaturePowerWeight: 3,
+  damageLethalBonus: 15,
+  drawCardValue: 6,
 });
 
 /**
