@@ -689,12 +689,46 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * Zwraca liczbę punktów do DODANIA (0 dla celu własnego — obsługuje go kara
    * wyżej). Deskryptory z widoku, zero nazw kart (ADR 0002).
    */
+  // M234/3 — czy TANI wrogi stwór jest już „ogarnięty walką": mam nietapniętego
+  // stwora, który zablokuje go i zabije, sam przeżywając (czysta wymiana na moją
+  // korzyść). Wtedy zdejmowanie go CZAREM marnuje kartę — model właściciela:
+  // „jeśli mogę zabić w walce, może nie warto zużywać removalu". Wykluczenia
+  // liczone są WYŻEJ (nie wołamy tego dla ewazji/deathtouch/protekcji/drogich).
+  // Czytamy wyłącznie widok (ADR 0017), reguła po statystykach/keywordach, zero
+  // nazw kart (ADR 0002).
+  const enemyCreatureHandledByCombat = (view, target) => {
+    if (!target || target.kind !== 'creature') return false;
+    const myBlockers = myCreatures(view).filter((o) => !o.tapped);
+    if (myBlockers.length === 0) return false;
+    if (!attackerCanBeBlocked(target, myBlockers)) return false; // jego ewazja
+    const enemyStats = duelStats(target);
+    for (const blocker of myBlockers) {
+      if (!attackerCanBeBlocked(target, [blocker])) continue; // ten bloker musi go dosięgnąć
+      // Modelujemy: wrogi stwór ATAKUJE, mój go blokuje (CR 509/510).
+      const outcome = simulateCombat(enemyStats, [duelStats(blocker)]);
+      const killsEnemy = outcome.attackerDies; // pierwszy arg = atakujący (wróg)
+      const myBlockerDies = (outcome.deadBlockers ?? []).includes(blocker.id);
+      if (killsEnemy && !myBlockerDies) return true; // czysta wymiana na moją korzyść
+    }
+    return false;
+  };
+
   const enemyRemovalTargetBonus = (view, target) => {
     if (!target || target.controllerId === view.playerId) return 0;
     let bonus = P.removalTmcWeight * (target.manaCost ?? 0);
     const kw = target.keywords ?? [];
-    if (kw.includes('deathtouch')) bonus += P.removalDeathtouchBonus;
-    if (enemyCreatureUnbeatableInCombat(view, target)) bonus += P.removalProtectionBonus;
+    const deathtouch = kw.includes('deathtouch');
+    const unbeatable = enemyCreatureUnbeatableInCombat(view, target);
+    if (deathtouch) bonus += P.removalDeathtouchBonus;
+    if (unbeatable) bonus += P.removalProtectionBonus;
+    // M234/3 — kara „ogarnięte walką" TYLKO dla taniego, zwykłego celu: bez
+    // deathtouch/protekcji (te są nie do przejścia — wykluczone wyżej) i o
+    // niskim TMC (drogie cele = potencjalne zdolności, zawsze warte removalu).
+    // Próg TMC 3 to granica „taniego" stwora (model właściciela: 1/1, drobiazg).
+    if (!deathtouch && !unbeatable && (target.manaCost ?? 0) <= 3
+      && enemyCreatureHandledByCombat(view, target)) {
+      bonus -= P.removalCombatHandledPenalty;
+    }
     return bonus;
   };
 

@@ -42,6 +42,7 @@ test('params: wartości domyślne są dokładnie dawnymi stałymi', () => {
   assert.equal(DEFAULT_HEURISTIC_PARAMS.removalTmcWeight, 2);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.removalDeathtouchBonus, 14);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.removalProtectionBonus, 18);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.removalCombatHandledPenalty, 12);
 });
 
 test('params: normalize bez nadpisań zwraca zamrożone defaulty', () => {

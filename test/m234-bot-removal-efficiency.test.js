@@ -134,3 +134,44 @@ test('M234/protekcja: BEZ własnych stworów w tym kolorze premia NIE działa (p
   assert.equal(tuned['cast_spell(spell->prot)'], base['cast_spell(spell->prot)'],
     'bez moich stworów w danym kolorze premia protekcji nie ma się aktywować');
 });
+
+test('M234/3: kara „ogarnięte walką" — tani cel, którego bloker i tak zabije, traci na wycenie', () => {
+  const build = () => {
+    const s = botTurn();
+    put(s, 'spell', 'lash-of-the-balrog', 'p2', 'hand');
+    put(s, 'cheap', 'crawling-chorus', 'p1', 'battlefield');   // 1 TMC 1/1 wroga
+    put(s, 'blk', 'thornhide-wolves', 'p2', 'battlefield');    // mój 4/5 — zablokuje i zabije bez straty
+    return s;
+  };
+  const on = castScores(build(), undefined); // penalty domyślnie 12
+  const off = castScores(build(), { removalCombatHandledPenalty: 0 });
+  assert.equal(off['cast_spell(spell->cheap)'] - on['cast_spell(spell->cheap)'], 12,
+    'kara „ogarnięte walką" (12) ma obniżyć wycenę zdjęcia taniego, ogranego celu');
+});
+
+test('M234/3: kara NIE działa na cel EWAZYJNY (mój bloker go nie dosięgnie)', () => {
+  const build = () => {
+    const s = botTurn();
+    put(s, 'spell', 'lash-of-the-balrog', 'p2', 'hand');
+    put(s, 'flyer', 'crawling-chorus', 'p1', 'battlefield', { keywords: ['flying'] }); // 1 TMC, ale lata
+    put(s, 'blk', 'thornhide-wolves', 'p2', 'battlefield');    // naziemny bloker — nie zablokuje latacza
+    return s;
+  };
+  const on = castScores(build(), undefined);
+  const off = castScores(build(), { removalCombatHandledPenalty: 0 });
+  assert.equal(on['cast_spell(spell->flyer)'], off['cast_spell(spell->flyer)'],
+    'cel ewazyjny nie jest „ogarnięty walką" — kara nie może się aktywować');
+});
+
+test('M234/3: kara NIE działa BEZ własnego blokera (nie ma czym zabić w walce)', () => {
+  const build = () => {
+    const s = botTurn();
+    put(s, 'spell', 'lash-of-the-balrog', 'p2', 'hand');
+    put(s, 'cheap', 'crawling-chorus', 'p1', 'battlefield');
+    return s; // brak mojego blokera
+  };
+  const on = castScores(build(), undefined);
+  const off = castScores(build(), { removalCombatHandledPenalty: 0 });
+  assert.equal(on['cast_spell(spell->cheap)'], off['cast_spell(spell->cheap)'],
+    'bez blokera cel nie jest „ogarnięty walką" — kara nie może się aktywować');
+});

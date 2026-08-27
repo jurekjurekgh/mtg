@@ -54,6 +54,7 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'removalTmcWeight',        // waga TMC celu w wycenie usunięcia (proxy zdolności)
   'removalDeathtouchBonus',  // premia za zdjęcie stwora z deathtouch (nie do przejścia w walce)
   'removalProtectionBonus',  // premia za zdjęcie stwora z protekcją od mojego koloru
+  'removalCombatHandledPenalty', // kara za marnowanie removalu na TANI cel, którego bloker i tak zabije w walce
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -85,6 +86,11 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   removalTmcWeight: 2,
   removalDeathtouchBonus: 14,
   removalProtectionBonus: 18,
+  // M234/3 — kara za zdejmowanie CZAREM taniego celu, którego i tak zabiję
+  // blokerem (oszczędzaj removal na realne zagrożenia). Mała (tie-break):
+  // NIE ma przebijać passu przy dobrym celu — działa tylko na TANIE, nieewazyjne
+  // cele bez deathtouch/protekcji, gdy mam blokera zabijającego bez straty.
+  removalCombatHandledPenalty: 12,
 });
 
 /**
