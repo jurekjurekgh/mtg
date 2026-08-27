@@ -1417,7 +1417,16 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
 /** Tekst reguł do pola karty: keywordy, efekty czaru lub opis zdolności. */
 export function rulesText(info) {
   if (info.faceDown) return '';
-  const keywordLine = (info.keywords ?? []).map((kw) => KEYWORD_LABELS[kw] ?? kw).join(' ');
+  // M229 (audyt Żywym Testerem, Awaken the Sleeper): keywordy NADANE (granty do
+  // EOT, załączniki) mają własny badge na kaflu (info.grantedKeywords, render
+  // ~3026). Linia reguł pokazuje więc tylko keywordy WYDRUKOWANE — inaczej
+  // keyword nadany (np. haste na przejętym Hill Giant) dublował się: raz w
+  // linii reguł, raz jako badge („Pośpiech · Pośpiech"). `keywords` z widoku
+  // jest EFEKTYWNE (z grantami), więc odejmujemy granty.
+  const granted = new Set(info.grantedKeywords ?? []);
+  const keywordLine = (info.keywords ?? [])
+    .filter((kw) => !granted.has(kw))
+    .map((kw) => KEYWORD_LABELS[kw] ?? kw).join(' ');
   const abilityLine = info.abilities && info.abilities.length
     ? info.abilities.map((a) => {
       if (a.type === 'triggered') return describeTriggered(a, info.controllerId);
