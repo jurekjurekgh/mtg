@@ -1039,6 +1039,8 @@ function describeEffect(e) {
         landEnteredThisTurn: 'land wchodził pod twoją kontrolą w tej turze (Landfall)',
         controlsNoCreatureSubtype: `nie kontrolujesz stworów typu ${e.subtype ?? '?'}`,
         controlsCreatureSubtype: `kontrolujesz stwora typu ${e.subtype ?? '?'}`,
+        // M230 (audyt talii spoza podziału, Liliana's Triumph).
+        controlsPlaneswalkerWithSubtype: `kontrolujesz planeswalkera ${e.subtype ?? '?'}`,
       };
       const cond = CONDITIONS[e.condition] ?? e.condition;
       // M229: gałąź „w przeciwnym razie" tylko GDY istnieje — inaczej kafel

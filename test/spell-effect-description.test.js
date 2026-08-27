@@ -146,3 +146,37 @@ test('M230: gain_life ze statyczną ilością działa jak dotąd', () => {
   assert.match(describeSpellEffects({ effects: [{ type: 'gain_life', amount: 3 }], targets: [] }), /zyskaj 3 życia/);
   assert.match(describeSpellEffects({ effects: [{ type: 'gain_life', amount: 1 }], targets: [] }), /zyskaj 1 życie/);
 });
+
+test('M230: conditional controlsPlaneswalkerWithSubtype po polsku (Liliana\u2019s Triumph)', () => {
+  const spell = {
+    effects: [
+      { type: 'player_sacrifices_creature' },
+      {
+        type: 'conditional', condition: 'controlsPlaneswalkerWithSubtype', subtype: 'Liliana',
+        then: { type: 'discard_each_opponent', amount: 1 }, else: null,
+      },
+    ],
+    targets: [{ type: 'player' }],
+  };
+  const desc = describeSpellEffects(spell);
+  assert.doesNotMatch(desc, /controlsPlaneswalkerWithSubtype/);
+  assert.match(desc, /kontrolujesz planeswalkera Liliana/);
+});
+
+// Strażnik klasy (M229/M230): ŻADEN opis czaru wspieranej karty nie wycieka
+// surowym identyfikatorem (camelCase warunku/efektu, undefined, [object]).
+// Ta rodzina błędów wracała trzykrotnie (landEnteredThisTurn, Sarkhan's Rage,
+// Liliana's Triumph, Severed Strands) — mechaniczny przegląd całego katalogu
+// łapie kolejne, zanim znajdzie je dopiero Żywy Tester.
+test('M230/strażnik: żaden opis czaru katalogu nie wycieka surowym identyfikatorem', async () => {
+  const { createCardRegistry } = await import('../src/cards/card-data.js');
+  const registry = createCardRegistry();
+  const offenders = [];
+  for (const card of registry.all()) {
+    if (card.support?.status !== 'supported' || !card.spell) continue;
+    let desc = '';
+    try { desc = describeSpellEffects(card.spell) || ''; } catch (e) { offenders.push(`${card.id}: THROW ${e.message}`); continue; }
+    if (/undefined|NaN|\[object|amountFrom[A-Z]|controls[A-Z]/.test(desc)) offenders.push(`${card.id}: ${desc.slice(0, 80)}`);
+  }
+  assert.deepEqual(offenders, [], `opisy z wyciekiem:\n${offenders.join('\n')}`);
+});
