@@ -442,6 +442,25 @@ całego etapu.
     ordering (drogi/deathtouch/chroniony/ograny cel). Golden-master zregenerowany
     (świadoma zmiana), bot-benchmark 9/9 bez regresji. Commity M234/1-3.
 
+- **Runda 6 (2026-08-27) — M235: TIMING flash-aury ochronnej (decyzja
+  STRUKTURALNA — KIEDY, nie ile): PRZYJĘTO.** Metodologia właściciela:
+  audyt z typowaniem mechaniki częstej ∧ nieoptymalnej. Pomiar częstości
+  (bot-vs-bot, 22 talie) pokazał cast_permanent jako #1 decyzję „wydania"
+  zasobu; ręczna lektura wyłapała, że gałąź aur NIE korzysta z okien walki
+  (M218), przez co Benevolent Blessing (aura protekcji z flash) szła w upkeepie.
+  - Korekta diagnozy właściciela: to NIE „aura na tokenie" (token to
+    pełnoprawna kreatura). Błąd = TIMING sztuczki bojowej: aura ochronna z
+    flash ma wartość tylko w oknie walki (ochrona atakującego / bezstratny
+    blok), a w upkeepie to zmarnowana elastyczność instanta.
+  - Fix: `flashProtectionAuraOffWindowPenalty=120` dla aur flash o czystej
+    wartości ochronnej (protection ALBO chooseColor, bez pumpa/keywordów) poza
+    oknem walki (combatTrickWindow albo Główna 1 z gotowym atakującym). Zakres
+    ograniczony: pump-aury (Feral Invocation, Silken Strength) mają wartość
+    trwałą, więc granie w main jest OK — nie karane.
+  - Dowód KONSTRUKCYJNY (testy per okno RED→GREEN: upkeep < pass, Główna 1 i
+    walka > pass). Golden-master bez zmian (snapshot nie ma tej sytuacji),
+    bot-benchmark 9/9. Commit M235/1.
+
 - **Wniosek strategiczny dla kolejnych sesji:** benchmark jest blisko nasycenia
   (heuristic wygrywa ~85% overall, 90.8% vs random), więc czysty win-rate ma
   MAŁO pola do poprawy jako sygnał — dokładnie problem „credit assignment"
