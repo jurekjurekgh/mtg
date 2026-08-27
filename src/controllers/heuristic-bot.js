@@ -2006,6 +2006,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const foe2 = enemy(view);
             if (target && foe2 && target.controllerId === foe2.id) {
               score += 12 + (target.power ?? 0) * 2 + (target.toughness ?? 0);
+            } else if (target && target.controllerId === view.playerId) {
+              // M231 (audyt Żywym Testerem, Awaken the Sleeper): przejęcie
+              // kontroli nad WŁASNYM stworem jest jałowe — już go kontrolujesz,
+              // „kradzież" nic nie daje (marginalny haste nie wart karty). Kara
+              // przebija bazę 50, żeby wariant zszedł poniżej passu; rzut w cel
+              // wroga (wyżej) pozostaje premiowany. Generycznie po kontrolerze
+              // celu (ADR 0002), nie po nazwie karty.
+              score -= 70;
             }
           }
           // M157/L28: efekty celujące KARTĘ we WŁASNYM grobie (Unbreakable
