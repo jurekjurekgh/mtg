@@ -2709,7 +2709,31 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               }
             }
           }
-          if (effect.type === 'gain_life') score += 2 + (effect.amount ?? 0);
+          if (effect.type === 'gain_life') {
+            // M236 (audyt Żywym Testerem, Instant Ramen): zysk życia z
+            // AKTYWOWANEJ zdolności ma wartość zależną od SYTUACJI, nie płaską.
+            // Przy zdrowym życiu 3 życia to prawie nic; przy niskim — ratunek.
+            // Bot aktywował Instant Ramen ({2},{T},poświęć: zyskaj 3) przy 22
+            // życia i przewadze (przeciwnik na 13), wyrzucając permanent-Food
+            // za marginalne życie.
+            const amount = effect.amount ?? 0;
+            const life = myLife(view);
+            const pressure = enemyAttackPower(view); // realny nacisk (atakujący/plansza wroga)
+            // Wartość życia: pełna gdy nisko/pod naciskiem, znikoma gdy wysoko
+            // i bezpiecznie. Progi jak w innych regułach życia (≤5 krytyczne).
+            let lifeValue;
+            if (life <= 5) lifeValue = 2 + amount;              // krytycznie — pełna wartość
+            else if (life <= 10 || pressure >= life - 5) lifeValue = 1 + Math.min(amount, 3);
+            else lifeValue = 0;                                 // wysoko i bezpiecznie — życie bez wartości
+            score += lifeValue;
+            // Koszt poświęcenia SIEBIE za samo życie (Instant Ramen): przy
+            // bezpiecznym życiu to strata permanentu — kara schodzi poniżej
+            // passu, bot trzyma artefakt na później. Bez życiowej korzyści
+            // (lifeValue==0) poświęcanie permanentu jest jałowe.
+            if (ability?.cost?.sacrificeSelf && lifeValue === 0) {
+              score -= source?.kind === 'creature' ? 8 : 4;
+            }
+          }
           // M157/L28 (Mournful Zombie „{W},{T}: Target player gains 1 life"):
           // cel-gracz bez wyceny = remis → bot mógł LECZYĆ PRZECIWNIKA.
           // Życie sobie = plus, przeciwnikowi = kara.
