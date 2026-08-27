@@ -73,7 +73,20 @@ function attackerNeutralizedByProtection(attacker, blockers) {
     // Bloker chroniony od któregokolwiek koloru atakującego = atak jałowy:
     // obrażenia bojowe od atakującego są zapobiegane (CR 702.16c), a bloker
     // przeżywa. `sourceHasProtectionQuality` liczy kolory ze `source`.
-    return qualities.some((q) => sourceHasProtectionQuality(q, attacker));
+    if (!qualities.some((q) => sourceHasProtectionQuality(q, attacker))) return false;
+    // M239/1 (audyt PR #83, CR 702.19b + 702.16c): ale TRAMPLE przebija blok
+    // z ochroną. Podział obrażeń wymaga od atakującego z trample tylko lethal
+    // na blokerach, a test lethal ignoruje prewencję — nadmiar mocy wpada
+    // w gracza, który protekcji NIE ma (chroni się tylko bloker). Czyli atak
+    // tramplerem, którego moc przekracza „lethal" bloka (wytrzymałość, albo 1
+    // przy deathtouch atakującego), nie jest jałowy: zada różnicę obrońcy.
+    // Bloker nadal przeżywa — neutralizuje tylko samą wymianę obiektów.
+    const attackerKeywords = attacker.keywords ?? [];
+    if (attackerKeywords.includes('trample')) {
+      const lethalNeeded = attackerKeywords.includes('deathtouch') ? 1 : (b.toughness ?? Number.POSITIVE_INFINITY);
+      if ((attacker.power ?? 0) > lethalNeeded) return false;
+    }
+    return true;
   });
 }
 
@@ -2541,14 +2554,6 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (abilityEffectTypes.includes('animate_permanent_until_end_of_turn') && source?.animatedUntilEOT === true) {
             return finish(-10);
           }
-          // M219 (pętla jakości Żywym Testerem, h9 zendikar vs worek-legend
-          // s=44): pendingTwin łapie tylko drugą kopię NA STOSIE. Gdy pierwsza
-          // aktywacja już się ROZSTRZYGNĘŁA i nadała trwały-do-EOT stan
-          // (saddled), źródło nosi go na polu bitwy, a bot i tak aktywował
-          // Trained Arynx (Saddle 2) 3× z rzędu w jednej turze — każde
-          // kolejne osiodłanie tapuje inny stwór za nic (L51: efekt
-          // idempotentny już zastosowany). Generycznie po flagach STANU
-          // czytanych z PlayerView (ADR 0017), nie po nazwie karty (ADR 0002).
         }
         // Patologia B1: aktywacja kosztem tapu we własnym untap zostawiłaby
         // stwora zatapianego całą turę (bot stał w miejscu i deck-outował).

@@ -40,9 +40,12 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'removalWorthWeight',      // waga (power+toughness) usuwanego permanentu (dawniej *2)
   'bounceEnemyBase',         // baza za odbicie permanentu wroga do ręki (dawniej +25)
   'bounceEnemyPowerWeight',  // waga mocy odbijanego permanentu (dawniej *2)
-  'damageCreatureBase',      // baza za obrażenia w stwora wroga (dawniej +10)
-  'damageCreaturePowerWeight', // waga mocy trafianego stwora (dawniej *3)
-  'damageLethalBonus',       // premia, gdy obrażenia są śmiertelne (dawniej +15)
+  // M239/2 (audyt PR #83, znalezisko Z3): rodzina „damage w stwora" (baza,
+  // waga mocy celu, premia lethal) usunięta — po M237/4 damageTargetValue
+  // wycenia obrażenia MODELIEM PER-CEL (bezpieczny blok → do wyceny wartości
+  // przeciwnika + juba lethal z połówką ceny stworzenia), więc te klucze były
+  // MARTWYMI pokrętłami (tuner zmieniał je bez jakiegokolwiek wpływu). Gromadzenie
+  // martwych parametrów zatruwa tablicę tune-card.mjs — wycinane u korzenia.
   'drawCardValue',           // wartość jednej dobranej karty (dawniej *6)
   // Rodzina „efektywność removalu" (B6 T1 — M234, zlecenie właściciela). Bot ma
   // maksymalizować wartość zdejmowanego stwora: preferować DROŻSZE cele (TMC to
@@ -76,9 +79,6 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   removalWorthWeight: 2,
   bounceEnemyBase: 25,
   bounceEnemyPowerWeight: 2,
-  damageCreatureBase: 10,
-  damageCreaturePowerWeight: 3,
-  damageLethalBonus: 15,
   drawCardValue: 6,
   // M234 — WŁĄCZONE wprost jako część zlecenia właściciela (efektywność
   // removalu). Wartości dobrane pomiarem (ordering + mirror-eval + divergence):

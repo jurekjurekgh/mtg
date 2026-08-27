@@ -53,7 +53,8 @@ export const DESCRIPTOR_PARAMS = Object.freeze({
     // Removal / obrażenia / dobór — najczęstsze efekty czarów.
     'removalEnemyBase', 'removalWorthWeight',
     'bounceEnemyBase', 'bounceEnemyPowerWeight',
-    'damageCreatureBase', 'damageCreaturePowerWeight', 'damageLethalBonus',
+    // M239/2: rodzina damageCreature*/damageLethalBonus usunięta (martwa od
+    // M237/4 — wycena damage jest modelem per-cel, nie pokrętłami).
     'drawCardValue',
   ]),
   // Rodziny mechanik czekające na własne parametry (kolejne sesje T1):
