@@ -384,6 +384,17 @@ całego etapu.
   (70/50 — ręcznie dostrojone przez właściciela w poprzednich sesjach) są
   lokalnym optimum na BENCH_DECKS. NIE przyjęto zmian.
 
+- **Runda 3 (2026-08-27) — rodzina bazowa Z PROXY (β=0.5): potwierdzone
+  OPTIMUM, brak ulepszenia.** Test tezy T2 („proxy znajdzie ulepszenie,
+  którego win-rate nie widział"). Strojenie creatureBase/spellBase z β=0.5
+  (miks win-rate + proxy, 8 seedów baza 3000, krok 10). WSZYSCY kandydaci
+  obj < baseline (66.63–66.69% vs 66.84%). Proxy POTWIERDZIŁ werdykt win-rate:
+  wartości domyślne 70/50 są optimum wg OBU sygnałów. Różnice między wariantami
+  ~0.1 p.p. — w granicach szumu. Wniosek: baza jest solidnie skalibrowana; T2
+  działa jako narzędzie (gładszy sygnał), ale tu nie ma czego zbierać. Kolejne
+  rundy: rodziny jeszcze NIE wyciągnięte (removal/damage/draw — częste w
+  cast_spell), które mogą być gorzej skalibrowane niż baza.
+
 - **Wniosek strategiczny dla kolejnych sesji:** benchmark jest blisko nasycenia
   (heuristic wygrywa ~85% overall, 90.8% vs random), więc czysty win-rate ma
   MAŁO pola do poprawy jako sygnał — dokładnie problem „credit assignment"
