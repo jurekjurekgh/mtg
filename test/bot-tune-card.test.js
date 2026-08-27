@@ -103,3 +103,37 @@ test('tuneCard: creature-owa karta stroi parametry bazy stwora (evaluate wstrzyk
   assert.ok(calls > 1, 'evaluate powinno być wywołane wielokrotnie');
   assert.ok(result.tuned.params.creatureBase >= 70);
 });
+
+test('hillClimbParams: β>0 kieruje się PROXY, gdy win-rate jest płaski (T2)', () => {
+  // Win-rate identyczny dla wszystkich wariantów (nasycenie), ale proxy rośnie
+  // ku creatureBase=90. Z β=0 tuner nie ma czego szukać; z β>0 wspina się ku 90.
+  const evaluate = (params) => {
+    const proxy = Math.max(0, 1 - Math.abs(params.creatureBase - 90) / 100);
+    return {
+      pairs: {
+        'heuristic | random': { games: 10, unfinished: 0, wins: { heuristic: 6 }, proxyMean: proxy },
+        'aggro | heuristic': { games: 10, unfinished: 0, wins: { heuristic: 6 }, proxyMean: proxy },
+      },
+    };
+  };
+  const flat = hillClimbParams({ keys: ['creatureBase'], step: 5, rounds: 3, evaluate, proxyWeight: 0 });
+  const guided = hillClimbParams({ keys: ['creatureBase'], step: 5, rounds: 3, evaluate, proxyWeight: 0.5 });
+  assert.equal(flat.params.creatureBase, 70, 'β=0: płaski win-rate → brak ruchu');
+  assert.ok(guided.params.creatureBase > 70, `β>0: proxy prowadzi ku 90 (${guided.params.creatureBase})`);
+  assert.ok(guided.params.creatureBase <= 90);
+});
+
+test('tuneCard: proxyWeight jest przekazywane do hill-climbingu', () => {
+  // Ten sam płaski win-rate + proxy jak wyżej — z β>0 wynik ma się ruszyć.
+  const evaluate = (params) => {
+    const proxy = Math.max(0, 1 - Math.abs(params.creatureBase - 90) / 100);
+    return {
+      pairs: {
+        'heuristic | random': { games: 10, unfinished: 0, wins: { heuristic: 6 }, proxyMean: proxy },
+        'aggro | heuristic': { games: 10, unfinished: 0, wins: { heuristic: 6 }, proxyMean: proxy },
+      },
+    };
+  };
+  const guided = tuneCard({ cardId: 'razorfoot-griffin', evaluate, rounds: 2, step: 5, proxyWeight: 0.5 });
+  assert.ok(guided.tuned.params.creatureBase > 70, 'proxyWeight musi dotrzeć do hill-climbingu');
+});

@@ -122,16 +122,20 @@ export function hillClimbParams({
   rounds = 1,
   evaluate,
   onEvaluation = null,
+  proxyWeight = 0,
 }) {
   if (typeof evaluate !== 'function') throw new TypeError('Tuner wymaga funkcji evaluate');
   if (!Array.isArray(keys) || keys.length === 0) throw new TypeError('Brak parametrów do strojenia');
   for (const key of keys) {
     if (!HEURISTIC_PARAM_KEYS.includes(key)) throw new RangeError(`Nieznany parametr: ${key}`);
   }
+  // B6 T2 — β>0 miesza proxy do funkcji celu (gęstszy sygnał). β=0 → klasyczny
+  // win-rate, zachowanie jak przed T2.
+  const objectiveOf = (result) => tuningObjective(result, { proxyWeight });
   const initial = normalizeHeuristicParams(initialParams);
   const baseline = evaluate({ ...initial });
   let currentParams = { ...initial };
-  let currentObjective = tuningObjective(baseline);
+  let currentObjective = objectiveOf(baseline);
   if (!Number.isFinite(currentObjective)) throw new Error('Baseline tunera ma niedokończone mecze');
 
   const history = [{
@@ -148,7 +152,7 @@ export function hillClimbParams({
         const candidate = { ...currentParams, [key]: value };
         const result = evaluate({ ...candidate });
         evaluations += 1;
-        const objective = tuningObjective(result);
+        const objective = objectiveOf(result);
         const summary = summarizeTuningResult(result);
         const accepted = summary.unfinished === 0 && objective > currentObjective;
         history.push({ round, key, direction, params: { ...candidate }, summary, objective, accepted });
@@ -187,6 +191,7 @@ export function tuneCard({
   decksDir = 'decks',
   evaluate = null,
   onEvaluation = null,
+  proxyWeight = 0,
 } = {}) {
   const registry = createCardRegistry();
   let descriptors;
@@ -213,6 +218,8 @@ export function tuneCard({
     return { plan, tuned: null, note: `Żadna talia w ${decksDir} nie zawiera ${cardId} — dodaj kartę do talii planu przed strojeniem.` };
   }
 
+  // Gdy β>0, benchmark musi ZBIERAĆ proxy (collectProxy), inaczej funkcja celu
+  // nie ma czego mieszać. Domyślnie β=0 → collectProxy=false (jak przed T2).
   const runEval = evaluate ?? ((heuristicParams) => runBenchmark({
     bots: ['aggro', 'heuristic', 'random'],
     pairs: [['heuristic', 'random'], ['heuristic', 'aggro']],
@@ -221,9 +228,10 @@ export function tuneCard({
     seedBase,
     maxCommands: 5000,
     heuristicParams,
+    collectProxy: proxyWeight > 0,
   }));
 
-  const tuned = hillClimbParams({ keys, rounds, step, evaluate: runEval, onEvaluation });
+  const tuned = hillClimbParams({ keys, rounds, step, evaluate: runEval, onEvaluation, proxyWeight });
   return { plan, tuned };
 }
 
@@ -234,7 +242,7 @@ function parsePositiveInt(value, flag) {
 }
 
 export function parseArgs(argv) {
-  const options = { cardId: null, descriptors: null, seedsCount: 6, seedBase: 2026, rounds: 1, step: 5, jsonPath: null };
+  const options = { cardId: null, descriptors: null, seedsCount: 6, seedBase: 2026, rounds: 1, step: 5, proxyWeight: 0, jsonPath: null };
   const readValue = (i, flag) => {
     const value = argv[i + 1];
     if (value == null || value.startsWith('--')) throw new Error(`Opcja ${flag} wymaga wartości`);
@@ -249,10 +257,14 @@ export function parseArgs(argv) {
     if (arg === '--seed-base') { options.seedBase = parsePositiveInt(readValue(i, arg), arg); i += 1; continue; }
     if (arg === '--rounds') { options.rounds = parsePositiveInt(readValue(i, arg), arg); i += 1; continue; }
     if (arg === '--step') { options.step = Number(readValue(i, arg)); i += 1; continue; }
+    if (arg === '--proxy-weight') { options.proxyWeight = Number(readValue(i, arg)); i += 1; continue; }
     if (arg === '--json') { options.jsonPath = readValue(i, arg); i += 1; continue; }
     throw new Error(`Nieznana opcja: ${arg}`);
   }
   if (!Number.isFinite(options.step) || options.step <= 0) throw new Error('Opcja --step musi być dodatnia');
+  if (!Number.isFinite(options.proxyWeight) || options.proxyWeight < 0 || options.proxyWeight > 1) {
+    throw new Error('Opcja --proxy-weight musi być w [0, 1]');
+  }
   return options;
 }
 
@@ -267,6 +279,8 @@ Opcje:
   --seed-base N        pierwszy seed (domyślnie 2026)
   --rounds N           liczba przejść po parametrach (domyślnie 1)
   --step X             krok addytywny parametru (domyślnie 5)
+  --proxy-weight β     waga proxy w funkcji celu [0,1] (domyślnie 0 = tylko
+                       win-rate; β>0 miesza gęstszy sygnał pozycyjny, B6 T2)
   --json plik          zapisz wynik (plan + historia) do pliku
   --help               ta pomoc
 
@@ -297,6 +311,7 @@ if (isDirectCliRun()) {
         seedBase: options.seedBase,
         rounds: options.rounds,
         step: options.step,
+        proxyWeight: options.proxyWeight,
         onEvaluation: ({ round, key, direction, params, objective, accepted }) => {
           const sign = direction < 0 ? '-' : '+';
           console.log(`B6 runda ${round}: ${sign}${key}=${params[key]} → ${(objective * 100).toFixed(2)}%${accepted ? ' [PRZYJĘTO]' : ''}`);
