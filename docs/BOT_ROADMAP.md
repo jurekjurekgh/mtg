@@ -461,6 +461,24 @@ całego etapu.
     walka > pass). Golden-master bez zmian (snapshot nie ma tej sytuacji),
     bot-benchmark 9/9. Commit M235/1.
 
+- **Runda 7 (2026-08-27) — M236: nieoptymalne rzucanie czarów/zdolności
+  (6 napraw): PRZYJĘTO.** Kontynuacja audytu Żywym Testerem (zlecenie: do
+  wyczerpania budżetu, nie przerywać po 1. znalezisku). ~25 partii + 3 skany
+  strukturalne bot-vs-bot; 0 zgłoszeń detektorów, wszystko z ręcznej lektury/
+  skanu. Rodzina „timing/wartość spalenia i lifegainu" była najsłabiej
+  skalibrowana:
+  - M236/1 fog przed deklaracją ataku (Inspire Awe) — kara poza oknem walki;
+  - M236/2 poświęcenie permanentu za życie przy bezpiecznym życiu (Instant
+    Ramen) — wartość życia zależna od sytuacji;
+  - M236/3 jałowy tap-za-życie (Soulmender) — pure gain_life bez wartości < pass;
+  - M236/4 skalujący Fireball za trywialny chip w twarz — dobicie=zawsze, chip
+    ≤2 < pass;
+  - M236/5 nieletalne spalenie w stwora poza walką (Shock w 2/3) < pass;
+  - M236/6 zakopywanie karty z grobu na spód (Barkform Harvester) — jałowy churn.
+  Każda RED→GREEN + mutacja, generyczna po deskryptorze (ADR 0002), tylko widok
+  (ADR 0017). npm test 3542/3542, bot-benchmark 9/9, golden-master bez zmian.
+  Commity M236/1–6. Raport: docs/audits/AUDYT_M236_ZYWY_TESTER_2026-08-27.md.
+
 - **Wniosek strategiczny dla kolejnych sesji:** benchmark jest blisko nasycenia
   (heuristic wygrywa ~85% overall, 90.8% vs random), więc czysty win-rate ma
   MAŁO pola do poprawy jako sygnał — dokładnie problem „credit assignment"
