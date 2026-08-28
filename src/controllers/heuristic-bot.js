@@ -774,6 +774,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return false;
   };
 
+  // Uwaga L39: gałąź `return_to_hand` niżej jest od dawna martwa (żaden
+  // producent efektu w src/); realne odbicia jadą typem `bounce_permanent`
+  // (modal Steel Sabotage) i dostają tę regułę z REMOVAL_EFFECTS.
+  //
+  // M247 (audyt Żywym Testerem, 2026-08-28 — Banishment Decree za 5 many
+  // rzucane w Great Furnace): czysty LĄD (typ `Land`, nie Creature, więc
+  // nie zagraża/nie broni) jako cel efektu niszczącego albo odbijającego to
+  // stracona karta — przeciwnikowi nie ginie nic bojowego, ląd wraca
+  // za darmo (a z „wierzchu biblioteki" wręcz przy następnym doborze).
+  // Deskryptor po typach z widoku (ADR 0002/0017); ląd-stwór (Dryad-Arbor
+  // class) wykluczony jawnie — ten ginie „naprawdę" w walce.
+  const pureLandTarget = (t) => t && (t.types ?? []).includes('Land')
+    && !(t.types ?? []).includes('Creature');
+
   const enemyRemovalTargetBonus = (view, target) => {
     if (!target || target.controllerId === view.playerId) return 0;
     let bonus = P.removalTmcWeight * (target.manaCost ?? 0);
@@ -1796,6 +1810,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           : null;
         const effects = modalEffects
           ?? ((cmd.type === 'cast_cleave' && spell.cleave ? spell.cleave.effects : spell.effects) ?? []);
+        // M247 anti-overfix (Vandalize „Zniszcz ląd"): kara „czysty ląd jako
+        // cel removalu" NIE obejmuje efektów ZAPROJEKTOWANYCH pod niszczenie
+        // lądów — rozpoznajemy je po specu celu z deskryptora: slot typu
+        // 'land' (i tylko 'land') oznacza nienawiść intencjonalną.
+        const modalTargets = modalEffects ? (spell.modes[cmd.modeIndex]?.targets ?? []) : null;
+        const targetSpecAt = (idx) => (modalTargets ?? spell.targets ?? [])[idx]?.type ?? null;
+        const removalAtLandByDesign = (idx) => targetSpecAt(idx) === 'land';
         // M106/Z2b: czar, którego CAŁA treść jest teraz pusta (0 tokenów, brak
         // stworów do osłabienia, pusty grób), to wyrzucona karta — nie rzucamy.
         if (allEffectsInertNow(view, effects, cmd)) return finish(-70);
@@ -1990,6 +2011,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // (karta + zasób ze stołu); kara musi przebić bazowe 50 pkt,
               // żeby „bo nie ma innego celu" nie wygrywało z passem.
               score -= 90;
+            } else if (pureLandTarget(target) && !removalAtLandByDesign(effect.targetIndex ?? 0)) {
+              // M247: bez premii removalu i z karą przebijającą bazę czaru —
+              // pass musi wygrać z „rzucam, bo jest dowolny cel".
+              score -= P.removalPureLandPenalty;
             } else {
               const worth = (target.power ?? 0) + (target.toughness ?? 0);
               score += P.removalEnemyBase + P.removalWorthWeight * worth;
@@ -2321,6 +2346,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 if (hasDamage) score += mine ? -60 : 12 + (t3.power ?? 0) * 2;
                 else if (hasCantBlock) score += mine ? -10 : 8;
                 if (hasRemoval) {
+                  // Uwaga L39/L48: wrappery z removal-efektami wewnętrznymi
+                  // celują wyłącznie w stwory/enchantmenty (spec z deskryptora,
+                  // np. creature_or_enchantment), więc „czysty ląd" nigdy nie
+                  // staje się celem — reguła M247 jest tu z założenia pusta.
                   score += mine
                     ? -90
                     : P.removalEnemyBase + P.removalWorthWeight * ((t3.power ?? 0) + (t3.toughness ?? 0))

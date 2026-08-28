@@ -1,0 +1,575 @@
+== NOWA PARTIA: gracz=ravnica vs bot=alara, seed=67, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Plains (1 z 3)
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mana Cylix
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Mana Cylix zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Courage in Crisis
+  >> Zagraj ląd: Plains (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Azorius Justiciar
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Rzuć: Expose to Daylight (koszt 2W) → cel: Mana Cylix (Nieprzyjaciel)
+  [ROZGRYWKA]   • Wykonujesz scry (patrzy na 1 kartę: Dimir Guildgate)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [modal choice] Scry 1 — obejrzane karty: 1. Dimir GuildgateKarta 1 z 1: Dimir GuildgateNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Esper Stormblade
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Esper Stormblade zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Ivy Lane Denizen
+  >> Zagraj ląd: Island (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Zagraj: Azorius Justiciar (koszt 2WW)
+  [ROZGRYWKA]   • Azorius Justiciar zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Azorius Justiciar — wybierz cel triggera (wymagany)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Azorius Justiciar — cel triggera (2 opcje)
+  [modal choice] Azorius Justiciar — cel triggera Azorius Justiciar — cele triggera: Esper Stormblade (Nieprzyjaciel)🔍 Podgląd karty Azorius Justiciar — bez celów („up to")
+  [modal choice]   ▶ Azorius Justiciar — cele triggera: Esper Stormblade (Nieprzyjaciel)
+  [modal choice]     Azorius Justiciar — bez celów („up to")
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Etherium Sculptor
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Etherium Sculptor wchodzi na pole bitwy
+  [ROZGRYWKA]   • Etherium Sculptor zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Akrasan Squire
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Veiled Ascension
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Zagraj: Veiled Ascension (koszt 3W)
+  [kreator many] Płatność 3W — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: WTapnij: Plains (W)Tapnij: Plains (W)Tapnij:  — źródła: 5
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Veiled Ascension zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Veiled Ascension — trigger (wejście na pole bitwy)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Veiled Ascension — trigger bez efektu (nie było czego wykonać)
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Esper Stormblade blokuje Azorius Justiciar
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Azorius Justiciar zadaje 2 obrażenia (Esper Stormblade)
+  [ROZGRYWKA]   • Esper Stormblade zadaje 2 obrażenia (Azorius Justiciar)
+  [ROZGRYWKA]   • Esper Stormblade ginie
+  [ROZGRYWKA]   • Azorius Justiciar ginie
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plague Reaver
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Plague Reaver zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Angel's Herald
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Etherium Abomination
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę (koszt zdolności)
+  [ROZGRYWKA]   • Plague Reaver zostaje poświęcony
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Plague Reaver → cel: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Etherium Sculptor zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 19
+  [ROZGRYWKA]   • Akrasan Squire zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 19 → 18
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Plague Reaver — trigger (opóźniony trigger)
+  >> Veiled Ascension — cloak (wierzch biblioteki twarzą w dół jako 2/2) (możesz) (2 opcje)
+  [modal choice] Veiled Ascension — cloak (wierzch biblioteki twarzą w dół jako 2/2) (możesz) Uruchom efekt dobrowolny (you may) Zrezygnuj z efektu
+  [modal choice]   ▶ Uruchom efekt dobrowolny (you may)
+  [modal choice]     Zrezygnuj z efektu
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Veiled Ascension — trigger (krok upkeep)
+  [ROZGRYWKA]   • Korzystasz z efektu „you may" (Veiled Ascension)
+  [ROZGRYWKA]   • Trestle Troll (Morph) dostaje +1 licznik flying (razem 1)
+  [ROZGRYWKA]   • Trestle Troll (Morph) wchodzi na pole bitwy
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: Plague Reaver — cmentarz → pole bitwy
+  [ROZGRYWKA]   • Plague Reaver przechodzi pod kontrolę gracza Ty
+  [ROZGRYWKA]   • Plague Reaver — trigger się rozstrzyga (opóźniony)
+  >> Aktywuj: Plague Reaver (Ty) (koszt: odrzuć 2 karty, poświęć) — wróć na pole bitwy na początku upkeep → cel: Ni
+  >> Wybierz: Karta do odrzucenia (3 opcje)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Boros Challenger🔍 Podgląd karty Odrzuć: Courage in Crisis🔍 Podgląd karty Odrzuć: Ivy Lane Denizen🔍 Podgląd karty
+  [modal choice]   ▶ Odrzuć: Boros Challenger
+  [modal choice]     Odrzuć: Courage in Crisis
+  [modal choice]     Odrzuć: Ivy Lane Denizen
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odrzucasz Boros Challenger
+  >> Wybierz: Karta do odrzucenia (2 opcje)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Courage in Crisis🔍 Podgląd karty Odrzuć: Ivy Lane Denizen🔍 Podgląd karty
+  [modal choice]   ▶ Odrzuć: Courage in Crisis
+  [modal choice]     Odrzuć: Ivy Lane Denizen
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Plague Reaver zostaje poświęcony
+  [ROZGRYWKA]   • Aktywujesz zdolność: Plague Reaver → cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Plague Reaver — opóźniony trigger: powrót na pole bitwy w następnym upkeep gracza Nieprzyjaciel
+  [ROZGRYWKA]   • Ty: zdolność Plague Reaver rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Toll of the Invasion
+  [ROZGRYWKA]   • Plague Reaver — trigger (opóźniony trigger)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Etherium Abomination
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Etherium Abomination rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Etherium Abomination
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Akrasan Squire — trigger (samotny atak)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Akrasan Squire — trigger się rozstrzyga
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Morph (2/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Etherium Abomination zadaje 5 obrażeń (Trestle Troll (Morph))
+  [ROZGRYWKA]   • Trestle Troll (Morph) zadaje 2 obrażenia (Etherium Abomination)
+  [ROZGRYWKA]   • Trestle Troll ginie
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Etherium Sculptor zostaje poświęcony
+  [ROZGRYWKA]   • Akrasan Squire zostaje poświęcony
+  [ROZGRYWKA]   • Angel's Herald zostaje poświęcony
+  [ROZGRYWKA]   • Plague Reaver — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Veiled Ascension — cloak (wierzch biblioteki twarzą w dół jako 2/2) (możesz) (2 opcje)
+  [modal choice] Veiled Ascension — cloak (wierzch biblioteki twarzą w dół jako 2/2) (możesz) Uruchom efekt dobrowolny (you may) Zrezygnuj z efektu
+  [modal choice]   ▶ Uruchom efekt dobrowolny (you may)
+  [modal choice]     Zrezygnuj z efektu
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Veiled Ascension — trigger (krok upkeep)
+  [ROZGRYWKA]   • Korzystasz z efektu „you may" (Veiled Ascension)
+  [ROZGRYWKA]   • Swamp (Morph) dostaje +1 licznik flying (razem 1)
+  [ROZGRYWKA]   • Swamp (Morph) wchodzi na pole bitwy
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Plague Reaver
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Morph (2/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA]   • Plague Reaver zadaje 6 obrażeń (Swamp (Morph))
+  [ROZGRYWKA]   • Swamp (Morph) zadaje 2 obrażenia (Plague Reaver)
+  [ROZGRYWKA]   • Swamp ginie
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Plague Reaver — trigger (krok końca tury)
+  [ROZGRYWKA]   • Plague Reaver — trigger bez efektu (nie było czego wykonać)
+  [ROZGRYWKA]   • Tura 15 — Ty
+  >> Veiled Ascension — cloak (wierzch biblioteki twarzą w dół jako 2/2) (możesz) (2 opcje)
+  [modal choice] Veiled Ascension — cloak (wierzch biblioteki twarzą w dół jako 2/2) (możesz) Uruchom efekt dobrowolny (you may) Zrezygnuj z efektu
+  [modal choice]   ▶ Uruchom efekt dobrowolny (you may)
+  [modal choice]     Zrezygnuj z efektu
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Guildscorn Ward
+  >> Aura: Guildscorn Ward (2 opcje)
+  [modal choice] Aura: Guildscorn Ward Zagraj aurę: Guildscorn Ward (koszt W) → zaczaruj Plague Reaver (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Guildscorn Ward (koszt W) → zaczaruj Forced Landing (Morph)🔍 Podgląd karty
+  [modal choice]   ▶ Zagraj aurę: Guildscorn Ward (koszt W) → zaczaruj Plague Reaver (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Guildscorn Ward (koszt W) → zaczaruj Forced Landing (Morph)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Guildscorn Ward zaczarowuje Plague Reaver
+  [ROZGRYWKA]   • Guildscorn Ward wchodzi na pole bitwy
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Plague Reaver
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Morph (2/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA]   • Plague Reaver zadaje 6 obrażeń (Forced Landing (Morph))
+  [ROZGRYWKA]   • Forced Landing (Morph) zadaje 2 obrażenia (Plague Reaver)
+  [ROZGRYWKA]   • Forced Landing ginie
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Plague Reaver — trigger (krok końca tury)
+  [ROZGRYWKA]   • Plague Reaver — trigger bez efektu (nie było czego wykonać)
+  [ROZGRYWKA]   • Tura 17 — Ty
+  >> Veiled Ascension — cloak (wierzch biblioteki twarzą w dół jako 2/2) (możesz) (2 opcje)
+  [modal choice] Veiled Ascension — cloak (wierzch biblioteki twarzą w dół jako 2/2) (możesz) Uruchom efekt dobrowolny (you may) Zrezygnuj z efektu
+  [modal choice]   ▶ Uruchom efekt dobrowolny (you may)
+  [modal choice]     Zrezygnuj z efektu
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Liliana's Triumph
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Fiery Fall → cel: Ember Beast (Morph)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Plague Reaver
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Plague Reaver zadaje 6 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 12
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Plague Reaver — trigger (krok końca tury)
+  [ROZGRYWKA]   • Plague Reaver — trigger bez efektu (nie było czego wykonać)
+  [ROZGRYWKA]   • Tura 19 — Ty
+  >> Veiled Ascension — cloak (wierzch biblioteki twarzą w dół jako 2/2) (możesz) (2 opcje)
+  [modal choice] Veiled Ascension — cloak (wierzch biblioteki twarzą w dół jako 2/2) (możesz) Uruchom efekt dobrowolny (you may) Zrezygnuj z efektu
+  [modal choice]   ▶ Uruchom efekt dobrowolny (you may)
+  [modal choice]     Zrezygnuj z efektu
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Veiled Ascension — trigger (krok upkeep)
+  [ROZGRYWKA]   • Korzystasz z efektu „you may" (Veiled Ascension)
+  [ROZGRYWKA]   • Epic Experiment (Morph) dostaje +1 licznik flying (razem 1)
+  [ROZGRYWKA]   • Epic Experiment (Morph) wchodzi na pole bitwy
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Ghost Warden
+  >> Zagraj: Ghost Warden (koszt 1W)
+  [kreator many] Płatność 1W — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: WTapnij: Plains (W)Tapnij: Plains (W)Tapnij:  — źródła: 6
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Plains (W)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Ghost Warden wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ghost Warden zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Wretched Banquet → cel: Epic Experiment (Morph)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Wretched Banquet zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Plague Reaver
+  >> Wybierz: Deklaracja blokujących (4 opcje)
+  [combat wizard] blokuję 1 stworami: Morph (2/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA]   • Epic Experiment (Morph) zadaje 2 obrażenia (Plague Reaver)
+  [ROZGRYWKA]   • Epic Experiment ginie
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Plague Reaver — trigger (krok końca tury)
+  [ROZGRYWKA]   • Plague Reaver — trigger bez efektu (nie było czego wykonać)
+  [ROZGRYWKA]   • Tura 21 — Ty
+  >> Veiled Ascension — cloak (wierzch biblioteki twarzą w dół jako 2/2) (możesz) (2 opcje)
+  [modal choice] Veiled Ascension — cloak (wierzch biblioteki twarzą w dół jako 2/2) (możesz) Uruchom efekt dobrowolny (you may) Zrezygnuj z efektu
+  [modal choice]   ▶ Uruchom efekt dobrowolny (you may)
+  [modal choice]     Zrezygnuj z efektu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Veiled Ascension — trigger (krok upkeep)
+  [ROZGRYWKA]   • Korzystasz z efektu „you may" (Veiled Ascension)
+  >> Cel zdolności: Ghost Warden (2 opcje)
+  [modal choice] Cel zdolności: Ghost Warden Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Plague Reaver (Nieprzyjaciel)🔍 Podgląd karty Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)🔍 Podgląd karty
+  [modal choice]   ▶ Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Plague Reaver (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghost Warden — zmiana statystyk celu → cel: Plague Reaver
+  [ROZGRYWKA]   • Ty: zdolność Ghost Warden rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Piercing Rays
+  >> Cel czaru: Piercing Rays (2 opcje)
+  [modal choice] Cel czaru: Piercing Rays Rzuć: Piercing Rays (koszt 1W) → cel: Plague Reaver (Nieprzyjaciel)🔍 Podgląd karty Rzuć: Piercing Rays (koszt 1W) → cel: Ghost Warden (Ty)🔍 Podgląd karty
+  [modal choice]   ▶ Rzuć: Piercing Rays (koszt 1W) → cel: Plague Reaver (Nieprzyjaciel)
+  [modal choice]     Rzuć: Piercing Rays (koszt 1W) → cel: Ghost Warden (Ty)
+  [kreator many] Płatność 1W — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: WTapnij: Plains (W)Tapnij: Plains (W)Tapnij:  — źródła: 6
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Plains (W)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Guildscorn Ward trafia do grobu (aura bez legalnego gospodarza)
+  [ROZGRYWKA]   • Nieprzyjaciel: Plague Reaver — pole bitwy → wygnanie
+  [ROZGRYWKA]   • Piercing Rays zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 22 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 23 — Ty
+  >> Veiled Ascension — cloak (wierzch biblioteki twarzą w dół jako 2/2) (możesz) (2 opcje)
+  [modal choice] Veiled Ascension — cloak (wierzch biblioteki twarzą w dół jako 2/2) (możesz) Uruchom efekt dobrowolny (you may) Zrezygnuj z efektu
+  [modal choice]   ▶ Uruchom efekt dobrowolny (you may)
+  [modal choice]     Zrezygnuj z efektu
+  [ROZGRYWKA]   • Korzystasz z efektu „you may" (Veiled Ascension)
+  >> Cel zdolności: Ghost Warden (2 opcje)
+  [modal choice] Cel zdolności: Ghost Warden Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)🔍 Podgląd karty Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Plains (Morph)🔍 Podgląd karty
+  [modal choice]   ▶ Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Plains (Morph)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghost Warden — zmiana statystyk celu → cel: Ghost Warden
+  [ROZGRYWKA]   • Ty: zdolność Ghost Warden rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Chronic Flooding
+  >> Aura: Chronic Flooding (14 opcji)
+  [modal choice] Aura: Chronic Flooding Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Ty) (1 z 4)🔍 Podgląd karty Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Forest (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Ty) (2 z 4)🔍 Podgląd karty Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Island (Nieprzyjaciel) (1 z 2)🔍 Podgląd karty Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Ty) (3 z 4)🔍 Podgląd karty Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Nieprzyjaciel) (1 z 2)🔍 Podgląd karty Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Island (Ty) (1 z 2)🔍 Podgląd karty Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Island (Ty) (2 z 2)🔍 Podgląd karty Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Swamp (Nieprzyjaciel) (1 z 2)🔍 Podgląd karty Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Mountain (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Ty) (4 z 4)🔍 Podgląd karty Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Island (Nieprzyjaciel) (2 z 2)🔍 Podgląd karty Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Nieprzyjaciel) (2 z 2)🔍 Podgląd karty Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Swamp (Nieprzyjaciel) (2 z 2)🔍 Podgląd karty
+  [modal choice]   ▶ Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Ty) (1 z 4)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Forest (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Ty) (2 z 4)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Island (Nieprzyjaciel) (1 z 2)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Ty) (3 z 4)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Nieprzyjaciel) (1 z 2)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Island (Ty) (1 z 2)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Island (Ty) (2 z 2)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Swamp (Nieprzyjaciel) (1 z 2)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Mountain (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Ty) (4 z 4)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Island (Nieprzyjaciel) (2 z 2)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Plains (Nieprzyjaciel) (2 z 2)
+  [modal choice]     Zagraj aurę: Chronic Flooding (koszt 1U) → zaczaruj Swamp (Nieprzyjaciel) (2 z 2)
+  [kreator many] Płatność 1U — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: UTapnij: Plains (W)Tapnij: Plains (W)Tapnij:  — źródła: 6
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Chronic Flooding zaczarowuje Plains
+  [ROZGRYWKA]   • Chronic Flooding wchodzi na pole bitwy
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 18
+  [ROZGRYWKA]   • Tura 24 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 25 — Ty
+  >> Veiled Ascension — cloak (wierzch biblioteki twarzą w dół jako 2/2) (możesz) (2 opcje)
+  [modal choice] Veiled Ascension — cloak (wierzch biblioteki twarzą w dół jako 2/2) (możesz) Uruchom efekt dobrowolny (you may) Zrezygnuj z efektu
+  [modal choice]   ▶ Uruchom efekt dobrowolny (you may)
+  [modal choice]     Zrezygnuj z efektu
+  [ROZGRYWKA]   • Korzystasz z efektu „you may" (Veiled Ascension)
+  >> Cel zdolności: Ghost Warden (3 opcje)
+  [modal choice] Cel zdolności: Ghost Warden Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)🔍 Podgląd karty Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Plains (Morph)🔍 Podgląd karty Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Tenth District Veteran (Morph)🔍 Podgląd karty
+  [modal choice]   ▶ Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Plains (Morph)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Tenth District Veteran (Morph)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghost Warden — zmiana statystyk celu → cel: Ghost Warden
+  [ROZGRYWKA]   • Ty: zdolność Ghost Warden rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Severed Strands
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Plains (Morph) zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 18 → 16
+  [ROZGRYWKA]   • Tenth District Veteran (Morph) zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 16 → 14
+  [ROZGRYWKA]   • Tura 26 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Gorger Wurm
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Gorger Wurm wchodzi na pole bitwy
+  [ROZGRYWKA]   • Gorger Wurm zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Gorger Wurm — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Tura 27 — Ty
+  >> Veiled Ascension — cloak (wierzch biblioteki twarzą w dół jako 2/2) (możesz) (2 opcje)
+  [modal choice] Veiled Ascension — cloak (wierzch biblioteki twarzą w dół jako 2/2) (możesz) Uruchom efekt dobrowolny (you may) Zrezygnuj z efektu
+  [modal choice]   ▶ Uruchom efekt dobrowolny (you may)
+  [modal choice]     Zrezygnuj z efektu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Veiled Ascension — trigger (krok upkeep)
+  [ROZGRYWKA]   • Korzystasz z efektu „you may" (Veiled Ascension)
+  >> Cel zdolności: Ghost Warden (5 opcji)
+  [modal choice] Cel zdolności: Ghost Warden Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)🔍 Podgląd karty Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Plains (Morph)🔍 Podgląd karty Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Tenth District Veteran (Morph)🔍 Podgląd karty Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Forest (Morph)🔍 Podgląd karty Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Gorger Wurm (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]   ▶ Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Plains (Morph)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Tenth District Veteran (Morph)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Forest (Morph)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Gorger Wurm (Nieprzyjaciel)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghost Warden — zmiana statystyk celu → cel: Ghost Warden
+  [ROZGRYWKA]   • Ty: zdolność Ghost Warden rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Trostani Discordant
+  >> Wybierz: Deklaracja atakujących (8 opcji)
+  [combat wizard] atakuję 3 z 3 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Plains (Morph) zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 14 → 12
+  [ROZGRYWKA]   • Tenth District Veteran (Morph) zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 12 → 10
+  [ROZGRYWKA]   • Forest (Morph) zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 10 → 8
+  [ROZGRYWKA]   • Tura 28 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Grizzled Leotau
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Grizzled Leotau wchodzi na pole bitwy
+  [ROZGRYWKA]   • Grizzled Leotau zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Gorger Wurm
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Morph (2/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA]   • Mountain ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 29 — Ty
+  >> Veiled Ascension — cloak (wierzch biblioteki twarzą w dół jako 2/2) (możesz) (2 opcje)
+  [modal choice] Veiled Ascension — cloak (wierzch biblioteki twarzą w dół jako 2/2) (możesz) Uruchom efekt dobrowolny (you may) Zrezygnuj z efektu
+  [modal choice]   ▶ Uruchom efekt dobrowolny (you may)
+  [modal choice]     Zrezygnuj z efektu
+  [ROZGRYWKA]   • Korzystasz z efektu „you may" (Veiled Ascension)
+  >> Cel zdolności: Ghost Warden (6 opcji)
+  [modal choice] Cel zdolności: Ghost Warden Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)🔍 Podgląd karty Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Plains (Morph)🔍 Podgląd karty Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Tenth District Veteran (Morph)🔍 Podgląd karty Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Forest (Morph)🔍 Podgląd karty Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Gorger Wurm (Nieprzyjaciel)🔍 Podgląd karty Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Grizzled Leotau (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]   ▶ Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Plains (Morph)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Tenth District Veteran (Morph)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Forest (Morph)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Gorger Wurm (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Grizzled Leotau (Nieprzyjaciel)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghost Warden — zmiana statystyk celu → cel: Ghost Warden
+  [ROZGRYWKA]   • Ty: zdolność Ghost Warden rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Zagraj: Ivy Lane Denizen (koszt 3G)
+  [kreator many] Płatność 3G — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: GTapnij: Plains (W)Tapnij: Plains (W)Tapnij:  — źródła: 7
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Plains (W)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Ivy Lane Denizen zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (8 opcji)
+  [combat wizard] atakuję 3 z 3 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Plains (Morph) zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 8 → 6
+  [ROZGRYWKA]   • Tenth District Veteran (Morph) zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 6 → 4
+  [ROZGRYWKA]   • Forest (Morph) zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 4 → 2
+  [ROZGRYWKA]   • Tura 30 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Unstable Frontier
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Gorger Wurm
+  >> Wybierz: Deklaracja blokujących (4 opcje)
+  [combat wizard] blokuję 1 stworami: Morph (2/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA]   • Gorger Wurm zadaje 5 obrażeń (Selesnya Charm (Morph))
+  [ROZGRYWKA]   • Selesnya Charm (Morph) zadaje 2 obrażenia (Gorger Wurm)
+  [ROZGRYWKA]   • Selesnya Charm ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 31 — Ty
+  >> Veiled Ascension — cloak (wierzch biblioteki twarzą w dół jako 2/2) (możesz) (2 opcje)
+  [modal choice] Veiled Ascension — cloak (wierzch biblioteki twarzą w dół jako 2/2) (możesz) Uruchom efekt dobrowolny (you may) Zrezygnuj z efektu
+  [modal choice]   ▶ Uruchom efekt dobrowolny (you may)
+  [modal choice]     Zrezygnuj z efektu
+  [ROZGRYWKA]   • Korzystasz z efektu „you may" (Veiled Ascension)
+  >> Cel zdolności: Ghost Warden (7 opcji)
+  [modal choice] Cel zdolności: Ghost Warden Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)🔍 Podgląd karty Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Plains (Morph)🔍 Podgląd karty Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Tenth District Veteran (Morph)🔍 Podgląd karty Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Forest (Morph)🔍 Podgląd karty Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Gorger Wurm (Nieprzyjaciel)🔍 Podgląd karty Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Grizzled Leotau (Nieprzyjaciel)🔍 Podgląd karty Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ivy Lane Denizen (Ty)🔍 Podgląd karty
+  [modal choice]   ▶ Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Plains (Morph)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Tenth District Veteran (Morph)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Forest (Morph)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Gorger Wurm (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Grizzled Leotau (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ivy Lane Denizen (Ty)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghost Warden — zmiana statystyk celu → cel: Ghost Warden
+  [ROZGRYWKA]   • Ty: zdolność Ghost Warden rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 141 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Toll of the Invasion · 3 · Sorcery · odsłoń rękę i odrzuć wybraną kartę + amass (stwórz/rozrośnij Armię) · cel: przeciwnik | Liliana's Triumph · 2 · Instant · cel poświęca stwora + jeśli kontrolujesz planeswalkera Liliana: każdy przeciwnik odrzuca kartę · cel: gracz | Severed Strands · 2 · Sorcery · zyskaj życie = wytrzymałość poświęconego stwora + zniszcz cel · cel: stwór przeciwnika | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4
+  MOJE POLA: Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Ghost Warden · 2 · Creature — Spirit · {T}: cel: stwór — +1/+1 do końca tury · +1/+1 · 2/2 | Plains · Creature · zakryty (Morph) · 1x Latanie · 2/2 | Tenth District Veteran · Creature · zakryty (Morph) · 1x Latanie · 2/2 | Chronic Flooding · 2 · Enchantment Aura · Zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Plains | Forest · Creature · zakryty (Morph) · 1x Latanie · 2/2 | Ivy Lane Denizen · 4 · Creature — Elf Warrior · Gdy inny zielony stwór pod twoją kontrolą wchodzi na pole bitwy: połóż licznik +1/+1. · 2/3 | Dimir Guildgate · Creature · zakryty (Morph) · choroba · 1x Latanie · 2/2 | Plains · Basic Land — Plains · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Unstable Frontier · Land · {T}: cel: twój ląd — stań się podstawowym lądem · T: dodaj 1 manę | Gorger Wurm · 5 · Creature — Wurm · 5/5 | Grizzled Leotau · 2 · Creature — Cat · 1/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Plains, Plains, Plains, Boros Challenger, Island, Island, Expose to Daylight ⏎ Nowa partia (seed 67). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 26, kliknięte: 34, modale: 10, sondy noop: 135 (panel 75, modal 60)
+== DETEKTORY: brak zgłoszeń ==

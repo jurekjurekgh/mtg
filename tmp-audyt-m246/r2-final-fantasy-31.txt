@@ -1,0 +1,367 @@
+== NOWA PARTIA: gracz=final-fantasy vs bot=warhammer-brg, seed=31, profil=explorer, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Cycling: Cloudbound Moogle (koszt 2) → szukaj: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz cycling: Cloudbound Moogle
+  [ROZGRYWKA]   • Szukasz karty w bibliotece (Cloudbound Moogle) — wybiera, którą wziąć do ręki albo rezygnuje
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Szukanie: Plains
+  [ROZGRYWKA]   • Aktywujesz cycling: Cloudbound Moogle
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje cycling: Unearth
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Magic Damper
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Zagraj: Scorpion Sentinel (koszt 1U)
+  [kreator many] Płatność 1U — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: UTapnij: Mountain (R)Tapnij: Plains (W)Tapnij — źródła: 3
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Mountain (R)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Scorpion Sentinel zostaje rozstrzygnięty
+  >> Rzuć: You're Not Alone (koszt W) → cel: Scorpion Sentinel (Ty)
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Goblin Piker
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Goblin Piker zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 7 — Ty
+  >> Rzuć: Magic Damper (koszt U) → cel: Scorpion Sentinel (Ty)
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Scorpion Sentinel zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 18
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Gorehorn Minotaurs
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Gorehorn Minotaurs zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Goblin Piker
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Goblin Piker zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 18
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Jill, Shiva's Dominant
+  >> Zagraj: Jill, Shiva's Dominant (koszt 2U)
+  [kreator many] Płatność 2U — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: UTapnij: Mountain (R)Tapnij: Plains (W)Tapnij — źródła: 4
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Plains (W)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Jill, Shiva's Dominant
+  [ROZGRYWKA]   • Jill, Shiva's Dominant wchodzi na pole bitwy
+  [ROZGRYWKA]   • Jill, Shiva's Dominant zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Jill, Shiva's Dominant — wybierz inny permanent do zwrotu na rękę (można odmówić)
+  >> Jill, Shiva's Dominant — cel triggera (4 opcje)
+  [modal choice] Jill, Shiva's Dominant — cel triggera Jill, Shiva's Dominant — zwróć do ręki: Gorehorn Minotaurs (Nieprzyjaciel)🔍 Podgląd karty Jill, Shiva's Dominant — zwróć do ręki: Scorpion Sentinel (Ty)🔍 Podgląd karty Jill, Shiva's Dominant — zwróć do ręki: Goblin Piker (Nieprzyjaciel)🔍 Podgląd karty Jill, Shiva's Dominant — nie zwracaj niczego (odmowa)
+  [modal choice]   ▶ Jill, Shiva's Dominant — zwróć do ręki: Gorehorn Minotaurs (Nieprzyjaciel)
+  [modal choice]     Jill, Shiva's Dominant — zwróć do ręki: Scorpion Sentinel (Ty)
+  [modal choice]     Jill, Shiva's Dominant — zwróć do ręki: Goblin Piker (Nieprzyjaciel)
+  [modal choice]     Jill, Shiva's Dominant — nie zwracaj niczego (odmowa)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Jill, Shiva's Dominant — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Jill, Shiva's Dominant — cel: Gorehorn Minotaurs
+  [ROZGRYWKA]   • Nieprzyjaciel: Gorehorn Minotaurs — pole bitwy → ręka
+  [ROZGRYWKA]   • Jill, Shiva's Dominant — trigger się rozstrzyga
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Scorpion Sentinel zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 18 → 17
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Fireball → cel: Scorpion Sentinel
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Fireball zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Scorpion Sentinel ginie
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Goblin Piker
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Jill, Shiva's Dominant (2/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA]   • Jill, Shiva's Dominant ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mysidian Elder
+  >> Zagraj: Mysidian Elder (koszt 2R)
+  [kreator many] Płatność 2R — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: RTapnij: Mountain (R)Tapnij: Plains (W)Tapnij — źródła: 5
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Mysidian Elder zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Mysidian Elder — trigger (wejście na pole bitwy)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty tworzysz token Wizard (0/1)
+  [ROZGRYWKA]   • Wizard wchodzi na pole bitwy
+  [ROZGRYWKA]   • Mysidian Elder — trigger się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Wrap in Flames — tryb: Owinięcie w płomienie → cel: Mysidian Elder, Wizard
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Wizard ginie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Lab Rats
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Dobierasz: Instant Ramen
+  >> Zagraj: Instant Ramen (koszt 2)
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Mountain (R)Tapnij: Plains (W)Tapnij: Island (U)Tapnij: Plain — źródła: 5
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Plains (W)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Instant Ramen
+  [ROZGRYWKA]   • Instant Ramen wchodzi na pole bitwy
+  [ROZGRYWKA]   • Instant Ramen zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Instant Ramen — trigger (wejście na pole bitwy)
+  >> Aktywuj: Instant Ramen (Ty) (koszt 2, T, poświęć) — zyskaj 3 życia
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Island (U)Tapnij: Plains (W)Tapnij: Mountain (R)Anuluj płatno — źródła: 3
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Instant Ramen zostaje poświęcony
+  [ROZGRYWKA]   • Aktywujesz zdolność: Instant Ramen — zdobycie życia
+  [ROZGRYWKA]   • Ty: życie 18 → 21
+  [ROZGRYWKA]   • Ty: zdolność Instant Ramen rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Instant Ramen — trigger się rozstrzyga
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Mysidian Elder zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 17 → 16
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Gorehorn Minotaurs
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Rzuć: Call the Mountain Chocobo (koszt 3R)
+  [kreator many] Płatność 3R — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: RTapnij: Mountain (R)Tapnij: Plains (W)Tapnij — źródła: 6
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Rzucasz Call the Mountain Chocobo
+  [ROZGRYWKA]   • Przeszukujesz bibliotekę (bez trafienia) i tasuje
+  [ROZGRYWKA]   • Ty tworzysz token Bird (2/2)
+  [ROZGRYWKA]   • Bird wchodzi na pole bitwy
+  [ROZGRYWKA]   • Call the Mountain Chocobo zostaje rozstrzygnięty
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Plains
+  [ROZGRYWKA]   • Bird — trigger (Landfall)
+  [ROZGRYWKA]   • Bird — trigger się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Mysidian Elder zadaje 1 obrażenie (Gorehorn Minotaurs)
+  [ROZGRYWKA]   • Gorehorn Minotaurs zadaje 3 obrażenia (Mysidian Elder)
+  [ROZGRYWKA]   • Mysidian Elder ginie
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Terminal Agony → cel: Bird
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Balamb Garden, SeeD Academy
+  >> Zagraj ląd: Balamb Garden, SeeD Academy
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Balamb Garden, SeeD Academy (wchodzi zatapnięty)
+  >> Flashback: Call the Mountain Chocobo (koszt 6)
+  [ROZGRYWKA]   • Ty tworzysz token Bird (2/2)
+  [ROZGRYWKA]   • Bird wchodzi na pole bitwy
+  [ROZGRYWKA]   • Call the Mountain Chocobo zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Minotaur Abomination
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Minotaur Abomination zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Gorehorn Minotaurs
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Bird (2/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA]   • Bird ginie
+  [ROZGRYWKA]   • token Bird przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 19 — Ty
+  >> Aktywuj: Balamb Garden, SeeD Academy (Ty) (koszt T) — dodaj 1 manę zieloną lub niebieską
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Gaelicat
+  >> Zagraj: Gaelicat (koszt 2W)
+  [kreator many] Płatność 2W — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: WTapnij: Mountain (R)Tapnij: Plains (W)Tapnij — źródła: 7
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Island (U)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Gaelicat zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Revolutionist
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Revolutionist — cel: Unearth
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: Unearth — cmentarz → ręka
+  [ROZGRYWKA]   • Revolutionist — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Gorehorn Minotaurs, Minotaur Abomination
+  >> Wybierz: Deklaracja blokujących (3 opcje)
+  [combat wizard] blokuję 1 stworami: Gaelicat (1/3)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA]   • Minotaur Abomination zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 12
+  [ROZGRYWKA]   • Gaelicat ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 21 — Ty
+  >> Aktywuj: Balamb Garden, SeeD Academy (Ty) (koszt T) — dodaj 1 manę zieloną lub niebieską
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Zagraj: Hecteyes (koszt 1B)
+  [kreator many] Płatność 1B — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: BTapnij: Mountain (R)Tapnij: Plains (W)Tapnij — źródła: 8
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Mountain (R)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Hecteyes zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Hecteyes — trigger (wejście na pole bitwy)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Tura 22 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Fledgling Imp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje cycling: Unearth
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Fledgling Imp wchodzi na pole bitwy
+  [ROZGRYWKA]   • Fledgling Imp zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Gorehorn Minotaurs, Minotaur Abomination, Revolutionist
+  >> Wybierz: Deklaracja blokujących (4 opcje)
+  [combat wizard] blokuję 1 stworami: Hecteyes (1/1)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA]   • Ty: życie 12 → 8
+  [ROZGRYWKA]   • Revolutionist zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 8 → 5
+  [ROZGRYWKA]   • Hecteyes ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 23 — Ty
+  >> Aktywuj: Balamb Garden, SeeD Academy (Ty) (koszt T) — dodaj 1 manę zieloną lub niebieską
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Tellah, Great Sage
+  >> Zagraj: Tellah, Great Sage (koszt 3UR)
+  [kreator many] Płatność 3UR — tapuj źródła po jednympozostało 5 many · kolory do pokrycia: U, RTapnij: Mountain (R)Tapnij: Plains (W)Ta — źródła: 8
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Tellah, Great Sage zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 24 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Hill Giant
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Reassembling Skeleton
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę (koszt zdolności)
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Fledgling Imp — nadanie do końca tury: latanie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Reassembling Skeleton
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Reassembling Skeleton rozstrzygnięta
+  [ROZGRYWKA]   • Fledgling Imp zyskuje: latanie
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Fledgling Imp rozstrzygnięta
+  [ROZGRYWKA]   • Hill Giant wchodzi na pole bitwy
+  [ROZGRYWKA]   • Hill Giant zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Gorehorn Minotaurs, Minotaur Abomination, Revolutionist, Fledgling Imp
+  >> Wybierz: Deklaracja blokujących (4 opcje)
+  [combat wizard] blokuję 1 stworami: Tellah, Great Sage (3/3)
+  [combat wizard] Zatwierdź bloki
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 90 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: (pusta)
+  MOJE POLA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Balamb Garden, SeeD Academy · Land — Town · {T}: dodaj 1 manę zieloną lub niebieską · {5}, {G}, {U}, {T}: transform (obróć kartę) | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×4 | Forest · Basic Land — Forest · T: dodaj 1 manę | Rat · 0 · Creature — Rat · 1/1 | Minotaur Abomination · 6 · Creature — Zombie Minotaur · 4/6 | Revolutionist · 6 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć kartę z grobu na rękę. · 3/3 | Fledgling Imp · 3 · Creature — Imp · {B}, odrzuć kartę: zdobądź Latanie do końca tury · Latanie · 2/2 | Reassembling Skeleton · 2 · Creature — Skeleton Warrior · {1}, {B}: wróć na pole bitwy zatapnięte · choroba · 1/1 | Hill Giant · 4 · Creature — Giant · choroba · 3/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Mountain, Hecteyes, You're Not Alone, Plains, Scorpion Sentinel, Call the Mountain Chocobo, Cloudbound Moogle ⏎ Nowa partia (seed 31). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 26, kliknięte: 26, modale: 2, sondy noop: 80 (panel 66, modal 14)
+== DETEKTORY: brak zgłoszeń ==

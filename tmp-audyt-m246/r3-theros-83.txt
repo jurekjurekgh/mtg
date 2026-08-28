@@ -1,0 +1,233 @@
+== NOWA PARTIA: gracz=theros vs bot=innistrad-wu, seed=83, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Zagraj: Pyxis of Pandemonium (koszt 1)
+  [ROZGRYWKA]   • Pyxis of Pandemonium wchodzi na pole bitwy
+  [ROZGRYWKA]   • Pyxis of Pandemonium zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Aktywuj: Pyxis of Pandemonium (Ty) (koszt T) — każdy gracz wygania wierzch swojej biblioteki zakryty
+  [ROZGRYWKA]   • Ty: zdolność Pyxis of Pandemonium rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  >> Aktywuj: Pyxis of Pandemonium (Ty) (koszt T) — każdy gracz wygania wierzch swojej biblioteki zakryty
+  [ROZGRYWKA]   • Ty — zakryta karta zostaje wygnana
+  [ROZGRYWKA]   • Nieprzyjaciel — zakryta karta zostaje wygnana
+  [ROZGRYWKA]   • Ty: zdolność Pyxis of Pandemonium rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Gather the Townsfolk
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Human wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Human (1/1)
+  [ROZGRYWKA]   • Human wchodzi na pole bitwy
+  [ROZGRYWKA]   • Gather the Townsfolk zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  >> Aktywuj: Pyxis of Pandemonium (Ty) (koszt T) — każdy gracz wygania wierzch swojej biblioteki zakryty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Pyxis of Pandemonium — wygnanie wierzchu biblioteki każdego gracza (zakryte)
+  [ROZGRYWKA]   • Ty — zakryta karta zostaje wygnana
+  [ROZGRYWKA]   • Nieprzyjaciel — zakryta karta zostaje wygnana
+  [ROZGRYWKA]   • Ty: zdolność Pyxis of Pandemonium rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Glaring Aegis
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Zagraj: Wavecrash Triton (koszt 2U)
+  [ROZGRYWKA]   • Wavecrash Triton zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Spare from Evil
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Spare from Evil zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 7 — Ty
+  >> Aktywuj: Pyxis of Pandemonium (Ty) (koszt T) — każdy gracz wygania wierzch swojej biblioteki zakryty
+  [ROZGRYWKA]   • Ty — zakryta karta zostaje wygnana
+  [ROZGRYWKA]   • Nieprzyjaciel — zakryta karta zostaje wygnana
+  [ROZGRYWKA]   • Ty: zdolność Pyxis of Pandemonium rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Aura: Glaring Aegis (3 opcje)
+  [modal choice] Aura: Glaring Aegis Zagraj aurę: Glaring Aegis (koszt W) → zaczaruj Human (Nieprzyjaciel) (1 z 2)🔍 Podgląd karty Zagraj aurę: Glaring Aegis (koszt W) → zaczaruj Human (Nieprzyjaciel) (2 z 2)🔍 Podgląd karty Zagraj aurę: Glaring Aegis (koszt W) → zaczaruj Wavecrash Triton (Ty)🔍 Podgląd karty
+  [modal choice]   ▶ Zagraj aurę: Glaring Aegis (koszt W) → zaczaruj Human (Nieprzyjaciel) (1 z 2)
+  [modal choice]     Zagraj aurę: Glaring Aegis (koszt W) → zaczaruj Human (Nieprzyjaciel) (2 z 2)
+  [modal choice]     Zagraj aurę: Glaring Aegis (koszt W) → zaczaruj Wavecrash Triton (Ty)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Glaring Aegis wchodzi na pole bitwy
+  [ROZGRYWKA]   • Glaring Aegis — wybierz cel triggera (wymagany)
+  >> Glaring Aegis — cel triggera (2 opcje)
+  [modal choice] Glaring Aegis — cel triggera Glaring Aegis — cel triggera: Human (Nieprzyjaciel) (1 z 2)🔍 Podgląd karty Glaring Aegis — cel triggera: Human (Nieprzyjaciel) (2 z 2)🔍 Podgląd karty
+  [modal choice]   ▶ Glaring Aegis — cel triggera: Human (Nieprzyjaciel) (1 z 2)
+  [modal choice]     Glaring Aegis — cel triggera: Human (Nieprzyjaciel) (2 z 2)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Glaring Aegis — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Glaring Aegis — cel: Human
+  [ROZGRYWKA]   • Glaring Aegis — trigger się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 19
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Chill of the Grave → cel: Wavecrash Triton
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Wavecrash Triton nie odkręca się w następnym kroku odkręcania
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Chill of the Grave zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA]   • Human zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 17
+  [ROZGRYWKA]   • Tura 9 — Ty
+  >> Aktywuj: Pyxis of Pandemonium (Ty) (koszt T) — każdy gracz wygania wierzch swojej biblioteki zakryty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Pyxis of Pandemonium — wygnanie wierzchu biblioteki każdego gracza (zakryte)
+  [ROZGRYWKA]   • Ty — zakryta karta zostaje wygnana
+  [ROZGRYWKA]   • Nieprzyjaciel — zakryta karta zostaje wygnana
+  [ROZGRYWKA]   • Ty: zdolność Pyxis of Pandemonium rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Entrancing Lyre
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Zagraj: Entrancing Lyre (koszt 3)
+  [kreator many] Płatność 3 — tapuj źródła po jednympozostało 3 manyTapnij: Island (U)Tapnij: Swamp (B)Tapnij: Plains (W)Tapnij: Mountain — źródła: 5
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Plains (W)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Entrancing Lyre zostaje rozstrzygnięty
+  >> Cel zdolności: Entrancing Lyre (5 opcji)
+  [multi-target wizard] Entrancing Lyre — zaznacz cele (1) oraz wartość X (1–2): [ ] Human (Nieprzyjaciel)Podgląd[ — opcji 3, potrzeba 1, celuję w 1
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Entrancing Lyre — cel nie odtapuje podczas następnego untap kontrolera (X=1) → cel: Human
+  [ROZGRYWKA]   • Ty: zdolność Entrancing Lyre rozstrzygnięta
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Farbog Explorer
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Atak: Human
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Human zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 15
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Aktywuj: Pyxis of Pandemonium (Ty) (koszt T) — każdy gracz wygania wierzch swojej biblioteki zakryty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Pyxis of Pandemonium — wygnanie wierzchu biblioteki każdego gracza (zakryte)
+  [ROZGRYWKA]   • Ty — zakryta karta zostaje wygnana
+  [ROZGRYWKA]   • Nieprzyjaciel — zakryta karta zostaje wygnana
+  [ROZGRYWKA]   • Ty: zdolność Pyxis of Pandemonium rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Sleep of the Dead
+  >> Cel czaru: Sleep of the Dead (4 opcje)
+  [modal choice] Cel czaru: Sleep of the Dead Rzuć: Sleep of the Dead (koszt U) → cel: Human (Nieprzyjaciel) (1 z 2)🔍 Podgląd karty Rzuć: Sleep of the Dead (koszt U) → cel: Human (Nieprzyjaciel) (2 z 2)🔍 Podgląd karty Rzuć: Sleep of the Dead (koszt U) → cel: Farbog Explorer (Nieprzyjaciel)🔍 Podgląd karty Rzuć: Sleep of the Dead (koszt U) → cel: Wavecrash Triton (Ty)🔍 Podgląd karty
+  [modal choice]   ▶ Rzuć: Sleep of the Dead (koszt U) → cel: Human (Nieprzyjaciel) (1 z 2)
+  [modal choice]     Rzuć: Sleep of the Dead (koszt U) → cel: Human (Nieprzyjaciel) (2 z 2)
+  [modal choice]     Rzuć: Sleep of the Dead (koszt U) → cel: Farbog Explorer (Nieprzyjaciel)
+  [modal choice]     Rzuć: Sleep of the Dead (koszt U) → cel: Wavecrash Triton (Ty)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Sleep of the Dead zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 19 → 18
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Elgaud Inquisitor
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Aktywuj: Pyxis of Pandemonium (Ty) (koszt T) — każdy gracz wygania wierzch swojej biblioteki zakryty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Pyxis of Pandemonium — wygnanie wierzchu biblioteki każdego gracza (zakryte)
+  [ROZGRYWKA]   • Ty — zakryta karta zostaje wygnana
+  [ROZGRYWKA]   • Nieprzyjaciel — zakryta karta zostaje wygnana
+  [ROZGRYWKA]   • Ty: zdolność Pyxis of Pandemonium rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Anthem of Champions
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Wavecrash Triton zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 18 → 17
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Dream Twist → cel: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Mielisz Sweet Oblivion do grobu
+  [ROZGRYWKA]   • Mielisz Returned Centaur do grobu
+  [ROZGRYWKA]   • Mielisz Forest do grobu
+  [ROZGRYWKA]   • Dream Twist zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Dream Twist → cel: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Atak: Human, Farbog Explorer, Elgaud Inquisitor
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Human zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 11
+  [ROZGRYWKA]   • Farbog Explorer zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 9
+  [ROZGRYWKA]   • Elgaud Inquisitor zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 9 → 7
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 17 → 19
+  [ROZGRYWKA]   • Tura 15 — Ty
+  >> Aktywuj: Pyxis of Pandemonium (Ty) (koszt T) — każdy gracz wygania wierzch swojej biblioteki zakryty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Pyxis of Pandemonium — wygnanie wierzchu biblioteki każdego gracza (zakryte)
+  [ROZGRYWKA]   • Nieprzyjaciel — zakryta karta zostaje wygnana
+  [ROZGRYWKA]   • Ty: zdolność Pyxis of Pandemonium rozstrzygnięta
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 53 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Time to Feed · 3 · Sorcery · gdy ten stwór zginie w tej turze, zyskujesz 3 życia + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: stwór przeciwnika + twój stwór | Feral Invocation · 3 · Enchantment — Aura · Flash (błysk) · stwór: +2/+2 | Anthem of Champions · 2 · Enchantment · twoje stwory: +1
+  MOJE POLA: Pyxis of Pandemonium · 1 · Artifact · {T}: każdy gracz wygania wierzch swojej biblioteki zakryty · {7}, {T}, poświęć: odkryj karty wygnane tym artefaktem — permanenty spośród nich wchodzą na pole bitwy | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. · 1/4 | Glaring Aegis · 1 · Enchantment Aura · stwór: +1/+3 · Gdy wejdzie na pole bitwy: tap. · aura → Human | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Human · 0 · Creature — Human · +1/+3 · zaczarowana: Glaring Aegis · 2/4 | Human · 0 · Creature — Human · nie odtapuje się · 1/1 | Farbog Explorer · 3 · Creature — Human Scout · 2/3 | Elgaud Inquisitor · 4 · Creature — Human Cleric · Dotykanie życia · Gdy ta karta umrze: stwórz token Spirit. · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Time to Feed, Island, Wavecrash Triton, Swamp, Plains, Pyxis of Pandemonium, Feral Invocation ⏎ Nowa partia (seed 83). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 15, kliknięte: 18, modale: 4, sondy noop: 53 (panel 40, modal 13)
+== DETEKTORY: brak zgłoszeń ==

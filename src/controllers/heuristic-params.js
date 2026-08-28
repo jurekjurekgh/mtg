@@ -58,6 +58,14 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'removalDeathtouchBonus',  // premia za zdjęcie stwora z deathtouch (nie do przejścia w walce)
   'removalProtectionBonus',  // premia za zdjęcie stwora z protekcją od mojego koloru
   'removalCombatHandledPenalty', // kara za marnowanie removalu na TANI cel, którego bloker i tak zabije w walce
+  // M247 (audyt Żywym Testerem, 2026-08-28 — Banishment Decree za 5 many
+  // w Great Furnace): CZYSTY LĄD (typu Land, nie Creature — np. ląd
+  // artefaktowy) jako cel efektu niszczącego/odbijającego nie zdejmuje ze
+  // stołu ANI jednej wartości bojowej; właściciel odtworzy go za darmo, a
+  // odesłanie na wierzch biblioteki zwraca go przy następnym doborze.
+  // Kara musi PRZEBIĆ bazę czaru (+50) i premię removalu, żeby wariant
+  // zszedł poniżej passu (wzec M237/2 — trywialny cel kontry).
+  'removalPureLandPenalty',  // kara za removal/odbicie kierowane w czysty ląd przeciwnika
   // Rodzina „timing aury-sztuczki" (M235, zlecenie właściciela po audycie).
   // Aura FLASH, której cała wartość jest bojowa (czysta ochrona), to combat
   // trick — jej wartość zależy od OKNA: sensowna w walce (ochrona atakującego
@@ -98,6 +106,7 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // NIE ma przebijać passu przy dobrym celu — działa tylko na TANIE, nieewazyjne
   // cele bez deathtouch/protekcji, gdy mam blokera zabijającego bez straty.
   removalCombatHandledPenalty: 12,
+  removalPureLandPenalty: 60,
   // M235 — aura FLASH o czystej wartości ochronnej rzucona POZA oknem walki
   // (własny upkeep/draw/end, postcombat, tura przeciwnika przed deklaracją
   // ataków) marnuje elastyczność instanta. Kara musi przebić bazę takiej aury

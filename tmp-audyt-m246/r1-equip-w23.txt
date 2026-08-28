@@ -1,0 +1,384 @@
+== NOWA PARTIA: gracz=mirrodin-wu vs bot=mirrodin-brg, seed=23, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Island (1 z 2)
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Great Furnace
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Island
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje cycling: Gloomfang Mauler
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel: karta — biblioteka → ręka
+  [ROZGRYWKA]   • Nieprzyjaciel znajduje Swamp i tasuje bibliotekę
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje cycling: Gloomfang Mauler
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: True Conviction
+  >> Zagraj ląd: Plains (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Zagraj: Pristine Talisman (koszt 3)
+  [ROZGRYWKA]   • Pristine Talisman zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Aktywuj: Pristine Talisman (Ty) (koszt T) — dodaj 1 manę bezbarwną + zyskaj 1 życie
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Shatter → cel: Pristine Talisman
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Pristine Talisman zostaje zniszczony
+  [ROZGRYWKA]   • Shatter zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Horizon Spellbomb
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Horizon Spellbomb zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Zagraj: Bladed Sentinel (koszt 4)
+  [ROZGRYWKA]   • Bladed Sentinel zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Bone Shredder
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Bone Shredder zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Bone Shredder — trigger bez efektu (brak legalnych celów)
+  [ROZGRYWKA]   • Tura 9 — Ty
+  >> Aktywuj: Bladed Sentinel (Ty) (koszt W) — zdobądź Czujność do końca tury
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Bladed Sentinel — nadanie do końca tury: czujność
+  >> Aktywuj: Bladed Sentinel (Ty) (koszt W) — zdobądź Czujność do końca tury
+  [ROZGRYWKA]   • Bladed Sentinel zyskuje: czujność
+  [ROZGRYWKA]   • Ty: zdolność Bladed Sentinel rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Bladed Sentinel zyskuje: czujność
+  [ROZGRYWKA]   • Ty: zdolność Bladed Sentinel rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Turn the Tide
+  >> Rzuć: Turn the Tide (koszt 1U)
+  [ROZGRYWKA]   • Turn the Tide zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Bone Shredder blokuje Bladed Sentinel
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Bladed Sentinel zadaje 2 obrażenia (Bone Shredder)
+  [ROZGRYWKA]   • Bone Shredder ginie
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Dementia Bat
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Dementia Bat zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Aktywuj: Bladed Sentinel (Ty) (koszt W) — zdobądź Czujność do końca tury
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Bladed Sentinel — nadanie do końca tury: czujność
+  >> Aktywuj: Bladed Sentinel (Ty) (koszt W) — zdobądź Czujność do końca tury
+  [ROZGRYWKA]   • Bladed Sentinel zyskuje: czujność
+  [ROZGRYWKA]   • Ty: zdolność Bladed Sentinel rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Bladed Sentinel zyskuje: czujność
+  [ROZGRYWKA]   • Ty: zdolność Bladed Sentinel rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Bladed Sentinel zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 18
+  >> Aktywuj: Bladed Sentinel (Ty) (koszt W) — zdobądź Czujność do końca tury
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Bladed Sentinel — nadanie do końca tury: czujność
+  [ROZGRYWKA]   • Bladed Sentinel zyskuje: czujność
+  [ROZGRYWKA]   • Ty: zdolność Bladed Sentinel rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Feed the Infection
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Horizon Spellbomb
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel: karta — biblioteka → ręka
+  [ROZGRYWKA]   • Nieprzyjaciel znajduje Forest i tasuje bibliotekę
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Feed the Infection zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Dementia Bat
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Dementia Bat zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 21 → 19
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Aktywuj: Bladed Sentinel (Ty) (koszt W) — zdobądź Czujność do końca tury
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Bladed Sentinel — nadanie do końca tury: czujność
+  >> Aktywuj: Bladed Sentinel (Ty) (koszt W) — zdobądź Czujność do końca tury
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Bladed Sentinel — nadanie do końca tury: czujność
+  >> Aktywuj: Bladed Sentinel (Ty) (koszt W) — zdobądź Czujność do końca tury
+  [ROZGRYWKA]   • Bladed Sentinel zyskuje: czujność
+  [ROZGRYWKA]   • Ty: zdolność Bladed Sentinel rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Bladed Sentinel zyskuje: czujność
+  [ROZGRYWKA]   • Ty: zdolność Bladed Sentinel rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Bladed Sentinel zyskuje: czujność
+  [ROZGRYWKA]   • Ty: zdolność Bladed Sentinel rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Quicksilver Fisher
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Bladed Sentinel zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 15 → 13
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Spread the Sickness → cel: Bladed Sentinel
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Bladed Sentinel zostaje zniszczony
+  [ROZGRYWKA]   • Spread the Sickness zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA]   • Dementia Bat zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 19 → 17
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Zagraj: Strandwalker (koszt 5)
+  [kreator many] Płatność 5 — tapuj źródła po jednympozostało 5 manyTapnij: Island (U)Tapnij: Island (U)Tapnij: Plains (W)Tapnij: Plains  — źródła: 7
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Strandwalker zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Strandwalker — trigger (wejście na pole bitwy)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty tworzysz token Germ (0/0)
+  [ROZGRYWKA]   • Germ wchodzi na pole bitwy
+  [ROZGRYWKA]   • Strandwalker zostaje załączony do Germ (bestow)
+  [ROZGRYWKA]   • Strandwalker — trigger się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Carrion Call
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Phyrexian Insect wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Phyrexian Insect (1/1)
+  [ROZGRYWKA]   • Phyrexian Insect wchodzi na pole bitwy
+  [ROZGRYWKA]   • Carrion Call zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Necrosquito
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Necrosquito wchodzi na pole bitwy
+  [ROZGRYWKA]   • Necrosquito dostaje +2 liczniki oil (razem 2)
+  [ROZGRYWKA]   • Necrosquito zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 17 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Divine Offering
+  >> Cel czaru: Divine Offering (2 opcje)
+  [modal choice] Cel czaru: Divine Offering Rzuć: Divine Offering (koszt 1W) → cel: Great Furnace (Nieprzyjaciel)🔍 Podgląd karty Rzuć: Divine Offering (koszt 1W) → cel: Strandwalker (Ty)🔍 Podgląd karty
+  [modal choice]   ▶ Rzuć: Divine Offering (koszt 1W) → cel: Great Furnace (Nieprzyjaciel)
+  [modal choice]     Rzuć: Divine Offering (koszt 1W) → cel: Strandwalker (Ty)
+  [kreator many] Płatność 1W — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: WTapnij: Island (U)Tapnij: Island (U)Tapnij:  — źródła: 7
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Divine Offering → cel: Great Furnace
+  >> Rzuć: Fuel for the Cause (koszt 2UU) → cel: Divine Offering
+  [kreator many] Płatność 2UU — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: U, UTapnij: Island (U)Tapnij: Plains (W)Tapn — źródła: 5
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Plains (W)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Divine Offering zostaje skontrowany (Fuel for the Cause)
+  [ROZGRYWKA]   • Wykonujesz proliferate — wybór permanentów/graczy z licznikami
+  >> Fuel for the Cause — Proliferate — cel licznika (2 opcje)
+  [modal choice] Fuel for the Cause — Proliferate — cel licznika Proliferate: bez celów (nic nie dostaje liczników) Proliferate: Necrosquito (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]   ▶ Proliferate: bez celów (nic nie dostaje liczników)
+  [modal choice]     Proliferate: Necrosquito (Nieprzyjaciel)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Fuel for the Cause zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Germ zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 13 → 11
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Death-Hood Cobra
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Dementia Bat → cel: Ty
+  [ROZGRYWKA]   • Necrosquito — trigger (śmierć innego permanentu (Nieprzyjaciel))
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Necrosquito dostaje +1 licznik oil (razem 3)
+  [ROZGRYWKA]   • Necrosquito — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Dementia Bat rozstrzygnięta
+  >> Wybierz: Karta do odrzucenia (2 opcje)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: True Conviction🔍 Podgląd karty Odrzuć: Quicksilver Fisher🔍 Podgląd karty
+  [modal choice]   ▶ Odrzuć: True Conviction
+  [modal choice]     Odrzuć: Quicksilver Fisher
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odrzucasz True Conviction
+  >> Odrzuć: Quicksilver Fisher
+  [ROZGRYWKA]   • Death-Hood Cobra wchodzi na pole bitwy
+  [ROZGRYWKA]   • Death-Hood Cobra zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Phyrexian Insect, Phyrexian Insect, Necrosquito
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Phyrexian Insect zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Otrzymujesz znaki trucizny (+1, łącznie: 1)
+  [ROZGRYWKA]   • Phyrexian Insect zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Otrzymujesz znaki trucizny (+1, łącznie: 2)
+  [ROZGRYWKA]   • Necrosquito zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 14
+  [ROZGRYWKA]   • Tura 19 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Banishment Decree
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Cel czaru: Banishment Decree (7 opcji)
+  [modal choice] Cel czaru: Banishment Decree Rzuć: Banishment Decree (koszt 3WW) → cel: Great Furnace (Nieprzyjaciel)🔍 Podgląd karty Rzuć: Banishment Decree (koszt 3WW) → cel: Strandwalker (Ty)🔍 Podgląd karty Rzuć: Banishment Decree (koszt 3WW) → cel: Germ (Ty)🔍 Podgląd karty Rzuć: Banishment Decree (koszt 3WW) → cel: Phyrexian Insect (Nieprzyjaciel) (1 z 2)🔍 Podgląd karty Rzuć: Banishment Decree (koszt 3WW) → cel: Phyrexian Insect (Nieprzyjaciel) (2 z 2)🔍 Podgląd karty Rzuć: Banishment Decree (koszt 3WW) → cel: Necrosquito (Nieprzyjaciel)🔍 Podgląd karty Rzuć: Banishment Decree (koszt 3WW) → cel: Death-Hood Cobra (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]   ▶ Rzuć: Banishment Decree (koszt 3WW) → cel: Great Furnace (Nieprzyjaciel)
+  [modal choice]     Rzuć: Banishment Decree (koszt 3WW) → cel: Strandwalker (Ty)
+  [modal choice]     Rzuć: Banishment Decree (koszt 3WW) → cel: Germ (Ty)
+  [modal choice]     Rzuć: Banishment Decree (koszt 3WW) → cel: Phyrexian Insect (Nieprzyjaciel) (1 z 2)
+  [modal choice]     Rzuć: Banishment Decree (koszt 3WW) → cel: Phyrexian Insect (Nieprzyjaciel) (2 z 2)
+  [modal choice]     Rzuć: Banishment Decree (koszt 3WW) → cel: Necrosquito (Nieprzyjaciel)
+  [modal choice]     Rzuć: Banishment Decree (koszt 3WW) → cel: Death-Hood Cobra (Nieprzyjaciel)
+  [kreator many] Płatność 3WW — tapuj źródła po jednympozostało 5 many · kolory do pokrycia: W, WTapnij: Island (U)Tapnij: Island (U)Tapn — źródła: 7
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Island (U)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Banishment Decree → cel: Great Furnace
+  [ROZGRYWKA]   • Nieprzyjaciel: Great Furnace — pole bitwy → biblioteka
+  [ROZGRYWKA]   • Banishment Decree zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Germ zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 11 → 9
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Great Furnace
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Rustvine Cultivator
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Rustvine Cultivator zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Phyrexian Insect, Phyrexian Insect, Necrosquito, Death-Hood Cobra
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Phyrexian Insect zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Otrzymujesz znaki trucizny (+1, łącznie: 3)
+  [ROZGRYWKA]   • Phyrexian Insect zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Otrzymujesz znaki trucizny (+1, łącznie: 4)
+  [ROZGRYWKA]   • Necrosquito zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 11
+  [ROZGRYWKA]   • Death-Hood Cobra zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 9
+  [ROZGRYWKA]   • Faza: Główna 2
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Consume Spirit → cel: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Consume Spirit zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 9 → 6
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 9 → 12
+  [ROZGRYWKA]   • Consume Spirit zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 21 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Crawling Chorus
+  >> Zagraj: Crawling Chorus (koszt W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Crawling Chorus
+  [ROZGRYWKA]   • Crawling Chorus wchodzi na pole bitwy
+  [ROZGRYWKA]   • Crawling Chorus zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 12 → 10
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 22 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Exterminator Magmarch
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Atak: Phyrexian Insect, Necrosquito, Death-Hood Cobra, Rustvine Cultivator
+  >> Wybierz: Deklaracja blokujących (4 opcje)
+  [combat wizard] blokuję 1 stworami: Crawling Chorus (1/1)
+  [combat wizard] Zatwierdź bloki
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 88 | Koniec partii — wygrywa Bot ---
+  STOS: Trigger: Crawling Chorus (śmierć stwora)
+  AKCJE: (brak)
+  RĘKA: (pusta)
+  MOJE POLA: Strandwalker · 5 · Artifact — Equipment · Equip {4} — nosiciel: Zasięg +2/+4 · Gdy wejdzie na pole bitwy: living weapon (stwórz 0/0 Germ i przypnij). · wyposaża → Germ | Germ · 0 · Creature — Phyrexian Germ · Zasięg · +2/+4 · wyposażona: Strandwalker · 2/4 | Island · Basic Land — Island · T: dodaj 1 manę ×4 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Great Furnace · Artifact Land · T: dodaj 1 manę | Phyrexian Insect · 0 · Creature — Phyrexian Insect · Infect · 1/1 ×2 | Necrosquito · 4 · Creature — Phyrexian Insect · Latanie · liczniki oil · Gdy inny twój permanent ginie: połóż licznik oil. · +3/+3 · 3x oil · 3/3 | Death-Hood Cobra · 2 · Creature — Phyrexian Snake · {1}, {G}: zdobądź Zasięg do końca tury · {1}, {G}: zdobądź Dotykanie śmierci do końca tury · 2/2 | Rustvine Cultivator · 1 · Creature — Phyrexian Elf Druid · {T}: połóż licznik oil · {T}, zdejmij 1 licznik oil: cel: ląd — odkręć · 1/2 | Exterminator Magmarch · 4 · Artifact Creature — Phyrexian Construct · Wymaga drugiego przeciwnika — zdolność nieaktywna w grze 1v1 · {1}, {B}: tarcza regeneracji (przetrwa zniszczenie do końca tury) · choroba · 5/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Pristine Talisman, Island, Bladed Sentinel, Fuel for the Cause, Strandwalker, Island, Plains ⏎ Nowa partia (seed 23). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 24, kliknięte: 26, modale: 5, sondy noop: 83 (panel 63, modal 20)
+== DETEKTORY: brak zgłoszeń ==

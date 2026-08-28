@@ -1,0 +1,220 @@
+== NOWA PARTIA: gracz=innistrad-brg vs bot=zendikar, seed=42, profil=defensive, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Grizzled Outcasts
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Mark of the Vampire
+  [ROZGRYWKA]   • Dobierasz: Tireless Hauler
+  [ROZGRYWKA]   • Dobierasz: Predator's Gambit
+  [ROZGRYWKA]   • Dobierasz: Caravan Vigil
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Wybierz: Karty na spód biblioteki (mulligan) (7 opcji)
+  [multi-target wizard] Mulligan: zaznacz 1 kartę do odłożenia na spód biblioteki:[ ] Grizzled OutcastsPodgląd[ ]  — opcji 7, potrzeba 1, celuję w 1
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 6 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 6 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Scorned Villager
+  [ROZGRYWKA]   • Dobierasz: Somberwald Spider
+  [ROZGRYWKA]   • Dobierasz: Blazing Torch
+  [ROZGRYWKA]   • Dobierasz: Mark of the Vampire
+  [ROZGRYWKA]   • Dobierasz: Caravan Vigil
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Forge Devil
+  >> Wybierz: Karty na spód biblioteki (mulligan) (21 opcji)
+  [multi-target wizard] Mulligan: zaznacz 2 karty do odłożenia na spód biblioteki:[ ] Scorned VillagerPodgląd[ ] S — opcji 7, potrzeba 2, celuję w 2
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 5 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 5 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Blazing Torch
+  [ROZGRYWKA]   • Dobierasz: Grizzled Outcasts
+  [ROZGRYWKA]   • Dobierasz: Ghoulcaller's Bell
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Mark of the Vampire
+  [ROZGRYWKA]   • Dobierasz: Curse of the Pierced Heart
+  >> Wybierz: Karty na spód biblioteki (mulligan) (32 opcje)
+  [multi-target wizard] Mulligan: zaznacz 3 karty do odłożenia na spód biblioteki:[ ] ForestPodgląd[ ] Blazing Tor — opcji 7, potrzeba 3, celuję w 3
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 4 karty) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 4 karty)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Curse of the Pierced Heart
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Blazing Torch
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Scorned Villager
+  [ROZGRYWKA]   • Dobierasz: Grave Exchange
+  >> Wybierz: Karty na spód biblioteki (mulligan) (32 opcje)
+  [multi-target wizard] Mulligan: zaznacz 4 karty do odłożenia na spód biblioteki:[ ] Curse of the Pierced HeartPo — opcji 7, potrzeba 4, celuję w 4
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 3 karty) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 3 karty)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Mark of the Vampire
+  [ROZGRYWKA]   • Dobierasz: Ghoulcaller's Bell
+  [ROZGRYWKA]   • Dobierasz: Grounded
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Grave Exchange
+  [ROZGRYWKA]   • Dobierasz: Somberwald Spider
+  [ROZGRYWKA]   • Dobierasz: Blazing Torch
+  >> Wybierz: Karty na spód biblioteki (mulligan) (21 opcji)
+  [multi-target wizard] Mulligan: zaznacz 5 kart do odłożenia na spód biblioteki:[ ] Mark of the VampirePodgląd[ ] — opcji 7, potrzeba 5, celuję w 5
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 2 karty) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 2 karty)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Tireless Hauler
+  [ROZGRYWKA]   • Dobierasz: Caravan Vigil
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Ghoulcaller's Bell
+  [ROZGRYWKA]   • Dobierasz: Forge Devil
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Wybierz: Karty na spód biblioteki (mulligan) (6 opcji)
+  [multi-target wizard] Mulligan: zaznacz 6 kart do odłożenia na spód biblioteki:[ ] Tireless HaulerPodgląd[ ] Car — opcji 7, potrzeba 6, celuję w 6
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 1 kartę) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 1 kartę)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Wolfkin Bond
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Grizzled Outcasts
+  [ROZGRYWKA]   • Dobierasz: Mark of the Vampire
+  >> Mulligan — odłóż na spód (7): Mountain, Swamp, Wolfkin Bond, Swamp, Swamp, Grizzled Outcasts, Mark of the Vamp
+  >> Mulligan: Zatrzymaj tę rękę (keep — 0 kart)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Healer of the Glade
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Skyclave Geopede
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Skyclave Geopede zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Grave Exchange
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Roiling Regrowth
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel: Plains — biblioteka → pole bitwy
+  [ROZGRYWKA]   • Plains wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel znajduje Plains i tasuje bibliotekę
+  [ROZGRYWKA]   • Skyclave Geopede — trigger (Landfall)
+  [ROZGRYWKA]   • Skyclave Geopede — trigger (Landfall)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Mountain
+  [ROZGRYWKA]   • Nieprzyjaciel: Mountain — biblioteka → pole bitwy
+  [ROZGRYWKA]   • Mountain wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel znajduje Mountain i tasuje bibliotekę
+  [ROZGRYWKA]   • Skyclave Geopede — trigger (Landfall)
+  [ROZGRYWKA]   • Skyclave Geopede — trigger (Landfall)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Skyclave Geopede dostaje +8/+8
+  [ROZGRYWKA]   • Skyclave Geopede — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Fertile Thicket (wchodzi zatapnięty)
+  [ROZGRYWKA]   • Fertile Thicket — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Skyclave Geopede — trigger (Landfall)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Skyclave Geopede dostaje +10/+10
+  [ROZGRYWKA]   • Skyclave Geopede — trigger się rozstrzyga
+  [ROZGRYWKA]   • Fertile Thicket — trigger się rozstrzyga
+  [ROZGRYWKA]   • Fertile Thicket: Nieprzyjaciel kładzie wybranego landa na wierzch, resztę na spód
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Skyclave Geopede
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Skyclave Geopede zadaje 13 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 7
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Caravan Vigil
+  >> Rzuć: Caravan Vigil (koszt G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Rzucasz Caravan Vigil
+  [ROZGRYWKA]   • Szukasz karty w bibliotece (Caravan Vigil) — wybiera, którą wziąć do ręki albo rezygnuje
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Szukanie w bibliotece (4 opcje)
+  [modal choice] Wybierz: Szukanie w bibliotece Szukanie: Forest Szukanie: Mountain Szukanie: Swamp Szukanie — nie znajduj karty (rezygnuję)
+  [modal choice]   ▶ Szukanie: Forest
+  [modal choice]     Szukanie: Mountain
+  [modal choice]     Szukanie: Swamp
+  [modal choice]     Szukanie — nie znajduj karty (rezygnuję)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odsłaniasz Forest
+  [ROZGRYWKA]   • Ty: Forest — biblioteka → ręka
+  [ROZGRYWKA]   • Caravan Vigil zostaje rozstrzygnięty
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA]   • Skyclave Geopede — trigger (Landfall)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Skyclave Geopede dostaje +2/+2
+  [ROZGRYWKA]   • Skyclave Geopede — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Relic Robber
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Fertile Thicket — dodanie 1 many zielonej do puli
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Relic Robber zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Scion Summoner
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 41 | Koniec partii — wygrywa Bot ---
+  STOS: Trigger: Relic Robber (obrażenia bojowe graczowi)
+  AKCJE: (brak)
+  RĘKA: Grave Exchange · 6 · Sorcery · stwór z grobu na rękę + cel poświęca stwora · cel: karta-stwór w grobie + gracz
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Island · Basic Land — Island · T: dodaj 1 manę | Skyclave Geopede · 3 · Creature — Insect · Zadeptywanie · Landfall — gdy land wchodzi pod twoją kontrolą: +2/+2 do końca tury. · +2/+2 · 5/3 | Relic Robber · 3 · Creature — Goblin Rogue · Pośpiech · Gdy zada obrażenia graczowi: stwórz token Goblin Construct. · 2/2 | Scion Summoner · 3 · Creature — Eldrazi Drone · Gdy wejdzie na pole bitwy: stwórz token Eldrazi Scion. · choroba · 2/2 | Eldrazi Scion · 0 · Creature — Eldrazi Scion · poświęć: dodaj 1 manę bezbarwną · choroba · 1/1
+  LOG: Dobierasz: Forest ⏎ Dobierasz: Grizzled Outcasts ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Caravan Vigil, Scorned Villager, Predator's Gambit, Swamp, Doomed Dissenter, Grave Exchange, Somberwald Spider ⏎ Nowa partia (seed 42). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 9, kliknięte: 12, modale: 2, sondy noop: 38 (panel 30, modal 8)
+== DETEKTORY: brak zgłoszeń ==

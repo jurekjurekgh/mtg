@@ -461,6 +461,13 @@ export async function runTableGame({
       || by(/^Nie bierz lądu/)
       || by(/^Rzuć z odbiciem:/)
       || by(/^Rzuć zawieszone:/)
+      // M246 (audyt Żywym Testerem, 2026-08-28): pending decyzja „(możesz)"
+      // (resolve_optional_trigger_choice — Veiled Ascension w upkeep przy
+      // opóźnionym triggerze Plague Reavera) to BLOKUJĄCY wybór źródła—
+      // efektu; bez wzorca tester zapisywał STOP (fałszywy „brak akcji"),
+      // choć gra była grywalna. Wzorzec musi siedzieć w „mandatory" —
+      // bez odpowiedzi stos stoi.
+      || by(/\(możesz\)|efekt dobrowolny/)
       || (profile === 'impatient' ? null : by(/Wznów grę bota/))
       || by(/zakończ|Zakończ/)
       || by(/Rozstrzygnij obrażenia/);

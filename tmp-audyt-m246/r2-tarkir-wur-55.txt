@@ -1,0 +1,144 @@
+== NOWA PARTIA: gracz=tarkir-wur vs bot=theros, seed=55, profil=impatient, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  >> Zagraj ląd: Plains (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Plains
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  >> ▶ Wznów grę bota
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Zagraj: Furious Forebear (koszt 1W)
+  [ROZGRYWKA]   • Furious Forebear zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA]   • Satyr Wayfinder — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel: Swamp — biblioteka → ręka
+  [ROZGRYWKA]   • Nieprzyjaciel: Island — biblioteka → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel: Pyxis of Pandemonium — biblioteka → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel: Sleep of the Dead — biblioteka → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel bierze żadnego lądu z wierzchu do ręki (reszta do grobu)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> ▶ Wznów grę bota
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Zagraj: Monastery Flock twarzą w dół (2/2, koszt 3)
+  [ROZGRYWKA]   • Monastery Flock zostaje rozstrzygnięty (twarzą w dół)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil impatient)
+  [combat wizard] Zatwierdź atak
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Sweet Oblivion → cel: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> ▶ Wznów grę bota
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Zagraj: Impact Tremors (koszt 1R)
+  [kreator many] Płatność 1R — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: RTapnij: Plains (W)Tapnij: Plains (W)Tapnij:  — źródła: 4
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Plains (W)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> ▶ Wznów grę bota
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil impatient)
+  [combat wizard] Zatwierdź atak
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA]   • Mielisz Palace Familiar do grobu
+  [ROZGRYWKA]   • Mielisz Rediscover the Way do grobu
+  [ROZGRYWKA]   • Sweet Oblivion zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Jeskai Devotee
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Zagraj: Jeskai Devotee (koszt 1R)
+  >> Zagraj: Jeskai Devotee (koszt 1R)
+  >> Zagraj: Jeskai Devotee (koszt 1R)
+  [kreator many] Płatność 1R — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: RTapnij: Plains (W)Tapnij: Plains (W)Tapnij:  — źródła: 4
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Plains (W)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Aktywuj: Jeskai Devotee (Ty) (koszt 1) — dodaj 1 manę niebieską, czerwoną lub białą
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Jeskai Devotee
+  [ROZGRYWKA]   • Jeskai Devotee wchodzi na pole bitwy
+  [ROZGRYWKA]   • Jeskai Devotee zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Impact Tremors — trigger (wejście stwora pod twoją kontrolą)
+  [kreator many] Płatność 1 — tapuj źródła po jednympozostało 1 manyTapnij: Plains (W)Tapnij: Mountain (R)Anuluj płatność — źródła: 2
+  [kreator many] Tapnij: Plains (W)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Impact Tremors zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 18 → 17
+  [ROZGRYWKA]   • Impact Tremors — trigger się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil impatient)
+  [combat wizard] Zatwierdź atak
+  >> Aktywuj: Jeskai Devotee (Ty) (koszt 1) — dodaj 1 manę niebieską, czerwoną lub białą
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Jeskai Devotee — dodanie 1 many niebieskiej, czerwonej lub białej do puli
+  >> Dalej (pass)
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA]   • Jeskai Devotee ginie
+  [ROZGRYWKA]   • Nieprzyjaciel kończy scry — zostawia na wierzchu biblioteki
+  [ROZGRYWKA]   • Rage of Purphoros zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Force Away
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil impatient)
+  [combat wizard] Zatwierdź atak
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Sea God's Scorn — tryb: Wzgarda boga mórz → cel: Monastery Flock (Morph), Impact Tremors
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> ▶ Wznów grę bota
+  >> Zagraj: Impact Tremors (koszt 1R)
+  [kreator many] Płatność 1R — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: RTapnij: Plains (W)Tapnij: Plains (W)Tapnij:  — źródła: 4
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Plains (W)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Zagraj: Monastery Flock twarzą w dół (2/2, koszt 3)
+  [ROZGRYWKA]   • Monastery Flock (Morph) wchodzi na pole bitwy
+  [ROZGRYWKA]   • Monastery Flock zostaje rozstrzygnięty (twarzą w dół)
+  [ROZGRYWKA]   • Impact Tremors — trigger (wejście stwora pod twoją kontrolą)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA]   • Tura 15 — Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Cel czaru: Sarkhan's Rage (4 opcje)
+  [modal choice] Cel czaru: Sarkhan's Rage Rzuć: Sarkhan's Rage (koszt 4R) → cel: Ty🔍 Podgląd karty Rzuć: Sarkhan's Rage (koszt 4R) → cel: Nieprzyjaciel🔍 Podgląd karty Rzuć: Sarkhan's Rage (koszt 4R) → cel: Monastery Flock (Morph)🔍 Podgląd karty Rzuć: Sarkhan's Rage (koszt 4R) → cel: Returned Centaur (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]   ▶ Rzuć: Sarkhan's Rage (koszt 4R) → cel: Ty
+  [modal choice]     Rzuć: Sarkhan's Rage (koszt 4R) → cel: Nieprzyjaciel
+  [modal choice]     Rzuć: Sarkhan's Rage (koszt 4R) → cel: Monastery Flock (Morph)
+  [modal choice]     Rzuć: Sarkhan's Rage (koszt 4R) → cel: Returned Centaur (Nieprzyjaciel)
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 34 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · 2/4 | Vandalize · 5 · Sorcery · wybierz jedno — Zniszcz artefakt: zniszcz cel · cel: artefakt / Zniszcz ląd: zniszcz cel · cel: ląd / Zniszcz oba: zniszcz cel + zniszcz cel · cel: artefakt + ląd | Force Away · 2 · Instant · wróć na rękę właściciela + ferocious: dobierz, potem odrzuć · cel: stwór
+  MOJE POLA: Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Monastery Flock · Creature · zakryty (Morph) · 2/2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · choroba · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Sarkhan's Rage, Gurmag Drowner, Monastery Flock, Vandalize, Plains, Plains, Mountain ⏎ Nowa partia (seed 55). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 14, kliknięte: 15, modale: 2, sondy noop: 49 (panel 40, modal 9)
+== DETEKTORY: brak zgłoszeń ==
