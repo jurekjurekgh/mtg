@@ -768,7 +768,19 @@ function boundedSubsets(ids, cap) {
     }
     return all;
   }
-  return [[], ...ids.map((id) => [id]), ids.slice()];
+  // M245 (zgłoszenie M właściciela, 2026-08-27): tryb ograniczony (2^n > cap)
+  // zostawiał wyłącznie puste/singletony/wszystkich — więc bot z sześcioma
+  // i więcej atakującymi NIE MÓGŁ wybrać „wszyscy oprócz tego jednego",
+  // który zginie bez niczego w blokera (typowy wybór taktyczny: zostaw
+  // marną sztukę). Dokładamy podzbiory „wszystkie minus jeden":
+  // 1 + n + n + 1 <= 32 mieści się jeszcze dla n = 15 (przy większej armii
+  // odcinamy końcówkowe minus-jeden po dawnej kolejności — deterministycznie,
+  // ADR 0005).
+  const singles = ids.map((id) => [id]);
+  const all = ids.slice();
+  const allButOne = ids.map((skip) => ids.filter((id) => id !== skip));
+  const out = [[], ...singles, ...allButOne, all];
+  return out.slice(0, cap);
 }
 
 /** Wszystkie zbiory atakujących, które gracz może teraz legalnie zadeklarować. */
@@ -1030,5 +1042,26 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
       }
     }
   }
-  return options;
+  // M245 (zgłoszenie M właściciela): w trybie ograniczonym kończyliśmy na
+  // parytach/singletonach/greedy — nie móglny zadeklarować „blokuję WSZYSTKIM
+  // poza jedną sztuką" (najczęstszy świadomy ruch: ochronić najdroższego
+  // blokera przed tracącym blokiem). Dokładamy pełne przypisanie oraz warianty
+  // „wszystkie minus jeden" per atakujący, póki mieści cap (обectomywane
+  // deterministycznie, ADR 0005). Każde przypisanie walidujemy tymi samymi
+  // regułami co walidacja declareBlockers (canBlock/menace/cantBlockAlone),
+  // by oferta pozostała spójna z engine (L48).
+  for (const attackerId of attackers) {
+    const attacker = state.objects.get(attackerId);
+    const pool = blockers.filter((id) => canBlock(state, attacker, state.objects.get(id)));
+    const candidateSets = [pool, ...pool.map((skip) => pool.filter((id) => id !== skip))];
+    for (const set of candidateSets) {
+      if (options.length >= cap) break;
+      if (set.length === 0) continue;
+      if (options.some((o) => JSON.stringify(o) === JSON.stringify({ [attackerId]: set }))) continue;
+      if (!satisfiesMenace(state, attackerId, set)) continue;
+      if (set.length === 1 && set.some((id) => hasAloneRestriction(state.objects.get(id), 'cantBlockAlone'))) continue;
+      options.push({ [attackerId]: set });
+    }
+  }
+  return options.slice(0, cap);
 }
