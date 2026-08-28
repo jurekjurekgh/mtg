@@ -83,12 +83,30 @@ Inwentaryzacja przed kasowaniem (63 pliki / 3.0 MB, 4 katalogi M239–M251):
       w `docs/` ani `test/` (grep: brak cytowań per plik).
 - [x] Notatka w `docs/PROJECT_HISTORY.md` + w opisie PR (co usunięto i dlaczego).
 
-## Etap 6 — pętla jakości (ADR 0021), jeśli budżet pozwoli
+## Etap 6 — pętla jakości (ADR 0021) — WYKONANE, bez znalezisk
 
-- [ ] Żywy Tester: karty nadal niewidziane w transkryptach (handoff PR #86: 45/420,
-      największa pula `forgotten-realms` — 6 kart), profil `explorer`, kilka seedów.
-- [ ] `npm i` w `tools/table-tester` + `npm run build` przed każdym pomiarem (L76).
-- [ ] Znalezione klasy → naprawa u root cause + test RED→GREEN (jeśli będą).
+- [x] Żywy Tester: 5 partii (`npm i` w `tools/table-tester` + `npm run build` przed
+      pomiarem — L76) na największej puli kart niewidzianych w poprzednich
+      transkryptach (handoff PR #86: `forgotten-realms`, 6 kart):
+      | partia | profil | wynik |
+      |---|---|---|
+      | forgotten-realms vs theros (seed 3) | explorer | Koniec partii, detektory 0 |
+      | forgotten-realms vs srodziemie (17) | explorer | Koniec partii, detektory 0 |
+      | forgotten-realms vs wiedzmin (29) | greedy | Koniec partii, detektory 0 |
+      | ravnica vs forgotten-realms (7) | explorer | Koniec partii, detektory 0 |
+      | forgotten-realms vs alara (55) | random | Koniec partii, detektory 0 |
+- [x] Pokrycie: **wszystkie 6 kart FR** (Basilisk Gate, Heap Gate, Cloak of the Bat,
+      Curate, Gray Slaad, Silvanus's Invoker) pojawiło się w transkryptach
+      (każda w ≥2 partiach) + **Epic Experiment** (ravnica, historyczny blocker M96).
+- [x] Ręczny przegląd osi 2 (L27/L40): brak surowych slugów w logu, brak
+      zduplikowanych linii, brak odrzuconych komend; `Curate` (surveil 2 + dobierz)
+      opisane w logu zgodnie z Oracle (L24 OK).
+- [x] Obserwacja BEZ naprawy (klasa znana, L15 + L57): `Basilisk Gate` (Oracle
+      „target creature" — dowolny stwór) oferuje graczowi pump na stwora
+      PRZECIWNIKA. Legalne wg Oracle → nie zawężamy ofert; wycena bota dla
+      `pump_by_gates` działa od M146 (L50/L51).
+- [x] Transkrypty partii **nie trafiają do repo** (poza `/home/user/tt-*.txt`) —
+      po zleconych porządkach nie dokładamy nowego `tmp-audyt-*` bez potrzeby.
 
 ## Etap 7 — zamknięcie sesji (ADR 0013)
 
