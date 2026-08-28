@@ -1,0 +1,235 @@
+== NOWA PARTIA: gracz=worek-legend vs bot=innistrad-brg, seed=523, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) | Supernatural Stamina · 1 · Instant · +2/+0 do końca tury + nadaj zdolności do końca tury · cel: stwór | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Pain for All · 3 · Enchantment — Aura · Gdy wejdzie na pole bitwy: zaczarowany stwór zadaje obrażenia równe swojej mocy. · Zaczarowany stwór otrzymał obrażenia: X obrażeń każdemu przeciwnikowi. | Island · Basic Land — Island · T: dodaj 1 manę | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Trained Arynx · 2 · Creature — Cat Beast Mount · Gdy atakuje: zdobądź Pierwsze uderzenie do końca tury, scry 1. · saddle 2: zostanie osiodłany do końca tury · 3/1
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Wedgelight Rammer, Supernatural Stamina, Vow of Flight, Pain for All, Island, Warmaker Gunship, Trained Arynx ⏎ Nowa partia (seed 523). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Island
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+
+--- krok 3 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Forest  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) | Supernatural Stamina · 1 · Instant · +2/+0 do końca tury + nadaj zdolności do końca tury · cel: stwór | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Pain for All · 3 · Enchantment — Aura · Gdy wejdzie na pole bitwy: zaczarowany stwór zadaje obrażenia równe swojej mocy. · Zaczarowany stwór otrzymał obrażenia: X obrażeń każdemu przeciwnikowi. | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Trained Arynx · 2 · Creature — Cat Beast Mount · Gdy atakuje: zdobądź Pierwsze uderzenie do końca tury, scry 1. · saddle 2: zostanie osiodłany do końca tury · 3/1 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Wedgelight Rammer, Supernatural Stamina, Vow of Flight, Pain for All, Island, Warmaker Gunship, Trained Arynx ⏎ Nowa partia (seed 523). Powodzenia!
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Snarling Wolf
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Snarling Wolf zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Spinewoods Paladin
+
+--- krok 6 | T. 6BotGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) | Supernatural Stamina · 1 · Instant · +2/+0 do końca tury + nadaj zdolności do końca tury · cel: stwór | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Pain for All · 3 · Enchantment — Aura · Gdy wejdzie na pole bitwy: zaczarowany stwór zadaje obrażenia równe swojej mocy. · Zaczarowany stwór otrzymał obrażenia: X obrażeń każdemu przeciwnikowi. | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Trained Arynx · 2 · Creature — Cat Beast Mount · Gdy atakuje: zdobądź Pierwsze uderzenie do końca tury, scry 1. · saddle 2: zostanie osiodłany do końca tury · 3/1 | Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Wedgelight Rammer, Supernatural Stamina, Vow of Flight, Pain for All, Island, Warmaker Gunship, Trained Arynx ⏎ Nowa partia (seed 523). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Snarling Wolf — zmiana statystyk celu
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Ty: życie 20 → 17
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+
+--- krok 9 | T. 7GraczGracz: 17 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Forest  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) | Supernatural Stamina · 1 · Instant · +2/+0 do końca tury + nadaj zdolności do końca tury · cel: stwór | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Pain for All · 3 · Enchantment — Aura · Gdy wejdzie na pole bitwy: zaczarowany stwór zadaje obrażenia równe swojej mocy. · Zaczarowany stwór otrzymał obrażenia: X obrażeń każdemu przeciwnikowi. | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Trained Arynx · 2 · Creature — Cat Beast Mount · Gdy atakuje: zdobądź Pierwsze uderzenie do końca tury, scry 1. · saddle 2: zostanie osiodłany do końca tury · 3/1 | Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Wedgelight Rammer, Supernatural Stamina, Vow of Flight, Pain for All, Island, Warmaker Gunship, Trained Arynx ⏎ Nowa partia (seed 523). Powodzenia!
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+
+--- krok 12 | T. 8BotGracz: 17 ż.Bot: 20 ż.Główna 1Stos — Mark of the Vampire ---
+  STOS: Mark of the Vampire (rzuca: Nieprzyjaciel) → cel: Snarling Wolf
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) | Supernatural Stamina · 1 · Instant · +2/+0 do końca tury + nadaj zdolności do końca tury · cel: stwór | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Pain for All · 3 · Enchantment — Aura · Gdy wejdzie na pole bitwy: zaczarowany stwór zadaje obrażenia równe swojej mocy. · Zaczarowany stwór otrzymał obrażenia: X obrażeń każdemu przeciwnikowi. | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Trained Arynx · 2 · Creature — Cat Beast Mount · Gdy atakuje: zdobądź Pierwsze uderzenie do końca tury, scry 1. · saddle 2: zostanie osiodłany do końca tury · 3/1 | Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Wedgelight Rammer, Supernatural Stamina, Vow of Flight, Pain for All, Island, Warmaker Gunship, Trained Arynx ⏎ Nowa partia (seed 523). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Mark of the Vampire → cel: Snarling Wolf
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Mark of the Vampire wchodzi na pole bitwy
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Snarling Wolf
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Snarling Wolf zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 14
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 23
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Gila Courser
+  >> Dalej (pass)
+
+--- krok 15 | T. 9GraczGracz: 14 ż.Bot: 23 ż.Główna 2 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj aurę: Vow of Flight (koszt 2U) → zaczaruj Snarling Wolf (Nieprzyjaciel)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) | Supernatural Stamina · 1 · Instant · +2/+0 do końca tury + nadaj zdolności do końca tury · cel: stwór | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Pain for All · 3 · Enchantment — Aura · Gdy wejdzie na pole bitwy: zaczarowany stwór zadaje obrażenia równe swojej mocy. · Zaczarowany stwór otrzymał obrażenia: X obrażeń każdemu przeciwnikowi. | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Trained Arynx · 2 · Creature — Cat Beast Mount · Gdy atakuje: zdobądź Pierwsze uderzenie do końca tury, scry 1. · saddle 2: zostanie osiodłany do końca tury · 3/1 | Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Gila Courser · 3 · Creature — Lizard Mount · saddle · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · saddle 1: zostanie osiodłany do końca tury · 4/2
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · Dotykanie życia · +2/+2 · zaczarowana: Mark of the Vampire · 3/3 | Mark of the Vampire · 4 · Enchantment Aura · stwór: +2/+2 · stwór ma: Dotykanie życia · aura → Snarling Wolf
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Wedgelight Rammer, Supernatural Stamina, Vow of Flight, Pain for All, Island, Warmaker Gunship, Trained Arynx ⏎ Nowa partia (seed 523). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Wybierasz, którą kartę odrzucić przy limicie ręki
+  >> Wybierz: Karta do odrzucenia (8 opcji)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Spinewoods Paladin🔍 Podgląd karty Odrzuć: Wedgelight Rammer🔍 Podgląd karty Odrzuć: Vow of Flight🔍 Podgląd karty Odrzuć: Pain for All🔍 Podgląd karty Odrzuć: Warmaker Gunship🔍 Podgląd karty Odrzuć: Gila Courser🔍 Podgląd karty Odrzuć: Trained Arynx🔍 Podgląd karty Odrzuć: Supernatural Stamina🔍 Podgląd karty
+  [modal choice]   ▶ Odrzuć: Spinewoods Paladin
+  [modal choice]     Odrzuć: Wedgelight Rammer
+  [modal choice]     Odrzuć: Vow of Flight
+  [modal choice]     Odrzuć: Pain for All
+  [modal choice]     Odrzuć: Warmaker Gunship
+  [modal choice]     Odrzuć: Gila Courser
+  [modal choice]     Odrzuć: Trained Arynx
+  [modal choice]     Odrzuć: Supernatural Stamina
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+
+--- krok 18 | T. 10BotGracz: 14 ż.Bot: 23 ż.Główna 1Stos — Tireless Hauler ---
+  STOS: Tireless Hauler (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) | Supernatural Stamina · 1 · Instant · +2/+0 do końca tury + nadaj zdolności do końca tury · cel: stwór | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Pain for All · 3 · Enchantment — Aura · Gdy wejdzie na pole bitwy: zaczarowany stwór zadaje obrażenia równe swojej mocy. · Zaczarowany stwór otrzymał obrażenia: X obrażeń każdemu przeciwnikowi. | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Trained Arynx · 2 · Creature — Cat Beast Mount · Gdy atakuje: zdobądź Pierwsze uderzenie do końca tury, scry 1. · saddle 2: zostanie osiodłany do końca tury · 3/1 | Gila Courser · 3 · Creature — Lizard Mount · saddle · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · saddle 1: zostanie osiodłany do końca tury · 4/2
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · Dotykanie życia · +2/+2 · zaczarowana: Mark of the Vampire · 3/3 | Mark of the Vampire · 4 · Enchantment Aura · stwór: +2/+2 · stwór ma: Dotykanie życia · aura → Snarling Wolf
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Wedgelight Rammer, Supernatural Stamina, Vow of Flight, Pain for All, Island, Warmaker Gunship, Trained Arynx ⏎ Nowa partia (seed 523). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Tireless Hauler
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Tireless Hauler zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Snarling Wolf
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Snarling Wolf zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 11
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 23 → 26
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Tumbleweed Rising
+  >> Rzuć: Tumbleweed Rising (koszt 1G)
+  [kreator many] Płatność 1G — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: GTapnij: Island (U)Tapnij: Forest (G)Tapnij:  — źródła: 3
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+
+--- krok 21 | T. 11GraczGracz: 11 ż.Bot: 26 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) | Supernatural Stamina · 1 · Instant · +2/+0 do końca tury + nadaj zdolności do końca tury · cel: stwór | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Pain for All · 3 · Enchantment — Aura · Gdy wejdzie na pole bitwy: zaczarowany stwór zadaje obrażenia równe swojej mocy. · Zaczarowany stwór otrzymał obrażenia: X obrażeń każdemu przeciwnikowi. | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Trained Arynx · 2 · Creature — Cat Beast Mount · Gdy atakuje: zdobądź Pierwsze uderzenie do końca tury, scry 1. · saddle 2: zostanie osiodłany do końca tury · 3/1 | Gila Courser · 3 · Creature — Lizard Mount · saddle · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · saddle 1: zostanie osiodłany do końca tury · 4/2
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · Dotykanie życia · +2/+2 · zaczarowana: Mark of the Vampire · 3/3 | Mark of the Vampire · 4 · Enchantment Aura · stwór: +2/+2 · stwór ma: Dotykanie życia · aura → Snarling Wolf | Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · choroba · 4/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Wedgelight Rammer, Supernatural Stamina, Vow of Flight, Pain for All, Island, Warmaker Gunship, Trained Arynx ⏎ Nowa partia (seed 523). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Rzucasz Tumbleweed Rising
+  [ROZGRYWKA]   • Ty tworzysz token Elemental (0/0)
+  [ROZGRYWKA]   • Elemental wchodzi na pole bitwy
+  [ROZGRYWKA]   • Tumbleweed Rising zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Elemental ginie
+  [ROZGRYWKA]   • token Elemental przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Grizzled Outcasts
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Atak: Snarling Wolf, Tireless Hauler
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Snarling Wolf zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 8
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 26 → 29
+  [ROZGRYWKA]   • Tireless Hauler zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 8 → 4
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+
+--- krok 24 | T. 13GraczGracz: 4 ż.Bot: 29 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Mountain  ||  Aura: Vow of Flight (3 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) | Supernatural Stamina · 1 · Instant · +2/+0 do końca tury + nadaj zdolności do końca tury · cel: stwór | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Pain for All · 3 · Enchantment — Aura · Gdy wejdzie na pole bitwy: zaczarowany stwór zadaje obrażenia równe swojej mocy. · Zaczarowany stwór otrzymał obrażenia: X obrażeń każdemu przeciwnikowi. | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Trained Arynx · 2 · Creature — Cat Beast Mount · Gdy atakuje: zdobądź Pierwsze uderzenie do końca tury, scry 1. · saddle 2: zostanie osiodłany do końca tury · 3/1 | Gila Courser · 3 · Creature — Lizard Mount · saddle · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · saddle 1: zostanie osiodłany do końca tury · 4/2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · Dotykanie życia · +2/+2 · zaczarowana: Mark of the Vampire · 3/3 | Mark of the Vampire · 4 · Enchantment Aura · stwór: +2/+2 · stwór ma: Dotykanie życia · aura → Snarling Wolf | Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). · choroba · 4/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Wedgelight Rammer, Supernatural Stamina, Vow of Flight, Pain for All, Island, Warmaker Gunship, Trained Arynx ⏎ Nowa partia (seed 523). Powodzenia!
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Zagraj: Warmaker Gunship (koszt 2R)
+  [kreator many] Płatność 2R — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: RTapnij: Island (U)Tapnij: Forest (G)Tapnij:  — źródła: 4
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Forest (G)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Warmaker Gunship zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Warmaker Gunship — wybierz cel triggera (wymagany)
+
+--- krok 27 | T. 13GraczGracz: 4 ż.Bot: 29 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Warmaker Gunship — cel triggera (3 opcje)
+  RĘKA: Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) | Supernatural Stamina · 1 · Instant · +2/+0 do końca tury + nadaj zdolności do końca tury · cel: stwór | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Pain for All · 3 · Enchantment — Aura · Gdy wejdzie na pole bitwy: zaczarowany stwór zadaje obrażenia równe swojej mocy. · Zaczarowany stwór otrzymał obrażenia: X obrażeń każdemu przeciwnikowi. | Trained Arynx · 2 · Creature — Cat Beast Mount · Gdy atakuje: zdobądź Pierwsze uderzenie do końca tury, scry 1. · saddle 2: zostanie osiodłany do końca tury · 3/1 | Gila Courser · 3 · Creature — Lizard Mount · saddle · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · saddle 1: zostanie osiodłany do końca tury · 4/2
+  MOJE POLA: Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · Dotykanie życia · +2/+2 · zaczarowana: Mark of the Vampire · 3/3 | Mark of the Vampire · 4 · Enchantment Aura · stwór: +2/+2 · stwór ma: Dotykanie życia · aura → Snarling Wolf | Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). · choroba · 4/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Wedgelight Rammer, Supernatural Stamina, Vow of Flight, Pain for All, Island, Warmaker Gunship, Trained Arynx ⏎ Nowa partia (seed 523). Powodzenia!
+  >> Warmaker Gunship — cel triggera (3 opcje)
+  [modal choice] Warmaker Gunship — cel triggera Warmaker Gunship — cel triggera: Snarling Wolf (Nieprzyjaciel)🔍 Podgląd karty Warmaker Gunship — cel triggera: Tireless Hauler (Nieprzyjaciel)🔍 Podgląd karty Warmaker Gunship — cel triggera: Grizzled Outcasts (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]   ▶ Warmaker Gunship — cel triggera: Snarling Wolf (Nieprzyjaciel)
+  [modal choice]     Warmaker Gunship — cel triggera: Tireless Hauler (Nieprzyjaciel)
+  [modal choice]     Warmaker Gunship — cel triggera: Grizzled Outcasts (Nieprzyjaciel)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Somberwald Spider
+
+--- krok 30 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) | Supernatural Stamina · 1 · Instant · +2/+0 do końca tury + nadaj zdolności do końca tury · cel: stwór | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Pain for All · 3 · Enchantment — Aura · Gdy wejdzie na pole bitwy: zaczarowany stwór zadaje obrażenia równe swojej mocy. · Zaczarowany stwór otrzymał obrażenia: X obrażeń każdemu przeciwnikowi. | Trained Arynx · 2 · Creature — Cat Beast Mount · Gdy atakuje: zdobądź Pierwsze uderzenie do końca tury, scry 1. · saddle 2: zostanie osiodłany do końca tury · 3/1 | Gila Courser · 3 · Creature — Lizard Mount · saddle · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · saddle 1: zostanie osiodłany do końca tury · 4/2
+  MOJE POLA: Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · Dotykanie życia · +2/+2 · zaczarowana: Mark of the Vampire · 3/3 | Mark of the Vampire · 4 · Enchantment Aura · stwór: +2/+2 · stwór ma: Dotykanie życia · aura → Snarling Wolf | Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). · 4/4 | Somberwald Spider · 5 · Creature — Spider · Zasięg · choroba · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Wedgelight Rammer, Supernatural Stamina, Vow of Flight, Pain for All, Island, Warmaker Gunship, Trained Arynx ⏎ Nowa partia (seed 523). Powodzenia!
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 31 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) | Supernatural Stamina · 1 · Instant · +2/+0 do końca tury + nadaj zdolności do końca tury · cel: stwór | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Pain for All · 3 · Enchantment — Aura · Gdy wejdzie na pole bitwy: zaczarowany stwór zadaje obrażenia równe swojej mocy. · Zaczarowany stwór otrzymał obrażenia: X obrażeń każdemu przeciwnikowi. | Trained Arynx · 2 · Creature — Cat Beast Mount · Gdy atakuje: zdobądź Pierwsze uderzenie do końca tury, scry 1. · saddle 2: zostanie osiodłany do końca tury · 3/1 | Gila Courser · 3 · Creature — Lizard Mount · saddle · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · saddle 1: zostanie osiodłany do końca tury · 4/2
+  MOJE POLA: Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · Dotykanie życia · +2/+2 · zaczarowana: Mark of the Vampire · 3/3 | Mark of the Vampire · 4 · Enchantment Aura · stwór: +2/+2 · stwór ma: Dotykanie życia · aura → Snarling Wolf | Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). · 4/4 | Somberwald Spider · 5 · Creature — Spider · Zasięg · choroba · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Wedgelight Rammer, Supernatural Stamina, Vow of Flight, Pain for All, Island, Warmaker Gunship, Trained Arynx ⏎ Nowa partia (seed 523). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 13, kliknięte: 12, modale: 3, sondy noop: 31 (panel 26, modal 5)
+== DETEKTORY: brak zgłoszeń ==

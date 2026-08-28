@@ -1,0 +1,769 @@
+== NOWA PARTIA: gracz=worek-dziki vs bot=wiedzmin, seed=521, profil=random, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Swamp  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Cathartic Reunion · 2 · Sorcery · dobierz 3 karty | Dire Fleet Ravager · 5 · Creature — Orc Pirate Wizard · Postrach Dotykanie śmierci · Gdy wejdzie na pole bitwy: każdy gracz traci część życia (zaokrąglone w górę). · 4/4 | Stall Out · 2 · Sorcery · tap + połóż licznik stun · cel: stwór lub Vehicle · Cycling {2} → dobierz kartę | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2 | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5 | Shock · 1 · Instant · Obrażenia 2 · dowolny cel | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+
+--- krok 3 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Forest  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Cathartic Reunion · 2 · Sorcery · dobierz 3 karty | Dire Fleet Ravager · 5 · Creature — Orc Pirate Wizard · Postrach Dotykanie śmierci · Gdy wejdzie na pole bitwy: każdy gracz traci część życia (zaokrąglone w górę). · 4/4 | Stall Out · 2 · Sorcery · tap + połóż licznik stun · cel: stwór lub Vehicle · Cycling {2} → dobierz kartę | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2 | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {2}, {R}, poświęć ląd: dobierz 1 kartę · Cycling {2} → szukaj: Mountain · 6/5 | Shock · 1 · Instant · Obrażenia 2 · dowolny cel | Forest · Basic Land — Forest · T: dodaj 1 manę
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Cycling: Seismic Monstrosaur (koszt 2) → szukaj: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz cycling: Seismic Monstrosaur
+  [ROZGRYWKA]   • Szukasz karty w bibliotece (Seismic Monstrosaur) — wybiera, którą wziąć do ręki albo rezygnuje
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Szukanie: Mountain
+  [ROZGRYWKA]   • Aktywujesz cycling: Seismic Monstrosaur
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+
+--- krok 6 | T. 4BotGracz: 20 ż.Bot: 20 ż.Główna 1Stos — Bedhead Beastie ---
+  STOS: Bedhead Beastie (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Cathartic Reunion · 2 · Sorcery · dobierz 3 karty | Dire Fleet Ravager · 5 · Creature — Orc Pirate Wizard · Postrach Dotykanie śmierci · Gdy wejdzie na pole bitwy: każdy gracz traci część życia (zaokrąglone w górę). · 4/4 | Stall Out · 2 · Sorcery · tap + połóż licznik stun · cel: stwór lub Vehicle · Cycling {2} → dobierz kartę | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2 | Shock · 1 · Instant · Obrażenia 2 · dowolny cel | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje cycling: Bedhead Beastie
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel: karta — biblioteka → ręka
+  [ROZGRYWKA]   • Nieprzyjaciel znajduje Mountain i tasuje bibliotekę
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje cycling: Bedhead Beastie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+
+--- krok 9 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cycling: Stall Out (koszt 2) → dobierz kartę  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Cathartic Reunion · 2 · Sorcery · dobierz 3 karty | Dire Fleet Ravager · 5 · Creature — Orc Pirate Wizard · Postrach Dotykanie śmierci · Gdy wejdzie na pole bitwy: każdy gracz traci część życia (zaokrąglone w górę). · 4/4 | Stall Out · 2 · Sorcery · tap + połóż licznik stun · cel: stwór lub Vehicle · Cycling {2} → dobierz kartę | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2 | Shock · 1 · Instant · Obrażenia 2 · dowolny cel | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  >> Cycling: Stall Out (koszt 2) → dobierz kartę
+  [ROZGRYWKA]   • Dobierasz: Lodestone Needle
+  [ROZGRYWKA]   • Ty: zdolność Stall Out rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Welder Automaton
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+
+--- krok 12 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Cel czaru: Shock (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Cathartic Reunion · 2 · Sorcery · dobierz 3 karty | Dire Fleet Ravager · 5 · Creature — Orc Pirate Wizard · Postrach Dotykanie śmierci · Gdy wejdzie na pole bitwy: każdy gracz traci część życia (zaokrąglone w górę). · 4/4 | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2 | Shock · 1 · Instant · Obrażenia 2 · dowolny cel | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Welder Automaton · 2 · Artifact Creature — Construct · {3}, {R}: 1 obrażenie każdemu przeciwnikowi · 2/1
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  >> Cel czaru: Shock (2 opcje)
+  [modal choice] Cel czaru: Shock Rzuć: Shock (koszt R) → cel: Ty🔍 Podgląd karty Rzuć: Shock (koszt R) → cel: Nieprzyjaciel🔍 Podgląd karty
+  [modal choice]   ▶ Rzuć: Shock (koszt R) → cel: Ty
+  [modal choice]     Rzuć: Shock (koszt R) → cel: Nieprzyjaciel
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Ty: życie 20 → 18
+  [ROZGRYWKA]   • Shock zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Morph twarzą w dół (2/2)
+
+--- krok 15 | T. 7GraczGracz: 18 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Cathartic Reunion · 2 · Sorcery · dobierz 3 karty | Dire Fleet Ravager · 5 · Creature — Orc Pirate Wizard · Postrach Dotykanie śmierci · Gdy wejdzie na pole bitwy: każdy gracz traci część życia (zaokrąglone w górę). · 4/4 | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2 | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Welder Automaton · 2 · Artifact Creature — Construct · {3}, {R}: 1 obrażenie każdemu przeciwnikowi · 2/1 | Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · 2/3
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Face-down creature · Creature · Morph · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Morph zostaje rozstrzygnięty (twarzą w dół)
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Reclusive Artificer
+  >> Rzuć: Cathartic Reunion (koszt 1R)
+  [kreator many] Płatność 1R — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: RTapnij: Swamp (B)Tapnij: Forest (G)Tapnij: M — źródła: 3
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Swamp (B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Rzucasz Cathartic Reunion
+
+--- krok 18 | T. 7GraczGracz: 18 ż.Bot: 20 ż.Główna 1Stos — Cathartic Reunion ---
+  STOS: Cathartic Reunion (rzuca: Ty)
+  AKCJE: Poddaj partię  ||  Wybierz: Karta do odrzucenia (5 opcji)
+  RĘKA: Dire Fleet Ravager · 5 · Creature — Orc Pirate Wizard · Postrach Dotykanie śmierci · Gdy wejdzie na pole bitwy: każdy gracz traci część życia (zaokrąglone w górę). · 4/4 | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2 | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Welder Automaton · 2 · Artifact Creature — Construct · {3}, {R}: 1 obrażenie każdemu przeciwnikowi · 2/1 | Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · 2/3
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Face-down creature · Creature · Morph · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  >> Wybierz: Karta do odrzucenia (5 opcji)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Lodestone Needle🔍 Podgląd karty Odrzuć: Welder Automaton🔍 Podgląd karty Odrzuć: Glint-Sleeve Artisan🔍 Podgląd karty Odrzuć: Reclusive Artificer🔍 Podgląd karty Odrzuć: Dire Fleet Ravager🔍 Podgląd karty
+  [modal choice]     Odrzuć: Lodestone Needle
+  [modal choice]     Odrzuć: Welder Automaton
+  [modal choice]   ▶ Odrzuć: Glint-Sleeve Artisan
+  [modal choice]     Odrzuć: Reclusive Artificer
+  [modal choice]     Odrzuć: Dire Fleet Ravager
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odrzucasz Glint-Sleeve Artisan
+  >> Wybierz: Karta do odrzucenia (4 opcje)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Lodestone Needle🔍 Podgląd karty Odrzuć: Welder Automaton🔍 Podgląd karty Odrzuć: Reclusive Artificer🔍 Podgląd karty Odrzuć: Dire Fleet Ravager🔍 Podgląd karty
+  [modal choice]     Odrzuć: Lodestone Needle
+  [modal choice]     Odrzuć: Welder Automaton
+  [modal choice]     Odrzuć: Reclusive Artificer
+  [modal choice]   ▶ Odrzuć: Dire Fleet Ravager
+
+--- krok 21 | T. 7GraczGracz: 18 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Zagraj ląd: Sequestered Stash  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Welder Automaton · 2 · Artifact Creature — Construct · {3}, {R}: 1 obrażenie każdemu przeciwnikowi · 2/1 | Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · 2/3 | Crested Herdcaller · 5 · Creature — Dinosaur · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Dinosaur. · 3/3 | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki | Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 2/5
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Face-down creature · Creature · Morph · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Dobierasz: Crested Herdcaller
+  [ROZGRYWKA]   • Dobierasz: Sequestered Stash
+  [ROZGRYWKA]   • Dobierasz: Cacophodon
+  [ROZGRYWKA]   • Cathartic Reunion zostaje rozstrzygnięty
+  >> Zagraj ląd: Sequestered Stash
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Sequestered Stash
+  >> Zagraj: Welder Automaton (koszt 2)
+  [ROZGRYWKA]   • Welder Automaton wchodzi na pole bitwy
+  [ROZGRYWKA]   • Welder Automaton zostaje rozstrzygnięty
+
+--- krok 24 | T. 8BotGracz: 18 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · 2/3 | Crested Herdcaller · 5 · Creature — Dinosaur · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Dinosaur. · 3/3 | Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 2/5
+  MOJE POLA: Welder Automaton · 2 · Artifact Creature — Construct · {3}, {R}: 1 obrażenie każdemu przeciwnikowi · choroba · 2/1 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Face-down creature · Creature · Morph · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Nature's Embrace → cel: Morph
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nature's Embrace wchodzi na pole bitwy
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Morph
+
+--- krok 27 | T. 8BotGracz: 18 ż.Bot: 20 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Deklaracja blokujących (2 opcje)
+  RĘKA: Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · 2/3 | Crested Herdcaller · 5 · Creature — Dinosaur · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Dinosaur. · 3/3 | Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 2/5
+  MOJE POLA: Welder Automaton · 2 · Artifact Creature — Construct · {3}, {R}: 1 obrażenie każdemu przeciwnikowi · choroba · 2/1 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Face-down creature · Creature · Morph · atakuje — niezablokowany · zaczarowana: Nature's Embrace · 4/4 | Nature's Embrace · 3 · Enchantment Aura · stwór: +2/+2 · ląd: „T: dodaj 2 many dowolnego koloru" · aura → Morph
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Welder Automaton (2/1)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA]   • Welder Automaton ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 9 — Ty
+
+--- krok 30 | T. 9GraczGracz: 18 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Sequestered Stash (Ty) (koszt T) — dodaj 1 manę bezbarwną  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · 2/3 | Crested Herdcaller · 5 · Creature — Dinosaur · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Dinosaur. · 3/3 | Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 2/5
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Face-down creature · Creature · Morph · zaczarowana: Nature's Embrace · 4/4 | Nature's Embrace · 3 · Enchantment Aura · stwór: +2/+2 · ląd: „T: dodaj 2 many dowolnego koloru" · aura → Morph
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA]   • Dobierasz: Canonized in Blood
+  >> Aktywuj: Sequestered Stash (Ty) (koszt T) — dodaj 1 manę bezbarwną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Sequestered Stash — dodanie many do puli
+  >> Dalej (pass)
+
+--- krok 33 | T. 9GraczGracz: 18 ż.Bot: 20 ż.Główna 2 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Canonized in Blood (koszt 1B)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · 2/3 | Crested Herdcaller · 5 · Creature — Dinosaur · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Dinosaur. · 3/3 | Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 2/5 | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Face-down creature · Creature · Morph · zaczarowana: Nature's Embrace · 4/4 | Nature's Embrace · 3 · Enchantment Aura · stwór: +2/+2 · ląd: „T: dodaj 2 many dowolnego koloru" · aura → Morph
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  >> Zagraj: Canonized in Blood (koszt 1B)
+  [kreator many] Płatność 1B — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: BTapnij: Swamp (B)Tapnij: Forest (G)Tapnij: M — źródła: 3
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Forest (G)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Zagrywasz Canonized in Blood
+  [ROZGRYWKA]   • Canonized in Blood wchodzi na pole bitwy
+  [ROZGRYWKA]   • Canonized in Blood zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Segmented Krotiq zostaje poświęcony
+
+--- krok 36 | T. 10BotGracz: 18 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · 2/3 | Crested Herdcaller · 5 · Creature — Dinosaur · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Dinosaur. · 3/3 | Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 2/5
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Village Rites zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Dread Warlock
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Dread Warlock zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 11 — Ty
+
+--- krok 39 | T. 11GraczGracz: 18 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Sequestered Stash (Ty) (koszt T) — dodaj 1 manę bezbarwną  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · 2/3 | Crested Herdcaller · 5 · Creature — Dinosaur · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Dinosaur. · 3/3 | Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 2/5
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dread Warlock · 3 · Creature — Human Wizard Warlock · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  >> Aktywuj: Sequestered Stash (Ty) (koszt T) — dodaj 1 manę bezbarwną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Sequestered Stash — dodanie many do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Zagraj: Lodestone Needle (koszt 1U)
+  [kreator many] Płatność 1U — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: UTapnij: Swamp (B)Tapnij: Forest (G)Tapnij: M — źródła: 4
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Forest (G)
+
+--- krok 42 | T. 11GraczGracz: 18 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię  ||  Lodestone Needle — cel triggera (2 opcje)
+  RĘKA: Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · 2/3 | Crested Herdcaller · 5 · Creature — Dinosaur · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Dinosaur. · 3/3 | Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 2/5
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dread Warlock · 3 · Creature — Human Wizard Warlock · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Lodestone Needle zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Lodestone Needle — wybierz cel triggera (można odmówić)
+  >> Lodestone Needle — cel triggera (2 opcje)
+  [modal choice] Lodestone Needle — cel triggera Lodestone Needle — cel triggera: Dread Warlock (Nieprzyjaciel)🔍 Podgląd karty Lodestone Needle — bez celu (odmowa — „up to one"/„you may")
+  [modal choice]     Lodestone Needle — cel triggera: Dread Warlock (Nieprzyjaciel)
+  [modal choice]   ▶ Lodestone Needle — bez celu (odmowa — „up to one"/„you may")
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Lodestone Needle — cel odrzucony, trigger bez efektu
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Nightshade Harvester
+
+--- krok 45 | T. 13GraczGracz: 16 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Sequestered Stash (Ty) (koszt T) — dodaj 1 manę bezbarwną  ||  Aktywuj: Sequestered Stash (Ty) (koszt 4, T, poświęć) — mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · 2/3 | Crested Herdcaller · 5 · Creature — Dinosaur · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Dinosaur. · 3/3 | Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 2/5
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dread Warlock · 3 · Creature — Human Wizard Warlock · 2/2 | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Dread Warlock zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 16
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Aktywuj: Sequestered Stash (Ty) (koszt T) — dodaj 1 manę bezbarwną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Sequestered Stash — dodanie many do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Malamet Battle Glyph
+  >> Zagraj: Reclusive Artificer (koszt 2UR)
+  [ROZGRYWKA]   • Reclusive Artificer zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Reclusive Artificer — wybierz cel triggera (można odmówić)
+
+--- krok 48 | T. 13GraczGracz: 16 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Reclusive Artificer — cel triggera (4 opcje)
+  RĘKA: Crested Herdcaller · 5 · Creature — Dinosaur · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Dinosaur. · 3/3 | Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 2/5 | Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · 2/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dread Warlock · 3 · Creature — Human Wizard Warlock · 2/2 | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Reclusive Artificer — cel triggera (4 opcje)
+  [modal choice] Reclusive Artificer — cel triggera Reclusive Artificer — cel triggera: Dread Warlock (Nieprzyjaciel)🔍 Podgląd karty Reclusive Artificer — cel triggera: Nightshade Harvester (Nieprzyjaciel)🔍 Podgląd karty Reclusive Artificer — cel triggera: Reclusive Artificer (Ty)🔍 Podgląd karty Reclusive Artificer — bez celu (odmowa — „up to one"/„you may")
+  [modal choice]     Reclusive Artificer — cel triggera: Dread Warlock (Nieprzyjaciel)
+  [modal choice]     Reclusive Artificer — cel triggera: Nightshade Harvester (Nieprzyjaciel)
+  [modal choice]     Reclusive Artificer — cel triggera: Reclusive Artificer (Ty)
+  [modal choice]   ▶ Reclusive Artificer — bez celu (odmowa — „up to one"/„you may")
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Reclusive Artificer — cel odrzucony, trigger bez efektu
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+
+--- krok 51 | T. 14BotGracz: 16 ż.Bot: 18 ż.Główna 1Stos — Springbloom Druid ---
+  STOS: Springbloom Druid (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Crested Herdcaller · 5 · Creature — Dinosaur · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Dinosaur. · 3/3 | Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 2/5 | Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · 2/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Dread Warlock · 3 · Creature — Human Wizard Warlock · 2/2 | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Reclusive Artificer zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 18
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Springbloom Druid
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Mountain wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel znajduje Mountain i tasuje bibliotekę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Island
+  [ROZGRYWKA]   • Nieprzyjaciel: Island — biblioteka → pole bitwy
+  [ROZGRYWKA]   • Island wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel znajduje Island i tasuje bibliotekę
+
+--- krok 54 | T. 14BotGracz: 16 ż.Bot: 18 ż.Główna 1Stos — Divest ---
+  STOS: Divest (rzuca: Nieprzyjaciel) → cel: Ty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Crested Herdcaller · 5 · Creature — Dinosaur · Zadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Dinosaur. · 3/3 | Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 2/5 | Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · 2/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Dread Warlock · 3 · Creature — Human Wizard Warlock · 2/2 | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · 2/2 | Springbloom Druid · 3 · Creature — Elf Druid · Gdy wejdzie na pole bitwy: poświęć ląd, szukaj 2 basic landów. · choroba · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Divest → cel: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Odrzucasz kartę z ręki
+  [ROZGRYWKA]   • Divest zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Dread Warlock, Nightshade Harvester
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Dread Warlock zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 14
+  [ROZGRYWKA]   • Nightshade Harvester zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 12
+  [ROZGRYWKA]   • Tura 15 — Ty
+  >> Aktywuj: Sequestered Stash (Ty) (koszt 4, T, poświęć) — mieli 5 kart (do grobu) + możesz położyć artefakt z gr
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Sequestered Stash — mielenie kart do grobu
+  [ROZGRYWKA]   • Mielisz Merchant's Dockhand do grobu
+  [ROZGRYWKA]   • Mielisz Hunter's Blowgun do grobu
+  [ROZGRYWKA]   • Mielisz Cogwork Assembler do grobu
+  [ROZGRYWKA]   • Mielisz Spin Out do grobu
+  [ROZGRYWKA]   • Mielisz Fathom Fleet Cutthroat do grobu
+  [ROZGRYWKA]   • Wybierasz karty-stwory z grobu na wierzch biblioteki — do wyboru 4
+  [ROZGRYWKA]   • Ty: zdolność Sequestered Stash rozstrzygnięta
+
+--- krok 57 | T. 15GraczGracz: 12 ż.Bot: 18 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Wybierz: Karta z grobu na wierzch biblioteki (5 opcji)
+  RĘKA: Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 2/5 | Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · 2/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Dread Warlock · 3 · Creature — Human Wizard Warlock · 2/2 | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · 2/2 | Springbloom Druid · 3 · Creature — Elf Druid · Gdy wejdzie na pole bitwy: poświęć ląd, szukaj 2 basic landów. · choroba · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Karta z grobu na wierzch biblioteki (5 opcji)
+  [modal choice] Wybierz: Karta z grobu na wierzch biblioteki Na wierzch biblioteki: Welder Automaton🔍 Podgląd karty Na wierzch biblioteki: Merchant's Dockhand🔍 Podgląd karty Na wierzch biblioteki: Hunter's Blowgun🔍 Podgląd karty Na wierzch biblioteki: Cogwork Assembler🔍 Podgląd karty Koniec przenoszenia na wierzch biblioteki
+  [modal choice]     Na wierzch biblioteki: Welder Automaton
+  [modal choice]     Na wierzch biblioteki: Merchant's Dockhand
+  [modal choice]     Na wierzch biblioteki: Hunter's Blowgun
+  [modal choice]   ▶ Na wierzch biblioteki: Cogwork Assembler
+  [modal choice]     Koniec przenoszenia na wierzch biblioteki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Cogwork Assembler
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+
+--- krok 60 | T. 15GraczGracz: 12 ż.Bot: 16 ż.KoniecStos — Canonized in Blood ---
+  STOS: Trigger: Canonized in Blood (krok końca tury)
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 2/5 | Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Cogwork Assembler · 3 · Artifact Creature — Assembly-Worker · {7}: cel: artefakt — stwórz token-kopię artefaktu (haste, exile na koniec tury) · 2/3
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · 2/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Dread Warlock · 3 · Creature — Human Wizard Warlock · 2/2 | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · 2/2 | Springbloom Druid · 3 · Creature — Elf Druid · Gdy wejdzie na pole bitwy: poświęć ląd, szukaj 2 basic landów. · choroba · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Reclusive Artificer zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 18 → 16
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Canonized in Blood — trigger (krok końca tury)
+  [ROZGRYWKA]   • Canonized in Blood — cel: Reclusive Artificer (jedyny legalny — automatycznie)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Reclusive Artificer dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Canonized in Blood — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Twiddle — tryb: Tapnięcie → cel: Lodestone Needle
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Twiddle — tryb: Tapnięcie zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+
+--- krok 63 | T. 16BotGracz: 12 ż.Bot: 16 ż.Główna 1Stos — Scroll Thief ---
+  STOS: Scroll Thief (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 2/5 | Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Cogwork Assembler · 3 · Artifact Creature — Assembly-Worker · {7}: cel: artefakt — stwórz token-kopię artefaktu (haste, exile na koniec tury) · 2/3
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · 1x +1/+1 · 3/4 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Dread Warlock · 3 · Creature — Human Wizard Warlock · 2/2 | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · 2/2 | Springbloom Druid · 3 · Creature — Elf Druid · Gdy wejdzie na pole bitwy: poświęć ląd, szukaj 2 basic landów. · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Scroll Thief
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Scroll Thief zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Dread Warlock, Nightshade Harvester, Springbloom Druid
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Dread Warlock zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 12 → 10
+  [ROZGRYWKA]   • Nightshade Harvester zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 10 → 8
+  [ROZGRYWKA]   • Springbloom Druid zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 8 → 7
+  [ROZGRYWKA]   • Tura 17 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Zagraj: Cogwork Assembler (koszt 3)
+  [kreator many] Płatność 3 — tapuj źródła po jednympozostało 3 manyTapnij: Swamp (B)Tapnij: Forest (G)Tapnij: Mountain (R)Tapnij: Island — źródła: 4
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Forest (G)
+
+--- krok 66 | T. 17GraczGracz: 7 ż.Bot: 16 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Zagraj ląd: Swamp  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 2/5 | Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · 1x +1/+1 · 3/4 | Cogwork Assembler · 3 · Artifact Creature — Assembly-Worker · {7}: cel: artefakt — stwórz token-kopię artefaktu (haste, exile na koniec tury) · choroba · 2/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Dread Warlock · 3 · Creature — Human Wizard Warlock · 2/2 | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · 2/2 | Springbloom Druid · 3 · Creature — Elf Druid · Gdy wejdzie na pole bitwy: poświęć ląd, szukaj 2 basic landów. · 1/1 | Scroll Thief · 3 · Creature — Merfolk Rogue · Gdy zada obrażenia graczowi: dobierz 1 kartę. · choroba · 1/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Cogwork Assembler
+  [ROZGRYWKA]   • Cogwork Assembler wchodzi na pole bitwy
+  [ROZGRYWKA]   • Cogwork Assembler zostaje rozstrzygnięty
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA]   • Nightshade Harvester — trigger się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+
+--- krok 69 | T. 18BotGracz: 6 ż.Bot: 13 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 2/5 | Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · 1x +1/+1 · 3/4 | Cogwork Assembler · 3 · Artifact Creature — Assembly-Worker · {7}: cel: artefakt — stwórz token-kopię artefaktu (haste, exile na koniec tury) · choroba · 2/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Dread Warlock · 3 · Creature — Human Wizard Warlock · 2/2 | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · 1x +1/+1 · 3/3 | Springbloom Druid · 3 · Creature — Elf Druid · Gdy wejdzie na pole bitwy: poświęć ląd, szukaj 2 basic landów. · 1/1 | Scroll Thief · 3 · Creature — Merfolk Rogue · Gdy zada obrażenia graczowi: dobierz 1 kartę. · 1/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Howl of the Night Pack
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Wolf wchodzi na pole bitwy
+  [ROZGRYWKA]   • Howl of the Night Pack zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Nightshade Harvester
+
+--- krok 72 | T. 18BotGracz: 6 ż.Bot: 13 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Deklaracja blokujących (2 opcje)
+  RĘKA: Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 2/5 | Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · 1x +1/+1 · 3/4 | Cogwork Assembler · 3 · Artifact Creature — Assembly-Worker · {7}: cel: artefakt — stwórz token-kopię artefaktu (haste, exile na koniec tury) · choroba · 2/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Dread Warlock · 3 · Creature — Human Wizard Warlock · 2/2 | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · atakuje — niezablokowany · 1x +1/+1 · 3/3 | Springbloom Druid · 3 · Creature — Elf Druid · Gdy wejdzie na pole bitwy: poświęć ląd, szukaj 2 basic landów. · 1/1 | Scroll Thief · 3 · Creature — Merfolk Rogue · Gdy zada obrażenia graczowi: dobierz 1 kartę. · 1/3 | Wolf · 0 · Creature — Wolf · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Cogwork Assembler (2/3)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Cogwork Assembler blokuje Nightshade Harvester
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Nightshade Harvester zadaje 3 obrażenia (Cogwork Assembler)
+  [ROZGRYWKA]   • Cogwork Assembler zadaje 2 obrażenia (Nightshade Harvester)
+  [ROZGRYWKA]   • Cogwork Assembler ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 19 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+
+--- krok 75 | T. 19GraczGracz: 6 ż.Bot: 13 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Mountain  ||  Zagraj: Cacophodon (koszt 3G)  ||  Cel czaru: Malamet Battle Glyph (5 opcji)  ||  Aktywuj: Lodestone Needle (Ty) (koszt 3) — craft — transform  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 2/5 | Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · 1x +1/+1 · 3/4 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Dread Warlock · 3 · Creature — Human Wizard Warlock · 2/2 | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · 1x +1/+1 · 3/3 | Springbloom Druid · 3 · Creature — Elf Druid · Gdy wejdzie na pole bitwy: poświęć ląd, szukaj 2 basic landów. · 1/1 | Scroll Thief · 3 · Creature — Merfolk Rogue · Gdy zada obrażenia graczowi: dobierz 1 kartę. · 1/3 | Wolf · 0 · Creature — Wolf · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA]   • Ty: życie 6 → 5
+  [ROZGRYWKA]   • Nightshade Harvester dostaje +1 licznik +1/+1 (razem 2)
+  [ROZGRYWKA]   • Nightshade Harvester — trigger się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Zagraj: Cacophodon (koszt 3G)
+  [kreator many] Płatność 3G — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: GTapnij: Swamp (B)Tapnij: Forest (G)Tapnij: M — źródła: 6
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Swamp (B)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Cacophodon
+  [ROZGRYWKA]   • Cacophodon wchodzi na pole bitwy
+  [ROZGRYWKA]   • Cacophodon zostaje rozstrzygnięty
+
+--- krok 78 | T. 19GraczGracz: 5 ż.Bot: 13 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Reclusive Artificer · 4 · Creature — Human Artificer · Pośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · 1x +1/+1 · 3/4 | Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · choroba · 2/5 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Dread Warlock · 3 · Creature — Human Wizard Warlock · 2/2 | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · 2x +1/+1 · 4/4 | Springbloom Druid · 3 · Creature — Elf Druid · Gdy wejdzie na pole bitwy: poświęć ląd, szukaj 2 basic landów. · 1/1 | Scroll Thief · 3 · Creature — Merfolk Rogue · Gdy zada obrażenia graczowi: dobierz 1 kartę. · 1/3 | Wolf · 0 · Creature — Wolf · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Dread Warlock i Wolf blokują Reclusive Artificer
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Rozdzielasz obrażenia bojowe (trample albo wielu blokerów)
+  >> Wybierz: Rozdzielenie obrażeń bojowych (1 opcja)
+  [modal choice] Rozdziel obrażenia bojowe — przydziel moc atakujących blokującym:Reclusive Artificer (moc 3)Dread Warlock (wytrz. 2, śmiertelne 2)−10+1↑↓Wolf (wytrz. 2, śmiertelne 2)−10+1↑↓Zatwierdź przydziałUżyj domyślnego przydziału (zabójcze obrażenia po kolei blokerów)Zamknij (dokończysz później)
+  [modal choice]     Zatwierdź przydział
+  [modal choice]   ▶ Użyj domyślnego przydziału (zabójcze obrażenia po kolei blokerów)
+
+--- krok 81 | T. 19GraczGracz: 5 ż.Bot: 13 ż.KoniecStos — Canonized in Blood ---
+  STOS: Trigger: Canonized in Blood (krok końca tury)
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · choroba · 2/5 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · 2x +1/+1 · 4/4 | Springbloom Druid · 3 · Creature — Elf Druid · Gdy wejdzie na pole bitwy: poświęć ląd, szukaj 2 basic landów. · 1/1 | Scroll Thief · 3 · Creature — Merfolk Rogue · Gdy zada obrażenia graczowi: dobierz 1 kartę. · 1/3 | Wolf · 0 · Creature — Wolf · −1 · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Canonized in Blood — trigger (krok końca tury)
+  [ROZGRYWKA]   • Canonized in Blood — cel: Cacophodon (jedyny legalny — automatycznie)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Cacophodon dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Canonized in Blood — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Dawntreader Elk
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dawntreader Elk wchodzi na pole bitwy
+  [ROZGRYWKA]   • Dawntreader Elk zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 21 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Spreading Insurrection
+
+--- krok 84 | T. 21GraczGracz: 5 ż.Bot: 13 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Cel czaru: Malamet Battle Glyph (5 opcji)  ||  Cel czaru: Spreading Insurrection (5 opcji)  ||  Aktywuj: Lodestone Needle (Ty) (koszt 3) — craft — transform  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Spreading Insurrection · 5 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste · cel: stwór przeciwnika
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 1x +1/+1 · 3/6 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · 2x +1/+1 · 4/4 | Springbloom Druid · 3 · Creature — Elf Druid · Gdy wejdzie na pole bitwy: poświęć ląd, szukaj 2 basic landów. · 1/1 | Scroll Thief · 3 · Creature — Merfolk Rogue · Gdy zada obrażenia graczowi: dobierz 1 kartę. · 1/3 | Wolf · 0 · Creature — Wolf · 2/2 | Dawntreader Elk · 2 · Creature — Elk · {G}, poświęć: szukaj w bibliotece na pole bitwy · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  >> Cel czaru: Spreading Insurrection (5 opcji)
+  [modal choice] Cel czaru: Spreading Insurrection Rzuć: Spreading Insurrection (koszt 4R) → cel: Nightshade Harvester (Nieprzyjaciel)🔍 Podgląd karty Rzuć: Spreading Insurrection (koszt 4R) → cel: Springbloom Druid (Nieprzyjaciel)🔍 Podgląd karty Rzuć: Spreading Insurrection (koszt 4R) → cel: Scroll Thief (Nieprzyjaciel)🔍 Podgląd karty Rzuć: Spreading Insurrection (koszt 4R) → cel: Wolf (Nieprzyjaciel)🔍 Podgląd karty Rzuć: Spreading Insurrection (koszt 4R) → cel: Dawntreader Elk (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]     Rzuć: Spreading Insurrection (koszt 4R) → cel: Nightshade Harvester (Nieprzyjaciel)
+  [modal choice]     Rzuć: Spreading Insurrection (koszt 4R) → cel: Springbloom Druid (Nieprzyjaciel)
+  [modal choice]   ▶ Rzuć: Spreading Insurrection (koszt 4R) → cel: Scroll Thief (Nieprzyjaciel)
+  [modal choice]     Rzuć: Spreading Insurrection (koszt 4R) → cel: Wolf (Nieprzyjaciel)
+  [modal choice]     Rzuć: Spreading Insurrection (koszt 4R) → cel: Dawntreader Elk (Nieprzyjaciel)
+  [kreator many] Płatność 4R — tapuj źródła po jednympozostało 5 many · kolory do pokrycia: RTapnij: Swamp (B)Tapnij: Forest (G)Tapnij: M — źródła: 6
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Forest (G)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Rzucasz Spreading Insurrection → cel: Scroll Thief
+  [ROZGRYWKA]   • Spreading Insurrection — trigger (storm)
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Negate → cel: Spreading Insurrection
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Negate zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Spreading Insurrection — trigger bez efektu (nie było czego wykonać)
+
+--- krok 87 | T. 21GraczGracz: 5 ż.Bot: 13 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 1x +1/+1 · 3/6 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · 2x +1/+1 · 4/4 | Springbloom Druid · 3 · Creature — Elf Druid · Gdy wejdzie na pole bitwy: poświęć ląd, szukaj 2 basic landów. · 1/1 | Scroll Thief · 3 · Creature — Merfolk Rogue · Gdy zada obrażenia graczowi: dobierz 1 kartę. · 1/3 | Wolf · 0 · Creature — Wolf · 2/2 | Dawntreader Elk · 2 · Creature — Elk · {G}, poświęć: szukaj w bibliotece na pole bitwy · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 0 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Inspiration → cel: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Dawntreader Elk zostaje poświęcony
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Dawntreader Elk — szukanie karty w bibliotece na pole bitwy
+
+--- krok 90 | T. 22BotGracz: 5 ż.Bot: 13 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Forest · Basic Land — Forest · T: dodaj 1 manę | Silken Strength · 2 · Enchantment — Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent.
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 1x +1/+1 · 3/6 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · 2x +1/+1 · 4/4 | Springbloom Druid · 3 · Creature — Elf Druid · Gdy wejdzie na pole bitwy: poświęć ląd, szukaj 2 basic landów. · 1/1 | Scroll Thief · 3 · Creature — Merfolk Rogue · Gdy zada obrażenia graczowi: dobierz 1 kartę. · 1/3 | Wolf · 0 · Creature — Wolf · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Dawntreader Elk rozstrzygnięta
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Island
+  [ROZGRYWKA]   • Nieprzyjaciel: Island — biblioteka → pole bitwy
+  [ROZGRYWKA]   • Island wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel znajduje Island i tasuje bibliotekę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 23 — Ty
+  >> Aura: Silken Strength (5 opcji)
+  [modal choice] Aura: Silken Strength Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Nightshade Harvester (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Springbloom Druid (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Scroll Thief (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Wolf (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Cacophodon (Ty)🔍 Podgląd karty
+  [modal choice]     Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Nightshade Harvester (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Springbloom Druid (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Scroll Thief (Nieprzyjaciel)
+  [modal choice]   ▶ Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Wolf (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Cacophodon (Ty)
+  [kreator many] Płatność 1G — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: GTapnij: Swamp (B)Tapnij: Forest (G)Tapnij: M — źródła: 6
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Swamp (B)
+
+--- krok 93 | T. 23GraczGracz: 5 ż.Bot: 13 ż.UpkeepStos — Silken Strength ---
+  STOS: Trigger: Silken Strength (wejście na pole bitwy)
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Forest · Basic Land — Forest · T: dodaj 1 manę
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 1x +1/+1 · 3/6 | Silken Strength · 2 · Enchantment Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent. · aura → Wolf | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · 2x +1/+1 · 4/4 | Springbloom Druid · 3 · Creature — Elf Druid · Gdy wejdzie na pole bitwy: poświęć ląd, szukaj 2 basic landów. · 1/1 | Scroll Thief · 3 · Creature — Merfolk Rogue · Gdy zada obrażenia graczowi: dobierz 1 kartę. · 1/3 | Wolf · 0 · Creature — Wolf · Zasięg · +1/+2 · zaczarowana: Silken Strength · 3/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Silken Strength zaczarowuje Wolf
+  [ROZGRYWKA]   • Silken Strength wchodzi na pole bitwy
+  [ROZGRYWKA]   • Silken Strength — trigger (wejście na pole bitwy)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Silken Strength — trigger bez efektu (nie było czego wykonać)
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Bomat Bazaar Barge
+  >> Zagraj: Bomat Bazaar Barge (koszt 4)
+  [ROZGRYWKA]   • Bomat Bazaar Barge zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Bomat Bazaar Barge — trigger (wejście na pole bitwy)
+
+--- krok 96 | T. 23GraczGracz: 5 ż.Bot: 13 ż.Główna 1Stos — Bomat Bazaar Barge ---
+  STOS: Trigger: Bomat Bazaar Barge (wejście na pole bitwy)
+  AKCJE: Aktywuj: Bomat Bazaar Barge (Ty) (koszt załoga 3) — stanie się stworem do końca tury — załoga: tapnij Cacophodon (Ty)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Forest · Basic Land — Forest · T: dodaj 1 manę
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 1x +1/+1 · 3/6 | Silken Strength · 2 · Enchantment Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent. · aura → Wolf | Bomat Bazaar Barge · 4 · Artifact — Vehicle · Gdy wejdzie na pole bitwy: dobierz 1 kartę. · załoga 3: stanie się stworem do końca tury | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · 2x +1/+1 · 4/4 | Springbloom Druid · 3 · Creature — Elf Druid · Gdy wejdzie na pole bitwy: poświęć ląd, szukaj 2 basic landów. · 1/1 | Scroll Thief · 3 · Creature — Merfolk Rogue · Gdy zada obrażenia graczowi: dobierz 1 kartę. · 1/3 | Wolf · 0 · Creature — Wolf · Zasięg · +1/+2 · zaczarowana: Silken Strength · 3/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Aktywuj: Bomat Bazaar Barge (Ty) (koszt załoga 3) — stanie się stworem do końca tury — załoga: tapnij Cacophod
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Bomat Bazaar Barge — załoga: Cacophodon
+  [ROZGRYWKA]   • Bomat Bazaar Barge staje się stworzeniem 5/5 do końca tury
+  [ROZGRYWKA]   • Ty: zdolność Bomat Bazaar Barge rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Bomat Bazaar Barge — trigger się rozstrzyga
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA]   • Ty: życie 5 → 4
+  [ROZGRYWKA]   • Nightshade Harvester dostaje +1 licznik +1/+1 (razem 3)
+  [ROZGRYWKA]   • Nightshade Harvester — trigger się rozstrzyga
+
+--- krok 99 | T. 23GraczGracz: 4 ż.Bot: 13 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Cel czaru: Malamet Battle Glyph (8 opcji)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Plains · Basic Land — Plains · T: dodaj 1 manę
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 1x +1/+1 · 3/6 | Silken Strength · 2 · Enchantment Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent. · aura → Wolf | Bomat Bazaar Barge · 4 · Artifact Creature — Vehicle · Gdy wejdzie na pole bitwy: dobierz 1 kartę. · załoga 3: stanie się stworem do końca tury · choroba · 5/5 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · 3x +1/+1 · 5/5 | Springbloom Druid · 3 · Creature — Elf Druid · Gdy wejdzie na pole bitwy: poświęć ląd, szukaj 2 basic landów. · 1/1 | Scroll Thief · 3 · Creature — Merfolk Rogue · Gdy zada obrażenia graczowi: dobierz 1 kartę. · 1/3 | Wolf · 0 · Creature — Wolf · Zasięg · +1/+2 · zaczarowana: Silken Strength · 3/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Cel czaru: Malamet Battle Glyph (8 opcji)
+  [multi-target wizard] Malamet Battle Glyph — wskaż po jednym celu dla każdej pozycji: 1. twój stwór:[ ] Cacophod — opcji 6, potrzeba 1, celuję w 1
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Cacophodon — wybierz cel triggera (wymagany)
+  >> Cacophodon — cel triggera (24 opcje)
+  [modal choice] Cacophodon — cel triggera Cacophodon — cel triggera: Bomat Bazaar Barge (Ty)🔍 Podgląd karty Cacophodon — cel triggera: Cacophodon (Ty)🔍 Podgląd karty Cacophodon — cel triggera: Nightshade Harvester (Nieprzyjaciel)🔍 Podgląd karty Cacophodon — cel triggera: Wolf (Nieprzyjaciel)🔍 Podgląd karty Cacophodon — cel triggera: Springbloom Druid (Nieprzyjaciel)🔍 Podgląd karty Cacophodon — cel triggera: Canonized in Blood (Ty)🔍 Podgląd karty Cacophodon — cel triggera: Lodestone Needle (Ty)🔍 Podgląd karty Cacophodon — cel triggera: Silken Strength (Ty)🔍 Podgląd karty Cacophodon — cel triggera: Swamp (Ty) (1 z 2)🔍 Podgląd karty Cacophodon — cel triggera: Forest (Ty) (1 z 2)🔍 Podgląd karty Cacophodon — cel triggera: Swamp (Nieprzyjaciel) (1 z 3)🔍 Podgląd karty Cacophodon — cel triggera: Mountain (Ty) (1 z 2)🔍 Podgląd karty Cacophodon — cel triggera: Mountain (Nieprzyjaciel) (1 z 2)🔍 Podgląd karty Cacophodon — cel triggera: Swamp (Nieprzyjaciel) (2 z 3)🔍 Podgląd karty Cacophodon — cel triggera: Swamp (Nieprzyjaciel) (3 z 3)🔍 Podgląd karty Cacophodon — cel triggera: Island (Ty)🔍 Podgląd karty Cacophodon — cel triggera: Mountain (Nieprzyjaciel) (2 z 2)🔍 Podgląd karty Cacophodon — cel triggera: Island (Nieprzyjaciel) (1 z 3)🔍 Podgląd karty Cacophodon — cel triggera: Island (Nieprzyjaciel) (2 z 3)🔍 Podgląd karty Cacophodon — cel triggera: Swamp (Ty) (2 z 2)🔍 Podgląd karty Cacophodon — cel triggera: Forest (Nieprzyjaciel)🔍 Podgląd karty Cacophodon — cel triggera: Mountain (Ty) (2 z 2)🔍 Podgląd karty Cacophodon — cel triggera: Island (Nieprzyjaciel) (3 z 3)🔍 Podgląd karty Cacophodon — cel triggera: Forest (Ty) (2 z 2)🔍 Podgląd karty
+  [modal choice]     Cacophodon — cel triggera: Bomat Bazaar Barge (Ty)
+  [modal choice]     Cacophodon — cel triggera: Cacophodon (Ty)
+  [modal choice]     Cacophodon — cel triggera: Nightshade Harvester (Nieprzyjaciel)
+  [modal choice]     Cacophodon — cel triggera: Wolf (Nieprzyjaciel)
+  [modal choice]     Cacophodon — cel triggera: Springbloom Druid (Nieprzyjaciel)
+  [modal choice]     Cacophodon — cel triggera: Canonized in Blood (Ty)
+  [modal choice]     Cacophodon — cel triggera: Lodestone Needle (Ty)
+  [modal choice]     Cacophodon — cel triggera: Silken Strength (Ty)
+  [modal choice]     Cacophodon — cel triggera: Swamp (Ty) (1 z 2)
+  [modal choice]     Cacophodon — cel triggera: Forest (Ty) (1 z 2)
+  [modal choice]     Cacophodon — cel triggera: Swamp (Nieprzyjaciel) (1 z 3)
+  [modal choice]     Cacophodon — cel triggera: Mountain (Ty) (1 z 2)
+  [modal choice]     Cacophodon — cel triggera: Mountain (Nieprzyjaciel) (1 z 2)
+  [modal choice]     Cacophodon — cel triggera: Swamp (Nieprzyjaciel) (2 z 3)
+  [modal choice]   ▶ Cacophodon — cel triggera: Swamp (Nieprzyjaciel) (3 z 3)
+  [modal choice]     Cacophodon — cel triggera: Island (Ty)
+  [modal choice]     Cacophodon — cel triggera: Mountain (Nieprzyjaciel) (2 z 2)
+  [modal choice]     Cacophodon — cel triggera: Island (Nieprzyjaciel) (1 z 3)
+  [modal choice]     Cacophodon — cel triggera: Island (Nieprzyjaciel) (2 z 3)
+  [modal choice]     Cacophodon — cel triggera: Swamp (Ty) (2 z 2)
+  [modal choice]     Cacophodon — cel triggera: Forest (Nieprzyjaciel)
+  [modal choice]     Cacophodon — cel triggera: Mountain (Ty) (2 z 2)
+  [modal choice]     Cacophodon — cel triggera: Island (Nieprzyjaciel) (3 z 3)
+  [modal choice]     Cacophodon — cel triggera: Forest (Ty) (2 z 2)
+
+--- krok 102 | T. 24BotGracz: 4 ż.Bot: 13 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Plains · Basic Land — Plains · T: dodaj 1 manę
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 1x +1/+1 · 3/6 | Silken Strength · 2 · Enchantment Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent. · aura → Wolf | Bomat Bazaar Barge · 4 · Artifact — Vehicle · Gdy wejdzie na pole bitwy: dobierz 1 kartę. · załoga 3: stanie się stworem do końca tury | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×4 | Forest · Basic Land — Forest · T: dodaj 1 manę | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · 3x +1/+1 · 5/5 | Springbloom Druid · 3 · Creature — Elf Druid · Gdy wejdzie na pole bitwy: poświęć ląd, szukaj 2 basic landów. · 1/1 | Wolf · 0 · Creature — Wolf · Zasięg · +1/+2 · zaczarowana: Silken Strength · 3/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Cacophodon — trigger (otrzymanie obrażeń)
+  [ROZGRYWKA]   • Cacophodon — cel: Swamp
+  [ROZGRYWKA]   • Cacophodon — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 24 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 104 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Plains · Basic Land — Plains · T: dodaj 1 manę
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Cacophodon · 4 · Creature — Dinosaur · Otrzymanie obrażeń: odkręć. · 1x +1/+1 · 3/6 | Silken Strength · 2 · Enchantment Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent. · aura → Wolf | Bomat Bazaar Barge · 4 · Artifact — Vehicle · Gdy wejdzie na pole bitwy: dobierz 1 kartę. · załoga 3: stanie się stworem do końca tury | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×4 | Forest · Basic Land — Forest · T: dodaj 1 manę | Nightshade Harvester · 4 · Creature — Elf Shaman · Gdy land wchodzi pod kontrolą przeciwnika: utrata 1 życia, połóż licznik +1/+1. · 3x +1/+1 · 5/5 | Springbloom Druid · 3 · Creature — Elf Druid · Gdy wejdzie na pole bitwy: poświęć ląd, szukaj 2 basic landów. · 1/1 | Wolf · 0 · Creature — Wolf · Zasięg · +1/+2 · zaczarowana: Silken Strength · 3/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cathartic Reunion, Dire Fleet Ravager, Stall Out, Glint-Sleeve Artisan, Seismic Monstrosaur, Shock, Swamp ⏎ Nowa partia (seed 521). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 38, kliknięte: 45, modale: 10, sondy noop: 139 (panel 83, modal 56)
+== DETEKTORY: brak zgłoszeń ==

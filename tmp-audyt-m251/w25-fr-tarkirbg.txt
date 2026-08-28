@@ -1,0 +1,449 @@
+== NOWA PARTIA: gracz=forgotten-realms vs bot=tarkir-bg, seed=511, profil=explorer, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island  ||  Zagraj ląd: Plains  ||  Zagraj ląd: Forest  ||  Zagraj ląd: Mountain  ||  Zagraj ląd: Manor Gate  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Curate · 2 · Instant · surveil 2 + dobierz 1 kartę | Island · Basic Land — Island · T: dodaj 1 manę | Circle of the Land Druid · 2 · Creature — Gnome Druid · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · Gdy ta karta umrze: wróć kartę z grobu na rękę. · 1/1 | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curate, Island, Circle of the Land Druid, Plains, Forest, Mountain, Manor Gate ⏎ Nowa partia (seed 511). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Island
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+
+--- krok 3 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Plains  ||  Zagraj ląd: Forest (1 z 2)  ||  Zagraj ląd: Mountain  ||  Zagraj ląd: Manor Gate  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Curate · 2 · Instant · surveil 2 + dobierz 1 kartę | Circle of the Land Druid · 2 · Creature — Gnome Druid · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · Gdy ta karta umrze: wróć kartę z grobu na rękę. · 1/1 | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curate, Island, Circle of the Land Druid, Plains, Forest, Mountain, Manor Gate ⏎ Nowa partia (seed 511). Powodzenia!
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Rzuć: Curate (koszt 1U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Curate
+  [ROZGRYWKA]   • Wykonujesz surveil (patrzy na 2 karty: Swamp, Swamp)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Surveil — karty do grobu (5 opcji)
+  [modal choice] Surveil 2 — obejrzane karty: 1. Swamp 2. SwampKarta 1 z 2: SwampNa cmentarzNa wierzch bibliotekiZamknij (dokończysz później)
+  [modal choice]   ▶ Na cmentarz
+  [modal choice]     Na wierzch biblioteki
+  [modal choice] Surveil 2 — obejrzane karty: 1. Swamp → cmentarz 2. SwampKarta 2 z 2: SwampNa cmentarzNa wierzch bibliotekiZamknij (dokończysz później)
+  [modal choice]     Na cmentarz
+  [modal choice]   ▶ Na wierzch biblioteki
+
+--- krok 6 | T. 4BotGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Circle of the Land Druid · 2 · Creature — Gnome Druid · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · Gdy ta karta umrze: wróć kartę z grobu na rękę. · 1/1 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curate, Island, Circle of the Land Druid, Plains, Forest, Mountain, Manor Gate ⏎ Nowa partia (seed 511). Powodzenia!
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Curate zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Your Temple Is Under Attack
+  >> Zagraj ląd: Forest (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+
+--- krok 9 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Circle of the Land Druid (koszt 1G)  ||  Rzuć: Your Temple Is Under Attack — Modlitwa o ochronę (koszt 2W)  ||  Rzuć: Your Temple Is Under Attack — Zawrzyj pakt (koszt 2W) → cel: Nieprzyjaciel  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Circle of the Land Druid · 2 · Creature — Gnome Druid · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · Gdy ta karta umrze: wróć kartę z grobu na rękę. · 1/1 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Your Temple Is Under Attack · 3 · Instant · wybierz jedno — Modlitwa o ochronę: +0/+0 dla twoich stworów do końca tury / Zawrzyj pakt: oboje dobierają 2 karty · cel: przeciwnik
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curate, Island, Circle of the Land Druid, Plains, Forest, Mountain, Manor Gate ⏎ Nowa partia (seed 511). Powodzenia!
+  >> Zagraj: Circle of the Land Druid (koszt 1G)
+  [kreator many] Płatność 1G — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: GTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 3
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Circle of the Land Druid zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Circle of the Land Druid — skorzystać z efektu „you may"? (wybór opcjonalny: Ty)
+  >> Circle of the Land Druid — mieli 4 karty (do grobu) (możesz) (2 opcje)
+  [modal choice] Circle of the Land Druid — mieli 4 karty (do grobu) (możesz) Uruchom efekt dobrowolny (you may) Zrezygnuj z efektu
+  [modal choice]   ▶ Uruchom efekt dobrowolny (you may)
+  [modal choice]     Zrezygnuj z efektu
+
+--- krok 12 | T. 6BotGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Mountain · Basic Land — Mountain · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Your Temple Is Under Attack · 3 · Instant · wybierz jedno — Modlitwa o ochronę: +0/+0 dla twoich stworów do końca tury / Zawrzyj pakt: oboje dobierają 2 karty · cel: przeciwnik
+  MOJE POLA: Circle of the Land Druid · 2 · Creature — Gnome Druid · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · Gdy ta karta umrze: wróć kartę z grobu na rękę. · choroba · 1/1 | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curate, Island, Circle of the Land Druid, Plains, Forest, Mountain, Manor Gate ⏎ Nowa partia (seed 511). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Mielisz Mountain do grobu
+  [ROZGRYWKA]   • Mielisz Marut do grobu
+  [ROZGRYWKA]   • Circle of the Land Druid — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Morph twarzą w dół (2/2)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Morph zostaje rozstrzygnięty (twarzą w dół)
+  [ROZGRYWKA]   • Tura 7 — Ty
+
+--- krok 15 | T. 7GraczGracz: 20 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Rzuć: Your Temple Is Under Attack — Modlitwa o ochronę (koszt 2W)  ||  Rzuć: Your Temple Is Under Attack — Zawrzyj pakt (koszt 2W) → cel: Nieprzyjaciel  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Mountain · Basic Land — Mountain · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Your Temple Is Under Attack · 3 · Instant · wybierz jedno — Modlitwa o ochronę: +0/+0 dla twoich stworów do końca tury / Zawrzyj pakt: oboje dobierają 2 karty · cel: przeciwnik
+  MOJE POLA: Circle of the Land Druid · 2 · Creature — Gnome Druid · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · Gdy ta karta umrze: wróć kartę z grobu na rękę. · 1/1 | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Face-down creature · Creature · Morph · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curate, Island, Circle of the Land Druid, Plains, Forest, Mountain, Manor Gate ⏎ Nowa partia (seed 511). Powodzenia!
+  >> Rzuć: Your Temple Is Under Attack — Modlitwa o ochronę (koszt 2W)
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Lurking Green Dragon
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+
+--- krok 18 | T. 8BotGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Lurking Green Dragon · 4 · Creature — Dragon · Latanie · atakuje tylko, gdy obrońca ma latanie · 4/4
+  MOJE POLA: Circle of the Land Druid · 2 · Creature — Gnome Druid · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · Gdy ta karta umrze: wróć kartę z grobu na rękę. · 1/1 | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Face-down creature · Creature · Morph · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curate, Island, Circle of the Land Druid, Plains, Forest, Mountain, Manor Gate ⏎ Nowa partia (seed 511). Powodzenia!
+  [ROZGRYWKA]   • Morph blokuje Circle of the Land Druid
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Circle of the Land Druid zadaje 1 obrażenie (Morph)
+  [ROZGRYWKA]   • Morph zadaje 2 obrażenia (Circle of the Land Druid)
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Knockout Maneuver → cel: Morph, Circle of the Land Druid
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Morph zadaje 3 obrażenia (Circle of the Land Druid)
+  [ROZGRYWKA]   • Knockout Maneuver zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Circle of the Land Druid ginie
+
+--- krok 21 | T. 8BotGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Circle of the Land Druid — cel triggera (2 opcje)
+  RĘKA: Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Lurking Green Dragon · 4 · Creature — Dragon · Latanie · atakuje tylko, gdy obrońca ma latanie · 4/4
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Face-down creature · Creature · Morph · 1x +1/+1 · 3/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curate, Island, Circle of the Land Druid, Plains, Forest, Mountain, Manor Gate ⏎ Nowa partia (seed 511). Powodzenia!
+  >> Circle of the Land Druid — cel triggera (2 opcje)
+  [modal choice] Circle of the Land Druid — cel triggera Circle of the Land Druid — cel triggera: Swamp🔍 Podgląd karty Circle of the Land Druid — cel triggera: Mountain🔍 Podgląd karty
+  [modal choice]   ▶ Circle of the Land Druid — cel triggera: Swamp
+  [modal choice]     Circle of the Land Druid — cel triggera: Mountain
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Morph
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Morph zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 17
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Manor Gate
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Manor Gate (wchodzi zatapnięty)
+
+--- krok 24 | T. 9GraczGracz: 17 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Lurking Green Dragon (koszt 3G)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Lurking Green Dragon · 4 · Creature — Dragon · Latanie · atakuje tylko, gdy obrońca ma latanie · 4/4 | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Face-down creature · Creature · Morph · 1x +1/+1 · 3/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curate, Island, Circle of the Land Druid, Plains, Forest, Mountain, Manor Gate ⏎ Nowa partia (seed 511). Powodzenia!
+  >> Zagraj: Lurking Green Dragon (koszt 3G)
+  [ROZGRYWKA]   • Lurking Green Dragon zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Trade Route Envoy
+
+--- krok 27 | T. 11GraczGracz: 17 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Manor Gate (Ty) (koszt T) — dodaj 1 manę zieloną  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Lurking Green Dragon · 4 · Creature — Dragon · Latanie · atakuje tylko, gdy obrońca ma latanie · 4/4 | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Face-down creature · Creature · Morph · 1x +1/+1 · 3/3 | Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · choroba · 4/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curate, Island, Circle of the Land Druid, Plains, Forest, Mountain, Manor Gate ⏎ Nowa partia (seed 511). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Trade Route Envoy zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Trade Route Envoy — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Trade Route Envoy — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Aktywuj: Manor Gate (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Manor Gate — dodanie 1 many zielonej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Nefarious Imp
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+
+--- krok 30 | T. 12BotGracz: 17 ż.Bot: 20 ż.Główna 1Stos — Silumgar Butcher ---
+  STOS: Silumgar Butcher (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1
+  MOJE POLA: Lurking Green Dragon · 4 · Creature — Dragon · Latanie · atakuje tylko, gdy obrońca ma latanie · 4/4 | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Face-down creature · Creature · Morph · 1x +1/+1 · 3/3 | Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · 4/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curate, Island, Circle of the Land Druid, Plains, Forest, Mountain, Manor Gate ⏎ Nowa partia (seed 511). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Silumgar Butcher
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Silumgar Butcher zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Woolly Loxodon zostaje poświęcony
+  [ROZGRYWKA]   • Exploit: Woolly Loxodon zostaje poświęcony dla Silumgar Butcher
+  [ROZGRYWKA]   • Silumgar Butcher — wybierz cel triggera (wymagany)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Silumgar Butcher — trigger (exploit)
+  [ROZGRYWKA]   • Silumgar Butcher — cel: Lurking Green Dragon
+
+--- krok 33 | T. 12BotGracz: 17 ż.Bot: 20 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Deklaracja blokujących (2 opcje)
+  RĘKA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1
+  MOJE POLA: Lurking Green Dragon · 4 · Creature — Dragon · Latanie · atakuje tylko, gdy obrońca ma latanie · -3/-3 · 1/1 | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · atakuje — niezablokowany · 4/3 | Silumgar Butcher · 5 · Creature — Zombie Djinn · Gdy ten stwór exploituje: -3/-3 do końca tury. · choroba · 3/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curate, Island, Circle of the Land Druid, Plains, Forest, Mountain, Manor Gate ⏎ Nowa partia (seed 511). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Trade Route Envoy
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Lurking Green Dragon (1/1)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA]   • Lurking Green Dragon ginie
+
+--- krok 36 | T. 13GraczGracz: 17 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Manor Gate (Ty) (koszt T) — dodaj 1 manę zieloną  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · 4/3 | Silumgar Butcher · 5 · Creature — Zombie Djinn · Gdy ten stwór exploituje: -3/-3 do końca tury. · choroba · 3/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curate, Island, Circle of the Land Druid, Plains, Forest, Mountain, Manor Gate ⏎ Nowa partia (seed 511). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Aktywuj: Manor Gate (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Guildsworn Prowler
+  >> Zagraj ląd: Swamp (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+
+--- krok 39 | T. 13GraczGracz: 17 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Nefarious Imp (koszt 2B)  ||  Zagraj: Guildsworn Prowler (koszt 1B)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · 2/1 | Guildsworn Prowler · 2 · Creature — Tiefling Rogue Assassin · Dotykanie śmierci · Gdy ta karta umrze: dobierz 1 kartę. · 2/1
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · 4/3 | Silumgar Butcher · 5 · Creature — Zombie Djinn · Gdy ten stwór exploituje: -3/-3 do końca tury. · choroba · 3/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curate, Island, Circle of the Land Druid, Plains, Forest, Mountain, Manor Gate ⏎ Nowa partia (seed 511). Powodzenia!
+  >> Zagraj: Nefarious Imp (koszt 2B)
+  [kreator many] Płatność 2B — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: BTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 6
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nefarious Imp zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Kishla Village
+
+--- krok 42 | T. 14BotGracz: 17 ż.Bot: 20 ż.Główna 1Stos — Ainok Artillerist ---
+  STOS: Ainok Artillerist (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Guildsworn Prowler · 2 · Creature — Tiefling Rogue Assassin · Dotykanie śmierci · Gdy ta karta umrze: dobierz 1 kartę. · 2/1
+  MOJE POLA: Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · choroba · 2/1 | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · 4/3 | Silumgar Butcher · 5 · Creature — Zombie Djinn · Gdy ten stwór exploituje: -3/-3 do końca tury. · 3/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curate, Island, Circle of the Land Druid, Plains, Forest, Mountain, Manor Gate ⏎ Nowa partia (seed 511). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Ainok Artillerist
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Kishla Village — dodanie 1 many zielonej do puli
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Ainok Artillerist zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Delta Bloodflies
+
+--- krok 45 | T. 14BotGracz: 17 ż.Bot: 20 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Deklaracja blokujących (3 opcje)
+  RĘKA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Guildsworn Prowler · 2 · Creature — Tiefling Rogue Assassin · Dotykanie śmierci · Gdy ta karta umrze: dobierz 1 kartę. · 2/1
+  MOJE POLA: Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. · choroba · 2/1 | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · atakuje — niezablokowany · 4/3 | Silumgar Butcher · 5 · Creature — Zombie Djinn · Gdy ten stwór exploituje: -3/-3 do końca tury. · atakuje — niezablokowany · 3/3 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · choroba · 4/1 | Delta Bloodflies · 2 · Creature — Insect · Latanie · Gdy atakuje: utrata 1 życia. · choroba · 1/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curate, Island, Circle of the Land Druid, Plains, Forest, Mountain, Manor Gate ⏎ Nowa partia (seed 511). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Atak: Trade Route Envoy, Silumgar Butcher
+  >> Wybierz: Deklaracja blokujących (3 opcje)
+  [combat wizard] blokuję 1 stworami: Nefarious Imp (2/1)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA]   • Silumgar Butcher zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 14
+  [ROZGRYWKA]   • Nefarious Imp ginie
+
+--- krok 48 | T. 15GraczGracz: 14 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Manor Gate (Ty) (koszt T) — dodaj 1 manę zieloną  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Guildsworn Prowler · 2 · Creature — Tiefling Rogue Assassin · Dotykanie śmierci · Gdy ta karta umrze: dobierz 1 kartę. · 2/1
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · 4/3 | Silumgar Butcher · 5 · Creature — Zombie Djinn · Gdy ten stwór exploituje: -3/-3 do końca tury. · 3/3 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · choroba · 4/1 | Delta Bloodflies · 2 · Creature — Insect · Latanie · Gdy atakuje: utrata 1 życia. · choroba · 1/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curate, Island, Circle of the Land Druid, Plains, Forest, Mountain, Manor Gate ⏎ Nowa partia (seed 511). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 15 — Ty
+  >> Aktywuj: Manor Gate (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Angel of the Dawn
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+
+--- krok 51 | T. 15GraczGracz: 14 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Guildsworn Prowler (koszt 1B)  ||  Zagraj: Angel of the Dawn (koszt 4W)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Island · Basic Land — Island · T: dodaj 1 manę | Guildsworn Prowler · 2 · Creature — Tiefling Rogue Assassin · Dotykanie śmierci · Gdy ta karta umrze: dobierz 1 kartę. · 2/1 | Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · 4/3 | Silumgar Butcher · 5 · Creature — Zombie Djinn · Gdy ten stwór exploituje: -3/-3 do końca tury. · 3/3 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · choroba · 4/1 | Delta Bloodflies · 2 · Creature — Insect · Latanie · Gdy atakuje: utrata 1 życia. · choroba · 1/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curate, Island, Circle of the Land Druid, Plains, Forest, Mountain, Manor Gate ⏎ Nowa partia (seed 511). Powodzenia!
+  >> Zagraj: Guildsworn Prowler (koszt 1B)
+  [kreator many] Płatność 1B — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: BTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 7
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Island (U)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Guildsworn Prowler zostaje rozstrzygnięty
+  >> Zagraj: Angel of the Dawn (koszt 4W)
+  [ROZGRYWKA]   • Angel of the Dawn — trigger (wejście na pole bitwy)
+
+--- krok 54 | T. 16BotGracz: 14 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Guildsworn Prowler · 2 · Creature — Tiefling Rogue Assassin · Dotykanie śmierci · Gdy ta karta umrze: dobierz 1 kartę. · choroba · 2/1 | Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · choroba · 3/3 | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×5 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · 4/3 | Silumgar Butcher · 5 · Creature — Zombie Djinn · Gdy ten stwór exploituje: -3/-3 do końca tury. · 3/3 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Delta Bloodflies · 2 · Creature — Insect · Latanie · Gdy atakuje: utrata 1 życia. · 1/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curate, Island, Circle of the Land Druid, Plains, Forest, Mountain, Manor Gate ⏎ Nowa partia (seed 511). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Stampeding Elk Herd
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Stampeding Elk Herd zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Trade Route Envoy, Silumgar Butcher, Ainok Artillerist
+
+--- krok 57 | T. 16BotGracz: 14 ż.Bot: 20 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Deklaracja blokujących (16 opcji)
+  RĘKA: Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Guildsworn Prowler · 2 · Creature — Tiefling Rogue Assassin · Dotykanie śmierci · Gdy ta karta umrze: dobierz 1 kartę. · choroba · 2/1 | Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · choroba · 3/3 | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×5 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · atakuje — niezablokowany · 4/3 | Silumgar Butcher · 5 · Creature — Zombie Djinn · Gdy ten stwór exploituje: -3/-3 do końca tury. · atakuje — niezablokowany · 3/3 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · atakuje — niezablokowany · 4/1 | Delta Bloodflies · 2 · Creature — Insect · Latanie · Gdy atakuje: utrata 1 życia. · 1/2 | Stampeding Elk Herd · 5 · Creature — Elk · Gdy atakuje: twoje stwory zdobywają Zadeptywanie do końca tury. · choroba · 5/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curate, Island, Circle of the Land Druid, Plains, Forest, Mountain, Manor Gate ⏎ Nowa partia (seed 511). Powodzenia!
+  >> Wybierz: Deklaracja blokujących (16 opcji)
+  [combat wizard] blokuję 2 stworami: Guildsworn Prowler (2/1)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA]   • Trade Route Envoy zadaje 1 obrażenie (Guildsworn Prowler)
+  [ROZGRYWKA]   • Trade Route Envoy zadaje 3 obrażenia (Angel of the Dawn)
+  [ROZGRYWKA]   • Guildsworn Prowler zadaje 2 obrażenia (Trade Route Envoy)
+  [ROZGRYWKA]   • Angel of the Dawn zadaje 3 obrażenia (Trade Route Envoy)
+  [ROZGRYWKA]   • Silumgar Butcher zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 11
+  [ROZGRYWKA]   • Ainok Artillerist zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 7
+  [ROZGRYWKA]   • Trade Route Envoy ginie
+  [ROZGRYWKA]   • Guildsworn Prowler ginie
+  [ROZGRYWKA]   • Angel of the Dawn ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 17 — Ty
+
+--- krok 60 | T. 17GraczGracz: 7 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Manor Gate (Ty) (koszt T) — dodaj 1 manę zieloną  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×5 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Silumgar Butcher · 5 · Creature — Zombie Djinn · Gdy ten stwór exploituje: -3/-3 do końca tury. · 3/3 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Delta Bloodflies · 2 · Creature — Insect · Latanie · Gdy atakuje: utrata 1 życia. · 1/2 | Stampeding Elk Herd · 5 · Creature — Elk · Gdy atakuje: twoje stwory zdobywają Zadeptywanie do końca tury. · choroba · 5/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curate, Island, Circle of the Land Druid, Plains, Forest, Mountain, Manor Gate ⏎ Nowa partia (seed 511). Powodzenia!
+  >> Aktywuj: Manor Gate (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Thieves' Tools
+  >> Zagraj: Thieves' Tools (koszt 1B)
+  [kreator many] Płatność 1B — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: BTapnij: Island (U)Tapnij: Plains (W)Tapnij:  — źródła: 7
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Island (U)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Thieves' Tools zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Thieves' Tools — trigger (wejście na pole bitwy)
+
+--- krok 63 | T. 17GraczGracz: 7 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Zagraj ląd: Island  ||  Aktywuj: Treasure (Ty) —  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Treasure · 0 · Artifact — Treasure | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×5 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Silumgar Butcher · 5 · Creature — Zombie Djinn · Gdy ten stwór exploituje: -3/-3 do końca tury. · 3/3 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Delta Bloodflies · 2 · Creature — Insect · Latanie · Gdy atakuje: utrata 1 życia. · 1/2 | Stampeding Elk Herd · 5 · Creature — Elk · Gdy atakuje: twoje stwory zdobywają Zadeptywanie do końca tury. · choroba · 5/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curate, Island, Circle of the Land Druid, Plains, Forest, Mountain, Manor Gate ⏎ Nowa partia (seed 511). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty tworzysz token Treasure
+  [ROZGRYWKA]   • Treasure wchodzi na pole bitwy
+  [ROZGRYWKA]   • Thieves' Tools — trigger się rozstrzyga
+  >> Aktywuj: Treasure (Ty) —
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Treasure — dodanie many do puli
+  [ROZGRYWKA]   • Treasure zostaje poświęcony
+  >> Zagraj ląd: Island
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Servant of the Scale
+
+--- krok 66 | T. 18BotGracz: 7 ż.Bot: 20 ż.Walka / BlokStos — Stampeding Elk Herd ---
+  STOS: Trigger: Delta Bloodflies (atak) | Trigger: Stampeding Elk Herd (atak)
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×5 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Silumgar Butcher · 5 · Creature — Zombie Djinn · Gdy ten stwór exploituje: -3/-3 do końca tury. · atakuje — niezablokowany · 3/3 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · atakuje — niezablokowany · 4/1 | Delta Bloodflies · 2 · Creature — Insect · Latanie · Gdy atakuje: utrata 1 życia. · atakuje — niezablokowany · 1/2 | Stampeding Elk Herd · 5 · Creature — Elk · Gdy atakuje: twoje stwory zdobywają Zadeptywanie do końca tury. · atakuje — niezablokowany · 5/5 | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · choroba · 1x +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curate, Island, Circle of the Land Druid, Plains, Forest, Mountain, Manor Gate ⏎ Nowa partia (seed 511). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Atak: Silumgar Butcher, Ainok Artillerist, Delta Bloodflies, Stampeding Elk Herd
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Delta Bloodflies — trigger (atak)
+  [ROZGRYWKA]   • Stampeding Elk Herd — trigger (atak)
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 68 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: (pusta)
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×5 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Silumgar Butcher · 5 · Creature — Zombie Djinn · Gdy ten stwór exploituje: -3/-3 do końca tury. · Zadeptywanie · 3/3 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · Zadeptywanie · 4/1 | Delta Bloodflies · 2 · Creature — Insect · Latanie · Gdy atakuje: utrata 1 życia. · Zadeptywanie · 1/2 | Stampeding Elk Herd · 5 · Creature — Elk · Gdy atakuje: twoje stwory zdobywają Zadeptywanie do końca tury. · Zadeptywanie · 5/5 | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · Zadeptywanie · choroba · 1x +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Curate, Island, Circle of the Land Druid, Plains, Forest, Mountain, Manor Gate ⏎ Nowa partia (seed 511). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 27, kliknięte: 30, modale: 5, sondy noop: 68 (panel 57, modal 11)
+== DETEKTORY: brak zgłoszeń ==

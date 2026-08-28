@@ -49,6 +49,20 @@
 - **Pułapka sesji (L8, recydywa):** weryfikacja mutacyjna strażnika cofnięta
   przez `git checkout --` zabrała też niezacommitowany fix N1 — mutacje
   cofać edycją odwrotną albo commitować fix przed mutowaniem.
+- **Kontynuacja na zlecenie („audyt Żywym Testerem do wyczerpania budżetu",
+  M251):** +22 partie (w tym talie benchmarku z profilami random/explorer/
+  impatient, mirror wiedzmin×wiedzmin, długa partia defensive `--tick-rate 1`).
+  Pokrycie kart nielądowych w transkryptach: 82 → **45 niewidzianych (10%)**.
+  Znaleziska osi 2: (a) żargon „lethal-first" w etykiecie przycisku wizarda
+  przydziału obrażeń → polski opis + pin copy; (b) to samo w `commandLabel`
+  („domyślnie lethal-first" — ruch bota w modalu „Ruch przeciwnika");
+  (c) modal Manifest Dread bez źródła → potokowanie `sourceCardId` jak
+  M240/B (silnik→widok→tytuł, 4 testy RED→GREEN, mutacja). (d) Kruchy test
+  wizarda lokalizował przycisk po copy → naprawa na hak semantyczny +
+  **lekcja L82** (skutek wiązać z klasą/`data-*`, copy pinać osobno).
+- **Finał sesji:** `npm test` 3620/3620, build 55 modułów / 2832.5 kB,
+  bot-benchmark 9/9, 29 partii Żywym Testerem bez zgłoszeń detektorów.
+  Transkrypty: `tmp-audyt-m250/` i `tmp-audyt-m251/`.
 
 ## Sesja 2026-08-28 — arena/01a047a8: audyt PR #84 + E1 fingerprint (PR #85)
 

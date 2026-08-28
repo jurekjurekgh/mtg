@@ -25,6 +25,39 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 ---
 
 
+## L82 (2026-08-28) — Test UI wiąże SKUTEK z hakiem semantycznym (klasa/`data-*`), copy pina się OSOBNYM testem
+
+**Objaw (sesja M251):** poprawna etykieta „Użyj domyślnego przydziału
+(zabójcze obrażenia…)" złamała test `choice-request-ui`, choć test ten
+nazywał się „przycisk Domyślnie wysyła wariant z legalCommands" — testował
+SKUTEK komendy, a lokalizował przycisk po TEKŚCIE (`findAll(host, 'button',
+'Domyślnie')`). Copy poprawne + logika poprawna = test czerwony; złowił go
+pełny rdzeń, nie punktowy grep (szukałem referencji do „lethal-first"
+i klasy — wzorzec „Domyślnie" mi umknął).
+
+**Przyczyna:** jeden test wiązał DWIE rzeczy — lokalizację widgetu i regułę
+gry — przez najbardziej lotną warstwę (copy). Etykiety tekstowe to warstwa,
+którą najczęściej ruszają uwagi UX (M162/C, M202/D, M211); kontraktem DOM
+jest klasa semantyczna / `data-*` (tu: `damage-wizard-default`). Test
+pisał się wtedy, gdy copy było stabilne — i działał, póki rozmowa o UX
+nie dotarła do tego tekstu.
+
+**Reguła:**
+1. Test zachowania („klik → komenda X") lokalizuje element po haku
+   semantycznym, NIGDY po tekście — tekst to dekoracja, klasa to rura.
+2. Treść widoczną dla gracza pilnuje OSOBNY, jawny pin (u mnie: osobny
+   test M251 z `doesNotMatch(/lethal-first/)`). Wtedy regresja copy mówi
+   „zmieniłeś tekst gracza", a nie symuluje złamania logiki.
+3. Przy zmianie stringów UI: punktowy grep ma ślepe półki (ja przegapiłem
+   wzorzec po słowie, bo grepem szukałem po INNYM słowie z tej samej
+   etykiety). Minimalny rytuał: grep po KLASIE elementu + pełny rdzeń
+   przed commitem (ADR 0020 C złapało — ale kosztem jednego cyklu).
+
+**Sformalizowane w:** `test/choice-request-ui.test.js` (lokalizacja po
+`damage-wizard-default` + pin copy); znaleisko i naprawa etykiet żargonu
+„lethal-first" w wizardzie i `commandLabel` (M251).
+
+
 ## L81 (2026-08-28) — Zastępując ręczną kopię „wspólną funkcją prawdy", porównaj FILTRY obu stron, nie tylko listę przedmiotów
 
 **Objaw (audyt PR #85, znalezisko N2, ta sesja):** bramka oferty
