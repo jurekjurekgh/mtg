@@ -25,6 +25,43 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 ---
 
 
+## L83 (2026-08-28) — Strażnik skanujący ŹRÓDŁO czyta KOD, nie komentarz: pokrycie „wspomnieniem" zamyka kontrolę
+
+**Objaw (audyt PR #86, sesja arena/01a049c7):** `test/fingerprint-pending-decisions.test.js`
+— strażnik klasy L16, którym PR #86 domknął pięć decyzji blokujących grę
+poza odciskiem stanu (N1) — liczył pokrycie jako **każde** wystąpienie
+`pending*` w pliku `src/engine/fingerprint.js`. Syntetyczna mutacja:
+dopisanie `state.pendingZzz` do `firstPendingDecisionPlayerId` i wspomnienie
+`pendingZzz` wyłącznie w komentarzu obok listy → strażnik **zielony (2/2)**.
+Czyli kolejna nowa decyzja blokująca znów wyciekłaby z fingerprintu dokładnie
+tak, jak te naprawione w PR #86.
+
+**Przyczyna:** regex puszczony po SUROWYM pliku nie odróżnia kodu od
+komentarza, a komentarz obok listy to najnaturalniejsze miejsce, w którym
+autor nowej decyzji opisuje swoją zmianę. To L31 (strażnik pilnował danych,
+błąd siedział w kodzie) i L56 (zwolnienie oparte o słowo kluczowe jest
+dziurą) przeniesione na skan źródła: kontrola mierzyła TEKST, nie regułę.
+
+**Reguła:**
+1. Strażnik czytający plik wydobywa fakty z **konstruktów**, nie z tekstu:
+   lista — z literału tablicy, projekcje — z odczytów `state.pole`, a
+   komentarze usuwa się PRZED skanem (świadomie: ciągi znakowe, `//`,
+   blokowe). Wtedy „wspomnienie" pola nie jest pokryciem z definicji.
+2. Pin na strażniku ma **DWIE nogi** (L67): (a) kompozycja nie liczy
+   komentarza jako pokrycia (syntetyczne źródło z zakomentowanym odczytem
+   `if (state.pendingZzz) …`), (b) **ścieżka produkcyjna musi iść przez tę
+   kompozycję** — inaczej obejście funkcji zostawia pin zielony, a lukę
+   otwartą. Nogę (b) złapała dopiero trzecia mutacja: przy produkcji
+   czytającej surowy plik obie pozostałe asercje nadal świeciły na zielono.
+3. **Sygnał ostrzegawczy przy audycie:** strażnik, który „udowadnia" własność
+   regexem po całym pliku. Zadaj pytanie: *czy da się przejść tę kontrolę,
+   nie zmieniając kodu?* Jeśli tak — kontrola mierzy tekst, nie regułę.
+
+**Sformalizowane w:** `test/fingerprint-pending-decisions.test.js`
+(`stripComments` + `coveredFieldsFromFingerprintFile` + pin A1 z dwiema
+nogami), raport `docs/audits/AUDYT_PR86_2026-08-28.md`.
+
+
 ## L82 (2026-08-28) — Test UI wiąże SKUTEK z hakiem semantycznym (klasa/`data-*`), copy pina się OSOBNYM testem
 
 **Objaw (sesja M251):** poprawna etykieta „Użyj domyślnego przydziału

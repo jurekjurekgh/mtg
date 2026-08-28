@@ -12,7 +12,36 @@
 >
 > Sesje dopisują tu swoją sekcję (ADR 0013) — nowe na górze.
 
-- **Ostatnia aktualizacja:** 2026-08-28 (sesja arena/01a047db: audyt PR #85 → N1/N2 fingerprint-oferta, M250 Żywy Tester: source-titled decyzje, PR #86)
+- **Ostatnia aktualizacja:** 2026-08-28 (sesja arena/01a049c7: audyt PR #86 → A1 strażnik L16 bez komentarzy, porządki w `tmp-audyt-*`, PR #87)
+
+## Sesja 2026-08-28 — arena/01a049c7: audyt PR #86, strażnik L16 (A1), porządki w `tmp-audyt-*` (PR #87)
+
+- **Zadanie:** „Kontynuujemy projekt." (ADR 0020/0021 — pętla domyślna) +
+  zlecenie właściciela: **po lekturze obowiązkowej posprzątać niepotrzebne
+  pliki w katalogach `tmp`** po poprzednim agencie.
+- **Lektura obowiązkowa wykonana w całości** (pomiar): `AGENTS.md` 358 linii,
+  ADR 0001–0024 + rejestr 1993 linie, `docs/LESSONS.md` **2092 linie (L1–L82)**,
+  `docs/setup/ENVIRONMENT.md` 175 linii, PR #86, `HANDOFF_2026-08-28b.md`.
+- **Audyt PR #86** (ADR 0020 B) — raport: `docs/audits/AUDYT_PR86_2026-08-28.md`.
+  Weryfikacja mutacyjna **6/6 napraw jest realnie przypiętych** (N1 fingerprint,
+  N2 bramka pass, L81 filtr pokoju, M251/B `sourceCardId`, M251 copy, M252
+  nagłówek tury) — każda mutacja czerwieni właściwy test, anty-over-fixy
+  zostają zielone. Skan poza PR: 62 pola blokujące, 0 luk w fingerprintcie;
+  `stateFingerprint` nie trafia do `playerView` (brak wycieku FoW).
+  - **Znalezisko A1 (naprawione):** strażnik klasy L16 liczył pokrycie regexem
+    po surowym `fingerprint.js`, więc **komentarz** wystarczał, by nowa
+    decyzja przeszła kontrolę. Naprawa: pokrycie z kodu po usunięciu
+    komentarzy (lista + `state.pending*`) i **dwunogowy pin** na strażniku
+    (kompozycja + ścieżka produkcyjna). → **lekcja L83**.
+- **Porządki w `tmp-audyt-*` (zlecenie właściciela):** z 63 plików / 3.0 MB
+  usunięto 4 bez wartości dowodowej — 2 duplikaty bajt-w-bajt (`t2b.txt`,
+  `r1-equip-e11-dense.txt`) i 2 przebiegi przerwane `[STOP]`, które mają
+  kompletny re-run tego samego seeda i profilu (`t1`→`t1b`, `r2-ravnica-67`
+  →`r2b`). Zostają 59 plików / 2.9 MB: kompletne partie oraz pary
+  przed/po (`w8/w8b`, `w13/w13b`, `r4-alara-33/-after`). Żaden usunięty plik
+  nie był cytowany w `docs/` ani `test/`.
+- **Wyniki:** `npm test` **3622/3622** (start 3621; +1 pin A1),
+  `npm run build` 55 modułów / 2835.1 kB.
 
 ## Sesja 2026-08-28 — arena/01a047db: audyt PR #85 + pętla jakości Żywym Testerem (PR #86)
 

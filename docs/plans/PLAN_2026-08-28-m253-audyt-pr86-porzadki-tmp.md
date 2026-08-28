@@ -60,11 +60,13 @@ Klasa L31/L56 (strażnik pilnuje tekstu, nie kodu) przeniesiona na skan źródł
 
 ## Etap 4 — naprawa A1 u root cause (chirurgicznie, ADR 0016 B)
 
-- [ ] Pokrycie liczone z kodu: komentarze usuwane przed skanem, lista
+- [x] Pokrycie liczone z kodu: komentarze usuwane przed skanem, lista
       `PENDING_DECISION_FIELDS` czytana z literału tablicy, projekcje ręczne z `state.pending*`.
-- [ ] Pin na strażniku (L13/L67): test, w którym pokrycie „tylko komentarzem"
+- [x] Pin na strażniku (L13/L67): test, w którym pokrycie „tylko komentarzem"
       czerwieni strażnik (musi istnieć przypadek, na którym guard krzyczy).
-- [ ] `npm test` + `npm run build` zielone → commit.
+- [x] `npm test` (3622/3622) + `npm run build` zielone → commit `2a0dc06`.
+      Mutacje po naprawie: usunięcie pola z tablicy → RED, pokrycie komentarzem → RED,
+      `stripComments` wyłączony → RED, produkcja czytająca surowy plik → RED.
 
 ## Etap 5 — porządki w `tmp-audyt-*` (zlecenie właściciela)
 
@@ -77,9 +79,9 @@ Inwentaryzacja przed kasowaniem (63 pliki / 3.0 MB, 4 katalogi M239–M251):
 | Pary przed/po naprawie (seed ten sam, różnią się tylko naprawionym copy) | `w8/w8b-domwu-ff`, `w13/w13b-mroczny-ravnica`, `r4-alara-33/-after` | **ZOSTAJĄ** — dowód objawu i skutku fixu |
 | Kompletne przebiegi (wynik `Koniec partii`) | pozostałe 51 | **ZOSTAJĄ** |
 
-- [ ] Usunięcie 4 plików osobnym commitem; sprawdzenie, że żaden nie jest cytowany
+- [x] Usunięcie 4 plików osobnym commitem (`ea7ca32`); sprawdzenie, że żaden nie jest cytowany
       w `docs/` ani `test/` (grep: brak cytowań per plik).
-- [ ] Notatka w `docs/PROJECT_HISTORY.md` + w opisie PR (co usunięto i dlaczego).
+- [x] Notatka w `docs/PROJECT_HISTORY.md` + w opisie PR (co usunięto i dlaczego).
 
 ## Etap 6 — pętla jakości (ADR 0021), jeśli budżet pozwoli
 
