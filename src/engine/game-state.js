@@ -5334,6 +5334,28 @@ export function playerView(state, playerId) {
     // Fabricate: dwa warianty (CR 702.122). Kolejność deterministyczna.
     legalCommands.push(command('resolve_fabricate', playerId, { mode: 'counters' }));
     legalCommands.push(command('resolve_fabricate', playerId, { mode: 'tokens' }));
+  // M254 (pełna macierz benchmarku, 2026-08-28): KOLEJNOŚĆ OFERT MUSI
+  // ODPOWIADAĆ KOLEJNOŚCI BRAMEK `execute`. Bramka rebound stoi w `execute`
+  // PRZED bramką undercity, a ta gałąź ofert była PO niej — przy dwóch
+  // pendingach tego samego gracza (rebound Ojutai's Breath + wybór ścieżki
+  // lochu) silnik oferował `resolve_undercity_route`, po czym sam go
+  // odrzucał (`rebound_unresolved`), co kończyło partię wyjątkiem „Bot
+  // wybrał nielegalną komendę". Reguła (jak przy `firstPendingDecisionPlayerId`):
+  // pierwszy właściciel decyzji = pierwsza bramka execute = pierwsza gałąź ofert.
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeReboundCast) {
+    // Rebound (CR 702.97): jednorazowa decyzja na początku następnego upkeepu —
+    // rzuć wygnany czar za darmo (ignorując timing) albo zostaw w exile.
+    // Ta sama struktura ofert co suspend/epic (cele + tryb modalny).
+    const pending = state.pendingReboundCast;
+    const obj = state.objects.get(pending.objectId);
+    if (obj && obj.zone === 'exile' && obj.reboundReady && obj.kind === 'spell') {
+      for (const offer of suspendCastOffers(state, playerId, obj)) {
+        legalCommands.push(command('resolve_rebound_cast', playerId, offer));
+      }
+    }
+  // M203/2: kolejność prezentacji = enumeracja (dawniej odwracał unshift).
+    legalCommands.push(command('resolve_rebound_cast', playerId, { cast: false }));
+
   } else if (state.status === 'active' && !blockedByOthersDecision && activeUndercityRoute) {
     // M190/B: wybór ścieżki lochu — kolejność ofert deterministyczna (ADR 0005),
     // taka jak w Oracle („Leads to: Forge, Lost Well").
@@ -5435,20 +5457,6 @@ export function playerView(state, playerId) {
     }
   // M203/2: kolejność prezentacji = enumeracja (dawniej odwracał unshift).
     legalCommands.push(command('resolve_suspend_cast', playerId, { cast: false }));
-  } else if (state.status === 'active' && !blockedByOthersDecision && activeReboundCast) {
-    // Rebound (CR 702.97): jednorazowa decyzja na początku następnego upkeepu —
-    // rzuć wygnany czar za darmo (ignorując timing) albo zostaw w exile.
-    // Ta sama struktura ofert co suspend/epic (cele + tryb modalny).
-    const pending = state.pendingReboundCast;
-    const obj = state.objects.get(pending.objectId);
-    if (obj && obj.zone === 'exile' && obj.reboundReady && obj.kind === 'spell') {
-      for (const offer of suspendCastOffers(state, playerId, obj)) {
-        legalCommands.push(command('resolve_rebound_cast', playerId, offer));
-      }
-    }
-  // M203/2: kolejność prezentacji = enumeracja (dawniej odwracał unshift).
-    legalCommands.push(command('resolve_rebound_cast', playerId, { cast: false }));
-
   } else if (state.status === 'active' && !blockedByOthersDecision && activeOptionalTrigger) {
     // „You may" bez celu (Angel's Feather, M72 — Curiosity draw, Veiled cloak):
     // tak/nie — boty „tak" (pierwsza oferta = dotychczasowe zachowanie).
