@@ -271,6 +271,12 @@ export function defineCard(data) {
     // Bloodthirst (Gorehorn Minotaurs): liczba liczników +1/+1 przy wejściu,
     // jeśli przeciwnik był obrażony w tej turze (CR 702.54).
     bloodthirst: data.bloodthirst ?? null,
+    // Renown N (CR 702.112a, Akroan Sergeant): „When this creature deals
+    // combat damage to a player, if it isn't renowned, put N +1/+1 counters on
+    // it and it becomes renowned." — liczba liczników; samo odpalenie leży
+    // w combat.js (jak bloodthirst w spells.js), a znacznik `renowned` żyje na
+    // obiekcie (CR 702.112b: ginie po opuszczeniu pola bitwy).
+    renown: data.renown ?? null,
     additionalCost: data.additionalCost ?? null,
     // Station (CR, EOE Spacecraft, Wedgelight Rammer): { threshold, keywords } —
     // artefakt NIE-będący stworem, który przy >= threshold licznikach charge

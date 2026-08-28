@@ -35,6 +35,10 @@ export const EVENT_TYPES = Object.freeze(['game_created', 'object_moved', 'card_
     'spell_copied',
     // M110 (storm): wybór nowych celów dla kopii czaru (CR 702.40a/706.10c).
     'copy_targets_required', 'copy_targets_resolved',
+    // Batch 51 (Renown, CR 702.112, Akroan Sergeant): stwór zadał obrażenia
+    // bojowe graczowi i po raz pierwszy stał się „renowned" (liczniki wchodzą
+    // w tym samym zdarzeniu obrażeń — log pokazuje jedno, nie dwa).
+    'creature_became_renowned',
     // M116 (Cuombajj Witches): cel wskazywany przez przeciwnika.
     'opponent_target_required', 'opponent_target_resolved',
     // M146 (suspend, Mindstab): zdjęcie ostatniego licznika czasu otwiera

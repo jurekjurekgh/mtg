@@ -80,6 +80,7 @@ export function installDeck(state, deck, { seed }) {
       protectionFromColors: card.protectionFromColors ?? null,
       exploit: card.exploit ?? null,
       bloodthirst: card.bloodthirst ?? null,
+      renown: card.renown ?? null,
       treasureAltCost: card.treasureAltCost ?? null,
       additionalCost: card.additionalCost ?? null,
       // Właściciel karty (CR 108.3) — jawny, żeby efekty „gains control of

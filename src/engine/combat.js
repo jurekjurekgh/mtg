@@ -93,6 +93,26 @@ function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amoun
   if (actual > 0 && (source?.toxic ?? 0) > 0) {
     events.push(...addPoisonCounters(state, targetPlayerId, source.toxic));
   }
+  // Renown N (CR 702.112a, Akroan Sergeant): po ZADANIU combat damage
+  // graczowi — jeśli stwór nie jest jeszcze „renowned", dostaje N liczników
+  // +1/+1 i staje się renowned. Kolejność ma znaczenie: liczniki wchodzą po
+  // obrażeniach (więc nie wpływają na ich rozmiar), a warunek `actual > 0`
+  // odzwierciedla CR 702.112a — w pełni zapobiegnięte obrażenia to brak
+  // „dealt combat damage", czyli brak renown (jak przy toxic wyżej).
+  if (actual > 0 && (source?.renown ?? 0) > 0 && source.zone === 'battlefield' && !source.renowned) {
+    addCounter(state, sourceId, '+1/+1', source.renown);
+    // Znacznik „renowned" (CR 702.112b): nie jest ani zdolnością, ani cechą
+    // kopiowalną — znika wraz z obiektem (nowy obiekt po powrocie = bez
+    // znacznika), więc wystarczy flaga na obiekcie.
+    const renownedSource = state.objects.get(sourceId);
+    if (renownedSource) {
+      state.objects.set(sourceId, Object.freeze({ ...renownedSource, renowned: true }));
+      events.push(event('creature_became_renowned', {
+        objectId: sourceId, cardId: renownedSource.cardId ?? null,
+        counters: source.renown, playerId: renownedSource.controllerId ?? null,
+      }));
+    }
+  }
 }
 
 /**

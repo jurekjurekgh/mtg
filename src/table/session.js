@@ -1340,6 +1340,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         }
         return `${objectOrLki(e.objectId, e.cardId)} traci ${e.amount} ${polishPlural(e.amount, 'licznik', 'liczniki', 'liczników')} ${e.counter} (zostało ${e.total})`;
       }
+      // Batch 51 (Renown, CR 702.112): stwór po raz pierwszy zadał obrażenia
+      // bojowe graczowi — staje się „renowned" i dostaje N liczników +1/+1.
+      case 'creature_became_renowned':
+        return `${objectOrLki(e.objectId, e.cardId)} zyskuje sławę (renown) — ${e.counters} ${polishPlural(e.counters, 'licznik', 'liczniki', 'liczników')} +1/+1`;
       case 'station_status_changed': return e.becameCreature
         ? `${nameOfObject(e.objectId)} osiąga ${e.chargeCounters} ${polishPlural(e.chargeCounters, 'licznik', 'liczniki', 'liczników')} charge i staje się artefaktowym stworem (Station)`
         : `${nameOfObject(e.objectId)} spada poniżej progu Station i przestaje być stworem`;
