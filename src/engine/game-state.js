@@ -6433,6 +6433,9 @@ export function playerView(state, playerId) {
   const pendingManifestDreadView = state.pendingManifestDread ? {
     playerId: state.pendingManifestDread.playerId,
     count: state.pendingManifestDread.objectIds.length,
+    // M251/B: źródło decyzji (czar na stosie) — publiczne dla obu graczy,
+    // w przeciwieństwie do `cards` (tylko decydent, „look at" CR 701.34a).
+    sourceCardId: state.pendingManifestDread.sourceCardId ?? null,
     cards: state.pendingManifestDread.playerId === playerId
       ? state.pendingManifestDread.objectIds.map((id) => {
         const object = state.objects.get(id);

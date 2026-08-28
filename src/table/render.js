@@ -1692,6 +1692,13 @@ function choiceSourceTitle(cmd, session, view) {
   if (cmd?.type === 'resolve_satyr_look_choice' && view?.pendingSatyrLook?.sourceCardId) {
     return `${session.nameOf(view.pendingSatyrLook.sourceCardId)} — bierz ląd z odsłoniętych kart`;
   }
+  // M251/B (audyt Żywym Testerem, partia worek-mroczny/ravnica s=41): decyzja
+  // Manifest Dread otwierała modal z generycznym „Wybierz: Wariant (2 opcje)"
+  // — ta sama klasa co M240/B powyżej. Źródło (rozstrzygany czar na stosie,
+  // info publiczna) jadę z pendingu — nigdy z nazwy w warstwie opisu (ADR 0002).
+  if (cmd?.type === 'resolve_manifest_dread' && view?.pendingManifestDread?.sourceCardId) {
+    return `${session.nameOf(view.pendingManifestDread.sourceCardId)} — zmanifestuj jedną z 2 kart (druga do grobu)`;
+  }
   if (!cmd || cmd.objectId == null) return null;
   const zones = ['hand', 'battlefield', 'stack', 'graveyard', 'library'];
   let object = null;

@@ -1,0 +1,579 @@
+== NOWA PARTIA: gracz=worek-mroczny vs bot=ravnica, seed=41, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Forest  ||  Zagraj ląd: Plains  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Forest · Basic Land — Forest · T: dodaj 1 manę | Manifest Dread · 2 · Sorcery · manifest dread: zobacz 2 z wierzchu, jedną zmanifestuj (2/2 twarzą w dół), drugą do grobu | Assert Perfection · 2 · Sorcery · +1/+0 do końca tury + obrażenia równe mocy stwora · cel: twój stwór + stwór przeciwnika (do jednego, opcjonalnie) | Plains · Basic Land — Plains · T: dodaj 1 manę | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Immersturm Skullcairn
+
+--- krok 3 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Plains  ||  Zagraj ląd: Immersturm Skullcairn  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Manifest Dread · 2 · Sorcery · manifest dread: zobacz 2 z wierzchu, jedną zmanifestuj (2/2 twarzą w dół), drugą do grobu | Assert Perfection · 2 · Sorcery · +1/+0 do końca tury + obrażenia równe mocy stwora · cel: twój stwór + stwór przeciwnika (do jednego, opcjonalnie) | Plains · Basic Land — Plains · T: dodaj 1 manę | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1 | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Rzuć: Manifest Dread (koszt 1G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Manifest Dread
+  [ROZGRYWKA]   • Ty — manifest dread: wybór, którą z 2 kart z wierzchu zmanifestować
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Wariant (2 opcje)
+  [modal choice] Wybierz: Wariant Zmanifestuj: Mountain🔍 Podgląd karty Zmanifestuj: Soulbright Flamekin🔍 Podgląd karty
+  [modal choice]   ▶ Zmanifestuj: Mountain
+  [modal choice]     Zmanifestuj: Soulbright Flamekin
+
+--- krok 6 | T. 4BotGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Assert Perfection · 2 · Sorcery · +1/+0 do końca tury + obrażenia równe mocy stwora · cel: twój stwór + stwór przeciwnika (do jednego, opcjonalnie) | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1 | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę
+  MOJE POLA: Mountain · Creature · zakryty (Morph) · choroba · 2/2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  [ROZGRYWKA]   • Manifest Dread zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  >> Aktywuj: Mosquito Guard (koszt 1W) — połóż licznik +1/+1 → cel: Mountain (Morph)
+  [ROZGRYWKA]   • Mountain (Morph) dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Ty: zdolność Mosquito Guard rozstrzygnięta
+
+--- krok 9 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Assert Perfection · 2 · Sorcery · +1/+0 do końca tury + obrażenia równe mocy stwora · cel: twój stwór + stwór przeciwnika (do jednego, opcjonalnie) | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  MOJE POLA: Mountain · Creature · zakryty (Morph) · 1x +1/+1 · 3/3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Zagraj ląd: Immersturm Skullcairn
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Immersturm Skullcairn (wchodzi zatapnięty)
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+
+--- krok 12 | T. 6BotGracz: 20 ż.Bot: 17 ż.Główna 1Stos — Piercing Rays ---
+  STOS: Piercing Rays (rzuca: Nieprzyjaciel) → cel: Morph
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Assert Perfection · 2 · Sorcery · +1/+0 do końca tury + obrażenia równe mocy stwora · cel: twój stwór + stwór przeciwnika (do jednego, opcjonalnie) | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  MOJE POLA: Mountain · Creature · zakryty (Morph) · 1x +1/+1 · 3/3 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  [ROZGRYWKA]   • Mountain (Morph) zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 17
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Piercing Rays → cel: Mountain (Morph)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: Mountain — pole bitwy → wygnanie
+  [ROZGRYWKA]   • Piercing Rays zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 7 — Ty
+  >> Aktywuj: Immersturm Skullcairn (Ty) (koszt T) — dodaj 1 manę czarną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Immersturm Skullcairn — dodanie 1 many czarnej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swooping Protector
+
+--- krok 15 | T. 7GraczGracz: 20 ż.Bot: 17 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Swamp  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Assert Perfection · 2 · Sorcery · +1/+0 do końca tury + obrażenia równe mocy stwora · cel: twój stwór + stwór przeciwnika (do jednego, opcjonalnie) | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Swooping Protector · 4 · Creature — Bird Citizen · Flash (błysk) Latanie · 2/1
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Guildscorn Ward
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Tura 9 — Ty
+  >> Zagraj: Swooping Protector (koszt 3W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Swooping Protector
+  [ROZGRYWKA]   • Swooping Protector wchodzi na pole bitwy
+  [ROZGRYWKA]   • Swooping Protector dostaje +1 licznik shield (razem 1)
+  [ROZGRYWKA]   • Swooping Protector zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Cenn's Tactician
+
+--- krok 18 | T. 11GraczGracz: 20 ż.Bot: 17 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Immersturm Skullcairn (Ty) (koszt T) — dodaj 1 manę czarną  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Assert Perfection · 2 · Sorcery · +1/+0 do końca tury + obrażenia równe mocy stwora · cel: twój stwór + stwór przeciwnika (do jednego, opcjonalnie) | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 1/1
+  MOJE POLA: Swooping Protector · 4 · Creature — Bird Citizen · Flash (błysk) Latanie · 1x shield · 2/1 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Selesnya Charm
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Aktywuj: Immersturm Skullcairn (Ty) (koszt T) — dodaj 1 manę czarną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Immersturm Skullcairn — dodanie 1 many czarnej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Fear of Burning Alive
+  >> Rzuć: Assert Perfection (koszt 1G) → cel: Swooping Protector (Ty)
+  [kreator many] Płatność 1G — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: GTapnij: Forest (G)Tapnij: Plains (W)Tapnij:  — źródła: 3
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Plains (W)
+
+--- krok 21 | T. 11GraczGracz: 20 ż.Bot: 17 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 1/1 | Fear of Burning Alive · 6 · Enchantment Creature — Nightmare · Gdy wejdzie na pole bitwy: 4 obrażenia każdemu przeciwnikowi. · Gdy źródło, które kontrolujesz, zada niebojowe obrażenia przeciwnikowi — ten stwór zada tyle samo obrażeń celowi (delirium). · 4/4
+  MOJE POLA: Swooping Protector · 4 · Creature — Bird Citizen · Flash (błysk) Latanie · +1/0 · 1x shield · 3/1 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Rzucasz Assert Perfection → cel: Swooping Protector
+  [ROZGRYWKA]   • Assert Perfection zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 17 → 14
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+
+--- krok 24 | T. 12BotGracz: 20 ż.Bot: 14 ż.Główna 1Stos — Withstand ---
+  STOS: Withstand (rzuca: Nieprzyjaciel) → cel: Nieprzyjaciel
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 1/1 | Fear of Burning Alive · 6 · Enchantment Creature — Nightmare · Gdy wejdzie na pole bitwy: 4 obrażenia każdemu przeciwnikowi. · Gdy źródło, które kontrolujesz, zada niebojowe obrażenia przeciwnikowi — ten stwór zada tyle samo obrażeń celowi (delirium). · 4/4
+  MOJE POLA: Swooping Protector · 4 · Creature — Bird Citizen · Flash (błysk) Latanie · 1x shield · 2/1 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Withstand → cel: Nieprzyjaciel
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Withstand zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Aktywuj: Immersturm Skullcairn (Ty) (koszt T) — dodaj 1 manę czarną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Immersturm Skullcairn — dodanie 1 many czarnej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Enter the Enigma
+
+--- krok 27 | T. 13GraczGracz: 20 ż.Bot: 14 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Cenn's Tactician (koszt W)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 1/1 | Fear of Burning Alive · 6 · Enchantment Creature — Nightmare · Gdy wejdzie na pole bitwy: 4 obrażenia każdemu przeciwnikowi. · Gdy źródło, które kontrolujesz, zada niebojowe obrażenia przeciwnikowi — ten stwór zada tyle samo obrażeń celowi (delirium). · 4/4 | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór
+  MOJE POLA: Swooping Protector · 4 · Creature — Bird Citizen · Flash (błysk) Latanie · 1x shield · 2/1 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  >> Zagraj: Cenn's Tactician (koszt W)
+  [ROZGRYWKA]   • Cenn's Tactician zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 14 → 12
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+
+--- krok 30 | T. 14BotGracz: 20 ż.Bot: 12 ż.Główna 1Stos — Toll of the Invasion ---
+  STOS: Toll of the Invasion (rzuca: Nieprzyjaciel) → cel: Ty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Fear of Burning Alive · 6 · Enchantment Creature — Nightmare · Gdy wejdzie na pole bitwy: 4 obrażenia każdemu przeciwnikowi. · Gdy źródło, które kontrolujesz, zada niebojowe obrażenia przeciwnikowi — ten stwór zada tyle samo obrażeń celowi (delirium). · 4/4 | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór
+  MOJE POLA: Swooping Protector · 4 · Creature — Bird Citizen · Flash (błysk) Latanie · 1x shield · 2/1 | Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · choroba · 1/1 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Toll of the Invasion → cel: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Odrzucasz kartę z ręki
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Zombie Army (0/0)
+  [ROZGRYWKA]   • Zombie Army wchodzi na pole bitwy
+  [ROZGRYWKA]   • Zombie Army dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Toll of the Invasion zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 15 — Ty
+
+--- krok 33 | T. 15GraczGracz: 20 ż.Bot: 12 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Immersturm Skullcairn (Ty) (koszt T) — dodaj 1 manę czarną  ||  Aktywuj: Cenn's Tactician (Ty) (koszt W, T) — połóż licznik +1/+1 → cel: Cenn's Tactician (Ty)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór
+  MOJE POLA: Swooping Protector · 4 · Creature — Bird Citizen · Flash (błysk) Latanie · 1x shield · 2/1 | Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 1/1 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Zombie Army · 0 · Creature — Zombie Army · choroba · 1x +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  >> Aktywuj: Immersturm Skullcairn (Ty) (koszt T) — dodaj 1 manę czarną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Immersturm Skullcairn — dodanie 1 many czarnej do puli
+  >> Aktywuj: Cenn's Tactician (Ty) (koszt W, T) — połóż licznik +1/+1 → cel: Cenn's Tactician (Ty)
+  [ROZGRYWKA]   • Cenn's Tactician dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Ty: zdolność Cenn's Tactician rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+
+--- krok 36 | T. 15GraczGracz: 20 ż.Bot: 12 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Plains  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Plains · Basic Land — Plains · T: dodaj 1 manę
+  MOJE POLA: Swooping Protector · 4 · Creature — Bird Citizen · Flash (błysk) Latanie · 1x shield · 2/1 | Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 1x +1/+1 · 2/2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Zombie Army · 0 · Creature — Zombie Army · choroba · 1x +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Swooping Protector zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 12 → 10
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+
+--- krok 39 | T. 16BotGracz: 20 ż.Bot: 10 ż.Główna 1Stos — Sagittars' Volley ---
+  STOS: Sagittars' Volley (rzuca: Nieprzyjaciel) → cel: Swooping Protector
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór
+  MOJE POLA: Swooping Protector · 4 · Creature — Bird Citizen · Flash (błysk) Latanie · 1x shield · 2/1 | Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 1x +1/+1 · 2/2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Zombie Army · 0 · Creature — Zombie Army · 1x +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Sagittars' Volley → cel: Swooping Protector
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Sagittars' Volley zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Swooping Protector ginie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Chronic Flooding → cel: Forest
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Zombie Army zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 19
+  [ROZGRYWKA]   • Tura 17 — Ty
+
+--- krok 42 | T. 17GraczGracz: 19 ż.Bot: 10 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Immersturm Skullcairn (Ty) (koszt T) — dodaj 1 manę czarną  ||  Aktywuj: Cenn's Tactician (Ty) (koszt W, T) — połóż licznik +1/+1 → cel: Cenn's Tactician (Ty)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór
+  MOJE POLA: Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 1x +1/+1 · 2/2 | Forest · Basic Land — Forest · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Zombie Army · 0 · Creature — Zombie Army · 1x +1/+1 · 1/1 | Chronic Flooding · 2 · Enchantment Aura · Zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Forest
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  >> Aktywuj: Immersturm Skullcairn (Ty) (koszt T) — dodaj 1 manę czarną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Immersturm Skullcairn — dodanie 1 many czarnej do puli
+  >> Aktywuj: Cenn's Tactician (Ty) (koszt W, T) — połóż licznik +1/+1 → cel: Cenn's Tactician (Ty)
+  [ROZGRYWKA]   • Cenn's Tactician dostaje +1 licznik +1/+1 (razem 2)
+  [ROZGRYWKA]   • Ty: zdolność Cenn's Tactician rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Stomping Slabs
+
+--- krok 45 | T. 18BotGracz: 19 ż.Bot: 10 ż.UpkeepStos — Courage in Crisis ---
+  STOS: Courage in Crisis (rzuca: Nieprzyjaciel) → cel: Zombie Army
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Stomping Slabs · 3 · Sorcery · odsłoń wierzch, ułóż w kolejności
+  MOJE POLA: Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 2x +1/+1 · 3/3 | Forest · Basic Land — Forest · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Zombie Army · 0 · Creature — Zombie Army · 1x +1/+1 · 1/1 | Chronic Flooding · 2 · Enchantment Aura · Zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Forest
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Courage in Crisis → cel: Zombie Army
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Dimir Guildgate (wchodzi zatapnięty)
+  [ROZGRYWKA]   • Tura 19 — Ty
+
+--- krok 48 | T. 19GraczGracz: 17 ż.Bot: 10 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Immersturm Skullcairn (Ty) (koszt T) — dodaj 1 manę czarną  ||  Aktywuj: Cenn's Tactician (Ty) (koszt W, T) — połóż licznik +1/+1 → cel: Cenn's Tactician (Ty)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Stomping Slabs · 3 · Sorcery · odsłoń wierzch, ułóż w kolejności
+  MOJE POLA: Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 2x +1/+1 · 3/3 | Forest · Basic Land — Forest · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Zombie Army · 0 · Creature — Zombie Army · 2x +1/+1 · 2/2 | Chronic Flooding · 2 · Enchantment Aura · Zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Forest
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  >> Aktywuj: Immersturm Skullcairn (Ty) (koszt T) — dodaj 1 manę czarną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Immersturm Skullcairn — dodanie 1 many czarnej do puli
+  >> Aktywuj: Cenn's Tactician (Ty) (koszt W, T) — połóż licznik +1/+1 → cel: Cenn's Tactician (Ty)
+  [ROZGRYWKA]   • Cenn's Tactician dostaje +1 licznik +1/+1 (razem 3)
+  [ROZGRYWKA]   • Ty: zdolność Cenn's Tactician rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+
+--- krok 51 | T. 19GraczGracz: 17 ż.Bot: 10 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Swamp  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Stomping Slabs · 3 · Sorcery · odsłoń wierzch, ułóż w kolejności | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  MOJE POLA: Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 3x +1/+1 · 4/4 | Forest · Basic Land — Forest · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Zombie Army · 0 · Creature — Zombie Army · 2x +1/+1 · 2/2 | Chronic Flooding · 2 · Enchantment Aura · Zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Forest
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Zagraj: Tiller of Flesh (koszt 3W)
+  [ROZGRYWKA]   • Mielisz Puppeteer Clique do grobu
+  [ROZGRYWKA]   • Mielisz Goldmeadow Nomad do grobu
+  [ROZGRYWKA]   • Mielisz Invasion of the Giants do grobu
+  [ROZGRYWKA]   • Chronic Flooding — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tiller of Flesh wchodzi na pole bitwy
+  [ROZGRYWKA]   • Tiller of Flesh zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Ivy Lane Denizen
+
+--- krok 54 | T. 21GraczGracz: 17 ż.Bot: 10 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Immersturm Skullcairn (Ty) (koszt T) — dodaj 1 manę czarną  ||  Aktywuj: Cenn's Tactician (Ty) (koszt W, T) — połóż licznik +1/+1 → cel: Cenn's Tactician (Ty)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Stomping Slabs · 3 · Sorcery · odsłoń wierzch, ułóż w kolejności
+  MOJE POLA: Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 3x +1/+1 · 4/4 | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Forest · Basic Land — Forest · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Zombie Army · 0 · Creature — Zombie Army · 2x +1/+1 · 2/2 | Chronic Flooding · 2 · Enchantment Aura · Zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Forest | Ivy Lane Denizen · 4 · Creature — Elf Warrior · Gdy inny zielony stwór pod twoją kontrolą wchodzi na pole bitwy: połóż licznik +1/+1. · choroba · 2/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ivy Lane Denizen wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ivy Lane Denizen zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 21 — Ty
+  >> Aktywuj: Immersturm Skullcairn (Ty) (koszt T) — dodaj 1 manę czarną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Immersturm Skullcairn — dodanie 1 many czarnej do puli
+  >> Aktywuj: Cenn's Tactician (Ty) (koszt W, T) — połóż licznik +1/+1 → cel: Cenn's Tactician (Ty)
+  [ROZGRYWKA]   • Cenn's Tactician dostaje +1 licznik +1/+1 (razem 4)
+  [ROZGRYWKA]   • Ty: zdolność Cenn's Tactician rozstrzygnięta
+
+--- krok 57 | T. 21GraczGracz: 17 ż.Bot: 10 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Stomping Slabs · 3 · Sorcery · odsłoń wierzch, ułóż w kolejności | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5
+  MOJE POLA: Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 4x +1/+1 · 5/5 | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Forest · Basic Land — Forest · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Zombie Army · 0 · Creature — Zombie Army · 2x +1/+1 · 2/2 | Chronic Flooding · 2 · Enchantment Aura · Zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Forest | Ivy Lane Denizen · 4 · Creature — Elf Warrior · Gdy inny zielony stwór pod twoją kontrolą wchodzi na pole bitwy: połóż licznik +1/+1. · choroba · 2/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Fear of Abduction
+  >> Aktywuj: Goldmeadow Nomad (koszt W, wygnaj tę kartę z grobu) — stwórz token Kithkin
+  [ROZGRYWKA]   • Aktywujesz zdolność: Goldmeadow Nomad
+  [ROZGRYWKA]   • Ty tworzysz token Kithkin (1/1)
+  [ROZGRYWKA]   • Kithkin wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ty: zdolność Goldmeadow Nomad rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+
+--- krok 60 | T. 21GraczGracz: 17 ż.Bot: 10 ż.Walka / Koniec walki ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Wybierz: Rozdzielenie obrażeń bojowych (1 opcja)
+  RĘKA: Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Stomping Slabs · 3 · Sorcery · odsłoń wierzch, ułóż w kolejności | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5
+  MOJE POLA: Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 4x +1/+1 · 5/5 | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · atakuje — blokują: Zombie Army, Ivy Lane Denizen · 2/4 | Kithkin · 0 · Creature — Kithkin · choroba · 1/1 | Forest · Basic Land — Forest · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Zombie Army · 0 · Creature — Zombie Army · blokuje: Tiller of Flesh · 2x +1/+1 · 2/2 | Chronic Flooding · 2 · Enchantment Aura · Zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Forest | Ivy Lane Denizen · 4 · Creature — Elf Warrior · Gdy inny zielony stwór pod twoją kontrolą wchodzi na pole bitwy: połóż licznik +1/+1. · blokuje: Tiller of Flesh · choroba · 2/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Tiller of Flesh
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Zombie Army i Ivy Lane Denizen blokują Tiller of Flesh
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Rozdzielasz obrażenia bojowe (trample albo wielu blokerów)
+  >> Wybierz: Rozdzielenie obrażeń bojowych (1 opcja)
+  [modal choice] Rozdziel obrażenia bojowe — przydziel moc atakujących blokującym:Tiller of Flesh (moc 2)Zombie Army (wytrz. 2, śmiertelne 2)−10+1↑↓Ivy Lane Denizen (wytrz. 3, śmiertelne 3)−10+1↑↓Zatwierdź przydziałUżyj domyślnego przydziału (zabójcze obrażenia po kolei blokerów)Zamknij (dokończysz później)
+  [modal choice]   ▶ Zatwierdź przydział
+  [modal choice]     Użyj domyślnego przydziału (zabójcze obrażenia po kolei blokerów)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zombie Army zadaje 2 obrażenia (Tiller of Flesh)
+  [ROZGRYWKA]   • Ivy Lane Denizen zadaje 2 obrażenia (Tiller of Flesh)
+  [ROZGRYWKA]   • Tiller of Flesh ginie
+  [ROZGRYWKA]   • Tura 22 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Trostani Discordant
+
+--- krok 63 | T. 22BotGracz: 17 ż.Bot: 10 ż.Główna 1Stos — Trostani Discordant ---
+  STOS: Trostani Discordant (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Stomping Slabs · 3 · Sorcery · odsłoń wierzch, ułóż w kolejności | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5
+  MOJE POLA: Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 4x +1/+1 · 5/5 | Kithkin · 0 · Creature — Kithkin · choroba · 1/1 | Forest · Basic Land — Forest · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Zombie Army · 0 · Creature — Zombie Army · 2x +1/+1 · 2/2 | Chronic Flooding · 2 · Enchantment Aura · Zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Forest | Ivy Lane Denizen · 4 · Creature — Elf Warrior · Gdy inny zielony stwór pod twoją kontrolą wchodzi na pole bitwy: połóż licznik +1/+1. · 2/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Dimir Guildgate — dodanie 1 many niebieskiej lub czarnej do puli
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Trostani Discordant zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Trostani Discordant — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Ivy Lane Denizen — trigger (wejście innego stworzenia)
+  [ROZGRYWKA]   • Ivy Lane Denizen — cel: Ivy Lane Denizen
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Trostani Discordant — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Zombie Army, Ivy Lane Denizen
+
+--- krok 66 | T. 22BotGracz: 17 ż.Bot: 10 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Deklaracja blokujących (3 opcje)
+  RĘKA: Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Stomping Slabs · 3 · Sorcery · odsłoń wierzch, ułóż w kolejności | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5
+  MOJE POLA: Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 4x +1/+1 · 5/5 | Kithkin · 0 · Creature — Kithkin · choroba · 1/1 | Forest · Basic Land — Forest · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Zombie Army · 0 · Creature — Zombie Army · +1/+1 · atakuje — niezablokowany · 2x +1/+1 · 3/3 | Chronic Flooding · 2 · Enchantment Aura · Zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Forest | Ivy Lane Denizen · 4 · Creature — Elf Warrior · Gdy inny zielony stwór pod twoją kontrolą wchodzi na pole bitwy: połóż licznik +1/+1. · +1/+1 · atakuje — niezablokowany · 1x +1/+1 · 4/5 | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · choroba · 1/4 | Soldier · 0 · Creature — Soldier · Dotykanie życia · +1/+1 · choroba · 2/2 ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  >> Wybierz: Deklaracja blokujących (3 opcje)
+  [combat wizard] blokuję 1 stworami: Kithkin (1/1)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kithkin blokuje Zombie Army
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Zombie Army zadaje 3 obrażenia (Kithkin)
+  [ROZGRYWKA]   • Kithkin zadaje 1 obrażenie (Zombie Army)
+  [ROZGRYWKA]   • Ivy Lane Denizen zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 13
+  [ROZGRYWKA]   • Kithkin ginie
+  [ROZGRYWKA]   • token Kithkin przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Trostani Discordant — trigger (krok końca tury)
+  [ROZGRYWKA]   • Trostani Discordant — trigger bez efektu (nie było czego wykonać)
+  [ROZGRYWKA]   • Tura 23 — Ty
+
+--- krok 69 | T. 23GraczGracz: 13 ż.Bot: 10 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Immersturm Skullcairn (Ty) (koszt T) — dodaj 1 manę czarną  ||  Cel zdolności: Cenn's Tactician (3 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Stomping Slabs · 3 · Sorcery · odsłoń wierzch, ułóż w kolejności | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5
+  MOJE POLA: Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 4x +1/+1 · 5/5 | Forest · Basic Land — Forest · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Zombie Army · 0 · Creature — Zombie Army · +1/+1 · 2x +1/+1 · 3/3 | Chronic Flooding · 2 · Enchantment Aura · Zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Forest | Ivy Lane Denizen · 4 · Creature — Elf Warrior · Gdy inny zielony stwór pod twoją kontrolą wchodzi na pole bitwy: połóż licznik +1/+1. · +1/+1 · 1x +1/+1 · 4/5 | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · choroba · 1/4 | Soldier · 0 · Creature — Soldier · Dotykanie życia · +1/+1 · choroba · 2/2 ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  >> Aktywuj: Immersturm Skullcairn (Ty) (koszt T) — dodaj 1 manę czarną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Immersturm Skullcairn — dodanie 1 many czarnej do puli
+  >> Cel zdolności: Cenn's Tactician (3 opcje)
+  [modal choice] Cel zdolności: Cenn's Tactician Aktywuj: Cenn's Tactician (Ty) (koszt W, T) — połóż licznik +1/+1 → cel: Cenn's Tactician (Ty)🔍 Podgląd karty Aktywuj: Cenn's Tactician (Ty) (koszt W, T) — połóż licznik +1/+1 → cel: Soldier (Nieprzyjaciel) (1 z 2)🔍 Podgląd karty Aktywuj: Cenn's Tactician (Ty) (koszt W, T) — połóż licznik +1/+1 → cel: Soldier (Nieprzyjaciel) (2 z 2)🔍 Podgląd karty
+  [modal choice]   ▶ Aktywuj: Cenn's Tactician (Ty) (koszt W, T) — połóż licznik +1/+1 → cel: Cenn's Tactician (Ty)
+  [modal choice]     Aktywuj: Cenn's Tactician (Ty) (koszt W, T) — połóż licznik +1/+1 → cel: Soldier (Nieprzyjaciel) (1 z 2)
+  [modal choice]     Aktywuj: Cenn's Tactician (Ty) (koszt W, T) — połóż licznik +1/+1 → cel: Soldier (Nieprzyjaciel) (2 z 2)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Cenn's Tactician dostaje +1 licznik +1/+1 (razem 5)
+  [ROZGRYWKA]   • Ty: zdolność Cenn's Tactician rozstrzygnięta
+
+--- krok 72 | T. 23GraczGracz: 13 ż.Bot: 10 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Stomping Slabs · 3 · Sorcery · odsłoń wierzch, ułóż w kolejności | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5 | Plains · Basic Land — Plains · T: dodaj 1 manę
+  MOJE POLA: Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 5x +1/+1 · 6/6 | Forest · Basic Land — Forest · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Zombie Army · 0 · Creature — Zombie Army · +1/+1 · 2x +1/+1 · 3/3 | Chronic Flooding · 2 · Enchantment Aura · Zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Forest | Ivy Lane Denizen · 4 · Creature — Elf Warrior · Gdy inny zielony stwór pod twoją kontrolą wchodzi na pole bitwy: połóż licznik +1/+1. · +1/+1 · 1x +1/+1 · 4/5 | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · choroba · 1/4 | Soldier · 0 · Creature — Soldier · Dotykanie życia · +1/+1 · choroba · 2/2 ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA]   • Tura 24 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Severed Strands → cel: Cenn's Tactician
+  [ROZGRYWKA]   • Zombie Army zostaje poświęcony
+  [ROZGRYWKA]   • token Zombie Army przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 10 → 13
+  [ROZGRYWKA]   • Cenn's Tactician zostaje zniszczony
+  [ROZGRYWKA]   • Severed Strands zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Azorius Justiciar
+
+--- krok 75 | T. 25GraczGracz: 4 ż.Bot: 17 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Immersturm Skullcairn (Ty) (koszt T) — dodaj 1 manę czarną  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Stomping Slabs · 3 · Sorcery · odsłoń wierzch, ułóż w kolejności | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Chronic Flooding · 2 · Enchantment Aura · Zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Forest | Ivy Lane Denizen · 4 · Creature — Elf Warrior · Gdy inny zielony stwór pod twoją kontrolą wchodzi na pole bitwy: połóż licznik +1/+1. · +1/+1 · 1x +1/+1 · 4/5 | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4 | Soldier · 0 · Creature — Soldier · Dotykanie życia · +1/+1 · 2/2 ×2 | Azorius Justiciar · 4 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: detain — do twojej następnej tury cel nie atakuje, nie blokuje i nie aktywuje zdolności. · +1/+1 · choroba · 3/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Atak: Ivy Lane Denizen, Trostani Discordant, Soldier, Soldier
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Ivy Lane Denizen zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 9
+  [ROZGRYWKA]   • Trostani Discordant zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 9 → 8
+  [ROZGRYWKA]   • Soldier zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 8 → 6
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 13 → 15
+  [ROZGRYWKA]   • Soldier zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 6 → 4
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 15 → 17
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Trostani Discordant — trigger (krok końca tury)
+  [ROZGRYWKA]   • Trostani Discordant — trigger bez efektu (nie było czego wykonać)
+  [ROZGRYWKA]   • Tura 25 — Ty
+  >> Aktywuj: Immersturm Skullcairn (Ty) (koszt T) — dodaj 1 manę czarną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Immersturm Skullcairn — dodanie 1 many czarnej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Creakwood Safewright
+  >> Zagraj: Creakwood Safewright (koszt 1B)
+  [kreator many] Płatność 1B — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: BTapnij: Forest (G)Tapnij: Plains (W)Tapnij:  — źródła: 6
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Forest (G)
+
+--- krok 78 | T. 25GraczGracz: 4 ż.Bot: 17 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Stomping Slabs · 3 · Sorcery · odsłoń wierzch, ułóż w kolejności | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5
+  MOJE POLA: Creakwood Safewright · 2 · Creature — Elf Warrior · Na początku kroku końca (gdy w twoim grobie jest karta Elf i ma licznik -1/-1): usuń licznik -1/-1. · choroba · 3x -1/-1 · 2/2 | Forest · Basic Land — Forest · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Chronic Flooding · 2 · Enchantment Aura · Zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Forest | Ivy Lane Denizen · 4 · Creature — Elf Warrior · Gdy inny zielony stwór pod twoją kontrolą wchodzi na pole bitwy: połóż licznik +1/+1. · +1/+1 · 1x +1/+1 · 4/5 | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4 | Soldier · 0 · Creature — Soldier · Dotykanie życia · +1/+1 · 2/2 ×2 | Azorius Justiciar · 4 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: detain — do twojej następnej tury cel nie atakuje, nie blokuje i nie aktywuje zdolności. · +1/+1 · choroba · 3/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Creakwood Safewright zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 26 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Ivy Lane Denizen, Soldier, Soldier, Azorius Justiciar
+  >> Wybierz: Deklaracja blokujących (5 opcji)
+  [combat wizard] blokuję 1 stworami: Creakwood Safewright (2/2)
+  [combat wizard] Zatwierdź bloki
+
+--- krok 81 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Stomping Slabs · 3 · Sorcery · odsłoń wierzch, ułóż w kolejności | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Chronic Flooding · 2 · Enchantment Aura · Zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Forest | Ivy Lane Denizen · 4 · Creature — Elf Warrior · Gdy inny zielony stwór pod twoją kontrolą wchodzi na pole bitwy: połóż licznik +1/+1. · +1/+1 · −2 · 1x +1/+1 · 4/5 | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4 | Soldier · 0 · Creature — Soldier · Dotykanie życia · +1/+1 · 2/2 ×2 | Azorius Justiciar · 4 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: detain — do twojej następnej tury cel nie atakuje, nie blokuje i nie aktywuje zdolności. · +1/+1 · 3/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 82 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Release the Ants · 2 · Instant · Obrażenia 1 + clash · dowolny cel | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Stomping Slabs · 3 · Sorcery · odsłoń wierzch, ułóż w kolejności | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Chronic Flooding · 2 · Enchantment Aura · Zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Forest | Ivy Lane Denizen · 4 · Creature — Elf Warrior · Gdy inny zielony stwór pod twoją kontrolą wchodzi na pole bitwy: połóż licznik +1/+1. · +1/+1 · −2 · 1x +1/+1 · 4/5 | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4 | Soldier · 0 · Creature — Soldier · Dotykanie życia · +1/+1 · 2/2 ×2 | Azorius Justiciar · 4 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: detain — do twojej następnej tury cel nie atakuje, nie blokuje i nie aktywuje zdolności. · +1/+1 · 3/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Manifest Dread, Assert Perfection, Plains, Tiller of Flesh, Release the Ants, Mosquito Guard ⏎ Nowa partia (seed 41). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 23, kliknięte: 24, modale: 4, sondy noop: 77 (panel 63, modal 14)
+== DETEKTORY: brak zgłoszeń ==
