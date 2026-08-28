@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { choiceRequest } from '../src/protocol/types.js';
 import { lookWizardKindOf, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard } from '../src/table/choice-request.js';
-import { choiceGroupLabel, groupCombatDecisions } from '../src/table/render.js';
+import { choiceGroupLabel, groupCombatDecisions, commandLabel } from '../src/table/render.js';
 import { commandOptionKey } from '../src/table/session.js';
 
 class ChoiceMiniEl {
@@ -388,6 +388,14 @@ test('M251: przycisk domyślnego przydziału opisuje przydział po polsku (bez �
   assert.ok(def, 'przycisk domyślnego przydziału jest w wizardzie');
   assert.match(def.textContent, /domyślnego przydziału/i, `etykieta bez copy żargonu, jest: ${def.textContent}`);
   assert.doesNotMatch(def.textContent, /lethal-first/i, 'gracz nie widzi nazwy wewnętrznej algorytmu');
+  // M251 (drugie okno tego samego znaleziska): etykieta KOMENDY
+  // resolve_damage_assignment w commandLabel mówiła „(domyślnie
+  // lethal-first)" — ruch bota z domyślnym przydziałem ląduje z nią
+  // w modalu „Ruch przeciwnika" (renderBotMoves → commandLabel).
+  const session = COMBAT_SESSION;
+  const label = commandLabel({ type: 'resolve_damage_assignment', playerId: 'p1', assignments: {} }, session, COMBAT_VIEW);
+  assert.doesNotMatch(label, /lethal-first/i, `etykieta komendy bez żargonu, jest: ${label}`);
+  assert.match(label, /domyślny przydział/i);
 });
 
 // =============================================================================

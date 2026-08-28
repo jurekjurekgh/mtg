@@ -2028,7 +2028,11 @@ export function commandLabel(cmd, session, view) {
   };
   switch (cmd.type) {
     case 'resolve_index_choice': return 'Przestaw karty na wierzchu biblioteki';
-    case 'resolve_damage_assignment': return 'Rozdziel obrażenia bojowe (domyślnie lethal-first)';
+    // M251 (audyt Żywym Testerem): ta sama etykieta co przycisk domyślny
+    // w wizardzie — ruch bota z silnikowym przydziałem ląduje w modalu
+    // „Ruch przeciwnika" dokładnie przez commandLabel (render.js: renderBotMoves).
+    // „lethal-first" to nazwa wewnętrzna algorytmu, nie copy dla gracza.
+    case 'resolve_damage_assignment': return 'Rozdziel obrażenia bojowe (domyślny przydział — zabójcze obrażenia po kolei blokerów)';
     case 'draw_card': return 'Dobierz kartę';
     case 'pass_priority': return 'Dalej (pass)';
     case 'concede': return 'Poddaj partię';
