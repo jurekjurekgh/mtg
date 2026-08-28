@@ -898,6 +898,9 @@ function describeEffect(e) {
     bounce_to_library_top: () => 'włóż na wierzch biblioteki właściciela',
     bounce_to_library_bottom: () => 'włóż na spód biblioteki właściciela',
     buff_creatures_you_control: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla twoich stworów do końca tury`,
+    // Batch 51 (Thunderstaff): „Attacking creatures get +1/+0 until end of
+    // turn." — bez wpisu panel pokazywałby surowy slug (strażnik M122).
+    buff_attacking_creatures: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla atakujących stworów do końca tury`,
     buff_creature_until_end_of_turn: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} do końca tury`,
     buff_land_creatures: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla land creatures do końca tury`,
     buff_opponents_creatures: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla stworów przeciwnika do końca tury`,

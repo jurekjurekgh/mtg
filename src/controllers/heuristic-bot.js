@@ -1199,6 +1199,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    */
   const FRIENDLY_TARGET_EFFECTS = new Map([
     ['pump', 50], ['pump_by_creature_count', 50], ['pump_enchanted_creature', 50],
+    // Batch 51 (Savage Surge): „+2/+2 i odkręcenie do końca tury" to ten sam
+    // rodzaj efektu co `pump` — bez wpisu bot mógłby za darmo wzmocnić stwora
+    // przeciwnika (klasa L50: własna karta i mana na korzyść wroga).
+    ['buff_creature_until_end_of_turn', 50],
     ['pump_by_gates', 50], ['grant_keywords_until_end_of_turn', 40],
     ['cant_be_blocked', 40], ['regenerate', 40], ['prevent_damage_this_turn', 40],
     ['set_base_pt_until_end_of_turn', 40], ['untap_permanent', 25],
@@ -2732,7 +2736,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // zdolność dostawała gołe `score = 2` i bot pompował ją 10× w Głównej
           // 1, zanim zadeklarował atak. Efekt „until end of turn" wygasa
           // w cleanup, więc mana wydana przed combatem przepada.
-          if (effect.type === 'pump' || effect.type === 'pump_enchanted_creature' || effect.type === 'pump_by_gates') {
+          // Batch 51 (Savage Surge): `buff_creature_until_end_of_turn` to ten
+          // sam „+X/+Y do końca tury", co `pump` — wspólna gałąź, żeby czar
+          // nie dostawał gołego `score = 2` (jak firebreathing w M96: bot
+          // pompował w Głównej 1, a efekt wygasał w cleanup).
+          if (effect.type === 'pump' || effect.type === 'pump_enchanted_creature'
+            || effect.type === 'pump_by_gates' || effect.type === 'buff_creature_until_end_of_turn') {
             // Basilisk Gate: +X/+X, X = liczba kontrolowanych bram (Gate) —
             // liczymy z widoku, bo X nie siedzi w deskryptorze efektu.
             const gates = effect.type === 'pump_by_gates'
@@ -2740,7 +2749,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               : 0;
             const pGain = effect.type === 'pump_by_gates' ? gates : (effect.power ?? 0);
             const tGain = effect.type === 'pump_by_gates' ? gates : (effect.toughness ?? 0);
+            // Savage Surge: ODKRĘCENIE celu obok pumpu („Untap that creature")
+            // — premia tylko, gdy cel naprawdę jest zatapnięty (odkręcenie
+            // nietapniętego stwora nic nie kupuje).
+            const untapsTarget = effects.some((e) => e?.type === 'untap_permanent');
             let value = pGain + (tGain > 0 ? 1 : 0);
+            // Savage Surge: „Untap that creature" — odkręcenie ZATAPNIĘTEGO
+            // stwora to realna wartość (odzyskany bloker), odkręcenie
+            // nie-tapniętego nie kupuje nic (reguła po treści efektu, ADR 0002).
+            if (untapsTarget && recipient?.tapped) value += 4;
             // Pump bez jawnych celów działa na samo źródło (np. Warboar);
             // aura firebreathing pompuje zaczarowanego stwora.
             const enchantedId = effect.type === 'pump_enchanted_creature' ? source?.attachedTo : null;

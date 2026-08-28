@@ -1,6 +1,7 @@
 # Tarkir (WUR)
 
 1x Descendant of Storms
+1x Dromoka Warrior
 1x Force Away
 1x Furious Forebear
 1x Impact Tremors
@@ -16,6 +17,6 @@
 1x Sarkhan's Rage
 1x Vandalize
 1x Ainok Tracker
-2x Plains
+3x Plains
 3x Island
 3x Mountain
