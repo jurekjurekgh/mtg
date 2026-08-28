@@ -1,6 +1,6 @@
 import {
   IMAGE_MODE, cardImageSources, hoverImageSources, hoverModeLabel, hoverPreviewShape,
-  nextHoverMode, HOVER_MODES, tileImageSources, localArtUrl,
+  nextHoverMode, HOVER_MODES, tileImageSources, localArtUrl, scryfallImageUrl,
 } from './card-images.js';
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
@@ -317,10 +317,14 @@ export function choiceRequestGroupKey(command) {
   if (command.type === 'cast_permanent' && command.targets?.length) {
     return `permanent:${command.objectId}:${Boolean(command.bestow)}`;
   }
-  // Phyrexian mana (CR 118.9): warianty płatności {W/P} — maną albo 2 życiem.
-  if (command.type === 'cast_escape' && command.escapeExileIds?.length) {
+  // M241 (zgłoszenie J/K/L): karta z Escape = jedna grupa; warianty CELU
+  // mieszczą się w środku (modal z rzędami per cel), a karty do wygnania
+  // wybiera osobny wizard (pendingEscapeExile) — góra-ebergeracja podzbiorów
+  // zniknęła całkowicie.
+  if (command.type === 'cast_escape') {
     return `escape:${command.objectId}`;
   }
+  if (command.type === 'resolve_escape_exile') return 'resolve_escape_exile';
   if (command.type === 'cast_permanent' && command.phyrexianPayWithLife != null) {
     return `permanent-x:${command.objectId}`;
   }
@@ -408,6 +412,7 @@ export function choiceRequestGroupKey(command) {
 function choiceRequestType(commands) {
   const first = commands[0];
   if (first.type === 'cast_escape') return 'escape';
+  if (first.type === 'resolve_escape_exile') return 'escape_exile';
   if (first.type === 'cast_flashback') return 'flashback';
   if (first.type === 'resolve_scry') return 'scry';
   if (first.type === 'resolve_surveil') return 'surveil';
@@ -1681,6 +1686,12 @@ function choiceSourceTitle(cmd, session, view) {
   if (cmd?.type === 'resolve_damage_division' && view?.pendingDamageDivision?.sourceCardId) {
     return `${session.nameOf(view.pendingDamageDivision.sourceCardId)} — podziel ${view.pendingDamageDivision.total} obrażeń`;
   }
+  // M240/B (zgłoszenie): ETB Satyr Wayfinder — „Wybierz: Wariant (N opcji)”
+  // bez podpisu. Źródło jadę z pendingu jak u M162/C (karta na polu bitwy —
+  // publiczna), nie z nazwy zaszytej w warstwie opisu.
+  if (cmd?.type === 'resolve_satyr_look_choice' && view?.pendingSatyrLook?.sourceCardId) {
+    return `${session.nameOf(view.pendingSatyrLook.sourceCardId)} — bierz ląd z odsłoniętych kart`;
+  }
   if (!cmd || cmd.objectId == null) return null;
   const zones = ['hand', 'battlefield', 'stack', 'graveyard', 'library'];
   let object = null;
@@ -1714,6 +1725,13 @@ function choiceSourceTitle(cmd, session, view) {
     return mode?.name ? `Cel czaru: ${name} — ${mode.name}` : `Cel czaru: ${name}`;
   }
   if (cmd.type === 'cast_cleave' && cmd.targets?.length) return `Cel czaru (Cleave): ${name}`;
+  // M240/K (zgłoszenie): rzut przez Escape — tytuł musi nazywać CZAR,
+  // bo przy dwóch kartach z Escape w grobie oba wiersze „Ucieczka —
+  // karty do wygnania (N opcji)” były nierozróżnialne. Deskryptor
+  // (koszt wygnania) zostaje — decyzja na końcóweczę dotyczy kart.
+  if (cmd.type === 'cast_escape') {
+    return `${name} — Ucieczka (Escape): karty do wygnania`;
+  }
   // M106/Z5 (audyt stołu): equip grupował się jako „Cel zdolności: Sprzęt",
   // a opcje w środku mówiły „Wyposaż: Sprzęt → stwór" — dwie różne nazwy tej
   // samej akcji. Nazwa keyworda jest w deskryptorze, więc grupa może nazwać
@@ -1742,6 +1760,15 @@ function choiceSourceTitle(cmd, session, view) {
  * „Wybierz: wybierz (N opcji)".
  */
 /** Tytuł grupy BEZ licznika — nagłówek modala wyboru (main.js introLabel). */
+// M240/K (audyt właściciela): gdy żadna doprecyzowana gałąź nie mówi,
+// a oczekująca decyzja zna swoją kartę-źródło (sourceCardId jest jawne),
+// deskryptor dostaje NAZWĘ KARTY zamiast bezznacznikowego „Wybierz: …”
+// (który bywał nierozróżnialny — dwie karty z Escape w grobie dały dwa
+// identyczne wiersze „Ucieczka (Escape) — karty do wygnania”).
+const CHOICE_GROUP_PENDING_SOURCE = Object.freeze({
+  resolve_proliferate: (view) => view?.pendingProliferate?.sourceCardId ?? null,
+});
+
 export function choiceGroupTitle(request, session, view) {
   const options = request?.options ?? [];
   const titled = choiceSourceTitle(options[0], session, view);
@@ -1749,6 +1776,8 @@ export function choiceGroupTitle(request, session, view) {
   const descriptor = CHOICE_GROUP_TYPE_DESCRIPTORS[request?.type]
     ?? CHOICE_GROUP_COMMAND_DESCRIPTORS[options[0]?.type]
     ?? (request?.type === 'target' ? 'Cel' : 'Wariant');
+  const sourceCardId = CHOICE_GROUP_PENDING_SOURCE[options[0]?.type]?.(view) ?? null;
+  if (sourceCardId) return `${session.nameOf(sourceCardId)} — ${descriptor}`;
   return `Wybierz: ${descriptor}`;
 }
 
@@ -2094,6 +2123,28 @@ export function commandLabel(cmd, session, view) {
       const selfFizzle = cmd.sacrificeTargetId != null
         && (cmd.targets ?? []).includes(cmd.sacrificeTargetId)
         ? ' — UWAGA: czar fizzluje (cel poświęcony jako koszt)' : '';
+      // M248 (audyt Żywym Testerem, 2026-08-28 — żand detektora z partii
+      // alara × mirrodin-wu seed 33: „Rzuć: Wretched Banquet → Illusory
+      // Demon (Ty)", a Demon nie był najsłabszy): „Destroy … if it has the
+      // least power" to intervening-if (CR 608.2a) — warunek bada się przy
+      // rozstrzyganiu, więc cel można wybrać i czar PEWNIE fizzluje (koszt
+      // płacony). Oferta zostaje (legalny rzut), ale gracz musi to widzieć,
+      // jak przy M102/U8. Moc stworów jest publiczna (pole bitwy, ADR 0017);
+      // reguła po deskryptorze efektu, zero nazw (ADR 0002).
+      let condLeastPowerFizzle = '';
+      {
+        const effs = mode?.effects ?? cardForMode?.spell?.effects ?? cardForMode?.adventure?.spell?.effects ?? [];
+        if (effs.some((e) => e?.type === 'destroy_if_least_power')) {
+          const creatures = (view?.zones?.battlefield ?? []).filter((o) => o?.kind === 'creature');
+          const tgt = creatures.find((o) => o.id === (cmd.targets ?? [])[0]);
+          if (creatures.length > 0 && tgt) {
+            const minPower = Math.min(...creatures.map((o) => o.power ?? 0));
+            if ((tgt.power ?? 0) > minPower) {
+              condLeastPowerFizzle = ' — UWAGA: czar fizzluje (cel nie ma najmniejszej mocy wśród stworów)';
+            }
+          }
+        }
+      }
       // Phyrexian mana (CR 118.9): wariant płatności pita {R/P} (jak cast_permanent).
       let phy = '';
       if (cmd.phyrexianPayWithLife != null) {
@@ -2104,7 +2155,7 @@ export function commandLabel(cmd, session, view) {
         if (cmd.phyrexianPayWithLife > 0) parts.push(`${cmd.phyrexianPayWithLife}× po 2 życia`);
         phy = ` · phyrexian ${parts.join(' + ')}`;
       }
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)}${xPart}${phy})${targets ? ` → cel: ${targets}` : ''}${sac}${alt}${selfFizzle}`;
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)}${xPart}${phy})${targets ? ` → cel: ${targets}` : ''}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
@@ -2549,6 +2600,12 @@ export function commandLabel(cmd, session, view) {
         return `Weź ląd do ręki: ${escapeHtml(session.nameOfObject(cmd.pickId))}`;
       }
       return `Weź ląd do ręki: ${nameOfObjectId(cmd.pickId)}`;
+    }
+    case 'resolve_escape_exile': {
+      // M241: to dwuetapowy wariant wyboru — gracz widzi wizard multiselect
+      // (ptaszki + Zatwierdź); etykieta dotyczy kształtu protokołu (L48).
+      const count = Array.isArray(cmd.exileIds) ? cmd.exileIds.length : 0;
+      return `Ucieczka (Escape): wygnij ${count} ${polishPluralCount(count, 'kartę', 'karty', 'kart')}`;
     }
     case 'resolve_discard_choice': {
       // M109 (Nightsnare): „You may choose" — rezygnacja z wyboru.
@@ -3203,25 +3260,38 @@ export function renderCardFullscreen(host, info, { positionText = null } = {}) {
 
 /**
  * M232 — tryb wysoko-graficzny (zlecenie właściciela): pełnoekranowa warstwa
- * z DWIEMA zmaksymalizowanymi ilustracjami rzucanej karty — panoramiczną (FOT)
- * u góry i bestiariusz (KON) pod nią. Wywoływana w momencie RZUCENIA czaru /
+ * z ilustracjami rzucanej karty. Wywoływana w momencie RZUCENIA czaru /
  * wystawienia non-basic lądu (nie rozstrzygnięcia). Klik/tap w dowolnym miejscu
  * zamyka warstwę (obsługa w main.js).
  *
- * Obie ilustracje to lokalne pliki `img/<artId>{FOT,KON}.png` (localArtUrl).
+ * Układ (zgłoszenia właściciela 2026-08-28, I2): panorama (FOT) u góry, a pod
+ * nią WYŚRODKOWANA para — bestiariusz (KON) i dokładnie po jego prawej
+ * ilustracja Scryfall TEJ karty („ta sama, która domyślnie jest prezentowana
+ * na stole"). KON zachowuje dotychczasową wielkość; para jest wspólnie
+ * centrowana tak jak FOT (efekt: KON lekko przesuwa się w lewo). Reguła CSS
+ * (`.showcase-row`) daje obu obrazom IDENTYCZNĄ wysokość wiersza.
+ *
+ * Ilustracje FOT/KON to lokalne pliki `img/<artId>{FOT,KON}.png` (localArtUrl).
  * Obraz, który się nie wczyta (brak pliku / brak artId), jest chowany — warstwa
- * pokazuje wtedy tę, która istnieje; gdy żadna, host zostaje pusty (caller
+ * pokazuje wtedy te, które istnieją; gdy żadna, host zostaje pusty (caller
  * może wtedy w ogóle nie otwierać warstwy — patrz cardHasShowcaseArt).
+ * Ilustrację Scryfalla NIE chowamy cicho: wg właściciela URL Scryfalla istnieje
+ * ZAWSZE, więc jego brak to błąd, który MA BYĆ widoczny, nie maskowany.
+ *
+ * I1 (zgłoszenie właściciela): warstwa odpala się dla kart OBU stron, a bez
+ * podpisu nie wiadomo, kto rzucił. `casterName` rysuje małą podpowiedź
+ * „Rzuca: <Nazwa>" (nakładka, więc wielkości FOT/KON są nietknięte).
  *
  * @param {HTMLElement} host kontener warstwy (czyszczony)
  * @param {object} card definicja karty z rejestru (potrzebne: artId, name)
  */
-export function renderCardArtShowcase(host, card) {
+export function renderCardArtShowcase(host, card, { casterName = null } = {}) {
   clear(host);
   if (!host || !card) return host;
-  for (const variant of ['fot', 'kon']) {
+  if (casterName) div(host, 'showcase-caster', `Rzuca: ${casterName}`);
+  const buildLocal = (variant) => {
     const url = localArtUrl(card, variant);
-    if (!url) continue;
+    if (!url) return null;
     const img = document.createElement('img');
     img.className = `showcase-art showcase-${variant} is-loading`;
     img.alt = `${card.name ?? 'Karta'} — ${variant.toUpperCase()}`;
@@ -3232,8 +3302,24 @@ export function renderCardArtShowcase(host, card) {
     img.addEventListener('error', () => { img.style.display = 'none'; });
     img.addEventListener('load', () => { img.className = img.className.replace(/\s*is-loading/, ''); });
     img.src = url;
-    host.appendChild(img);
-  }
+    return img;
+  };
+  const fot = buildLocal('fot');
+  if (fot) host.appendChild(fot);
+  // I2: para KON + Scryfall we wspólnym wierszu (`.showcase-row` w CSS pilnuje,
+  // żeby OBA miały tę samą wysokość, a KON dotychczasową wielkość).
+  const row = document.createElement('div');
+  row.className = 'showcase-row';
+  const kon = buildLocal('kon');
+  if (kon) row.appendChild(kon);
+  const sf = document.createElement('img');
+  sf.className = 'showcase-art showcase-scryfall is-loading';
+  sf.alt = `${card.name ?? 'Karta'} — Scryfall`;
+  sf.decoding = 'async';
+  sf.addEventListener('load', () => { sf.className = sf.className.replace(/\s*is-loading/, ''); });
+  sf.src = scryfallImageUrl(card);
+  row.appendChild(sf);
+  host.appendChild(row);
   return host;
 }
 

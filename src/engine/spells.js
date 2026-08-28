@@ -2532,7 +2532,7 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
 }
 
 /** Limit oferowanych podzbiorów wygnania Escape (jak CREW_OPTION_CAP). */
-const ESCAPE_OPTION_CAP = 32;
+export const ESCAPE_OPTION_CAP = 32;
 
 /**
  * Escape (CR 702.138, Sweet Oblivion): czar z deskryptorem spell.escape w grobie
@@ -2580,16 +2580,9 @@ export function legalEscapeCasts(state, playerId) {
     if (!hasColorForObject(state, playerId, object)) continue;
     const others = ownGraveyard.filter((otherId) => otherId !== id);
     if (others.length < escape.exileCount) continue;
-    // M103/D (zgłoszenie właściciela + regresja wydajności benchmarku):
-    // pełna enumeracja C(n, 4) podzbiorów wygnania rosła wykładniczo z
-    // cmentarzem (10+ kart = setki/tysiące wariantów na okno — modal dla
-    // gracza bezużyteczny, a bot punktował je wszystkie). Cap jak
-    // CREW_OPTION_CAP/COMBAT_OPTION_CAP: pierwsze 32 podzbiory w stabilnej,
-    // deterministycznej kolejności grobu (ADR 0005).
-    const exileSubsets = subsets(others, escape.exileCount).slice(0, ESCAPE_OPTION_CAP);
     const targetSpec = object.spell.targets ?? [];
     if (targetSpec.length === 0) {
-      for (const escapeExileIds of exileSubsets) casts.push({ objectId: id, targets: [], escapeExileIds });
+      casts.push({ objectId: id, targets: [] });
       continue;
     }
     // Batch 45 (Assert Perfection): pozycja celu z `optional: true` („up to
@@ -2601,8 +2594,16 @@ export function legalEscapeCasts(state, playerId) {
     });
     if (candidatePools.some((pool) => pool.length === 0)) continue;
     for (const combo of cartesian(candidatePools)) {
-      for (const escapeExileIds of exileSubsets) casts.push({ objectId: id, targets: combo, escapeExileIds });
+      casts.push({ objectId: id, targets: combo });
     }
+    // M241 (zgłoszenie J/K/L): komenda rzutu NIE niesie już podzbioru
+    // wygnania (C(n,k) × cele rozwalało modal — „80+ opcji” — i WPIEKANY
+    // cel tłukł self-mill Sweet Oblivion). Część „wygnij N kart” to
+    // osobna decyzja queued (pendingEscapeExile → resolve_escape_exile),
+    // oferta dla botów/enumeracje w legalCommands, gracz dostaje
+    // multiselect z kandydatów.
+    void subsets;
+    void ESCAPE_OPTION_CAP;
   }
   return casts;
 }
@@ -2611,7 +2612,15 @@ export function legalEscapeCasts(state, playerId) {
  * Rzuca czar z grobu przez Escape (Sweet Oblivion): płaci koszt escape, wygania
  * exileCount innych kart z grobu (koszt) i kładzie czar na stos z celami.
  */
-export function castEscape(state, playerId, objectId, targets, escapeExileIds) {
+/**
+ * Deklaracja rzutu przez Escape (Sweet Oblivion, Sleep of the Dead):
+ * waliduje celem+manię (CR 601.2b–c) i KOLEJKUJE decyzję wygnania
+ * (pendingEscapeExile → resolve_escape_exile), która dokonuje płatności
+ * i kładzie czar na stos (CR 601.2h). Dwukrok, żeby UI mogło pokazać
+ * (a) JAWNY wybór celu, (b) multiselect kart z grobu — zamiast
+ * eksplodującej enumeracji podzbiorów × cele (zgłoszenie J/K/L 2026-08-27).
+ */
+export function castEscape(state, playerId, objectId, targets) {
   const object = state.objects.get(objectId);
   if (!object || object.controllerId !== playerId || object.zone !== 'graveyard' || object.kind !== 'spell' || !object.spell?.escape) {
     throw new Error('To nie jest czar z Escape w twoim grobie');
@@ -2625,37 +2634,78 @@ export function castEscape(state, playerId, objectId, targets, escapeExileIds) {
   const chosen = targets ?? [];
   if (!Array.isArray(chosen) || chosen.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów');
   const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object);
-  // Walidacja kosztu wygnania PRZED mutacją (CR 601.2h).
   const ownGraveyard = state.zones.graveyard.filter((id) => state.objects.get(id)?.controllerId === playerId);
-  const validExile = Array.isArray(escapeExileIds)
-    && escapeExileIds.length === escape.exileCount
-    && new Set(escapeExileIds).size === escapeExileIds.length
-    && escapeExileIds.every((exId) => exId !== objectId && ownGraveyard.includes(exId));
-  if (!validExile) throw new Error('Nieprawidłowy koszt Escape (exile)');
-  // Opłacalność po manie produkowalnej — spendMana sam do-tapuje landy.
+  const others = ownGraveyard.filter((id) => id !== objectId);
+  if (others.length < escape.exileCount) throw new Error('Za mało kart w grobie na koszt Escape');
+  // Opłacalność — jak przy zwykłym rzucie (nie oddajemy, dopóki nie zapłacimy).
   const escapeCost = reduceAlternativeCost(state, object, escape.cost ?? 0, escape.colors ?? []);
   if (escapeCost > producibleMana(state, playerId, null, spellManaPurpose(object))) throw new Error('Niewystarczająca mana na Escape');
   if (!hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
-  const manaSpent = escapeCost;
+  state.pendingEscapeExile = {
+    playerId,
+    objectId,
+    cardId: object.cardId ?? null,
+    targets: targetObjects.map((entry) => entry.id),
+    targetCardIds: targetObjects.map((entry) => entry.cardId),
+    exileCount: escape.exileCount,
+    candidateIds: [...others],
+    manaCost: escapeCost,
+    colors: [...(escape.colors ?? [])],
+    restorePriorityTo: state.turn.priorityPlayerId,
+  };
+  state.turn.priorityPlayerId = playerId;
+  const e = event('escape_exile_required', {
+    playerId, sourceId: objectId, cardId: object.cardId ?? null,
+    exileCount: escape.exileCount, candidateIds: [...others],
+  });
+  state.events.push(e);
+  return e;
+}
+
+/**
+ * Domknięcie kosztu Escape: wygnij dokładnie exileCount innych kart z własnego
+ * grobu (CR 702.138a „exile three OTHER cards”), zaplać manę i połóż czar
+ * na stosie z wybranymi wcześniej celami.
+ */
+export function resolveEscapeExile(state, playerId, exileIds) {
+  const pending = state.pendingEscapeExile;
+  if (!pending || pending.playerId !== playerId) throw new Error('To nie jest twoja decyzja Escape');
+  const object = state.objects.get(pending.objectId);
+  if (!object || object.zone !== 'graveyard') { state.pendingEscapeExile = null; throw new Error('Czar zniknął z grobu'); }
+  const ownGraveyard = state.zones.graveyard.filter((id) => state.objects.get(id)?.controllerId === playerId);
+  const valid = Array.isArray(exileIds)
+    && exileIds.length === pending.exileCount
+    && new Set(exileIds).size === exileIds.length
+    && exileIds.every((exId) => exId !== pending.objectId && ownGraveyard.includes(exId));
+  if (!valid) throw new Error('Nieprawidłowy koszt Escape (exile)');
+  state.pendingEscapeExile = null;
+  const manaSpent = pending.manaCost;
   spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId), spellManaPurpose(object));
   consumePendingSpellDiscount(state, object);
   state.spellsCastThisTurn += 1;
-  for (const exId of escapeExileIds) {
+  for (const exId of exileIds) {
     const exileId = `exile-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, exId, 'exile', exileId);
     state.events.push(event('object_moved', { fromId: exId, object: moved, fromZone: 'graveyard', toZone: 'exile', escape: true }));
   }
   const stackId = `spell-${state.objectSequence++}`;
-  const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
-  const stacked = Object.freeze({ ...moved, tapped: false, chosenTargets: chosen.slice(), escaped: true });
+  const moved = moveObjectDirectly(state, pending.objectId, 'stack', stackId);
+  const chosenTargets = [...pending.targets];
+  const stacked = Object.freeze({ ...moved, tapped: false, chosenTargets, escaped: true });
   state.objects.set(stackId, stacked);
+  const resolved = event('escape_exile_resolved', {
+    playerId, sourceId: pending.objectId, cardId: pending.cardId,
+    exileIds: exileIds.slice(),
+  });
+  state.events.push(resolved);
   const e = event('spell_cast', {
-    playerId, fromId: objectId, object: stacked, cardId: object.cardId,
-    targets: targetObjects.map((entry) => entry.id),
-    targetCardIds: targetObjects.map((entry) => entry.cardId), escaped: true, manaSpent,
+    playerId, fromId: stackId, object: stacked, cardId: object.cardId,
+    targets: chosenTargets,
+    targetCardIds: [...pending.targetCardIds], escaped: true, manaSpent,
     colors: [...(object.colors ?? [])],
   });
   state.events.push(e);
+  state.turn.priorityPlayerId = pending.restorePriorityTo ?? playerId;
   return e;
 }
 

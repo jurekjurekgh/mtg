@@ -1,0 +1,232 @@
+== NOWA PARTIA: gracz=theros vs bot=theros, seed=27, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Feral Invocation
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Rzuć: Inspire Awe (koszt 3G)
+  [ROZGRYWKA]   • Wykonujesz scry (patrzy na 2 karty: Forest, Sleep of the Dead)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Scry — co odłożyć na spód? (5 opcji)
+  [modal choice] Scry 2 — obejrzane karty: 1. Forest 2. Sleep of the DeadKarta 1 z 2: ForestNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [modal choice] Scry 2 — obejrzane karty: 1. Forest → spód 2. Sleep of the DeadKarta 2 z 2: Sleep of the DeadNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 9 — Ty
+  >> Zagraj: Breaching Hippocamp (koszt 3U)
+  [ROZGRYWKA]   • Breaching Hippocamp wchodzi na pole bitwy
+  [ROZGRYWKA]   • Breaching Hippocamp zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Breaching Hippocamp — trigger bez efektu (brak legalnych celów)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Anthem of Champions
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Sleep of the Dead → cel: Breaching Hippocamp
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Sleep of the Dead zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Rage of Purphoros
+  >> Dalej (pass)
+  >> Zagraj: Returned Centaur (koszt 3B)
+  [ROZGRYWKA]   • Returned Centaur wchodzi na pole bitwy
+  [ROZGRYWKA]   • Returned Centaur zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Returned Centaur — wybierz cel triggera (wymagany)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Returned Centaur — cel triggera (2 opcje)
+  [modal choice] Returned Centaur — cel triggera Returned Centaur — cel triggera: Nieprzyjaciel Returned Centaur — cel triggera: Ty
+  [modal choice]   ▶ Returned Centaur — cel triggera: Nieprzyjaciel
+  [modal choice]     Returned Centaur — cel triggera: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Returned Centaur do grobu
+  [ROZGRYWKA]   • Returned Centaur — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Sweet Oblivion → cel: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Mielisz Sweet Oblivion do grobu
+  [ROZGRYWKA]   • Mielisz Setessan Skirmisher do grobu
+  [ROZGRYWKA]   • Mielisz Plains do grobu
+  [ROZGRYWKA]   • Mielisz Entrancing Lyre do grobu
+  [ROZGRYWKA]   • Sweet Oblivion zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Sleep of the Dead — Nieprzyjaciel wybiera 3 karty do wygnania (koszt Escape)
+  [ROZGRYWKA]   • Nieprzyjaciel: Glaring Aegis — cmentarz → wygnanie
+  [ROZGRYWKA]   • Nieprzyjaciel: Rage of Purphoros — cmentarz → wygnanie
+  [ROZGRYWKA]   • Nieprzyjaciel: Sweet Oblivion — cmentarz → wygnanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Sleep of the Dead → cel: Returned Centaur
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Returned Centaur nie odkręca się w następnym kroku odkręcania
+  [ROZGRYWKA]   • Sleep of the Dead zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Aura: Feral Invocation (2 opcje)
+  [modal choice] Aura: Feral Invocation Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Breaching Hippocamp (Ty)🔍 Podgląd karty Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Returned Centaur (Ty)🔍 Podgląd karty
+  [modal choice]   ▶ Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Breaching Hippocamp (Ty)
+  [modal choice]     Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Returned Centaur (Ty)
+  [kreator many] Płatność 2G — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: GTapnij: Swamp (B)Tapnij: Forest (G)Tapnij: M — źródła: 4
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Mountain (R)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Feral Invocation → cel: Breaching Hippocamp
+  [ROZGRYWKA]   • Feral Invocation zaczarowuje Breaching Hippocamp
+  [ROZGRYWKA]   • Feral Invocation wchodzi na pole bitwy
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Pyxis of Pandemonium
+  >> Zagraj: Pyxis of Pandemonium (koszt 1)
+  [ROZGRYWKA]   • Pyxis of Pandemonium wchodzi na pole bitwy
+  [ROZGRYWKA]   • Pyxis of Pandemonium zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Aktywuj: Pyxis of Pandemonium (Ty) (koszt T) — każdy gracz wygania wierzch swojej biblioteki zakryty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Pyxis of Pandemonium — wygnanie wierzchu biblioteki każdego gracza (zakryte)
+  [ROZGRYWKA]   • Ty — zakryta karta zostaje wygnana
+  [ROZGRYWKA]   • Nieprzyjaciel — zakryta karta zostaje wygnana
+  [ROZGRYWKA]   • Ty: zdolność Pyxis of Pandemonium rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 15
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Pyxis of Pandemonium
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Pyxis of Pandemonium wchodzi na pole bitwy
+  [ROZGRYWKA]   • Pyxis of Pandemonium zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Pyxis of Pandemonium — wygnanie wierzchu biblioteki każdego gracza (zakryte)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Tura 15 — Ty
+  >> Aktywuj: Pyxis of Pandemonium (Ty) (koszt T) — każdy gracz wygania wierzch swojej biblioteki zakryty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Pyxis of Pandemonium — wygnanie wierzchu biblioteki każdego gracza (zakryte)
+  [ROZGRYWKA]   • Ty — zakryta karta zostaje wygnana
+  [ROZGRYWKA]   • Nieprzyjaciel — zakryta karta zostaje wygnana
+  [ROZGRYWKA]   • Ty: zdolność Pyxis of Pandemonium rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Titan's Strength
+  >> Cel czaru: Titan's Strength (2 opcje)
+  [modal choice] Cel czaru: Titan's Strength Rzuć: Titan's Strength (koszt R) → cel: Breaching Hippocamp (Ty)🔍 Podgląd karty Rzuć: Titan's Strength (koszt R) → cel: Returned Centaur (Ty)🔍 Podgląd karty
+  [modal choice]   ▶ Rzuć: Titan's Strength (koszt R) → cel: Breaching Hippocamp (Ty)
+  [modal choice]     Rzuć: Titan's Strength (koszt R) → cel: Returned Centaur (Ty)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Titan's Strength → cel: Breaching Hippocamp
+  [ROZGRYWKA]   • Wykonujesz scry (patrzy na 1 kartę: Forest)
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [modal choice] Scry 1 — obejrzane karty: 1. ForestKarta 1 z 1: ForestNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kończysz scry — na spód: Forest
+  [ROZGRYWKA]   • Titan's Strength zostaje rozstrzygnięty
+  >> Zagraj: Wavecrash Triton (koszt 2U)
+  [ROZGRYWKA]   • Wavecrash Triton zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Breaching Hippocamp zadaje 8 obrażeń (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 15 → 7
+  [ROZGRYWKA]   • Returned Centaur zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 7 → 5
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Setessan Skirmisher
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Pyxis of Pandemonium — wygnanie wierzchu biblioteki każdego gracza (zakryte)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel — zakryta karta zostaje wygnana
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Pyxis of Pandemonium rozstrzygnięta
+  [ROZGRYWKA]   • Setessan Skirmisher wchodzi na pole bitwy
+  [ROZGRYWKA]   • Setessan Skirmisher zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 17 — Ty
+  >> Aktywuj: Pyxis of Pandemonium (Ty) (koszt T) — każdy gracz wygania wierzch swojej biblioteki zakryty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Pyxis of Pandemonium — wygnanie wierzchu biblioteki każdego gracza (zakryte)
+  [ROZGRYWKA]   • Ty — zakryta karta zostaje wygnana
+  [ROZGRYWKA]   • Nieprzyjaciel — zakryta karta zostaje wygnana
+  [ROZGRYWKA]   • Ty: zdolność Pyxis of Pandemonium rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Cel czaru: Rage of Purphoros (4 opcje)
+  [modal choice] Cel czaru: Rage of Purphoros Rzuć: Rage of Purphoros (koszt 4R) → cel: Setessan Skirmisher (Nieprzyjaciel)🔍 Podgląd karty Rzuć: Rage of Purphoros (koszt 4R) → cel: Breaching Hippocamp (Ty)🔍 Podgląd karty Rzuć: Rage of Purphoros (koszt 4R) → cel: Returned Centaur (Ty)🔍 Podgląd karty Rzuć: Rage of Purphoros (koszt 4R) → cel: Wavecrash Triton (Ty)🔍 Podgląd karty
+  [modal choice]   ▶ Rzuć: Rage of Purphoros (koszt 4R) → cel: Setessan Skirmisher (Nieprzyjaciel)
+  [modal choice]     Rzuć: Rage of Purphoros (koszt 4R) → cel: Breaching Hippocamp (Ty)
+  [modal choice]     Rzuć: Rage of Purphoros (koszt 4R) → cel: Returned Centaur (Ty)
+  [modal choice]     Rzuć: Rage of Purphoros (koszt 4R) → cel: Wavecrash Triton (Ty)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Setessan Skirmisher nie może być regenerowany do końca tury
+  [ROZGRYWKA]   • Wykonujesz scry (patrzy na 1 kartę: Sleep of the Dead)
+  [ROZGRYWKA]   • Setessan Skirmisher ginie
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [modal choice] Scry 1 — obejrzane karty: 1. Sleep of the DeadKarta 1 z 1: Sleep of the DeadNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kończysz scry — na spód: Sleep of the Dead
+  [ROZGRYWKA]   • Rage of Purphoros zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (8 opcji)
+  [combat wizard] atakuję 3 z 3 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+== KONIEC PARTII == Koniec partii — wygrywa Gracz
+
+--- krok 53 | Koniec partii — wygrywa Gracz ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Sea God's Scorn · 6 · Sorcery · Wzgarda boga mórz: wróć na rękę właściciela (każdy z celów) | Anthem of Champions · 2 · Enchantment · twoje stwory: +1
+  MOJE POLA: Breaching Hippocamp · 4 · Creature — Horse Fish · Flash (błysk) · Gdy wejdzie na pole bitwy: odkręć. · +2/+2 · zaczarowana: Feral Invocation · 5/4 | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 2/4 | Feral Invocation · 3 · Enchantment Aura · Flash (błysk) · stwór: +2/+2 · aura → Breaching Hippocamp | Pyxis of Pandemonium · 1 · Artifact · {T}: każdy gracz wygania wierzch swojej biblioteki zakryty · {7}, {T}, poświęć: odkryj karty wygnane tym artefaktem — permanenty spośród nich wchodzą na pole bitwy | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. · 1/4 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Pyxis of Pandemonium · 1 · Artifact · {T}: każdy gracz wygania wierzch swojej biblioteki zakryty · {7}, {T}, poświęć: odkryj karty wygnane tym artefaktem — permanenty spośród nich wchodzą na pole bitwy
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Breaching Hippocamp, Swamp, Forest, Returned Centaur, Wavecrash Triton, Sea God's Scorn, Inspire Awe ⏎ Nowa partia (seed 27). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 22, kliknięte: 26, modale: 9, sondy noop: 69 (panel 48, modal 21)
+== DETEKTORY: brak zgłoszeń ==

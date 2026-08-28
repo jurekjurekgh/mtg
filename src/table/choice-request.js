@@ -1038,3 +1038,67 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
   }
   return host;
 }
+
+/**
+ * M241 (zgłoszenie J/K/L): koszt Escape — „wygnij N innych kart z własnego
+ * grobu”. Dawniej UI pokazywało enumerację podzbiorów C(n,k) × cele (Sleep
+ * of the Dead przy 9 kartach w grobie → 80+ wierszy) z WPIEKANYM celem —
+ * zgłaszane: „kombinacje dziesiątek kart” i „Sweet Oblivion millował
+ * sam siebie” (pierwszy cel z enumeracji).
+ *
+ * Teraz (jak inne dobrze zakodowane decyzje tego typu): niestała lista
+ * legalnych kandydatów jako ptaszki, „Zatwierdź” wolne dopiero przy
+ * dokładnie N zaznaczonych. Komenda składana z wyboru gracza —
+ * silnik waliduje niezależnie (L48: oferta i protokół zgodne).
+ *
+ * Ptaszek = „wygnij tę kartę” (koszt), odznaczenie cofa — wiersze
+ * klikalne całą nazwą; lupa (onOpenCard) jak w innych wizardach.
+ */
+export function renderEscapeExileWizard(host, { candidates, exileCount, sourceName, manaCost, onComplete, onCancel, onOpenCard, playerId = null }) {
+  clearChoiceElement(host);
+  const picked = new Set();
+  const intro = choiceNode(host, 'div', 'choice-request-intro');
+  const countN = `${exileCount} ${polishPluralCount(exileCount, 'kartę', 'karty', 'kart')}`;
+  intro.textContent = (sourceName ? `${sourceName} — ` : '')
+    + `Ucieczka (Escape): zaznacz ${countN} do wygnania z własnego grobu`
+    + (Number.isInteger(manaCost) ? ` (pozostały koszt: ${manaCost} many)` : '');
+  const progress = choiceNode(host, 'div', 'escape-exile-progress', `Wybrano 0 z ${exileCount}`);
+  const list = choiceNode(host, 'div', 'escape-exile-list');
+  const buttons = choiceNode(host, 'div', 'choice-request-buttons');
+  const confirm = choiceNode(buttons, 'button', 'primary-btn escape-exile-confirm', 'Zatwierdź');
+  confirm.disabled = true;
+  const cancel = choiceNode(buttons, 'button', 'secondary-btn', 'Anuluj');
+  cancel.addEventListener('click', () => { if (onCancel) onCancel(); });
+
+  const refresh = () => {
+    progress.textContent = `Wybrano ${picked.size} z ${exileCount}`;
+    confirm.disabled = picked.size !== exileCount;
+    // Klucz sondy aktualizuje się po każdej zmianie — jak w M112.
+    if (playerId) {
+      const ids = [...picked].sort();
+      confirm.dataset.optionKey = commandOptionKey({ type: 'resolve_escape_exile', playerId, exileIds: ids });
+    }
+  };
+  confirm.addEventListener('click', () => {
+    if (confirm.disabled) return;
+    onComplete([...picked].sort());
+  });
+
+  for (const candidate of candidates) {
+    const row = choiceNode(list, 'label', 'escape-exile-row');
+    const input = choiceNode(row, 'input', 'escape-exile-toggle');
+    input.type = 'checkbox';
+    input.checked = false;
+    input.addEventListener('change', () => {
+      if (input.checked) picked.add(candidate.id); else picked.delete(candidate.id);
+      refresh();
+    });
+    choiceNode(row, 'span', 'escape-exile-name', candidate.name ?? candidate.id);
+    if (typeof onOpenCard === 'function' && candidate.cardId) {
+      const spy = choiceNode(row, 'button', 'card-preview-btn', '🔍 Podgląd karty');
+      spy.addEventListener('click', (ev) => { ev.preventDefault?.(); ev.stopPropagation?.(); onOpenCard(candidate.cardId); });
+    }
+  }
+  refresh();
+  return host;
+}

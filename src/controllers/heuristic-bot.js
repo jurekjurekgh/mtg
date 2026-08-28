@@ -73,7 +73,20 @@ function attackerNeutralizedByProtection(attacker, blockers) {
     // Bloker chroniony od któregokolwiek koloru atakującego = atak jałowy:
     // obrażenia bojowe od atakującego są zapobiegane (CR 702.16c), a bloker
     // przeżywa. `sourceHasProtectionQuality` liczy kolory ze `source`.
-    return qualities.some((q) => sourceHasProtectionQuality(q, attacker));
+    if (!qualities.some((q) => sourceHasProtectionQuality(q, attacker))) return false;
+    // M239/1 (audyt PR #83, CR 702.19b + 702.16c): ale TRAMPLE przebija blok
+    // z ochroną. Podział obrażeń wymaga od atakującego z trample tylko lethal
+    // na blokerach, a test lethal ignoruje prewencję — nadmiar mocy wpada
+    // w gracza, który protekcji NIE ma (chroni się tylko bloker). Czyli atak
+    // tramplerem, którego moc przekracza „lethal" bloka (wytrzymałość, albo 1
+    // przy deathtouch atakującego), nie jest jałowy: zada różnicę obrońcy.
+    // Bloker nadal przeżywa — neutralizuje tylko samą wymianę obiektów.
+    const attackerKeywords = attacker.keywords ?? [];
+    if (attackerKeywords.includes('trample')) {
+      const lethalNeeded = attackerKeywords.includes('deathtouch') ? 1 : (b.toughness ?? Number.POSITIVE_INFINITY);
+      if ((attacker.power ?? 0) > lethalNeeded) return false;
+    }
+    return true;
   });
 }
 
@@ -541,6 +554,20 @@ export const UNDERCITY_ROOM_LINKS = Object.freeze({
   'Throne of the Dead Three': [],
 });
 
+/**
+ * M241: wycena jednej karty grobu dla kosztu wygnania Escape. Stwór wyceniany
+ * wyżej niż inny typ karty (jak dawniej w M103/D: +10 + 2×P + T), inny typ
+ * karty to stałe 6. Dane po deskryptorze rejestru, nie nazwie (ADR 0002),
+ * bo widok grobu redaguje pola obiektów.
+ */
+function escapeExileCostOf(view, object) {
+  const def = object?.cardId ? createCardRegistry().get(object.cardId) : undefined;
+  const isCreature = (def?.types ?? []).includes('Creature')
+    || (def?.power != null && def?.toughness != null);
+  if (isCreature) return 10 + 2 * (def.power ?? 0) + (def.toughness ?? 0);
+  return 6;
+}
+
 export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null, weights = undefined, params = undefined, registry: registryOverride = undefined }) {
   if (!Number.isInteger(seed)) throw new TypeError('Bot wymaga całkowitego seeda');
   if (typeof randomness !== 'number' || randomness < 0 || randomness > 1) throw new RangeError('randomness ma być w [0, 1]');
@@ -746,6 +773,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     return false;
   };
+
+  // Uwaga L39: gałąź `return_to_hand` niżej jest od dawna martwa (żaden
+  // producent efektu w src/); realne odbicia jadą typem `bounce_permanent`
+  // (modal Steel Sabotage) i dostają tę regułę z REMOVAL_EFFECTS.
+  //
+  // M247 (audyt Żywym Testerem, 2026-08-28 — Banishment Decree za 5 many
+  // rzucane w Great Furnace): czysty LĄD (typ `Land`, nie Creature, więc
+  // nie zagraża/nie broni) jako cel efektu niszczącego albo odbijającego to
+  // stracona karta — przeciwnikowi nie ginie nic bojowego, ląd wraca
+  // za darmo (a z „wierzchu biblioteki" wręcz przy następnym doborze).
+  // Deskryptor po typach z widoku (ADR 0002/0017); ląd-stwór (Dryad-Arbor
+  // class) wykluczony jawnie — ten ginie „naprawdę" w walce.
+  const pureLandTarget = (t) => t && (t.types ?? []).includes('Land')
+    && !(t.types ?? []).includes('Creature');
 
   const enemyRemovalTargetBonus = (view, target) => {
     if (!target || target.controllerId === view.playerId) return 0;
@@ -1733,6 +1774,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         return finish(score);
       }
+      case 'resolve_escape_exile': {
+        const costSum = (cmd.exileIds ?? []).reduce((sum, exId) => {
+          const o = view.zones.graveyard.find((entry) => entry.id === exId);
+          return sum + (o ? escapeExileCostOf(view, o) : 0);
+        }, 0);
+        return finish(-costSum);
+      }
       case 'cast_spell':
       case 'cast_cleave':
       case 'cast_escape':
@@ -1762,6 +1810,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           : null;
         const effects = modalEffects
           ?? ((cmd.type === 'cast_cleave' && spell.cleave ? spell.cleave.effects : spell.effects) ?? []);
+        // M247 anti-overfix (Vandalize „Zniszcz ląd"): kara „czysty ląd jako
+        // cel removalu" NIE obejmuje efektów ZAPROJEKTOWANYCH pod niszczenie
+        // lądów — rozpoznajemy je po specu celu z deskryptora: slot typu
+        // 'land' (i tylko 'land') oznacza nienawiść intencjonalną.
+        const modalTargets = modalEffects ? (spell.modes[cmd.modeIndex]?.targets ?? []) : null;
+        const targetSpecAt = (idx) => (modalTargets ?? spell.targets ?? [])[idx]?.type ?? null;
+        const removalAtLandByDesign = (idx) => targetSpecAt(idx) === 'land';
         // M106/Z2b: czar, którego CAŁA treść jest teraz pusta (0 tokenów, brak
         // stworów do osłabienia, pusty grób), to wyrzucona karta — nie rzucamy.
         if (allEffectsInertNow(view, effects, cmd)) return finish(-70);
@@ -1793,16 +1848,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // wariantem niszczącym własny cmentarz, bo wszystkie warianty miały
         // ten sam wynik wyceny.
         if (cmd.type === 'cast_escape') {
-          for (const exId of cmd.escapeExileIds ?? []) {
-            const exiled = zoneCard(view, exId) ?? view.zones.graveyard.find((o) => o.id === exId);
-            if (!exiled) continue;
-            // Widok grobu redaguje pola — cechy wygnanej karty bierzemy
-            // z rejestru po cardId (jak wyżej przy deskryptorze czaru).
-            const def = exiled.cardId ? cardDef(exiled.cardId) : undefined;
-            const isCreature = (def?.types ?? []).includes('Creature')
-              || (def?.power != null && def?.toughness != null);
-            if (isCreature) score -= 10 + 2 * (def.power ?? 0) + (def.toughness ?? 0);
-            else score -= 6;
+          // M241/M103/D: koszt kosztu wygnania nie leci już W komendzie
+          // (zgłoszenie J — enumeracja podzbiorów zniknęła), więc kary liczymy
+          // od PLANOWANEGO wyboru kosztu: N najtańszych kandydatów z własnego
+          // grobu. Bot, który miałby wypłacić 4 dobrych stworów za mill 4,
+          // nadal schodzi poniżej passu (anti-over-fix antyD).
+          const escapeDef = spell?.escape ?? null;
+          const candidates = view.zones.graveyard
+            .filter((o) => o.id !== cmd.objectId && o.controllerId === view.playerId);
+          const values = candidates.map((o) => escapeExileCostOf(view, o)).sort((a, b) => a - b);
+          const need = escapeDef?.exileCount ?? 0;
+          if (need > 0 && values.length >= need) {
+            score -= values.slice(0, need).reduce((sum, v) => sum + v, 0);
           }
         }
         // M120 (decyzja właściciela po audycie M119/Z7): kontrczar wycelowany
@@ -1954,6 +2011,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // (karta + zasób ze stołu); kara musi przebić bazowe 50 pkt,
               // żeby „bo nie ma innego celu" nie wygrywało z passem.
               score -= 90;
+            } else if (pureLandTarget(target) && !removalAtLandByDesign(effect.targetIndex ?? 0)) {
+              // M247: bez premii removalu i z karą przebijającą bazę czaru —
+              // pass musi wygrać z „rzucam, bo jest dowolny cel".
+              score -= P.removalPureLandPenalty;
             } else {
               const worth = (target.power ?? 0) + (target.toughness ?? 0);
               score += P.removalEnemyBase + P.removalWorthWeight * worth;
@@ -2285,6 +2346,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 if (hasDamage) score += mine ? -60 : 12 + (t3.power ?? 0) * 2;
                 else if (hasCantBlock) score += mine ? -10 : 8;
                 if (hasRemoval) {
+                  // Uwaga L39/L48: wrappery z removal-efektami wewnętrznymi
+                  // celują wyłącznie w stwory/enchantmenty (spec z deskryptora,
+                  // np. creature_or_enchantment), więc „czysty ląd" nigdy nie
+                  // staje się celem — reguła M247 jest tu z założenia pusta.
                   score += mine
                     ? -90
                     : P.removalEnemyBase + P.removalWorthWeight * ((t3.power ?? 0) + (t3.toughness ?? 0))
@@ -2504,9 +2569,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // undefined i efekty (np. „{T},poświęć: 2 obrażenia") w ogóle nie były
         // wyceniane (każdy cel dostawał gołe score=2, bot celował w twarz/siebie
         // zamiast zabić stwora). Spójnie z silnikiem (abilities.js).
+        // M243/E (zgłoszenie właściciela, Treasure): treść zdolności bierzemy
+        // NAJPIERW z obiektu (view.activatableAbilities — M243 dodaje, tokeny
+        // typu Skarb mają zdolność w deskryptorze obiektu, a nie w rejestrze).
+        // Bez tego token spoza card-data dostawał `ability = undefined` →
+        // pętla efektów nie karyzowała niczego → goła baza 2 → bot poświęcał
+        // Skarb na manę przy trzech nietapniętych lądach. Silnik indeksuje po
+        // activatableAbilities (L48), więc widok niesie tę samą listę.
+        const viewAbilities = abilityObject?.activatableAbilities;
         const ability = cmd.grantedFromEquipment
           ? (def?.equipment?.grantedAbilities ?? [])[cmd.abilityIndex ?? 0]
-          : def?.abilities?.[cmd.abilityIndex ?? 0];
+          : (viewAbilities ?? def?.abilities ?? [])[cmd.abilityIndex ?? 0];
         const taps = Boolean(ability?.cost?.tap);
         const tapsCreature = Boolean(ability?.cost?.tapCreature);
         const effects = Array.isArray(ability?.effect) ? ability.effect : ability?.effect ? [ability.effect] : [];
@@ -2541,14 +2614,6 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (abilityEffectTypes.includes('animate_permanent_until_end_of_turn') && source?.animatedUntilEOT === true) {
             return finish(-10);
           }
-          // M219 (pętla jakości Żywym Testerem, h9 zendikar vs worek-legend
-          // s=44): pendingTwin łapie tylko drugą kopię NA STOSIE. Gdy pierwsza
-          // aktywacja już się ROZSTRZYGNĘŁA i nadała trwały-do-EOT stan
-          // (saddled), źródło nosi go na polu bitwy, a bot i tak aktywował
-          // Trained Arynx (Saddle 2) 3× z rzędu w jednej turze — każde
-          // kolejne osiodłanie tapuje inny stwór za nic (L51: efekt
-          // idempotentny już zastosowany). Generycznie po flagach STANU
-          // czytanych z PlayerView (ADR 0017), nie po nazwie karty (ADR 0002).
         }
         // Patologia B1: aktywacja kosztem tapu we własnym untap zostawiłaby
         // stwora zatapianego całą turę (bot stał w miejscu i deck-outował).
@@ -3253,6 +3318,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const tokenToughness = effect.toughness === 'source_power' ? (source?.power ?? 0) : (effect.toughness ?? 1);
             score += 10 * amount * (2 * tokenPower + tokenToughness) / 3;
             if (ability?.cost?.sacrificeSelf) score -= source?.kind === 'creature' ? 4 : 1;
+            // M243/C (zgłoszenie właściciela, Heap Gate #3): token będący
+            // WYŁĄCZNIE bankiem many (Treasure/Powerstone — token-def albo
+            // deskryptor efektu: jedyną funkcją jest add_mana, brak ciała)
+            // za KOSZT many i tapnięć w turze, w której nie ma co rzucić,
+            // to przeniesienie many na przyszłość — bot nie planuje portfela
+            // na nast. turę, więc mierzymy TYLKO bieżącą turę: zapłata many
+            // + tapowane źródła (tu: DWA lądy) a token dopiero poświęci się
+            // jutro za tę samą manę. Bilans zerowy co do liczby, ujemny co
+            // do tempa. Kara przebija premię „10 pkt za token" (L3: kara ma
+            // przenosić wariant PONIŻEJ passa).
+            const tokenDef = effect.cardId ? cardDef(effect.cardId) : null;
+            const tokenAbilities = effect.abilities ?? tokenDef?.abilities ?? [];
+            const tokenEffects = tokenAbilities.flatMap((a) => {
+              const fx = a?.effect;
+              return Array.isArray(fx) ? fx : fx ? [fx] : [];
+            });
+            const tokenOnlyManaBank = (effect.power ?? tokenDef?.power ?? 0) <= 0
+              && tokenEffects.length > 0
+              && tokenEffects.every((fx) => fx?.type === 'add_mana');
+            if (tokenOnlyManaBank) {
+              const hasPlayable = view.zones.hand.some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
+              score -= hasPlayable ? 13 : 14;
+            }
           }
           if (effect.type === 'become_basic_land_type') {
             // Pętla jakości Żywym Testerem (2026-08-26, g9): bot aktywował
@@ -3307,10 +3395,49 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // omija tego blokera (flying, gdy blokery nie latają). Reguła po
               // deskryptorach (ADR 0002): kolory celu vs protekcja blokera.
               const blockersNow = untappedEnemyBlockers(view);
-              const grantsEvasion = grants.includes('flying')
-                && blockersNow.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'));
+              // M243/D-G (Batch zgłoszeń właściciela 2026-08-27): wartość
+              // Equip = WARTOŚĆ REALNIE DODANA nosicielowi, a nie „działa
+              // dokładnie". Trzy zgłoszenia = jedna zasada (L28):
+              //   D (Cloak of the Bat na latającym): keyword, który cel JUŻ
+              //     ma, niczego nie dodaje — grant skopiowany jest no-opem;
+              //   G (Thieves' Tools na power 4): ewazja warunkowa
+              //     „cantBeBlockedMaxPower: 3" na stworze powyżej progu jest
+              //     martwa (kryterium ze stanu, nie nazwy karty);
+              //   F (Lurking Green Dragon bez latania u obrońcy): stwór,
+              //     który legalnie NIE MOŻE atakować (cantAttackStatic z
+              //     PlayerView), nie wyciąga niczego z grantu ofensywnego.
+              const equipmentDef = source.equipment ?? {};
+              const targetKeywords = new Set([...(target.keywords ?? []), ...(target.grantedKeywords ?? [])]);
+              const freshGrants = grants.filter((kw) => !targetKeywords.has(kw));
+              const hasteAdds = freshGrants.includes('haste') && target.summoningSickness === true;
+              const pumpPower = equipmentDef.pump?.power ?? 0;
+              const pumpToughness = equipmentDef.pump?.toughness ?? 0;
+              const effectiveTargetPower = (target.power ?? 0) + (target.grantedPower ?? 0);
+              const conditionalEvasion = equipmentDef.cantBeBlockedMaxPower != null
+                && effectiveTargetPower <= equipmentDef.cantBeBlockedMaxPower;
+              const grantsEvasion = (freshGrants.includes('flying')
+                && blockersNow.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach')))
+                || conditionalEvasion;
               const neutralized = attackerNeutralizedByProtection(target, blockersNow);
-              if (neutralized && !grantsEvasion) {
+              // „Nic nie dodaje" (D/G): bez pompy, bez nowych użytecznych
+              // keywordów (haste liczymy tylko przy chorobie), bez ewazji.
+              const nothingAdded = pumpPower === 0 && pumpToughness === 0
+                && !grantsEvasion
+                && !hasteAdds
+                && freshGrants.every((kw) => kw === 'haste');
+              if (target.cantAttackStatic === true) {
+                // F: sprzęt na stworze, który NIE MOŻE atakować (obrońca bez
+                // latającego / defender / detain / aura Hobble) — premia
+                // ofensywna (siła nosiciela, ewazja, haste) niczego nie kupuje;
+                // zostałaby tylko wartość z P/T pompy do obrony.
+                score += 2 + 2 * pumpPower + pumpToughness;
+                if (nothingAdded) score -= 14;
+              } else if (nothingAdded) {
+                // D/G: Equipment niczego nie dodaje nosicielowi — czysta
+                // strata many i tempa (bot wyposażał i wyrzucał 2 many co
+                // turę). Kara przebija dotychczasową premię 10+2·power (L3).
+                score -= 12;
+              } else if (neutralized && !grantsEvasion) {
                 score -= 8; // pompowanie bezradnego atakującego — nic nie zmienia
               } else {
                 score += 10 + 2 * (target.power ?? 0);

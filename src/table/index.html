@@ -775,6 +775,29 @@
     box-shadow: 0 10px 40px rgba(0,0,0,.7);
   }
   .art-showcase .showcase-art.is-loading { opacity: 0; }
+  /* I2 (zgłoszenie właściciela 2026-08-28): para [KON][Scryfall] w jednym
+     wierszu pod FOT. HEIGHT na obu obrazach = 47vh, więc Scryfall ma DOKŁADNIE
+     wysokość KON, a KON zachowuje dotychczasowy rozmiar (wcześniej też 47vh
+     przez max-height ogólnej reguły powyżej). Wiersz wycentrowany jak FOT —
+     KON przesuwa się naturalnie lekko w lewo, żeby zrobić miejsce Scryfallowi. */
+  .art-showcase .showcase-row {
+    display: flex; align-items: flex-start; justify-content: center;
+    gap: 1vw; max-width: 97vw;
+  }
+  .art-showcase .showcase-row .showcase-kon { height: 47vh; max-width: 65vw; }
+  .art-showcase .showcase-row .showcase-scryfall { height: 47vh; max-width: 30vw; }
+  /* Za wąski ekran (kwadrat/pion): obok KON nie ma miejsca na Scryfalla —
+     dokładnie DOTYCHSZASOWY widok jednej ilustracji (KON sam, wycentrowany). */
+  @media (max-aspect-ratio: 7/5) {
+    .art-showcase .showcase-row .showcase-scryfall { display: none; }
+  }
+  /* I1: mała informacja kto rzucił (nakładka — wielkości FOT/KON nietknięte). */
+  .art-showcase .showcase-caster {
+    position: absolute; left: 1.5vw; top: 1.2vh; z-index: 2;
+    font-size: 12px; letter-spacing: .03em; color: #f5e6c4;
+    background: rgba(0,0,0,.6); padding: 4px 12px; border-radius: 999px;
+    border: 1px solid rgba(230,195,106,.35); pointer-events: none;
+  }
 
   /* --- Ruch bota ----------------------------------------------------- */
   .bot-move-card { max-width: 420px; margin: auto; }

@@ -461,6 +461,13 @@ export async function runTableGame({
       || by(/^Nie bierz lądu/)
       || by(/^Rzuć z odbiciem:/)
       || by(/^Rzuć zawieszone:/)
+      // M246 (audyt Żywym Testerem, 2026-08-28): pending decyzja „(możesz)"
+      // (resolve_optional_trigger_choice — Veiled Ascension w upkeep przy
+      // opóźnionym triggerze Plague Reavera) to BLOKUJĄCY wybór źródła—
+      // efektu; bez wzorca tester zapisywał STOP (fałszywy „brak akcji"),
+      // choć gra była grywalna. Wzorzec musi siedzieć w „mandatory" —
+      // bez odpowiedzi stos stoi.
+      || by(/\(możesz\)|efekt dobrowolny/)
       || (profile === 'impatient' ? null : by(/Wznów grę bota/))
       || by(/zakończ|Zakończ/)
       || by(/Rozstrzygnij obrażenia/);
@@ -611,6 +618,26 @@ export async function runTableGame({
       // Nie dało się złożyć legalnego podziału — anuluj (modal wróci).
       const cancelBtn = $$('#choice-request button').find((b) => /Anuluj/.test(text(b)));
       if (cancelBtn) { cancelBtn.click(); await sleep(60); }
+      return true;
+    }
+    // M241 (zgłoszenie J): KREATOR KOSZTU ESCAPE (`.escape-exile-confirm`) —
+    // „zaznacz N kart z własnego grobu do wygnania” zamiast enumeracji
+    // podzbiorów. Tester klika N pierwszych ptaszków i zatwierdza.
+    const escapeConfirm = $$('#choice-request button').find((b) => /escape-exile-confirm/.test(String(b.className)));
+    if (escapeConfirm) {
+      const progress = text($('#choice-request .escape-exile-progress')) ?? '';
+      const needMatch = /Wybrano (\d+) z (\d+)/.exec(progress);
+      const need = needMatch ? Number(needMatch[2]) : null;
+      const toggles = $$('#choice-request .escape-exile-toggle');
+      if (toggles.length > 0 && need != null) {
+        for (let i = 0; i < Math.min(need, toggles.length); i += 1) toggles[i].click();
+        logL(`  [escape wizard] zaznaczono ${Math.min(need, toggles.length)} karty do wygnania (${progress})`);
+        await sleep(60);
+        const confirmNow = $$('#choice-request button').find((b) => /escape-exile-confirm/.test(String(b.className)));
+        if (confirmNow && !confirmNow.disabled) { confirmNow.click(); await sleep(80); return true; }
+      }
+      const cancelBtn2 = $$('#choice-request button').find((b) => /Anuluj/.test(text(b)));
+      if (cancelBtn2) { cancelBtn2.click(); await sleep(60); }
       return true;
     }
     // M203 (pętla jakości Żywym Testerem, innistrad vs wiedzmin seed 23):

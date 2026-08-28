@@ -34,9 +34,6 @@ test('params: wartości domyślne są dokładnie dawnymi stałymi', () => {
   assert.equal(DEFAULT_HEURISTIC_PARAMS.removalWorthWeight, 2);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceEnemyBase, 25);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceEnemyPowerWeight, 2);
-  assert.equal(DEFAULT_HEURISTIC_PARAMS.damageCreatureBase, 10);
-  assert.equal(DEFAULT_HEURISTIC_PARAMS.damageCreaturePowerWeight, 3);
-  assert.equal(DEFAULT_HEURISTIC_PARAMS.damageLethalBonus, 15);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.drawCardValue, 6);
   // Rodzina „efektywność removalu" (M234) — WŁĄCZONA wprost (zlecenie właściciela).
   assert.equal(DEFAULT_HEURISTIC_PARAMS.removalTmcWeight, 2);

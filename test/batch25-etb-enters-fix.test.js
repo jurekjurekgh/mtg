@@ -110,10 +110,11 @@ test('Idyllic Grange: 3 INNE Plains → wchodzi UNTAPPED, ETB counter na wskazan
   assert.ok(r.ok, 'land drop: ' + (r.events?.[0]?.reason ?? ''));
   const grange = byCard(state, 'idyllic-grange', 'battlefield');
   assert.equal(grange.tapped, false, 'wchodzi untapped przy 3 innych Plains');
-  assert.ok(state.pendingTriggerTargets.length >= 1, 'ETB trigger czeka na cel');
-  const pending = state.pendingTriggerTargets[0];
-  const rr = execute(state, { type: 'resolve_trigger_target', playerId: pending.playerId, targetId: 'bear' });
-  assert.ok(rr.ok, 'cel wybrany: ' + (rr.events?.[0]?.reason ?? ''));
+  // M242/H: jedyny własny stwór ('bear') → autowybór celu, bez pytania.
+  assert.equal(state.pendingTriggerTargets.length, 0, 'jedyny kandydat → auto (M242)');
+  const autoEvt = state.events.filter((e) => e.type === 'trigger_target_resolved' && e.cardId === 'idyllic-grange').at(-1);
+  assert.ok(autoEvt && autoEvt.auto === true && autoEvt.targetId === 'bear',
+    'auto cel = bear: ' + JSON.stringify(autoEvt));
   passRounds(state, 3);
   const bear = state.objects.get('bear');
   assert.equal((bear.counters ?? {})['+1/+1'] ?? 0, 1, 'counter +1/+1 na wybranym stworze');

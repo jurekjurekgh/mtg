@@ -76,12 +76,12 @@ test('BUG1: Cloudbound Moogle — „target creature\" może celować w siebie (
   const selfId = state.zones.battlefield.find((id) => state.objects.get(id)?.cardId === 'cloudbound-moogle');
   assert.ok(selfId, 'Moogle na polu bitwy');
   // ETB „put a +1/+1 counter on target creature" — jedyny stwór to Moogle,
-  // więc trigger MUSI mieć go jako kandydata (self). Bez fixa trigger nie odpala.
-  assert.equal(state.pendingTriggerTargets.length, 1, 'ETB z celem czeka na decyzję');
-  assert.ok(state.pendingTriggerTargets[0].candidates.includes(selfId),
-    `self jest kandydatem: ${state.pendingTriggerTargets[0].candidates}`);
-  // Kontroler celuje w siebie — dostaje +1/+1.
-  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: selfId }).ok);
+  // więc kandydatem MUSI być on sam (self). M242/H: jedyny legalny
+  // kandydat → cel wybiera się automatycznie, bez pytania.
+  assert.equal(state.pendingTriggerTargets.length, 0, 'jedyny kandydat (self) → auto (M242)');
+  const autoEvt = state.events.filter((e) => e.type === 'trigger_target_resolved' && e.cardId === 'cloudbound-moogle').at(-1);
+  assert.ok(autoEvt && autoEvt.auto === true && autoEvt.targetId === selfId,
+    `auto cel = self: ${JSON.stringify(autoEvt)}`);
   fullPass(state);
   const moog = state.objects.get(selfId);
   assert.equal(moog.counters['+1/+1'], 1, 'Moogle dostał +1/+1 licznik');
@@ -94,11 +94,18 @@ test('BUG1: Forge Devil — „target creature\" może celować w siebie', () =>
   addMana(state, 'p1', 1, ['R']);
   execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'fd' });
   fullPass(state);
-  const selfId = state.zones.battlefield.find((id) => state.objects.get(id)?.cardId === 'forge-devil');
-  assert.ok(selfId);
-  assert.equal(state.pendingTriggerTargets.length, 1, 'Forge Devil ETB czeka na cel');
-  assert.ok(state.pendingTriggerTargets[0].candidates.includes(selfId),
-    `self jest kandydatem Forge Devil: ${state.pendingTriggerTargets[0].candidates}`);
+  // M242/H: jedyny stwór to sam Forge Devil → self jest (jedynym) kandydatem i
+  // cel wybiera się automatycznie. UWAGA: efekt „1 damage to target creature"
+  // zadaje Devilowi 1 → 1/1 GINIE w SBA — nie szukamy go już na polu bitwy.
+  assert.equal(state.pendingTriggerTargets.length, 0, 'jedyny kandydat (self) → auto (M242)');
+  const autoEvt = state.events.filter((e) => e.type === 'trigger_target_resolved' && e.cardId === 'forge-devil').at(-1);
+  assert.ok(autoEvt && autoEvt.auto === true, `auto przy jedynym kandydacie: ${JSON.stringify(autoEvt)}`);
+  // Cel auto = sam Devil: na ŚWIEŻY obiekt (wejście dało nowe id); dowód — 1 obrażenie i śmierć.
+  const dmg = state.events.some((e) => e.type === 'creature_destroyed' && e.cardId === 'forge-devil')
+    || state.events.some((e) => e.type === 'permanent_destroyed' && e.cardId === 'forge-devil');
+  assert.ok(dmg, 'Devil dostał obrażenie od własnego ETB (self-cel działa: śmierć w SBA)');
+  const dead = [...state.objects.values()].find((o) => o.cardId === 'forge-devil' && o.zone === 'graveyard');
+  assert.ok(dead, 'Forge Devil 1/1 ginie od własnego ETB po autowyborze siebie');
 });
 
 // ---------------------------------------------------------------------------

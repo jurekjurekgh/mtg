@@ -1,0 +1,270 @@
+== NOWA PARTIA: gracz=warhammer-wu vs bot=zendikar, seed=71, profil=explorer, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Plains (1 z 2)
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Fertile Thicket (wchodzi zatapnięty)
+  [ROZGRYWKA]   • Fertile Thicket — trigger (wejście na pole bitwy)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Fertile Thicket — trigger się rozstrzyga
+  [ROZGRYWKA]   • Fertile Thicket: Nieprzyjaciel kładzie wybranego landa na wierzch, resztę na spód
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Omenspeaker
+  >> Zagraj ląd: Rupture Spire
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Rupture Spire (wchodzi zatapnięty)
+  >> Wybierz: Zapłata albo poświęcenie (2 opcje)
+  [modal choice] Wybierz: Zapłata albo poświęcenie Poświęć Rupture Spire (Ty) (bez płacenia) Zapłać 1 (zachowaj Rupture Spire (Ty))
+  [modal choice]   ▶ Poświęć Rupture Spire (Ty) (bez płacenia)
+  [modal choice]     Zapłać 1 (zachowaj Rupture Spire (Ty))
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Healer of the Glade
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Healer of the Glade zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Healer of the Glade — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 23
+  [ROZGRYWKA]   • Healer of the Glade — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: You're Confronted by Robbers
+  >> Zagraj ląd: Dismal Backwater
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Dismal Backwater (wchodzi zatapnięty)
+  [ROZGRYWKA]   • Dismal Backwater — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Ty: życie 20 → 21
+  [ROZGRYWKA]   • Dismal Backwater — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Scion Summoner
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Scion Summoner zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Scion Summoner — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Eldrazi Scion (1/1)
+  [ROZGRYWKA]   • Eldrazi Scion wchodzi na pole bitwy
+  [ROZGRYWKA]   • Scion Summoner — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Healer of the Glade
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Healer of the Glade zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 21 → 20
+  [ROZGRYWKA]   • Tura 7 — Ty
+  >> Aktywuj: Dismal Backwater (Ty) (koszt T) — dodaj 1 manę niebieską lub czarną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Dismal Backwater — dodanie 1 many niebieskiej lub czarnej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Wooden Stake
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Zagraj: Wooden Stake (koszt 2)
+  [ROZGRYWKA]   • Wooden Stake zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Roiling Regrowth
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel: Mountain — biblioteka → pole bitwy
+  [ROZGRYWKA]   • Mountain wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel znajduje Mountain i tasuje bibliotekę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Plains
+  [ROZGRYWKA]   • Nieprzyjaciel: Plains — biblioteka → pole bitwy
+  [ROZGRYWKA]   • Plains wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel znajduje Plains i tasuje bibliotekę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA]   • token Eldrazi Scion przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA]   • Healer of the Glade zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 19
+  [ROZGRYWKA]   • Scion Summoner zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 19 → 17
+  [ROZGRYWKA]   • Tura 9 — Ty
+  >> Aktywuj: Dismal Backwater (Ty) (koszt T) — dodaj 1 manę niebieską lub czarną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Dismal Backwater — dodanie 1 many niebieskiej lub czarnej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Cellar Door
+  >> Zagraj: Cellar Door (koszt 2)
+  [ROZGRYWKA]   • Cellar Door zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Kabira Vindicator
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Kabira Vindicator zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Healer of the Glade, Scion Summoner
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Healer of the Glade zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 16
+  [ROZGRYWKA]   • Scion Summoner zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 14
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Cel zdolności: Cellar Door (2 opcje)
+  [modal choice] Cel zdolności: Cellar Door Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Ty🔍 Podgląd karty Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Nieprzyjaciel🔍 Podgląd karty
+  [modal choice]   ▶ Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Ty
+  [modal choice]     Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Nieprzyjaciel
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Cellar Door → cel: Ty
+  [ROZGRYWKA]   • Ty: Plains — biblioteka → cmentarz
+  [ROZGRYWKA]   • Mielisz 1 kartę od spodu biblioteki
+  [ROZGRYWKA]   • Ty: zdolność Cellar Door rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Rzuć: Index (koszt U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Index
+  [ROZGRYWKA]   • Index: oglądasz wierzch biblioteki (5 kart: Island, Island, Negate, Tome Scour, Frost Lynx)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Kolejność kart na wierzchu biblioteki (1 opcja)
+  [modal choice] Wierzch biblioteki — 5 kart (ułóż w dowolnej kolejności): 1. Island 2. Island 3. Negate 4. Tome Scour 5. Frost LynxUstaw nową kolejność od góry — wybieraj karty po kolei:1. na wierzchu: Island1. na wierzchu: Island1. na wierzchu: Negate1. na wierzchu: Tome Scour1. na wierzchu: Frost LynxZamknij (dokończysz później)
+  [modal choice]   ▶ 1. na wierzchu: Island
+  [modal choice]     1. na wierzchu: Island
+  [modal choice]     1. na wierzchu: Negate
+  [modal choice]     1. na wierzchu: Tome Scour
+  [modal choice]     1. na wierzchu: Frost Lynx
+  [modal choice] Wierzch biblioteki — 5 kart (ułóż w dowolnej kolejności): 1. Island 2. Island 3. Negate 4. Tome Scour 5. Frost LynxUstaw nową kolejność od góry — wybieraj karty po kolei:2. na wierzchu: Island2. na wierzchu: Negate2. na wierzchu: Tome Scour2. na wierzchu: Frost LynxZamknij (dokończysz później)
+  [modal choice]     2. na wierzchu: Island
+  [modal choice]   ▶ 2. na wierzchu: Negate
+  [modal choice]     2. na wierzchu: Tome Scour
+  [modal choice]     2. na wierzchu: Frost Lynx
+  [modal choice] Wierzch biblioteki — 5 kart (ułóż w dowolnej kolejności): 1. Island 2. Island 3. Negate 4. Tome Scour 5. Frost LynxUstaw nową kolejność od góry — wybieraj karty po kolei:3. na wierzchu: Island3. na wierzchu: Tome Scour3. na wierzchu: Frost LynxZamknij (dokończysz później)
+  [modal choice]     3. na wierzchu: Island
+  [modal choice]   ▶ 3. na wierzchu: Tome Scour
+  [modal choice]     3. na wierzchu: Frost Lynx
+  [modal choice] Wierzch biblioteki — 5 kart (ułóż w dowolnej kolejności): 1. Island 2. Island 3. Negate 4. Tome Scour 5. Frost LynxUstaw nową kolejność od góry — wybieraj karty po kolei:4. na wierzchu: Island4. na wierzchu: Frost LynxZamknij (dokończysz później)
+  [modal choice]     4. na wierzchu: Island
+  [modal choice]   ▶ 4. na wierzchu: Frost Lynx
+  [modal choice] Wierzch biblioteki — 5 kart (ułóż w dowolnej kolejności): 1. Island 2. Island 3. Negate 4. Tome Scour 5. Frost LynxUstaw nową kolejność od góry — wybieraj karty po kolei:5. na wierzchu: IslandZamknij (dokończysz później)
+  [modal choice]   ▶ 5. na wierzchu: Island
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Mysteries of the Deep
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Healer of the Glade zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 13
+  [ROZGRYWKA]   • Scion Summoner zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 11
+  [ROZGRYWKA]   • Kabira Vindicator zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 9
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Wybierz: Wariant (8 opcji)
+  [multi-target wizard] You're Confronted by Robbers — zaznacz cele (0–3): [ ] Healer of the Glade (Nieprzyjaciel) — opcji 3, potrzeba 0, celuję w 3
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz You're Confronted by Robbers — tryb: Zyskiwanie czasu → cel: Healer of the Glade, Scion Summoner, Kabira Vindicator
+  [ROZGRYWKA]   • You're Confronted by Robbers — tryb: Zyskiwanie czasu zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Jwar Isle Avenger
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Healer of the Glade zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 9 → 8
+  [ROZGRYWKA]   • Scion Summoner zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 8 → 6
+  [ROZGRYWKA]   • Kabira Vindicator zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 6 → 4
+  [ROZGRYWKA]   • Tura 15 — Ty
+  >> Cel zdolności: Cellar Door (2 opcje)
+  [modal choice] Cel zdolności: Cellar Door Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Ty🔍 Podgląd karty Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Nieprzyjaciel🔍 Podgląd karty
+  [modal choice]     Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Ty
+  [modal choice]   ▶ Aktywuj: Cellar Door (Ty) (koszt 3, T) — mieli 1 kartę od spodu biblioteki → cel: Nieprzyjaciel
+  [kreator many] Płatność 3 — tapuj źródła po jednympozostało 3 manyTapnij: Plains (W)Tapnij: Dismal Backwater (bezbarwna)Tapnij: Plains  — źródła: 5
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Dismal Backwater (bezbarwna)
+  [kreator many] Tapnij: Plains (W)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Cellar Door → cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel: Holdout Settlement — biblioteka → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel mieli 1 kartę od spodu biblioteki
+  [ROZGRYWKA]   • Ty: zdolność Cellar Door rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Negate
+  >> Zagraj: Omenspeaker (koszt 1U)
+  [ROZGRYWKA]   • Omenspeaker wchodzi na pole bitwy
+  [ROZGRYWKA]   • Omenspeaker zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Omenspeaker — trigger (wejście na pole bitwy)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Wykonujesz scry (patrzy na 2 karty: Tome Scour, Frost Lynx)
+  [ROZGRYWKA]   • Omenspeaker — trigger się rozstrzyga
+  >> Wybierz: Scry — co odłożyć na spód? (5 opcji)
+  [modal choice] Scry 2 — obejrzane karty: 1. Tome Scour 2. Frost LynxKarta 1 z 2: Tome ScourNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [modal choice] Scry 2 — obejrzane karty: 1. Tome Scour → spód 2. Frost LynxKarta 2 z 2: Frost LynxNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]     Na spód biblioteki
+  [modal choice]   ▶ Zostaw na wierzchu
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Pilgrim's Eye
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Pilgrim's Eye zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Pilgrim's Eye — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Pilgrim's Eye — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Mountain
+  [ROZGRYWKA]   • Nieprzyjaciel: karta — biblioteka → ręka
+  [ROZGRYWKA]   • Nieprzyjaciel znajduje Mountain i tasuje bibliotekę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Kor Cartographer
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Kor Cartographer zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Kor Cartographer — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Kor Cartographer — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Plains
+  [ROZGRYWKA]   • Nieprzyjaciel: Plains — biblioteka → pole bitwy
+  [ROZGRYWKA]   • Plains wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel znajduje Plains i tasuje bibliotekę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Scion Summoner, Kabira Vindicator, Jwar Isle Avenger
+  >> Wybierz: Deklaracja blokujących (3 opcje)
+  [combat wizard] blokuję 1 stworami: Omenspeaker (1/3)
+  [combat wizard] Zatwierdź bloki
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 51 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Feedback · 3 · Enchantment — Aura · Na początku upkeep (gdy rzucono 2+ czary): 1 obrażenie kontrolerowi zaczarowanego. | Hobble · 3 · Enchantment — Aura · zaczarowany nie może atakować · zaczarowany nie może blokować · Gdy wejdzie na pole bitwy: dobierz 1 kartę. | Negate · 2 · Instant · skontruj czar · cel: czar niebędący stworem na stosie
+  MOJE POLA: Wooden Stake · 2 · Artifact — Equipment · Equip {1} +1/+0 · Blok wyposażonego stwora (w obie strony): zniszcz cel, nie może być regenerowany. | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Omenspeaker · 2 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: scry 2. · −2 · choroba · 1/3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj 1 manę niebieską lub czarną | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Healer of the Glade · 1 · Creature — Elf · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 1/2 | Scion Summoner · 3 · Creature — Eldrazi Drone · Gdy wejdzie na pole bitwy: stwórz token Eldrazi Scion. · −1 · 2/2 | Kabira Vindicator · 4 · Creature — Human Knight · Level up · {2}, {W}: połóż licznik level · +1/+2 · poziomy 2-4 · +2/+4 · poziomy 5+ · inne twoje stwory: +1 · poziomy 2-4 · inne twoje stwory: +2 · poziomy 5+ · 2/4 | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Pilgrim's Eye · 3 · Artifact Creature — Thopter · Latanie · Gdy wejdzie na pole bitwy: szukaj w bibliotece do ręki. · choroba · 1/1 | Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Plains, Rupture Spire, Dismal Backwater, Feedback, Index, Hobble, Plains ⏎ Nowa partia (seed 71). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 19, kliknięte: 26, modale: 6, sondy noop: 51 (panel 40, modal 11)
+== DETEKTORY: brak zgłoszeń ==

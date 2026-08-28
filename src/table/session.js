@@ -198,6 +198,11 @@ function manaColorsLabel(colors, single) {
  * „dodanie 1 many niebieskiej", nie „…manę niebieską"). Trzymany obok
  * manaEffectLabel, bo obie warstwy opisują ten sam deskryptor (L41).
  */
+// M240/A: mianownik kolorów do zwrotów „inne niż <kolor>” (Manor Gate).
+const COLOR_NAMES_EXCL = Object.freeze({
+  W: 'biały', U: 'niebieski', B: 'czarny', R: 'czerwony', G: 'zielony',
+});
+
 const MANA_COLOR_NAMES_GEN = Object.freeze({
   W: 'białej', U: 'niebieskiej', B: 'czarnej', R: 'czerwonej', G: 'zielonej',
 });
@@ -1436,7 +1441,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const target = e.targetId == null
           ? 'nic'
           : (isPlayer(e.targetId) ? whoN(e.targetId) : nameOfObject(e.targetId));
-        return `${src} — cel: ${target}`;
+        // M242 (zgłoszenie H): jedyny legalny cel wymuszonego triggera —
+        // wybór bez pytania, ale zapisany wprost (nie wygląda jak pominięcie).
+        const autoNote = e.auto ? ' (jedyny legalny — automatycznie)' : '';
+        return `${src} — cel: ${target}${autoNote}`;
       }
       case 'optional_trigger_required': return `${nameOf(e.cardId)} — skorzystać z efektu „you may"? (${decisionOwnerNote(e.playerId)})`;
       // M138/Z7 (audyt Żywym Testerem): „Nieprzyjaciel korzysta z efektu «you
@@ -1520,6 +1528,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
           : 'efektem';
         return `${whoN(e.playerId)} wybiera, którą kartę odrzucić ${why}${source}`;
       }
+      // M241 (zgłoszenie K): koszt Escape — komunikat nazywa czar i liczbę.
+      case 'escape_exile_required': {
+        const n = e.exileCount ?? 0;
+        return `${nameOf(e.cardId)} — ${whoN(e.playerId)} wybiera ${n} ${polishPlural(n, 'kartę', 'karty', 'kart')} do wygnania (koszt Escape)`;
+      }
+      // Zdarzenie pary: object_moved+escape już nazywają przeniesione karty —
+      // resolved to dublet informacji (Uwaga D: świadome pominięcie).
+      case 'escape_exile_resolved': return null;
       case 'discard_choice_resolved': return e.purpose === 'cost'
         ? `${whoN(e.playerId)} odrzuca kartę (koszt zdolności)`
         : `${whoN(e.playerId)} odrzuca kartę z ręki`;
@@ -1551,10 +1567,28 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
           ? `${whoN(e.playerId)} mieli ${e.amount} ${karta} od spodu biblioteki`
           : `${whoN(e.playerId)} mieli ${e.amount} ${karta} do grobu`;
       }
-      case 'color_choice_required': return `${nameOfObject(e.auraId)} — wybór koloru (ochrona przed nim)`;
+      case 'color_choice_required': {
+        // M240/A (zgłoszenie): kolor wybierają też NIE-aury (Manor Gate —
+        // ląd przy wejściu). Wcześniej nazwa brana WYŁĄCZNIE z auraId →
+        // dla lądu wychodziło „null — wybór koloru (ochrona przed nim)”.
+        const what = e.auraId
+          ? nameOfObject(e.auraId)
+          : nameOf(e.cardId) ?? nameOfObject(e.objectId) ?? 'brama';
+        const purpose = e.auraId ? ' (ochrona przed nim)' : ' (kolor produkowanej many)';
+        const excl = (e.excludeColors?.length)
+          ? ` — inne niż ${e.excludeColors.map((c) => COLOR_NAMES_EXCL[c] ?? c).join(', ')}`
+          : '';
+        return `${what} — wybór koloru${purpose}${excl}`;
+      }
       case 'color_choice_resolved': {
         const COLOR_NAMES = { W: 'biały', U: 'niebieski', B: 'czarny', R: 'czerwony', G: 'zielony' };
-        return `${nameOfObject(e.auraId)} — wybrany kolor: ${COLOR_NAMES[e.color] ?? e.color}`;
+        // M240/A: jak wyżej — bez auraId branie nazwy z karty/obiektu;
+        // wpis musi nazwać kto i JAKI kolor wybrał (Rozgrywka/log).
+        const what = e.auraId
+          ? nameOfObject(e.auraId)
+          : nameOf(e.cardId) ?? nameOfObject(e.objectId) ?? 'brama';
+        const purpose = e.auraId ? ' (ochrona przed nim)' : ' (kolor produkowanej many)';
+        return `${whoN(e.playerId)}: ${what} — wybrany kolor: ${COLOR_NAMES[e.color] ?? e.color}${purpose}`;
       }
       case 'damage_assignment_required': return `${whoN(e.playerId)} rozdziela obrażenia bojowe (trample albo wielu blokerów)`;
       case 'damage_assignment_resolved': return null; // linie damage_dealt zaraz to opiszą

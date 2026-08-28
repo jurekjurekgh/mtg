@@ -1,0 +1,207 @@
+== NOWA PARTIA: gracz=theros vs bot=theros, seed=13, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Island
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Cel czaru: Sweet Oblivion (2 opcje)
+  [modal choice] Cel czaru: Sweet Oblivion Rzuć: Sweet Oblivion (koszt 1U) → cel: Ty🔍 Podgląd karty Rzuć: Sweet Oblivion (koszt 1U) → cel: Nieprzyjaciel🔍 Podgląd karty
+  [modal choice]   ▶ Rzuć: Sweet Oblivion (koszt 1U) → cel: Ty
+  [modal choice]     Rzuć: Sweet Oblivion (koszt 1U) → cel: Nieprzyjaciel
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Mielisz Satyr Wayfinder do grobu
+  [ROZGRYWKA]   • Mielisz Inspire Awe do grobu
+  [ROZGRYWKA]   • Mielisz Island do grobu
+  [ROZGRYWKA]   • Sweet Oblivion zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Sweet Oblivion → cel: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Mielisz Anthem of Champions do grobu
+  [ROZGRYWKA]   • Mielisz Wavecrash Triton do grobu
+  [ROZGRYWKA]   • Mielisz Plains do grobu
+  [ROZGRYWKA]   • Sweet Oblivion zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Zagraj: Entrancing Lyre (koszt 3)
+  [ROZGRYWKA]   • Entrancing Lyre zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Setessan Skirmisher
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Setessan Skirmisher zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 7 — Ty
+  >> Cel zdolności: Entrancing Lyre (2 opcje)
+  [multi-target wizard] Entrancing Lyre — zaznacz cele (1) oraz wartość X (2–3): [ ] Setessan Skirmisher (Nieprzyj — opcji 1, potrzeba 1, celuję w 1
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Entrancing Lyre — cel nie odtapuje podczas następnego untap kontrolera (X=2) → cel: Setessan Skirmisher
+  [ROZGRYWKA]   • Ty: zdolność Entrancing Lyre rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Time to Feed
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Feral Invocation → cel: Setessan Skirmisher
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Setessan Skirmisher dostaje +1/+1
+  [ROZGRYWKA]   • Setessan Skirmisher — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Setessan Skirmisher
+  >> Zagraj: Setessan Skirmisher (koszt 1G)
+  [ROZGRYWKA]   • Setessan Skirmisher zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Pyxis of Pandemonium
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Pyxis of Pandemonium zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Sleep of the Dead → cel: Setessan Skirmisher
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Pyxis of Pandemonium — wygnanie wierzchu biblioteki każdego gracza (zakryte)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel — zakryta karta zostaje wygnana
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Pyxis of Pandemonium rozstrzygnięta
+  [ROZGRYWKA]   • Setessan Skirmisher nie odkręca się w następnym kroku odkręcania
+  [ROZGRYWKA]   • Sleep of the Dead zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Rzuć: Time to Feed (koszt 2G) → cel: Setessan Skirmisher (Nieprzyjaciel), Setessan Skirmisher (Ty)
+  [kreator many] Płatność 2G — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: GTapnij: Island (U)Tapnij: Island (U)Tapnij:  — źródła: 4
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Island (U)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Setessan Skirmisher zadaje 2 obrażenia (Setessan Skirmisher)
+  [ROZGRYWKA]   • Setessan Skirmisher zadaje 4 obrażenia (Setessan Skirmisher)
+  [ROZGRYWKA]   • Time to Feed zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Setessan Skirmisher ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Pyxis of Pandemonium — wygnanie wierzchu biblioteki każdego gracza (zakryte)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel — zakryta karta zostaje wygnana
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Pyxis of Pandemonium rozstrzygnięta
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Zagraj: Breaching Hippocamp (koszt 3U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Breaching Hippocamp
+  [ROZGRYWKA]   • Breaching Hippocamp wchodzi na pole bitwy
+  [ROZGRYWKA]   • Breaching Hippocamp zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Breaching Hippocamp — trigger bez efektu (brak legalnych celów)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Satyr Wayfinder
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Pyxis of Pandemonium — wygnanie wierzchu biblioteki każdego gracza (zakryte)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel — zakryta karta zostaje wygnana
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Pyxis of Pandemonium rozstrzygnięta
+  [ROZGRYWKA]   • Satyr Wayfinder wchodzi na pole bitwy
+  [ROZGRYWKA]   • Satyr Wayfinder zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Satyr Wayfinder — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Satyr Wayfinder — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel: Mountain — biblioteka → ręka
+  [ROZGRYWKA]   • Nieprzyjaciel: Sea God's Scorn — biblioteka → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel: Glaring Aegis — biblioteka → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel: Inspire Awe — biblioteka → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel bierze żadnego lądu z wierzchu do ręki (reszta do grobu)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Rage of Purphoros → cel: Breaching Hippocamp
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel wykonuje scry (patrzy na 1 kartę)
+  [ROZGRYWKA]   • Breaching Hippocamp ginie
+  [ROZGRYWKA]   • Nieprzyjaciel kończy scry — zostawia na wierzchu biblioteki
+  [ROZGRYWKA]   • Rage of Purphoros zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Feral Invocation
+  >> Aura: Feral Invocation (2 opcje)
+  [modal choice] Aura: Feral Invocation Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Setessan Skirmisher (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Satyr Wayfinder (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]   ▶ Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Setessan Skirmisher (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Feral Invocation (koszt 2G) → zaczaruj Satyr Wayfinder (Nieprzyjaciel)
+  [kreator many] Płatność 2G — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: GTapnij: Island (U)Tapnij: Island (U)Tapnij:  — źródła: 5
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Island (U)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Feral Invocation → cel: Setessan Skirmisher
+  [ROZGRYWKA]   • Feral Invocation zaczarowuje Setessan Skirmisher
+  [ROZGRYWKA]   • Feral Invocation wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel: Sleep of the Dead — cmentarz → wygnanie
+  [ROZGRYWKA]   • Nieprzyjaciel: Sea God's Scorn — cmentarz → wygnanie
+  [ROZGRYWKA]   • Nieprzyjaciel: Glaring Aegis — cmentarz → wygnanie
+  [ROZGRYWKA]   • Nieprzyjaciel: Inspire Awe — cmentarz → wygnanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Sweet Oblivion → cel: Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Pyxis of Pandemonium — wygnanie wierzchu biblioteki każdego gracza (zakryte)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel — zakryta karta zostaje wygnana
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Pyxis of Pandemonium rozstrzygnięta
+  [ROZGRYWKA]   • Sweet Oblivion zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Satyr Wayfinder
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Titan's Strength → cel: Satyr Wayfinder
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 45 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Sea God's Scorn · 6 · Sorcery · Wzgarda boga mórz: wróć na rękę właściciela (każdy z celów) | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór | Rage of Purphoros · 5 · Sorcery · Obrażenia 4 + nie może być regenerowany + scry 1 · cel: stwór
+  MOJE POLA: Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Feral Invocation · 3 · Enchantment Aura · Flash (błysk) · stwór: +2/+2 · aura → Setessan Skirmisher | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Setessan Skirmisher · 2 · Creature — Human Warrior · Konstelacja — gdy twój enchantment wchodzi: +1/+1 do końca tury. · nie odtapuje się · +4/+4 · zaczarowana: Feral Invocation · zaczarowana: Feral Invocation · 6/5 | Feral Invocation · 3 · Enchantment Aura · Flash (błysk) · stwór: +2/+2 · aura → Setessan Skirmisher | Pyxis of Pandemonium · 1 · Artifact · {T}: każdy gracz wygania wierzch swojej biblioteki zakryty · {7}, {T}, poświęć: odkryj karty wygnane tym artefaktem — permanenty spośród nich wchodzą na pole bitwy | Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Entrancing Lyre, Sea God's Scorn, Sweet Oblivion, Island, Titan's Strength, Breaching Hippocamp, Rage of Purphoros ⏎ Nowa partia (seed 13). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 15, kliknięte: 14, modale: 3, sondy noop: 34 (panel 29, modal 5)
+== DETEKTORY: brak zgłoszeń ==

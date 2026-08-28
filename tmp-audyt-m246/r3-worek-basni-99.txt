@@ -1,0 +1,234 @@
+== NOWA PARTIA: gracz=worek-basni vs bot=mirrodin-wu, seed=99, profil=defensive, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Clawing Torment
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Thistledown Players
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Wybierz: Karty na spód biblioteki (mulligan) (6 opcji)
+  [multi-target wizard] Mulligan: zaznacz 1 kartę do odłożenia na spód biblioteki:[ ] Clawing TormentPodgląd[ ] Pl — opcji 6, potrzeba 1, celuję w 1
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 6 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 6 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Idyllic Grange
+  [ROZGRYWKA]   • Dobierasz: Mystic Sanctuary
+  [ROZGRYWKA]   • Dobierasz: Zoraline, Cosmos Caller
+  [ROZGRYWKA]   • Dobierasz: Insatiable Appetite
+  [ROZGRYWKA]   • Dobierasz: Talion's Messenger
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Wybierz: Karty na spód biblioteki (mulligan) (21 opcji)
+  [multi-target wizard] Mulligan: zaznacz 2 karty do odłożenia na spód biblioteki:[ ] MountainPodgląd[ ] Idyllic G — opcji 7, potrzeba 2, celuję w 2
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 5 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 5 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Steelclaw Lance
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Zoraline, Cosmos Caller
+  [ROZGRYWKA]   • Dobierasz: Blade-Blizzard Kitsune
+  [ROZGRYWKA]   • Dobierasz: Barkform Harvester
+  [ROZGRYWKA]   • Dobierasz: Idyllic Grange
+  [ROZGRYWKA]   • Dobierasz: Agate Assault
+  >> Wybierz: Karty na spód biblioteki (mulligan) (32 opcje)
+  [multi-target wizard] Mulligan: zaznacz 3 karty do odłożenia na spód biblioteki:[ ] Steelclaw LancePodgląd[ ] Pl — opcji 7, potrzeba 3, celuję w 3
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 4 karty) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 4 karty)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Locthwain Paladin
+  [ROZGRYWKA]   • Dobierasz: High Stride
+  [ROZGRYWKA]   • Dobierasz: Mystic Sanctuary
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Halo Forager
+  [ROZGRYWKA]   • Dobierasz: Idyllic Grange
+  [ROZGRYWKA]   • Dobierasz: Barkform Harvester
+  >> Wybierz: Karty na spód biblioteki (mulligan) (32 opcje)
+  [multi-target wizard] Mulligan: zaznacz 4 karty do odłożenia na spód biblioteki:[ ] Locthwain PaladinPodgląd[ ]  — opcji 7, potrzeba 4, celuję w 4
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 3 karty) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 3 karty)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Blade-Blizzard Kitsune
+  [ROZGRYWKA]   • Dobierasz: Zoraline, Cosmos Caller
+  [ROZGRYWKA]   • Dobierasz: Insatiable Appetite
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Locthwain Paladin
+  [ROZGRYWKA]   • Dobierasz: Thistledown Players
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Wybierz: Karty na spód biblioteki (mulligan) (21 opcji)
+  [multi-target wizard] Mulligan: zaznacz 5 kart do odłożenia na spód biblioteki:[ ] Blade-Blizzard KitsunePodgląd — opcji 7, potrzeba 5, celuję w 5
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 2 karty) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 2 karty)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Downwind Ambusher
+  [ROZGRYWKA]   • Dobierasz: Thistledown Players
+  [ROZGRYWKA]   • Dobierasz: Idyllic Grange
+  [ROZGRYWKA]   • Dobierasz: Blade-Blizzard Kitsune
+  [ROZGRYWKA]   • Dobierasz: Halo Forager
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Wybierz: Karty na spód biblioteki (mulligan) (7 opcji)
+  [multi-target wizard] Mulligan: zaznacz 6 kart do odłożenia na spód biblioteki:[ ] Downwind AmbusherPodgląd[ ] T — opcji 7, potrzeba 6, celuję w 6
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 1 kartę) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 1 kartę)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Locthwain Paladin
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Idyllic Grange
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Blade-Blizzard Kitsune
+  [ROZGRYWKA]   • Dobierasz: Insatiable Appetite
+  >> Mulligan — odłóż na spód (7): Locthwain Paladin, Swamp, Forest, Idyllic Grange, Swamp, Blade-Blizzard Kitsune,
+  >> Mulligan: Zatrzymaj tę rękę (keep — 0 kart)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Barkform Harvester
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mystic Sanctuary
+  >> Zagraj ląd: Mystic Sanctuary
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Pristine Talisman
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Pristine Talisman zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Pristine Talisman — dodanie many do puli, zdobycie życia
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 21
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Zoraline, Cosmos Caller
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Pristine Talisman — dodanie many do puli, zdobycie życia
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 21 → 22
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Steelfin Whale
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Steelfin Whale zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Halo Forager
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Strandwalker
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 22 → 23
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Strandwalker — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Steelfin Whale — trigger (wejście artefaktu pod kontrolę (Nieprzyjaciel))
+  [ROZGRYWKA]   • Steelfin Whale — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Germ (0/0)
+  [ROZGRYWKA]   • Germ wchodzi na pole bitwy
+  [ROZGRYWKA]   • Strandwalker zostaje załączony do Germ (bestow)
+  [ROZGRYWKA]   • Strandwalker — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Steelfin Whale
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Steelfin Whale zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 17
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Downwind Ambusher
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Pristine Talisman — dodanie many do puli, zdobycie życia
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 23 → 24
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Steelfin Whale zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 14
+  [ROZGRYWKA]   • Germ zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 12
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Clawing Torment
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa True Conviction
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 24 → 25
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Panic Spellbomb
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Steelfin Whale — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Steelfin Whale, Germ
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Steelfin Whale zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 12 → 9
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 25 → 28
+  [ROZGRYWKA]   • Germ zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 9 → 7
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 28 → 30
+  [ROZGRYWKA]   • Steelfin Whale zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 7 → 4
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 30 → 33
+  [ROZGRYWKA]   • Germ zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 4 → 2
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 33 → 35
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Pristine Talisman — dodanie many do puli, zdobycie życia
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 35 → 36
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 46 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Barkform Harvester · 3 · Artifact Creature — Shapeshifter · Zasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki · 2/3 | Zoraline, Cosmos Caller · 3 · Legendary Creature — Bat Cleric · Latanie Czujność · Gdy nietoperz, który kontrolujesz, atakuje: zyskaj 1 życie. · Gdy wejdzie na pole bitwy: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · Gdy atakuje: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · 3/3 | Halo Forager · 3 · Creature — Faerie Rogue · Latanie · Gdy wejdzie na pole bitwy: możesz zapłacić {X} i rzucić instant/sorcery o MV X z dowolnego grobu za darmo (potem wygnanie). · 3/1 | Downwind Ambusher · 4 · Creature — Skunk Assassin · Flash (błysk) · wybierz tryb: Osłabienie / Dobicie rannego · 4/2 | Clawing Torment · 1 · Enchantment — Aura · stwór: -1/-1 · zaczarowany nie może blokować · można zaczarować permanent dowolnego gracza · Na początku upkeep (gdy rzucono 2+ czary): kontroler zaczarowanego permanentu traci 1 życia w swoim upkeepie.
+  MOJE POLA: Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×4 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Pristine Talisman · 3 · Artifact · {T}: dodaj 1 manę bezbarwną + zyskaj 1 życie | Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · Podwójne uderzenie · Dotykanie życia · 3/4 | Strandwalker · 5 · Artifact — Equipment · Equip {4} — nosiciel: Zasięg +2/+4 · Gdy wejdzie na pole bitwy: living weapon (stwórz 0/0 Germ i przypnij). · wyposaża → Germ | Germ · 0 · Creature — Phyrexian Germ · Zasięg · Podwójne uderzenie · Dotykanie życia · +2/+4 · wyposażona: Strandwalker · 2/4 | True Conviction · 6 · Enchantment · inne twoje stwory: Podwójne uderzenie Dotykanie życia | Panic Spellbomb · 1 · Artifact · {T}, poświęć: cel: stwór — nie może blokować · Gdy ta karta umrze: dobierz 1 kartę.
+  LOG: Dobierasz: Plains ⏎ Dobierasz: Clawing Torment ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Mountain, Swamp, Forest, Forest, Plains, Forever Young, Downwind Ambusher ⏎ Nowa partia (seed 99). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 8, kliknięte: 10, modale: 1, sondy noop: 29 (panel 22, modal 7)
+== DETEKTORY: brak zgłoszeń ==

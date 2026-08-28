@@ -1,0 +1,198 @@
+== NOWA PARTIA: gracz=mirrodin-brg vs bot=ravnica, seed=11, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Carapace Forger
+  >> Zagraj ląd: Great Furnace
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Great Furnace
+  >> Rzuć: Shatter (koszt 1R) → cel: Great Furnace (Ty)
+  [ROZGRYWKA]   • Shatter zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Ghost Warden
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Ghost Warden zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Rustvine Cultivator
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Cel czaru: Consume Spirit (3 opcje)
+  [modal choice] Cel czaru: Consume Spirit Rzuć: Consume Spirit (koszt X1B, X=0) → cel: Ty🔍 Podgląd karty Rzuć: Consume Spirit (koszt X1B, X=0) → cel: Nieprzyjaciel🔍 Podgląd karty Rzuć: Consume Spirit (koszt X1B, X=0) → cel: Ghost Warden (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]   ▶ Rzuć: Consume Spirit (koszt X1B, X=0) → cel: Ty
+  [modal choice]     Rzuć: Consume Spirit (koszt X1B, X=0) → cel: Nieprzyjaciel
+  [modal choice]     Rzuć: Consume Spirit (koszt X1B, X=0) → cel: Ghost Warden (Nieprzyjaciel)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Consume Spirit zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Withstand → cel: Nieprzyjaciel
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Withstand zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Ghost Warden
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Ghost Warden zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 19
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Veiled Ascension
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Veiled Ascension zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Veiled Ascension — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Veiled Ascension — trigger bez efektu (nie było czego wykonać)
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Ghost Warden
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Ghost Warden zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 19 → 18
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Rzuć: Awaken the Sleeper (koszt 3R) → cel: Ghost Warden (Nieprzyjaciel)
+  [ROZGRYWKA]   • Ghost Warden zyskuje: pośpiech
+  [ROZGRYWKA]   • Awaken the Sleeper zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Aktywuj: Ghost Warden (Ty) (koszt T) — +1/+1 do końca tury → cel: Ghost Warden (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Ghost Warden — zmiana statystyk celu → cel: Ghost Warden
+  [ROZGRYWKA]   • Ty: zdolność Ghost Warden rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Veiled Ascension — skorzystać z efektu „you may"? (wybór opcjonalny: Nieprzyjaciel)
+  [ROZGRYWKA]   • Veiled Ascension — trigger (krok upkeep)
+  [ROZGRYWKA]   • Nieprzyjaciel korzysta z efektu „you may" (Veiled Ascension)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Morph dostaje +1 licznik flying (razem 1)
+  [ROZGRYWKA]   • Morph wchodzi na pole bitwy
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Selesnya Charm — tryb: Rycerz
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Knight wchodzi na pole bitwy
+  [ROZGRYWKA]   • Selesnya Charm — tryb: Rycerz zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Ghost Warden
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Ghost Warden zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 17
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Cel czaru: Spread the Sickness (3 opcje)
+  [modal choice] Cel czaru: Spread the Sickness Rzuć: Spread the Sickness (koszt 4B) → cel: Ghost Warden (Nieprzyjaciel)🔍 Podgląd karty Rzuć: Spread the Sickness (koszt 4B) → cel: Morph (Nieprzyjaciel)🔍 Podgląd karty Rzuć: Spread the Sickness (koszt 4B) → cel: Knight (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]   ▶ Rzuć: Spread the Sickness (koszt 4B) → cel: Ghost Warden (Nieprzyjaciel)
+  [modal choice]     Rzuć: Spread the Sickness (koszt 4B) → cel: Morph (Nieprzyjaciel)
+  [modal choice]     Rzuć: Spread the Sickness (koszt 4B) → cel: Knight (Nieprzyjaciel)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Wykonujesz proliferate — wybór permanentów/graczy z licznikami
+  >> Wybierz: Proliferate — cel licznika (2 opcje)
+  [modal choice] Wybierz: Proliferate — cel licznika Proliferate: bez celów (nic nie dostaje liczników) Proliferate: Morph (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]   ▶ Proliferate: bez celów (nic nie dostaje liczników)
+  [modal choice]     Proliferate: Morph (Nieprzyjaciel)
+  [ROZGRYWKA]   • Veiled Ascension — skorzystać z efektu „you may"? (wybór opcjonalny: Nieprzyjaciel)
+  [ROZGRYWKA]   • Veiled Ascension — trigger (krok upkeep)
+  [ROZGRYWKA]   • Nieprzyjaciel korzysta z efektu „you may" (Veiled Ascension)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Morph dostaje +1 licznik flying (razem 1)
+  [ROZGRYWKA]   • Morph wchodzi na pole bitwy
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Chronic Flooding → cel: Mountain
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Chronic Flooding wchodzi na pole bitwy
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Morph, Knight
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Morph zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 15
+  [ROZGRYWKA]   • Knight zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 15 → 13
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Ruthless Invasion
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Veiled Ascension — skorzystać z efektu „you may"? (wybór opcjonalny: Nieprzyjaciel)
+  [ROZGRYWKA]   • Veiled Ascension — trigger (krok upkeep)
+  [ROZGRYWKA]   • Nieprzyjaciel korzysta z efektu „you may" (Veiled Ascension)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Morph dostaje +1 licznik flying (razem 1)
+  [ROZGRYWKA]   • Morph wchodzi na pole bitwy
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA]   • Knight zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 9
+  [ROZGRYWKA]   • Morph zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 9 → 7
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Death-Hood Cobra
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Veiled Ascension — skorzystać z efektu „you may"? (wybór opcjonalny: Nieprzyjaciel)
+  [ROZGRYWKA]   • Veiled Ascension — trigger (krok upkeep)
+  [ROZGRYWKA]   • Nieprzyjaciel korzysta z efektu „you may" (Veiled Ascension)
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 38 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Carapace Forger · 2 · Creature — Elf Artificer · +2 · przy 3+ artefaktach · 2/2 | Rustvine Cultivator · 1 · Creature — Phyrexian Elf Druid · {T}: połóż licznik oil · {T}, zdejmij 1 licznik oil: cel: ląd — odkręć · 1/2 | Ruthless Invasion · 3 · Sorcery · stwory niebędące artefaktami nie mogą blokować w tej turze | Death-Hood Cobra · 2 · Creature — Phyrexian Snake · {1}, {G}: zdobądź Zasięg do końca tury · {1}, {G}: zdobądź Dotykanie śmierci do końca tury · 2/2
+  MOJE POLA: Mountain · Basic Land — Mountain · T: dodaj 1 manę · zaczarowana: Chronic Flooding | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×5 | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Face-down creature · Creature · Morph · 1x Latanie · 2/2 ×3 | Knight · 0 · Creature — Knight · Czujność · 2/2 | Chronic Flooding · 2 · Enchantment Aura · Zatapnięcie zaczarowanego permanentu: mieli 3 karty (do grobu). · aura → Mountain | Face-down creature · Creature · Morph · choroba · 1x Latanie · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Mountain, Consume Spirit, Awaken the Sleeper, Shatter, Great Furnace, Spread the Sickness, Swamp ⏎ Nowa partia (seed 11). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 12, kliknięte: 15, modale: 4, sondy noop: 41 (panel 32, modal 9)
+== DETEKTORY: brak zgłoszeń ==

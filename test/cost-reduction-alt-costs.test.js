@@ -100,9 +100,16 @@ test('Escape: obniżka kosztu z permanentu tnie koszt ucieczki (pełna ścieżka
   assert.ok(cast, 'escape za 3 many jest oferowany (koszt 4 − obniżka 1)');
   const result = execute(state, cast);
   assert.equal(result.ok, true, `rzut przyjęty: ${result.events?.[0]?.reason ?? ''}`);
+  // M241: mana płacona przy DOMKNIĘCIU kosztu (pendingEscapeExile), nie przy deklaracji.
+  assert.ok(state.pendingEscapeExile, 'koszt wygnania to kolejna decyzja (zgłoszenie J)');
+  const candidates = state.pendingEscapeExile.candidateIds.slice(0, state.pendingEscapeExile.exileCount);
+  const done = execute(state, { type: 'resolve_escape_exile', playerId: 'p1', exileIds: candidates });
+  assert.equal(done.ok, true, `koszt przyjęty: ${done.events?.[0]?.reason ?? ''}`);
   const player = state.players.find((p) => p.id === 'p1');
   const left = Object.values(player.manaPool ?? {}).reduce((sum, n) => sum + n, 0);
   assert.equal(left, 0, 'zapłacono dokładnie 3 many (całą pulę), nie 4');
+  assert.ok(state.zones.stack.some((id) => state.objects.get(id)?.cardId === 'sweet-oblivion'),
+    'Sweet Oblivion na stosie po płatności');
 });
 
 test('Bestow i modal: obniżka też je obejmuje (CR 601.2f — koszt to koszt)', async () => {

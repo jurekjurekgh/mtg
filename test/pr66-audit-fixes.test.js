@@ -130,6 +130,10 @@ test('F2c: strażnik oferta=walidacja — KAŻDA oferowana komenda madness przec
 test('F3: ETB Revolutionista z legalnym celem w grobie — NIE można odmówić celu', () => {
   const state = game();
   putCard(state, 'gySpell', 'wrap-in-flames', 'p1', 'graveyard');
+  // M242/H: z JEDNYM kandydatem cel wybrałby się automatycznie, zanim ktokolwiek
+  // mógłby próbować odmówić — a tu testujemy regułę „odmowa odrzucana", więc
+  // muszą istnieć DWA legalne cele (pytanie remains real).
+  putCard(state, 'gySpell2', 'shatter', 'p1', 'graveyard');
   putCard(state, 'rev', 'revolutionist', 'p1', 'hand');
   addMana(state, 'p1', 6, { colors: ['R'] });
   assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'rev' }).ok);

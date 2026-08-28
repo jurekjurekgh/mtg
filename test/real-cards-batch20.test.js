@@ -274,8 +274,9 @@ test('Chittering Rats: ETB — CEL wybiera kartę z ręki na wierzch biblioteki'
 ;
   resolveStack(state);
 assert.ok(rCast.ok, rCast.events[0]?.reason);
-  // Temat 2: „target opponent" — kontroler (p1) wskazuje cel (p2).
-  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'p2' }).ok);
+  // Temat 2 + M242/H: „target opponent" — w dwuosobowej partii cel jest
+  // JEDYNY legalny i wybiera się AUTOMATYCZNIE (bez pytania).
+  assert.equal(state.pendingTriggerTargets.length, 0, 'jedyny przeciwnik — cel auto');
   resolveStack(state); // T6: trigger Rats ze stosu
   // Temat 4: kartę wybiera CEL (p2) — decyzja resolve_hand_top_choice.
   assert.ok(state.pendingHandTopChoice, 'decyzja hand-top czeka');
@@ -340,10 +341,14 @@ assert.ok(rCast.ok, rCast.events[0]?.reason);
   // Fear on battlefield.
   const fear = [...state.objects.values()].find((o) => o.cardId === 'fear-of-abduction' && o.zone === 'battlefield');
   assert.ok(fear, 'Fear na polu bitwy');
-  // ETB: cel „target creature an opponent controls" — decyzja gracza.
-  const tgt = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_trigger_target' && c.targetId === 'foe');
-  assert.ok(tgt, 'cel ETB Fear w ofercie');
-  assert.ok(execute(state, tgt).ok);
+  // ETB: „target creature an opponent controls" — tu JEDYNY legalny kandydat
+  // → M242/H: cel wybrany automatycznie (CR 115.1d), trigger na stosie z celem.
+  assert.equal(state.pendingTriggerTargets.length, 0, 'jedyny legalny cel — auto');
+  const autoEvt = state.events.filter((e) => e.type === 'trigger_target_resolved' && e.cardId === 'fear-of-abduction').at(-1);
+  assert.ok(autoEvt && autoEvt.auto === true && autoEvt.targetId === 'foe', 'autowybór jedynie przeciwnickiego stwora');
+  // UWAGA: poprzedni resolveStack KONSUMUJE też świeżo autozakolejkowany
+  // wpis (pasy jadą do pustego stosu), więc trigger mógł już zdążyć się
+  // rozstrzygnąć. Jeśli nie — domykamy kolejną rundą pasażu.
   resolveStack(state);
   // Opponent creature exiled (ETB trigger).
   assert.equal(state.objects.get('foe'), undefined, 'stwór przeciwnika wygnany (ETB)');

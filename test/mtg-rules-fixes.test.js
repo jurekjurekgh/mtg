@@ -308,8 +308,9 @@ test('T4: Chittering Rats — CEL wybiera kartę z ręki na wierzch biblioteki',
 ;
   resolveStack(state);
 assert.ok(rCast.ok, rCast.events[0]?.reason);
-  // Temat 2: „target opponent" — kontroler (p1) wskazuje cel (p2).
-  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'p2' }).ok);
+  // Temat 2 + M242/H: „target opponent" — w dwuosobowej partii JEDYNY
+  // legalny cel; wybiera się automatycznie (pytanie byłoby szumem).
+  assert.equal(state.pendingTriggerTargets.length, 0, 'jedyny przeciwnik — cel auto');
   resolveStack(state); // T6: trigger Rats ze stosu (hand-top jako decyzja)
   // Decyzja należy do p2 (cel).
   assert.ok(state.pendingHandTopChoice, 'brak oczekującej decyzji hand-top');

@@ -361,10 +361,12 @@ test('Willbender: morph flip → redirect celu czaru na stosie', () => {
   assert.equal(flipOffers.length, 1, 'flip oferowany');
   const rFlip = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: fd.id, abilityIndex: flipOffers[0].abilityIndex });
   assert.ok(rFlip.ok, 'flip: ' + (rFlip.events?.[0]?.reason ?? ''));
-  // Trigger Willbendera czeka na cel (czar na stosie z jednym celem)
-  assert.ok(state.pendingTriggerTargets.length >= 1, 'trigger turned_face_up czeka na cel');
-  const rr = resolveTriggerTarget(state, shatterStackId);
-  assert.ok(rr && rr.ok, 'wybrano czar do przekierowania');
+  // M242/H: czar na stosie to JEDYNY legalny kandydat triggera — cel wybiera
+  // się automatycznie (CR 115.1d), trigger od razu na stosie.
+  assert.equal(state.pendingTriggerTargets.length, 0, 'jedyny kandydat → auto (M242)');
+  const autoEvt = state.events.filter((e) => e.type === 'trigger_target_resolved' && e.cardId === 'willbender').at(-1);
+  assert.ok(autoEvt && autoEvt.auto === true && autoEvt.targetId === shatterStackId,
+    'auto cel = czar na stosie: ' + JSON.stringify(autoEvt));
   passRounds(state, 1); // trigger na stosie -> rozstrzygnięcie -> redirect_choice
   assert.ok(state.pendingRedirectChoice, 'redirect czeka na wybór nowego celu');
   const v = playerView(state, 'p1');

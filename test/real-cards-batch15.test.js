@@ -507,7 +507,13 @@ test('Sweet Oblivion: Escape z cmentarza (koszt + wygnanie 4 kart)', () => {
     addObject(state, { id: gid, instanceId: `i-${gid}`, cardId: 'shatter', controllerId: 'p1', zone: 'graveyard', kind: 'spell', manaCost: 2, spell: REGISTRY.get('shatter').spell, colors: ['R'], types: ['Instant'] });
   }
   addMana(state, 'p1', 4);
-  const r = execute(state, { type: 'cast_escape', playerId: 'p1', objectId: 'sweet-g', targets: ['p2'], escapeExileIds: exileIds });
+  // M241 (zgłoszenie J/K/L): dwuetapowo — deklaracja z celem kolejkuje
+  // pending wygnania, resolve_escape_exile domyka koszt (zamiast enumeracji
+  // podzbiorów × cele w jednej komendzie).
+  const announced = execute(state, { type: 'cast_escape', playerId: 'p1', objectId: 'sweet-g', targets: ['p2'] });
+  assert.ok(announced.ok, announced.events?.map((e) => e.reason).join(''));
+  assert.ok(state.pendingEscapeExile, 'kolejkuje wybór kart do wygnania');
+  const r = execute(state, { type: 'resolve_escape_exile', playerId: 'p1', exileIds });
   assert.ok(r.ok, r.events?.map((e) => e.reason).join(''));
   // 4 karty wygnane, Sweet Oblivion na stosie.
   assert.equal(state.zones.exile.length, 4);

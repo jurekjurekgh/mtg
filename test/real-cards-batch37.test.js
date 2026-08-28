@@ -471,20 +471,13 @@ test('Static Net: ETB wygnuje nie-lądowy permanent przeciwnika; LTB go przywrac
   addMana(state, 'p1', 4);
   execute(state, playerView(state, 'p1').legalCommands
     .find((c) => c.type === 'cast_permanent' && c.objectId === 'net'));
-  // Rozstrzygnij permanent na stosie (pełne rundy passów), ale NIE rozwiązuj
-  // decyzji celu triggera — przechodzimy tylko puste passy, aż zostanie sam cel.
-  for (let i = 0; i < 16; i += 1) {
-    const view = playerView(state, state.turn.priorityPlayerId);
-    const pass = view.legalCommands.find((c) => c.type === 'pass_priority');
-    const triggerTarget = view.legalCommands.find((c) => c.type === 'resolve_trigger_target');
-    if (triggerTarget) break;
-    if (!pass) break;
-    execute(state, pass);
-  }
-  const targetChoice = playerView(state, 'p1').legalCommands
-    .find((c) => c.type === 'resolve_trigger_target' && c.targetId === 'foe');
-  assert.ok(targetChoice, 'cel wygnania: stwór przeciwnika');
-  execute(state, targetChoice);
+  // M242/H: jedyny nie-lądowy permanent przeciwnika ('foe') → autowybór celu.
+  // Rozstrzygamy stos w całości (permanent + trigger wygnania po passach).
+  resolveStack(state);
+  resolveStack(state);
+  const autoEvt = state.events.filter((e) => e.type === 'trigger_target_resolved' && e.cardId === 'static-net' && e.auto === true).at(-1);
+  assert.ok(autoEvt, 'autowybór celu wygnania');
+  assert.equal(autoEvt.targetId, 'foe', 'auto: stwór przeciwnika (jedyny legalny)');
   resolveStack(state); // dokończ — drugi ETB (life+powerstone) też
   assert.equal(zoneOfCardId(state, 'highland-game'), 'exile', 'stwór wygnany');
   // LTB: zniszcz Static Net → wygnany wraca.

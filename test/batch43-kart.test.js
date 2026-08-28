@@ -150,9 +150,21 @@ test('B43/5: Sleep of the Dead — tapuje cel i blokuje najbliższe odkręcenie;
   putCard(state, 'g3', 'highland-game', 'p1', 'graveyard');
   addMana(state, 'p1', 3, { colors: ['U'] });
   const esc = playerView(state, 'p1').legalCommands
-    .find((c) => c.type === 'cast_escape' && c.objectId === inGrave.id);
-  assert.ok(esc, 'oferta Escape z grobu');
-  assert.equal((esc.escapeExileIds ?? []).length, 3, 'koszt: wygnanie 3 innych kart');
+    .find((c) => c.type === 'cast_escape' && c.objectId === inGrave.id && c.targets?.[0] === 'grizzly');
+  assert.ok(esc, 'oferta Escape z grobu (z jawnym celem — M241/J2)');
+  // M241/J: koszt wygnania to osobna decyzja pending — komenda rzutu nie niesie
+  // już enumerowanego podzbioru (dawniej eksplodował C(n,k) × cele).
+  assert.ok(!('escapeExileIds' in esc) || (esc.escapeExileIds ?? []).length === 0,
+    'brak pre-baked zakresu wygnania w komendzie');
+  assert.ok(execute(state, esc).ok, 'deklaracja legalna');
+  assert.ok(state.pendingEscapeExile, 'kolejkuje decyzję wygnania (M241)');
+  assert.equal(state.pendingEscapeExile.exileCount, 3, 'koszt: wygnanie 3 innych kart (Oracle)');
+  const done = execute(state, {
+    type: 'resolve_escape_exile', playerId: 'p1', exileIds: ['g1', 'g2', 'g3'],
+  });
+  assert.ok(done.ok, `wygnanie przyjęte: ${done.events?.[0]?.reason ?? ''}`);
+  assert.ok(state.zones.stack.some((id) => state.objects.get(id)?.cardId === 'sleep-of-the-dead'),
+    'czar na stosie po domknięciu kosztu');
 });
 
 // ---- Transza B ----------------------------------------------------------------

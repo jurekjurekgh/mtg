@@ -415,20 +415,13 @@ test('Warmaker Gunship: ETB zadaje obrażenia = liczba artefaktów kontrolera', 
   addMana(state, 'p1', 3, { colors: ['R'] });
   const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'gunship' });
   assert.ok(r.ok, 'rzut: ' + (r.events?.[0]?.reason ?? ''));
-  // Rozstrzygnij stos permanentu -> ETB trigger odpala się z decyzją celu.
-  let guard = 0;
-  while (state.zones.stack.length > 0 && state.pendingTriggerTargets.length === 0 && guard++ < 50) {
-    const holder = state.turn.priorityPlayerId;
-    const view = playerView(state, holder);
-    const pick = view.legalCommands.find((c) => c.type === 'pass_priority') ?? view.legalCommands.find((c) => c.type.startsWith('resolve_'));
-    if (!pick) break;
-    execute(state, pick);
-  }
-  assert.ok(state.pendingTriggerTargets.length > 0, 'ETB trigger czeka na cel');
-  const tt = state.pendingTriggerTargets[0];
-  const r2 = execute(state, { type: 'resolve_trigger_target', playerId: tt.playerId, targetId: 'target' });
-  assert.ok(r2.ok, 'cel triggera: ' + (r2.events?.[0]?.reason ?? ''));
+  // M242/H: jedyny stwór przeciwnika → wymagany cel wybiera się automatycznie.
+  const r2 = { ok: true };
   assert.ok(resolveStack(state), 'stos rozstrzygnięty');
+  assert.ok(resolveStack(state), 'trigger triggera (auto) rozstrzygnięty');
+  const autoEvt = state.events.filter((e) => e.type === 'trigger_target_resolved' && e.cardId === 'warmaker-gunship').at(-1);
+  assert.ok(autoEvt && autoEvt.auto === true && autoEvt.targetId === 'target',
+    'auto cel triggera: ' + JSON.stringify(autoEvt));
   const t = state.objects.get('target');
   const dead = !t || t.zone !== 'battlefield';
   const damaged = t ? (t.damage ?? 0) > 0 : false;
