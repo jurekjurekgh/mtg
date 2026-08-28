@@ -61,6 +61,13 @@ dziurą) przeniesione na skan źródła: kontrola mierzyła TEKST, nie regułę.
 (`stripComments` + `coveredFieldsFromFingerprintFile` + pin A1 z dwiema
 nogami), raport `docs/audits/AUDYT_PR86_2026-08-28.md`.
 
+**Pułapka uderzyła drugi raz w tej samej sesji — w moim własnym strażniku.**
+`test/repo-artefakty-audytu.test.js` sprawdzał kompletność reguł `.gitignore`
+przez `ignore.includes('tmp-audyt-*/')`, a komentarz NAD tą regułą cytuje ją
+dosłownie: usunięcie reguły zostawiało strażnik zielony (wykryła to mutacja
+M2, nie code review). Wniosek praktyczny: reguła 1 obowiązuje także wobec
+strażników, które sam piszesz — i to w dniu ich powstania.
+
 
 ## L82 (2026-08-28) — Test UI wiąże SKUTEK z hakiem semantycznym (klasa/`data-*`), copy pina się OSOBNYM testem
 

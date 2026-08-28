@@ -81,7 +81,17 @@ Inwentaryzacja przed kasowaniem (63 pliki / 3.0 MB, 4 katalogi M239–M251):
 
 - [x] Usunięcie 4 plików osobnym commitem (`ea7ca32`); sprawdzenie, że żaden nie jest cytowany
       w `docs/` ani `test/` (grep: brak cytowań per plik).
-- [x] Notatka w `docs/PROJECT_HISTORY.md` + w opisie PR (co usunięto i dlaczego).
+- [x] **Doprecyzowanie właściciela w trakcie sesji: „całkowicie do usunięcia,
+      także inne rozsiane po repozytorium"** → inwentaryzacja całego repo
+      (222 pliki .txt poza `decks/`) i usunięcie **205 plików / ~9 MB**
+      (commit `9f93387`): `tmp-audyt-*/` (59), `tools/table-tester/audyt-*.txt`
+      (23), `tools/table-tester/audyt-*/` (117), logi (4), zrzuty `.zip` (2).
+- [x] Sprawdzenie zależności: żaden test/moduł nie czyta tych plików (tylko
+      komentarze-proweniencja); 52 wzmianki w `docs/` → ścieżki historyczne.
+- [x] Zabezpieczenie: `.gitignore` (`tmp-audyt-*/` + `*.log`/`*.zip`) oraz
+      strażnik `test/repo-artefakty-audytu.test.js` (3 nogi, mutacyjnie RED).
+- [x] Notatki w `docs/PROJECT_HISTORY.md` (nagłówek + sekcja sesji),
+      `docs/setup/TESTER_STOLU.md` (obowiązująca reguła), handoff i opis PR.
 
 ## Etap 6 — pętla jakości (ADR 0021) — WYKONANE, bez znalezisk
 

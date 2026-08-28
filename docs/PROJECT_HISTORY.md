@@ -11,6 +11,13 @@
 > Wtedy `grep`, nie czytanie od góry: plik ma ponad 5900 linii.
 >
 > Sesje dopisują tu swoją sekcję (ADR 0013) — nowe na górze.
+>
+> **Uwaga (2026-08-28, decyzja właściciela):** transkrypty Żywego Testera
+> zostały usunięte z repozytorium (205 plików / ~9 MB: `tmp-audyt-*/`,
+> `tools/table-tester/audyt*`, logi i zrzuty). Ścieżki transkryptów w starszych
+> wpisach są więc historyczne — pliki nadal istnieją w historii gita, ale nie
+> w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
+> nie trafiają do repozytorium".
 
 - **Ostatnia aktualizacja:** 2026-08-28 (sesja arena/01a049c7: audyt PR #86 → A1 strażnik L16 bez komentarzy, porządki w `tmp-audyt-*`, PR #87)
 
@@ -33,13 +40,19 @@
     decyzja przeszła kontrolę. Naprawa: pokrycie z kodu po usunięciu
     komentarzy (lista + `state.pending*`) i **dwunogowy pin** na strażniku
     (kompozycja + ścieżka produkcyjna). → **lekcja L83**.
-- **Porządki w `tmp-audyt-*` (zlecenie właściciela):** z 63 plików / 3.0 MB
-  usunięto 4 bez wartości dowodowej — 2 duplikaty bajt-w-bajt (`t2b.txt`,
-  `r1-equip-e11-dense.txt`) i 2 przebiegi przerwane `[STOP]`, które mają
-  kompletny re-run tego samego seeda i profilu (`t1`→`t1b`, `r2-ravnica-67`
-  →`r2b`). Zostają 59 plików / 2.9 MB: kompletne partie oraz pary
-  przed/po (`w8/w8b`, `w13/w13b`, `r4-alara-33/-after`). Żaden usunięty plik
-  nie był cytowany w `docs/` ani `test/`.
+- **Porządki w artefaktach audytu (zlecenie właściciela):** w dwóch krokach —
+  najpierw 4 pliki z `tmp-audyt-*` bez wartości dowodowej (2 duplikaty
+  bajt-w-bajt: `t2b.txt`, `r1-equip-e11-dense.txt`; 2 przebiegi przerwane
+  `[STOP]` z kompletnym re-runem tego samego seeda: `t1`→`t1b`,
+  `r2-ravnica-67`→`r2b`), a po doprecyzowaniu (**„całkowicie do usunięcia"**)
+  wszystkie **205 plików / ~9 MB**: `tmp-audyt-*/` (59), śledzone
+  `tools/table-tester/audyt*` (140 txt + 4 logi) i 2 zrzuty `.zip` z M100.
+  Zostają tylko wyniki benchmarku `tools/b*.txt` (ADR 0018) i dane projektu.
+  Zależności sprawdzone przed kasowaniem: żaden test ani moduł nie czyta tych
+  plików (tylko komentarze-proweniencja w `test/` i `tools/table-tester/`),
+  a cytowania w `docs/` są opisowe — ścieżki stały się historyczne (nota
+  w nagłówku tego pliku). Zabezpieczenie: wzorce w `.gitignore` + strażnik
+  `test/repo-artefakty-audytu.test.js` (3 nogi, mutacyjnie RED).
 - **Wyniki:** `npm test` **3622/3622** (start 3621; +1 pin A1),
   `npm run build` 55 modułów / 2835.1 kB.
 

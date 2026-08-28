@@ -403,7 +403,24 @@ Audyty „żywym testerem" zgłaszaj jak inne audyty (wzorzec M54/M65/M73):
 - opisz **co widział gracz** (cytat z transkryptu) i dlaczego to błąd/niejasność;
 - napraw u root cause (nie maskuj);
 - dodaj test regresyjny (engine lub UI) blokujący powrót błędu;
-- transkrypt (`--out`) zachowaj w PR lub wklej fragment do opisu.
+- transkryptu (`--out`) **nie commituj** — wklej do opisu PR albo do raportu
+  w `docs/audits/` tylko fragmenty, które są dowodem.
+
+### Transkrypty nie trafiają do repozytorium (decyzja właściciela 2026-08-28)
+
+Transkrypt to artefakt przebiegu, nie dowód, który musi żyć w historii: przez
+kilka sesji katalogi `tmp-audyt-*/` w korzeniu (konwencja M239) i śledzone
+`tools/table-tester/audyt*` (sprzed reguł `.gitignore` z M203/M205) urosły do
+**205 plików / ~9 MB**. Wszystkie zostały usunięte z repo (zostają w historii
+gita). Obowiązuje teraz:
+
+- `--out` zapisujesz, gdzie chcesz (domyślnie `tools/table-tester/transcript.txt`,
+  gitignorowany) — po prostu **nie dodawaj pliku do commita**;
+- wzorce `tmp-audyt-*/`, `tools/table-tester/**/*.{txt,log,zip}` są w
+  `.gitignore`, a `test/repo-artefakty-audytu.test.js` pilnuje, żeby żaden
+  taki plik nie wrócił do indeksu;
+- wyniki benchmarku (`tools/b1-final-*.txt`, ADR 0018) i talie (`decks/*.txt`)
+  to dane projektu — tych strażnik wymaga (kontrola pozytywna).
 
 ## Rozwój narzędzia (opcje na kolejne sesje)
 
