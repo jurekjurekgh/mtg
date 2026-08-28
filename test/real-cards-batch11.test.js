@@ -773,8 +773,11 @@ test('Canonized in Blood: odrzucenie permanent card = descended; end step kładz
   state.turn = jumpToStep(state.turn, 'end_of_combat', 'p1');
   passBoth(state);
   passBoth(state);
-  // Temat 2: „target creature you control" — kontroler wskazuje własnego stwora.
-  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'own' }).ok);
+  // Temat 2 + M242/H: „target creature you control" — jedyny własny stwór
+  // ('own') wybiera się AUTOMATYCZNIE, bez pytania.
+  const autoEvt = state.events.filter((e) => e.type === 'trigger_target_resolved' && e.cardId === 'canonized-in-blood').at(-1);
+  assert.ok(autoEvt && autoEvt.auto === true && autoEvt.targetId === 'own',
+    'autowybór jedynego własnego stwora: ' + JSON.stringify(autoEvt));
   passBoth(state); // T6: rozstrzygnij trigger ze stosu
   assert.equal(state.objects.get('own').counters['+1/+1'], 1, 'end step z descended kładzie licznik na własnego stwora');
   assert.ok(state.events.some((event) => event.type === 'ability_triggered' && event.trigger === 'end_step'));

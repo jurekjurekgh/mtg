@@ -323,10 +323,12 @@ test('D1: Burning-Yard Trainer — ETB buffuje INNEGO Rycerza (+2/+2, trample+ha
       assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
     } else break;
   }
-  const pending = state.pendingTriggerTargets?.[0];
-  assert.ok(pending, 'decyzja celu triggera');
-  assert.deepEqual(pending.candidates, ['knight'], 'kandydat TYLKO inny Rycerz (nie Elk, nie sam Trainer)');
-  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'knight' }).ok);
+  // M242/H: kandydat filtruje się do JEDNEGO ('knight' — nie Elk, nie sam
+  // Trainer) → cel przejmowany automatycznie; filtr sprawdzamy po autowyborze.
+  assert.equal(state.pendingTriggerTargets.length, 0, 'jedyny kandydat → bez pytania (M242)');
+  const autoEvt = state.events.filter((e) => e.type === 'trigger_target_resolved' && e.cardId === 'burning-yard-trainer').at(-1);
+  assert.ok(autoEvt && autoEvt.auto === true, 'zapis autowyboru');
+  assert.equal(autoEvt.targetId, 'knight', 'auto wzięło jedynego Rycerza (nie Elka ani siebie)');
   assert.ok(resolveStack(state));
   const knight = state.objects.get('knight');
   // Buff „until end of turn" żyje w warstwie EOT — czytamy wartości efektywne.

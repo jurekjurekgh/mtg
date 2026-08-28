@@ -159,12 +159,12 @@ test('B50: Nanoform Sentinel — tapnięcie odkręca INNY docelowy permanent', (
   put(state, 'nano', 'nanoform-sentinel', 'p1', 'battlefield', { summoningSickness: false });
   put(state, 'land', 'basic-island', 'p1', 'battlefield', { tapped: true });
   const produced = tapAndProcess(state, 'nano');
-  assert.ok(produced.some((e) => e.type === 'trigger_target_required'), 'trigger celu odpalił się');
-  const view = playerView(state, 'p1');
-  const pick = view.legalCommands.find((c) => c.type === 'resolve_trigger_target' && c.targetId === 'land');
-  assert.ok(pick, 'oferta celu: tapnięty ląd');
-  const r = execute(state, pick);
-  assert.ok(r.ok, `resolve_trigger_target odrzucone: ${r.events?.[0]?.reason}`);
+  // M242/H: jedyny kandydat ('land' — nano to notSelf) → autowybór celu,
+  // bez trigger_target_required ani oferty resolve_trigger_target.
+  const autoEvt = produced.filter((e) => e.type === 'trigger_target_resolved' && e.auto === true).at(-1);
+  assert.ok(autoEvt, 'auto rozstrzygnięcie celu przy jedynym kandydacie (M242)');
+  assert.equal(autoEvt.targetId, 'land', 'auto: tapnięty ląd');
+  const r = { ok: true };
   // rozstrzygamy stos triggera
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   execute(state, { type: 'pass_priority', playerId: 'p2' });
@@ -356,15 +356,14 @@ test('B50: Nanoform Sentinel — triggers only once each turn', () => {
   put(state, 'nano', 'nanoform-sentinel', 'p1', 'battlefield', { summoningSickness: false });
   put(state, 'land', 'basic-island', 'p1', 'battlefield', { tapped: true });
   const first = tapAndProcess(state, 'nano');
-  assert.ok(first.some((e) => e.type === 'trigger_target_required'), 'pierwsze tapnięcie odpala trigger');
-  // rozstrzygnij i odkręć nano, żeby móc tapnąć drugi raz w tej samej turze
-  const view = playerView(state, 'p1');
-  const pick = view.legalCommands.find((c) => c.type === 'resolve_trigger_target' && c.targetId === 'land');
-  execute(state, pick);
+  assert.ok(first.some((e) => e.type === 'trigger_target_resolved' && e.auto === true),
+    'pierwsze tapnięcie odpala trigger (auto cel, M242)');
+  // rozstrzygnij i odkręc nano, żeby móc tapnąć drugi raz w tej samej turze
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   execute(state, { type: 'pass_priority', playerId: 'p2' });
   state.objects.set('nano', Object.freeze({ ...state.objects.get('nano'), tapped: false }));
   const second = tapAndProcess(state, 'nano');
-  assert.ok(!second.some((e) => e.type === 'trigger_target_required'),
+  assert.ok(!second.some((e) => e.type === 'trigger_target_required')
+    && !second.some((e) => e.type === 'trigger_target_resolved'),
     'drugie tapnięcie w tej samej turze NIE odpala triggera (once each turn)');
 });

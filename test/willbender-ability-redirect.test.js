@@ -95,11 +95,12 @@ test('Willbender: przekierowuje cel ZDOLNOŚCI ze stosu (Oracle: „spell or abi
   assert.ok(turnUp, `oferta obrócenia morpha: ${p1.legalCommands.map((c) => c.type).join(',')}`);
   execute(state, turnUp);
 
-  // Trigger Willbendera wymaga celu — wskazujemy zdolność na stosie.
-  const withTarget = playerView(state, 'p1').legalCommands
-    .find((c) => c.type === 'resolve_trigger_target' && c.targetId === stackId);
-  assert.ok(withTarget, 'zdolność na stosie jest legalnym celem triggera Willbendera');
-  execute(state, withTarget);
+  // Trigger Willbendera wymaga celu — zdolność na stosie jest legalnym
+  // kandydatem. M242/H: jest JEDYNYM kandydatem (jedyny wpis na stosie) → cel
+  // wybiera się automatycznie, trigger idzie na stos bez pytania.
+  const autoEvt = state.events.filter((e) => e.type === 'trigger_target_resolved' && e.cardId === 'willbender').at(-1);
+  assert.ok(autoEvt && autoEvt.auto === true && autoEvt.targetId === stackId,
+    'auto cel: zdolność na stosie (jedyny kandydat): ' + JSON.stringify(autoEvt));
   // Trigger rozstrzyga się i pyta o nowy cel.
   for (let i = 0; i < 6 && !state.pendingRedirectChoice; i += 1) {
     const view = playerView(state, state.turn.priorityPlayerId);

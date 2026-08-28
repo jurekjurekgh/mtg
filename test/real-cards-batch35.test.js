@@ -227,6 +227,9 @@ test('Simian Simulacrum: ETB kładzie 2 liczniki +1/+1 na twojego stwora (także
   const state = newState();
   putCard(state, 'malpa', 'simian-simulacrum', 'p1', 'hand');
   putBlank(state, 'wrog', 'p2', { cardName: 'Wrogi' });
+  // M242/H: z JEDNYM własnym stworem (samą małpą) silnik celuje automatycznie
+  // — tu testujemy WYBÓR „także siebie", więc dokładamy drugiego kandydata.
+  putBlank(state, 'swój', 'p1', { cardName: 'Swój pomocnik' });
   addMana(state, 'p1', 3);
   execute(state, playerView(state, 'p1').legalCommands
     .find((c) => c.type === 'cast_permanent' && c.objectId === 'malpa'));

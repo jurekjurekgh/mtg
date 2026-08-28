@@ -444,19 +444,18 @@ test('Jill: {3}{U}{U},{T} wygania i zwraca przemienioną jako Shiva z rozdziałe
   assert.ok(r.ok, r.events?.map((e) => e.reason).join(''));
   // D (2026-08-11): zdolność aktywowana idzie na stos — transform po rozstrzygnięciu.
   resolveStack(state);
-  // Temat 2 dla Sag: rozdział I (Mesmerize) ma requiresTarget — kolejkuje
-  // decyzję CELU (resolve_trigger_target) zamiast iść od razu na stos.
-  // Jedyny własny stwór to sama Shiva — kontroler ją wskazuje.
+  // Temat 2 dla Sag + M242/H: rozdział I (Mesmerize) ma requiresTarget —
+  // jedyny własny stwór to sama Shiva → cel wybiera się AUTOMATYCZNIE
+  // (bez kolejki decyzji), rozdział trafia prosto na stos (T6).
   const shivaId = findId(state, 'shiva-warden-of-ice');
   assert.ok(shivaId, 'Shiva powinna być na polu bitwy po transformacji');
-  assert.equal(state.pendingTriggerTargets.length, 1, 'decyzja celu Mesmerize czeka');
-  const pending = state.pendingTriggerTargets[0];
-  assert.equal(pending.playerId, 'p1');
-  assert.equal(pending.sourceId, shivaId);
-  assert.deepEqual(pending.candidates, [shivaId], 'kandydat: sama Shiva');
-  // Wybór celu + rozstrzygnięcie rozdziału ze stosu (T6).
-  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: shivaId }).ok);
-  passBoth(state); // T6: rozdział I Sagi ze stosu
+  assert.equal(state.pendingTriggerTargets.length, 0, 'jedyny kandydat → auto (M242)');
+  const autoEvt = state.events.filter((e) => e.type === 'trigger_target_resolved' && e.auto === true).at(-1);
+  assert.ok(autoEvt, 'zapis autowyboru celu rozdziału');
+  assert.equal(autoEvt.targetId, shivaId, 'auto cel = sama Shiva (jedyny kandydat)');
+  assert.equal(autoEvt.sourceId, shivaId, 'źródło triggera = Shiva');
+  // Rozdział I Sagi rozstrzyga się ze stosu po rundzie passów (T6).
+  passBoth(state);
   const shiva = state.objects.get(shivaId);
   assert.equal(shiva.power, 4);
   assert.equal(shiva.toughness, 5);
@@ -482,12 +481,12 @@ test('Shiva: kolejne liczniki lore po kroku dobierania kontrolera odpalają rozd
   resolveStack(state);
   const shivaId = findId(state, 'shiva-warden-of-ice');
   assert.ok(shivaId);
-  // Temat 2 dla Sag (Mesmerize): rozdział I kolejkuje decyzję CELU
-  // (resolve_trigger_target) zanim w ogóle trafi na stos. Jedyny własny
-  // stwór to sama Shiva — wskazujemy ją, a dopiero potem passBoth
-  // rozstrzyga rozdział ze stosu.
-  assert.equal(state.pendingTriggerTargets.length, 1, 'Mesmerize kolejkuje decyzję celu');
-  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: shivaId }).ok);
+  // Temat 2 dla Sag (Mesmerize) + M242/H: rozdział I z JEDNYM własnym
+  // stworem (Shiva) → cel wybiera się AUTOMATYCZNIE, rozdział od razu na
+  // stosie; passBoth go rozstrzyga.
+  assert.equal(state.pendingTriggerTargets.length, 0, 'Mesmerize: jedyny cel → auto (M242)');
+  const auto1 = state.events.filter((e) => e.type === 'trigger_target_resolved' && e.auto === true).at(-1);
+  assert.ok(auto1 && auto1.targetId === shivaId, 'auto cel rozdziału I = Shiva');
   // Przechodzimy do precombat main p1 (po kroku draw) — rozdział II.
   jumpStep(state, 'p2', 'ending', 'end', 10, 1);
   passBoth(state); // T6: rozdział I (z wejścia Sagi) ze stosu
@@ -496,10 +495,10 @@ test('Shiva: kolejne liczniki lore po kroku dobierania kontrolera odpalają rozd
   passBoth(state); // upkeep p1
   passBoth(state); // draw p1
   passBoth(state); // precombat_main p1 → licznik lore + rozdział II (kolejkuje cel)
-  // Temat 2 dla Sag: rozdział II to też Mesmerize — kolejkuje decyzję CELU
-  // (jedyny własny stwór to nadal sama Shiva).
-  assert.equal(state.pendingTriggerTargets.length, 1, 'Mesmerize II kolejkuje decyzję celu');
-  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: shivaId }).ok);
+  // Temat 2 dla Sag + M242/H: rozdział II — jw., cel auto (Shiva).
+  assert.equal(state.pendingTriggerTargets.length, 0, 'Mesmerize II: jedyny cel → auto (M242)');
+  const auto2 = state.events.filter((e) => e.type === 'trigger_target_resolved' && e.auto === true).at(-1);
+  assert.ok(auto2 && auto2.targetId === shivaId, 'auto cel rozdziału II = Shiva');
   passBoth(state); // T6: rozdział II ze stosu
   assert.equal(state.objects.get(shivaId)?.counters?.lore, 2, 'Po draw step kontrolera: 2 liczniki lore');
   assert.ok(eventsOfType(state, 'saga_chapter_fired').some((e) => e.chapter === 2));

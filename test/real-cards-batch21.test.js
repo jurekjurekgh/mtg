@@ -268,8 +268,12 @@ test('Kor Sanctifiers: kicker niszczy celowy artefakt', () => {
   resolveStack(state);
 
   assert.ok(kicked.ok, kicked.events[0]?.reason);
-  // Temat 2: „destroy target artifact or enchantment" — cel wybiera kontroler.
-  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'art' }).ok);
+  // Temat 2 + M242/H: „destroy target artifact or enchantment" — jedyny
+  // kandydat ('art') → autowybór.
+  {
+    const autoEvt = state.events.filter((e) => e.type === 'trigger_target_resolved' && e.cardId === 'kor-sanctifiers').at(-1);
+    assert.ok(autoEvt && autoEvt.auto === true && autoEvt.targetId === 'art', 'auto cel: jedyny artefakt/enchantment');
+  }
   passBoth(state); // T6: rozstrzygnij trigger ze stosu
   const kor = battlefieldByCardId(state, 'kor-sanctifiers');
   assert.equal(kor.wasKicked, true, 'flaga wasKicked');
@@ -352,8 +356,12 @@ test('Skilled Animator: celowy artefakt 5/5; po śmierci animatora wraca', () =>
   resolveStack(state);
 
   assert.ok(cast.ok, cast.events[0]?.reason);
-  // Temat 2: „target artifact you control" — cel wybiera kontroler.
-  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'relic' }).ok);
+  // Temat 2 + M242/H: „target artifact you control" — jedyny kandydat
+  // ('relic') → cel wybiera się automatycznie (bez pytania o nic).
+  {
+    const autoEvt = state.events.filter((e) => e.type === 'trigger_target_resolved' && e.cardId === 'skilled-animator').at(-1);
+    assert.ok(autoEvt && autoEvt.auto === true && autoEvt.targetId === 'relic', 'auto cel: jedyny artefakt');
+  }
   passBoth(state); // T6: rozstrzygnij trigger ze stosu
   const relic = state.objects.get('relic');
   assert.equal(relic.kind, 'creature', 'artefakt animowany na stwora');

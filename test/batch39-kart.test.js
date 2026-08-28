@@ -82,6 +82,9 @@ test('A2: Hippocamp sam na polu — brak kandydatów, trigger bez decyzji i bez 
 test('A3: Lightblade — ETB przypina sprzęt do wybranego stwora + first strike do końca tury', () => {
   const state = game();
   putCard(state, 'soldier', 'highland-game', 'p1');
+  // M242/H: z jednym kandydatem silnik (CR 115.1d) celowałby AUTOMATYCZNIE —
+  // a tu testujemy WYBRANEGO stwora → potrzebny drugi kandydat, żeby pytanie istniało.
+  putCard(state, 'soldier2', 'highland-game', 'p1');
   putCard(state, 'blade', 'squires-lightblade', 'p1', 'hand');
   addMana(state, 'p1', 4, { colors: ['W', 'W'] });
 

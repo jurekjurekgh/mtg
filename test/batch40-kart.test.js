@@ -213,6 +213,8 @@ test('B4: Enrage odpala TEZ gdy obrazenia zabija stwora (CR 603.10 looks-back)',
     .find((c) => c.type === 'cast_spell' && c.objectId === 'ants' && c.targets?.[0] === 'caco');
   assert.ok(cast, 'oferta dośmiertelnego obrażenia');
   assert.ok(execute(state, cast).ok);
+  // M242/H: jedyny legalny kandydat ('guy') → Enrage wybiera cel AUTO-
+  // MATYCZNIE (testujemy kluczową treść: odpalenie mimo śmierci źródła, LKI).
   let untapSeen = false;
   for (let i = 0; i < 12; i += 1) {
     const pending = state.pendingTriggerTargets?.[0];
@@ -227,7 +229,11 @@ test('B4: Enrage odpala TEZ gdy obrazenia zabija stwora (CR 603.10 looks-back)',
     }
     break;
   }
-  assert.ok(untapSeen, 'trigger Enrage odpalił mimo śmierci źródła (LKI)');
+  if (!untapSeen) {
+    const autoEvt = state.events.filter((e) => e.type === 'trigger_target_resolved' && e.cardId === 'cacophodon').at(-1);
+    untapSeen = Boolean(autoEvt && autoEvt.auto === true && autoEvt.targetId === 'guy');
+  }
+  assert.ok(untapSeen, 'trigger Enrage odpalił mimo śmierci źródła (LKI) — wybór ręczny albo auto');
   assert.equal(state.objects.get('guy').tapped, false, 'odkręcenie celu działa po śmierci Cacophodona');
   const dead = [...state.objects.values()].find((o) => o.cardId === 'cacophodon' && o.zone === 'graveyard');
   assert.ok(dead, 'Cacophodon zginął od obrażeń');

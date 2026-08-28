@@ -1441,7 +1441,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const target = e.targetId == null
           ? 'nic'
           : (isPlayer(e.targetId) ? whoN(e.targetId) : nameOfObject(e.targetId));
-        return `${src} — cel: ${target}`;
+        // M242 (zgłoszenie H): jedyny legalny cel wymuszonego triggera —
+        // wybór bez pytania, ale zapisany wprost (nie wygląda jak pominięcie).
+        const autoNote = e.auto ? ' (jedyny legalny — automatycznie)' : '';
+        return `${src} — cel: ${target}${autoNote}`;
       }
       case 'optional_trigger_required': return `${nameOf(e.cardId)} — skorzystać z efektu „you may"? (${decisionOwnerNote(e.playerId)})`;
       // M138/Z7 (audyt Żywym Testerem): „Nieprzyjaciel korzysta z efektu «you

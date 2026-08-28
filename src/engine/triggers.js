@@ -1125,6 +1125,36 @@ function hasPayCost(trigger) {
  */
 function queueTargetDecision(state, ability, source, candidates, allowNone, fixedTargetIds, events, extra, specOverride = null) {
   const controllerId = source.controllerId;
+  // M242 (zgłoszenie H, Breaching Hippocamp): WYMAGANY trigger celowy, który
+  // ma DOKŁADNIE JEDNEGO legalnego kandydata (i nic poza wyborem — brak celów
+  // stałych, brak „up to N"), nie ma czego pytać kontrolera — cel wybiera
+  // się automatycznie (duch CR 115.1d: z JEDNEGO legalnego celu ustawa
+  // wymusza wybór, pytanie to szum UI — „modal z jednym przyciskiem").
+  // Wyłączone: allowNone (zgoda nigdy nie jest automatyczna), cele stałe
+  // (fixedTargetIds — auto gubiłoby informację o komponowaniu listy celów),
+  // wielocele (count > 1 — żaden częściowy autowybór). Trigger i tak ide na
+  // stos (odpowiedź przeciwnika jak dla celu wybranego z modalu).
+  const autoSpec = ability?.trigger?.requiresTarget;
+  const autoMulti = Number.isInteger(autoSpec?.count) && autoSpec.count > 1;
+  if (!allowNone && candidates.length === 1 && fixedTargetIds.length === 0 && !autoMulti) {
+    // LKI jak w ścieżce resolve (M166/B): źródło mogło umrzeć z SBA tej samej
+    // komendy, co odpaliło trigger (Enrage) — bierzemy ostatni znany stan.
+    const src = state.objects.get(source.id) ?? source;
+    const srcLegal = Boolean(src
+      && ['battlefield', 'graveyard', 'exile'].includes(src.zone)
+      && triggerConditionHolds(state, ability, src, extra ?? {}));
+    if (srcLegal) {
+      queueTriggerToStack(state, ability, src, [candidates[0]], events, extra ?? {});
+    }
+    const resolved = event('trigger_target_resolved', {
+      playerId: controllerId, sourceId: source.id, cardId: source.cardId,
+      targetId: srcLegal ? candidates[0] : null, noEffect: !srcLegal,
+      remaining: state.pendingTriggerTargets.length, auto: true,
+    });
+    state.events.push(resolved);
+    events.push(resolved);
+    return true;
+  }
   state.pendingTriggerTargets.push({
     playerId: controllerId,
     sourceId: source.id,

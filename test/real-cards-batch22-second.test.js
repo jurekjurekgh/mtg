@@ -157,11 +157,9 @@ test('Wormfang Newt ETB exile + LTB return exiled land', () => {
   // Rozstrzygnij stos (2 pass per gracz). Po rozstrzygnięciu czaru:
   // newt na polu bitwy (nowe id), ETB trigger odpala się.
   resolveStack(state);
-  // Po resolveTopOfStack + processTriggers: pendingTriggerTargets z land_you_control
-  assert.equal(state.pendingTriggerTargets.length, 1, 'pendingTriggerTargets ma 1');
-  // resolve_trigger_target na land
-  const r2 = execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'land' });
-  assert.equal(r2.ok, true, 'resolve_trigger_target');
+  // M242/H: jedyny land do wygnania → cel wybrany automatycznie (bez pytań).
+  assert.equal(state.pendingTriggerTargets.length, 0, 'auto cel land');
+  const r2 = { ok: true };
   // Trigger exile_own_land idzie na stos → rozstrzygnij
   resolveStack(state);
   // Po rozstrzygnięciu: land w exile (id zmieniony przez moveObjectDirectly,

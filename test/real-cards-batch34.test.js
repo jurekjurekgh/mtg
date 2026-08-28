@@ -267,12 +267,11 @@ test('Circle of the Land Druid: po śmierci wraca LAND z grobu (nie stwór)', ()
   putBlank(state, 'trup', 'p1', { zone: 'graveyard', cardName: 'Trup' });
   state.objects.set('druid', Object.freeze({ ...state.objects.get('druid'), damage: 9 }));
   execute(state, { type: 'pass_priority', playerId: 'p1' });
-  const view = playerView(state, 'p1');
-  const choices = view.legalCommands.filter((c) => c.type === 'resolve_trigger_target');
-  assert.ok(choices.length > 0, `trigger pyta o cel: ${view.legalCommands.map((c) => c.type).join(',')}`);
-  assert.ok(choices.some((c) => c.targetId === 'las'), 'land z grobu jest celem');
-  assert.ok(!choices.some((c) => c.targetId === 'trup'), 'karta-stwór z grobu NIE jest celem');
-  execute(state, choices.find((c) => c.targetId === 'las'));
+  // M242/H: jedyny legalny kandydat ('las' — 'trup' to stwór i NIE może być
+  // celem) → autowybór; filtrację sprawdzamy po wybranym celu w zdarzeniu.
+  const autoEvt = state.events.filter((e) => e.type === 'trigger_target_resolved' && e.cardId === 'circle-of-the-land-druid').at(-1);
+  assert.ok(autoEvt && autoEvt.auto === true, 'auto przy jedynym legalnym celu');
+  assert.equal(autoEvt.targetId, 'las', 'auto wzięło LAND (nie trupa) — filtr działa');
   resolveStack(state);
   const land = [...state.objects.values()].find((o) => o.cardName === 'Las');
   assert.equal(land.zone, 'hand', 'land wrócił do ręki');
@@ -317,10 +316,11 @@ test('Academy Journeymage: ETB odbija stwora PRZECIWNIKA do ręki właściciela'
   execute(state, playerView(state, 'p1').legalCommands
     .find((c) => c.type === 'cast_permanent' && c.objectId === 'journey'));
   resolveStack(state);
-  const choices = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_trigger_target');
-  assert.ok(choices.length > 0, 'ETB pyta o cel');
-  assert.ok(!choices.some((c) => c.targetId === 'moj'), 'własny stwór nie jest celem (Oracle: an opponent controls)');
-  execute(state, choices.find((c) => c.targetId === 'wrog'));
+  // M242/H: jedyny legalny kandydat ('wrog' — własny nie może być celem,
+  // Oracle „an opponent controls") → autowybór; filtr sprawdzamy po celu.
+  const autoEvt = state.events.filter((e) => e.type === 'trigger_target_resolved' && e.cardId === 'academy-journeymage').at(-1);
+  assert.ok(autoEvt && autoEvt.auto === true, 'jedyny przeciwnicki stwór → auto');
+  assert.equal(autoEvt.targetId, 'wrog', 'auto NIE celuje własnego stwora');
   resolveStack(state);
   const bounced = [...state.objects.values()].find((o) => o.cardName === 'Wrogi stwór');
   assert.equal(bounced.zone, 'hand');

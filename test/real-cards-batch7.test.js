@@ -281,8 +281,12 @@ test('Puppeteer Clique: przejęty stwór jest wygnany na początku kroku end kon
   const rCast1 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'pc' });
   assert.ok(rCast1.ok);
   resolveStack(state);
-  // Temat 2: cel reanimacji wybiera kontroler (jedyny stwór w grobie p2).
-  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'strong' }).ok);
+  // Temat 2 + M242/H: cel reanimacji wybiera „kontroler" — ale tu to JEDYNY
+  // stwór w grobie p2 → wybór automatyczny (CR 115.1d), bez pytania.
+  const autoEvt = state.events.filter((e) => e.type === 'trigger_target_resolved' && e.cardId === 'puppeteer-clique').at(-1);
+  assert.ok(autoEvt && autoEvt.auto === true && autoEvt.targetId === 'strong',
+    'auto cel reanimacji: ' + JSON.stringify(autoEvt));
+  assert.equal(state.pendingTriggerTargets.length, 0, 'bez kolejki decyzji');
   passBoth(state); // T6: rozstrzygnij trigger ze stosu
   const reanimatedId = state.zones.battlefield.find((id) => state.objects.get(id).cardId === 'highland-game');
 

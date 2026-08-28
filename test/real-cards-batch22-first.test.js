@@ -74,13 +74,12 @@ test('Thistledown Players: trigger attacks + untap nonland permanent (T2: cel wy
   };
   const r = execute(state, cmd);
   assert.equal(r.ok, true, 'declare_attackers');
-  // pendingTriggerTargets: trigger attacks czeka na cel (T2)
-  assert.equal(state.pendingTriggerTargets.length, 1, 'pendingTriggerTargets ma 1 wpis');
-  const pending = state.pendingTriggerTargets[0];
-  assert.equal(pending.sourceId, 'mice');
-  // Wybieramy target (stwór, NIE land) — land-p2 powinien być w candidateIds=false
-  const r2 = execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'target' });
-  assert.equal(r2.ok, true, 'resolve_trigger_target');
+  // M242/H: jedyny legalny kandydat ('target' — land-p2 to NIE nonland) →
+  // cel triggera wybrany automatycznie, bez kolejki decyzji.
+  assert.equal(state.pendingTriggerTargets.length, 0, 'bez kolejki (auto: land nie jest kandydatem)');
+  const autoEvt = state.events.filter((e) => e.type === 'trigger_target_resolved' && e.cardId === 'thistledown-players').at(-1);
+  assert.ok(autoEvt && autoEvt.auto === true && autoEvt.targetId === 'target',
+    'auto cel: stwór, nie land: ' + JSON.stringify(autoEvt));
   // T6: trigger poszedł na stos — rozstrzyga się po rundzie passów.
   // Wykonaj passy obu graczy, żeby symulacja zamknęła kolejkę.
   execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
