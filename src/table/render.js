@@ -170,6 +170,8 @@ const TARGET_TYPE_LABELS = Object.freeze({
   nonartifact_nonblack_creature: 'stwór niebędący artefaktem ani czarnym',
   creature_you_control: 'twój stwór', creature_opponent_controls: 'stwór przeciwnika',
   creature_or_vehicle: 'stwór lub Vehicle',
+  // Batch 51 (Skinbrand Goblin — Bloodrush): cel to ATAKUJĄCY stwór tej walki.
+  attacking_creature: 'atakujący stwór',
   creature_defending_player_controls: 'stwór broniącego się gracza',
   creature_with_subtypes: 'stwór z podtypem', creature_with_power_at_least: 'stwór o sile ≥',
   creature_card_in_graveyard: 'karta-stwór w grobie', creature_card_in_opponent_graveyard: 'karta-stwór w grobie przeciwnika',
@@ -1239,6 +1241,14 @@ function describeAbility(ability, { withCost = true, withTarget = true } = {}) {
   if (ability?.channel) {
     return `Channel ${costTextOf(ability)} — szukaj podstawowego lądu`;
   }
+  // Batch 51 (Skinbrand Goblin): Bloodrush (CR 207.2c — słowo zdolności).
+  // Sama lista efektów (pump +2/+1) nie mówi graczowi NAJWAŻNIEJSZEGO: że
+  // płaci ODRZUCENIEM tej karty z ręki, a beneficjentem jest atakujący stwór.
+  if (ability?.bloodrush) {
+    const pw = ability.bloodrush.power ?? 0;
+    const th = ability.bloodrush.toughness ?? 0;
+    return `Bloodrush ${costTextOf(ability)} — odrzuć: atakujący stwór ${pw > 0 ? '+' : ''}${pw}/${th > 0 ? '+' : ''}${th}`;
+  }
   // M138/Z10 (audyt Żywym Testerem): zdolność, której treścią jest KEYWORD,
   // a nie lista efektów (`effect: []` — mechanikę realizuje silnik po
   // `ability.keyword`), renderowała się jako samotny koszt. Trestle Troll
@@ -2227,6 +2237,14 @@ export function commandLabel(cmd, session, view) {
       }
       if (ability?.channel) {
         return `Channel: ${nameOfObjectId(cmd.objectId)} (koszt ${abilityCostHtml(ability)}) → szukaj podstawowego lądu`;
+      }
+      // Batch 51 (Skinbrand Goblin): koszt bloodrushu to mana + ODRZUCENIE
+      // karty z ręki (CR 117.11) — etykieta pokazuje oba, bo gracz widzi tu
+      // jedynie „{R}”, a traci kartę.
+      if (ability?.bloodrush) {
+        const pw = ability.bloodrush.power ?? 0;
+        const th = ability.bloodrush.toughness ?? 0;
+        return `Bloodrush: ${nameOfObjectId(cmd.objectId)} (koszt ${abilityCostHtml(ability)}, odrzuć) → atakujący ${pw > 0 ? '+' : ''}${pw}/${th > 0 ? '+' : ''}${th}`;
       }
       if (ability?.keyword === 'equip') {
         // Batch 48 (Steelclaw Lance, ELD): „Equip Knight {1}" obok „Equip {3}" —

@@ -121,7 +121,7 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   return base;
 }
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, landwalk = null, onNthResolve = null }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, landwalk = null, onNthResolve = null }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -195,6 +195,13 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // M166/B (Reinforce, CR 702.29a): zdolność karty w RĘCE — koszt mana +
     // odrzucenie karty; efekt: liczniki +1/+1 na celu stworze.
     reinforce: reinforce ? Object.freeze({ ...reinforce }) : null,
+    // Batch 51 (Skinbrand Goblin): Bloodrush (CR 207.2c — słowo zdolności, nie
+    // słowo kluczowe) — „{R}, Discard this card: Target attacking creature gets
+    // +2/+1 until end of turn.". Jak reinforce: zdolność karty w RĘCE, koszt
+    // mana + odrzucenie; różnica to CEL (`attacking_creature`) i efekt (pump
+    // do końca tury). Deskryptor niesie tylko dane do opisu/etykiety —
+    // rezultat leży w `effect` (ADR 0002).
+    bloodrush: bloodrush ? Object.freeze({ ...bloodrush }) : null,
     // M166/E (Cenn's Tactician): statyka „Each creature you control with
     // a +1/+1 counter on it can block an additional creature each combat"
     // — licznik uprawniający do dodatkowego slotu bloku.
@@ -512,6 +519,10 @@ export function legalActivatedAbilities(state, playerId) {
       // jest martwa. Bez pominięcia bot dostawał ofertę z pola bitwy i
       // execute odrzucał „Reinforce aktywuje się z ręki" (crash sesji).
       if (ability.reinforce) continue;
+      // Batch 51: Bloodrush — jak cycling/channel/reinforce: zdolność karty
+      // w RĘCE. Na polu bitwy jest martwa; oferowanie jej stąd kończyło się
+      // odrzuceniem własnej komendy („Bloodrush aktywuje się z ręki").
+      if (ability.bloodrush) continue;
       // Megamorph (obrócenie twarzą do góry) działa tylko, póki permanent
       // leży twarzą w dół; po obrocie zdolność wygasa.
       if ((ability.keyword === 'megamorph' || ability.keyword === 'morph') && !object.faceDown) continue;
@@ -979,6 +990,27 @@ export function legalActivatedAbilities(state, playerId) {
       }
     }
   }
+  // Batch 51: Bloodrush (CR 207.2c, Skinbrand Goblin) — zdolność karty w RĘCE,
+  // szybkość instanta (jak cycling/reinforce); koszt mana + ODRZUCENIE karty.
+  // Cel jest obowiązkowy i zawężony do atakujących stworów (CR 508.1k), więc
+  // poza walką zdolność nie ma legalnego celu i nie jest oferowana.
+  for (const id of state.zones.hand) {
+    const object = state.objects.get(id);
+    if (object?.controllerId !== playerId) continue;
+    for (let index = 0; index < (object.abilities ?? []).length; index += 1) {
+      const ability = object.abilities[index];
+      if (ability?.type !== ABILITY_TYPE.activated || !ability.bloodrush) continue;
+      const effManaBloodrush = effectiveAbilityManaCost(state, playerId, ability, object);
+      if (effManaBloodrush > baseMana) continue;
+      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+      const targetSpec = ability.targets ?? [];
+      if (targetSpec.length === 0) continue; // bloodrush bez celu to błąd danych
+      const candidates = legalTargetCandidates(state, playerId, targetSpec[0], object);
+      for (const targetId of candidates) {
+        out.push({ objectId: id, abilityIndex: index, ability, targets: [targetId] });
+      }
+    }
+  }
   // Forecast (CR 702.94, Piercing Rays) — zdolność z RĘKI, tylko w swoim
   // upkeepie, raz na turę. Karta zostaje w ręce (koszt to UJAWNIENIE).
   if (state.turn?.step === 'upkeep' && state.turn.activePlayerId === playerId) {
@@ -1091,6 +1123,9 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   }
   if (ability.reinforce) {
     return activateReinforce(state, playerId, object, abilityIndex, ability, targets);
+  }
+  if (ability.bloodrush) {
+    return activateBloodrush(state, playerId, object, abilityIndex, ability, targets);
   }
   if (ability.forecast) {
     return activateForecast(state, playerId, object, abilityIndex, ability, targets);
@@ -1734,6 +1769,52 @@ function activateReinforce(state, playerId, cardObject, abilityIndex, ability, t
     effectSourceId: graveId,
     effectTargets: chosenTargets,
     eventExtra: { reinforce: true },
+  });
+}
+
+/**
+ * Batch 51 (Bloodrush, CR 207.2c — słowo zdolności; wzorzec M166/B reinforce):
+ * „{R}, Discard this card: Target attacking creature gets +2/+1 until end of
+ * turn.\" Zdolność karty w RĘCE — koszt to mana + ODRZUCENIE karty (przed
+ * wejściem zdolności na stos, CR 117.11/601.2h). Efekt idzie przez STOS z
+ * wybranym celem, więc przeciwnik może odpowiedzieć, a cel, który zniknie,
+ * sprawia, że efekt fizzluje (CR 608.2b).
+ */
+function activateBloodrush(state, playerId, cardObject, abilityIndex, ability, targets) {
+  if (cardObject.zone !== 'hand') throw new Error('Bloodrush aktywuje się z ręki');
+  const bloodrushReqs = colorRequirementsOf(ability.cost);
+  if (bloodrushReqs.length > 0 && !canPayColoredCost(state, playerId, bloodrushReqs)) {
+    throw new Error('Brak kolorowego źródła many na bloodrush');
+  }
+  const effMana = effectiveAbilityManaCost(state, playerId, ability, cardObject);
+  spendMana(state, playerId, effMana, bloodrushReqs);
+  // Odrzucenie karty to KOSZT (przed stosem) — karta trafia do grobu.
+  const graveId = `grave-${state.objectSequence++}`;
+  const discarded = moveObjectDirectly(state, cardObject.id, 'graveyard', graveId);
+  state.events.push(event('card_discarded', {
+    playerId, fromId: cardObject.id, objectId: graveId, cardId: discarded.cardId,
+    cost: true, bloodrush: true,
+  }));
+  // Kopia zdolności do kolejki (źródło leci do grobu — efekt i tak się liczy).
+  const bloodrushAbility = Object.freeze({
+    type: 'activated',
+    bloodrush: Object.freeze({ ...ability.bloodrush }),
+    effect: Array.isArray(ability.effect) ? Object.freeze(ability.effect.map((e) => Object.freeze({ ...e }))) : Object.freeze({ ...ability.effect }),
+    targets: ability.targets ? Object.freeze(ability.targets.map((t) => Object.freeze({ ...t }))) : null,
+    cost: Object.freeze({ mana: effMana, colors: Object.freeze([...(ability.cost?.colors ?? [])]) }),
+  });
+  let chosenTargets = [];
+  const targetSpec = ability.targets ?? [];
+  if (targetSpec.length > 0) {
+    if (!Array.isArray(targets) || targets.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów bloodrush');
+    chosenTargets = validateTargets(state, targetSpec, targets, playerId, cardObject.colors ?? [], cardObject).map((e) => e.id);
+  }
+  return queueActivatedAbilityToStack(state, {
+    playerId, objectId: cardObject.id, abilityIndex,
+    ability: bloodrushAbility,
+    effectSourceId: graveId,
+    effectTargets: chosenTargets,
+    eventExtra: { bloodrush: true },
   });
 }
 
