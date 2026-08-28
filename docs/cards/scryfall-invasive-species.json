@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Invasive+Species&set=m15",
+  "print": "m15",
+  "name": "Invasive Species",
+  "mana_cost": "{2}{G}",
+  "cmc": 3.0,
+  "type_line": "Creature — Insect",
+  "oracle_text": "When this creature enters, return another permanent you control to its owner's hand.",
+  "set": "m15",
+  "set_name": "Magic 2015",
+  "collector_number": "181",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/1/c1fb5a98-94f4-419f-850b-e3a01f17080f.jpg?1783939166",
+    "normal": "https://cards.scryfall.io/normal/front/c/1/c1fb5a98-94f4-419f-850b-e3a01f17080f.jpg?1783939166"
+  },
+  "pobrano": "2026-08-28",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+    "G"
+  ]
+}

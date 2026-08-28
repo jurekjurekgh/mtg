@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Akroan+Sergeant&set=ori",
+  "print": "ori",
+  "name": "Akroan Sergeant",
+  "mana_cost": "{2}{R}",
+  "cmc": 3.0,
+  "type_line": "Creature — Human Soldier",
+  "oracle_text": "First strike (This creature deals combat damage before creatures without first strike.)\nRenown 1 (When this creature deals combat damage to a player, if it isn't renowned, put a +1/+1 counter on it and it becomes renowned.)",
+  "set": "ori",
+  "set_name": "Magic Origins",
+  "collector_number": "130",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/1/31913547-460c-45b3-be23-89f0e3a43325.jpg?1783938333",
+    "normal": "https://cards.scryfall.io/normal/front/3/1/31913547-460c-45b3-be23-89f0e3a43325.jpg?1783938333"
+  },
+  "pobrano": "2026-08-28",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "R"
+  ]
+}

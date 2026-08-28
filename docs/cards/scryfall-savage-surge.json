@@ -1,0 +1,21 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Savage+Surge&set=ths",
+  "print": "ths",
+  "name": "Savage Surge",
+  "mana_cost": "{1}{G}",
+  "cmc": 2.0,
+  "type_line": "Instant",
+  "oracle_text": "Target creature gets +2/+2 until end of turn. Untap that creature.",
+  "set": "ths",
+  "set_name": "Theros",
+  "collector_number": "176",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/9/5916d5e7-0825-4d72-82e4-1e4c86d1fafe.jpg?1783939737",
+    "normal": "https://cards.scryfall.io/normal/front/5/9/5916d5e7-0825-4d72-82e4-1e4c86d1fafe.jpg?1783939737"
+  },
+  "pobrano": "2026-08-28",
+  "colors": [
+    "G"
+  ]
+}
