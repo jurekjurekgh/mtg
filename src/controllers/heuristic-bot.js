@@ -2540,9 +2540,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // undefined i efekty (np. „{T},poświęć: 2 obrażenia") w ogóle nie były
         // wyceniane (każdy cel dostawał gołe score=2, bot celował w twarz/siebie
         // zamiast zabić stwora). Spójnie z silnikiem (abilities.js).
+        // M243/E (zgłoszenie właściciela, Treasure): treść zdolności bierzemy
+        // NAJPIERW z obiektu (view.activatableAbilities — M243 dodaje, tokeny
+        // typu Skarb mają zdolność w deskryptorze obiektu, a nie w rejestrze).
+        // Bez tego token spoza card-data dostawał `ability = undefined` →
+        // pętla efektów nie karyzowała niczego → goła baza 2 → bot poświęcał
+        // Skarb na manę przy trzech nietapniętych lądach. Silnik indeksuje po
+        // activatableAbilities (L48), więc widok niesie tę samą listę.
+        const viewAbilities = abilityObject?.activatableAbilities;
         const ability = cmd.grantedFromEquipment
           ? (def?.equipment?.grantedAbilities ?? [])[cmd.abilityIndex ?? 0]
-          : def?.abilities?.[cmd.abilityIndex ?? 0];
+          : (viewAbilities ?? def?.abilities ?? [])[cmd.abilityIndex ?? 0];
         const taps = Boolean(ability?.cost?.tap);
         const tapsCreature = Boolean(ability?.cost?.tapCreature);
         const effects = Array.isArray(ability?.effect) ? ability.effect : ability?.effect ? [ability.effect] : [];
@@ -3281,6 +3289,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const tokenToughness = effect.toughness === 'source_power' ? (source?.power ?? 0) : (effect.toughness ?? 1);
             score += 10 * amount * (2 * tokenPower + tokenToughness) / 3;
             if (ability?.cost?.sacrificeSelf) score -= source?.kind === 'creature' ? 4 : 1;
+            // M243/C (zgłoszenie właściciela, Heap Gate #3): token będący
+            // WYŁĄCZNIE bankiem many (Treasure/Powerstone — token-def albo
+            // deskryptor efektu: jedyną funkcją jest add_mana, brak ciała)
+            // za KOSZT many i tapnięć w turze, w której nie ma co rzucić,
+            // to przeniesienie many na przyszłość — bot nie planuje portfela
+            // na nast. turę, więc mierzymy TYLKO bieżącą turę: zapłata many
+            // + tapowane źródła (tu: DWA lądy) a token dopiero poświęci się
+            // jutro za tę samą manę. Bilans zerowy co do liczby, ujemny co
+            // do tempa. Kara przebija premię „10 pkt za token" (L3: kara ma
+            // przenosić wariant PONIŻEJ passa).
+            const tokenDef = effect.cardId ? cardDef(effect.cardId) : null;
+            const tokenAbilities = effect.abilities ?? tokenDef?.abilities ?? [];
+            const tokenEffects = tokenAbilities.flatMap((a) => {
+              const fx = a?.effect;
+              return Array.isArray(fx) ? fx : fx ? [fx] : [];
+            });
+            const tokenOnlyManaBank = (effect.power ?? tokenDef?.power ?? 0) <= 0
+              && tokenEffects.length > 0
+              && tokenEffects.every((fx) => fx?.type === 'add_mana');
+            if (tokenOnlyManaBank) {
+              const hasPlayable = view.zones.hand.some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
+              score -= hasPlayable ? 13 : 14;
+            }
           }
           if (effect.type === 'become_basic_land_type') {
             // Pętla jakości Żywym Testerem (2026-08-26, g9): bot aktywował

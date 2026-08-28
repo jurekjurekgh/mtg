@@ -20,7 +20,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell } from './spells.js';
 import { legalActivatedAbilities, activateAbility, performActivation } from './abilities.js';
-import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject } from './permanents.js';
+import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
 import { addCounter } from './counters.js';
 import { runStateBasedActions, tryRegenerate } from './state-based.js';
 import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds } from './triggers.js';
@@ -4824,6 +4824,18 @@ export function playerView(state, playerId) {
         // Flagi liczone jak w combat.js (effectiveAbilities — także nadane).
         if (effectiveAbilities(object).some((a) => a?.type === 'static' && a.cantAttackAlone === true)) entry.cantAttackAlone = true;
         if (effectiveAbilities(object).some((a) => a?.type === 'static' && a.cantBlockAlone === true)) entry.cantBlockAlone = true;
+        // M243/E (zgłoszenie właściciela, Treasure): treść AKTYWOWALNYCH
+        // zdolności permanentu to informacja PUBLICZNA (wydrukowany tekst),
+        // a nie nosi jej rejestrz kart wszystkich obiektów — tokeny (Treasure)
+        // mają zdolność w deskryptorze OBIEKTU, nie w card-data. Bez tego pola
+        // bot czytał def?.abilities z rejestru (puste!) i wyceniał Skarb gołą
+        // bazą „legalne zagranie" — POŚWIĘCAŁ go na manę przy trzech
+        // nietapniętych lądach. Lista wg `activatableAbilities` — tej
+        // samej, po której indeksuje engine (L48: oferta = walidacja).
+        if (!hiddenFromViewer) {
+          const activatable = activatableAbilities(state, object);
+          if (activatable.length > 0) entry.activatableAbilities = JSON.parse(JSON.stringify(activatable));
+        }
         if (object.lostKeywordsUntilEOT?.length) entry.lostKeywordsUntilEOT = [...object.lostKeywordsUntilEOT];
         // M173/C (uwaga właściciela — audyt WSZYSTKICH czasowych flag):
         // każdy widoczny skutek efektu ma być badge'em na kaflu; te pola
