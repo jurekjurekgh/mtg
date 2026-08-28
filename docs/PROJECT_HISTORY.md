@@ -12,7 +12,43 @@
 >
 > Sesje dopisują tu swoją sekcję (ADR 0013) — nowe na górze.
 
-- **Ostatnia aktualizacja:** 2026-08-28 (sesja arena/01a047a8: audyt PR #84 + E1 fingerprint Escape, PR #85)
+- **Ostatnia aktualizacja:** 2026-08-28 (sesja arena/01a047db: audyt PR #85 → N1/N2 fingerprint-oferta, M250 Żywy Tester: source-titled decyzje, PR #86)
+
+## Sesja 2026-08-28 — arena/01a047db: audyt PR #85 + pętla jakości Żywym Testerem (PR #86)
+
+- **Zadanie:** „Kontynuujemy projekt." (ADR 0020/0021 — pętla domyślna).
+- **Audyt PR #85** (ADR 0020 B) — raport: `docs/audits/AUDYT_PR85_2026-08-28.md`.
+  Poprzedni fix E1 mutacyjnie zweryfikowany jako poprawny, ale **łatał
+  wystąpienie, nie klasę** (L16):
+  - **N1:** `firstPendingDecisionPlayerId` konsultuje 62 pendingi,
+    `PENDING_DECISION_FIELDS` pokrywał 57. Dopisane 5 brakujących
+    (`pendingManifestDread`, `pendingSuspendCast`, `pendingOpponentTarget`,
+    `pendingFabricate`, `pendingCopyTargets`) + **strażnik klasy**
+    `test/fingerprint-pending-decisions.test.js` (czyta ciało funkcji
+    i wymaga pokrycia w fingerprintcie; mutacyjnie RED).
+  - **N2:** bramka oferty `pass_priority` — ostatnia z trzech kopii bez
+    `firstDecisionOwner == null` → pass oferowany przy otwartym Manifest
+    Dread. Unifikacja ujawniła głębszy defekt: wspólna funkcja liczyła
+    `pendingRoomTargets` po surowej długości, bez filtra „na żywo"
+    (kontrakt M33). Fix: hoist + filtr `legalRoomTargetCandidates` —
+    **lekcja L81**. Test `test/manifest-dread-pass-offer.test.js`
+    (RED→GREEN + anty-over-fix).
+  - **N3:** wpis PR #85 w dzienniku przeniesiony na górę (konwencja
+    „nowe na górze"); odnotowany brak sekcji PR #81/#83/#84.
+- **Pętla jakości (Żywy Tester, M250):** 7 partii na 10 taliach spoza
+  próbki benchmarku, 3 osie; detektory 0 zgłoszeń. Jedna awaria: fałszywy
+  „[STOP] brak akcji" przy klikalnej decyzji Szczurów (`— karta z ręki na
+  wierzch biblioteki (6 opcji)`) — root cause po stronie NARZĘDZIA (wzorce
+  greedy case-sensitive, a `choiceSourceTitle` kontynuuje małą literą;
+  M162/C). Ta sama klasa dopisana dla Exploit/Satyr/phyrexian/Escape/
+  „Cel dla:" + ostateczny fallback greedy na pierwszy klikalny przycisk.
+  Po fixie partia poleciała do naturalnego końca (46 kliknięć vs 11);
+  oś ptaszków (`--tick-rate 1`) czysta. Transkrypty `tmp-audyt-m250/`.
+- **Wyniki:** `npm test` 3615/3615 (+4), build 55 modułów / 2830.8 kB,
+  `bot-benchmark` 9/9. B0 nieruszany (ADR 0018).
+- **Pułapka sesji (L8, recydywa):** weryfikacja mutacyjna strażnika cofnięta
+  przez `git checkout --` zabrała też niezacommitowany fix N1 — mutacje
+  cofać edycją odwrotną albo commitować fix przed mutowaniem.
 
 ## Sesja 2026-08-28 — arena/01a047a8: audyt PR #84 + E1 fingerprint (PR #85)
 
