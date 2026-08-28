@@ -2123,6 +2123,28 @@ export function commandLabel(cmd, session, view) {
       const selfFizzle = cmd.sacrificeTargetId != null
         && (cmd.targets ?? []).includes(cmd.sacrificeTargetId)
         ? ' — UWAGA: czar fizzluje (cel poświęcony jako koszt)' : '';
+      // M248 (audyt Żywym Testerem, 2026-08-28 — żand detektora z partii
+      // alara × mirrodin-wu seed 33: „Rzuć: Wretched Banquet → Illusory
+      // Demon (Ty)", a Demon nie był najsłabszy): „Destroy … if it has the
+      // least power" to intervening-if (CR 608.2a) — warunek bada się przy
+      // rozstrzyganiu, więc cel można wybrać i czar PEWNIE fizzluje (koszt
+      // płacony). Oferta zostaje (legalny rzut), ale gracz musi to widzieć,
+      // jak przy M102/U8. Moc stworów jest publiczna (pole bitwy, ADR 0017);
+      // reguła po deskryptorze efektu, zero nazw (ADR 0002).
+      let condLeastPowerFizzle = '';
+      {
+        const effs = mode?.effects ?? cardForMode?.spell?.effects ?? cardForMode?.adventure?.spell?.effects ?? [];
+        if (effs.some((e) => e?.type === 'destroy_if_least_power')) {
+          const creatures = (view?.zones?.battlefield ?? []).filter((o) => o?.kind === 'creature');
+          const tgt = creatures.find((o) => o.id === (cmd.targets ?? [])[0]);
+          if (creatures.length > 0 && tgt) {
+            const minPower = Math.min(...creatures.map((o) => o.power ?? 0));
+            if ((tgt.power ?? 0) > minPower) {
+              condLeastPowerFizzle = ' — UWAGA: czar fizzluje (cel nie ma najmniejszej mocy wśród stworów)';
+            }
+          }
+        }
+      }
       // Phyrexian mana (CR 118.9): wariant płatności pita {R/P} (jak cast_permanent).
       let phy = '';
       if (cmd.phyrexianPayWithLife != null) {
@@ -2133,7 +2155,7 @@ export function commandLabel(cmd, session, view) {
         if (cmd.phyrexianPayWithLife > 0) parts.push(`${cmd.phyrexianPayWithLife}× po 2 życia`);
         phy = ` · phyrexian ${parts.join(' + ')}`;
       }
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)}${xPart}${phy})${targets ? ` → cel: ${targets}` : ''}${sac}${alt}${selfFizzle}`;
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)}${xPart}${phy})${targets ? ` → cel: ${targets}` : ''}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
