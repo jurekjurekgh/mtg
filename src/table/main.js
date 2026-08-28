@@ -20,7 +20,7 @@ import { createGameState, execute, playerView } from '../engine/game-state.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
 import { createCardRegistry, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
-import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, FACE_DOWN_LABEL } from './session.js';
+import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, FACE_DOWN_LABEL, TURN_NAMES } from './session.js';
 import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt } from './render.js';
 import { installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
@@ -548,19 +548,27 @@ function bootstrapTable() {
   }
 
   /**
-   * M232 — tryb wysoko-graficzny: pełnoekranowa warstwa z ilustracjami (FOT+KON)
-   * rzucanej karty. Otwierana z obserwatora `onCast` sesji (moment rzucenia).
+   * M232 — tryb wysoko-graficzny: pełnoekranowa warstwa z ilustracjami
+   * rzucanej karty — FOT u góry, pod nią para KON+Scryfall (I2) oraz mała
+   * podpowiedź rzucającego (I1). Otwierana z obserwatora `onCast` sesji
+   * (moment rzucenia).
    * Klik/tap w dowolnym miejscu zamyka TYLKO tę warstwę (obsługa niżej, przy
    * pozostałych warstwach). Pokazujemy wyłącznie karty z lokalnymi
    * ilustracjami (artId) — inaczej warstwa byłaby pusta.
    */
   let artShowcaseOpenedAt = 0;
-  function openArtShowcase(cardId) {
+  function openArtShowcase(cardId, playerId = null) {
     if (!session || !els.artShowcase) return;
     if (!els.hiGfxToggle?.checked) return;
     const card = session.cardDetails(cardId);
     if (!cardHasShowcaseArt(card)) return;
-    renderCardArtShowcase(els.artShowcase, card);
+    // I1 (zgłoszenie właściciela 2026-08-28): warstwa odpala się dla kart
+    // OBU stron — mała podpowiedź, KTO rzucił („Czarodziejka"/„Nieprzyjaciel",
+    // imiona jak w sekcji „Przebieg tur"; fallback: nazwa gracza z widoku).
+    const casterName = TURN_NAMES[playerId]
+      ?? session.view()?.players?.find((pl) => pl.id === playerId)?.name
+      ?? null;
+    renderCardArtShowcase(els.artShowcase, card, { casterName });
     els.artShowcase.className = 'art-showcase active';
     els.artShowcase.setAttribute('aria-hidden', 'false');
     artShowcaseOpenedAt = Date.now();
@@ -1510,7 +1518,7 @@ function bootstrapTable() {
         seed, registry, decks, pauseOnBotMoves: true, ignoredOptionKeys,
         // M232: obserwator rzutu — otwiera warstwę wysoko-graficzną (jeśli tryb
         // włączony). Zero wpływu na przebieg gry.
-        onCast: ({ cardId }) => openArtShowcase(cardId),
+        onCast: ({ cardId, playerId }) => openArtShowcase(cardId, playerId),
       });
       // Nowa gra unieważnia wstrzymany rzut kreatora many (E.3a): deskryptor
       // odnosił się do starej sesji, więc zamykamy modal i zapominamy komendę.

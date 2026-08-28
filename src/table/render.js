@@ -1,6 +1,6 @@
 import {
   IMAGE_MODE, cardImageSources, hoverImageSources, hoverModeLabel, hoverPreviewShape,
-  nextHoverMode, HOVER_MODES, tileImageSources, localArtUrl,
+  nextHoverMode, HOVER_MODES, tileImageSources, localArtUrl, scryfallImageUrl,
 } from './card-images.js';
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
@@ -3238,25 +3238,38 @@ export function renderCardFullscreen(host, info, { positionText = null } = {}) {
 
 /**
  * M232 — tryb wysoko-graficzny (zlecenie właściciela): pełnoekranowa warstwa
- * z DWIEMA zmaksymalizowanymi ilustracjami rzucanej karty — panoramiczną (FOT)
- * u góry i bestiariusz (KON) pod nią. Wywoływana w momencie RZUCENIA czaru /
+ * z ilustracjami rzucanej karty. Wywoływana w momencie RZUCENIA czaru /
  * wystawienia non-basic lądu (nie rozstrzygnięcia). Klik/tap w dowolnym miejscu
  * zamyka warstwę (obsługa w main.js).
  *
- * Obie ilustracje to lokalne pliki `img/<artId>{FOT,KON}.png` (localArtUrl).
+ * Układ (zgłoszenia właściciela 2026-08-28, I2): panorama (FOT) u góry, a pod
+ * nią WYŚRODKOWANA para — bestiariusz (KON) i dokładnie po jego prawej
+ * ilustracja Scryfall TEJ karty („ta sama, która domyślnie jest prezentowana
+ * na stole"). KON zachowuje dotychczasową wielkość; para jest wspólnie
+ * centrowana tak jak FOT (efekt: KON lekko przesuwa się w lewo). Reguła CSS
+ * (`.showcase-row`) daje obu obrazom IDENTYCZNĄ wysokość wiersza.
+ *
+ * Ilustracje FOT/KON to lokalne pliki `img/<artId>{FOT,KON}.png` (localArtUrl).
  * Obraz, który się nie wczyta (brak pliku / brak artId), jest chowany — warstwa
- * pokazuje wtedy tę, która istnieje; gdy żadna, host zostaje pusty (caller
+ * pokazuje wtedy te, które istnieją; gdy żadna, host zostaje pusty (caller
  * może wtedy w ogóle nie otwierać warstwy — patrz cardHasShowcaseArt).
+ * Ilustrację Scryfalla NIE chowamy cicho: wg właściciela URL Scryfalla istnieje
+ * ZAWSZE, więc jego brak to błąd, który MA BYĆ widoczny, nie maskowany.
+ *
+ * I1 (zgłoszenie właściciela): warstwa odpala się dla kart OBU stron, a bez
+ * podpisu nie wiadomo, kto rzucił. `casterName` rysuje małą podpowiedź
+ * „Rzuca: <Nazwa>" (nakładka, więc wielkości FOT/KON są nietknięte).
  *
  * @param {HTMLElement} host kontener warstwy (czyszczony)
  * @param {object} card definicja karty z rejestru (potrzebne: artId, name)
  */
-export function renderCardArtShowcase(host, card) {
+export function renderCardArtShowcase(host, card, { casterName = null } = {}) {
   clear(host);
   if (!host || !card) return host;
-  for (const variant of ['fot', 'kon']) {
+  if (casterName) div(host, 'showcase-caster', `Rzuca: ${casterName}`);
+  const buildLocal = (variant) => {
     const url = localArtUrl(card, variant);
-    if (!url) continue;
+    if (!url) return null;
     const img = document.createElement('img');
     img.className = `showcase-art showcase-${variant} is-loading`;
     img.alt = `${card.name ?? 'Karta'} — ${variant.toUpperCase()}`;
@@ -3267,8 +3280,24 @@ export function renderCardArtShowcase(host, card) {
     img.addEventListener('error', () => { img.style.display = 'none'; });
     img.addEventListener('load', () => { img.className = img.className.replace(/\s*is-loading/, ''); });
     img.src = url;
-    host.appendChild(img);
-  }
+    return img;
+  };
+  const fot = buildLocal('fot');
+  if (fot) host.appendChild(fot);
+  // I2: para KON + Scryfall we wspólnym wierszu (`.showcase-row` w CSS pilnuje,
+  // żeby OBA miały tę samą wysokość, a KON dotychczasową wielkość).
+  const row = document.createElement('div');
+  row.className = 'showcase-row';
+  const kon = buildLocal('kon');
+  if (kon) row.appendChild(kon);
+  const sf = document.createElement('img');
+  sf.className = 'showcase-art showcase-scryfall is-loading';
+  sf.alt = `${card.name ?? 'Karta'} — Scryfall`;
+  sf.decoding = 'async';
+  sf.addEventListener('load', () => { sf.className = sf.className.replace(/\s*is-loading/, ''); });
+  sf.src = scryfallImageUrl(card);
+  row.appendChild(sf);
+  host.appendChild(row);
   return host;
 }
 

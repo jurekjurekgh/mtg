@@ -5,7 +5,7 @@ import { BOT_ID, HUMAN_ID, createSession } from '../src/table/session.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 import { renderCardArtShowcase, cardHasShowcaseArt } from '../src/table/render.js';
-import { localArtUrl } from '../src/table/card-images.js';
+import { localArtUrl, scryfallImageUrl } from '../src/table/card-images.js';
 
 /**
  * M232 — tryb wysoko-graficzny (zlecenie właściciela): przy RZUCENIU czaru /
@@ -39,28 +39,65 @@ globalThis.document = { createElement: (tag) => new MiniEl(tag) };
 const REGISTRY = createCardRegistry();
 const imagesIn = (host) => [host, ...host.descendants()].filter((el) => el.tagName === 'img');
 
-test('renderCardArtShowcase: buduje DWA obrazy — FOT nad KON — z lokalnymi adresami', () => {
+test('renderCardArtShowcase: TRZY obrazy — FOT u góry, pod nim para [KON][Scryfall] (I2)', () => {
   const host = new MiniEl('#art-showcase');
   const card = REGISTRY.get('dimir-guildgate'); // ma artId 570
   renderCardArtShowcase(host, card);
-  const imgs = imagesIn(host);
-  assert.equal(imgs.length, 2, 'dwie ilustracje');
-  // Kolejność: FOT pierwszy (u góry), KON drugi (pod spodem).
-  assert.ok(imgs[0].className.includes('showcase-fot'), 'pierwszy = FOT');
-  assert.ok(imgs[1].className.includes('showcase-kon'), 'drugi = KON');
-  assert.equal(imgs[0].src, localArtUrl(card, 'fot'));
-  assert.equal(imgs[1].src, localArtUrl(card, 'kon'));
+  // FOT zostaje bezpośrednim dzieckiem warstwy (jak dotąd, wielkość bez zmian).
+  const fot = host.children.find((el) => el.tagName === 'img' && el.className.includes('showcase-fot'));
+  assert.ok(fot, 'FOT zostaje u góry');
+  // I2 (zgłoszenie właściciela 2026-08-28): obok KON (po prawej) ilustracja
+  // Scryfall — „ta sama, która domyślnie jest prezentowana na stole". Para
+  // (KON + Scryfall) siedzi we wspólnym wierszu i jest wycentrowana jak FOT.
+  const row = host.children.find((el) => el.tagName !== 'img' && el.className.includes('showcase-row'));
+  assert.ok(row, 'wiersz pary KON+Scryfall istnieje');
+  const kon = row.children.find((el) => el.tagName === 'img' && el.className.includes('showcase-kon'));
+  const sf = row.children.find((el) => el.tagName === 'img' && el.className.includes('showcase-scryfall'));
+  assert.ok(kon, 'KON w wierszu');
+  assert.ok(sf, 'Scryfall w wierszu — zawsze (brak = błąd, więc łapiemy to asercją)');
+  assert.ok(row.children.indexOf(kon) < row.children.indexOf(sf), 'Scryfall jest PO PRAWEJ od KON');
+  assert.equal(fot.src, localArtUrl(card, 'fot'));
+  assert.equal(kon.src, localArtUrl(card, 'kon'));
+  assert.equal(sf.src, scryfallImageUrl(card));
+  // CSS pilnuje równej wysokości KON i Scryfall oraz niezmienionej wielkości
+  // KON — asercja obecności klas, na których „wisi" ta reguła.
+  assert.ok(kon.className.includes('showcase-kon') && sf.className.includes('showcase-scryfall'));
 });
 
-test('renderCardArtShowcase: obraz, który się nie wczyta (404), jest chowany', () => {
+test('renderCardArtShowcase: FOT/KON z błędem (404) są chowane; Scryfall NIE (I2: brak = błąd)', () => {
   const host = new MiniEl('#art-showcase');
   renderCardArtShowcase(host, REGISTRY.get('shatter'));
   const imgs = imagesIn(host);
-  assert.equal(imgs.length, 2);
-  imgs[0].emit('error');
-  assert.equal(imgs[0].style.display, 'none', 'obraz z błędem znika (bez pustej ramki)');
-  imgs[1].emit('load');
-  assert.ok(!imgs[1].className.includes('is-loading'), 'wczytany traci is-loading');
+  assert.equal(imgs.length, 3, 'FOT + KON + Scryfall');
+  const fot = imgs.find((el) => el.className.includes('showcase-fot'));
+  const kon = imgs.find((el) => el.className.includes('showcase-kon'));
+  const sf = imgs.find((el) => el.className.includes('showcase-scryfall'));
+  fot.emit('error');
+  assert.equal(fot.style.display, 'none', 'lokalny FOT z błędem znika (bez pustej ramki)');
+  kon.emit('error');
+  assert.equal(kon.style.display, 'none', 'lokalny KON z błędem znika');
+  kon.emit('load');
+  assert.ok(!kon.className.includes('is-loading'), 'wczytany traci is-loading');
+  // Wg właściciela ilustracja Scryfalla istnieje ZAWSZE — brak jest błędem
+  // i NIE ma być cicho maskowany, więc handler error nie chowa tego obrazka.
+  sf.emit('error');
+  assert.notEqual(sf.style.display, 'none', 'Scryfalla nie chowamy cicho (brak = błąd do zobaczenia)');
+  sf.emit('load');
+  assert.ok(!sf.className.includes('is-loading'));
+});
+
+test('renderCardArtShowcase: I1 — podpis RZUCAJĄCEGO małą czcionką (kto rzucił)', () => {
+  const host = new MiniEl('#art-showcase');
+  const card = REGISTRY.get('dimir-guildgate');
+  renderCardArtShowcase(host, card, { casterName: 'Czarodziejka' });
+  const caption = [host, ...host.descendants()].find((el) => el.className === 'showcase-caster');
+  assert.ok(caption, 'caption rzucającego istnieje na warstwie');
+  assert.equal(caption.textContent, 'Rzuca: Czarodziejka');
+  // Bez danych o rzucającym (np. wywołanie legacy) — żadnej pustej ramki.
+  const host2 = new MiniEl('#art-showcase');
+  renderCardArtShowcase(host2, card);
+  assert.ok(![host2, ...host2.descendants()].some((el) => el.className === 'showcase-caster'),
+    'bez casterName nie ma captionu');
 });
 
 test('cardHasShowcaseArt: true dla karty z artId, false bez', () => {
@@ -106,7 +143,8 @@ test('onCast: pełna partia woła callback dla rzutów, NIGDY dla basic-lądów'
     if (!session.apply(cmd).ok) break;
   }
   assert.ok(calls.length > 0, 'callback musi się odpalić dla rzutów w realnej partii (inaczej test pusty)');
-  for (const { cardId, eventType } of calls) {
+  for (const { cardId, playerId, eventType } of calls) {
+    assert.ok([HUMAN_ID, BOT_ID].includes(playerId), `onCast niesie playerId (I1): ${playerId}`);
     assert.ok(['spell_cast', 'permanent_cast', 'aura_spell_cast', 'land_played'].includes(eventType),
       `nieoczekiwany typ zdarzenia: ${eventType}`);
     assert.ok(!cardId.startsWith('basic-'), `basic-land nie może wołać onCast: ${cardId}`);
