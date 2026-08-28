@@ -40,14 +40,15 @@ dokumentacja (AUDYT_PR84, PLAN, HANDOFF, PROJECT_HISTORY).
 
 ## Etap 3 — pętla jakości projektu (ADR 0021)
 
-- [ ] Audyt Żywym Testerem z perspektywy gracza na najmniej przeczesanych taliach
+- [x] Audyt Żywym Testerem z perspektywy gracza na najmniej przeczesanych taliach
       (handoff poprzedniej sesji: `innistrad-wu`, `tarkir-bg`, `srodziemie`,
       `zendikar`, `wiedzmin`…, spoza próbki benchmarku). Zakres: bezsensowne
       działania bota, kompletność logu/modalu, ptaszki auto-pass.
-- [ ] Znalezione klasy problemów → naprawy u root cause + nowe detektory.
+- [x] Znalezione klasy problemów → naprawy u root cause + nowe detektory.
 - [ ] Alternatywnie/uzupełniająco: polowanie na niezgodności z CR inną ścieżką
-      niż poprzednia sesja.
-- **Nie** wymyślać nowego batcha kart (ADR 0021 pkt 4c).
+      niż poprzednia sesja (pominięte — pętla Żywym Testerem dała realne
+      znalezisko i wyczerpała budżet sesji).
+- **Nie** wymyślać nowego batcha kart (ADR 0021 pkt 4c). ✓
 
 ## Ryzyka / pułapki
 
@@ -72,5 +73,37 @@ dokumentacja (AUDYT_PR84, PLAN, HANDOFF, PROJECT_HISTORY).
 Audyt PR #85 (etapy 1–2) ZAKOŃCZONY: N1/N2/N3 naprawione (commit `0aa884d`),
 strażnik klasy L16 w miejscu, benchmark regresji 9/9. W toku N2 naprawiono
 też głębszy defekt: `firstPendingDecisionPlayerId` bez filtra „na żywo" dla
-`pendingRoomTargets` (kontrakt M33) — lekcja L81. Pozostały etap 3 (pętla
-jakości Żywym Testerem) — w toku; dopisane na końcu sesji.
+`pendingRoomTargets` (kontrakt M33) — lekcja L81.
+
+Etap 3 (pętla jakości Żywym Testerem) ZAKOŃCZONY — 7 partii na 10 taliach
+spoza próbki benchmarku (`BENCH_DECKS` = alara, dominaria-brg, dominaria-wu,
+final-fantasy, forgotten-realms, innistrad-brg): theros/wiedzmin s=13,
+innistrad-wu/tarkir-bg s=5, zendikar/tarkir-wur s=21 (explorer),
+warhammer-wu/srodziemie s=9 (defensive), worek-mroczny/theros s=31,
+tarkir-bg/ravnica s=17, wiedzmin/zendikar s=33 (`--tick-rate 1`, oś
+ptaszków). Detektory: 0 zgłoszeń we wszystkich; 6/7 partii z naturalnym
+końcem (siódma początkowo STOP — patrz niżej).
+
+**Znalezisko M250/A (jedyna awaria, naprawiona w tej sesji):** partia
+theros/wiedzmin stanęła w kroku 31 z fałszywym „[STOP] brak akcji", choć
+panel miał klikalną, blokującą decyzję `Chittering Rats — karta z ręki na
+wierzch biblioteki (6 opcji)`. Root cause w NARZĘDZIU (nie w stole —
+etykieta jest poprawna wg uwagi C właściciela z M162/C): wzorce
+`decisions` w polityce greedy wymagały wielkiej litery (`Karta z ręki`,
+`Karta na wierzch`), a etykiety z `choiceSourceTitle` po „Nazwa — "
+kontynuują małą. Audyt pokrycia vs `choiceSourceTitle` złapał tę samą
+klasę dla: Exploit (`— Exploit (poświęć stwora)`), Satyr (`— bierz ląd
+z odsłoniętych kart` — wzorzec `odsłonięte` nie złapie odmiany „-tych"),
+phyrexian (`— zapłata: mana czy życie?`), Escape (`— Ucieczka… karty do
+wygnania` — `wygnaj` nie złapie „wygnania"), cast permanenta z celem
+(`Cel dla:`). Fix w `tools/table-tester/run-game.mjs`: wzorce dopisane
++ ostateczny fallback `labels[0]` w greedy — dopóki istnieje JAKAKOLWIEK
+klikalna akcja, „brak akcji" jest kłamstwem narzędzia, nie sygnałem o grze
+(prawdziwe ugrzęźnięcie = samo Poddaj partię nadal zgłasza STOP).
+Weryfikacja: ta sama partia po fixie kliknęła decyzję Szczurów i poleciała
+do naturalnego końca (46 kliknięć vs 11 przed), regresja s=5 czysta.
+Transkrypty: `tmp-audyt-m250/`.
+
+Pobocznie: usprawnienie po N2 działa też na stole — podczas decyzji
+Szczurów panel NIE oferował już pass (transkrypt pokazuje same:
+Poddaj + odpowiedź na efekt), dokładnie tak, jak chce nowa bramka.

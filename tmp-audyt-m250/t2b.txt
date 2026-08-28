@@ -1,0 +1,505 @@
+== NOWA PARTIA: gracz=innistrad-wu vs bot=tarkir-bg, seed=5, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island (1 z 3)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1 | Frightful Delusion · 3 · Instant · skontruj czar, chyba że kontroler zapłaci {1}; ten gracz odrzuca kartę · cel: czar na stosie | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Chill of the Grave · 3 · Instant · tap + nie odkręca się w następnym untap step + dobierz 1 kartę · cel: stwór | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Island (1 z 3)
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Servant of the Scale
+
+--- krok 3 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1 | Frightful Delusion · 3 · Instant · skontruj czar, chyba że kontroler zapłaci {1}; ten gracz odrzuca kartę · cel: czar na stosie | Chill of the Grave · 3 · Instant · tap + nie odkręca się w następnym untap step + dobierz 1 kartę · cel: stwór | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · choroba · 1x +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Servant of the Scale dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Servant of the Scale zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island (1 z 3)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Midnight Guard
+
+--- krok 6 | T. 5GraczGracz: 19 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island (1 z 2)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1 | Frightful Delusion · 3 · Instant · skontruj czar, chyba że kontroler zapłaci {1}; ten gracz odrzuca kartę · cel: czar na stosie | Chill of the Grave · 3 · Instant · tap + nie odkręca się w następnym untap step + dobierz 1 kartę · cel: stwór | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Zagraj ląd: Island (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Rzuć: Chill of the Grave (koszt 2U) → cel: Servant of the Scale (Nieprzyjaciel)
+  [ROZGRYWKA]   • Chill of the Grave zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+
+--- krok 9 | T. 6BotGracz: 19 ż.Bot: 20 ż.Główna 1Stos — Krotiq Nestguard ---
+  STOS: Krotiq Nestguard (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1 | Frightful Delusion · 3 · Instant · skontruj czar, chyba że kontroler zapłaci {1}; ten gracz odrzuca kartę · cel: czar na stosie | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Island · Basic Land — Island · T: dodaj 1 manę | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×3
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Krotiq Nestguard
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Krotiq Nestguard zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+
+--- krok 12 | T. 7GraczGracz: 19 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Civilized Scholar (koszt 2U)  ||  Cel czaru (Cleave): Lunar Rejection (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Civilized Scholar · 3 · Creature — Human Advisor · Transform · {T}: dobierz, potem odrzuć · 0/1 | Frightful Delusion · 3 · Instant · skontruj czar, chyba że kontroler zapłaci {1}; ten gracz odrzuca kartę · cel: czar na stosie | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×4
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · choroba · 4/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Zagraj: Civilized Scholar (koszt 2U)
+  [ROZGRYWKA]   • Civilized Scholar zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Knockout Maneuver → cel: Krotiq Nestguard, Civilized Scholar
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Civilized Scholar ginie
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+
+--- krok 15 | T. 9GraczGracz: 18 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cel czaru (Cleave): Lunar Rejection (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Frightful Delusion · 3 · Instant · skontruj czar, chyba że kontroler zapłaci {1}; ten gracz odrzuca kartę · cel: czar na stosie | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×4
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 1x +1/+1 · 5/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA]   • Tura 9 — Ty
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Spare from Evil
+  >> Dalej (pass)
+
+--- krok 18 | T. 9GraczGracz: 18 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island  ||  Zagraj: Makeshift Mauler (koszt 3U)  ||  Cel czaru (Cleave): Lunar Rejection (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Frightful Delusion · 3 · Instant · skontruj czar, chyba że kontroler zapłaci {1}; ten gracz odrzuca kartę · cel: czar na stosie | Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Island · Basic Land — Island · T: dodaj 1 manę | Spare from Evil · 2 · Instant · ochrona do końca tury
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×4
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 1x +1/+1 · 5/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Zagraj: Makeshift Mauler (koszt 3U)
+  [ROZGRYWKA]   • Makeshift Mauler wchodzi na pole bitwy
+  [ROZGRYWKA]   • Makeshift Mauler zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+
+--- krok 21 | T. 10BotGracz: 18 ż.Bot: 20 ż.Główna 1Stos — Trade Route Envoy ---
+  STOS: Trade Route Envoy (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Frightful Delusion · 3 · Instant · skontruj czar, chyba że kontroler zapłaci {1}; ten gracz odrzuca kartę · cel: czar na stosie | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Spare from Evil · 2 · Instant · ochrona do końca tury
+  MOJE POLA: Makeshift Mauler · 4 · Creature — Zombie Horror · choroba · 4/5 | Island · Basic Land — Island · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 1x +1/+1 · 5/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Trade Route Envoy
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Trade Route Envoy zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Trade Route Envoy — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Trade Route Envoy — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Armored Skaab
+
+--- krok 24 | T. 11GraczGracz: 18 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: Cel czaru (Cleave): Lunar Rejection (4 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Frightful Delusion · 3 · Instant · skontruj czar, chyba że kontroler zapłaci {1}; ten gracz odrzuca kartę · cel: czar na stosie | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Spare from Evil · 2 · Instant · ochrona do końca tury | Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 1/4
+  MOJE POLA: Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Island · Basic Land — Island · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 1x +1/+1 · 5/5 | Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · choroba · 4/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Dalej (pass)
+  >> Zagraj: Armored Skaab (koszt 2U)
+  [ROZGRYWKA]   • Armored Skaab wchodzi na pole bitwy
+  [ROZGRYWKA]   • Armored Skaab zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Armored Skaab — trigger (wejście na pole bitwy)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Mielisz Dream Twist do grobu
+  [ROZGRYWKA]   • Mielisz Plains do grobu
+  [ROZGRYWKA]   • Mielisz Hysterical Blindness do grobu
+  [ROZGRYWKA]   • Mielisz Island do grobu
+  [ROZGRYWKA]   • Armored Skaab — trigger się rozstrzyga
+
+--- krok 27 | T. 11GraczGracz: 18 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Frightful Delusion · 3 · Instant · skontruj czar, chyba że kontroler zapłaci {1}; ten gracz odrzuca kartę · cel: czar na stosie | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Spare from Evil · 2 · Instant · ochrona do końca tury
+  MOJE POLA: Makeshift Mauler · 4 · Creature — Zombie Horror · 4/5 | Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · choroba · 1/4 | Island · Basic Land — Island · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 1x +1/+1 · 5/5 | Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · choroba · 4/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+
+--- krok 30 | T. 11GraczGracz: 18 ż.Bot: 20 ż.Walka / Obrażenia ---
+  STOS: Stos pusty
+  AKCJE: Rozstrzygnij obrażenia w walce  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Frightful Delusion · 3 · Instant · skontruj czar, chyba że kontroler zapłaci {1}; ten gracz odrzuca kartę · cel: czar na stosie | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Spare from Evil · 2 · Instant · ochrona do końca tury
+  MOJE POLA: Makeshift Mauler · 4 · Creature — Zombie Horror · atakuje — blokują: Krotiq Nestguard · 4/5 | Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · choroba · 1/4 | Island · Basic Land — Island · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · blokuje: Makeshift Mauler · 1x +1/+1 · 5/5 | Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · choroba · 4/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Makeshift Mauler
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Krotiq Nestguard blokuje Makeshift Mauler
+  >> Rozstrzygnij obrażenia w walce
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Makeshift Mauler zadaje 4 obrażenia (Krotiq Nestguard)
+  [ROZGRYWKA]   • Krotiq Nestguard zadaje 5 obrażeń (Makeshift Mauler)
+  [ROZGRYWKA]   • Makeshift Mauler ginie
+  >> Dalej (pass)
+
+--- krok 33 | T. 11GraczGracz: 18 ż.Bot: 20 ż.Główna 2 ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Frightful Delusion · 3 · Instant · skontruj czar, chyba że kontroler zapłaci {1}; ten gracz odrzuca kartę · cel: czar na stosie | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Spare from Evil · 2 · Instant · ochrona do końca tury
+  MOJE POLA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · choroba · 1/4 | Island · Basic Land — Island · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · −4 · 1x +1/+1 · 5/5 | Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · choroba · 4/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+
+--- krok 36 | T. 12BotGracz: 18 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Frightful Delusion · 3 · Instant · skontruj czar, chyba że kontroler zapłaci {1}; ten gracz odrzuca kartę · cel: czar na stosie | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Spare from Evil · 2 · Instant · ochrona do końca tury
+  MOJE POLA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · choroba · 1/4 | Island · Basic Land — Island · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 1x +1/+1 · 5/5 | Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · 4/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Ainok Artillerist
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ainok Artillerist wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ainok Artillerist zostaje rozstrzygnięty
+
+--- krok 39 | T. 12BotGracz: 18 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Frightful Delusion · 3 · Instant · skontruj czar, chyba że kontroler zapłaci {1}; ten gracz odrzuca kartę · cel: czar na stosie | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Spare from Evil · 2 · Instant · ochrona do końca tury
+  MOJE POLA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · choroba · 1/4 | Island · Basic Land — Island · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 1x +1/+1 · 5/5 | Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · 4/3 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · choroba · 4/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Trade Route Envoy
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Armored Skaab (1/4)
+  [combat wizard] Zatwierdź bloki
+
+--- krok 42 | T. 12BotGracz: 18 ż.Bot: 20 ż.Walka / Obrażenia ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Frightful Delusion · 3 · Instant · skontruj czar, chyba że kontroler zapłaci {1}; ten gracz odrzuca kartę · cel: czar na stosie | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Spare from Evil · 2 · Instant · ochrona do końca tury
+  MOJE POLA: Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · blokuje: Trade Route Envoy · choroba · 1/4 | Island · Basic Land — Island · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 1x +1/+1 · 5/5 | Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · atakuje — blokują: Armored Skaab · 4/3 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · choroba · 4/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Armored Skaab blokuje Trade Route Envoy
+  >> Dalej (pass)
+  [ROZGRYWKA]   • Armored Skaab zadaje 1 obrażenie (Trade Route Envoy)
+  [ROZGRYWKA]   • Armored Skaab ginie
+  >> Dalej (pass)
+
+--- krok 45 | T. 12BotGracz: 18 ż.Bot: 20 ż.Główna 2 ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Frightful Delusion · 3 · Instant · skontruj czar, chyba że kontroler zapłaci {1}; ten gracz odrzuca kartę · cel: czar na stosie | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Spare from Evil · 2 · Instant · ochrona do końca tury
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 1x +1/+1 · 5/5 | Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · −1 · 4/3 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · choroba · 4/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 13 — Ty
+
+--- krok 48 | T. 13GraczGracz: 18 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cel czaru (Cleave): Lunar Rejection (4 opcje)  ||  Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Frightful Delusion · 3 · Instant · skontruj czar, chyba że kontroler zapłaci {1}; ten gracz odrzuca kartę · cel: czar na stosie | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Spare from Evil · 2 · Instant · ochrona do końca tury
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 1x +1/+1 · 5/5 | Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · 4/3 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · choroba · 4/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA]   • Dobierasz: Spectral Prison
+  >> Dalej (pass)
+  >> Aura: Spectral Prison (4 opcje)
+  [modal choice] Aura: Spectral Prison Zagraj aurę: Spectral Prison (koszt 1U) → zaczaruj Servant of the Scale (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Spectral Prison (koszt 1U) → zaczaruj Krotiq Nestguard (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Spectral Prison (koszt 1U) → zaczaruj Trade Route Envoy (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Spectral Prison (koszt 1U) → zaczaruj Ainok Artillerist (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]   ▶ Zagraj aurę: Spectral Prison (koszt 1U) → zaczaruj Servant of the Scale (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Spectral Prison (koszt 1U) → zaczaruj Krotiq Nestguard (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Spectral Prison (koszt 1U) → zaczaruj Trade Route Envoy (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Spectral Prison (koszt 1U) → zaczaruj Ainok Artillerist (Nieprzyjaciel)
+
+--- krok 51 | T. 13GraczGracz: 18 ż.Bot: 20 ż.Główna 1Stos — Spectral Prison ---
+  STOS: Spectral Prison (rzuca: Ty) → cel: Servant of the Scale
+  AKCJE: Rzuć: Frightful Delusion (koszt 2U) → cel: Spectral Prison  ||  Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Frightful Delusion · 3 · Instant · skontruj czar, chyba że kontroler zapłaci {1}; ten gracz odrzuca kartę · cel: czar na stosie | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na pole bitwy: odkręć. · 2/3 | Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Spare from Evil · 2 · Instant · ochrona do końca tury
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 1x +1/+1 · 5/5 | Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · 4/3 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · choroba · 4/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Rzucasz Spectral Prison → cel: Servant of the Scale
+  >> Rzuć: Frightful Delusion (koszt 2U) → cel: Spectral Prison
+  [ROZGRYWKA]   • Wybierasz, którą kartę odrzucić efektem (Frightful Delusion)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Karta do odrzucenia (3 opcje)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Midnight Guard🔍 Podgląd karty Odrzuć: Lunar Rejection🔍 Podgląd karty Odrzuć: Spare from Evil🔍 Podgląd karty
+  [modal choice]   ▶ Odrzuć: Midnight Guard
+  [modal choice]     Odrzuć: Lunar Rejection
+  [modal choice]     Odrzuć: Spare from Evil
+
+--- krok 54 | T. 14BotGracz: 18 ż.Bot: 20 ż.Główna 1Stos — Morph ---
+  STOS: Morph (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Spare from Evil · 2 · Instant · ochrona do końca tury
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 1x +1/+1 · 5/5 | Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · 4/3 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Morph twarzą w dół (2/2)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Servant of the Scale zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 17
+  [ROZGRYWKA]   • Trade Route Envoy zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 13
+  [ROZGRYWKA]   • Ainok Artillerist zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 9
+  [ROZGRYWKA]   • Tura 15 — Ty
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Murder of Crows
+
+--- krok 57 | T. 15GraczGracz: 9 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: Cel czaru (Cleave): Lunar Rejection (5 opcji)  ||  Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Spare from Evil · 2 · Instant · ochrona do końca tury | Murder of Crows · 5 · Creature — Bird · Latanie · Gdy jakiekolwiek stworzenie umrze: dobierz, potem odrzuć. · 4/4
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 1x +1/+1 · 5/5 | Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · 4/3 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Face-down creature · Creature · Morph · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Dalej (pass)
+  >> Zagraj: Murder of Crows (koszt 3UU)
+  [ROZGRYWKA]   • Murder of Crows wchodzi na pole bitwy
+  [ROZGRYWKA]   • Murder of Crows zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Colossodon Yearling
+
+--- krok 60 | T. 16BotGracz: 9 ż.Bot: 20 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Deklaracja blokujących (3 opcje)
+  RĘKA: Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Spare from Evil · 2 · Instant · ochrona do końca tury
+  MOJE POLA: Murder of Crows · 5 · Creature — Bird · Latanie · Gdy jakiekolwiek stworzenie umrze: dobierz, potem odrzuć. · choroba · 4/4 | Island · Basic Land — Island · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 1x +1/+1 · 5/5 | Trade Route Envoy · 4 · Creature — Dog Soldier · Gdy wejdzie na pole bitwy: jeśli kontrolujesz stwora z licznikiem: dobierz 1 kartę; w przeciwnym razie: połóż licznik +1/+1. · atakuje — niezablokowany · 4/3 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · atakuje — niezablokowany · 4/1 | Face-down creature · Creature · Morph · 2/2 | Colossodon Yearling · 3 · Creature — Beast · choroba · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Atak: Trade Route Envoy, Ainok Artillerist
+  >> Wybierz: Deklaracja blokujących (3 opcje)
+  [combat wizard] blokuję 1 stworami: Murder of Crows (4/4)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA]   • Ainok Artillerist zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 9 → 5
+  [ROZGRYWKA]   • Trade Route Envoy ginie
+  [ROZGRYWKA]   • Murder of Crows ginie
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Murder of Crows — skorzystać z efektu „you may"? (wybór opcjonalny: Ty)
+
+--- krok 63 | T. 16BotGracz: 5 ż.Bot: 20 ż.Walka / Koniec walki ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Murder of Crows — dobierz, potem odrzuć (możesz) (2 opcje)
+  RĘKA: Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Spare from Evil · 2 · Instant · ochrona do końca tury
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 1x +1/+1 · 5/5 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Face-down creature · Creature · Morph · 2/2 | Colossodon Yearling · 3 · Creature — Beast · choroba · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Murder of Crows — dobierz, potem odrzuć (możesz) (2 opcje)
+  [modal choice] Murder of Crows — dobierz, potem odrzuć (możesz) Uruchom efekt dobrowolny (you may) Zrezygnuj z efektu
+  [modal choice]   ▶ Uruchom efekt dobrowolny (you may)
+  [modal choice]     Zrezygnuj z efektu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Korzystasz z efektu „you may" (Murder of Crows)
+  [ROZGRYWKA]   • Tura 17 — Ty
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Farbog Explorer
+
+--- krok 66 | T. 17GraczGracz: 5 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: Cel czaru (Cleave): Lunar Rejection (5 opcji)  ||  Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Spare from Evil · 2 · Instant · ochrona do końca tury | Farbog Explorer · 3 · Creature — Human Scout · 2/3
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 1x +1/+1 · 5/5 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Face-down creature · Creature · Morph · 2/2 | Colossodon Yearling · 3 · Creature — Beast · choroba · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+
+--- krok 69 | T. 17GraczGracz: 5 ż.Bot: 20 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (1 opcja)  ||  Cel czaru (Cleave): Lunar Rejection (5 opcji)  ||  Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Spare from Evil · 2 · Instant · ochrona do końca tury | Farbog Explorer · 3 · Creature — Human Scout · 2/3
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 1x +1/+1 · 5/5 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Face-down creature · Creature · Morph · 2/2 | Colossodon Yearling · 3 · Creature — Beast · choroba · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Wybierz: Deklaracja atakujących (1 opcja)
+  [modal choice] Wybierz atakujących (zaznacz stwory, które mają atakować):Zatwierdź atakBez atakuZamknij (dokończysz później)
+  [modal choice]   ▶ Zatwierdź atak
+  >> Rozstrzygnij obrażenia w walce
+  >> Dalej (pass)
+
+--- krok 72 | T. 17GraczGracz: 5 ż.Bot: 20 ż.Główna 2 ---
+  STOS: Stos pusty
+  AKCJE: Cel czaru (Cleave): Lunar Rejection (5 opcji)  ||  Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Spare from Evil · 2 · Instant · ochrona do końca tury | Farbog Explorer · 3 · Creature — Human Scout · 2/3
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 1x +1/+1 · 5/5 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Face-down creature · Creature · Morph · 2/2 | Colossodon Yearling · 3 · Creature — Beast · choroba · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+
+--- krok 75 | T. 18BotGracz: 5 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cel czaru (Cleave): Lunar Rejection (5 opcji)  ||  Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Spare from Evil · 2 · Instant · ochrona do końca tury | Farbog Explorer · 3 · Creature — Human Scout · 2/3
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 1x +1/+1 · 5/5 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Face-down creature · Creature · Morph · 2/2 | Colossodon Yearling · 3 · Creature — Beast · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Krotiq Nestguard
+
+--- krok 78 | T. 18BotGracz: 5 ż.Bot: 20 ż.Główna 1Stos — Krotiq Nestguard ---
+  STOS: Krotiq Nestguard (rzuca: Nieprzyjaciel)
+  AKCJE: Cel czaru (Cleave): Lunar Rejection (5 opcji)  ||  Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)
+  RĘKA: Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Spare from Evil · 2 · Instant · ochrona do końca tury | Farbog Explorer · 3 · Creature — Human Scout · 2/3
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×5 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · 1x +1/+1 · 5/5 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Face-down creature · Creature · Morph · 2/2 | Colossodon Yearling · 3 · Creature — Beast · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Krotiq Nestguard rozstrzygnięta
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA]   • Atak: Servant of the Scale, Krotiq Nestguard, Ainok Artillerist, Morph, Colossodon Yearling
+
+--- krok 81 | T. 18BotGracz: 5 ż.Bot: 20 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Cel czaru (Cleave): Lunar Rejection (5 opcji)  ||  Dalej (pass)  ||  Poddaj partię  ||  Flashback: Dream Twist (koszt 2)  ||  Flashback: Dream Twist (koszt 2)  ||  Wybierz: Deklaracja blokujących (1 opcja)
+  RĘKA: Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Spare from Evil · 2 · Instant · ochrona do końca tury | Farbog Explorer · 3 · Creature — Human Scout · 2/3
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×5 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · atakuje — niezablokowany · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · Obrońca · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · bez: Obrońca · atakuje — niezablokowany · 1x +1/+1 · 5/5 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · atakuje — niezablokowany · 4/1 | Face-down creature · Creature · Morph · atakuje — niezablokowany · 2/2 | Colossodon Yearling · 3 · Creature — Beast · atakuje — niezablokowany · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+  >> Wybierz: Deklaracja blokujących (1 opcja)
+  [modal choice] Wybierz blokujących (przełączniki przy każdym atakującym):Zatwierdź blokiBez blokówZamknij (dokończysz później)
+  [modal choice]   ▶ Zatwierdź bloki
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Awaken the Bear → cel: Krotiq Nestguard
+  >> Dalej (pass)
+  [ROZGRYWKA]   • Awaken the Bear zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Servant of the Scale zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 5 → 4
+  [ROZGRYWKA]   • Krotiq Nestguard zadaje 8 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 4 → -4
+  [ROZGRYWKA]   • Ainok Artillerist zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie -4 → -8
+  [ROZGRYWKA]   • Morph zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie -8 → -10
+  [ROZGRYWKA]   • Colossodon Yearling zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie -10 → -12
+  [ROZGRYWKA]   • Przegrywasz (brak życia)
+
+--- krok 84 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Spare from Evil · 2 · Instant · ochrona do końca tury | Farbog Explorer · 3 · Creature — Human Scout · 2/3
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×5 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · Zadeptywanie · bez: Obrońca · +3/+3 · 1x +1/+1 · 8/8 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Face-down creature · Creature · Morph · 2/2 | Colossodon Yearling · 3 · Creature — Beast · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 85 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Lunar Rejection · 2 · Instant · wróć na rękę właściciela + dobierz 1 kartę · cel: stwór z podtypem Wolf lub Werewolf | Spare from Evil · 2 · Instant · ochrona do końca tury | Farbog Explorer · 3 · Creature — Human Scout · 2/3
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×5
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę ×5 | Island · Basic Land — Island · T: dodaj 1 manę | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki. · 1x +1/+1 · 1/1 | Krotiq Nestguard · 3 · Creature — Insect · {2}, {G}: zmiana podtypu i utrata keyworda do końca tury · Zadeptywanie · bez: Obrońca · +3/+3 · 1x +1/+1 · 8/8 | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Face-down creature · Creature · Morph · 2/2 | Colossodon Yearling · 3 · Creature — Beast · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Civilized Scholar, Frightful Delusion, Island, Chill of the Grave, Island, Makeshift Mauler, Island ⏎ Nowa partia (seed 5). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 21, kliknięte: 24, modale: 6, sondy noop: 95 (panel 83, modal 12)
+== DETEKTORY: brak zgłoszeń ==

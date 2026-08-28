@@ -1,0 +1,897 @@
+== NOWA PARTIA: gracz=zendikar vs bot=tarkir-wur, seed=21, profil=explorer, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island  ||  Zagraj ląd: Mountain  ||  Zagraj ląd: Plains  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2 | Skyclave Geopede · 3 · Creature — Insect · Zadeptywanie · Landfall — gdy land wchodzi pod twoją kontrolą: +2/+2 do końca tury. · 3/1 | Mysteries of the Deep · 5 · Instant · jeśli land wchodził pod twoją kontrolą w tej turze (Landfall): dobierz 3 karty; w przeciwnym razie: dobierz 2 karty
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Island
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Battle-Rattle Shaman
+
+--- krok 3 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Mountain  ||  Zagraj ląd: Plains  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2 | Skyclave Geopede · 3 · Creature — Insect · Zadeptywanie · Landfall — gdy land wchodzi pod twoją kontrolą: +2/+2 do końca tury. · 3/1 | Mysteries of the Deep · 5 · Instant · jeśli land wchodził pod twoją kontrolą w tej turze (Landfall): dobierz 3 karty; w przeciwnym razie: dobierz 2 karty | Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · 2/2
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Impact Tremors
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Impact Tremors zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Coralhelm Guide
+
+--- krok 6 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Plains  ||  Zagraj: Coralhelm Guide (koszt 1U)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Plains · Basic Land — Plains · T: dodaj 1 manę | Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2 | Skyclave Geopede · 3 · Creature — Insect · Zadeptywanie · Landfall — gdy land wchodzi pod twoją kontrolą: +2/+2 do końca tury. · 3/1 | Mysteries of the Deep · 5 · Instant · jeśli land wchodził pod twoją kontrolą w tej turze (Landfall): dobierz 3 karty; w przeciwnym razie: dobierz 2 karty | Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · 2/2 | Coralhelm Guide · 2 · Creature — Merfolk Scout Ally · {4}, {U}: cel: stwór — nie może być blokowany · 2/1
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi.
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Zagraj: Molten Nursery (koszt 2R)
+  [ROZGRYWKA]   • Molten Nursery zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+
+--- krok 9 | T. 6BotGracz: 20 ż.Bot: 20 ż.Główna 1Stos — Morph ---
+  STOS: Morph (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2 | Skyclave Geopede · 3 · Creature — Insect · Zadeptywanie · Landfall — gdy land wchodzi pod twoją kontrolą: +2/+2 do końca tury. · 3/1 | Mysteries of the Deep · 5 · Instant · jeśli land wchodził pod twoją kontrolą w tej turze (Landfall): dobierz 3 karty; w przeciwnym razie: dobierz 2 karty | Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · 2/2 | Coralhelm Guide · 2 · Creature — Merfolk Scout Ally · {4}, {U}: cel: stwór — nie może być blokowany · 2/1
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi.
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Morph twarzą w dół (2/2)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Morph zostaje rozstrzygnięty (twarzą w dół)
+  [ROZGRYWKA]   • Impact Tremors — trigger (wejście stwora pod kontrolę (Nieprzyjaciel))
+  [ROZGRYWKA]   • Impact Tremors zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 19
+  [ROZGRYWKA]   • Impact Tremors — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Fertile Thicket
+  >> Zagraj ląd: Fertile Thicket
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Fertile Thicket (wchodzi zatapnięty)
+  [ROZGRYWKA]   • Fertile Thicket — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Fertile Thicket: odsłaniasz 5 kart z wierzchu biblioteki (bazowych landów: 2)
+  [ROZGRYWKA]   • Fertile Thicket — trigger się rozstrzyga
+
+--- krok 12 | T. 7GraczGracz: 19 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Wybierz: Układanie wierzchu biblioteki (4 opcje)
+  RĘKA: Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2 | Skyclave Geopede · 3 · Creature — Insect · Zadeptywanie · Landfall — gdy land wchodzi pod twoją kontrolą: +2/+2 do końca tury. · 3/1 | Mysteries of the Deep · 5 · Instant · jeśli land wchodził pod twoją kontrolą w tej turze (Landfall): dobierz 3 karty; w przeciwnym razie: dobierz 2 karty | Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · 2/2 | Coralhelm Guide · 2 · Creature — Merfolk Scout Ally · {4}, {U}: cel: stwór — nie może być blokowany · 2/1
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Face-down creature · Creature · Morph · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Układanie wierzchu biblioteki (4 opcje)
+  [modal choice] Wybierz: Układanie wierzchu biblioteki Odłóż wszystko na spód (bez landa) basic land na wierzch biblioteki Island na wierzch biblioteki🔍 Podgląd karty Forest na wierzch biblioteki🔍 Podgląd karty
+  [modal choice]   ▶ Odłóż wszystko na spód (bez landa)
+  [modal choice]     basic land na wierzch biblioteki
+  [modal choice]     Island na wierzch biblioteki
+  [modal choice]     Forest na wierzch biblioteki
+  >> Zagraj: Skyclave Geopede (koszt 2R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Skyclave Geopede
+  [ROZGRYWKA]   • Skyclave Geopede wchodzi na pole bitwy
+  [ROZGRYWKA]   • Skyclave Geopede zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+
+--- krok 15 | T. 8BotGracz: 19 ż.Bot: 20 ż.Główna 1Stos — Bring Low ---
+  STOS: Bring Low (rzuca: Nieprzyjaciel) → cel: Skyclave Geopede
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2 | Mysteries of the Deep · 5 · Instant · jeśli land wchodził pod twoją kontrolą w tej turze (Landfall): dobierz 3 karty; w przeciwnym razie: dobierz 2 karty | Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · 2/2 | Coralhelm Guide · 2 · Creature — Merfolk Scout Ally · {4}, {U}: cel: stwór — nie może być blokowany · 2/1
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Skyclave Geopede · 3 · Creature — Insect · Zadeptywanie · Landfall — gdy land wchodzi pod twoją kontrolą: +2/+2 do końca tury. · choroba · 3/1 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Face-down creature · Creature · Morph · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Bring Low → cel: Skyclave Geopede
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Bring Low zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Skyclave Geopede ginie
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Morph
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Morph zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 19 → 17
+  [ROZGRYWKA]   • Tura 9 — Ty
+  >> Aktywuj: Fertile Thicket (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Fertile Thicket — dodanie 1 many zielonej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+
+--- krok 18 | T. 9GraczGracz: 17 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island  ||  Zagraj: Coralhelm Guide (koszt 1U)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2 | Mysteries of the Deep · 5 · Instant · jeśli land wchodził pod twoją kontrolą w tej turze (Landfall): dobierz 3 karty; w przeciwnym razie: dobierz 2 karty | Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · 2/2 | Coralhelm Guide · 2 · Creature — Merfolk Scout Ally · {4}, {U}: cel: stwór — nie może być blokowany · 2/1 | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Face-down creature · Creature · Morph · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  >> Zagraj: Coralhelm Guide (koszt 1U)
+  [kreator many] Płatność 1U — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: UTapnij: Island (U)Tapnij: Mountain (R)Tapnij — źródła: 3
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Mountain (R)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Coralhelm Guide zostaje rozstrzygnięty
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+
+--- krok 21 | T. 10BotGracz: 17 ż.Bot: 20 ż.Główna 1Stos — Jeskai Windscout ---
+  STOS: Jeskai Windscout (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2 | Mysteries of the Deep · 5 · Instant · jeśli land wchodził pod twoją kontrolą w tej turze (Landfall): dobierz 3 karty; w przeciwnym razie: dobierz 2 karty | Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · 2/2
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Coralhelm Guide · 2 · Creature — Merfolk Scout Ally · {4}, {U}: cel: stwór — nie może być blokowany · choroba · 2/1 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Face-down creature · Creature · Morph · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Jeskai Windscout
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Jeskai Windscout zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Impact Tremors — trigger (wejście stwora pod kontrolę (Nieprzyjaciel))
+  [ROZGRYWKA]   • Impact Tremors zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 16
+  [ROZGRYWKA]   • Impact Tremors — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Morph
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Coralhelm Guide (2/1)
+  [combat wizard] Zatwierdź bloki
+
+--- krok 24 | T. 10BotGracz: 16 ż.Bot: 20 ż.Walka / Koniec walki ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2 | Mysteries of the Deep · 5 · Instant · jeśli land wchodził pod twoją kontrolą w tej turze (Landfall): dobierz 3 karty; w przeciwnym razie: dobierz 2 karty | Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · 2/2
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · choroba · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Coralhelm Guide blokuje Morph
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Morph zadaje 2 obrażenia (Coralhelm Guide)
+  [ROZGRYWKA]   • Coralhelm Guide zadaje 2 obrażenia (Morph)
+  [ROZGRYWKA]   • Ainok Tracker ginie
+  [ROZGRYWKA]   • Coralhelm Guide ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Rzuć: Mysteries of the Deep (koszt 4U)
+  [ROZGRYWKA]   • Dobierasz: Jwar Isle Avenger
+  [ROZGRYWKA]   • Dobierasz: Healer of the Glade
+  [ROZGRYWKA]   • Mysteries of the Deep zostaje rozstrzygnięty
+
+--- krok 27 | T. 11GraczGracz: 16 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2 | Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · 2/2 | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Healer of the Glade · 1 · Creature — Elf · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 1/2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · choroba · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Zagraj: Healer of the Glade (koszt G)
+  [ROZGRYWKA]   • Healer of the Glade zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Healer of the Glade — trigger (wejście na pole bitwy)
+
+--- krok 30 | T. 12BotGracz: 19 ż.Bot: 20 ż.DobieranieStos — Jeskai Windscout ---
+  STOS: Sarkhan's Rage (rzuca: Nieprzyjaciel) → cel: Healer of the Glade | Trigger: Jeskai Windscout (rzucenie czaru niebędącego stworem)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2 | Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · 2/2 | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Healer of the Glade · 1 · Creature — Elf · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · choroba · 1/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Sarkhan's Rage → cel: Healer of the Glade
+  [ROZGRYWKA]   • Jeskai Windscout — trigger (rzucenie czaru niebędącego stworem)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Healer of the Glade ginie
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Jeskai Windscout
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Jeskai Windscout zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 19 → 16
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Aktywuj: Fertile Thicket (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Fertile Thicket — dodanie 1 many zielonej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Holdout Settlement
+
+--- krok 33 | T. 13GraczGracz: 16 ż.Bot: 18 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Holdout Settlement  ||  Zagraj: Kor Cartographer (koszt 3W)  ||  Zagraj: Battle-Rattle Shaman (koszt 3R)  ||  Zagraj: Jwar Isle Avenger (koszt 4U)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2 | Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · 2/2 | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  >> Zagraj ląd: Holdout Settlement
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Holdout Settlement
+  >> Zagraj: Kor Cartographer (koszt 3W)
+  [kreator many] Płatność 3W — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: WTapnij: Island (U)Tapnij: Mountain (R)Tapnij — źródła: 6
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Island (U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Kor Cartographer
+
+--- krok 36 | T. 13GraczGracz: 16 ż.Bot: 18 ż.Główna 1Stos — Kor Cartographer ---
+  STOS: Kor Cartographer (rzuca: Ty)
+  AKCJE: Aktywuj: Holdout Settlement (Ty) (koszt T) — dodaj 1 manę bezbarwną  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · 2/2 | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  >> Aktywuj: Holdout Settlement (Ty) (koszt T) — dodaj 1 manę bezbarwną
+  [ROZGRYWKA]   • Kor Cartographer wchodzi na pole bitwy
+  [ROZGRYWKA]   • Kor Cartographer zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Kor Cartographer — trigger (wejście na pole bitwy)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Szukasz karty w bibliotece (Kor Cartographer) — wybiera, którą wziąć na pole bitwy albo rezygnuje
+  [ROZGRYWKA]   • Kor Cartographer — trigger się rozstrzyga
+  >> Szukanie: Plains
+  [ROZGRYWKA]   • Plains wchodzi na pole bitwy
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Force Away → cel: Kor Cartographer
+  [ROZGRYWKA]   • Jeskai Windscout — trigger (rzucenie czaru niebędącego stworem)
+
+--- krok 39 | T. 15GraczGracz: 13 ż.Bot: 18 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Fertile Thicket (Ty) (koszt T) — dodaj 1 manę zieloną  ||  Aktywuj: Holdout Settlement (Ty) (koszt T) — dodaj 1 manę bezbarwną  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · 2/2 | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Jeskai Windscout zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 13
+  [ROZGRYWKA]   • Tura 15 — Ty
+  >> Aktywuj: Fertile Thicket (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Fertile Thicket — dodanie 1 many zielonej do puli
+  >> Aktywuj: Holdout Settlement (Ty) (koszt T) — dodaj 1 manę bezbarwną
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Kazuul's Toll Collector
+
+--- krok 42 | T. 15GraczGracz: 13 ż.Bot: 18 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Battle-Rattle Shaman (koszt 3R)  ||  Zagraj: Jwar Isle Avenger (koszt 4U)  ||  Zagraj: Kor Cartographer (koszt 3W)  ||  Zagraj: Kazuul's Toll Collector (koszt 2R)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · 2/2 | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · 3/2
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  >> Zagraj: Battle-Rattle Shaman (koszt 3R)
+  [kreator many] Płatność 3R — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: RTapnij: Island (U)Tapnij: Mountain (R)Tapnij — źródła: 6
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Battle-Rattle Shaman zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Początek walki
+  [ROZGRYWKA]   • Battle-Rattle Shaman — wybierz cel triggera (można odmówić)
+
+--- krok 45 | T. 15GraczGracz: 13 ż.Bot: 18 ż.Walka / Początek walki ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Battle-Rattle Shaman — cel triggera (3 opcje)
+  RĘKA: Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · 3/2
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · choroba · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  >> Battle-Rattle Shaman — cel triggera (3 opcje)
+  [modal choice] Battle-Rattle Shaman — cel triggera Battle-Rattle Shaman — cel triggera: Jeskai Windscout (Nieprzyjaciel)🔍 Podgląd karty Battle-Rattle Shaman — cel triggera: Battle-Rattle Shaman (Ty)🔍 Podgląd karty Battle-Rattle Shaman — bez celu (odmowa — „up to one"/„you may")
+  [modal choice]   ▶ Battle-Rattle Shaman — cel triggera: Jeskai Windscout (Nieprzyjaciel)
+  [modal choice]     Battle-Rattle Shaman — cel triggera: Battle-Rattle Shaman (Ty)
+  [modal choice]     Battle-Rattle Shaman — bez celu (odmowa — „up to one"/„you may")
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Battle-Rattle Shaman — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Jeskai Windscout
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Jeskai Windscout zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 11
+  [ROZGRYWKA]   • Tura 17 — Ty
+  >> Aktywuj: Holdout Settlement (Ty) (koszt T, tapnij swojego stwora) — dodaj 1 manę dowolnego koloru — tapnij Bat
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Holdout Settlement — dodanie 1 many dowolnego koloru do puli
+
+--- krok 48 | T. 17GraczGracz: 11 ż.Bot: 18 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Fertile Thicket (Ty) (koszt T) — dodaj 1 manę zieloną  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · 3/2
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  >> Aktywuj: Fertile Thicket (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj: Jwar Isle Avenger (koszt 4U)
+  [kreator many] Płatność 4U — tapuj źródła po jednympozostało 5 many · kolory do pokrycia: UTapnij: Island (U)Tapnij: Mountain (R)Tapnij — źródła: 6
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Forest (G)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Jwar Isle Avenger zostaje rozstrzygnięty
+
+--- krok 51 | T. 17GraczGracz: 11 ż.Bot: 18 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Mountain  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · 3/2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · 2/2 | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · choroba · 3/3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  [ROZGRYWKA]   • Faza: Początek walki
+  [ROZGRYWKA]   • Battle-Rattle Shaman — wybierz cel triggera (można odmówić)
+  >> Battle-Rattle Shaman — cel triggera (4 opcje)
+  [modal choice] Battle-Rattle Shaman — cel triggera Battle-Rattle Shaman — cel triggera: Jeskai Windscout (Nieprzyjaciel)🔍 Podgląd karty Battle-Rattle Shaman — cel triggera: Battle-Rattle Shaman (Ty)🔍 Podgląd karty Battle-Rattle Shaman — cel triggera: Jwar Isle Avenger (Ty)🔍 Podgląd karty Battle-Rattle Shaman — bez celu (odmowa — „up to one"/„you may")
+  [modal choice]     Battle-Rattle Shaman — cel triggera: Jeskai Windscout (Nieprzyjaciel)
+  [modal choice]   ▶ Battle-Rattle Shaman — cel triggera: Battle-Rattle Shaman (Ty)
+  [modal choice]     Battle-Rattle Shaman — cel triggera: Jwar Isle Avenger (Ty)
+  [modal choice]     Battle-Rattle Shaman — bez celu (odmowa — „up to one"/„you may")
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+
+--- krok 54 | T. 18BotGracz: 11 ż.Bot: 18 ż.Główna 1Stos — Furious Forebear ---
+  STOS: Furious Forebear (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · 3/2
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · 2/2 | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · choroba · 3/3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Furious Forebear
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Furious Forebear zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Impact Tremors — trigger (wejście stwora pod kontrolę (Nieprzyjaciel))
+  [ROZGRYWKA]   • Impact Tremors zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 10
+  [ROZGRYWKA]   • Impact Tremors — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 19 — Ty
+  >> Aktywuj: Holdout Settlement (2 opcje)
+  [modal choice] Aktywuj: Holdout Settlement Aktywuj: Holdout Settlement (Ty) (koszt T, tapnij swojego stwora) — dodaj 1 manę dowolnego koloru — tapnij Battle-Rattle Shaman (Ty)🔍 Podgląd karty Aktywuj: Holdout Settlement (Ty) (koszt T, tapnij swojego stwora) — dodaj 1 manę dowolnego koloru — tapnij Jwar Isle Avenger (Ty)🔍 Podgląd karty
+  [modal choice]     Aktywuj: Holdout Settlement (Ty) (koszt T, tapnij swojego stwora) — dodaj 1 manę dowolnego koloru — tapnij Battle-Rattle Shaman (Ty)
+  [modal choice]   ▶ Aktywuj: Holdout Settlement (Ty) (koszt T, tapnij swojego stwora) — dodaj 1 manę dowolnego koloru — tapnij Jwar Isle Avenger (Ty)
+
+--- krok 57 | T. 19GraczGracz: 10 ż.Bot: 18 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Fertile Thicket (Ty) (koszt T) — dodaj 1 manę zieloną  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · 3/2
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · 2/2 | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1 | Furious Forebear · 2 · Creature — Spirit Warrior · Gdy kontrolowany stwór umiera, a ta karta jest w grobie: zapłać {2} i wróć na rękę. · choroba · 3/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Holdout Settlement — dodanie 1 many dowolnego koloru do puli
+  >> Aktywuj: Fertile Thicket (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Pilgrim's Eye
+  >> Zagraj: Kazuul's Toll Collector (koszt 2R)
+  [kreator many] Płatność 2R — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: RTapnij: Island (U)Tapnij: Mountain (R)Tapnij — źródła: 7
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+
+--- krok 60 | T. 19GraczGracz: 10 ż.Bot: 18 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Zagraj: Kor Cartographer (koszt 3W)  ||  Zagraj: Pilgrim's Eye (koszt 3)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2 | Pilgrim's Eye · 3 · Artifact Creature — Thopter · Latanie · Gdy wejdzie na pole bitwy: szukaj w bibliotece do ręki. · 1/1
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · 2/2 | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · choroba · 3/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1 | Furious Forebear · 2 · Creature — Spirit Warrior · Gdy kontrolowany stwór umiera, a ta karta jest w grobie: zapłać {2} i wróć na rękę. · choroba · 3/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Kazuul's Toll Collector zostaje rozstrzygnięty
+  >> Zagraj: Pilgrim's Eye (koszt 3)
+  [kreator many] Płatność 3 — tapuj źródła po jednympozostało 3 manyTapnij: Island (U)Tapnij: Forest (G)Tapnij: Plains (W)Tapnij: Mountai — źródła: 4
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Plains (W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Pilgrim's Eye
+
+--- krok 63 | T. 19GraczGracz: 10 ż.Bot: 18 ż.Główna 1Stos — Pilgrim's Eye ---
+  STOS: Pilgrim's Eye (rzuca: Ty)
+  AKCJE: Poddaj partię  ||  Molten Nursery — cel triggera (7 opcji)
+  RĘKA: Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · 2/2 | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · choroba · 3/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1 | Furious Forebear · 2 · Creature — Spirit Warrior · Gdy kontrolowany stwór umiera, a ta karta jest w grobie: zapłać {2} i wróć na rękę. · choroba · 3/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  >> Molten Nursery — cel triggera (7 opcji)
+  [modal choice] Molten Nursery — cel triggera Molten Nursery — cel triggera: Nieprzyjaciel Molten Nursery — cel triggera: Jeskai Windscout (Nieprzyjaciel)🔍 Podgląd karty Molten Nursery — cel triggera: Battle-Rattle Shaman (Ty)🔍 Podgląd karty Molten Nursery — cel triggera: Jwar Isle Avenger (Ty)🔍 Podgląd karty Molten Nursery — cel triggera: Furious Forebear (Nieprzyjaciel)🔍 Podgląd karty Molten Nursery — cel triggera: Kazuul's Toll Collector (Ty)🔍 Podgląd karty Molten Nursery — cel triggera: Ty
+  [modal choice]   ▶ Molten Nursery — cel triggera: Nieprzyjaciel
+  [modal choice]     Molten Nursery — cel triggera: Jeskai Windscout (Nieprzyjaciel)
+  [modal choice]     Molten Nursery — cel triggera: Battle-Rattle Shaman (Ty)
+  [modal choice]     Molten Nursery — cel triggera: Jwar Isle Avenger (Ty)
+  [modal choice]     Molten Nursery — cel triggera: Furious Forebear (Nieprzyjaciel)
+  [modal choice]     Molten Nursery — cel triggera: Kazuul's Toll Collector (Ty)
+  [modal choice]     Molten Nursery — cel triggera: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Molten Nursery — cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Molten Nursery zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 18 → 17
+  [ROZGRYWKA]   • Molten Nursery — trigger się rozstrzyga
+  [ROZGRYWKA]   • Pilgrim's Eye wchodzi na pole bitwy
+  [ROZGRYWKA]   • Pilgrim's Eye zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Pilgrim's Eye — trigger (wejście na pole bitwy)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Szukasz karty w bibliotece (Pilgrim's Eye) — wybiera, którą wziąć do ręki albo rezygnuje
+  [ROZGRYWKA]   • Pilgrim's Eye — trigger się rozstrzyga
+
+--- krok 66 | T. 19GraczGracz: 10 ż.Bot: 17 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Wybierz: Szukanie w bibliotece (4 opcje)
+  RĘKA: Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · 2/2 | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · choroba · 3/2 | Pilgrim's Eye · 3 · Artifact Creature — Thopter · Latanie · Gdy wejdzie na pole bitwy: szukaj w bibliotece do ręki. · choroba · 1/1 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1 | Furious Forebear · 2 · Creature — Spirit Warrior · Gdy kontrolowany stwór umiera, a ta karta jest w grobie: zapłać {2} i wróć na rękę. · choroba · 3/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  >> Wybierz: Szukanie w bibliotece (4 opcje)
+  [modal choice] Wybierz: Szukanie w bibliotece Szukanie: Island Szukanie: Mountain Szukanie: Forest Szukanie — nie znajduj karty (rezygnuję)
+  [modal choice]   ▶ Szukanie: Island
+  [modal choice]     Szukanie: Mountain
+  [modal choice]     Szukanie: Forest
+  [modal choice]     Szukanie — nie znajduj karty (rezygnuję)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odsłaniasz Island
+  [ROZGRYWKA]   • Ty: Island — biblioteka → ręka
+  >> Zagraj ląd: Island
+  [ROZGRYWKA]   • Battle-Rattle Shaman — wybierz cel triggera (można odmówić)
+
+--- krok 69 | T. 19GraczGracz: 10 ż.Bot: 17 ż.Walka / Początek walki ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Battle-Rattle Shaman — cel triggera (7 opcji)
+  RĘKA: Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Battle-Rattle Shaman · 4 · Creature — Goblin Shaman · Na początku walki: +2/+0 do końca tury. · 2/2 | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · choroba · 3/2 | Pilgrim's Eye · 3 · Artifact Creature — Thopter · Latanie · Gdy wejdzie na pole bitwy: szukaj w bibliotece do ręki. · choroba · 1/1 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1 | Furious Forebear · 2 · Creature — Spirit Warrior · Gdy kontrolowany stwór umiera, a ta karta jest w grobie: zapłać {2} i wróć na rękę. · choroba · 3/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  >> Battle-Rattle Shaman — cel triggera (7 opcji)
+  [modal choice] Battle-Rattle Shaman — cel triggera Battle-Rattle Shaman — cel triggera: Jeskai Windscout (Nieprzyjaciel)🔍 Podgląd karty Battle-Rattle Shaman — cel triggera: Battle-Rattle Shaman (Ty)🔍 Podgląd karty Battle-Rattle Shaman — cel triggera: Jwar Isle Avenger (Ty)🔍 Podgląd karty Battle-Rattle Shaman — cel triggera: Furious Forebear (Nieprzyjaciel)🔍 Podgląd karty Battle-Rattle Shaman — cel triggera: Kazuul's Toll Collector (Ty)🔍 Podgląd karty Battle-Rattle Shaman — cel triggera: Pilgrim's Eye (Ty)🔍 Podgląd karty Battle-Rattle Shaman — bez celu (odmowa — „up to one"/„you may")
+  [modal choice]     Battle-Rattle Shaman — cel triggera: Jeskai Windscout (Nieprzyjaciel)
+  [modal choice]     Battle-Rattle Shaman — cel triggera: Battle-Rattle Shaman (Ty)
+  [modal choice]   ▶ Battle-Rattle Shaman — cel triggera: Jwar Isle Avenger (Ty)
+  [modal choice]     Battle-Rattle Shaman — cel triggera: Furious Forebear (Nieprzyjaciel)
+  [modal choice]     Battle-Rattle Shaman — cel triggera: Kazuul's Toll Collector (Ty)
+  [modal choice]     Battle-Rattle Shaman — cel triggera: Pilgrim's Eye (Ty)
+  [modal choice]     Battle-Rattle Shaman — bez celu (odmowa — „up to one"/„you may")
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Battle-Rattle Shaman — trigger (początek walki)
+  [ROZGRYWKA]   • Battle-Rattle Shaman — cel: Jwar Isle Avenger
+  [ROZGRYWKA]   • Battle-Rattle Shaman — trigger się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+
+--- krok 72 | T. 20BotGracz: 10 ż.Bot: 17 ż.Główna 1Stos — Gurmag Drowner ---
+  STOS: Gurmag Drowner (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · choroba · 3/2 | Pilgrim's Eye · 3 · Artifact Creature — Thopter · Latanie · Gdy wejdzie na pole bitwy: szukaj w bibliotece do ręki. · choroba · 1/1 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Furious Forebear · 2 · Creature — Spirit Warrior · Gdy kontrolowany stwór umiera, a ta karta jest w grobie: zapłać {2} i wróć na rękę. · 3/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Battle-Rattle Shaman zadaje 2 obrażenia (Jeskai Windscout)
+  [ROZGRYWKA]   • Jeskai Windscout zadaje 2 obrażenia (Battle-Rattle Shaman)
+  [ROZGRYWKA]   • Jeskai Windscout ginie
+  [ROZGRYWKA]   • Battle-Rattle Shaman ginie
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Gurmag Drowner
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Gurmag Drowner wchodzi na pole bitwy
+  [ROZGRYWKA]   • Gurmag Drowner zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Impact Tremors — trigger (wejście stwora pod kontrolę (Nieprzyjaciel))
+  [ROZGRYWKA]   • Furious Forebear zostaje poświęcony
+  [ROZGRYWKA]   • Exploit: Furious Forebear zostaje poświęcony dla Gurmag Drowner
+  [ROZGRYWKA]   • Furious Forebear — zapłacić {2}? (wybór opcjonalny: Nieprzyjaciel)
+  [ROZGRYWKA]   • Gurmag Drowner — trigger (exploit)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Furious Forebear — trigger (śmierć kontrolowanego stwora (Nieprzyjaciel))
+  [ROZGRYWKA]   • Nieprzyjaciel płaci i odpala trigger
+
+--- krok 75 | T. 20BotGracz: 10 ż.Bot: 17 ż.Główna 1Stos — Impact Tremors ---
+  STOS: Trigger: Impact Tremors (wejście stwora pod twoją kontrolą)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · choroba · 3/2 | Pilgrim's Eye · 3 · Artifact Creature — Thopter · Latanie · Gdy wejdzie na pole bitwy: szukaj w bibliotece do ręki. · choroba · 1/1 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · choroba · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel patrzy na 4 karty z wierzchu biblioteki
+  [ROZGRYWKA]   • Gurmag Drowner — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel: karta — biblioteka → ręka
+  [ROZGRYWKA]   • Nieprzyjaciel: Plains — biblioteka → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel: Monastery Flock — biblioteka → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel: Mountain — biblioteka → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel bierze kartę z wierzchu do ręki (reszta do grobu)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Impact Tremors zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 10 → 9
+  [ROZGRYWKA]   • Impact Tremors — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 21 — Ty
+  >> Aktywuj: Fertile Thicket (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Fertile Thicket — dodanie 1 many zielonej do puli
+
+--- krok 78 | T. 21GraczGracz: 9 ż.Bot: 17 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Holdout Settlement (Ty) (koszt T) — dodaj 1 manę bezbarwną  ||  Aktywuj: Holdout Settlement (3 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · 3/2 | Pilgrim's Eye · 3 · Artifact Creature — Thopter · Latanie · Gdy wejdzie na pole bitwy: szukaj w bibliotece do ręki. · 1/1 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · choroba · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  >> Aktywuj: Holdout Settlement (Ty) (koszt T) — dodaj 1 manę bezbarwną
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Zagraj: Kor Cartographer (koszt 3W)
+  [kreator many] Płatność 3W — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: WTapnij: Island (U)Tapnij: Mountain (R)Tapnij — źródła: 9
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Island (U)
+
+--- krok 81 | T. 21GraczGracz: 9 ż.Bot: 17 ż.Główna 1Stos — Kor Cartographer ---
+  STOS: Trigger: Kor Cartographer (wejście na pole bitwy)
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · 3/2 | Pilgrim's Eye · 3 · Artifact Creature — Thopter · Latanie · Gdy wejdzie na pole bitwy: szukaj w bibliotece do ręki. · 1/1 | Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · choroba · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · choroba · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Kor Cartographer zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Kor Cartographer — trigger (wejście na pole bitwy)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Przeszukujesz bibliotekę (bez trafienia) i tasuje
+  [ROZGRYWKA]   • Kor Cartographer — trigger się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (8 opcji)
+  [combat wizard] atakuję 1 z 3 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+
+--- krok 84 | T. 22BotGracz: 9 ż.Bot: 14 ż.UpkeepStos — Ojutai's Breath ---
+  STOS: Ojutai's Breath (rzuca: Nieprzyjaciel) → cel: Kazuul's Toll Collector
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · 3/2 | Pilgrim's Eye · 3 · Artifact Creature — Thopter · Latanie · Gdy wejdzie na pole bitwy: szukaj w bibliotece do ręki. · 1/1 | Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · choroba · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  [ROZGRYWKA]   • Jwar Isle Avenger zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 17 → 14
+  [ROZGRYWKA]   • Tura 22 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Ojutai's Breath → cel: Kazuul's Toll Collector
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kazuul's Toll Collector nie odkręca się w następnym kroku odkręcania
+  [ROZGRYWKA]   • Ojutai's Breath zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Furious Forebear
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Ty: życie 9 → 8
+  [ROZGRYWKA]   • Impact Tremors — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Gurmag Drowner
+
+--- krok 87 | T. 22BotGracz: 8 ż.Bot: 14 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Deklaracja blokujących (4 opcje)
+  RĘKA: (pusta)
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · nie odtapuje się · 3/2 | Pilgrim's Eye · 3 · Artifact Creature — Thopter · Latanie · Gdy wejdzie na pole bitwy: szukaj w bibliotece do ręki. · 1/1 | Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · choroba · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · atakuje — niezablokowany · 2/4 | Furious Forebear · 2 · Creature — Spirit Warrior · Gdy kontrolowany stwór umiera, a ta karta jest w grobie: zapłać {2} i wróć na rękę. · choroba · 3/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  >> Wybierz: Deklaracja blokujących (4 opcje)
+  [combat wizard] blokuję 2 stworami: Pilgrim's Eye (1/1)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA]   • Pilgrim's Eye ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 23 — Ty
+
+--- krok 90 | T. 23GraczGracz: 8 ż.Bot: 14 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Fertile Thicket (Ty) (koszt T) — dodaj 1 manę zieloną  ||  Aktywuj: Holdout Settlement (Ty) (koszt T) — dodaj 1 manę bezbarwną  ||  Aktywuj: Holdout Settlement (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · 3/2 | Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · 2/4 | Furious Forebear · 2 · Creature — Spirit Warrior · Gdy kontrolowany stwór umiera, a ta karta jest w grobie: zapłać {2} i wróć na rękę. · choroba · 3/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  >> Aktywuj: Holdout Settlement (Ty) (koszt T) — dodaj 1 manę bezbarwną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Holdout Settlement — dodanie many do puli
+  >> Aktywuj: Fertile Thicket (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Relic Robber
+  >> Zagraj: Relic Robber (koszt 2R)
+  [kreator many] Płatność 2R — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: RTapnij: Island (U)Tapnij: Mountain (R)Tapnij — źródła: 9
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+
+--- krok 93 | T. 23GraczGracz: 8 ż.Bot: 14 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · 3/2 | Kor Cartographer · 4 · Creature — Kor Scout · Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy. · 2/2 | Relic Robber · 3 · Creature — Goblin Rogue · Pośpiech · Gdy zada obrażenia graczowi: stwórz token Goblin Construct. · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · 2/4 | Furious Forebear · 2 · Creature — Spirit Warrior · Gdy kontrolowany stwór umiera, a ta karta jest w grobie: zapłać {2} i wróć na rękę. · choroba · 3/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Relic Robber zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (8 opcji)
+  [combat wizard] atakuję 1 z 3 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Kor Cartographer zadaje 2 obrażenia (Furious Forebear)
+  [ROZGRYWKA]   • Furious Forebear zadaje 3 obrażenia (Kor Cartographer)
+  [ROZGRYWKA]   • Kor Cartographer ginie
+  [ROZGRYWKA]   • Furious Forebear ginie
+  [ROZGRYWKA]   • Tura 24 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel: Ojutai's Breath odbija się — możesz rzucić ją bez kosztu many albo zostawić w wygnaniu
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Ojutai's Breath → cel: Jwar Isle Avenger
+
+--- krok 96 | T. 24BotGracz: 8 ż.Bot: 14 ż.Główna 1Stos — Jeskai Devotee ---
+  STOS: Jeskai Devotee (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · nie odtapuje się · 3/3 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · 3/2 | Relic Robber · 3 · Creature — Goblin Rogue · Pośpiech · Gdy zada obrażenia graczowi: stwórz token Goblin Construct. · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Jwar Isle Avenger nie odkręca się w następnym kroku odkręcania
+  [ROZGRYWKA]   • Ojutai's Breath zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Jeskai Devotee
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Ty: życie 8 → 7
+  [ROZGRYWKA]   • Impact Tremors — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Palace Familiar
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Palace Familiar wchodzi na pole bitwy
+  [ROZGRYWKA]   • Palace Familiar zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Impact Tremors — trigger (wejście stwora pod kontrolę (Nieprzyjaciel))
+  [ROZGRYWKA]   • Impact Tremors zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 7 → 6
+  [ROZGRYWKA]   • Impact Tremors — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Descendant of Storms
+
+--- krok 99 | T. 24BotGracz: 5 ż.Bot: 14 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Deklaracja blokujących (2 opcje)
+  RĘKA: (pusta)
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · nie odtapuje się · 3/3 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · 3/2 | Relic Robber · 3 · Creature — Goblin Rogue · Pośpiech · Gdy zada obrażenia graczowi: stwórz token Goblin Construct. · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · atakuje — niezablokowany · 2/4 | Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj 1 manę niebieską, czerwoną lub białą · choroba · 2/2 | Palace Familiar · 2 · Creature — Bird · Latanie · Gdy ta karta umrze: dobierz 1 kartę. · choroba · 1/1 | Descendant of Storms · 1 · Creature — Human Soldier · Gdy atakuje: zapłać 2 many, endure X (liczniki +1/+1 albo token Spirit). · choroba · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Atak: Gurmag Drowner
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Relic Robber (2/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Relic Robber blokuje Gurmag Drowner
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Gurmag Drowner zadaje 2 obrażenia (Relic Robber)
+  [ROZGRYWKA]   • Relic Robber zadaje 2 obrażenia (Gurmag Drowner)
+  [ROZGRYWKA]   • Relic Robber ginie
+
+--- krok 102 | T. 25GraczGracz: 5 ż.Bot: 14 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Fertile Thicket (Ty) (koszt T) — dodaj 1 manę zieloną  ||  Aktywuj: Holdout Settlement (Ty) (koszt T) — dodaj 1 manę bezbarwną  ||  Aktywuj: Holdout Settlement (Ty) (koszt T, tapnij swojego stwora) — dodaj 1 manę dowolnego koloru — tapnij Kazuul's Toll Collector (Ty)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · 3/2 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · 2/4 | Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj 1 manę niebieską, czerwoną lub białą · choroba · 2/2 | Palace Familiar · 2 · Creature — Bird · Latanie · Gdy ta karta umrze: dobierz 1 kartę. · choroba · 1/1 | Descendant of Storms · 1 · Creature — Human Soldier · Gdy atakuje: zapłać 2 many, endure X (liczniki +1/+1 albo token Spirit). · choroba · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 25 — Ty
+  >> Aktywuj: Holdout Settlement (Ty) (koszt T) — dodaj 1 manę bezbarwną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Holdout Settlement — dodanie many do puli
+  >> Aktywuj: Fertile Thicket (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Scion Summoner
+
+--- krok 105 | T. 25GraczGracz: 5 ż.Bot: 14 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Scion Summoner (koszt 2G)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Scion Summoner · 3 · Creature — Eldrazi Drone · Gdy wejdzie na pole bitwy: stwórz token Eldrazi Scion. · 2/2
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · 3/2 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · 2/4 | Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj 1 manę niebieską, czerwoną lub białą · choroba · 2/2 | Palace Familiar · 2 · Creature — Bird · Latanie · Gdy ta karta umrze: dobierz 1 kartę. · choroba · 1/1 | Descendant of Storms · 1 · Creature — Human Soldier · Gdy atakuje: zapłać 2 many, endure X (liczniki +1/+1 albo token Spirit). · choroba · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  >> Zagraj: Scion Summoner (koszt 2G)
+  [kreator many] Płatność 2G — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: GTapnij: Island (U)Tapnij: Mountain (R)Tapnij — źródła: 9
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Scion Summoner
+  >> Molten Nursery — cel triggera (8 opcji)
+  [modal choice] Molten Nursery — cel triggera Molten Nursery — cel triggera: Nieprzyjaciel Molten Nursery — cel triggera: Jwar Isle Avenger (Ty)🔍 Podgląd karty Molten Nursery — cel triggera: Kazuul's Toll Collector (Ty)🔍 Podgląd karty Molten Nursery — cel triggera: Gurmag Drowner (Nieprzyjaciel)🔍 Podgląd karty Molten Nursery — cel triggera: Jeskai Devotee (Nieprzyjaciel)🔍 Podgląd karty Molten Nursery — cel triggera: Palace Familiar (Nieprzyjaciel)🔍 Podgląd karty Molten Nursery — cel triggera: Descendant of Storms (Nieprzyjaciel)🔍 Podgląd karty Molten Nursery — cel triggera: Ty
+  [modal choice]     Molten Nursery — cel triggera: Nieprzyjaciel
+  [modal choice]   ▶ Molten Nursery — cel triggera: Jwar Isle Avenger (Ty)
+  [modal choice]     Molten Nursery — cel triggera: Kazuul's Toll Collector (Ty)
+  [modal choice]     Molten Nursery — cel triggera: Gurmag Drowner (Nieprzyjaciel)
+  [modal choice]     Molten Nursery — cel triggera: Jeskai Devotee (Nieprzyjaciel)
+  [modal choice]     Molten Nursery — cel triggera: Palace Familiar (Nieprzyjaciel)
+  [modal choice]     Molten Nursery — cel triggera: Descendant of Storms (Nieprzyjaciel)
+  [modal choice]     Molten Nursery — cel triggera: Ty
+
+--- krok 108 | T. 25GraczGracz: 5 ż.Bot: 14 ż.Główna 1Stos — Scion Summoner ---
+  STOS: Trigger: Scion Summoner (wejście na pole bitwy)
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · −1 · 3/3 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · 3/2 | Scion Summoner · 3 · Creature — Eldrazi Drone · Gdy wejdzie na pole bitwy: stwórz token Eldrazi Scion. · choroba · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · 2/4 | Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj 1 manę niebieską, czerwoną lub białą · choroba · 2/2 | Palace Familiar · 2 · Creature — Bird · Latanie · Gdy ta karta umrze: dobierz 1 kartę. · choroba · 1/1 | Descendant of Storms · 1 · Creature — Human Soldier · Gdy atakuje: zapłać 2 many, endure X (liczniki +1/+1 albo token Spirit). · choroba · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Molten Nursery zadaje 1 obrażenie (Jwar Isle Avenger)
+  [ROZGRYWKA]   • Molten Nursery — trigger się rozstrzyga
+  [ROZGRYWKA]   • Scion Summoner wchodzi na pole bitwy
+  [ROZGRYWKA]   • Scion Summoner zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Scion Summoner — trigger (wejście na pole bitwy)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty tworzysz token Eldrazi Scion (1/1)
+  [ROZGRYWKA]   • Eldrazi Scion wchodzi na pole bitwy
+  [ROZGRYWKA]   • Scion Summoner — trigger się rozstrzyga
+  >> Aktywuj: Eldrazi Scion (Ty) (koszt: poświęć) — dodaj 1 manę bezbarwną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Eldrazi Scion — dodanie many do puli
+  [ROZGRYWKA]   • Eldrazi Scion zostaje poświęcony
+
+--- krok 111 | T. 25GraczGracz: 5 ż.Bot: 14 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · −1 · 3/3 | Kazuul's Toll Collector · 3 · Creature — Ogre Warrior · {0}: cel: twój ekwipunek — przyczep ekwipunek do tego stwora · 3/2 | Scion Summoner · 3 · Creature — Eldrazi Drone · Gdy wejdzie na pole bitwy: stwórz token Eldrazi Scion. · choroba · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · 2/4 | Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj 1 manę niebieską, czerwoną lub białą · choroba · 2/2 | Palace Familiar · 2 · Creature — Bird · Latanie · Gdy ta karta umrze: dobierz 1 kartę. · choroba · 1/1 | Descendant of Storms · 1 · Creature — Human Soldier · Gdy atakuje: zapłać 2 many, endure X (liczniki +1/+1 albo token Spirit). · choroba · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Descendant of Storms blokuje Kazuul's Toll Collector
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Kazuul's Toll Collector zadaje 3 obrażenia (Descendant of Storms)
+  [ROZGRYWKA]   • Descendant of Storms zadaje 2 obrażenia (Kazuul's Toll Collector)
+  [ROZGRYWKA]   • Kazuul's Toll Collector ginie
+  [ROZGRYWKA]   • Descendant of Storms ginie
+  [ROZGRYWKA]   • Tura 26 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Vandalize — tryb: Zniszcz ląd → cel: Island
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Island zostaje zniszczony
+  [ROZGRYWKA]   • Vandalize — tryb: Zniszcz ląd zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Gurmag Drowner, Jeskai Devotee, Palace Familiar
+
+--- krok 114 | T. 26BotGracz: 5 ż.Bot: 14 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Deklaracja blokujących (3 opcje)
+  RĘKA: (pusta)
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Scion Summoner · 3 · Creature — Eldrazi Drone · Gdy wejdzie na pole bitwy: stwórz token Eldrazi Scion. · choroba · 2/2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · atakuje — niezablokowany · 2/4 | Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj 1 manę niebieską, czerwoną lub białą · atakuje — niezablokowany · 2/2 | Palace Familiar · 2 · Creature — Bird · Latanie · Gdy ta karta umrze: dobierz 1 kartę. · atakuje — niezablokowany · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  >> Wybierz: Deklaracja blokujących (3 opcje)
+  [combat wizard] blokuję 1 stworami: Scion Summoner (2/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA]   • Jeskai Devotee zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 5 → 3
+  [ROZGRYWKA]   • Palace Familiar zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 3 → 2
+  [ROZGRYWKA]   • Scion Summoner ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 27 — Ty
+
+--- krok 117 | T. 27GraczGracz: 2 ż.Bot: 14 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Fertile Thicket (Ty) (koszt T) — dodaj 1 manę zieloną  ||  Aktywuj: Holdout Settlement (Ty) (koszt T) — dodaj 1 manę bezbarwną  ||  Aktywuj: Holdout Settlement (Ty) (koszt T, tapnij swojego stwora) — dodaj 1 manę dowolnego koloru — tapnij Jwar Isle Avenger (Ty)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · 2/4 | Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj 1 manę niebieską, czerwoną lub białą · 2/2 | Palace Familiar · 2 · Creature — Bird · Latanie · Gdy ta karta umrze: dobierz 1 kartę. · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  >> Aktywuj: Holdout Settlement (Ty) (koszt T) — dodaj 1 manę bezbarwną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Holdout Settlement — dodanie many do puli
+  >> Aktywuj: Fertile Thicket (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+
+--- krok 120 | T. 27GraczGracz: 2 ż.Bot: 14 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · 2/4 | Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj 1 manę niebieską, czerwoną lub białą · 2/2 | Palace Familiar · 2 · Creature — Bird · Latanie · Gdy ta karta umrze: dobierz 1 kartę. · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil explorer)
+  [combat wizard] Zatwierdź atak
+== KONIEC PARTII == Koniec partii — wygrywa Gracz
+
+--- krok 122 | Koniec partii — wygrywa Gracz ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: (pusta)
+  MOJE POLA: Molten Nursery · 3 · Enchantment · Devoid (bezbarwna) · Gdy rzucisz czar: 1 obrażenie. | Jwar Isle Avenger · 5 · Creature — Sphinx · Latanie · 3/3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · {T}: dodaj 1 manę zieloną | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Holdout Settlement · Land · {T}: dodaj 1 manę bezbarwną · {T}, tapnij swojego stwora: dodaj 1 manę dowolnego koloru
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · 2/4 | Jeskai Devotee · 2 · Creature — Orc Monk · Gdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj 1 manę niebieską, czerwoną lub białą · 2/2 | Palace Familiar · 2 · Creature — Bird · Latanie · Gdy ta karta umrze: dobierz 1 kartę. · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Molten Nursery, Island, Mountain, Plains, Kor Cartographer, Skyclave Geopede, Mysteries of the Deep ⏎ Nowa partia (seed 21). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 35, kliknięte: 41, modale: 6, sondy noop: 127 (panel 97, modal 30)
+== DETEKTORY: brak zgłoszeń ==

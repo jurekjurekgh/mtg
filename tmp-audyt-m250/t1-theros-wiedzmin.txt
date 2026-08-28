@@ -1,0 +1,217 @@
+== NOWA PARTIA: gracz=theros vs bot=wiedzmin, seed=13, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Sea God's Scorn · 6 · Sorcery · Wzgarda boga mórz: wróć na rękę właściciela (każdy z celów) | Sweet Oblivion · 2 · Sorcery · mieli 4 karty (do grobu) · cel: gracz | Island · Basic Land — Island · T: dodaj 1 manę | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór | Breaching Hippocamp · 4 · Creature — Horse Fish · Flash (błysk) · Gdy wejdzie na pole bitwy: odkręć. · 3/2 | Rage of Purphoros · 5 · Sorcery · Obrażenia 4 + nie może być regenerowany + scry 1 · cel: stwór
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Entrancing Lyre, Sea God's Scorn, Sweet Oblivion, Island, Titan's Strength, Breaching Hippocamp, Rage of Purphoros ⏎ Nowa partia (seed 13). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Island
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+
+--- krok 3 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Sea God's Scorn · 6 · Sorcery · Wzgarda boga mórz: wróć na rękę właściciela (każdy z celów) | Sweet Oblivion · 2 · Sorcery · mieli 4 karty (do grobu) · cel: gracz | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór | Breaching Hippocamp · 4 · Creature — Horse Fish · Flash (błysk) · Gdy wejdzie na pole bitwy: odkręć. · 3/2 | Rage of Purphoros · 5 · Sorcery · Obrażenia 4 + nie może być regenerowany + scry 1 · cel: stwór | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Entrancing Lyre, Sea God's Scorn, Sweet Oblivion, Island, Titan's Strength, Breaching Hippocamp, Rage of Purphoros ⏎ Nowa partia (seed 13). Powodzenia!
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Cel czaru: Sweet Oblivion (2 opcje)
+  [modal choice] Cel czaru: Sweet Oblivion Rzuć: Sweet Oblivion (koszt 1U) → cel: Ty🔍 Podgląd karty Rzuć: Sweet Oblivion (koszt 1U) → cel: Nieprzyjaciel🔍 Podgląd karty
+  [modal choice]   ▶ Rzuć: Sweet Oblivion (koszt 1U) → cel: Ty
+  [modal choice]     Rzuć: Sweet Oblivion (koszt 1U) → cel: Nieprzyjaciel
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Mielisz Satyr Wayfinder do grobu
+  [ROZGRYWKA]   • Mielisz Inspire Awe do grobu
+  [ROZGRYWKA]   • Mielisz Island do grobu
+  [ROZGRYWKA]   • Sweet Oblivion zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Cuombajj Witches
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Sleep of the Dead
+
+--- krok 6 | T. 6BotGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Sea God's Scorn · 6 · Sorcery · Wzgarda boga mórz: wróć na rękę właściciela (każdy z celów) | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór | Breaching Hippocamp · 4 · Creature — Horse Fish · Flash (błysk) · Gdy wejdzie na pole bitwy: odkręć. · 3/2 | Rage of Purphoros · 5 · Sorcery · Obrażenia 4 + nie może być regenerowany + scry 1 · cel: stwór | Sleep of the Dead · 1 · Sorcery · tap + nie odkręca się w następnym untap step · cel: stwór
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Entrancing Lyre, Sea God's Scorn, Sweet Oblivion, Island, Titan's Strength, Breaching Hippocamp, Rage of Purphoros ⏎ Nowa partia (seed 13). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje cycling: Bedhead Beastie
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel: karta — biblioteka → ręka
+  [ROZGRYWKA]   • Nieprzyjaciel znajduje Mountain i tasuje bibliotekę
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje cycling: Bedhead Beastie
+
+--- krok 9 | T. 7GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Sea God's Scorn · 6 · Sorcery · Wzgarda boga mórz: wróć na rękę właściciela (każdy z celów) | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór | Breaching Hippocamp · 4 · Creature — Horse Fish · Flash (błysk) · Gdy wejdzie na pole bitwy: odkręć. · 3/2 | Rage of Purphoros · 5 · Sorcery · Obrażenia 4 + nie może być regenerowany + scry 1 · cel: stwór | Sleep of the Dead · 1 · Sorcery · tap + nie odkręca się w następnym untap step · cel: stwór | Anthem of Champions · 2 · Enchantment · twoje stwory: +1
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Entrancing Lyre, Sea God's Scorn, Sweet Oblivion, Island, Titan's Strength, Breaching Hippocamp, Rage of Purphoros ⏎ Nowa partia (seed 13). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Anthem of Champions
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Morph twarzą w dół (2/2)
+
+--- krok 12 | T. 9GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Sea God's Scorn · 6 · Sorcery · Wzgarda boga mórz: wróć na rękę właściciela (każdy z celów) | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór | Breaching Hippocamp · 4 · Creature — Horse Fish · Flash (błysk) · Gdy wejdzie na pole bitwy: odkręć. · 3/2 | Rage of Purphoros · 5 · Sorcery · Obrażenia 4 + nie może być regenerowany + scry 1 · cel: stwór | Sleep of the Dead · 1 · Sorcery · tap + nie odkręca się w następnym untap step · cel: stwór | Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. · 1/4
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Face-down creature · Creature · Morph · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Entrancing Lyre, Sea God's Scorn, Sweet Oblivion, Island, Titan's Strength, Breaching Hippocamp, Rage of Purphoros ⏎ Nowa partia (seed 13). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Morph zostaje rozstrzygnięty (twarzą w dół)
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Wavecrash Triton
+  >> Rzuć: Sleep of the Dead (koszt U) → cel: Morph (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Wishful Merfolk
+
+--- krok 15 | T. 11GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Sea God's Scorn · 6 · Sorcery · Wzgarda boga mórz: wróć na rękę właściciela (każdy z celów) | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór | Breaching Hippocamp · 4 · Creature — Horse Fish · Flash (błysk) · Gdy wejdzie na pole bitwy: odkręć. · 3/2 | Rage of Purphoros · 5 · Sorcery · Obrażenia 4 + nie może być regenerowany + scry 1 · cel: stwór | Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. · 1/4 | Plains · Basic Land — Plains · T: dodaj 1 manę
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Face-down creature · Creature · Morph · 2/2 | Wishful Merfolk · 2 · Creature — Merfolk · Obrońca · {1}, {U}: zmiana podtypu i utrata keyworda do końca tury · choroba · 3/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Entrancing Lyre, Sea God's Scorn, Sweet Oblivion, Island, Titan's Strength, Breaching Hippocamp, Rage of Purphoros ⏎ Nowa partia (seed 13). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Wishful Merfolk zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Zagraj: Entrancing Lyre (koszt 3)
+  [ROZGRYWKA]   • Entrancing Lyre zostaje rozstrzygnięty
+
+--- krok 18 | T. 12BotGracz: 20 ż.Bot: 20 ż.DobieranieStos — Village Rites ---
+  STOS: Village Rites (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Sea God's Scorn · 6 · Sorcery · Wzgarda boga mórz: wróć na rękę właściciela (każdy z celów) | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór | Breaching Hippocamp · 4 · Creature — Horse Fish · Flash (błysk) · Gdy wejdzie na pole bitwy: odkręć. · 3/2 | Rage of Purphoros · 5 · Sorcery · Obrażenia 4 + nie może być regenerowany + scry 1 · cel: stwór | Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. · 1/4
+  MOJE POLA: Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Wishful Merfolk · 2 · Creature — Merfolk · Obrońca · {1}, {U}: zmiana podtypu i utrata keyworda do końca tury · 3/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Entrancing Lyre, Sea God's Scorn, Sweet Oblivion, Island, Titan's Strength, Breaching Hippocamp, Rage of Purphoros ⏎ Nowa partia (seed 13). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Segmented Krotiq zostaje poświęcony
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Village Rites zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Twiddle — tryb: Tapnięcie → cel: Entrancing Lyre
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Twiddle — tryb: Tapnięcie zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+
+--- krok 21 | T. 13GraczGracz: 20 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=3) → cel: Wishful Merfolk (Nieprzyjaciel)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Sea God's Scorn · 6 · Sorcery · Wzgarda boga mórz: wróć na rękę właściciela (każdy z celów) | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór | Breaching Hippocamp · 4 · Creature — Horse Fish · Flash (błysk) · Gdy wejdzie na pole bitwy: odkręć. · 3/2 | Rage of Purphoros · 5 · Sorcery · Obrażenia 4 + nie może być regenerowany + scry 1 · cel: stwór | Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. · 1/4
+  MOJE POLA: Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Wishful Merfolk · 2 · Creature — Merfolk · Obrońca · {1}, {U}: zmiana podtypu i utrata keyworda do końca tury · 3/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Entrancing Lyre, Sea God's Scorn, Sweet Oblivion, Island, Titan's Strength, Breaching Hippocamp, Rage of Purphoros ⏎ Nowa partia (seed 13). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Aktywuj: Entrancing Lyre (Ty) (koszt X, T) — tap + blokada odkręcania (póki źródło zatapnięte) (X=3) → cel: Wi
+  [ROZGRYWKA]   • Ty: zdolność Entrancing Lyre rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+
+--- krok 24 | T. 13GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Forest  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Sea God's Scorn · 6 · Sorcery · Wzgarda boga mórz: wróć na rękę właściciela (każdy z celów) | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór | Breaching Hippocamp · 4 · Creature — Horse Fish · Flash (błysk) · Gdy wejdzie na pole bitwy: odkręć. · 3/2 | Rage of Purphoros · 5 · Sorcery · Obrażenia 4 + nie może być regenerowany + scry 1 · cel: stwór | Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. · 1/4 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  MOJE POLA: Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Wishful Merfolk · 2 · Creature — Merfolk · Obrońca · {1}, {U}: zmiana podtypu i utrata keyworda do końca tury · nie odtapuje się · 3/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Entrancing Lyre, Sea God's Scorn, Sweet Oblivion, Island, Titan's Strength, Breaching Hippocamp, Rage of Purphoros ⏎ Nowa partia (seed 13). Powodzenia!
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Maritime Guard
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Maritime Guard wchodzi na pole bitwy
+  [ROZGRYWKA]   • Maritime Guard zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 15 — Ty
+  >> Zagraj: Breaching Hippocamp (koszt 3U)
+  [ROZGRYWKA]   • Breaching Hippocamp — trigger bez efektu (brak legalnych celów)
+
+--- krok 27 | T. 15GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Sea God's Scorn · 6 · Sorcery · Wzgarda boga mórz: wróć na rękę właściciela (każdy z celów) | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór | Rage of Purphoros · 5 · Sorcery · Obrażenia 4 + nie może być regenerowany + scry 1 · cel: stwór | Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. · 1/4 | Time to Feed · 3 · Sorcery · gdy ten stwór zginie w tej turze, zyskujesz 3 życia + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: stwór przeciwnika + twój stwór
+  MOJE POLA: Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Breaching Hippocamp · 4 · Creature — Horse Fish · Flash (błysk) · Gdy wejdzie na pole bitwy: odkręć. · choroba · 3/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Wishful Merfolk · 2 · Creature — Merfolk · Obrońca · {1}, {U}: zmiana podtypu i utrata keyworda do końca tury · nie odtapuje się · 3/2 | Maritime Guard · 2 · Creature — Merfolk Soldier · choroba · 1/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Entrancing Lyre, Sea God's Scorn, Sweet Oblivion, Island, Titan's Strength, Breaching Hippocamp, Rage of Purphoros ⏎ Nowa partia (seed 13). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Time to Feed
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Chittering Rats
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Chittering Rats — cel: Ty (jedyny legalny — automatycznie)
+  [ROZGRYWKA]   • Chittering Rats — trigger się rozstrzyga
+
+--- krok 30 | T. 16BotGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Chittering Rats — karta z ręki na wierzch biblioteki (6 opcji)
+  RĘKA: Sea God's Scorn · 6 · Sorcery · Wzgarda boga mórz: wróć na rękę właściciela (każdy z celów) | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór | Rage of Purphoros · 5 · Sorcery · Obrażenia 4 + nie może być regenerowany + scry 1 · cel: stwór | Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. · 1/4 | Time to Feed · 3 · Sorcery · gdy ten stwór zginie w tej turze, zyskujesz 3 życia + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: stwór przeciwnika + twój stwór
+  MOJE POLA: Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Breaching Hippocamp · 4 · Creature — Horse Fish · Flash (błysk) · Gdy wejdzie na pole bitwy: odkręć. · choroba · 3/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Wishful Merfolk · 2 · Creature — Merfolk · Obrońca · {1}, {U}: zmiana podtypu i utrata keyworda do końca tury · nie odtapuje się · 3/2 | Maritime Guard · 2 · Creature — Merfolk Soldier · 1/3 | Chittering Rats · 3 · Creature — Rat · Gdy wejdzie na pole bitwy: karta z ręki przeciwnika na wierzch biblioteki. · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Entrancing Lyre, Sea God's Scorn, Sweet Oblivion, Island, Titan's Strength, Breaching Hippocamp, Rage of Purphoros ⏎ Nowa partia (seed 13). Powodzenia!
+
+--- krok 31 | T. 16BotGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Chittering Rats — karta z ręki na wierzch biblioteki (6 opcji)
+  RĘKA: Sea God's Scorn · 6 · Sorcery · Wzgarda boga mórz: wróć na rękę właściciela (każdy z celów) | Titan's Strength · 1 · Instant · +3/+1 do końca tury + scry 1 · cel: stwór | Rage of Purphoros · 5 · Sorcery · Obrażenia 4 + nie może być regenerowany + scry 1 · cel: stwór | Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. · 1/4 | Time to Feed · 3 · Sorcery · gdy ten stwór zginie w tej turze, zyskujesz 3 życia + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: stwór przeciwnika + twój stwór
+  MOJE POLA: Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Breaching Hippocamp · 4 · Creature — Horse Fish · Flash (błysk) · Gdy wejdzie na pole bitwy: odkręć. · choroba · 3/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Wishful Merfolk · 2 · Creature — Merfolk · Obrońca · {1}, {U}: zmiana podtypu i utrata keyworda do końca tury · nie odtapuje się · 3/2 | Maritime Guard · 2 · Creature — Merfolk Soldier · 1/3 | Chittering Rats · 3 · Creature — Rat · Gdy wejdzie na pole bitwy: karta z ręki przeciwnika na wierzch biblioteki. · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Entrancing Lyre, Sea God's Scorn, Sweet Oblivion, Island, Titan's Strength, Breaching Hippocamp, Rage of Purphoros ⏎ Nowa partia (seed 13). Powodzenia!
+  [STOP] brak akcji w kroku 31 | T. 16BotGracz: 20 ż.Bot: 20 ż.Główna 1 | akcje: Poddaj partię,Chittering Rats — karta z ręki na wierzch biblioteki (6 opcji)
+
+== POKRYCIE UI == akcje widziane: 13, kliknięte: 11, modale: 2, sondy noop: 27 (panel 24, modal 3)
+== DETEKTORY: brak zgłoszeń ==

@@ -1,0 +1,497 @@
+== NOWA PARTIA: gracz=tarkir-bg vs bot=ravnica, seed=17, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Forest (1 z 3)  ||  Zagraj ląd: Kishla Village  ||  Zagraj ląd: Swamp  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Coat with Venom · 1 · Instant · +1/+2 do końca tury + zdobądź Dotykanie śmierci do końca tury · cel: stwór | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Awaken the Bear · 3 · Instant · +3/+3 do końca tury + zdobądź Zadeptywanie do końca tury · cel: stwór | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Coat with Venom, Forest, Awaken the Bear, Forest, Kishla Village, Forest, Swamp ⏎ Nowa partia (seed 17). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Forest (1 z 3)
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Dimir Guildgate (wchodzi zatapnięty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Silumgar Butcher
+
+--- krok 3 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Forest (1 z 2)  ||  Zagraj ląd: Kishla Village  ||  Zagraj ląd: Swamp  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Coat with Venom · 1 · Instant · +1/+2 do końca tury + zdobądź Dotykanie śmierci do końca tury · cel: stwór | Awaken the Bear · 3 · Instant · +3/+3 do końca tury + zdobądź Zadeptywanie do końca tury · cel: stwór | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Silumgar Butcher · 5 · Creature — Zombie Djinn · Gdy ten stwór exploituje: -3/-3 do końca tury. · 3/3
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Coat with Venom, Forest, Awaken the Bear, Forest, Kishla Village, Forest, Swamp ⏎ Nowa partia (seed 17). Powodzenia!
+  >> Zagraj ląd: Forest (1 z 2)
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Dimir Guildgate — dodanie 1 many niebieskiej lub czarnej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Knockout Maneuver
+
+--- krok 6 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Kishla Village  ||  Zagraj ląd: Forest  ||  Zagraj ląd: Swamp  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Coat with Venom · 1 · Instant · +1/+2 do końca tury + zdobądź Dotykanie śmierci do końca tury · cel: stwór | Awaken the Bear · 3 · Instant · +3/+3 do końca tury + zdobądź Zadeptywanie do końca tury · cel: stwór | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Silumgar Butcher · 5 · Creature — Zombie Djinn · Gdy ten stwór exploituje: -3/-3 do końca tury. · 3/3 | Knockout Maneuver · 3 · Sorcery · połóż licznik +1/+1 + obrażenia równe mocy stwora · cel: twój stwór + stwór przeciwnika
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2
+  POLA WROGA: Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Coat with Venom, Forest, Awaken the Bear, Forest, Kishla Village, Forest, Swamp ⏎ Nowa partia (seed 17). Powodzenia!
+  >> Zagraj ląd: Kishla Village
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Toll of the Invasion → cel: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Odrzucasz kartę z ręki
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Zombie Army (0/0)
+  [ROZGRYWKA]   • Zombie Army wchodzi na pole bitwy
+  [ROZGRYWKA]   • Zombie Army dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Toll of the Invasion zostaje rozstrzygnięty
+
+--- krok 9 | T. 7GraczGracz: 20 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Rzuć: Awaken the Bear (koszt 2G) → cel: Zombie Army (Nieprzyjaciel)  ||  Aktywuj: Kishla Village (Ty) (koszt T) — dodaj 1 manę zieloną  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Coat with Venom · 1 · Instant · +1/+2 do końca tury + zdobądź Dotykanie śmierci do końca tury · cel: stwór | Awaken the Bear · 3 · Instant · +3/+3 do końca tury + zdobądź Zadeptywanie do końca tury · cel: stwór | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Knockout Maneuver · 3 · Sorcery · połóż licznik +1/+1 + obrażenia równe mocy stwora · cel: twój stwór + stwór przeciwnika
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2
+  POLA WROGA: Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Zombie Army · 0 · Creature — Zombie Army · choroba · 1x +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Coat with Venom, Forest, Awaken the Bear, Forest, Kishla Village, Forest, Swamp ⏎ Nowa partia (seed 17). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 7 — Ty
+  >> Rzuć: Awaken the Bear (koszt 2G) → cel: Zombie Army (Nieprzyjaciel)
+  [ROZGRYWKA]   • Zombie Army zyskuje: zadeptywanie
+  [ROZGRYWKA]   • Awaken the Bear zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Zagraj ląd: Forest (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+
+--- krok 12 | T. 8BotGracz: 20 ż.Bot: 20 ż.Główna 1Stos — Withstand ---
+  STOS: Withstand (rzuca: Nieprzyjaciel) → cel: Nieprzyjaciel
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Coat with Venom · 1 · Instant · +1/+2 do końca tury + zdobądź Dotykanie śmierci do końca tury · cel: stwór | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Knockout Maneuver · 3 · Sorcery · połóż licznik +1/+1 + obrażenia równe mocy stwora · cel: twój stwór + stwór przeciwnika | Forest · Basic Land — Forest · T: dodaj 1 manę
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2
+  POLA WROGA: Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Zombie Army · 0 · Creature — Zombie Army · 1x +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Coat with Venom, Forest, Awaken the Bear, Forest, Kishla Village, Forest, Swamp ⏎ Nowa partia (seed 17). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Withstand → cel: Nieprzyjaciel
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Withstand zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Zombie Army
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Zombie Army zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 19
+  [ROZGRYWKA]   • Tura 9 — Ty
+  >> Aktywuj: Kishla Village (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Kishla Village — dodanie 1 many zielonej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Ainok Artillerist
+
+--- krok 15 | T. 9GraczGracz: 19 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Swamp  ||  Zagraj ląd: Forest  ||  Zagraj: Ainok Artillerist (koszt 2G)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Coat with Venom · 1 · Instant · +1/+2 do końca tury + zdobądź Dotykanie śmierci do końca tury · cel: stwór | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Knockout Maneuver · 3 · Sorcery · połóż licznik +1/+1 + obrażenia równe mocy stwora · cel: twój stwór + stwór przeciwnika | Forest · Basic Land — Forest · T: dodaj 1 manę | Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2
+  POLA WROGA: Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Zombie Army · 0 · Creature — Zombie Army · 1x +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Coat with Venom, Forest, Awaken the Bear, Forest, Kishla Village, Forest, Swamp ⏎ Nowa partia (seed 17). Powodzenia!
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Rzuć: Coat with Venom (koszt B) → cel: Zombie Army (Nieprzyjaciel)
+  [ROZGRYWKA]   • Coat with Venom zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Zagraj: Ainok Artillerist (koszt 2G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Ainok Artillerist
+  [ROZGRYWKA]   • Ainok Artillerist wchodzi na pole bitwy
+  [ROZGRYWKA]   • Ainok Artillerist zostaje rozstrzygnięty
+
+--- krok 18 | T. 10BotGracz: 19 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Knockout Maneuver · 3 · Sorcery · połóż licznik +1/+1 + obrażenia równe mocy stwora · cel: twój stwór + stwór przeciwnika | Forest · Basic Land — Forest · T: dodaj 1 manę
+  MOJE POLA: Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · choroba · 4/1 | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Zombie Army · 0 · Creature — Zombie Army · 1x +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Coat with Venom, Forest, Awaken the Bear, Forest, Kishla Village, Forest, Swamp ⏎ Nowa partia (seed 17). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Boros Challenger
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Boros Challenger zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 11 — Ty
+
+--- krok 21 | T. 11GraczGracz: 19 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Kishla Village (Ty) (koszt T) — dodaj 1 manę zieloną  ||  Aktywuj: Kishla Village (Ty) (koszt 4, T) — surveil 2  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Knockout Maneuver · 3 · Sorcery · połóż licznik +1/+1 + obrażenia równe mocy stwora · cel: twój stwór + stwór przeciwnika | Forest · Basic Land — Forest · T: dodaj 1 manę
+  MOJE POLA: Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Zombie Army · 0 · Creature — Zombie Army · 1x +1/+1 · 1/1 | Boros Challenger · 2 · Creature — Human Soldier · Gdy ten stwór atakuje jako mentor: wybrany atakujący stwór o mniejszej sile dostaje licznik +1/+1. · {2}, {R}, {W}: +1/+1 do końca tury · choroba · 2/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Coat with Venom, Forest, Awaken the Bear, Forest, Kishla Village, Forest, Swamp ⏎ Nowa partia (seed 17). Powodzenia!
+  >> Aktywuj: Kishla Village (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Kishla Village — dodanie 1 many zielonej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Stampeding Elk Herd
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Zagraj: Stampeding Elk Herd (koszt 3GG)
+  [ROZGRYWKA]   • Stampeding Elk Herd zostaje rozstrzygnięty
+
+--- krok 24 | T. 11GraczGracz: 19 ż.Bot: 20 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Knockout Maneuver · 3 · Sorcery · połóż licznik +1/+1 + obrażenia równe mocy stwora · cel: twój stwór + stwór przeciwnika
+  MOJE POLA: Ainok Artillerist · 3 · Creature — Dog Archer · Zasięg · gdy ma licznik +1/+1 · 4/1 | Stampeding Elk Herd · 5 · Creature — Elk · Gdy atakuje: twoje stwory zdobywają Zadeptywanie do końca tury. · choroba · 5/5 | Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Zombie Army · 0 · Creature — Zombie Army · 1x +1/+1 · 1/1 | Boros Challenger · 2 · Creature — Human Soldier · Gdy ten stwór atakuje jako mentor: wybrany atakujący stwór o mniejszej sile dostaje licznik +1/+1. · {2}, {R}, {W}: +1/+1 do końca tury · choroba · 2/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Coat with Venom, Forest, Awaken the Bear, Forest, Kishla Village, Forest, Swamp ⏎ Nowa partia (seed 17). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Zombie Army blokuje Ainok Artillerist
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Ainok Artillerist zadaje 4 obrażenia (Zombie Army)
+  [ROZGRYWKA]   • Zombie Army zadaje 1 obrażenie (Ainok Artillerist)
+  [ROZGRYWKA]   • Zombie Army ginie
+  [ROZGRYWKA]   • Ainok Artillerist ginie
+  [ROZGRYWKA]   • token Zombie Army przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Veiled Ascension
+
+--- krok 27 | T. 13GraczGracz: 19 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Kishla Village (Ty) (koszt T) — dodaj 1 manę zieloną  ||  Aktywuj: Kishla Village (Ty) (koszt 4, T) — surveil 2  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Knockout Maneuver · 3 · Sorcery · połóż licznik +1/+1 + obrażenia równe mocy stwora · cel: twój stwór + stwór przeciwnika
+  MOJE POLA: Stampeding Elk Herd · 5 · Creature — Elk · Gdy atakuje: twoje stwory zdobywają Zadeptywanie do końca tury. · 5/5 | Forest · Basic Land — Forest · T: dodaj 1 manę ×4 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Boros Challenger · 2 · Creature — Human Soldier · Gdy ten stwór atakuje jako mentor: wybrany atakujący stwór o mniejszej sile dostaje licznik +1/+1. · {2}, {R}, {W}: +1/+1 do końca tury · 2/3 | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2).
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Coat with Venom, Forest, Awaken the Bear, Forest, Kishla Village, Forest, Swamp ⏎ Nowa partia (seed 17). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Veiled Ascension zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Veiled Ascension — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Veiled Ascension — trigger bez efektu (nie było czego wykonać)
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Aktywuj: Kishla Village (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Kishla Village — dodanie 1 many zielonej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+
+--- krok 30 | T. 13GraczGracz: 19 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Rzuć: Knockout Maneuver (koszt 2G) → cel: Stampeding Elk Herd (Ty), Boros Challenger (Nieprzyjaciel)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Knockout Maneuver · 3 · Sorcery · połóż licznik +1/+1 + obrażenia równe mocy stwora · cel: twój stwór + stwór przeciwnika
+  MOJE POLA: Stampeding Elk Herd · 5 · Creature — Elk · Gdy atakuje: twoje stwory zdobywają Zadeptywanie do końca tury. · 5/5 | Forest · Basic Land — Forest · T: dodaj 1 manę ×5 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Boros Challenger · 2 · Creature — Human Soldier · Gdy ten stwór atakuje jako mentor: wybrany atakujący stwór o mniejszej sile dostaje licznik +1/+1. · {2}, {R}, {W}: +1/+1 do końca tury · 2/3 | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2).
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Coat with Venom, Forest, Awaken the Bear, Forest, Kishla Village, Forest, Swamp ⏎ Nowa partia (seed 17). Powodzenia!
+  >> Rzuć: Knockout Maneuver (koszt 2G) → cel: Stampeding Elk Herd (Ty), Boros Challenger (Nieprzyjaciel)
+  [kreator many] Płatność 2G — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: GTapnij: Forest (G)Tapnij: Forest (G)Tapnij:  — źródła: 6
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Forest (G)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Stampeding Elk Herd zadaje 6 obrażeń (Boros Challenger)
+  [ROZGRYWKA]   • Knockout Maneuver zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Boros Challenger ginie
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+
+--- krok 33 | T. 14BotGracz: 19 ż.Bot: 14 ż.UpkeepStos — Veiled Ascension ---
+  STOS: Trigger: Veiled Ascension (krok upkeep)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Stampeding Elk Herd · 5 · Creature — Elk · Gdy atakuje: twoje stwory zdobywają Zadeptywanie do końca tury. · 1x +1/+1 · 6/6 | Forest · Basic Land — Forest · T: dodaj 1 manę ×5 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2).
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Coat with Venom, Forest, Awaken the Bear, Forest, Kishla Village, Forest, Swamp ⏎ Nowa partia (seed 17). Powodzenia!
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Veiled Ascension — skorzystać z efektu „you may"? (wybór opcjonalny: Nieprzyjaciel)
+  [ROZGRYWKA]   • Veiled Ascension — trigger (krok upkeep)
+  [ROZGRYWKA]   • Nieprzyjaciel korzysta z efektu „you may" (Veiled Ascension)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Morph dostaje +1 licznik flying (razem 1)
+  [ROZGRYWKA]   • Morph wchodzi na pole bitwy
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Liliana's Triumph → cel: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Poświęć: Stampeding Elk Herd (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Stampeding Elk Herd zostaje poświęcony
+  [ROZGRYWKA]   • Liliana's Triumph zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+
+--- krok 36 | T. 15GraczGracz: 19 ż.Bot: 14 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Kishla Village (Ty) (koszt T) — dodaj 1 manę zieloną  ||  Aktywuj: Kishla Village (Ty) (koszt 4, T) — surveil 2  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę ×5 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Face-down creature · Creature · Morph · choroba · 1x Latanie · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Coat with Venom, Forest, Awaken the Bear, Forest, Kishla Village, Forest, Swamp ⏎ Nowa partia (seed 17). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 15 — Ty
+  >> Aktywuj: Kishla Village (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Kin-Tree Nurturer
+  >> Zagraj: Kin-Tree Nurturer (koszt 2B)
+  [ROZGRYWKA]   • Kin-Tree Nurturer zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Endure (Kin-Tree Nurturer): wybierasz — 1× licznik +1/+1 albo token Spirit 1/1
+  [ROZGRYWKA]   • Kin-Tree Nurturer — trigger (wejście na pole bitwy)
+
+--- krok 39 | T. 15GraczGracz: 19 ż.Bot: 14 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Wybierz: Endure — liczniki czy token? (2 opcje)
+  RĘKA: (pusta)
+  MOJE POLA: Kin-Tree Nurturer · 3 · Creature — Human Druid · Dotykanie życia · choroba · 2/1 | Forest · Basic Land — Forest · T: dodaj 1 manę ×5 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Face-down creature · Creature · Morph · choroba · 1x Latanie · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Coat with Venom, Forest, Awaken the Bear, Forest, Kishla Village, Forest, Swamp ⏎ Nowa partia (seed 17). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Endure — liczniki czy token? (2 opcje)
+  [modal choice] Wybierz: Endure — liczniki czy token? Endure: liczniki +1/+1 na źródle Endure: stwórz białego tokena Spirit
+  [modal choice]   ▶ Endure: liczniki +1/+1 na źródle
+  [modal choice]     Endure: stwórz białego tokena Spirit
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kin-Tree Nurturer dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Veiled Ascension — skorzystać z efektu „you may"? (wybór opcjonalny: Nieprzyjaciel)
+  [ROZGRYWKA]   • Veiled Ascension — trigger (krok upkeep)
+  [ROZGRYWKA]   • Nieprzyjaciel korzysta z efektu „you may" (Veiled Ascension)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Morph dostaje +1 licznik flying (razem 1)
+  [ROZGRYWKA]   • Morph wchodzi na pole bitwy
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+
+--- krok 42 | T. 17GraczGracz: 17 ż.Bot: 14 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Kishla Village (Ty) (koszt T) — dodaj 1 manę zieloną  ||  Aktywuj: Kishla Village (Ty) (koszt 4, T) — surveil 2  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Kin-Tree Nurturer · 3 · Creature — Human Druid · Dotykanie życia · 1x +1/+1 · 3/2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×5 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Face-down creature · Creature · Morph · 1x Latanie · 2/2 | Face-down creature · Creature · Morph · choroba · 1x Latanie · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Coat with Venom, Forest, Awaken the Bear, Forest, Kishla Village, Forest, Swamp ⏎ Nowa partia (seed 17). Powodzenia!
+  [ROZGRYWKA]   • Tura 17 — Ty
+  >> Aktywuj: Kishla Village (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Kishla Village — dodanie 1 many zielonej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Colossodon Yearling
+  >> Zagraj: Colossodon Yearling (koszt 2G)
+  [kreator many] Płatność 2G — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: GTapnij: Forest (G)Tapnij: Forest (G)Tapnij:  — źródła: 6
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Forest (G)
+
+--- krok 45 | T. 17GraczGracz: 17 ż.Bot: 14 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Kin-Tree Nurturer · 3 · Creature — Human Druid · Dotykanie życia · 1x +1/+1 · 3/2 | Colossodon Yearling · 3 · Creature — Beast · choroba · 2/4 | Forest · Basic Land — Forest · T: dodaj 1 manę ×5 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Face-down creature · Creature · Morph · 1x Latanie · 2/2 | Face-down creature · Creature · Morph · choroba · 1x Latanie · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Coat with Venom, Forest, Awaken the Bear, Forest, Kishla Village, Forest, Swamp ⏎ Nowa partia (seed 17). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Colossodon Yearling zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Ty: życie 17 → 20
+  [ROZGRYWKA]   • Kin-Tree Nurturer zadaje 3 obrażenia (Morph)
+  [ROZGRYWKA]   • Morph zadaje 2 obrażenia (Kin-Tree Nurturer)
+  [ROZGRYWKA]   • Kin-Tree Nurturer ginie
+  [ROZGRYWKA]   • Plains ginie
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Veiled Ascension — skorzystać z efektu „you may"? (wybór opcjonalny: Nieprzyjaciel)
+  [ROZGRYWKA]   • Veiled Ascension — trigger (krok upkeep)
+  [ROZGRYWKA]   • Nieprzyjaciel korzysta z efektu „you may" (Veiled Ascension)
+
+--- krok 48 | T. 19GraczGracz: 18 ż.Bot: 14 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Kishla Village (Ty) (koszt T) — dodaj 1 manę zieloną  ||  Aktywuj: Kishla Village (Ty) (koszt 4, T) — surveil 2  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Colossodon Yearling · 3 · Creature — Beast · 2/4 | Forest · Basic Land — Forest · T: dodaj 1 manę ×5 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Face-down creature · Creature · Morph · 1x Latanie · 2/2 | Face-down creature · Creature · Morph · choroba · 1x Latanie · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Coat with Venom, Forest, Awaken the Bear, Forest, Kishla Village, Forest, Swamp ⏎ Nowa partia (seed 17). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Morph dostaje +1 licznik flying (razem 1)
+  [ROZGRYWKA]   • Morph wchodzi na pole bitwy
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Morph
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Morph zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 18
+  [ROZGRYWKA]   • Tura 19 — Ty
+  >> Aktywuj: Kishla Village (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Kishla Village — dodanie 1 many zielonej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Delta Bloodflies
+  >> Zagraj: Delta Bloodflies (koszt 1B)
+  [ROZGRYWKA]   • Delta Bloodflies zostaje rozstrzygnięty
+
+--- krok 51 | T. 19GraczGracz: 18 ż.Bot: 14 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Colossodon Yearling · 3 · Creature — Beast · 2/4 | Delta Bloodflies · 2 · Creature — Insect · Latanie · Gdy atakuje: utrata 1 życia. · choroba · 1/2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×5 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Face-down creature · Creature · Morph · 1x Latanie · 2/2 | Face-down creature · Creature · Morph · choroba · 1x Latanie · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Coat with Venom, Forest, Awaken the Bear, Forest, Kishla Village, Forest, Swamp ⏎ Nowa partia (seed 17). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 14 → 12
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Veiled Ascension — skorzystać z efektu „you may"? (wybór opcjonalny: Nieprzyjaciel)
+  [ROZGRYWKA]   • Veiled Ascension — trigger (krok upkeep)
+  [ROZGRYWKA]   • Nieprzyjaciel korzysta z efektu „you may" (Veiled Ascension)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Morph dostaje +1 licznik flying (razem 1)
+  [ROZGRYWKA]   • Morph wchodzi na pole bitwy
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Piercing Rays → cel: Colossodon Yearling
+
+--- krok 54 | T. 20BotGracz: 18 ż.Bot: 12 ż.Główna 1Stos — Severed Strands ---
+  STOS: Severed Strands (rzuca: Nieprzyjaciel) → cel: Delta Bloodflies
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Delta Bloodflies · 2 · Creature — Insect · Latanie · Gdy atakuje: utrata 1 życia. · choroba · 1/2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×5 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Face-down creature · Creature · Morph · 1x Latanie · 2/2 | Face-down creature · Creature · Morph · choroba · 1x Latanie · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Coat with Venom, Forest, Awaken the Bear, Forest, Kishla Village, Forest, Swamp ⏎ Nowa partia (seed 17). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: Colossodon Yearling — pole bitwy → wygnanie
+  [ROZGRYWKA]   • Piercing Rays zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Severed Strands → cel: Delta Bloodflies
+  [ROZGRYWKA]   • Azorius Justiciar zostaje poświęcony
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Atak: Morph
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Morph zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 16
+  [ROZGRYWKA]   • Tura 21 — Ty
+  >> Aktywuj: Kishla Village (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Kishla Village — dodanie 1 many zielonej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+
+--- krok 57 | T. 21GraczGracz: 16 ż.Bot: 14 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Forest  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Forest · Basic Land — Forest · T: dodaj 1 manę
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę ×5 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Face-down creature · Creature · Morph · 1x Latanie · 2/2 | Face-down creature · Creature · Morph · choroba · 1x Latanie · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Coat with Venom, Forest, Awaken the Bear, Forest, Kishla Village, Forest, Swamp ⏎ Nowa partia (seed 17). Powodzenia!
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Veiled Ascension — skorzystać z efektu „you may"? (wybór opcjonalny: Nieprzyjaciel)
+  [ROZGRYWKA]   • Veiled Ascension — trigger (krok upkeep)
+  [ROZGRYWKA]   • Nieprzyjaciel korzysta z efektu „you may" (Veiled Ascension)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Morph dostaje +1 licznik flying (razem 1)
+  [ROZGRYWKA]   • Morph wchodzi na pole bitwy
+  [ROZGRYWKA]   • Veiled Ascension — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Ember Beast
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Morph zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 14
+  [ROZGRYWKA]   • Morph zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 12
+  [ROZGRYWKA]   • Tura 23 — Ty
+
+--- krok 60 | T. 23GraczGracz: 12 ż.Bot: 14 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Kishla Village (Ty) (koszt T) — dodaj 1 manę zieloną  ||  Aktywuj: Kishla Village (Ty) (koszt 4, T) — surveil 2  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę ×6 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Face-down creature · Creature · Morph · 1x Latanie · 2/2 ×2 | Face-down creature · Creature · Morph · choroba · 1x Latanie · 2/2 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · choroba · 3/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Coat with Venom, Forest, Awaken the Bear, Forest, Kishla Village, Forest, Swamp ⏎ Nowa partia (seed 17). Powodzenia!
+  >> Aktywuj: Kishla Village (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Kishla Village — dodanie 1 many zielonej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Veiled Ascension — skorzystać z efektu „you may"? (wybór opcjonalny: Nieprzyjaciel)
+  [ROZGRYWKA]   • Veiled Ascension — trigger (krok upkeep)
+  [ROZGRYWKA]   • Nieprzyjaciel korzysta z efektu „you may" (Veiled Ascension)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Ty: życie 12 → 10
+  [ROZGRYWKA]   • Morph zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 10 → 8
+  [ROZGRYWKA]   • Morph zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 8 → 6
+  [ROZGRYWKA]   • Ember Beast zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 6 → 3
+  [ROZGRYWKA]   • Tura 25 — Ty
+
+--- krok 63 | T. 25GraczGracz: 3 ż.Bot: 14 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Kishla Village (Ty) (koszt T) — dodaj 1 manę zieloną  ||  Aktywuj: Kishla Village (Ty) (koszt 4, T) — surveil 2  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę ×6 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Face-down creature · Creature · Morph · 1x Latanie · 2/2 ×3 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Face-down creature · Creature · Morph · choroba · 1x Latanie · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Coat with Venom, Forest, Awaken the Bear, Forest, Kishla Village, Forest, Swamp ⏎ Nowa partia (seed 17). Powodzenia!
+  >> Aktywuj: Kishla Village (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Kishla Village — dodanie 1 many zielonej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Rakshasa Vizier
+  [ROZGRYWKA]   • Veiled Ascension — trigger (krok upkeep)
+  [ROZGRYWKA]   • Nieprzyjaciel korzysta z efektu „you may" (Veiled Ascension)
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 66 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Rakshasa Vizier · 5 · Creature — Demon · Ilekroć karty trafiają na wygnanie z twojego grobu: połóż licznik +1/+1. · 4/4
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę ×6 | Kishla Village · Land · {T}: dodaj 1 manę zieloną · {4}, {T}: surveil 2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Veiled Ascension · 4 · Enchantment · Gdy wejdzie na pole bitwy: połóż licznik flying na zakrytych stworach. · zakryte stwory wchodzą z licznikiem flying · Na początku upkeep (gdy rzucono 2+ czary): cloak (wierzch biblioteki twarzą w dół jako 2/2). | Face-down creature · Creature · Morph · 1x Latanie · 2/2 ×4 | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam · 3/4 | Face-down creature · Creature · Morph · choroba · 1x Latanie · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Coat with Venom, Forest, Awaken the Bear, Forest, Kishla Village, Forest, Swamp ⏎ Nowa partia (seed 17). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 20, kliknięte: 19, modale: 2, sondy noop: 64 (panel 58, modal 6)
+== DETEKTORY: brak zgłoszeń ==

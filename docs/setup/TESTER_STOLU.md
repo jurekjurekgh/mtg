@@ -107,7 +107,7 @@ ptaszki) nigdy nie były odwiedzane. Teraz `--profile` wybiera zachowanie:
 
 | Profil | Zachowanie | Do czego |
 |---|---|---|
-| `greedy` (domyślny) | pierwsza sensowna akcja, atak wszystkim | regresja wyników z M80–M96 |
+| `greedy` (domyślny) | pierwsza sensowna akcja, atak wszystkim; na końcu kliknie **dowolną** dostępną akcję zamiast zgłaszać STOP (M250) | regresja wyników z M80–M96 |
 | `random` | losowa akcja i losowa opcja modala, czasem pass | rzadkie gałęzie UI, nietypowe sekwencje |
 | `defensive` | unika ataku, blokuje czym się da, woli zdolności i pass | okna reakcji, długie partie, obrona |
 | `explorer` | preferuje akcje jeszcze NIEklikane w tej partii | maksymalne pokrycie interfejsu |
@@ -374,7 +374,15 @@ W praktyce:
 - `[STOP] brak akcji` w oknie, w którym człowiek po prostu kliknąłby przycisk,
   to **luka w polityce gracza** (`pickAction` w `run-game.mjs`) — dopisz wzorzec
   etykiety i uruchom partię ponownie. Przykład: M96 — akcja „Epic Experiment:
-  zakończ (reszta kart do grobu)" zatrzymywała audyt.
+  zakończ (reszta kart do grobu)" zatrzymywała audyt. M250: etykiety z
+  `choiceSourceTitle` (konwencja „Nazwa — opis małą literą", M162/C) łamały
+  wielkoliterowe wzorce — „Chittering Rats — karta z ręki na wierzch
+  biblioteki" nie przechodziło przez `Karta z ręki`; w tej samej klasie
+  leżały Exploit, Satyr (odsłoniętych), phyrexian (zapłata: mana czy życie),
+  Escape (karty do wygnania) i „Cel dla:". Od M250 greedy ma też ostateczny
+  fallback na pierwszy klikalny przycisk — przy wzorcu ‟dopisz etykietę”
+  fałszywe STOP-y powinny zniknąć; zostają prawdziwe ugrzęźnięcia (samo
+  „Poddaj partię").
 - Mechanika, której tester nie potrafi rozegrać (modal bez obsługi, wizard
   z nietypowym układem), wymaga rozszerzenia `resolveModal` — nie pominięcia
   talii z tą mechaniką.

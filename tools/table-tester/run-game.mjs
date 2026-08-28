@@ -478,7 +478,16 @@ export async function runTableGame({
     // mechanika Batch 38) to rzut PERMANENTA; bez wzorca tester nigdy nie
     // ćwiczył warp. Dokładamy do puli ruchów i priorytetów greedy.
     const plays = all(/Zagraj ląd|^Rzuć:|^Rzuć za warp:|^Rzuć za surge:|^Zagraj:|^Aktywuj:|^Cycling:|^Wyposaż:|^Flashback:|^Cel czaru|^Cel zdolności:|^Bestow:|^Aura:|^Wybierz:|cel triggera|podziel \d+ obrażeni?[ae]?/);
-    const decisions = all(/Odrzucenie karty|Poświęcenie|Zapłata|Dopłata|Karta z ręki|Wybór koloru|Wybór typu|Kolejność|Proliferate|Cel obrażeń|Rozdzielenie|Wybierz tryb|wybór trybu|Moonlit|Przekierowanie|Dobrowolna|Index|Rozstrzygnij|Pokój|wybierz cel|Karta do ręki|Szukanie|Wybór efektu|Karta na wierzch|Karty do grobu|Surveil|Stomping|odsłonięte|reveal_exile|Craft:|wygnaj|pomijam|brak karty/);
+    // M250 (audyt Żywym Testerem, theros vs wiedzmin s=13): source-titled
+    // (choiceSourceTitle) blokujące decyzje łamią WIELKĄ literę wzorców —
+    // „Chittering Rats — karta z ręki na wierzch biblioteki" nie łapało się
+    // w `Karta z ręki`/`Karta na wierzch` i tester wypisał fałszywy [STOP],
+    // choć gra czekała grywalnie na kliknięcie. Dopisane wzorce niższej
+    // litery: rats (M162/C), Exploit (poświęcenie), Satyr (bierz ląd
+    // z odsłoniętych — `odsłonięte` nie złapie odmiany „-tych"), phyrexian
+    // (zapłata: mana czy życie), Escape (karty do wygnania — `wygnaj` nie
+    // złapie „wygnania"), rzuty permanenta z celem (Cel dla:).
+    const decisions = all(/Odrzucenie karty|Poświęcenie|poświęć stwora|Zapłata|Dopłata|Karta z ręki|karta z ręki na wierzch|Wybór koloru|Wybór typu|Kolejność|Proliferate|Cel obrażeń|Rozdzielenie|Wybierz tryb|wybór trybu|Moonlit|Przekierowanie|Dobrowolna|Index|Rozstrzygnij|Pokój|wybierz cel|Karta do ręki|Szukanie|Wybór efektu|Karta na wierzch|Karty do grobu|Surveil|Stomping|odsłonięte|odsłoniętych|reveal_exile|Craft:|wygnaj|karty do wygnania|Exploit|bierz ląd|zapłata: mana|Cel dla:|pomijam|brak karty/);
     const pass = by(/Dalej|pass/);
 
     // Decyzje blokujące zawsze przed pasem (inaczej gra utyka).
@@ -533,7 +542,13 @@ export async function runTableGame({
           || by(/podziel \d+ obrażeni/) // M172/E: wizard podziału obrażeń
           || by(/^Cel zdolności:|^Cel czaru:|^Bestow:|^Aura:/)
           || (decisions.length > 0 ? decisions[0] : null)
-          || pass;
+          || pass
+          // M250 (audyt Żywym Testerem): dopóki w panelu jest JAKAKOLWIEK
+          // klikalna akcja, „brak akcji" jest kłamstwem narzędzia, nie
+          // sygnałem o grze (klasa L46 dotyczy okien BEZ ruchu). Ostateczny
+          // fallback = pierwszy nie-Poddaj przycisk; prawdziwe ugrzęźnięcie
+          // (samo Poddaj partię) nadal kończy się [STOP].
+          || labels[0];
     }
   };
 
