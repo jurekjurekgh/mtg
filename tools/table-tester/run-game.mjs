@@ -600,6 +600,9 @@ export async function runTableGame({
 
   // M203/#3: ile wpisów modala pauzy bota już trafiło do transkryptu.
   let loggedBotMoveEntries = 0;
+  // M252: ostatnie zalogowane wpisy (do rozróżnienia „ta sama rosnąca lista"
+  // vs „nowe napełnienie po drenażu bufora") — patrz blok ekstrakcji modala.
+  let loggedBotMoveLines = [];
 
   const resolveModal = async () => {
     if (await resolveManaWizard()) return true;
@@ -863,9 +866,26 @@ export async function runTableGame({
       // Logujemy wyłącznie wpisy NOWE względem poprzedniego renderu — po
       // INDEKSIE, nie po treści: prawdziwe powtórzenie (station, mill) to
       // kolejny wpis o tym samym tekście i musi zostać policzony.
-      if (entries.length < loggedBotMoveEntries) loggedBotMoveEntries = 0; // lista zresetowana
+      //
+      // M252 (audyt Żywym Testerem, innistrad-brg/wiedzmin s=127): czyste
+      // „po długości" myliło ŚWIEŻE pokaz (bufor wypompowany i napełniony
+      // od nowa) z tą samą rosnącą listą. Przykład: pokaz A miał 1 wpis
+      // („…zostaje rozstrzygnięty"), następny pokaz to NOWA lista „[Tura 9
+      // — Ty, Faza: Dobieranie, Dobierasz: Swamp]" (3 wpisy) — slice(1)
+      // uciął NAGŁÓWEK TURY (świadkowie: trace bufora pokazywał jego
+      // rysunek). Reset myślimy prefiksem: gdy bieżąca lista NIE zaczyna
+      // się od zarejestrowanych poprzednio wpisów, to jest nowe napełnienie
+      // i logujemy całość; gdy się zaczyna — to ten sam rosnący ciąg (M203).
+      const loggedPrefix = loggedBotMoveLines;
+      const samePrefix = loggedPrefix.length > 0
+        && lines.length >= loggedPrefix.length
+        && loggedPrefix.every((line, i) => lines[i] === line);
+      if (!samePrefix) {
+        loggedBotMoveEntries = 0; // nowe napełnienie po drenażu (albo pierwsze)
+      }
       const fresh = lines.slice(loggedBotMoveEntries);
       loggedBotMoveEntries = lines.length;
+      loggedBotMoveLines = lines;
       for (const line of fresh) logL(`  [ROZGRYWKA] ${line}`);
       const ok = $('#bot-move-ok');
       if (ok) { ok.click(); await sleep(120); return true; }
