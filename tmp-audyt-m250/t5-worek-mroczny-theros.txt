@@ -1,0 +1,336 @@
+== NOWA PARTIA: gracz=worek-mroczny vs bot=theros, seed=31, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Forest  ||  Zagraj ląd: Mountain (1 z 2)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Forest · Basic Land — Forest · T: dodaj 1 manę | Unbreakable Bond · 5 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie | Creakwood Safewright · 2 · Creature — Elf Warrior · Na początku kroku końca (gdy w twoim grobie jest karta Elf i ma licznik -1/-1): usuń licznik -1/-1. · 5/5 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Unbreakable Bond, Creakwood Safewright, Mountain, Enter the Enigma, Tiller of Flesh, Mountain ⏎ Nowa partia (seed 31). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Puppeteer Clique
+
+--- krok 3 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Mountain (1 z 2)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Unbreakable Bond · 5 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie | Creakwood Safewright · 2 · Creature — Elf Warrior · Na początku kroku końca (gdy w twoim grobie jest karta Elf i ma licznik -1/-1): usuń licznik -1/-1. · 5/5 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Unbreakable Bond, Creakwood Safewright, Mountain, Enter the Enigma, Tiller of Flesh, Mountain ⏎ Nowa partia (seed 31). Powodzenia!
+  >> Zagraj ląd: Mountain (1 z 2)
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Sweet Oblivion → cel: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Mielisz Assert Perfection do grobu
+  [ROZGRYWKA]   • Mielisz Mountain do grobu
+  [ROZGRYWKA]   • Mielisz Swamp do grobu
+  [ROZGRYWKA]   • Sweet Oblivion zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+
+--- krok 6 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Mountain (1 z 2)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Unbreakable Bond · 5 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie | Creakwood Safewright · 2 · Creature — Elf Warrior · Na początku kroku końca (gdy w twoim grobie jest karta Elf i ma licznik -1/-1): usuń licznik -1/-1. · 5/5 | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Unbreakable Bond, Creakwood Safewright, Mountain, Enter the Enigma, Tiller of Flesh, Mountain ⏎ Nowa partia (seed 31). Powodzenia!
+  >> Zagraj ląd: Mountain (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Wavecrash Triton
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Wavecrash Triton zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Soulbright Flamekin
+
+--- krok 9 | T. 7GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Mountain  ||  Zagraj: Soulbright Flamekin (koszt 1R)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Unbreakable Bond · 5 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie | Creakwood Safewright · 2 · Creature — Elf Warrior · Na początku kroku końca (gdy w twoim grobie jest karta Elf i ma licznik -1/-1): usuń licznik -1/-1. · 5/5 | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Soulbright Flamekin · 2 · Creature — Elemental Shaman · {2}: cel: stwór — zdobądź Zadeptywanie do końca tury · 2/1
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. · choroba · 1/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Unbreakable Bond, Creakwood Safewright, Mountain, Enter the Enigma, Tiller of Flesh, Mountain ⏎ Nowa partia (seed 31). Powodzenia!
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Zagraj: Soulbright Flamekin (koszt 1R)
+  [kreator many] Płatność 1R — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: RTapnij: Forest (G)Tapnij: Mountain (R)Tapnij — źródła: 4
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Forest (G)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Soulbright Flamekin zostaje rozstrzygnięty
+
+--- krok 12 | T. 7GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Cel zdolności: Soulbright Flamekin (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Unbreakable Bond · 5 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie | Creakwood Safewright · 2 · Creature — Elf Warrior · Na początku kroku końca (gdy w twoim grobie jest karta Elf i ma licznik -1/-1): usuń licznik -1/-1. · 5/5 | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2
+  MOJE POLA: Soulbright Flamekin · 2 · Creature — Elemental Shaman · {2}: cel: stwór — zdobądź Zadeptywanie do końca tury · choroba · 2/1 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. · choroba · 1/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Unbreakable Bond, Creakwood Safewright, Mountain, Enter the Enigma, Tiller of Flesh, Mountain ⏎ Nowa partia (seed 31). Powodzenia!
+  >> Cel zdolności: Soulbright Flamekin (2 opcje)
+  [modal choice] Cel zdolności: Soulbright Flamekin Aktywuj: Soulbright Flamekin (Ty) (koszt 2) — zdobądź Zadeptywanie do końca tury → cel: Wavecrash Triton (Nieprzyjaciel)🔍 Podgląd karty Aktywuj: Soulbright Flamekin (Ty) (koszt 2) — zdobądź Zadeptywanie do końca tury → cel: Soulbright Flamekin (Ty)🔍 Podgląd karty
+  [modal choice]   ▶ Aktywuj: Soulbright Flamekin (Ty) (koszt 2) — zdobądź Zadeptywanie do końca tury → cel: Wavecrash Triton (Nieprzyjaciel)
+  [modal choice]     Aktywuj: Soulbright Flamekin (Ty) (koszt 2) — zdobądź Zadeptywanie do końca tury → cel: Soulbright Flamekin (Ty)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Soulbright Flamekin — nadanie do końca tury: zadeptywanie → cel: Wavecrash Triton
+  [ROZGRYWKA]   • Wavecrash Triton zyskuje: zadeptywanie
+  [ROZGRYWKA]   • Ty: zdolność Soulbright Flamekin rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Entrancing Lyre
+
+--- krok 15 | T. 8BotGracz: 20 ż.Bot: 20 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Deklaracja blokujących (2 opcje)
+  RĘKA: Unbreakable Bond · 5 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie | Creakwood Safewright · 2 · Creature — Elf Warrior · Na początku kroku końca (gdy w twoim grobie jest karta Elf i ma licznik -1/-1): usuń licznik -1/-1. · 5/5 | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2
+  MOJE POLA: Soulbright Flamekin · 2 · Creature — Elemental Shaman · {2}: cel: stwór — zdobądź Zadeptywanie do końca tury · choroba · 2/1 | Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. · atakuje — niezablokowany · 1/4 | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Unbreakable Bond, Creakwood Safewright, Mountain, Enter the Enigma, Tiller of Flesh, Mountain ⏎ Nowa partia (seed 31). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Atak: Wavecrash Triton
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Soulbright Flamekin (2/1)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA]   • Soulbright Flamekin ginie
+
+--- krok 18 | T. 9GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Unbreakable Bond · 5 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie | Creakwood Safewright · 2 · Creature — Elf Warrior · Na początku kroku końca (gdy w twoim grobie jest karta Elf i ma licznik -1/-1): usuń licznik -1/-1. · 5/5 | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. · 1/4 | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Unbreakable Bond, Creakwood Safewright, Mountain, Enter the Enigma, Tiller of Flesh, Mountain ⏎ Nowa partia (seed 31). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Satyr Wayfinder
+
+--- krok 21 | T. 10BotGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Unbreakable Bond · 5 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie | Creakwood Safewright · 2 · Creature — Elf Warrior · Na początku kroku końca (gdy w twoim grobie jest karta Elf i ma licznik -1/-1): usuń licznik -1/-1. · 5/5 | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. · 1/4 | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · choroba · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Unbreakable Bond, Creakwood Safewright, Mountain, Enter the Enigma, Tiller of Flesh, Mountain ⏎ Nowa partia (seed 31). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Satyr Wayfinder zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Satyr Wayfinder — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Satyr Wayfinder — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel: Island — biblioteka → ręka
+  [ROZGRYWKA]   • Nieprzyjaciel: Sleep of the Dead — biblioteka → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel: Pyxis of Pandemonium — biblioteka → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel: Anthem of Champions — biblioteka → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel bierze żadnego lądu z wierzchu do ręki (reszta do grobu)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Wavecrash Triton
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Titan's Strength → cel: Wavecrash Triton
+  [ROZGRYWKA]   • Wavecrash Triton — trigger bez efektu (brak legalnych celów)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Wavecrash Triton zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 16
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Goldmeadow Nomad
+
+--- krok 24 | T. 12BotGracz: 16 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Unbreakable Bond · 5 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie | Creakwood Safewright · 2 · Creature — Elf Warrior · Na początku kroku końca (gdy w twoim grobie jest karta Elf i ma licznik -1/-1): usuń licznik -1/-1. · 5/5 | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. · 1/4 | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Unbreakable Bond, Creakwood Safewright, Mountain, Enter the Enigma, Tiller of Flesh, Mountain ⏎ Nowa partia (seed 31). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA]   • Nieprzyjaciel: Anthem of Champions — cmentarz → wygnanie
+  [ROZGRYWKA]   • Nieprzyjaciel: Titan's Strength — cmentarz → wygnanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Sweet Oblivion → cel: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Atak: Wavecrash Triton, Satyr Wayfinder
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Wavecrash Triton zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 15
+  [ROZGRYWKA]   • Satyr Wayfinder zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 15 → 14
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swooping Protector
+
+--- krok 27 | T. 14BotGracz: 14 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Unbreakable Bond · 5 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie | Creakwood Safewright · 2 · Creature — Elf Warrior · Na początku kroku końca (gdy w twoim grobie jest karta Elf i ma licznik -1/-1): usuń licznik -1/-1. · 5/5 | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Swooping Protector · 4 · Creature — Bird Citizen · Flash (błysk) Latanie · 2/1
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. · 1/4 | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Unbreakable Bond, Creakwood Safewright, Mountain, Enter the Enigma, Tiller of Flesh, Mountain ⏎ Nowa partia (seed 31). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Returned Centaur
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Returned Centaur zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Returned Centaur — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Returned Centaur — cel: Ty
+
+--- krok 30 | T. 15GraczGracz: 12 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Unbreakable Bond · 5 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie | Creakwood Safewright · 2 · Creature — Elf Warrior · Na początku kroku końca (gdy w twoim grobie jest karta Elf i ma licznik -1/-1): usuń licznik -1/-1. · 5/5 | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Swooping Protector · 4 · Creature — Bird Citizen · Flash (błysk) Latanie · 2/1 | Vanish from Sight · 4 · Instant · właściciel celu kładzie go na wierzch albo spód swojej biblioteki (jego wybór) + surveil 1 · cel: permanent niebędący lądem
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. · 1/4 | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · choroba · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Unbreakable Bond, Creakwood Safewright, Mountain, Enter the Enigma, Tiller of Flesh, Mountain ⏎ Nowa partia (seed 31). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Returned Centaur — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Wavecrash Triton, Satyr Wayfinder
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Wavecrash Triton zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 13
+  [ROZGRYWKA]   • Satyr Wayfinder zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 12
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Vanish from Sight
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Wybierasz, którą kartę odrzucić przy limicie ręki
+  >> Wybierz: Karta do odrzucenia (8 opcji)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Unbreakable Bond🔍 Podgląd karty Odrzuć: Puppeteer Clique🔍 Podgląd karty Odrzuć: Tiller of Flesh🔍 Podgląd karty Odrzuć: Swooping Protector🔍 Podgląd karty Odrzuć: Vanish from Sight🔍 Podgląd karty Odrzuć: Creakwood Safewright🔍 Podgląd karty Odrzuć: Enter the Enigma🔍 Podgląd karty Odrzuć: Goldmeadow Nomad🔍 Podgląd karty
+  [modal choice]   ▶ Odrzuć: Unbreakable Bond
+  [modal choice]     Odrzuć: Puppeteer Clique
+  [modal choice]     Odrzuć: Tiller of Flesh
+  [modal choice]     Odrzuć: Swooping Protector
+  [modal choice]     Odrzuć: Vanish from Sight
+  [modal choice]     Odrzuć: Creakwood Safewright
+  [modal choice]     Odrzuć: Enter the Enigma
+  [modal choice]     Odrzuć: Goldmeadow Nomad
+
+--- krok 33 | T. 16BotGracz: 12 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Creakwood Safewright · 2 · Creature — Elf Warrior · Na początku kroku końca (gdy w twoim grobie jest karta Elf i ma licznik -1/-1): usuń licznik -1/-1. · 5/5 | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Swooping Protector · 4 · Creature — Bird Citizen · Flash (błysk) Latanie · 2/1 | Vanish from Sight · 4 · Instant · właściciel celu kładzie go na wierzch albo spód swojej biblioteki (jego wybór) + surveil 1 · cel: permanent niebędący lądem
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. · 1/4 | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Unbreakable Bond, Creakwood Safewright, Mountain, Enter the Enigma, Tiller of Flesh, Mountain ⏎ Nowa partia (seed 31). Powodzenia!
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA]   • Wavecrash Triton zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 12 → 11
+  [ROZGRYWKA]   • Satyr Wayfinder zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 10
+  [ROZGRYWKA]   • Returned Centaur zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 10 → 8
+  [ROZGRYWKA]   • Tura 17 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Fear of Abduction
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Sprzątanie
+  [ROZGRYWKA]   • Wybierasz, którą kartę odrzucić przy limicie ręki
+
+--- krok 36 | T. 17GraczGracz: 8 ż.Bot: 20 ż.Sprzątanie ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Wybierz: Karta do odrzucenia (8 opcji)
+  RĘKA: Creakwood Safewright · 2 · Creature — Elf Warrior · Na początku kroku końca (gdy w twoim grobie jest karta Elf i ma licznik -1/-1): usuń licznik -1/-1. · 5/5 | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Swooping Protector · 4 · Creature — Bird Citizen · Flash (błysk) Latanie · 2/1 | Vanish from Sight · 4 · Instant · właściciel celu kładzie go na wierzch albo spód swojej biblioteki (jego wybór) + surveil 1 · cel: permanent niebędący lądem | Fear of Abduction · 6 · Enchantment Creature — Nightmare · Latanie · Gdy wejdzie na pole bitwy: wygnij stwora przeciwnika. · Gdy ta karta opuszcza pole bitwy: zwróć wygnane na rękę. · 5/5
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. · 1/4 | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Unbreakable Bond, Creakwood Safewright, Mountain, Enter the Enigma, Tiller of Flesh, Mountain ⏎ Nowa partia (seed 31). Powodzenia!
+  >> Wybierz: Karta do odrzucenia (8 opcji)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Fear of Abduction🔍 Podgląd karty Odrzuć: Puppeteer Clique🔍 Podgląd karty Odrzuć: Tiller of Flesh🔍 Podgląd karty Odrzuć: Swooping Protector🔍 Podgląd karty Odrzuć: Vanish from Sight🔍 Podgląd karty Odrzuć: Creakwood Safewright🔍 Podgląd karty Odrzuć: Enter the Enigma🔍 Podgląd karty Odrzuć: Goldmeadow Nomad🔍 Podgląd karty
+  [modal choice]   ▶ Odrzuć: Fear of Abduction
+  [modal choice]     Odrzuć: Puppeteer Clique
+  [modal choice]     Odrzuć: Tiller of Flesh
+  [modal choice]     Odrzuć: Swooping Protector
+  [modal choice]     Odrzuć: Vanish from Sight
+  [modal choice]     Odrzuć: Creakwood Safewright
+  [modal choice]     Odrzuć: Enter the Enigma
+  [modal choice]     Odrzuć: Goldmeadow Nomad
+  [ROZGRYWKA]   • Atak: Wavecrash Triton, Satyr Wayfinder, Returned Centaur
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Wavecrash Triton zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 8 → 7
+  [ROZGRYWKA]   • Satyr Wayfinder zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 7 → 6
+  [ROZGRYWKA]   • Returned Centaur zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 6 → 4
+  [ROZGRYWKA]   • Tura 19 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+
+--- krok 39 | T. 19GraczGracz: 4 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Cel czaru: Enter the Enigma (3 opcje)  ||  Cel czaru: Vanish from Sight (4 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Creakwood Safewright · 2 · Creature — Elf Warrior · Na początku kroku końca (gdy w twoim grobie jest karta Elf i ma licznik -1/-1): usuń licznik -1/-1. · 5/5 | Enter the Enigma · 1 · Instant · nie może być blokowany + dobierz 1 kartę · cel: stwór | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Swooping Protector · 4 · Creature — Bird Citizen · Flash (błysk) Latanie · 2/1 | Vanish from Sight · 4 · Instant · właściciel celu kładzie go na wierzch albo spód swojej biblioteki (jego wybór) + surveil 1 · cel: permanent niebędący lądem
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. · 1/4 | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Unbreakable Bond, Creakwood Safewright, Mountain, Enter the Enigma, Tiller of Flesh, Mountain ⏎ Nowa partia (seed 31). Powodzenia!
+  >> Cel czaru: Enter the Enigma (3 opcje)
+  [modal choice] Cel czaru: Enter the Enigma Rzuć: Enter the Enigma (koszt U) → cel: Wavecrash Triton (Nieprzyjaciel)🔍 Podgląd karty Rzuć: Enter the Enigma (koszt U) → cel: Satyr Wayfinder (Nieprzyjaciel)🔍 Podgląd karty Rzuć: Enter the Enigma (koszt U) → cel: Returned Centaur (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]   ▶ Rzuć: Enter the Enigma (koszt U) → cel: Wavecrash Triton (Nieprzyjaciel)
+  [modal choice]     Rzuć: Enter the Enigma (koszt U) → cel: Satyr Wayfinder (Nieprzyjaciel)
+  [modal choice]     Rzuć: Enter the Enigma (koszt U) → cel: Returned Centaur (Nieprzyjaciel)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Dobierasz: Cenn's Tactician
+  [ROZGRYWKA]   • Enter the Enigma zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Feral Invocation → cel: Returned Centaur
+
+--- krok 42 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Creakwood Safewright · 2 · Creature — Elf Warrior · Na początku kroku końca (gdy w twoim grobie jest karta Elf i ma licznik -1/-1): usuń licznik -1/-1. · 5/5 | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Swooping Protector · 4 · Creature — Bird Citizen · Flash (błysk) Latanie · 2/1 | Vanish from Sight · 4 · Instant · właściciel celu kładzie go na wierzch albo spód swojej biblioteki (jego wybór) + surveil 1 · cel: permanent niebędący lądem | Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 1/1
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. · 1/4 | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · +2/+2 · zaczarowana: Feral Invocation · 4/6 | Feral Invocation · 3 · Enchantment Aura · Flash (błysk) · stwór: +2/+2 · aura → Returned Centaur
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Unbreakable Bond, Creakwood Safewright, Mountain, Enter the Enigma, Tiller of Flesh, Mountain ⏎ Nowa partia (seed 31). Powodzenia!
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 43 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Creakwood Safewright · 2 · Creature — Elf Warrior · Na początku kroku końca (gdy w twoim grobie jest karta Elf i ma licznik -1/-1): usuń licznik -1/-1. · 5/5 | Tiller of Flesh · 4 · Creature — Phyrexian Knight · Rzucenie czaru celującego w permanent: inkubuj 2. · 2/4 | Puppeteer Clique · 5 · Creature — Faerie Wizard · Latanie Persist · Gdy wejdzie na pole bitwy: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na pole bitwy z licznikiem. · 3/2 | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Swooping Protector · 4 · Creature — Bird Citizen · Flash (błysk) Latanie · 2/1 | Vanish from Sight · 4 · Instant · właściciel celu kładzie go na wierzch albo spód swojej biblioteki (jego wybór) + surveil 1 · cel: permanent niebędący lądem | Cenn's Tactician · 1 · Creature — Kithkin Soldier · {W}, {T}: cel: stwór z podtypem Soldier — połóż licznik +1/+1 · 1/1
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. · 1/4 | Entrancing Lyre · 3 · Artifact · {X}, {T}: cel: stwór o sile ≤ X — tap + blokada odkręcania (póki źródło zatapnięte) | Satyr Wayfinder · 2 · Creature — Satyr · Gdy wejdzie na pole bitwy: odsłoń 4 karty z wierzchu: możesz wziąć ląd do ręki, reszta do grobu. · 1/1 | Returned Centaur · 4 · Creature — Zombie Centaur · Gdy wejdzie na pole bitwy: mieli 4 karty (do grobu). · +2/+2 · zaczarowana: Feral Invocation · 4/6 | Feral Invocation · 3 · Enchantment Aura · Flash (błysk) · stwór: +2/+2 · aura → Returned Centaur
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Forest, Unbreakable Bond, Creakwood Safewright, Mountain, Enter the Enigma, Tiller of Flesh, Mountain ⏎ Nowa partia (seed 31). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 12, kliknięte: 15, modale: 5, sondy noop: 36 (panel 27, modal 9)
+== DETEKTORY: brak zgłoszeń ==

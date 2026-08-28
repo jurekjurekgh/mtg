@@ -1,0 +1,371 @@
+== NOWA PARTIA: gracz=warhammer-wu vs bot=srodziemie, seed=9, profil=defensive, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Karty na spód biblioteki (mulligan) (7 opcji)
+  RĘKA: Ramroller · 3 · Artifact Creature — Juggernaut · musi atakować · +2/+0 · gdy kontrolujesz inny artefakt · 2/3 | Negate · 2 · Instant · skontruj czar · cel: czar niebędący stworem na stosie | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury | You're Confronted by Robbers · 4 · Instant · wybierz jedno — Zyskiwanie czasu: tap permanenty / Wezwanie pomocy: Stwórz ×3 1/1 Soldier | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj 1 manę niebieską lub czarną
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Negate ⏎ Dobierasz: Ramroller ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Dismal Backwater, Wooden Stake, Rupture Spire, Hobble, Island, Frost Lynx, Plains ⏎ Nowa partia (seed 9). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Ramroller
+  [ROZGRYWKA]   • Dobierasz: Negate
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Irontread Crusher
+  [ROZGRYWKA]   • Dobierasz: You're Confronted by Robbers
+  [ROZGRYWKA]   • Dobierasz: Dismal Backwater
+  >> Wybierz: Karty na spód biblioteki (mulligan) (7 opcji)
+  [multi-target wizard] Mulligan: zaznacz 1 kartę do odłożenia na spód biblioteki:[ ] RamrollerPodgląd[ ] NegatePo — opcji 7, potrzeba 1, celuję w 1
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 6 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 6 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+
+--- krok 3 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Karty na spód biblioteki (mulligan) (16 opcji)
+  RĘKA: Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Omenspeaker · 2 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: scry 2. · 1/3 | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Index · 1 · Sorcery · zobacz wierzch biblioteki i ułóż w dowolnej kolejności | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Negate ⏎ Dobierasz: Ramroller ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Dismal Backwater, Wooden Stake, Rupture Spire, Hobble, Island, Frost Lynx, Plains ⏎ Nowa partia (seed 9). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Irontread Crusher
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Omenspeaker
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Brawler's Plate
+  [ROZGRYWKA]   • Dobierasz: Index
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Wybierz: Karty na spód biblioteki (mulligan) (16 opcji)
+  [multi-target wizard] Mulligan: zaznacz 2 karty do odłożenia na spód biblioteki:[ ] Irontread CrusherPodgląd[ ]  — opcji 7, potrzeba 2, celuję w 2
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 5 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 5 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+
+--- krok 6 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Karty na spód biblioteki (mulligan) (15 opcji)
+  RĘKA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Ramroller · 3 · Artifact Creature — Juggernaut · musi atakować · +2/+0 · gdy kontrolujesz inny artefakt · 2/3 | Feedback · 3 · Enchantment — Aura · Na początku upkeep (gdy rzucono 2+ czary): 1 obrażenie kontrolerowi zaczarowanego. | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 | Wooden Stake · 2 · Artifact — Equipment · Equip {1} +1/+0 · Blok wyposażonego stwora (w obie strony): zniszcz cel, nie może być regenerowany.
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Negate ⏎ Dobierasz: Ramroller ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Dismal Backwater, Wooden Stake, Rupture Spire, Hobble, Island, Frost Lynx, Plains ⏎ Nowa partia (seed 9). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Ramroller
+  [ROZGRYWKA]   • Dobierasz: Feedback
+  [ROZGRYWKA]   • Dobierasz: Brawler's Plate
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Wooden Stake
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Wybierz: Karty na spód biblioteki (mulligan) (15 opcji)
+  [multi-target wizard] Mulligan: zaznacz 3 karty do odłożenia na spód biblioteki:[ ] IslandPodgląd[ ] RamrollerPo — opcji 7, potrzeba 3, celuję w 3
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 4 karty) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 4 karty)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+
+--- krok 9 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Karty na spód biblioteki (mulligan) (25 opcji)
+  RĘKA: Hobble · 3 · Enchantment — Aura · zaczarowany nie może atakować · zaczarowany nie może blokować · Gdy wejdzie na pole bitwy: dobierz 1 kartę. | Frost Lynx · 3 · Creature — Elemental Cat · Gdy wejdzie na pole bitwy: tap, blokada odkręcania (póki źródło zatapnięte). · 2/2 | Wooden Stake · 2 · Artifact — Equipment · Equip {1} +1/+0 · Blok wyposażonego stwora (w obie strony): zniszcz cel, nie może być regenerowany. | Ramroller · 3 · Artifact Creature — Juggernaut · musi atakować · +2/+0 · gdy kontrolujesz inny artefakt · 2/3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Negate ⏎ Dobierasz: Ramroller ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Dismal Backwater, Wooden Stake, Rupture Spire, Hobble, Island, Frost Lynx, Plains ⏎ Nowa partia (seed 9). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Hobble
+  [ROZGRYWKA]   • Dobierasz: Frost Lynx
+  [ROZGRYWKA]   • Dobierasz: Wooden Stake
+  [ROZGRYWKA]   • Dobierasz: Ramroller
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Wybierz: Karty na spód biblioteki (mulligan) (25 opcji)
+  [multi-target wizard] Mulligan: zaznacz 4 karty do odłożenia na spód biblioteki:[ ] HobblePodgląd[ ] Frost LynxP — opcji 7, potrzeba 4, celuję w 4
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 3 karty) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 3 karty)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+
+--- krok 12 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Karty na spód biblioteki (mulligan) (16 opcji)
+  RĘKA: You're Confronted by Robbers · 4 · Instant · wybierz jedno — Zyskiwanie czasu: tap permanenty / Wezwanie pomocy: Stwórz ×3 1/1 Soldier | Frost Lynx · 3 · Creature — Elemental Cat · Gdy wejdzie na pole bitwy: tap, blokada odkręcania (póki źródło zatapnięte). · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Irontread Crusher · 4 · Artifact — Vehicle · załoga 3: stanie się stworem do końca tury | Plains · Basic Land — Plains · T: dodaj 1 manę
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Negate ⏎ Dobierasz: Ramroller ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Dismal Backwater, Wooden Stake, Rupture Spire, Hobble, Island, Frost Lynx, Plains ⏎ Nowa partia (seed 9). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: You're Confronted by Robbers
+  [ROZGRYWKA]   • Dobierasz: Frost Lynx
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Cellar Door
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Irontread Crusher
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Wybierz: Karty na spód biblioteki (mulligan) (16 opcji)
+  [multi-target wizard] Mulligan: zaznacz 5 kart do odłożenia na spód biblioteki:[ ] You're Confronted by RobbersP — opcji 7, potrzeba 5, celuję w 5
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 2 karty) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 2 karty)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+
+--- krok 15 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Karty na spód biblioteki (mulligan) (4 opcje)
+  RĘKA: Island · Basic Land — Island · T: dodaj 1 manę ×4 | Cellar Door · 2 · Artifact · {3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Feedback · 3 · Enchantment — Aura · Na początku upkeep (gdy rzucono 2+ czary): 1 obrażenie kontrolerowi zaczarowanego. | Ramroller · 3 · Artifact Creature — Juggernaut · musi atakować · +2/+0 · gdy kontrolujesz inny artefakt · 2/3
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Negate ⏎ Dobierasz: Ramroller ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Dismal Backwater, Wooden Stake, Rupture Spire, Hobble, Island, Frost Lynx, Plains ⏎ Nowa partia (seed 9). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Cellar Door
+  [ROZGRYWKA]   • Dobierasz: Feedback
+  [ROZGRYWKA]   • Dobierasz: Ramroller
+  >> Wybierz: Karty na spód biblioteki (mulligan) (4 opcje)
+  [multi-target wizard] Mulligan: zaznacz 6 kart do odłożenia na spód biblioteki:[ ] IslandPodgląd[ ] IslandPodglą — opcji 7, potrzeba 6, celuję w 6
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 1 kartę) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 1 kartę)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+
+--- krok 18 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Mulligan — odłóż na spód (7): You're Confronted by Robbers, Frost Lynx, Ramroller, Tome Scour, Wooden Stake, Island, Dismal Backwater
+  RĘKA: You're Confronted by Robbers · 4 · Instant · wybierz jedno — Zyskiwanie czasu: tap permanenty / Wezwanie pomocy: Stwórz ×3 1/1 Soldier | Frost Lynx · 3 · Creature — Elemental Cat · Gdy wejdzie na pole bitwy: tap, blokada odkręcania (póki źródło zatapnięte). · 2/2 | Ramroller · 3 · Artifact Creature — Juggernaut · musi atakować · +2/+0 · gdy kontrolujesz inny artefakt · 2/3 | Tome Scour · 1 · Sorcery · mieli 5 kart (do grobu) · cel: gracz | Wooden Stake · 2 · Artifact — Equipment · Equip {1} +1/+0 · Blok wyposażonego stwora (w obie strony): zniszcz cel, nie może być regenerowany. | Island · Basic Land — Island · T: dodaj 1 manę | Dismal Backwater · Land · Gdy wejdzie na pole bitwy: zyskaj 1 życie. · {T}: dodaj 1 manę niebieską lub czarną
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Negate ⏎ Dobierasz: Ramroller ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Dismal Backwater, Wooden Stake, Rupture Spire, Hobble, Island, Frost Lynx, Plains ⏎ Nowa partia (seed 9). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: You're Confronted by Robbers
+  [ROZGRYWKA]   • Dobierasz: Frost Lynx
+  [ROZGRYWKA]   • Dobierasz: Ramroller
+  [ROZGRYWKA]   • Dobierasz: Tome Scour
+  [ROZGRYWKA]   • Dobierasz: Wooden Stake
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Dismal Backwater
+  >> Mulligan — odłóż na spód (7): You're Confronted by Robbers, Frost Lynx, Ramroller, Tome Scour, Wooden Stake, I
+  >> Mulligan: Zatrzymaj tę rękę (keep — 0 kart)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+
+--- krok 21 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: (puste)
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę
+  LOG: Dobierasz: Negate ⏎ Dobierasz: Ramroller ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Dismal Backwater, Wooden Stake, Rupture Spire, Hobble, Island, Frost Lynx, Plains ⏎ Nowa partia (seed 9). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Rustwing Falcon
+
+--- krok 24 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Rustwing Falcon · 1 · Creature — Bird · Latanie · choroba · 1/2
+  LOG: Dobierasz: Negate ⏎ Dobierasz: Ramroller ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Dismal Backwater, Wooden Stake, Rupture Spire, Hobble, Island, Frost Lynx, Plains ⏎ Nowa partia (seed 9). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Rustwing Falcon zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Greenwood Sentinel
+
+--- krok 27 | T. 7GraczGracz: 19 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Rustwing Falcon · 1 · Creature — Bird · Latanie · 1/2 | Greenwood Sentinel · 2 · Creature — Elf Scout · Czujność · choroba · 2/2
+  LOG: Dobierasz: Negate ⏎ Dobierasz: Ramroller ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Dismal Backwater, Wooden Stake, Rupture Spire, Hobble, Island, Frost Lynx, Plains ⏎ Nowa partia (seed 9). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Greenwood Sentinel zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Rustwing Falcon
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Rustwing Falcon zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 19
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Captain's Call
+
+--- krok 30 | T. 9GraczGracz: 16 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Rupture Spire · Land · Gdy wejdzie na pole bitwy: zapłać {1} albo ją poświęć (płatność automatyczna). · T: dodaj 1 manę
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×3
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Rustwing Falcon · 1 · Creature — Bird · Latanie · 1/2 | Greenwood Sentinel · 2 · Creature — Elf Scout · Czujność · 2/2 | Soldier · 0 · Creature — Soldier · choroba · 1/1 ×3
+  LOG: Dobierasz: Negate ⏎ Dobierasz: Ramroller ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Dismal Backwater, Wooden Stake, Rupture Spire, Hobble, Island, Frost Lynx, Plains ⏎ Nowa partia (seed 9). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Soldier (1/1)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Soldier (1/1)
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
+  [ROZGRYWKA]   • Captain's Call zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Rustwing Falcon, Greenwood Sentinel
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Rustwing Falcon zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 19 → 18
+  [ROZGRYWKA]   • Greenwood Sentinel zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 16
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Rupture Spire
+  >> Zagraj ląd: Rupture Spire
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Rupture Spire (wchodzi zatapnięty)
+  >> Wybierz: Zapłata albo poświęcenie (2 opcje)
+  [modal choice] Wybierz: Zapłata albo poświęcenie Poświęć Rupture Spire (Ty) (bez płacenia) Zapłać 1 (zachowaj Rupture Spire (Ty))
+  [modal choice]   ▶ Poświęć Rupture Spire (Ty) (bez płacenia)
+  [modal choice]     Zapłać 1 (zachowaj Rupture Spire (Ty))
+
+--- krok 33 | T. 10BotGracz: 16 ż.Bot: 20 ż.Główna 1Stos — Deadly Recluse ---
+  STOS: Deadly Recluse (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×3
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Rustwing Falcon · 1 · Creature — Bird · Latanie · 1/2 | Greenwood Sentinel · 2 · Creature — Elf Scout · Czujność · 2/2 | Soldier · 0 · Creature — Soldier · 1/1 ×3
+  LOG: Dobierasz: Negate ⏎ Dobierasz: Ramroller ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Dismal Backwater, Wooden Stake, Rupture Spire, Hobble, Island, Frost Lynx, Plains ⏎ Nowa partia (seed 9). Powodzenia!
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Deadly Recluse
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Benevolent Blessing → cel: Greenwood Sentinel
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Benevolent Blessing wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel: Benevolent Blessing — wybrany kolor: biały (ochrona przed nim)
+  [ROZGRYWKA]   • Deadly Recluse wchodzi na pole bitwy
+  [ROZGRYWKA]   • Deadly Recluse zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Rustwing Falcon, Greenwood Sentinel, Soldier, Soldier, Soldier
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Rustwing Falcon zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 15
+  [ROZGRYWKA]   • Greenwood Sentinel zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 15 → 13
+  [ROZGRYWKA]   • Soldier zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 12
+  [ROZGRYWKA]   • Soldier zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 12 → 11
+  [ROZGRYWKA]   • Soldier zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 10
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Hobble
+
+--- krok 36 | T. 12BotGracz: 10 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Hobble · 3 · Enchantment — Aura · zaczarowany nie może atakować · zaczarowany nie może blokować · Gdy wejdzie na pole bitwy: dobierz 1 kartę.
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×3
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Rustwing Falcon · 1 · Creature — Bird · Latanie · 1/2 | Greenwood Sentinel · 2 · Creature — Elf Scout · Czujność · zaczarowana: Benevolent Blessing · 2/2 | Soldier · 0 · Creature — Soldier · 1/1 ×3 | Benevolent Blessing · 2 · Enchantment Aura · Flash (błysk) · aura → Greenwood Sentinel | Deadly Recluse · 2 · Creature — Spider · Zasięg Dotykanie śmierci · 1/2
+  LOG: Dobierasz: Negate ⏎ Dobierasz: Ramroller ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Dismal Backwater, Wooden Stake, Rupture Spire, Hobble, Island, Frost Lynx, Plains ⏎ Nowa partia (seed 9). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Dunland Crebain
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Dunland Crebain zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Dunland Crebain — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Orc Army (0/0)
+  [ROZGRYWKA]   • Orc Army wchodzi na pole bitwy
+  [ROZGRYWKA]   • Orc Army dostaje +2 liczniki +1/+1 (razem 2)
+  [ROZGRYWKA]   • Dunland Crebain — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Angel's Feather
+
+--- krok 39 | T. 13GraczGracz: 3 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Hobble · 3 · Enchantment — Aura · zaczarowany nie może atakować · zaczarowany nie może blokować · Gdy wejdzie na pole bitwy: dobierz 1 kartę. | Negate · 2 · Instant · skontruj czar · cel: czar niebędący stworem na stosie
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×3
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Rustwing Falcon · 1 · Creature — Bird · Latanie · 1/2 | Greenwood Sentinel · 2 · Creature — Elf Scout · Czujność · zaczarowana: Benevolent Blessing · 2/2 | Soldier · 0 · Creature — Soldier · 1/1 ×3 | Benevolent Blessing · 2 · Enchantment Aura · Flash (błysk) · aura → Greenwood Sentinel | Deadly Recluse · 2 · Creature — Spider · Zasięg Dotykanie śmierci · 1/2 | Dunland Crebain · 3 · Creature — Bird Horror · Latanie · Gdy wejdzie na pole bitwy: amass (stwórz/rozrośnij Armię). · choroba · 1/1 | Orc Army · 0 · Creature — Orc Army · choroba · 2x +1/+1 · 2/2 | Angel's Feather · 2 · Artifact · Gdy gracz rzuci czar: zyskaj 1 życie.
+  LOG: Dobierasz: Negate ⏎ Dobierasz: Ramroller ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Dismal Backwater, Wooden Stake, Rupture Spire, Hobble, Island, Frost Lynx, Plains ⏎ Nowa partia (seed 9). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Ty: życie 9 → 7
+  [ROZGRYWKA]   • Soldier zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 7 → 6
+  [ROZGRYWKA]   • Soldier zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 6 → 5
+  [ROZGRYWKA]   • Soldier zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 5 → 4
+  [ROZGRYWKA]   • Deadly Recluse zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 4 → 3
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Negate
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Fierce Empath
+
+--- krok 42 | T. 14BotGracz: 3 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Hobble · 3 · Enchantment — Aura · zaczarowany nie może atakować · zaczarowany nie może blokować · Gdy wejdzie na pole bitwy: dobierz 1 kartę. | Negate · 2 · Instant · skontruj czar · cel: czar niebędący stworem na stosie
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×3
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Rustwing Falcon · 1 · Creature — Bird · Latanie · 1/2 | Greenwood Sentinel · 2 · Creature — Elf Scout · Czujność · zaczarowana: Benevolent Blessing · 2/2 | Soldier · 0 · Creature — Soldier · 1/1 ×3 | Benevolent Blessing · 2 · Enchantment Aura · Flash (błysk) · aura → Greenwood Sentinel | Deadly Recluse · 2 · Creature — Spider · Zasięg Dotykanie śmierci · 1/2 | Dunland Crebain · 3 · Creature — Bird Horror · Latanie · Gdy wejdzie na pole bitwy: amass (stwórz/rozrośnij Armię). · 1/1 | Orc Army · 0 · Creature — Orc Army · 2x +1/+1 · 2/2 | Angel's Feather · 2 · Artifact · Gdy gracz rzuci czar: zyskaj 1 życie.
+  LOG: Dobierasz: Negate ⏎ Dobierasz: Ramroller ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Dismal Backwater, Wooden Stake, Rupture Spire, Hobble, Island, Frost Lynx, Plains ⏎ Nowa partia (seed 9). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Fierce Empath zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Fierce Empath — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Fierce Empath — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Inferno Titan
+  [ROZGRYWKA]   • Nieprzyjaciel: karta — biblioteka → ręka
+  [ROZGRYWKA]   • Nieprzyjaciel znajduje Inferno Titan i tasuje bibliotekę
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 44 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Hobble · 3 · Enchantment — Aura · zaczarowany nie może atakować · zaczarowany nie może blokować · Gdy wejdzie na pole bitwy: dobierz 1 kartę. | Negate · 2 · Instant · skontruj czar · cel: czar niebędący stworem na stosie
+  MOJE POLA: Island · Basic Land — Island · T: dodaj 1 manę ×3
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Rustwing Falcon · 1 · Creature — Bird · Latanie · 1/2 | Greenwood Sentinel · 2 · Creature — Elf Scout · Czujność · zaczarowana: Benevolent Blessing · 2/2 | Soldier · 0 · Creature — Soldier · 1/1 ×3 | Benevolent Blessing · 2 · Enchantment Aura · Flash (błysk) · aura → Greenwood Sentinel | Deadly Recluse · 2 · Creature — Spider · Zasięg Dotykanie śmierci · 1/2 | Dunland Crebain · 3 · Creature — Bird Horror · Latanie · Gdy wejdzie na pole bitwy: amass (stwórz/rozrośnij Armię). · 1/1 | Orc Army · 0 · Creature — Orc Army · 2x +1/+1 · 2/2 | Angel's Feather · 2 · Artifact · Gdy gracz rzuci czar: zyskaj 1 życie.
+  LOG: Dobierasz: Negate ⏎ Dobierasz: Ramroller ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Dismal Backwater, Wooden Stake, Rupture Spire, Hobble, Island, Frost Lynx, Plains ⏎ Nowa partia (seed 9). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 9, kliknięte: 12, modale: 2, sondy noop: 36 (panel 28, modal 8)
+== DETEKTORY: brak zgłoszeń ==

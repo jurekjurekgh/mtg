@@ -25,6 +25,81 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 ---
 
 
+## L82 (2026-08-28) — Test UI wiąże SKUTEK z hakiem semantycznym (klasa/`data-*`), copy pina się OSOBNYM testem
+
+**Objaw (sesja M251):** poprawna etykieta „Użyj domyślnego przydziału
+(zabójcze obrażenia…)" złamała test `choice-request-ui`, choć test ten
+nazywał się „przycisk Domyślnie wysyła wariant z legalCommands" — testował
+SKUTEK komendy, a lokalizował przycisk po TEKŚCIE (`findAll(host, 'button',
+'Domyślnie')`). Copy poprawne + logika poprawna = test czerwony; złowił go
+pełny rdzeń, nie punktowy grep (szukałem referencji do „lethal-first"
+i klasy — wzorzec „Domyślnie" mi umknął).
+
+**Przyczyna:** jeden test wiązał DWIE rzeczy — lokalizację widgetu i regułę
+gry — przez najbardziej lotną warstwę (copy). Etykiety tekstowe to warstwa,
+którą najczęściej ruszają uwagi UX (M162/C, M202/D, M211); kontraktem DOM
+jest klasa semantyczna / `data-*` (tu: `damage-wizard-default`). Test
+pisał się wtedy, gdy copy było stabilne — i działał, póki rozmowa o UX
+nie dotarła do tego tekstu.
+
+**Reguła:**
+1. Test zachowania („klik → komenda X") lokalizuje element po haku
+   semantycznym, NIGDY po tekście — tekst to dekoracja, klasa to rura.
+2. Treść widoczną dla gracza pilnuje OSOBNY, jawny pin (u mnie: osobny
+   test M251 z `doesNotMatch(/lethal-first/)`). Wtedy regresja copy mówi
+   „zmieniłeś tekst gracza", a nie symuluje złamania logiki.
+3. Przy zmianie stringów UI: punktowy grep ma ślepe półki (ja przegapiłem
+   wzorzec po słowie, bo grepem szukałem po INNYM słowie z tej samej
+   etykiety). Minimalny rytuał: grep po KLASIE elementu + pełny rdzeń
+   przed commitem (ADR 0020 C złapało — ale kosztem jednego cyklu).
+
+**Sformalizowane w:** `test/choice-request-ui.test.js` (lokalizacja po
+`damage-wizard-default` + pin copy); znaleisko i naprawa etykiet żargonu
+„lethal-first" w wizardzie i `commandLabel` (M251).
+
+
+## L81 (2026-08-28) — Zastępując ręczną kopię „wspólną funkcją prawdy", porównaj FILTRY obu stron, nie tylko listę przedmiotów
+
+**Objaw (audyt PR #85, znalezisko N2, ta sesja):** bramka oferty
+`pass_priority` dostała `firstDecisionOwner == null` — dokończenie
+unifikacji z Batch 47 (bramki czarów i lądów/ataków już ją mają). Zielony
+rdzeń odpowiedział JEDNYM czerwonym testem: M33 („ślepa decyzja pokoju
+gaśnie, gra toczy się dalej"). Wspólna funkcja `firstPendingDecisionPlayerId`
+ liczyła `pendingRoomTargets` po SUROWEJ długości tablicy, podczas gdy
+zastępowana kopia miała filtr „na żywo" (`legalRoomTargetCandidates(…)`
+> 0) — ślepe wpisy (kandydaci zniknęli po zakolejkowaniu decyzji) nie mogą
+blokować gry.
+
+**Przyczyna:** unifikując N kopii w jedno źródło (L41) porównałem
+PRZEDMIOTY list (61 pól ręcznego łańcucha ⊆ 62 funkcji), ale nie SEMANTYKĘ
+poszczególnych pozycji. Kopie ręczne narosły o lokalne filtry jakości
+(`triggerTargetsBlock` — żywe wpisy, `roomTargetBlocks` — wpisy z legalnym
+celem); funkcja „jednego źródła prawdy" miała ten filtr tylko dla jednej
+z nich (`triggerTargetDecisionPending`). Rozjazd ujawnił się dopiero
+w pętli uruchomieniowej, jak w L37: zmiana ścieżki to darmowy fuzzing
+kontraktów.
+
+**Reguła:**
+1. Przy zamianie kopii na wspólną funkcję zrób tabelę DWÓCH kolumn:
+   „co kopia sprawdza" × „co funkcja sprawdza" — różnica w FILTRZE jest
+   kontraktem do przeniesienia, nie szumem. Surowe `length > 0` kontra
+   `some(legal(…))` to RÓŻNE reguły gry: pierwsza patrzy na kolejkę, druga
+   na skutek (pokrewne L80).
+2. Zanim zaakceptujesz regresję testu po takiej zamianie, rozstrzygnij,
+   która strona mówi prawdę o REGULE (tu: M33 ma rację — ślepa decyzja MUSI
+   przestać blokować; naprawiana jest funkcja wspólna, nie test). Regresja
+   po unifikacji bywa sygnałem, że funkcja „prawdy" dotąd kłamała.
+3. Ślepe decyzje to stała klasa stanu silnika: `pendingRoomTargets`,
+   `pendingTriggerTargets` (i przyszłe kolejki z kandydatami) — każda nowa
+   kolejka wieloelementowa dostaje pytanie „co, gdy wpis zdążył umrzeć?"
+   (przycinanie w `pruneDeadPendingDecisions` + filtr
+   w `firstPendingDecisionPlayerId`).
+
+**Sformalizowane w:** filtr pokoju w `firstPendingDecisionPlayerId`
+(2026-08-28), test `test/room-targets-staleness.test.js` (kontrakt M33),
+`test/manifest-dread-pass-offer.test.js` (N2).
+
+
 ## L80 (2026-08-26) — „Dubel na stosie" to nie to samo co „efekt już zastosowany": strażnik idempotencji musi patrzeć na STAN, nie tylko na stos
 
 **Objaw (M220, pętla jakości Żywym Testerem, h9):** bot aktywował Saddle na

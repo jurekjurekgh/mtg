@@ -1,0 +1,723 @@
+== NOWA PARTIA: gracz=worek-legend vs bot=worek-mroczny, seed=407, profil=random, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Prismari Campus  ||  Zagraj ląd: Plains  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Plains · Basic Land — Plains · T: dodaj 1 manę | Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Nanoform Sentinel · 3 · Artifact Creature — Robot · Gdy ten permanent zostaje zatapnięty (raz na turę): odkręć docelowy inny permanent. · 3/2
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Goldmeadow Nomad
+
+--- krok 3 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Nanoform Sentinel · 3 · Artifact Creature — Robot · Gdy ten permanent zostaje zatapnięty (raz na turę): odkręć docelowy inny permanent. · 3/2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  MOJE POLA: Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · choroba · 1/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Goldmeadow Nomad zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Zagraj ląd: Prismari Campus
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Prismari Campus (wchodzi zatapnięty)
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+
+--- krok 6 | T. 5GraczGracz: 19 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Swamp  ||  Zagraj ląd: Mountain  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Nanoform Sentinel · 3 · Artifact Creature — Robot · Gdy ten permanent zostaje zatapnięty (raz na turę): odkręć docelowy inny permanent. · 3/2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  MOJE POLA: Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Zagraj: Lotusguard Disciple (koszt 2W)
+  [ROZGRYWKA]   • Lotusguard Disciple zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Lotusguard Disciple — wybierz cel triggera (wymagany)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Lotusguard Disciple — cel triggera (2 opcje)
+  [modal choice] Lotusguard Disciple — cel triggera Lotusguard Disciple — cel triggera: Goldmeadow Nomad (Nieprzyjaciel)🔍 Podgląd karty Lotusguard Disciple — cel triggera: Lotusguard Disciple (Ty)🔍 Podgląd karty
+  [modal choice]   ▶ Lotusguard Disciple — cel triggera: Goldmeadow Nomad (Nieprzyjaciel)
+  [modal choice]     Lotusguard Disciple — cel triggera: Lotusguard Disciple (Ty)
+
+--- krok 9 | T. 6BotGracz: 19 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Nanoform Sentinel · 3 · Artifact Creature — Robot · Gdy ten permanent zostaje zatapnięty (raz na turę): odkręć docelowy inny permanent. · 3/2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  MOJE POLA: Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · choroba · 2/2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mosquito Guard
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Mosquito Guard zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Supernatural Stamina
+
+--- krok 12 | T. 7GraczGracz: 19 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Swamp  ||  Aura: Vow of Flight (3 opcje)  ||  Zagraj: Nanoform Sentinel (koszt 2U)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Nanoform Sentinel · 3 · Artifact Creature — Robot · Gdy ten permanent zostaje zatapnięty (raz na turę): odkręć docelowy inny permanent. · 3/2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Supernatural Stamina · 1 · Instant · +2/+0 do końca tury + nadaj zdolności do końca tury · cel: stwór
+  MOJE POLA: Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · choroba · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Dalej (pass)
+  >> Cel czaru: Supernatural Stamina (3 opcje)
+  [modal choice] Cel czaru: Supernatural Stamina Rzuć: Supernatural Stamina (koszt B) → cel: Lotusguard Disciple (Ty)🔍 Podgląd karty Rzuć: Supernatural Stamina (koszt B) → cel: Goldmeadow Nomad (Nieprzyjaciel)🔍 Podgląd karty Rzuć: Supernatural Stamina (koszt B) → cel: Mosquito Guard (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]     Rzuć: Supernatural Stamina (koszt B) → cel: Lotusguard Disciple (Ty)
+  [modal choice]     Rzuć: Supernatural Stamina (koszt B) → cel: Goldmeadow Nomad (Nieprzyjaciel)
+  [modal choice]   ▶ Rzuć: Supernatural Stamina (koszt B) → cel: Mosquito Guard (Nieprzyjaciel)
+
+--- krok 15 | T. 7GraczGracz: 19 ż.Bot: 20 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Nanoform Sentinel · 3 · Artifact Creature — Robot · Gdy ten permanent zostaje zatapnięty (raz na turę): odkręć docelowy inny permanent. · 3/2
+  MOJE POLA: Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · +2/0 · choroba · 3/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Supernatural Stamina zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 18
+
+--- krok 18 | T. 7GraczGracz: 19 ż.Bot: 18 ż.Główna 2 ---
+  STOS: Stos pusty
+  AKCJE: Aura: Vow of Flight (3 opcje)  ||  Zagraj: Nanoform Sentinel (koszt 2U)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Nanoform Sentinel · 3 · Artifact Creature — Robot · Gdy ten permanent zostaje zatapnięty (raz na turę): odkręć docelowy inny permanent. · 3/2
+  MOJE POLA: Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · +2/0 · choroba · 3/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  >> Zagraj: Nanoform Sentinel (koszt 2U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Nanoform Sentinel
+  [ROZGRYWKA]   • Nanoform Sentinel wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nanoform Sentinel zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Ruinous Rampage
+
+--- krok 21 | T. 9GraczGracz: 19 ż.Bot: 18 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Aura: Vow of Flight (4 opcje)  ||  Zagraj: Wedgelight Rammer (koszt 3W)  ||  Rzuć: Ruinous Rampage — 3 obrażenia dla każdego przeciwnika (koszt 1RR)  ||  Rzuć: Ruinous Rampage — Wygnaj artefakty (koszt 1RR)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Ruinous Rampage · 3 · Sorcery · wybierz jedno — 3 obrażenia dla każdego przeciwnika: 3 obrażenia każdemu przeciwnikowi / Wygnaj artefakty: wygnij wszystkie (filtr)
+  MOJE POLA: Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Nanoform Sentinel · 3 · Artifact Creature — Robot · Gdy ten permanent zostaje zatapnięty (raz na turę): odkręć docelowy inny permanent. · 3/2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  >> Rzuć: Ruinous Rampage — Wygnaj artefakty (koszt 1RR)
+  [kreator many] Płatność 1RR — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: R, RTapnij: Plains (W)Tapnij: Prismari Campu — źródła: 4
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Prismari Campus (UR)
+  [kreator many] Tapnij: Swamp (B)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Ruinous Rampage — tryb: Wygnaj artefakty zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+
+--- krok 24 | T. 10BotGracz: 19 ż.Bot: 16 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie
+  MOJE POLA: Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 18 → 16
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Moonlit Meditation
+  >> Zagraj: Wedgelight Rammer (koszt 3W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Wedgelight Rammer
+  [ROZGRYWKA]   • Wedgelight Rammer wchodzi na pole bitwy
+  [ROZGRYWKA]   • Wedgelight Rammer zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Wedgelight Rammer — trigger (wejście na pole bitwy)
+
+--- krok 27 | T. 11GraczGracz: 17 ż.Bot: 16 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Aktywuj: Wedgelight Rammer (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Moonlit Meditation · 3 · Enchantment — Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz)
+  MOJE POLA: Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) | Robot · 0 · Artifact Creature — Robot · choroba · 2/2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty tworzysz token Robot (2/2)
+  [ROZGRYWKA]   • Robot wchodzi na pole bitwy
+  [ROZGRYWKA]   • Wedgelight Rammer — trigger się rozstrzyga
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+
+--- krok 30 | T. 11GraczGracz: 17 ż.Bot: 14 ż.Główna 2 ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Wedgelight Rammer (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Robot (Ty)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Moonlit Meditation · 3 · Enchantment — Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz)
+  MOJE POLA: Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) | Robot · 0 · Artifact Creature — Robot · choroba · 2/2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  [ROZGRYWKA]   • Lotusguard Disciple zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 16 → 14
+  >> Aktywuj: Wedgelight Rammer (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapni
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Wedgelight Rammer — liczniki charge ze Station (tapuje: Robot)
+  [ROZGRYWKA]   • Wedgelight Rammer dostaje +2 liczniki charge (razem 2)
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+
+--- krok 33 | T. 13GraczGracz: 15 ż.Bot: 14 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Moonlit Meditation · 3 · Enchantment — Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) · 2x charge | Robot · 0 · Artifact Creature — Robot · 2/2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  [ROZGRYWKA]   • Mosquito Guard zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 16
+  [ROZGRYWKA]   • Goldmeadow Nomad zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 15
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 1 z 2 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+
+--- krok 36 | T. 13GraczGracz: 15 ż.Bot: 12 ż.Główna 2 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island  ||  Aura: Vow of Flight (4 opcje)  ||  Aura: Moonlit Meditation (3 opcje)  ||  Aktywuj: Wedgelight Rammer (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Lotusguard Disciple (Ty)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Moonlit Meditation · 3 · Enchantment — Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) · 2x charge | Robot · 0 · Artifact Creature — Robot · 2/2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Robot
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Robot zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 14 → 12
+  >> Aura: Moonlit Meditation (3 opcje)
+  [modal choice] Aura: Moonlit Meditation Zagraj aurę: Moonlit Meditation (koszt 2U) → zaczaruj Lotusguard Disciple (Ty)🔍 Podgląd karty Zagraj aurę: Moonlit Meditation (koszt 2U) → zaczaruj Wedgelight Rammer (Ty)🔍 Podgląd karty Zagraj aurę: Moonlit Meditation (koszt 2U) → zaczaruj Robot (Ty)🔍 Podgląd karty
+  [modal choice]     Zagraj aurę: Moonlit Meditation (koszt 2U) → zaczaruj Lotusguard Disciple (Ty)
+  [modal choice]     Zagraj aurę: Moonlit Meditation (koszt 2U) → zaczaruj Wedgelight Rammer (Ty)
+  [modal choice]   ▶ Zagraj aurę: Moonlit Meditation (koszt 2U) → zaczaruj Robot (Ty)
+  [kreator many] Płatność 2U — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: UTapnij: Plains (W)Tapnij: Prismari Campus (U — źródła: 4
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Prismari Campus (UR)
+  [kreator many] Tapnij: Plains (W)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Moonlit Meditation → cel: Robot
+  [ROZGRYWKA]   • Moonlit Meditation zaczarowuje Robot
+  [ROZGRYWKA]   • Moonlit Meditation wchodzi na pole bitwy
+
+--- krok 39 | T. 13GraczGracz: 15 ż.Bot: 12 ż.Główna 2 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island  ||  Aktywuj: Wedgelight Rammer (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Lotusguard Disciple (Ty)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) · 2x charge | Robot · 0 · Artifact Creature — Robot · zaczarowana: Moonlit Meditation · 2/2 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Robot | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Aktywuj: Wedgelight Rammer (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapni
+  [ROZGRYWKA]   • Wedgelight Rammer dostaje +2 liczniki charge (razem 4)
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Mosquito Guard zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 15 → 14
+  [ROZGRYWKA]   • Goldmeadow Nomad zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 13
+  [ROZGRYWKA]   • Tura 15 — Ty
+
+--- krok 42 | T. 15GraczGracz: 13 ż.Bot: 12 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Prismari Campus (Ty) (koszt 4, T) — scry 1  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie
+  MOJE POLA: Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) · 4x charge | Robot · 0 · Artifact Creature — Robot · zaczarowana: Moonlit Meditation · 2/2 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Robot | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  >> Aktywuj: Prismari Campus (Ty) (koszt 4, T) — scry 1
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Prismari Campus — scry na wierzchu biblioteki
+  [ROZGRYWKA]   • Wykonujesz scry (patrzy na 1 kartę: Pain for All)
+  [ROZGRYWKA]   • Ty: zdolność Prismari Campus rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [modal choice] Scry 1 — obejrzane karty: 1. Pain for AllKarta 1 z 1: Pain for AllNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kończysz scry — na spód: Pain for All
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+
+--- krok 45 | T. 15GraczGracz: 13 ż.Bot: 12 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Mountain  ||  Aktywuj: Wedgelight Rammer (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  MOJE POLA: Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) · 4x charge | Robot · 0 · Artifact Creature — Robot · zaczarowana: Moonlit Meditation · 2/2 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Robot | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Aktywuj: Wedgelight Rammer (2 opcje)
+  [modal choice] Aktywuj: Wedgelight Rammer Aktywuj: Wedgelight Rammer (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Lotusguard Disciple (Ty)🔍 Podgląd karty Aktywuj: Wedgelight Rammer (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Robot (Ty)🔍 Podgląd karty
+  [modal choice]   ▶ Aktywuj: Wedgelight Rammer (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Lotusguard Disciple (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Robot (Ty)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+
+--- krok 48 | T. 15GraczGracz: 13 ż.Bot: 12 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Wedgelight Rammer (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Robot (Ty)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie
+  MOJE POLA: Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) · 6x charge | Robot · 0 · Artifact Creature — Robot · zaczarowana: Moonlit Meditation · 2/2 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Robot | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  >> Aktywuj: Wedgelight Rammer (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapni
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Wedgelight Rammer — liczniki charge ze Station (tapuje: Robot)
+  [ROZGRYWKA]   • Wedgelight Rammer dostaje +2 liczniki charge (razem 8)
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Vanish from Sight → cel: Lotusguard Disciple
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Wierzch czy spód biblioteki (2 opcje)
+  [modal choice] Wybierz: Wierzch czy spód biblioteki Na SPÓD twojej biblioteki Na WIERZCH twojej biblioteki (odzyskasz najbliższym dobraniem)
+  [modal choice]     Na SPÓD twojej biblioteki
+  [modal choice]   ▶ Na WIERZCH twojej biblioteki (odzyskasz najbliższym dobraniem)
+
+--- krok 51 | T. 17GraczGracz: 11 ż.Bot: 12 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Prismari Campus (Ty) (koszt 4, T) — scry 1  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie
+  MOJE POLA: Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) · 8x charge | Robot · 0 · Artifact Creature — Robot · zaczarowana: Moonlit Meditation · 2/2 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Robot | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  [ROZGRYWKA]   • Vanish from Sight zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Goldmeadow Nomad, Mosquito Guard
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Mosquito Guard zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 12
+  [ROZGRYWKA]   • Goldmeadow Nomad zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 12 → 11
+  [ROZGRYWKA]   • Tura 17 — Ty
+  >> Aktywuj: Prismari Campus (Ty) (koszt 4, T) — scry 1
+  [kreator many] Płatność 4 — tapuj źródła po jednympozostało 4 manyTapnij: Plains (W)Tapnij: Mountain (R)Tapnij: Swamp (B)Tapnij: Island — źródła: 5
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Mountain (R)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Prismari Campus — scry na wierzchu biblioteki
+  [ROZGRYWKA]   • Wykonujesz scry (patrzy na 1 kartę: Lotusguard Disciple)
+  [ROZGRYWKA]   • Ty: zdolność Prismari Campus rozstrzygnięta
+
+--- krok 54 | T. 17GraczGracz: 11 ż.Bot: 12 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Scry — co odłożyć na spód? (2 opcje)  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie
+  MOJE POLA: Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) · 8x charge | Robot · 0 · Artifact Creature — Robot · zaczarowana: Moonlit Meditation · 2/2 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Robot | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [modal choice] Scry 1 — obejrzane karty: 1. Lotusguard DiscipleKarta 1 z 1: Lotusguard DiscipleNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]     Na spód biblioteki
+  [modal choice]   ▶ Zostaw na wierzchu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kończysz scry — na wierzchu: Lotusguard Disciple
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Lotusguard Disciple
+  >> Aktywuj: Wedgelight Rammer (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapni
+  [ROZGRYWKA]   • Wedgelight Rammer osiąga 10 liczników charge i staje się artefaktowym stworem (Station)
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+
+--- krok 57 | T. 17GraczGracz: 11 ż.Bot: 12 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2
+  MOJE POLA: Wedgelight Rammer · 4 · Artifact Creature — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) · Latanie · Pierwsze uderzenie · 10x charge · 3/4 | Robot · 0 · Artifact Creature — Robot · zaczarowana: Moonlit Meditation · 2/2 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Robot | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Enter the Enigma → cel: Goldmeadow Nomad
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Enter the Enigma zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Release the Ants → cel: Ty
+
+--- krok 60 | T. 18BotGracz: 10 ż.Bot: 9 ż.DobieranieStos — Release the Ants ---
+  STOS: Release the Ants (rzuca: Nieprzyjaciel) → cel: Ty
+  AKCJE: Poddaj partię  ||  Wybierz: Clash — wierzch czy spód? (2 opcje)
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2
+  MOJE POLA: Wedgelight Rammer · 4 · Artifact Creature — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) · Latanie · Pierwsze uderzenie · 10x charge · 3/4 | Robot · 0 · Artifact Creature — Robot · zaczarowana: Moonlit Meditation · 2/2 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Robot | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · nie do zablokowania · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Odsłaniasz Plains
+  [ROZGRYWKA]   • Clash: Nieprzyjaciel wygrywa (mana value 2 vs 0)
+  [ROZGRYWKA]   • Nieprzyjaciel zostawia odsłoniętą kartę na wierzchu biblioteki
+  >> Wybierz: Clash — wierzch czy spód? (2 opcje)
+  [modal choice] Wybierz: Clash — wierzch czy spód? Clash: Plains na wierzch biblioteki Clash: Plains na spód biblioteki
+  [modal choice]   ▶ Clash: Plains na wierzch biblioteki
+  [modal choice]     Clash: Plains na spód biblioteki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zostawiasz odsłoniętą kartę na wierzchu biblioteki
+  [ROZGRYWKA]   • Nieprzyjaciel: Release the Ants — stos → ręka
+  [ROZGRYWKA]   • Release the Ants zostaje rozstrzygnięty — wygrany clash zwraca czar do ręki właściciela
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Release the Ants → cel: Ty
+
+--- krok 63 | T. 18BotGracz: 9 ż.Bot: 9 ż.DobieranieStos — Release the Ants ---
+  STOS: Release the Ants (rzuca: Nieprzyjaciel) → cel: Ty
+  AKCJE: Poddaj partię  ||  Wybierz: Clash — wierzch czy spód? (2 opcje)
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2
+  MOJE POLA: Wedgelight Rammer · 4 · Artifact Creature — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) · Latanie · Pierwsze uderzenie · 10x charge · 3/4 | Robot · 0 · Artifact Creature — Robot · zaczarowana: Moonlit Meditation · 2/2 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Robot | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · nie do zablokowania · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Clash: Nieprzyjaciel wygrywa (mana value 2 vs 0)
+  [ROZGRYWKA]   • Nieprzyjaciel zostawia odsłoniętą kartę na wierzchu biblioteki
+  >> Wybierz: Clash — wierzch czy spód? (2 opcje)
+  [modal choice] Wybierz: Clash — wierzch czy spód? Clash: Plains na wierzch biblioteki Clash: Plains na spód biblioteki
+  [modal choice]     Clash: Plains na wierzch biblioteki
+  [modal choice]   ▶ Clash: Plains na spód biblioteki
+  [ROZGRYWKA]   • Mosquito Guard zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 9 → 8
+  [ROZGRYWKA]   • Goldmeadow Nomad zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 8 → 7
+  [ROZGRYWKA]   • Tura 19 — Ty
+
+--- krok 66 | T. 19GraczGracz: 7 ż.Bot: 9 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Prismari Campus (Ty) (koszt 4, T) — scry 1  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2
+  MOJE POLA: Wedgelight Rammer · 4 · Artifact Creature — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) · Latanie · Pierwsze uderzenie · 10x charge · 3/4 | Robot · 0 · Artifact Creature — Robot · zaczarowana: Moonlit Meditation · 2/2 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Robot | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  >> Aktywuj: Prismari Campus (Ty) (koszt 4, T) — scry 1
+  [kreator many] Płatność 4 — tapuj źródła po jednympozostało 4 manyTapnij: Plains (W)Tapnij: Mountain (R)Tapnij: Swamp (B)Tapnij: Island — źródła: 5
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Mountain (R)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Prismari Campus — scry na wierzchu biblioteki
+  [ROZGRYWKA]   • Wykonujesz scry (patrzy na 1 kartę: Warmaker Gunship)
+  [ROZGRYWKA]   • Ty: zdolność Prismari Campus rozstrzygnięta
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [modal choice] Scry 1 — obejrzane karty: 1. Warmaker GunshipKarta 1 z 1: Warmaker GunshipNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]     Na spód biblioteki
+  [modal choice]   ▶ Zostaw na wierzchu
+
+--- krok 69 | T. 19GraczGracz: 7 ż.Bot: 9 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station)
+  MOJE POLA: Wedgelight Rammer · 4 · Artifact Creature — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) · Latanie · Pierwsze uderzenie · 10x charge · 3/4 | Robot · 0 · Artifact Creature — Robot · zaczarowana: Moonlit Meditation · 2/2 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Robot | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kończysz scry — na wierzchu: Warmaker Gunship
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Warmaker Gunship
+  >> Aktywuj: Wedgelight Rammer (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapni
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+
+--- krok 72 | T. 20BotGracz: 7 ż.Bot: 6 ż.UpkeepStos — Release the Ants ---
+  STOS: Release the Ants (rzuca: Nieprzyjaciel) → cel: Ty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station)
+  MOJE POLA: Wedgelight Rammer · 4 · Artifact Creature — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) · Latanie · Pierwsze uderzenie · 12x charge · 3/4 | Robot · 0 · Artifact Creature — Robot · zaczarowana: Moonlit Meditation · 2/2 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Robot | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 9 → 6
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Release the Ants → cel: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Release the Ants zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 7 → 6
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Invasion of the Giants
+  [ROZGRYWKA]   • Odsłaniasz Fake Your Own Death
+  [ROZGRYWKA]   • Clash: Nieprzyjaciel przegrywa (mana value 2 vs 2)
+  [ROZGRYWKA]   • Nieprzyjaciel zostawia odsłoniętą kartę na wierzchu biblioteki
+  >> Wybierz: Clash — wierzch czy spód? (2 opcje)
+  [modal choice] Wybierz: Clash — wierzch czy spód? Clash: Fake Your Own Death na wierzch biblioteki Clash: Fake Your Own Death na spód biblioteki
+  [modal choice]     Clash: Fake Your Own Death na wierzch biblioteki
+  [modal choice]   ▶ Clash: Fake Your Own Death na spód biblioteki
+
+--- krok 75 | T. 20BotGracz: 6 ż.Bot: 6 ż.Główna 1Stos — Invasion of the Giants ---
+  STOS: Invasion of the Giants (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station)
+  MOJE POLA: Wedgelight Rammer · 4 · Artifact Creature — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) · Latanie · Pierwsze uderzenie · 12x charge · 3/4 | Robot · 0 · Artifact Creature — Robot · zaczarowana: Moonlit Meditation · 2/2 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Robot | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odkładasz odsłoniętą kartę na spód biblioteki
+  [ROZGRYWKA]   • Release the Ants zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Invasion of the Giants
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel wykonuje scry (patrzy na 2 karty)
+  [ROZGRYWKA]   • Invasion of the Giants — trigger się rozstrzyga (rozdział 1)
+  [ROZGRYWKA]   • Nieprzyjaciel kończy scry — odkłada na spód biblioteki 1 z 2 kart
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Goldmeadow Nomad, Mosquito Guard
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Mosquito Guard zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 6 → 5
+  [ROZGRYWKA]   • Goldmeadow Nomad zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 5 → 4
+  [ROZGRYWKA]   • Tura 21 — Ty
+  >> Aktywuj: Prismari Campus (Ty) (koszt 4, T) — scry 1
+  [kreator many] Płatność 4 — tapuj źródła po jednympozostało 4 manyTapnij: Plains (W)Tapnij: Mountain (R)Tapnij: Swamp (B)Tapnij: Island — źródła: 5
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Mountain (R)
+
+--- krok 78 | T. 21GraczGracz: 4 ż.Bot: 6 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Scry — co odłożyć na spód? (2 opcje)  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station)
+  MOJE POLA: Wedgelight Rammer · 4 · Artifact Creature — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) · Latanie · Pierwsze uderzenie · 12x charge · 3/4 | Robot · 0 · Artifact Creature — Robot · zaczarowana: Moonlit Meditation · 2/2 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Robot | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1 | Invasion of the Giants · 2 · Enchantment — Saga · Saga — I: scry 2 · II: dobierz 1 kartę, możesz ujawnić kartę z ręki — obrażenia przeciwnika · III: następny czar podtypu tańszy w tej turze · Rozdział I (1/3)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Prismari Campus — scry na wierzchu biblioteki
+  [ROZGRYWKA]   • Wykonujesz scry (patrzy na 1 kartę: Island)
+  [ROZGRYWKA]   • Ty: zdolność Prismari Campus rozstrzygnięta
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [modal choice] Scry 1 — obejrzane karty: 1. IslandKarta 1 z 1: IslandNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kończysz scry — na spód: Island
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+
+--- krok 81 | T. 21GraczGracz: 4 ż.Bot: 6 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Mountain  ||  Aktywuj: Wedgelight Rammer (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapnij Robot (Ty)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  MOJE POLA: Wedgelight Rammer · 4 · Artifact Creature — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) · Latanie · Pierwsze uderzenie · 12x charge · 3/4 | Robot · 0 · Artifact Creature — Robot · zaczarowana: Moonlit Meditation · 2/2 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Robot | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1 | Invasion of the Giants · 2 · Enchantment — Saga · Saga — I: scry 2 · II: dobierz 1 kartę, możesz ujawnić kartę z ręki — obrażenia przeciwnika · III: następny czar podtypu tańszy w tej turze · Rozdział I (1/3)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  >> Aktywuj: Wedgelight Rammer (Ty) (koszt tapnij innego swojego stwora) — połóż liczniki charge (station) — tapni
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+
+--- krok 84 | T. 22BotGracz: 4 ż.Bot: 3 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station)
+  MOJE POLA: Wedgelight Rammer · 4 · Artifact Creature — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) · Latanie · Pierwsze uderzenie · 14x charge · 3/4 | Robot · 0 · Artifact Creature — Robot · zaczarowana: Moonlit Meditation · 2/2 | Moonlit Meditation · 3 · Enchantment Aura · pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu (możesz) · aura → Robot | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1 | Invasion of the Giants · 2 · Enchantment — Saga · Saga — I: scry 2 · II: dobierz 1 kartę, możesz ujawnić kartę z ręki — obrażenia przeciwnika · III: następny czar podtypu tańszy w tej turze · Rozdział II (2/3)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Wedgelight Rammer zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 6 → 3
+  [ROZGRYWKA]   • Tura 22 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Invasion of the Giants — trigger (rozdział sagi)
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Invasion of the Giants — trigger się rozstrzyga (rozdział 2)
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Assert Perfection → cel: Goldmeadow Nomad, Robot
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Goldmeadow Nomad zadaje 2 obrażenia (Robot)
+  [ROZGRYWKA]   • Assert Perfection zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Robot ginie
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Creakwood Safewright
+
+--- krok 87 | T. 23GraczGracz: 1 ż.Bot: 3 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Prismari Campus (Ty) (koszt 4, T) — scry 1  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station)
+  MOJE POLA: Wedgelight Rammer · 4 · Artifact Creature — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) · Latanie · Pierwsze uderzenie · 14x charge · 3/4 | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1 | Invasion of the Giants · 2 · Enchantment — Saga · Saga — I: scry 2 · II: dobierz 1 kartę, możesz ujawnić kartę z ręki — obrażenia przeciwnika · III: następny czar podtypu tańszy w tej turze · Rozdział II (2/3) | Creakwood Safewright · 2 · Creature — Elf Warrior · Na początku kroku końca (gdy w twoim grobie jest karta Elf i ma licznik -1/-1): usuń licznik -1/-1. · choroba · 3x -1/-1 · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Mosquito Guard zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 4 → 3
+  [ROZGRYWKA]   • Goldmeadow Nomad zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 3 → 1
+  [ROZGRYWKA]   • Tura 23 — Ty
+  >> Aktywuj: Prismari Campus (Ty) (koszt 4, T) — scry 1
+  [kreator many] Płatność 4 — tapuj źródła po jednympozostało 4 manyTapnij: Plains (W)Tapnij: Mountain (R)Tapnij: Swamp (B)Tapnij: Island — źródła: 6
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Island (U)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Prismari Campus — scry na wierzchu biblioteki
+  [ROZGRYWKA]   • Wykonujesz scry (patrzy na 1 kartę: Sifter Wurm)
+  [ROZGRYWKA]   • Ty: zdolność Prismari Campus rozstrzygnięta
+
+--- krok 90 | T. 23GraczGracz: 1 ż.Bot: 3 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Scry — co odłożyć na spód? (2 opcje)  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station)
+  MOJE POLA: Wedgelight Rammer · 4 · Artifact Creature — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) · Latanie · Pierwsze uderzenie · 14x charge · 3/4 | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1 | Invasion of the Giants · 2 · Enchantment — Saga · Saga — I: scry 2 · II: dobierz 1 kartę, możesz ujawnić kartę z ręki — obrażenia przeciwnika · III: następny czar podtypu tańszy w tej turze · Rozdział II (2/3) | Creakwood Safewright · 2 · Creature — Elf Warrior · Na początku kroku końca (gdy w twoim grobie jest karta Elf i ma licznik -1/-1): usuń licznik -1/-1. · choroba · 3x -1/-1 · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [modal choice] Scry 1 — obejrzane karty: 1. Sifter WurmKarta 1 z 1: Sifter WurmNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kończysz scry — na spód: Sifter Wurm
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Tumbleweed Rising
+  >> Dalej (pass)
+  [ROZGRYWKA]   • Invasion of the Giants zostaje poświęcony
+  [ROZGRYWKA]   • Invasion of the Giants — trigger się rozstrzyga (rozdział 3)
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Immersturm Skullcairn (wchodzi zatapnięty)
+
+--- krok 93 | T. 24BotGracz: 1 ż.Bot: 3 ż.Główna 1Stos — Security Rhox ---
+  STOS: Security Rhox (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Tumbleweed Rising · 2 · Sorcery · Stwórz X (największa twoja moc)/X (największa twoja moc) Elemental · Plot {3}: wygnaj z ręki, później rzuć bez kosztu
+  MOJE POLA: Wedgelight Rammer · 4 · Artifact Creature — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) · Latanie · Pierwsze uderzenie · 14x charge · 3/4 | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1 | Creakwood Safewright · 2 · Creature — Elf Warrior · Na początku kroku końca (gdy w twoim grobie jest karta Elf i ma licznik -1/-1): usuń licznik -1/-1. · 3x -1/-1 · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Security Rhox
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Security Rhox zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 25 — Ty
+  >> Aktywuj: Prismari Campus (Ty) (koszt 4, T) — scry 1
+  [kreator many] Płatność 4 — tapuj źródła po jednympozostało 4 manyTapnij: Plains (W)Tapnij: Mountain (R)Tapnij: Swamp (B)Tapnij: Island — źródła: 6
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Mountain (R)
+
+--- krok 96 | T. 25GraczGracz: 1 ż.Bot: 3 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Scry — co odłożyć na spód? (2 opcje)  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Tumbleweed Rising · 2 · Sorcery · Stwórz X (największa twoja moc)/X (największa twoja moc) Elemental · Plot {3}: wygnaj z ręki, później rzuć bez kosztu
+  MOJE POLA: Wedgelight Rammer · 4 · Artifact Creature — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) · Latanie · Pierwsze uderzenie · 14x charge · 3/4 | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1 | Creakwood Safewright · 2 · Creature — Elf Warrior · Na początku kroku końca (gdy w twoim grobie jest karta Elf i ma licznik -1/-1): usuń licznik -1/-1. · 3x -1/-1 · 2/2 | Security Rhox · 4 · Creature — Rhino Warrior · choroba · 5/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Prismari Campus — scry na wierzchu biblioteki
+  [ROZGRYWKA]   • Wykonujesz scry (patrzy na 1 kartę: Sterling Keykeeper)
+  [ROZGRYWKA]   • Ty: zdolność Prismari Campus rozstrzygnięta
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [modal choice] Scry 1 — obejrzane karty: 1. Sterling KeykeeperKarta 1 z 1: Sterling KeykeeperNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]     Na spód biblioteki
+  [modal choice]   ▶ Zostaw na wierzchu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kończysz scry — na wierzchu: Sterling Keykeeper
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Sterling Keykeeper
+
+--- krok 99 | T. 25GraczGracz: 1 ż.Bot: 3 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Tumbleweed Rising · 2 · Sorcery · Stwórz X (największa twoja moc)/X (największa twoja moc) Elemental · Plot {3}: wygnaj z ręki, później rzuć bez kosztu | Sterling Keykeeper · 2 · Creature — Human Mercenary · {2}, {T}: cel: stwór bez podtypu Mount — tap · 2/2
+  MOJE POLA: Wedgelight Rammer · 4 · Artifact Creature — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) · Latanie · Pierwsze uderzenie · 14x charge · 3/4 | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1 | Creakwood Safewright · 2 · Creature — Elf Warrior · Na początku kroku końca (gdy w twoim grobie jest karta Elf i ma licznik -1/-1): usuń licznik -1/-1. · 3x -1/-1 · 2/2 | Security Rhox · 4 · Creature — Rhino Warrior · choroba · 5/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+== KONIEC PARTII == Koniec partii — wygrywa Gracz
+
+--- krok 101 | Koniec partii — wygrywa Gracz ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. · 5/4 | Vow of Flight · 3 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie · zaczarowany nie może atakować ciebie | Lotusguard Disciple · 3 · Creature — Bird Cleric · Latanie · Gdy wejdzie na pole bitwy: zdobądź Dotykanie życia, Niezniszczalny do końca tury. · 2/2 | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · tapnij innego swojego stwora: połóż liczniki charge (station) | Tumbleweed Rising · 2 · Sorcery · Stwórz X (największa twoja moc)/X (największa twoja moc) Elemental · Plot {3}: wygnaj z ręki, później rzuć bez kosztu | Sterling Keykeeper · 2 · Creature — Human Mercenary · {2}, {T}: cel: stwór bez podtypu Mount — tap · 2/2
+  MOJE POLA: Wedgelight Rammer · 4 · Artifact Creature — Spacecraft · Gdy wejdzie na pole bitwy: stwórz token Robot. · tapnij innego swojego stwora: połóż liczniki charge (station) · Latanie · Pierwsze uderzenie · 14x charge · 3/4 | Plains · Basic Land — Plains · T: dodaj 1 manę | Prismari Campus · Land · {4}, {T}: scry 1 · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Immersturm Skullcairn · Land · {T}: dodaj 1 manę czarną · {1}, {B}, {R}, {R}, {T}, poświęć: cel: gracz — 3 obrażenia + odrzuć 1 kartę | Goldmeadow Nomad · 1 · Creature — Kithkin Scout · {W}, wygnaj tę kartę z grobu: stwórz token Kithkin · 1/2 | Mosquito Guard · 1 · Creature — Kithkin Soldier · Pierwsze uderzenie · {1}, {W}: cel: stwór — połóż licznik +1/+1 · 1/1 | Creakwood Safewright · 2 · Creature — Elf Warrior · Na początku kroku końca (gdy w twoim grobie jest karta Elf i ma licznik -1/-1): usuń licznik -1/-1. · 3x -1/-1 · 2/2 | Security Rhox · 4 · Creature — Rhino Warrior · choroba · 5/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Lotusguard Disciple, Prismari Campus, Spinewoods Paladin, Plains, Wedgelight Rammer, Vow of Flight, Nanoform Sentinel ⏎ Nowa partia (seed 407). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 25, kliknięte: 31, modale: 14, sondy noop: 114 (panel 80, modal 34)
+== DETEKTORY: brak zgłoszeń ==

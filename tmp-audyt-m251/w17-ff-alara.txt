@@ -1,0 +1,502 @@
+== NOWA PARTIA: gracz=final-fantasy vs bot=alara, seed=301, profil=defensive, policy-seed=1, tick-rate=0.3 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Karty na spód biblioteki (mulligan) (5 opcji)
+  RĘKA: Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Scorpion Sentinel · 2 · Artifact Creature — Robot Scorpion · +3/+0 · przy 7+ landach · 1/4 | Instant Ramen · 2 · Artifact — Food · Flash (błysk) · Gdy wejdzie na pole bitwy: dobierz 1 kartę. · {2}, {T}, poświęć: zyskaj 3 życia | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Scorpion Sentinel ⏎ Dobierasz: Plains ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cloudbound Moogle, Aerith Rescue Mission, White Mage's Staff, Mountain, Jill, Shiva's Dominant, Island, Hecteyes ⏎ Nowa partia (seed 301). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Scorpion Sentinel
+  [ROZGRYWKA]   • Dobierasz: Instant Ramen
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Wybierz: Karty na spód biblioteki (mulligan) (5 opcji)
+  [multi-target wizard] Mulligan: zaznacz 1 kartę do odłożenia na spód biblioteki:[ ] PlainsPodgląd[ ] Scorpion Se — opcji 5, potrzeba 1, celuję w 1
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 6 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 6 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+
+--- krok 3 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Karty na spód biblioteki (mulligan) (21 opcji)
+  RĘKA: Cloudbound Moogle · 5 · Creature — Moogle · Latanie · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · Cycling {2} → szukaj: Plains · 2/3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Scorpion Sentinel · 2 · Artifact Creature — Robot Scorpion · +3/+0 · przy 7+ landach · 1/4 | White Mage's Staff · 2 · Artifact — Equipment · Equip {3} +1/+1 · Gdy wejdzie na pole bitwy: job select (stwórz 1/1 Hero i przypnij). · Gdy wyposażony stwór atakuje: zyskaj 1 życie. | Island · Basic Land — Island · T: dodaj 1 manę | Aerith Rescue Mission · 4 · Sorcery · wybierz jedno — Winda: Stwórz ×3 1/1 Hero / Schody: tap permanenty + połóż licznik stun | Gaelicat · 3 · Creature — Cat · Latanie Czujność · +2/+0 · przy 2+ artefaktach · 1/3
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Scorpion Sentinel ⏎ Dobierasz: Plains ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cloudbound Moogle, Aerith Rescue Mission, White Mage's Staff, Mountain, Jill, Shiva's Dominant, Island, Hecteyes ⏎ Nowa partia (seed 301). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Cloudbound Moogle
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Scorpion Sentinel
+  [ROZGRYWKA]   • Dobierasz: White Mage's Staff
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Aerith Rescue Mission
+  [ROZGRYWKA]   • Dobierasz: Gaelicat
+  >> Wybierz: Karty na spód biblioteki (mulligan) (21 opcji)
+  [multi-target wizard] Mulligan: zaznacz 2 karty do odłożenia na spód biblioteki:[ ] Cloudbound MooglePodgląd[ ]  — opcji 7, potrzeba 2, celuję w 2
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 5 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 5 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+
+--- krok 6 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Karty na spód biblioteki (mulligan) (25 opcji)
+  RĘKA: Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Instant Ramen · 2 · Artifact — Food · Flash (błysk) · Gdy wejdzie na pole bitwy: dobierz 1 kartę. · {2}, {T}, poświęć: zyskaj 3 życia | Mysidian Elder · 3 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: stwórz token Wizard. · 1/3 | Scorpion Sentinel · 2 · Artifact Creature — Robot Scorpion · +3/+0 · przy 7+ landach · 1/4 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Scorpion Sentinel ⏎ Dobierasz: Plains ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cloudbound Moogle, Aerith Rescue Mission, White Mage's Staff, Mountain, Jill, Shiva's Dominant, Island, Hecteyes ⏎ Nowa partia (seed 301). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Instant Ramen
+  [ROZGRYWKA]   • Dobierasz: Mysidian Elder
+  [ROZGRYWKA]   • Dobierasz: Scorpion Sentinel
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Wybierz: Karty na spód biblioteki (mulligan) (25 opcji)
+  [multi-target wizard] Mulligan: zaznacz 3 karty do odłożenia na spód biblioteki:[ ] PlainsPodgląd[ ] Instant Ram — opcji 7, potrzeba 3, celuję w 3
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 4 karty) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 4 karty)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+
+--- krok 9 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Karty na spód biblioteki (mulligan) (25 opcji)
+  RĘKA: Mountain · Basic Land — Mountain · T: dodaj 1 manę | Magic Damper · 1 · Instant · +1/+1 do końca tury + zdobądź Hexproof (niecelowalność) do końca tury + odkręć · cel: twój stwór | White Mage's Staff · 2 · Artifact — Equipment · Equip {3} +1/+1 · Gdy wejdzie na pole bitwy: job select (stwórz 1/1 Hero i przypnij). · Gdy wyposażony stwór atakuje: zyskaj 1 życie. | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Cloudbound Moogle · 5 · Creature — Moogle · Latanie · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · Cycling {2} → szukaj: Plains · 2/3 | Scorpion Sentinel · 2 · Artifact Creature — Robot Scorpion · +3/+0 · przy 7+ landach · 1/4
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Scorpion Sentinel ⏎ Dobierasz: Plains ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cloudbound Moogle, Aerith Rescue Mission, White Mage's Staff, Mountain, Jill, Shiva's Dominant, Island, Hecteyes ⏎ Nowa partia (seed 301). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Magic Damper
+  [ROZGRYWKA]   • Dobierasz: White Mage's Staff
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Cloudbound Moogle
+  [ROZGRYWKA]   • Dobierasz: Scorpion Sentinel
+  >> Wybierz: Karty na spód biblioteki (mulligan) (25 opcji)
+  [multi-target wizard] Mulligan: zaznacz 4 karty do odłożenia na spód biblioteki:[ ] MountainPodgląd[ ] Magic Dam — opcji 7, potrzeba 4, celuję w 4
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 3 karty) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 3 karty)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+
+--- krok 12 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Karty na spód biblioteki (mulligan) (16 opcji)
+  RĘKA: Mountain · Basic Land — Mountain · T: dodaj 1 manę | Mysidian Elder · 3 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: stwórz token Wizard. · 1/3 | Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3 | White Mage's Staff · 2 · Artifact — Equipment · Equip {3} +1/+1 · Gdy wejdzie na pole bitwy: job select (stwórz 1/1 Hero i przypnij). · Gdy wyposażony stwór atakuje: zyskaj 1 życie. | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Scorpion Sentinel ⏎ Dobierasz: Plains ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cloudbound Moogle, Aerith Rescue Mission, White Mage's Staff, Mountain, Jill, Shiva's Dominant, Island, Hecteyes ⏎ Nowa partia (seed 301). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Mysidian Elder
+  [ROZGRYWKA]   • Dobierasz: Tellah, Great Sage
+  [ROZGRYWKA]   • Dobierasz: White Mage's Staff
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Wybierz: Karty na spód biblioteki (mulligan) (16 opcji)
+  [multi-target wizard] Mulligan: zaznacz 5 kart do odłożenia na spód biblioteki:[ ] MountainPodgląd[ ] Mysidian E — opcji 7, potrzeba 5, celuję w 5
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 2 karty) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 2 karty)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+
+--- krok 15 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Karty na spód biblioteki (mulligan) (7 opcji)
+  RĘKA: Plains · Basic Land — Plains · T: dodaj 1 manę | Instant Ramen · 2 · Artifact — Food · Flash (błysk) · Gdy wejdzie na pole bitwy: dobierz 1 kartę. · {2}, {T}, poświęć: zyskaj 3 życia | White Mage's Staff · 2 · Artifact — Equipment · Equip {3} +1/+1 · Gdy wejdzie na pole bitwy: job select (stwórz 1/1 Hero i przypnij). · Gdy wyposażony stwór atakuje: zyskaj 1 życie. | You're Not Alone · 1 · Instant · +2/+2 do końca tury · cel: stwór | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Scorpion Sentinel · 2 · Artifact Creature — Robot Scorpion · +3/+0 · przy 7+ landach · 1/4 | Jill, Shiva's Dominant · 3 · Legendary Creature — Human Noble Warrior · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · {3}, {U}, {U}, {T}: wygnij, potem wróć przekształcone · 2/2
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Scorpion Sentinel ⏎ Dobierasz: Plains ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cloudbound Moogle, Aerith Rescue Mission, White Mage's Staff, Mountain, Jill, Shiva's Dominant, Island, Hecteyes ⏎ Nowa partia (seed 301). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Instant Ramen
+  [ROZGRYWKA]   • Dobierasz: White Mage's Staff
+  [ROZGRYWKA]   • Dobierasz: You're Not Alone
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Scorpion Sentinel
+  [ROZGRYWKA]   • Dobierasz: Jill, Shiva's Dominant
+  >> Wybierz: Karty na spód biblioteki (mulligan) (7 opcji)
+  [multi-target wizard] Mulligan: zaznacz 6 kart do odłożenia na spód biblioteki:[ ] PlainsPodgląd[ ] Instant Rame — opcji 7, potrzeba 6, celuję w 6
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 1 kartę) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 1 kartę)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+
+--- krok 18 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Mulligan — odłóż na spód (7): Magic Damper, Plains, Mountain, Cloudbound Moogle, Mountain, Call the Mountain Chocobo, Aerith Rescue Mission
+  RĘKA: Magic Damper · 1 · Instant · +1/+1 do końca tury + zdobądź Hexproof (niecelowalność) do końca tury + odkręć · cel: twój stwór | Plains · Basic Land — Plains · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Cloudbound Moogle · 5 · Creature — Moogle · Latanie · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · Cycling {2} → szukaj: Plains · 2/3 | Call the Mountain Chocobo · 4 · Sorcery · szukaj w bibliotece do ręki + Stwórz 2/2 Bird | Aerith Rescue Mission · 4 · Sorcery · wybierz jedno — Winda: Stwórz ×3 1/1 Hero / Schody: tap permanenty + połóż licznik stun
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Scorpion Sentinel ⏎ Dobierasz: Plains ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cloudbound Moogle, Aerith Rescue Mission, White Mage's Staff, Mountain, Jill, Shiva's Dominant, Island, Hecteyes ⏎ Nowa partia (seed 301). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Magic Damper
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Cloudbound Moogle
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Call the Mountain Chocobo
+  [ROZGRYWKA]   • Dobierasz: Aerith Rescue Mission
+  >> Mulligan — odłóż na spód (7): Magic Damper, Plains, Mountain, Cloudbound Moogle, Mountain, Call the Mountain C
+  >> Mulligan: Zatrzymaj tę rękę (keep — 0 kart)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+
+--- krok 21 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3
+  MOJE POLA: (puste)
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę
+  LOG: Dobierasz: Scorpion Sentinel ⏎ Dobierasz: Plains ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cloudbound Moogle, Aerith Rescue Mission, White Mage's Staff, Mountain, Jill, Shiva's Dominant, Island, Hecteyes ⏎ Nowa partia (seed 301). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Tellah, Great Sage
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Esper Stormblade
+
+--- krok 24 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3 | Plains · Basic Land — Plains · T: dodaj 1 manę
+  MOJE POLA: (puste)
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Esper Stormblade · 2 · Artifact Creature — Vedalken Wizard · +1 · Latanie · gdy kontrolujesz inny wielokolorowy permanent · choroba · 2/1
+  LOG: Dobierasz: Scorpion Sentinel ⏎ Dobierasz: Plains ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cloudbound Moogle, Aerith Rescue Mission, White Mage's Staff, Mountain, Jill, Shiva's Dominant, Island, Hecteyes ⏎ Nowa partia (seed 301). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Esper Stormblade zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plague Reaver
+
+--- krok 27 | T. 6BotGracz: 20 ż.Bot: 20 ż.Główna 1Stos — Plague Reaver ---
+  STOS: Plague Reaver (rzuca: Nieprzyjaciel) → cel: Ty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3
+  MOJE POLA: Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Esper Stormblade · 2 · Artifact Creature — Vedalken Wizard · +1 · Latanie · gdy kontrolujesz inny wielokolorowy permanent · 2/1
+  LOG: Dobierasz: Scorpion Sentinel ⏎ Dobierasz: Plains ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cloudbound Moogle, Aerith Rescue Mission, White Mage's Staff, Mountain, Jill, Shiva's Dominant, Island, Hecteyes ⏎ Nowa partia (seed 301). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Plague Reaver zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera, którą kartę odrzucić jako koszt (Plague Reaver)
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Bone Splinters
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera, którą kartę odrzucić jako koszt (Plague Reaver)
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Grizzled Leotau
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę (koszt zdolności)
+  [ROZGRYWKA]   • Plague Reaver zostaje poświęcony
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Plague Reaver → cel: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Plague Reaver — trigger (opóźniony trigger)
+  [ROZGRYWKA]   • Ty: Plague Reaver — cmentarz → pole bitwy
+  [ROZGRYWKA]   • Plague Reaver przechodzi pod kontrolę gracza Ty
+  [ROZGRYWKA]   • Plague Reaver — trigger się rozstrzyga (opóźniony)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+
+--- krok 30 | T. 7GraczGracz: 18 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Plague Reaver (Ty) (koszt: odrzuć 2 karty, poświęć) — wróć na pole bitwy na początku upkeep → cel: Nieprzyjaciel  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3 | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · choroba · 6/5 | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Esper Stormblade · 2 · Artifact Creature — Vedalken Wizard · +1 · Latanie · gdy kontrolujesz inny wielokolorowy permanent · 2/1
+  LOG: Dobierasz: Scorpion Sentinel ⏎ Dobierasz: Plains ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cloudbound Moogle, Aerith Rescue Mission, White Mage's Staff, Mountain, Jill, Shiva's Dominant, Island, Hecteyes ⏎ Nowa partia (seed 301). Powodzenia!
+  [ptaszek] wyciszam: Aktywuj: Plague Reaver (Ty) (koszt: odrzuć 2 karty, poświęć) — wróć na
+  >> Zagraj ląd: Island
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Plague Reaver — trigger (krok końca tury)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Plague Reaver — trigger bez efektu (nie było czego wykonać)
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Etherium Sculptor
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Dobierasz: Instant Ramen
+
+--- krok 33 | T. 9GraczGracz: 18 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Instant Ramen (koszt 2)  ||  Aktywuj: Plague Reaver (Ty) (koszt: odrzuć 2 karty, poświęć) — wróć na pole bitwy na początku upkeep → cel: Nieprzyjaciel  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3 | Instant Ramen · 2 · Artifact — Food · Flash (błysk) · Gdy wejdzie na pole bitwy: dobierz 1 kartę. · {2}, {T}, poświęć: zyskaj 3 życia
+  MOJE POLA: Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · 6/5 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Esper Stormblade · 2 · Artifact Creature — Vedalken Wizard · +1 · Latanie · gdy kontrolujesz inny wielokolorowy permanent · 2/1 | Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · choroba · 1/2
+  LOG: Dobierasz: Scorpion Sentinel ⏎ Dobierasz: Plains ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cloudbound Moogle, Aerith Rescue Mission, White Mage's Staff, Mountain, Jill, Shiva's Dominant, Island, Hecteyes ⏎ Nowa partia (seed 301). Powodzenia!
+  >> Aktywuj: Plague Reaver (Ty) (koszt: odrzuć 2 karty, poświęć) — wróć na pole bitwy na początku upkeep → cel: Ni
+  >> Wybierz: Karta do odrzucenia (2 opcje)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Instant Ramen🔍 Podgląd karty Odrzuć: Tellah, Great Sage🔍 Podgląd karty
+  [modal choice]   ▶ Odrzuć: Instant Ramen
+  [modal choice]     Odrzuć: Tellah, Great Sage
+  >> Odrzuć: Tellah, Great Sage
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Plague Reaver → cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Plague Reaver — opóźniony trigger: powrót na pole bitwy w następnym upkeep gracza Nieprzyjaciel
+  [ROZGRYWKA]   • Ty: zdolność Plague Reaver rozstrzygnięta
+
+--- krok 36 | T. 10BotGracz: 18 ż.Bot: 20 ż.UpkeepStos — Plague Reaver ---
+  STOS: Trigger: Plague Reaver (opóźniony trigger)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Esper Stormblade · 2 · Artifact Creature — Vedalken Wizard · +1 · Latanie · gdy kontrolujesz inny wielokolorowy permanent · 2/1 | Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · 1/2
+  LOG: Dobierasz: Scorpion Sentinel ⏎ Dobierasz: Plains ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cloudbound Moogle, Aerith Rescue Mission, White Mage's Staff, Mountain, Jill, Shiva's Dominant, Island, Hecteyes ⏎ Nowa partia (seed 301). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Plague Reaver — trigger (opóźniony trigger)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera, którą kartę odrzucić jako koszt (Plague Reaver)
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Etherwrought Page
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera, którą kartę odrzucić jako koszt (Plague Reaver)
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Angelic Benediction
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę (koszt zdolności)
+  [ROZGRYWKA]   • Plague Reaver zostaje poświęcony
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Plague Reaver → cel: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Plague Reaver — trigger (opóźniony trigger)
+  [ROZGRYWKA]   • Ty: Plague Reaver — cmentarz → pole bitwy
+  [ROZGRYWKA]   • Plague Reaver przechodzi pod kontrolę gracza Ty
+  [ROZGRYWKA]   • Plague Reaver — trigger się rozstrzyga (opóźniony)
+
+--- krok 39 | T. 11GraczGracz: 15 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Warrior's Sword · 4 · Artifact — Equipment · Equip {5} +3/+2 · Gdy wejdzie na pole bitwy: job select (stwórz 1/1 Hero i przypnij).
+  MOJE POLA: Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · choroba · 6/5 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Esper Stormblade · 2 · Artifact Creature — Vedalken Wizard · +1 · Latanie · gdy kontrolujesz inny wielokolorowy permanent · 2/1 | Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · 1/2
+  LOG: Dobierasz: Scorpion Sentinel ⏎ Dobierasz: Plains ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cloudbound Moogle, Aerith Rescue Mission, White Mage's Staff, Mountain, Jill, Shiva's Dominant, Island, Hecteyes ⏎ Nowa partia (seed 301). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Warrior's Sword
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Plague Reaver — trigger (krok końca tury)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+
+--- krok 42 | T. 13GraczGracz: 15 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Aktywuj: Plague Reaver (Ty) (koszt: odrzuć 2 karty, poświęć) — wróć na pole bitwy na początku upkeep → cel: Nieprzyjaciel  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Warrior's Sword · 4 · Artifact — Equipment · Equip {5} +3/+2 · Gdy wejdzie na pole bitwy: job select (stwórz 1/1 Hero i przypnij). | Plains · Basic Land — Plains · T: dodaj 1 manę
+  MOJE POLA: Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · 6/5 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Esper Stormblade · 2 · Artifact Creature — Vedalken Wizard · +1 · Latanie · gdy kontrolujesz inny wielokolorowy permanent · 2/1 | Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · 1/2
+  LOG: Dobierasz: Scorpion Sentinel ⏎ Dobierasz: Plains ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cloudbound Moogle, Aerith Rescue Mission, White Mage's Staff, Mountain, Jill, Shiva's Dominant, Island, Hecteyes ⏎ Nowa partia (seed 301). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Aktywuj: Plague Reaver (Ty) (koszt: odrzuć 2 karty, poświęć) — wróć na pole bitwy na początku upkeep → cel: Ni
+  >> Wybierz: Karta do odrzucenia (2 opcje)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Plains🔍 Podgląd karty Odrzuć: Warrior's Sword🔍 Podgląd karty
+  [modal choice]   ▶ Odrzuć: Plains
+  [modal choice]     Odrzuć: Warrior's Sword
+
+--- krok 45 | T. 13GraczGracz: 15 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Odrzuć: Warrior's Sword
+  RĘKA: Warrior's Sword · 4 · Artifact — Equipment · Equip {5} +3/+2 · Gdy wejdzie na pole bitwy: job select (stwórz 1/1 Hero i przypnij).
+  MOJE POLA: Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · 6/5 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Esper Stormblade · 2 · Artifact Creature — Vedalken Wizard · +1 · Latanie · gdy kontrolujesz inny wielokolorowy permanent · 2/1 | Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · 1/2
+  LOG: Dobierasz: Scorpion Sentinel ⏎ Dobierasz: Plains ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cloudbound Moogle, Aerith Rescue Mission, White Mage's Staff, Mountain, Jill, Shiva's Dominant, Island, Hecteyes ⏎ Nowa partia (seed 301). Powodzenia!
+  >> Odrzuć: Warrior's Sword
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Plague Reaver → cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Plague Reaver — opóźniony trigger: powrót na pole bitwy w następnym upkeep gracza Nieprzyjaciel
+  [ROZGRYWKA]   • Ty: zdolność Plague Reaver rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Plague Reaver — trigger (opóźniony trigger)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera, którą kartę odrzucić jako koszt (Plague Reaver)
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Angel's Herald
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera, którą kartę odrzucić jako koszt (Plague Reaver)
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Gorger Wurm
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę (koszt zdolności)
+  [ROZGRYWKA]   • Plague Reaver zostaje poświęcony
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Plague Reaver → cel: Ty
+
+--- krok 48 | T. 15GraczGracz: 12 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · choroba · 6/5 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Esper Stormblade · 2 · Artifact Creature — Vedalken Wizard · +1 · Latanie · gdy kontrolujesz inny wielokolorowy permanent · 2/1 | Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · 1/2
+  LOG: Dobierasz: Scorpion Sentinel ⏎ Dobierasz: Plains ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cloudbound Moogle, Aerith Rescue Mission, White Mage's Staff, Mountain, Jill, Shiva's Dominant, Island, Hecteyes ⏎ Nowa partia (seed 301). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Plague Reaver — trigger (opóźniony trigger)
+  [ROZGRYWKA]   • Ty: Plague Reaver — cmentarz → pole bitwy
+  [ROZGRYWKA]   • Plague Reaver przechodzi pod kontrolę gracza Ty
+  [ROZGRYWKA]   • Plague Reaver — trigger się rozstrzyga (opóźniony)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: You're Not Alone
+  >> Cel czaru: You're Not Alone (3 opcje)
+  [modal choice] Cel czaru: You're Not Alone Rzuć: You're Not Alone (koszt W) → cel: Plague Reaver (Ty)🔍 Podgląd karty Rzuć: You're Not Alone (koszt W) → cel: Esper Stormblade (Nieprzyjaciel)🔍 Podgląd karty Rzuć: You're Not Alone (koszt W) → cel: Etherium Sculptor (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]   ▶ Rzuć: You're Not Alone (koszt W) → cel: Plague Reaver (Ty)
+  [modal choice]     Rzuć: You're Not Alone (koszt W) → cel: Esper Stormblade (Nieprzyjaciel)
+  [modal choice]     Rzuć: You're Not Alone (koszt W) → cel: Etherium Sculptor (Nieprzyjaciel)
+
+--- krok 51 | T. 15GraczGracz: 12 ż.Bot: 20 ż.KoniecStos — Plague Reaver ---
+  STOS: Trigger: Plague Reaver (krok końca tury)
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · +2/+2 · choroba · 8/7 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Esper Stormblade · 2 · Artifact Creature — Vedalken Wizard · +1 · Latanie · gdy kontrolujesz inny wielokolorowy permanent · 2/1 | Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · 1/2
+  LOG: Dobierasz: Scorpion Sentinel ⏎ Dobierasz: Plains ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cloudbound Moogle, Aerith Rescue Mission, White Mage's Staff, Mountain, Jill, Shiva's Dominant, Island, Hecteyes ⏎ Nowa partia (seed 301). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Plague Reaver — trigger (krok końca tury)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Plague Reaver — trigger bez efektu (nie było czego wykonać)
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mana Cylix
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Dobierasz: Gaelicat
+
+--- krok 54 | T. 17GraczGracz: 12 ż.Bot: 20 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Gaelicat · 3 · Creature — Cat · Latanie Czujność · +2/+0 · przy 2+ artefaktach · 1/3
+  MOJE POLA: Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · 6/5 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Esper Stormblade · 2 · Artifact Creature — Vedalken Wizard · +1 · Latanie · gdy kontrolujesz inny wielokolorowy permanent · 2/1 | Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · 1/2 | Mana Cylix · 1 · Artifact · {1}, {T}: dodaj 1 manę dowolnego koloru
+  LOG: Dobierasz: Scorpion Sentinel ⏎ Dobierasz: Plains ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cloudbound Moogle, Aerith Rescue Mission, White Mage's Staff, Mountain, Jill, Shiva's Dominant, Island, Hecteyes ⏎ Nowa partia (seed 301). Powodzenia!
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Plague Reaver — trigger (krok końca tury)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Illusory Demon
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Esper Stormblade zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 12 → 9
+  [ROZGRYWKA]   • Tura 19 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Hecteyes
+
+--- krok 57 | T. 19GraczGracz: 9 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Plague Reaver (Ty) (koszt: odrzuć 2 karty, poświęć) — wróć na pole bitwy na początku upkeep → cel: Nieprzyjaciel  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Gaelicat · 3 · Creature — Cat · Latanie Czujność · +2/+0 · przy 2+ artefaktach · 1/3 | Hecteyes · 2 · Creature — Ooze Horror · Gdy wejdzie na pole bitwy: każdy przeciwnik odrzuca kartę. · 1/1
+  MOJE POLA: Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · 6/5 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Esper Stormblade · 2 · Artifact Creature — Vedalken Wizard · +1 · Latanie · gdy kontrolujesz inny wielokolorowy permanent · Latanie · +1/+1 · 3/2 | Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · 1/2 | Mana Cylix · 1 · Artifact · {1}, {T}: dodaj 1 manę dowolnego koloru | Illusory Demon · 3 · Creature — Demon Illusion · Latanie · Gdy rzucisz czar: poświęć ten permanent. · choroba · 4/3
+  LOG: Dobierasz: Scorpion Sentinel ⏎ Dobierasz: Plains ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cloudbound Moogle, Aerith Rescue Mission, White Mage's Staff, Mountain, Jill, Shiva's Dominant, Island, Hecteyes ⏎ Nowa partia (seed 301). Powodzenia!
+  >> Aktywuj: Plague Reaver (Ty) (koszt: odrzuć 2 karty, poświęć) — wróć na pole bitwy na początku upkeep → cel: Ni
+  >> Wybierz: Karta do odrzucenia (2 opcje)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Hecteyes🔍 Podgląd karty Odrzuć: Gaelicat🔍 Podgląd karty
+  [modal choice]   ▶ Odrzuć: Hecteyes
+  [modal choice]     Odrzuć: Gaelicat
+  >> Odrzuć: Gaelicat
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Plague Reaver → cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Plague Reaver — opóźniony trigger: powrót na pole bitwy w następnym upkeep gracza Nieprzyjaciel
+  [ROZGRYWKA]   • Ty: zdolność Plague Reaver rozstrzygnięta
+
+--- krok 60 | T. 20BotGracz: 9 ż.Bot: 20 ż.UpkeepStos — Plague Reaver ---
+  STOS: Trigger: Plague Reaver (opóźniony trigger)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Esper Stormblade · 2 · Artifact Creature — Vedalken Wizard · +1 · Latanie · gdy kontrolujesz inny wielokolorowy permanent · Latanie · +1/+1 · 3/2 | Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · 1/2 | Mana Cylix · 1 · Artifact · {1}, {T}: dodaj 1 manę dowolnego koloru | Illusory Demon · 3 · Creature — Demon Illusion · Latanie · Gdy rzucisz czar: poświęć ten permanent. · 4/3
+  LOG: Dobierasz: Scorpion Sentinel ⏎ Dobierasz: Plains ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cloudbound Moogle, Aerith Rescue Mission, White Mage's Staff, Mountain, Jill, Shiva's Dominant, Island, Hecteyes ⏎ Nowa partia (seed 301). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Plague Reaver — trigger (opóźniony trigger)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera, którą kartę odrzucić jako koszt (Plague Reaver)
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Goblin Deathraiders
+  [ROZGRYWKA]   • Nieprzyjaciel wybiera, którą kartę odrzucić jako koszt (Plague Reaver)
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Fiery Fall
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę (koszt zdolności)
+  [ROZGRYWKA]   • Plague Reaver zostaje poświęcony
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Plague Reaver → cel: Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Tura 21 — Ty
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Plague Reaver — trigger (opóźniony trigger)
+  [ROZGRYWKA]   • Ty: Plague Reaver — cmentarz → pole bitwy
+  [ROZGRYWKA]   • Plague Reaver przechodzi pod kontrolę gracza Ty
+  [ROZGRYWKA]   • Plague Reaver — trigger się rozstrzyga (opóźniony)
+
+--- krok 63 | T. 21GraczGracz: 1 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Mysidian Elder · 3 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: stwórz token Wizard. · 1/3
+  MOJE POLA: Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · choroba · 6/5 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Esper Stormblade · 2 · Artifact Creature — Vedalken Wizard · +1 · Latanie · gdy kontrolujesz inny wielokolorowy permanent · Latanie · +1/+1 · 3/2 | Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · 1/2 | Mana Cylix · 1 · Artifact · {1}, {T}: dodaj 1 manę dowolnego koloru | Illusory Demon · 3 · Creature — Demon Illusion · Latanie · Gdy rzucisz czar: poświęć ten permanent. · 4/3
+  LOG: Dobierasz: Scorpion Sentinel ⏎ Dobierasz: Plains ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cloudbound Moogle, Aerith Rescue Mission, White Mage's Staff, Mountain, Jill, Shiva's Dominant, Island, Hecteyes ⏎ Nowa partia (seed 301). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mysidian Elder
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Plague Reaver — trigger (krok końca tury)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+
+--- krok 66 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Mysidian Elder · 3 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: stwórz token Wizard. · 1/3
+  MOJE POLA: Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · choroba · 6/5 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Esper Stormblade · 2 · Artifact Creature — Vedalken Wizard · +1 · Latanie · gdy kontrolujesz inny wielokolorowy permanent · Latanie · +1/+1 · 3/2 | Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · 1/2 | Mana Cylix · 1 · Artifact · {1}, {T}: dodaj 1 manę dowolnego koloru | Illusory Demon · 3 · Creature — Demon Illusion · Latanie · Gdy rzucisz czar: poświęć ten permanent. · 4/3
+  LOG: Dobierasz: Scorpion Sentinel ⏎ Dobierasz: Plains ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cloudbound Moogle, Aerith Rescue Mission, White Mage's Staff, Mountain, Jill, Shiva's Dominant, Island, Hecteyes ⏎ Nowa partia (seed 301). Powodzenia!
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 67 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Mysidian Elder · 3 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: stwórz token Wizard. · 1/3
+  MOJE POLA: Plague Reaver · 3 · Creature — Beast · Na początku kroku końca: poświęć każde inne stworzenie. · odrzuć 2 karty, poświęć: cel: przeciwnik — wróć na pole bitwy na początku upkeep · choroba · 6/5 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Esper Stormblade · 2 · Artifact Creature — Vedalken Wizard · +1 · Latanie · gdy kontrolujesz inny wielokolorowy permanent · Latanie · +1/+1 · 3/2 | Etherium Sculptor · 2 · Artifact Creature — Vedalken Artificer · obniża koszt czarów · 1/2 | Mana Cylix · 1 · Artifact · {1}, {T}: dodaj 1 manę dowolnego koloru | Illusory Demon · 3 · Creature — Demon Illusion · Latanie · Gdy rzucisz czar: poświęć ten permanent. · 4/3
+  LOG: Dobierasz: Scorpion Sentinel ⏎ Dobierasz: Plains ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Cloudbound Moogle, Aerith Rescue Mission, White Mage's Staff, Mountain, Jill, Shiva's Dominant, Island, Hecteyes ⏎ Nowa partia (seed 301). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 14, kliknięte: 20, modale: 5, sondy noop: 52 (panel 39, modal 13)
+== DETEKTORY: brak zgłoszeń ==

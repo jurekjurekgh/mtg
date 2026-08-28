@@ -1,0 +1,227 @@
+== NOWA PARTIA: gracz=ravnica vs bot=final-fantasy, seed=417, profil=impatient, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Swamp  ||  Zagraj ląd: Forest (1 z 2)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Piercing Rays · 2 · Sorcery · wygnij artefakt/enchantment · cel: zatapnięty stwór · {2}, {W}: cel: odtapnięty stwór — tap | Guildscorn Ward · 1 · Enchantment — Aura · zaczarowany ma ochronę przed wielokolorowymi | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4 | Liliana's Triumph · 2 · Instant · cel poświęca stwora + jeśli kontrolujesz planeswalkera Liliana: każdy przeciwnik odrzuca kartę · cel: gracz
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Piercing Rays, Guildscorn Ward, Trostani Discordant, Forest, Liliana's Triumph ⏎ Nowa partia (seed 417). Powodzenia!
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  >> ▶ Wznów grę bota
+  >> Zagraj ląd: Forest (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+
+--- krok 3 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Rzuć: Liliana's Triumph (koszt 1B) → cel: Nieprzyjaciel  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Piercing Rays · 2 · Sorcery · wygnij artefakt/enchantment · cel: zatapnięty stwór · {2}, {W}: cel: odtapnięty stwór — tap | Guildscorn Ward · 1 · Enchantment — Aura · zaczarowany ma ochronę przed wielokolorowymi | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4 | Forest · Basic Land — Forest · T: dodaj 1 manę | Liliana's Triumph · 2 · Instant · cel poświęca stwora + jeśli kontrolujesz planeswalkera Liliana: każdy przeciwnik odrzuca kartę · cel: gracz | Plains · Basic Land — Plains · T: dodaj 1 manę
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Piercing Rays, Guildscorn Ward, Trostani Discordant, Forest, Liliana's Triumph ⏎ Nowa partia (seed 417). Powodzenia!
+  >> Rzuć: Liliana's Triumph (koszt 1B) → cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> ▶ Wznów grę bota
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+
+--- krok 6 | T. 6BotGracz: 20 ż.Bot: 20 ż.Główna 1Stos — White Mage's Staff ---
+  STOS: White Mage's Staff (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Piercing Rays · 2 · Sorcery · wygnij artefakt/enchantment · cel: zatapnięty stwór · {2}, {W}: cel: odtapnięty stwór — tap | Guildscorn Ward · 1 · Enchantment — Aura · zaczarowany ma ochronę przed wielokolorowymi | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4 | Plains · Basic Land — Plains · T: dodaj 1 manę | Expose to Daylight · 3 · Instant · zniszcz cel + scry 1 · cel: artefakt lub enchantment
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Instant Ramen · 2 · Artifact — Food · Flash (błysk) · Gdy wejdzie na pole bitwy: dobierz 1 kartę. · {2}, {T}, poświęć: zyskaj 3 życia
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Piercing Rays, Guildscorn Ward, Trostani Discordant, Forest, Liliana's Triumph ⏎ Nowa partia (seed 417). Powodzenia!
+  >> ▶ Wznów grę bota
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Cel czaru: Expose to Daylight (2 opcje)
+  [modal choice] Cel czaru: Expose to Daylight Rzuć: Expose to Daylight (koszt 2W) → cel: Instant Ramen (Nieprzyjaciel)🔍 Podgląd karty Rzuć: Expose to Daylight (koszt 2W) → cel: White Mage's Staff (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]   ▶ Rzuć: Expose to Daylight (koszt 2W) → cel: Instant Ramen (Nieprzyjaciel)
+  [modal choice]     Rzuć: Expose to Daylight (koszt 2W) → cel: White Mage's Staff (Nieprzyjaciel)
+  [kreator many] Płatność 2W — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: WTapnij: Swamp (B)Tapnij: Forest (G)Tapnij: F — źródła: 4
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Forest (G)
+
+--- krok 9 | T. 7GraczGracz: 20 ż.Bot: 20 ż.Główna 1Stos — Expose to Daylight ---
+  STOS: Expose to Daylight (rzuca: Ty) → cel: Instant Ramen
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Scry — co odłożyć na spód? (2 opcje)  ||  Poddaj partię
+  RĘKA: Piercing Rays · 2 · Sorcery · wygnij artefakt/enchantment · cel: zatapnięty stwór · {2}, {W}: cel: odtapnięty stwór — tap | Guildscorn Ward · 1 · Enchantment — Aura · zaczarowany ma ochronę przed wielokolorowymi | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4 | Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | White Mage's Staff · 2 · Artifact — Equipment · Equip {3} +1/+1 · Gdy wejdzie na pole bitwy: job select (stwórz 1/1 Hero i przypnij). · Gdy wyposażony stwór atakuje: zyskaj 1 życie. · wyposaża → Hero | Hero · 0 · Creature — Hero · +1/+1 · choroba · wyposażona: White Mage's Staff · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Piercing Rays, Guildscorn Ward, Trostani Discordant, Forest, Liliana's Triumph ⏎ Nowa partia (seed 417). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [ROZGRYWKA]   • Wykonujesz scry (patrzy na 1 kartę: Ghost Warden)
+  [modal choice] Scry 1 — obejrzane karty: 1. Ghost WardenKarta 1 z 1: Ghost WardenNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Hero
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • White Mage's Staff — trigger (atak wyposażonego stwora)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> ▶ Wznów grę bota
+
+--- krok 12 | T. 9GraczGracz: 16 ż.Bot: 21 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Piercing Rays (koszt 2W) — tap → cel: Jill, Shiva's Dominant (Nieprzyjaciel)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Piercing Rays · 2 · Sorcery · wygnij artefakt/enchantment · cel: zatapnięty stwór · {2}, {W}: cel: odtapnięty stwór — tap | Guildscorn Ward · 1 · Enchantment — Aura · zaczarowany ma ochronę przed wielokolorowymi | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4 | Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | White Mage's Staff · 2 · Artifact — Equipment · Equip {3} +1/+1 · Gdy wejdzie na pole bitwy: job select (stwórz 1/1 Hero i przypnij). · Gdy wyposażony stwór atakuje: zyskaj 1 życie. · wyposaża → Hero | Hero · 0 · Creature — Hero · +1/+1 · wyposażona: White Mage's Staff · 2/2 | Jill, Shiva's Dominant · 3 · Legendary Creature — Human Noble Warrior · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · {3}, {U}, {U}, {T}: wygnij, potem wróć przekształcone · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Piercing Rays, Guildscorn Ward, Trostani Discordant, Forest, Liliana's Triumph ⏎ Nowa partia (seed 417). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Aktywuj: Piercing Rays (koszt 2W) — tap → cel: Jill, Shiva's Dominant (Nieprzyjaciel)
+  [kreator many] Płatność 2W — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: WTapnij: Swamp (B)Tapnij: Forest (G)Tapnij: F — źródła: 4
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Forest (G)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> ▶ Wznów grę bota
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+
+--- krok 15 | T. 10BotGracz: 16 ż.Bot: 21 ż.Główna 1Stos — Aerith Rescue Mission ---
+  STOS: Aerith Rescue Mission (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Piercing Rays · 2 · Sorcery · wygnij artefakt/enchantment · cel: zatapnięty stwór · {2}, {W}: cel: odtapnięty stwór — tap | Guildscorn Ward · 1 · Enchantment — Aura · zaczarowany ma ochronę przed wielokolorowymi | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4 | Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | White Mage's Staff · 2 · Artifact — Equipment · Equip {3} +1/+1 · Gdy wejdzie na pole bitwy: job select (stwórz 1/1 Hero i przypnij). · Gdy wyposażony stwór atakuje: zyskaj 1 życie. · wyposaża → Hero | Hero · 0 · Creature — Hero · +1/+1 · wyposażona: White Mage's Staff · 2/2 | Jill, Shiva's Dominant · 3 · Legendary Creature — Human Noble Warrior · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · {3}, {U}, {U}, {T}: wygnij, potem wróć przekształcone · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Piercing Rays, Guildscorn Ward, Trostani Discordant, Forest, Liliana's Triumph ⏎ Nowa partia (seed 417). Powodzenia!
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA]   • Jill, Shiva's Dominant zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 12
+  [ROZGRYWKA]   • Tura 11 — Ty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Cel zdolności: Piercing Rays (3 opcje)
+  [modal choice] Cel zdolności: Piercing Rays Aktywuj: Piercing Rays (koszt 2W) — tap → cel: Hero (Nieprzyjaciel) (1 z 3)🔍 Podgląd karty Aktywuj: Piercing Rays (koszt 2W) — tap → cel: Hero (Nieprzyjaciel) (2 z 3)🔍 Podgląd karty Aktywuj: Piercing Rays (koszt 2W) — tap → cel: Hero (Nieprzyjaciel) (3 z 3)🔍 Podgląd karty
+  [modal choice]   ▶ Aktywuj: Piercing Rays (koszt 2W) — tap → cel: Hero (Nieprzyjaciel) (1 z 3)
+  [modal choice]     Aktywuj: Piercing Rays (koszt 2W) — tap → cel: Hero (Nieprzyjaciel) (2 z 3)
+  [modal choice]     Aktywuj: Piercing Rays (koszt 2W) — tap → cel: Hero (Nieprzyjaciel) (3 z 3)
+  [kreator many] Płatność 2W — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: WTapnij: Swamp (B)Tapnij: Forest (G)Tapnij: F — źródła: 5
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Forest (G)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> ▶ Wznów grę bota
+
+--- krok 18 | T. 11GraczGracz: 12 ż.Bot: 22 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Dimir Guildgate  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Piercing Rays · 2 · Sorcery · wygnij artefakt/enchantment · cel: zatapnięty stwór · {2}, {W}: cel: odtapnięty stwór — tap | Guildscorn Ward · 1 · Enchantment — Aura · zaczarowany ma ochronę przed wielokolorowymi | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4 | Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Ivy Lane Denizen · 4 · Creature — Elf Warrior · Gdy inny zielony stwór pod twoją kontrolą wchodzi na pole bitwy: połóż licznik +1/+1. · 2/3
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | White Mage's Staff · 2 · Artifact — Equipment · Equip {3} +1/+1 · Gdy wejdzie na pole bitwy: job select (stwórz 1/1 Hero i przypnij). · Gdy wyposażony stwór atakuje: zyskaj 1 życie. · wyposaża → Hero | Hero · 0 · Creature — Hero · +1/+1 · wyposażona: White Mage's Staff · 2/2 | Jill, Shiva's Dominant · 3 · Legendary Creature — Human Noble Warrior · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · {3}, {U}, {U}, {T}: wygnij, potem wróć przekształcone · 2/2 | Hero · 0 · Creature — Hero · choroba · 1/1 ×3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Piercing Rays, Guildscorn Ward, Trostani Discordant, Forest, Liliana's Triumph ⏎ Nowa partia (seed 417). Powodzenia!
+  >> Zagraj ląd: Dimir Guildgate
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Dimir Guildgate (wchodzi zatapnięty)
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Cloudbound Moogle
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA]   • White Mage's Staff — trigger (atak wyposażonego stwora)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Aktywuj: Dimir Guildgate (Ty) (koszt T) — dodaj 1 manę niebieską lub czarną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Dimir Guildgate — dodanie 1 many niebieskiej lub czarnej do puli
+
+--- krok 21 | T. 13GraczGracz: 5 ż.Bot: 23 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Piercing Rays (koszt 2W) — tap → cel: Cloudbound Moogle (Nieprzyjaciel)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Piercing Rays · 2 · Sorcery · wygnij artefakt/enchantment · cel: zatapnięty stwór · {2}, {W}: cel: odtapnięty stwór — tap | Guildscorn Ward · 1 · Enchantment — Aura · zaczarowany ma ochronę przed wielokolorowymi | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4 | Ivy Lane Denizen · 4 · Creature — Elf Warrior · Gdy inny zielony stwór pod twoją kontrolą wchodzi na pole bitwy: połóż licznik +1/+1. · 2/3
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | White Mage's Staff · 2 · Artifact — Equipment · Equip {3} +1/+1 · Gdy wejdzie na pole bitwy: job select (stwórz 1/1 Hero i przypnij). · Gdy wyposażony stwór atakuje: zyskaj 1 życie. · wyposaża → Hero | Hero · 0 · Creature — Hero · +1/+1 · wyposażona: White Mage's Staff · 2/2 | Jill, Shiva's Dominant · 3 · Legendary Creature — Human Noble Warrior · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · {3}, {U}, {U}, {T}: wygnij, potem wróć przekształcone · 2/2 | Hero · 0 · Creature — Hero · 1/1 ×3 | Cloudbound Moogle · 5 · Creature — Moogle · Latanie · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · Cycling {2} → szukaj: Plains · choroba · 1x +1/+1 · 3/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Piercing Rays, Guildscorn Ward, Trostani Discordant, Forest, Liliana's Triumph ⏎ Nowa partia (seed 417). Powodzenia!
+  >> Aktywuj: Piercing Rays (koszt 2W) — tap → cel: Cloudbound Moogle (Nieprzyjaciel)
+  >> Aktywuj: Piercing Rays (koszt 2W) — tap → cel: Cloudbound Moogle (Nieprzyjaciel)
+  [kreator many] Płatność 2W — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: WTapnij: Swamp (B)Tapnij: Forest (G)Tapnij: F — źródła: 5
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Swamp (B)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> ▶ Wznów grę bota
+
+--- krok 24 | T. 13GraczGracz: 5 ż.Bot: 23 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Piercing Rays · 2 · Sorcery · wygnij artefakt/enchantment · cel: zatapnięty stwór · {2}, {W}: cel: odtapnięty stwór — tap | Guildscorn Ward · 1 · Enchantment — Aura · zaczarowany ma ochronę przed wielokolorowymi | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4 | Ivy Lane Denizen · 4 · Creature — Elf Warrior · Gdy inny zielony stwór pod twoją kontrolą wchodzi na pole bitwy: połóż licznik +1/+1. · 2/3 | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | White Mage's Staff · 2 · Artifact — Equipment · Equip {3} +1/+1 · Gdy wejdzie na pole bitwy: job select (stwórz 1/1 Hero i przypnij). · Gdy wyposażony stwór atakuje: zyskaj 1 życie. · wyposaża → Hero | Hero · 0 · Creature — Hero · +1/+1 · wyposażona: White Mage's Staff · 2/2 | Jill, Shiva's Dominant · 3 · Legendary Creature — Human Noble Warrior · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · {3}, {U}, {U}, {T}: wygnij, potem wróć przekształcone · 2/2 | Hero · 0 · Creature — Hero · 1/1 ×3 | Cloudbound Moogle · 5 · Creature — Moogle · Latanie · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · Cycling {2} → szukaj: Plains · choroba · 1x +1/+1 · 3/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Piercing Rays, Guildscorn Ward, Trostani Discordant, Forest, Liliana's Triumph ⏎ Nowa partia (seed 417). Powodzenia!
+  >> Zagraj ląd: Island
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Zagraj: Ivy Lane Denizen (koszt 3G)
+  [ROZGRYWKA]   • Ivy Lane Denizen zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Bird (2/2)
+  [ROZGRYWKA]   • Bird wchodzi na pole bitwy
+  [ROZGRYWKA]   • Call the Mountain Chocobo zostaje rozstrzygnięty
+
+--- krok 27 | T. 14BotGracz: 5 ż.Bot: 23 ż.Główna 1Stos — Bird ---
+  STOS: Trigger: Bird (Landfall)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Piercing Rays · 2 · Sorcery · wygnij artefakt/enchantment · cel: zatapnięty stwór · {2}, {W}: cel: odtapnięty stwór — tap | Guildscorn Ward · 1 · Enchantment — Aura · zaczarowany ma ochronę przed wielokolorowymi | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4
+  MOJE POLA: Ivy Lane Denizen · 4 · Creature — Elf Warrior · Gdy inny zielony stwór pod twoją kontrolą wchodzi na pole bitwy: połóż licznik +1/+1. · choroba · 2/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | White Mage's Staff · 2 · Artifact — Equipment · Equip {3} +1/+1 · Gdy wejdzie na pole bitwy: job select (stwórz 1/1 Hero i przypnij). · Gdy wyposażony stwór atakuje: zyskaj 1 życie. · wyposaża → Hero | Hero · 0 · Creature — Hero · +1/+1 · wyposażona: White Mage's Staff · 2/2 | Jill, Shiva's Dominant · 3 · Legendary Creature — Human Noble Warrior · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · {3}, {U}, {U}, {T}: wygnij, potem wróć przekształcone · 2/2 | Hero · 0 · Creature — Hero · 1/1 ×3 | Cloudbound Moogle · 5 · Creature — Moogle · Latanie · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · Cycling {2} → szukaj: Plains · 1x +1/+1 · 3/4 | Bird · 0 · Creature — Bird · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Piercing Rays, Guildscorn Ward, Trostani Discordant, Forest, Liliana's Triumph ⏎ Nowa partia (seed 417). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> ▶ Wznów grę bota
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Bird dostaje +1/+0
+  [ROZGRYWKA]   • Bird — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Jill, Shiva's Dominant, Hero, Hero, Hero, Cloudbound Moogle
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Deklaracja blokujących (5 opcji)
+  [combat wizard] blokuję 1 stworami: Ivy Lane Denizen (2/3)
+  [combat wizard] Zatwierdź bloki
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 30 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Piercing Rays · 2 · Sorcery · wygnij artefakt/enchantment · cel: zatapnięty stwór · {2}, {W}: cel: odtapnięty stwór — tap | Guildscorn Ward · 1 · Enchantment — Aura · zaczarowany ma ochronę przed wielokolorowymi | Trostani Discordant · 5 · Legendary Creature — Dryad · inne twoje stwory: +1 · Gdy wejdzie na pole bitwy: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli. · 1/4
+  MOJE POLA: Ivy Lane Denizen · 4 · Creature — Elf Warrior · Gdy inny zielony stwór pod twoją kontrolą wchodzi na pole bitwy: połóż licznik +1/+1. · −2 · choroba · 2/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Dimir Guildgate · Land — Gate · {T}: dodaj 1 manę niebieską lub czarną | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | White Mage's Staff · 2 · Artifact — Equipment · Equip {3} +1/+1 · Gdy wejdzie na pole bitwy: job select (stwórz 1/1 Hero i przypnij). · Gdy wyposażony stwór atakuje: zyskaj 1 życie. · wyposaża → Hero | Hero · 0 · Creature — Hero · +1/+1 · wyposażona: White Mage's Staff · 2/2 | Hero · 0 · Creature — Hero · 1/1 ×3 | Cloudbound Moogle · 5 · Creature — Moogle · Latanie · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · Cycling {2} → szukaj: Plains · 1x +1/+1 · 3/4 | Bird · 0 · Creature — Bird · +1/0 · choroba · 3/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Swamp, Forest, Piercing Rays, Guildscorn Ward, Trostani Discordant, Forest, Liliana's Triumph ⏎ Nowa partia (seed 417). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 19, kliknięte: 21, modale: 4, sondy noop: 46 (panel 37, modal 9)
+== DETEKTORY: brak zgłoszeń ==

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { choiceRequest } from '../src/protocol/types.js';
 import { lookWizardKindOf, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard } from '../src/table/choice-request.js';
-import { choiceGroupLabel, groupCombatDecisions } from '../src/table/render.js';
+import { choiceGroupLabel, groupCombatDecisions, commandLabel } from '../src/table/render.js';
 import { commandOptionKey } from '../src/table/session.js';
 
 class ChoiceMiniEl {
@@ -360,14 +360,42 @@ test('renderDamageWizard (M101/B6): bez trample niedobór nadal wolno zatwierdzi
   assert.equal(calls.length, 1);
 });
 
-test('renderDamageWizard: przycisk „Domyślnie" wysyła wariant z legalCommands', () => {
+test('renderDamageWizard: przycisk domyślnego przydziału wysyła wariant z legalCommands', () => {
   const host = new ChoiceMiniEl('div');
   const calls = [];
   const pending = { playerId: 'p1', entries: [{ attackerId: 'atk', attackerCardId: 'goblin-piker', power: 5, trample: false, blockers: [{ id: 'b1', cardId: 'highland-game', toughness: 3, damage: 0, lethal: 3 }] }] };
   const defaultCommand = { type: 'resolve_damage_assignment', playerId: 'p1', assignments: { atk: [{ blockerId: 'b1', amount: 3 }] } };
   renderDamageWizard(host, { view: COMBAT_VIEW, session: COMBAT_SESSION, pending, defaultCommand, onComplete: (cmd) => calls.push(cmd) });
-  findAll(host, 'button', 'Domyślnie')[0].click();
+  // M251 (audyt Żywym Testerem): lokalizacja po KLASIE, nie po copy —
+  // poprzednia wersja szukała po tekście „Domyślnie" i pękła wraz ze
+  // zmianą etykiety (żargon „lethal-first" → polski opis) choć zachowanie
+  // przycisku było bez zmian. Semantyczny hak = damage-wizard-default.
+  const def = findAll(host, 'button').find((b) => b.className.includes('damage-wizard-default'));
+  assert.ok(def, 'przycisk domyślnego przydziału jest w wizardzie');
+  def.click();
   assert.deepEqual(calls, [defaultCommand]);
+});
+
+test('M251: przycisk domyślnego przydziału opisuje przydział po polsku (bez żargonu implementacji)', () => {
+  // Strażnik znaleziska z audytu Żywym Testerem (oś 2s): etykieta brzmiała
+  // „Domyślnie (lethal-first)" — angielski skrót ALGORYTMU na stole gracza.
+  // Pin mówi o TREŚCI dla gracza, nie o wewnętrznej nazwie algorytmu.
+  const host = new ChoiceMiniEl('div');
+  const pending = { playerId: 'p1', entries: [{ attackerId: 'atk', attackerCardId: 'goblin-piker', power: 5, trample: false, blockers: [{ id: 'b1', cardId: 'highland-game', toughness: 3, damage: 0, lethal: 3 }] }] };
+  const defaultCommand = { type: 'resolve_damage_assignment', playerId: 'p1', assignments: { atk: [{ blockerId: 'b1', amount: 3 }] } };
+  renderDamageWizard(host, { view: COMBAT_VIEW, session: COMBAT_SESSION, pending, defaultCommand, onComplete: () => {} });
+  const def = findAll(host, 'button').find((b) => b.className.includes('damage-wizard-default'));
+  assert.ok(def, 'przycisk domyślnego przydziału jest w wizardzie');
+  assert.match(def.textContent, /domyślnego przydziału/i, `etykieta bez copy żargonu, jest: ${def.textContent}`);
+  assert.doesNotMatch(def.textContent, /lethal-first/i, 'gracz nie widzi nazwy wewnętrznej algorytmu');
+  // M251 (drugie okno tego samego znaleziska): etykieta KOMENDY
+  // resolve_damage_assignment w commandLabel mówiła „(domyślnie
+  // lethal-first)" — ruch bota z domyślnym przydziałem ląduje z nią
+  // w modalu „Ruch przeciwnika" (renderBotMoves → commandLabel).
+  const session = COMBAT_SESSION;
+  const label = commandLabel({ type: 'resolve_damage_assignment', playerId: 'p1', assignments: {} }, session, COMBAT_VIEW);
+  assert.doesNotMatch(label, /lethal-first/i, `etykieta komendy bez żargonu, jest: ${label}`);
+  assert.match(label, /domyślny przydział/i);
 });
 
 // =============================================================================

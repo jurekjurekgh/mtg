@@ -1692,6 +1692,13 @@ function choiceSourceTitle(cmd, session, view) {
   if (cmd?.type === 'resolve_satyr_look_choice' && view?.pendingSatyrLook?.sourceCardId) {
     return `${session.nameOf(view.pendingSatyrLook.sourceCardId)} — bierz ląd z odsłoniętych kart`;
   }
+  // M251/B (audyt Żywym Testerem, partia worek-mroczny/ravnica s=41): decyzja
+  // Manifest Dread otwierała modal z generycznym „Wybierz: Wariant (2 opcje)"
+  // — ta sama klasa co M240/B powyżej. Źródło (rozstrzygany czar na stosie,
+  // info publiczna) jadę z pendingu — nigdy z nazwy w warstwie opisu (ADR 0002).
+  if (cmd?.type === 'resolve_manifest_dread' && view?.pendingManifestDread?.sourceCardId) {
+    return `${session.nameOf(view.pendingManifestDread.sourceCardId)} — zmanifestuj jedną z 2 kart (druga do grobu)`;
+  }
   if (!cmd || cmd.objectId == null) return null;
   const zones = ['hand', 'battlefield', 'stack', 'graveyard', 'library'];
   let object = null;
@@ -2021,7 +2028,11 @@ export function commandLabel(cmd, session, view) {
   };
   switch (cmd.type) {
     case 'resolve_index_choice': return 'Przestaw karty na wierzchu biblioteki';
-    case 'resolve_damage_assignment': return 'Rozdziel obrażenia bojowe (domyślnie lethal-first)';
+    // M251 (audyt Żywym Testerem): ta sama etykieta co przycisk domyślny
+    // w wizardzie — ruch bota z silnikowym przydziałem ląduje w modalu
+    // „Ruch przeciwnika" dokładnie przez commandLabel (render.js: renderBotMoves).
+    // „lethal-first" to nazwa wewnętrzna algorytmu, nie copy dla gracza.
+    case 'resolve_damage_assignment': return 'Rozdziel obrażenia bojowe (domyślny przydział — zabójcze obrażenia po kolei blokerów)';
     case 'draw_card': return 'Dobierz kartę';
     case 'pass_priority': return 'Dalej (pass)';
     case 'concede': return 'Poddaj partię';

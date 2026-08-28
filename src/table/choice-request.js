@@ -1027,7 +1027,12 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
     onComplete?.({ type: 'resolve_damage_assignment', playerId: view.playerId, assignments });
   });
   if (defaultCommand) {
-    const def = choiceNode(actions, 'button', 'action choice-request-option damage-wizard-default', 'Domyślnie (lethal-first)');
+    // M251 (audyt Żywym Testerem, w8): etykieta mówiła „Domyślnie
+    // (lethal-first)" — żargon implementacji na stole gracza (polski opis,
+    // oś 2). Przycisk stosuje silnikowy przydział domyślny: każdy kolejny
+    // bloker deklarowanej kolejności dostaje zabójcze obrażenia dopiero,
+    // gdy poprzedni je ma (CR 510.1c/d).
+    const def = choiceNode(actions, 'button', 'action choice-request-option damage-wizard-default', 'Użyj domyślnego przydziału (zabójcze obrażenia po kolei blokerów)');
     def.type = 'button';
     def.addEventListener('click', () => onComplete?.(defaultCommand));
   }

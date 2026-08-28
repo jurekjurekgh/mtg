@@ -12,7 +12,75 @@
 >
 > Sesje dopisują tu swoją sekcję (ADR 0013) — nowe na górze.
 
-- **Ostatnia aktualizacja:** 2026-08-26 (M217: exploit — CR 702.110 (brak kandydatów nie przerywa ETB), PR #78)
+- **Ostatnia aktualizacja:** 2026-08-28 (sesja arena/01a047db: audyt PR #85 → N1/N2 fingerprint-oferta, M250 Żywy Tester: source-titled decyzje, PR #86)
+
+## Sesja 2026-08-28 — arena/01a047db: audyt PR #85 + pętla jakości Żywym Testerem (PR #86)
+
+- **Zadanie:** „Kontynuujemy projekt." (ADR 0020/0021 — pętla domyślna).
+- **Audyt PR #85** (ADR 0020 B) — raport: `docs/audits/AUDYT_PR85_2026-08-28.md`.
+  Poprzedni fix E1 mutacyjnie zweryfikowany jako poprawny, ale **łatał
+  wystąpienie, nie klasę** (L16):
+  - **N1:** `firstPendingDecisionPlayerId` konsultuje 62 pendingi,
+    `PENDING_DECISION_FIELDS` pokrywał 57. Dopisane 5 brakujących
+    (`pendingManifestDread`, `pendingSuspendCast`, `pendingOpponentTarget`,
+    `pendingFabricate`, `pendingCopyTargets`) + **strażnik klasy**
+    `test/fingerprint-pending-decisions.test.js` (czyta ciało funkcji
+    i wymaga pokrycia w fingerprintcie; mutacyjnie RED).
+  - **N2:** bramka oferty `pass_priority` — ostatnia z trzech kopii bez
+    `firstDecisionOwner == null` → pass oferowany przy otwartym Manifest
+    Dread. Unifikacja ujawniła głębszy defekt: wspólna funkcja liczyła
+    `pendingRoomTargets` po surowej długości, bez filtra „na żywo"
+    (kontrakt M33). Fix: hoist + filtr `legalRoomTargetCandidates` —
+    **lekcja L81**. Test `test/manifest-dread-pass-offer.test.js`
+    (RED→GREEN + anty-over-fix).
+  - **N3:** wpis PR #85 w dzienniku przeniesiony na górę (konwencja
+    „nowe na górze"); odnotowany brak sekcji PR #81/#83/#84.
+- **Pętla jakości (Żywy Tester, M250):** 7 partii na 10 taliach spoza
+  próbki benchmarku, 3 osie; detektory 0 zgłoszeń. Jedna awaria: fałszywy
+  „[STOP] brak akcji" przy klikalnej decyzji Szczurów (`— karta z ręki na
+  wierzch biblioteki (6 opcji)`) — root cause po stronie NARZĘDZIA (wzorce
+  greedy case-sensitive, a `choiceSourceTitle` kontynuuje małą literą;
+  M162/C). Ta sama klasa dopisana dla Exploit/Satyr/phyrexian/Escape/
+  „Cel dla:" + ostateczny fallback greedy na pierwszy klikalny przycisk.
+  Po fixie partia poleciała do naturalnego końca (46 kliknięć vs 11);
+  oś ptaszków (`--tick-rate 1`) czysta. Transkrypty `tmp-audyt-m250/`.
+- **Wyniki:** `npm test` 3615/3615 (+4), build 55 modułów / 2830.8 kB,
+  `bot-benchmark` 9/9. B0 nieruszany (ADR 0018).
+- **Pułapka sesji (L8, recydywa):** weryfikacja mutacyjna strażnika cofnięta
+  przez `git checkout --` zabrała też niezacommitowany fix N1 — mutacje
+  cofać edycją odwrotną albo commitować fix przed mutowaniem.
+- **Kontynuacja na zlecenie („audyt Żywym Testerem do wyczerpania budżetu",
+  M251):** +22 partie (w tym talie benchmarku z profilami random/explorer/
+  impatient, mirror wiedzmin×wiedzmin, długa partia defensive `--tick-rate 1`).
+  Pokrycie kart nielądowych w transkryptach: 82 → **45 niewidzianych (10%)**.
+  Znaleziska osi 2: (a) żargon „lethal-first" w etykiecie przycisku wizarda
+  przydziału obrażeń → polski opis + pin copy; (b) to samo w `commandLabel`
+  („domyślnie lethal-first" — ruch bota w modalu „Ruch przeciwnika");
+  (c) modal Manifest Dread bez źródła → potokowanie `sourceCardId` jak
+  M240/B (silnik→widok→tytuł, 4 testy RED→GREEN, mutacja). (d) Kruchy test
+  wizarda lokalizował przycisk po copy → naprawa na hak semantyczny +
+  **lekcja L82** (skutek wiązać z klasą/`data-*`, copy pinać osobno).
+- **Finał sesji:** `npm test` 3620/3620, build 55 modułów / 2832.5 kB,
+  bot-benchmark 9/9, 29 partii Żywym Testerem bez zgłoszeń detektorów.
+  Transkrypty: `tmp-audyt-m250/` i `tmp-audyt-m251/`.
+
+## Sesja 2026-08-28 — arena/01a047a8: audyt PR #84 + E1 fingerprint (PR #85)
+
+- **Zadanie:** „Kontynuujemy projekt." (ADR 0020/0021 — pętla domyślna).
+- **Audyt PR #84** (ADR 0020 B / 0016) — pełny przegląd `src/engine/*`,
+  `src/controllers/*`, `src/protocol/types.js`, `src/table/*`, `tools/*`.
+  Wszystkie zmiany spójne z CR / ADR 0002 / L48 (ofert=walidacja); 1 drobna
+  obserwacja (redundancja defender/detain przed `staticAttackPrevented`).
+- **E1 (NAPRAWIONE, L16):** dwukrokowy Escape (M240/M241) kolejkował
+  `state.pendingEscapeExile` (decyzja wstrzymująca priorytet), ale nie miał go
+  `PENDING_DECISION_FIELDS` w `src/engine/fingerprint.js` → fingerprint nie
+  odróżniał stanu przed/po otwarciu decyzji Escape. Fix: dopisanie pola do
+  listy + test RED→GREEN `test/pr84-fingerprint-escape-pending.test.js`.
+- **Pętla jakości (Żywy Tester):** 3 partie (`worek-dziki`×`worek-mroczny`,
+  `srodziemie`×`worek-legend`, `mirrodin-brg`×`zendikar`) — 0 zgłoszeń detektorów.
+- **Wyniki:** `npm test` 3611/3611 (+1), build 55 modułów / 2829.6 kB,
+  `bot-benchmark` 9/9. Dokumenty: `docs/audits/AUDYT_PR84_2026-08-28.md`,
+  `docs/plans/PLAN_2026-08-28-audyt-pr84-i-petla-jakosci.md`.
 
 ## M214–M217 — srebrna odznaka „wyłapywacza błędów”: 5 unikalnych błędów vs MtG (2026-08-26)
 
@@ -6156,24 +6224,6 @@ wojny testuj przez nierozróżnialność, nie przez listę zasłoniętych pól).
 **Weryfikacja:** `npm test` **2244/2244** (było 2239, +5 nowych `m141-...`), `npm run build` 51 modułów / 1912.8 kB, benchmark szybki `node tools/benchmark.mjs --seeds 2` 0 crashy, fuzzer azorius 200 partii 0 naruszeń (po naprawach). Testy po deskryptorach (ADR 0002), każdy z mutacją odwracającą.
 
 Nowe lekcje: **L46** (animacja + trwały stan — cleanup musi resynchronizować trwałe cechy), **L47** (kopiowalne cechy to WSZYSTKIE drukowane deskryptory, nie tylko P/T), **L48** (flaga keepOwn musi przejść cały łańcuch `registry → gameObject → pendingChoice → SBA`, inaczej ginie po cichu — L21).
-
-## Sesja 2026-08-28 — arena/01a047a8: audyt PR #84 + E1 fingerprint (PR #85)
-
-- **Zadanie:** „Kontynuujemy projekt." (ADR 0020/0021 — pętla domyślna).
-- **Audyt PR #84** (ADR 0020 B / 0016) — pełny przegląd `src/engine/*`,
-  `src/controllers/*`, `src/protocol/types.js`, `src/table/*`, `tools/*`.
-  Wszystkie zmiany spójne z CR / ADR 0002 / L48 (ofert=walidacja); 1 drobna
-  obserwacja (redundancja defender/detain przed `staticAttackPrevented`).
-- **E1 (NAPRAWIONE, L16):** dwukrokowy Escape (M240/M241) kolejkował
-  `state.pendingEscapeExile` (decyzja wstrzymująca priorytet), ale nie miał go
-  `PENDING_DECISION_FIELDS` w `src/engine/fingerprint.js` → fingerprint nie
-  odróżniał stanu przed/po otwarciu decyzji Escape. Fix: dopisanie pola do
-  listy + test RED→GREEN `test/pr84-fingerprint-escape-pending.test.js`.
-- **Pętla jakości (Żywy Tester):** 3 partie (`worek-dziki`×`worek-mroczny`,
-  `srodziemie`×`worek-legend`, `mirrodin-brg`×`zendikar`) — 0 zgłoszeń detektorów.
-- **Wyniki:** `npm test` 3611/3611 (+1), build 55 modułów / 2829.6 kB,
-  `bot-benchmark` 9/9. Dokumenty: `docs/audits/AUDYT_PR84_2026-08-28.md`,
-  `docs/plans/PLAN_2026-08-28-audyt-pr84-i-petla-jakosci.md`.
 
 ## Zasada aktualizacji
 

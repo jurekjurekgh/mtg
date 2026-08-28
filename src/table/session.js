@@ -2443,7 +2443,23 @@ export function createSession(config) {
       // Uwaga E: auto-pass faz CZŁOWIEKA (koniec tury, cleanup) nie pauzuje —
       // „Brak akcji"/modale ruchu przeciwnika w środku własnej tury (audyt:
       // auto-pass zatrzymał się w Głównej 2 po wyciszeniu opcji).
-      streamAutoEvents(pass.events);
+      //
+      // M252 (audyt Żywym Testerem, seed 127): ...ALE strumień passa może
+      // nieść PRZEJŚCIE GRANICY TURY — wtedy wypadają tu `turn_started` i
+      // (auto)card_drawn własnego dobrania. M100/E8 oznacza to dobranie jako
+      // `significant` właśnie po to, by para „Tura N — Ty" + „Dobierasz"
+      // nie zginęła bezalarmowo: dotąd `significant` czytała tylko gałąź
+      // bota, więc przy „cichej" turze bota bufor dokładał nagłówek+dobranie
+      // BEZ pauzy, a najbliższa komenda człowieka (apply) czyściła obie linie
+      // przed jakimkolwiek pokazaniem. Pauza uruchamia się tu TYLKO gdy
+      // stream niósł istotne zdarzenie turnowe (dobranie człowieka / stun),
+      // zgodnie z ustalonym kontraktem — zwykły pass: bez zmian.
+      const passSig = streamAutoEvents(pass.events);
+      if (pauseOnBotMoves && passSig) {
+        awaitingBotAck = true;
+        isBotAdvancing = false;
+        return;
+      }
     }
   }
 
@@ -2612,7 +2628,16 @@ export function createSession(config) {
       // M100/E8: zapamiętaj niepokazany nagłówek tury (para z dobraniem —
       // patrz niżej). Zwykła odpowiedź na komendę historii nagłówków nie
       // zatrzymuje (M90 stoi).
-      const pendingTurnHeader = botMoves.find((m) => m.type === 'turn_started');
+      // M252 (audyt Żywym Testerem, seed 127): `find` łapało NAJSTARSZY
+      // nagłówek w buforze. Gdy poprzednia tura bota nie wymagała pauzy
+      // (modal nieczyny → bufor nie był opróżniany), w buforze siedziało
+      // już „Tura N — Nieprzyjaciel", a „Tura N+1 — Ty" leżała dalej (za
+      // triggerem upkeepu). Guard `startsWith(Tura N+1)` odpadał i para
+      // nagłówkowa własnej tury ginęła przy czyszczeniu bufora. Przywracamy
+      // nagłówek BIEŻĄCEJ tury (po numerze), nie „pierwszy z brzegu".
+      const currentTurnHeader = botMoves.find(
+        (m) => m.type === 'turn_started' && m.text?.startsWith(`Tura ${state.turn.number} — `),
+      );
       botMoves.length = 0;
       // Konsument nie powinien aplikować komendy w trakcie pauzy (UI blokuje
       // ją modalem) — po UDANEJ komendzie niedokończoną pauzę ignorujemy
@@ -2645,8 +2670,20 @@ export function createSession(config) {
       const internalError = advanceGuarded();
       // M100/E8: modal własnego dobrania pokazuje parę nagłówkową tury
       // („Tura N — Ty" + „Ty dobiera: X"), nie samą linię — kontekst M98.
-      if (ownDraw && pendingTurnHeader && pendingTurnHeader.text.startsWith(`Tura ${state.turn.number} — `)) {
-        botMoves.unshift(pendingTurnHeader);
+      //
+      // M252 (audyt Żywym Testerem, seed 127): nagłówek był przywracany
+      // tylko przy własnym dobraniu (ownDraw). Ale `turn_started` potrafi
+      // wpaść do bufora PRZED pierwszą komendą tury — np. walka kończy
+      // turę bota i advance w tej samej `apply` otwiera turę gracza
+      // (nagłówek siedział w buforze już przy pierwszym ruchu T13, przed
+      // dobraniem). Jeśli tym pierwszym ruchem było cokolwiek innego
+      // (zdolność w upkeep!), drain kasował nagłówek raz na zawsze —
+      // gracz widział „Dobierasz" bez „Tura N — Ty". Nagłówek w buforze
+      // na starcie apply = NIGDY nie był pokazany (pokaz spłukuje bufor),
+      // więc przywracamy go ZAWSZE — to kontekst tury (jak Faza:*), nie
+      // treść odpowiedzi (M90 stoi: reszta historii nadal jest czyszczona).
+      if (currentTurnHeader) {
+        botMoves.unshift(currentTurnHeader);
       }
       if (ownDraw && pauseOnBotMoves && !awaitingBotAck) awaitingBotAck = true;
       return { ok: true, botPause: awaitingBotAck, ...(internalError ? { internalError } : {}) };

@@ -4547,6 +4547,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       playerId: controllerId,
       objectIds: [...topIds],
       restorePriorityTo: state.turn.priorityPlayerId,
+      // M251/B (audyt Żywym Testerem): źródło decyzji jak u pendingSatyrLook
+      // (M240/B) — rozstrzygany czar leży na stosie, czyli jest informacją
+      // PUBLICZNĄ; stół nazywa nim tytuł modala (klasa M162/C, ADR 0002).
+      sourceCardId: sourceObject?.cardId ?? null,
     };
     state.turn.priorityPlayerId = controllerId;
     state.events.push(event('manifest_dread_required', {

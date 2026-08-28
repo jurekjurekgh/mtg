@@ -238,6 +238,12 @@ function bootstrapTable() {
     window.__mtgDebug = {
       fingerprint: () => (session ? session.debugFingerprint() : null),
       probe: (optionKey) => (session ? session.probeCommandEffect(optionKey) : { ok: false, reason: 'no_session' }),
+      // M252 (audyt Żywym Testerem): sonda strumienia modala „Rozgrywka"
+      // — bieżąca zawartość bufora botMoves + stan pauzy. Tylko odczyt
+      // (teksty), bez modyfikacji stanu; cel: rozróżnić „nagłówek nigdy
+      // nie wszedł do bufora" od „wszedł, ale nie zdążył się pokazać".
+      botMovesSnapshot: () => (session ? session.botMoves.map((m) => m.text ?? '') : []),
+      botPausePending: () => (session ? session.botPausePending : false),
     };
   }
   // Feature 2026-08-11: wyciszone opcje akcji (ptaszek „nie przerywaj

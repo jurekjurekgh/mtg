@@ -1,0 +1,442 @@
+== NOWA PARTIA: gracz=worek-dziki vs bot=tarkir-wur, seed=61, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Swamp  ||  Zagraj ląd: Mountain  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Shock · 1 · Instant · Obrażenia 2 · dowolny cel | Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · 1/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Spreading Insurrection · 5 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste · cel: stwór przeciwnika | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Shock, Malamet Battle Glyph, Lodestone Needle, Skilled Animator, Swamp, Spreading Insurrection, Mountain ⏎ Nowa partia (seed 61). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Canonized in Blood
+
+--- krok 3 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Mountain  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Shock · 1 · Instant · Obrażenia 2 · dowolny cel | Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · 1/3 | Spreading Insurrection · 5 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste · cel: stwór przeciwnika | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Shock, Malamet Battle Glyph, Lodestone Needle, Skilled Animator, Swamp, Spreading Insurrection, Mountain ⏎ Nowa partia (seed 61). Powodzenia!
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Zagraj: Canonized in Blood (koszt 1B)
+  [ROZGRYWKA]   • Canonized in Blood zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+
+--- krok 6 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Cel czaru: Shock (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Shock · 1 · Instant · Obrażenia 2 · dowolny cel | Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · 1/3 | Spreading Insurrection · 5 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste · cel: stwór przeciwnika
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Shock, Malamet Battle Glyph, Lodestone Needle, Skilled Animator, Swamp, Spreading Insurrection, Mountain ⏎ Nowa partia (seed 61). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  >> Cel czaru: Shock (2 opcje)
+  [modal choice] Cel czaru: Shock Rzuć: Shock (koszt R) → cel: Ty🔍 Podgląd karty Rzuć: Shock (koszt R) → cel: Nieprzyjaciel🔍 Podgląd karty
+  [modal choice]   ▶ Rzuć: Shock (koszt R) → cel: Ty
+  [modal choice]     Rzuć: Shock (koszt R) → cel: Nieprzyjaciel
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Shock zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 18
+  [ROZGRYWKA]   • Shock zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Glint-Sleeve Artisan
+
+--- krok 9 | T. 7GraczGracz: 18 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · 1/3 | Spreading Insurrection · 5 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste · cel: stwór przeciwnika | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Shock, Malamet Battle Glyph, Lodestone Needle, Skilled Animator, Swamp, Spreading Insurrection, Mountain ⏎ Nowa partia (seed 61). Powodzenia!
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Silken Strength
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+
+--- krok 12 | T. 10BotGracz: 18 ż.Bot: 20 ż.Główna 1Stos — Morph ---
+  STOS: Morph (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · 1/3 | Spreading Insurrection · 5 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste · cel: stwór przeciwnika | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2 | Silken Strength · 2 · Enchantment — Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent.
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Shock, Malamet Battle Glyph, Lodestone Needle, Skilled Animator, Swamp, Spreading Insurrection, Mountain ⏎ Nowa partia (seed 61). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Morph twarzą w dół (2/2)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Morph zostaje rozstrzygnięty (twarzą w dół)
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+
+--- krok 15 | T. 12BotGracz: 18 ż.Bot: 20 ż.Główna 1Stos — Gurmag Drowner ---
+  STOS: Gurmag Drowner (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · 1/3 | Spreading Insurrection · 5 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste · cel: stwór przeciwnika | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2 | Silken Strength · 2 · Enchantment — Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent.
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Face-down creature · Creature · Morph · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Shock, Malamet Battle Glyph, Lodestone Needle, Skilled Animator, Swamp, Spreading Insurrection, Mountain ⏎ Nowa partia (seed 61). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Gurmag Drowner
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Gurmag Drowner zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Ainok Tracker zostaje poświęcony
+  [ROZGRYWKA]   • Exploit: Ainok Tracker zostaje poświęcony dla Gurmag Drowner
+  [ROZGRYWKA]   • Gurmag Drowner — trigger (exploit)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel: Plains — biblioteka → cmentarz
+  [ROZGRYWKA]   • Nieprzyjaciel bierze kartę z wierzchu do ręki (reszta do grobu)
+
+--- krok 18 | T. 13GraczGracz: 18 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · 1/3 | Spreading Insurrection · 5 · Sorcery · przejmij kontrolę do końca tury, odkręć i haste · cel: stwór przeciwnika | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2 | Silken Strength · 2 · Enchantment — Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent. | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · choroba · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Shock, Malamet Battle Glyph, Lodestone Needle, Skilled Animator, Swamp, Spreading Insurrection, Mountain ⏎ Nowa partia (seed 61). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Rzuć: Spreading Insurrection (koszt 4R) → cel: Gurmag Drowner (Nieprzyjaciel)
+  [ROZGRYWKA]   • Spreading Insurrection — trigger bez efektu (nie było czego wykonać)
+  [ROZGRYWKA]   • Gurmag Drowner przechodzi pod kontrolę gracza Ty
+  [ROZGRYWKA]   • Gurmag Drowner zyskuje: pośpiech
+  [ROZGRYWKA]   • Spreading Insurrection zostaje rozstrzygnięty
+
+--- krok 21 | T. 13GraczGracz: 18 ż.Bot: 20 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · 1/3 | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2 | Silken Strength · 2 · Enchantment — Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent.
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · Pośpiech · kontrola do końca tury · 2/4 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Shock, Malamet Battle Glyph, Lodestone Needle, Skilled Animator, Swamp, Spreading Insurrection, Mountain ⏎ Nowa partia (seed 61). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Vandalize — tryb: Zniszcz ląd → cel: Swamp
+
+--- krok 24 | T. 15GraczGracz: 16 ż.Bot: 18 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · 1/3 | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2 | Silken Strength · 2 · Enchantment — Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent. | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Shock, Malamet Battle Glyph, Lodestone Needle, Skilled Animator, Swamp, Spreading Insurrection, Mountain ⏎ Nowa partia (seed 61). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Vandalize — tryb: Zniszcz ląd zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Gurmag Drowner
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Gurmag Drowner zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 16
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Sequestered Stash
+  >> Zagraj ląd: Sequestered Stash
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Sequestered Stash
+  >> Aktywuj: Sequestered Stash (Ty) (koszt T) — dodaj 1 manę bezbarwną
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Jeskai Windscout
+
+--- krok 27 | T. 17GraczGracz: 14 ż.Bot: 18 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Sequestered Stash (Ty) (koszt T) — dodaj 1 manę bezbarwną  ||  Aktywuj: Sequestered Stash (Ty) (koszt 4, T, poświęć) — mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · 1/3 | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2 | Silken Strength · 2 · Enchantment — Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent.
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · 2/4 | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · choroba · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Shock, Malamet Battle Glyph, Lodestone Needle, Skilled Animator, Swamp, Spreading Insurrection, Mountain ⏎ Nowa partia (seed 61). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Gurmag Drowner zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 14
+  [ROZGRYWKA]   • Tura 17 — Ty
+  >> Aktywuj: Sequestered Stash (Ty) (koszt T) — dodaj 1 manę bezbarwną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Sequestered Stash — dodanie many do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Merchant's Dockhand
+  >> Zagraj: Merchant's Dockhand (koszt 1)
+  [kreator many] Płatność 1 — tapuj źródła po jednympozostało 1 manyTapnij: Mountain (R)Tapnij: Mountain (R)Tapnij: Swamp (B)Tapnij: Moun — źródła: 4
+  [kreator many] Tapnij: Mountain (R)
+
+--- krok 30 | T. 17GraczGracz: 14 ż.Bot: 18 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · 1/3 | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2 | Silken Strength · 2 · Enchantment — Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent.
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Merchant's Dockhand · 1 · Artifact Creature — Construct · {3}, {U}, {T}, tapnij X swoich nietapniętych artefaktów: zobacz X kart z wierzchu — jedna do ręki, reszta na spód biblioteki · choroba · 1/2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · 2/4 | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · choroba · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Shock, Malamet Battle Glyph, Lodestone Needle, Skilled Animator, Swamp, Spreading Insurrection, Mountain ⏎ Nowa partia (seed 61). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Merchant's Dockhand zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Bring Low → cel: Merchant's Dockhand
+  [ROZGRYWKA]   • Jeskai Windscout — trigger (rzucenie czaru niebędącego stworem)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Merchant's Dockhand ginie
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Gurmag Drowner, Jeskai Windscout
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Gurmag Drowner zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 12
+  [ROZGRYWKA]   • Jeskai Windscout zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 12 → 9
+  [ROZGRYWKA]   • Tura 19 — Ty
+
+--- krok 33 | T. 19GraczGracz: 9 ż.Bot: 18 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Sequestered Stash (Ty) (koszt T) — dodaj 1 manę bezbarwną  ||  Aktywuj: Sequestered Stash (Ty) (koszt 4, T, poświęć) — mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · 1/3 | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2 | Silken Strength · 2 · Enchantment — Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent.
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · 2/4 | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Shock, Malamet Battle Glyph, Lodestone Needle, Skilled Animator, Swamp, Spreading Insurrection, Mountain ⏎ Nowa partia (seed 61). Powodzenia!
+  >> Aktywuj: Sequestered Stash (Ty) (koszt T) — dodaj 1 manę bezbarwną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Sequestered Stash — dodanie many do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Zagraj: Lodestone Needle (koszt 1U)
+  [kreator many] Płatność 1U — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: UTapnij: Mountain (R)Tapnij: Mountain (R)Tapn — źródła: 5
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Mountain (R)
+
+--- krok 36 | T. 19GraczGracz: 9 ż.Bot: 18 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię  ||  Lodestone Needle — cel triggera (3 opcje)
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · 1/3 | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2 | Silken Strength · 2 · Enchantment — Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent.
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · 2/4 | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Shock, Malamet Battle Glyph, Lodestone Needle, Skilled Animator, Swamp, Spreading Insurrection, Mountain ⏎ Nowa partia (seed 61). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Lodestone Needle zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Lodestone Needle — wybierz cel triggera (można odmówić)
+  >> Lodestone Needle — cel triggera (3 opcje)
+  [modal choice] Lodestone Needle — cel triggera Lodestone Needle — cel triggera: Gurmag Drowner (Nieprzyjaciel)🔍 Podgląd karty Lodestone Needle — cel triggera: Jeskai Windscout (Nieprzyjaciel)🔍 Podgląd karty Lodestone Needle — bez celu (odmowa — „up to one"/„you may")
+  [modal choice]   ▶ Lodestone Needle — cel triggera: Gurmag Drowner (Nieprzyjaciel)
+  [modal choice]     Lodestone Needle — cel triggera: Jeskai Windscout (Nieprzyjaciel)
+  [modal choice]     Lodestone Needle — bez celu (odmowa — „up to one"/„you may")
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Lodestone Needle — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Lodestone Needle — cel: Gurmag Drowner
+  [ROZGRYWKA]   • Gurmag Drowner dostaje +2 liczniki stun (razem 2)
+  [ROZGRYWKA]   • Lodestone Needle — trigger się rozstrzyga
+
+--- krok 39 | T. 19GraczGracz: 9 ż.Bot: 18 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Lodestone Needle (Ty) (koszt 3) — craft — transform  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · 1/3 | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2 | Silken Strength · 2 · Enchantment — Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent.
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Lodestone Needle · 2 · Artifact · Flash (błysk) · Gdy wejdzie na pole bitwy: tap, połóż licznik stun. · {3}: craft — transform | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · 2x ogłuszenie · 2/4 | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Shock, Malamet Battle Glyph, Lodestone Needle, Skilled Animator, Swamp, Spreading Insurrection, Mountain ⏎ Nowa partia (seed 61). Powodzenia!
+  >> Aktywuj: Lodestone Needle (Ty) (koszt 3) — craft — transform
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Lodestone Needle — craft — przemiana artefaktu
+  [ROZGRYWKA]   • Wybierasz karty do craftu (Lodestone Needle)
+  [ROZGRYWKA]   • Ty: zdolność Lodestone Needle rozstrzygnięta
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Craft: wygnaj Merchant's Dockhand
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Gurmag Drowner traci 1 licznik stun (zostało 1)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Morph twarzą w dół (2/2)
+
+--- krok 42 | T. 20BotGracz: 9 ż.Bot: 18 ż.Główna 1Stos — Palace Familiar ---
+  STOS: Palace Familiar (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · 1/3 | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2 | Silken Strength · 2 · Enchantment — Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent.
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Guidestone Compass · 0 · Artifact · {1}, {T}: cel: twój stwór — explore | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · 1x ogłuszenie · 2/4 | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1 | Face-down creature · Creature · Morph · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Shock, Malamet Battle Glyph, Lodestone Needle, Skilled Animator, Swamp, Spreading Insurrection, Mountain ⏎ Nowa partia (seed 61). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Palace Familiar
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Atak: Jeskai Windscout
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Jeskai Windscout zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 9 → 7
+  [ROZGRYWKA]   • Tura 21 — Ty
+  >> Aktywuj: Sequestered Stash (Ty) (koszt T) — dodaj 1 manę bezbarwną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Sequestered Stash — dodanie many do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+
+--- krok 45 | T. 21GraczGracz: 7 ż.Bot: 18 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Forest  ||  Zagraj: Skilled Animator (koszt 2U)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · 1/3 | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2 | Silken Strength · 2 · Enchantment — Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent. | Forest · Basic Land — Forest · T: dodaj 1 manę
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Guidestone Compass · 0 · Artifact · {1}, {T}: cel: twój stwór — explore | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · 1x ogłuszenie · 2/4 | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1 | Face-down creature · Creature · Morph · choroba · 2/2 | Palace Familiar · 2 · Creature — Bird · Latanie · Gdy ta karta umrze: dobierz 1 kartę. · choroba · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Shock, Malamet Battle Glyph, Lodestone Needle, Skilled Animator, Swamp, Spreading Insurrection, Mountain ⏎ Nowa partia (seed 61). Powodzenia!
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Zagraj: Skilled Animator (koszt 2U)
+  [kreator many] Płatność 2U — tapuj źródła po jednympozostało 3 many · kolory do pokrycia: UTapnij: Mountain (R)Tapnij: Mountain (R)Tapn — źródła: 6
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Mountain (R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Skilled Animator
+
+--- krok 48 | T. 21GraczGracz: 7 ż.Bot: 18 ż.Główna 1Stos — Skilled Animator ---
+  STOS: Skilled Animator (rzuca: Ty)
+  AKCJE: Aura: Silken Strength (4 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2 | Silken Strength · 2 · Enchantment — Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent.
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Guidestone Compass · 0 · Artifact · {1}, {T}: cel: twój stwór — explore | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · 1x ogłuszenie · 2/4 | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1 | Face-down creature · Creature · Morph · choroba · 2/2 | Palace Familiar · 2 · Creature — Bird · Latanie · Gdy ta karta umrze: dobierz 1 kartę. · choroba · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Shock, Malamet Battle Glyph, Lodestone Needle, Skilled Animator, Swamp, Spreading Insurrection, Mountain ⏎ Nowa partia (seed 61). Powodzenia!
+  >> Aura: Silken Strength (4 opcje)
+  [modal choice] Aura: Silken Strength Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Gurmag Drowner (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Jeskai Windscout (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Morph (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Palace Familiar (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]   ▶ Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Gurmag Drowner (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Jeskai Windscout (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Morph (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Silken Strength (koszt 1G) → zaczaruj Palace Familiar (Nieprzyjaciel)
+  [kreator many] Płatność 1G — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: GTapnij: Swamp (B)Tapnij: Mountain (R)Tapnij: — źródła: 3
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Swamp (B)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Silken Strength zaczarowuje Gurmag Drowner
+  [ROZGRYWKA]   • Silken Strength wchodzi na pole bitwy
+  [ROZGRYWKA]   • Silken Strength — trigger (wejście na pole bitwy)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Gurmag Drowner odkręca się (koniec liczników stun)
+  [ROZGRYWKA]   • Silken Strength — trigger się rozstrzyga
+
+--- krok 51 | T. 21GraczGracz: 7 ż.Bot: 18 ż.Główna 1Stos — Skilled Animator ---
+  STOS: Trigger: Skilled Animator (wejście na pole bitwy)
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Guidestone Compass · 0 · Artifact · {1}, {T}: cel: twój stwór — explore | Silken Strength · 2 · Enchantment Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent. · aura → Gurmag Drowner | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · choroba · 1/3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · Zasięg · +1/+2 · 1x ogłuszenie · zaczarowana: Silken Strength · 3/6 | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1 | Face-down creature · Creature · Morph · choroba · 2/2 | Palace Familiar · 2 · Creature — Bird · Latanie · Gdy ta karta umrze: dobierz 1 kartę. · choroba · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Shock, Malamet Battle Glyph, Lodestone Needle, Skilled Animator, Swamp, Spreading Insurrection, Mountain ⏎ Nowa partia (seed 61). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Skilled Animator — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Skilled Animator — cel: Guidestone Compass (jedyny legalny — automatycznie)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Guidestone Compass staje się stworzeniem 5/5 (dopóki źródło jest na polu bitwy)
+  [ROZGRYWKA]   • Skilled Animator — trigger się rozstrzyga
+  >> Cel zdolności: Guidestone Compass (2 opcje)
+  [modal choice] Cel zdolności: Guidestone Compass Aktywuj: Guidestone Compass (Ty) (koszt 1, T) — explore → cel: Guidestone Compass (Ty)🔍 Podgląd karty Aktywuj: Guidestone Compass (Ty) (koszt 1, T) — explore → cel: Skilled Animator (Ty)🔍 Podgląd karty
+  [modal choice]   ▶ Aktywuj: Guidestone Compass (Ty) (koszt 1, T) — explore → cel: Guidestone Compass (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt 1, T) — explore → cel: Skilled Animator (Ty)
+
+--- krok 54 | T. 21GraczGracz: 7 ż.Bot: 18 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię  ||  Wybierz: Explore — co z odsłoniętą kartą? (2 opcje)
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Guidestone Compass · 0 · Artifact Creature · {1}, {T}: cel: twój stwór — explore · 1x +1/+1 · 6/6 | Silken Strength · 2 · Enchantment Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent. · aura → Gurmag Drowner | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · choroba · 1/3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · Zasięg · +1/+2 · 1x ogłuszenie · zaczarowana: Silken Strength · 3/6 | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1 | Face-down creature · Creature · Morph · choroba · 2/2 | Palace Familiar · 2 · Creature — Bird · Latanie · Gdy ta karta umrze: dobierz 1 kartę. · choroba · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Shock, Malamet Battle Glyph, Lodestone Needle, Skilled Animator, Swamp, Spreading Insurrection, Mountain ⏎ Nowa partia (seed 61). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Guidestone Compass dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Rozstrzygasz explore — Crested Herdcaller na wierzchu biblioteki
+  [ROZGRYWKA]   • Ty: zdolność Guidestone Compass rozstrzygnięta
+  >> Wybierz: Explore — co z odsłoniętą kartą? (2 opcje)
+  [modal choice] Wybierz: Explore — co z odsłoniętą kartą? Explore: odłóż kartę do grobu Explore: zostaw kartę na wierzchu
+  [modal choice]   ▶ Explore: odłóż kartę do grobu
+  [modal choice]     Explore: zostaw kartę na wierzchu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Mielisz Crested Herdcaller do grobu
+  [ROZGRYWKA]   • Faza: Krok końcowy
+  [ROZGRYWKA]   • Canonized in Blood — wybierz cel triggera (wymagany)
+
+--- krok 57 | T. 21GraczGracz: 7 ż.Bot: 18 ż.Koniec ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Canonized in Blood — cel triggera (2 opcje)
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Guidestone Compass · 0 · Artifact Creature · {1}, {T}: cel: twój stwór — explore · 1x +1/+1 · 6/6 | Silken Strength · 2 · Enchantment Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent. · aura → Gurmag Drowner | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · choroba · 1/3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · Zasięg · +1/+2 · 1x ogłuszenie · zaczarowana: Silken Strength · 3/6 | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · 2/1 | Face-down creature · Creature · Morph · choroba · 2/2 | Palace Familiar · 2 · Creature — Bird · Latanie · Gdy ta karta umrze: dobierz 1 kartę. · choroba · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Shock, Malamet Battle Glyph, Lodestone Needle, Skilled Animator, Swamp, Spreading Insurrection, Mountain ⏎ Nowa partia (seed 61). Powodzenia!
+  >> Canonized in Blood — cel triggera (2 opcje)
+  [modal choice] Canonized in Blood — cel triggera Canonized in Blood — cel triggera: Guidestone Compass (Ty)🔍 Podgląd karty Canonized in Blood — cel triggera: Skilled Animator (Ty)🔍 Podgląd karty
+  [modal choice]   ▶ Canonized in Blood — cel triggera: Guidestone Compass (Ty)
+  [modal choice]     Canonized in Blood — cel triggera: Skilled Animator (Ty)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Canonized in Blood — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 22 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Ojutai's Breath → cel: Skilled Animator
+  [ROZGRYWKA]   • Jeskai Windscout — trigger (rzucenie czaru niebędącego stworem)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Jeskai Windscout dostaje +1/+1
+  [ROZGRYWKA]   • Jeskai Windscout — trigger się rozstrzyga
+  [ROZGRYWKA]   • Skilled Animator nie odkręca się w następnym kroku odkręcania
+  [ROZGRYWKA]   • Ojutai's Breath zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Impact Tremors
+  [ROZGRYWKA]   • Jeskai Windscout — trigger (rzucenie czaru niebędącego stworem)
+
+--- krok 60 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Guidestone Compass · 0 · Artifact Creature · {1}, {T}: cel: twój stwór — explore · 2x +1/+1 · 7/7 | Silken Strength · 2 · Enchantment Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent. · aura → Gurmag Drowner | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · nie odtapuje się · choroba · 1/3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · Zasięg · +1/+2 · 1x ogłuszenie · zaczarowana: Silken Strength · 3/6 | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · +2/+2 · 4/3 | Face-down creature · Creature · Morph · 2/2 | Palace Familiar · 2 · Creature — Bird · Latanie · Gdy ta karta umrze: dobierz 1 kartę. · 1/1 | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi.
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Shock, Malamet Battle Glyph, Lodestone Needle, Skilled Animator, Swamp, Spreading Insurrection, Mountain ⏎ Nowa partia (seed 61). Powodzenia!
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 61 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Malamet Battle Glyph · 1 · Sorcery · połóż licznik +1/+1 + walka: stwory zadają sobie nawzajem obrażenia równe mocy · cel: twój stwór + stwór przeciwnika | Glint-Sleeve Artisan · 3 · Creature — Dwarf Artificer · Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo) · Gdy wejdzie na pole bitwy: fabricate 1 (liczniki +1/+1 albo tokeny Servo). · 2/2
+  MOJE POLA: Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {5}, {B}, {B}, poświęć: stwórz token Vampire Demon | Guidestone Compass · 0 · Artifact Creature · {1}, {T}: cel: twój stwór — explore · 2x +1/+1 · 7/7 | Silken Strength · 2 · Enchantment Aura · Flash (błysk) · stwór: +1/+2 · stwór ma: Zasięg · Gdy wejdzie na pole bitwy: odkręć zaczarowany permanent. · aura → Gurmag Drowner | Skilled Animator · 3 · Creature — Human Artificer · Gdy wejdzie na pole bitwy: animuj do końca tury. · nie odtapuje się · choroba · 1/3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Sequestered Stash · Land · {T}: dodaj 1 manę bezbarwną · {4}, {T}, poświęć: mieli 5 kart (do grobu) + możesz położyć artefakt z grobu na wierzch biblioteki | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. · Zasięg · +1/+2 · 1x ogłuszenie · zaczarowana: Silken Strength · 3/6 | Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. · +2/+2 · 4/3 | Face-down creature · Creature · Morph · 2/2 | Palace Familiar · 2 · Creature — Bird · Latanie · Gdy ta karta umrze: dobierz 1 kartę. · 1/1 | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi.
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Shock, Malamet Battle Glyph, Lodestone Needle, Skilled Animator, Swamp, Spreading Insurrection, Mountain ⏎ Nowa partia (seed 61). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 23, kliknięte: 28, modale: 7, sondy noop: 69 (panel 53, modal 16)
+== DETEKTORY: brak zgłoszeń ==

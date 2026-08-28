@@ -1,0 +1,383 @@
+== NOWA PARTIA: gracz=worek-basni vs bot=mirrodin-wu, seed=19, profil=defensive, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Karty na spód biblioteki (mulligan) (6 opcji)
+  RĘKA: Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Talion's Messenger · 3 · Creature — Faerie Noble · Latanie · Atak z Faerie: dobierz 1 kartę, odrzuć 1 kartę, połóż licznik +1/+1. · 1/3 | Agate Assault · 3 · Sorcery · wybierz jedno — Obrażenia: jeśli miałby umrzeć w tej turze, wygnaj go zamiast tego + Obrażenia 4 · cel: stwór / Wygnanie artefaktu: wygnij artefakt/enchantment · cel: artefakt | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Swamp ⏎ Dobierasz: Forest ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Greater Tanuki, Swamp, Insatiable Appetite, Blade-Blizzard Kitsune, High Stride, Plains, Idyllic Grange ⏎ Nowa partia (seed 19). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Talion's Messenger
+  [ROZGRYWKA]   • Dobierasz: Agate Assault
+  [ROZGRYWKA]   • Dobierasz: Mystic Sanctuary
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Wybierz: Karty na spód biblioteki (mulligan) (6 opcji)
+  [multi-target wizard] Mulligan: zaznacz 1 kartę do odłożenia na spód biblioteki:[ ] ForestPodgląd[ ] SwampPodglą — opcji 6, potrzeba 1, celuję w 1
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 6 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 6 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+
+--- krok 3 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Karty na spód biblioteki (mulligan) (16 opcji)
+  RĘKA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Idyllic Grange · Land — Plains · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · T: dodaj 1 manę | Agate Assault · 3 · Sorcery · wybierz jedno — Obrażenia: jeśli miałby umrzeć w tej turze, wygnaj go zamiast tego + Obrażenia 4 · cel: stwór / Wygnanie artefaktu: wygnij artefakt/enchantment · cel: artefakt | Island · Basic Land — Island · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Swamp ⏎ Dobierasz: Forest ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Greater Tanuki, Swamp, Insatiable Appetite, Blade-Blizzard Kitsune, High Stride, Plains, Idyllic Grange ⏎ Nowa partia (seed 19). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Idyllic Grange
+  [ROZGRYWKA]   • Dobierasz: Agate Assault
+  [ROZGRYWKA]   • Dobierasz: Island
+  [ROZGRYWKA]   • Dobierasz: Mystic Sanctuary
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Wybierz: Karty na spód biblioteki (mulligan) (16 opcji)
+  [multi-target wizard] Mulligan: zaznacz 2 karty do odłożenia na spód biblioteki:[ ] SwampPodgląd[ ] PlainsPodglą — opcji 7, potrzeba 2, celuję w 2
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 5 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 5 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+
+--- krok 6 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Karty na spód biblioteki (mulligan) (32 opcje)
+  RĘKA: Thistledown Players · 3 · Creature — Mouse Bard · Gdy atakuje: odkręć. · 3/3 | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Idyllic Grange · Land — Plains · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · T: dodaj 1 manę | Burning-Yard Trainer · 5 · Creature — Human Knight · Zadeptywanie Pośpiech · Gdy wejdzie na pole bitwy: +2/+2 do końca tury, zdobądź Zadeptywanie, Pośpiech do końca tury. · 3/3 | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Swamp ⏎ Dobierasz: Forest ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Greater Tanuki, Swamp, Insatiable Appetite, Blade-Blizzard Kitsune, High Stride, Plains, Idyllic Grange ⏎ Nowa partia (seed 19). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Thistledown Players
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Idyllic Grange
+  [ROZGRYWKA]   • Dobierasz: Burning-Yard Trainer
+  [ROZGRYWKA]   • Dobierasz: Mystic Sanctuary
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Wybierz: Karty na spód biblioteki (mulligan) (32 opcje)
+  [multi-target wizard] Mulligan: zaznacz 3 karty do odłożenia na spód biblioteki:[ ] Thistledown PlayersPodgląd[  — opcji 7, potrzeba 3, celuję w 3
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 4 karty) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 4 karty)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+
+--- krok 9 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Karty na spód biblioteki (mulligan) (32 opcje)
+  RĘKA: Thistledown Players · 3 · Creature — Mouse Bard · Gdy atakuje: odkręć. · 3/3 | Zoraline, Cosmos Caller · 3 · Legendary Creature — Bat Cleric · Latanie Czujność · Gdy nietoperz, który kontrolujesz, atakuje: zyskaj 1 życie. · Gdy wejdzie na pole bitwy: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · Gdy atakuje: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · 3/3 | Clawing Torment · 1 · Enchantment — Aura · stwór: -1/-1 · zaczarowany nie może blokować · można zaczarować permanent dowolnego gracza · Na początku upkeep (gdy rzucono 2+ czary): kontroler zaczarowanego permanentu traci 1 życia w swoim upkeepie. | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Downwind Ambusher · 4 · Creature — Skunk Assassin · Flash (błysk) · wybierz tryb: Osłabienie / Dobicie rannego · 4/2 | Locthwain Paladin · 4 · Creature — Human Knight · Postrach · 3/2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Swamp ⏎ Dobierasz: Forest ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Greater Tanuki, Swamp, Insatiable Appetite, Blade-Blizzard Kitsune, High Stride, Plains, Idyllic Grange ⏎ Nowa partia (seed 19). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Thistledown Players
+  [ROZGRYWKA]   • Dobierasz: Zoraline, Cosmos Caller
+  [ROZGRYWKA]   • Dobierasz: Clawing Torment
+  [ROZGRYWKA]   • Dobierasz: Mystic Sanctuary
+  [ROZGRYWKA]   • Dobierasz: Downwind Ambusher
+  [ROZGRYWKA]   • Dobierasz: Locthwain Paladin
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Wybierz: Karty na spód biblioteki (mulligan) (32 opcje)
+  [multi-target wizard] Mulligan: zaznacz 4 karty do odłożenia na spód biblioteki:[ ] Thistledown PlayersPodgląd[  — opcji 7, potrzeba 4, celuję w 4
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 3 karty) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 3 karty)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+
+--- krok 12 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Karty na spód biblioteki (mulligan) (21 opcji)
+  RĘKA: Downwind Ambusher · 4 · Creature — Skunk Assassin · Flash (błysk) · wybierz tryb: Osłabienie / Dobicie rannego · 4/2 | Forever Young · 2 · Sorcery · karty z grobu na wierzch biblioteki + dobierz 1 kartę | Halo Forager · 3 · Creature — Faerie Rogue · Latanie · Gdy wejdzie na pole bitwy: możesz zapłacić {X} i rzucić instant/sorcery o MV X z dowolnego grobu za darmo (potem wygnanie). · 3/1 | Plains · Basic Land — Plains · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Steelclaw Lance · 2 · Artifact — Equipment · Equip Knight {1} · {3} +2/+2 | Barkform Harvester · 3 · Artifact Creature — Shapeshifter · Zasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki · 2/3
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Swamp ⏎ Dobierasz: Forest ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Greater Tanuki, Swamp, Insatiable Appetite, Blade-Blizzard Kitsune, High Stride, Plains, Idyllic Grange ⏎ Nowa partia (seed 19). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Downwind Ambusher
+  [ROZGRYWKA]   • Dobierasz: Forever Young
+  [ROZGRYWKA]   • Dobierasz: Halo Forager
+  [ROZGRYWKA]   • Dobierasz: Plains
+  [ROZGRYWKA]   • Dobierasz: Forest
+  [ROZGRYWKA]   • Dobierasz: Steelclaw Lance
+  [ROZGRYWKA]   • Dobierasz: Barkform Harvester
+  >> Wybierz: Karty na spód biblioteki (mulligan) (21 opcji)
+  [multi-target wizard] Mulligan: zaznacz 5 kart do odłożenia na spód biblioteki:[ ] Downwind AmbusherPodgląd[ ] F — opcji 7, potrzeba 5, celuję w 5
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 2 karty) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 2 karty)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+
+--- krok 15 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wybierz: Karty na spód biblioteki (mulligan) (5 opcji)
+  RĘKA: Halo Forager · 3 · Creature — Faerie Rogue · Latanie · Gdy wejdzie na pole bitwy: możesz zapłacić {X} i rzucić instant/sorcery o MV X z dowolnego grobu za darmo (potem wygnanie). · 3/1 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Clawing Torment · 1 · Enchantment — Aura · stwór: -1/-1 · zaczarowany nie może blokować · można zaczarować permanent dowolnego gracza · Na początku upkeep (gdy rzucono 2+ czary): kontroler zaczarowanego permanentu traci 1 życia w swoim upkeepie. | Kappa Tech-Wrecker · 2 · Creature — Turtle Ninja · Ninjutsu {2}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · Gdy zada obrażenia graczowi: usuń licznik deathtouch, wygnij artefakt/enchantment. · 1/3 | Blade-Blizzard Kitsune · 3 · Creature — Fox Ninja · Podwójne uderzenie · Ninjutsu {4}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · 2/2
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Swamp ⏎ Dobierasz: Forest ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Greater Tanuki, Swamp, Insatiable Appetite, Blade-Blizzard Kitsune, High Stride, Plains, Idyllic Grange ⏎ Nowa partia (seed 19). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Halo Forager
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Clawing Torment
+  [ROZGRYWKA]   • Dobierasz: Kappa Tech-Wrecker
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Blade-Blizzard Kitsune
+  >> Wybierz: Karty na spód biblioteki (mulligan) (5 opcji)
+  [multi-target wizard] Mulligan: zaznacz 6 kart do odłożenia na spód biblioteki:[ ] Halo ForagerPodgląd[ ] SwampP — opcji 7, potrzeba 6, celuję w 6
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 1 kartę) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 1 kartę)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+
+--- krok 18 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Untap ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Mulligan — odłóż na spód (7): Swamp, Mystic Sanctuary, Burning-Yard Trainer, Thistledown Players, Agate Assault, Forever Young, Greater Tanuki
+  RĘKA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mystic Sanctuary · Land — Island · Gdy wejdzie na pole bitwy: karta z grobu na wierzch biblioteki. · T: dodaj 1 manę | Burning-Yard Trainer · 5 · Creature — Human Knight · Zadeptywanie Pośpiech · Gdy wejdzie na pole bitwy: +2/+2 do końca tury, zdobądź Zadeptywanie, Pośpiech do końca tury. · 3/3 | Thistledown Players · 3 · Creature — Mouse Bard · Gdy atakuje: odkręć. · 3/3 | Agate Assault · 3 · Sorcery · wybierz jedno — Obrażenia: jeśli miałby umrzeć w tej turze, wygnaj go zamiast tego + Obrażenia 4 · cel: stwór / Wygnanie artefaktu: wygnij artefakt/enchantment · cel: artefakt | Forever Young · 2 · Sorcery · karty z grobu na wierzch biblioteki + dobierz 1 kartę | Greater Tanuki · 6 · Enchantment Creature — Dog · Zadeptywanie · Channel {2}, {G} — szukaj podstawowego lądu · 6/5
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Dobierasz: Swamp ⏎ Dobierasz: Forest ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Greater Tanuki, Swamp, Insatiable Appetite, Blade-Blizzard Kitsune, High Stride, Plains, Idyllic Grange ⏎ Nowa partia (seed 19). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  [ROZGRYWKA]   • Dobierasz: Mystic Sanctuary
+  [ROZGRYWKA]   • Dobierasz: Burning-Yard Trainer
+  [ROZGRYWKA]   • Dobierasz: Thistledown Players
+  [ROZGRYWKA]   • Dobierasz: Agate Assault
+  [ROZGRYWKA]   • Dobierasz: Forever Young
+  [ROZGRYWKA]   • Dobierasz: Greater Tanuki
+  >> Mulligan — odłóż na spód (7): Swamp, Mystic Sanctuary, Burning-Yard Trainer, Thistledown Players, Agate Assaul
+  >> Mulligan: Zatrzymaj tę rękę (keep — 0 kart)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+
+--- krok 21 | T. 2BotGracz: 20 ż.Bot: 20 ż.Główna 1Stos — Panic Spellbomb ---
+  STOS: Panic Spellbomb (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: (puste)
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę
+  LOG: Dobierasz: Swamp ⏎ Dobierasz: Forest ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Greater Tanuki, Swamp, Insatiable Appetite, Blade-Blizzard Kitsune, High Stride, Plains, Idyllic Grange ⏎ Nowa partia (seed 19). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Panic Spellbomb
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Panic Spellbomb zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+
+--- krok 24 | T. 4BotGracz: 20 ż.Bot: 20 ż.Główna 1Stos — Crawling Chorus ---
+  STOS: Crawling Chorus (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: (pusta)
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Panic Spellbomb · 1 · Artifact · {T}, poświęć: cel: stwór — nie może blokować · Gdy ta karta umrze: dobierz 1 kartę.
+  LOG: Dobierasz: Swamp ⏎ Dobierasz: Forest ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Greater Tanuki, Swamp, Insatiable Appetite, Blade-Blizzard Kitsune, High Stride, Plains, Idyllic Grange ⏎ Nowa partia (seed 19). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Crawling Chorus
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Crawling Chorus zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+
+--- krok 27 | T. 7GraczGracz: 19 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Plains · Basic Land — Plains · T: dodaj 1 manę
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Panic Spellbomb · 1 · Artifact · {T}, poświęć: cel: stwór — nie może blokować · Gdy ta karta umrze: dobierz 1 kartę. | Crawling Chorus · 1 · Creature — Phyrexian Horror · Toksyczny (combat damage graczowi = poison) · Gdy ta karta umrze: stwórz token Phyrexian Mite. · 1/1
+  LOG: Dobierasz: Swamp ⏎ Dobierasz: Forest ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Greater Tanuki, Swamp, Insatiable Appetite, Blade-Blizzard Kitsune, High Stride, Plains, Idyllic Grange ⏎ Nowa partia (seed 19). Powodzenia!
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Downwind Ambusher
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+
+--- krok 30 | T. 10BotGracz: 18 ż.Bot: 20 ż.Główna 1Stos — Bladed Sentinel ---
+  STOS: Bladed Sentinel (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Downwind Ambusher · 4 · Creature — Skunk Assassin · Flash (błysk) · wybierz tryb: Osłabienie / Dobicie rannego · 4/2
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę | Panic Spellbomb · 1 · Artifact · {T}, poświęć: cel: stwór — nie może blokować · Gdy ta karta umrze: dobierz 1 kartę. | Crawling Chorus · 1 · Creature — Phyrexian Horror · Toksyczny (combat damage graczowi = poison) · Gdy ta karta umrze: stwórz token Phyrexian Mite. · 1/1
+  LOG: Dobierasz: Swamp ⏎ Dobierasz: Forest ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Greater Tanuki, Swamp, Insatiable Appetite, Blade-Blizzard Kitsune, High Stride, Plains, Idyllic Grange ⏎ Nowa partia (seed 19). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Bladed Sentinel
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Bladed Sentinel zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Crawling Chorus
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Crawling Chorus zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 17
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: High Stride
+  >> Cel czaru: High Stride (2 opcje)
+  [modal choice] Cel czaru: High Stride Rzuć: High Stride (koszt G) → cel: Crawling Chorus (Nieprzyjaciel)🔍 Podgląd karty Rzuć: High Stride (koszt G) → cel: Bladed Sentinel (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]   ▶ Rzuć: High Stride (koszt G) → cel: Crawling Chorus (Nieprzyjaciel)
+  [modal choice]     Rzuć: High Stride (koszt G) → cel: Bladed Sentinel (Nieprzyjaciel)
+
+--- krok 33 | T. 12BotGracz: 17 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Downwind Ambusher · 4 · Creature — Skunk Assassin · Flash (błysk) · wybierz tryb: Osłabienie / Dobicie rannego · 4/2
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Panic Spellbomb · 1 · Artifact · {T}, poświęć: cel: stwór — nie może blokować · Gdy ta karta umrze: dobierz 1 kartę. | Crawling Chorus · 1 · Creature — Phyrexian Horror · Toksyczny (combat damage graczowi = poison) · Gdy ta karta umrze: stwórz token Phyrexian Mite. · 1/1 | Bladed Sentinel · 4 · Artifact Creature — Construct · {W}: zdobądź Czujność do końca tury · 2/4
+  LOG: Dobierasz: Swamp ⏎ Dobierasz: Forest ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Greater Tanuki, Swamp, Insatiable Appetite, Blade-Blizzard Kitsune, High Stride, Plains, Idyllic Grange ⏎ Nowa partia (seed 19). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz High Stride → cel: Crawling Chorus
+  [ROZGRYWKA]   • Crawling Chorus zyskuje: zasięg
+  [ROZGRYWKA]   • High Stride zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Quicksilver Fisher
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Quicksilver Fisher zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Quicksilver Fisher — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Quicksilver Fisher — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Turn the Tide
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Crawling Chorus, Bladed Sentinel
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Crawling Chorus zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 16
+  [ROZGRYWKA]   • Bladed Sentinel zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 14
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Clawing Torment
+
+--- krok 36 | T. 13GraczGracz: 14 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Aura: Clawing Torment (4 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Downwind Ambusher · 4 · Creature — Skunk Assassin · Flash (błysk) · wybierz tryb: Osłabienie / Dobicie rannego · 4/2 | Clawing Torment · 1 · Enchantment — Aura · stwór: -1/-1 · zaczarowany nie może blokować · można zaczarować permanent dowolnego gracza · Na początku upkeep (gdy rzucono 2+ czary): kontroler zaczarowanego permanentu traci 1 życia w swoim upkeepie.
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Panic Spellbomb · 1 · Artifact · {T}, poświęć: cel: stwór — nie może blokować · Gdy ta karta umrze: dobierz 1 kartę. | Crawling Chorus · 1 · Creature — Phyrexian Horror · Toksyczny (combat damage graczowi = poison) · Gdy ta karta umrze: stwórz token Phyrexian Mite. · 1/1 | Bladed Sentinel · 4 · Artifact Creature — Construct · {W}: zdobądź Czujność do końca tury · 2/4 | Quicksilver Fisher · 5 · Creature — Phyrexian Drake · Latanie · Gdy wejdzie na pole bitwy: dobierz, potem odrzuć. · choroba · 4/3
+  LOG: Dobierasz: Swamp ⏎ Dobierasz: Forest ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Greater Tanuki, Swamp, Insatiable Appetite, Blade-Blizzard Kitsune, High Stride, Plains, Idyllic Grange ⏎ Nowa partia (seed 19). Powodzenia!
+  >> Aura: Clawing Torment (4 opcje)
+  [modal choice] Aura: Clawing Torment Zagraj aurę: Clawing Torment (koszt B) → zaczaruj Panic Spellbomb (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Clawing Torment (koszt B) → zaczaruj Crawling Chorus (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Clawing Torment (koszt B) → zaczaruj Bladed Sentinel (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Clawing Torment (koszt B) → zaczaruj Quicksilver Fisher (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]   ▶ Zagraj aurę: Clawing Torment (koszt B) → zaczaruj Panic Spellbomb (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Clawing Torment (koszt B) → zaczaruj Crawling Chorus (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Clawing Torment (koszt B) → zaczaruj Bladed Sentinel (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Clawing Torment (koszt B) → zaczaruj Quicksilver Fisher (Nieprzyjaciel)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Rzucasz Clawing Torment → cel: Panic Spellbomb
+  [ROZGRYWKA]   • Clawing Torment zaczarowuje Panic Spellbomb
+  [ROZGRYWKA]   • Clawing Torment wchodzi na pole bitwy
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Clawing Torment — trigger (krok upkeep)
+
+--- krok 39 | T. 14BotGracz: 14 ż.Bot: 20 ż.UpkeepStos — Banishment Decree ---
+  STOS: Trigger: Clawing Torment (krok upkeep) | Banishment Decree (rzuca: Nieprzyjaciel) → cel: Clawing Torment
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Downwind Ambusher · 4 · Creature — Skunk Assassin · Flash (błysk) · wybierz tryb: Osłabienie / Dobicie rannego · 4/2
+  MOJE POLA: Clawing Torment · 1 · Enchantment Aura · stwór: -1/-1 · zaczarowany nie może blokować · można zaczarować permanent dowolnego gracza · Na początku upkeep (gdy rzucono 2+ czary): kontroler zaczarowanego permanentu traci 1 życia w swoim upkeepie. · aura → Panic Spellbomb | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Panic Spellbomb · 1 · Artifact · {T}, poświęć: cel: stwór — nie może blokować · Gdy ta karta umrze: dobierz 1 kartę. · zaczarowana: Clawing Torment | Crawling Chorus · 1 · Creature — Phyrexian Horror · Toksyczny (combat damage graczowi = poison) · Gdy ta karta umrze: stwórz token Phyrexian Mite. · 1/1 | Bladed Sentinel · 4 · Artifact Creature — Construct · {W}: zdobądź Czujność do końca tury · 2/4 | Quicksilver Fisher · 5 · Creature — Phyrexian Drake · Latanie · Gdy wejdzie na pole bitwy: dobierz, potem odrzuć. · 4/3
+  LOG: Dobierasz: Swamp ⏎ Dobierasz: Forest ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Greater Tanuki, Swamp, Insatiable Appetite, Blade-Blizzard Kitsune, High Stride, Plains, Idyllic Grange ⏎ Nowa partia (seed 19). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Banishment Decree → cel: Clawing Torment
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Banishment Decree zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Clawing Torment — trigger bez efektu (warunek/cele nieaktualne)
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Crawling Chorus, Bladed Sentinel, Quicksilver Fisher
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Crawling Chorus zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 13
+  [ROZGRYWKA]   • Bladed Sentinel zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 11
+  [ROZGRYWKA]   • Quicksilver Fisher zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 7
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Clawing Torment
+  >> Dalej (pass)
+
+--- krok 42 | T. 15GraczGracz: 7 ż.Bot: 20 ż.Główna 2 ---
+  STOS: Stos pusty
+  AKCJE: Aura: Clawing Torment (4 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Downwind Ambusher · 4 · Creature — Skunk Assassin · Flash (błysk) · wybierz tryb: Osłabienie / Dobicie rannego · 4/2 | Clawing Torment · 1 · Enchantment — Aura · efekt (attach_aura) · cel: stwór · stwór: -1/-1 · zaczarowany nie może blokować · można zaczarować permanent dowolnego gracza · Na początku upkeep (gdy rzucono 2+ czary): kontroler zaczarowanego permanentu traci 1 życia w swoim upkeepie.
+  MOJE POLA: Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Panic Spellbomb · 1 · Artifact · {T}, poświęć: cel: stwór — nie może blokować · Gdy ta karta umrze: dobierz 1 kartę. | Crawling Chorus · 1 · Creature — Phyrexian Horror · Toksyczny (combat damage graczowi = poison) · Gdy ta karta umrze: stwórz token Phyrexian Mite. · 1/1 | Bladed Sentinel · 4 · Artifact Creature — Construct · {W}: zdobądź Czujność do końca tury · 2/4 | Quicksilver Fisher · 5 · Creature — Phyrexian Drake · Latanie · Gdy wejdzie na pole bitwy: dobierz, potem odrzuć. · 4/3
+  LOG: Dobierasz: Swamp ⏎ Dobierasz: Forest ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Greater Tanuki, Swamp, Insatiable Appetite, Blade-Blizzard Kitsune, High Stride, Plains, Idyllic Grange ⏎ Nowa partia (seed 19). Powodzenia!
+  >> Aura: Clawing Torment (4 opcje)
+  [modal choice] Aura: Clawing Torment Zagraj aurę: Clawing Torment (koszt B) → zaczaruj Panic Spellbomb (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Clawing Torment (koszt B) → zaczaruj Crawling Chorus (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Clawing Torment (koszt B) → zaczaruj Bladed Sentinel (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Clawing Torment (koszt B) → zaczaruj Quicksilver Fisher (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]   ▶ Zagraj aurę: Clawing Torment (koszt B) → zaczaruj Panic Spellbomb (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Clawing Torment (koszt B) → zaczaruj Crawling Chorus (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Clawing Torment (koszt B) → zaczaruj Bladed Sentinel (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Clawing Torment (koszt B) → zaczaruj Quicksilver Fisher (Nieprzyjaciel)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 2
+  [ROZGRYWKA]   • Rzucasz Clawing Torment → cel: Panic Spellbomb
+  [ROZGRYWKA]   • Clawing Torment zaczarowuje Panic Spellbomb
+  [ROZGRYWKA]   • Clawing Torment wchodzi na pole bitwy
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Clawing Torment — trigger (krok upkeep)
+
+--- krok 45 | T. 16BotGracz: 7 ż.Bot: 19 ż.Główna 1Stos — Steelfin Whale ---
+  STOS: Steelfin Whale (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Downwind Ambusher · 4 · Creature — Skunk Assassin · Flash (błysk) · wybierz tryb: Osłabienie / Dobicie rannego · 4/2
+  MOJE POLA: Clawing Torment · 1 · Enchantment Aura · stwór: -1/-1 · zaczarowany nie może blokować · można zaczarować permanent dowolnego gracza · Na początku upkeep (gdy rzucono 2+ czary): kontroler zaczarowanego permanentu traci 1 życia w swoim upkeepie. · aura → Panic Spellbomb | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Panic Spellbomb · 1 · Artifact · {T}, poświęć: cel: stwór — nie może blokować · Gdy ta karta umrze: dobierz 1 kartę. · zaczarowana: Clawing Torment | Crawling Chorus · 1 · Creature — Phyrexian Horror · Toksyczny (combat damage graczowi = poison) · Gdy ta karta umrze: stwórz token Phyrexian Mite. · 1/1 | Bladed Sentinel · 4 · Artifact Creature — Construct · {W}: zdobądź Czujność do końca tury · 2/4 | Quicksilver Fisher · 5 · Creature — Phyrexian Drake · Latanie · Gdy wejdzie na pole bitwy: dobierz, potem odrzuć. · 4/3
+  LOG: Dobierasz: Swamp ⏎ Dobierasz: Forest ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Greater Tanuki, Swamp, Insatiable Appetite, Blade-Blizzard Kitsune, High Stride, Plains, Idyllic Grange ⏎ Nowa partia (seed 19). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Steelfin Whale
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Bladed Sentinel — nadanie do końca tury: czujność
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 48 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Downwind Ambusher · 4 · Creature — Skunk Assassin · Flash (błysk) · wybierz tryb: Osłabienie / Dobicie rannego · 4/2
+  MOJE POLA: Clawing Torment · 1 · Enchantment Aura · stwór: -1/-1 · zaczarowany nie może blokować · można zaczarować permanent dowolnego gracza · Na początku upkeep (gdy rzucono 2+ czary): kontroler zaczarowanego permanentu traci 1 życia w swoim upkeepie. · aura → Panic Spellbomb | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę ×3 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Panic Spellbomb · 1 · Artifact · {T}, poświęć: cel: stwór — nie może blokować · Gdy ta karta umrze: dobierz 1 kartę. · zaczarowana: Clawing Torment | Crawling Chorus · 1 · Creature — Phyrexian Horror · Toksyczny (combat damage graczowi = poison) · Gdy ta karta umrze: stwórz token Phyrexian Mite. · 1/1 | Bladed Sentinel · 4 · Artifact Creature — Construct · {W}: zdobądź Czujność do końca tury · Czujność · 2/4 | Quicksilver Fisher · 5 · Creature — Phyrexian Drake · Latanie · Gdy wejdzie na pole bitwy: dobierz, potem odrzuć. · 4/3 | Steelfin Whale · 6 · Creature — Whale · Gdy artefakt wchodzi pod twoją kontrolą: odkręć. · choroba · 3/4
+  LOG: Dobierasz: Swamp ⏎ Dobierasz: Forest ⏎ Bierzesz mulligan (1) — nowa ręka 7 kart ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Greater Tanuki, Swamp, Insatiable Appetite, Blade-Blizzard Kitsune, High Stride, Plains, Idyllic Grange ⏎ Nowa partia (seed 19). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 11, kliknięte: 16, modale: 3, sondy noop: 48 (panel 31, modal 17)
+== DETEKTORY: brak zgłoszeń ==

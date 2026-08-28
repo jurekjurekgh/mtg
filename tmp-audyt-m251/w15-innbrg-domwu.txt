@@ -1,0 +1,317 @@
+== NOWA PARTIA: gracz=innistrad-brg vs bot=dominaria-wu, seed=93, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Forest  ||  Zagraj ląd: Swamp (1 z 2)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · 1/1 | Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Forge Devil · 1 · Creature — Devil · Gdy wejdzie na pole bitwy: zada 1 obrażenie celowi i 1 obrażenie kontrolerowi. · 1/1
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Tireless Hauler, Forest, Swamp, Swamp, Snarling Wolf, Blazing Torch, Forge Devil ⏎ Nowa partia (seed 93). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Zagraj: Snarling Wolf (koszt G)
+  [ROZGRYWKA]   • Snarling Wolf wchodzi na pole bitwy
+  [ROZGRYWKA]   • Snarling Wolf zostaje rozstrzygnięty
+
+--- krok 3 | T. 2BotGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Forge Devil · 1 · Creature — Devil · Gdy wejdzie na pole bitwy: zada 1 obrażenie celowi i 1 obrażenie kontrolerowi. · 1/1
+  MOJE POLA: Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · choroba · 1/1 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Tireless Hauler, Forest, Swamp, Swamp, Snarling Wolf, Blazing Torch, Forge Devil ⏎ Nowa partia (seed 93). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Survivor of Korlis
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Survivor of Korlis zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Doomed Dissenter
+
+--- krok 6 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Swamp (1 z 2)  ||  Zagraj: Blazing Torch (koszt 1)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Forge Devil · 1 · Creature — Devil · Gdy wejdzie na pole bitwy: zada 1 obrażenie celowi i 1 obrażenie kontrolerowi. · 1/1 | Doomed Dissenter · 2 · Creature — Human · Gdy ta karta umrze: stwórz token Zombie. · 1/1
+  MOJE POLA: Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · 1/1 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Survivor of Korlis · 1 · Creature — Human Soldier · Pierwsze uderzenie · {1}, {W}, wygnaj tę kartę z grobu: scry 2 · choroba · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Tireless Hauler, Forest, Swamp, Swamp, Snarling Wolf, Blazing Torch, Forge Devil ⏎ Nowa partia (seed 93). Powodzenia!
+  >> Zagraj ląd: Swamp (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Zagraj: Blazing Torch (koszt 1)
+  [kreator many] Płatność 1 — tapuj źródła po jednympozostało 1 manyTapnij: Forest (G)Tapnij: Swamp (B)Anuluj płatność — źródła: 2
+  [kreator many] Tapnij: Forest (G)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Blazing Torch zostaje rozstrzygnięty
+
+--- krok 9 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Wyposaż: Blazing Torch (Ty) → Snarling Wolf (Ty) (koszt 1)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forge Devil · 1 · Creature — Devil · Gdy wejdzie na pole bitwy: zada 1 obrażenie celowi i 1 obrażenie kontrolerowi. · 1/1 | Doomed Dissenter · 2 · Creature — Human · Gdy ta karta umrze: stwórz token Zombie. · 1/1
+  MOJE POLA: Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · 1/1 | Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Survivor of Korlis · 1 · Creature — Human Soldier · Pierwsze uderzenie · {1}, {W}, wygnaj tę kartę z grobu: scry 2 · choroba · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Tireless Hauler, Forest, Swamp, Swamp, Snarling Wolf, Blazing Torch, Forge Devil ⏎ Nowa partia (seed 93). Powodzenia!
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Survivor of Korlis blokuje Snarling Wolf
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Survivor of Korlis zadaje 1 obrażenie (Snarling Wolf)
+  [ROZGRYWKA]   • Snarling Wolf ginie
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+
+--- krok 12 | T. 5GraczGracz: 19 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forge Devil · 1 · Creature — Devil · Gdy wejdzie na pole bitwy: zada 1 obrażenie celowi i 1 obrażenie kontrolerowi. · 1/1 | Doomed Dissenter · 2 · Creature — Human · Gdy ta karta umrze: stwórz token Zombie. · 1/1 | Mark of the Vampire · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Dotykanie życia
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Survivor of Korlis · 1 · Creature — Human Soldier · Pierwsze uderzenie · {1}, {W}, wygnaj tę kartę z grobu: scry 2 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Tireless Hauler, Forest, Swamp, Swamp, Snarling Wolf, Blazing Torch, Forge Devil ⏎ Nowa partia (seed 93). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Survivor of Korlis
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Survivor of Korlis zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 19
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mark of the Vampire
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Zagraj: Doomed Dissenter (koszt 1B)
+  [kreator many] Płatność 1B — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: BTapnij: Forest (G)Tapnij: Swamp (B)Tapnij: S — źródła: 3
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Forest (G)
+
+--- krok 15 | T. 5GraczGracz: 19 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wyposaż: Blazing Torch (Ty) → Doomed Dissenter (Ty) (koszt 1)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Forge Devil · 1 · Creature — Devil · Gdy wejdzie na pole bitwy: zada 1 obrażenie celowi i 1 obrażenie kontrolerowi. · 1/1 | Mark of the Vampire · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Dotykanie życia
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Doomed Dissenter · 2 · Creature — Human · Gdy ta karta umrze: stwórz token Zombie. · choroba · 1/1 | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Survivor of Korlis · 1 · Creature — Human Soldier · Pierwsze uderzenie · {1}, {W}, wygnaj tę kartę z grobu: scry 2 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Tireless Hauler, Forest, Swamp, Swamp, Snarling Wolf, Blazing Torch, Forge Devil ⏎ Nowa partia (seed 93). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Doomed Dissenter zostaje rozstrzygnięty
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+
+--- krok 18 | T. 6BotGracz: 19 ż.Bot: 20 ż.Główna 1Stos — Simian Simulacrum ---
+  STOS: Simian Simulacrum (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Forge Devil · 1 · Creature — Devil · Gdy wejdzie na pole bitwy: zada 1 obrażenie celowi i 1 obrażenie kontrolerowi. · 1/1 | Mark of the Vampire · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Dotykanie życia
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Doomed Dissenter · 2 · Creature — Human · Gdy ta karta umrze: stwórz token Zombie. · choroba · 1/1 | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Survivor of Korlis · 1 · Creature — Human Soldier · Pierwsze uderzenie · {1}, {W}, wygnaj tę kartę z grobu: scry 2 · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Tireless Hauler, Forest, Swamp, Swamp, Snarling Wolf, Blazing Torch, Forge Devil ⏎ Nowa partia (seed 93). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Simian Simulacrum
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Simian Simulacrum zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Simian Simulacrum — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Simian Simulacrum — cel: Simian Simulacrum
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Simian Simulacrum dostaje +2 liczniki +1/+1 (razem 2)
+  [ROZGRYWKA]   • Simian Simulacrum — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Survivor of Korlis
+
+--- krok 21 | T. 6BotGracz: 19 ż.Bot: 20 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Deklaracja blokujących (2 opcje)
+  RĘKA: Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Forge Devil · 1 · Creature — Devil · Gdy wejdzie na pole bitwy: zada 1 obrażenie celowi i 1 obrażenie kontrolerowi. · 1/1 | Mark of the Vampire · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Dotykanie życia
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Doomed Dissenter · 2 · Creature — Human · Gdy ta karta umrze: stwórz token Zombie. · choroba · 1/1 | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Survivor of Korlis · 1 · Creature — Human Soldier · Pierwsze uderzenie · {1}, {W}, wygnaj tę kartę z grobu: scry 2 · atakuje — niezablokowany · 1/1 | Simian Simulacrum · 3 · Artifact Creature — Ape · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · {2}, {G}, {G}: unearth (z grobu z haste, exile na końcu tury) · choroba · 2x +1/+1 · 4/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Tireless Hauler, Forest, Swamp, Swamp, Snarling Wolf, Blazing Torch, Forge Devil ⏎ Nowa partia (seed 93). Powodzenia!
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Doomed Dissenter (1/1)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Doomed Dissenter — trigger (śmierć stwora)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty tworzysz token Zombie (2/2)
+  [ROZGRYWKA]   • Zombie wchodzi na pole bitwy
+  [ROZGRYWKA]   • Doomed Dissenter — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Somberwald Spider
+
+--- krok 24 | T. 7GraczGracz: 19 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Wyposaż: Blazing Torch (Ty) → Zombie (Ty) (koszt 1)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Forge Devil · 1 · Creature — Devil · Gdy wejdzie na pole bitwy: zada 1 obrażenie celowi i 1 obrażenie kontrolerowi. · 1/1 | Mark of the Vampire · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Dotykanie życia | Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Zombie · 0 · Creature — Zombie · 2/2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Survivor of Korlis · 1 · Creature — Human Soldier · Pierwsze uderzenie · {1}, {W}, wygnaj tę kartę z grobu: scry 2 · 1/1 | Simian Simulacrum · 3 · Artifact Creature — Ape · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · {2}, {G}, {G}: unearth (z grobu z haste, exile na końcu tury) · choroba · 2x +1/+1 · 4/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Tireless Hauler, Forest, Swamp, Swamp, Snarling Wolf, Blazing Torch, Forge Devil ⏎ Nowa partia (seed 93). Powodzenia!
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Simian Simulacrum zadaje 4 obrażenia (Zombie)
+  [ROZGRYWKA]   • Zombie ginie
+  [ROZGRYWKA]   • token Zombie przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Urza's Mine
+
+--- krok 27 | T. 8BotGracz: 19 ż.Bot: 20 ż.Główna 1Stos — Razorfoot Griffin ---
+  STOS: Razorfoot Griffin (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Forge Devil · 1 · Creature — Devil · Gdy wejdzie na pole bitwy: zada 1 obrażenie celowi i 1 obrażenie kontrolerowi. · 1/1 | Mark of the Vampire · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Dotykanie życia | Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Urza's Mine · Land — Urza's Mine · T: dodaj 1 manę | Survivor of Korlis · 1 · Creature — Human Soldier · Pierwsze uderzenie · {1}, {W}, wygnaj tę kartę z grobu: scry 2 · 1/1 | Simian Simulacrum · 3 · Artifact Creature — Ape · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · {2}, {G}, {G}: unearth (z grobu z haste, exile na końcu tury) · 2x +1/+1 · 4/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Tireless Hauler, Forest, Swamp, Swamp, Snarling Wolf, Blazing Torch, Forge Devil ⏎ Nowa partia (seed 93). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Razorfoot Griffin
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Razorfoot Griffin zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Survivor of Korlis, Simian Simulacrum
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Survivor of Korlis zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 19 → 18
+  [ROZGRYWKA]   • Simian Simulacrum zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 14
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Predator's Gambit
+  >> Aura: Predator's Gambit (3 opcje)
+  [modal choice] Aura: Predator's Gambit Zagraj aurę: Predator's Gambit (koszt B) → zaczaruj Survivor of Korlis (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Predator's Gambit (koszt B) → zaczaruj Simian Simulacrum (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Predator's Gambit (koszt B) → zaczaruj Razorfoot Griffin (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]   ▶ Zagraj aurę: Predator's Gambit (koszt B) → zaczaruj Survivor of Korlis (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Predator's Gambit (koszt B) → zaczaruj Simian Simulacrum (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Predator's Gambit (koszt B) → zaczaruj Razorfoot Griffin (Nieprzyjaciel)
+
+--- krok 30 | T. 9GraczGracz: 14 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Forge Devil · 1 · Creature — Devil · Gdy wejdzie na pole bitwy: zada 1 obrażenie celowi i 1 obrażenie kontrolerowi. · 1/1 | Mark of the Vampire · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Dotykanie życia | Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Predator's Gambit · 1 · Enchantment Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) · aura → Survivor of Korlis | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Urza's Mine · Land — Urza's Mine · T: dodaj 1 manę | Survivor of Korlis · 1 · Creature — Human Soldier · Pierwsze uderzenie · {1}, {W}, wygnaj tę kartę z grobu: scry 2 · +2/+1 · zaczarowana: Predator's Gambit · 3/2 | Simian Simulacrum · 3 · Artifact Creature — Ape · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · {2}, {G}, {G}: unearth (z grobu z haste, exile na końcu tury) · 2x +1/+1 · 4/3 | Razorfoot Griffin · 4 · Creature — Griffin · Latanie Pierwsze uderzenie · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Tireless Hauler, Forest, Swamp, Swamp, Snarling Wolf, Blazing Torch, Forge Devil ⏎ Nowa partia (seed 93). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Rzucasz Predator's Gambit → cel: Survivor of Korlis
+  [ROZGRYWKA]   • Predator's Gambit zaczarowuje Survivor of Korlis
+  [ROZGRYWKA]   • Predator's Gambit wchodzi na pole bitwy
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Morph twarzą w dół (2/2)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Atak: Survivor of Korlis, Simian Simulacrum, Razorfoot Griffin
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Survivor of Korlis zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 11
+  [ROZGRYWKA]   • Razorfoot Griffin zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 9
+  [ROZGRYWKA]   • Simian Simulacrum zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 9 → 5
+  [ROZGRYWKA]   • Tura 11 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+
+--- krok 33 | T. 11GraczGracz: 5 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Mountain  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Forge Devil · 1 · Creature — Devil · Gdy wejdzie na pole bitwy: zada 1 obrażenie celowi i 1 obrażenie kontrolerowi. · 1/1 | Mark of the Vampire · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Dotykanie życia | Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Predator's Gambit · 1 · Enchantment Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) · aura → Survivor of Korlis | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Urza's Mine · Land — Urza's Mine · T: dodaj 1 manę | Survivor of Korlis · 1 · Creature — Human Soldier · Pierwsze uderzenie · {1}, {W}, wygnaj tę kartę z grobu: scry 2 · +2/+1 · zaczarowana: Predator's Gambit · 3/2 | Simian Simulacrum · 3 · Artifact Creature — Ape · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · {2}, {G}, {G}: unearth (z grobu z haste, exile na końcu tury) · 2x +1/+1 · 4/3 | Razorfoot Griffin · 4 · Creature — Griffin · Latanie Pierwsze uderzenie · 2/2 | Face-down creature · Creature · Morph · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Tireless Hauler, Forest, Swamp, Swamp, Snarling Wolf, Blazing Torch, Forge Devil ⏎ Nowa partia (seed 93). Powodzenia!
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Mountain
+  >> Zagraj: Forge Devil (koszt R)
+  [ROZGRYWKA]   • Forge Devil zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Forge Devil — wybierz cel triggera (wymagany)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Forge Devil — cel triggera (5 opcji)
+  [modal choice] Forge Devil — cel triggera Forge Devil — cel triggera: Survivor of Korlis (Nieprzyjaciel)🔍 Podgląd karty Forge Devil — cel triggera: Simian Simulacrum (Nieprzyjaciel)🔍 Podgląd karty Forge Devil — cel triggera: Razorfoot Griffin (Nieprzyjaciel)🔍 Podgląd karty Forge Devil — cel triggera: Morph (Nieprzyjaciel)🔍 Podgląd karty Forge Devil — cel triggera: Forge Devil (Ty)🔍 Podgląd karty
+  [modal choice]   ▶ Forge Devil — cel triggera: Survivor of Korlis (Nieprzyjaciel)
+  [modal choice]     Forge Devil — cel triggera: Simian Simulacrum (Nieprzyjaciel)
+  [modal choice]     Forge Devil — cel triggera: Razorfoot Griffin (Nieprzyjaciel)
+  [modal choice]     Forge Devil — cel triggera: Morph (Nieprzyjaciel)
+  [modal choice]     Forge Devil — cel triggera: Forge Devil (Ty)
+
+--- krok 36 | T. 11GraczGracz: 4 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Wyposaż: Blazing Torch (Ty) → Forge Devil (Ty) (koszt 1)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Mark of the Vampire · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Dotykanie życia | Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Predator's Gambit · 1 · Enchantment Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) · aura → Survivor of Korlis | Forge Devil · 1 · Creature — Devil · Gdy wejdzie na pole bitwy: zada 1 obrażenie celowi i 1 obrażenie kontrolerowi. · choroba · 1/1 | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Urza's Mine · Land — Urza's Mine · T: dodaj 1 manę | Survivor of Korlis · 1 · Creature — Human Soldier · Pierwsze uderzenie · {1}, {W}, wygnaj tę kartę z grobu: scry 2 · +2/+1 · −1 · zaczarowana: Predator's Gambit · 3/2 | Simian Simulacrum · 3 · Artifact Creature — Ape · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · {2}, {G}, {G}: unearth (z grobu z haste, exile na końcu tury) · 2x +1/+1 · 4/3 | Razorfoot Griffin · 4 · Creature — Griffin · Latanie Pierwsze uderzenie · 2/2 | Face-down creature · Creature · Morph · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Tireless Hauler, Forest, Swamp, Swamp, Snarling Wolf, Blazing Torch, Forge Devil ⏎ Nowa partia (seed 93). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Ty: życie 5 → 4
+  [ROZGRYWKA]   • Forge Devil — trigger się rozstrzyga
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+
+--- krok 39 | T. 12BotGracz: 4 ż.Bot: 20 ż.Główna 1Stos — Koilos Roc ---
+  STOS: Koilos Roc (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Mark of the Vampire · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Dotykanie życia | Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Predator's Gambit · 1 · Enchantment Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) · aura → Survivor of Korlis | Forge Devil · 1 · Creature — Devil · Gdy wejdzie na pole bitwy: zada 1 obrażenie celowi i 1 obrażenie kontrolerowi. · choroba · 1/1 | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Urza's Mine · Land — Urza's Mine · T: dodaj 1 manę | Survivor of Korlis · 1 · Creature — Human Soldier · Pierwsze uderzenie · {1}, {W}, wygnaj tę kartę z grobu: scry 2 · +2/+1 · zaczarowana: Predator's Gambit · 3/2 | Simian Simulacrum · 3 · Artifact Creature — Ape · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · {2}, {G}, {G}: unearth (z grobu z haste, exile na końcu tury) · 2x +1/+1 · 4/3 | Razorfoot Griffin · 4 · Creature — Griffin · Latanie Pierwsze uderzenie · 2/2 | Face-down creature · Creature · Morph · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Tireless Hauler, Forest, Swamp, Swamp, Snarling Wolf, Blazing Torch, Forge Devil ⏎ Nowa partia (seed 93). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Koilos Roc
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Koilos Roc zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Koilos Roc — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Powerstone
+  [ROZGRYWKA]   • Powerstone wchodzi na pole bitwy
+  [ROZGRYWKA]   • Koilos Roc — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Survivor of Korlis, Simian Simulacrum, Razorfoot Griffin, Morph
+  >> Wybierz: Deklaracja blokujących (4 opcje)
+  [combat wizard] blokuję 1 stworami: Forge Devil (1/1)
+  [combat wizard] Zatwierdź bloki
+
+--- krok 42 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Mark of the Vampire · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Dotykanie życia | Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Predator's Gambit · 1 · Enchantment Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) · aura → Survivor of Korlis | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Urza's Mine · Land — Urza's Mine · T: dodaj 1 manę | Survivor of Korlis · 1 · Creature — Human Soldier · Pierwsze uderzenie · {1}, {W}, wygnaj tę kartę z grobu: scry 2 · +2/+1 · zaczarowana: Predator's Gambit · 3/2 | Simian Simulacrum · 3 · Artifact Creature — Ape · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · {2}, {G}, {G}: unearth (z grobu z haste, exile na końcu tury) · 2x +1/+1 · 4/3 | Razorfoot Griffin · 4 · Creature — Griffin · Latanie Pierwsze uderzenie · 2/2 | Face-down creature · Creature · Morph · 2/2 | Koilos Roc · 5 · Creature — Bird · Flash (błysk) Latanie · Gdy wejdzie na pole bitwy: stwórz token Powerstone. · choroba · 3/3 | Powerstone · 0 · Artifact — Powerstone
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Tireless Hauler, Forest, Swamp, Swamp, Snarling Wolf, Blazing Torch, Forge Devil ⏎ Nowa partia (seed 93). Powodzenia!
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 43 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Tireless Hauler · 5 · Creature — Human Werewolf · Czujność Daybound · 4/5 | Mark of the Vampire · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Dotykanie życia | Somberwald Spider · 5 · Creature — Spider · Zasięg · 2/4
+  MOJE POLA: Blazing Torch · 1 · Artifact — Equipment · Equip {1} | Predator's Gambit · 1 · Enchantment Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) · aura → Survivor of Korlis | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Urza's Mine · Land — Urza's Mine · T: dodaj 1 manę | Survivor of Korlis · 1 · Creature — Human Soldier · Pierwsze uderzenie · {1}, {W}, wygnaj tę kartę z grobu: scry 2 · +2/+1 · zaczarowana: Predator's Gambit · 3/2 | Simian Simulacrum · 3 · Artifact Creature — Ape · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · {2}, {G}, {G}: unearth (z grobu z haste, exile na końcu tury) · 2x +1/+1 · 4/3 | Razorfoot Griffin · 4 · Creature — Griffin · Latanie Pierwsze uderzenie · 2/2 | Face-down creature · Creature · Morph · 2/2 | Koilos Roc · 5 · Creature — Bird · Flash (błysk) Latanie · Gdy wejdzie na pole bitwy: stwórz token Powerstone. · choroba · 3/3 | Powerstone · 0 · Artifact — Powerstone
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Tireless Hauler, Forest, Swamp, Swamp, Snarling Wolf, Blazing Torch, Forge Devil ⏎ Nowa partia (seed 93). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 20, kliknięte: 17, modale: 3, sondy noop: 54 (panel 41, modal 13)
+== DETEKTORY: brak zgłoszeń ==

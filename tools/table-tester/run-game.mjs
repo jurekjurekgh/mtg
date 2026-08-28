@@ -478,7 +478,16 @@ export async function runTableGame({
     // mechanika Batch 38) to rzut PERMANENTA; bez wzorca tester nigdy nie
     // ćwiczył warp. Dokładamy do puli ruchów i priorytetów greedy.
     const plays = all(/Zagraj ląd|^Rzuć:|^Rzuć za warp:|^Rzuć za surge:|^Zagraj:|^Aktywuj:|^Cycling:|^Wyposaż:|^Flashback:|^Cel czaru|^Cel zdolności:|^Bestow:|^Aura:|^Wybierz:|cel triggera|podziel \d+ obrażeni?[ae]?/);
-    const decisions = all(/Odrzucenie karty|Poświęcenie|Zapłata|Dopłata|Karta z ręki|Wybór koloru|Wybór typu|Kolejność|Proliferate|Cel obrażeń|Rozdzielenie|Wybierz tryb|wybór trybu|Moonlit|Przekierowanie|Dobrowolna|Index|Rozstrzygnij|Pokój|wybierz cel|Karta do ręki|Szukanie|Wybór efektu|Karta na wierzch|Karty do grobu|Surveil|Stomping|odsłonięte|reveal_exile|Craft:|wygnaj|pomijam|brak karty/);
+    // M250 (audyt Żywym Testerem, theros vs wiedzmin s=13): source-titled
+    // (choiceSourceTitle) blokujące decyzje łamią WIELKĄ literę wzorców —
+    // „Chittering Rats — karta z ręki na wierzch biblioteki" nie łapało się
+    // w `Karta z ręki`/`Karta na wierzch` i tester wypisał fałszywy [STOP],
+    // choć gra czekała grywalnie na kliknięcie. Dopisane wzorce niższej
+    // litery: rats (M162/C), Exploit (poświęcenie), Satyr (bierz ląd
+    // z odsłoniętych — `odsłonięte` nie złapie odmiany „-tych"), phyrexian
+    // (zapłata: mana czy życie), Escape (karty do wygnania — `wygnaj` nie
+    // złapie „wygnania"), rzuty permanenta z celem (Cel dla:).
+    const decisions = all(/Odrzucenie karty|Poświęcenie|poświęć stwora|Zapłata|Dopłata|Karta z ręki|karta z ręki na wierzch|Wybór koloru|Wybór typu|Kolejność|Proliferate|Cel obrażeń|Rozdzielenie|Wybierz tryb|wybór trybu|Moonlit|Przekierowanie|Dobrowolna|Index|Rozstrzygnij|Pokój|wybierz cel|Karta do ręki|Szukanie|Wybór efektu|Karta na wierzch|Karty do grobu|Surveil|Stomping|odsłonięte|odsłoniętych|reveal_exile|Craft:|wygnaj|karty do wygnania|Exploit|bierz ląd|zapłata: mana|Cel dla:|pomijam|brak karty/);
     const pass = by(/Dalej|pass/);
 
     // Decyzje blokujące zawsze przed pasem (inaczej gra utyka).
@@ -533,7 +542,13 @@ export async function runTableGame({
           || by(/podziel \d+ obrażeni/) // M172/E: wizard podziału obrażeń
           || by(/^Cel zdolności:|^Cel czaru:|^Bestow:|^Aura:/)
           || (decisions.length > 0 ? decisions[0] : null)
-          || pass;
+          || pass
+          // M250 (audyt Żywym Testerem): dopóki w panelu jest JAKAKOLWIEK
+          // klikalna akcja, „brak akcji" jest kłamstwem narzędzia, nie
+          // sygnałem o grze (klasa L46 dotyczy okien BEZ ruchu). Ostateczny
+          // fallback = pierwszy nie-Poddaj przycisk; prawdziwe ugrzęźnięcie
+          // (samo Poddaj partię) nadal kończy się [STOP].
+          || labels[0];
     }
   };
 
@@ -585,6 +600,9 @@ export async function runTableGame({
 
   // M203/#3: ile wpisów modala pauzy bota już trafiło do transkryptu.
   let loggedBotMoveEntries = 0;
+  // M252: ostatnie zalogowane wpisy (do rozróżnienia „ta sama rosnąca lista"
+  // vs „nowe napełnienie po drenażu bufora") — patrz blok ekstrakcji modala.
+  let loggedBotMoveLines = [];
 
   const resolveModal = async () => {
     if (await resolveManaWizard()) return true;
@@ -848,9 +866,26 @@ export async function runTableGame({
       // Logujemy wyłącznie wpisy NOWE względem poprzedniego renderu — po
       // INDEKSIE, nie po treści: prawdziwe powtórzenie (station, mill) to
       // kolejny wpis o tym samym tekście i musi zostać policzony.
-      if (entries.length < loggedBotMoveEntries) loggedBotMoveEntries = 0; // lista zresetowana
+      //
+      // M252 (audyt Żywym Testerem, innistrad-brg/wiedzmin s=127): czyste
+      // „po długości" myliło ŚWIEŻE pokaz (bufor wypompowany i napełniony
+      // od nowa) z tą samą rosnącą listą. Przykład: pokaz A miał 1 wpis
+      // („…zostaje rozstrzygnięty"), następny pokaz to NOWA lista „[Tura 9
+      // — Ty, Faza: Dobieranie, Dobierasz: Swamp]" (3 wpisy) — slice(1)
+      // uciął NAGŁÓWEK TURY (świadkowie: trace bufora pokazywał jego
+      // rysunek). Reset myślimy prefiksem: gdy bieżąca lista NIE zaczyna
+      // się od zarejestrowanych poprzednio wpisów, to jest nowe napełnienie
+      // i logujemy całość; gdy się zaczyna — to ten sam rosnący ciąg (M203).
+      const loggedPrefix = loggedBotMoveLines;
+      const samePrefix = loggedPrefix.length > 0
+        && lines.length >= loggedPrefix.length
+        && loggedPrefix.every((line, i) => lines[i] === line);
+      if (!samePrefix) {
+        loggedBotMoveEntries = 0; // nowe napełnienie po drenażu (albo pierwsze)
+      }
       const fresh = lines.slice(loggedBotMoveEntries);
       loggedBotMoveEntries = lines.length;
+      loggedBotMoveLines = lines;
       for (const line of fresh) logL(`  [ROZGRYWKA] ${line}`);
       const ok = $('#bot-move-ok');
       if (ok) { ok.click(); await sleep(120); return true; }
