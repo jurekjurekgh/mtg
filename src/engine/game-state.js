@@ -1050,7 +1050,16 @@ function firstPendingDecisionPlayerId(state) {
   if (state.pendingClash) return state.pendingClash.choices[0];
   if (state.pendingUndercityRoute) return state.pendingUndercityRoute.playerId;
   if (state.pendingFabricate) return state.pendingFabricate.playerId;
-  if (state.pendingRoomTargets.length > 0) return state.pendingRoomTargets[0].playerId;
+  // Ślepe wpisy decyzji pokoju (wszyscy kandydaci zniknęli od utworzenia
+  // decyzji — M33/A2, kontrakt testu room-targets-staleness) NIE blokują
+  // gry — dokładnie jak ślepe wpisy celu triggera poniżej. Gaśnięcie
+  // sprząta execute() przy pierwszej kolejnej komendzie, a priorytet ma
+  // pierwszy ŻYWY wpis. Bez filtra warunek `firstDecisionOwner == null`
+  // (Batch 47, audyt PR #86/N2) zatrzaskiwał ofertę pass przy ślepej
+  // decyzji pokoju.
+  if (state.pendingRoomTargets.some((rtPending) => legalRoomTargetCandidates(state, rtPending).length > 0)) {
+    return state.pendingRoomTargets.find((rtPending) => legalRoomTargetCandidates(state, rtPending).length > 0).playerId;
+  }
   if (state.pendingSearchChoice) return state.pendingSearchChoice.playerId;
   if (state.pendingPayOrSacrifice) return state.pendingPayOrSacrifice.playerId;
   if (state.pendingOptionalPay) return state.pendingOptionalPay.playerId;
@@ -4991,6 +5000,19 @@ export function playerView(state, playerId) {
   // DOKŁADANE NA KONIEC — inaczej przy remisie punktów stabilne sortowanie
   // bota wybierało `pass_priority` zamiast ataku/bloku (zmierzone:
   // bot-opponent-model/B3 i m167/I1 dostawały `pass_priority`).
+  // Sekwencyjność ofert także MIĘDZY graczami: execute() odblokowuje decyzje
+  // w ustalonym porządku bramek, więc gdy decyzja innego gracza jest
+  // wcześniejsza (np. cudze scry przed naszym delirium — skan
+  // wieloprzebiegowy może kolejkować kilka typów decyzji w jednej komendzie),
+  // ten gracz nie dostaje jeszcze swojej oferty — execute odrzuciłby ją
+  // bramką wcześniejszej decyzji (regresja scry_unresolved, benchmark B0).
+  // (Audyt PR #86 / N2: liczone PRZED bramką pass — bramka pass była jedyną
+  // z trzech kopii tej logiki bez strażnika `firstDecisionOwner == null`
+  // wprowadzonego w Batch 47, więc pendingManifestDread znów „wyciekł" —
+  // pass był oferowany przy otwartej, blokującej decyzji. Klasa L41.)
+  const firstDecisionOwner = state.status === 'active' ? firstPendingDecisionPlayerId(state) : null;
+  const blockedByOthersDecision = firstDecisionOwner != null && firstDecisionOwner !== playerId;
+
   const trailingCommands = [];
   if (state.status === 'active' && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom) {
     // Koncesję może zgłosić każdy gracz niezależnie od priorytetu; pass
@@ -5017,7 +5039,7 @@ export function playerView(state, playerId) {
     // (okno odpowiedzi obrońcy po deklaracji bloków) jest oferowany.
     const blockedByCombat = state.turn.step === 'combat_damage' && state.combat && state.zones.stack.length === 0
       && state.turn.passes + 1 >= state.players.length;
-    if (hasPriority && !blockedByCombat && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
+    if (hasPriority && !blockedByCombat && firstDecisionOwner == null && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
       && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingSuspendCast && !state.pendingReboundCast && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingDamageDivision && !state.pendingReplacementChoice && !state.pendingUndercityRoute && !state.pendingFabricate && !state.pendingEscapeExile) trailingCommands.push(command('pass_priority', playerId));
   }
   // Oczekujące decyzje oferujemy SEKWENCYJNIE — w tej samej kolejności, w
@@ -5105,15 +5127,6 @@ export function playerView(state, playerId) {
   const activeDamageAssignment = state.pendingDamageAssignment && state.pendingDamageAssignment.playerId === playerId;
   const activeOptionalDraw = state.pendingOptionalDraw && state.pendingOptionalDraw.playerId === playerId;
   const activeColorChoice = state.pendingColorChoice && state.pendingColorChoice.playerId === playerId;
-
-  // Sekwencyjność ofert także MIĘDZY graczami: execute() odblokowuje decyzje
-  // w ustalonym porządku bramek, więc gdy decyzja innego gracza jest
-  // wcześniejsza (np. cudze scry przed naszym delirium — skan
-  // wieloprzebiegowy może kolejkować kilka typów decyzji w jednej komendzie),
-  // ten gracz nie dostaje jeszcze swojej oferty — execute odrzuciłby ją
-  // bramką wcześniejszej decyzji (regresja scry_unresolved, benchmark B0).
-  const firstDecisionOwner = state.status === 'active' ? firstPendingDecisionPlayerId(state) : null;
-  const blockedByOthersDecision = firstDecisionOwner != null && firstDecisionOwner !== playerId;
 
   // Mulligan londyński (CR 103.4): decydujący gracz wybiera keep (pierwsza
   // oferta — boty zatrzymują rękę) albo mulligan. Po mulliganie — wybór N

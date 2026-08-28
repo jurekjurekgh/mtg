@@ -10,6 +10,11 @@
 const PENDING_DECISION_FIELDS = Object.freeze([
   'pendingAbilityActivation', 'pendingAmass', 'pendingColorChoice',
   'pendingEscapeExile',
+  // Audyt PR #86 (N1, klasa L16 — skan firstPendingDecisionPlayerId ×
+  // fingerprint): te decyzje blokowały grę, ale nie były w odcisku.
+  // Strażnik: test/fingerprint-pending-decisions.test.js.
+  'pendingManifestDread', 'pendingSuspendCast', 'pendingOpponentTarget',
+  'pendingFabricate', 'pendingCopyTargets',
   'pendingCraftExile', 'pendingDamageAssignment', 'pendingDamageTarget',
   'pendingDestroyEquipment', 'pendingDiscardChoice', 'pendingDiscover',
   'pendingEnterAsCopy', 'pendingEpicExperiment', 'pendingExploits',
