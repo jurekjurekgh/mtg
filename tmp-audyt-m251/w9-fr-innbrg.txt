@@ -1,0 +1,579 @@
+== NOWA PARTIA: gracz=forgotten-realms vs bot=innistrad-brg, seed=91, profil=random, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Island  ||  Zagraj ląd: Manor Gate  ||  Zagraj ląd: Swamp  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Island · Basic Land — Island · T: dodaj 1 manę | Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · 5/3 | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Patron of the Arts · 3 · Creature — Dragon Noble · Gdy wejdzie na pole bitwy: stwórz token Treasure. · Gdy ta karta umrze: stwórz token Treasure. · 3/1
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Ghoulcaller's Bell
+
+--- krok 3 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Island · Basic Land — Island · T: dodaj 1 manę ×2 | Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · 5/3 | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Patron of the Arts · 3 · Creature — Dragon Noble · Gdy wejdzie na pole bitwy: stwórz token Treasure. · Gdy ta karta umrze: stwórz token Treasure. · 3/1
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Ghoulcaller's Bell zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+  >> Zagraj ląd: Island (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Zagraj: Thieves' Tools (koszt 1B)
+  [ROZGRYWKA]   • Thieves' Tools zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Thieves' Tools — trigger (wejście na pole bitwy)
+
+--- krok 6 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Aktywuj: Treasure (Ty) —  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · 5/3 | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Patron of the Arts · 3 · Creature — Dragon Noble · Gdy wejdzie na pole bitwy: stwórz token Treasure. · Gdy ta karta umrze: stwórz token Treasure. · 3/1 | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Treasure · 0 · Artifact — Treasure | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty tworzysz token Treasure
+  [ROZGRYWKA]   • Treasure wchodzi na pole bitwy
+  [ROZGRYWKA]   • Thieves' Tools — trigger się rozstrzyga
+  >> Aktywuj: Treasure (Ty) —
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Snarling Wolf
+
+--- krok 9 | T. 4BotGracz: 20 ż.Bot: 20 ż.Główna 1Stos — Predator's Gambit ---
+  STOS: Predator's Gambit (rzuca: Nieprzyjaciel) → cel: Snarling Wolf
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · 5/3 | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Patron of the Arts · 3 · Creature — Dragon Noble · Gdy wejdzie na pole bitwy: stwórz token Treasure. · Gdy ta karta umrze: stwórz token Treasure. · 3/1 | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · choroba · 1/1
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Snarling Wolf zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Predator's Gambit → cel: Snarling Wolf
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Caves of Chaos Adventurer
+  >> Zagraj ląd: Manor Gate
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Manor Gate (wchodzi zatapnięty)
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Caravan Vigil
+
+--- krok 12 | T. 6BotGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · 5/3 | Patron of the Arts · 3 · Creature — Dragon Noble · Gdy wejdzie na pole bitwy: stwórz token Treasure. · Gdy ta karta umrze: stwórz token Treasure. · 3/1 | Island · Basic Land — Island · T: dodaj 1 manę | Caves of Chaos Adventurer · 4 · Creature — Human Barbarian · Zadeptywanie · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · 5/3
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · zastraszenie (blok: artefakty/wspólny kolor) · +2/+1 · zaczarowana: Predator's Gambit · 3/2 | Predator's Gambit · 1 · Enchantment Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) · aura → Snarling Wolf
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel odsłania Swamp
+  [ROZGRYWKA]   • Nieprzyjaciel: karta — biblioteka → ręka
+  [ROZGRYWKA]   • Nieprzyjaciel znajduje Swamp i tasuje bibliotekę
+  [ROZGRYWKA]   • Caravan Vigil zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA]   • Atak: Snarling Wolf
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Snarling Wolf zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 17
+  [ROZGRYWKA]   • Tura 7 — Ty
+
+--- krok 15 | T. 7GraczGracz: 17 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Manor Gate (Ty) (koszt T) — dodaj 1 manę zieloną  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · 5/3 | Patron of the Arts · 3 · Creature — Dragon Noble · Gdy wejdzie na pole bitwy: stwórz token Treasure. · Gdy ta karta umrze: stwórz token Treasure. · 3/1 | Island · Basic Land — Island · T: dodaj 1 manę | Caves of Chaos Adventurer · 4 · Creature — Human Barbarian · Zadeptywanie · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · 5/3
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · zastraszenie (blok: artefakty/wspólny kolor) · +2/+1 · zaczarowana: Predator's Gambit · 3/2 | Predator's Gambit · 1 · Enchantment Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) · aura → Snarling Wolf
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  >> Aktywuj: Manor Gate (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Manor Gate — dodanie 1 many zielonej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Mountain
+  >> Dalej (pass)
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 2
+  [ROZGRYWKA]   • Zagrywasz Mountain
+
+--- krok 18 | T. 7GraczGracz: 17 ż.Bot: 20 ż.Główna 2 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Patron of the Arts (koszt 2R)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · 5/3 | Patron of the Arts · 3 · Creature — Dragon Noble · Gdy wejdzie na pole bitwy: stwórz token Treasure. · Gdy ta karta umrze: stwórz token Treasure. · 3/1 | Island · Basic Land — Island · T: dodaj 1 manę | Caves of Chaos Adventurer · 4 · Creature — Human Barbarian · Zadeptywanie · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · 5/3
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · zastraszenie (blok: artefakty/wspólny kolor) · +2/+1 · zaczarowana: Predator's Gambit · 3/2 | Predator's Gambit · 1 · Enchantment Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) · aura → Snarling Wolf
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  >> Zagraj: Patron of the Arts (koszt 2R)
+  [ROZGRYWKA]   • Patron of the Arts zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Patron of the Arts — trigger (wejście na pole bitwy)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty tworzysz token Treasure
+  [ROZGRYWKA]   • Treasure wchodzi na pole bitwy
+  [ROZGRYWKA]   • Patron of the Arts — trigger się rozstrzyga
+  >> Aktywuj: Treasure (Ty) —
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Snarling Wolf
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Snarling Wolf — zmiana statystyk celu
+
+--- krok 21 | T. 9GraczGracz: 12 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Manor Gate (Ty) (koszt T) — dodaj 1 manę zieloną  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · 5/3 | Island · Basic Land — Island · T: dodaj 1 manę | Caves of Chaos Adventurer · 4 · Creature — Human Barbarian · Zadeptywanie · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · 5/3
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Patron of the Arts · 3 · Creature — Dragon Noble · Gdy wejdzie na pole bitwy: stwórz token Treasure. · Gdy ta karta umrze: stwórz token Treasure. · 3/1 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · zastraszenie (blok: artefakty/wspólny kolor) · +2/+1 · zaczarowana: Predator's Gambit · 3/2 | Predator's Gambit · 1 · Enchantment Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) · aura → Snarling Wolf
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Snarling Wolf dostaje +2/+2
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Snarling Wolf rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Snarling Wolf zadaje 5 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 12
+  [ROZGRYWKA]   • Tura 9 — Ty
+  >> Aktywuj: Manor Gate (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Manor Gate — dodanie 1 many zielonej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Swamp
+  >> Wyposaż: Thieves' Tools (Ty) → Patron of the Arts (Ty) (koszt 2)
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Swamp (B)Tapnij: Island (U)Tapnij: Mountain (R)Anuluj płatnoś — źródła: 3
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Swamp (B)
+
+--- krok 24 | T. 9GraczGracz: 12 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Zagraj ląd: Island  ||  Zagraj ląd: Swamp  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · 5/3 | Island · Basic Land — Island · T: dodaj 1 manę | Caves of Chaos Adventurer · 4 · Creature — Human Barbarian · Zadeptywanie · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · 5/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. · wyposaża → Patron of the Arts | Patron of the Arts · 3 · Creature — Dragon Noble · Gdy wejdzie na pole bitwy: stwórz token Treasure. · Gdy ta karta umrze: stwórz token Treasure. · wyposażona: Thieves' Tools · 3/1 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · zastraszenie (blok: artefakty/wspólny kolor) · +2/+1 · zaczarowana: Predator's Gambit · 3/2 | Predator's Gambit · 1 · Enchantment Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) · aura → Snarling Wolf
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Aktywujesz Equip: Thieves' Tools → cel: Patron of the Arts
+  [ROZGRYWKA]   • Thieves' Tools wyposaża Patron of the Arts
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+
+--- krok 27 | T. 10BotGracz: 12 ż.Bot: 17 ż.Walka / BlokStos — Snarling Wolf ---
+  STOS: Snarling Wolf (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · 5/3 | Caves of Chaos Adventurer · 4 · Creature — Human Barbarian · Zadeptywanie · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · 5/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. · wyposaża → Patron of the Arts | Patron of the Arts · 3 · Creature — Dragon Noble · Gdy wejdzie na pole bitwy: stwórz token Treasure. · Gdy ta karta umrze: stwórz token Treasure. · wyposażona: Thieves' Tools · 3/1 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · zastraszenie (blok: artefakty/wspólny kolor) · +2/+1 · atakuje — niezablokowany · zaczarowana: Predator's Gambit · 3/2 | Predator's Gambit · 1 · Enchantment Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) · aura → Snarling Wolf
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Patron of the Arts zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 17
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Snarling Wolf
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Snarling Wolf — zmiana statystyk celu
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Snarling Wolf dostaje +2/+2
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Snarling Wolf rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Snarling Wolf zadaje 5 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 12 → 7
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Aktywuj: Manor Gate (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Manor Gate — dodanie 1 many zielonej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Scorch Spitter
+
+--- krok 30 | T. 11GraczGracz: 7 ż.Bot: 17 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Swamp  ||  Zagraj: Caves of Chaos Adventurer (koszt 3R)  ||  Zagraj: Scorch Spitter (koszt R)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · 5/3 | Caves of Chaos Adventurer · 4 · Creature — Human Barbarian · Zadeptywanie · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · 5/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. · wyposaża → Patron of the Arts | Patron of the Arts · 3 · Creature — Dragon Noble · Gdy wejdzie na pole bitwy: stwórz token Treasure. · Gdy ta karta umrze: stwórz token Treasure. · wyposażona: Thieves' Tools · 3/1 | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · zastraszenie (blok: artefakty/wspólny kolor) · +2/+1 · zaczarowana: Predator's Gambit · 3/2 | Predator's Gambit · 1 · Enchantment Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) · aura → Snarling Wolf
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+
+--- krok 33 | T. 11GraczGracz: 7 ż.Bot: 14 ż.Główna 2 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Underdark Explorer (koszt 4B)  ||  Zagraj: Caves of Chaos Adventurer (koszt 3R)  ||  Zagraj: Scorch Spitter (koszt R)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · 5/3 | Caves of Chaos Adventurer · 4 · Creature — Human Barbarian · Zadeptywanie · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · 5/3 | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. · wyposaża → Patron of the Arts | Patron of the Arts · 3 · Creature — Dragon Noble · Gdy wejdzie na pole bitwy: stwórz token Treasure. · Gdy ta karta umrze: stwórz token Treasure. · wyposażona: Thieves' Tools · 3/1 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · zastraszenie (blok: artefakty/wspólny kolor) · +2/+1 · zaczarowana: Predator's Gambit · 3/2 | Predator's Gambit · 1 · Enchantment Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) · aura → Snarling Wolf
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Patron of the Arts zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 17 → 14
+  >> Zagraj: Scorch Spitter (koszt R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Scorch Spitter
+  [ROZGRYWKA]   • Scorch Spitter wchodzi na pole bitwy
+  [ROZGRYWKA]   • Scorch Spitter zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wyposaż: Thieves' Tools (Ty) → Scorch Spitter (Ty) (koszt 2)
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Swamp (B)Tapnij: Island (U)Tapnij: Island (U)Tapnij: Swamp (B — źródła: 4
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Island (U)
+
+--- krok 36 | T. 11GraczGracz: 7 ż.Bot: 14 ż.Główna 2 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Wyposaż: Thieves' Tools (Ty) → Patron of the Arts (Ty) (koszt 2)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · 5/3 | Caves of Chaos Adventurer · 4 · Creature — Human Barbarian · Zadeptywanie · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · 5/3
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. · wyposaża → Scorch Spitter | Patron of the Arts · 3 · Creature — Dragon Noble · Gdy wejdzie na pole bitwy: stwórz token Treasure. · Gdy ta karta umrze: stwórz token Treasure. · 3/1 | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · choroba · wyposażona: Thieves' Tools · 1/1 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · zastraszenie (blok: artefakty/wspólny kolor) · +2/+1 · zaczarowana: Predator's Gambit · 3/2 | Predator's Gambit · 1 · Enchantment Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) · aura → Snarling Wolf
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz Equip: Thieves' Tools → cel: Scorch Spitter
+  [ROZGRYWKA]   • Thieves' Tools wyposaża Scorch Spitter
+  >> Wyposaż: Thieves' Tools (Ty) → Patron of the Arts (Ty) (koszt 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz Equip: Thieves' Tools → cel: Patron of the Arts
+  [ROZGRYWKA]   • Thieves' Tools wyposaża Patron of the Arts
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+
+--- krok 39 | T. 12BotGracz: 7 ż.Bot: 14 ż.Główna 1Stos — Mark of the Vampire ---
+  STOS: Mark of the Vampire (rzuca: Nieprzyjaciel) → cel: Snarling Wolf
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · 5/3 | Caves of Chaos Adventurer · 4 · Creature — Human Barbarian · Zadeptywanie · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · 5/3
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. · wyposaża → Patron of the Arts | Patron of the Arts · 3 · Creature — Dragon Noble · Gdy wejdzie na pole bitwy: stwórz token Treasure. · Gdy ta karta umrze: stwórz token Treasure. · wyposażona: Thieves' Tools · 3/1 | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · choroba · 1/1 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · zastraszenie (blok: artefakty/wspólny kolor) · +2/+1 · zaczarowana: Predator's Gambit · 3/2 | Predator's Gambit · 1 · Enchantment Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) · aura → Snarling Wolf
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Mark of the Vampire → cel: Snarling Wolf
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Mark of the Vampire wchodzi na pole bitwy
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Snarling Wolf
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Snarling Wolf zadaje 5 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 7 → 2
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 14 → 19
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Aktywuj: Manor Gate (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Manor Gate — dodanie 1 many zielonej do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Angel of the Dawn
+
+--- krok 42 | T. 13GraczGracz: 2 ż.Bot: 19 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Underdark Explorer (koszt 4B)  ||  Zagraj: Caves of Chaos Adventurer (koszt 3R)  ||  Wyposaż: Thieves' Tools (Ty) → Scorch Spitter (Ty) (koszt 2)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · 5/3 | Caves of Chaos Adventurer · 4 · Creature — Human Barbarian · Zadeptywanie · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · 5/3 | Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. · wyposaża → Patron of the Arts | Patron of the Arts · 3 · Creature — Dragon Noble · Gdy wejdzie na pole bitwy: stwórz token Treasure. · Gdy ta karta umrze: stwórz token Treasure. · wyposażona: Thieves' Tools · 3/1 | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · zastraszenie (blok: artefakty/wspólny kolor) · Dotykanie życia · +4/+3 · zaczarowana: Predator's Gambit · zaczarowana: Mark of the Vampire · 5/4 | Predator's Gambit · 1 · Enchantment Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) · aura → Snarling Wolf | Mark of the Vampire · 4 · Enchantment Aura · stwór: +2/+2 · stwór ma: Dotykanie życia · aura → Snarling Wolf
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  >> Zagraj: Underdark Explorer (koszt 4B)
+  [ROZGRYWKA]   • Underdark Explorer zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Underdark Explorer — trigger (wejście na pole bitwy)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Obejmujesz inicjatywę — obejmuje ją po raz pierwszy i zagłębia się w Podziemia
+  [ROZGRYWKA]   • Zagłębiasz się w Podziemiach (pokój 1/9: Secret Entrance)
+  [ROZGRYWKA]   • Szukasz karty w bibliotece (undercity) — wybiera, którą wziąć do ręki albo rezygnuje
+  [ROZGRYWKA]   • Underdark Explorer — trigger się rozstrzyga
+  >> Wybierz: Szukanie w bibliotece (5 opcji)
+  [modal choice] Wybierz: Szukanie w bibliotece Szukanie: Swamp Szukanie: Forest Szukanie: Plains Szukanie: Mountain Szukanie — nie znajduj karty (rezygnuję)
+  [modal choice]   ▶ Szukanie: Swamp
+  [modal choice]     Szukanie: Forest
+  [modal choice]     Szukanie: Plains
+  [modal choice]     Szukanie: Mountain
+  [modal choice]     Szukanie — nie znajduj karty (rezygnuję)
+
+--- krok 45 | T. 13GraczGracz: 2 ż.Bot: 19 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Swamp  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Caves of Chaos Adventurer · 4 · Creature — Human Barbarian · Zadeptywanie · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · 5/3 | Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. · wyposaża → Patron of the Arts | Patron of the Arts · 3 · Creature — Dragon Noble · Gdy wejdzie na pole bitwy: stwórz token Treasure. · Gdy ta karta umrze: stwórz token Treasure. · wyposażona: Thieves' Tools · 3/1 | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · choroba · 5/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×2 | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · zastraszenie (blok: artefakty/wspólny kolor) · Dotykanie życia · +4/+3 · zaczarowana: Predator's Gambit · zaczarowana: Mark of the Vampire · 5/4 | Predator's Gambit · 1 · Enchantment Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) · aura → Snarling Wolf | Mark of the Vampire · 4 · Enchantment Aura · stwór: +2/+2 · stwór ma: Dotykanie życia · aura → Snarling Wolf
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Odsłaniasz Swamp
+  [ROZGRYWKA]   • Ty: Swamp — biblioteka → ręka
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Swamp
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 1 z 2 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+
+--- krok 48 | T. 14BotGracz: 2 ż.Bot: 16 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Caves of Chaos Adventurer · 4 · Creature — Human Barbarian · Zadeptywanie · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · 5/3 | Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. · wyposaża → Patron of the Arts | Patron of the Arts · 3 · Creature — Dragon Noble · Gdy wejdzie na pole bitwy: stwórz token Treasure. · Gdy ta karta umrze: stwórz token Treasure. · wyposażona: Thieves' Tools · 3/1 | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · choroba · 5/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · zastraszenie (blok: artefakty/wspólny kolor) · Dotykanie życia · +4/+3 · zaczarowana: Predator's Gambit · zaczarowana: Mark of the Vampire · 5/4 | Predator's Gambit · 1 · Enchantment Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) · aura → Snarling Wolf | Mark of the Vampire · 4 · Enchantment Aura · stwór: +2/+2 · stwór ma: Dotykanie życia · aura → Snarling Wolf
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Patron of the Arts zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 19 → 16
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Thornhide Wolves
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Thornhide Wolves zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Snarling Wolf
+
+--- krok 51 | T. 14BotGracz: 2 ż.Bot: 16 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Deklaracja blokujących (4 opcje)
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Caves of Chaos Adventurer · 4 · Creature — Human Barbarian · Zadeptywanie · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · 5/3 | Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. · wyposaża → Patron of the Arts | Patron of the Arts · 3 · Creature — Dragon Noble · Gdy wejdzie na pole bitwy: stwórz token Treasure. · Gdy ta karta umrze: stwórz token Treasure. · wyposażona: Thieves' Tools · 3/1 | Scorch Spitter · 1 · Creature — Elemental Lizard · Gdy atakuje: 1 obrażenie obrońcy. · 1/1 | Underdark Explorer · 5 · Creature — Lizard Warrior · Postrach · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · choroba · 5/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Snarling Wolf · 1 · Creature — Wolf · {1}, {G}: +2/+2 do końca tury · Dotykanie życia · +4/+3 · atakuje — niezablokowany · zaczarowana: Predator's Gambit · zaczarowana: Mark of the Vampire · 5/4 | Predator's Gambit · 1 · Enchantment Aura · stwór: +2/+1 · zastraszenie (blok: artefakty/wspólny kolor) (gdy kontroler nie ma innych stworów) · aura → Snarling Wolf | Mark of the Vampire · 4 · Enchantment Aura · stwór: +2/+2 · stwór ma: Dotykanie życia · aura → Snarling Wolf | Thornhide Wolves · 5 · Creature — Wolf · choroba · 4/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  >> Wybierz: Deklaracja blokujących (4 opcje)
+  [combat wizard] blokuję 2 stworami: Scorch Spitter (1/1)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 16 → 17
+  [ROZGRYWKA]   • Snarling Wolf zadaje 1 obrażenie (Scorch Spitter)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 17 → 20
+  [ROZGRYWKA]   • Snarling Wolf zadaje 3 obrażenia (Underdark Explorer)
+  [ROZGRYWKA]   • Scorch Spitter zadaje 1 obrażenie (Snarling Wolf)
+  [ROZGRYWKA]   • Underdark Explorer zadaje 5 obrażeń (Snarling Wolf)
+  [ROZGRYWKA]   • Snarling Wolf ginie
+  [ROZGRYWKA]   • Scorch Spitter ginie
+  [ROZGRYWKA]   • Underdark Explorer ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 15 — Ty
+
+--- krok 54 | T. 15GraczGracz: 2 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Wybierz: Ścieżka w Undercity (2 opcje)
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Caves of Chaos Adventurer · 4 · Creature — Human Barbarian · Zadeptywanie · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · 5/3 | Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. · wyposaża → Patron of the Arts | Patron of the Arts · 3 · Creature — Dragon Noble · Gdy wejdzie na pole bitwy: stwórz token Treasure. · Gdy ta karta umrze: stwórz token Treasure. · wyposażona: Thieves' Tools · 3/1 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Thornhide Wolves · 5 · Creature — Wolf · choroba · 4/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  >> Wybierz: Ścieżka w Undercity (2 opcje)
+  [modal choice] Wybierz: Ścieżka w Undercity Podziemia — idź do: Forge Podziemia — idź do: Lost Well
+  [modal choice]     Podziemia — idź do: Forge
+  [modal choice]   ▶ Podziemia — idź do: Lost Well
+  >> Wybierz: Scry — co odłożyć na spód? (5 opcji)
+  [modal choice] Scry 2 — obejrzane karty: 1. Guildsworn Prowler 2. ForestKarta 1 z 2: Guildsworn ProwlerNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]     Na spód biblioteki
+  [modal choice]   ▶ Zostaw na wierzchu
+  [modal choice] Scry 2 — obejrzane karty: 1. Guildsworn Prowler → wierzch 2. ForestKarta 2 z 2: ForestNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]     Na spód biblioteki
+  [modal choice]   ▶ Zostaw na wierzchu
+  [modal choice] Scry 2 — obejrzane karty: 1. Guildsworn Prowler → wierzch 2. Forest → wierzchWybierz w kolejności od najwyższej do najniższej na szczycie biblioteki:1. na wierzchu: Guildsworn Prowler1. na wierzchu: ForestZamknij (dokończysz później)
+  [modal choice]     1. na wierzchu: Guildsworn Prowler
+  [modal choice]   ▶ 1. na wierzchu: Forest
+  [modal choice] Scry 2 — obejrzane karty: 1. Guildsworn Prowler → wierzch 2. Forest → wierzchWybierz w kolejności od najwyższej do najniższej na szczycie biblioteki:2. na wierzchu: Guildsworn ProwlerZamknij (dokończysz później)
+  [modal choice]   ▶ 2. na wierzchu: Guildsworn Prowler
+  >> Aktywuj: Manor Gate (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Forest
+
+--- krok 57 | T. 15GraczGracz: 2 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Forest  ||  Zagraj: Caves of Chaos Adventurer (koszt 3R)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Caves of Chaos Adventurer · 4 · Creature — Human Barbarian · Zadeptywanie · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · 5/3 | Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3 | Forest · Basic Land — Forest · T: dodaj 1 manę
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. · wyposaża → Patron of the Arts | Patron of the Arts · 3 · Creature — Dragon Noble · Gdy wejdzie na pole bitwy: stwórz token Treasure. · Gdy ta karta umrze: stwórz token Treasure. · wyposażona: Thieves' Tools · 3/1 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Thornhide Wolves · 5 · Creature — Wolf · choroba · 4/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Forest
+  >> Zagraj: Caves of Chaos Adventurer (koszt 3R)
+  [kreator many] Płatność 3R — tapuj źródła po jednympozostało 4 many · kolory do pokrycia: RTapnij: Swamp (B)Tapnij: Island (U)Tapnij: M — źródła: 7
+  [kreator many] Tapnij: Mountain (R)
+  [kreator many] Tapnij: Forest (G)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Swamp (B)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Caves of Chaos Adventurer zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Caves of Chaos Adventurer — trigger (wejście na pole bitwy)
+
+--- krok 60 | T. 15GraczGracz: 2 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Wyposaż: Thieves' Tools (Ty) → Caves of Chaos Adventurer (Ty) (koszt 2)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. · wyposaża → Patron of the Arts | Patron of the Arts · 3 · Creature — Dragon Noble · Gdy wejdzie na pole bitwy: stwórz token Treasure. · Gdy ta karta umrze: stwórz token Treasure. · wyposażona: Thieves' Tools · 3/1 | Caves of Chaos Adventurer · 4 · Creature — Human Barbarian · Zadeptywanie · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · choroba · 5/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Thornhide Wolves · 5 · Creature — Wolf · choroba · 4/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Obejmujesz inicjatywę
+  [ROZGRYWKA]   • Caves of Chaos Adventurer — trigger się rozstrzyga
+  >> Wyposaż: Thieves' Tools (Ty) → Caves of Chaos Adventurer (Ty) (koszt 2)
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Swamp (B)Tapnij: Island (U)Tapnij: Swamp (B)Anuluj płatność — źródła: 3
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Swamp (B)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz Equip: Thieves' Tools → cel: Caves of Chaos Adventurer
+  [ROZGRYWKA]   • Thieves' Tools wyposaża Caves of Chaos Adventurer
+
+--- krok 63 | T. 15GraczGracz: 2 ż.Bot: 20 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. · wyposaża → Caves of Chaos Adventurer | Patron of the Arts · 3 · Creature — Dragon Noble · Gdy wejdzie na pole bitwy: stwórz token Treasure. · Gdy ta karta umrze: stwórz token Treasure. · 3/1 | Caves of Chaos Adventurer · 4 · Creature — Human Barbarian · Zadeptywanie · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · choroba · wyposażona: Thieves' Tools · 5/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Thornhide Wolves · 5 · Creature — Wolf · choroba · 4/5
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Thornhide Wolves blokuje Patron of the Arts
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Patron of the Arts zadaje 3 obrażenia (Thornhide Wolves)
+  [ROZGRYWKA]   • Thornhide Wolves zadaje 4 obrażenia (Patron of the Arts)
+  [ROZGRYWKA]   • Patron of the Arts ginie
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Patron of the Arts — trigger (śmierć stwora)
+  [ROZGRYWKA]   • Ty tworzysz token Treasure
+  [ROZGRYWKA]   • Treasure wchodzi na pole bitwy
+  [ROZGRYWKA]   • Patron of the Arts — trigger się rozstrzyga
+  >> Aktywuj: Treasure (Ty) —
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Treasure — dodanie many do puli
+  [ROZGRYWKA]   • Treasure zostaje poświęcony
+  [ROZGRYWKA]   • token Treasure przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Wolfkin Bond → cel: Thornhide Wolves
+
+--- krok 66 | T. 16BotGracz: 2 ż.Bot: 20 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Deklaracja blokujących (2 opcje)
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. · wyposaża → Caves of Chaos Adventurer | Caves of Chaos Adventurer · 4 · Creature — Human Barbarian · Zadeptywanie · Gdy wejdzie na pole bitwy: obejmij inicjatywę. · Gdy atakuje: wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury. · choroba · wyposażona: Thieves' Tools · 5/3 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Thornhide Wolves · 5 · Creature — Wolf · +2/+2 · atakuje — niezablokowany · zaczarowana: Wolfkin Bond · 6/7 | Wolfkin Bond · 5 · Enchantment Aura · stwór: +2/+2 · Gdy wejdzie na pole bitwy: stwórz token Wolf. · aura → Thornhide Wolves | Wolf · 0 · Creature — Wolf · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Thornhide Wolves
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Caves of Chaos Adventurer (5/3)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Caves of Chaos Adventurer blokuje Thornhide Wolves
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Thornhide Wolves zadaje 6 obrażeń (Caves of Chaos Adventurer)
+  [ROZGRYWKA]   • Caves of Chaos Adventurer zadaje 5 obrażeń (Thornhide Wolves)
+  [ROZGRYWKA]   • Caves of Chaos Adventurer ginie
+
+--- krok 69 | T. 17GraczGracz: 2 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Wybierz: Ścieżka w Undercity (2 opcje)
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Thornhide Wolves · 5 · Creature — Wolf · +2/+2 · zaczarowana: Wolfkin Bond · 6/7 | Wolfkin Bond · 5 · Enchantment Aura · stwór: +2/+2 · Gdy wejdzie na pole bitwy: stwórz token Wolf. · aura → Thornhide Wolves | Wolf · 0 · Creature — Wolf · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 17 — Ty
+  >> Wybierz: Ścieżka w Undercity (2 opcje)
+  [modal choice] Wybierz: Ścieżka w Undercity Podziemia — idź do: Arena Podziemia — idź do: Stash
+  [modal choice]   ▶ Podziemia — idź do: Arena
+  [modal choice]     Podziemia — idź do: Stash
+  >> Wybierz: Cel pokoju lochu (2 opcje)
+  [modal choice] Wybierz: Cel pokoju lochu Pokój Arena: wybierz cel — Thornhide Wolves (Nieprzyjaciel)🔍 Podgląd karty Pokój Arena: wybierz cel — Wolf (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]   ▶ Pokój Arena: wybierz cel — Thornhide Wolves (Nieprzyjaciel)
+  [modal choice]     Pokój Arena: wybierz cel — Wolf (Nieprzyjaciel)
+
+--- krok 72 | T. 17GraczGracz: 2 ż.Bot: 20 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Manor Gate (Ty) (koszt T) — dodaj 1 manę zieloną  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Thornhide Wolves · 5 · Creature — Wolf · goad · +2/+2 · zaczarowana: Wolfkin Bond · 6/7 | Wolfkin Bond · 5 · Enchantment Aura · stwór: +2/+2 · Gdy wejdzie na pole bitwy: stwórz token Wolf. · aura → Thornhide Wolves | Wolf · 0 · Creature — Wolf · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  >> Aktywuj: Manor Gate (Ty) (koszt T) — dodaj 1 manę zieloną
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Guildsworn Prowler
+  >> Zagraj: Guildsworn Prowler (koszt 1B)
+  [kreator many] Płatność 1B — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: BTapnij: Swamp (B)Tapnij: Island (U)Tapnij: M — źródła: 7
+  [kreator many] Tapnij: Swamp (B)
+  [kreator many] Tapnij: Forest (G)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Guildsworn Prowler zostaje rozstrzygnięty
+
+--- krok 75 | T. 17GraczGracz: 2 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Wyposaż: Thieves' Tools (Ty) → Guildsworn Prowler (Ty) (koszt 2)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. | Guildsworn Prowler · 2 · Creature — Tiefling Rogue Assassin · Dotykanie śmierci · Gdy ta karta umrze: dobierz 1 kartę. · choroba · 2/1 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Thornhide Wolves · 5 · Creature — Wolf · goad · +2/+2 · zaczarowana: Wolfkin Bond · 6/7 | Wolfkin Bond · 5 · Enchantment Aura · stwór: +2/+2 · Gdy wejdzie na pole bitwy: stwórz token Wolf. · aura → Thornhide Wolves | Wolf · 0 · Creature — Wolf · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  >> Wyposaż: Thieves' Tools (Ty) → Guildsworn Prowler (Ty) (koszt 2)
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Swamp (B)Tapnij: Island (U)Tapnij: Mountain (R)Tapnij: Island — źródła: 5
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Mountain (R)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz Equip: Thieves' Tools → cel: Guildsworn Prowler
+  [ROZGRYWKA]   • Thieves' Tools wyposaża Guildsworn Prowler
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Somberwald Spider
+
+--- krok 78 | T. 18BotGracz: 2 ż.Bot: 20 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Deklaracja blokujących (3 opcje)
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. · wyposaża → Guildsworn Prowler | Guildsworn Prowler · 2 · Creature — Tiefling Rogue Assassin · Dotykanie śmierci · Gdy ta karta umrze: dobierz 1 kartę. · choroba · wyposażona: Thieves' Tools · 2/1 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Thornhide Wolves · 5 · Creature — Wolf · goad · +2/+2 · atakuje — niezablokowany · zaczarowana: Wolfkin Bond · 6/7 | Wolfkin Bond · 5 · Enchantment Aura · stwór: +2/+2 · Gdy wejdzie na pole bitwy: stwórz token Wolf. · aura → Thornhide Wolves | Wolf · 0 · Creature — Wolf · atakuje — niezablokowany · 2/2 | Somberwald Spider · 5 · Creature — Spider · Zasięg · choroba · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Atak: Thornhide Wolves, Wolf
+  >> Dalej (pass)
+  [ROZGRYWKA]   • Ty: życie -4 → -6
+  [ROZGRYWKA]   • Przegrywasz (brak życia)
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Nieprzyjaciel obejmuje inicjatywę — obejmuje ją po raz pierwszy i zagłębia się w Podziemia
+  [ROZGRYWKA]   • Nieprzyjaciel zagłębia się w Podziemiach (pokój 1/9: Secret Entrance)
+  [ROZGRYWKA]   • Nieprzyjaciel szuka karty w bibliotece (undercity) — wybiera, którą wziąć do ręki albo rezygnuje
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 81 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Ettercap · 5 · Creature — Spider Beast · Zasięg · 2/5 | Angel of the Dawn · 5 · Creature — Angel · Latanie · Gdy wejdzie na pole bitwy: +1/+1 dla twoich stworów do końca tury. · 3/3
+  MOJE POLA: Thieves' Tools · 2 · Artifact — Equipment · Equip {2} — nosiciel o mocy ≤3 nie może być blokowany · Gdy wejdzie na pole bitwy: stwórz token Treasure. · wyposaża → Guildsworn Prowler | Guildsworn Prowler · 2 · Creature — Tiefling Rogue Assassin · Dotykanie śmierci · Gdy ta karta umrze: dobierz 1 kartę. · choroba · wyposażona: Thieves' Tools · 2/1 | Swamp · Basic Land — Swamp · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Manor Gate · Land — Gate · {T}: dodaj 1 manę zieloną | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę ×2 | Forest · Basic Land — Forest · T: dodaj 1 manę ×3 | Ghoulcaller's Bell · 1 · Artifact · {T}: mieli po 1 karcie z biblioteki każdy gracz | Thornhide Wolves · 5 · Creature — Wolf · goad · +2/+2 · zaczarowana: Wolfkin Bond · 6/7 | Wolfkin Bond · 5 · Enchantment Aura · stwór: +2/+2 · Gdy wejdzie na pole bitwy: stwórz token Wolf. · aura → Thornhide Wolves | Wolf · 0 · Creature — Wolf · 2/2 | Somberwald Spider · 5 · Creature — Spider · Zasięg · choroba · 2/4
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Island, Ettercap, Underdark Explorer, Manor Gate, Thieves' Tools, Swamp, Patron of the Arts ⏎ Nowa partia (seed 91). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 27, kliknięte: 34, modale: 7, sondy noop: 89 (panel 74, modal 15)
+== DETEKTORY: brak zgłoszeń ==

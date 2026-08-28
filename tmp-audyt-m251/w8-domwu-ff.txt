@@ -1,0 +1,491 @@
+== NOWA PARTIA: gracz=dominaria-wu vs bot=final-fantasy, seed=88, profil=random, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+
+--- krok 0 | T. 1GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Plains (1 z 2)  ||  Zagraj ląd: Island  ||  Zagraj ląd: Urza's Mine  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Serra's Embrace · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie, Czujność | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Enduring Sliver · 2 · Creature — Sliver · outlast · {2}, {T}: połóż licznik +1/+1 · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę | Altar of the Goyf · 5 · Kindred Artifact — Lhurgoyf · Gdy atakuje samotnie: liczba typów kart w grobach do końca tury. · twoje stwory Lhurgoyf: Zadeptywanie | Urza's Mine · Land — Urza's Mine · T: dodaj 1 manę
+  MOJE POLA: (puste)
+  POLA WROGA: (puste)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Serra's Embrace, Plains, Enduring Sliver, Island, Altar of the Goyf, Urza's Mine, Plains ⏎ Nowa partia (seed 88). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Urza's Mine
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Island
+
+--- krok 3 | T. 3GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Plains (1 z 2)  ||  Zagraj ląd: Island (1 z 2)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Serra's Embrace · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie, Czujność | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Enduring Sliver · 2 · Creature — Sliver · outlast · {2}, {T}: połóż licznik +1/+1 · 2/2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Altar of the Goyf · 5 · Kindred Artifact — Lhurgoyf · Gdy atakuje samotnie: liczba typów kart w grobach do końca tury. · twoje stwory Lhurgoyf: Zadeptywanie
+  MOJE POLA: Urza's Mine · Land — Urza's Mine · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Serra's Embrace, Plains, Enduring Sliver, Island, Altar of the Goyf, Urza's Mine, Plains ⏎ Nowa partia (seed 88). Powodzenia!
+  >> Zagraj ląd: Plains (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+  >> Zagraj: Enduring Sliver (koszt 1W)
+  [ROZGRYWKA]   • Enduring Sliver zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Balamb Garden, SeeD Academy (wchodzi zatapnięty)
+
+--- krok 6 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Serra's Embrace · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie, Czujność | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Altar of the Goyf · 5 · Kindred Artifact — Lhurgoyf · Gdy atakuje samotnie: liczba typów kart w grobach do końca tury. · twoje stwory Lhurgoyf: Zadeptywanie | Plains · Basic Land — Plains · T: dodaj 1 manę | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2
+  MOJE POLA: Enduring Sliver · 2 · Creature — Sliver · outlast · {2}, {T}: połóż licznik +1/+1 · 2/2 | Urza's Mine · Land — Urza's Mine · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Balamb Garden, SeeD Academy · Land — Town · {T}: dodaj 1 manę zieloną lub niebieską · {5}, {G}, {U}, {T}: transform (obróć kartę)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Serra's Embrace, Plains, Enduring Sliver, Island, Altar of the Goyf, Urza's Mine, Plains ⏎ Nowa partia (seed 88). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Wormfang Newt
+  >> Zagraj ląd: Island (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Zagraj: Wormfang Newt (koszt 1U)
+  [kreator many] Płatność 1U — tapuj źródła po jednympozostało 2 many · kolory do pokrycia: UTapnij: Urza's Mine (bezbarwna)Tapnij: Plain — źródła: 3
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Urza's Mine (bezbarwna)
+
+--- krok 9 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię  ||  Wormfang Newt — cel triggera (3 opcje)
+  RĘKA: Serra's Embrace · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie, Czujność | Altar of the Goyf · 5 · Kindred Artifact — Lhurgoyf · Gdy atakuje samotnie: liczba typów kart w grobach do końca tury. · twoje stwory Lhurgoyf: Zadeptywanie | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Enduring Sliver · 2 · Creature — Sliver · outlast · {2}, {T}: połóż licznik +1/+1 · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · choroba · 2/2 | Urza's Mine · Land — Urza's Mine · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Balamb Garden, SeeD Academy · Land — Town · {T}: dodaj 1 manę zieloną lub niebieską · {5}, {G}, {U}, {T}: transform (obróć kartę)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Serra's Embrace, Plains, Enduring Sliver, Island, Altar of the Goyf, Urza's Mine, Plains ⏎ Nowa partia (seed 88). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Wormfang Newt zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Wormfang Newt — wybierz cel triggera (wymagany)
+  >> Wormfang Newt — cel triggera (3 opcje)
+  [modal choice] Wormfang Newt — cel triggera Wormfang Newt — cel triggera: Urza's Mine (Ty)🔍 Podgląd karty Wormfang Newt — cel triggera: Plains (Ty)🔍 Podgląd karty Wormfang Newt — cel triggera: Island (Ty)🔍 Podgląd karty
+  [modal choice]   ▶ Wormfang Newt — cel triggera: Urza's Mine (Ty)
+  [modal choice]     Wormfang Newt — cel triggera: Plains (Ty)
+  [modal choice]     Wormfang Newt — cel triggera: Island (Ty)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Wormfang Newt — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Wormfang Newt — cel: Urza's Mine
+  [ROZGRYWKA]   • Ty: Urza's Mine — pole bitwy → wygnanie
+  [ROZGRYWKA]   • Wormfang Newt — trigger się rozstrzyga
+
+--- krok 12 | T. 5GraczGracz: 20 ż.Bot: 20 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Serra's Embrace · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie, Czujność | Altar of the Goyf · 5 · Kindred Artifact — Lhurgoyf · Gdy atakuje samotnie: liczba typów kart w grobach do końca tury. · twoje stwory Lhurgoyf: Zadeptywanie | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Enduring Sliver · 2 · Creature — Sliver · outlast · {2}, {T}: połóż licznik +1/+1 · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · choroba · 2/2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Balamb Garden, SeeD Academy · Land — Town · {T}: dodaj 1 manę zieloną lub niebieską · {5}, {G}, {U}, {T}: transform (obróć kartę)
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Serra's Embrace, Plains, Enduring Sliver, Island, Altar of the Goyf, Urza's Mine, Plains ⏎ Nowa partia (seed 88). Powodzenia!
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 18
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Gaelicat
+
+--- krok 15 | T. 7GraczGracz: 20 ż.Bot: 18 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Serra's Embrace · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie, Czujność | Altar of the Goyf · 5 · Kindred Artifact — Lhurgoyf · Gdy atakuje samotnie: liczba typów kart w grobach do końca tury. · twoje stwory Lhurgoyf: Zadeptywanie | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę
+  MOJE POLA: Enduring Sliver · 2 · Creature — Sliver · outlast · {2}, {T}: połóż licznik +1/+1 · 2/2 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Balamb Garden, SeeD Academy · Land — Town · {T}: dodaj 1 manę zieloną lub niebieską · {5}, {G}, {U}, {T}: transform (obróć kartę) | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Gaelicat · 3 · Creature — Cat · Latanie Czujność · +2/+0 · przy 2+ artefaktach · choroba · 1/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Serra's Embrace, Plains, Enduring Sliver, Island, Altar of the Goyf, Urza's Mine, Plains ⏎ Nowa partia (seed 88). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Gaelicat zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 7 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Plains
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Island
+  >> Aktywuj: Enduring Sliver (Ty) (koszt 2, T) — połóż licznik +1/+1
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Plains (W)Tapnij: Island (U)Tapnij: Island (U)Anuluj płatność — źródła: 3
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Island (U)
+
+--- krok 18 | T. 7GraczGracz: 20 ż.Bot: 18 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Serra's Embrace · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie, Czujność | Altar of the Goyf · 5 · Kindred Artifact — Lhurgoyf · Gdy atakuje samotnie: liczba typów kart w grobach do końca tury. · twoje stwory Lhurgoyf: Zadeptywanie | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  MOJE POLA: Enduring Sliver · 2 · Creature — Sliver · outlast · {2}, {T}: połóż licznik +1/+1 · 1x +1/+1 · 3/3 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Balamb Garden, SeeD Academy · Land — Town · {T}: dodaj 1 manę zieloną lub niebieską · {5}, {G}, {U}, {T}: transform (obróć kartę) | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Gaelicat · 3 · Creature — Cat · Latanie Czujność · +2/+0 · przy 2+ artefaktach · choroba · 1/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Serra's Embrace, Plains, Enduring Sliver, Island, Altar of the Goyf, Urza's Mine, Plains ⏎ Nowa partia (seed 88). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Ty: zdolność Enduring Sliver rozstrzygnięta
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA]   • Gaelicat blokuje Wormfang Newt
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Wormfang Newt zadaje 2 obrażenia (Gaelicat)
+  [ROZGRYWKA]   • Gaelicat zadaje 1 obrażenie (Wormfang Newt)
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+
+--- krok 21 | T. 8BotGracz: 20 ż.Bot: 18 ż.Główna 1Stos — Aerith Rescue Mission ---
+  STOS: Aerith Rescue Mission (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Serra's Embrace · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie, Czujność | Altar of the Goyf · 5 · Kindred Artifact — Lhurgoyf · Gdy atakuje samotnie: liczba typów kart w grobach do końca tury. · twoje stwory Lhurgoyf: Zadeptywanie | Plains · Basic Land — Plains · T: dodaj 1 manę ×2
+  MOJE POLA: Enduring Sliver · 2 · Creature — Sliver · outlast · {2}, {T}: połóż licznik +1/+1 · 1x +1/+1 · 3/3 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Balamb Garden, SeeD Academy · Land — Town · {T}: dodaj 1 manę zieloną lub niebieską · {5}, {G}, {U}, {T}: transform (obróć kartę) | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Gaelicat · 3 · Creature — Cat · Latanie Czujność · +2/+0 · przy 2+ artefaktach · 1/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Serra's Embrace, Plains, Enduring Sliver, Island, Altar of the Goyf, Urza's Mine, Plains ⏎ Nowa partia (seed 88). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Aerith Rescue Mission — tryb: Winda
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Hero wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Hero (1/1)
+  [ROZGRYWKA]   • Hero wchodzi na pole bitwy
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Hero (1/1)
+  [ROZGRYWKA]   • Hero wchodzi na pole bitwy
+  [ROZGRYWKA]   • Aerith Rescue Mission — tryb: Winda zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Gaelicat
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Gaelicat zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 19
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Static Net
+  >> Zagraj ląd: Plains (1 z 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Zagrywasz Plains
+
+--- krok 24 | T. 9GraczGracz: 19 ż.Bot: 18 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Aura: Serra's Embrace (6 opcji)  ||  Zagraj: Static Net (koszt 3W)  ||  Aktywuj: Enduring Sliver (Ty) (koszt 2, T) — połóż licznik +1/+1  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Serra's Embrace · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie, Czujność | Altar of the Goyf · 5 · Kindred Artifact — Lhurgoyf · Gdy atakuje samotnie: liczba typów kart w grobach do końca tury. · twoje stwory Lhurgoyf: Zadeptywanie | Plains · Basic Land — Plains · T: dodaj 1 manę | Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy.
+  MOJE POLA: Enduring Sliver · 2 · Creature — Sliver · outlast · {2}, {T}: połóż licznik +1/+1 · 1x +1/+1 · 3/3 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Balamb Garden, SeeD Academy · Land — Town · {T}: dodaj 1 manę zieloną lub niebieską · {5}, {G}, {U}, {T}: transform (obróć kartę) | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Gaelicat · 3 · Creature — Cat · Latanie Czujność · +2/+0 · przy 2+ artefaktach · 1/3 | Hero · 0 · Creature — Hero · choroba · 1/1 ×3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Serra's Embrace, Plains, Enduring Sliver, Island, Altar of the Goyf, Urza's Mine, Plains ⏎ Nowa partia (seed 88). Powodzenia!
+  >> Zagraj: Static Net (koszt 3W)
+  [ROZGRYWKA]   • Static Net zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Static Net — wybierz cel triggera (wymagany)
+  [ROZGRYWKA]   • Static Net — trigger (wejście na pole bitwy)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Static Net — cel triggera (4 opcje)
+  [modal choice] Static Net — cel triggera Static Net — cel triggera: Gaelicat (Nieprzyjaciel)🔍 Podgląd karty Static Net — cel triggera: Hero (Nieprzyjaciel) (1 z 3)🔍 Podgląd karty Static Net — cel triggera: Hero (Nieprzyjaciel) (2 z 3)🔍 Podgląd karty Static Net — cel triggera: Hero (Nieprzyjaciel) (3 z 3)🔍 Podgląd karty
+  [modal choice]     Static Net — cel triggera: Gaelicat (Nieprzyjaciel)
+  [modal choice]     Static Net — cel triggera: Hero (Nieprzyjaciel) (1 z 3)
+  [modal choice]   ▶ Static Net — cel triggera: Hero (Nieprzyjaciel) (2 z 3)
+  [modal choice]     Static Net — cel triggera: Hero (Nieprzyjaciel) (3 z 3)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Static Net — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Static Net — cel: Hero
+  [ROZGRYWKA]   • Nieprzyjaciel: Hero — pole bitwy → wygnanie
+  [ROZGRYWKA]   • Static Net — trigger się rozstrzyga
+  [ROZGRYWKA]   • token Hero przestaje istnieć (trafił do wygnania — token istnieje tylko na polu bitwy)
+
+--- krok 27 | T. 9GraczGracz: 21 ż.Bot: 18 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: ▶ Wznów grę bota  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Serra's Embrace · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie, Czujność | Altar of the Goyf · 5 · Kindred Artifact — Lhurgoyf · Gdy atakuje samotnie: liczba typów kart w grobach do końca tury. · twoje stwory Lhurgoyf: Zadeptywanie | Plains · Basic Land — Plains · T: dodaj 1 manę
+  MOJE POLA: Enduring Sliver · 2 · Creature — Sliver · outlast · {2}, {T}: połóż licznik +1/+1 · 1x +1/+1 · 3/3 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Powerstone · 0 · Artifact — Powerstone | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Balamb Garden, SeeD Academy · Land — Town · {T}: dodaj 1 manę zieloną lub niebieską · {5}, {G}, {U}, {T}: transform (obróć kartę) | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Gaelicat · 3 · Creature — Cat · Latanie Czujność · +2/+0 · przy 2+ artefaktach · 1/3 | Hero · 0 · Creature — Hero · choroba · 1/1 ×2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Serra's Embrace, Plains, Enduring Sliver, Island, Altar of the Goyf, Urza's Mine, Plains ⏎ Nowa partia (seed 88). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: życie 19 → 21
+  [ROZGRYWKA]   • Ty tworzysz token Powerstone
+  [ROZGRYWKA]   • Powerstone wchodzi na pole bitwy
+  [ROZGRYWKA]   • Static Net — trigger się rozstrzyga
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Call the Mountain Chocobo
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Bird (2/2)
+  [ROZGRYWKA]   • Bird wchodzi na pole bitwy
+  [ROZGRYWKA]   • Call the Mountain Chocobo zostaje rozstrzygnięty
+
+--- krok 30 | T. 10BotGracz: 21 ż.Bot: 18 ż.Główna 1Stos — Bird ---
+  STOS: Trigger: Bird (Landfall)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Serra's Embrace · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie, Czujność | Altar of the Goyf · 5 · Kindred Artifact — Lhurgoyf · Gdy atakuje samotnie: liczba typów kart w grobach do końca tury. · twoje stwory Lhurgoyf: Zadeptywanie | Plains · Basic Land — Plains · T: dodaj 1 manę
+  MOJE POLA: Enduring Sliver · 2 · Creature — Sliver · outlast · {2}, {T}: połóż licznik +1/+1 · 1x +1/+1 · 3/3 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Powerstone · 0 · Artifact — Powerstone | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Balamb Garden, SeeD Academy · Land — Town · {T}: dodaj 1 manę zieloną lub niebieską · {5}, {G}, {U}, {T}: transform (obróć kartę) | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Gaelicat · 3 · Creature — Cat · Latanie Czujność · +2/+0 · przy 2+ artefaktach · 1/3 | Hero · 0 · Creature — Hero · 1/1 ×2 | Bird · 0 · Creature — Bird · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Serra's Embrace, Plains, Enduring Sliver, Island, Altar of the Goyf, Urza's Mine, Plains ⏎ Nowa partia (seed 88). Powodzenia!
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA]   • Bird — trigger (Landfall)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Gaelicat
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Gaelicat zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 21 → 20
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Dragon Arch
+
+--- krok 33 | T. 11GraczGracz: 20 ż.Bot: 18 ż.Dobieranie ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Powerstone (Ty) —  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Serra's Embrace · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie, Czujność | Altar of the Goyf · 5 · Kindred Artifact — Lhurgoyf · Gdy atakuje samotnie: liczba typów kart w grobach do końca tury. · twoje stwory Lhurgoyf: Zadeptywanie | Plains · Basic Land — Plains · T: dodaj 1 manę | Dragon Arch · 5 · Artifact · {2}, {T}: wielokolorowy stwór z ręki na pole bitwy
+  MOJE POLA: Enduring Sliver · 2 · Creature — Sliver · outlast · {2}, {T}: połóż licznik +1/+1 · 1x +1/+1 · 3/3 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · 2/2 | Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Powerstone · 0 · Artifact — Powerstone | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Balamb Garden, SeeD Academy · Land — Town · {T}: dodaj 1 manę zieloną lub niebieską · {5}, {G}, {U}, {T}: transform (obróć kartę) | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Gaelicat · 3 · Creature — Cat · Latanie Czujność · +2/+0 · przy 2+ artefaktach · 1/3 | Hero · 0 · Creature — Hero · 1/1 ×2 | Bird · 0 · Creature — Bird · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Serra's Embrace, Plains, Enduring Sliver, Island, Altar of the Goyf, Urza's Mine, Plains ⏎ Nowa partia (seed 88). Powodzenia!
+  >> Aktywuj: Powerstone (Ty) —
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Powerstone — dodanie many do puli
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 1 z 2 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+
+--- krok 36 | T. 11GraczGracz: 20 ż.Bot: 18 ż.Walka / Koniec walki ---
+  STOS: Stos pusty
+  AKCJE: Poddaj partię  ||  Wybierz: Rozdzielenie obrażeń bojowych (1 opcja)
+  RĘKA: Serra's Embrace · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie, Czujność | Altar of the Goyf · 5 · Kindred Artifact — Lhurgoyf · Gdy atakuje samotnie: liczba typów kart w grobach do końca tury. · twoje stwory Lhurgoyf: Zadeptywanie | Plains · Basic Land — Plains · T: dodaj 1 manę | Dragon Arch · 5 · Artifact · {2}, {T}: wielokolorowy stwór z ręki na pole bitwy
+  MOJE POLA: Enduring Sliver · 2 · Creature — Sliver · outlast · {2}, {T}: połóż licznik +1/+1 · 1x +1/+1 · 3/3 | Wormfang Newt · 2 · Creature — Salamander · Gdy wejdzie na pole bitwy: wygnij własny ląd. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. · atakuje — blokują: Gaelicat, Hero · 2/2 | Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Powerstone · 0 · Artifact — Powerstone | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Balamb Garden, SeeD Academy · Land — Town · {T}: dodaj 1 manę zieloną lub niebieską · {5}, {G}, {U}, {T}: transform (obróć kartę) | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Gaelicat · 3 · Creature — Cat · Latanie Czujność · +2/+0 · przy 2+ artefaktach · blokuje: Wormfang Newt · 1/3 | Hero · 0 · Creature — Hero · blokuje: Wormfang Newt · 1/1 | Hero · 0 · Creature — Hero · 1/1 | Bird · 0 · Creature — Bird · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Serra's Embrace, Plains, Enduring Sliver, Island, Altar of the Goyf, Urza's Mine, Plains ⏎ Nowa partia (seed 88). Powodzenia!
+  [ROZGRYWKA]   • Atak: Wormfang Newt
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Gaelicat i Hero blokują Wormfang Newt
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Rozdzielasz obrażenia bojowe (trample albo wielu blokerów)
+  >> Wybierz: Rozdzielenie obrażeń bojowych (1 opcja)
+  [modal choice] Rozdziel obrażenia bojowe — przydziel moc atakujących blokującym:Wormfang Newt (moc 2)Gaelicat (wytrz. 3, śmiertelne 3)−10+1↑↓Hero (wytrz. 1, śmiertelne 1)−10+1↑↓Zatwierdź przydziałDomyślnie (lethal-first)Zamknij (dokończysz później)
+  [modal choice]     Zatwierdź przydział
+  [modal choice]   ▶ Domyślnie (lethal-first)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Ty: Urza's Mine — wygnanie → pole bitwy
+  [ROZGRYWKA]   • Urza's Mine przechodzi pod kontrolę gracza Ty
+  [ROZGRYWKA]   • Wormfang Newt — trigger się rozstrzyga
+
+--- krok 39 | T. 11GraczGracz: 20 ż.Bot: 18 ż.Główna 2 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj ląd: Plains  ||  Aura: Serra's Embrace (5 opcji)  ||  Zagraj: Altar of the Goyf (koszt 5)  ||  Zagraj: Dragon Arch (koszt 5)  ||  Aktywuj: Enduring Sliver (Ty) (koszt 2, T) — połóż licznik +1/+1  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Serra's Embrace · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie, Czujność | Altar of the Goyf · 5 · Kindred Artifact — Lhurgoyf · Gdy atakuje samotnie: liczba typów kart w grobach do końca tury. · twoje stwory Lhurgoyf: Zadeptywanie | Plains · Basic Land — Plains · T: dodaj 1 manę | Dragon Arch · 5 · Artifact · {2}, {T}: wielokolorowy stwór z ręki na pole bitwy
+  MOJE POLA: Enduring Sliver · 2 · Creature — Sliver · outlast · {2}, {T}: połóż licznik +1/+1 · 1x +1/+1 · 3/3 | Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Powerstone · 0 · Artifact — Powerstone | Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Urza's Mine · Land — Urza's Mine · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Balamb Garden, SeeD Academy · Land — Town · {T}: dodaj 1 manę zieloną lub niebieską · {5}, {G}, {U}, {T}: transform (obróć kartę) | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Gaelicat · 3 · Creature — Cat · Latanie Czujność · +2/+0 · przy 2+ artefaktach · −2 · 1/3 | Hero · 0 · Creature — Hero · 1/1 ×2 | Bird · 0 · Creature — Bird · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Serra's Embrace, Plains, Enduring Sliver, Island, Altar of the Goyf, Urza's Mine, Plains ⏎ Nowa partia (seed 88). Powodzenia!
+  >> Zagraj: Dragon Arch (koszt 5)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 2
+  [ROZGRYWKA]   • Zagrywasz Dragon Arch
+  [ROZGRYWKA]   • Dragon Arch wchodzi na pole bitwy
+  [ROZGRYWKA]   • Dragon Arch zostaje rozstrzygnięty
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Plains
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Tellah, Great Sage
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Gaelicat zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 19
+  [ROZGRYWKA]   • Tura 13 — Ty
+
+--- krok 42 | T. 13GraczGracz: 19 ż.Bot: 18 ż.Upkeep ---
+  STOS: Stos pusty
+  AKCJE: Aktywuj: Powerstone (Ty) —  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Serra's Embrace · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie, Czujność | Altar of the Goyf · 5 · Kindred Artifact — Lhurgoyf · Gdy atakuje samotnie: liczba typów kart w grobach do końca tury. · twoje stwory Lhurgoyf: Zadeptywanie
+  MOJE POLA: Enduring Sliver · 2 · Creature — Sliver · outlast · {2}, {T}: połóż licznik +1/+1 · 1x +1/+1 · 3/3 | Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Powerstone · 0 · Artifact — Powerstone | Dragon Arch · 5 · Artifact · {2}, {T}: wielokolorowy stwór z ręki na pole bitwy | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Urza's Mine · Land — Urza's Mine · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Balamb Garden, SeeD Academy · Land — Town · {T}: dodaj 1 manę zieloną lub niebieską · {5}, {G}, {U}, {T}: transform (obróć kartę) | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Gaelicat · 3 · Creature — Cat · Latanie Czujność · +2/+0 · przy 2+ artefaktach · 1/3 | Hero · 0 · Creature — Hero · 1/1 ×2 | Bird · 0 · Creature — Bird · 2/2 | Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · choroba · 3/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Serra's Embrace, Plains, Enduring Sliver, Island, Altar of the Goyf, Urza's Mine, Plains ⏎ Nowa partia (seed 88). Powodzenia!
+  >> Aktywuj: Powerstone (Ty) —
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Powerstone — dodanie many do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Academy Journeymage
+  >> Aktywuj: Enduring Sliver (Ty) (koszt 2, T) — połóż licznik +1/+1
+  [kreator many] Płatność 2 — tapuj źródła po jednympozostało 2 manyTapnij: Plains (W)Tapnij: Island (U)Tapnij: Island (U)Tapnij: Plains  — źródła: 6
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Urza's Mine (bezbarwna)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Ty: zdolność Enduring Sliver rozstrzygnięta
+
+--- krok 45 | T. 13GraczGracz: 19 ż.Bot: 18 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Aura: Serra's Embrace (6 opcji)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Serra's Embrace · 4 · Enchantment — Aura · stwór: +2/+2 · stwór ma: Latanie, Czujność | Altar of the Goyf · 5 · Kindred Artifact — Lhurgoyf · Gdy atakuje samotnie: liczba typów kart w grobach do końca tury. · twoje stwory Lhurgoyf: Zadeptywanie | Academy Journeymage · 5 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · 3/2
+  MOJE POLA: Enduring Sliver · 2 · Creature — Sliver · outlast · {2}, {T}: połóż licznik +1/+1 · 2x +1/+1 · 4/4 | Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Powerstone · 0 · Artifact — Powerstone | Dragon Arch · 5 · Artifact · {2}, {T}: wielokolorowy stwór z ręki na pole bitwy | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Urza's Mine · Land — Urza's Mine · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×2 | Balamb Garden, SeeD Academy · Land — Town · {T}: dodaj 1 manę zieloną lub niebieską · {5}, {G}, {U}, {T}: transform (obróć kartę) | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Gaelicat · 3 · Creature — Cat · Latanie Czujność · +2/+0 · przy 2+ artefaktach · 1/3 | Hero · 0 · Creature — Hero · 1/1 ×2 | Bird · 0 · Creature — Bird · 2/2 | Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · choroba · 3/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Serra's Embrace, Plains, Enduring Sliver, Island, Altar of the Goyf, Urza's Mine, Plains ⏎ Nowa partia (seed 88). Powodzenia!
+  >> Aura: Serra's Embrace (6 opcji)
+  [modal choice] Aura: Serra's Embrace Zagraj aurę: Serra's Embrace (koszt 2WW) → zaczaruj Enduring Sliver (Ty)🔍 Podgląd karty Zagraj aurę: Serra's Embrace (koszt 2WW) → zaczaruj Gaelicat (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Serra's Embrace (koszt 2WW) → zaczaruj Hero (Nieprzyjaciel) (1 z 2)🔍 Podgląd karty Zagraj aurę: Serra's Embrace (koszt 2WW) → zaczaruj Hero (Nieprzyjaciel) (2 z 2)🔍 Podgląd karty Zagraj aurę: Serra's Embrace (koszt 2WW) → zaczaruj Bird (Nieprzyjaciel)🔍 Podgląd karty Zagraj aurę: Serra's Embrace (koszt 2WW) → zaczaruj Tellah, Great Sage (Nieprzyjaciel)🔍 Podgląd karty
+  [modal choice]     Zagraj aurę: Serra's Embrace (koszt 2WW) → zaczaruj Enduring Sliver (Ty)
+  [modal choice]     Zagraj aurę: Serra's Embrace (koszt 2WW) → zaczaruj Gaelicat (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Serra's Embrace (koszt 2WW) → zaczaruj Hero (Nieprzyjaciel) (1 z 2)
+  [modal choice]     Zagraj aurę: Serra's Embrace (koszt 2WW) → zaczaruj Hero (Nieprzyjaciel) (2 z 2)
+  [modal choice]   ▶ Zagraj aurę: Serra's Embrace (koszt 2WW) → zaczaruj Bird (Nieprzyjaciel)
+  [modal choice]     Zagraj aurę: Serra's Embrace (koszt 2WW) → zaczaruj Tellah, Great Sage (Nieprzyjaciel)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rzucasz Serra's Embrace → cel: Bird
+  [ROZGRYWKA]   • Serra's Embrace zaczarowuje Bird
+  [ROZGRYWKA]   • Serra's Embrace wchodzi na pole bitwy
+  [ROZGRYWKA]   • Bird — trigger (Landfall)
+
+--- krok 48 | T. 14BotGracz: 19 ż.Bot: 18 ż.Główna 1Stos — Tellah, Great Sage ---
+  STOS: Call the Mountain Chocobo (rzuca: Nieprzyjaciel) | Trigger: Tellah, Great Sage (rzucenie czaru niebędącego stworem)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Altar of the Goyf · 5 · Kindred Artifact — Lhurgoyf · Gdy atakuje samotnie: liczba typów kart w grobach do końca tury. · twoje stwory Lhurgoyf: Zadeptywanie | Academy Journeymage · 5 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · 3/2
+  MOJE POLA: Enduring Sliver · 2 · Creature — Sliver · outlast · {2}, {T}: połóż licznik +1/+1 · 2x +1/+1 · 4/4 | Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Powerstone · 0 · Artifact — Powerstone | Dragon Arch · 5 · Artifact · {2}, {T}: wielokolorowy stwór z ręki na pole bitwy | Serra's Embrace · 4 · Enchantment Aura · stwór: +2/+2 · stwór ma: Latanie, Czujność · aura → Bird | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Urza's Mine · Land — Urza's Mine · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Balamb Garden, SeeD Academy · Land — Town · {T}: dodaj 1 manę zieloną lub niebieską · {5}, {G}, {U}, {T}: transform (obróć kartę) | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Gaelicat · 3 · Creature — Cat · Latanie Czujność · +2/+0 · przy 2+ artefaktach · 1/3 | Hero · 0 · Creature — Hero · 1/1 ×2 | Bird · 0 · Creature — Bird · Latanie · Czujność · +1/0 · +2/+2 · zaczarowana: Serra's Embrace · 5/4 | Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Serra's Embrace, Plains, Enduring Sliver, Island, Altar of the Goyf, Urza's Mine, Plains ⏎ Nowa partia (seed 88). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Bird dostaje +1/+0
+  [ROZGRYWKA]   • Bird — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Call the Mountain Chocobo
+  [ROZGRYWKA]   • Tellah, Great Sage — trigger (rzucenie czaru niebędącego stworem)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Tellah, Great Sage — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Bird (2/2)
+  [ROZGRYWKA]   • Bird wchodzi na pole bitwy
+  [ROZGRYWKA]   • Call the Mountain Chocobo zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Gaelicat, Hero, Hero, Bird, Tellah, Great Sage
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Gaelicat zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 19 → 18
+  [ROZGRYWKA]   • Hero zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 17
+  [ROZGRYWKA]   • Hero zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 16
+  [ROZGRYWKA]   • Bird zadaje 5 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 11
+  [ROZGRYWKA]   • Tellah, Great Sage zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 8
+  [ROZGRYWKA]   • Tura 15 — Ty
+  >> Aktywuj: Powerstone (Ty) —
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Aktywujesz zdolność: Powerstone — dodanie many do puli
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Dobierasz: Survivor of Korlis
+
+--- krok 51 | T. 15GraczGracz: 8 ż.Bot: 18 ż.Główna 1 ---
+  STOS: Stos pusty
+  AKCJE: Zagraj: Altar of the Goyf (koszt 5)  ||  Zagraj: Academy Journeymage (koszt 4U)  ||  Zagraj: Survivor of Korlis (koszt W)  ||  Aktywuj: Enduring Sliver (Ty) (koszt 2, T) — połóż licznik +1/+1  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Altar of the Goyf · 5 · Kindred Artifact — Lhurgoyf · Gdy atakuje samotnie: liczba typów kart w grobach do końca tury. · twoje stwory Lhurgoyf: Zadeptywanie | Academy Journeymage · 5 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · 3/2 | Survivor of Korlis · 1 · Creature — Human Soldier · Pierwsze uderzenie · {1}, {W}, wygnaj tę kartę z grobu: scry 2 · 1/1
+  MOJE POLA: Enduring Sliver · 2 · Creature — Sliver · outlast · {2}, {T}: połóż licznik +1/+1 · 2x +1/+1 · 4/4 | Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Powerstone · 0 · Artifact — Powerstone | Dragon Arch · 5 · Artifact · {2}, {T}: wielokolorowy stwór z ręki na pole bitwy | Serra's Embrace · 4 · Enchantment Aura · stwór: +2/+2 · stwór ma: Latanie, Czujność · aura → Bird | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Urza's Mine · Land — Urza's Mine · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Balamb Garden, SeeD Academy · Land — Town · {T}: dodaj 1 manę zieloną lub niebieską · {5}, {G}, {U}, {T}: transform (obróć kartę) | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Gaelicat · 3 · Creature — Cat · Latanie Czujność · +2/+0 · przy 2+ artefaktach · 1/3 | Hero · 0 · Creature — Hero · 1/1 ×2 | Bird · 0 · Creature — Bird · Latanie · Czujność · +2/+2 · zaczarowana: Serra's Embrace · 4/4 | Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3 | Hero · 0 · Creature — Hero · choroba · 1/1 | Bird · 0 · Creature — Bird · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Serra's Embrace, Plains, Enduring Sliver, Island, Altar of the Goyf, Urza's Mine, Plains ⏎ Nowa partia (seed 88). Powodzenia!
+  >> Zagraj: Altar of the Goyf (koszt 5)
+  [kreator many] Płatność 5 — tapuj źródła po jednympozostało 5 manyTapnij: Plains (W)Tapnij: Island (U)Tapnij: Island (U)Tapnij: Plains  — źródła: 6
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Island (U)
+  [kreator many] Tapnij: Plains (W)
+  [kreator many] Tapnij: Urza's Mine (bezbarwna)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Altar of the Goyf zostaje rozstrzygnięty
+  >> Zagraj: Survivor of Korlis (koszt W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Zagrywasz Survivor of Korlis
+  [ROZGRYWKA]   • Survivor of Korlis wchodzi na pole bitwy
+  [ROZGRYWKA]   • Survivor of Korlis zostaje rozstrzygnięty
+
+--- krok 54 | T. 15GraczGracz: 8 ż.Bot: 18 ż.Walka / Atak ---
+  STOS: Stos pusty
+  AKCJE: Wybierz: Deklaracja atakujących (2 opcje)  ||  Dalej (pass)  ||  Poddaj partię
+  RĘKA: Academy Journeymage · 5 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · 3/2
+  MOJE POLA: Enduring Sliver · 2 · Creature — Sliver · outlast · {2}, {T}: połóż licznik +1/+1 · 2x +1/+1 · 4/4 | Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Powerstone · 0 · Artifact — Powerstone | Dragon Arch · 5 · Artifact · {2}, {T}: wielokolorowy stwór z ręki na pole bitwy | Serra's Embrace · 4 · Enchantment Aura · stwór: +2/+2 · stwór ma: Latanie, Czujność · aura → Bird | Altar of the Goyf · 5 · Kindred Artifact — Lhurgoyf · Gdy atakuje samotnie: liczba typów kart w grobach do końca tury. · twoje stwory Lhurgoyf: Zadeptywanie | Survivor of Korlis · 1 · Creature — Human Soldier · Pierwsze uderzenie · {1}, {W}, wygnaj tę kartę z grobu: scry 2 · choroba · 1/1 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Urza's Mine · Land — Urza's Mine · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Balamb Garden, SeeD Academy · Land — Town · {T}: dodaj 1 manę zieloną lub niebieską · {5}, {G}, {U}, {T}: transform (obróć kartę) | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Gaelicat · 3 · Creature — Cat · Latanie Czujność · +2/+0 · przy 2+ artefaktach · 1/3 | Hero · 0 · Creature — Hero · 1/1 ×2 | Bird · 0 · Creature — Bird · Latanie · Czujność · +2/+2 · zaczarowana: Serra's Embrace · 4/4 | Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3 | Hero · 0 · Creature — Hero · choroba · 1/1 | Bird · 0 · Creature — Bird · choroba · 2/2
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Serra's Embrace, Plains, Enduring Sliver, Island, Altar of the Goyf, Urza's Mine, Plains ⏎ Nowa partia (seed 88). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Altar of the Goyf — trigger (samotny atak)
+  [ROZGRYWKA]   • Altar of the Goyf — trigger bez efektu (nie było czego wykonać)
+  [ROZGRYWKA]   • Bird blokuje Enduring Sliver
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Enduring Sliver zadaje 4 obrażenia (Bird)
+  [ROZGRYWKA]   • Bird zadaje 4 obrażenia (Enduring Sliver)
+  [ROZGRYWKA]   • Enduring Sliver ginie
+  [ROZGRYWKA]   • Bird ginie
+  [ROZGRYWKA]   • token Bird przestaje istnieć (trafił do grobu — token istnieje tylko na polu bitwy)
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Instant Ramen
+  [ROZGRYWKA]   • Tellah, Great Sage — trigger (rzucenie czaru niebędącego stworem)
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Hero (1/1)
+  [ROZGRYWKA]   • Hero wchodzi na pole bitwy
+  [ROZGRYWKA]   • Tellah, Great Sage — trigger się rozstrzyga
+  [ROZGRYWKA]   • Instant Ramen wchodzi na pole bitwy
+  [ROZGRYWKA]   • Instant Ramen zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Instant Ramen — trigger (wejście na pole bitwy)
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Instant Ramen — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA]   • Bird — trigger (Landfall)
+
+--- krok 57 | T. 16BotGracz: 8 ż.Bot: 18 ż.Główna 1Stos — Cloudbound Moogle ---
+  STOS: Cloudbound Moogle (rzuca: Nieprzyjaciel)
+  AKCJE: ▶ Wznów grę bota  ||  Poddaj partię
+  RĘKA: Academy Journeymage · 5 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · 3/2
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Powerstone · 0 · Artifact — Powerstone | Dragon Arch · 5 · Artifact · {2}, {T}: wielokolorowy stwór z ręki na pole bitwy | Altar of the Goyf · 5 · Kindred Artifact — Lhurgoyf · Gdy atakuje samotnie: liczba typów kart w grobach do końca tury. · twoje stwory Lhurgoyf: Zadeptywanie | Survivor of Korlis · 1 · Creature — Human Soldier · Pierwsze uderzenie · {1}, {W}, wygnaj tę kartę z grobu: scry 2 · choroba · 1/1 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Urza's Mine · Land — Urza's Mine · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Balamb Garden, SeeD Academy · Land — Town · {T}: dodaj 1 manę zieloną lub niebieską · {5}, {G}, {U}, {T}: transform (obróć kartę) | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Gaelicat · 3 · Creature — Cat · Latanie Czujność · +2/+0 · przy 2+ artefaktach · 1/3 | Hero · 0 · Creature — Hero · 1/1 ×3 | Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 3/3 | Bird · 0 · Creature — Bird · +1/0 · 3/2 | Hero · 0 · Creature — Hero · choroba · 1/1 | Instant Ramen · 2 · Artifact — Food · Flash (błysk) · Gdy wejdzie na pole bitwy: dobierz 1 kartę. · {2}, {T}, poświęć: zyskaj 3 życia
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Serra's Embrace, Plains, Enduring Sliver, Island, Altar of the Goyf, Urza's Mine, Plains ⏎ Nowa partia (seed 88). Powodzenia!
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Bird dostaje +1/+0
+  [ROZGRYWKA]   • Bird — trigger się rozstrzyga
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Cloudbound Moogle
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA]   • Cloudbound Moogle — cel: Tellah, Great Sage
+  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tellah, Great Sage dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Cloudbound Moogle — trigger się rozstrzyga
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Gaelicat, Hero, Tellah, Great Sage, Hero, Bird
+
+--- krok 60 | T. 16BotGracz: 8 ż.Bot: 18 ż.Walka / Blok ---
+  STOS: Stos pusty
+  AKCJE: Dalej (pass)  ||  Poddaj partię  ||  Wybierz: Deklaracja blokujących (5 opcji)
+  RĘKA: Academy Journeymage · 5 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · 3/2
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Powerstone · 0 · Artifact — Powerstone | Dragon Arch · 5 · Artifact · {2}, {T}: wielokolorowy stwór z ręki na pole bitwy | Altar of the Goyf · 5 · Kindred Artifact — Lhurgoyf · Gdy atakuje samotnie: liczba typów kart w grobach do końca tury. · twoje stwory Lhurgoyf: Zadeptywanie | Survivor of Korlis · 1 · Creature — Human Soldier · Pierwsze uderzenie · {1}, {W}, wygnaj tę kartę z grobu: scry 2 · choroba · 1/1 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Urza's Mine · Land — Urza's Mine · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Balamb Garden, SeeD Academy · Land — Town · {T}: dodaj 1 manę zieloną lub niebieską · {5}, {G}, {U}, {T}: transform (obróć kartę) | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Gaelicat · 3 · Creature — Cat · Latanie Czujność · +2/+0 · przy 2+ artefaktach · atakuje — niezablokowany · 1/3 | Hero · 0 · Creature — Hero · 1/1 | Hero · 0 · Creature — Hero · atakuje — niezablokowany · 1/1 ×2 | Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · atakuje — niezablokowany · 1x +1/+1 · 4/4 | Bird · 0 · Creature — Bird · +1/0 · atakuje — niezablokowany · 3/2 | Hero · 0 · Creature — Hero · choroba · 1/1 | Instant Ramen · 2 · Artifact — Food · Flash (błysk) · Gdy wejdzie na pole bitwy: dobierz 1 kartę. · {2}, {T}, poświęć: zyskaj 3 życia | Cloudbound Moogle · 5 · Creature — Moogle · Latanie · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · Cycling {2} → szukaj: Plains · choroba · 2/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Serra's Embrace, Plains, Enduring Sliver, Island, Altar of the Goyf, Urza's Mine, Plains ⏎ Nowa partia (seed 88). Powodzenia!
+  >> Wybierz: Deklaracja blokujących (5 opcji)
+  [combat wizard] blokuję 1 stworami: Survivor of Korlis (1/1)
+  [combat wizard] Zatwierdź bloki
+== KONIEC PARTII == Koniec partii — wygrywa Bot
+
+--- krok 62 | Koniec partii — wygrywa Bot ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Academy Journeymage · 5 · Creature — Human Wizard · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · 3/2
+  MOJE POLA: Static Net · 4 · Enchantment · Gdy wejdzie na pole bitwy: wygnij nie-lądowy permanent do odejścia. · Gdy wejdzie na pole bitwy: zyskaj 2 życia, stwórz token Powerstone. · Gdy ta karta opuszcza pole bitwy: wygnane wraca na pole bitwy. | Powerstone · 0 · Artifact — Powerstone | Dragon Arch · 5 · Artifact · {2}, {T}: wielokolorowy stwór z ręki na pole bitwy | Altar of the Goyf · 5 · Kindred Artifact — Lhurgoyf · Gdy atakuje samotnie: liczba typów kart w grobach do końca tury. · twoje stwory Lhurgoyf: Zadeptywanie | Survivor of Korlis · 1 · Creature — Human Soldier · Pierwsze uderzenie · {1}, {W}, wygnaj tę kartę z grobu: scry 2 · choroba · 1/1 | Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Island · Basic Land — Island · T: dodaj 1 manę ×2 | Urza's Mine · Land — Urza's Mine · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę ×3 | Balamb Garden, SeeD Academy · Land — Town · {T}: dodaj 1 manę zieloną lub niebieską · {5}, {G}, {U}, {T}: transform (obróć kartę) | Mountain · Basic Land — Mountain · T: dodaj 1 manę ×2 | Island · Basic Land — Island · T: dodaj 1 manę | Gaelicat · 3 · Creature — Cat · Latanie Czujność · +2/+0 · przy 2+ artefaktach · 1/3 | Hero · 0 · Creature — Hero · 1/1 ×2 | Tellah, Great Sage · 5 · Legendary Creature — Human Wizard · Gdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana). · 1x +1/+1 · 4/4 | Bird · 0 · Creature — Bird · +1/0 · 3/2 | Hero · 0 · Creature — Hero · choroba · 1/1 | Instant Ramen · 2 · Artifact — Food · Flash (błysk) · Gdy wejdzie na pole bitwy: dobierz 1 kartę. · {2}, {T}, poświęć: zyskaj 3 życia | Cloudbound Moogle · 5 · Creature — Moogle · Latanie · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · Cycling {2} → szukaj: Plains · choroba · 2/3
+  LOG: Obie ręce zatrzymane — gra się zaczyna ⏎ Nieprzyjaciel zatrzymuje rękę otwarcia ⏎ Zatrzymujesz rękę otwarcia ⏎ Ręka startowa Nieprzyjaciel: 7 kart ⏎ Ręka startowa Ty: Serra's Embrace, Plains, Enduring Sliver, Island, Altar of the Goyf, Urza's Mine, Plains ⏎ Nowa partia (seed 88). Powodzenia!
+
+== POKRYCIE UI == akcje widziane: 22, kliknięte: 26, modale: 5, sondy noop: 73 (panel 53, modal 20)
+== DETEKTORY: brak zgłoszeń ==
