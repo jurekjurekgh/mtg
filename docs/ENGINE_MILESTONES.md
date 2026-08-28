@@ -3044,7 +3044,16 @@ przed kodowaniem (ADR 0010 §2a).
 obrażenia bojowe zadawane kontrolerowi (Oracle nie obejmuje innych źródeł);
 bloodrush nie ma wariantu „z pola bitwy\" (karta działa tylko z ręki).
 
-**Wynik:** `npm test` **3654/3654** (+29 w `test/batch51-kart.test.js`), build
-**55 modułów / 2859.7 kB**. Bez zmian w kontrolerze bota poza wyceną efektu
-(`buff_creature_until_end_of_turn`) — pełny benchmark B0 niewymagany; złoty
-fixture bota zregenerowany, progi win-rate bez zmian.
+**Naprawa znaleziona pełną macierzą:** kolizja dwóch pendingów tego samego
+gracza (`pendingReboundCast` + `pendingUndercityRoute`) — `legalCommands`
+oferowało komendę, którą bramka `execute` odrzucała (`rebound_unresolved`).
+Gałąź ofert reboundu stała PO undercity, choć jej bramka jest PRZED; przywrócona
+zgodność (reguła przy `firstPendingDecisionPlayerId`, dopisek do L48).
+
+**Wycena bota:** wspólny mianownik efektów pump (`TEMPORARY_PUMP_EFFECTS` +
+`temporaryPumpOf`) zamiast łańcucha nazw typów; przy okazji naprawiony debuff
+Downwind Ambushera (klasa M202/G) i TDZ przy premii za odkręcenie celu.
+
+**Wynik:** `npm test` **3661/3661** (+36 testów), build **55 modułów /
+2861.8 kB**, `npm run test:slow` (próbka B0) **9/9**. Złoty fixture bota
+zregenerowany, progi win-rate bez zmian.

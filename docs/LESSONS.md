@@ -2081,6 +2081,20 @@ pól łapie tylko te, o których ktoś pamiętał.
 
 **Sygnał:** gdy dodajesz nowy deskryptor ochrony lub nowy `resolve_*`, uruchom `node tools/benchmark.mjs --seeds 2` — jeśli bot rzuca `illegal_spell` lub `nie znalazł ruchu`, oferta jest niekompletna.
 
+**Dopisek (M254, 2026-08-28) — ten sam filtr to za mało: musi zgadzać się też
+KOLEJNOŚĆ bramek.** Pełna macierz benchmarku (`--full`) kończyła się wyjątkiem
+„Bot wybrał nielegalną komendę: rebound_unresolved": gracz miał naraz
+`pendingReboundCast` (Ojutai's Breath, CR 702.97) i `pendingUndercityRoute`
+(M190/B). `execute` ma bramkę reboundu **przed** undercity, a `legalCommands`
+gałąź reboundu **po** undercity — więc silnik oferował `resolve_undercity_route`
+i sam go odrzucał (bramka reboundu odrzuca wszystko poza `resolve_rebound_cast`).
+Żadna z kart nie była nowa: zmiana talii tylko sprawiła, że kolizja wyszła
+w próbce. Reguła dopisana przy `firstPendingDecisionPlayerId` brzmi teraz
+wprost: **pierwszy właściciel decyzji = pierwsza bramka `execute` = pierwsza
+gałąź ofert** — przy każdym nowym `pending*` dopisz go w tych trzech miejscach
+w tej samej kolejności (`test/m254-kolejnosc-pendingow.test.js` czerwieni
+rozjazd).
+
 ## L49 (2026-08-18) — Plik startowy musi kazać CZYTAĆ ADR-y zanim agent odezwie się w czacie
 
 **Objaw:** nowa sesja, zamiast wykonać ADR 0020 (PR → audyt poprzedniego PR →

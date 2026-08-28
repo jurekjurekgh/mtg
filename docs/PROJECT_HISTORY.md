@@ -78,9 +78,30 @@ bez zmian: żaden plan nie przekroczył progu awansu.
 strażniki zgłaszają je osobno, więc dopisuje się je od razu (krok 4b w
 `docs/cards/HOW_TO_ADD_CARD.md`).
 
-**Stan:** `npm test` **3654/3654** (było 3625 przed batchem, +29 w
-`test/batch51-kart.test.js`), build **55 modułów / 2859.7 kB**, katalog
-**478 kart** (436 z artId), słownik kolekcji **579 pozycji**.
+**Review po komitach (zlecenie właściciela): wspólny mianownik efektów pump.**
+Zamiast łańcucha `type === 'pump' || type === '...'` powstała tabela
+`TEMPORARY_PUMP_EFFECTS` + `temporaryPumpOf` (liczby z istniejącego
+`pumpDelta`). Przy okazji wyszły dwa błędy: (1) `buff_creature_until_end_of_turn`
+trafił do `FRIENDLY_TARGET_EFFECTS` po NAZWIE TYPU, a ten sam typ niesie debuff
+**Downwind Ambushera** — bot dostawał karę „wzmacniasz przeciwnika" za
+osłabienie go (klasa M202/G na nowym typie); (2) premia za odkręcenie celu
+czytała `recipient` przed deklaracją (`const`, TDZ).
+
+**Znalezisko z pełnej macierzy (M254) — naprawione.** `benchmark --full`
+kończył się wyjątkiem „Bot wybrał nielegalną komendę: rebound_unresolved":
+gracz miał naraz `pendingReboundCast` i `pendingUndercityRoute`, a `legalCommands`
+oferowało `resolve_undercity_route`, które bramka reboundu w `execute` odrzuca.
+Gałąź ofert reboundu stała PO undercity, choć jej bramka jest PRZED — naprawa
+przywraca regułę „pierwszy właściciel decyzji = pierwsza bramka execute =
+pierwsza gałąź ofert" (dopisek do L48). Batch 51 nie dodał żadnej z tych kart;
+nowe karty w `tarkir-wur` tylko sprawiły, że kolizja wyszła w próbce.
+Weryfikacja mutacyjna: przesunięcie gałęzi czerwieni 2 z 3 testów.
+
+**Stan:** `npm test` **3661/3661** (było 3625 przed batchem, +36: 29 w
+`test/batch51-kart.test.js`, 4 w `test/m179-inwentaryzacja.test.js` E3–E6,
+3 w `test/m254-kolejnosc-pendingow.test.js`), build **55 modułów / 2861.8 kB**,
+`npm run test:slow` (próbka B0) **9/9**, katalog **478 kart** (436 z artId),
+słownik kolekcji **579 pozycji**.
 
 ## Sesja 2026-08-28 — arena/01a049c7: audyt PR #86, strażnik L16 (A1), porządki w `tmp-audyt-*` (PR #87)
 
