@@ -18,24 +18,23 @@ ADR 0002 (brak przypadków po nazwie/ID karty w core), L48 (oferta = walidacja),
 L41 (jedno źródło prawdy), L16 (fingerprint obejmuje decyzje wstrzymujące).
 
 ### Etapy
-- [ ] Przegląd `heuristic-bot.js` (M239 trample, M241 escape-exile, M243 activatable,
+- [x] Przegląd `heuristic-bot.js` (M239 trample, M241 escape-exile, M243 activatable,
       M244 equip, M245 attack-subsets, M247 pure-land, M248 fizzle).
-- [ ] Przegląd `heuristic-params.js` (usunięte martwe damageCreature*, dodany removalPureLandPenalty).
-- [ ] Przegląd `engine/game-state.js` (pendingEscapeExile, cantAttackStatic, activatableAbilities, widok).
-- [ ] Przegląd `engine/spells.js` (dwukrokowy Escape: castEscape → pending → resolveEscapeExile).
-- [ ] Przegląd `engine/effects.js`, `engine/triggers.js` (M240 sourceCardId, M242 auto-cel),
+- [x] Przegląd `heuristic-params.js` (usunięte martwe damageCreature*, dodany removalPureLandPenalty).
+- [x] Przegląd `engine/game-state.js` (pendingEscapeExile, cantAttackStatic, activatableAbilities, widok).
+- [x] Przegląd `engine/spells.js` (dwukrokowy Escape: castEscape → pending → resolveEscapeExile).
+- [x] Przegląd `engine/effects.js`, `engine/triggers.js` (M240 sourceCardId, M242 auto-cel),
       `engine/combat.js` (staticAttackPrevented, M245 podzbiory).
-- [ ] Przegląd `protocol/types.js`, `table/*`, `tools/*`.
-- [ ] Weryfikacja RED→GREEN wybranych testów mutacyjnie (L61).
-- [ ] Spisanie wniosków → `docs/audits/AUDYT_PR84_2026-08-28.md`.
+- [x] Przegląd `protocol/types.js`, `table/*`, `tools/*`.
+- [x] Weryfikacja RED→GREEN znaleziska E1 mutacyjnie (L61).
+- [x] Spisanie wniosków → `docs/audits/AUDYT_PR84_2026-08-28.md`.
 
-### Znalezisko (na moment pisania)
-- **E1 (fingerprint):** `pendingEscapeExile` wstrzymuje priorytet (decyzja gracza,
-  `game-state.js`), ale **nie ma go w `PENDING_DECISION_FIELDS`**
-  (`src/engine/fingerprint.js`). Narusza L16 („każda struktura blokująca priorytet
-  musi być częścią fingerprintu"); skutek: sonda „oferta bez skutku" (L16/L18) oraz
-  weryfikacja replayów mogą nie odróżnić stanu przed/po otwarciu decyzji Escape.
-  Naprawa u root cause: dopisać `pendingEscapeExile` do listy + test RED→GREEN.
+### Znalezisko E1 — NAPRAWIONE
+- `pendingEscapeExile` wstrzymuje priorytet, ale nie było w
+  `PENDING_DECISION_FIELDS` (`src/engine/fingerprint.js`) — naruszenie L16.
+  Dowód: odcisk przed/po `cast_escape` z pendingem był identyczny (test RED).
+  Naprawa u root cause: dopisanie `'pendingEscapeExile'` do listy + test
+  RED→GREEN (`test/pr84-fingerprint-escape-pending.test.js`). `npm test` 3611/3611.
 
 ## Etap 2 — pętla jakości projektu (ADR 0021)
 

@@ -9,6 +9,7 @@
  */
 const PENDING_DECISION_FIELDS = Object.freeze([
   'pendingAbilityActivation', 'pendingAmass', 'pendingColorChoice',
+  'pendingEscapeExile',
   'pendingCraftExile', 'pendingDamageAssignment', 'pendingDamageTarget',
   'pendingDestroyEquipment', 'pendingDiscardChoice', 'pendingDiscover',
   'pendingEnterAsCopy', 'pendingEpicExperiment', 'pendingExploits',
