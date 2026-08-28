@@ -16,27 +16,27 @@ Zakres PR #85 (squash `2a1e79d`): fix E1 (fingerprint: `pendingEscapeExile` w
 dokumentacja (AUDYT_PR84, PLAN, HANDOFF, PROJECT_HISTORY).
 
 ### Kroki
-- [ ] Przegląd diffa każdego zmienionego pliku (kod ×2, docs ×4).
-- [ ] Weryfikacja RED→GREEN testu E1 **mutacją** (L61): skasować `'pendingEscapeExile'`
+- [x] Przegląd diffa każdego zmienionego pliku (kod ×2, docs ×4).
+- [x] Weryfikacja RED→GREEN testu E1 **mutacją** (L61): skasować `'pendingEscapeExile'`
       z listy → test MUSI paść; przywrócić → zielony.
-- [ ] Skan kompletności **klasy L16**: zestawić pola czytane przez
+- [x] Skan kompletności **klasy L16**: zestawić pola czytane przez
       `firstPendingDecisionPlayerId` (ground truth: co faktycznie BLOKUJE grę)
       z projekcją fingerprintu (16 pozycji ręcznych + `PENDING_DECISION_FIELDS`).
       Kandydaci na lukę (ujawnieni skanem na starcie): `pendingManifestDread`,
       `pendingSuspendCast`, `pendingOpponentTarget`, `pendingFabricate`,
       `pendingCopyTargets` — każdy zweryfikować osobno (czy blokujący).
-- [ ] Spisanie wniosków → `docs/audits/AUDYT_PR85_2026-08-28.md`, wynik do opisu PR.
+- [x] Spisanie wniosków → `docs/audits/AUDYT_PR85_2026-08-28.md`, wynik do opisu PR.
 
 ## Etap 2 — naprawa u root cause klasy L16 (jeśli potwierdzona)
 
-- [ ] Dopisać potwierdzone brakujące pola blokujące do fingerprintu.
-- [ ] Testy zachowania: fingerprint różnicuje stan przed/po otwarciu decyzji
+- [x] Dopisać potwierdzone brakujące pola blokujące do fingerprintu (5/5).
+- [x] Testy zachowania: fingerprint różnicuje stan przed/po otwarciu decyzji
       (dla każdego dopisanego pola) + projekcja obecna w `pendingDecisions`.
-- [ ] **Strażnik klasy** (L39/L28): test źródłowy czytający ciało
+- [x] **Strażnik klasy** (L39/L28): test źródłowy czytający ciało
       `firstPendingDecisionPlayerId` i wymagający, by KAŻDE konsultowane tam pole
       `pending*` było pokryte w fingerprintu (lista albo projekcja ręczna) —
       zamyka klasę przy przyszłych decyzjach, nie tylko dziś.
-- [ ] Weryfikacja mutacyjna strażnika (skasować pole z fingerprintu → RED).
+- [x] Weryfikacja mutacyjna strażnika (wypuszczenie pendingProliferate → RED).
 
 ## Etap 3 — pętla jakości projektu (ADR 0021)
 
@@ -69,4 +69,8 @@ dokumentacja (AUDYT_PR84, PLAN, HANDOFF, PROJECT_HISTORY).
 
 ## Podsumowanie wykonania
 
-(dopisywane na końcu sesji)
+Audyt PR #85 (etapy 1–2) ZAKOŃCZONY: N1/N2/N3 naprawione (commit `0aa884d`),
+strażnik klasy L16 w miejscu, benchmark regresji 9/9. W toku N2 naprawiono
+też głębszy defekt: `firstPendingDecisionPlayerId` bez filtra „na żywo" dla
+`pendingRoomTargets` (kontrakt M33) — lekcja L81. Pozostały etap 3 (pętla
+jakości Żywym Testerem) — w toku; dopisane na końcu sesji.

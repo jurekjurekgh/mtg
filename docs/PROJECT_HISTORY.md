@@ -12,7 +12,25 @@
 >
 > Sesje dopisują tu swoją sekcję (ADR 0013) — nowe na górze.
 
-- **Ostatnia aktualizacja:** 2026-08-26 (M217: exploit — CR 702.110 (brak kandydatów nie przerywa ETB), PR #78)
+- **Ostatnia aktualizacja:** 2026-08-28 (sesja arena/01a047a8: audyt PR #84 + E1 fingerprint Escape, PR #85)
+
+## Sesja 2026-08-28 — arena/01a047a8: audyt PR #84 + E1 fingerprint (PR #85)
+
+- **Zadanie:** „Kontynuujemy projekt." (ADR 0020/0021 — pętla domyślna).
+- **Audyt PR #84** (ADR 0020 B / 0016) — pełny przegląd `src/engine/*`,
+  `src/controllers/*`, `src/protocol/types.js`, `src/table/*`, `tools/*`.
+  Wszystkie zmiany spójne z CR / ADR 0002 / L48 (ofert=walidacja); 1 drobna
+  obserwacja (redundancja defender/detain przed `staticAttackPrevented`).
+- **E1 (NAPRAWIONE, L16):** dwukrokowy Escape (M240/M241) kolejkował
+  `state.pendingEscapeExile` (decyzja wstrzymująca priorytet), ale nie miał go
+  `PENDING_DECISION_FIELDS` w `src/engine/fingerprint.js` → fingerprint nie
+  odróżniał stanu przed/po otwarciu decyzji Escape. Fix: dopisanie pola do
+  listy + test RED→GREEN `test/pr84-fingerprint-escape-pending.test.js`.
+- **Pętla jakości (Żywy Tester):** 3 partie (`worek-dziki`×`worek-mroczny`,
+  `srodziemie`×`worek-legend`, `mirrodin-brg`×`zendikar`) — 0 zgłoszeń detektorów.
+- **Wyniki:** `npm test` 3611/3611 (+1), build 55 modułów / 2829.6 kB,
+  `bot-benchmark` 9/9. Dokumenty: `docs/audits/AUDYT_PR84_2026-08-28.md`,
+  `docs/plans/PLAN_2026-08-28-audyt-pr84-i-petla-jakosci.md`.
 
 ## M214–M217 — srebrna odznaka „wyłapywacza błędów”: 5 unikalnych błędów vs MtG (2026-08-26)
 
@@ -6156,24 +6174,6 @@ wojny testuj przez nierozróżnialność, nie przez listę zasłoniętych pól).
 **Weryfikacja:** `npm test` **2244/2244** (było 2239, +5 nowych `m141-...`), `npm run build` 51 modułów / 1912.8 kB, benchmark szybki `node tools/benchmark.mjs --seeds 2` 0 crashy, fuzzer azorius 200 partii 0 naruszeń (po naprawach). Testy po deskryptorach (ADR 0002), każdy z mutacją odwracającą.
 
 Nowe lekcje: **L46** (animacja + trwały stan — cleanup musi resynchronizować trwałe cechy), **L47** (kopiowalne cechy to WSZYSTKIE drukowane deskryptory, nie tylko P/T), **L48** (flaga keepOwn musi przejść cały łańcuch `registry → gameObject → pendingChoice → SBA`, inaczej ginie po cichu — L21).
-
-## Sesja 2026-08-28 — arena/01a047a8: audyt PR #84 + E1 fingerprint (PR #85)
-
-- **Zadanie:** „Kontynuujemy projekt." (ADR 0020/0021 — pętla domyślna).
-- **Audyt PR #84** (ADR 0020 B / 0016) — pełny przegląd `src/engine/*`,
-  `src/controllers/*`, `src/protocol/types.js`, `src/table/*`, `tools/*`.
-  Wszystkie zmiany spójne z CR / ADR 0002 / L48 (ofert=walidacja); 1 drobna
-  obserwacja (redundancja defender/detain przed `staticAttackPrevented`).
-- **E1 (NAPRAWIONE, L16):** dwukrokowy Escape (M240/M241) kolejkował
-  `state.pendingEscapeExile` (decyzja wstrzymująca priorytet), ale nie miał go
-  `PENDING_DECISION_FIELDS` w `src/engine/fingerprint.js` → fingerprint nie
-  odróżniał stanu przed/po otwarciu decyzji Escape. Fix: dopisanie pola do
-  listy + test RED→GREEN `test/pr84-fingerprint-escape-pending.test.js`.
-- **Pętla jakości (Żywy Tester):** 3 partie (`worek-dziki`×`worek-mroczny`,
-  `srodziemie`×`worek-legend`, `mirrodin-brg`×`zendikar`) — 0 zgłoszeń detektorów.
-- **Wyniki:** `npm test` 3611/3611 (+1), build 55 modułów / 2829.6 kB,
-  `bot-benchmark` 9/9. Dokumenty: `docs/audits/AUDYT_PR84_2026-08-28.md`,
-  `docs/plans/PLAN_2026-08-28-audyt-pr84-i-petla-jakosci.md`.
 
 ## Zasada aktualizacji
 

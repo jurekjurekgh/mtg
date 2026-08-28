@@ -25,6 +25,48 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 ---
 
 
+## L81 (2026-08-28) — Zastępując ręczną kopię „wspólną funkcją prawdy", porównaj FILTRY obu stron, nie tylko listę przedmiotów
+
+**Objaw (audyt PR #85, znalezisko N2, ta sesja):** bramka oferty
+`pass_priority` dostała `firstDecisionOwner == null` — dokończenie
+unifikacji z Batch 47 (bramki czarów i lądów/ataków już ją mają). Zielony
+rdzeń odpowiedział JEDNYM czerwonym testem: M33 („ślepa decyzja pokoju
+gaśnie, gra toczy się dalej"). Wspólna funkcja `firstPendingDecisionPlayerId`
+ liczyła `pendingRoomTargets` po SUROWEJ długości tablicy, podczas gdy
+zastępowana kopia miała filtr „na żywo" (`legalRoomTargetCandidates(…)`
+> 0) — ślepe wpisy (kandydaci zniknęli po zakolejkowaniu decyzji) nie mogą
+blokować gry.
+
+**Przyczyna:** unifikując N kopii w jedno źródło (L41) porównałem
+PRZEDMIOTY list (61 pól ręcznego łańcucha ⊆ 62 funkcji), ale nie SEMANTYKĘ
+poszczególnych pozycji. Kopie ręczne narosły o lokalne filtry jakości
+(`triggerTargetsBlock` — żywe wpisy, `roomTargetBlocks` — wpisy z legalnym
+celem); funkcja „jednego źródła prawdy" miała ten filtr tylko dla jednej
+z nich (`triggerTargetDecisionPending`). Rozjazd ujawnił się dopiero
+w pętli uruchomieniowej, jak w L37: zmiana ścieżki to darmowy fuzzing
+kontraktów.
+
+**Reguła:**
+1. Przy zamianie kopii na wspólną funkcję zrób tabelę DWÓCH kolumn:
+   „co kopia sprawdza" × „co funkcja sprawdza" — różnica w FILTRZE jest
+   kontraktem do przeniesienia, nie szumem. Surowe `length > 0` kontra
+   `some(legal(…))` to RÓŻNE reguły gry: pierwsza patrzy na kolejkę, druga
+   na skutek (pokrewne L80).
+2. Zanim zaakceptujesz regresję testu po takiej zamianie, rozstrzygnij,
+   która strona mówi prawdę o REGULE (tu: M33 ma rację — ślepa decyzja MUSI
+   przestać blokować; naprawiana jest funkcja wspólna, nie test). Regresja
+   po unifikacji bywa sygnałem, że funkcja „prawdy" dotąd kłamała.
+3. Ślepe decyzje to stała klasa stanu silnika: `pendingRoomTargets`,
+   `pendingTriggerTargets` (i przyszłe kolejki z kandydatami) — każda nowa
+   kolejka wieloelementowa dostaje pytanie „co, gdy wpis zdążył umrzeć?"
+   (przycinanie w `pruneDeadPendingDecisions` + filtr
+   w `firstPendingDecisionPlayerId`).
+
+**Sformalizowane w:** filtr pokoju w `firstPendingDecisionPlayerId`
+(2026-08-28), test `test/room-targets-staleness.test.js` (kontrakt M33),
+`test/manifest-dread-pass-offer.test.js` (N2).
+
+
 ## L80 (2026-08-26) — „Dubel na stosie" to nie to samo co „efekt już zastosowany": strażnik idempotencji musi patrzeć na STAN, nie tylko na stos
 
 **Objaw (M220, pętla jakości Żywym Testerem, h9):** bot aktywował Saddle na
