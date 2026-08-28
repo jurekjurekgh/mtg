@@ -1719,7 +1719,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // cards in all graveyards." — pump TYLKO celu (atakującego) do końca tury.
     // Wartość X dynamiczna (card_types_in_all_graveyards), liczona przy
     // rozstrzygnięciu (jak pump source_power / card_types).
-    const targetId = targets[0] ?? sourceObject.id;
+    // M254/E (zgłoszenie właściciela, Altar of the Goyf): trigger
+    // `attacks_alone` niesie atakującego w `context.attackerId`. Zdolność
+    // siedzi na ARTEFAKCIE („whenever a creature you control attacks alone,
+    // IT gets +X/+X"), więc bez tego spadku efekt pumpował ŹRÓDŁO — a źródło
+    // nie jest stworem, więc wychodziło „trigger bez efektu (nie było czego
+    // wykonać)". Ten sam wzorzec co `exalted_pump` wyżej (ADR 0002: reguła po
+    // treści efektu, nie po tym, kto niesie zdolność).
+    const targetId = targets[0] ?? context?.attackerId ?? sourceObject.id;
     const target = state.objects.get(targetId);
     if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') return; // CR 608.2b
     const dyn = (v, fb) => {
@@ -2531,8 +2538,37 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       if (!exiled.includes(exileId)) exiled.push(exileId);
       state.objects.set(sourceObject.id, Object.freeze({ ...src, exiledCardIds: exiled }));
     }
+    // M254/D: znacznik na WYGNANEJ karcie (stół pokazuje ją w strefie
+    // „wygnania tymczasowego" obok Suspend/Plot).
+    markTemporaryExile(state, exileId, sourceObject);
     return;
   }
+
+/**
+ * M254/D (zgłoszenie właściciela, Wormfang Newt): karta wygnana z LINKIEM
+ * powrotu („When this creature leaves the battlefield, return the exiled
+ * card to the battlefield") dostaje na sobie znacznik, KTO ją wygnał i KIEDY
+ * wraca. Bez tego stół nie miał skąd wiedzieć, że to wygnanie TYMCZASOWE —
+ * karta lądowała w zwykłym exile obok wygnanych na zawsze, bez badge'a i bez
+ * informacji, co ją sprowadzi (ADR 0002: znacznik po treści efektu, nie po
+ * nazwie karty — działa dla Newta, Faceless Butchera, Static Net i każdej
+ * następnej karty o tym kształcie).
+ */
+function markTemporaryExile(state, exileId, sourceObject) {
+  const exiled = state.objects.get(exileId);
+  if (!exiled) return;
+  state.objects.set(exileId, Object.freeze({
+    ...exiled,
+    temporaryExile: Object.freeze({
+      byCardId: sourceObject?.cardId ?? null,
+      byName: sourceObject?.cardName ?? null,
+      // Powrót jest związany z odejściem ŹRÓDŁA z pola bitwy (CR 610.3 —
+      // efekt połączony jednorazowy). Inne rodziny (Suspend, Plot) niosą
+      // własne liczniki i nie przechodzą przez ten znacznik.
+      returnsWhenSourceLeaves: true,
+    }),
+  }));
+}
 
   if (effect.type === 'exile_own_land') {
     // Wormfang Newt (ETB): exile land you control (T2: cel wybiera
@@ -2556,6 +2592,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       if (!exiled.includes(exileId)) exiled.push(exileId);
       state.objects.set(sourceObject.id, Object.freeze({ ...src, exiledCardIds: exiled }));
     }
+    // M254/D: znacznik na WYGNANEJ karcie (stół pokazuje ją w strefie
+    // „wygnania tymczasowego" obok Suspend/Plot).
+    markTemporaryExile(state, exileId, sourceObject);
     return;
   }
   if (effect.type === 'exile_target_creature') {
@@ -2578,6 +2617,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       if (!exiled.includes(exileId)) exiled.push(exileId);
       state.objects.set(sourceObject.id, Object.freeze({ ...src, exiledCardIds: exiled }));
     }
+    // M254/D: znacznik na WYGNANEJ karcie (stół pokazuje ją w strefie
+    // „wygnania tymczasowego" obok Suspend/Plot).
+    markTemporaryExile(state, exileId, sourceObject);
     return;
   }
   if (effect.type === 'destroy_if_least_power') {
@@ -4387,7 +4429,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const moved = moveObjectDirectly(state, exiledCardId, 'battlefield', newId);
     // Kontroler = właściciel (NIE kontroler źródła efektu).
     const ownerId = obj.ownerId ?? moved.controllerId;
-    const permanent = Object.freeze({ ...moved, controllerId: ownerId, summoningSickness: true });
+    // M254/D: powrót czyści znacznik — karta wraca na stół jako zwykły
+    // permanent, a nie „wygnana tymczasowo" (bez tego badge wisiałby na
+    // obiekcie na polu bitwy, choć strefa wygnania już go nie dotyczy).
+    const permanent = Object.freeze({
+      ...moved, controllerId: ownerId, summoningSickness: true, temporaryExile: null,
+    });
     state.objects.set(newId, permanent);
     state.events.push(event('object_moved', {
       fromId: exiledCardId, object: permanent, fromZone: 'exile', toZone: 'battlefield',

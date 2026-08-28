@@ -1,6 +1,6 @@
 import {
   IMAGE_MODE, cardImageSources, hoverImageSources, hoverModeLabel, hoverPreviewShape,
-  nextHoverMode, HOVER_MODES, tileImageSources, localArtUrl, scryfallImageUrl,
+  nextHoverMode, HOVER_MODES, tileImageSources, localArtUrl, scryfallCardUrl, IMAGE_SIZE,
 } from './card-images.js';
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
@@ -2840,6 +2840,12 @@ export function cardInfo(session, object, combat = null) {
   // nie wyglądał jak pełny stwór — jest „zakryty (morph)", 2/2.
   const ownFaceDown = faceDown && object.controllerId === HUMAN_ID;
   const details = faceDown ? {} : (session.cardDetails(cardId) || {});
+  // M254/B (zgłoszenie właściciela): właściciel zna swoją kartę zakrytą
+  // (CR 708.6 — tożsamość nie jest informacją ukrytą dla niego), więc
+  // PODGLĄD (hover / pełny ekran) pokazuje prawdziwą ilustrację. Kafel na
+  // stole zostaje zakryty (imageUri/artId niżej są nadal null) — znacznik
+  // niesie wyłącznie dane do obrazu, żeby nie odkryć reszty (tekst, staty).
+  const ownFaceDownDetails = ownFaceDown ? (session.cardDetails(cardId) || {}) : null;
   const colors = faceDown ? [] : (session.colorsOf(cardId) || details.colors || []);
   const kind = inferKind(object, details);
   // Załączona aura to na polu bitwy „Enchantment — Aura", a nie stwór;
@@ -2932,6 +2938,17 @@ export function cardInfo(session, object, combat = null) {
           .map((o) => ({ name: o.cardId ? (session.nameOf(o.cardId) || o.cardId) : o.cardId, kind: (o.aura || o.bestow) ? 'aura' : 'equip' }))
       : [],
     faceDown,
+    // M254/B: ilustracja PRAWDZIWEJ karty dla właściciela zakrytego
+    // permanentu (hover i pełny ekran); `null` dla kart przeciwnika —
+    // FoW (CR 708.2) dalej obowiązuje, bo tożsamość zna tylko właściciel.
+    hiddenArt: ownFaceDownDetails
+      ? {
+        name: ownFaceDownDetails.name ?? null,
+        set: ownFaceDownDetails.set ?? null,
+        imageUri: ownFaceDownDetails.imageUri ?? null,
+        artId: ownFaceDownDetails.artId ?? null,
+      }
+      : null,
     // M112: znacznik walki („atakuje — niezablokowany", „blokuje: X").
     combatRole: combatRoleOf(object, combat, session),
     isBattlefield: object.zone === 'battlefield',
@@ -3237,10 +3254,20 @@ export function renderMiniFace(el, session, objectId) {
  * syntetyczna twarz. Wydzielone z `renderTableView`, żeby dało się testować
  * bez pełnego stołu.
  */
+/**
+ * Ilustracja dla PODGLĄDU (hover / pełny ekran). M254/B: właściciel zakrytego
+ * permanentu widzi PRAWDZIWĄ kartę — kafel na stole zostaje zakryty, bo
+ * `artOf()` (kafel) czyta `info.faceDown`, a nie to pole.
+ */
+function hoverArtOf(info) {
+  if (info?.hiddenArt) return { ...info.hiddenArt, faceDown: false };
+  return artOf(info);
+}
+
 export function renderHoverPreview(host, info, hoverMode = 'scryfall') {
   clear(host);
   const shape = hoverPreviewShape(hoverMode);
-  const candidates = hoverImageSources(artOf(info), { hoverMode });
+  const candidates = hoverImageSources(hoverArtOf(info), { hoverMode });
   // M157/A (uwaga właściciela, czwarty raz — usuwamy zaślepkę całkiem):
   // podgląd hover/tap NIE rysuje syntetycznej „niby-karty". Każda karta ma
   // ilustrację (Scryfall; FOT/KON z artId), a pseudo-karta z gradientem
@@ -3249,7 +3276,7 @@ export function renderHoverPreview(host, info, hoverMode = 'scryfall') {
   if (!candidates.length) return host;
   const img = document.createElement('img');
   img.className = 'hover-img';
-  img.alt = info.faceDown ? 'Karta zakryta' : info.name;
+  img.alt = (info.faceDown && !info.hiddenArt) ? 'Karta zakryta' : info.name;
   img.decoding = 'async';
   img.style.width = `${shape.width}px`;
   img.style.maxHeight = `${shape.height}px`;
@@ -3274,11 +3301,13 @@ export function renderCardFullscreen(host, info, { positionText = null } = {}) {
   if (!info) return host;
   // M157/A (uwaga właściciela): pełny ekran bez syntetycznej „niby-karty" —
   // wyłącznie skan karty (tożsamość własnej karty zakrytej niesie alt obrazu).
-  const candidates = hoverImageSources(artOf(info), { hoverMode: 'scryfall' });
+  const candidates = hoverImageSources(hoverArtOf(info), { hoverMode: 'scryfall' });
   if (candidates.length) {
     const img = document.createElement('img');
     img.className = 'card-img';
-    img.alt = info.faceDown ? 'Karta zakryta' : info.name;
+    // M254/B: właściciel zakrytej karty widzi w podglądzie jej prawdziwą
+    // ilustrację, więc alt niesie prawdziwą nazwę (FoW = tylko dla wroga).
+    img.alt = (info.faceDown && !info.hiddenArt) ? 'Karta zakryta' : info.name;
     img.decoding = 'async';
     host.appendChild(img);
     attachImageWithFallback(img, candidates, null);
@@ -3349,7 +3378,13 @@ export function renderCardArtShowcase(host, card, { casterName = null } = {}) {
   sf.alt = `${card.name ?? 'Karta'} — Scryfall`;
   sf.decoding = 'async';
   sf.addEventListener('load', () => { sf.className = sf.className.replace(/\s*is-loading/, ''); });
-  sf.src = scryfallImageUrl(card);
+  // M254/A (zgłoszenie właściciela, Willbender): `scryfallImageUrl` buduje
+  // adres po NAZWIE (`/cards/named?exact=`), a Scryfall oddaje wtedy druk
+  // DOMYŚLNY, nie ten z kolekcji — na stole kafel brał `imageUri` (właściwy
+  // druk), a warstwa wysoko-graficzna pokazywała inną edycję. `scryfallCardUrl`
+  // preferuje druk z definicji i spada na nazwę tylko dla kart bez `imageUri`
+  // (landy wirtualne, tokeny) — dokładnie jak kafel i podgląd.
+  sf.src = scryfallCardUrl(card, { size: IMAGE_SIZE.zoom });
   row.appendChild(sf);
   host.appendChild(row);
   return host;
@@ -4070,7 +4105,11 @@ export function renderEnemyHand(host, label, view, session, enemyId) {
  */
 export function waitingExileEntries(view) {
   return (view.zones?.exile ?? []).filter((o) => o.suspended || o.plotted || o.plottedAtTurn != null
-    || o.playableWithoutPaying || o.reboundReady || o.madnessReady);
+    || o.playableWithoutPaying || o.reboundReady || o.madnessReady
+    // M254/D (zgłoszenie właściciela, Wormfang Newt): wygnanie TYMCZASOWE
+    // z linkiem powrotu („kiedy źródło opuści pole bitwy") — ta sama strefa
+    // co Suspend/Plot, bo karta też stamtąd wraca (tylko bez liczników).
+    || o.temporaryExile);
 }
 
 /** Opis stanu oczekiwania — jedno źródło dla kafla i dla podpowiedzi. */
@@ -4094,6 +4133,14 @@ export function waitingExileStatus(object) {
   }
   if (object.reboundReady) parts.push('Rebound · rzut w Twoim upkeepie');
   if (object.madnessReady) parts.push('Madness · czeka na decyzję rzutu');
+  // M254/D: badge „wygnana tymczasowo przez <karta>" — nazwa źródła jest
+  // informacją PUBLICZNĄ (wygnanie widać na stole), więc nie ma tu FoW.
+  if (object.temporaryExile) {
+    const by = object.temporaryExile.byName;
+    parts.push(by
+      ? `Wygnana tymczasowo przez ${by} · wróci, gdy opuści pole bitwy`
+      : 'Wygnana tymczasowo · wróci, gdy źródło opuści pole bitwy');
+  }
   return parts.join(' · ');
 }
 

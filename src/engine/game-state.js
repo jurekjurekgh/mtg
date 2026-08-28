@@ -4949,6 +4949,10 @@ export function playerView(state, playerId) {
         if (object.playableUntilTurn != null) waiting.playableUntilTurn = object.playableUntilTurn;
         if (object.reboundReady) waiting.reboundReady = true;
         if (object.madnessReady) waiting.madnessReady = true;
+        // M254/D (zgłoszenie właściciela, Wormfang Newt): wygnanie TYMCZASOWE
+        // z linkiem powrotu — badge mówi, przez kogo karta została wygnana.
+        // Wygnanie jest strefą jawną (CR 406.3), więc znacznik widzą obaj.
+        if (object.temporaryExile) waiting.temporaryExile = object.temporaryExile;
         if (object.faceDown) waiting.faceDown = true;
         if (Object.keys(object.counters ?? {}).length > 0) waiting.counters = { ...object.counters };
         if (object.kind) waiting.kind = object.kind;

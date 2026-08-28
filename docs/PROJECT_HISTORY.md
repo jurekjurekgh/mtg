@@ -19,7 +19,50 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
-- **Ostatnia aktualizacja:** 2026-08-28 (sesja arena/01a049c7: audyt PR #86 → A1 strażnik L16 bez komentarzy, porządki w `tmp-audyt-*`, **Batch 51: 8 kart właściciela (artId 572–579)**, PR #87)
+- **Ostatnia aktualizacja:** 2026-08-28 (sesja arena/01a049c7: audyt PR #86 → A1 strażnik L16 bez komentarzy, porządki w `tmp-audyt-*`, **Batch 51: 8 kart właściciela (artId 572–579)**, uwagi z testów A–E, PR #87)
+
+## Sesja 2026-08-28 — uwagi właściciela z testów A–E (M254, PR #87)
+
+**A. Tryb wysoko-graficzny pokazywał druk DOMYŚLNY Scryfalla.** Warstwa
+FOT/KON/Scryfall budowała adres po NAZWIE (`/cards/named?exact=`), a kafel na
+stole brał `imageUri` z definicji — stąd Willbender z innej edycji w warstwie
+i poprawny na stole. Naprawa: warstwa korzysta z `scryfallCardUrl` (druk z
+definicji, fallback po nazwie tylko dla kart bez `imageUri`).
+
+**B. Karty zagrane zakryte (Morph) — właściciel nie widział swojej karty.**
+`cardInfo` maskował wszystko dla `faceDown` (również własnego permanentu), więc
+hover pokazywał rewers. Teraz własny zakryty permanent niesie `hiddenArt`
+(ilustracja prawdziwej karty) wyłącznie dla podglądu — kafel na stole zostaje
+zakryty, a FoW (CR 708.2) nadal działa dla kart przeciwnika (CR 708.6:
+właściciel zna tożsamość).
+
+**C. Warstwa grafik nie pauzowała gry.** Otwierała się w trakcie pętli
+`advance()`, więc kolejne rzuty w jednej sekwencji ją nadpisywały — gracz
+widział tylko OSTATNI czar. Naprawa: obserwator `onCast` zwraca `true`, gdy
+warstwa naprawdę się pokazała → sesja zatrzymuje `advance()` (nowy stan
+`artPausePending` + `continueArtPlay()`), a zamknięcie warstwy otwiera
+NASTĘPNY rzut z kolejki (`src/table/art-showcase.js`, moduł czysty, testowalny
+headless). Nowa lekcja **L86**.
+
+**D. Wormfang Newt — wygnanie tymczasowe było niewidoczne.** Wygnana karta nie
+niosła żadnego znacznika, więc na stole lądowała w zwykłym exile. Teraz efekty
+z linkiem powrotu (`exile_own_land`, `exile_target_creature`,
+`exile_nonland_permanent_linked`) znaczą kartę `temporaryExile` (kto wygnał),
+a stół pokazuje ją w tej samej strefie co Suspend/Plot z badge'em „Wygnana
+tymczasowo przez …". Przy okazji wyszło, że **LTB nie odpalało się po
+zniszczeniu efektem** — `permanent_destroyed` nie było w skanie triggerów
+„leaves the battlefield" (działało tylko dla śmierci z obrażeń i poświęcenia),
+więc ląd Newta zostawał w exile na zawsze (dopisek do L48).
+
+**E. Altar of the Goyf — „attacks alone → it gets +X/+X" bez efektu.** Zdolność
+siedzi na ARTEFAKCIE, a efekt `buff_creature_until_end_of_turn` szukał celu w
+`targets[0] ?? źródło` — pompował więc Altar (nie stwora) i wychodziło „trigger
+bez efektu". Teraz czyta `context.attackerId` (ten sam wzorzec co
+`exalted_pump`).
+
+**Stan:** `npm test` **3674/3674** (było 3661 — +13 testów w
+`test/m254-uwagi-wlasciciela.test.js`; każdy punkt A–E ma test z mutacją
+odwracającą), build **56 modułów / 2874.0 kB**.
 
 ## Sesja 2026-08-28 — Batch 51: 8 kart właściciela M254, artId 572–579 (PR #87)
 

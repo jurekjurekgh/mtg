@@ -1743,7 +1743,15 @@ function processTriggersScan(state, recentEvents) {
     // (Nefarious Imp). Jedno zdarzenie = jedno odejście; CR 603.2 mówi
     // „one or more", ale w engine każde odejście generuje osobne zdarzenie,
     // więc grupujemy je po komendzie (patrz leftBattlefieldControllers niżej).
-    if (ev.type === 'creature_destroyed' || ev.type === 'permanent_sacrificed'
+    // M254/D (zgłoszenie właściciela, Wormfang Newt): `permanent_destroyed`
+    // (zniszczenie EFEKTEM — Spin Out, Murder) nie było tu w ogóle
+    // uwzględnione, choć śmierć z OBRAŻEŃ (`creature_destroyed`, SBA) i
+    // poświęcenie były. Skutek: „When this creature leaves the battlefield"
+    // nie odpalało się po zniszczeniu karty czarem, więc wygnany ląd Newta
+    // zostawał w exile na zawsze. To samo dotyczy triggerów „permanents you
+    // control leave the battlefield" (Nefarious Imp) — licznik odejść wyżej.
+    if (ev.type === 'creature_destroyed' || ev.type === 'permanent_destroyed'
+      || ev.type === 'permanent_sacrificed'
       || (ev.type === 'object_moved' && ev.fromZone === 'battlefield' && ev.toZone !== 'battlefield')
       || (ev.type === 'object_exiled' && ev.fromId)) {
       // CR 603.10: obiekt mógł już przestać istnieć (token poza polem bitwy —

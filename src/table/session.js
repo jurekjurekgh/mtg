@@ -1713,6 +1713,15 @@ export function createSession(config) {
   // warstwę z ilustracjami. Sesja tylko GO WOŁA — decyzję o wyświetleniu i cały
   // DOM trzyma UI. Zero wpływu na przebieg gry (obserwator, nie mutator).
   const onCast = typeof config.onCast === 'function' ? config.onCast : null;
+  /**
+   * M254/C (zgłoszenie właściciela): pauza PREZENTACYJNA. Osobna od
+   * `awaitingBotAck`, bo „Ruch bota" i warstwa grafik to dwie różne warstwy
+   * UI — wspólna flaga otwierałaby oba modale naraz. Obserwator `onCast`
+   * odpowiada `true`, gdy warstwa naprawdę się pokazała (tryb właczony +
+   * karta ma ilustracje); wtedy `advance()` zatrzymuje się po bieżącej
+   * komendzie, a wznowienie idzie wyłącznie przez `continueArtPlay()`.
+   */
+  let awaitingArtAck = false;
   if (!(decks instanceof Map) || decks.size !== 2) throw new TypeError('Sesja wymaga dwóch talii (Map)');
   if (!decks.has(HUMAN_ID) || !decks.has(BOT_ID)) throw new TypeError('Talia musi istnieć dla gracza i bota');
   const botFactory = config.botFactory ?? defaultBotFactory;
@@ -1945,7 +1954,12 @@ export function createSession(config) {
       const isBasic = (card?.types ?? []).includes('Basic') || cardId.startsWith('basic-');
       if (isBasic) return;
     }
-    onCast({ cardId, playerId: e.playerId ?? null, eventType: e.type });
+    // M254/C: `true` = warstwa się otworzyła (albo czeka w kolejce) — prośba
+    // o wstrzymanie gry, żeby gracz zdążył zobaczyć KAŻDY rzut, nie tylko
+    // ostatni z sekwencji (zgłoszenie: mój czar zniknął, pokazał się cudzy).
+    if (onCast({ cardId, playerId: e.playerId ?? null, eventType: e.type }) === true) {
+      awaitingArtAck = true;
+    }
   }
 
 /** Opis zdarzenia przez modułowego czytelnika (wstrzyknięte nazwy stanu). */
@@ -2390,6 +2404,10 @@ export function createSession(config) {
     isBotAdvancing = true;
     while (state.status === 'active') {
       if (guard++ > 5000) throw new Error('advance: brak postępu sesji');
+      // M254/C: warstwa grafik (tryb wysoko-graficzny) wstrzymuje grę — bez
+      // tego pętla przelatywała przez kolejne rzuty i gracz widział tylko
+      // ostatni (a własny znikał w tej samej komendzie).
+      if (awaitingArtAck) { isBotAdvancing = false; return; }
       if (state.turn.priorityPlayerId === BOT_ID) {
         const helpers = { simulate: makeSimulate(state) };
         const cmd = bot.chooseCommand(playerView(state, BOT_ID), helpers);
@@ -2691,10 +2709,25 @@ export function createSession(config) {
         botMoves.unshift(currentTurnHeader);
       }
       if (ownDraw && pauseOnBotMoves && !awaitingBotAck) awaitingBotAck = true;
-      return { ok: true, botPause: awaitingBotAck, ...(internalError ? { internalError } : {}) };
+      // M254/C: `artPause` mówi UI, że po tej komendzie czeka warstwa grafik
+      // (nie otwieraj modala „Ruch bota" — gracz ogląda teraz ilustracje).
+      return { ok: true, botPause: awaitingBotAck, artPause: awaitingArtAck, ...(internalError ? { internalError } : {}) };
     },
     /** Sesja czeka na potwierdzenie istotnego zagraniu bota (klik gracza). */
     get botPausePending() { return awaitingBotAck; },
+    /** M254/C: gra wstrzymana przez warstwę grafik (tryb wysoko-graficzny). */
+    get artPausePending() { return awaitingArtAck; },
+    /**
+     * M254/C: wznowienie po zamknięciu warstwy grafik. Zwalnia flagę i
+     * prowadzi partię dalej — jeżeli po drodze pojawi się kolejny rzut,
+     * obserwator znowu poprosi o pauzę (`awaitingArtAck` wraca na true).
+     */
+    continueArtPlay() {
+      if (!awaitingArtAck) return { ok: true, artPause: false, botPause: awaitingBotAck };
+      awaitingArtAck = false;
+      const internalError = advanceGuarded();
+      return { ok: true, artPause: awaitingArtAck, botPause: awaitingBotAck, ...(internalError ? { internalError } : {}) };
+    },
     /**
      * Wznawia grę po pauzie na istotnym zagraniu bota: rozgrywa kolejne ruchy
      * do następnej pauzy albo okna decyzyjnego człowieka (klik = „rozumiem").

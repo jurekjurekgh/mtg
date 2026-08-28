@@ -5,7 +5,7 @@ import { BOT_ID, HUMAN_ID, createSession } from '../src/table/session.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 import { renderCardArtShowcase, cardHasShowcaseArt } from '../src/table/render.js';
-import { localArtUrl, scryfallImageUrl } from '../src/table/card-images.js';
+import { localArtUrl, scryfallCardUrl, IMAGE_SIZE } from '../src/table/card-images.js';
 
 /**
  * M232 — tryb wysoko-graficzny (zlecenie właściciela): przy RZUCENIU czaru /
@@ -58,7 +58,14 @@ test('renderCardArtShowcase: TRZY obrazy — FOT u góry, pod nim para [KON][Scr
   assert.ok(row.children.indexOf(kon) < row.children.indexOf(sf), 'Scryfall jest PO PRAWEJ od KON');
   assert.equal(fot.src, localArtUrl(card, 'fot'));
   assert.equal(kon.src, localArtUrl(card, 'kon'));
-  assert.equal(sf.src, scryfallImageUrl(card));
+  // M254/A (zgłoszenie właściciela, Willbender): warstwa ma pokazywać TEN SAM
+  // druk co stół — `imageUri` z definicji (druk z kolekcji), a nie redirect po
+  // nazwie (`/cards/named?exact=`), po którym Scryfall oddaje druk DOMYŚLNY.
+  // Wcześniej było tu `scryfallImageUrl(card)` i warstwa pokazywała inną
+  // edycję niż kafel na stole (pin uaktualniony do poprawnego zachowania).
+  assert.equal(sf.src, scryfallCardUrl(card, { size: IMAGE_SIZE.zoom }));
+  assert.ok(!sf.src.includes('/cards/named?'),
+    'druk z definicji, nie domyślny Scryfalla po nazwie');
   // CSS pilnuje równej wysokości KON i Scryfall oraz niezmienionej wielkości
   // KON — asercja obecności klas, na których „wisi" ta reguła.
   assert.ok(kon.className.includes('showcase-kon') && sf.className.includes('showcase-scryfall'));

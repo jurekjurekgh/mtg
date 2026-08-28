@@ -69,6 +69,38 @@ M2, nie code review). Wniosek praktyczny: reguła 1 obowiązuje także wobec
 strażników, które sam piszesz — i to w dniu ich powstania.
 
 
+## L86 (2026-08-28) — Warstwa prezentacyjna potrzebuje WŁASNEJ pauzy: obserwator zdarzenia nie może zakładać, że gra na niego czeka
+
+**Objaw (zgłoszenie właściciela, tryb wysoko-graficzny):** „Rzuciłem czar, a
+akcja poszła dalej i zaczęła się następna tura i nieprzyjaciel rzucił czar i
+pokazał się ekran z grafikami tego ostatniego czaru nieprzyjaciela, a mojego
+w ogóle nie było pokazanego." Warstwa otwierała się z obserwatora `onCast`,
+ale pętla `advance()` sesji leciała dalej — w jednej komendzie potrafią
+przejść trzy rzuty i następna tura.
+
+**Przyczyna:** obserwator był „donosicielem" (wypadek przy grze), a nie
+„uczestnikiem" (ktoś, kogo gra musi zapytać o zgodę). Brakowało mu dwóch
+rzeczy naraz: **pauzy** (sesja musi przerwać `advance()` po bieżącej komendzie)
+i **kolejki** (każdy rzut osobno, nie tylko ostatni). Bez kolejki pauza
+zamienia „widzę ostatni" na „widzę pierwszy" — drugi błąd tej samej klasy.
+
+**Reguła:** gdy UI pokazuje coś, co gracz ma ZOBACZYĆ (ilustracja, animacja,
+„Ruch bota"), potrzebuje:
+
+1. **sygnału zwrotnego** — obserwator mówi, czy warstwa naprawdę się pokazała
+   (`true` = wstrzymaj), żeby karty bez ilustracji nie zatrzymywały gry;
+2. **własnego stanu pauzy** — nie pożyczonego od innej warstwy (wspólna flaga
+   otwierałaby jednocześnie modal „Ruch bota" i warstwę grafik);
+3. **kolejki** — zamknięcie warstwy otwiera następny element, a gra rusza
+   dopiero przy pustej kolejce.
+
+Kolejkę warto wynieść do CZESTEGO modułu (`src/table/art-showcase.js`): wtedy
+jej zachowanie jest testowalne headless, bez DOM-u i bez sesji.
+
+**Sformalizowane w:** `session.artPausePending` / `continueArtPlay()`
+(`src/table/session.js`), `createArtShowcaseQueue` (`src/table/art-showcase.js`),
+testy w `test/m254-uwagi-wlasciciela.test.js` (C1–C3).
+
 ## L85 (2026-08-28) — `eventData.manaCost` to mana WYDATKOWANA, nie mana value karty
 
 **Objaw (Batch 51, Kulrath Mystic — „Whenever you cast a spell with mana value
@@ -2076,6 +2108,16 @@ pól łapie tylko te, o których ktoś pamiętał.
 **Objaw:** bot w benchmarku wybierał biały czar na cel z `protection from white` (Benevolent Blessing), `legalSpellCasts` oferował go (filtrował tylko `isProtectedFromSource` dla jakości), a `validateTargets` odrzucał (sprawdzał także `effectiveProtectionFromColors` dla koloru) — crash `illegal_spell: protection`, a `aggro-bot` nie znał `resolve_color_choice`, więc drugi crash `Kontroler nie znalazł ruchu`.
 
 **Przyczyna:** filtr ochrony ma dwie gałęzie: jakość (`isProtectedFromSource`) i kolor (`effectiveProtectionFromColors`). Oferta znała tylko pierwszą, walidacja obie. Dla czarów bez `sourceObject` (oferta) ochrona kolorowa była niewidoczna, więc legalne cele po stronie oferty zawierały chronione. To samo dla `aggro-bot`: lista `simple` z `resolve_*` rosła z nowymi mechanikami (`resolve_color_choice` — M59, `resolve_index_choice` — M64), ale bot nie nadążał.
+
+**Dopisek 2 (M254, 2026-08-28) — to samo dotyczy ZDARZEŃ tej samej rodziny.**
+`permanent_destroyed` (zniszczenie EFEKTEM: Murder, Spin Out) nie było w ogóle
+w skanie triggerów „when this permanent leaves the battlefield\" — skan znał
+`creature_destroyed` (śmierć z obrażeń), `permanent_sacrificed`, `object_moved`
+i `object_exiled`. Wormfang Newt zniszczony czarem zostawiał wygnany ląd w
+exile na zawsze, a zniszczony OBRAŻENIAMI oddawał go prawidłowo — ta sama
+karta, dwa różne wyniki, zależnie od tego, jak umarła. Nowe zdarzenie z
+rodziny musi trafić do KAŻDEGO skanu tej rodziny (tu: `dies`, `leaves_-
+battlefield`, „permanents you control leave"), nie tylko do jednego.
 
 **Reguła:** każdy nowy typ ochrony / nowy `pending*` musi trafić w TRZY miejsca naraz: (1) `legalTargetCandidates` (oferta, z `sourceObject`), (2) `validateTargets` (walidacja), (3) oba boty (`heuristic` ma fallback `anyResolve`, `aggro` ma listę `simple` + fallback). Rozjazd oferta/walidacja to gotowy crash w benchmarku — wykrywa go `tools/benchmark.mjs` z `maxCommands` i deterministycznym seedem.
 
