@@ -3366,10 +3366,49 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // omija tego blokera (flying, gdy blokery nie latają). Reguła po
               // deskryptorach (ADR 0002): kolory celu vs protekcja blokera.
               const blockersNow = untappedEnemyBlockers(view);
-              const grantsEvasion = grants.includes('flying')
-                && blockersNow.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'));
+              // M243/D-G (Batch zgłoszeń właściciela 2026-08-27): wartość
+              // Equip = WARTOŚĆ REALNIE DODANA nosicielowi, a nie „działa
+              // dokładnie". Trzy zgłoszenia = jedna zasada (L28):
+              //   D (Cloak of the Bat na latającym): keyword, który cel JUŻ
+              //     ma, niczego nie dodaje — grant skopiowany jest no-opem;
+              //   G (Thieves' Tools na power 4): ewazja warunkowa
+              //     „cantBeBlockedMaxPower: 3" na stworze powyżej progu jest
+              //     martwa (kryterium ze stanu, nie nazwy karty);
+              //   F (Lurking Green Dragon bez latania u obrońcy): stwór,
+              //     który legalnie NIE MOŻE atakować (cantAttackStatic z
+              //     PlayerView), nie wyciąga niczego z grantu ofensywnego.
+              const equipmentDef = source.equipment ?? {};
+              const targetKeywords = new Set([...(target.keywords ?? []), ...(target.grantedKeywords ?? [])]);
+              const freshGrants = grants.filter((kw) => !targetKeywords.has(kw));
+              const hasteAdds = freshGrants.includes('haste') && target.summoningSickness === true;
+              const pumpPower = equipmentDef.pump?.power ?? 0;
+              const pumpToughness = equipmentDef.pump?.toughness ?? 0;
+              const effectiveTargetPower = (target.power ?? 0) + (target.grantedPower ?? 0);
+              const conditionalEvasion = equipmentDef.cantBeBlockedMaxPower != null
+                && effectiveTargetPower <= equipmentDef.cantBeBlockedMaxPower;
+              const grantsEvasion = (freshGrants.includes('flying')
+                && blockersNow.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach')))
+                || conditionalEvasion;
               const neutralized = attackerNeutralizedByProtection(target, blockersNow);
-              if (neutralized && !grantsEvasion) {
+              // „Nic nie dodaje" (D/G): bez pompy, bez nowych użytecznych
+              // keywordów (haste liczymy tylko przy chorobie), bez ewazji.
+              const nothingAdded = pumpPower === 0 && pumpToughness === 0
+                && !grantsEvasion
+                && !hasteAdds
+                && freshGrants.every((kw) => kw === 'haste');
+              if (target.cantAttackStatic === true) {
+                // F: sprzęt na stworze, który NIE MOŻE atakować (obrońca bez
+                // latającego / defender / detain / aura Hobble) — premia
+                // ofensywna (siła nosiciela, ewazja, haste) niczego nie kupuje;
+                // zostałaby tylko wartość z P/T pompy do obrony.
+                score += 2 + 2 * pumpPower + pumpToughness;
+                if (nothingAdded) score -= 14;
+              } else if (nothingAdded) {
+                // D/G: Equipment niczego nie dodaje nosicielowi — czysta
+                // strata many i tempa (bot wyposażał i wyrzucał 2 many co
+                // turę). Kara przebija dotychczasową premię 10+2·power (L3).
+                score -= 12;
+              } else if (neutralized && !grantsEvasion) {
                 score -= 8; // pompowanie bezradnego atakującego — nic nie zmienia
               } else {
                 score += 10 + 2 * (target.power ?? 0);

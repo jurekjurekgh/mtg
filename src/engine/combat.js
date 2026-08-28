@@ -116,38 +116,49 @@ function hasAloneRestriction(object, field) {
   return effectiveAbilities(object).some((ability) => ability?.type === 'static' && ability[field] === true);
 }
 
+/**
+ * M243/F (zgłoszenie właściciela 2026-08-27, Lurking Green Dragon): STATYCZNE
+ * „nie może atakować TERAZ" — poza tapowaniem i chorobą przywołania (te
+ * zmieniają się co turę, więc nie są „strukturalne"). Wydzielone z
+ * isLegalAttacker, żeby PlayerView mógł flagować (entry.cantAttackStatic) —
+ * bot oceniając Equip nie widzi deskryptorów zdolności stworów-chyłków.
+ * Liczone dokładnie tym samym kodem co walidacja (L48): isLegalAttacker
+ * woła odtąd ten helper zamiast duplikować listę ograniczeń.
+ */
+export function staticAttackPrevented(state, object, playerId) {
+  if (!object || object.kind !== 'creature') return false;
+  const controllerId = playerId ?? object.controllerId;
+  // Defender (CR 702.3), detain (CR 701.29), aura/attachment „can't attack"
+  if (hasKeyword(state, object, 'defender')) return true;
+  if (object.detained) return true;
+  if (attachmentRestrictions(state, object).cantAttack) return true;
+  // „Can't attack unless defending player controls a creature with flying".
+  if (effectiveAbilities(object).some((ability) => ability?.type === 'static' && ability.cantAttackUnlessDefenderHasFlying)) {
+    const defendingPlayerId = state.players.find((p) => p.id !== controllerId)?.id;
+    const hasFlyer = Boolean(defendingPlayerId) && [...state.objects.values()].some((candidate) => candidate.zone === 'battlefield'
+      && candidate.controllerId === defendingPlayerId
+      && candidate.kind === 'creature'
+      && hasKeyword(state, candidate, 'flying'));
+    if (!hasFlyer) return true;
+  }
+  // „Can't attack unless defending player is poisoned" (Chained Throatseeker).
+  if (effectiveAbilities(object).some((ability) => ability?.type === 'static' && ability.cantAttackUnlessDefenderPoisoned)) {
+    const defender = state.players.find((p) => p.id !== controllerId);
+    if (!defender || (defender.poison ?? 0) <= 0) return true;
+  }
+  return false;
+}
+
 function isLegalAttacker(state, object, playerId) {
   if (object?.controllerId !== playerId || object.kind !== 'creature' || object.tapped) return false;
   // Defender (CR 702.3): stwór z defender NIE może atakować.
   if (hasKeyword(state, object, 'defender')) return false;
   // Detain (CR 701.29, M177/E): zatrzymany stwór nie atakuje.
   if (object.detained) return false;
-  // „Enchanted creature can't attack" (Hobble): ograniczenie nakładane przez
-  // załącznik, liczone przy odczycie — odłączenie aury znosi je natychmiast.
-  if (attachmentRestrictions(state, object).cantAttack) return false;
-  // Lurking Green Dragon (CLB): „can't attack unless defending player controls a creature with flying"
-  // Sprawdzane jako statyczna zdolność `cantAttackUnlessDefenderHasFlying`.
-  const hasRestriction = effectiveAbilities(object).some((ability) => ability?.type === 'static' && ability.cantAttackUnlessDefenderHasFlying);
-  if (hasRestriction) {
-    const defendingPlayerId = state.players.find((p) => p.id !== playerId)?.id;
-    if (defendingPlayerId) {
-      const hasFlyer = [...state.objects.values()].some((candidate) => candidate.zone === 'battlefield'
-        && candidate.controllerId === defendingPlayerId
-        && candidate.kind === 'creature'
-        && hasKeyword(state, candidate, 'flying'));
-      if (!hasFlyer) return false;
-    }
-  }
-  // Chained Throatseeker (NPH): „can't attack unless defending player is
-  // poisoned" — gracz jest zatruty, gdy ma co najmniej jeden znacznik
-  // trucizny (CR 122.1 + 704.5c). Statyczna zdolność, jak restrykcja
-  // Lurking Green Dragon powyżej.
-  const poisonRestriction = effectiveAbilities(object)
-    .some((ability) => ability?.type === 'static' && ability.cantAttackUnlessDefenderPoisoned);
-  if (poisonRestriction) {
-    const defender = state.players.find((p) => p.id !== playerId);
-    if (!defender || (defender.poison ?? 0) <= 0) return false;
-  }
+  // M243/F: ograniczenia STATYCZNE (defender, detain, attachment, unless-
+  // defender-flying/poisoned) — jedno źródło prawdy dzielone z PlayerView
+  // (flaga entry.cantAttackStatic; L48/L41).
+  if (staticAttackPrevented(state, object, playerId)) return false;
   // Haste (CR 702.10): stwór może atakować mimo choroby przywołania.
   if (object.summoningSickness && !hasKeyword(state, object, 'haste')) return false;
   return true;
