@@ -69,6 +69,62 @@ M2, nie code review). Wniosek praktyczny: reguła 1 obowiązuje także wobec
 strażników, które sam piszesz — i to w dniu ich powstania.
 
 
+## L85 (2026-08-28) — `eventData.manaCost` to mana WYDATKOWANA, nie mana value karty
+
+**Objaw (Batch 51, Kulrath Mystic — „Whenever you cast a spell with mana value
+4 or greater"):** pierwsza implementacja warunku `spellManaValueAtLeast: 4`
+czytała `eventData.manaCost` zdarzenia `permanent_cast` i przepuszczała czar
+z obniżką (MV 5 zapłacone {3} po redukcji), a odrzucała czar bez obniżki przy
+alternatywnym koszcie. Testy własne karty były zielone, bo w nich koszt równał
+się wartości many.
+
+**Przyczyna:** dwa różne fakty niosą to samo pole. `eventData.manaCost` w
+zdarzeniu rzutu to koszt faktycznie ZAPŁACONY (po obniżkach, po koszcie
+alternatywnym), a mana value (CR 202.3) wynika z KOSZTU WYDRUKOWANEGO na
+obiekcie — czyli `eventData.object.manaCost`.
+
+**Wniosek:** warunek na mana value czyta OBIEKT (`eventData.object?.manaCost`),
+nigdy kwotę ze zdarzenia płatności. Przy dopisywaniu warunku do triggera
+sprawdź, czy dane wejściowe są „wartością z karty" czy „wynikiem rozliczenia" —
+w zdarzeniach silnika to prawie zawsze to drugie.
+
+**Sformalizowane w:** `conditionHolds` (`src/engine/triggers.js`, wpis
+`spellManaValueAtLeast`), testy „MV 4 odpala / MV 1 nie" w
+`test/batch51-kart.test.js`.
+
+
+## L84 (2026-08-28) — Nowy deskryptor mechaniki ma cztery dowiązania poza silnikiem: strażniki zgłaszają je osobno, więc dopisz je od razu
+
+**Objaw (Batch 51):** po dodaniu trzech nowych elementów (`buff_attacking_creatures`,
+`buff_creature_until_end_of_turn`, zdarzenie `creature_became_renowned`) pełny
+`npm test` pokazał **pięć** czerwonych testów naraz, z czego cztery nie miały
+nic wspólnego z mechaniką, tylko z jej OTOCZENIEM: brak etykiety PL
+(strażnik M122), brak wyceny bota (strażnik M157), brak wpisu w `EVENT_TYPES`
+i brak opisu zdarzenia w `describeGameEventRaw` (strażniki M134/uwagi
+właściciela). Piąty to złoty fixture bota (osobna lekcja L25).
+
+**Przyczyna:** mechanika w silniku to **jedno** z kilku miejsc, w których nowy
+deskryptor musi istnieć. Strażniki są pisane osobno i każdy zgłasza swój brak
+własnym komunikatem, więc kolejka redów jest kosztem PROCESOWYM, nie dowodem
+błędu w mechanice. Czekanie na nie uruchamia pełny test za każdym razem
+(~2 min), a komunikat i tak mówi wprost, czego brakuje.
+
+**Wniosek:** wprowadzając nowy deskryptor (efekt, zdarzenie, filtr celu),
+odhacz listę PRZED pierwszym uruchomieniem pełnego testu:
+
+1. `EVENT_TYPES` + `describeGameEventRaw` (`src/table/session.js`) — zdarzenie
+   bez opisu jest dla gracza niewidoczne (L24);
+2. etykieta w mapie opisów (`src/table/render.js`) — strażnik M122;
+3. wycena bota (`src/controllers/heuristic-bot.js`) albo świadomy wpis do
+   `REVIEWED_UNVALUED` — strażnik M157;
+4. `gameObjectDataOf` (`src/cards/materialize.js`) — deskryptor z definicji
+   karty musi dojść na obiekt gry (L21 uderzyła tu po raz kolejny: `renown`
+   ginęło w materializacji).
+
+**Sformalizowane w:** sekcja „Obowiązki przy nowym deskryptorze" w
+`docs/cards/HOW_TO_ADD_CARD.md`, strażniki M122/M134/M157.
+
+
 ## L82 (2026-08-28) — Test UI wiąże SKUTEK z hakiem semantycznym (klasa/`data-*`), copy pina się OSOBNYM testem
 
 **Objaw (sesja M251):** poprawna etykieta „Użyj domyślnego przydziału

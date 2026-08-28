@@ -3014,3 +3014,37 @@ niewymagane (progi 0.78/0.57, pomiar #44).
 Testy: `test/audit-m83-tester.test.js` (10). `npm test` **1452/1452**,
 build 50 modułów / ~1574 kB. Bot zmieniony → pełne B0 bez niedokończonych,
 progi win-rate utrzymane.
+
+## M254 — Batch 51: 8 kart właściciela (2026-08-28, PR #87)
+
+**Zakres:** Skinbrand Goblin (GTC), Typhoid Rats (FRF), Invasive Species (M15),
+Dromoka Warrior (DTK), Akroan Sergeant (ORI), Thunderstaff (DST), Savage Surge
+(THS), Kulrath Mystic (ECL). Plan:
+`docs/plans/PLAN_2026-08-28-m254-batch51-kart.md`. Dane Oracle ze Scryfalla
+przed kodowaniem (ADR 0010 §2a).
+
+**Nowe mechaniki (generyczne, ADR 0002):**
+
+- **Bloodrush** — zdolność aktywowana z RĘKI (`{R}, Discard this card: Target
+  attacking creature gets +2/+1`) z nowym filtrem celu `attacking_creature`
+  (poza walką oferty nie ma — CR 508.1k).
+- **Renown N** (CR 702.112) — licznik +1/+1 za pierwsze obrażenia bojowe
+  zadane graczowi; flaga *renowned* blokuje powtórzenie.
+- **`bounce_permanent` + filtr `permanent` z `controlledBy: 'controller'`**
+  (Invasive Species) — cel obowiązkowy, brak kandydata = `no_targets`
+  (CR 603.3d).
+- **`preventCombatDamageToController`** (Thunderstaff, CR 615.1a) — statyczna
+  prewencja liczona per źródło obrażeń, przed jednorazowymi tarczami.
+- **`buff_attacking_creatures`** (Thunderstaff) — zbiór atakujących mrożony
+  przy rozstrzygnięciu (CR 611.2c).
+- **Warunek `spellManaValueAtLeast`** (Kulrath Mystic) — mana value czytana z
+  OBIEKTU czaru, nie z kwoty zapłaconej (L85).
+
+**Świadome ograniczenia:** prewencja Thunderstaffa działa wyłącznie na
+obrażenia bojowe zadawane kontrolerowi (Oracle nie obejmuje innych źródeł);
+bloodrush nie ma wariantu „z pola bitwy\" (karta działa tylko z ręki).
+
+**Wynik:** `npm test` **3654/3654** (+29 w `test/batch51-kart.test.js`), build
+**55 modułów / 2859.7 kB**. Bez zmian w kontrolerze bota poza wyceną efektu
+(`buff_creature_until_end_of_turn`) — pełny benchmark B0 niewymagany; złoty
+fixture bota zregenerowany, progi win-rate bez zmian.

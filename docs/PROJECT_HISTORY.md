@@ -19,7 +19,68 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
-- **Ostatnia aktualizacja:** 2026-08-28 (sesja arena/01a049c7: audyt PR #86 → A1 strażnik L16 bez komentarzy, porządki w `tmp-audyt-*`, PR #87)
+- **Ostatnia aktualizacja:** 2026-08-28 (sesja arena/01a049c7: audyt PR #86 → A1 strażnik L16 bez komentarzy, porządki w `tmp-audyt-*`, **Batch 51: 8 kart właściciela (artId 572–579)**, PR #87)
+
+## Sesja 2026-08-28 — Batch 51: 8 kart właściciela M254, artId 572–579 (PR #87)
+
+- **Zlecenie (właściciel, lista wprost):** Skinbrand Goblin (GTC), Typhoid Rats
+  (FRF), Invasive Species (M15), Dromoka Warrior (DTK), Akroan Sergeant (ORI),
+  Thunderstaff (DST), Savage Surge (THS), Kulrath Mystic (ECL). 8 kart w jednym
+  batchu (odstępstwo od domyślnych 5 na wyraźną listę właściciela).
+- **Plan:** `docs/plans/PLAN_2026-08-28-m254-batch51-kart.md`. Dane Oracle
+  pobrane ze Scryfalla PRZED kodowaniem (ADR 0010 §2a) → 8 plików
+  `docs/cards/scryfall-*.json`; `artId` 572–579 i `plan` wg listy, dopisane do
+  `tools/collection-art-ids.csv` (słownik 571 → 579 pozycji).
+
+**Nowe mechaniki (wszystkie generyczne, ADR 0002 — ani jednego warunku na nazwę
+karty):**
+
+- **Bloodrush** (Skinbrand Goblin) — zdolność aktywowana z RĘKI o koszcie
+  `{R}, Discard this card: Target attacking creature gets +2/+1`. Powielony
+  kształt `reinforce`/`cycling/channel`, ale z **celem**: nowy filtr
+  `attacking_creature` (CR 508.1k — poza walką brak legalnego celu, więc oferta
+  znika) i nowy deskryptor `ability.bloodrush`.
+- **Renown N** (CR 702.112, Akroan Sergeant) — licznik +1/+1 i flaga
+  *renowned* za pierwsze obrażenia bojowe zadane GRACZOWI (zablokowany atak nie
+  odpala). Warstwa danych + `src/engine/combat.js`, bez nowej zdolności w
+  definicji (`renown: 1` obok `keywords`).
+- **Invasive Species** — trigger `enter_battlefield` z filtrem
+  `permanent` + `notSelf` + **`controlledBy: 'controller'`** („another permanent
+  YOU control") i efektem `bounce_permanent`. Cel obowiązkowy: brak kandydata =
+  `no_targets` (CR 603.3d).
+- **Thunderstaff** — statyczna prewencja `preventCombatDamageToController`
+  (CR 615.1a: działa per ŹRÓDŁO obrażeń — trzech atakujących = 3 zapobiegnięte,
+  nie 1 łącznie) oraz aktywowana `{2}, {T}` z nowym efektem
+  `buff_attacking_creatures` (CR 611.2c: zbiór atakujących mrożony w chwili
+  rozstrzygnięcia).
+- **Kulrath Mystic** — trigger `when_you_cast_spell` z warunkiem
+  `spellManaValueAtLeast: 4`; warunek czyta mana value z OBIEKTU czaru, nie
+  kwotę zapłaconą ze zdarzenia (nowa lekcja **L85**).
+
+**Naprawy u źródła:** `gameObjectDataOf` nie przenosił `renown` na obiekt gry —
+mechanika ginęła w materializacji (L21 po raz kolejny; test czytający definicję
+z rejestru by tego nie zauważył).
+
+**Bot (strażnik M157 wyłapał lukę):** `buff_creature_until_end_of_turn`
+(Savage Surge) nie miał wyceny — czar dostawał gołe `score = 2`, dokładnie jak
+firebreathing w M96 (bot pompował w Głównej 1, efekt wygasał w cleanup). Teraz
+wpada do tej samej gałęzi co `pump` (z oknem na trick bojowy) i do
+`FRIENDLY_TARGET_EFFECTS`, plus premia +4 gdy odkręca ZATAPNIĘTEGO stwora.
+
+**Dług odsetkowy nowych kart w taliach (L25):** złoty fixture bota
+zregenerowany (`tools/bot-scoring-snapshot.mjs --write` — inna partia: 315 vs
+262 decyzji w parze ravnica|innistrad-wu@1000), a test `bot-spell-resolution-in-modal`
+dostał nowy seed (4 zamiast 3) po przehuntowaniu 40 seedów. Krajobraz planów
+bez zmian: żaden plan nie przekroczył progu awansu.
+
+**Nowa lekcja L84** — nowy deskryptor ma **cztery** dowiązania poza silnikiem
+(`EVENT_TYPES` + opis zdarzenia, etykieta PL, wycena bota, `gameObjectDataOf`);
+strażniki zgłaszają je osobno, więc dopisuje się je od razu (krok 4b w
+`docs/cards/HOW_TO_ADD_CARD.md`).
+
+**Stan:** `npm test` **3654/3654** (było 3625 przed batchem, +29 w
+`test/batch51-kart.test.js`), build **55 modułów / 2859.7 kB**, katalog
+**478 kart** (436 z artId), słownik kolekcji **579 pozycji**.
 
 ## Sesja 2026-08-28 — arena/01a049c7: audyt PR #86, strażnik L16 (A1), porządki w `tmp-audyt-*` (PR #87)
 
