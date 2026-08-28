@@ -790,6 +790,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         if (count === 0) return null;
         const who = e.scope === 'opponents' ? 'stwory przeciwnika'
           : e.scope === 'your_lands' ? 'twoje stwory-lądy'
+          : e.scope === 'attacking' ? 'atakujące stwory'
           : 'twoje stwory';
         const stats = (e.powerModifier || e.toughnessModifier)
           ? `${sign(e.powerModifier)}/${sign(e.toughnessModifier)}` : null;

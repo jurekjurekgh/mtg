@@ -107,6 +107,17 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   if (condition.spellIsColorless) {
     return (eventData.colors ?? []).length === 0;
   }
+  // Batch 51 (Kulrath Mystic): „Whenever you cast a spell with MANA VALUE 4
+  // or greater" (CR 202.3 — mana value to koszt many wydrukowany na karcie).
+  // Źródłem wartości jest obiekt czaru na stosie (`eventData.object.manaCost`),
+  // nie `eventData.manaCost`: przy permanentach to drugie pole niesie MANĘ
+  // WYDANĄ (po rabatch i kickerze), a nie mana value — trigger reagowałby na
+  // taniego stwora rzuconego za {4} dzięki zniżce.
+  if (condition.spellManaValueAtLeast != null) {
+    const manaValue = eventData.manaValue ?? eventData.object?.manaCost ?? null;
+    if (manaValue == null) return false;
+    return manaValue >= condition.spellManaValueAtLeast;
+  }
   // „If you descended this turn" (Canonized in Blood, CR 603.4 — intervening
   // if): permanent card wpadł do grobu kontrolera w bieżącej turze.
   if (condition.descendedThisTurn) {
@@ -469,6 +480,12 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
         // Nanoform Sentinel: „untap ANOTHER target permanent\" — `notSelf`
         // wyklucza źródło (CR 115.2 — „another\").
         if (spec.notSelf && objectId === sourceObject.id) return false;
+        // Batch 51 (Invasive Species): „return ANOTHER permanent YOU CONTROL"
+        // — `controlledBy: 'controller'` zawęża zbiór do permanentów
+        // kontrolera ŹRÓDŁA (CR 115.2 + „you control"). Bez tego trigger
+        // oferowałby na własne wejście permanent przeciwnika, a po wybraniu
+        // go gracz oddawałby cudzy stwór zamiast swojego.
+        if (spec.controlledBy === 'controller' && object?.controllerId !== sourceObject.controllerId) return false;
         return object && object.zone === 'battlefield' && !hexproofBlocked(object);
       })
       .sort((a, b) => targetValue(state.objects.get(b)) - targetValue(state.objects.get(a)));

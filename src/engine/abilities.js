@@ -121,7 +121,7 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   return base;
 }
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, landwalk = null, onNthResolve = null }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, landwalk = null, onNthResolve = null, preventCombatDamageToController = null }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -215,6 +215,14 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // flying counter on them." — statyczna zdolność, która modyfikuje wejście
     // zakrytych stworów kontrolera (jak Day/Night). Przenoszona na obiekt.
     faceDownEnterFlyingCounter: Boolean(faceDownEnterFlyingCounter),
+    // Batch 51 (Thunderstaff, CR 615.1a): „As long as this artifact is
+    // untapped, if a creature would deal combat damage to you, prevent 1 of
+    // that damage." — statyczna prewencja obrażeń bojowych w GRACZA, która
+    // wyłącza się po tapnięciu źródła (warunek „untapped" jest częścią
+    // tekstu, nie efektem ubocznym kosztu). Deskryptor: { amount }.
+    preventCombatDamageToController: preventCombatDamageToController
+      ? Object.freeze({ ...preventCombatDamageToController })
+      : null,
   });
 }
 

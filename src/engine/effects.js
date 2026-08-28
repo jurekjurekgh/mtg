@@ -1687,6 +1687,32 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     emitMassBuff(state, sourceObject, state.untilEndOfTurnBuffs[state.untilEndOfTurnBuffs.length - 1], 'yours');
     return;
   }
+  if (effect.type === 'buff_attacking_creatures') {
+    // Batch 51 (Thunderstaff): „Attacking creatures get +1/+0 until end of
+    // turn." — zbiór objętych stworów ustala się W CHWILI ROZSTRZYGNIĘCIA
+    // (CR 611.2c), więc stwór wchodzący na pole bitwy później buffa NIE
+    // dostaje (ten sam wzorzec co buff_creatures_you_control, M101/B2).
+    // Poza walką `state.combat` jest pusty — efekt legalnie nic nie robi.
+    const attackerIds = state.combat?.attackers ?? [];
+    const buffIds = attackerIds.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      return object && object.zone === 'battlefield' && object.kind === 'creature';
+    });
+    if (buffIds.length === 0) return;
+    state.untilEndOfTurnBuffs = [
+      ...(state.untilEndOfTurnBuffs ?? []),
+      Object.freeze({
+        controllerId: sourceObject.controllerId,
+        opponent: false,
+        objectIds: Object.freeze(buffIds),
+        power: effect.power ?? 0,
+        toughness: effect.toughness ?? 0,
+        keywords: Object.freeze([...(effect.keywords ?? [])]),
+      }),
+    ];
+    emitMassBuff(state, sourceObject, state.untilEndOfTurnBuffs[state.untilEndOfTurnBuffs.length - 1], 'attacking');
+    return;
+  }
   if (effect.type === 'buff_creature_until_end_of_turn') {
     // Altar of the Goyf: „Whenever a creature you control attacks alone, it
     // gets +X/+X until end of turn, where X is the number of card types among
