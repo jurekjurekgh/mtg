@@ -33,7 +33,7 @@ choroba + {T}, hand size 7, first-turn bez draw, anihilacja liczników, rozdzia�
 na stosie, cele triggerów jako wybór gracza (resolve_trigger_target), auto-tap pipów właściwą
 maną, triggery na stosie, regeneracja.
 B0 harness (B1–B5 bota, tune-bot), ilustracje Scryfall, ChoiceRequest i benchmark.
-Bieżący stan: **2445/2445 testów** (`test:all`), artefakt **51 modułów / 2072 kB**. Szczegóły:
+Bieżący stan: **3735/3735 testów** (`test:all`), artefakt **56 modułów / 2894.7 kB**. Szczegóły:
 [docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md) i [docs/PROJECT_HISTORY.md](docs/PROJECT_HISTORY.md).
 
 ```bash
@@ -194,14 +194,14 @@ Zbudowany plik otwiera się dwuklikiem — także na iPadzie i iPhonie, bez serw
 
 ## Najbliższy etap
 
-Etapy 1–5 zamknięte, Etap 2/3 przekroczony (138 kart >> docelowe ~20), Etap 4 bota
+Etapy 1–5 zamknięte, Etap 2/3 przekroczony (436 kart realnych + 42 tokeny >> docelowe ~20), Etap 4 bota
 zamknięty (heurystyka + modelowanie, harness B0, tune-bot), Etap 5 stołu zamknięty
 (gra człowiek–bot na iPadzie przez Pages / file://).
 
 Kolejne kroki:
-1. **Batch 22** — kolejne 10 kart z listy właściciela (Scryfall → definicje → testy → talie singleton → B0).
-2. Dalsze czyszczenie luk MtG: `any target` (Reliquary Dragon) i `Mesmerize` Sagi jako wybór gracza, pozostałe determinizmy kosztów (jeśli się pojawią).
-3. Ewentualne strojenie bota pod nowe mechaniki (Adventure/Kicker/Crew) i B0 0.78/0.57.
+1. **Batch 52** — kolejne karty z listy właściciela (Scryfall → definicje → testy → talie singleton → B0).
+2. Dalsze czyszczenie luk MtG z listy właściciela — każda karta 100% Oracle albo niewspierana (ADR 0022), bez specjalnych przypadków po nazwie (ADR 0002).
+3. Strojenie bota pod nowe mechaniki (Adventure/Kicker/Crew) i pętla jakości (Żywy Tester / zgodność CR); pełna macierz B0 tylko na komendę właściciela (ADR 0018).
 
 Szczegóły kolejki i blokery: [docs/ROADMAP.md](docs/ROADMAP.md), najnowszy handoff sesji.
 
