@@ -68,8 +68,7 @@ strażników, które sam piszesz, i to w dniu ich powstania.
 
 ## L88 (2026-08-29) — Błąd bez adresu: narzędzie długiego biegu musi powiedzieć GDZIE (i jedna reguła = jedna funkcja dla oferty i walidacji)
 
-**Objaw:** `node tools/benchmark.mjs --full` (~23 400 meczów, ~50 min)
-kończył się „Kontroler nie znalazł ruchu mimo legalnych komend" — bez meczu,
+**Objaw:** `node tools/benchmark.mjs --full` kończył się „Kontroler nie znalazł ruchu mimo legalnych komend" — bez meczu,
 bez stanu. Drugi bieg po to samo. Po dopisaniu kontekstu do narzędzia
 diagnoza zajęła 60 s: tura 15, `combat_damage`, priorytet p2, oferta
 `activate_ability, concede`.
@@ -1672,3 +1671,32 @@ dokumentacji).
    zwalniała linie ze słowem „sprostowanie" — mutacja pokazała, że wystarczy
    postawić błędne zdanie obok tego słowa.
 
+
+## L89 (2026-08-29) — Przebieg, którego nikt nie dograł: długi bieg loguje postęp, a rozmiar macierzy wyznacza budżet, nie liczba kombinacji
+
+**Objaw:** `node tools/benchmark.mjs --full` liczył się 63 minuty CPU bez jednej
+linii logu (raport powstaje po ostatnim meczu) — nie dało się odróżnić wolnego
+liczenia od meczu, który utknął. Pierwszy log po dopisaniu postępu powiedział
+wszystko: `1/75900`, ETA 526 minut.
+**Przyczyna:** dwie rzeczy naraz. (1) Narzędzie długiego biegu było NIEME: bez
+logu przyrostowego pojedyncza jednostka i całość wyglądają identycznie.
+(2) Kombinacje rosną z KWA-DRATEM liczby talii, a szacunek „23 400 meczów,
+~40 min" (ADR 0018) był z epoki 12 talii; po podziałach ADR 0024 jest 22 pliki,
+czyli 253 pary × 2 strony × 3 pary botów × 50 seedów = 75 900. Nikt nie
+zauważył, BO NIKT NIE DOGRAŁ MACIERZY DO KOŃCA — martwa liczba w dokumentacji
+nie boli, dopóki nikt jej nie sprawdzi.
+**Reguła:**
+1. Przebieg dłuższy niż ~1 minutę loguje postęp PRZYROSTOWO: done/total,
+   ms/jednostkę, ETA i adres pozycji — pierwszy log po PIERWSZEJ jednostce, nie
+   po progu (`--progress` + `onProgress`).
+2. Dostaje watchdoga na pojedynczą jednostkę: przerwij ją, wpisz adres do
+   raportu, idź dalej (`--stall-ms` + `result.stalls`) — zacinka nie pociąga
+   całego przebiegu.
+3. Rozmiar macierzy wyznacza BUDŻET, nie liczba kombinacji: algorytm dobiera
+   (par, seedy) do liczby talii, każda talia musi być w próbce (ADR 0025).
+4. Liczba w dokumentacji, której nikt nie weryfikuje od miesięcy, jest
+   PODEJRZANA — sprawdź ją komendą, zanim zaplanujesz według niej sesję.
+**Strażnik:** `test/benchmark-progress-watchdog.test.js` (postęp + zacinki),
+`test/benchmark-budget-probki.test.js` (budżet trzyma rozmiar dla 6/22/45/120
+talii, pokrycie każdej talii, determinizm próbki); raport wypisuje
+`ZACINKI (watchdog N ms)` z adresem każdego przerwanego meczu.

@@ -39,6 +39,7 @@ dokument opisuje kontekst, wybór i jego konsekwencje.
 | [0022](0022-full-oracle-or-unsupported.md) | Katalog kart — pełny Oracle albo brak wsparcia (zastępuje interpretację M111 o „świadomym długu") | Zaakceptowana |
 | [0023](0023-decks-per-plan-and-benchmark-sample.md) | Talie per PLAN (worki dla małych planów), singleton, landy 1:2; testy i benchmark na stałej próbce | Zaakceptowana |
 | [0024](0024-deck-split-by-colors-and-rotating-benchmark.md) | Podział talii planowej ≥30 kart nielandowych po kolorach (tożsamość bezkolorowych z produkcji many); rotująca auto-próbka benchmarku | Zaakceptowana |
+| [0025](0025-benchmark-match-budget-not-all-combinations.md) | Pełna macierz benchmarku pod budżet meczów (~6 000), nie pod wszystkie kombinacje; próbka par talii skaluje się z katalogiem | Zaakceptowana |
 
 ## Gdzie zapisać regułę (ADR vs LESSONS vs handoff)
 

@@ -41,3 +41,12 @@ deterministyczna próbka regresji (`REGRESSION_CONFIG`: 4 seedy, 2 pary,
   szybkiej** jako bieżący stan (`tools/b1-final-*.json` zawiera pełny `config`,
   więc próbki i macierze są rozróżnialne), a pełną macierz zaznaczają jako „do
   uruchomienia na komendę".
+
+## Nota (2026-08-29)
+
+Liczby z §Kontekst (3×12×50 = 23 400 meczów, ~40 min) to stan z 2026-08-16. Po
+podziałach talii (ADR 0024) ten sam wzór daje 75 900 meczów — nikt nie
+zauważył, bo pełna macierz nie była dogrywana do końca. **Rozmiar pełnego
+przebiegu wyznacza od teraz budżet meczów — patrz
+[ADR 0025](0025-benchmark-match-budget-not-all-combinations.md).** Reguła
+tego ADR (tylko na wyraźną komendę) pozostaje bez zmian.

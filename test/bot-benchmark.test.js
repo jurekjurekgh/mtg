@@ -334,3 +334,23 @@ test('raport tekstowy zawiera macierz i wyniki par (smoke formatowania)', () => 
   assert.match(report, /== heuristic vs random ==/);
   assert.match(report, /tarkir-bg | warhammer-brg/);
 });
+
+test('runBenchmark: macierz mieści się w budżecie i mierzy każdą talię z katalogu', () => {
+  const decks = listRepoDeckNames().slice(0, 10);
+  const result = runBenchmark({
+    bots: ['heuristic', 'random'],
+    pairs: [['heuristic', 'random']],
+    decks,
+    budgetMatches: 96,
+    minSeedsPerMatchup: 2,
+    maxCommands: 800,
+  });
+
+  assert.ok(result.config.totalMatches <= 96, `przebieg ${result.config.totalMatches} meczów > budżet 96`);
+  assert.ok(result.config.totalMatches >= 60, `budżet 96 niewykorzystany (${result.config.totalMatches})`);
+  assert.ok(result.config.deckPairsPlayed <= result.config.deckPairsAll);
+
+  // Każda z 10 talii ma swój wiersz w tabeli par — żadna nie wypada z pomiaru.
+  const zmierzone = new Set(Object.keys(result.pairs['heuristic | random'].decks).flatMap((k) => k.split(' | ')));
+  assert.equal(zmierzone.size, decks.length, `talie bez pomiaru: ${decks.filter((d) => !zmierzone.has(d))}`);
+});
