@@ -19,7 +19,57 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
-- **Ostatnia aktualizacja:** 2026-08-29 (sesja arena/01a049c7: audyt PR #86 → A1 strażnik L16, porządki w `tmp-audyt-*`, **Batch 51: 8 kart właściciela (artId 572–579)**, uwagi z testów A–E, **M255: pętla jakości Żywym Testerem po Batchu 51 (18 partii, 5 napraw A–E) + znalezisko F z próby pełnej macierzy benchmarku**, PR #87)
+- **Ostatnia aktualizacja:** 2026-08-29 (sesja arena/01a04e98: **audyt PR #87** (raport `docs/audits/AUDYT_PR87_2026-08-29.md`): 6 znalezisk — A2 luka strażnika L16 w ciągach znakowych (naprawiona), D1 README drift, D5 JSDoc, D2 brak handoffu (naprawione: `HANDOFF_2026-08-29.md`), D3/D4 zgłoszenia procesowe; **PR #88**)
+
+## Sesja 2026-08-29 — audyt PR #87: 6 znalezisk, 4 naprawione (arena/01a04e98, PR #88)
+
+**Prompt:** „kontynuujemy projekt" — brak nazwanego tematu → ADR 0021 (pętla
+domyślna). Zakres: audyt scalonego PR #87 (squash `15a2be5`, 303 pliki,
++13 909/−98 250) wg ADR 0020 B + naprawa znalezisk + domknięcie dokumentacyjne
+sesji PR #87 (brak handoffu końcowego — D2).
+
+**Wynik audytu: silnikowo poprawny.** 8/8 kart Batchu 51 zgodne z Oracle
+(scryfall JSON + CR); renown = CR 702.112b (renowned do opuszczenia pola
+bitwy, brak powtórki triggera); Invasive Species: hexproof tylko wobec
+przeciwnika; M255/A modal — flaga `untilEndOfTurn:true` wyłącznie w
+set_base_pt/buff_creature, `mass_stats_modified` poza szumem celowo (L87).
+Weryfikacja mutacyjna deklarowanych napraw **6/6 RED→GREEN** (bloodrush
+filtr, renown, warunek MV, M255/F, M255/G, M256), strażnik M253 2/2,
+`test:slow` 10/10 (budżet ADR 0025), `test:all` 3735/3735.
+
+**Znaleziska (szczegóły: `docs/audits/AUDYT_PR87_2026-08-29.md`):**
+
+- **A2 (naprawione, `e596078`)** — strażnik klasy L16 zaliczał
+  `state.pendingX` w TREŚCI CIĄGU ZNAKOWYM jako pokrycie fingerprintu
+  (klasa A1/komentarzy: L83 — strażnik liczy KONSTRUKTY). Nowe `maskNonCode`
+  (komentarze + `'…'`/`"…"`/`` `…` `` z kodem w `${…}`) + dwa skany po
+  dwóch konstruktach + pin A1 rozszerzony o A2 (mutacja obchodząca
+  `maskNonCode` → RED).
+- **D1 (naprawione, `04c3c85`)** — README sprzed ~30 batchy: 2445/2445 →
+  3735/3735 (`test:all`), 51 mod/2072 kB → 56 mod/2894.7 kB, „138 kart" →
+  436 kart + 42 tokeny, „Batch 22" → Batch 52; luki `any target`/`Mesmerize`
+  z listy — od dawna zamknięte.
+- **D5 (naprawione, `a1800f1`)** — 5 bloków JSDoc w `src/engine/effects.js`
+  nad funkcją, której nie opisują (efekt patchy chirurgicznych): czysty
+  przenos nad właściwe funkcje (31−/31+, treść identyczna).
+- **D2 (naprawione, `d2e2d82`)** — sesja PR #87 bez handoffu końcowego
+  (2026-08-28c środkowy) → `docs/setup/HANDOFF_2026-08-29.md`.
+- **D3 (zgłoszenie właścicielowi)** — ADR-y 0001–0024 + README przepisane
+  (−10–25%) bez deklaracji zakresu w opisie PR #87; fakt-check: **zmysł
+  zachowany** (statusy/liczby/CR/progi bez zmian; legitymacyjne dopiski:
+  nota 2026-08-29 w ADR 0018, nowy ADR 0025), ale regresja typograficzna
+  `”`→`"`. Decyzja: przyjąć (przywracając `”`) albo poprzednią wersję.
+- **D4 (zgłoszenie)** — opis PR #87 nieaktualny przy domykaniu (bez M256/
+  ADR 0025, 3687 vs 3725 testów) → konwencja: domykanie sesji = świeży opis.
+
+**Wyniki:** `npm test` 3725/3725, `test:slow` 10/10, `test:all` 3735/3735,
+build 56 mod/2894.7 kB; szybki profil benchmarku 672 mecze: heuristic 85.1%
+(próbka `BENCH_DECKS`; pełny przebieg z PR #87 w `tools/b1-final-2026-08-29.*`
+— 5130 meczów, heuristic 80.8%). Pełna macierz B0 nie odpalana (ADR 0018/0025).
+
+**Następna sesja:** Etap 2 planu M257 — pętla jakości (Żywy Tester na
+następnej największej puli kart niewidzianych; polowanie na CR; bez nowego
+batcha kart) — szczegóły w `docs/setup/HANDOFF_2026-08-29.md`.
 
 ## Sesja 2026-08-29 — M255: pętla jakości Żywym Testerem po Batchu 51 (PR #87)
 
