@@ -298,9 +298,27 @@ export const OPTION_IGNORABLE_TYPES = Object.freeze([
 ]);
 
 const ACTION_RANK = Object.freeze({
-  resolve_mulligan_choice: -3, resolve_mulligan_bottom_choice: -3, resolve_backup: -2, resolve_scry: -1, resolve_surveil: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, suspend_card: 3, warp_card: 3, cast_permanent: 4, cast_spell: 5, cast_cleave: 5, activate_ability: 5,
+  resolve_mulligan_choice: -3, resolve_mulligan_bottom_choice: -3, resolve_backup: -2, resolve_scry: -1, resolve_surveil: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, suspend_card: 3, warp_card: 3, cast_permanent: 4, cast_spell: 5, cast_cleave: 5,
+  // M257 r3 (uwaga B właściciela): PRZYGODA (Gray Slaad) i inne rzuty, które
+  // tu nie były, spadały na fallback `?? 99` = PO pass/poddaniu. Właściciel:
+  // „Nie mogłaby się pokazywać tam gdzie inne czary?" — wszystkie czary
+  // razem, w ranku 5 (escape/flashback/adventure/obrócenie manifested).
+  cast_escape: 5, cast_flashback: 5, cast_adventure: 5, cast_adventure_creature: 5, turn_manifest_face_up: 5,
+  activate_ability: 5,
   declare_attackers: 5, declare_blockers: 6, resolve_combat: 7, pass_priority: 8, concede: 9,
 });
+
+/**
+ * M257 r3 (uwaga B właściciela): pozycja akcji w menu „Twoje działania".
+ * PASS i PODDAJĄCE SIĘ PARTII są ostatnie Z ZASADY (strukturalnie), a nie z
+ * ranku — nowa/nierankowana komenda (fallback 99) nigdy nie może wypaść
+ * poniżej „Poddaj partię". Test: test/m257-uwagi-runda3.test.js.
+ */
+export function actionMenuRank(type) {
+  if (type === 'pass_priority') return 1000;
+  if (type === 'concede') return 1001;
+  return ACTION_RANK[type] ?? 99;
+}
 
 /**
  * Grupuje warianty, które są jednym wyborem użytkownika: cel czaru/zdolności,
@@ -1501,8 +1519,16 @@ export function rulesText(info) {
   const spellLine = info.spell ? describeSpellEffects(info.spell) : '';
   const plotLine = info.plot ? `Plot {${info.plot.cost ?? '?'}}: wygnaj z ręki, później rzuć bez kosztu` : '';
   const equip = info.equipment;
+  // M257 r3 (Greatsword of Tyr, „Equip {W}"): pipy KOLORÓW kosztu equipu —
+  // to samo rozbicie generic + kolory co costTextOf/abilityCostHtml (M138/Z10:
+  // goła liczba kłamała, że koszt płaci się dowolną maną). Zwraca treść
+  // wewnątrz klamerek („1”, „W”, „1, B”).
+  const equipPips = (n, colors = []) => {
+    const generic = Math.max(0, (n ?? 0) - colors.length);
+    return [generic > 0 ? String(generic) : '', ...colors].filter(Boolean).join(', ');
+  };
   const equipLine = equip
-    ? `Equip ${equip.equipFor ? `${equip.equipFor.subtype} {${equip.equipFor.equip}} · ` : ''}{${equip.equip ?? '?'}}${(equip.keywords ?? []).length ? ` — nosiciel: ${(equip.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : ''}${equip.pump ? ` ${signed(equip.pump.power ?? 0)}/${signed(equip.pump.toughness ?? 0)}` : ''}${equip.cantBeBlockedMaxPower != null ? ` — nosiciel o mocy ≤${equip.cantBeBlockedMaxPower} nie może być blokowany` : ''}`
+    ? `Equip ${equip.equipFor ? `${equip.equipFor.subtype} {${equipPips(equip.equipFor.equip, equip.equipFor.colors) || '?'}} · ` : ''}{${equipPips(equip.equip, equip.colors) || '?'}}${(equip.keywords ?? []).length ? ` — nosiciel: ${(equip.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : ''}${equip.pump ? ` ${signed(equip.pump.power ?? 0)}/${signed(equip.pump.toughness ?? 0)}` : ''}${equip.cantBeBlockedMaxPower != null ? ` — nosiciel o mocy ≤${equip.cantBeBlockedMaxPower} nie może być blokowany` : ''}`
     : '';
   const morphLine = info.morph && info.morph.megamorphCost != null
     ? `Megamorph {${info.morph.megamorphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt Megamorph (+1/+1)`
@@ -2282,8 +2308,10 @@ export function commandLabel(cmd, session, view) {
         const targetEntry = targetId ? view.zones.battlefield.find((o) => o.id === targetId) : null;
         const equipForActive = Boolean(object?.equipment?.equipFor
           && (targetEntry?.subtypes ?? []).includes(object.equipment.equipFor.subtype));
+        // M257 r3: koszt wariantu equipFor niesie WŁASNE pipy kolorów
+        // (dotąd twarde `colors: []` — ukrywałoby „Equip Knight {W}”).
         const shownAbility = equipForActive
-          ? { ...ability, cost: { ...ability.cost, mana: object.equipment.equipFor.equip, colors: [] } }
+          ? { ...ability, cost: { ...ability.cost, mana: object.equipment.equipFor.equip, colors: object.equipment.equipFor.colors ?? [] } }
           : ability;
         return `Wyposaż: ${nameOfObjectId(cmd.objectId)} → ${target} (koszt ${abilityCostHtml(shownAbility)})`;
       }
@@ -3665,7 +3693,11 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   }
 
   // --- Akcje -----------------------------------------------------------
-  const commands = view.legalCommands.slice().sort((a, b) => (ACTION_RANK[a.type] ?? 99) - (ACTION_RANK[b.type] ?? 99));
+  // M257 r3 (uwaga B): `actionMenuRank` (nie surowy `ACTION_RANK`) — pass i
+  // poddanie partii są ostatnie Z ZASADY (1000/1001), a reszta wg ranku
+  // (nierankowane 99, czyli przed nimi). Właściciel: pass/poddaj zawsze na
+  // dole, „Przygoda" i inne efekty tam, gdzie inne czary.
+  const commands = view.legalCommands.slice().sort((a, b) => actionMenuRank(a.type) - actionMenuRank(b.type));
   // M102/U5 (zgłoszenie właściciela 2026-08-16): nagłówek „Twoje działania"
   // NIE pokazuje już liczby. Liczyła surowe `legalCommands`, więc po scaleniu
   // duplikatów (U4) i pogrupowaniu wariantów w modale nie zgadzała się nawet

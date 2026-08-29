@@ -148,6 +148,11 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // gospodarza ZOSTAJE na polu bitwy odłączony (nie ginie jak aura).
     equipment: equipment ? (() => {
       const base = { equip: equipment.equip, pump: equipment.pump ? Object.freeze({ ...equipment.pump }) : null, keywords: Object.freeze([...(equipment.keywords ?? [])]), subtypes: Object.freeze([...(equipment.subtypes ?? [])]) };
+      // M257 r3 (Greatsword of Tyr, „Equip {W}"): pipy KOLORÓW kosztu equipu —
+      // trzecia warstwa łańcucha registry → gameObject (L21); bez niej
+      // walidacja płaciła dowolną maną, podczas gdy oferta wymagała białej
+      // (uwaga C właściciela). Pole tylko gdy niepuste (jak w registry).
+      if (equipment.colors?.length) base.colors = Object.freeze([...equipment.colors]);
       // Batch 48 (Steelclaw Lance): TANSZY equip dla podtypu („Equip Knight
       // {1}" obok „Equip {3}"). Trzecia warstwa przepisujaca equipment pole
       // po polu — bez tego deskryptor ginie w drodze na obiekt gry (L21).

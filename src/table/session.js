@@ -2052,7 +2052,11 @@ export function createSession(config) {
     // M254/C: `true` = warstwa się otworzyła (albo czeka w kolejce) — prośba
     // o wstrzymanie gry, żeby gracz zdążył zobaczyć KAŻDY rzut, nie tylko
     // ostatni z sekwencji (zgłoszenie: mój czar zniknął, pokazał się cudzy).
-    if (onCast({ cardId, playerId: e.playerId ?? null, eventType: e.type }) === true) {
+    // M257 r3 (uwaga A): `faceDown` (CR 708.2 — twarzą w dół = 2/2,
+    // tożsamość ukryta przed OBU stronami) — warstwa ilustracji NIE może
+    // pokazać, co bot rzucił twarzą w dół (wypływ FoW przez FOT/KON/Scryfall).
+    if (onCast({ cardId, playerId: e.playerId ?? null, eventType: e.type,
+      faceDown: Boolean(e.faceDown ?? e.object?.faceDown) }) === true) {
       awaitingArtAck = true;
     }
   }

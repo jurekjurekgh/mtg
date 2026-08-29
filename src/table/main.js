@@ -609,7 +609,14 @@ function bootstrapTable() {
    * Gdy tryb jest wyłączony albo karta nie ma ilustracji — zwraca false
    * (gra toczy się dalej bez pauzy, dokładnie jak dotąd).
    */
-  function onCastShowcase({ cardId, playerId }) {
+  function onCastShowcase({ cardId, playerId, faceDown }) {
+    // M257 r3 (uwaga A właściciela): karta twarzą w dół (Morph, CR 708.2)
+    // ukrywa tożsamość PRZED OBU STRONAMI — warstwa ilustracji (FOT/KON/
+    // Scryfall + podpis „Rzuca: Nieprzyjaciel") nie może jej zdradzić, gdy
+    // to BOT rzuca ukrytego. Właściciel: „w ogóle ta warstwa nie powinna się
+    // pokazywać". Dotyczy też własnego morpha — rzucający zna swoją kartę
+    // (CR 708.6), a kafel pokazuje jej nazwę; warstwa dodałaby tylko pauzę.
+    if (faceDown) return false;
     if (!session || !els.hiGfxToggle?.checked) return false;
     const card = session.cardDetails(cardId);
     if (!cardHasShowcaseArt(card)) return false;

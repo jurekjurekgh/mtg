@@ -55,7 +55,11 @@ export function stateFingerprint(state) {
       attachedTo: attachedTo ?? null, baseKind: baseKind ?? null,
       bestow: bestow ? { cost: bestow.cost } : null,
       aura: aura ? { keywords: [...(aura.keywords ?? [])] } : null,
-      equipment: equipment ? { equip: equipment.equip } : null,
+      // M257 r3 (Greatsword of Tyr, „Equip {W}"): pipy kolorów kosztu są
+      // częścią stanu (dwa sprzęty {1} vs {W} muszą się różnić w odcisku).
+      equipment: equipment
+        ? { equip: equipment.equip, colors: [...(equipment.colors ?? [])] }
+        : null,
       backup: backup ? { counters: backup.counters } : null,
       transformTo: transformTo ? { cardId: transformTo.cardId, power: transformTo.power, toughness: transformTo.toughness } : null,
       untapLockedBy: [...(untapLockedBy ?? [])],
