@@ -6,55 +6,53 @@
 
 ## Kontekst
 
-Projekt jest prowadzony przez sesje Agent Arena (ADR 0013). Każda sesja startuje
-z gałęzi `main` i z tekstu pierwszego promptu, bez dostępu do stanu lokalnego
-poprzedniej sesji. Praca poprzednich sesji trafia do `main` przez scalenie PR
-(ADR 0007, 0013), a pojedynczy PR może naraz zawierać zmiany engine, batch kart,
-talie i zmiany bota. Dlatego nowa sesja musi zweryfikować, że poprzedni PR został
-poprawnie wdrożony, zanim rozbuduje go dalej — inaczej błędy poprzedniej sesji
-propagują się do nowych zmian.
+Projekt prowadzą sesje Agent Arena (ADR 0013): każda startuje z gałęzi `main` i
+tekstu pierwszego promptu, bez dostępu do stanu lokalnego poprzedniej sesji.
+Praca poprzednich sesji trafia do `main` przez scalenie PR (ADR 0007, 0013), a
+pojedynczy PR może naraz zawierać zmiany engine, batch kart, talie i bota. Nowa
+sesja musi więc zweryfikować poprzedni PR, zanim go rozbuduje — inaczej błędy
+poprzedniej sesji propagują się dalej.
 
-Ponadto w toku pracy agenci wielokrotnie przepisywali całe funkcje i pliki,
-ryzykując zgubienie istotnych elementów (zmienne, odwołania do innych funkcji,
-warunki brzegowe) i wprowadzając w ten sposób regresje.
+Ponadto agenci wielokrotnie przepisywali całe funkcje i pliki, ryzykując
+zgubienie istotnych elementów (zmienne, odwołania do innych funkcji, warunki
+brzegowe) i wprowadzając regresje.
 
 ## Decyzja
 
 ### A. Audyt poprzedniego PR na starcie sesji
 
-Każda nowa sesja obowiązkowo zaczyna się od szczegółowego audytu poprzedniego
-PR (ostatniego zmergowanego lub aktualnie otwartego w sesji):
+Każda nowa sesja zaczyna się od szczegółowego audytu poprzedniego PR
+(ostatniego zmergowanego lub aktualnie otwartego):
 
 1. **poprawność zmian w engine** (reguły, stan, FoW, determinizm) — żadna zmiana
    nie jest pominięta ani nie regresuje istniejących zachowań;
 2. **prawidłowe zakodowanie kart w batchu** — zgodność z Oracle text (Scryfall)
    i mechanikami, poprawne pola i `limitations`, działanie na prawdziwych
-   przykładowych scenariuszach;
+   scenariuszach;
 3. **audyt mechanik** używanych przez dodane karty — implementacja generyczna,
-   bez specjalnych przypadków po nazwie/ID karty (zgodnie z ADR 0002).
+   bez specjalnych przypadków po nazwie/ID karty (ADR 0002).
 
-Audyt prowadzony jest **bez pełnego BO** (pełna macierz benchmarku bota może
+Audyt prowadzony jest **bez pełnego BO** (pełna macierz benchmarku może
 przekroczyć limit czasu sesji); dopuszczalne potwierdzenie to `npm test` oraz
-`node --test test/bot-benchmark.test.js`. Wnioski trafiają do roadmapy zadania
-(`docs/plans/PLAN_*.md`) i `docs/PROJECT_HISTORY.md`.
+`node --test test/bot-benchmark.test.js`. Wnioski trafiają do
+`docs/plans/PLAN_*.md` i `docs/PROJECT_HISTORY.md`.
 
 ### B. Chirurgiczne patchowanie
 
-Przy zmianach kodu używa się patchowania chirurgicznego, które podmienia
-**minimalną ilość kodu** (pojedyncze linie, bloki, warunki), a nie całe funkcje
-czy pliki. Jeżeli wymiana całej funkcji lub pliku jest niezbędna, Agent ma
-obowiązek **dwukrotnie sprawdzić**, czy nowa wersja nie zgubiła istotnych
-elementów: zmiennych, pól, odwołań do innych funkcji, warunków brzegowych.
-Zalecane jest przejrzenie `git diff` po zmianie i opisanie w commicie, co
-zostało zachowane.
+Zmiany kodu podmieniają **minimalną ilość kodu** (pojedyncze linie, bloki,
+warunki), nie całe funkcje czy pliki. Jeżeli wymiana całej funkcji lub pliku
+jest niezbędna, agent **dwukrotnie sprawdza**, czy nowa wersja nie zgubiła
+istotnych elementów: zmiennych, pól, odwołań do innych funkcji, warunków
+brzegowych. Zalecane jest przejrzenie `git diff` po zmianie i opisanie w
+commicie, co zostało zachowane.
 
 ## Konsekwencje
 
 ### Pozytywne
 
 - Nowa sesja zaczyna od zweryfikowanego stanu — błędy poprzedniego PR są łapane
-  i naprawiane u root cause, zanim rozbudują się dalej.
-- Mniej regresji spowodowanych zgubieniem elementów przy przepisywaniu kodu.
+  u root cause, zanim się rozbudują.
+- Mniej regresji ze zgubienia elementów przy przepisywaniu kodu.
 - Mniejsze diffy, łatwiejsze review i scalanie (ADR 0007).
 
 ### Koszty i ryzyka
@@ -67,9 +65,8 @@ zostało zachowane.
 
 ## Rozważone alternatywy
 
-- Utrzymanie reguł wyłącznie w `AGENTS.md` bez ADR — reguła nadal obowiązywałaby,
-  ale bez trwałego rejestru decyzji; ADR zapewnia rozstrzygnięcie odtwarzalne
-  z repozytorium.
+- **Reguły wyłącznie w `AGENTS.md`, bez ADR** — obowiązywałyby, ale bez
+  trwałego rejestru decyzji odtwarzalnego z repozytorium.
 
 ## Powiązania
 

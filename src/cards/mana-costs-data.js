@@ -417,4 +417,13 @@ export const MANA_COSTS = {
   "nanoform-sentinel": "{2}{U}",
   "jwar-isle-avenger": "{4}{U}",
   "manifest-dread": "{1}{G}",
+  // Batch 51 (2026-08-28) — koszty wprost z Oracle (docs/cards/scryfall-*.json).
+  "skinbrand-goblin": "{1}{R}",
+  "typhoid-rats": "{B}",
+  "invasive-species": "{2}{G}",
+  "dromoka-warrior": "{1}{W}",
+  "akroan-sergeant": "{2}{R}",
+  "thunderstaff": "{3}",
+  "savage-surge": "{1}{G}",
+  "kulrath-mystic": "{2}{U}",
 };

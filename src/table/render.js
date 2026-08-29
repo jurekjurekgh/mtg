@@ -1,6 +1,6 @@
 import {
   IMAGE_MODE, cardImageSources, hoverImageSources, hoverModeLabel, hoverPreviewShape,
-  nextHoverMode, HOVER_MODES, tileImageSources, localArtUrl, scryfallImageUrl,
+  nextHoverMode, HOVER_MODES, tileImageSources, localArtUrl, scryfallCardUrl, IMAGE_SIZE,
 } from './card-images.js';
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
@@ -170,6 +170,8 @@ const TARGET_TYPE_LABELS = Object.freeze({
   nonartifact_nonblack_creature: 'stwór niebędący artefaktem ani czarnym',
   creature_you_control: 'twój stwór', creature_opponent_controls: 'stwór przeciwnika',
   creature_or_vehicle: 'stwór lub Vehicle',
+  // Batch 51 (Skinbrand Goblin — Bloodrush): cel to ATAKUJĄCY stwór tej walki.
+  attacking_creature: 'atakujący stwór',
   creature_defending_player_controls: 'stwór broniącego się gracza',
   creature_with_subtypes: 'stwór z podtypem', creature_with_power_at_least: 'stwór o sile ≥',
   creature_card_in_graveyard: 'karta-stwór w grobie', creature_card_in_opponent_graveyard: 'karta-stwór w grobie przeciwnika',
@@ -239,7 +241,9 @@ export function describeSpellEffects(spell) {
   }
   const parts = (spell.effects ?? []).map((effect) => {
     if (effect.type === 'damage') return `Obrażenia ${effect.amount}`;
-    if (effect.type === 'pump') return `+${effect.power}/+${effect.toughness} do końca tury`;
+    // M255/D: „+${power}/+${toughness}” drukowało SUROWY SLUG, gdy wartość
+    // jest dynamiczna (Tarmogoyf). Ten sam helper co buff_* (`ptPair`).
+    if (effect.type === 'pump') return `${ptPair(effect.power ?? 0, effect.toughness ?? 0)} do końca tury`;
     if (effect.type === 'create_token') {
       // amount > 1: „N× token" (Gather the Townsfolk 2×, Howl 2×+, Undead Servant wg grobu).
       // Domyślny amount=1 (ETB tworzące jeden token, np. Crested Herdcaller 3/3) —
@@ -809,8 +813,26 @@ function ptAmount(n) {
 function ptPair(power, toughness) {
   const p = ptAmount(power ?? 0);
   const t = ptAmount(toughness ?? 0);
-  if (p === t && typeof power === 'string' && typeof toughness === 'string') return p;
-  return `${p}/${t}`;
+  const pDyn = typeof power === 'string';
+  const tDyn = typeof toughness === 'string';
+  if (!pDyn && !tDyn) return `${p}/${t}`;
+  // M255/D (pętla jakości, Altar of the Goyf / Jyoti / Tarmogoyf): wartość
+  // DYNAMICZNA (string) to DEFINICJA X, a nie liczba premii. Drukowanie jej
+  // samej („Gdy atakuje samotnie: liczba typów kart w grobach do końca tury”)
+  // brzmiało tak, jakby treścią efektu była definicja, a nie +X/+X — gracz
+  // nie widział, co właściwie dostaje stwór. Jedna reguła dla pary: premia
+  // zawsze ma znak, a definicje X/Y idą po „gdzie” (L41 — jedno źródło
+  // prawdy dla obu etykiet, które mogą nieść wartości dynamiczne: `ptPair`
+  // dla buff_* i `pump`).
+  // Równe definicje (Jyoti: source_power/source_power; Altar: liczba typów
+  // kart w grobach dla obu) pokazujemy RAZ (pin: test/bug-ptpair-description).
+  const pair = (pDyn && tDyn && p === t)
+    ? `+X/+X (X = ${p})`
+    : `${pDyn ? '+X' : p}/${tDyn ? '+Y' : t}${pDyn || tDyn ? ` (${[
+        ...(pDyn ? [`X = ${p}`] : []),
+        ...(tDyn ? [`Y = ${t}`] : []),
+      ].join(', ')})` : ''}`;
+  return pair;
 }
 
 /** Diament (2026-08-11): odmiana „obrażenie/obrażenia/obrażeń" wg liczby. */
@@ -830,7 +852,10 @@ function describeEffect(e) {
   // „efekt (undefined)" — pomijamy (audyt żywym testerem).
   if (!e || typeof e.type !== 'string' || e.type === '') return '';
   const generic = {
-    pump: () => `${signed(e.power ?? 0)}/${signed(e.toughness ?? 0)} do końca tury${e.upgradeIfCreatures ? ` (${signed(e.upgradeIfCreatures.power ?? 0)}/${signed(e.upgradeIfCreatures.toughness ?? 0)} przy ${e.upgradeIfCreatures.min}+ stworach)` : ''}`,
+    // M255/D: `signed()` nie znał wartości dynamicznych — dla „pump” z X
+    // (Tarmogoyf: liczba typów kart w grobach) panel drukowałby SUROWY SLUG.
+    // Ten sam helper co buff_* (`ptPair`), liczby bez zmian (D3).
+    pump: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} do końca tury${e.upgradeIfCreatures ? ` (${signed(e.upgradeIfCreatures.power ?? 0)}/${signed(e.upgradeIfCreatures.toughness ?? 0)} przy ${e.upgradeIfCreatures.min}+ stworach)` : ''}`,
     exile_if_dies_this_turn: () => 'jeśli miałby umrzeć w tej turze, wygnaj go zamiast tego',
     create_token: () => {
       const count = Number.isFinite(e.amount) && e.amount > 1 ? `×${e.amount} ` : '';
@@ -896,6 +921,9 @@ function describeEffect(e) {
     bounce_to_library_top: () => 'włóż na wierzch biblioteki właściciela',
     bounce_to_library_bottom: () => 'włóż na spód biblioteki właściciela',
     buff_creatures_you_control: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla twoich stworów do końca tury`,
+    // Batch 51 (Thunderstaff): „Attacking creatures get +1/+0 until end of
+    // turn." — bez wpisu panel pokazywałby surowy slug (strażnik M122).
+    buff_attacking_creatures: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla atakujących stworów do końca tury`,
     buff_creature_until_end_of_turn: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} do końca tury`,
     buff_land_creatures: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla land creatures do końca tury`,
     buff_opponents_creatures: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla stworów przeciwnika do końca tury`,
@@ -1238,6 +1266,14 @@ function describeAbility(ability, { withCost = true, withTarget = true } = {}) {
   }
   if (ability?.channel) {
     return `Channel ${costTextOf(ability)} — szukaj podstawowego lądu`;
+  }
+  // Batch 51 (Skinbrand Goblin): Bloodrush (CR 207.2c — słowo zdolności).
+  // Sama lista efektów (pump +2/+1) nie mówi graczowi NAJWAŻNIEJSZEGO: że
+  // płaci ODRZUCENIEM tej karty z ręki, a beneficjentem jest atakujący stwór.
+  if (ability?.bloodrush) {
+    const pw = ability.bloodrush.power ?? 0;
+    const th = ability.bloodrush.toughness ?? 0;
+    return `Bloodrush ${costTextOf(ability)} — odrzuć: atakujący stwór ${pw > 0 ? '+' : ''}${pw}/${th > 0 ? '+' : ''}${th}`;
   }
   // M138/Z10 (audyt Żywym Testerem): zdolność, której treścią jest KEYWORD,
   // a nie lista efektów (`effect: []` — mechanikę realizuje silnik po
@@ -2228,6 +2264,14 @@ export function commandLabel(cmd, session, view) {
       if (ability?.channel) {
         return `Channel: ${nameOfObjectId(cmd.objectId)} (koszt ${abilityCostHtml(ability)}) → szukaj podstawowego lądu`;
       }
+      // Batch 51 (Skinbrand Goblin): koszt bloodrushu to mana + ODRZUCENIE
+      // karty z ręki (CR 117.11) — etykieta pokazuje oba, bo gracz widzi tu
+      // jedynie „{R}”, a traci kartę.
+      if (ability?.bloodrush) {
+        const pw = ability.bloodrush.power ?? 0;
+        const th = ability.bloodrush.toughness ?? 0;
+        return `Bloodrush: ${nameOfObjectId(cmd.objectId)} (koszt ${abilityCostHtml(ability)}, odrzuć) → atakujący ${pw > 0 ? '+' : ''}${pw}/${th > 0 ? '+' : ''}${th}`;
+      }
       if (ability?.keyword === 'equip') {
         // Batch 48 (Steelclaw Lance, ELD): „Equip Knight {1}" obok „Equip {3}" —
         // koszt zależy od PODTYPU celu (CR 702.6e). Etykieta musi pokazywać
@@ -2819,6 +2863,12 @@ export function cardInfo(session, object, combat = null) {
   // nie wyglądał jak pełny stwór — jest „zakryty (morph)", 2/2.
   const ownFaceDown = faceDown && object.controllerId === HUMAN_ID;
   const details = faceDown ? {} : (session.cardDetails(cardId) || {});
+  // M254/B (zgłoszenie właściciela): właściciel zna swoją kartę zakrytą
+  // (CR 708.6 — tożsamość nie jest informacją ukrytą dla niego), więc
+  // PODGLĄD (hover / pełny ekran) pokazuje prawdziwą ilustrację. Kafel na
+  // stole zostaje zakryty (imageUri/artId niżej są nadal null) — znacznik
+  // niesie wyłącznie dane do obrazu, żeby nie odkryć reszty (tekst, staty).
+  const ownFaceDownDetails = ownFaceDown ? (session.cardDetails(cardId) || {}) : null;
   const colors = faceDown ? [] : (session.colorsOf(cardId) || details.colors || []);
   const kind = inferKind(object, details);
   // Załączona aura to na polu bitwy „Enchantment — Aura", a nie stwór;
@@ -2911,6 +2961,17 @@ export function cardInfo(session, object, combat = null) {
           .map((o) => ({ name: o.cardId ? (session.nameOf(o.cardId) || o.cardId) : o.cardId, kind: (o.aura || o.bestow) ? 'aura' : 'equip' }))
       : [],
     faceDown,
+    // M254/B: ilustracja PRAWDZIWEJ karty dla właściciela zakrytego
+    // permanentu (hover i pełny ekran); `null` dla kart przeciwnika —
+    // FoW (CR 708.2) dalej obowiązuje, bo tożsamość zna tylko właściciel.
+    hiddenArt: ownFaceDownDetails
+      ? {
+        name: ownFaceDownDetails.name ?? null,
+        set: ownFaceDownDetails.set ?? null,
+        imageUri: ownFaceDownDetails.imageUri ?? null,
+        artId: ownFaceDownDetails.artId ?? null,
+      }
+      : null,
     // M112: znacznik walki („atakuje — niezablokowany", „blokuje: X").
     combatRole: combatRoleOf(object, combat, session),
     isBattlefield: object.zone === 'battlefield',
@@ -3216,10 +3277,20 @@ export function renderMiniFace(el, session, objectId) {
  * syntetyczna twarz. Wydzielone z `renderTableView`, żeby dało się testować
  * bez pełnego stołu.
  */
+/**
+ * Ilustracja dla PODGLĄDU (hover / pełny ekran). M254/B: właściciel zakrytego
+ * permanentu widzi PRAWDZIWĄ kartę — kafel na stole zostaje zakryty, bo
+ * `artOf()` (kafel) czyta `info.faceDown`, a nie to pole.
+ */
+function hoverArtOf(info) {
+  if (info?.hiddenArt) return { ...info.hiddenArt, faceDown: false };
+  return artOf(info);
+}
+
 export function renderHoverPreview(host, info, hoverMode = 'scryfall') {
   clear(host);
   const shape = hoverPreviewShape(hoverMode);
-  const candidates = hoverImageSources(artOf(info), { hoverMode });
+  const candidates = hoverImageSources(hoverArtOf(info), { hoverMode });
   // M157/A (uwaga właściciela, czwarty raz — usuwamy zaślepkę całkiem):
   // podgląd hover/tap NIE rysuje syntetycznej „niby-karty". Każda karta ma
   // ilustrację (Scryfall; FOT/KON z artId), a pseudo-karta z gradientem
@@ -3228,7 +3299,7 @@ export function renderHoverPreview(host, info, hoverMode = 'scryfall') {
   if (!candidates.length) return host;
   const img = document.createElement('img');
   img.className = 'hover-img';
-  img.alt = info.faceDown ? 'Karta zakryta' : info.name;
+  img.alt = (info.faceDown && !info.hiddenArt) ? 'Karta zakryta' : info.name;
   img.decoding = 'async';
   img.style.width = `${shape.width}px`;
   img.style.maxHeight = `${shape.height}px`;
@@ -3253,11 +3324,13 @@ export function renderCardFullscreen(host, info, { positionText = null } = {}) {
   if (!info) return host;
   // M157/A (uwaga właściciela): pełny ekran bez syntetycznej „niby-karty" —
   // wyłącznie skan karty (tożsamość własnej karty zakrytej niesie alt obrazu).
-  const candidates = hoverImageSources(artOf(info), { hoverMode: 'scryfall' });
+  const candidates = hoverImageSources(hoverArtOf(info), { hoverMode: 'scryfall' });
   if (candidates.length) {
     const img = document.createElement('img');
     img.className = 'card-img';
-    img.alt = info.faceDown ? 'Karta zakryta' : info.name;
+    // M254/B: właściciel zakrytej karty widzi w podglądzie jej prawdziwą
+    // ilustrację, więc alt niesie prawdziwą nazwę (FoW = tylko dla wroga).
+    img.alt = (info.faceDown && !info.hiddenArt) ? 'Karta zakryta' : info.name;
     img.decoding = 'async';
     host.appendChild(img);
     attachImageWithFallback(img, candidates, null);
@@ -3328,7 +3401,13 @@ export function renderCardArtShowcase(host, card, { casterName = null } = {}) {
   sf.alt = `${card.name ?? 'Karta'} — Scryfall`;
   sf.decoding = 'async';
   sf.addEventListener('load', () => { sf.className = sf.className.replace(/\s*is-loading/, ''); });
-  sf.src = scryfallImageUrl(card);
+  // M254/A (zgłoszenie właściciela, Willbender): `scryfallImageUrl` buduje
+  // adres po NAZWIE (`/cards/named?exact=`), a Scryfall oddaje wtedy druk
+  // DOMYŚLNY, nie ten z kolekcji — na stole kafel brał `imageUri` (właściwy
+  // druk), a warstwa wysoko-graficzna pokazywała inną edycję. `scryfallCardUrl`
+  // preferuje druk z definicji i spada na nazwę tylko dla kart bez `imageUri`
+  // (landy wirtualne, tokeny) — dokładnie jak kafel i podgląd.
+  sf.src = scryfallCardUrl(card, { size: IMAGE_SIZE.zoom });
   row.appendChild(sf);
   host.appendChild(row);
   return host;
@@ -4049,7 +4128,11 @@ export function renderEnemyHand(host, label, view, session, enemyId) {
  */
 export function waitingExileEntries(view) {
   return (view.zones?.exile ?? []).filter((o) => o.suspended || o.plotted || o.plottedAtTurn != null
-    || o.playableWithoutPaying || o.reboundReady || o.madnessReady);
+    || o.playableWithoutPaying || o.reboundReady || o.madnessReady
+    // M254/D (zgłoszenie właściciela, Wormfang Newt): wygnanie TYMCZASOWE
+    // z linkiem powrotu („kiedy źródło opuści pole bitwy") — ta sama strefa
+    // co Suspend/Plot, bo karta też stamtąd wraca (tylko bez liczników).
+    || o.temporaryExile);
 }
 
 /** Opis stanu oczekiwania — jedno źródło dla kafla i dla podpowiedzi. */
@@ -4073,6 +4156,14 @@ export function waitingExileStatus(object) {
   }
   if (object.reboundReady) parts.push('Rebound · rzut w Twoim upkeepie');
   if (object.madnessReady) parts.push('Madness · czeka na decyzję rzutu');
+  // M254/D: badge „wygnana tymczasowo przez <karta>" — nazwa źródła jest
+  // informacją PUBLICZNĄ (wygnanie widać na stole), więc nie ma tu FoW.
+  if (object.temporaryExile) {
+    const by = object.temporaryExile.byName;
+    parts.push(by
+      ? `Wygnana tymczasowo przez ${by} · wróci, gdy opuści pole bitwy`
+      : 'Wygnana tymczasowo · wróci, gdy źródło opuści pole bitwy');
+  }
   return parts.join(' · ');
 }
 

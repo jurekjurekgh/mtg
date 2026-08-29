@@ -13,6 +13,7 @@
 1x Release the Ants
 1x Soulbright Flamekin
 1x Crew Captain
+1x Kulrath Mystic
 1x Stomping Slabs
 1x Security Rhox
 1x Swooping Protector
@@ -24,7 +25,7 @@
 1x Fear of Abduction
 1x Fear of Burning Alive
 3x Plains
-1x Island
+2x Island
 2x Swamp
-4x Mountain
+3x Mountain
 2x Forest

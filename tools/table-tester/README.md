@@ -31,7 +31,10 @@ wypisuje `--list-decks`; nieistniejąca nazwa to jawny błąd), `--seed <n>`,
 
 Profile gracza: `greedy` (domyślny), `random`, `defensive`, `explorer`,
 `impatient` (M99 — nie czeka na zamknięcie pauzy bota, czasem stuka dwa razy;
-jedyny, który odtwarza błędy stanu po odrzuconej komendzie).
+jedyny, który odtwarza błędy stanu po odrzuconej komendzie), `hoarder`
+(M256 — trzyma w ręce karty mechanik „z ręki" (bloodrush) i używa ich w oknie
+ataku; bez niego stała kolejność priorytetów ZAMAWIA taką kartę na stół, zanim
+powstanie okno, którego potrzebuje).
 
 ## Transkrypt
 

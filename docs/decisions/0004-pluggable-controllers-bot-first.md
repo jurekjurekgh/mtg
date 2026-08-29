@@ -6,26 +6,30 @@
 
 ## Kontekst
 
-Dzisiejszy przeciwnik korzysta z zewnętrznego chatbota: właściciel przekleja snapshot i ręcznie wykonuje jego decyzję. Taki przepływ jest wolny, trudny do odtworzenia i zależny od jakości niedeterministycznej odpowiedzi.
-
-Nie jest jednak wykluczone, że w przyszłości LLM lub bardziej zaawansowany algorytm będzie użyteczny strategicznie.
+Dzisiejszy przeciwnik to zewnętrzny chatbot: właściciel przekleja snapshot i
+ręcznie wykonuje jego decyzję — wolno, trudno odtworzyć, zależnie od
+niedeterministycznej odpowiedzi. Nie wykluczamy, że w przyszłości LLM lub
+zaawansowany algorytm będzie użyteczny strategicznie.
 
 ## Decyzja
 
-Engine udostępni wspólny protokół kontrolera. Człowiek, bot losowy, bot regułowy/heurystyczny, search bot i opcjonalny agent LLM będą wymiennymi implementacjami tej samej roli.
-
-Pierwszą automatyczną implementacją będzie prosty bot przydatny do testów, a pierwszym celem grywalnym — bot algorytmiczny/heurystyczny. LLM nie jest wymagany do pierwszej wersji i nigdy nie rozstrzyga legalności.
-
-Kontroler wybiera z działań i opcji przedstawionych przez engine. Może być lekko randomizowany w sposób kontrolowany.
+- Engine udostępnia wspólny protokół kontrolera: człowiek, bot losowy,
+  heurystyczny, search bot i opcjonalny agent LLM to wymienne implementacje tej
+  samej roli.
+- Pierwszą automatyczną implementacją jest prosty bot do testów; pierwszym
+  celem grywalnym — bot algorytmiczny/heurystyczny. LLM nie jest wymagany do
+  pierwszej wersji i nigdy nie rozstrzyga legalności.
+- Kontroler wybiera z działań i opcji przedstawionych przez engine; może być
+  lekko randomizowany w sposób kontrolowany.
 
 ## Konsekwencje
 
 ### Pozytywne
 
 - Brak kosztu i opóźnień LLM w podstawowej grze.
-- Powtarzalne testy oraz możliwość diagnozowania decyzji.
+- Powtarzalne testy i możliwość diagnozowania decyzji.
 - Późniejsze AI nie wymaga przebudowy engine.
-- Random bot może eksplorować wiele ścieżek i wykrywać błędy reguł.
+- Random bot eksploruje wiele ścieżek i wykrywa błędy reguł.
 
 ### Koszty i ryzyka
 
@@ -37,8 +41,9 @@ Kontroler wybiera z działań i opcji przedstawionych przez engine. Może być l
 ## Rozważone alternatywy
 
 - LLM jako jedyny przeciwnik — odrzucone jako domyślna architektura.
-- Logika bota wpisana bezpośrednio do engine — odrzucone z powodu sprzężenia strategii z regułami.
-- Bot podający dowolny tekst ruchu do interpretacji — odrzucone; powinien używać stabilnych identyfikatorów działań i wyborów.
+- Logika bota wpisana wprost do engine — sprzężenie strategii z regułami.
+- Bot podający dowolny tekst ruchu do interpretacji — ma używać stabilnych
+  identyfikatorów działań i wyborów.
 
 ## Powiązania
 

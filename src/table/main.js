@@ -31,6 +31,7 @@ import { parseManaCost } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
+import { createArtShowcaseQueue } from './art-showcase.js';
 import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard } from './choice-request.js';
 import { multiTargetPlanOf, mulliganBottomPlanOf } from './multi-target.js';
 import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
@@ -563,11 +564,32 @@ function bootstrapTable() {
    * ilustracjami (artId) — inaczej warstwa byłaby pusta.
    */
   let artShowcaseOpenedAt = 0;
+  /**
+   * M254/C (zgłoszenie właściciela): KOLEJKA rzutów. Wcześniej warstwa
+   * otwierała się w trakcie pętli `advance()`, więc kolejne rzuty w jednej
+   * sekwencji nadpisywały ją i gracz widział wyłącznie OSTATNI (własny czar
+   * znikał, pokazywał się czar nieprzyjaciela z następnej tury). Teraz:
+   *  - `onCast` dokłada rzut do kolejki i prosi sesję o pauzę (zwraca true);
+   *  - zamknięcie warstwy otwiera NASTĘPNY rzut z kolejki;
+   *  - dopiero po opróżnieniu kolejki gra jest wznawiana.
+   */
+  function artShowcaseOpen() {
+    return els.artShowcase?.className === 'art-showcase active';
+  }
+  // Moduł czysty (testowalny headless) — kolejka mówi, KIEDY otworzyć warstwę.
+  const artShowcaseQueue = createArtShowcaseQueue({
+    isOpen: artShowcaseOpen,
+    open: ({ cardId, playerId }) => openArtShowcase(cardId, playerId),
+  });
+  /** Otwiera kolejny rzut z kolejki (jeśli jest). Zwraca true, gdy otwarto. */
+  function openNextArtShowcase() {
+    return artShowcaseQueue.next();
+  }
   function openArtShowcase(cardId, playerId = null) {
-    if (!session || !els.artShowcase) return;
-    if (!els.hiGfxToggle?.checked) return;
+    if (!session || !els.artShowcase) return false;
+    if (!els.hiGfxToggle?.checked) return false;
     const card = session.cardDetails(cardId);
-    if (!cardHasShowcaseArt(card)) return;
+    if (!cardHasShowcaseArt(card)) return false;
     // I1 (zgłoszenie właściciela 2026-08-28): warstwa odpala się dla kart
     // OBU stron — mała podpowiedź, KTO rzucił („Czarodziejka"/„Nieprzyjaciel",
     // imiona jak w sekcji „Przebieg tur"; fallback: nazwa gracza z widoku).
@@ -578,13 +600,36 @@ function bootstrapTable() {
     els.artShowcase.className = 'art-showcase active';
     els.artShowcase.setAttribute('aria-hidden', 'false');
     artShowcaseOpenedAt = Date.now();
+    return true;
   }
 
+  /**
+   * M254/C: obserwator `onCast` — dokłada rzut do kolejki, otwiera warstwę
+   * (gdy wolna) i PROSI o pauzę (`true` → sesja wstrzymuje `advance()`).
+   * Gdy tryb jest wyłączony albo karta nie ma ilustracji — zwraca false
+   * (gra toczy się dalej bez pauzy, dokładnie jak dotąd).
+   */
+  function onCastShowcase({ cardId, playerId }) {
+    if (!session || !els.hiGfxToggle?.checked) return false;
+    const card = session.cardDetails(cardId);
+    if (!cardHasShowcaseArt(card)) return false;
+    // 'opened' | 'queued' — w obu przypadkach gra ma stanąć.
+    return artShowcaseQueue.push({ cardId, playerId }) != null;
+  }
+
+  /** Zamknięcie warstwy: następny rzut z kolejki albo wznowienie gry (M254/C). */
   function closeArtShowcase() {
     if (!els.artShowcase) return;
     els.artShowcase.className = 'art-showcase';
     els.artShowcase.setAttribute('aria-hidden', 'true');
     els.artShowcase.textContent = '';
+    artShowcaseOpenedAt = 0;
+    if (openNextArtShowcase()) return; // kolejny rzut czeka — gra nadal stoi
+    if (!session?.artPausePending) return;
+    session.continueArtPlay();
+    autosave();
+    rerender();
+    showBotMoves();
   }
 
   /**
@@ -1309,7 +1354,9 @@ function bootstrapTable() {
       showNotice(`Błąd wewnętrzny stołu: ${result.internalError}. Wyeksportuj zapis partii i zgłoś problem.`);
       return;
     }
-    if (result?.ok !== false) showBotMoves();
+    // M254/C: przy wstrzymanej warstwie grafik nie otwieramy modala „Ruch
+    // bota" — gracz ogląda ilustrację rzutu; gra ruszy po zamknięciu.
+    if (result?.ok !== false && !result?.artPause) showBotMoves();
   }
 
   /**
@@ -1524,7 +1571,9 @@ function bootstrapTable() {
         seed, registry, decks, pauseOnBotMoves: true, ignoredOptionKeys,
         // M232: obserwator rzutu — otwiera warstwę wysoko-graficzną (jeśli tryb
         // włączony). Zero wpływu na przebieg gry.
-        onCast: ({ cardId, playerId }) => openArtShowcase(cardId, playerId),
+        // M254/C: obserwator zwraca `true`, gdy warstwa naprawdę się pokazała
+        // — wtedy sesja wstrzymuje grę do jej zamknięcia.
+        onCast: (payload) => onCastShowcase(payload),
       });
       // Nowa gra unieważnia wstrzymany rzut kreatora many (E.3a): deskryptor
       // odnosił się do starej sesji, więc zamykamy modal i zapominamy komendę.

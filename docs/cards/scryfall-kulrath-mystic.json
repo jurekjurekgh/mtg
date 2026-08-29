@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Kulrath+Mystic&set=ecl",
+  "print": "ecl",
+  "name": "Kulrath Mystic",
+  "mana_cost": "{2}{U}",
+  "cmc": 3.0,
+  "type_line": "Creature — Elemental Wizard",
+  "oracle_text": "Whenever you cast a spell with mana value 4 or greater, this creature gets +2/+0 and gains vigilance until end of turn.",
+  "set": "ecl",
+  "set_name": "Lorwyn Eclipsed",
+  "collector_number": "56",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/7/377d257c-920c-4dd4-a4b1-01cbc631ef8f.jpg?1783904487",
+    "normal": "https://cards.scryfall.io/normal/front/3/7/377d257c-920c-4dd4-a4b1-01cbc631ef8f.jpg?1783904487"
+  },
+  "pobrano": "2026-08-28",
+  "power": "2",
+  "toughness": "4",
+  "colors": [
+    "U"
+  ]
+}

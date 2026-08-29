@@ -137,7 +137,10 @@ test('M99: skutek czaru bota (+X/+X) też trafia do modala, nie tylko do logu', 
   // tarkir→tarkir-bg; Awaken the Bear jest po zielonej stronie tarkir-bg) —
   // hunter (kolejne sprawdzone z pump w modalu: 8, 9, 10, 16, 17, 21, 23).
   // Konwencja L25.
-  const session = makeSession(3);
+  // Seed 4 po Batchu 51 (8 kart: tarkir +Typhoid Rats +Dromoka Warrior,
+  // pozostałe plany bez zmian w tej parze) — hunter (kolejne sprawdzone:
+  // 6, 7, 8, 9, 11, 12). Konwencja L25.
+  const session = makeSession(4);
   const { modalTexts, log } = playCollectingModals(session);
   const pumpInLog = log.filter((t) => /dostaje \+\d+\/\+\d+/.test(t));
   assert.ok(pumpInLog.length > 0, 'seed 3 miał produkować pump w logu');

@@ -6,37 +6,41 @@
 
 ## Kontekst
 
-Magic: The Gathering obejmuje dziesiątki tysięcy kart i dużą liczbę wyjątków. Celem projektu jest gra z prywatnym, wybranym katalogiem właściciela, liczącym obecnie około 400 kart. Próba pełnej obsługi całej gry przed pierwszą rozgrywką uniemożliwiłaby szybkie dostarczenie wartości.
+MtG to dziesiątki tysięcy kart z dużą liczbą wyjątków. Celem projektu jest gra
+z prywatnym katalogiem właściciela (~400 kart); pełna obsługa całej gry przed
+pierwszą rozgrywką uniemożliwiłaby szybkie dostarczenie wartości.
 
 ## Decyzja
 
-Karty będą implementowane pojedynczo lub małymi partiami. Brakujące mechaniki powstaną wtedy, gdy zażąda ich konkretna karta, ale będą projektowane jako elementy wielokrotnego użytku tam, gdzie ma to sens.
-
-Pierwszym celem grywalności jest około 20 odpowiednio dobranych, w pełni przetestowanych kart. Katalog będzie następnie doganiał i rozwijał prywatną bazę właściciela.
-
-Każda karta otrzyma jawny status wsparcia. Nieobsługiwana karta nie może po cichu wejść do normalnej rozgrywki.
+- Karty implementujemy pojedynczo lub małymi partiami. Brakujące mechaniki
+  powstają, gdy zażąda ich konkretna karta, ale projektujemy je jako elementy
+  wielokrotnego użytku.
+- Pierwszy cel grywalności: ~20 dobranych, w pełni przetestowanych kart; potem
+  katalog dogania prywatną bazę właściciela.
+- Każda karta ma jawny status wsparcia. Nieobsługiwana karta nie wchodzi po
+  cichu do normalnej rozgrywki.
 
 ## Konsekwencje
 
 ### Pozytywne
 
-- Szybka droga do pierwszej grywalnej wersji.
-- Zakres pracy pozostaje kontrolowany.
+- Szybka droga do pierwszej grywalnej wersji; zakres pracy pod kontrolą.
 - Mechaniki rozwijają się na podstawie realnych potrzeb.
-- Można jednoznacznie powiedzieć, które talie są legalne dla engine.
+- Jednoznaczna odpowiedź, które talie są legalne dla engine.
 
 ### Koszty i ryzyka
 
-- Nie każda karta z bazy będzie od razu dostępna.
+- Nie każda karta z bazy będzie dostępna od razu.
 - Kolejność kart może wcześnie wymusić złożoną mechanikę.
-- Każda nowa interakcja może ujawnić brak w istniejącym modelu.
-- Potrzebny jest registry statusu i ograniczeń wsparcia.
+- Nowa interakcja może ujawnić brak w modelu.
+- Potrzebny jest rejestr statusu i ograniczeń wsparcia.
 
 ## Rozważone alternatywy
 
-- Pełna implementacja Comprehensive Rules przed kartami — odrzucona jako zbyt duży zakres.
-- Interpretowanie dowolnego tekstu karty przez LLM w czasie gry — odrzucone jako niedeterministyczne i niewiarygodne źródło legalności.
-- Zakodowanie wyłącznie dwóch niezmiennych talii — zbyt ograniczające dla rozwijanej kolekcji.
+- Pełna implementacja Comprehensive Rules przed kartami — zbyt duży zakres.
+- Interpretacja dowolnego tekstu karty przez LLM w czasie gry —
+  niedeterministyczne i niewiarygodne źródło legalności.
+- Zakodowanie wyłącznie dwóch niezmiennych talii — zbyt ograniczające.
 
 ## Powiązania
 

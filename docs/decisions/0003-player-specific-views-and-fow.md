@@ -6,39 +6,44 @@
 
 ## Kontekst
 
-Obecna aplikacja pokazuje obie ręce i cały snapshot jest dostępny człowiekowi oraz chatbotowi. Docelowa rozgrywka ma symulować informacje ukryte zgodnie z zasadami MtG.
-
-Samo schowanie elementu HTML nie tworzy poprawnej granicy informacji. Kontroler może przypadkowo albo celowo wykorzystać dane, których nie powinien znać.
+Obecna aplikacja pokazuje obie ręce, a cały snapshot jest dostępny człowiekowi i
+chatbotowi; docelowa rozgrywka symuluje informacje ukryte wg zasad MtG.
+Schowanie elementu HTML nie tworzy poprawnej granicy informacji — kontroler
+może wykorzystać dane, których nie powinien znać.
 
 ## Decyzja
 
-Autorytatywny `GameState` zostanie oddzielony od projekcji `PlayerView`. Każdy człowiek, bot lub agent otrzymuje wyłącznie informacje dozwolone z perspektywy danego gracza oraz legalne działania/wybory.
-
-Filtrowanie odbywa się przed przekazaniem danych kontrolerowi lub UI. Nie polegamy na instrukcji „zignoruj ukryte pola”.
-
-Poziom ochrony przed użytkownikiem zaglądającym do pamięci przeglądarki pozostaje osobną decyzją deploymentową. Jeżeli będzie wymagany realny sekret względem lokalnego klienta, pełny stan musi działać poza jego kontrolą, np. na backendzie.
+- Autorytatywny `GameState` zostaje oddzielony od projekcji `PlayerView`.
+  Człowiek, bot i agent dostają wyłącznie informacje dozwolone z perspektywy
+  danego gracza oraz jego legalne działania/wybory.
+- Filtrowanie dzieje się PRZED przekazaniem danych kontrolerowi lub UI — nie
+  polegamy na instrukcji „zignoruj ukryte pola".
+- Ochrona przed użytkownikiem zaglądającym do pamięci przeglądarki to osobna
+  decyzja deploymentowa: realny sekret wymaga działania pełnego stanu poza
+  kontrolą klienta (np. na backendzie).
 
 ## Konsekwencje
 
 ### Pozytywne
 
 - Ten sam zakres wiedzy dla każdego rodzaju kontrolera.
-- Łatwiejsze testy wycieku informacji.
-- LLM nie otrzyma przypadkowo ręki przeciwnika.
+- Łatwiejsze testy wycieku informacji; LLM nie dostaje ręki przeciwnika.
 - UI renderuje dane, które faktycznie wolno mu znać.
 
 ### Koszty i ryzyka
 
 - Trzeba modelować widoczność stref, obiektów i eventów.
-- Ujawnione wcześniej informacje oraz zmiany stref wymagają precyzji.
-- Debugger developerski potrzebuje osobnego, świadomie uprzywilejowanego widoku.
+- Ujawnione wcześniej informacje i zmiany stref wymagają precyzji.
+- Debugger developerski potrzebuje osobnego, świadomie uprzywilejowanego
+  widoku.
 - Czysto lokalna aplikacja nie gwarantuje tajemnicy przed DevTools.
 
 ## Rozważone alternatywy
 
-- CSS/ukrywanie DOM przy przesyłaniu pełnego stanu — odrzucone jako pozorny FoW.
+- CSS/ukrywanie DOM przy pełnym stanie — pozorny FoW.
 - Pełny snapshot dla bota z instrukcją ignorowania danych — odrzucone.
-- Osobne, ręcznie utrzymywane stany obu graczy — odrzucone z powodu ryzyka rozbieżności; widoki powinny być projekcjami jednego stanu.
+- Osobne, ręcznie utrzymywane stany obu graczy — ryzyko rozbieżności; widoki
+  mają być projekcjami jednego stanu.
 
 ## Powiązania
 

@@ -140,7 +140,7 @@ sklejać znaczniki konfliktu.
 | `npm run build` | <1 s | j.w. |
 | `node --test test/bot-benchmark.test.js` | ~2 min | próbka regresji bota |
 | `node tools/benchmark.mjs --seeds 12` | ~9 min | realistyczny pomiar w sesji |
-| pełna macierz B0 (50 seedów) | ~40+ min | zwykle przekracza budżet sesji |
+| pełna macierz B0 (`--full`) | ~10 min | próbka do budżetu ~10 000 meczów (ADR 0025); loguje postęp i zacinki |
 
 Benchmark uruchamiaj **bez** `| tail` — potok potrafi uciąć proces przed
 wypisaniem tabeli. Przy zmianach bota mierz też **ukierunkowanie** na talie

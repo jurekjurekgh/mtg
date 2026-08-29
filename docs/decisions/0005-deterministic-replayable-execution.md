@@ -4,20 +4,24 @@
 - **Data:** 2026-07-31; zaakceptowana 2026-08-01
 - **Decydenci:** właściciel projektu
 - **Nota redakcyjna (2026-08-14):** nagłówek „Proponowana decyzja" zmieniony na
-  „Decyzja" (zgodność z szablonem ADR i statusem *Zaakceptowana*). Treść
-  decyzji bez zmian.
+  „Decyzja" (zgodność z szablonem ADR i statusem *Zaakceptowana*). Treść decyzji
+  bez zmian.
 
 ## Kontekst
 
-Silnik zasad i bot będą tworzyć długie sekwencje stanów, zawierające tasowanie i ewentualne losowe wybory. Bez kontroli losowości błąd wykryty po wielu turach może być niemożliwy do ponownego uruchomienia.
+Silnik i bot tworzą długie sekwencje stanów z tasowaniem i ewentualnymi losowymi
+wyborami. Bez kontroli losowości błąd wykryty po wielu turach może być
+niemożliwy do ponownego uruchomienia.
 
 ## Decyzja
 
-Dla ustalonej wersji kodu, konfiguracji startowej, seeda i sekwencji decyzji engine powinien dawać ten sam rezultat.
+Dla ustalonej wersji kodu, konfiguracji startowej, seeda i sekwencji decyzji
+engine daje ten sam rezultat.
 
-- Wszystkie losowe operacje reguł przechodzą przez seedowane API RNG.
-- Nie używamy bezpośrednio globalnego `Math.random()` ani zegara w logice gry.
-- Zapis partii zawiera co najmniej wersję/protokół, seed, konfigurację oraz decyzje kontrolerów.
+- Wszystkie losowe operacje reguł przechodzą przez seedowane API RNG; w logice
+  gry nie używamy globalnego `Math.random()` ani zegara.
+- Zapis partii zawiera co najmniej wersję/protokół, seed, konfigurację oraz
+  decyzje kontrolerów.
 - Log pozwala odtworzyć przebieg na potrzeby testu regresyjnego.
 
 Nie przesądza to jeszcze pełnego event sourcingu ani formatu trwałego replaya.
@@ -26,8 +30,7 @@ Nie przesądza to jeszcze pełnego event sourcingu ani formatu trwałego replaya
 
 ### Pozytywne
 
-- Powtarzalne testy i symulacje.
-- Łatwiejsza diagnostyka błędów po wielu turach.
+- Powtarzalne testy i symulacje; łatwiejsza diagnostyka po wielu turach.
 - Porównywanie wersji botów na tych samych rozdaniach.
 - Kontrolowana, regulowana wariancja zachowania bota.
 
@@ -40,16 +43,16 @@ Nie przesądza to jeszcze pełnego event sourcingu ani formatu trwałego replaya
 
 ## Rozważone alternatywy
 
-- Zapisywanie wyłącznie końcowego stanu — niewystarczające do diagnozy.
-- Używanie standardowej niekontrolowanej losowości — prostsze, ale utrudnia regresje.
-- Pełny event sourcing od pierwszego dnia — możliwe, ale zbyt wczesne bez prototypu modelu.
+- Zapis wyłącznie stanu końcowego — niewystarczający do diagnozy.
+- Standardowa niekontrolowana losowość — prostsza, ale utrudnia regresje.
+- Pełny event sourcing od pierwszego dnia — zbyt wczesny bez prototypu modelu.
+
+## Do rozstrzygnięcia
+
+- Gwarancja replaya między wersjami engine czy tylko w ramach jednej wersji?
+- Czy RNG bota i RNG zasad mają osobne strumienie?
+- Minimalny format zapisu pierwszego prototypu.
 
 ## Powiązania
 
 - [Architektura — determinizm](../ARCHITECTURE.md#determinizm-i-odtwarzanie)
-
-## Do rozstrzygnięcia
-
-- Gwarancja replaya między wersjami engine czy tylko w ramach tej samej wersji?
-- Czy RNG bota i RNG zasad mają osobne strumienie?
-- Minimalny format zapisu pierwszego prototypu.

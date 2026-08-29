@@ -467,7 +467,7 @@ export const ADD_OBJECT_FIELDS = Object.freeze([
   'entersWithCountersIf', 'keywords', 'subtypes', 'transformTo', 'types', 'entersTapped',
   'entersTappedCondition', 'bestow', 'aura', 'equipment', 'backup', 'colors',
   'phyrexianManaCost', 'enchantPlayer', 'saga', 'station', 'ownerId', 'devour', 'endure', 'toxic', 'echo', 'chooseColor',
-  'exploit', 'treasureAltCost', 'cardName', 'name', 'bloodthirst', 'additionalCost',
+  'exploit', 'treasureAltCost', 'cardName', 'name', 'bloodthirst', 'renown', 'additionalCost',
   'kicker', 'costReduction', 'adventure', 'buyback', 'protectionFromColors',
   'plottedAtTurn', 'enterAsCopy', 'suspend', 'suspended', 'timeCounters', 'suspendReady',
   'warp', 'warpReady', 'surge', 'manifestReady', 'manifestTurnUpCost',
@@ -533,12 +533,12 @@ function assertAddObjectContract(config) {
 
 export function addObject(state, config) {
   assertAddObjectContract(config);
-  const { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false } = config;
+  const { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, renown = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false } = config;
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, toxic, echo, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, additionalCost, kicker, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, surge, manifestReady, manifestTurnUpCost, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, toxic, echo, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, renown, additionalCost, kicker, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, surge, manifestReady, manifestTurnUpCost, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady });
   const placed = zone === 'battlefield'
     // Batch 46 (Bone Shredder): permanent z echem wchodzi z nieopłaconym echem
     // — pierwszy WŁASNY upkeep po wejściu zapyta o zapłatę (CR 702.29).
@@ -548,6 +548,25 @@ export function addObject(state, config) {
   state.zones[zone].push(id);
   assertStateInvariants(state);
   return placed;
+}
+
+/**
+ * M255/F — pass DOMYKAJĄCY rundę w kroku obrażeń combat. Reguła w jednej
+ * funkcji, bo oferta (legalCommands) i walidacja (execute) muszą się
+ * zgadzać (L48), a rozjechanie dwóch kopii to znana klasa błędu (L41).
+ *
+ * Zakaz dotyczy WYŁĄCZNIE gracza AKTYWNEGO: tylko on ma alternatywę
+ * (`resolve_combat`, CR 510.4 w umowie tego silnika). Obrońca, który
+ * spasuje w tym samym oknie, NIE domyka kroku — jego pass oddaje
+ * priorytet aktywnemu (obsługa poniżej), więc blokowanie go było ślepą
+ * uliczką: zostawał z samym `concede` i pełna macierz benchmarku
+ * (23 400 meczów) kończyła się wyjątkiem aggro-bota „nie znalazł ruchu
+ * mimo legalnych komend”.
+ */
+function closingCombatPassBlocked(state, playerId) {
+  return state.turn.step === 'combat_damage' && Boolean(state.combat) && state.zones.stack.length === 0
+    && state.turn.passes + 1 >= state.players.length
+    && state.turn.activePlayerId === playerId;
 }
 
 function reject(reason) { return { ok: false, events: [event('command_rejected', { reason })] }; }
@@ -1014,42 +1033,51 @@ function discardChooserId(pending) {
  * powstało kilka decyzji różnych typów (skan wieloprzebiegowy, np. scry
  * z pokoju lochu i cel delirium z obrażeń triggera w tym samym upkeep).
  */
-function firstPendingDecisionPlayerId(state) {
-  if (state.pendingMulligans.length > 0) return state.pendingMulligans[0];
-  if (state.pendingMulliganBottom) return state.pendingMulliganBottom.playerId;
-  if (state.pendingScry) return state.pendingScry.playerId;
-  if (state.pendingSurveil) return state.pendingSurveil.playerId;
+/**
+ * M255/G — PIERWSZA oczekująca decyzja jako { playerId, kind }.
+ *
+ * Kolejność niżej to JEDYNY porządek rozstrzygania, kto decyduje: ta sama
+ * funkcja zasila ofertę (playerView) i walidację (execute). `kind` pozwala
+ * bramce execute zapytać wprost: „czy to MOJA decyzja jest pierwsza?" — bez
+ * tego warunek „pendingExploits niepuste" blokował gracza, którego decyzja
+ * była wcześniejsza (cel triggera), i oferta rozjeżdżała się z walidacją.
+ */
+function firstPendingDecision(state) {
+  if (state.pendingMulligans.length > 0) return { playerId: state.pendingMulligans[0], kind: 'mulligan' };
+  if (state.pendingMulliganBottom) return { playerId: state.pendingMulliganBottom.playerId, kind: 'mulliganBottom' };
+  if (state.pendingScry) return { playerId: state.pendingScry.playerId, kind: 'scry' };
+  if (state.pendingSurveil) return { playerId: state.pendingSurveil.playerId, kind: 'surveil' };
   // Kolejność bramek execute: scry → surveil → reveal_order → proliferate →
   // modal_trigger → damage_target → backups → … (Batch 22/23: Stomping Slabs,
   // Courage in Crisis, Etherwrought Page). Gdy kilka decyzji czeka naraz,
   // pierwszy właściciel musi odpowiadać kolejności bramek execute — inaczej
   // oferowana komenda byłaby odrzucona wcześniejszą bramką.
-  if (state.pendingRevealOrder) return state.pendingRevealOrder.playerId;
-  if (state.pendingProliferate) return state.pendingProliferate.playerId;
-  if (state.pendingModalTrigger) return state.pendingModalTrigger.playerId;
-  if (state.pendingLookTopN) return state.pendingLookTopN.playerId;
-  if (state.pendingManifestDread) return state.pendingManifestDread.playerId;
-  if (state.pendingSatyrLook) return state.pendingSatyrLook.playerId;
-  if (state.pendingEscapeExile) return state.pendingEscapeExile.playerId;
-  if (state.pendingRevealChoice) return state.pendingRevealChoice.playerId;
-  if (state.pendingMadnessCast) return state.pendingMadnessCast.playerId;
-  if (state.pendingDamageDivision) return state.pendingDamageDivision.playerId;
-  if (state.pendingGraveFreeCast) return state.pendingGraveFreeCast.playerId;
-  if (state.pendingEpicExperiment) return state.pendingEpicExperiment.playerId;
-  if (state.pendingSuspendCast) return state.pendingSuspendCast.playerId;
-  if (state.pendingReboundCast) return state.pendingReboundCast.playerId;
-  if (state.pendingOpponentTarget) return state.pendingOpponentTarget.playerId;
-  if (state.pendingDamageTarget) return state.pendingDamageTarget.playerId;
-  if (state.pendingRedirectChoice) return state.pendingRedirectChoice.playerId;
-  if (state.pendingFertileThicket) return state.pendingFertileThicket.controllerId;
-  if (state.pendingSpringbloom) return state.pendingSpringbloom.controllerId;
-  if (state.pendingIndex) return state.pendingIndex.playerId;
-  if (state.pendingOptionalDraw) return state.pendingOptionalDraw.playerId;
-  if (state.pendingColorChoice) return state.pendingColorChoice.playerId;
-  if (state.pendingBackups.length > 0) return state.pendingBackups[0].playerId;
-  if (state.pendingClash) return state.pendingClash.choices[0];
-  if (state.pendingUndercityRoute) return state.pendingUndercityRoute.playerId;
-  if (state.pendingFabricate) return state.pendingFabricate.playerId;
+  if (state.pendingRevealOrder) return { playerId: state.pendingRevealOrder.playerId, kind: 'revealOrder' };
+  if (state.pendingProliferate) return { playerId: state.pendingProliferate.playerId, kind: 'proliferate' };
+  if (state.pendingModalTrigger) return { playerId: state.pendingModalTrigger.playerId, kind: 'modalTrigger' };
+  if (state.pendingLookTopN) return { playerId: state.pendingLookTopN.playerId, kind: 'lookTopN' };
+  if (state.pendingManifestDread) return { playerId: state.pendingManifestDread.playerId, kind: 'manifestDread' };
+  if (state.pendingSatyrLook) return { playerId: state.pendingSatyrLook.playerId, kind: 'satyrLook' };
+  if (state.pendingEscapeExile) return { playerId: state.pendingEscapeExile.playerId, kind: 'escapeExile' };
+  if (state.pendingRevealChoice) return { playerId: state.pendingRevealChoice.playerId, kind: 'revealChoice' };
+  if (state.pendingMadnessCast) return { playerId: state.pendingMadnessCast.playerId, kind: 'madnessCast' };
+  if (state.pendingDamageDivision) return { playerId: state.pendingDamageDivision.playerId, kind: 'damageDivision' };
+  if (state.pendingGraveFreeCast) return { playerId: state.pendingGraveFreeCast.playerId, kind: 'graveFreeCast' };
+  if (state.pendingEpicExperiment) return { playerId: state.pendingEpicExperiment.playerId, kind: 'epicExperiment' };
+  if (state.pendingSuspendCast) return { playerId: state.pendingSuspendCast.playerId, kind: 'suspendCast' };
+  if (state.pendingReboundCast) return { playerId: state.pendingReboundCast.playerId, kind: 'reboundCast' };
+  if (state.pendingOpponentTarget) return { playerId: state.pendingOpponentTarget.playerId, kind: 'opponentTarget' };
+  if (state.pendingDamageTarget) return { playerId: state.pendingDamageTarget.playerId, kind: 'damageTarget' };
+  if (state.pendingRedirectChoice) return { playerId: state.pendingRedirectChoice.playerId, kind: 'redirectChoice' };
+  if (state.pendingFertileThicket) return { playerId: state.pendingFertileThicket.controllerId, kind: 'fertileThicket' };
+  if (state.pendingSpringbloom) return { playerId: state.pendingSpringbloom.controllerId, kind: 'springbloom' };
+  if (state.pendingIndex) return { playerId: state.pendingIndex.playerId, kind: 'index' };
+  if (state.pendingOptionalDraw) return { playerId: state.pendingOptionalDraw.playerId, kind: 'optionalDraw' };
+  if (state.pendingColorChoice) return { playerId: state.pendingColorChoice.playerId, kind: 'colorChoice' };
+  if (state.pendingBackups.length > 0) return { playerId: state.pendingBackups[0].playerId, kind: 'backup' };
+  if (state.pendingClash) return { playerId: state.pendingClash.choices[0], kind: 'clash' };
+  if (state.pendingUndercityRoute) return { playerId: state.pendingUndercityRoute.playerId, kind: 'undercityRoute' };
+  if (state.pendingFabricate) return { playerId: state.pendingFabricate.playerId, kind: 'fabricate' };
   // Ślepe wpisy decyzji pokoju (wszyscy kandydaci zniknęli od utworzenia
   // decyzji — M33/A2, kontrakt testu room-targets-staleness) NIE blokują
   // gry — dokładnie jak ślepe wpisy celu triggera poniżej. Gaśnięcie
@@ -1058,51 +1086,77 @@ function firstPendingDecisionPlayerId(state) {
   // (Batch 47, audyt PR #86/N2) zatrzaskiwał ofertę pass przy ślepej
   // decyzji pokoju.
   if (state.pendingRoomTargets.some((rtPending) => legalRoomTargetCandidates(state, rtPending).length > 0)) {
-    return state.pendingRoomTargets.find((rtPending) => legalRoomTargetCandidates(state, rtPending).length > 0).playerId;
+    return { playerId: state.pendingRoomTargets.find((rtPending) => legalRoomTargetCandidates(state, rtPending).length > 0).playerId, kind: 'roomTarget' };
   }
-  if (state.pendingSearchChoice) return state.pendingSearchChoice.playerId;
-  if (state.pendingPayOrSacrifice) return state.pendingPayOrSacrifice.playerId;
-  if (state.pendingOptionalPay) return state.pendingOptionalPay.playerId;
-  if (state.pendingCounterPay) return state.pendingCounterPay.playerId;
+  if (state.pendingSearchChoice) return { playerId: state.pendingSearchChoice.playerId, kind: 'searchChoice' };
+  if (state.pendingPayOrSacrifice) return { playerId: state.pendingPayOrSacrifice.playerId, kind: 'payOrSacrifice' };
+  if (state.pendingOptionalPay) return { playerId: state.pendingOptionalPay.playerId, kind: 'optionalPay' };
+  if (state.pendingCounterPay) return { playerId: state.pendingCounterPay.playerId, kind: 'counterPay' };
   // M72 (Batch 29): decyzje „you may" (optional trigger — Curiosity draw,
   // Veiled cloak) kolejkują się PRZED celami triggerów, bo bramka execute dla
   // pendingOptionalTrigger jest wcześniejsza niż dla pendingTriggerTargets
   // (inaczej oferowany resolve_trigger_target byłby odrzucany bramką optional
   // trigger — deadlock w benchmarku).
-  if (state.pendingOptionalTrigger) return state.pendingOptionalTrigger.playerId;
-  if (state.pendingEnterAsCopy) return state.pendingEnterAsCopy.playerId;
-  if (state.pendingDestroyEquipment) return state.pendingDestroyEquipment.playerId;
-  if (state.pendingCopyTargets) return state.pendingCopyTargets.playerId;
+  if (state.pendingOptionalTrigger) return { playerId: state.pendingOptionalTrigger.playerId, kind: 'optionalTrigger' };
+  if (state.pendingEnterAsCopy) return { playerId: state.pendingEnterAsCopy.playerId, kind: 'enterAsCopy' };
+  if (state.pendingDestroyEquipment) return { playerId: state.pendingDestroyEquipment.playerId, kind: 'destroyEquipment' };
+  if (state.pendingCopyTargets) return { playerId: state.pendingCopyTargets.playerId, kind: 'copyTargets' };
   // Ślepe wpisy celu triggera (źródło zniknęło, intervening-if nie zachodzi)
   // nie blokują gry — pierwszy ŻYWY wpis przejmuje priorytet (jak delirium).
   if (state.pendingTriggerTargets.some((p) => triggerTargetDecisionPending(state, p))) {
-    return state.pendingTriggerTargets.find((p) => triggerTargetDecisionPending(state, p)).playerId;
+    return { playerId: state.pendingTriggerTargets.find((p) => triggerTargetDecisionPending(state, p)).playerId, kind: 'triggerTarget' };
   }
   // M66 (R): rozdzielanie obrażeń — PO decyzjach celów triggerów, bo bramka
   // execute dla pendingTriggerTargets jest wcześniejsza (triggery z obrażeń
   // combatu mogą czekać, gdy drugi pass kolejkuje przydział obrażeń).
-  if (state.pendingDamageAssignment) return state.pendingDamageAssignment.playerId;
-  if (state.pendingReplacementChoice) return state.pendingReplacementChoice.playerId;
-  if (state.pendingExploits.length > 0) return state.pendingExploits[0].playerId;
-  if (state.pendingRevealExile) return state.pendingRevealExile.playerId;
-  if (state.pendingMoonlitChoice) return state.pendingMoonlitChoice.playerId;
-  if (state.pendingLandTypeChoice) return state.pendingLandTypeChoice.playerId;
-  if (state.pendingLibraryPlacement) return state.pendingLibraryPlacement.playerId;
-  if (state.pendingDiscardChoice) return discardChooserId(state.pendingDiscardChoice);
-  if (state.pendingHandTopChoice) return state.pendingHandTopChoice.playerId;
-  if (state.pendingSacrifice) return state.pendingSacrifice.playerId;
-  if (state.pendingFoodChoice) return state.pendingFoodChoice.playerId;
-  if (state.pendingAmass) return state.pendingAmass.playerId;
-  if (state.pendingDiscover) return state.pendingDiscover.playerId;
-  if (state.pendingExplore) return state.pendingExplore.playerId;
-  if (state.pendingCraftExile) return state.pendingCraftExile.playerId;
-  if (state.pendingHandCreature) return state.pendingHandCreature.playerId;
-  if (state.pendingDevours.length > 0) return state.pendingDevours[0].playerId;
-  if (state.pendingEndures.length > 0) return state.pendingEndures[0].playerId;
-  if (state.pendingDeliriumTargets.length > 0) return state.pendingDeliriumTargets[0].playerId;
-  if (state.pendingMentorTargets.length > 0) return state.pendingMentorTargets[0].playerId;
-  if (state.pendingGraveyardToTop) return state.pendingGraveyardToTop.playerId;
-  return state.pendingLegendChoice?.playerId ?? null;
+  if (state.pendingDamageAssignment) return { playerId: state.pendingDamageAssignment.playerId, kind: 'damageAssignment' };
+  if (state.pendingReplacementChoice) return { playerId: state.pendingReplacementChoice.playerId, kind: 'replacementChoice' };
+  if (state.pendingExploits.length > 0) return { playerId: state.pendingExploits[0].playerId, kind: 'exploit' };
+  if (state.pendingRevealExile) return { playerId: state.pendingRevealExile.playerId, kind: 'revealExile' };
+  if (state.pendingMoonlitChoice) return { playerId: state.pendingMoonlitChoice.playerId, kind: 'moonlitChoice' };
+  if (state.pendingLandTypeChoice) return { playerId: state.pendingLandTypeChoice.playerId, kind: 'landTypeChoice' };
+  if (state.pendingLibraryPlacement) return { playerId: state.pendingLibraryPlacement.playerId, kind: 'libraryPlacement' };
+  if (state.pendingDiscardChoice) return { playerId: discardChooserId(state.pendingDiscardChoice), kind: 'discardChoice' };
+  if (state.pendingHandTopChoice) return { playerId: state.pendingHandTopChoice.playerId, kind: 'handTopChoice' };
+  if (state.pendingSacrifice) return { playerId: state.pendingSacrifice.playerId, kind: 'sacrifice' };
+  if (state.pendingFoodChoice) return { playerId: state.pendingFoodChoice.playerId, kind: 'foodChoice' };
+  if (state.pendingAmass) return { playerId: state.pendingAmass.playerId, kind: 'amass' };
+  if (state.pendingDiscover) return { playerId: state.pendingDiscover.playerId, kind: 'discover' };
+  if (state.pendingExplore) return { playerId: state.pendingExplore.playerId, kind: 'explore' };
+  if (state.pendingCraftExile) return { playerId: state.pendingCraftExile.playerId, kind: 'craftExile' };
+  if (state.pendingHandCreature) return { playerId: state.pendingHandCreature.playerId, kind: 'handCreature' };
+  if (state.pendingDevours.length > 0) return { playerId: state.pendingDevours[0].playerId, kind: 'devour' };
+  if (state.pendingEndures.length > 0) return { playerId: state.pendingEndures[0].playerId, kind: 'endure' };
+  if (state.pendingDeliriumTargets.length > 0) return { playerId: state.pendingDeliriumTargets[0].playerId, kind: 'delirium' };
+  if (state.pendingMentorTargets.length > 0) return { playerId: state.pendingMentorTargets[0].playerId, kind: 'mentor' };
+  if (state.pendingGraveyardToTop) return { playerId: state.pendingGraveyardToTop.playerId, kind: 'graveyardToTop' };
+  return state.pendingLegendChoice?.playerId ? { playerId: state.pendingLegendChoice.playerId, kind: 'legendChoice' } : null;
+}
+
+/** Zachowane dla istniejących wywołań: sam identyfikator gracza (jak dawniej). */
+function firstPendingDecisionPlayerId(state) {
+  return firstPendingDecision(state)?.playerId ?? null;
+}
+
+/**
+ * M255/G — jedna reguła dla oferty (playerView) i walidacji (execute).
+ *
+ * Bramka „exploit" w execute odrzucała KAŻDĄ komendę dowolnego gracza, gdy
+ * tylko `pendingExploits` był niepusty. Oferta tymczasem blokuje gracza
+ * wyłącznie wtedy, gdy jego decyzja jest PIERWSZA w kolejce
+ * (`blockedByOthersDecision` z `firstPendingDecisionPlayerId`). Gdy cel
+ * triggera (p2) czekał przed exploitem (p1), oferta dawała p2
+ * `resolve_trigger_target`, a execute odrzucał ją wcześniejszą bramką
+ * exploitu — „Bot wybrał nielegalną komendę: exploit_unresolved"
+ * (macierz: aggro(tarkir-bg) vs random(theros), seed 1003).
+ *
+ * Wzorzec jak przy `closingCombatPassBlocked` (M255/F): o tym, czyja decyzja
+ * blokuje, rozstrzyga JEDNA funkcja wołana z obu stron, nie dwa warunki.
+ */
+function exploitDecisionPendingFor(state, playerId) {
+  if (state.status !== 'active' || state.pendingExploits.length === 0) return false;
+  const first = firstPendingDecision(state);
+  return first != null && first.kind === 'exploit' && first.playerId === playerId;
 }
 
 /**
@@ -2867,10 +2921,9 @@ export function execute(state, input) {
   // you may sacrifice a creature. When this creature exploits a creature, ..."
   // Opcjonalna decyzja kontrolera: poświęć INNEGO stwora albo skip. Po
   // poświęceniu emitujemy exploited (odpala trigger „exploits" na źródle).
-  if (state.pendingExploits.length > 0) {
+  if (exploitDecisionPendingFor(state, cmd.playerId)) {
     const pending = state.pendingExploits[0];
     if (cmd.type !== 'resolve_exploit_choice') return reject('exploit_unresolved');
-    if (cmd.playerId !== pending.playerId) return reject('exploit_not_your_decision');
     const before = state.events.length;
     if (cmd.skip === true) {
       state.pendingExploits.shift();
@@ -4096,8 +4149,9 @@ export function execute(state, input) {
     // M172/C (CR 509.4): pojedynczy pass (obrońca → atakujący) jest legalny —
     // odrzucamy dopiero pass DOMYKAJĄCY pełną rundę (pominąłby obrażenia;
     // atakujący ma wtedy jedyną drogę turową: resolve_combat).
-    if (state.turn.step === 'combat_damage' && state.combat && state.zones.stack.length === 0
-      && state.turn.passes + 1 >= state.players.length) return reject('combat_unresolved');
+    // M255/F: zakaz dotyczy tylko AKTYWNEGO gracza — obrońca ma prawo
+    // spasować (closingCombatPassBlocked), inaczej ślepa uliczka.
+    if (closingCombatPassBlocked(state, cmd.playerId)) return reject('combat_unresolved');
     const current = state.players.findIndex((p) => p.id === state.turn.priorityPlayerId);
     const next = state.players[(current + 1) % state.players.length].id;
     state.turn.passes += 1;
@@ -4123,6 +4177,16 @@ export function execute(state, input) {
         if (!state.pendingScry && !state.pendingSurveil && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingTriggerTargets.some((p) => triggerTargetDecisionPending(state, p)) && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingColorChoice && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !state.pendingGraveyardToTop && state.pendingBackups.length === 0 && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && state.pendingDeliriumTargets.length === 0 && state.pendingMentorTargets.length === 0 && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingDamageDivision && !state.pendingReplacementChoice) {
           state.turn.priorityPlayerId = state.turn.activePlayerId;
         }
+      } else if (state.turn.step === 'combat_damage' && state.combat) {
+        // M255/F: pełna runda passów w kroku obrażeń NIE domyka kroku —
+        // obrażenia zadaje wyłącznie `resolve_combat` aktywnego gracza
+        // (inaczej pass pomijałby damage: regresja M172/C). Priorytet wraca
+        // do AKTYWNEGO gracza, a licznik passów ZOSTAJE domknięty, więc jego
+        // pass jest nadal odrzucany (closingCombatPassBlocked) i jedyną
+        // drogą jest resolve_combat. Przed poprawką obrońca nie miał ani
+        // pass, ani resolve_combat — zostawał z samym `concede`.
+        state.turn.priorityPlayerId = state.turn.activePlayerId;
+        events.push(event('priority_passed', { playerId: cmd.playerId, nextPlayerId: state.turn.activePlayerId }));
       } else {
         const previousTurnNumber = state.turn.number;
         state.turn = nextTurnStep(state.turn, state.players);
@@ -4949,6 +5013,10 @@ export function playerView(state, playerId) {
         if (object.playableUntilTurn != null) waiting.playableUntilTurn = object.playableUntilTurn;
         if (object.reboundReady) waiting.reboundReady = true;
         if (object.madnessReady) waiting.madnessReady = true;
+        // M254/D (zgłoszenie właściciela, Wormfang Newt): wygnanie TYMCZASOWE
+        // z linkiem powrotu — badge mówi, przez kogo karta została wygnana.
+        // Wygnanie jest strefą jawną (CR 406.3), więc znacznik widzą obaj.
+        if (object.temporaryExile) waiting.temporaryExile = object.temporaryExile;
         if (object.faceDown) waiting.faceDown = true;
         if (Object.keys(object.counters ?? {}).length > 0) waiting.counters = { ...object.counters };
         if (object.kind) waiting.kind = object.kind;
@@ -5037,8 +5105,9 @@ export function playerView(state, playerId) {
     // obrażeń combat — jedyna droga dalej to wtedy resolve_combat (albo
     // koncesja). M172/C (CR 509.4, L48 oferta=walidacja): pojedynczy pass
     // (okno odpowiedzi obrońcy po deklaracji bloków) jest oferowany.
-    const blockedByCombat = state.turn.step === 'combat_damage' && state.combat && state.zones.stack.length === 0
-      && state.turn.passes + 1 >= state.players.length;
+    // M255/F: ta sama reguła co w execute (closingCombatPassBlocked) —
+    // obrońca MUSI dostać pass, bo nie ma `resolve_combat`.
+    const blockedByCombat = closingCombatPassBlocked(state, playerId);
     if (hasPriority && !blockedByCombat && firstDecisionOwner == null && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
       && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingSuspendCast && !state.pendingReboundCast && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingDamageDivision && !state.pendingReplacementChoice && !state.pendingUndercityRoute && !state.pendingFabricate && !state.pendingEscapeExile) trailingCommands.push(command('pass_priority', playerId));
   }
@@ -5102,7 +5171,7 @@ export function playerView(state, playerId) {
   const activeHandCreature = state.pendingHandCreature && state.pendingHandCreature.playerId === playerId;
 
   const activeDevour = state.pendingDevours.length > 0 && state.pendingDevours[0].playerId === playerId;
-  const activeExploit = state.pendingExploits.length > 0 && state.pendingExploits[0].playerId === playerId;
+  const activeExploit = exploitDecisionPendingFor(state, playerId);
   const activeRevealExile = state.pendingRevealExile && state.pendingRevealExile.playerId === playerId;
 
   const activeEndure = state.pendingEndures.length > 0 && state.pendingEndures[0].playerId === playerId;
@@ -5334,6 +5403,28 @@ export function playerView(state, playerId) {
     // Fabricate: dwa warianty (CR 702.122). Kolejność deterministyczna.
     legalCommands.push(command('resolve_fabricate', playerId, { mode: 'counters' }));
     legalCommands.push(command('resolve_fabricate', playerId, { mode: 'tokens' }));
+  // M254 (pełna macierz benchmarku, 2026-08-28): KOLEJNOŚĆ OFERT MUSI
+  // ODPOWIADAĆ KOLEJNOŚCI BRAMEK `execute`. Bramka rebound stoi w `execute`
+  // PRZED bramką undercity, a ta gałąź ofert była PO niej — przy dwóch
+  // pendingach tego samego gracza (rebound Ojutai's Breath + wybór ścieżki
+  // lochu) silnik oferował `resolve_undercity_route`, po czym sam go
+  // odrzucał (`rebound_unresolved`), co kończyło partię wyjątkiem „Bot
+  // wybrał nielegalną komendę". Reguła (jak przy `firstPendingDecisionPlayerId`):
+  // pierwszy właściciel decyzji = pierwsza bramka execute = pierwsza gałąź ofert.
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeReboundCast) {
+    // Rebound (CR 702.97): jednorazowa decyzja na początku następnego upkeepu —
+    // rzuć wygnany czar za darmo (ignorując timing) albo zostaw w exile.
+    // Ta sama struktura ofert co suspend/epic (cele + tryb modalny).
+    const pending = state.pendingReboundCast;
+    const obj = state.objects.get(pending.objectId);
+    if (obj && obj.zone === 'exile' && obj.reboundReady && obj.kind === 'spell') {
+      for (const offer of suspendCastOffers(state, playerId, obj)) {
+        legalCommands.push(command('resolve_rebound_cast', playerId, offer));
+      }
+    }
+  // M203/2: kolejność prezentacji = enumeracja (dawniej odwracał unshift).
+    legalCommands.push(command('resolve_rebound_cast', playerId, { cast: false }));
+
   } else if (state.status === 'active' && !blockedByOthersDecision && activeUndercityRoute) {
     // M190/B: wybór ścieżki lochu — kolejność ofert deterministyczna (ADR 0005),
     // taka jak w Oracle („Leads to: Forge, Lost Well").
@@ -5435,20 +5526,6 @@ export function playerView(state, playerId) {
     }
   // M203/2: kolejność prezentacji = enumeracja (dawniej odwracał unshift).
     legalCommands.push(command('resolve_suspend_cast', playerId, { cast: false }));
-  } else if (state.status === 'active' && !blockedByOthersDecision && activeReboundCast) {
-    // Rebound (CR 702.97): jednorazowa decyzja na początku następnego upkeepu —
-    // rzuć wygnany czar za darmo (ignorując timing) albo zostaw w exile.
-    // Ta sama struktura ofert co suspend/epic (cele + tryb modalny).
-    const pending = state.pendingReboundCast;
-    const obj = state.objects.get(pending.objectId);
-    if (obj && obj.zone === 'exile' && obj.reboundReady && obj.kind === 'spell') {
-      for (const offer of suspendCastOffers(state, playerId, obj)) {
-        legalCommands.push(command('resolve_rebound_cast', playerId, offer));
-      }
-    }
-  // M203/2: kolejność prezentacji = enumeracja (dawniej odwracał unshift).
-    legalCommands.push(command('resolve_rebound_cast', playerId, { cast: false }));
-
   } else if (state.status === 'active' && !blockedByOthersDecision && activeOptionalTrigger) {
     // „You may" bez celu (Angel's Feather, M72 — Curiosity draw, Veiled cloak):
     // tak/nie — boty „tak" (pierwsza oferta = dotychczasowe zachowanie).
@@ -6079,6 +6156,7 @@ export function playerView(state, playerId) {
     // od fazy. Każda oferowana aktywacja jest akceptowana przez execute.
     // Ninjutsu niesie dodatkowo attackerId (atakujący do zwrotu do ręki);
     // zdolności celowane/{X} niosą targets i xValue.
+    //
     for (const { objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, grantedFromEquipment, tapArtifactIds, tapPermanentCostId, sacrificeCreatureIds } of legalActivatedAbilities(state, playerId)) {
       const extra = { objectId, abilityIndex };
       if (attackerId !== undefined) extra.attackerId = attackerId;

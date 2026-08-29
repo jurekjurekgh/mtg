@@ -1,6 +1,9 @@
 import { event } from '../protocol/types.js';
 import { singleTargetOfStackEntry } from './objects.js';
-import { applyEffect } from './effects.js';
+import {
+  applyEffect, creaturesNotControlledByOwner, creaturesYouControl, faceDownCreaturesYouControl,
+  landCreaturesYouControl, libraryCardsOf, millTargetPlayerId, otherCreaturesYouControl,
+} from './effects.js';
 import { addCounter, hasCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { effectiveAbilities, effectiveKeywords, effectivePower } from './permanents.js';
@@ -106,6 +109,17 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   // rzucanego czaru są puste (Devoid i artefakty są bezbarwne).
   if (condition.spellIsColorless) {
     return (eventData.colors ?? []).length === 0;
+  }
+  // Batch 51 (Kulrath Mystic): „Whenever you cast a spell with MANA VALUE 4
+  // or greater" (CR 202.3 — mana value to koszt many wydrukowany na karcie).
+  // Źródłem wartości jest obiekt czaru na stosie (`eventData.object.manaCost`),
+  // nie `eventData.manaCost`: przy permanentach to drugie pole niesie MANĘ
+  // WYDANĄ (po rabatch i kickerze), a nie mana value — trigger reagowałby na
+  // taniego stwora rzuconego za {4} dzięki zniżce.
+  if (condition.spellManaValueAtLeast != null) {
+    const manaValue = eventData.manaValue ?? eventData.object?.manaCost ?? null;
+    if (manaValue == null) return false;
+    return manaValue >= condition.spellManaValueAtLeast;
   }
   // „If you descended this turn" (Canonized in Blood, CR 603.4 — intervening
   // if): permanent card wpadł do grobu kontrolera w bieżącej turze.
@@ -469,6 +483,12 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
         // Nanoform Sentinel: „untap ANOTHER target permanent\" — `notSelf`
         // wyklucza źródło (CR 115.2 — „another\").
         if (spec.notSelf && objectId === sourceObject.id) return false;
+        // Batch 51 (Invasive Species): „return ANOTHER permanent YOU CONTROL"
+        // — `controlledBy: 'controller'` zawęża zbiór do permanentów
+        // kontrolera ŹRÓDŁA (CR 115.2 + „you control"). Bez tego trigger
+        // oferowałby na własne wejście permanent przeciwnika, a po wybraniu
+        // go gracz oddawałby cudzy stwór zamiast swojego.
+        if (spec.controlledBy === 'controller' && object?.controllerId !== sourceObject.controllerId) return false;
         return object && object.zone === 'battlefield' && !hexproofBlocked(object);
       })
       .sort((a, b) => targetValue(state.objects.get(b)) - targetValue(state.objects.get(a)));
@@ -1022,10 +1042,18 @@ export function resolveTriggerEntry(state, entry) {
   const producedNothing = state.events.length === beforeEffects;
   const noOpByState = producedNothing
     && applyTriggerEffectsWereNoOp(state, payload.ability, payload.targets ?? [], source);
+  // M256 (Żywy Tester, runda 2): „nie było czego wykonać" a „nikt nie pasuje
+  // do efektu" to dwa RÓŻNE komunikaty dla gracza — pierwszy sugeruje usterkę,
+  // drugi mówi, że karta nie miała na kim działać.
+  const emptyReceiverReason = producedNothing && !noOpByState
+    ? triggerEffectsReasonForEmptyReceivers(state, payload.ability, source, payload.targets ?? [])
+    : null;
   const resolved = event('trigger_resolved', {
     objectId: entry.id, cardId: entry.cardId,
     trigger: payload.ability?.trigger?.event ?? null,
-    ...(producedNothing && !noOpByState ? { noEffect: true, reason: 'no_result' } : {}),
+    ...(producedNothing && !noOpByState
+      ? { noEffect: true, reason: emptyReceiverReason ?? 'no_result' }
+      : {}),
   });
   state.events.push(resolved);
   return state.events.slice(before);
@@ -1041,19 +1069,102 @@ export function resolveTriggerEntry(state, entry) {
 const STATE_IDEMPOTENT_EFFECTS = Object.freeze({
   tap_permanent: (object) => object?.tapped === true,
   untap_permanent: (object) => object?.tapped === false,
+  // Silken Strength (M256/J, runda 3 Żywym Testerem): „when this Aura enters,
+  // untap enchanted permanent" — odkręcenie już odkręconego gospodarza to
+  // legalny no-op (CR 701.20b), nie porażka triggera (klasa M189/Z2).
+  untap_enchanted_permanent: (object) => object?.tapped === false,
 });
+
+/**
+ * Skąd efekt idempotentny bierze swój obiekt, gdy NIE ma jawnego celu:
+ * aura (i wyposażenie) działa na GOSPODARZA (`attachedTo`), nie na siebie —
+   domyślną regułą jest „cel albo źródło" (Steelfin Whale, M189/Z2e).
+ */
+const STATE_IDEMPOTENT_TARGET = Object.freeze({
+  untap_enchanted_permanent: (state, source) => (source?.attachedTo
+    ? state.objects.get(source.attachedTo) ?? null
+    : null),
+});
+
+/**
+ * Efekty ZBIOROWE, które legalnie nie zmieniają niczego, gdy stan jest już
+ * docelowy (CR 701.20b). Osobna tabela, bo predykat dostaje CAŁY zbiór, nie
+ * jeden obiekt: Village Bell-Ringer („untap all creatures you control")
+ * odkręca zbiór, w którym sam jest — więc „pusty zbiór odbiorców" nie zdarza
+ * się nigdy, a „wszystkie już odkręcone" jest wykonaniem zdolności, nie jej
+ * porażką (M106/Z2).
+ */
+const STATE_IDEMPOTENT_MASS_EFFECTS = Object.freeze({
+  untap_all_creatures_you_control: (state, source) => creaturesYouControl(state, source?.controllerId)
+    .every((object) => object.tapped === false),
+});
+
+/**
+ * Efekty, które działają na ZBIÓR odbiorców („każdy zakryty stwór",
+ * „wszystkie stwory wracają do właściciela"): gdy zbiór jest pusty, trigger
+ * nie ma kogo ruszyć — a to NIE to samo, co „efekt wykonał się bez skutku".
+ * Gracz czytający „nie było czego wykonać" przy Veiled Ascension (żadnego
+ * zakrytego stwora) albo przy Trostani Discordant (nikt nie trzyma cudzych
+ * stworów) dostaje powód, który sugeruje usterkę; właściwy to „brak legalnych
+ * celów" (M189/Z2). Deskryptor po typie efektu (ADR 0002), selektor WSPÓLNY
+ * z efektem (`effects.js`) — jedna reguła, nie dwie kopie (L41/L48).
+ *
+ * Tabela rośnie wraz z obserwacjami Żywego Testera, tak jak
+ * `STATE_IDEMPOTENT_EFFECTS`; świadomie NIE ma tu `create_token`
+ * (Undead Servant przy pustym grobie to „nie było czego wykonać").
+ */
+export const EMPTY_RECEIVER_EFFECTS = Object.freeze({
+  add_flying_counter_to_face_down_you_control: (state, effect, source) => (
+    faceDownCreaturesYouControl(state, source?.controllerId).length === 0 ? 'no_targets' : null),
+  control_to_owners_all_creatures: (state) => (
+    creaturesNotControlledByOwner(state).length === 0 ? 'no_targets' : null),
+  buff_land_creatures: (state, effect, source) => (
+    landCreaturesYouControl(state, source?.controllerId).length === 0 ? 'no_targets' : null),
+  sacrifice_each_other_creature: (state, effect, source) => (
+    otherCreaturesYouControl(state, source?.controllerId, source?.id).length === 0
+      ? 'no_targets' : null),
+  // Mill to wyjątek w rodzinie: cel (gracz) ISTNIEJE, brakuje kart
+  // w bibliotece — „brak legalnych celów" byłoby kłamstwem.
+  mill_cards: (state, effect, source, targets) => (
+    libraryCardsOf(state, millTargetPlayerId(state, effect, source, targets)).length === 0
+      ? 'empty_library' : null),
+});
+
+/**
+ * Powód „braku efektu" wynikający z PUSTEGO ZBIORU ODBIORCÓW (`no_targets`,
+ * `empty_library`) albo `null`, gdy tej przyczyny nie ma. Pytamy wyłącznie
+ * wtedy, gdy efekt wyprodukował zero zdarzeń — inaczej odpowiedź byłaby bez
+ * znaczenia (L83: warunek musi mierzyć regułę).
+ *
+ * Zgodę wymagamy od KAŻDEGO znanego efektu triggera: mieszanka (jeden ma
+ * odbiorców, drugi nie) nie ma jednego powodu, więc zostaje `no_result`.
+ */
+function triggerEffectsReasonForEmptyReceivers(state, ability, source, targets) {
+  const effects = (Array.isArray(ability?.effect) ? ability.effect : [ability?.effect])
+    .filter(Boolean)
+    .filter((effect) => EMPTY_RECEIVER_EFFECTS[effect.type]);
+  if (effects.length === 0) return null;
+  const reasons = effects.map((effect) => EMPTY_RECEIVER_EFFECTS[effect.type](state, effect, source, targets));
+  const first = reasons[0];
+  return reasons.every((reason) => reason === first) ? first : null;
+}
 
 function applyTriggerEffectsWereNoOp(state, ability, targets, source) {
   const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
   const relevant = effects.filter(Boolean);
   if (relevant.length === 0) return false;
   return relevant.every((effect) => {
+    const massPredicate = STATE_IDEMPOTENT_MASS_EFFECTS[effect.type];
+    if (massPredicate) return massPredicate(state, source);
     const predicate = STATE_IDEMPOTENT_EFFECTS[effect.type];
     if (!predicate) return false;
     // Efekt bez jawnego celu działa na ŹRÓDŁO (Steelfin Whale, Midnight
-    // Guard: „untap this creature") — tak samo jak w applyEffect.
+    // Guard: „untap this creature") — tak samo jak w applyEffect. Aura działa
+    // na GOSPODARZA (M256/J) — osobna tabela, bo obiektem nie jest źródło.
     const targetId = targets[effect.targetIndex ?? 0] ?? source?.id ?? null;
-    const target = targetId != null ? state.objects.get(targetId) : null;
+    const target = STATE_IDEMPOTENT_TARGET[effect.type]
+      ? STATE_IDEMPOTENT_TARGET[effect.type](state, source)
+      : (targetId != null ? state.objects.get(targetId) : null);
     return Boolean(target && target.zone === 'battlefield' && predicate(target));
   });
 }
@@ -1726,7 +1837,15 @@ function processTriggersScan(state, recentEvents) {
     // (Nefarious Imp). Jedno zdarzenie = jedno odejście; CR 603.2 mówi
     // „one or more", ale w engine każde odejście generuje osobne zdarzenie,
     // więc grupujemy je po komendzie (patrz leftBattlefieldControllers niżej).
-    if (ev.type === 'creature_destroyed' || ev.type === 'permanent_sacrificed'
+    // M254/D (zgłoszenie właściciela, Wormfang Newt): `permanent_destroyed`
+    // (zniszczenie EFEKTEM — Spin Out, Murder) nie było tu w ogóle
+    // uwzględnione, choć śmierć z OBRAŻEŃ (`creature_destroyed`, SBA) i
+    // poświęcenie były. Skutek: „When this creature leaves the battlefield"
+    // nie odpalało się po zniszczeniu karty czarem, więc wygnany ląd Newta
+    // zostawał w exile na zawsze. To samo dotyczy triggerów „permanents you
+    // control leave the battlefield" (Nefarious Imp) — licznik odejść wyżej.
+    if (ev.type === 'creature_destroyed' || ev.type === 'permanent_destroyed'
+      || ev.type === 'permanent_sacrificed'
       || (ev.type === 'object_moved' && ev.fromZone === 'battlefield' && ev.toZone !== 'battlefield')
       || (ev.type === 'object_exiled' && ev.fromId)) {
       // CR 603.10: obiekt mógł już przestać istnieć (token poza polem bitwy —

@@ -7,7 +7,10 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana, producibleMana, untappedFreeManaSources } from '../src/engine/resources.js';
-import { createHeuristicBot, IDEMPOTENT_EOT_EFFECTS, STACKING_ACTIVATED_EFFECTS } from '../src/controllers/heuristic-bot.js';
+import {
+  createHeuristicBot, IDEMPOTENT_EOT_EFFECTS, STACKING_ACTIVATED_EFFECTS,
+  TEMPORARY_PUMP_EFFECTS, temporaryPumpOf, isNegativePump,
+} from '../src/controllers/heuristic-bot.js';
 import { KEYWORD_LABELS } from '../src/table/render.js';
 import { KEYWORD_EVENT_LABELS } from '../src/table/session.js';
 
@@ -281,6 +284,75 @@ test('E2: bot NIE niszczy WŁASNEGO stwora (selfHarmPenalty — regresja central
   const chosen = createHeuristicBot({ seed: 1 }).chooseCommand(view);
   assert.ok(!(chosen.type === 'cast_spell' && chosen.objectId === 'spin'),
     `removal we własnego stwora (wybrał: ${JSON.stringify(chosen)})`);
+});
+
+// ---- E3/E4 (Batch 51): wspólny mianownik efektów „pump" --------------------
+//
+// Zlecenie właściciela do Batcha 51: „wspólny mianownik (pump/buff/potem), a
+// nie if po nazwie typu". W Batchu 51 `buff_creature_until_end_of_turn`
+// (Savage Surge: „+2/+2 do końca tury") trafił do `FRIENDLY_TARGET_EFFECTS`
+// po NAZWIE TYPU — a ten sam typ niesie debuff Downwind Ambushera
+// („-1/-1 until end of turn" na stwora przeciwnika). Efekt: bot dostawał karę
+// „wzmacniasz przeciwnika" za osłabienie go, czyli porzucał własną kartę
+// (klasa M202/G, tylko na innym typie efektu).
+
+test('E3: debuff „-1/-1 do końca tury" NIE jest efektem przyjaznym (wspólny mianownik po znaku, nie po typie)', () => {
+  // Downwind Ambusher: „Target creature an opponent controls gets -1/-1".
+  assert.equal(isNegativePump({ type: 'buff_creature_until_end_of_turn', power: -1, toughness: -1 }), true,
+    'debuff na obcym typie efektu musi być rozpoznany jako WROGI (inaczej klamra M179/E karze bota za osłabienie wroga)');
+  // Savage Surge: „+2/+2 until end of turn".
+  assert.equal(isNegativePump({ type: 'buff_creature_until_end_of_turn', power: 2, toughness: 2 }), false,
+    'dodatni pump to efekt przyjazny');
+  assert.equal(isNegativePump({ type: 'pump', power: 2, toughness: 1 }), false, 'klasyczny pump bez zmian');
+  assert.equal(isNegativePump({ type: 'damage', amount: 3 }), false, 'efekt nie-pump nie jest „negative pumpem"');
+});
+
+test('E4: `temporaryPumpOf` jest wspólnym mianownikiem (tabela typów + jedna funkcja)', () => {
+  // Każdy typ o kształcie „nadaj P/T do końca tury" jest rozpoznawany — nowy
+  // typ efektu dostaje wycenę przez jeden wpis w tabeli (L28), nie przez
+  // dopisek do trzech miejsc.
+  for (const type of TEMPORARY_PUMP_EFFECTS.keys()) {
+    assert.ok(temporaryPumpOf({ type }, null), `typ ${type} ma kształt pumpa`);
+  }
+  assert.deepEqual(
+    temporaryPumpOf({ type: 'buff_creature_until_end_of_turn', power: 2, toughness: 2 }, null),
+    { power: 2, toughness: 2 },
+    'P/T z deskryptora',
+  );
+  assert.equal(temporaryPumpOf({ type: 'damage', amount: 3 }, null), null, 'obrażenia nie mają kształtu pumpa');
+  assert.equal(temporaryPumpOf({ type: 'destroy_permanent' }, null), null);
+});
+
+test('E5: bot RZUCA Savage Surge (+2/+2 do końca tury) na własnego atakującego w oknie bloków', () => {
+  // Batch 51: bez wyceny „wspólnego mianownika" czar dostawał gołe
+  // `score = 2` i bot nie odróżniał go od karty bezużytecznej (klasa M96).
+  const state = game('p1');
+  putCard(state, 'atk', 'hill-giant', 'p1', 'battlefield', { summoningSickness: false });
+  putCard(state, 'foe', 'segmented-krotiq', 'p2');
+  putCard(state, 'surge', 'savage-surge', 'p1', 'hand');
+  addMana(state, 'p1', 4, { colors: ['G'] });
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  const attack = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'declare_attackers' && (c.attackerIds ?? []).includes('atk'));
+  assert.ok(attack, 'atak legalny');
+  assert.ok(execute(state, attack).ok);
+  state.turn = jumpToStep(state.turn, 'declare_blockers', 'p1');
+  state.turn.priorityPlayerId = 'p1';
+  const view = playerView(state, 'p1');
+  const chosen = createHeuristicBot({ seed: 3 }).chooseCommand(view);
+  assert.equal(chosen.type, 'cast_spell', `bot powinien rzucić Savage Surge (wybrał: ${JSON.stringify(chosen)})`);
+  assert.deepEqual(chosen.targets, ['atk'], 'pump idzie we własnego atakującego, nie we wroga');
+});
+
+test('E6 (anty-over-fix): Savage Surge NIE jest rzucany poza oknem walki (efekt wygasa w cleanup)', () => {
+  const state = game('p1');
+  putCard(state, 'atk', 'hill-giant', 'p1', 'battlefield', { summoningSickness: false });
+  putCard(state, 'surge', 'savage-surge', 'p1', 'hand');
+  addMana(state, 'p1', 4, { colors: ['G'] });
+  const view = playerView(state, 'p1');
+  const chosen = createHeuristicBot({ seed: 3 }).chooseCommand(view);
+  assert.ok(!(chosen.type === 'cast_spell' && chosen.objectId === 'surge'),
+    `pump „do końca tury" w Głównej 1 to wyrzucanie many (wybrał: ${JSON.stringify(chosen)})`);
 });
 
 // ---- Z1 (M180, regresja M179/D): własna mana źródła nie płaci jego zdolności ----

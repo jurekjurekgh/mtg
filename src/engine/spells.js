@@ -165,6 +165,17 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       }
       return object;
     }
+    // Batch 51 (Bloodrush): cel musi być ATAKUJĄCYM w tej walce — identyczna
+    // reguła jak w `targetCandidatesBySpec` (pułapka M82: oferta ≠ walidacja
+    // kończy się odrzuceniem komendy, którą sami zaproponowaliśmy).
+    if (spec?.type === 'attacking_creature') {
+      const attackerIds = state.combat?.attackers ?? [];
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature'
+        || !attackerIds.includes(targetId)) {
+        throw new Error(`Nielegalny cel: ${targetId} (nie atakuje)`);
+      }
+      return object;
+    }
     // Cel „artifact" (Shatter, CR 701.7): artefakt na polu bitwy (kind artifact
     // albo typ Artifact — uwzględnia artefaktowe stwory, np. Esper Stormblade).
     if (spec?.type === 'artifact') {
@@ -1117,6 +1128,20 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
         const object = state.objects.get(objectId);
         return object?.zone === 'battlefield' && object.kind === 'creature' && !object.tapped
           && !hasHexproofAgainst(state, object, playerId);
+      });
+    }
+    // Batch 51 (Skinbrand Goblin — Bloodrush, CR 207.2c): „Target attacking
+    // creature" — wyłącznie stwory zadeklarowane jako atakujące w TEJ walce
+    // (`state.combat.attackers`). Poza walką zbiór jest pusty: CR 508.1k mówi,
+    // że „attacking creature" istnieje tylko od deklaracji atakujących do
+    // końca fazy walki — bez tego bloodrush celowałby w dowolnego stwora.
+    case 'attacking_creature': {
+      const attackerIds = state.combat?.attackers ?? [];
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+        if (!attackerIds.includes(objectId)) return false;
+        return !hasHexproofAgainst(state, object, playerId);
       });
     }
     case 'creature_with_power_at_least': {

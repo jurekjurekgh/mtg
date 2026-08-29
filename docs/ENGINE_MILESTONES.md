@@ -3014,3 +3014,118 @@ niewymagane (progi 0.78/0.57, pomiar #44).
 Testy: `test/audit-m83-tester.test.js` (10). `npm test` **1452/1452**,
 build 50 modułów / ~1574 kB. Bot zmieniony → pełne B0 bez niedokończonych,
 progi win-rate utrzymane.
+
+## M256 — Runda 2 Żywym Testerem: precyzja „trigger bez efektu" i okno bloodrushu (2026-08-29, PR #87)
+
+**Zlecenie:** „runda Żywym Testerem do wyczerpania budżetu" + domknięcie dwóch
+kardynałów z M255. Pełny raport i dowody:
+`docs/audits/AUDYT_M256_ZYWY_TESTER_2026-08-29.md`.
+
+- **Engine + log (H):** `EMPTY_RECEIVER_EFFECTS` (triggers.js) — tabela
+  selektorów odbiorców kluczowana TYPEM EFEKTU, zwracająca POWÓD (`no_targets`,
+  `empty_library`) zamiast booleanu; selektory wyeksportowane z `effects.js`
+  i używane też przez same efekty (jedna definicja zbioru, L41/L48). 12
+  nieprecyzyjnych komunikatów „nie było czego wykonać" w 18 partiach → 0 po
+  poprawce (kontrola na tych samych adresach: Trostani ×4, Veiled Ascension ×2,
+  Jyoti ×2, Plague Reaver ×1 → „brak legalnych celów"; Chronic Flooding →
+  „pusta biblioteka").
+- **Engine (I):** `STATE_IDEMPOTENT_MASS_EFFECTS` — efekt zbiorowy, który ma
+  w zbiorze SAMO ŹRÓDŁO (Village Bell-Ringer: „untap all creatures you
+  control"), nie może zgłosić pustego zbioru; „wszystkie już odkręcone" to
+  legalny no-op (CR 701.20b, M106/Z2), nie porażka triggera.
+- **Narzędzie:** nowy profil testera `hoarder` (trzyma w ręce karty mechanik
+  „z ręki") — bloodrush przeszedł end-to-end po raz pierwszy (0 okien
+  w 33 partiach starymi profilami, 2 okna w 10 partiach z `hoarder`; premia
+  policzona: 2 → 4 obrażenia).
+- **Zgłoszenie detektora `[noop]` (Thunderstaff aktywowany bez atakujących)
+  uznane za poprawne**: aktywacja jest legalna, UI nie ukrywa akcji gracza;
+  naprawa z M255/E dotyczyła bota.
+
+- **Engine (J, runda 3):** `untap_enchanted_permanent` (Silken Strength —
+  „untap enchanted permanent"): odkręcenie OD KRĘCONEGO gospodarza to legalny
+  no-op (CR 701.20b), nie „trigger bez efektu". Obiekt efektu idempotentnego
+  bierze nowa tabela `STATE_IDEMPOTENT_TARGET` — aura działa na GOSPODARZA
+  (`attachedTo`), nie na cel z wyboru ani na źródło.
+
+Nowa lekcja **L91**. Testy `test/m256-zywy-tester-runda2.test.js` (18: H1–H7,
+J1–J1c) — każda asercja o braku komunikatu ma kontrolę pozytywną; 11 mutacji
+(MUT11 to mutant RÓWNOWAŻNY — zapisane jawnie w raporcie); strażnik H7 skanuje
+katalog pod kątem „zbiorowych" typów efektów. `npm test` **3725/3725**,
+build 56 modułów / 2893.8 kB.
+
+## M255 — Pętla jakości Żywym Testerem po Batchu 51 (2026-08-29, PR #87)
+
+**Zlecenie:** „pętla jakości żywym testerem ze szczególnym akcentem na nowe
+karty”. 18 partii (tali z Batcha 51 i kart z uwag A–E), detektory: 0 zgłoszeń;
+pięć napraw wyszło z lektury transkryptów. Szczegóły i dowody:
+`docs/audits/AUDYT_M255_ZYWY_TESTER_2026-08-29.md`, testy
+`test/m255-petla-jakosci.test.js` (13, każdy z mutacją).
+
+- **A (silnik):** `buff_creature_until_end_of_turn` emituje `stats_modified` i
+  `keyword_granted` — bez tego `resolveTrigger` raportował „trigger bez efektu”
+  dla skutku, który realnie wszedł (Kulrath Mystic; dotyczyłoby też Altara of
+  the Goyf po M254/E). Wyjątek M99 w `isBotMoveNoise` (czysta funkcja wyeksportowana
+  z session.js) przepuszcza buffy `untilEndOfTurn` do modalu „Rozgrywka”.
+- **B (log):** `ability_activated` z `bloodrush: true` nazywa mechanikę
+  (CR 702.63) i odrzucenie karty jako koszt; `card_discarded` z `cost: true`
+  dostaje dopisek „(koszt: bloodrush)”.
+- **C (log):** `ABILITY_EFFECT_LABELS` uzupełnione o 31 typów (brakowało 29 z
+  52 używanych przez zdolności aktywowane) + strażnik M255/C1.
+- **D (panel):** `ptPair` i etykieta `pump` drukują „+X/+X (X = …)” dla
+  wartości dynamicznych (koniec surowego sluga i zgubionego „+X/+X”).
+- **E (bot):** `buff_attacking_creatures` w `TEMPORARY_PUMP_EFFECTS` +
+  reprezentant zbioru (własny atakujący) — bot przestał palić {2} + tap w
+  Głównej 1 i nadal używa premii w oknie walki (test E2 anty-over-fix).
+- **F (silnik + narzędzie, z próby pełnej macierzy):** obrońca w kroku obrażeń
+  dostaje `pass_priority` (reguła `closingCombatPassBlocked` — jedna funkcja
+  dla oferty i walidacji; zakaz domykającego passu dotyczy wyłącznie gracza
+  aktywnego, bo tylko on ma `resolve_combat`). Pełna runda passów w tym kroku
+  oddaje priorytet aktywnemu zamiast domykać krok (obrażenia nie zostaną
+  pominięte: regresja M172/C). Przed poprawką oferta obrońcy w oknie obrażeń
+  to było `concede` (+ ewentualna aktywacja) — martwy punkt, przez który
+  pełna macierz benchmarku kończyła się wyjątkiem aggro-bota w 15. turze.
+  Narzędzie: wyjątek kontrolera niesie krok/komendy, `runBenchmark` — adres
+  meczu (L88).
+
+## M254 — Batch 51: 8 kart właściciela (2026-08-28, PR #87)
+
+**Zakres:** Skinbrand Goblin (GTC), Typhoid Rats (FRF), Invasive Species (M15),
+Dromoka Warrior (DTK), Akroan Sergeant (ORI), Thunderstaff (DST), Savage Surge
+(THS), Kulrath Mystic (ECL). Plan:
+`docs/plans/PLAN_2026-08-28-m254-batch51-kart.md`. Dane Oracle ze Scryfalla
+przed kodowaniem (ADR 0010 §2a).
+
+**Nowe mechaniki (generyczne, ADR 0002):**
+
+- **Bloodrush** — zdolność aktywowana z RĘKI (`{R}, Discard this card: Target
+  attacking creature gets +2/+1`) z nowym filtrem celu `attacking_creature`
+  (poza walką oferty nie ma — CR 508.1k).
+- **Renown N** (CR 702.112) — licznik +1/+1 za pierwsze obrażenia bojowe
+  zadane graczowi; flaga *renowned* blokuje powtórzenie.
+- **`bounce_permanent` + filtr `permanent` z `controlledBy: 'controller'`**
+  (Invasive Species) — cel obowiązkowy, brak kandydata = `no_targets`
+  (CR 603.3d).
+- **`preventCombatDamageToController`** (Thunderstaff, CR 615.1a) — statyczna
+  prewencja liczona per źródło obrażeń, przed jednorazowymi tarczami.
+- **`buff_attacking_creatures`** (Thunderstaff) — zbiór atakujących mrożony
+  przy rozstrzygnięciu (CR 611.2c).
+- **Warunek `spellManaValueAtLeast`** (Kulrath Mystic) — mana value czytana z
+  OBIEKTU czaru, nie z kwoty zapłaconej (L85).
+
+**Świadome ograniczenia:** prewencja Thunderstaffa działa wyłącznie na
+obrażenia bojowe zadawane kontrolerowi (Oracle nie obejmuje innych źródeł);
+bloodrush nie ma wariantu „z pola bitwy\" (karta działa tylko z ręki).
+
+**Naprawa znaleziona pełną macierzą:** kolizja dwóch pendingów tego samego
+gracza (`pendingReboundCast` + `pendingUndercityRoute`) — `legalCommands`
+oferowało komendę, którą bramka `execute` odrzucała (`rebound_unresolved`).
+Gałąź ofert reboundu stała PO undercity, choć jej bramka jest PRZED; przywrócona
+zgodność (reguła przy `firstPendingDecisionPlayerId`, dopisek do L48).
+
+**Wycena bota:** wspólny mianownik efektów pump (`TEMPORARY_PUMP_EFFECTS` +
+`temporaryPumpOf`) zamiast łańcucha nazw typów; przy okazji naprawiony debuff
+Downwind Ambushera (klasa M202/G) i TDZ przy premii za odkręcenie celu.
+
+**Wynik:** `npm test` **3661/3661** (+36 testów), build **55 modułów /
+2861.8 kB**, `npm run test:slow` (próbka B0) **9/9**. Złoty fixture bota
+zregenerowany, progi win-rate bez zmian.

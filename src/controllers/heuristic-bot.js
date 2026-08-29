@@ -568,6 +568,66 @@ function escapeExileCostOf(view, object) {
   return 6;
 }
 
+/**
+ * WSPÓLNY MIANOWNIK efektów „pump" (zlecenie właściciela, Batch 51).
+ *
+ * Łączy je nie nazwa typu, tylko ROLA: efekt nadaje P/T na OGRANICZONY czas
+ * (do końca tury), więc jego wartość zależy od OKNA tricku bojowego (M96 —
+ * poza nim mana przepada w cleanup) i od tego, po czyjej stronie stoi cel
+ * (M179/E). Rozpoznawanie po łańcuchu `type === 'pump' || type === '...'`
+ * oznaczało, że każdy nowy typ efektu startował bez wyceny i czekał na
+ * zgłoszenie (L28) — stąd tabela + jedna funkcja egzekwująca.
+ *
+ * Wartość wpisu = skąd wziąć P/T:
+ *   'descriptor' — z pól `power`/`toughness` efektu;
+ *   'gateCount'  — X = liczba kontrolowanych bram (Basilisk Gate; X nie siedzi
+ *                  w deskryptorze, liczymy z widoku).
+ * Odbiorcę (cel / zaczarowany stwór / źródło) ustala `pumpRecipientOf`.
+ */
+export const TEMPORARY_PUMP_EFFECTS = new Map([
+  ['pump', 'descriptor'],
+  ['pump_enchanted_creature', 'descriptor'],
+  ['pump_by_gates', 'gateCount'],
+  ['pump_by_creature_count', 'creatureCount'],
+  ['buff_creature_until_end_of_turn', 'descriptor'],
+  // M255/E (pętla jakości Żywym Testerem, Thunderstaff): „atakujące stwory
+  // dostają +1/+0 do końca tury” ma ten sam kształt co pump — bez wpisu
+  // zdolność nie miała wyceny (gołe score = 2) i bot aktywowała ją w Głównej
+  // 1, gdy nikt nie atakował (2 many + tap na efekt, który wygasa w cleanup).
+  ['buff_attacking_creatures', 'descriptor'],
+]);
+
+/**
+ * Wspólny mianownik: `{ power, toughness }` nadawane przez efekt typu pump
+ * (null = to nie jest pump). Ujemne wartości są tu NA MIEJSCU — to ten sam
+ * efekt, tylko ze znakiem minus (M202/G: debuff to efekt WROGI, nie mniejszy
+ * przyjazny).
+ */
+export function temporaryPumpOf(effect, view = null) {
+  if (!TEMPORARY_PUMP_EFFECTS.has(effect?.type)) return null;
+  // Liczby bierze `pumpDelta` — JEDNO źródło prawdy dla P/T efektów pump
+  // (X = liczba stworów/bram liczy się z widoku, nie z deskryptora).
+  if (view?.zones) return pumpDelta(view, effect);
+  return { power: effect.power ?? 0, toughness: effect.toughness ?? 0 };
+}
+
+/**
+ * M202/G (uwaga właściciela, Fleeting Distraction): efekt pump jest PRZYJAZNY
+ * tylko przy dodatnich wartościach — „Target creature gets -1/-0 until end of
+ * turn” to efekt WROGI. Klasyfikacja wyłącznie po TYPIE efektu karała rzucenie
+ * debuffu we wroga i premiowała rzucenie go we WŁASNEGO stwora — dokładnie
+ * zgłoszenie: „Bot ma na stole kreatury, gracz nie ma. Bot rzuca ten czar na
+ * swoją kreaturę i debuffuje ją. Bez sensu.” Reguła generyczna po ZNAKU
+ * deskryptora (ADR 0002) i po WSPÓLNYM MIANOWNIKU (L28), nie po nazwie typu:
+ * debuff „-1/-1 do końca tury” (Downwind Ambusher) jest wrogi tak samo jak
+ * debuff typu `pump`.
+ */
+export function isNegativePump(effect) {
+  const pump = temporaryPumpOf(effect);
+  if (!pump) return false;
+  return pump.power < 0 || pump.toughness < 0;
+}
+
 export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null, weights = undefined, params = undefined, registry: registryOverride = undefined }) {
   if (!Number.isInteger(seed)) throw new TypeError('Bot wymaga całkowitego seeda');
   if (typeof randomness !== 'number' || randomness < 0 || randomness > 1) throw new RangeError('randomness ma być w [0, 1]');
@@ -1137,19 +1197,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    *    koszt, nie efekt, i nie przechodzi tą ścieżką,
    *  - efekt bez celu (globalny) nie jest tu oceniany.
    */
-  /**
-   * M202/G (uwaga właściciela, Fleeting Distraction): efekt `pump` jest
-   * PRZYJAZNY tylko przy dodatnich wartościach — „Target creature gets -1/-0
-   * until end of turn” to efekt WROGI. Klasyfikacja wyłącznie po TYPIE efektu
-   * (`pump` = przyjazny, +50) karała rzucenie debuffu we wroga i premiowała
-   * rzucenie go we WŁASNEGO stwora — dokładnie zgłoszenie: „Bot ma na stole
-   * kreatury, gracz nie ma. Bot rzuca ten czar na swoją kreaturę i debuffuje
-   * ją. Bez sensu.” Reguła generyczna po ZNAKU deskryptora (ADR 0002).
-   */
-  function isNegativePump(effect) {
-    if (effect?.type !== 'pump') return false;
-    return (effect.power ?? 0) < 0 || (effect.toughness ?? 0) < 0;
-  }
+  // `isNegativePump` i `temporaryPumpOf` żyją na poziomie modułu (wspólny
+  // mianownik efektów pump — patrz komentarz przy `TEMPORARY_PUMP_EFFECTS`).
 
   function selfHarmPenalty(view, effects, cmd, target) {
     let penalty = 0;
@@ -1199,6 +1248,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    */
   const FRIENDLY_TARGET_EFFECTS = new Map([
     ['pump', 50], ['pump_by_creature_count', 50], ['pump_enchanted_creature', 50],
+    // `buff_creature_until_end_of_turn` (Savage Surge) i `pump_by_gates`
+    // nie mają tu wpisu — wpadają przez WSPÓLNY MIANOWNIK niżej
+    // (`temporaryPumpOf`), żeby kolejny typ efektu o tym samym kształcie nie
+    // potrzebował dopisku w trzech miejscach (zlecenie właściciela, L28).
     ['pump_by_gates', 50], ['grant_keywords_until_end_of_turn', 40],
     ['cant_be_blocked', 40], ['regenerate', 40], ['prevent_damage_this_turn', 40],
     ['set_base_pt_until_end_of_turn', 40], ['untap_permanent', 25],
@@ -1214,9 +1267,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if (!effect?.type) continue;
       // M202/G: ujemny pump NIE jest efektem przyjaznym — bez tego wykluczenia
       // rzucenie debuffu we wroga dostawało karę jak wzmacnianie przeciwnika.
+      // Wspólny mianownik: każdy efekt o kształcie pumpa jest przyjazny
+      // (chyba że niesie ujemne P/T — M202/G), niezależnie od nazwy typu.
       const friendCost = isNegativePump(effect)
         ? null
         : (FRIENDLY_TARGET_EFFECTS.get(effect.type)
+          ?? (temporaryPumpOf(effect) ? 50 : null)
           ?? (effect.type === 'add_counter' && BENEFICIAL_COUNTERS.has(effect.counter ?? '+1/+1') ? 50 : null));
       if (friendCost != null) {
         const slot = effect.targetIndex != null ? targets[effect.targetIndex] : null;
@@ -2429,10 +2485,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Uwaga B (2026-08-12): pumpy (pump, pump_by_creature_count — Might of
           // the Masses, pump_enchanted_creature) wzmacniają stwora-CELU. Wzmacnianie
           // stwora PRZECIWNIKA to marnotrawstwo — kara, nie dotyczy własnych.
-          const isPumpEffect = effect.type === 'pump'
-            || effect.type === 'pump_by_creature_count'
-            || effect.type === 'pump_enchanted_creature'
-            || effect.type === 'pump_by_gates';
+          // WSPÓLNY MIANOWNIK (zlecenie właściciela, L28): tabela typów +
+          // jedna funkcja, bez łańcucha `type === '...'`.
+          const isPumpEffect = Boolean(temporaryPumpOf(effect, view));
           // M202/G: ujemny pump na WROGIM stworze to debuff przeciwnika —
           // realny zysk (Fleeting Distraction: „-1/-0 until end of turn”).
           // Bez tej gałęzi efekt nie dostawał ŻADNEJ wartości (dodatnie pumpy
@@ -2732,19 +2787,39 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // zdolność dostawała gołe `score = 2` i bot pompował ją 10× w Głównej
           // 1, zanim zadeklarował atak. Efekt „until end of turn" wygasa
           // w cleanup, więc mana wydana przed combatem przepada.
-          if (effect.type === 'pump' || effect.type === 'pump_enchanted_creature' || effect.type === 'pump_by_gates') {
-            // Basilisk Gate: +X/+X, X = liczba kontrolowanych bram (Gate) —
-            // liczymy z widoku, bo X nie siedzi w deskryptorze efektu.
-            const gates = effect.type === 'pump_by_gates'
-              ? view.zones.battlefield.filter((o) => o.controllerId === view.playerId && (o.subtypes ?? []).includes('Gate')).length
-              : 0;
-            const pGain = effect.type === 'pump_by_gates' ? gates : (effect.power ?? 0);
-            const tGain = effect.type === 'pump_by_gates' ? gates : (effect.toughness ?? 0);
-            let value = pGain + (tGain > 0 ? 1 : 0);
+          //
+          // Batch 51 (Savage Surge — „+2/+2 i odkręcenie do końca tury"):
+          // gałąź rozpoznaje efekt po WSPÓLNYM MIANOWNIKU (nadanie P/T do
+          // końca tury — `temporaryPumpOf`), nie po łańcuchu nazw typów.
+          const pump = temporaryPumpOf(effect, view);
+          if (pump) {
+            const pGain = pump.power;
+            const tGain = pump.toughness;
             // Pump bez jawnych celów działa na samo źródło (np. Warboar);
             // aura firebreathing pompuje zaczarowanego stwora.
             const enchantedId = effect.type === 'pump_enchanted_creature' ? source?.attachedTo : null;
-            const recipient = target ?? (enchantedId ? objectOnBoard(view, enchantedId) : null) ?? source;
+            // M255/E: „atakujące stwory dostają +X/+0” — odbiorcą jest ZBIÓR
+            // atakujących (CR 611.2c), nie cel i nie źródło. Bez
+            // reprezentanta zbioru `recipient` był artefaktem-źródłem, więc
+            // `combatTrickWindow` nie zachodził i bot dostawał karę „poza
+            // oknem walki” ZAWSZE (również w walce) albo (przed wpisem do
+            // tabeli) gołą bazę 2. Reprezentant = własny atakujący z
+            // PlayerView (ADR 0017); dalej obowiązują te same reguły co dla
+            // pumpa z pojedynczym celem (L28 — wspólny mianownik).
+            const attackingRecipientId = effect.type === 'buff_attacking_creatures'
+              ? (view.combat?.attackers ?? []).find((id) => objectOnBoard(view, id)?.controllerId === view.playerId)
+              : null;
+            const recipient = target ?? (enchantedId ? objectOnBoard(view, enchantedId) : null)
+              ?? (attackingRecipientId ? objectOnBoard(view, attackingRecipientId) : null) ?? source;
+            // Savage Surge: ODKRĘCENIE celu obok pumpu („Untap that creature")
+            // — premia tylko, gdy cel naprawdę jest zatapnięty (odkręcenie
+            // nietapniętego stwora nic nie kupuje).
+            const untapsTarget = effects.some((e) => e?.type === 'untap_permanent');
+            let value = pGain + (tGain > 0 ? 1 : 0);
+            // Savage Surge: „Untap that creature" — odkręcenie ZATAPNIĘTEGO
+            // stwora to realna wartość (odzyskany bloker), odkręcenie
+            // nie-tapniętego nie kupuje nic (reguła po treści efektu, ADR 0002).
+            if (untapsTarget && recipient?.tapped) value += 4;
             // Pump „do końca tury" ma sens dopiero, gdy obrażenia są przesądzone:
             // w combacie (po deklaracjach) albo w obronie. W main/upkeep to
             // wyrzucanie many — gracz i tak zdąży zareagować.

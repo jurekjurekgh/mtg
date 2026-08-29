@@ -72,7 +72,8 @@ test('lokalny słownik zawiera wszystkie karty z ID setu, bez ucieczek i z duble
   // kolumny udawały plany o nazwach kart (zgłoszenie właściciela 2026-08-23).
   // Batch 49 (lista właściciela): +10 pozycji 557–566 → 566.
   // Batch 50 (lista właściciela): +5 pozycji 567–571 → 571.
-  assert.equal(data.length, 571, 'pełna lista kolekcji (571 unikalnych pozycji)');
+  // Batch 51 (lista właściciela): +8 pozycji 572–579 → 579.
+  assert.equal(data.length, 579, 'pełna lista kolekcji (579 unikalnych pozycji)');
   for (const [art, name] of data) {
     assert.match(art, /^\d+[A-Za-z0-9_]*$/, `ID ilustracji bez znaków specjalnych: ${art}`);
     assert.ok(name.trim(), `nazwa nie może być pusta (ID ${art})`);
@@ -114,7 +115,8 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // niego niewidzialnych — mimo że słownik znał ich numery (pułapka L23).
   // Brak numeru pilnuje teraz test/m197-plany-kolekcji.test.js; tutaj zostaje
   // sama liczba, już bez kart-widm.
-  assert.equal(withArt.length, 428, 'wszystkie realne karty mają artId (Batche 1–50)');
+  // Batch 51: +8 kart (572–579) → 436.
+  assert.equal(withArt.length, 436, 'wszystkie realne karty mają artId (Batche 1–51)');
   const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   for (const card of withArt) {
     const entries = byName.get(card.name.toLowerCase()) ?? [];

@@ -25,3 +25,14 @@ tools/table-tester/*.txt
 # ...także transkrypty grupowane w podkatalogi audytu (M205: `--out
 # audyt-m205/g1.txt`) — wzorzec z jedną gwiazdką ich nie obejmował.
 tools/table-tester/**/*.txt
+# ...oraz logi i zrzuty (zip) z tych przebiegów — ta sama klasa artefaktu,
+# inny sufiks. M253: wszystkie śledzone kopie usunięto z repo.
+tools/table-tester/**/*.log
+tools/table-tester/**/*.zip
+# Katalogi `tmp-audyt-*/` w korzeniu (konwencja M239 — „transkrypty audytu
+# w repo, bo --out w katalogu narzędzia jest gitignorowany") przestały
+# obowiązywać 2026-08-28 decyzją właściciela: transkrypt to artefakt
+# przebiegu, dowodem jest raport w `docs/audits/` (ew. fragment wklejony
+# do opisu PR), a nie plik w historii. Tester nadal pisze `--out` gdzie
+# chce — po prostu nie commitujemy tego.
+tmp-audyt-*/

@@ -47,6 +47,30 @@ function isCombatDamagePreventedByInspire(state, source) {
   return !isEnchantmentCreature && !isEnchanted;
 }
 
+/**
+ * Batch 51 (Thunderstaff, CR 615.1a): „As long as this artifact is untapped,
+ * if a creature would deal combat damage to you, prevent 1 of that damage."
+ * Suma prewencji ze statycznych zdolności permanentów OBRONICY, które są
+ * OD TAPNIĘTE (deskryptor `preventCombatDamageToController`). Liczone per
+ * ŹRÓDŁO obrażeń — w MtG każdy atakujący to osobne zdarzenie obrażeń, więc
+ * trzech atakujących traci po 1, nie łącznie 1 (gdyby liczyć raz na turę,
+ * karta byłaby dużo słabsza niż w Oracle).
+ */
+function staticCombatDamagePrevention(state, defenderId) {
+  let amount = 0;
+  for (const objectId of state.zones.battlefield) {
+    const object = state.objects.get(objectId);
+    if (!object || object.zone !== 'battlefield' || object.controllerId !== defenderId) continue;
+    if (object.tapped) continue; // warunek „as long as this artifact is untapped"
+    for (const ability of effectiveAbilities(object)) {
+      const prevention = ability?.preventCombatDamageToController;
+      if (ability?.type !== 'static' || !prevention) continue;
+      amount += prevention.amount ?? 0;
+    }
+  }
+  return amount;
+}
+
 function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amount) {
   const source = state.objects.get(sourceId);
   // CR 119.3: zapobiegnięte obrażenia NIE są zadane — zdarzenie damage_dealt
@@ -57,8 +81,20 @@ function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amoun
   // (bug złotej odznaki — spójność ze ścieżką niecombat dealNonCombatDamage).
   const before = state.events.length;
   const inspireAmount = isCombatDamagePreventedByInspire(state, source) ? 0 : amount;
-  const prevented = preventDamageTo(state, targetPlayerId, inspireAmount);
-  const actual = inspireAmount - prevented;
+  // Batch 51 (Thunderstaff): prewencja STATYCZNA (obrońcy) przed tarczami
+  // jednorazowymi (Withstand) — kolejność nie zmienia wyniku, ale zdarzenie
+  // `damage_prevented` musi nieść ŹRÓDŁO prewencji, żeby log nie zrzucał
+  // zasługi na tarczę, której nie było.
+  const staticPrevented = Math.min(inspireAmount, staticCombatDamagePrevention(state, targetPlayerId));
+  const afterStatic = inspireAmount - staticPrevented;
+  const shieldPrevented = preventDamageTo(state, targetPlayerId, afterStatic);
+  const prevented = staticPrevented + shieldPrevented;
+  const actual = afterStatic - shieldPrevented;
+  if (staticPrevented > 0) {
+    state.events.push(event('damage_prevented', {
+      target: targetPlayerId, amount: staticPrevented, staticPrevention: true,
+    }));
+  }
   const damageEvent = event('damage_dealt', {
     source: sourceId, target: targetPlayerId, amount: actual, combat: true,
     sourceCardId: source?.cardId ?? null,
@@ -92,6 +128,26 @@ function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amoun
   // zadanych obrażeniach (prewencja w całości = brak poisonu).
   if (actual > 0 && (source?.toxic ?? 0) > 0) {
     events.push(...addPoisonCounters(state, targetPlayerId, source.toxic));
+  }
+  // Renown N (CR 702.112a, Akroan Sergeant): po ZADANIU combat damage
+  // graczowi — jeśli stwór nie jest jeszcze „renowned", dostaje N liczników
+  // +1/+1 i staje się renowned. Kolejność ma znaczenie: liczniki wchodzą po
+  // obrażeniach (więc nie wpływają na ich rozmiar), a warunek `actual > 0`
+  // odzwierciedla CR 702.112a — w pełni zapobiegnięte obrażenia to brak
+  // „dealt combat damage", czyli brak renown (jak przy toxic wyżej).
+  if (actual > 0 && (source?.renown ?? 0) > 0 && source.zone === 'battlefield' && !source.renowned) {
+    addCounter(state, sourceId, '+1/+1', source.renown);
+    // Znacznik „renowned" (CR 702.112b): nie jest ani zdolnością, ani cechą
+    // kopiowalną — znika wraz z obiektem (nowy obiekt po powrocie = bez
+    // znacznika), więc wystarczy flaga na obiekcie.
+    const renownedSource = state.objects.get(sourceId);
+    if (renownedSource) {
+      state.objects.set(sourceId, Object.freeze({ ...renownedSource, renowned: true }));
+      events.push(event('creature_became_renowned', {
+        objectId: sourceId, cardId: renownedSource.cardId ?? null,
+        counters: source.renown, playerId: renownedSource.controllerId ?? null,
+      }));
+    }
   }
 }
 

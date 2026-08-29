@@ -9907,6 +9907,169 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['manifest dread: wybór którą z 2 kart z wierzchu zmanifestować (2/2 face-down), druga do grobu; obrót za koszt many tylko dla kart stworów (CR 701.34)'],
   }),
 
+  // =========================================================================
+  // Batch 51 (2026-08-28, lista właściciela: artId 572–579) — 8 kart.
+  // Dane Oracle pobrane ze Scryfall per druk (docs/cards/scryfall-*.json),
+  // artId i plan ze słownika kolekcji (tools/collection-art-ids.csv).
+  //
+  // Nowe mechaniki generyczne (osobne commity, ADR 0002 — zero warunków na
+  // nazwę karty): bloodrush (zdolność z ręki, cel = atakujący stwór),
+  // renown N (CR 702.112), statyczna prewencja obrażeń bojowych w gracza,
+  // efekt na atakujące stwory, warunek mana value rzucanego czaru, filtr
+  // celu „another permanent you control".
+  // =========================================================================
+
+  // 572GTC Skinbrand Goblin (GTC) {1}{R} 2/1 Goblin Warrior — Bloodrush.
+  // „Bloodrush — {R}, Discard this card: Target attacking creature gets
+  //  +2/+1 until end of turn." Bloodrush to SŁOWO ZDOLNOŚCI (CR 207.2c),
+  // nie słowo kluczowe — mechanikę niesie zdolność aktywowana karty w ręce.
+  defineCard({
+    id: 'skinbrand-goblin', name: 'Skinbrand Goblin', set: 'GTC',
+    types: ['Creature'], subtypes: ['Goblin', 'Warrior'], colors: ['R'],
+    power: 2, toughness: 1, manaCost: 2,
+    oracleText: 'Bloodrush — {R}, Discard this card: Target attacking creature gets +2/+1 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/e/fe4f9b6c-3ba9-4f4f-8135-f5236195e507.jpg?1783940122',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, colors: ['R'] },
+        bloodrush: { power: 2, toughness: 1 },
+        targets: [{ type: 'attacking_creature' }],
+        effect: { type: 'pump', power: 2, toughness: 1 },
+      }),
+    ],
+    artId: 572, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+    notes: ['bloodrush działa wyłącznie z ręki (koszt = odrzucenie karty) i wyłącznie w atakującego stwora — poza fazą walki zdolność nie ma legalnego celu (CR 508.1k)'],
+  }),
+
+  // 573FRF Typhoid Rats (FRF) {B} 1/1 Rat — deathtouch (druk Sultai z FRF).
+  defineCard({
+    id: 'typhoid-rats', name: 'Typhoid Rats', set: 'FRF',
+    types: ['Creature'], subtypes: ['Rat'], colors: ['B'],
+    power: 1, toughness: 1, manaCost: 1, keywords: ['deathtouch'],
+    oracleText: 'Deathtouch (Any amount of damage this deals to a creature is enough to destroy it.)',
+    imageUri: 'https://cards.scryfall.io/large/front/d/1/d13cb90b-50c3-46ef-83f8-812dfb7ff881.jpg?1783938691',
+    artId: 573, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 574M15 Invasive Species (M15) {2}{G} 3/3 Insect —
+  // „When this creature enters, return another permanent you control to its
+  //  owner's hand." Cel jest obowiązkowy: bez własnego permanentu trigger
+  // gaśnie bez efektu (CR 603.3d).
+  defineCard({
+    id: 'invasive-species', name: 'Invasive Species', set: 'M15',
+    types: ['Creature'], subtypes: ['Insect'], colors: ['G'],
+    power: 3, toughness: 3, manaCost: 3,
+    oracleText: "When this creature enters, return another permanent you control to its owner's hand.",
+    imageUri: 'https://cards.scryfall.io/large/front/c/1/c1fb5a98-94f4-419f-850b-e3a01f17080f.jpg?1783939166',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          requiresTarget: { type: 'permanent', controlledBy: 'controller', notSelf: true },
+        },
+        effect: [{ type: 'bounce_permanent' }],
+      }),
+    ],
+    artId: 574, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['cel obowiązkowy — przy braku innego własnego permanentu trigger gaśnie bez efektu (CR 603.3d); polityka deterministyczna wybiera najcenniejszy własny permanent'],
+  }),
+
+  // 575DTK Dromoka Warrior (DTK) {1}{W} 3/1 Human Warrior — wanilia.
+  defineCard({
+    id: 'dromoka-warrior', name: 'Dromoka Warrior', set: 'DTK',
+    types: ['Creature'], subtypes: ['Human', 'Warrior'], colors: ['W'],
+    power: 3, toughness: 1, manaCost: 2, oracleText: '',
+    imageUri: 'https://cards.scryfall.io/large/front/1/3/13ae001b-556f-4576-8cf4-0b8902997bb1.jpg?1783938618',
+    artId: 575, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 576ORI Akroan Sergeant (ORI) {2}{R} 2/2 Human Soldier —
+  // first strike + Renown 1 (CR 702.112).
+  defineCard({
+    id: 'akroan-sergeant', name: 'Akroan Sergeant', set: 'ORI',
+    types: ['Creature'], subtypes: ['Human', 'Soldier'], colors: ['R'],
+    power: 2, toughness: 2, manaCost: 3, keywords: ['first_strike'], renown: 1,
+    oracleText: "First strike (This creature deals combat damage before creatures without first strike.)\nRenown 1 (When this creature deals combat damage to a player, if it isn't renowned, put a +1/+1 counter on it and it becomes renowned.)",
+    imageUri: 'https://cards.scryfall.io/large/front/3/1/31913547-460c-45b3-be23-89f0e3a43325.jpg?1783938333',
+    artId: 576, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+    notes: ['renown 1: licznik +1/+1 za PIERWSZE obrażenia bojowe zadane graczowi (znacznik „renowned” ginie po opuszczeniu pola bitwy, CR 702.112b)'],
+  }),
+
+  // 577DST Thunderstaff (DST) {3} Artifact — prewencja statyczna (dopóki
+  // nietapnięty) oraz {2}, {T}: atakujące stwory dostają +1/+0 do końca tury.
+  defineCard({
+    id: 'thunderstaff', name: 'Thunderstaff', set: 'DST',
+    types: ['Artifact'], colors: [], manaCost: 3,
+    oracleText: 'As long as this artifact is untapped, if a creature would deal combat damage to you, prevent 1 of that damage.\n{2}, {T}: Attacking creatures get +1/+0 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/4/84d23ce7-3880-40e7-985b-a8dce97ff77c.jpg?1783944415',
+    abilities: [
+      // Prewencja wyłącza się po tapnięciu — warunek „untapped" jest częścią
+      // tekstu karty, więc engine czyta stan permanentu przy każdych obrażeniach.
+      createAbility({
+        type: ABILITY_TYPE.static,
+        preventCombatDamageToController: { amount: 1 },
+      }),
+      // {2}, {T}: atakujące stwory +1/+0 do końca tury (zbiór ustalany przy
+      // rozstrzygnięciu, CR 611.2c).
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, tap: true },
+        effect: { type: 'buff_attacking_creatures', power: 1, toughness: 0 },
+      }),
+    ],
+    artId: 577, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['prewencja 1 liczy się od KAŻDEGO źródła obrażeń bojowych (trzech atakujących = 3 zapobiegnięte), nie raz na turę'],
+  }),
+
+  // 578THS Savage Surge (THS) {1}{G} Instant —
+  // „Target creature gets +2/+2 until end of turn. Untap that creature."
+  defineCard({
+    id: 'savage-surge', name: 'Savage Surge', set: 'THS',
+    types: ['Instant'], colors: ['G'], manaCost: 2,
+    oracleText: 'Target creature gets +2/+2 until end of turn. Untap that creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/9/5916d5e7-0825-4d72-82e4-1e4c86d1fafe.jpg?1783939737',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'buff_creature_until_end_of_turn', power: 2, toughness: 2 },
+        { type: 'untap_permanent' },
+      ],
+    },
+    artId: 578, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 579ECL Kulrath Mystic (ECL) {2}{U} 2/4 Elemental Wizard —
+  // „Whenever you cast a spell with mana value 4 or greater, this creature
+  //  gets +2/+0 and gains vigilance until end of turn."
+  defineCard({
+    id: 'kulrath-mystic', name: 'Kulrath Mystic', set: 'ECL',
+    types: ['Creature'], subtypes: ['Elemental', 'Wizard'], colors: ['U'],
+    power: 2, toughness: 4, manaCost: 3,
+    oracleText: 'Whenever you cast a spell with mana value 4 or greater, this creature gets +2/+0 and gains vigilance until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/7/377d257c-920c-4dd4-a4b1-01cbc631ef8f.jpg?1783904487',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'when_you_cast_spell', condition: { spellManaValueAtLeast: 4 } },
+        effect: { type: 'buff_creature_until_end_of_turn', power: 2, toughness: 0, keywords: ['vigilance'] },
+      }),
+    ],
+    artId: 579, plan: 'Lorwyn',
+    support: { status: 'supported', limitations: [] },
+    notes: ['mana value to koszt many z karty (CR 202.3) — mana WYDANA po zniżkach nie ma znaczenia'],
+  }),
+
+
 ]);
 
 /**

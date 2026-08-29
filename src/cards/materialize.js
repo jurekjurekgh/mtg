@@ -67,6 +67,13 @@ export function gameObjectDataOf(card) {
     // Bloodthirst (Gorehorn Minotaurs): jeśli przeciwnik był obrażony w tej turze,
     // stwór wchodzi z licznikami +1/+1.
     if (card.bloodthirst) data.bloodthirst = card.bloodthirst;
+    // Renown N (CR 702.112a, Akroan Sergeant): liczba liczników +1/+1 za
+    // pierwsze obrażenia bojowe zadane graczowi. Szczebel materializacji jest
+    // obowiązkowy (L21): `deck.js` przenosi deskryptor przy installDeck, ale
+    // karta wylosowana z biblioteki idzie przez `gameObjectDataOf` — bez tego
+    // wpisu stwór wchodziłby na stół bez mechaniki (test helperów, które
+    // czytają definicję z rejestru, w ogóle by tego nie zauważył).
+    if (card.renown != null) data.renown = card.renown;
     if (card.additionalCost) data.additionalCost = card.additionalCost;
     // Kicker (CR 702.33, Kor Sanctifiers): opcjonalny dodatkowy koszt rzutu
     // — wariant `kicked` komendy cast_permanent (resources.castPermanent).

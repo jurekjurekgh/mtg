@@ -6,6 +6,7 @@
 1x Squire's Lightblade
 1x Tome Scour
 1x Cellar Door
+1x Contested Game Ball
 1x Negate (M15)
 1x Omenspeaker
 1x Wooden Stake
@@ -14,7 +15,8 @@
 1x Frost Lynx
 1x Hobble
 1x Ramroller
+1x Thunderstaff
 1x Irontread Crusher
 1x You're Confronted by Robbers
 3x Plains
-5x Island
+6x Island

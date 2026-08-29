@@ -6,101 +6,90 @@
 
 ## Kontekst
 
-Audyt ([AUDIT_LEGACY_APP.md](../AUDIT_LEGACY_APP.md), §3.1) ustalił, że arkusz kolekcji
-**nie zawiera żadnych danych reguł MtG**. Kolumny to: `Ilustracja`, `Nazwa`, `Set`, `Plan`,
-`Colors`, `Narracja`, `Bestiariusz`, `Lore`. Brakuje kosztu many, typów, podtypów,
-siły i wytrzymałości oraz Oracle text. Kolumna `Colors` nie opisuje koloru karty — steruje
-generowaniem wariantów graficznych.
+Audyt ([AUDIT_LEGACY_APP.md](../AUDIT_LEGACY_APP.md), §3.1): arkusz kolekcji
+**nie zawiera żadnych danych reguł MtG** — kolumny to `Ilustracja`, `Nazwa`,
+`Set`, `Plan`, `Colors`, `Narracja`, `Bestiariusz`, `Lore`. Brakuje kosztu many,
+typów, podtypów, P/T i Oracle text, a `Colors` steruje wariantami graficznymi,
+nie kolorem karty. Stąd instrukcja w prompcie: *„OBOWIĄZKOWO! Wyszukaj w
+internecie statystyki i efekty każdej nowej karty"*. Bez danych reguł engine nie
+ma czym walidować kosztów, typów ani obrażeń — to blokada wejścia w Etap 2.
 
-To bezpośrednia przyczyna instrukcji w obecnym promptcie: *„OBOWIĄZKOWO! Wyszukaj w internecie
-statystyki i efekty każdej nowej karty"*. Bez danych reguł engine nie ma czym walidować
-kosztów, typów ani obrażeń, więc jest to blokada wejścia w Etap 2.
-
-Rozważano trzy źródła: ręczne definicje w repozytorium, import ze Scryfall do lokalnego cache
-oraz rozszerzenie arkusza Google o kolumny reguł.
+Rozważano trzy źródła: ręczne definicje w repozytorium, import ze Scryfall do
+lokalnego cache, rozszerzenie arkusza Google o kolumny reguł.
 
 ## Decyzja
 
-Dane reguł każdej obsługiwanej karty są **wpisywane ręcznie i przechowywane w repozytorium**
-jako część definicji karty, razem z jej zachowaniem, statusem wsparcia i testami.
+Dane reguł każdej obsługiwanej karty są **wpisywane ręcznie i przechowywane w
+repozytorium** jako część definicji karty, razem z jej zachowaniem, statusem
+wsparcia i testami.
 
-Zasady:
-
-1. **Jedna karta = jeden plik** w `src/cards/definitions/`, zawierający dane reguł,
-   zachowanie zbudowane z mechanik i deklarację zakresu wsparcia.
+1. **Jedna karta = jeden plik** w `src/cards/definitions/`.
    > **Zastąpiony przez [ADR 0014](0014-card-definitions-single-module.md):**
-   > definicje kart są przechowywane w pojedynczym module `src/cards/card-data.js`
-   > (sekcje `SYNTHETIC_CARDS` / `REAL_CARDS` / `VIRTUAL_BASIC_LANDS`), a nie
-   > jeden plik na kartę. Pozostałe § tego ADR (w tym §2a — obowiązkowy pobór
-   > ze Scryfall przed kodowaniem) pozostają w mocy.
-2. **Dane reguł są zapisywane dosłownie** według aktualnego Oracle text. Wpisanie ich
-   jest częścią implementacji karty, nie osobnym etapem importu.
-2a. **Przed zakodowaniem każdej karty jej dane pobieramy z Scryfall.** To obowiązkowy,
-   pierwszy krok procedury dodawania karty — nie wolno wpisywać kosztu many, typów, P/T
-   ani tekstu reguł z pamięci. Pobranie jest jednorazowe: po weryfikacji dane trafiają
-   do pliku definicji i od tej pory obowiązuje §3 (żadnych zapytań w czasie gry).
-   Przy większych partiach kart pobieramy dane jednym przebiegiem, z zachowaniem prośby
-   Scryfall o utrzymanie ruchu poniżej 10 żądań na sekundę.
-3. **Repozytorium nie pobiera danych reguł z sieci w czasie gry.** Engine działa offline
-   i deterministycznie. Scryfall pozostaje wyłącznie źródłem **obrazów** w UI.
-4. **Karta bez danych reguł nie może mieć statusu `supported`** i nie wchodzi do legalnej talii.
-5. **Nazwa i tekst reguł są danymi wejściowymi, nie warunkami w kodzie.** Engine nadal nie
-   zawiera rozgałęzień po nazwie karty (ADR 0002). Dane opisują kartę; zachowanie składa się
-   z mechanik wielokrotnego użytku.
-6. **Powiązanie z kolekcją właściciela jest osobnym polem**, np. identyfikatorem ilustracji.
-   Definicja reguł nie dziedziczy arytmetyki ID z aplikacji kolekcjonerskiej
-   (`+100000`/`+200000`), która miesza definicję karty z wariantem graficznym.
-   To samo pole obsługuje oba tryby grafik z [ADR 0011](0011-modular-sources-single-file-artifact.md):
-   lokalne ilustracje właściciela oraz obrazy ze Scryfall.
-7. **Pierwszy zestaw kart wskazuje właściciel** ze swojego katalogu (decyzja z 2026-07-31).
-   Do czasu otrzymania listy engine rozwijamy na kartach syntetycznych używanych wyłącznie
-   w testach, jawnie oznaczonych jako testowe i niedostępnych w grze.
+   > definicje są w jednym module `src/cards/card-data.js` (sekcje
+   > `SYNTHETIC_CARDS` / `REAL_CARDS` / `VIRTUAL_BASIC_LANDS`). Pozostałe § tego
+   > ADR, w tym §2a, pozostają w mocy.
+2. **Dane reguł zapisujemy dosłownie** wg aktualnego Oracle text; wpisanie ich
+   jest częścią implementacji karty.
+2a. **Przed zakodowaniem każdej karty dane pobieramy z Scryfall** — obowiązkowy
+   pierwszy krok. Nie wolno wpisywać kosztu many, typów, P/T ani tekstu reguł z
+   pamięci. Pobranie jest jednorazowe: po weryfikacji dane trafiają do pliku
+   definicji i od tej pory obowiązuje §3. Przy większych partiach pobieramy
+   jednym przebiegiem, utrzymując ruch poniżej 10 żądań/s.
+3. **Repo nie pobiera danych reguł z sieci w czasie gry** — engine działa
+   offline i deterministycznie; Scryfall to wyłącznie źródło **obrazów**.
+4. **Karta bez danych reguł nie dostaje statusu `supported`** i nie wchodzi do
+   legalnej talii.
+5. **Nazwa i tekst reguł są danymi, nie warunkami w kodzie** — engine nadal nie
+   rozgałęzia się po nazwie karty (ADR 0002).
+6. **Powiązanie z kolekcją to osobne pole** (np. identyfikator ilustracji);
+   definicja nie dziedziczy arytmetyki ID z aplikacji kolekcjonerskiej
+   (`+100000`/`+200000`). To samo pole obsługuje oba tryby grafik z ADR 0011:
+   lokalne ilustracje właściciela i obrazy ze Scryfall.
+7. **Pierwszy zestaw kart wskazuje właściciel** (decyzja z 2026-07-31). Do czasu
+   otrzymania listy rozwijamy engine na kartach syntetycznych, używanych
+   wyłącznie w testach i jawnie oznaczonych jako niedostępne w grze.
 
 ## Konsekwencje
 
 ### Pozytywne
 
-- Repozytorium jest samowystarczalne: testy i symulacje nie zależą od sieci ani od arkusza.
-- Dane reguł są wersjonowane i przeglądane w PR razem z implementacją i testami.
-- Nie ma rozjazdu między tym, co engine „wie" o karcie, a tym, co potrafi wykonać —
-  jedno i drugie powstaje w tym samym commicie.
-- Znika pokusa proszenia LLM o reguły w czasie gry (sprzeczna z ADR 0002 i PRODUCT.md).
-- Brak pytań licencyjnych o masowy import cudzej bazy danych; wpisujemy tylko karty,
-  które faktycznie implementujemy.
+- Repo jest samowystarczalne: testy i symulacje bez sieci i arkusza.
+- Dane reguł wersjonowane i przeglądane w PR razem z implementacją i testami.
+- Brak rozjazdu między tym, co engine „wie" o karcie, a tym, co potrafi
+  wykonać — powstaje w tym samym commicie.
+- Znika pokusa proszenia LLM o reguły w czasie gry (sprzeczne z ADR 0002).
+- Brak pytań licencyjnych o masowy import cudzej bazy.
 
 ### Koszty i ryzyka
 
-- **Praca ręczna rośnie liniowo z katalogiem.** Około 20 kart to realny start; 400 kart
-  tą metodą to długi horyzont. Świadomie akceptowane — ADR 0001 i tak zakłada wzrost karta
-  po karcie, a wąskim gardłem jest implementacja mechanik, nie przepisywanie danych.
-- **Ryzyko literówki w koszcie many lub P/T.** Łagodzenie: test na każdą kartę sprawdzający
-  jej dane i przynajmniej jeden scenariusz legalny oraz jeden nielegalny.
-- **Dane mogą się zdezaktualizować** po errata/zmianie Oracle text. Łagodzenie: pole z datą
-  weryfikacji tekstu w definicji karty.
-- **Duplikacja względem arkusza właściciela** w zakresie nazwy i przynależności do kolekcji.
-  Łagodzenie: definicja przechowuje odnośnik do pozycji w kolekcji zamiast kopiować jej dane.
+- **Praca ręczna rośnie liniowo z katalogiem**: ~20 kart to realny start, 400
+  to długi horyzont — akceptowane, bo ADR 0001 i tak zakłada wzrost karta po
+  karcie, a wąskim gardłem są mechaniki, nie przepisywanie danych.
+- **Ryzyko literówki w koszcie many lub P/T** → test na każdą kartę sprawdzający
+  dane oraz scenariusz legalny i nielegalny.
+- **Dezaktualizacja po erracie** → pole z datą weryfikacji tekstu w definicji.
+- **Duplikacja względem arkusza** (nazwa, przynależność do kolekcji) →
+  definicja trzyma odnośnik do pozycji, nie kopię jej danych.
 
 ## Furtka na przyszłość
 
-Decyzja nie zamyka drogi do automatyzacji. Gdyby ręczne wpisywanie stało się wąskim gardłem,
-można dodać **jednorazowy skrypt pomocniczy**, który przygotuje szkielet definicji na podstawie
-publicznego źródła danych, a człowiek go zweryfikuje i zatwierdzi w PR. Warunki:
-skrypt działa offline wobec gry, wynik trafia do repozytorium jako zwykły plik, a karta
-i tak wymaga testów przed nadaniem statusu `supported`. Taka zmiana wymaga nowego ADR.
+Automatyzacja jest dopuszczalna: gdyby ręczne wpisywanie stało się wąskim
+gardłem, można dodać **jednorazowy skrypt pomocniczy** przygotowujący szkielet
+definicji z publicznego źródła, który człowiek weryfikuje i zatwierdza w PR.
+Warunki: skrypt działa offline wobec gry, wynik trafia do repo jako zwykły plik,
+karta i tak wymaga testów przed statusem `supported`. Wymaga nowego ADR.
 
 ## Rozważone alternatywy
 
-- **Import ze Scryfall do lokalnego cache** — szybszy przy 400 kartach, ale wprowadza zależność
-  od zewnętrznej bazy, pytania licencyjne o masowy zrzut danych i ryzyko, że repozytorium
-  „zna" karty, których engine nie potrafi rozegrać.
-- **Rozszerzenie arkusza Google o kolumny reguł** — zachowuje jedno źródło prawdy dla właściciela,
-  ale wiąże engine z siecią i arkuszem, utrudnia testy offline i uzależnia poprawność reguł
-  od ręcznego wypełniania komórek bez przeglądu w PR.
+- **Import ze Scryfall do lokalnego cache** — szybszy przy 400 kartach, ale
+  dodaje zależność od zewnętrznej bazy, pytania licencyjne o masowy zrzut i
+  ryzyko, że repo „zna" karty, których engine nie potrafi rozegrać.
+- **Rozszerzenie arkusza Google o kolumny reguł** — jedno źródło prawdy dla
+  właściciela, ale wiąże engine z siecią i arkuszem, utrudnia testy offline i
+  uzależnia poprawność reguł od komórek bez przeglądu w PR.
 
 ## Powiązania
 
-- [ADR 0001 — stopniowo rozszerzany katalog kart](0001-incremental-card-support.md)
-- [ADR 0002 — engine niezależny od konkretnych kart](0002-authoritative-card-agnostic-engine.md)
-- [ADR 0011 — modularne źródła i jednoplikowy artefakt](0011-modular-sources-single-file-artifact.md)
-- [Audyt istniejącej aplikacji](../AUDIT_LEGACY_APP.md)
+- [ADR 0001](0001-incremental-card-support.md) · [ADR 0002](0002-authoritative-card-agnostic-engine.md)
+- [ADR 0011](0011-modular-sources-single-file-artifact.md) · [Audyt istniejącej aplikacji](../AUDIT_LEGACY_APP.md)
 - [Karta projektu](../PRODUCT.md)

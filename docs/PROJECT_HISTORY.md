@@ -11,8 +11,255 @@
 > Wtedy `grep`, nie czytanie od góry: plik ma ponad 5900 linii.
 >
 > Sesje dopisują tu swoją sekcję (ADR 0013) — nowe na górze.
+>
+> **Uwaga (2026-08-28, decyzja właściciela):** transkrypty Żywego Testera
+> zostały usunięte z repozytorium (205 plików / ~9 MB: `tmp-audyt-*/`,
+> `tools/table-tester/audyt*`, logi i zrzuty). Ścieżki transkryptów w starszych
+> wpisach są więc historyczne — pliki nadal istnieją w historii gita, ale nie
+> w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
+> nie trafiają do repozytorium".
 
-- **Ostatnia aktualizacja:** 2026-08-28 (sesja arena/01a047db: audyt PR #85 → N1/N2 fingerprint-oferta, M250 Żywy Tester: source-titled decyzje, PR #86)
+- **Ostatnia aktualizacja:** 2026-08-29 (sesja arena/01a049c7: audyt PR #86 → A1 strażnik L16, porządki w `tmp-audyt-*`, **Batch 51: 8 kart właściciela (artId 572–579)**, uwagi z testów A–E, **M255: pętla jakości Żywym Testerem po Batchu 51 (18 partii, 5 napraw A–E) + znalezisko F z próby pełnej macierzy benchmarku**, PR #87)
+
+## Sesja 2026-08-29 — M255: pętla jakości Żywym Testerem po Batchu 51 (PR #87)
+
+**Zlecenie właściciela:** „Proponuje teraz pętlę jakości żywym testerem ze
+szczególnym akcentem na nowe karty."
+
+**Metoda (ADR 0021):** 18 partii (12 w rundzie 1 + 6 kontrolnych po naprawach)
+na parach talii, które dostały karty w Batchu 51 i przy uwagach A–E: ravnica
+(bloodrush), tarkir-bg (Typhoid Rats), tarkir-wur (Dromoka Warrior),
+warhammer-brg (Invasive Species, Savage Surge), warhammer-wu (Thunderstaff),
+theros (Akroan Sergeant / renown), worek-mroczny (Kulrath Mystic; poza próbką
+benchmarku), dominaria-wu (Willbender, Wormfang Newt, Altar of the Goyf).
+Profile `explorer/greedy/defensive/impatient/random`. Wszystkie partie kończą
+się naturalnie, detektory (osie 1–4) milczą — **zero zgłoszeń to dolna granica,
+nie dowód jakości** (L27/L40): wszystkie poniższe znaleziska wyszły z lektury
+transkryptów. Transkrypty poza repo (`tmp-audyt-m255/`, decyzja właściciela).
+
+**Znaleziska (każde: repro → root cause → RED→GREEN + mutacja → 13 testów
+w `test/m255-petla-jakosci.test.js`):**
+
+- **A. Silnik — fałszywy komunikat „trigger bez efektu" (Kulrath Mystic).**
+  `buff_creature_until_end_of_turn` zapisywał buff w `state.untilEndOfTurnBuffs`
+  i nie emitował zdarzenia, więc `resolveTrigger` czytał „0 zdarzeń” jako
+  „brak efektu” — log kłamał, podczas gdy stwór realnie dostał +2/+0 i czujność
+  (klasa M138/Z4). Groziło też Altarowi of the Goyf: po naprawie celu (M254/E)
+  właściciel zobaczyłby ten sam komunikat i uznał, że nic nie naprawiono.
+  Druga bramka: `stats_modified` jest szumem w modalu (M99) — wyjątek
+  rozszerzony o buffy `untilEndOfTurn`, reguła wyciągnięta do czystej funkcji
+  `isBotMoveNoise` (ADR 0011). Nowa lekcja **L87**.
+- **B. Log nie nazywał bloodrush** (Skinbrand Goblin). „Aktywujesz zdolność:
+  Skinbrand Goblin — zmiana statystyk celu” + „Odrzucasz Skinbrand Goblin”:
+  mechanika (CR 702.63) i fakt, że odrzucenie jest KOSZTEM, ginęły (wzorzec
+  M158/A dla Morph). Teraz: „używa bloodrush: … — odrzuca tę kartę z ręki”.
+  Bezpośredni repro wykazał przy okazji, że mechanika DZIAŁA (bot potrafi
+  użyć bloodrush w oknie walki) — w 18 partiach nie trafiło się okno.
+- **C. Etykiety logu — 29 z 52 typów efektów zdolności aktywowanych nie miało
+  opisu** (`ABILITY_EFFECT_LABELS`), w tym `buff_attacking_creatures` z Batcha 51
+  (log: gołe „Nieprzyjaciel aktywuje zdolność: Thunderstaff”). Tabela
+  uzupełniona + **strażnik M255/C1** (przejście po katalogu, wzorzec A2a/A2b
+  z M179) — dopisek do L84.
+- **D. Dynamiczne P/T gubiło „+X/+X"** (Altar of the Goyf, Jyoti, Tarmogoyf):
+  panel mówił „Gdy atakuje samotnie: liczba typów kart w grobach do końca tury",
+  jakby definicja X była treścią efektu. `ptPair` i etykieta `pump` (która
+  drukowałaby surowy slug) biorą teraz wspólny helper: „+X/+X (X = liczba typów
+  kart w grobach) do końca tury".
+- **E. Bot marnował Thunderstaffa.** `buff_attacking_creatures` nie było w
+  `TEMPORARY_PUMP_EFFECTS`, więc zdolność miała gołą bazę (`score = 2`) i bot
+  aktywował ją w Głównej 1, gdy nikt nie atakował (transkrypt tura 16: 2 many
+  + tap na efekt wygasły w cleanup). Wpis w tabeli + **reprezentant zbioru**
+  (własny atakujący) dla wspólnego mianownika — dopisek do L50.
+
+- **F. Znalezisko z próby pełnej macierzy benchmarku (silnik + narzędzie).**
+  `node tools/benchmark.mjs --full` (~23 400 meczów) kończył się wyjątkiem
+  aggro-bota „nie znalazł ruchu mimo legalnych komend” BEZ ADRESU meczu. Po
+  dopisaniu kontekstu do narzędzia: tura 15, `combat_damage`, priorytet p2,
+  oferta `activate_ability, concede` — obrońca nie miał pass ani
+  `resolve_combat`. Przyczyna: reguła M172/C (pass nie domknie kroku obrażeń)
+  żyła w dwóch kopiach (execute + oferta) i blokowała pass KAŻDEMU graczowi,
+  a alternatywa (`resolve_combat`) należy wyłącznie do aktywnego. Naprawa:
+  jedna funkcja `closingCombatPassBlocked` (zakaz tylko dla aktywnego; oferta
+  = walidacja) + pełna runda passów w tym kroku oddaje priorytet aktywnemu
+  zamiast domykać krok. Świadomie BEZ ślepego fallbacku w polityce bota.
+  Golden-master bota zmienił się w jednej z sześciu partii (101 → 224
+  decyzje = partia kończyła się przedwcześnie) — dowód martwego punktu.
+  Nowa lekcja **L88**.
+
+**Sprawdzone i uznane za poprawne (bez zmian):** Invasive Species (cel
+obowiązkowy, „inny permanent", lądy legalne — 7 opcji bez siebie), renown
+(„Akroan Sergeant zyskuje sławę (renown) — 1 licznik +1/+1"), Wormfang Newt
+(strefa wygnania tymczasowego), Morph/Willbender, deathtouch Typhoid Rats.
+**Rozpoznana luka (poza zakresem):** komunikat „trigger bez efektu (nie było
+czego wykonać)” jest PRAWDZIWY, ale nieprecyzyjny, gdy efekt nie ma
+odbiorców (Veiled Ascension — brak zakrytych stworów; Trostani Discordant —
+nikt nie kontroluje cudzych stworów). Właściwy komunikat to „brak legalnych
+celów” (M189/Z2) — wymaga, by efekty sygnalizowały „nie miałem kogo/czego"
+odrębnym powodem.
+
+**Bramy:** `npm test` **3687/3687** (było 3674; +13), `npm run build` **56
+modułów / 2882.5 kB**, strażniki dokumentacji 17/17, lektura startowa **~96,6k
+/ 100k** tokenów (wzrost o 1,6k — nowa lekcja L87 i dwa dopiski).
+
+## Sesja 2026-08-28 — uwagi właściciela z testów A–E (M254, PR #87)
+
+**A. Tryb wysoko-graficzny pokazywał druk DOMYŚLNY Scryfalla.** Warstwa
+FOT/KON/Scryfall budowała adres po NAZWIE (`/cards/named?exact=`), a kafel na
+stole brał `imageUri` z definicji — stąd Willbender z innej edycji w warstwie
+i poprawny na stole. Naprawa: warstwa korzysta z `scryfallCardUrl` (druk z
+definicji, fallback po nazwie tylko dla kart bez `imageUri`).
+
+**B. Karty zagrane zakryte (Morph) — właściciel nie widział swojej karty.**
+`cardInfo` maskował wszystko dla `faceDown` (również własnego permanentu), więc
+hover pokazywał rewers. Teraz własny zakryty permanent niesie `hiddenArt`
+(ilustracja prawdziwej karty) wyłącznie dla podglądu — kafel na stole zostaje
+zakryty, a FoW (CR 708.2) nadal działa dla kart przeciwnika (CR 708.6:
+właściciel zna tożsamość).
+
+**C. Warstwa grafik nie pauzowała gry.** Otwierała się w trakcie pętli
+`advance()`, więc kolejne rzuty w jednej sekwencji ją nadpisywały — gracz
+widział tylko OSTATNI czar. Naprawa: obserwator `onCast` zwraca `true`, gdy
+warstwa naprawdę się pokazała → sesja zatrzymuje `advance()` (nowy stan
+`artPausePending` + `continueArtPlay()`), a zamknięcie warstwy otwiera
+NASTĘPNY rzut z kolejki (`src/table/art-showcase.js`, moduł czysty, testowalny
+headless). Nowa lekcja **L86**.
+
+**D. Wormfang Newt — wygnanie tymczasowe było niewidoczne.** Wygnana karta nie
+niosła żadnego znacznika, więc na stole lądowała w zwykłym exile. Teraz efekty
+z linkiem powrotu (`exile_own_land`, `exile_target_creature`,
+`exile_nonland_permanent_linked`) znaczą kartę `temporaryExile` (kto wygnał),
+a stół pokazuje ją w tej samej strefie co Suspend/Plot z badge'em „Wygnana
+tymczasowo przez …". Przy okazji wyszło, że **LTB nie odpalało się po
+zniszczeniu efektem** — `permanent_destroyed` nie było w skanie triggerów
+„leaves the battlefield" (działało tylko dla śmierci z obrażeń i poświęcenia),
+więc ląd Newta zostawał w exile na zawsze (dopisek do L48).
+
+**E. Altar of the Goyf — „attacks alone → it gets +X/+X" bez efektu.** Zdolność
+siedzi na ARTEFAKCIE, a efekt `buff_creature_until_end_of_turn` szukał celu w
+`targets[0] ?? źródło` — pompował więc Altar (nie stwora) i wychodziło „trigger
+bez efektu". Teraz czyta `context.attackerId` (ten sam wzorzec co
+`exalted_pump`).
+
+**Stan:** `npm test` **3674/3674** (było 3661 — +13 testów w
+`test/m254-uwagi-wlasciciela.test.js`; każdy punkt A–E ma test z mutacją
+odwracającą), build **56 modułów / 2874.0 kB**.
+
+## Sesja 2026-08-28 — Batch 51: 8 kart właściciela M254, artId 572–579 (PR #87)
+
+- **Zlecenie (właściciel, lista wprost):** Skinbrand Goblin (GTC), Typhoid Rats
+  (FRF), Invasive Species (M15), Dromoka Warrior (DTK), Akroan Sergeant (ORI),
+  Thunderstaff (DST), Savage Surge (THS), Kulrath Mystic (ECL). 8 kart w jednym
+  batchu (odstępstwo od domyślnych 5 na wyraźną listę właściciela).
+- **Plan:** `docs/plans/PLAN_2026-08-28-m254-batch51-kart.md`. Dane Oracle
+  pobrane ze Scryfalla PRZED kodowaniem (ADR 0010 §2a) → 8 plików
+  `docs/cards/scryfall-*.json`; `artId` 572–579 i `plan` wg listy, dopisane do
+  `tools/collection-art-ids.csv` (słownik 571 → 579 pozycji).
+
+**Nowe mechaniki (wszystkie generyczne, ADR 0002 — ani jednego warunku na nazwę
+karty):**
+
+- **Bloodrush** (Skinbrand Goblin) — zdolność aktywowana z RĘKI o koszcie
+  `{R}, Discard this card: Target attacking creature gets +2/+1`. Powielony
+  kształt `reinforce`/`cycling/channel`, ale z **celem**: nowy filtr
+  `attacking_creature` (CR 508.1k — poza walką brak legalnego celu, więc oferta
+  znika) i nowy deskryptor `ability.bloodrush`.
+- **Renown N** (CR 702.112, Akroan Sergeant) — licznik +1/+1 i flaga
+  *renowned* za pierwsze obrażenia bojowe zadane GRACZOWI (zablokowany atak nie
+  odpala). Warstwa danych + `src/engine/combat.js`, bez nowej zdolności w
+  definicji (`renown: 1` obok `keywords`).
+- **Invasive Species** — trigger `enter_battlefield` z filtrem
+  `permanent` + `notSelf` + **`controlledBy: 'controller'`** („another permanent
+  YOU control") i efektem `bounce_permanent`. Cel obowiązkowy: brak kandydata =
+  `no_targets` (CR 603.3d).
+- **Thunderstaff** — statyczna prewencja `preventCombatDamageToController`
+  (CR 615.1a: działa per ŹRÓDŁO obrażeń — trzech atakujących = 3 zapobiegnięte,
+  nie 1 łącznie) oraz aktywowana `{2}, {T}` z nowym efektem
+  `buff_attacking_creatures` (CR 611.2c: zbiór atakujących mrożony w chwili
+  rozstrzygnięcia).
+- **Kulrath Mystic** — trigger `when_you_cast_spell` z warunkiem
+  `spellManaValueAtLeast: 4`; warunek czyta mana value z OBIEKTU czaru, nie
+  kwotę zapłaconą ze zdarzenia (nowa lekcja **L85**).
+
+**Naprawy u źródła:** `gameObjectDataOf` nie przenosił `renown` na obiekt gry —
+mechanika ginęła w materializacji (L21 po raz kolejny; test czytający definicję
+z rejestru by tego nie zauważył).
+
+**Bot (strażnik M157 wyłapał lukę):** `buff_creature_until_end_of_turn`
+(Savage Surge) nie miał wyceny — czar dostawał gołe `score = 2`, dokładnie jak
+firebreathing w M96 (bot pompował w Głównej 1, efekt wygasał w cleanup). Teraz
+wpada do tej samej gałęzi co `pump` (z oknem na trick bojowy) i do
+`FRIENDLY_TARGET_EFFECTS`, plus premia +4 gdy odkręca ZATAPNIĘTEGO stwora.
+
+**Dług odsetkowy nowych kart w taliach (L25):** złoty fixture bota
+zregenerowany (`tools/bot-scoring-snapshot.mjs --write` — inna partia: 315 vs
+262 decyzji w parze ravnica|innistrad-wu@1000), a test `bot-spell-resolution-in-modal`
+dostał nowy seed (4 zamiast 3) po przehuntowaniu 40 seedów. Krajobraz planów
+bez zmian: żaden plan nie przekroczył progu awansu.
+
+**Nowa lekcja L84** — nowy deskryptor ma **cztery** dowiązania poza silnikiem
+(`EVENT_TYPES` + opis zdarzenia, etykieta PL, wycena bota, `gameObjectDataOf`);
+strażniki zgłaszają je osobno, więc dopisuje się je od razu (krok 4b w
+`docs/cards/HOW_TO_ADD_CARD.md`).
+
+**Review po komitach (zlecenie właściciela): wspólny mianownik efektów pump.**
+Zamiast łańcucha `type === 'pump' || type === '...'` powstała tabela
+`TEMPORARY_PUMP_EFFECTS` + `temporaryPumpOf` (liczby z istniejącego
+`pumpDelta`). Przy okazji wyszły dwa błędy: (1) `buff_creature_until_end_of_turn`
+trafił do `FRIENDLY_TARGET_EFFECTS` po NAZWIE TYPU, a ten sam typ niesie debuff
+**Downwind Ambushera** — bot dostawał karę „wzmacniasz przeciwnika" za
+osłabienie go (klasa M202/G na nowym typie); (2) premia za odkręcenie celu
+czytała `recipient` przed deklaracją (`const`, TDZ).
+
+**Znalezisko z pełnej macierzy (M254) — naprawione.** `benchmark --full`
+kończył się wyjątkiem „Bot wybrał nielegalną komendę: rebound_unresolved":
+gracz miał naraz `pendingReboundCast` i `pendingUndercityRoute`, a `legalCommands`
+oferowało `resolve_undercity_route`, które bramka reboundu w `execute` odrzuca.
+Gałąź ofert reboundu stała PO undercity, choć jej bramka jest PRZED — naprawa
+przywraca regułę „pierwszy właściciel decyzji = pierwsza bramka execute =
+pierwsza gałąź ofert" (dopisek do L48). Batch 51 nie dodał żadnej z tych kart;
+nowe karty w `tarkir-wur` tylko sprawiły, że kolizja wyszła w próbce.
+Weryfikacja mutacyjna: przesunięcie gałęzi czerwieni 2 z 3 testów.
+
+**Stan:** `npm test` **3661/3661** (było 3625 przed batchem, +36: 29 w
+`test/batch51-kart.test.js`, 4 w `test/m179-inwentaryzacja.test.js` E3–E6,
+3 w `test/m254-kolejnosc-pendingow.test.js`), build **55 modułów / 2861.8 kB**,
+`npm run test:slow` (próbka B0) **9/9**, katalog **478 kart** (436 z artId),
+słownik kolekcji **579 pozycji**.
+
+## Sesja 2026-08-28 — arena/01a049c7: audyt PR #86, strażnik L16 (A1), porządki w `tmp-audyt-*` (PR #87)
+
+- **Zadanie:** „Kontynuujemy projekt." (ADR 0020/0021 — pętla domyślna) +
+  zlecenie właściciela: **po lekturze obowiązkowej posprzątać niepotrzebne
+  pliki w katalogach `tmp`** po poprzednim agencie.
+- **Lektura obowiązkowa wykonana w całości** (pomiar): `AGENTS.md` 358 linii,
+  ADR 0001–0024 + rejestr 1993 linie, `docs/LESSONS.md` **2092 linie (L1–L82)**,
+  `docs/setup/ENVIRONMENT.md` 175 linii, PR #86, `HANDOFF_2026-08-28b.md`.
+- **Audyt PR #86** (ADR 0020 B) — raport: `docs/audits/AUDYT_PR86_2026-08-28.md`.
+  Weryfikacja mutacyjna **6/6 napraw jest realnie przypiętych** (N1 fingerprint,
+  N2 bramka pass, L81 filtr pokoju, M251/B `sourceCardId`, M251 copy, M252
+  nagłówek tury) — każda mutacja czerwieni właściwy test, anty-over-fixy
+  zostają zielone. Skan poza PR: 62 pola blokujące, 0 luk w fingerprintcie;
+  `stateFingerprint` nie trafia do `playerView` (brak wycieku FoW).
+  - **Znalezisko A1 (naprawione):** strażnik klasy L16 liczył pokrycie regexem
+    po surowym `fingerprint.js`, więc **komentarz** wystarczał, by nowa
+    decyzja przeszła kontrolę. Naprawa: pokrycie z kodu po usunięciu
+    komentarzy (lista + `state.pending*`) i **dwunogowy pin** na strażniku
+    (kompozycja + ścieżka produkcyjna). → **lekcja L83**.
+- **Porządki w artefaktach audytu (zlecenie właściciela):** w dwóch krokach —
+  najpierw 4 pliki z `tmp-audyt-*` bez wartości dowodowej (2 duplikaty
+  bajt-w-bajt: `t2b.txt`, `r1-equip-e11-dense.txt`; 2 przebiegi przerwane
+  `[STOP]` z kompletnym re-runem tego samego seeda: `t1`→`t1b`,
+  `r2-ravnica-67`→`r2b`), a po doprecyzowaniu (**„całkowicie do usunięcia"**)
+  wszystkie **205 plików / ~9 MB**: `tmp-audyt-*/` (59), śledzone
+  `tools/table-tester/audyt*` (140 txt + 4 logi) i 2 zrzuty `.zip` z M100.
+  Zostają tylko wyniki benchmarku `tools/b*.txt` (ADR 0018) i dane projektu.
+  Zależności sprawdzone przed kasowaniem: żaden test ani moduł nie czyta tych
+  plików (tylko komentarze-proweniencja w `test/` i `tools/table-tester/`),
+  a cytowania w `docs/` są opisowe — ścieżki stały się historyczne (nota
+  w nagłówku tego pliku). Zabezpieczenie: wzorce w `.gitignore` + strażnik
+  `test/repo-artefakty-audytu.test.js` (3 nogi, mutacyjnie RED).
+- **Wyniki:** `npm test` **3622/3622** (start 3621; +1 pin A1),
+  `npm run build` 55 modułów / 2835.1 kB.
 
 ## Sesja 2026-08-28 — arena/01a047db: audyt PR #85 + pętla jakości Żywym Testerem (PR #86)
 
@@ -6224,6 +6471,39 @@ wojny testuj przez nierozróżnialność, nie przez listę zasłoniętych pól).
 **Weryfikacja:** `npm test` **2244/2244** (było 2239, +5 nowych `m141-...`), `npm run build` 51 modułów / 1912.8 kB, benchmark szybki `node tools/benchmark.mjs --seeds 2` 0 crashy, fuzzer azorius 200 partii 0 naruszeń (po naprawach). Testy po deskryptorach (ADR 0002), każdy z mutacją odwracającą.
 
 Nowe lekcje: **L46** (animacja + trwały stan — cleanup musi resynchronizować trwałe cechy), **L47** (kopiowalne cechy to WSZYSTKIE drukowane deskryptory, nie tylko P/T), **L48** (flaga keepOwn musi przejść cały łańcuch `registry → gameObject → pendingChoice → SBA`, inaczej ginie po cichu — L21).
+
+## 2026-08-29 — M256: runda 2 Żywym Testerem (PR #87)
+
+**Zlecenie właściciela:** „Proponuję rundę Żywym Testerem do wyczerpania
+budżetu", następnie: „kontynuuj i zrób to" — dokumentacja poprawki (L91 + raport
+audytu) i domknięcie kardynałów z M255 (precyzja „trigger bez efektu"; okno
+bloodrushu; zgłoszenie `[noop]`).
+
+**Partie:** 18 (runda 2, build przed poprawką) + 20 (runda 2b: kontrola po
+częściowej poprawce + 15 prób okna bloodrushu) + 17 (runda 2c: kontrola po
+pełnej poprawce + 10 nowym profilem `hoarder`). Wszystkie zakończone naturalnie,
+0 × `[STOP]`, 0 odrzuconych komend.
+
+**Wyniki:** komunikat „trigger bez efektu" dostał trzy odrębne powody (pusty
+zbiór odbiorców / pusta biblioteka / stan już docelowy); 12 nieprecyzyjnych
+komunikatów → 0. Bloodrush: pierwsze okna w historii (2 z 10 partii profilem
+`hoarder`) — log i premia zweryfikowane end-to-end. Zgłoszenie `[noop]` dla
+Thunderstaffa uznane za poprawne (legalna akcja, UI nie ukrywa ofert).
+
+**Operacyjnie:** sandbox trzykrotnie czyścił `node_modules`, `dist` i katalogi
+poza repozytorium (refsy gita wracały do `6d04551`); skrypty i transkrypty
+przeniesione do gitignorowanego `tmp-audyt-m256/` WEWNĄTRZ drzewa roboczego.
+
+**Runda 3 (21 partii, talie nieprzeczesane w rundzie 2):** jedno nowe
+znalezisko — Silken Strength (`untap_enchanted_permanent`): odkręcenie już
+odkręconego gospodarza aury raportowane jako porażka triggera (CR 701.20b);
+naprawione tabelą `STATE_IDEMPOTENT_TARGET`. Marut (0 tokenów bez many ze
+Skarbów) i Jyoti (0 tokenów commandera) zostają przy „nie było czego wykonać"
+— jawna intencja M106/Z2. Uczciwa wpadka operacyjna: jedna z 22 partii nie
+powstała przez literówkę w nazwie talii w skrypcie przebiegu.
+
+**Weryfikacja:** `npm test` **3725/3725** (+18), build 56 modułów / 2893.8 kB,
+11 mutacji (MUT11 = mutant równoważny, opisany w raporcie). Nowa lekcja **L91**.
 
 ## Zasada aktualizacji
 

@@ -99,6 +99,45 @@ export function commandOptionKey(cmd) {
  */
 export const TURN_NAMES = { [HUMAN_ID]: 'Czarodziejka', [BOT_ID]: 'Nieprzyjaciel' };
 
+/**
+ * Zdarzenia, które są SZUMEM w modalu „Rozgrywka" (nie mówią graczowi nic
+ * o decyzji przeciwnika). Stała przeniesiona na poziom modułu w M255/A, żeby
+ * regułę „szum czy skutek" dało się przetestować bez sesji (ADR 0011).
+ */
+const BOT_MOVE_NOISE = new Set([
+  'priority_passed', 'mana_changed', 'mana_produced', 'step_advanced',
+  'turn_started', 'object_tapped', 'object_untapped', 'damage_marked',
+  'object_moved', 'game_created', 'stats_modified',
+]);
+
+/**
+ * Czy zdarzenie jest szumem w modalu „Rozgrywka"? Czysta funkcja (bez DOM-u
+ * i bez stanu sesji): kontekst (kto działa, ile obiektów na stosie) przychodzi
+ * w argumentach.
+ *
+ * Dwa wyjątki od `BOT_MOVE_NOISE`:
+ *  - M99 (oś 2): `stats_modified` przy rozstrzyganiu czaru/zdolności BOTA to
+ *    właśnie SKUTEK, o który pyta gracz („Servant of the Scale dostaje +3/+3");
+ *  - M255/A (pętla jakości, Kulrath Mystic): buff „do końca tury" jest skutkiem
+ *    rozstrzygnięcia także w turze CZŁOWIEKA — dotąd wyjątek działał tylko dla
+ *    bota (`!botActing`), więc własny trigger pokazywał „zyskuje: czujność",
+ *    a o +2/+0 gracz dowiadywał się wyłącznie z kafla. `stats_modified` BEZ
+ *    `untilEndOfTurn` zostaje szumem (P/T przelicza się przy każdym zdarzeniu).
+ *
+ * M100/E8 (uwaga właściciela 2026-08-15): własne dobranie w kroku dobierania
+ * jest komunikatem „Rozgrywka" (pełna legalność — własna wiedza); dobranie
+ * BOTA w kroku dobierania zostaje szumem; dobrania z efektu (obu) są treścią.
+ */
+export function isBotMoveNoise(e, { botActing = false, stackSize = 0, humanId = HUMAN_ID } = {}) {
+  if (e?.type === 'card_drawn') return e.source !== 'effect' && e.playerId !== humanId;
+  if (!BOT_MOVE_NOISE.has(e.type)) return false;
+  if (e.type === 'stats_modified') {
+    if (!botActing && stackSize > 0) return false;      // M99
+    if (e.untilEndOfTurn === true) return false;        // M255/A
+  }
+  return true;
+}
+
 function defaultBotFactory(seed, ctx) {
   // B3: bot modeluje rękę przeciwnika (człowieka) — zna jego talię.
   return createHeuristicBot({ seed, opponentDeck: ctx?.opponentDeck });
@@ -143,6 +182,45 @@ function defaultBotFactory(seed, ctx) {
     transform: 'transform karty',
     untap_permanent: 'odtapnięcie celu',
     venture_into_undercity: 'zagłębienie w Podziemia',
+    // M255/C (pętla jakości Żywym Testerem): 29 typów efektów zdolności
+    // AKTYWOWANYCH nie miało tu wpisu, więc log pokazywał gołą nazwę karty
+    // („Nieprzyjaciel aktywuje zdolność: Thunderstaff”) — gracz nie wiedział,
+    // co właściwie się stało. Kompletowanie tabeli + strażnik w
+    // test/m255-petla-jakosci.test.js (C1) pilnuje, że kolejny typ efektu
+    // nie wejdzie do katalogu bez opisu (klasa L84: deskryptor ma cztery
+    // dowiązania poza silnikiem; tu: etykieta logu).
+    animate_permanent_until_end_of_turn: 'animacja permanentu do końca tury',
+    attach_equipment_to_source: 'przypięcie sprzętu do źródła',
+    become_basic_land_type: 'zmiana na wybrany podstawowy typ lądu',
+    becomes_subtype_until_end_of_turn: 'zmiana podtypu do końca tury',
+    buff_attacking_creatures: 'premia dla atakujących stworów do końca tury',
+    buff_creature_until_end_of_turn: 'premia P/T dla celu do końca tury',
+    cant_be_blocked: 'cel nie może być blokowany',
+    create_copy_token: 'stworzenie kopii stwora',
+    create_token: 'stworzenie tokena',
+    damage_each_opponent: 'obrażenia dla każdego przeciwnika',
+    destroy_permanent: 'zniszczenie permanentu',
+    discard_cards: 'odrzucenie kart',
+    draw_then_discard: 'dobranie karty i odrzucenie',
+    endure_x: 'endure X (liczniki +1/+1 albo token)',
+    gain_life_target: 'zdobycie życia przez cel',
+    graveyard_card_to_library_top_choice: 'wybór karty z grobu na wierzch biblioteki',
+    investigate: 'zbadanie (token Clue)',
+    mill_both_players: 'mielenie kart obu graczy',
+    mill_from_bottom: 'mielenie kart z dołu biblioteki',
+    pump_by_gates: 'premia wg liczby bram',
+    pump_enchanted_creature: 'premia dla zaczarowanego stwora',
+    put_graveyard_card_on_bottom: 'karta z grobu na spód biblioteki',
+    put_multicolored_creature_from_hand: 'wprowadzenie wielokolorowego stwora z ręki',
+    regenerate: 'regeneracja',
+    return_to_battlefield_tapped: 'powrót karty na pole bitwy (zatapnięta)',
+    return_to_battlefield_under_control_at_upkeep: 'powrót karty na pole bitwy pod twoją kontrolą (upkeep)',
+    search_library_to_battlefield_tapped: 'szukanie karty — na pole bitwy zatapniętą',
+    search_library_to_hand: 'szukanie karty do ręki',
+    set_saddled: 'osiodłanie',
+    surveil: 'surveil (podgląd wierzchu biblioteki)',
+    tap_permanent: 'zatapianie celu',
+    unearth_return: 'powrót karty z grobu na pole bitwy (unearth)',
   });
 
 /**
@@ -790,6 +868,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         if (count === 0) return null;
         const who = e.scope === 'opponents' ? 'stwory przeciwnika'
           : e.scope === 'your_lands' ? 'twoje stwory-lądy'
+          : e.scope === 'attacking' ? 'atakujące stwory'
           : 'twoje stwory';
         const stats = (e.powerModifier || e.toughnessModifier)
           ? `${sign(e.powerModifier)}/${sign(e.toughnessModifier)}` : null;
@@ -905,6 +984,15 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         if (e.keyword === 'morph' || e.keyword === 'megamorph') {
           const name = e.keyword === 'morph' ? 'Morph' : 'Megamorph';
           return `${whoN(e.playerId)} aktywuje ${name}: ${e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId)} — odkrycie karty za koszt ${name.toLowerCase()}`;
+        }
+        // M255/B1 (pętla jakości, Skinbrand Goblin): bloodrush to NAZWANA
+        // mechanika (CR 702.63) — koszt to odrzucenie karty z ręki, a celem
+        // jest atakujący stwór. Goły „aktywuje zdolność: Skinbrand Goblin —
+        // zmiana statystyk celu” nie mówił, co się właściwie stało (wzorzec
+        // M158/A dla Morph: log nazywa mechanikę, nie tylko źródło).
+        if (e.bloodrush) {
+          const targetsBloodrush = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
+          return `${whoN(e.playerId)} używa bloodrush: ${e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId)} — odrzuca tę kartę z ręki${targetsBloodrush ? ` → cel: ${targetsBloodrush}` : ''}`;
         }
         if (e.keyword === 'equip') {
           const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
@@ -1068,7 +1156,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         ? `${srcName({ cardId: e.sourceCardId })}${nameOf(e.cardId)} wchodzi na pole bitwy z ręki`
         : `${whoN(e.playerId)} rezygnuje z położenia stwora`;
       case 'permanent_put_into_graveyard': return `${nameOf(e.cardId)} trafia do grobu (aura bez legalnego gospodarza)`;
-      case 'card_discarded': return `${whoN(e.playerId)} odrzuca ${nameOf(e.cardId)}`;
+      case 'card_discarded': {
+        // M255/B2 (pętla jakości, Skinbrand Goblin — bloodrush): odrzucenie
+        // jako KOSZT zdolności wyglądało identycznie jak strata karty z ręki
+        // („Odrzucasz Skinbrand Goblin”), a to zapłata, nie kara. Log nazywa
+        // intencję, nie tylko ruch karty (wzorzec M100/E13 dla Equip).
+        const costNote = e.cost ? (e.bloodrush ? ' (koszt: bloodrush)' : ' (koszt zdolności)') : '';
+        return `${whoN(e.playerId)} odrzuca ${nameOf(e.cardId)}${costNote}`;
+      }
       case 'card_milled': return `${whoN(e.playerId)} mieli ${nameOf(e.cardId)} do grobu`;
       case 'card_plotted': return `${whoN(e.playerId)} plotuje ${nameOf(e.cardId)} (karta trafia do exile)`;
       case 'card_suspended': {
@@ -1340,6 +1435,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         }
         return `${objectOrLki(e.objectId, e.cardId)} traci ${e.amount} ${polishPlural(e.amount, 'licznik', 'liczniki', 'liczników')} ${e.counter} (zostało ${e.total})`;
       }
+      // Batch 51 (Renown, CR 702.112): stwór po raz pierwszy zadał obrażenia
+      // bojowe graczowi — staje się „renowned" i dostaje N liczników +1/+1.
+      case 'creature_became_renowned':
+        return `${objectOrLki(e.objectId, e.cardId)} zyskuje sławę (renown) — ${e.counters} ${polishPlural(e.counters, 'licznik', 'liczniki', 'liczników')} +1/+1`;
       case 'station_status_changed': return e.becameCreature
         ? `${nameOfObject(e.objectId)} osiąga ${e.chargeCounters} ${polishPlural(e.chargeCounters, 'licznik', 'liczniki', 'liczników')} charge i staje się artefaktowym stworem (Station)`
         : `${nameOfObject(e.objectId)} spada poniżej progu Station i przestaje być stworem`;
@@ -1426,6 +1525,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
           // zostaje wyłącznie dla triggerów, które naprawdę nic nie zrobiły
           // (Undead Servant przy pustym grobie) — nazywamy to wprost.
           const why = e.reason === 'no_targets' ? 'brak legalnych celów'
+            : e.reason === 'empty_library' ? 'pusta biblioteka'
             : e.reason === 'no_result' ? 'nie było czego wykonać'
             : 'warunek/cele nieaktualne';
           return `${nameOf(e.cardId)} — trigger bez efektu (${why})`;
@@ -1708,6 +1808,15 @@ export function createSession(config) {
   // warstwę z ilustracjami. Sesja tylko GO WOŁA — decyzję o wyświetleniu i cały
   // DOM trzyma UI. Zero wpływu na przebieg gry (obserwator, nie mutator).
   const onCast = typeof config.onCast === 'function' ? config.onCast : null;
+  /**
+   * M254/C (zgłoszenie właściciela): pauza PREZENTACYJNA. Osobna od
+   * `awaitingBotAck`, bo „Ruch bota" i warstwa grafik to dwie różne warstwy
+   * UI — wspólna flaga otwierałaby oba modale naraz. Obserwator `onCast`
+   * odpowiada `true`, gdy warstwa naprawdę się pokazała (tryb właczony +
+   * karta ma ilustracje); wtedy `advance()` zatrzymuje się po bieżącej
+   * komendzie, a wznowienie idzie wyłącznie przez `continueArtPlay()`.
+   */
+  let awaitingArtAck = false;
   if (!(decks instanceof Map) || decks.size !== 2) throw new TypeError('Sesja wymaga dwóch talii (Map)');
   if (!decks.has(HUMAN_ID) || !decks.has(BOT_ID)) throw new TypeError('Talia musi istnieć dla gracza i bota');
   const botFactory = config.botFactory ?? defaultBotFactory;
@@ -1940,7 +2049,12 @@ export function createSession(config) {
       const isBasic = (card?.types ?? []).includes('Basic') || cardId.startsWith('basic-');
       if (isBasic) return;
     }
-    onCast({ cardId, playerId: e.playerId ?? null, eventType: e.type });
+    // M254/C: `true` = warstwa się otworzyła (albo czeka w kolejce) — prośba
+    // o wstrzymanie gry, żeby gracz zdążył zobaczyć KAŻDY rzut, nie tylko
+    // ostatni z sekwencji (zgłoszenie: mój czar zniknął, pokazał się cudzy).
+    if (onCast({ cardId, playerId: e.playerId ?? null, eventType: e.type }) === true) {
+      awaitingArtAck = true;
+    }
   }
 
 /** Opis zdarzenia przez modułowego czytelnika (wstrzyknięte nazwy stanu). */
@@ -1994,16 +2108,6 @@ export function createSession(config) {
   // Rager, Evangel, Curiosity itd.) jest istotny — gracz chce widzieć,
   // że przeciwnik dobrał X kart (zgłoszenie właściciela 2026-08-13,
   // M89 zadanie A).
-  const BOT_MOVE_NOISE = new Set([
-    'priority_passed', 'mana_changed', 'mana_produced', 'step_advanced',
-    'turn_started', 'object_tapped', 'object_untapped', 'damage_marked',
-    'object_moved', 'game_created', 'stats_modified',
-  ]);
-  // M100/E8 (uwaga właściciela 2026-08-15): własne dobranie w kroku
-  // dobierania jest komunikatem „Rozgrywka" (pełna legalność — własna
-  // wiedza; lepszy UX przy grze przez modale). Dobranie BOTA w kroku
-  // dobierania zostaje szumem; dobrania z efektu (obu) były treścią od E3.
-  const isCardDrawnNoise = (e) => e.type === 'card_drawn' && e.source !== 'effect' && e.playerId !== HUMAN_ID;
 
   /** M100/E5: nagłówkowe zagrania CZŁOWIEKA w panelu „Rozgrywka" — panel
    * jest wspólnym streszczeniem rozgrywki (uwaga właściciela: „inne istotne
@@ -2223,9 +2327,9 @@ export function createSession(config) {
     // jest właśnie SKUTEK, o który pyta gracz: „Servant of the Scale dostaje
     // +3/+3". Bez tego modal mówił tylko „zyskuje: zadeptywanie", a gracz nie
     // rozumiał, dlaczego przegrywa walkę.
-    const isResolutionEffect = !botActing && stackObjects.size > 0;
-    if ((BOT_MOVE_NOISE.has(e.type) || isCardDrawnNoise(e))
-        && !(e.type === 'stats_modified' && isResolutionEffect)) {
+    // M99 + M255/A: reguła „szum czy skutek" mieszka w czystym predykacie
+    // `isBotMoveNoise` (test: test/m255-petla-jakosci.test.js A3).
+    if (isBotMoveNoise(e, { botActing, stackSize: stackObjects.size, humanId: HUMAN_ID })) {
       // Szum logu — pomijamy, CHYBA że zdarzenie jest pauzowalne: zmiana
       // strefy karty (object_moved) ma być pokazana w modalu ruchu bota,
       // choć do logu nie trafia (decyzja o gadatliwości logu zostaje).
@@ -2385,6 +2489,10 @@ export function createSession(config) {
     isBotAdvancing = true;
     while (state.status === 'active') {
       if (guard++ > 5000) throw new Error('advance: brak postępu sesji');
+      // M254/C: warstwa grafik (tryb wysoko-graficzny) wstrzymuje grę — bez
+      // tego pętla przelatywała przez kolejne rzuty i gracz widział tylko
+      // ostatni (a własny znikał w tej samej komendzie).
+      if (awaitingArtAck) { isBotAdvancing = false; return; }
       if (state.turn.priorityPlayerId === BOT_ID) {
         const helpers = { simulate: makeSimulate(state) };
         const cmd = bot.chooseCommand(playerView(state, BOT_ID), helpers);
@@ -2686,10 +2794,25 @@ export function createSession(config) {
         botMoves.unshift(currentTurnHeader);
       }
       if (ownDraw && pauseOnBotMoves && !awaitingBotAck) awaitingBotAck = true;
-      return { ok: true, botPause: awaitingBotAck, ...(internalError ? { internalError } : {}) };
+      // M254/C: `artPause` mówi UI, że po tej komendzie czeka warstwa grafik
+      // (nie otwieraj modala „Ruch bota" — gracz ogląda teraz ilustracje).
+      return { ok: true, botPause: awaitingBotAck, artPause: awaitingArtAck, ...(internalError ? { internalError } : {}) };
     },
     /** Sesja czeka na potwierdzenie istotnego zagraniu bota (klik gracza). */
     get botPausePending() { return awaitingBotAck; },
+    /** M254/C: gra wstrzymana przez warstwę grafik (tryb wysoko-graficzny). */
+    get artPausePending() { return awaitingArtAck; },
+    /**
+     * M254/C: wznowienie po zamknięciu warstwy grafik. Zwalnia flagę i
+     * prowadzi partię dalej — jeżeli po drodze pojawi się kolejny rzut,
+     * obserwator znowu poprosi o pauzę (`awaitingArtAck` wraca na true).
+     */
+    continueArtPlay() {
+      if (!awaitingArtAck) return { ok: true, artPause: false, botPause: awaitingBotAck };
+      awaitingArtAck = false;
+      const internalError = advanceGuarded();
+      return { ok: true, artPause: awaitingArtAck, botPause: awaitingBotAck, ...(internalError ? { internalError } : {}) };
+    },
     /**
      * Wznawia grę po pauzie na istotnym zagraniu bota: rozgrywa kolejne ruchy
      * do następnej pauzy albo okna decyzyjnego człowieka (klik = „rozumiem").

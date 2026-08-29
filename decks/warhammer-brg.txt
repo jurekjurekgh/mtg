@@ -5,10 +5,11 @@
 1x Lab Rats
 1x Unearth
 1x Cherished Hatchling
-1x Contested Game Ball
 1x Goblin Piker
 1x Reassembling Skeleton
+1x Savage Surge
 1x Fledgling Imp
+1x Invasive Species
 1x Goblin Battle Jester
 1x Gorehorn Minotaurs
 1x Hill Giant
@@ -17,5 +18,5 @@
 1x Minotaur Abomination
 1x Revolutionist
 3x Swamp
-4x Mountain
+5x Mountain
 1x Forest

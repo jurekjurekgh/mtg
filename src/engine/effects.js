@@ -721,6 +721,79 @@ export function maybeAddFaceDownFlyingCounter(state, controllerId, objectId) {
   if (hasSource) addCounter(state, objectId, 'flying', 1);
 }
 
+/**
+ * Odbiorcy efektu „każdy zakryty stwór, którego kontrolujesz" (Veiled
+ * Ascension). Wspólna definicja zbioru: efekt bierze z niej stwory do
+ * licznika, a raport „trigger bez efektu" w `triggers.js` pyta, czy zbiór
+ * jest pusty. Jedna reguła zamiast dwóch kopii (L41/L48 — kopie się
+ * rozjeżdżają); deskryptor po typie efektu, nie po nazwie karty (ADR 0002).
+ */
+/** Stwory-lądy kontrolera (Jyoti: „land creatures you control"). */
+export function landCreaturesYouControl(state, controllerId) {
+  return [...state.objects.values()].filter((object) => object.zone === 'battlefield'
+    && object.controllerId === controllerId
+    && object.kind === 'creature'
+    && (object.types ?? []).includes('Land'));
+}
+
+/** Wszystkie stwory kontrolera (Village Bell-Ringer: „untap all creatures you control"). */
+export function creaturesYouControl(state, controllerId) {
+  return [...state.objects.values()].filter((object) => object.zone === 'battlefield'
+    && object.controllerId === controllerId
+    && object.kind === 'creature');
+}
+
+/**
+ * Inne stwory kontrolera (Plague Reaver: „sacrifice each other creature you
+ * control"). Porządek jak w `state.zones.battlefield` — kolejność poświęceń
+ * jest widoczna w logu, więc selektor nie może jej zmieniać.
+ */
+export function otherCreaturesYouControl(state, controllerId, exceptId) {
+  return [...state.zones.battlefield]
+    .map((objectId) => state.objects.get(objectId))
+    .filter((object) => object && object.zone === 'battlefield'
+      && object.controllerId === controllerId
+      && object.kind === 'creature'
+      && object.id !== exceptId);
+}
+
+/** Karty biblioteki gracza — strefa jest WSPÓLNA, filtr idzie po kontrolerze. */
+export function libraryCardsOf(state, playerId) {
+  return state.zones.library.filter((id) => state.objects.get(id)?.controllerId === playerId);
+}
+
+/**
+ * Gracz, którego bibliotekę mieli `mill_cards` (Chronic Flooding: kontroler
+ * ZACZAROWANEGO permanentu — CR 109.5; „target player mills N": cel).
+ */
+export function millTargetPlayerId(state, effect, sourceObject, targets = []) {
+  if (effect.applyTo === 'enchanted_controller') {
+    const host = sourceObject?.attachedTo ? state.objects.get(sourceObject.attachedTo) : null;
+    return host?.controllerId ?? null;
+  }
+  return (targets[0] && state.players.some((player) => player.id === targets[0]))
+    ? targets[0]
+    : sourceObject?.controllerId ?? null;
+}
+
+export function faceDownCreaturesYouControl(state, controllerId) {
+  return [...state.objects.values()].filter((object) => object.zone === 'battlefield'
+    && object.controllerId === controllerId
+    && Boolean(object.faceDown)
+    && object.kind === 'creature');
+}
+
+/**
+ * Stwory, których kontroler NIE jest właścicielem (Trostani Discordant:
+ * „each player gains control of all creatures they own"). Ta sama reguła
+ * w obu miejscach — patrz `faceDownCreaturesYouControl`.
+ */
+export function creaturesNotControlledByOwner(state) {
+  return [...state.objects.values()].filter((object) => object.zone === 'battlefield'
+    && object.kind === 'creature'
+    && (object.ownerId ?? object.controllerId) !== object.controllerId);
+}
+
 export function applyEffect(state, effect, sourceObject, targets = [], context = {}) {
   // X-cost czary (Consume Spirit, Epic Experiment — Batch 30): efekty mogą
   // użyć amount: 'X' (lub amountFrom: 'X') — wartość X z obiektu stosu
@@ -1007,10 +1080,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // kontroli stwór ma chorobę atakową (CR 302.6 — dopóki jego nowy
     // kontroler nie rozpocznie z nim tury).
     const moved = [];
-    for (const object of [...state.objects.values()]) {
-      if (object.zone !== 'battlefield' || object.kind !== 'creature') continue;
+    for (const object of creaturesNotControlledByOwner(state)) {
       const ownerId = object.ownerId ?? object.controllerId;
-      if (ownerId === object.controllerId) continue;
       const updated = Object.freeze({ ...object, controllerId: ownerId, summoningSickness: true });
       state.objects.set(object.id, updated);
       state.events.push(event('control_changed', {
@@ -1687,13 +1758,46 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     emitMassBuff(state, sourceObject, state.untilEndOfTurnBuffs[state.untilEndOfTurnBuffs.length - 1], 'yours');
     return;
   }
+  if (effect.type === 'buff_attacking_creatures') {
+    // Batch 51 (Thunderstaff): „Attacking creatures get +1/+0 until end of
+    // turn." — zbiór objętych stworów ustala się W CHWILI ROZSTRZYGNIĘCIA
+    // (CR 611.2c), więc stwór wchodzący na pole bitwy później buffa NIE
+    // dostaje (ten sam wzorzec co buff_creatures_you_control, M101/B2).
+    // Poza walką `state.combat` jest pusty — efekt legalnie nic nie robi.
+    const attackerIds = state.combat?.attackers ?? [];
+    const buffIds = attackerIds.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      return object && object.zone === 'battlefield' && object.kind === 'creature';
+    });
+    if (buffIds.length === 0) return;
+    state.untilEndOfTurnBuffs = [
+      ...(state.untilEndOfTurnBuffs ?? []),
+      Object.freeze({
+        controllerId: sourceObject.controllerId,
+        opponent: false,
+        objectIds: Object.freeze(buffIds),
+        power: effect.power ?? 0,
+        toughness: effect.toughness ?? 0,
+        keywords: Object.freeze([...(effect.keywords ?? [])]),
+      }),
+    ];
+    emitMassBuff(state, sourceObject, state.untilEndOfTurnBuffs[state.untilEndOfTurnBuffs.length - 1], 'attacking');
+    return;
+  }
   if (effect.type === 'buff_creature_until_end_of_turn') {
     // Altar of the Goyf: „Whenever a creature you control attacks alone, it
     // gets +X/+X until end of turn, where X is the number of card types among
     // cards in all graveyards." — pump TYLKO celu (atakującego) do końca tury.
     // Wartość X dynamiczna (card_types_in_all_graveyards), liczona przy
     // rozstrzygnięciu (jak pump source_power / card_types).
-    const targetId = targets[0] ?? sourceObject.id;
+    // M254/E (zgłoszenie właściciela, Altar of the Goyf): trigger
+    // `attacks_alone` niesie atakującego w `context.attackerId`. Zdolność
+    // siedzi na ARTEFAKCIE („whenever a creature you control attacks alone,
+    // IT gets +X/+X"), więc bez tego spadku efekt pumpował ŹRÓDŁO — a źródło
+    // nie jest stworem, więc wychodziło „trigger bez efektu (nie było czego
+    // wykonać)". Ten sam wzorzec co `exalted_pump` wyżej (ADR 0002: reguła po
+    // treści efektu, nie po tym, kto niesie zdolność).
+    const targetId = targets[0] ?? context?.attackerId ?? sourceObject.id;
     const target = state.objects.get(targetId);
     if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') return; // CR 608.2b
     const dyn = (v, fb) => {
@@ -1701,17 +1805,44 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       if (v === 'source_power') return effectivePower(sourceObject, state);
       return v ?? fb;
     };
+    const power = dyn(effect.power, 0);
+    const toughness = dyn(effect.toughness, 0);
+    const keywords = Object.freeze([...(effect.keywords ?? [])]);
     state.untilEndOfTurnBuffs = [
       ...(state.untilEndOfTurnBuffs ?? []),
       Object.freeze({
         objectId: targetId,
         controllerId: target.controllerId,
         opponent: false,
-        power: dyn(effect.power, 0),
-        toughness: dyn(effect.toughness, 0),
-        keywords: Object.freeze([...(effect.keywords ?? [])]),
+        power,
+        toughness,
+        keywords,
       }),
     ];
+    // M255/A (pętla jakości Żywym Testerem, Kulrath Mystic): skutek bez
+    // zdarzenia jest dla reszty systemu NIEWIDZIALNY, a `resolveTrigger`
+    // czyta „0 nowych zdarzeń” jako „trigger bez efektu” — log mówił
+    // graczowi „nie było czego wykonać” w chwili, gdy stwór realnie dostał
+    // +2/+0 i czujność (klasa M138/Z4 dla `set_base_pt_until_end_of_turn`).
+    // Ten sam wzorzec co masowe buffy (`emitMassBuff`): buff ogłasza się
+    // zdarzeniem, nawet gdy jedyną zmianą jest wpis w `untilEndOfTurnBuffs`.
+    // Dotyczy też Altara of the Goyf po naprawie M254/E — tam komunikat był
+    // prawdziwy (pompowany był artefakt), teraz byłby kłamstwem.
+    state.events.push(event('stats_modified', {
+      objectId: targetId,
+      cardId: target.cardId,
+      powerModifier: power,
+      toughnessModifier: toughness,
+      untilEndOfTurn: true,
+    }));
+    if (keywords.length > 0) {
+      state.events.push(event('keyword_granted', {
+        objectId: targetId,
+        cardId: target.cardId,
+        keywords: [...keywords],
+        untilEndOfTurn: true,
+      }));
+    }
     return;
   }
   // M115 (Krumar Initiate, TDM): „This creature endures X" — X z kosztu
@@ -1758,10 +1889,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (effect.applyTo === 'enchanted_controller' && (!enchantedHost || enchantedHost.zone !== 'battlefield')) {
       return; // aura odpięta w oknie odpowiedzi — brak skutku (CR 608.2b)
     }
-    const targetPlayerId = enchantedHost ? enchantedHost.controllerId
-      : ((targets[0] && state.players.some((player) => player.id === targets[0]))
-        ? targets[0]
-        : sourceObject.controllerId);
+    const targetPlayerId = millTargetPlayerId(state, effect, sourceObject, targets);
     const protectedIds = new Set();
     if (state.pendingScry?.playerId === targetPlayerId) for (const id of state.pendingScry.objectIds) protectedIds.add(id);
     if (state.pendingSurveil?.playerId === targetPlayerId) for (const id of state.pendingSurveil.objectIds) protectedIds.add(id);
@@ -1902,10 +2030,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const power = effect.power === 'source_power' ? effectivePower(sourceObject, state) : (effect.power ?? 0);
     const toughness = effect.toughness === 'source_power' ? effectivePower(sourceObject, state) : (effect.toughness ?? 0);
     const buffed = [];
-    for (const object of state.objects.values()) {
-      if (object.zone !== 'battlefield' || object.controllerId !== sourceObject.controllerId) continue;
-      const isLandCreature = object.kind === 'creature' && (object.types ?? []).includes('Land');
-      if (isLandCreature) { modifyStats(state, object.id, { power, toughness }); buffed.push(object.id); }
+    for (const object of landCreaturesYouControl(state, sourceObject.controllerId)) {
+      modifyStats(state, object.id, { power, toughness });
+      buffed.push(object.id);
     }
     if (buffed.length > 0) {
       emitMassBuff(state, sourceObject, { objectIds: buffed, power, toughness, keywords: [] }, 'your_lands');
@@ -2114,10 +2241,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // on each face-down creature you control." — wszystkie zakryte stwory
   // kontrolera źródła dostają licznik flying.
   if (effect.type === 'add_flying_counter_to_face_down_you_control') {
-    const ctrl = sourceObject.controllerId;
-    for (const object of [...state.objects.values()]) {
-      if (object.zone !== 'battlefield' || object.controllerId !== ctrl) continue;
-      if (!object.faceDown || object.kind !== 'creature') continue;
+    for (const object of faceDownCreaturesYouControl(state, sourceObject.controllerId)) {
       addCounter(state, object.id, 'flying', 1);
     }
     return;
@@ -2308,10 +2432,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // control.\" — odkręca KAŻDEGO stwora kontrolera źródła (CR 701.16a),
     // po jednym zdarzeniu object_untapped na stwora.
     const ctrl = sourceObject.controllerId;
-    for (const objectId of state.zones.battlefield) {
-      const object = state.objects.get(objectId);
-      if (!object || object.zone !== 'battlefield') continue;
-      if (object.kind !== 'creature' || object.controllerId !== ctrl) continue;
+    for (const object of creaturesYouControl(state, ctrl)) {
+      const objectId = object.id;
       if (object.tapped) {
         state.objects.set(objectId, Object.freeze({ ...object, tapped: false }));
         state.events.push(event('object_untapped', { objectId, playerId: ctrl }));
@@ -2505,8 +2627,37 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       if (!exiled.includes(exileId)) exiled.push(exileId);
       state.objects.set(sourceObject.id, Object.freeze({ ...src, exiledCardIds: exiled }));
     }
+    // M254/D: znacznik na WYGNANEJ karcie (stół pokazuje ją w strefie
+    // „wygnania tymczasowego" obok Suspend/Plot).
+    markTemporaryExile(state, exileId, sourceObject);
     return;
   }
+
+/**
+ * M254/D (zgłoszenie właściciela, Wormfang Newt): karta wygnana z LINKIEM
+ * powrotu („When this creature leaves the battlefield, return the exiled
+ * card to the battlefield") dostaje na sobie znacznik, KTO ją wygnał i KIEDY
+ * wraca. Bez tego stół nie miał skąd wiedzieć, że to wygnanie TYMCZASOWE —
+ * karta lądowała w zwykłym exile obok wygnanych na zawsze, bez badge'a i bez
+ * informacji, co ją sprowadzi (ADR 0002: znacznik po treści efektu, nie po
+ * nazwie karty — działa dla Newta, Faceless Butchera, Static Net i każdej
+ * następnej karty o tym kształcie).
+ */
+function markTemporaryExile(state, exileId, sourceObject) {
+  const exiled = state.objects.get(exileId);
+  if (!exiled) return;
+  state.objects.set(exileId, Object.freeze({
+    ...exiled,
+    temporaryExile: Object.freeze({
+      byCardId: sourceObject?.cardId ?? null,
+      byName: sourceObject?.cardName ?? null,
+      // Powrót jest związany z odejściem ŹRÓDŁA z pola bitwy (CR 610.3 —
+      // efekt połączony jednorazowy). Inne rodziny (Suspend, Plot) niosą
+      // własne liczniki i nie przechodzą przez ten znacznik.
+      returnsWhenSourceLeaves: true,
+    }),
+  }));
+}
 
   if (effect.type === 'exile_own_land') {
     // Wormfang Newt (ETB): exile land you control (T2: cel wybiera
@@ -2530,6 +2681,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       if (!exiled.includes(exileId)) exiled.push(exileId);
       state.objects.set(sourceObject.id, Object.freeze({ ...src, exiledCardIds: exiled }));
     }
+    // M254/D: znacznik na WYGNANEJ karcie (stół pokazuje ją w strefie
+    // „wygnania tymczasowego" obok Suspend/Plot).
+    markTemporaryExile(state, exileId, sourceObject);
     return;
   }
   if (effect.type === 'exile_target_creature') {
@@ -2552,6 +2706,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       if (!exiled.includes(exileId)) exiled.push(exileId);
       state.objects.set(sourceObject.id, Object.freeze({ ...src, exiledCardIds: exiled }));
     }
+    // M254/D: znacznik na WYGNANEJ karcie (stół pokazuje ją w strefie
+    // „wygnania tymczasowego" obok Suspend/Plot).
+    markTemporaryExile(state, exileId, sourceObject);
     return;
   }
   if (effect.type === 'destroy_if_least_power') {
@@ -4001,13 +4158,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // trigger): wszystkie inne stwory kontrolera źródła trafiają do grobu.
     // Pętla po kopii listy — każde poświęcenie to zmiana strefy (CR 400.7).
     const controllerId = sourceObject.controllerId;
-    const victims = [...state.zones.battlefield].filter((objectId) => {
-      const candidate = state.objects.get(objectId);
-      return candidate && candidate.id !== sourceObject.id
-        && candidate.controllerId === controllerId && candidate.kind === 'creature';
-    });
-    for (const victimId of victims) {
-      const victim = state.objects.get(victimId);
+    const victims = otherCreaturesYouControl(state, controllerId, sourceObject.id);
+    for (const victim of victims) {
+      const victimId = victim.id;
       const toZone = deathZoneFor(state, victim);
       const destId = `${toZone}-${state.objectSequence++}`;
       const moved = moveObjectDirectly(state, victimId, toZone, destId);
@@ -4361,7 +4514,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const moved = moveObjectDirectly(state, exiledCardId, 'battlefield', newId);
     // Kontroler = właściciel (NIE kontroler źródła efektu).
     const ownerId = obj.ownerId ?? moved.controllerId;
-    const permanent = Object.freeze({ ...moved, controllerId: ownerId, summoningSickness: true });
+    // M254/D: powrót czyści znacznik — karta wraca na stół jako zwykły
+    // permanent, a nie „wygnana tymczasowo" (bez tego badge wisiałby na
+    // obiekcie na polu bitwy, choć strefa wygnania już go nie dotyczy).
+    const permanent = Object.freeze({
+      ...moved, controllerId: ownerId, summoningSickness: true, temporaryExile: null,
+    });
     state.objects.set(newId, permanent);
     state.events.push(event('object_moved', {
       fromId: exiledCardId, object: permanent, fromZone: 'exile', toZone: 'battlefield',

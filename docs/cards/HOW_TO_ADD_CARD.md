@@ -125,6 +125,31 @@ w core (`src/engine/`) jako wielokrotnego użytku. Nie naprawiaj jej warunkiem
 zależnym od nazwy karty. Wzorce generycznych mechanik z poprzednich batchy:
 `docs/ENGINE_MILESTONES.md` (M8–M24).
 
+### Krok 4b — obowiązki przy nowym deskryptorze (efekt / zdarzenie / filtr celu)
+
+Mechanika w `src/engine/` to **jedno** z miejsc, w których deskryptor musi
+istnieć. L84: w Batchu 51 cztery z pięciu czerwonych testów nie dotyczyły
+mechaniki, tylko jej otoczenia — a każdy strażnik zgłasza swój brak osobnym
+komunikatem (i osobnym 2-minutowym przebiegiem pełnego `npm test`). Odhacz
+listę PRZED pierwszym uruchomieniem pełnego testu:
+
+1. **`EVENT_TYPES` + `describeGameEventRaw`** (`src/table/session.js`) — nowe
+   zdarzenie bez opisu jest dla gracza niewidoczne (L24); strażniki M134 i
+   uwag właściciela.
+2. **Etykieta w mapie opisów** (`src/table/render.js`) — strażnik M122 nie
+   przepuszcza typu efektu bez polskiego opisu (L29: fallback `?? key` to
+   wyciek identyfikatora do UI).
+3. **Wycena bota** (`src/controllers/heuristic-bot.js`: `FRIENDLY_TARGET_EFFECTS`
+   i gałąź efektu) albo świadomy wpis do `REVIEWED_UNVALUED` w
+   `test/bot-targeted-effect-valuation-guard.test.js` — strażnik M157.
+4. **`gameObjectDataOf`** (`src/cards/materialize.js`) — deskryptor z definicji
+   karty musi dojść na obiekt gry, inaczej mechanika ginie w materializacji
+   (L21: w Batchu 51 tak ginęło `renown`; test czytający definicję z rejestru
+   tego nie zauważy).
+
+Warunki triggera czytaj też WŁAŚCIWE dane: `eventData.manaCost` przy rzucie to
+mana WYDATKOWANA (po obniżkach), nie mana value karty (L85).
+
 ## Krok 5 — dopisz karty do istniejących talii singleton
 
 Od M32 **nie tworzymy osobnych talii batchowych** (`decks/real-batchN.txt`)
@@ -193,6 +218,8 @@ Wynik podaj w opisie PR (liczba testów, liczba modułów i rozmiar artefaktu).
       liczności, jeśli trzeba)
 - [ ] testy `test/real-cards-batchN.test.js` (legalny + nielegalny + sanity danych)
 - [ ] generyczne mechaniki w engine (jeśli nowe), bez warunków na nazwę
+- [ ] nowy deskryptor ma 4 dowiązania: EVENT_TYPES + opis zdarzenia, etykieta
+      PL, wycena bota (albo `REVIEWED_UNVALUED`), `gameObjectDataOf` (L84)
 - [ ] B0 + progi `test/bot-benchmark.test.js`, jeśli zmieniał się bot
 - [ ] `PROJECT_HISTORY.md` i `ENGINE_MILESTONES.md` zaktualizowane
 - [ ] `npm test` zielone, `npm run build` podaje liczby w opisie PR
