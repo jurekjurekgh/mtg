@@ -5477,7 +5477,11 @@ export function playerView(state, playerId) {
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activePayOrSacrifice) {
     // „Sacrifice it unless you pay {N}" (Rupture Spire, Temat 7): wybór
-    // kontrolera — zapłać albo poświęć. Boty płacą (pierwsza oferta).
+    // kontrolera — zapłać albo poświęć. Boty płacą (pierwsza oferta) — i tak
+    // TO jest od M258/B: dawniej na czele stało pay:false, a bot bez case'u
+    // wyceny (remis 0:0, stabilny sort) zawsze brał pierwszą ofertę =
+    // ZAWSZE poświęcał (uwaga właściciela). Kolejność = intencja (M203/2);
+    // bot i tak decyduje scorem (heuristic-bot: resolve_pay_or_sacrifice).
     // M101/B: komenda niesie KOSZT i źródło, żeby UI mogło opisać każdą opcję
     // z osobna („Zapłać {2}" / „Poświęć Rupture Spire") — bez tych danych
     // etykieta mogła mówić tylko o typie decyzji, jednakowo dla obu wariantów.
@@ -5485,8 +5489,8 @@ export function playerView(state, playerId) {
       cost: state.pendingPayOrSacrifice.amount ?? null,
       sourceId: state.pendingPayOrSacrifice.sourceId ?? null,
     };
-    legalCommands.push(command('resolve_pay_or_sacrifice', playerId, { pay: false, ...payOrSacInfo }));
     legalCommands.push(command('resolve_pay_or_sacrifice', playerId, { pay: true, ...payOrSacInfo }));
+    legalCommands.push(command('resolve_pay_or_sacrifice', playerId, { pay: false, ...payOrSacInfo }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeCounterPay) {
     // Batch 44 (Frightful Delusion): zapłać {N} (czar zostaje) albo nie płać
     // (czar skontrowany). Boty płacą (pierwsza oferta) — czar na stosie jest

@@ -1757,6 +1757,30 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         const def = card ? cardDef(card.cardId) : undefined;
         let score = P.creatureBase + (card?.power ?? 0) * P.creaturePowerWeight + (card?.toughness ?? 0) * P.creatureToughnessWeight;
+        // M258/A (uwaga właściciela, Squire's Lightblade): wartość equipmentu
+        // żyje na NOSICIELU. Rzut przy braku własnych kreatur to marnowanie:
+        // ETB „attach za darmo" fizzluje (CR 603.4b), a karta czeka na stole
+        // za koszt equipu (tu {3} zamiast 0). Baza P.creatureBase (70 — tyle
+        // co stwór 0/0) nie zna tego kontekstu, więc bot rzucał flash-equipment
+        // na pusty stół. Reguła generyczna po deskryptorze (ADR 0002):
+        //  - bez nosiciela: kara PONIŻEJ passu (trzymaj kartę; gdy stwór jest
+        //    w ręce — grany jest PRZED equipmentem, bo ma wyższy score, a
+        //    wtedy ETB znajdzie legalny cel),
+        //  - z nosicielem: premia za pompę na stwora (attach sam wycenia
+        //    scoring Equip — M244 — więc tu tylko P/T, bez podwójnego
+        //    liczenia keywordów).
+        if (card?.equipment) {
+          const etbAttach = (def?.abilities ?? []).some((a) => a?.type === 'triggered'
+            && a.trigger?.event === 'enter_battlefield'
+            && a.trigger?.requiresTarget?.type === 'creature_you_control'
+            && (Array.isArray(a.effect) ? a.effect : [a.effect]).some((e) => e?.type === 'attach_self_to_target'));
+          if (myCreatures(view).length === 0) {
+            score -= etbAttach ? 100 : 75;
+          } else {
+            const pump = card.equipment.pump ?? {};
+            score += (pump.power ?? 0) * P.creaturePowerWeight + (pump.toughness ?? 0) * P.creatureToughnessWeight;
+          }
+        }
         // M146 (Jwari Shapeshifter): enterAsCopy bez celu na stole = 0/0,
         // który ginie od SBA zanim ETB się odpali (CR 704.5e). Nie zagrywaj.
         if (def?.enterAsCopy?.subtype) {
@@ -3957,6 +3981,30 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Bot poświęca Food, jeśli ma (większy buff).
         return finish(cmd.sacrifice ? 50 : 30);
       }
+      // M258/B (uwaga właściciela, Rupture Spire): „sacrifice it unless you
+      // pay {N}" (ETB) i ECHO. Silnik prezentuje decyzję TYLKO gdy jest
+      // opłacalna (queuePayOrSacrifice: producibleMana >= amount), a w trakcie
+      // decyzji blokuje WSZYSTKIE inne akcje (tylko ta komenda, produkcja
+      // many i CONCEDE). Płacenie jest więc zawsze co najmniej tak dobre jak
+      // poświęcenie: koszt idzie z puli albo auto-tapem (spendMana), a mana
+      // i tak by wyparowała na końcu kroku (CR 106.4) — permanent zostaje.
+      //
+      // Root cause błędu: komenda nie miała case'u (domyślnie 0) → remis z
+      // „poświęć" (również 0), a stabilny sort w greedyChoice bierze PIERWSZĄ
+      // ofertę — w enumeracji (game-state.js) na czele stało pay:false. Bot
+      // ZAWSZE poświęcał. L41: wybór z intencji, nie z pozycji w ofercie.
+      case 'resolve_pay_or_sacrifice':
+        return finish(cmd.pay ? 90 : 5);
+      // Batch 44 (Frightful Delusion): zapłać {N} i czar zostaje, albo pozwól
+      // skontrować. Silnik oferuje pay:true tylko gdy opłacalne; czar już na
+      // stosie jest niemal zawsze warty więcej niż koszt.
+      case 'resolve_counter_pay_choice':
+        return finish(cmd.pay ? 85 : 10);
+      // „You may pay ... When you do, ..." (Panic Spellbomb, Zoraline):
+      // trigger jest kolejkowany tylko gdy opłacalny (canPayTrigger) — efekt
+      // jest sensem karty, zapłata niemal zawsze na plusie.
+      case 'resolve_optional_pay_choice':
+        return finish(cmd.pay ? 75 : 15);
       case 'resolve_discover_choice': {
         // Geological Appraiser: rzuć bez kosztu albo weź do ręki.
         // Bot rzuca bez kosztu (darmowa karta na stole).
