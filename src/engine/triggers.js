@@ -1069,6 +1069,21 @@ export function resolveTriggerEntry(state, entry) {
 const STATE_IDEMPOTENT_EFFECTS = Object.freeze({
   tap_permanent: (object) => object?.tapped === true,
   untap_permanent: (object) => object?.tapped === false,
+  // Silken Strength (M256/J, runda 3 Żywym Testerem): „when this Aura enters,
+  // untap enchanted permanent" — odkręcenie już odkręconego gospodarza to
+  // legalny no-op (CR 701.20b), nie porażka triggera (klasa M189/Z2).
+  untap_enchanted_permanent: (object) => object?.tapped === false,
+});
+
+/**
+ * Skąd efekt idempotentny bierze swój obiekt, gdy NIE ma jawnego celu:
+ * aura (i wyposażenie) działa na GOSPODARZA (`attachedTo`), nie na siebie —
+   domyślną regułą jest „cel albo źródło" (Steelfin Whale, M189/Z2e).
+ */
+const STATE_IDEMPOTENT_TARGET = Object.freeze({
+  untap_enchanted_permanent: (state, source) => (source?.attachedTo
+    ? state.objects.get(source.attachedTo) ?? null
+    : null),
 });
 
 /**
@@ -1144,9 +1159,12 @@ function applyTriggerEffectsWereNoOp(state, ability, targets, source) {
     const predicate = STATE_IDEMPOTENT_EFFECTS[effect.type];
     if (!predicate) return false;
     // Efekt bez jawnego celu działa na ŹRÓDŁO (Steelfin Whale, Midnight
-    // Guard: „untap this creature") — tak samo jak w applyEffect.
+    // Guard: „untap this creature") — tak samo jak w applyEffect. Aura działa
+    // na GOSPODARZA (M256/J) — osobna tabela, bo obiektem nie jest źródło.
     const targetId = targets[effect.targetIndex ?? 0] ?? source?.id ?? null;
-    const target = targetId != null ? state.objects.get(targetId) : null;
+    const target = STATE_IDEMPOTENT_TARGET[effect.type]
+      ? STATE_IDEMPOTENT_TARGET[effect.type](state, source)
+      : (targetId != null ? state.objects.get(targetId) : null);
     return Boolean(target && target.zone === 'battlefield' && predicate(target));
   });
 }

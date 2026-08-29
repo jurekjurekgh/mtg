@@ -32,6 +32,16 @@ repo, decyzja właściciela 2026-08-28) są artefaktami przebiegu.
 | 2 | 18 | 18 × „KONIEC PARTII" (15 wygrywa Bot, 3 Gracz) | 17 × 0, 1 × 1 (`noop`) |
 | 2b | 20 | 20 × „KONIEC PARTII" | 20 × 0 |
 | 2c | 17 | 17 × „KONIEC PARTII" (15 Bot, 2 Gracz) | 16 × 0, 1 × 1 (`noop`) |
+| 3 | 21 | 21 × „KONIEC PARTII" (17 Bot, 4 Gracz) | 21 × 0 |
+
+Runda 3 szła po taliach, których runda 2 nie dotknęła (`dominaria-wu`,
+`final-fantasy`, `forgotten-realms`, `innistrad-wu`, `mirrodin-brg`,
+`wiedzmin`, …), profilami `explorer / impatient / defensive / greedy / random /
+hoarder`, seedami 301–322. **Uczciwa uwaga:** 22. zaplanowana partia nie
+powstała — w skrypcie przebiegu wpisałem nazwę talii z literówką
+(`forgoten-realms`), tester zgłosił to jako błąd (M203: nieistniejąca talia to
+błąd, nie cichy fallback), a filtr logu przepuścił tylko nagłówki. Zostaje
+przy zapisaniu: 21 partii, brak śladu w logu to wina skryptu, nie silnika.
 
 Żadnego `[STOP] brak akcji`, żadnego odrzucenia komendy, żadnego przekroczenia
 limitu kroków.
@@ -86,6 +96,19 @@ Jyoti, Moag Ancient — trigger bez efektu (nie było czego wykonać) ×1  ← E
 Ostatnia linia zostaje celowo: Jyoti tworzy tokeny „za każde rzucenie
 commandera" — w tym formacie zawsze zero, więc „nie było czego wykonać" jest
 intencją M106/Z2 (Undead Servant przy pustym grobie).
+
+**Dowód, że anty-over-fix działa w realnej grze (nie tylko w teście):** w tym
+samym materiale `Undead Servant` dostał „nie było czego wykonać" ×2 — czyli
+przypadek, dla którego M106/Z2 powstało, nadal jest raportowany po staremu.
+
+**Ścieżka celowana (M189/Z2) bez zmian** — w r2b/r2c „brak legalnych celów"
+dostały też: Breaching Hippocamp ×2, Azorius Justiciar, Squire's Lightblade,
+Frost Lynx. Żadnego nowego „nie było czego wykonać" spoza ustalonej intencji.
+
+**Uwaga metodologiczna:** runda 2b (20 partii) pobiegła na buildzie z CZĘŚCIOWĄ
+poprawką (tylko dwa pierwsze wpisy tabeli) — dlatego jej kontrolne komunikaty
+dla Jyoti i Plague Reavera są jeszcze stare. Wyniki „po" brane są wyłącznie
+z rundy 2c (build po pełnej poprawce).
 
 ## Znalezisko I (silnik) — Village Bell-Ringer: legalny no-op ZBIOROWY
 
@@ -153,6 +176,27 @@ pokazuje wszystko, co legalne, i to jest pożądane. Wniosek idzie do kardynał�
   jedyne „bez efektu" padło przy pustej bibliotece przeciwnika, który w tej
   samej partii przegrał przez deck-out (talie z generatora mają ~22 karty).
 
+## Znalezisko J (silnik + log) — Silken Strength: odkręcenie OD KRĘCONEGO gospodarza to legalny no-op
+
+**Objaw (runda 3, `final-fantasy × worek-dziki`, seed 316, profil `hoarder`):**
+
+```
+[ROZGRYWKA]   • Silken Strength wchodzi na pole bitwy
+[ROZGRYWKA]   • Silken Strength — trigger (wejście na pole bitwy)
+[ROZGRYWKA]   • Silken Strength — trigger bez efektu (nie było czego wykonać)
+```
+
+Oracle: „When this Aura enters, untap enchanted permanent." Gospodarz był
+odkręcony — zdolność wykonała się w całości (CR 701.20b: odkręcenie
+odkręconego jest legalne), a gracz dostał komunikat o porażce. Ta sama klasa
+co M189/Z2 (Glaring Aegis) i M106/Z2e (Steelfin Whale), tylko obiektem efektu
+jest **GOSPODARZ aury** (`attachedTo`), nie cel z wyboru ani samo źródło —
+dotychczasowa reguła „cel albo źródło" tego nie obejmowała.
+
+**Naprawa:** `untap_enchanted_permanent` trafia do `STATE_IDEMPOTENT_EFFECTS`,
+a obiekt bierze nowa, jednoelementowa tabela `STATE_IDEMPOTENT_TARGET`
+(aura działa na gospodarza). Testy J1/J1b/J1c.
+
 ## Kardynały następnej rundy
 
 1. **Oś 4 „miękka"**: oferta legalna, ale w tym oknie bezużyteczna
@@ -161,13 +205,15 @@ pokazuje wszystko, co legalne, i to jest pożądane. Wniosek idzie do kardynał�
 2. **Jyoti (ETB, `create_token` z `amount: 'commander_casts'`)**: komunikat
    mógłby mówić „0 tokenów (brak rzutów commandera)" — wymagałoby to, żeby
    efekt raportował SWÓJ powód, nie tylko liczbę zdarzeń (ta sama klasa co H,
-   ale po stronie kwoty, nie zbioru).
+   ale po stronie KWOTY, nie zbioru). **Uwaga:** obecny komunikat
+   („nie było czego wykonać") to jawna intencja M106/Z2, więc zmiana wymaga
+   decyzji właściciela, nie samej diagnozy.
 3. **Budżet lektury**: po tej sesji ~85 % (L91 waży ~3,5 tys. znaków).
 
 ## Bramy
 
-- `npm test` **3722/3722** (+15 testów H1–H7 względem stanu po M255: było
-  3707, potem 3714 po pierwszej transzy, teraz 3722).
+- `npm test` **3725/3725** (+18 testów H1–H7 i J1–J1c względem stanu po M255:
+  było 3707, potem 3714 po pierwszej transzy, 3722 po drugiej, teraz 3725).
 - `npm run build` **56 modułów / 2893.8 kB**.
 - Weryfikacja mutacyjna (9 mutacji, każda cofnięta jedną edycją, pliki
   przywracane z kopii zapasowych — L88): `zawsze no_result` → H1, H1c, H2;
@@ -176,8 +222,13 @@ pokazuje wszystko, co legalne, i to jest pożądane. Wniosek idzie do kardynał�
   `sacrifice_each_other_creature` → H5, H7; `mill_cards` → H3, H7;
   `empty_library` → `no_targets` → H3; wycięcie masowej idempotentności → H6.
 - Kontrole pozytywne do KAŻDEJ asercji o braku komunikatu (H1b, H2b, H3b, H4b,
-  H5b, H6b) — bez nich asercja bywa zielona dlatego, że nic się nie dzieje
+  H5b, H6b, J1b) — bez nich asercja bywa zielona dlatego, że nic się nie dzieje
   (klasa M255/G2).
+- Mutacja **MUT11** (werdykt czytany z AURY zamiast z gospodarza) **przeżyła —
+  to mutant równoważny**: w tym silniku aura nie bywa tapnięta, a sam efekt
+  wykonuje się niezależnie od werdyktu (werdykt zmienia wyłącznie komunikat).
+  Zapisuję to jawnie, żeby następna sesja nie wzięła braku czerwonego testu za
+  lukę w pokryciu (L83: strażnik ma mierzyć regułę, nie tekst).
 - Strażnik kompletności tabeli (H7): skan katalogu — każdy „zbiorowy" typ
   efektu ma wpis w `EMPTY_RECEIVER_EFFECTS` albo udokumentowany wyjątek;
   heurystyka NAZWY mieszka wyłącznie w teście (silnik kluczuje po typie efektu,

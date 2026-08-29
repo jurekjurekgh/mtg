@@ -1760,6 +1760,9 @@ wykonał się bez skutku", bo oba nie produkują zdarzeń.
    'no_targets' | 'empty_library' | null` — kolejna przyczyna to kolejna
    WARTOŚĆ, nie kolejny `if` po typie efektu (L28/ADR 0002).
 3. **Efekt, który ma w zbiorze samego siebie, nie zgłasza pustego zbioru.**
+   Osobna pułapka z tej samej rodziny: efekt idempotentny działa nie zawsze na
+   ŹRÓDŁO — aura działa na GOSPODARZA (`attachedTo`), więc reguła „cel albo
+   źródło" (M189/Z2e) nie wystarcza (Silken Strength, M256/J).
    Village Bell-Ringer („untap all creatures you control") zawsze jest własnym
    odbiorcą, więc pustka jest niemożliwa; tam obowiązuje tabela idempotentności
    ZBIOROWEJ (`STATE_IDEMPOTENT_MASS_EFFECTS`), bo „wszystkie już odkręcone" to

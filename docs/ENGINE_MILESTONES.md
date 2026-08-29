@@ -3041,10 +3041,17 @@ kardynałów z M255. Pełny raport i dowody:
   uznane za poprawne**: aktywacja jest legalna, UI nie ukrywa akcji gracza;
   naprawa z M255/E dotyczyła bota.
 
-Nowa lekcja **L91**. Testy `test/m256-zywy-tester-runda2.test.js` (15: H1–H7) —
-każda asercja o braku komunikatu ma kontrolę pozytywną; 9 mutacji, każda
-czerwieni właściwy test; strażnik H7 skanuje katalog pod kątem „zbiorowych"
-typów efektów. `npm test` **3722/3722**, build 56 modułów / 2893.8 kB.
+- **Engine (J, runda 3):** `untap_enchanted_permanent` (Silken Strength —
+  „untap enchanted permanent"): odkręcenie OD KRĘCONEGO gospodarza to legalny
+  no-op (CR 701.20b), nie „trigger bez efektu". Obiekt efektu idempotentnego
+  bierze nowa tabela `STATE_IDEMPOTENT_TARGET` — aura działa na GOSPODARZA
+  (`attachedTo`), nie na cel z wyboru ani na źródło.
+
+Nowa lekcja **L91**. Testy `test/m256-zywy-tester-runda2.test.js` (18: H1–H7,
+J1–J1c) — każda asercja o braku komunikatu ma kontrolę pozytywną; 11 mutacji
+(MUT11 to mutant RÓWNOWAŻNY — zapisane jawnie w raporcie); strażnik H7 skanuje
+katalog pod kątem „zbiorowych" typów efektów. `npm test` **3725/3725**,
+build 56 modułów / 2893.8 kB.
 
 ## M255 — Pętla jakości Żywym Testerem po Batchu 51 (2026-08-29, PR #87)
 

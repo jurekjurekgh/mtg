@@ -361,6 +361,63 @@ test('H6c: anty-over-fix — odkręcenie stwora PRZECIWNIKA nadal nic nie daje',
     'cudzy stwór zostaje tapnięty (zakres: „creatures YOU control")');
 });
 
+// ---- J (runda 3): Silken Strength — odkręcenie OD KRĘCONEGO gospodarza to legalny no-op
+
+/** Rzuca aurę Silken Strength na wybrany permanent i domyka stos. */
+function rzucSilkenStrength(state, celId, tapped = false) {
+  if (tapped) {
+    const obiekt = state.objects.get(celId);
+    state.objects.set(celId, Object.freeze({ ...obiekt, tapped: true }));
+  }
+  putCard(state, 'silk', 'silken-strength', 'p1', 'hand');
+  addMana(state, 'p1', 2, { colors: ['G'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'silk'
+      && ((c.targets ?? [])[0] === celId || c.targetId === celId));
+  assert.ok(cast, `rzut aury na ${celId}`);
+  assert.ok(execute(state, cast).ok, 'rzut przyjęty');
+  resolveAll(state);
+  return state.events.filter((e) => e.type === 'trigger_resolved'
+    && e.cardId === 'silken-strength');
+}
+
+test('J1: Silken Strength na OD KRĘCONYM stworze to legalny no-op (CR 701.20b)', () => {
+  // Runda 3, final-fantasy×worek-dziki s316: „Silken Strength — trigger bez
+  // efektu (nie było czego wykonać)", choć zdolność wykonała się w całości
+  // (gospodarz był odkręcony). Ta sama klasa co M189/Z2 (Glaring Aegis) —
+  // tylko obiektem jest GOSPODARZ aury, nie cel z wyboru.
+  const state = game('p1');
+  putCard(state, 'moj', 'highland-game', 'p1');
+  const resolved = rzucSilkenStrength(state, 'moj');
+  assert.ok(resolved.length > 0, 'trigger wejścia się rozstrzygnął');
+  assert.deepEqual(resolved.filter((e) => e.noEffect).map((e) => e.reason), [],
+    'odkręcenie odkręconego to wykonana zdolność, nie „brak efektu"');
+});
+
+test('J1b: kontrola pozytywna — TAPNIĘTY gospodarz zostaje odkręcony', () => {
+  const state = game('p1');
+  putCard(state, 'moj', 'highland-game', 'p1');
+  const resolved = rzucSilkenStrength(state, 'moj', true);
+  assert.ok(resolved.length > 0, 'trigger się rozstrzygnął');
+  assert.deepEqual(resolved.filter((e) => e.noEffect).map((e) => e.reason), [],
+    'są odbiorcy — brak komunikatu o braku efektu');
+  assert.equal(state.objects.get('moj').tapped, false, 'gospodarz odkręcony');
+});
+
+test('J1c: anty-over-fix — aura bez gospodarza nie udaje sukcesu', () => {
+  // Gdy aura traci gospodarza, efekt nie ma obiektu — to nie jest no-op.
+  const state = game('p1');
+  putCard(state, 'moj', 'highland-game', 'p1');
+  const resolved = rzucSilkenStrength(state, 'moj');
+  assert.ok(resolved.length > 0, 'trigger się rozstrzygnął');
+  // Usunięcie gospodarza ze stołu po rozstrzygnięciu nie zmienia werdyktu
+  // z przeszłości (zdarzenie zostało zapisane bez noEffect).
+  const wTrakcie = state.objects.get('moj');
+  assert.ok(wTrakcie, 'gospodarz nadal na stole — werdykt był wydany dla niego');
+  assert.equal(resolved.at(-1).noEffect, undefined,
+    'werdykt „wykonana zdolność" zapisany w zdarzeniu');
+});
+
 // ---- H7: strażnik kompletności tabeli (skan katalogu, wzorzec M255/C1)
 
 test('H7: każdy „zbiorowy" typ efektu w katalogu jest w tabeli albo na liście wyjątków', () => {

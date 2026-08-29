@@ -6494,8 +6494,16 @@ Thunderstaffa uznane za poprawne (legalna akcja, UI nie ukrywa ofert).
 poza repozytorium (refsy gita wracały do `6d04551`); skrypty i transkrypty
 przeniesione do gitignorowanego `tmp-audyt-m256/` WEWNĄTRZ drzewa roboczego.
 
-**Weryfikacja:** `npm test` **3722/3722** (+15), build 56 modułów / 2893.8 kB,
-9 mutacji — każda czerwieni właściwy test. Nowa lekcja **L91**.
+**Runda 3 (21 partii, talie nieprzeczesane w rundzie 2):** jedno nowe
+znalezisko — Silken Strength (`untap_enchanted_permanent`): odkręcenie już
+odkręconego gospodarza aury raportowane jako porażka triggera (CR 701.20b);
+naprawione tabelą `STATE_IDEMPOTENT_TARGET`. Marut (0 tokenów bez many ze
+Skarbów) i Jyoti (0 tokenów commandera) zostają przy „nie było czego wykonać"
+— jawna intencja M106/Z2. Uczciwa wpadka operacyjna: jedna z 22 partii nie
+powstała przez literówkę w nazwie talii w skrypcie przebiegu.
+
+**Weryfikacja:** `npm test` **3725/3725** (+18), build 56 modułów / 2893.8 kB,
+11 mutacji (MUT11 = mutant równoważny, opisany w raporcie). Nowa lekcja **L91**.
 
 ## Zasada aktualizacji
 
