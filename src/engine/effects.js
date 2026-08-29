@@ -141,10 +141,6 @@ function thronePutChosenCreature(state, pending, targetId) {
 }
 
 /**
- * Wykonuje WYBRANY cel pokoju (komenda resolve_room_target, game-state.js).
- * Zwraca zdarzenia zakończonego wyboru (dopisane do state.events).
- */
-/**
  * Manifest (CR 701.34): przenosi kartę z biblioteki na pole bitwy jako face-down
  * stwór 2/2 bez nazwy/typów/kosztu (jak morph face-down, CR 708.2). Zapisuje
  * `faceDownOriginal` (cechy karty) i `manifestReady` — jeśli karta jest kartą
@@ -194,6 +190,10 @@ export function manifestCardFaceDown(state, cardObjectId, controllerId) {
   return newId;
 }
 
+/**
+ * Wykonuje WYBRANY cel pokoju (komenda resolve_room_target, game-state.js).
+ * Zwraca zdarzenia zakończonego wyboru (dopisane do state.events).
+ */
 export function applyRoomTargetChoice(state, pending, targetId) {
   if (pending.kind === 'player') {
     changeLife(state, targetId, -(pending.params.amount ?? 5));
@@ -492,18 +492,6 @@ export function drawPlayerCards(state, playerId, amount, source = 'effect') {
   }
 }
 
-/**
- * Wspólny interpreter efektów dla czarów i zdolności aktywowanych.
- * Deskryptor efektu (typ + parametry) buduje warstwa kart; core zna wyłącznie
- * ogólne typy: damage, pump, create_token. Efekty zapisują swoje zdarzenia
- * wprost do `state.events` (jak dotąd robiły to w spells.js), więc są widoczne
- * w logu i strumieniu rozstrzygania.
- *
- * @param {object} state
- * @param {{type: string, [k: string]: unknown}} effect
- * @param {object} sourceObject obiekt źródła (kontroler tokenów/obrażeń)
- * @param {string[]} targets id celów (dla damage/pump pierwszy cel)
- */
 /** Wspólna ścieżka obrażeń NIEcombat (czary, zdolności, triggery) — CR 119.3,
  *  614, 615, 702.15, 702.89 w pełnym wymiarze:
  *  - prewencja tarcz (Withstand — damageShields) ORAZ filtr „prevent all damage
@@ -623,14 +611,6 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
 }
 
 /**
- * Temat 6 — „You may search your library for ..." (CR 701.19b): blokująca
- * decyzja gracza, KTÓRĄ kartę znaleźć (albo w ogóle nie szukać — fail to
- * find). Ruch karty + tasowanie wykonuje komenda resolve_search_choice.
- * Zwraca true (blokada), gdy są kandydaci; bez kandydatów automatycznie
- * tasuje (szukanie z pustym/niepasującym zbiorem to samo „search... shuffle").
- */
-/** Czy karta z biblioteki pasuje do kwalifikatora szukania (types/subtypes/kind/minMV). */
-/**
  * M177/C (Sifter Wurm): reveal wierzchu biblioteki + życie równe mana value
  * odsłoniętej karty. Wspólne dla ścieżki natychmiastowej (scry bez blokady)
  * i po resolve_scry (game-state).
@@ -646,6 +626,7 @@ export function revealTopGainLife(state, playerId, sourceCardId = null) {
   if (gained > 0) changeLife(state, playerId, gained);
 }
 
+/** Czy karta z biblioteki pasuje do kwalifikatora szukania (types/subtypes/kind/minMV). */
 export function librarySearchMatches(object, qualifier, ownerId) {
   if (!object || object.controllerId !== ownerId || object.zone !== 'library') return false;
   const typeMatch = (qualifier.types ?? []).length === 0
@@ -662,6 +643,13 @@ export function librarySearchMatches(object, qualifier, ownerId) {
   return typeMatch && subtypeMatch && kindMatch && mvOk && nameOk;
 }
 
+/**
+ * Temat 6 — „You may search your library for ..." (CR 701.19b): blokująca
+ * decyzja gracza, KTÓRĄ kartę znaleźć (albo w ogóle nie szukać — fail to
+ * find). Ruch karty + tasowanie wykonuje komenda resolve_search_choice.
+ * Zwraca true (blokada), gdy są kandydaci; bez kandydatów automatycznie
+ * tasuje (szukanie z pustym/niepasującym zbiorem to samo „search... shuffle").
+ */
 export function queueSearchChoice(state, sourceObject, { qualifier, destination, entersTapped, destinations = null, chain = null, emitter = null, mandatory = false }) {
   const ownerId = sourceObject.controllerId;
   const matches = (object) => librarySearchMatches(object, qualifier, ownerId);
@@ -721,13 +709,6 @@ export function maybeAddFaceDownFlyingCounter(state, controllerId, objectId) {
   if (hasSource) addCounter(state, objectId, 'flying', 1);
 }
 
-/**
- * Odbiorcy efektu „każdy zakryty stwór, którego kontrolujesz" (Veiled
- * Ascension). Wspólna definicja zbioru: efekt bierze z niej stwory do
- * licznika, a raport „trigger bez efektu" w `triggers.js` pyta, czy zbiór
- * jest pusty. Jedna reguła zamiast dwóch kopii (L41/L48 — kopie się
- * rozjeżdżają); deskryptor po typie efektu, nie po nazwie karty (ADR 0002).
- */
 /** Stwory-lądy kontrolera (Jyoti: „land creatures you control"). */
 export function landCreaturesYouControl(state, controllerId) {
   return [...state.objects.values()].filter((object) => object.zone === 'battlefield'
@@ -776,6 +757,13 @@ export function millTargetPlayerId(state, effect, sourceObject, targets = []) {
     : sourceObject?.controllerId ?? null;
 }
 
+/**
+ * Odbiorcy efektu „każdy zakryty stwór, którego kontrolujesz" (Veiled
+ * Ascension). Wspólna definicja zbioru: efekt bierze z niej stwory do
+ * licznika, a raport „trigger bez efektu" w `triggers.js` pyta, czy zbiór
+ * jest pusty. Jedna reguła zamiast dwóch kopii (L41/L48 — kopie się
+ * rozjeżdżają); deskryptor po typie efektu, nie po nazwie karty (ADR 0002).
+ */
 export function faceDownCreaturesYouControl(state, controllerId) {
   return [...state.objects.values()].filter((object) => object.zone === 'battlefield'
     && object.controllerId === controllerId
@@ -794,6 +782,18 @@ export function creaturesNotControlledByOwner(state) {
     && (object.ownerId ?? object.controllerId) !== object.controllerId);
 }
 
+/**
+ * Wspólny interpreter efektów dla czarów i zdolności aktywowanych.
+ * Deskryptor efektu (typ + parametry) buduje warstwa kart; core zna wyłącznie
+ * ogólne typy: damage, pump, create_token. Efekty zapisują swoje zdarzenia
+ * wprost do `state.events` (jak dotąd robiły to w spells.js), więc są widoczne
+ * w logu i strumieniu rozstrzygania.
+ *
+ * @param {object} state
+ * @param {{type: string, [k: string]: unknown}} effect
+ * @param {object} sourceObject obiekt źródła (kontroler tokenów/obrażeń)
+ * @param {string[]} targets id celów (dla damage/pump pierwszy cel)
+ */
 export function applyEffect(state, effect, sourceObject, targets = [], context = {}) {
   // X-cost czary (Consume Spirit, Epic Experiment — Batch 30): efekty mogą
   // użyć amount: 'X' (lub amountFrom: 'X') — wartość X z obiektu stosu
