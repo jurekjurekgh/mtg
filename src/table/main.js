@@ -31,7 +31,7 @@ import { parseManaCost } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
-import { createArtShowcaseQueue } from './art-showcase.js';
+import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard } from './choice-request.js';
 import { multiTargetPlanOf, mulliganBottomPlanOf } from './multi-target.js';
 import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
@@ -610,13 +610,15 @@ function bootstrapTable() {
    * (gra toczy się dalej bez pauzy, dokładnie jak dotąd).
    */
   function onCastShowcase({ cardId, playerId, faceDown }) {
-    // M257 r3 (uwaga A właściciela): karta twarzą w dół (Morph, CR 708.2)
-    // ukrywa tożsamość PRZED OBU STRONAMI — warstwa ilustracji (FOT/KON/
-    // Scryfall + podpis „Rzuca: Nieprzyjaciel") nie może jej zdradzić, gdy
-    // to BOT rzuca ukrytego. Właściciel: „w ogóle ta warstwa nie powinna się
-    // pokazywać". Dotyczy też własnego morpha — rzucający zna swoją kartę
-    // (CR 708.6), a kafel pokazuje jej nazwę; warstwa dodałaby tylko pauzę.
-    if (faceDown) return false;
+    // M257 r3 (uwaga A właściciela + doprecyzowanie): karta twarzą w dół
+    // (Morph, CR 708.2) ukrywa tożsamość PRZED PRZECIWNIKIEM — warstwa
+    // ilustracji (FOT/KON/Scryfall + podpis „Rzuca: Nieprzyjaciel") nie
+    // może zdradzić, co BOT rzucił ukrytego. Właściciel: „w ogóle ta warstwa
+    // nie powinna się pokazywać” (przy kartach ukrytych rzucanych przez
+    // bota), a potem doprecyzował: „własny morph gracza otwiera warstwę.
+    // FoW dotyczy tylko zagrań bota” — stąd krycie tylko gdy rzucający
+    // to bot (widok = HUMAN_ID; rzucający zna swoją kartę, CR 708.6).
+    if (isCastHiddenFromViewer({ faceDown, playerId }, HUMAN_ID)) return false;
     if (!session || !els.hiGfxToggle?.checked) return false;
     const card = session.cardDetails(cardId);
     if (!cardHasShowcaseArt(card)) return false;

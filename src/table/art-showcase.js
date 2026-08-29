@@ -26,6 +26,18 @@
  * @param {(entry: object) => boolean} deps.open pokaż pozycję; `false` = karta
  *   bez ilustracji (odrzucamy i bierzemy następną z kolejki)
  */
+/**
+ * M257 r3 (uwaga A + doprecyzowanie właściciela): czy ukryty rzut (twarzą w
+ * dół, CR 708.2) ma być WYKŁUCZONY z warstwy ilustracji. FoW dotyczy zagrań
+ * BOTa (przeciwnika widoku) — WŁASNY morph gracza warstwę otwiera
+ * (właściciel: „wolałbym, żeby własny morph gracza otwierał warstwę. FoW
+ * dotyczy tylko zagrań bota”): rzucający zna swoją kartę (CR 708.6).
+ * `playerId === null` (nieznany rzucający) = bezpieczna domyślna krycie.
+ */
+export function isCastHiddenFromViewer({ faceDown, playerId }, viewerId) {
+  return Boolean(faceDown) && playerId !== viewerId;
+}
+
 export function createArtShowcaseQueue({ isOpen, open }) {
   if (typeof isOpen !== 'function' || typeof open !== 'function') {
     throw new TypeError('Kolejka wymaga funkcji isOpen i open');

@@ -8,8 +8,9 @@
 //    informacji o twarzu — warstwa renderowała pełną definicję karty.
 //    Fix: zdarzenie permanent_cast NIESIE faceDown (engine już je znosi,
 //    resources.js), sesja przekazuje je w payloaddzie onCast, a warstwa
-//    (main.js) dla faceDown w ogóle się nie otwiera (CR 708.2 — twarzą w
-//    dół tożsamość jest ukryta przed OBU stronami).
+//    (main.js) wyklucza ukryte zagranie BOTA (doprecyzowanie właściciela:
+//    „własny morph gracza otwiera warstwę. FoW dotyczy tylko zagrań bota” —
+//    CR 708.2/708.6).
 //
 // B: „Przygoda: Gray Slaad” (cast_adventure) w menu „Twoje działania”
 //    pojawiało się NA SAMYM DOLE, pod pass/poddaniem. Root cause: sort
@@ -45,6 +46,7 @@ import { createGameState, execute, playerView, addObject } from '../src/engine/g
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { actionMenuRank } from '../src/table/render.js';
+import { isCastHiddenFromViewer } from '../src/table/art-showcase.js';
 import { createSession, HUMAN_ID, BOT_ID } from '../src/table/session.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 
@@ -279,4 +281,20 @@ test('M257A1: paylod onCast — rzut twarzą w dół niesie faceDown:true (wypł
   const leaky = REGISTRY.get(morphCalls[0].cardId);
   assert.ok(leaky?.artId, 'morph w talii bota ma artId (warstwa by się odpaliła)');
   void registry;
+});
+
+test('M257A2: widokowo — ukryty rzut BOTA wykluczony, WŁASNY morph gracza otwiera warstwę', () => {
+  // Doprecyzowanie właściciela: „wolałbym, żeby własny morph gracza otwierał
+  // warstwę. FoW dotyczy tylko zagrań bota.” Predykat jest czystą funkcją
+  // (art-showcase.js) — main.js decyduje na niej (widok = HUMAN_ID).
+  assert.equal(isCastHiddenFromViewer({ faceDown: true, playerId: BOT_ID }, HUMAN_ID), true,
+    'ukryte zagranie bota = kryte (leak FoW zamknięty)');
+  assert.equal(isCastHiddenFromViewer({ faceDown: true, playerId: HUMAN_ID }, HUMAN_ID), false,
+    'własny morph gracza NIE jest kryty (warstwa otwiera się)');
+  assert.equal(isCastHiddenFromViewer({ faceDown: false, playerId: BOT_ID }, HUMAN_ID), false,
+    'jawny rzut bota = warstwa jak dotąd');
+  assert.equal(isCastHiddenFromViewer({ faceDown: false, playerId: HUMAN_ID }, HUMAN_ID), false,
+    'jawny rzut gracza = warstwa jak dotąd');
+  assert.equal(isCastHiddenFromViewer({ faceDown: true, playerId: null }, HUMAN_ID), true,
+    'ukryty rzut o nieznanym rzucającym = bezpieczne krycie');
 });
