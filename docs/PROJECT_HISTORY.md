@@ -19,7 +19,56 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
-- **Ostatnia aktualizacja:** 2026-08-29 (sesja arena/01a04e98, **etap 4**: **uwagi z testów runda 3** (talia Warhammer) — trzy błędy naprawione w root cause: **A** wypływ FoW przez warstwę ilustracji przy Morph twarzą w dół (paylod onCast niośce `faceDown`; krycie WIDOKOWE — warstwa nie otwiera się dla ukrytych zagrań BOTA, **własny morph gracza warstwę otwiera** — CR 708.2/708.6), **B** „Przygoda” (i inne rzuty) pod pass/poddaniem w menu „Twoje działania” (brak ranków cast_adventure/escape/flashback + pass/poddanie teraz Z ZASADY ostatnie), **C** Greatsword of Tyr „Equip {W}” akceptował jedną dowolną manę (deskryptor equipment bez `colors` w łańcuchu L21 + płatność bez wymogów koloru, rozjazd oferta/walidacja L48); 10 testów regresji; `npm test` 3748/3748; build 2907.7 kB; **PR #88**)
+- **Ostatnia aktualizacja:** 2026-08-29 (sesja arena/01a04e98, **etap 5**: **pętla jakości Żywym Testerem** (właściciel: „może sam coś znajdziesz”) — 6 partii (tarkir-bg/wiedzmin, worek-basni/theros, warhammer-wu/worek-legend, seeds 2001–2006), 0 detektorów, 3 znaleziska: **F3** Kappa Tech-Wrecker „Ninjutsu {1}{G}" — pita zielona zgubiona w danych (koszt {2} generyczny), silnik (oferta + płatność) ignorował pipy KOLORÓW w ninjutsu — jedyne aktywowane kosztowanie bez koloru (L48) + kafel „Ninjutsu {2}” i gramatyka żeńska; **F1** „enters with a counter” niewidoczne na kaflu (7 kart: Trigon, Kappa, Servant of the Scale, Necrosquito, Voice of the Vermin, Swooping Protector, Creakwood Safewright); **F4** (narzędzie) profil defensive mulliganował do 0 kart (wzorzec bez granic słów łapał „zostaNIE 5”); 7 testów (RED→GREEN dowiedzone stashem), 8 fałszywych alarmów zamkniętych z L57 (m.in. Colossodon vanilla, Breaching Hippocamp untap stwora, własny morph w logu = zgodne z regułą rundy 3); `npm test` 3755/3755; build 2910.5 kB; **PR #88**)
+
+## Sesja 2026-08-29 (etap 5) — pętla jakości Żywym Testerem: F3 ninjutsu {1}{G}, F1 liczniki wejścia, F4 driver (arena/01a04e98, PR #88)
+
+**Zakres:** pętla jakości na prośbę właściciela po rundzie 3 („Proponuję
+teraz Pętlę Jakości Żywym Testerem, może sam coś znajdziesz"). Talie z
+ostatnich rund nieprzetestowane + Batch 51: tarkir-bg ↔ wiedzmin
+(seeds 2001–2002, greedy/explorer), worek-basni ↔ theros (2003–2004,
+greedy/defensive), warhammer-wu ↔ worek-legend (2005–2006, greedy/random).
+Raport: `docs/audits/AUDYT_M257R4_ZYWY_TESTER_2026-08-29.md`.
+
+**F3 (dane + silnik + kafel) — Kappa Tech-Wrecker, „Ninjutsu {1}{G}":**
+Oracle (NEO #198; repo JSON + API Scryfall) — koszt ninjutsu z zieloną
+pitą, a w rejestrze `{mana: 2}` generyczny. Trzy warstwy: (1) dane
+→ `{mana: 2, colors: ['G']}` (semantyka: suma 2, pita G = {1}{G});
+(2) silnik — oferta w oknie combat_damage i `activateNinjutsu`
+nie respektowały `cost.colors` — audyt wykazał, że NINJUTSU to jedyne
+aktywowane kosztowanie bez koloru (cycling/reinforce/bloodrush/channel/
+forecast/equip mają canPayColoredCost + colorRequirementsOf) → dopięte
+(L48: oferta = walidacja; płatność atomowo CR 601.2h); (3) kafel —
+etykieta pipsów „Ninjutsu {1}{G}” + „wejdź zatapnięty i atakujący"
+(gramatyka). W rejestrze tylko 2 ninjutsu — Kitsune {3}{W} poprawna.
+Koszt rzutu {1}{G} (MANA_COSTS) i kreator many — od dawna OK. B7.2:
+pula testowa 2×{U} → {G}+generyczna (test korzystał ze starej dowolności).
+
+**F1 (kafel) — „enters with a counter”:** 7 kart wchodzi z licznikami,
+a opis kafla milczał (L1/ADR 0017). `cardInfo` + `rulesText`: linia
+„Wchodzi z 1 licznikiem X / z N licznikami X" (COUNTER_LABELS;
+ukryta przy faceDown). cardId: Trigon 3×charge, Kappa deathtouch,
+Servant of the Scale +1/+1, Necrosquito 2×oil, Voice of the Vermin
+shield, Swooping Protector shield, Creakwood Safewright 3×−1/−1.
+
+**F4 (narzędzie audytu) — defensive mulliganował do 0:** heurystyka
+„opcja pomiń" `/pomij|nie |brak|zostaw/` łapała „zosta**nie** 5"
+(w etykiecie mulligana) → pętla do pustej ręki (legalne,
+nieintendowane). Granice słów; zweryfikowane na żywo tym seidem
+(g2004b: „Zatrzymaj tę rękę", 0 detektorów).
+
+**Fałszywe alarmy (L57, NIE naprawiane):** Colossodon Yearling
+(vanilla 2/4), Greater Tanuki (CMC 6), Thistledown Players (nonland
+permanent), Breaching Hippocamp (untap another creature you control —
+bot bez innego stwora = poprawny „brak legalnych celów"), {2}{G}=CMC 3
+(błąd rachuby audytora), Kitsune (dane OK), „Atak: Woolly Loxodon
+(Morph)" (wŁASNY morph gracza — CR 708.6 + reguła rundy 3 „FoW dotyczy
+tylko zagrań bota" — zgodne), „tapnij Soldier (" (obcięcie TRANSKRYPTU
+do 90 znaków, nie UI). Fix rundy 2 (Rupture Spire) zweryfikowany na
+żywo w g2005.
+
+**Bramy:** `npm test` 3748 → **3755/3755** (+7), build 2907.7 →
+**2910.5 kB**. Commit `eb8246a`.
 
 ## Sesja 2026-08-29 (etap 4) — „Uwagi z testów” runda 3: trzy błędy (talia Warhammer) naprawione w root cause (arena/01a04e98, PR #88)
 
