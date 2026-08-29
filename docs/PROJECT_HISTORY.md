@@ -19,7 +19,49 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
-- **Ostatnia aktualizacja:** 2026-08-29 (sesja arena/01a04e98: **audyt PR #87** (raport `docs/audits/AUDYT_PR87_2026-08-29.md`): 6 znalezisk — A2 luka strażnika L16 w ciągach znakowych (naprawiona), D1 README drift, D5 JSDoc, D2 brak handoffu (naprawione: `HANDOFF_2026-08-29.md`), D3/D4 zgłoszenia procesowe; **PR #88**)
+- **Ostatnia aktualizacja:** 2026-08-29 (sesja arena/01a04e98, etap 2: **petla jakości M257** — Żywy Tester na puli Innistrad (22 karty); **K5 naprawiony** (DFC poza polem bitwy wraca przodem, CR 711.4a/711.7/711.8, `3f4d122`) + **K4 naprawiony** (controllerId w `object_transformed` — transform człowieka w panelu Rozgrywka); K1/K3/K6/D0 zamknięte jako nie-błędy, K2 zgłoszone (kosmetyka); raport `docs/audits/AUDYT_M257_2026-08-29.md`; `test:all` 3740/3740; **PR #88**)
+
+## Sesja 2026-08-29 (etap 2) — petla jakości M257: pool Innistrad, K5 (CR 711.4a) + K4 naprawione (arena/01a04e98, PR #88)
+
+**Zakres:** ADR 0021 (pętla domyślna) — Żywy Tester na nowym pulu
+(Innistrad, 22 karty nieprzetestowane); 6 partii seeds 1001–1006
+(`innistrad-brg` ↔ `innistrad-wu`, greedy) + czytanie transkryptów
+krok po kroku + weryfikacja L57 par transform (API Scryfall INR #212,
+ISD #185).
+
+**Naprawione (commit `3f4d122`, 5 testów w `test/audit-m257-fixes.test.js`):**
+- **K5 (CR 711.4a/711.7/711.8):** DFC opuszczający pole bitwy tyłem
+  (obrócony wilkołak odbity na rękę) zostawał w innej strefie TYŁEM i
+  z ręki wchodził na pole TYŁEM. Naprawa w choke poincie
+  `moveObjectDirectly`: `frontFaceId` (createCardDeck → installDeck →
+  kontrakt addObject → createGameObject) + reset cech na twarz przednią
+  przy wyjściu z pola bitwy (transformTo odwracane na tył — flicker w
+  obie strony zostaje; LKI CR 603.10 zachowuje twarz z pola bitwy).
+  Uwaga L21: `addObject` początkowo cicho gubił nowe pole (strażnik
+  kontraktu wskazał).
+- **K4 (M100/E5):** `object_transformed` bez kontrolera →
+  `isHumanHeadline` martwy → transform człowieka nie trafiał do panelu
+  „Rozgrywka". `controllerId` w zdarzeniu we wszystkich 4 miejscach
+  emisji (transform, transformReturn, craft, nightbound).
+
+**Zamknięte jako nie-błędy:** K1 (choroba = summoning sickness, CR 302.6),
+K3 (zlepienie linii kreatora many = spłaszczenie modala w testerze, UI
+poprawne), K6 (vigilance na Moonscarred Werewolf JEST w Oracle — API
+Scryfall; błędna „poprawka" złapana i cofnięta przez
+`card-sources-guard`), D0 (tylne strony DFC w taliach — parser talii
+zamienia nazwy tyłów na fronty, CR 711.4).
+
+**Zgłoszone (kosmetyka, następna runda):** K2 — kafel 2. strony DFC
+pokazuje koszt „0" (katalog bieżącej twarzy zamiast `manaCost` obiektu;
+CR 711.4b CMC = koszt przedniej).
+
+**Incydent:** restart sandboxa zresetował HEAD do punktu odgałęzienia
+(`15a2be5`); naprawa fetch + mixed reset na `1560322` (drzewo robocze
+= remote + zmiany sesji, zweryfikowane per-file). Macierz przebita po
+poprawkach (wynik 5:1 Bot:Gracz jak przed, detektory 0/6).
+
+**Bramy:** `npm test` 3730/3730, `test:all` **3740/3740**, build
+56 modułów / 2898.8 kB. Raport: `docs/audits/AUDYT_M257_2026-08-29.md`.
 
 ## Sesja 2026-08-29 — audyt PR #87: 6 znalezisk, 4 naprawione (arena/01a04e98, PR #88)
 
