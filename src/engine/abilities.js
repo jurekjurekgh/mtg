@@ -1083,6 +1083,12 @@ export function legalActivatedAbilities(state, playerId) {
         const ability = object.abilities[index];
         if (ability?.type !== ABILITY_TYPE.activated || ability.keyword !== 'ninjutsu') continue;
         if ((ability.cost?.mana ?? 0) > baseMana) continue;
+        // M257 r4 (Kappa Tech-Wrecker, „Ninjutsu {1}{G}"): pipy kolorów
+        // kosztu — oferta bez tego pozwalała ninjutsu dowolną maną, a
+        // płatność ją przyjmowała (L48; jedyne aktywowane kosztowanie,
+        // które nie miało koloru — cycling/reinforce/bloodrush/channel/
+        // forecast/equip respektują pipy).
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
         for (const attackerId of unblocked) out.push({ objectId: id, abilityIndex: index, attackerId });
       }
     }
@@ -1989,7 +1995,10 @@ function activateNinjutsu(state, playerId, cardObject, abilityIndex, ability, at
   if (!state.combat.attackers.includes(attackerId) || state.combat.blockers.has(attackerId)) {
     throw new Error('Ninjutsu wymaga nieblokowanego atakującego');
   }
-  spendMana(state, playerId, ability.cost?.mana ?? 0);
+  // M257 r4 (Kappa Tech-Wrecker, „Ninjutsu {1}{G}"): pipy kolorów — spójnie
+  // z ofertą (L48). spendMana atomowy (CR 601.2h) — nieudana płatność nie
+  // zostawia tapniętych źródeł ani zwrotu atakującego (to następuje dalej).
+  spendMana(state, playerId, ability.cost?.mana ?? 0, colorRequirementsOf(ability.cost));
   // Zwrot atakującego do ręki to KOSZT (CR 702.48: „Return an unblocked
   // attacker you control to hand: ...") — następuje przed wejściem zdolności
   // na stos (CR 601.2h). Atakujący znika z combat PRZED zmianą strefy, żeby

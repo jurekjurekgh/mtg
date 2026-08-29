@@ -59,7 +59,10 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         keyword: 'ninjutsu',
-        cost: { mana: 2 },
+        // M257 r4 (Żywy Tester, g2004): Oracle „Ninjutsu {1}{G}" — pita
+        // ZIELONA. Wpis {mana: 2} (bez colors) pozwalał płacić dowolną maną
+        // (L57/ADR 0022; ta sama klasa co r3/C — pipy w kosztach).
+        cost: { mana: 2, colors: ['G'] },
       }),
       createAbility({
         type: ABILITY_TYPE.triggered,

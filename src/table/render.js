@@ -1507,7 +1507,19 @@ export function rulesText(info) {
   const abilityLine = info.abilities && info.abilities.length
     ? info.abilities.map((a) => {
       if (a.type === 'triggered') return describeTriggered(a, info.controllerId);
-      if (a.keyword === 'ninjutsu') return `Ninjutsu {${a.cost?.mana ?? '?'}}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca`;
+      if (a.keyword === 'ninjutsu') {
+        // M257 r4 (Żywy Tester g2004, Kappa Tech-Wrecker): (1) goły
+        // `cost.mana` gubił pipy kolorów („Ninjutsu {2}" zamiast {1}{G} —
+        // notacja jak MANA_COSTS: generyczny w klamkach + pipy, M138/Z10);
+        // (2) gramatyka: „zatapnięta/atakująca" (formy żeńskie) na karcie
+        // rodzaju męskiego.
+        const njColors = a.cost?.colors ?? [];
+        const njGeneric = Math.max(0, (a.cost?.mana ?? 0) - njColors.length);
+        const njCostStr = njGeneric > 0 || njColors.length === 0
+          ? `{${njGeneric}}${njColors.map((c) => `{${c}}`).join('')}`
+          : njColors.map((c) => `{${c}}`).join('');
+        return `Ninjutsu ${njCostStr || '{?}'}: wróć nieblokowanego atakującego, wejdź zatapnięty i atakujący`;
+      }
       if (a.keyword === 'megamorph') return `Megamorph {${a.cost?.mana ?? '?'}}: obróć twarzą do góry i połóż +1/+1`;
       if (a.keyword === 'morph') return `Morph {${a.cost?.mana ?? '?'}}: obróć twarzą do góry`;
       // M100/E10 (P9 — Żywy Tester h09/h13): zdolność equip już opisuje
@@ -1606,7 +1618,20 @@ export function rulesText(info) {
       return `${roman}: ${chapterParts || '?'}`;
     }).join(' · ')}`
     : '';
-  return [keywordLine, spellLine, plotLine, equipLine, auraLine, abilityLine, morphLine, sagaLine, landLine].filter(Boolean).join(' · ');
+  // M257r4/F1 (audyt Żywym Testerem g2001): karta WCHODZI Z LICZNIKAMI —
+  // linia Oracle na kaflu (dotąd brak: Trigon of Corruption +3 charge,
+  // Kappa Tech-Wrecker licznik deathtouch, Servant of the Scale +1/+1 …).
+  // Odmiana po „z”: z 1 licznikiem / z N licznikami; etykiety z
+  // COUNTER_LABELS (ta sama konwencja co badge „Nx …” i „gdy ma licznik …”).
+  const entersCountersLine = (() => {
+    const ewc = info.entersWithCounters;
+    if (!ewc || typeof ewc !== 'object') return '';
+    const parts = Object.entries(ewc)
+      .filter(([, n]) => Number(n) > 0)
+      .map(([name, n]) => `z ${n === 1 ? '1 licznikiem' : `${n} licznikami`} ${COUNTER_LABELS[name] ?? name}`);
+    return parts.length ? `Wchodzi ${parts.join(', ')}` : '';
+  })();
+  return [keywordLine, spellLine, plotLine, equipLine, auraLine, abilityLine, morphLine, sagaLine, entersCountersLine, landLine].filter(Boolean).join(' · ');
 }
 
 /** Etykieta przycisku akcji — po polsku, z nazwami kart i celów.
@@ -2980,6 +3005,13 @@ export function cardInfo(session, object, combat = null) {
     // M159/Z4: rozdziały Sagi są treścią kafla (rulesText) — bez tego pola
     // Saga renderowała się bez żadnego opisu.
     saga: faceDown ? null : (details.saga || object.saga || null),
+    // M257r4/F1 (audyt Żywym Testerem g2001): „enters with a counter” to
+    // publiczny Oracle (wydrukowany tekst) — 7 kart (Trigon of Corruption,
+    // Kappa Tech-Wrecker, Servant of the Scale…) wchodziło z licznikami, a
+    // kafel nie pokazywał o tym ani słowa (klasa L1/ADR 0017: widoczny stan
+    // musi być widoczny na kaflu). Z rejestru dla kopii/tokenów ze stanu —
+    // jak equipment/saga.
+    entersWithCounters: faceDown ? null : (details.entersWithCounters || object.entersWithCounters || null),
     attachedTo: object.attachedTo ?? null,
     hostName: object.attachedTo ? (session.nameOfObject?.(object.attachedTo) ?? '') : '',
     // F (2026-08-11): karta-gospodarz pokazuje przypięte do niej aury/equipmenty

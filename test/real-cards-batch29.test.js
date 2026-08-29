@@ -734,7 +734,10 @@ test('Audyt B7.2: ninjutsu idzie na stos — kontrczar w oknie odpowiedzi nie wp
   addRealCard(state, 'attacker', 'highland-game', 'p1', 'battlefield');
   addRealCard(state, 'kappa', 'kappa-tech-wrecker', 'p1', 'hand');
   addRealCard(state, 'negate', 'negate', 'p2', 'hand');
-  addMana(state, 'p1', 2, { colors: ['U'] });
+  // M257 r4 (F3): Kappa kosztuje „Ninjutsu {1}{G}” (pita zielona, L57) —
+  // 2×{U} z dawnego zapisu opłacało go, bo ninjutsu ignorowało kolory.
+  addMana(state, 'p1', 1, { colors: ['G'] });
+  addMana(state, 'p1', 1, { colors: [] });
   addMana(state, 'p2', 2, { colors: ['U'] });
   const cmd = playerView(state, 'p1').legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'kappa');
   assert.ok(cmd, 'ninjutsu oferowane w oknie combat');
