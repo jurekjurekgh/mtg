@@ -19,7 +19,72 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
-- **Ostatnia aktualizacja:** 2026-08-28 (sesja arena/01a049c7: audyt PR #86 → A1 strażnik L16 bez komentarzy, porządki w `tmp-audyt-*`, **Batch 51: 8 kart właściciela (artId 572–579)**, uwagi z testów A–E, PR #87)
+- **Ostatnia aktualizacja:** 2026-08-29 (sesja arena/01a049c7: audyt PR #86 → A1 strażnik L16, porządki w `tmp-audyt-*`, **Batch 51: 8 kart właściciela (artId 572–579)**, uwagi z testów A–E, **M255: pętla jakości Żywym Testerem po Batchu 51 (18 partii, 5 napraw A–E)**, PR #87)
+
+## Sesja 2026-08-29 — M255: pętla jakości Żywym Testerem po Batchu 51 (PR #87)
+
+**Zlecenie właściciela:** „Proponuje teraz pętlę jakości żywym testerem ze
+szczególnym akcentem na nowe karty."
+
+**Metoda (ADR 0021):** 18 partii (12 w rundzie 1 + 6 kontrolnych po naprawach)
+na parach talii, które dostały karty w Batchu 51 i przy uwagach A–E: ravnica
+(bloodrush), tarkir-bg (Typhoid Rats), tarkir-wur (Dromoka Warrior),
+warhammer-brg (Invasive Species, Savage Surge), warhammer-wu (Thunderstaff),
+theros (Akroan Sergeant / renown), worek-mroczny (Kulrath Mystic; poza próbką
+benchmarku), dominaria-wu (Willbender, Wormfang Newt, Altar of the Goyf).
+Profile `explorer/greedy/defensive/impatient/random`. Wszystkie partie kończą
+się naturalnie, detektory (osie 1–4) milczą — **zero zgłoszeń to dolna granica,
+nie dowód jakości** (L27/L40): wszystkie poniższe znaleziska wyszły z lektury
+transkryptów. Transkrypty poza repo (`tmp-audyt-m255/`, decyzja właściciela).
+
+**Znaleziska (każde: repro → root cause → RED→GREEN + mutacja → 13 testów
+w `test/m255-petla-jakosci.test.js`):**
+
+- **A. Silnik — fałszywy komunikat „trigger bez efektu" (Kulrath Mystic).**
+  `buff_creature_until_end_of_turn` zapisywał buff w `state.untilEndOfTurnBuffs`
+  i nie emitował zdarzenia, więc `resolveTrigger` czytał „0 zdarzeń” jako
+  „brak efektu” — log kłamał, podczas gdy stwór realnie dostał +2/+0 i czujność
+  (klasa M138/Z4). Groziło też Altarowi of the Goyf: po naprawie celu (M254/E)
+  właściciel zobaczyłby ten sam komunikat i uznał, że nic nie naprawiono.
+  Druga bramka: `stats_modified` jest szumem w modalu (M99) — wyjątek
+  rozszerzony o buffy `untilEndOfTurn`, reguła wyciągnięta do czystej funkcji
+  `isBotMoveNoise` (ADR 0011). Nowa lekcja **L87**.
+- **B. Log nie nazywał bloodrush** (Skinbrand Goblin). „Aktywujesz zdolność:
+  Skinbrand Goblin — zmiana statystyk celu” + „Odrzucasz Skinbrand Goblin”:
+  mechanika (CR 702.63) i fakt, że odrzucenie jest KOSZTEM, ginęły (wzorzec
+  M158/A dla Morph). Teraz: „używa bloodrush: … — odrzuca tę kartę z ręki”.
+  Bezpośredni repro wykazał przy okazji, że mechanika DZIAŁA (bot potrafi
+  użyć bloodrush w oknie walki) — w 18 partiach nie trafiło się okno.
+- **C. Etykiety logu — 29 z 52 typów efektów zdolności aktywowanych nie miało
+  opisu** (`ABILITY_EFFECT_LABELS`), w tym `buff_attacking_creatures` z Batcha 51
+  (log: gołe „Nieprzyjaciel aktywuje zdolność: Thunderstaff”). Tabela
+  uzupełniona + **strażnik M255/C1** (przejście po katalogu, wzorzec A2a/A2b
+  z M179) — dopisek do L84.
+- **D. Dynamiczne P/T gubiło „+X/+X"** (Altar of the Goyf, Jyoti, Tarmogoyf):
+  panel mówił „Gdy atakuje samotnie: liczba typów kart w grobach do końca tury",
+  jakby definicja X była treścią efektu. `ptPair` i etykieta `pump` (która
+  drukowałaby surowy slug) biorą teraz wspólny helper: „+X/+X (X = liczba typów
+  kart w grobach) do końca tury".
+- **E. Bot marnował Thunderstaffa.** `buff_attacking_creatures` nie było w
+  `TEMPORARY_PUMP_EFFECTS`, więc zdolność miała gołą bazę (`score = 2`) i bot
+  aktywował ją w Głównej 1, gdy nikt nie atakował (transkrypt tura 16: 2 many
+  + tap na efekt wygasły w cleanup). Wpis w tabeli + **reprezentant zbioru**
+  (własny atakujący) dla wspólnego mianownika — dopisek do L50.
+
+**Sprawdzone i uznane za poprawne (bez zmian):** Invasive Species (cel
+obowiązkowy, „inny permanent", lądy legalne — 7 opcji bez siebie), renown
+(„Akroan Sergeant zyskuje sławę (renown) — 1 licznik +1/+1"), Wormfang Newt
+(strefa wygnania tymczasowego), Morph/Willbender, deathtouch Typhoid Rats.
+**Rozpoznana luka (poza zakresem):** komunikat „trigger bez efektu (nie było
+czego wykonać)” jest PRAWDZIWY, ale nieprecyzyjny, gdy efekt nie ma
+odbiorców (Veiled Ascension — brak zakrytych stworów; Trostani Discordant —
+nikt nie kontroluje cudzych stworów). Właściwy komunikat to „brak legalnych
+celów” (M189/Z2) — wymaga, by efekty sygnalizowały „nie miałem kogo/czego"
+odrębnym powodem.
+
+**Bramy:** `npm test` **3687/3687** (było 3674; +13), `npm run build` **56
+modułów / 2882.5 kB**, strażniki dokumentacji 17/17, lektura startowa **~96,6k
+/ 100k** tokenów (wzrost o 1,6k — nowa lekcja L87 i dwa dopiski).
 
 ## Sesja 2026-08-28 — uwagi właściciela z testów A–E (M254, PR #87)
 

@@ -3015,6 +3015,30 @@ Testy: `test/audit-m83-tester.test.js` (10). `npm test` **1452/1452**,
 build 50 modułów / ~1574 kB. Bot zmieniony → pełne B0 bez niedokończonych,
 progi win-rate utrzymane.
 
+## M255 — Pętla jakości Żywym Testerem po Batchu 51 (2026-08-29, PR #87)
+
+**Zlecenie:** „pętla jakości żywym testerem ze szczególnym akcentem na nowe
+karty”. 18 partii (tali z Batcha 51 i kart z uwag A–E), detektory: 0 zgłoszeń;
+pięć napraw wyszło z lektury transkryptów. Szczegóły i dowody:
+`docs/audits/AUDYT_M255_ZYWY_TESTER_2026-08-29.md`, testy
+`test/m255-petla-jakosci.test.js` (13, każdy z mutacją).
+
+- **A (silnik):** `buff_creature_until_end_of_turn` emituje `stats_modified` i
+  `keyword_granted` — bez tego `resolveTrigger` raportował „trigger bez efektu”
+  dla skutku, który realnie wszedł (Kulrath Mystic; dotyczyłoby też Altara of
+  the Goyf po M254/E). Wyjątek M99 w `isBotMoveNoise` (czysta funkcja wyeksportowana
+  z session.js) przepuszcza buffy `untilEndOfTurn` do modalu „Rozgrywka”.
+- **B (log):** `ability_activated` z `bloodrush: true` nazywa mechanikę
+  (CR 702.63) i odrzucenie karty jako koszt; `card_discarded` z `cost: true`
+  dostaje dopisek „(koszt: bloodrush)”.
+- **C (log):** `ABILITY_EFFECT_LABELS` uzupełnione o 31 typów (brakowało 29 z
+  52 używanych przez zdolności aktywowane) + strażnik M255/C1.
+- **D (panel):** `ptPair` i etykieta `pump` drukują „+X/+X (X = …)” dla
+  wartości dynamicznych (koniec surowego sluga i zgubionego „+X/+X”).
+- **E (bot):** `buff_attacking_creatures` w `TEMPORARY_PUMP_EFFECTS` +
+  reprezentant zbioru (własny atakujący) — bot przestał palić {2} + tap w
+  Głównej 1 i nadal używa premii w oknie walki (test E2 anty-over-fix).
+
 ## M254 — Batch 51: 8 kart właściciela (2026-08-28, PR #87)
 
 **Zakres:** Skinbrand Goblin (GTC), Typhoid Rats (FRF), Invasive Species (M15),

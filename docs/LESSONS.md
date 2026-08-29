@@ -69,6 +69,53 @@ M2, nie code review). Wniosek praktyczny: reguła 1 obowiązuje także wobec
 strażników, które sam piszesz — i to w dniu ich powstania.
 
 
+## L87 (2026-08-29) — Skutek, którego nie widać, zamienia się w komunikat, że go NIE BYŁO (dwie bramki: zdarzenie i bramka szumu)
+
+**Objaw (pętla jakości Żywym Testerem, Kulrath Mystic):** transkrypt partii
+`worek-mroczny vs theros` (seed 47) pokazał parę linii
+
+```
+Kulrath Mystic — trigger (rzucenie czaru)
+Kulrath Mystic — trigger bez efektu (nie było czego wykonać)
+```
+
+a kafel na stole w tej samej turze: „Kulrath Mystic · … · Czujność · +2/+0 ·
+4/4". Efekt DZIAŁAŁ, tylko nie powiedział o tym nikomu. Ten sam komunikat
+właściciel zgłaszał dzień wcześniej dla Altara of the Goyf (M254/E) — tam był
+prawdą (pompowany był artefakt), po naprawie celu stałby się kłamstwem.
+
+**Przyczyna:** `buff_creature_until_end_of_turn` zapisuje buff w
+`state.untilEndOfTurnBuffs` i nie emituje ŻADNEGO zdarzenia, a `resolveTrigger`
+czyta „0 nowych zdarzeń” jako „trigger bez efektu”. Wszystkie buffy MASOWE z tej
+samej rodziny (`buff_creatures_you_control`, `buff_attacking_creatures`,
+`buff_opponents_creatures`) wołają `emitMassBuff` i są widoczne — jeden
+członek rodziny milczał (klasa M138/Z4 dla `set_base_pt_until_end_of_turn`).
+
+**Druga bramka, o której łatwo zapomnieć:** samo zdarzenie nie wystarczy.
+`stats_modified` jest w `BOT_MOVE_NOISE` (P/T przelicza się przy każdym
+zdarzeniu — M99), więc po dopisaniu zdarzenia log przestał kłamać, ale modal
+„Rozgrywka” nadal pokazywał tylko „zyskuje: czujność”. Wyjątek M99 dotyczył
+wyłącznie rozstrzygnięć BOTA (`!botActing`); buff „do końca tury”
+(`untilEndOfTurn: true`) jest skutkiem rozstrzygnięcia także w turze człowieka.
+Reguła wyciągnięta z domknięcia sesji do czystej funkcji `isBotMoveNoise`
+(ADR 0011) — trzeci dopisek do tej samej bramki wystarczył, żeby ją
+przetestować wprost.
+
+**Reguła:** efekt, który zapisuje stan wewnętrzny (wpis w tabeli buffów, flaga
+na obiekcie, licznik poza `counter_added`), musi:
+
+1. **wyemitować zdarzenie** opisujące skutek (`stats_modified`,
+   `keyword_granted`, …) — bez tego „brak zdarzeń” zostaje przetłumaczony na
+   komunikat o braku efektu, czyli aktywne kłamstwo (L24);
+2. **przejść przez bramki logu i modala** — sprawdź, czy typ zdarzenia nie jest
+   na liście szumu; jeśli jest, dopisz WYJĄTEK dla skutków rozstrzygnięcia,
+   nie usuwaj go z listy (inaczej zalewasz gracza przeliczeniami);
+3. **mieć rodzeństwo pod kontrolą** — gdy naprawiasz jeden efekt rodziny,
+   przejrzyj pozostałe: czy też ogłaszają skutek (L72)?
+
+**Sygnał ostrzegawczy:** log mówi „bez efektu”, a stan gry się zmienił. Szukaj
+efektu, który pisze w `state.*` bez `state.events.push` (`grep -n "state\.\w* = \[" src/engine/effects.js` i sprawdź, czy obok idzie zdarzenie).
+
 ## L86 (2026-08-28) — Warstwa prezentacyjna potrzebuje WŁASNEJ pauzy: obserwator zdarzenia nie może zakładać, że gra na niego czeka
 
 **Objaw (zgłoszenie właściciela, tryb wysoko-graficzny):** „Rzuciłem czar, a
@@ -156,6 +203,17 @@ odhacz listę PRZED pierwszym uruchomieniem pełnego testu:
 **Sformalizowane w:** sekcja „Obowiązki przy nowym deskryptorze" w
 `docs/cards/HOW_TO_ADD_CARD.md`, strażniki M122/M134/M157.
 
+
+**Dopisek 2 (M255, 2026-08-29 — pętla jakości Żywym Testerem):** czwarte
+dowiązanie (etykieta logu) nie miało ŻADNEGO strażnika, więc tabela
+`ABILITY_EFFECT_LABELS` w session.js dziurawiała się latami: 29 z 52 typów
+efektów zdolności AKTYWOWANYCH nie miało opisu (log pokazywał gołą nazwę karty
+— „Nieprzyjaciel aktywuje zdolność: Thunderstaff”). Strażnik `M255/C1`
+(test/m255-petla-jakosci.test.js) przechodzi po katalogu i żąda opisu dla
+każdego typu efektu zdolności aktywowanej — wzorzec żywcem z A2a/A2b (M179),
+tylko dla efektów zamiast keywordów. Wniosek: dowiązanie BEZ strażnika dziurawieje
+nawet wtedy, gdy autor nowej karty o nim pamięta (Batch 51 dodał oba wpisy do
+etykiet PANELU w render.js — druga tabela, ten sam kształt, zero powiązania).
 
 ## L82 (2026-08-28) — Test UI wiąże SKUTEK z hakiem semantycznym (klasa/`data-*`), copy pina się OSOBNYM testem
 
@@ -1058,6 +1116,18 @@ To ten sam wzorzec co M96 (cele-gracze), M135 (scry), M138/Z1
 się dobrze, a bot „głupieje" na tej jednej karcie. Szybka sonda:
 `grep -n "'<typ>'\` w wycenie` przed merge. Audyt Żywym Testerem po batchu
 z nowymi mechanikami obowiązkowo obejmuje partie, gdzie BOT ma te karty.
+
+**Dopisek (M255/E, 2026-08-29 — pętla jakości, Thunderstaff):** klasa wraca przy
+efektach, których odbiorcą jest ZBIÓR, nie cel. `{2}, {T}: atakujące stwory
+dostają +1/+0 do końca tury` nie miało wpisu w `TEMPORARY_PUMP_EFFECTS`, więc
+zdolność dostawała gołą bazę (`score = 2`) i bot aktywował ją w Głównej 1, gdy
+nikt nie atakował — 2 many + tap na efekt wygasły w cleanup (transkrypt
+`tarkir-wur vs warhammer-wu`, tura 16). Po dopisaniu typu do tabeli okazało się,
+że wspólny mianownik potrzebuje jeszcze **reprezentanta zbioru**: `recipient`
+był źródłem (artefaktem), więc `combatTrickWindow` nie zachodził i bot dostałby
+karę „poza oknem walki” ZAWSZE. Reprezentant = własny atakujący z `view.combat`
+(ADR 0017); dalej obowiązują te same reguły co dla pumpa z pojedynczym celem.
+Test anty-over-fix (M255/E2) pilnuje, że bot nadal UŻYWA zdolności w walce.
 
 ## L1 (2026-08-14) — „Bot robi coś głupiego" bywa ślepotą, nie głupotą
 
