@@ -1,6 +1,7 @@
 # Rejestr decyzji architektonicznych (ADR)
 
-ADR zapisują decyzje, których nie powinno się odtwarzać z historii czatu. Każdy dokument opisuje kontekst, wybór i jego konsekwencje.
+ADR zapisują decyzje, których nie powinno się odtwarzać z historii czatu. Każdy
+dokument opisuje kontekst, wybór i jego konsekwencje.
 
 ## Statusy
 
@@ -27,22 +28,22 @@ ADR zapisują decyzje, których nie powinno się odtwarzać z historii czatu. Ka
 | [0011](0011-modular-sources-single-file-artifact.md) | Modularne źródła, jednoplikowy artefakt i dwa tryby uruchomienia | Zaakceptowana |
 | [0012](0012-deck-builder-and-text-deck-format.md) | Kreator talii i wspólny tekstowy format talii | Zaakceptowana |
 | [0013](0013-agent-arena-sessions-and-mandatory-handoff.md) | Sesje Agent Arena i obowiązkowy handoff po scaleniu PR | Zaakceptowana |
-| [0014](0014-card-definitions-single-module.md) | Definicje kart w pojedynczym module `src/cards/card-data.js` (zastępuje §1 ADR 0010) | Zaakceptowana |
-| [0015](0015-colored-mana-pool.md) | Kolorowa pula many (MtG-correct; zastępuje uproszczenie bezbarwnej puli z M2) | Proponowana |
+| [0014](0014-card-definitions-single-module.md) | Definicje kart w module `src/cards/card-data.js` (zastępuje §1 ADR 0010) | Zaakceptowana |
+| [0015](0015-colored-mana-pool.md) | Kolorowa pula many (MtG-correct; zastępuje bezbarwną pulę z M2) | Proponowana |
 | [0016](0016-session-audit-and-surgical-patching.md) | Audyt poprzedniego PR na starcie sesji i chirurgiczne patchowanie | Zaakceptowana |
-| [0017](0017-playerview-completeness-contract.md) | Kompletność informacji publicznych w PlayerView (kontrakt widok↔kontroler; uzupełnia 0003) | Zaakceptowana |
+| [0017](0017-playerview-completeness-contract.md) | Kompletność informacji publicznych w PlayerView (uzupełnia 0003) | Zaakceptowana |
 | [0018](0018-benchmark-full-only-on-owner-command.md) | Pełny benchmark B0 wyłącznie na wyraźną komendę właściciela; CLI domyślnie profil szybki | Zaakceptowana |
 | [0019](0019-test-tiers-and-generic-catalog-coverage.md) | Tiers testów — szybki rdzeń, wolny manifest i generyczne pokrycie katalogu | Zaakceptowana |
 | [0020](0020-mandatory-session-workflow-pr-audit-incremental.md) | Obowiązkowy tryb sesji agentskiej — PR, audyt, inkrementalne commity | Zaakceptowana |
 | [0021](0021-default-session-work-no-queue-question.md) | Domyślna praca sesji — nie pytaj właściciela o kolejkę | Zaakceptowana |
 | [0022](0022-full-oracle-or-unsupported.md) | Katalog kart — pełny Oracle albo brak wsparcia (zastępuje interpretację M111 o „świadomym długu") | Zaakceptowana |
-| [0023](0023-decks-per-plan-and-benchmark-sample.md) | Talie per PLAN (worki dla małych planów), singleton, landy 1:2; testy i benchmark na stałej próbce talii jednoplanowych | Zaakceptowana |
+| [0023](0023-decks-per-plan-and-benchmark-sample.md) | Talie per PLAN (worki dla małych planów), singleton, landy 1:2; testy i benchmark na stałej próbce | Zaakceptowana |
 | [0024](0024-deck-split-by-colors-and-rotating-benchmark.md) | Podział talii planowej ≥30 kart nielandowych po kolorach (tożsamość bezkolorowych z produkcji many); rotująca auto-próbka benchmarku | Zaakceptowana |
 
 ## Gdzie zapisać regułę (ADR vs LESSONS vs handoff)
 
-Uwaga właściciela (2026-08-14): reguły trwałe nie mogą mieszkać w handoffie,
-bo handoff opisuje JEDNĄ sesję i traci aktualność. Podział:
+Uwaga właściciela (2026-08-14): reguły trwałe nie mogą mieszkać w handoffie, bo
+handoff opisuje JEDNĄ sesję i traci aktualność.
 
 | Rodzaj treści | Miejsce |
 |---|---|
@@ -56,14 +57,11 @@ Spójności rejestru ADR i formatu lekcji pilnuje `test/docs-decisions.test.js`.
 
 ## Kiedy utworzyć ADR
 
-ADR jest potrzebny, gdy wybór:
-
-- trudno będzie później odwrócić;
-- wpływa na kilka modułów lub sposób dodawania kart;
-- dotyczy modelu stanu, protokołu, bezpieczeństwa informacji, persistence albo deploymentu;
-- rozstrzyga spór między istotnymi alternatywami.
-
-Nie potrzeba ADR dla zwykłej implementacji lokalnej, nazwy prywatnej funkcji czy naprawy błędu.
+Gdy wybór: trudno będzie go odwrócić; wpływa na kilka modułów lub sposób
+dodawania kart; dotyczy modelu stanu, protokołu, bezpieczeństwa informacji,
+persistence albo deploymentu; rozstrzyga spór między istotnymi alternatywami.
+Nie potrzeba ADR dla zwykłej implementacji lokalnej, nazwy prywatnej funkcji czy
+naprawy błędu.
 
 ## Szablon
 
@@ -101,4 +99,5 @@ Nie potrzeba ADR dla zwykłej implementacji lokalnej, nazwy prywatnej funkcji cz
 - ...
 ```
 
-Po zaakceptowaniu nie zmieniamy znaczenia historycznej decyzji. Jeżeli kierunek się zmieni, nowy ADR zastępuje poprzedni.
+Po zaakceptowaniu nie zmieniamy znaczenia historycznej decyzji. Jeżeli kierunek
+się zmieni, nowy ADR zastępuje poprzedni.
