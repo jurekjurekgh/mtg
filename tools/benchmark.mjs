@@ -307,7 +307,16 @@ export function runBenchmark({
             legs.push({ firstBot: botB, firstDeck: deckY, secondBot: botA, secondDeck: deckX });
           }
           for (const leg of legs) {
-            const match = playBenchMatch({ ...leg, seed, deckLists, registry, maxCommands, heuristicWeights, heuristicParams, collectProxy });
+            let match;
+            try {
+              match = playBenchMatch({ ...leg, seed, deckLists, registry, maxCommands, heuristicWeights, heuristicParams, collectProxy });
+            } catch (error) {
+              // M255/F: wyjątek z kontrolera musi nieść ADRES meczu — bez
+              // niego pełna macierz (23 400 meczów) kończy się po ~50 min
+              // komunikatem, którego nie da się powtórzyć.
+              const adres = `${leg.firstBot}(${leg.firstDeck}) vs ${leg.secondBot}(${leg.secondDeck}), seed ${seed}, maxCommands ${maxCommands}`;
+              throw new Error(`${error.message} — mecz: ${adres}`);
+            }
             recordMatch(aggregate.board, match);
             recordMatch(deckBoard, match);
             recordMatch(totals.get(botA), match);

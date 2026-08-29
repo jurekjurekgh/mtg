@@ -272,3 +272,113 @@ test('M255/A4 (anty-over-fix): „stats_modified” bez „do końca tury” zos
   assert.equal(isBotMoveNoise({ type: 'card_drawn', source: 'draw_step', playerId: 'p2' }, { humanId: 'p1' }), true,
     'dobranie bota w kroku dobierania to szum (M100/E8)');
 });
+
+// ------------------------------------------------------------------ F. Pełna macierz benchmarku
+//
+// Pełna macierz (`node tools/benchmark.mjs --full`, 23 400 meczów) nie
+// dobiegła końca: aggro-bot rzucał „nie znalazł ruchu mimo legalnych komend",
+// a komunikat nie mówił NIC o tym, który mecz i jaki stan go wywołał. Z kontekstem
+// (poprawka narzędzia poniżej) wyszło: tura 15, combat/combat_damage, priorytet p2,
+// komendy: activate_ability + concede — obrońca NIE MA PASS ani resolve_combat.
+// `blockedByCombat` z M172/C zakazywał passu każdemu graczowi, a jedyna
+// alternatywa (`resolve_combat`) jest oferowana wyłącznie aktywnemu. Obrońca
+// zostawał z samym `concede` (martwy punkt: ani gra, ani benchmark nie idą dalej).
+
+/** Walka: 3/3 (p1, atakujący) zablokowany przez 1/1 (p2, obrońca), krok obrażeń. */
+function combatDamageWindow({ passes = 1, priority = 'p2' } = {}) {
+  const state = game('p1', 'declare_attackers');
+  put(state, 'atk', 'hill-giant', 'p1'); // 3/3 wanilia
+  put(state, 'blk', 'token_soldier', 'p2'); // 1/1
+  const atak = execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] });
+  assert.ok(atak.ok, 'deklaracja ataku');
+  state.turn.priorityPlayerId = 'p2';
+  const blok = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['blk'] } });
+  assert.ok(blok.ok, 'deklaracja bloku');
+  assert.equal(state.turn.step, 'combat_damage', 'krok obrażeń');
+  assert.equal(state.zones.stack.length, 0, 'pusty stos');
+  state.turn.passes = passes;
+  state.turn.priorityPlayerId = priority;
+  return state;
+}
+
+function offerTypes(state, playerId) {
+  return [...new Set(playerView(state, playerId).legalCommands.map((cmd) => cmd.type))].sort();
+}
+
+test('F1 — obrońca w kroku obrażeń DOSTAJE pass (bez niego zostaje z samym concede)', () => {
+  const state = combatDamageWindow({ passes: 1, priority: 'p2' });
+  const oferta = offerTypes(state, 'p2');
+  assert.ok(oferta.includes('pass_priority'), `obrońca musi mieć pass; oferta: ${oferta.join(', ')}`);
+});
+
+test('F2 — atakujący w tym samym oknie NADAL nie ma pass (M172/C nienaruszone): jedyna droga to resolve_combat', () => {
+  const state = combatDamageWindow({ passes: 1, priority: 'p1' });
+  const oferta = offerTypes(state, 'p1');
+  assert.ok(!oferta.includes('pass_priority'), `pass domykający nadal zakazany; oferta: ${oferta.join(', ')}`);
+  assert.ok(oferta.includes('resolve_combat'), 'atakujący ma resolve_combat');
+  // Oferta = walidacja (L48): execute musi odrzucić to, czego nie oferowaliśmy.
+  assert.equal(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok, false, 'execute odrzuca domykający pass');
+});
+
+test('F3 — pass obrońcy nie domyka KROKU (obrażenia nie mogą zostać pominięte): priorytet wraca do atakującego', () => {
+  const state = combatDamageWindow({ passes: 1, priority: 'p2' });
+  const pass = execute(state, { type: 'pass_priority', playerId: 'p2' });
+  assert.ok(pass.ok, 'pass obrońcy jest legalny');
+  assert.equal(state.turn.step, 'combat_damage', 'krok NIE domknięty — inaczej obrażenia by nie padły');
+  assert.equal(state.turn.priorityPlayerId, 'p1', 'priorytet wraca do aktywnego gracza');
+  assert.ok(state.turn.passes >= state.players.length, 'licznik zostaje domknięty (pass aktywnego odrzucany)');
+  assert.equal(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok, false, 'atakujący nie ominie obrażeń passem');
+  const combat = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
+  assert.ok(combat.ok, 'resolve_combat');
+  assert.equal(state.turn.step, 'end_of_combat', 'po obrażeniach koniec walki');
+  const events = combat.events ?? [];
+  assert.ok(events.filter((e) => e.type === 'damage_dealt').length >= 2, 'obrażenia walki padły');
+  assert.ok(events.some((e) => e.type === 'creature_destroyed'), 'bloker 1/1 ginie od 3/3');
+});
+
+test('F4 — mecz, który wykładał pełną macierz (random/final-fantasy vs aggro/alara, seed 1001), kończy się', async () => {
+  const [{ runSimulation }, { setupCardMatch }, bench, fs] = await Promise.all([
+    import('../src/engine/simulation.js'),
+    import('../src/cards/materialize.js'),
+    import('../tools/benchmark.mjs'),
+    import('node:fs'),
+  ]);
+  const parse = (await import('../src/cards/deck-text.js')).parseDeckText;
+  const seed = 1001;
+  const finalFantasy = parse(fs.readFileSync('decks/final-fantasy.txt', 'utf8'), REGISTRY).cardIds;
+  const alara = parse(fs.readFileSync('decks/alara.txt', 'utf8'), REGISTRY).cardIds;
+  const state = setupCardMatch({
+    seed,
+    players: [{ id: 'p1' }, { id: 'p2' }],
+    decks: new Map([['p1', finalFantasy], ['p2', alara]]),
+    registry: REGISTRY,
+  });
+  // Bez poprawki F: aggro (p2, obrońca) w 15. turze nie ma żadnego ruchu →
+  // wyjątek kontrolera. Z poprawką: mecz dochodzi do końca.
+  const { state: final } = runSimulation({
+    state,
+    controllers: new Map([
+      ['p1', bench.BENCH_BOT_FACTORIES.random(seed + 1, { opponentDeck: alara })],
+      ['p2', bench.BENCH_BOT_FACTORIES.aggro(seed + 2, { opponentDeck: finalFantasy })],
+    ]),
+    maxCommands: 8000,
+  });
+  assert.equal(final.status, 'finished', 'mecz kończy się (przed poprawką: wyjątek „nie znalazł ruchu”)');
+  assert.ok(final.winnerId, 'jest zwycięzca');
+});
+
+test('F5 — wyjątek aggro-bota niesie kontekst (krok/komendy): 50 min macierzy bez adresu to ślepy trop', async () => {
+  const { createAggroBot } = await import('../src/controllers/aggro-bot.js');
+  const bot = createAggroBot(255);
+  const view = {
+    playerId: 'p2',
+    turn: { number: 15, phase: 'combat', step: 'combat_damage' },
+    zones: { battlefield: [], hand: [], graveyard: [] },
+    legalCommands: [{ type: 'activate_ability', objectId: 'permanent-44', abilityIndex: 1 }, { type: 'concede' }],
+  };
+  let blad = null;
+  try { bot.chooseCommand(view); } catch (error) { blad = error; }
+  assert.ok(blad, 'kontroler zgłasza brak ruchu (okno bez pass i bez resolve_combat)');
+  assert.match(blad.message, /combat_damage/, 'komunikat mówi, w którym kroku');
+  assert.match(blad.message, /activate_ability/, 'komunikat wymienia komendy, których nie rozpoznał');
+});

@@ -550,6 +550,25 @@ export function addObject(state, config) {
   return placed;
 }
 
+/**
+ * M255/F — pass DOMYKAJĄCY rundę w kroku obrażeń combat. Reguła w jednej
+ * funkcji, bo oferta (legalCommands) i walidacja (execute) muszą się
+ * zgadzać (L48), a rozjechanie dwóch kopii to znana klasa błędu (L41).
+ *
+ * Zakaz dotyczy WYŁĄCZNIE gracza AKTYWNEGO: tylko on ma alternatywę
+ * (`resolve_combat`, CR 510.4 w umowie tego silnika). Obrońca, który
+ * spasuje w tym samym oknie, NIE domyka kroku — jego pass oddaje
+ * priorytet aktywnemu (obsługa poniżej), więc blokowanie go było ślepą
+ * uliczką: zostawał z samym `concede` i pełna macierz benchmarku
+ * (23 400 meczów) kończyła się wyjątkiem aggro-bota „nie znalazł ruchu
+ * mimo legalnych komend”.
+ */
+function closingCombatPassBlocked(state, playerId) {
+  return state.turn.step === 'combat_damage' && Boolean(state.combat) && state.zones.stack.length === 0
+    && state.turn.passes + 1 >= state.players.length
+    && state.turn.activePlayerId === playerId;
+}
+
 function reject(reason) { return { ok: false, events: [event('command_rejected', { reason })] }; }
 
 /**
@@ -4096,8 +4115,9 @@ export function execute(state, input) {
     // M172/C (CR 509.4): pojedynczy pass (obrońca → atakujący) jest legalny —
     // odrzucamy dopiero pass DOMYKAJĄCY pełną rundę (pominąłby obrażenia;
     // atakujący ma wtedy jedyną drogę turową: resolve_combat).
-    if (state.turn.step === 'combat_damage' && state.combat && state.zones.stack.length === 0
-      && state.turn.passes + 1 >= state.players.length) return reject('combat_unresolved');
+    // M255/F: zakaz dotyczy tylko AKTYWNEGO gracza — obrońca ma prawo
+    // spasować (closingCombatPassBlocked), inaczej ślepa uliczka.
+    if (closingCombatPassBlocked(state, cmd.playerId)) return reject('combat_unresolved');
     const current = state.players.findIndex((p) => p.id === state.turn.priorityPlayerId);
     const next = state.players[(current + 1) % state.players.length].id;
     state.turn.passes += 1;
@@ -4123,6 +4143,16 @@ export function execute(state, input) {
         if (!state.pendingScry && !state.pendingSurveil && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingTriggerTargets.some((p) => triggerTargetDecisionPending(state, p)) && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingColorChoice && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !state.pendingGraveyardToTop && state.pendingBackups.length === 0 && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && state.pendingDeliriumTargets.length === 0 && state.pendingMentorTargets.length === 0 && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingDamageDivision && !state.pendingReplacementChoice) {
           state.turn.priorityPlayerId = state.turn.activePlayerId;
         }
+      } else if (state.turn.step === 'combat_damage' && state.combat) {
+        // M255/F: pełna runda passów w kroku obrażeń NIE domyka kroku —
+        // obrażenia zadaje wyłącznie `resolve_combat` aktywnego gracza
+        // (inaczej pass pomijałby damage: regresja M172/C). Priorytet wraca
+        // do AKTYWNEGO gracza, a licznik passów ZOSTAJE domknięty, więc jego
+        // pass jest nadal odrzucany (closingCombatPassBlocked) i jedyną
+        // drogą jest resolve_combat. Przed poprawką obrońca nie miał ani
+        // pass, ani resolve_combat — zostawał z samym `concede`.
+        state.turn.priorityPlayerId = state.turn.activePlayerId;
+        events.push(event('priority_passed', { playerId: cmd.playerId, nextPlayerId: state.turn.activePlayerId }));
       } else {
         const previousTurnNumber = state.turn.number;
         state.turn = nextTurnStep(state.turn, state.players);
@@ -5041,8 +5071,9 @@ export function playerView(state, playerId) {
     // obrażeń combat — jedyna droga dalej to wtedy resolve_combat (albo
     // koncesja). M172/C (CR 509.4, L48 oferta=walidacja): pojedynczy pass
     // (okno odpowiedzi obrońcy po deklaracji bloków) jest oferowany.
-    const blockedByCombat = state.turn.step === 'combat_damage' && state.combat && state.zones.stack.length === 0
-      && state.turn.passes + 1 >= state.players.length;
+    // M255/F: ta sama reguła co w execute (closingCombatPassBlocked) —
+    // obrońca MUSI dostać pass, bo nie ma `resolve_combat`.
+    const blockedByCombat = closingCombatPassBlocked(state, playerId);
     if (hasPriority && !blockedByCombat && firstDecisionOwner == null && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
       && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingSuspendCast && !state.pendingReboundCast && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingDamageDivision && !state.pendingReplacementChoice && !state.pendingUndercityRoute && !state.pendingFabricate && !state.pendingEscapeExile) trailingCommands.push(command('pass_priority', playerId));
   }

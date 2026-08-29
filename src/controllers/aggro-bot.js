@@ -207,7 +207,15 @@ export function createAggroBot() {
       if (anyResolve) return anyResolve;
       const pass = byType(view, 'pass_priority')[0];
       if (pass) return pass;
-      throw new Error('Kontroler nie znalazł ruchu mimo legalnych komend');
+      // M255/F (pętla jakości): wyjątek bez kontekstu po ~50 min liczenia
+      // pełnej macierzy (23 400 meczów) nie mówił NIC o tym, który mecz i
+      // jaki stan go wywołał — diagnoza wymagała zgadywania. Kontroler WIDZI
+      // komendy, więc niech o nich powie (wzorzec L73: narzędzie ma
+      // raportować to, co widziało, nie tylko że mu się nie udało).
+      const types = [...new Set((view.legalCommands ?? []).map((c) => c.type))].sort();
+      throw new Error(`Kontroler nie znalazł ruchu mimo legalnych komend`
+        + ` [tura ${view.turn?.number ?? '?'} · ${view.turn?.phase ?? '?'}/${view.turn?.step ?? '?'}`
+        + ` · priorytet: ${view.playerId} · komendy: ${types.join(', ') || 'BRAK'}]`);
     },
   });
 }
