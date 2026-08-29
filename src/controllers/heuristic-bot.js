@@ -1670,7 +1670,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // premiowała ją jak każdą aurę, bo patrzyła tylko na to, czy
           // gospodarz jest nasz.
           if (auraIsHostile(descriptor, card ? cardDef(card.cardId) : undefined)) {
-            if (!target) return finish(-50);
+            if (!target) return finish(-P.auraNoTargetPenalty);
             const worth = (target.power ?? 0) + (target.toughness ?? 0);
             // M200/H (uwaga właściciela, Grounded): aura, KTÓRA ODBIERA
             // keyword (losesKeywords), na stworze bez niego jest jałowa —
@@ -1683,13 +1683,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const lostKeywords = descriptor?.losesKeywords ?? [];
             if (lostKeywords.length > 0
               && !lostKeywords.some((k) => (target.keywords ?? []).includes(k))) {
-              return finish(-80 - worth);
+              return finish(-P.auraLosesKeywordsWastedPenalty - P.auraHostileWorthWeight * worth);
             }
             return finish(target.controllerId === view.playerId
-              ? -70 - worth              // unieruchamiam własnego stwora
-              : 55 + 2 * worth);         // unieruchamiam stwora wroga
+              ? -P.auraHostileOwnPenalty - P.auraHostileWorthWeight * worth      // unieruchamiam własnego stwora
+              : P.auraHostileEnemyBase + P.auraHostileEnemyWorthWeight * worth); // unieruchamiam stwora wroga
           }
-          if (!target || target.controllerId !== view.playerId) return finish(-50);
+          if (!target || target.controllerId !== view.playerId) return finish(-P.auraNoTargetPenalty);
           // M209 (audyt M207, Guildscorn Ward): aura, ktorej CALA wartoscia
           // jest OCHRONA przed konkretna jakoscia (CR 702.16b-e), jest jalowa,
           // gdy przeciwnik nie ma czym w nia uderzyc. Bot rzucal „protection
@@ -1741,18 +1741,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // silnik przy rozstrzyganiu ochrony (L41: jedna reguła, jeden
             // odczyt) — bot nie ma wlasnej kopii semantyki „multicolored".
             const threats = known.filter((o) => sourceHasProtectionQuality(protectionQuality, o)).length;
-            // Kara musi PRZEBIC baze aury (~66) — inaczej jest dekoracja
-            // (L3/L54). Brak zagrozen = nie rzucaj, trzymaj karte w rece.
-            if (threats === 0) return finish(-40);
+            // Kara musi PRZEBIC baze aury (~P.auraBase) — inaczej jest
+            // dekoracja (L3/L54). Brak zagrozen = nie rzucaj, trzymaj karte w rece.
+            if (threats === 0) return finish(-P.auraProtectionNoThreatPenalty);
             // Sa zagrozenia: wartosc rosnie z ich liczba, ale ochrona bez
             // pumpa nie jest tempem — zostaje ponizej zwyklego buffa.
             // M235: flash-aura ochronna poza oknem walki — kara (trzymaj kartę).
-            return finish(20 + 12 * threats + (target.power ?? 0) - offWindowFlashProtectionPenalty);
+            return finish(P.auraProtectionBase + P.auraProtectionThreatWeight * threats + (target.power ?? 0) - offWindowFlashProtectionPenalty);
           }
           const pump = pumpDesc;
           // M235: chooseColor-protection (Benevolent Blessing) trafia tu (nie do
           // isPureProtection) — kara okna dotyczy też jej, gdy jest flash i poza walką.
-          return finish(66 + 2 * ((target.power ?? 0) + pump.power) + ((target.toughness ?? 0) + pump.toughness)
+          return finish(P.auraBase + P.auraBuffWorthWeight * ((target.power ?? 0) + pump.power) + ((target.toughness ?? 0) + pump.toughness)
             - offWindowFlashProtectionPenalty);
         }
         const def = card ? cardDef(card.cardId) : undefined;

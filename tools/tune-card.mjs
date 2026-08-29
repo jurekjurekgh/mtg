@@ -57,10 +57,19 @@ export const DESCRIPTOR_PARAMS = Object.freeze({
     // M237/4 — wycena damage jest modelem per-cel, nie pokrętłami).
     'drawCardValue',
   ]),
+  // M257 r4/B6 T1: rodzina „aura” wpięta — ekstrakcja stałych bloku aury
+  // scoreCommand (buff/hostile/losesKeywords/protection) pod nazwy.
+  aura: Object.freeze([
+    'auraBase', 'auraBuffWorthWeight',
+    'auraHostileEnemyBase', 'auraHostileEnemyWorthWeight',
+    'auraHostileOwnPenalty', 'auraHostileWorthWeight',
+    'auraNoTargetPenalty', 'auraLosesKeywordsWastedPenalty',
+    'auraProtectionNoThreatPenalty', 'auraProtectionBase', 'auraProtectionThreatWeight',
+    'flashProtectionAuraOffWindowPenalty',
+  ]),
   // Rodziny mechanik czekające na własne parametry (kolejne sesje T1):
   // surge:   ['surgeBias'],
   // manifest:['manifestEarlyBias'],
-  // aura:    ['auraBase', ...],
 });
 
 /**
