@@ -6,9 +6,9 @@
 
 ## Kontekst
 
-Talia ma być możliwa do zbudowania na iPadzie, ale nie może zależeć od `localStorage`
-ani od arkusza Google w czasie działania. Talia powinna być jednocześnie łatwa do
-przejrzenia w PR, wklejenia do czatu i zapisania w repozytorium.
+Talia ma być możliwa do zbudowania na iPadzie, ale nie może zależeć od
+`localStorage` ani od arkusza Google w czasie działania. Ma być jednocześnie
+łatwa do przejrzenia w PR, wklejenia do czatu i zapisania w repozytorium.
 
 ## Decyzja
 
@@ -20,9 +20,10 @@ Po dodaniu pierwszych obsługiwanych kart powstanie kreator talii w UI, który:
 - waliduje limit czterech kopii dla kart niebędących landami podstawowymi;
 - pozwala na dowolną liczbę landów podstawowych;
 - waliduje ustalony rozmiar talii, gdy format zostanie przyjęty;
-- udostępnia przyciski „kopiuj” i „pobierz”.
+- udostępnia przyciski „kopiuj" i „pobierz".
 
-Format zapisu, eksportu, kopiowania i pliku talii w repozytorium jest dokładnie taki sam:
+Format zapisu, eksportu, kopiowania i pliku talii w repozytorium jest dokładnie
+taki sam:
 
 ```text
 # Nazwa talii
@@ -31,34 +32,34 @@ Format zapisu, eksportu, kopiowania i pliku talii w repozytorium jest dokładnie
 4x Lightning Bolt
 ```
 
-Nie powstaje osobny JSON dla talii. Pliki talii w repozytorium są tekstem w tym formacie.
-
-Definicje kart w repozytorium zawierają także pola `Set` i `Plan` przepisane z kolekcji.
-Aplikacja nie odpytuje arkusza Google w czasie działania.
+Nie powstaje osobny JSON dla talii — pliki talii w repo są tekstem w tym
+formacie. Definicje kart zawierają też pola `Set` i `Plan` przepisane z
+kolekcji; aplikacja nie odpytuje arkusza Google w czasie działania.
 
 ## Plan wdrożenia
 
-Kreator i parser talii wchodzą po pierwszych obsługiwanych kartach, razem z registry
-statusu wsparcia i pierwszym formatem talii. Do tego czasu engine rozwija się na
-syntetycznych obiektach testowych, bez UI kreatora.
+Kreator i parser talii wchodzą po pierwszych obsługiwanych kartach, razem z
+registry statusu wsparcia i pierwszym formatem talii. Do tego czasu engine
+rozwija się na syntetycznych obiektach testowych, bez UI kreatora.
 
 ## Konsekwencje
 
 ### Pozytywne
 
-- Talia jest przenośna między UI, czatem i repozytorium.
-- Brak utraty danych po wyczyszczeniu `localStorage`.
-- Repozytorium pozostaje źródłem prawdy dla danych kart i talii.
-- Kreator nie proponuje kart, których engine nie obsługuje.
+- Talia przenośna między UI, czatem i repozytorium; brak utraty danych po
+  wyczyszczeniu `localStorage`.
+- Repo pozostaje źródłem prawdy dla danych kart i talii; kreator nie proponuje
+  kart, których engine nie obsługuje.
 
 ### Koszty i ryzyka
 
-- Zmiana talii wymaga pobrania pliku albo commita; nie jest to edycja trwała w przeglądarce.
-- Szczegółowa definicja „landu podstawowego” musi być dostępna w danych karty.
-- Ostateczny rozmiar talii i nazwa pola `Plan` muszą zachować zgodność z kolekcją właściciela.
+- Zmiana talii wymaga pobrania pliku albo commita — nie jest to edycja trwała w
+  przeglądarce.
+- Szczegółowa definicja „landu podstawowego" musi być dostępna w danych karty.
+- Ostateczny rozmiar talii i nazwa pola `Plan` muszą zachować zgodność z
+  kolekcją właściciela.
 
 ## Powiązania
 
-- [ADR 0010 — dane reguł kart w repozytorium](0010-card-rules-data-in-repository.md)
-- [ADR 0011 — talie wersjonowane i brak trwałości localStorage](0011-modular-sources-single-file-artifact.md)
+- [ADR 0010](0010-card-rules-data-in-repository.md) · [ADR 0011](0011-modular-sources-single-file-artifact.md)
 - [PROJECT_HISTORY](../PROJECT_HISTORY.md)
