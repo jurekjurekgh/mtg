@@ -113,6 +113,12 @@ test('krok dobierania oferuje wyłącznie akceptowane komendy', () => {
 
 test('każdy krok tury oferuje co najmniej jedną legalną komendę', () => {
   const state = freshState();
+  // M257 r4/A (uwaga właściciela): bez kreatur krok `declare_attackers` jest
+  // przechodzony AUTOMATYCZNYM przejściem (CR 508.1 — deklaracja pusta,
+  // decyzja nie istnieje), więc w pętli pass-only nie „istnieje" na starcie
+  // żadnej iteracji. Stwór u aktywnego gracza tury 1 sprawia, że krok jest
+  // krokiem DECYZJI (oferta ataku) i automat go odwiedza.
+  addObject(state, { id: 'c-p1', instanceId: 'icp1', cardId: 'C-P1', controllerId: 'p1', zone: 'battlefield', kind: 'creature', power: 2, toughness: 2 });
   const visited = new Set();
   // Pełna runda passów obu graczy przez wszystkie 12 kroków automatu.
   for (let i = 0; i < 24; i += 1) {

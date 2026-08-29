@@ -220,7 +220,7 @@ function isLegalAttacker(state, object, playerId) {
   return true;
 }
 
-export function declareAttackers(state, playerId, attackerIds) {
+export function declareAttackers(state, playerId, attackerIds, { pushToState = true } = {}) {
   if (state.turn.phase !== 'combat' || state.turn.step !== 'declare_attackers') throw new Error('Nieprawidłowy krok deklaracji atakujących');
   if (state.turn.activePlayerId !== playerId) throw new Error('Nieaktywny gracz nie deklaruje atakujących');
   if (!Array.isArray(attackerIds) || new Set(attackerIds).size !== attackerIds.length) throw new Error('Atakujący nie może wystąpić więcej niż raz');
@@ -260,7 +260,11 @@ export function declareAttackers(state, playerId, attackerIds) {
     playerId, attackerIds: attackerIds.slice(),
     attackerCardIds: attackerIds.map((id) => state.objects.get(id)?.cardId ?? null),
   });
-  state.events.push(e);
+  // M257 r4/A: `pass_priority` zbiera eventy lokalnie i dopisuje je do
+  // state.events dopiero na końcu komendy — natychmiastowy push wstawiłby
+  // auto-deklarację PRZED passami i przestawił kolejność w logu (ten sam
+  // wzorzec co `untapStepTurnBasedAction`/pushToState).
+  if (pushToState) state.events.push(e);
   return e;
 }
 

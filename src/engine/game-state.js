@@ -564,7 +564,11 @@ export function addObject(state, config) {
  * mimo legalnych komend”.
  */
 function closingCombatPassBlocked(state, playerId) {
-  return state.turn.step === 'combat_damage' && Boolean(state.combat) && state.zones.stack.length === 0
+  // M257 r4/A: walka z ZERO atakujących nie może zadać obrażeń (CR 510.1c) —
+  // „pass nie pomija obrażeń" (M172/C) nie ma tu czego chronić, więc domykający
+  // pass przechodzi (bez niego pętla pass-only zastygałaby w combat_damage).
+  return state.turn.step === 'combat_damage' && Boolean(state.combat) && state.combat.attackers.length > 0
+    && state.zones.stack.length === 0
     && state.turn.passes + 1 >= state.players.length
     && state.turn.activePlayerId === playerId;
 }
@@ -4179,7 +4183,7 @@ export function execute(state, input) {
         if (!state.pendingScry && !state.pendingSurveil && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingTriggerTargets.some((p) => triggerTargetDecisionPending(state, p)) && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingColorChoice && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !state.pendingGraveyardToTop && state.pendingBackups.length === 0 && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && state.pendingDeliriumTargets.length === 0 && state.pendingMentorTargets.length === 0 && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingDamageDivision && !state.pendingReplacementChoice) {
           state.turn.priorityPlayerId = state.turn.activePlayerId;
         }
-      } else if (state.turn.step === 'combat_damage' && state.combat) {
+      } else if (state.turn.step === 'combat_damage' && state.combat && state.combat.attackers.length > 0) {
         // M255/F: pełna runda passów w kroku obrażeń NIE domyka kroku —
         // obrażenia zadaje wyłącznie `resolve_combat` aktywnego gracza
         // (inaczej pass pomijałby damage: regresja M172/C). Priorytet wraca
@@ -4187,6 +4191,8 @@ export function execute(state, input) {
         // pass jest nadal odrzucany (closingCombatPassBlocked) i jedyną
         // drogą jest resolve_combat. Przed poprawką obrońca nie miał ani
         // pass, ani resolve_combat — zostawał z samym `concede`.
+        // M257 r4/A: wyjątek — walka bez atakujących nie ma obrażeń do
+        // „pominięcia" (CR 510.1c); przechodzi ogólna ścieżka nextTurnStep.
         state.turn.priorityPlayerId = state.turn.activePlayerId;
         events.push(event('priority_passed', { playerId: cmd.playerId, nextPlayerId: state.turn.activePlayerId }));
       } else {
@@ -4197,6 +4203,22 @@ export function execute(state, input) {
         // kartę SAM, bez decyzji i bez stosu (M101/A). Wykonujemy zaraz po
         // wejściu w krok, zanim ktokolwiek dostanie priorytet.
         events.push(...drawStepTurnBasedAction(state));
+        // M257 r4/A (uwaga właściciela): „Deklaracja atakujących" bez
+        // kreatur. CR 508.1: gdy aktywny gracz nie ma ŻADNEGO legalnego
+        // atakującego, deklaracja jest pusta i AUTOMATYCZNA — decyzja nie
+        // istnieje (dotąd generator wystawiał jedną komendę z pustym
+        // zestawem, bo legalAttackerOptions → [[]]). Auto-przejście przy
+        // wejściu w krok, wzorzec auto-dobrania (CR 504.1): eventy lokalnie
+        // (pushToState: false — kolejność logu), priorytet kroku blokujących
+        // dla obrońcy (jak w drodze przez komendę).
+        if (state.turn.step === 'declare_attackers'
+            && !legalAttackerOptions(state, state.turn.activePlayerId, COMBAT_OPTION_CAP)
+              .some((attackerIds) => attackerIds.length > 0)) {
+          events.push(declareAttackers(state, state.turn.activePlayerId, [], { pushToState: false }));
+          const defenderId = state.players.find((player) => player.id !== state.turn.activePlayerId).id;
+          state.turn = jumpToStep(state.turn, 'declare_blockers', defenderId);
+          events.push(event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step }));
+        }
         // CR 106.4: niewykorzystana mana znika z puli na końcu KAŻDEGO kroku
         // i fazy (wcześniej utrzymywała się do końca tury — tapnięte landy
         // „trzymały" manę przez walkę i fazy przeciwnika).
