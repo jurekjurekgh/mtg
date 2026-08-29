@@ -728,6 +728,54 @@ export function maybeAddFaceDownFlyingCounter(state, controllerId, objectId) {
  * jest pusty. Jedna reguła zamiast dwóch kopii (L41/L48 — kopie się
  * rozjeżdżają); deskryptor po typie efektu, nie po nazwie karty (ADR 0002).
  */
+/** Stwory-lądy kontrolera (Jyoti: „land creatures you control"). */
+export function landCreaturesYouControl(state, controllerId) {
+  return [...state.objects.values()].filter((object) => object.zone === 'battlefield'
+    && object.controllerId === controllerId
+    && object.kind === 'creature'
+    && (object.types ?? []).includes('Land'));
+}
+
+/** Wszystkie stwory kontrolera (Village Bell-Ringer: „untap all creatures you control"). */
+export function creaturesYouControl(state, controllerId) {
+  return [...state.objects.values()].filter((object) => object.zone === 'battlefield'
+    && object.controllerId === controllerId
+    && object.kind === 'creature');
+}
+
+/**
+ * Inne stwory kontrolera (Plague Reaver: „sacrifice each other creature you
+ * control"). Porządek jak w `state.zones.battlefield` — kolejność poświęceń
+ * jest widoczna w logu, więc selektor nie może jej zmieniać.
+ */
+export function otherCreaturesYouControl(state, controllerId, exceptId) {
+  return [...state.zones.battlefield]
+    .map((objectId) => state.objects.get(objectId))
+    .filter((object) => object && object.zone === 'battlefield'
+      && object.controllerId === controllerId
+      && object.kind === 'creature'
+      && object.id !== exceptId);
+}
+
+/** Karty biblioteki gracza — strefa jest WSPÓLNA, filtr idzie po kontrolerze. */
+export function libraryCardsOf(state, playerId) {
+  return state.zones.library.filter((id) => state.objects.get(id)?.controllerId === playerId);
+}
+
+/**
+ * Gracz, którego bibliotekę mieli `mill_cards` (Chronic Flooding: kontroler
+ * ZACZAROWANEGO permanentu — CR 109.5; „target player mills N": cel).
+ */
+export function millTargetPlayerId(state, effect, sourceObject, targets = []) {
+  if (effect.applyTo === 'enchanted_controller') {
+    const host = sourceObject?.attachedTo ? state.objects.get(sourceObject.attachedTo) : null;
+    return host?.controllerId ?? null;
+  }
+  return (targets[0] && state.players.some((player) => player.id === targets[0]))
+    ? targets[0]
+    : sourceObject?.controllerId ?? null;
+}
+
 export function faceDownCreaturesYouControl(state, controllerId) {
   return [...state.objects.values()].filter((object) => object.zone === 'battlefield'
     && object.controllerId === controllerId
@@ -1841,10 +1889,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (effect.applyTo === 'enchanted_controller' && (!enchantedHost || enchantedHost.zone !== 'battlefield')) {
       return; // aura odpięta w oknie odpowiedzi — brak skutku (CR 608.2b)
     }
-    const targetPlayerId = enchantedHost ? enchantedHost.controllerId
-      : ((targets[0] && state.players.some((player) => player.id === targets[0]))
-        ? targets[0]
-        : sourceObject.controllerId);
+    const targetPlayerId = millTargetPlayerId(state, effect, sourceObject, targets);
     const protectedIds = new Set();
     if (state.pendingScry?.playerId === targetPlayerId) for (const id of state.pendingScry.objectIds) protectedIds.add(id);
     if (state.pendingSurveil?.playerId === targetPlayerId) for (const id of state.pendingSurveil.objectIds) protectedIds.add(id);
@@ -1985,10 +2030,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const power = effect.power === 'source_power' ? effectivePower(sourceObject, state) : (effect.power ?? 0);
     const toughness = effect.toughness === 'source_power' ? effectivePower(sourceObject, state) : (effect.toughness ?? 0);
     const buffed = [];
-    for (const object of state.objects.values()) {
-      if (object.zone !== 'battlefield' || object.controllerId !== sourceObject.controllerId) continue;
-      const isLandCreature = object.kind === 'creature' && (object.types ?? []).includes('Land');
-      if (isLandCreature) { modifyStats(state, object.id, { power, toughness }); buffed.push(object.id); }
+    for (const object of landCreaturesYouControl(state, sourceObject.controllerId)) {
+      modifyStats(state, object.id, { power, toughness });
+      buffed.push(object.id);
     }
     if (buffed.length > 0) {
       emitMassBuff(state, sourceObject, { objectIds: buffed, power, toughness, keywords: [] }, 'your_lands');
@@ -2388,10 +2432,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // control.\" — odkręca KAŻDEGO stwora kontrolera źródła (CR 701.16a),
     // po jednym zdarzeniu object_untapped na stwora.
     const ctrl = sourceObject.controllerId;
-    for (const objectId of state.zones.battlefield) {
-      const object = state.objects.get(objectId);
-      if (!object || object.zone !== 'battlefield') continue;
-      if (object.kind !== 'creature' || object.controllerId !== ctrl) continue;
+    for (const object of creaturesYouControl(state, ctrl)) {
+      const objectId = object.id;
       if (object.tapped) {
         state.objects.set(objectId, Object.freeze({ ...object, tapped: false }));
         state.events.push(event('object_untapped', { objectId, playerId: ctrl }));
@@ -4116,13 +4158,9 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // trigger): wszystkie inne stwory kontrolera źródła trafiają do grobu.
     // Pętla po kopii listy — każde poświęcenie to zmiana strefy (CR 400.7).
     const controllerId = sourceObject.controllerId;
-    const victims = [...state.zones.battlefield].filter((objectId) => {
-      const candidate = state.objects.get(objectId);
-      return candidate && candidate.id !== sourceObject.id
-        && candidate.controllerId === controllerId && candidate.kind === 'creature';
-    });
-    for (const victimId of victims) {
-      const victim = state.objects.get(victimId);
+    const victims = otherCreaturesYouControl(state, controllerId, sourceObject.id);
+    for (const victim of victims) {
+      const victimId = victim.id;
       const toZone = deathZoneFor(state, victim);
       const destId = `${toZone}-${state.objectSequence++}`;
       const moved = moveObjectDirectly(state, victimId, toZone, destId);

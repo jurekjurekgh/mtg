@@ -1,7 +1,8 @@
 import { event } from '../protocol/types.js';
 import { singleTargetOfStackEntry } from './objects.js';
 import {
-  applyEffect, creaturesNotControlledByOwner, faceDownCreaturesYouControl,
+  applyEffect, creaturesNotControlledByOwner, creaturesYouControl, faceDownCreaturesYouControl,
+  landCreaturesYouControl, libraryCardsOf, millTargetPlayerId, otherCreaturesYouControl,
 } from './effects.js';
 import { addCounter, hasCounter } from './counters.js';
 import { changeLife } from './players.js';
@@ -1044,13 +1045,14 @@ export function resolveTriggerEntry(state, entry) {
   // M256 (Żywy Tester, runda 2): „nie było czego wykonać" a „nikt nie pasuje
   // do efektu" to dwa RÓŻNE komunikaty dla gracza — pierwszy sugeruje usterkę,
   // drugi mówi, że karta nie miała na kim działać.
-  const noReceivers = producedNothing && !noOpByState
-    && triggerEffectsHadNoReceivers(state, payload.ability, source);
+  const emptyReceiverReason = producedNothing && !noOpByState
+    ? triggerEffectsReasonForEmptyReceivers(state, payload.ability, source, payload.targets ?? [])
+    : null;
   const resolved = event('trigger_resolved', {
     objectId: entry.id, cardId: entry.cardId,
     trigger: payload.ability?.trigger?.event ?? null,
     ...(producedNothing && !noOpByState
-      ? { noEffect: true, reason: noReceivers ? 'no_targets' : 'no_result' }
+      ? { noEffect: true, reason: emptyReceiverReason ?? 'no_result' }
       : {}),
   });
   state.events.push(resolved);
@@ -1070,6 +1072,19 @@ const STATE_IDEMPOTENT_EFFECTS = Object.freeze({
 });
 
 /**
+ * Efekty ZBIOROWE, które legalnie nie zmieniają niczego, gdy stan jest już
+ * docelowy (CR 701.20b). Osobna tabela, bo predykat dostaje CAŁY zbiór, nie
+ * jeden obiekt: Village Bell-Ringer („untap all creatures you control")
+ * odkręca zbiór, w którym sam jest — więc „pusty zbiór odbiorców" nie zdarza
+ * się nigdy, a „wszystkie już odkręcone" jest wykonaniem zdolności, nie jej
+ * porażką (M106/Z2).
+ */
+const STATE_IDEMPOTENT_MASS_EFFECTS = Object.freeze({
+  untap_all_creatures_you_control: (state, source) => creaturesYouControl(state, source?.controllerId)
+    .every((object) => object.tapped === false),
+});
+
+/**
  * Efekty, które działają na ZBIÓR odbiorców („każdy zakryty stwór",
  * „wszystkie stwory wracają do właściciela"): gdy zbiór jest pusty, trigger
  * nie ma kogo ruszyć — a to NIE to samo, co „efekt wykonał się bez skutku".
@@ -1083,24 +1098,40 @@ const STATE_IDEMPOTENT_EFFECTS = Object.freeze({
  * `STATE_IDEMPOTENT_EFFECTS`; świadomie NIE ma tu `create_token`
  * (Undead Servant przy pustym grobie to „nie było czego wykonać").
  */
-const EMPTY_RECEIVER_EFFECTS = Object.freeze({
-  add_flying_counter_to_face_down_you_control: (state, effect, source) =>
-    faceDownCreaturesYouControl(state, source?.controllerId).length === 0,
-  control_to_owners_all_creatures: (state) =>
-    creaturesNotControlledByOwner(state).length === 0,
+export const EMPTY_RECEIVER_EFFECTS = Object.freeze({
+  add_flying_counter_to_face_down_you_control: (state, effect, source) => (
+    faceDownCreaturesYouControl(state, source?.controllerId).length === 0 ? 'no_targets' : null),
+  control_to_owners_all_creatures: (state) => (
+    creaturesNotControlledByOwner(state).length === 0 ? 'no_targets' : null),
+  buff_land_creatures: (state, effect, source) => (
+    landCreaturesYouControl(state, source?.controllerId).length === 0 ? 'no_targets' : null),
+  sacrifice_each_other_creature: (state, effect, source) => (
+    otherCreaturesYouControl(state, source?.controllerId, source?.id).length === 0
+      ? 'no_targets' : null),
+  // Mill to wyjątek w rodzinie: cel (gracz) ISTNIEJE, brakuje kart
+  // w bibliotece — „brak legalnych celów" byłoby kłamstwem.
+  mill_cards: (state, effect, source, targets) => (
+    libraryCardsOf(state, millTargetPlayerId(state, effect, source, targets)).length === 0
+      ? 'empty_library' : null),
 });
 
 /**
- * Czy trigger nie zrobił nic DLATEGO, że jego efekt nie miał odbiorców?
- * Pytamy wyłącznie wtedy, gdy efekt wyprodukował zero zdarzeń — inaczej
- * odpowiedź byłaby bez znaczenia (L83: warunek musi mierzyć regułę).
+ * Powód „braku efektu" wynikający z PUSTEGO ZBIORU ODBIORCÓW (`no_targets`,
+ * `empty_library`) albo `null`, gdy tej przyczyny nie ma. Pytamy wyłącznie
+ * wtedy, gdy efekt wyprodukował zero zdarzeń — inaczej odpowiedź byłaby bez
+ * znaczenia (L83: warunek musi mierzyć regułę).
+ *
+ * Zgodę wymagamy od KAŻDEGO znanego efektu triggera: mieszanka (jeden ma
+ * odbiorców, drugi nie) nie ma jednego powodu, więc zostaje `no_result`.
  */
-function triggerEffectsHadNoReceivers(state, ability, source) {
+function triggerEffectsReasonForEmptyReceivers(state, ability, source, targets) {
   const effects = (Array.isArray(ability?.effect) ? ability.effect : [ability?.effect])
     .filter(Boolean)
     .filter((effect) => EMPTY_RECEIVER_EFFECTS[effect.type]);
-  if (effects.length === 0) return false;
-  return effects.every((effect) => EMPTY_RECEIVER_EFFECTS[effect.type](state, effect, source));
+  if (effects.length === 0) return null;
+  const reasons = effects.map((effect) => EMPTY_RECEIVER_EFFECTS[effect.type](state, effect, source, targets));
+  const first = reasons[0];
+  return reasons.every((reason) => reason === first) ? first : null;
 }
 
 function applyTriggerEffectsWereNoOp(state, ability, targets, source) {
@@ -1108,6 +1139,8 @@ function applyTriggerEffectsWereNoOp(state, ability, targets, source) {
   const relevant = effects.filter(Boolean);
   if (relevant.length === 0) return false;
   return relevant.every((effect) => {
+    const massPredicate = STATE_IDEMPOTENT_MASS_EFFECTS[effect.type];
+    if (massPredicate) return massPredicate(state, source);
     const predicate = STATE_IDEMPOTENT_EFFECTS[effect.type];
     if (!predicate) return false;
     // Efekt bez jawnego celu działa na ŹRÓDŁO (Steelfin Whale, Midnight

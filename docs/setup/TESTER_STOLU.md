@@ -41,7 +41,7 @@ Opcje:
 | `--steps <n>` | limit kroków gry | `300` |
 | `--out <plik>` | plik transkryptu | `transcript.txt` |
 | `--quiet` | bez snapshotów co krok (mniejszy transkrypt) | — |
-| `--profile <p>` | profil gracza: `greedy`/`random`/`defensive`/`explorer`/`impatient` | `greedy` |
+| `--profile <p>` | profil gracza: `greedy`/`random`/`defensive`/`explorer`/`impatient`/`hoarder` | `greedy` |
 | `--policy-seed <n>` | seed decyzji profilu (powtarzalność) | `1` |
 | `--tick-rate <0..1>` | jak często gracz ptaszkuje akcję (auto-pass) | `0` |
 | `--snapshot-every <n>` | snapshot co n kroków (przy `--quiet`) | `3` |
@@ -112,6 +112,16 @@ ptaszki) nigdy nie były odwiedzane. Teraz `--profile` wybiera zachowanie:
 | `defensive` | unika ataku, blokuje czym się da, woli zdolności i pass | okna reakcji, długie partie, obrona |
 | `explorer` | preferuje akcje jeszcze NIEklikane w tej partii | maksymalne pokrycie interfejsu |
 | `impatient` (M99) | **nie czeka** na zamknięcie pauzy bota, klika „przez" modal, czasem stuka dwa razy (double-tap) | błędy stanu po ODRZUCONEJ komendzie (Forever Young) |
+| `hoarder` (M256) | **trzyma** w ręce karty z mechaniką „z ręki" (bloodrush — rozpoznaje je po treści kafla, jak gracz) i używa ich, gdy tylko panel wystawi ofertę | okna mechanik z ręki, których stała kolejność priorytetów nigdy nie tworzyła |
+
+**Kardynał 2 z M255 (bloodrush) domknięty w M256.** W 33 partiach (18 w rundzie
+M255 + 15 w rundzie M256, profil `greedy`/`random`/`explorer`/`defensive`) nie
+powstało ANI JEDNO okno bloodrushu, choć `Skinbrand Goblin` bywał w ręce w 9
+partiach: stała kolejność priorytetów sterownika („Zagraj:" przed „Aktywuj:")
+zagrywała kartę na stół, zanim powstało okno ataku, w którym mechanika działa.
+Profil `hoarder` powstał właśnie z tej obserwacji — to dowód, że profil testera
+bywa jedynym sposobem na przejście ścieżki, która w przyrodzie zdarza się
+rzadko, a w kodzie jest zwykłą gałęzią.
 
 Profil `impatient` powstał, bo pozostałe cztery **nie były w stanie** odtworzyć
 przypadku właściciela „ekran z jedyną opcją *Poddaj partię*". Każdy z nich

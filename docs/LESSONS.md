@@ -1734,3 +1734,50 @@ dwie kopie jednej reguły, lecz **dwa porządki tej samej reguły**.
 (Exploit blokuje wyłącznie jako PIERWSZA decyzja; opcja `skip` jest w ofercie;
 cudza decyzja nie daje komend). Mutacje: „bramka blokuje każdego" → G1
 czerwone; „blokuje właściciela bez względu na porządek" → G1 czerwone.
+
+## L91 (2026-08-29) — „Trigger bez efektu" ma trzy różne przyczyny; liczenie zdarzeń to ich przybliżenie, nie reguła
+
+**Objaw:** runda 2 Żywym Testerem (18 partii, M256) wyprodukowała 12 komunikatów
+„trigger bez efektu (nie było czego wykonać)": Trostani Discordant ×4,
+Veiled Ascension ×3, Jyoti, Moag Ancient ×3, Plague Reaver ×1, Chronic Flooding
+×1. Dla czterech pierwszych komunikat był NIEPRECYZYJNY — karta nie miała na
+kim działać (brak zakrytych stworów, brak cudzych stworów, brak stworów-lądów,
+brak innych stworów), a gracz czytał „nie było czego wykonać", czyli komunikat,
+który sugeruje usterkę (kardynał 1 z AUDYT_M255).
+**Przyczyna:** `resolveTrigger` wnioskował powód z LICZBY nowych zdarzeń
+(`producedNothing`). Milczenie ma jednak TRZY źródła: pusty zbiór odbiorców,
+brak paliwa (pusta biblioteka przy młynowaniu) i stan już docelowy (CR 701.20b —
+tapnięcie tapniętego, M106/Z2). Dotychczasowe rozróżnienie brało pod uwagę dwa
+z nich; trzecie („nikt nie pasuje do efektu") było nierozróżnialne od „efekt
+wykonał się bez skutku", bo oba nie produkują zdarzeń.
+**Reguła:**
+1. **Powód mieszka w warstwie efektu.** Selektor zbioru odbiorców
+   (`faceDownCreaturesYouControl`, `creaturesNotControlledByOwner`,
+   `landCreaturesYouControl`, …) jest eksportowany z `effects.js` i używany
+   także PRZEZ SAM EFEKT — jedna definicja zbioru, nie dwie kopie (L41/L48:
+   kopie się rozjeżdżają).
+2. **Tabela zwraca POWÓD, nie boolean.** `EMPTY_RECEIVER_EFFECTS[type](…) →
+   'no_targets' | 'empty_library' | null` — kolejna przyczyna to kolejna
+   WARTOŚĆ, nie kolejny `if` po typie efektu (L28/ADR 0002).
+3. **Efekt, który ma w zbiorze samego siebie, nie zgłasza pustego zbioru.**
+   Village Bell-Ringer („untap all creatures you control") zawsze jest własnym
+   odbiorcą, więc pustka jest niemożliwa; tam obowiązuje tabela idempotentności
+   ZBIOROWEJ (`STATE_IDEMPOTENT_MASS_EFFECTS`), bo „wszystkie już odkręcone" to
+   wykonana zdolność, nie porażka triggera (M106/Z2).
+4. **Do każdego wpisu kontrola pozytywna**: test, w którym zbiór NIE jest
+   pusty (H1b/H2b/H3b/H4b/H5b/H6b). Bez niego asercja „brak komunikatu" bywa
+   zielona dlatego, że w ogóle nic się nie dzieje (klasa M255/G2).
+5. **Heurystyka NAZWY efektu (`_each_`, `_all_`) wolno mieszkać wyłącznie
+   w strażniku** (skan katalogu: każdy zbiorowy typ efektu ma wpis w tabeli
+   albo udokumentowany wyjątek). Silnik kluczuje po typie efektu i z nazwy nie
+   zgaduje — inaczej wracamy do `if` po nazwie typu.
+6. Komunikat dla gracza to NIE ozdoba: „brak legalnych celów" i „pusta
+   biblioteka" mówią, co zrobić dalej; „nie było czego wykonać" mówi tylko, że
+   coś nie zadziałało (oś 2: „wszystko poza szumem powinno tam być").
+**Strażnik:** `test/m256-zywy-tester-runda2.test.js` (H1–H7, 15 testów).
+Mutacje: brak rozrównienia (`zawsze no_result`) → H1, H1c, H2; `zawsze
+no_targets` → H3; selektor bez filtra kontrolera → H1c; selektor właściciela
+zawsze pusty → H2b; wycięcie wpisu `buff_land_creatures` → H4, H7;
+`sacrifice_each_other_creature` → H5, H7; `mill_cards` → H3, H7;
+`empty_library` → `no_targets` → H3; wycięcie masowej idempotentności
+(untap_all) → H6.

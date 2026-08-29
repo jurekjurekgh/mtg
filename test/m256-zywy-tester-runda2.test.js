@@ -22,6 +22,8 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { describeGameEvent } from '../src/table/session.js';
+import { EMPTY_RECEIVER_EFFECTS } from '../src/engine/triggers.js';
+import { effectivePower } from '../src/engine/permanents.js';
 
 const REGISTRY = createCardRegistry();
 const HELPERS = {
@@ -176,11 +178,11 @@ test('H2b: kontrola pozytywna — cudzy stwór wraca do właściciela (bez komun
 
 // ---- H3: anty-over-fix — efekt spoza tabeli zostaje przy „nie było czego wykonać"
 
-test('H3: mill przy pustej bibliotece nadal mówi „nie było czego wykonać"', () => {
+test('H3: mill przy pustej bibliotece mówi „pusta biblioteka", nie „brak celów"', () => {
   // Chronic Flooding: „Whenever enchanted land becomes tapped, its controller
-  // mills three cards." Przy PUSTEJ bibliotece nie ma kart do zmielenia —
-  // to „nie było czego wykonać", a nie „brak legalnych celów" (cel jest:
-  // kontroler zaczarowanego lądu). Anty-over-fix dla H1.
+  // mills three cards." Cel (gracz) ISTNIEJE — brakuje kart w bibliotece, więc
+  // „brak legalnych celów" byłoby kłamstwem. Runda 2: dokładnie taki przypadek
+  // w partii ravnica×theros (bot miał pustą bibliotekę i przegrał przez deck-out).
   const state = game('p1');
   putCard(state, 'flood', 'chronic-flooding', 'p1', 'hand');
   putCard(state, 'gaj', 'basic-plains', 'p2');
@@ -199,14 +201,199 @@ test('H3: mill przy pustej bibliotece nadal mówi „nie było czego wykonać"',
     && e.cardId === 'chronic-flooding');
   assert.ok(resolved.length > 0, 'trigger młynowania się rozstrzygnął');
   assert.equal(resolved.at(-1).noEffect, true, 'bez efektu (pusta biblioteka)');
-  assert.equal(resolved.at(-1).reason, 'no_result',
-    'mill NIE jest w tabeli odbiorców — cel istnieje, brakuje kart');
+  assert.equal(resolved.at(-1).reason, 'empty_library',
+    'powód: biblioteka gracza-celu jest pusta (cel istnieje)');
+  const line = String(describeGameEvent(resolved.at(-1), HELPERS, NAMES));
+  assert.match(line, /pusta biblioteka/, `komunikat dla gracza: ${JSON.stringify(line)}`);
 });
 
-test('H3b: opis „brak legalnych celów" nie pojawia się dla milla (log gracza)', () => {
-  const line = String(describeGameEvent(
-    { type: 'trigger_resolved', cardId: 'chronic-flooding', noEffect: true, reason: 'no_result' },
-    HELPERS, NAMES,
-  ));
-  assert.match(line, /nie było czego wykonać/, `komunikat: ${JSON.stringify(line)}`);
+test('H3b: mill przy NIEpustej bibliotece nie zgłasza braku efektu', () => {
+  // Anty-over-fix H3: z kartami w bibliotece trigger po prostu mieli.
+  const state = game('p1');
+  putCard(state, 'flood', 'chronic-flooding', 'p1', 'hand');
+  putCard(state, 'gaj', 'basic-plains', 'p2');
+  for (const id of ['b1', 'b2', 'b3', 'b4']) {
+    putCard(state, id, 'basic-plains', 'p2', 'library');
+  }
+  addMana(state, 'p1', 2, { colors: ['U'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'flood'
+      && ((c.targets ?? [])[0] === 'gaj' || c.targetId === 'gaj'));
+  assert.ok(cast, 'rzut aury na cudzy ląd');
+  assert.ok(execute(state, cast).ok);
+  resolveAll(state);
+  state.events.length = 0;
+  state.turn.priorityPlayerId = 'p2';
+  execute(state, { type: 'tap_for_mana', playerId: 'p2', objectId: 'gaj' });
+  resolveAll(state);
+  const resolved = state.events.filter((e) => e.type === 'trigger_resolved'
+    && e.cardId === 'chronic-flooding');
+  assert.ok(resolved.length > 0, 'trigger młynowania się rozstrzygnął');
+  assert.notEqual(resolved.at(-1).noEffect, true, 'są karty — młynowanie działa');
+});
+
+// ---- H4: Jyoti — „land creatures you control get +X/+X"
+
+/** Wchodzi w wybrany krok aktywnego gracza i rozstrzyga to, co kolejkuje. */
+function wejdzWKrok(state, krok, limit = 12) {
+  for (let i = 0; i < limit && state.turn.step !== krok; i += 1) passBoth(state);
+  assert.equal(state.turn.step, krok, `gra weszła w krok ${krok}`);
+  resolveAll(state);
+}
+
+test('H4: Jyoti bez stworów-lądów mówi „brak legalnych celów" (początek walki)', () => {
+  const state = game('p1');
+  putCard(state, 'jyoti', 'jyoti-moag-ancient', 'p1');
+  wejdzWKrok(state, 'beginning_of_combat');
+  const resolved = state.events.filter((e) => e.type === 'trigger_resolved'
+    && e.cardId === 'jyoti-moag-ancient');
+  assert.ok(resolved.length > 0, 'trigger początku walki się rozstrzygnął');
+  assert.equal(resolved.at(-1).noEffect, true, 'bez efektu');
+  assert.equal(resolved.at(-1).reason, 'no_targets',
+    'powód: żaden stwór-ląd pod kontrolą (nie „nie było czego wykonać")');
+});
+
+test('H4b: kontrola pozytywna — stwór-ląd DOSTAJE +X/+X (bez komunikatu)', () => {
+  const state = game('p1');
+  putCard(state, 'jyoti', 'jyoti-moag-ancient', 'p1');
+  // Token Forest Dryad z efektu Jyoti: `create_token` niesie kind 'creature'
+  // (materializacja z definicji karty dałaby 'land' — types zaczynają się od
+  // Land), więc w teście doszywamy kind jawnie, jak robi to silnik.
+  putCard(state, 'drysada', 'token_forest_dryad', 'p1', 'battlefield',
+    { kind: 'creature', power: 1, toughness: 1 });
+  const przed = state.objects.get('drysada');
+  wejdzWKrok(state, 'beginning_of_combat');
+  const resolved = state.events.filter((e) => e.type === 'trigger_resolved'
+    && e.cardId === 'jyoti-moag-ancient');
+  assert.deepEqual(resolved.filter((e) => e.noEffect).map((e) => e.reason), [],
+    'są odbiorcy — brak komunikatu o braku efektu');
+  // Premia „do końca tury" leży w `untilEndOfTurnBuffs`, więc bazowe P/T
+  // obiektu się nie zmienia — mierzymy statystyki EFEKTYWNE (M138/Z4).
+  const po = state.objects.get('drysada');
+  const mocJyoti = 2; // Jyoti 2/4 — X = jej moc
+  assert.equal(effectivePower(po, state), effectivePower(przed, state) + mocJyoti,
+    `drysada dostaje +X/+X (efektywnie): ${effectivePower(przed, state)}`
+    + ` → ${effectivePower(po, state)}`);
+});
+
+// ---- H5: Plague Reaver — „sacrifice each other creature you control"
+
+test('H5: Plague Reaver bez innych stworów mówi „brak legalnych celów"', () => {
+  const state = game('p1');
+  putCard(state, 'reaver', 'plague-reaver', 'p1');
+  wejdzWEndStep(state);
+  const resolved = state.events.filter((e) => e.type === 'trigger_resolved'
+    && e.cardId === 'plague-reaver');
+  assert.ok(resolved.length > 0, 'trigger kroku końca się rozstrzygnął');
+  assert.equal(resolved.at(-1).noEffect, true, 'bez efektu');
+  assert.equal(resolved.at(-1).reason, 'no_targets',
+    'powód: nie ma innych stworów do poświęcenia');
+});
+
+test('H5b: kontrola pozytywna — inny stwór zostaje poświęcony (bez komunikatu)', () => {
+  const state = game('p1');
+  putCard(state, 'reaver', 'plague-reaver', 'p1');
+  putCard(state, 'kolega', 'highland-game', 'p1');
+  wejdzWEndStep(state);
+  const resolved = state.events.filter((e) => e.type === 'trigger_resolved'
+    && e.cardId === 'plague-reaver');
+  assert.deepEqual(resolved.filter((e) => e.noEffect).map((e) => e.reason), [],
+    'są odbiorcy — brak komunikatu o braku efektu');
+  // Po zmianie strefy obiekt dostaje NOWY identyfikator (CR 400.7) —
+  // szukamy po cardId, nie po starym id.
+  const wGrobie = [...state.objects.values()].find((o) => o.cardId === 'highland-game');
+  assert.equal(wGrobie?.zone, 'graveyard', 'kolega poświęcony');
+});
+
+// ---- H6: Village Bell-Ringer — „untap all creatures you control"
+
+test('H6: Village Bell-Ringer ze wszystkimi odkręconymi to legalny no-op (M106/Z2)', () => {
+  // Odkryte skanem katalogu (strażnik H7), nie transkryptem: „untap all
+  // creatures you control" ma w zbiorze SAMO ŹRÓDŁO, więc „pusty zbiór
+  // odbiorców" nie zdarza się nigdy — za to „wszystkie już odkręcone" to
+  // wykonana zdolność (CR 701.20b), a nie porażka triggera.
+  const state = game('p1');
+  putCard(state, 'bell', 'village-bell-ringer', 'p1', 'hand');
+  addMana(state, 'p1', 3, { colors: ['W'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'bell');
+  assert.ok(cast, 'oferta rzutu (flash)');
+  assert.ok(execute(state, cast).ok);
+  resolveAll(state);
+  const resolved = state.events.filter((e) => e.type === 'trigger_resolved'
+    && e.cardId === 'village-bell-ringer');
+  assert.ok(resolved.length > 0, 'trigger wejścia się rozstrzygnął');
+  assert.deepEqual(resolved.filter((e) => e.noEffect).map((e) => e.reason), [],
+    'wszystkie stwory odkręcone = wykonana zdolność, bez komunikatu o braku efektu');
+});
+
+test('H6b: kontrola pozytywna — tapnięty stwór zostaje odkręcony (bez komunikatu)', () => {
+  const state = game('p1');
+  putCard(state, 'bell', 'village-bell-ringer', 'p1', 'hand');
+  putCard(state, 'moj', 'highland-game', 'p1');
+  state.objects.set('moj', Object.freeze({ ...state.objects.get('moj'), tapped: true }));
+  addMana(state, 'p1', 3, { colors: ['W'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'bell');
+  assert.ok(cast, 'oferta rzutu');
+  assert.ok(execute(state, cast).ok);
+  resolveAll(state);
+  const resolved = state.events.filter((e) => e.type === 'trigger_resolved'
+    && e.cardId === 'village-bell-ringer');
+  assert.deepEqual(resolved.filter((e) => e.noEffect).map((e) => e.reason), [],
+    'są odbiorcy — brak komunikatu o braku efektu');
+  assert.equal(state.objects.get('moj').tapped, false, 'stwór odkręcony');
+});
+
+test('H6c: anty-over-fix — odkręcenie stwora PRZECIWNIKA nadal nic nie daje', () => {
+  // `untap_all_creatures_you_control` odkręca wyłącznie własne stwory.
+  const state = game('p1');
+  putCard(state, 'bell', 'village-bell-ringer', 'p1', 'hand');
+  putCard(state, 'cudzy', 'highland-game', 'p2');
+  state.objects.set('cudzy', Object.freeze({ ...state.objects.get('cudzy'), tapped: true }));
+  addMana(state, 'p1', 3, { colors: ['W'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'bell');
+  assert.ok(cast, 'oferta rzutu');
+  assert.ok(execute(state, cast).ok);
+  resolveAll(state);
+  assert.equal(state.objects.get('cudzy').tapped, true,
+    'cudzy stwór zostaje tapnięty (zakres: „creatures YOU control")');
+});
+
+// ---- H7: strażnik kompletności tabeli (skan katalogu, wzorzec M255/C1)
+
+test('H7: każdy „zbiorowy" typ efektu w katalogu jest w tabeli albo na liście wyjątków', () => {
+  // Heurystyka NAZWY działa TYLKO w strażniku (L83) — silnik kluczuje po typie
+  // efektu (ADR 0002) i nie zgaduje z nazwy. Cel: nowa karta z efektem
+  // „każdy/wszystkie" nie przejdzie obok tabeli niezauważona.
+  const wyjatki = new Map([
+    // Zbiór odbiorców NIE MOŻE być pusty: przeciwnicy i gracze istnieją zawsze.
+    ['damage_each_opponent', 'przeciwnicy istnieją zawsze'],
+    ['discard_each_opponent', 'przeciwnicy istnieją zawsze'],
+    ['each_player_exiles_top_face_down', 'gracze istnieją zawsze'],
+    ['each_player_loses_life_fraction', 'gracze istnieją zawsze'],
+    // Cel wybiera gracz — nielegalność celu to inny powód (warunek/cele).
+    ['apply_to_each_target', 'cele wybierane przez gracza'],
+    // Zbiór zawiera SAMO ŹRÓDŁO (Dzwonnik jest stworem), więc pusty zbiór
+    // odbiorców jest niemożliwy; „wszystkie już odkręcone" to legalny no-op
+    // (STATE_IDEMPOTENT_MASS_EFFECTS, test H6).
+    ['untap_all_creatures_you_control', 'zbiór zawsze zawiera źródło'],
+  ]);
+  const brakujace = new Map();
+  for (const card of REGISTRY.all()) {
+    for (const ability of card.abilities ?? []) {
+      if (ability?.type !== 'triggered' || !ability.effect) continue;
+      for (const effect of (Array.isArray(ability.effect) ? ability.effect : [ability.effect])) {
+        const type = effect?.type;
+        if (!type || !/(_each_|_all_|^each|^all_)/.test(type)) continue;
+        if (EMPTY_RECEIVER_EFFECTS[type] || wyjatki.has(type)) continue;
+        brakujace.set(type, (brakujace.get(type) ?? 0) + 1);
+      }
+    }
+  }
+  assert.deepEqual([...brakujace.entries()], [],
+    'zbiorowy efekt bez wpisu w EMPTY_RECEIVER_EFFECTS — dopisz selektor albo wyjątek z powodem');
+  // Kontrola pozytywna (L26): strażnik nie może być zielony przez brak danych.
+  assert.ok(Object.keys(EMPTY_RECEIVER_EFFECTS).length >= 5, 'tabela ma wpisy');
 });

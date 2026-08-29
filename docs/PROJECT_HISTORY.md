@@ -6472,6 +6472,31 @@ wojny testuj przez nierozróżnialność, nie przez listę zasłoniętych pól).
 
 Nowe lekcje: **L46** (animacja + trwały stan — cleanup musi resynchronizować trwałe cechy), **L47** (kopiowalne cechy to WSZYSTKIE drukowane deskryptory, nie tylko P/T), **L48** (flaga keepOwn musi przejść cały łańcuch `registry → gameObject → pendingChoice → SBA`, inaczej ginie po cichu — L21).
 
+## 2026-08-29 — M256: runda 2 Żywym Testerem (PR #87)
+
+**Zlecenie właściciela:** „Proponuję rundę Żywym Testerem do wyczerpania
+budżetu", następnie: „kontynuuj i zrób to" — dokumentacja poprawki (L91 + raport
+audytu) i domknięcie kardynałów z M255 (precyzja „trigger bez efektu"; okno
+bloodrushu; zgłoszenie `[noop]`).
+
+**Partie:** 18 (runda 2, build przed poprawką) + 20 (runda 2b: kontrola po
+częściowej poprawce + 15 prób okna bloodrushu) + 17 (runda 2c: kontrola po
+pełnej poprawce + 10 nowym profilem `hoarder`). Wszystkie zakończone naturalnie,
+0 × `[STOP]`, 0 odrzuconych komend.
+
+**Wyniki:** komunikat „trigger bez efektu" dostał trzy odrębne powody (pusty
+zbiór odbiorców / pusta biblioteka / stan już docelowy); 12 nieprecyzyjnych
+komunikatów → 0. Bloodrush: pierwsze okna w historii (2 z 10 partii profilem
+`hoarder`) — log i premia zweryfikowane end-to-end. Zgłoszenie `[noop]` dla
+Thunderstaffa uznane za poprawne (legalna akcja, UI nie ukrywa ofert).
+
+**Operacyjnie:** sandbox trzykrotnie czyścił `node_modules`, `dist` i katalogi
+poza repozytorium (refsy gita wracały do `6d04551`); skrypty i transkrypty
+przeniesione do gitignorowanego `tmp-audyt-m256/` WEWNĄTRZ drzewa roboczego.
+
+**Weryfikacja:** `npm test` **3722/3722** (+15), build 56 modułów / 2893.8 kB,
+9 mutacji — każda czerwieni właściwy test. Nowa lekcja **L91**.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

@@ -3015,6 +3015,37 @@ Testy: `test/audit-m83-tester.test.js` (10). `npm test` **1452/1452**,
 build 50 modułów / ~1574 kB. Bot zmieniony → pełne B0 bez niedokończonych,
 progi win-rate utrzymane.
 
+## M256 — Runda 2 Żywym Testerem: precyzja „trigger bez efektu" i okno bloodrushu (2026-08-29, PR #87)
+
+**Zlecenie:** „runda Żywym Testerem do wyczerpania budżetu" + domknięcie dwóch
+kardynałów z M255. Pełny raport i dowody:
+`docs/audits/AUDYT_M256_ZYWY_TESTER_2026-08-29.md`.
+
+- **Engine + log (H):** `EMPTY_RECEIVER_EFFECTS` (triggers.js) — tabela
+  selektorów odbiorców kluczowana TYPEM EFEKTU, zwracająca POWÓD (`no_targets`,
+  `empty_library`) zamiast booleanu; selektory wyeksportowane z `effects.js`
+  i używane też przez same efekty (jedna definicja zbioru, L41/L48). 12
+  nieprecyzyjnych komunikatów „nie było czego wykonać" w 18 partiach → 0 po
+  poprawce (kontrola na tych samych adresach: Trostani ×4, Veiled Ascension ×2,
+  Jyoti ×2, Plague Reaver ×1 → „brak legalnych celów"; Chronic Flooding →
+  „pusta biblioteka").
+- **Engine (I):** `STATE_IDEMPOTENT_MASS_EFFECTS` — efekt zbiorowy, który ma
+  w zbiorze SAMO ŹRÓDŁO (Village Bell-Ringer: „untap all creatures you
+  control"), nie może zgłosić pustego zbioru; „wszystkie już odkręcone" to
+  legalny no-op (CR 701.20b, M106/Z2), nie porażka triggera.
+- **Narzędzie:** nowy profil testera `hoarder` (trzyma w ręce karty mechanik
+  „z ręki") — bloodrush przeszedł end-to-end po raz pierwszy (0 okien
+  w 33 partiach starymi profilami, 2 okna w 10 partiach z `hoarder`; premia
+  policzona: 2 → 4 obrażenia).
+- **Zgłoszenie detektora `[noop]` (Thunderstaff aktywowany bez atakujących)
+  uznane za poprawne**: aktywacja jest legalna, UI nie ukrywa akcji gracza;
+  naprawa z M255/E dotyczyła bota.
+
+Nowa lekcja **L91**. Testy `test/m256-zywy-tester-runda2.test.js` (15: H1–H7) —
+każda asercja o braku komunikatu ma kontrolę pozytywną; 9 mutacji, każda
+czerwieni właściwy test; strażnik H7 skanuje katalog pod kątem „zbiorowych"
+typów efektów. `npm test` **3722/3722**, build 56 modułów / 2893.8 kB.
+
 ## M255 — Pętla jakości Żywym Testerem po Batchu 51 (2026-08-29, PR #87)
 
 **Zlecenie:** „pętla jakości żywym testerem ze szczególnym akcentem na nowe

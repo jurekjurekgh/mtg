@@ -114,6 +114,7 @@ Opcje:
   --snapshot-every <n>   snapshot co n kroków (tylko przy --quiet)                 [3]
   --profile, -p <nazwa>  profil gracza: greedy | random | defensive | explorer
                          | impatient (klika W TRAKCIE pauzy bota)        [greedy]
+                         | hoarder (trzyma w ręce karty „z ręki": bloodrush)
   --policy-seed <n>      seed decyzji profilu (deterministycznie)                  [1]
   --tick-rate <0..1>     jak często gracz „ptaszkuje" akcję (wycisza auto-pass)    [0]
   --list-decks           wypisz talie z decks/ i zakończ (bez partii)
@@ -473,11 +474,26 @@ export async function runTableGame({
       || by(/Rozstrzygnij obrażenia/);
     if (mandatory) return mandatory;
 
-    // Pula „ruchów rozwijających" — z niej wybiera profil.
+    /**
+   * Nazwy kart w ręce, które mają bloodrush — czytane z KAFLA, czyli z tego,
+   * co widzi gracz (profil `hoarder`, M256). Etykieta kafla niesie treść
+   * zdolności („Bloodrush {R} — odrzuć: ..."), więc nie ma osobnego
+   * deskryptora w UI.
+   */
+  const bloodrushCardNamesInHand = () => tiles('#hand')
+    .filter((tile) => /bloodrush/i.test(tile))
+    .map((tile) => tile.split('·')[0].trim())
+    .filter(Boolean);
+
+  // Pula „ruchów rozwijających" — z niej wybiera profil.
     // M155 (audyt żywym testerem): „Rzuć za warp:" (Weftblade Enhancer — nowa
     // mechanika Batch 38) to rzut PERMANENTA; bez wzorca tester nigdy nie
     // ćwiczył warp. Dokładamy do puli ruchów i priorytetów greedy.
-    const plays = all(/Zagraj ląd|^Rzuć:|^Rzuć za warp:|^Rzuć za surge:|^Zagraj:|^Aktywuj:|^Cycling:|^Wyposaż:|^Flashback:|^Cel czaru|^Cel zdolności:|^Bestow:|^Aura:|^Wybierz:|cel triggera|podziel \d+ obrażeni?[ae]?/);
+    // M256: `Bloodrush:` — mechanika „z ręki" (Batch 51, Skinbrand Goblin).
+    // Bez wzorca w puli profil `greedy` ZAWSZE zagrywał kartę („Zagraj:"),
+    // więc przez 33 partie nie powstało ani jedno okno bloodrushu
+    // (kardynał 2 z AUDYT_M255).
+    const plays = all(/Zagraj ląd|^Rzuć:|^Rzuć za warp:|^Rzuć za surge:|^Zagraj:|^Aktywuj:|^Cycling:|^Wyposaż:|^Flashback:|^Bloodrush:|^Cel czaru|^Cel zdolności:|^Bestow:|^Aura:|^Wybierz:|cel triggera|podziel \d+ obrażeni?[ae]?/);
     // M250 (audyt Żywym Testerem, theros vs wiedzmin s=13): source-titled
     // (choiceSourceTitle) blokujące decyzje łamią WIELKĄ literę wzorców —
     // „Chittering Rats — karta z ręki na wierzch biblioteki" nie łapało się
@@ -519,6 +535,19 @@ export async function runTableGame({
         const pool = [...plays, ...decisions];
         if (pool.length > 0) return pickRandom(pool);
         return by(/Wznów grę bota/) ?? pass ?? labels[0];
+      }
+      case 'hoarder': {
+        // M256 (kardynał 2 z AUDYT_M255): profil dla mechanik „z ręki".
+        // Trzyma w ręce karty, które mają bloodrush (stała kolejność
+        // priorytetów zamawiała je na stół, zanim powstało okno ataku), i
+        // używa ich, gdy tylko panel wystawi ofertę „Bloodrush:". Dzięki temu
+        // przechodzimy end-to-end log i modal z M255/B1–B2.
+        const bloodrushOffers = plays.filter(({ t }) => /^Bloodrush:/.test(t));
+        if (bloodrushOffers.length > 0) return bloodrushOffers[0];
+        const keep = bloodrushCardNamesInHand();
+        const pool = [...plays, ...decisions].filter(({ t }) => !keep.some((name) => t.includes(name)));
+        if (pool.length > 0) return pool[0];
+        return pass ?? labels[0];
       }
       case 'explorer': {
         // Maksymalne pokrycie UI: najpierw akcje, których jeszcze NIE

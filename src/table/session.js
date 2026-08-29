@@ -1525,6 +1525,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
           // zostaje wyłącznie dla triggerów, które naprawdę nic nie zrobiły
           // (Undead Servant przy pustym grobie) — nazywamy to wprost.
           const why = e.reason === 'no_targets' ? 'brak legalnych celów'
+            : e.reason === 'empty_library' ? 'pusta biblioteka'
             : e.reason === 'no_result' ? 'nie było czego wykonać'
             : 'warunek/cele nieaktualne';
           return `${nameOf(e.cardId)} — trigger bez efektu (${why})`;
