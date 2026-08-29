@@ -19,7 +19,7 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
-- **Ostatnia aktualizacja:** 2026-08-29 (sesja arena/01a04e98, **etap 4**: **uwagi z testów runda 3** (talia Warhammer) — trzy błędy naprawione w root cause: **A** wypływ FoW przez warstwę ilustracji przy Morph twarzą w dół (paylod onCast niośce `faceDown`, warstwa dla ukrytych rzutów nie otwiera się — CR 708.2), **B** „Przygoda” (i inne rzuty) pod pass/poddaniem w menu „Twoje działania” (brak ranków cast_adventure/escape/flashback + pass/poddanie teraz Z ZASADY ostatnie), **C** Greatsword of Tyr „Equip {W}” akceptował jedną dowolną manę (deskryptor equipment bez `colors` w łańcuchu L21 + płatność bez wymogów koloru, rozjazd oferta/walidacja L48); 9 testów regresji; `npm test` 3747/3747; build 2906.9 kB; **PR #88**)
+- **Ostatnia aktualizacja:** 2026-08-29 (sesja arena/01a04e98, **etap 4**: **uwagi z testów runda 3** (talia Warhammer) — trzy błędy naprawione w root cause: **A** wypływ FoW przez warstwę ilustracji przy Morph twarzą w dół (paylod onCast niośce `faceDown`; krycie WIDOKOWE — warstwa nie otwiera się dla ukrytych zagrań BOTA, **własny morph gracza warstwę otwiera** — CR 708.2/708.6), **B** „Przygoda” (i inne rzuty) pod pass/poddaniem w menu „Twoje działania” (brak ranków cast_adventure/escape/flashback + pass/poddanie teraz Z ZASADY ostatnie), **C** Greatsword of Tyr „Equip {W}” akceptował jedną dowolną manę (deskryptor equipment bez `colors` w łańcuchu L21 + płatność bez wymogów koloru, rozjazd oferta/walidacja L48); 10 testów regresji; `npm test` 3748/3748; build 2907.7 kB; **PR #88**)
 
 ## Sesja 2026-08-29 (etap 4) — „Uwagi z testów” runda 3: trzy błędy (talia Warhammer) naprawione w root cause (arena/01a04e98, PR #88)
 
@@ -33,17 +33,22 @@ inne czary, a **pass i poddanie partii ZAWSZE ostatnie**; (C) Greatsword
 of Tyr — Oracle „Equip {W}”, a silnik akceptował jedną dowolną manę
 (właściciel zapłacił tapując Górę).
 
-**Naprawione (commit `93cf9a7`, 9 testów w `test/m257-uwagi-runda3.test.js`):**
+**Naprawione (commity `93cf9a7` + `9cfb431` — doprecyzowanie A, 10 testów
+w `test/m257-uwagi-runda3.test.js`):**
 - **A (root cause):** zdarzenie `permanent_cast` NIESIE `faceDown`
   (resources.js:933, engine od dawna), ale obserwator `onCast` sesji
   dostawał tylko `cardId` — warstwa renderowała pełną definicję karty
   (FOT/KON/Scryfall + podpis „Rzuca: Nieprzyjaciel”) = wypływ tożsamości
   ukrytej (CR 708.2). Fix: paylod onCast niośce `faceDown`
-  (session.js `emitCastEvent`), a `onCastShowcase` (main.js) dla
-  `faceDown` w ogóle nie otwiera warstwy — zgodnie z właścicielem
-  („w ogóle ta warstwa nie powinna się pokazywać”). Dotyczy też własnego
-  morpha: rzucający zna swoją kartę (CR 708.6), a kafel i tak pokazuje
-  nazwę; warstwa dodałaby tylko pauzę.
+  (session.js `emitCastEvent`), a krycie warstwy jest WIDOKOWE — czysty
+  predykat `isCastHiddenFromViewer` (art-showcase.js, testowalny headless):
+  ukryty rzut jest z warstwy wykluczony TYLKO gdy rzuca nie-właściciel
+  widoku (bot); **własny morph gracza warstwę otwiera**
+  (doprecyzowanie właściciela: „wolałbym, żeby własny morph gracza
+  otwierał warstwę. FoW dotyczy tylko zagrań bota” — rzucający zna swoją
+  kartę, CR 708.6; ukryty rzut o nieznanym rzucającym = bezpieczne
+  krycie). `onCastShowcase` (main.js) decyduje na predykacie
+  (widok = HUMAN_ID).
 - **B (root cause):** sort panelu „Twoje działania” wg
   `ACTION_RANK[type] ?? 99`, a mapa ranków nie znała `cast_adventure` /
   `cast_adventure_creature` (ani `cast_escape`/`cast_flashback` /
@@ -70,8 +75,8 @@ of Tyr — Oracle „Equip {W}”, a silnik akceptował jedną dowolną manę
   Greatsword of Tyr ma kolorowy equip (reszta generyczna — bez `colors`,
   zachowanie bez zmian, test C5 anti-overfix).
 
-**Wyniki:** `npm test` **3747/3747** (było 3738, +9); `npm run build`
-56 modułów / 2906.9 kB (było 2901.8 kB).
+**Wyniki:** `npm test` **3748/3748** (było 3738, +10); `npm run build`
+56 modułów / 2907.7 kB (było 2901.8 kB).
 
 ## Sesja 2026-08-29 (etap 3) — „Uwagi z testów”: dwa błędy decyzji bota (talia Warhammer) naprawione w root cause (arena/01a04e98, PR #88)
 
