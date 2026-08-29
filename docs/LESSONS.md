@@ -1700,3 +1700,37 @@ nie boli, dopóki nikt jej nie sprawdzi.
 `test/benchmark-budget-probki.test.js` (budżet trzyma rozmiar dla 6/22/45/120
 talii, pokrycie każdej talii, determinizm próbki); raport wypisuje
 `ZACINKI (watchdog N ms)` z adresem każdego przerwanego meczu.
+
+## L90 (2026-08-29) — Trzecia powtórka tej samej klasy: oferta i walidacja rozjechały się PORZĄDKIEM (Exploit vs cel triggera)
+
+**Objaw:** pierwsza w życiu pełna macierz, która w ogóle dobiegła do sensownego
+momentu, zatrzymała się na 58,5%: `Bot wybrał nielegalną komendę:
+exploit_unresolved — aggro(tarkir-bg) vs random(theros), seed 1003`. Bot dostał
+w ofercie `resolve_trigger_target` i `activate_ability`, a odrzuciła go bramka
+exploitu, której w ofercie nie było widać.
+**Przyczyna:** `firstPendingDecisionPlayerId` układał decyzje „cel triggera →
+exploit", a bramki w `execute` stały odwrotnie (exploit wcześniej). Gdy gracz
+miał obie decyzje naraz, oferta mówiła „najpierw cel triggera", walidacja —
+„tylko `resolve_exploit_choice`". Ta sama klasa co F i M254/E, tylko że nie
+dwie kopie jednej reguły, lecz **dwa porządki tej samej reguły**.
+**Reguła:**
+1. Kolejność „kto teraz decyduje" mieszka w JEDNEJ funkcji, która zwraca nie
+   tylko właściciela, ale i RODZAJ decyzji (`firstPendingDecision` →
+   `{ playerId, kind }`). Bramka execute pyta: „czy pierwsza decyzja jest MOJA
+   i tego rodzaju?" — nigdy „czy kolejka jest niepusta".
+2. Predykat blokady jest jeden i wołają go OBIE strony, oferta i walidacja
+   (`exploitDecisionPendingFor`; wzorzec z F — `closingCombatPassBlocked`).
+3. Bramka „coś czeka" ma być warunkiem na właściciela i rodzaj, nie na sam
+   fakt niepustości kolejki — inaczej blokuje gracza, którego decyzja jest
+   wcześniejsza.
+4. Przy N-tej powtórce jednej klasy szukaj WSPÓLNEGO MIANOWNIKA klasy, nie
+   kolejnego przypadku (L28).
+5. Martwy wartownik to też błąd: sprawdzony dodatkowy warunek okazał się
+   nadmiarowy (blok akcji jest już osłonięty wyżej) — mutacja go nie
+   czerwieniła, więc go usunąłem, zamiast zostawić jako „dokumentację zamiaru"
+   (L83: strażnik ma mierzyć regułę, nie tekst).
+**Strażnik:** `test/m255-petla-jakosci.test.js` — G1 (replay adresu z macierzy:
+`aggro(tarkir-bg)` vs `random(theros)`, seed 1003, mecz kończy się) i G2
+(Exploit blokuje wyłącznie jako PIERWSZA decyzja; opcja `skip` jest w ofercie;
+cudza decyzja nie daje komend). Mutacje: „bramka blokuje każdego" → G1
+czerwone; „blokuje właściciela bez względu na porządek" → G1 czerwone.

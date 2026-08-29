@@ -382,3 +382,92 @@ test('F5 — wyjątek aggro-bota niesie kontekst (krok/komendy): 50 min macierzy
   assert.match(blad.message, /combat_damage/, 'komunikat mówi, w którym kroku');
   assert.match(blad.message, /activate_ability/, 'komunikat wymienia komendy, których nie rozpoznał');
 });
+
+// === M255/G =============================================================
+// Trzecia powtórka tej samej klasy (po F i M254/E): OFERTA vs WALIDACJA.
+// Tym razem nie o jedną regułę w dwóch kopiach, tylko o DWA PORZĄDKI:
+// `firstPendingDecision` mówi „najpierw cel triggera, potem exploit",
+// a bramka exploitu w execute stała WCZEŚNIEJ niż bramka celu triggera.
+// Gdy gracz miał obie decyzje naraz, oferta dawała `resolve_trigger_target`,
+// a execute odrzucał je wcześniejszą bramką:
+//   „Bot wybrał nielegalną komendę: exploit_unresolved"
+//   — aggro(tarkir-bg) vs random(theros), seed 1003 (58,5% pełnej macierzy).
+
+test('G1 — mecz, który wykładał macierz po naprawie rozmiaru (aggro/tarkir-bg vs random/theros, seed 1003), kończy się', async () => {
+  const [{ runSimulation }, { setupCardMatch }, bench, fs] = await Promise.all([
+    import('../src/engine/simulation.js'),
+    import('../src/cards/materialize.js'),
+    import('../tools/benchmark.mjs'),
+    import('node:fs'),
+  ]);
+  const parse = (await import('../src/cards/deck-text.js')).parseDeckText;
+  const seed = 1003;
+  const tarkir = parse(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), REGISTRY).cardIds;
+  const theros = parse(fs.readFileSync('decks/theros.txt', 'utf8'), REGISTRY).cardIds;
+  const state = setupCardMatch({
+    seed,
+    players: [{ id: 'p1' }, { id: 'p2' }],
+    decks: new Map([['p1', tarkir], ['p2', theros]]),
+    registry: REGISTRY,
+  });
+  // Bez poprawki G: p2 wybiera activate_ability / resolve_trigger_target,
+  // a bramka exploitu (p1) odrzuca komendę wcześniej → wyjątek symulacji.
+  const { state: final } = runSimulation({
+    state,
+    controllers: new Map([
+      ['p1', bench.BENCH_BOT_FACTORIES.aggro(seed + 1, { opponentDeck: theros })],
+      ['p2', bench.BENCH_BOT_FACTORIES.random(seed + 2, { opponentDeck: tarkir })],
+    ]),
+    maxCommands: 8000,
+  });
+  assert.equal(final.status, 'finished', 'mecz kończy się (przed poprawką: „nielegalna komenda: exploit_unresolved”)');
+  assert.ok(final.winnerId, 'jest zwycięzca');
+});
+
+test('G2 — oczekująca decyzja Exploit blokuje wyłącznie wtedy, gdy jest PIERWSZA w kolejce (nie każda, nie cudza)', async () => {
+  const { playerView } = await import('../src/engine/game-state.js');
+  const { gameObjectDataOf } = await import('../src/cards/materialize.js');
+  const state = game('p1', 'main');
+
+  // p1: stwór z exploitem + kandydat do poświęcenia.
+  put(state, 'butcher', 'silumgar-butcher', 'p1');
+  put(state, 'kandydat', 'highland-game', 'p1');
+  const butcher = state.objects.get('butcher');
+  const kandydat = state.objects.get('kandydat');
+  assert.ok(butcher.exploit, 'karta ma mechanikę Exploit');
+
+  // Stan: decyzja exploitu czeka na p1.
+  state.pendingExploits.push({ playerId: 'p1', sourceId: butcher.id, candidateIds: [kandydat.id], restorePriorityTo: 'p2' });
+
+  const widokP1 = playerView(state, 'p1');
+  assert.ok(
+    widokP1.legalCommands.some((c) => c.type === 'resolve_exploit_choice'),
+    'właściciel decyzji dostaje komendę resolve_exploit_choice',
+  );
+  assert.ok(
+    widokP1.legalCommands.some((c) => c.type === 'resolve_exploit_choice' && c.skip === true),
+    'Exploit to „you may” — opcja skip musi być w ofercie',
+  );
+  // G: żadna zwykła akcja nie wchodzi do oferty, gdy czeka oczekująca decyzja.
+  // Kontrola pozytywna: zdolność DO AKTYWACJI naprawdę istnieje (inaczej
+  // twierdzenie byłoby puste — mutacja usunięcia wartownika przeszłaaby
+  // na zielono, bo `legalActivatedAbilities` i tak zwracałoby zero).
+  put(state, 'soulmender', 'soulmender', 'p1');
+  const { legalActivatedAbilities } = await import('../src/engine/abilities.js');
+  assert.ok(
+    legalActivatedAbilities(state, 'p1').length > 0,
+    'kontrola pozytywna: p1 ma zdolność do aktywacji (bez niej test byłby pusty)',
+  );
+  const poDodaniu = playerView(state, 'p1');
+  assert.ok(
+    !poDodaniu.legalCommands.some((c) => c.type === 'activate_ability'),
+    'inwariant oferta↔walidacja: przy czekającej decyzji nie wolno oferować zwykłych akcji',
+  );
+
+  // Przeciwnik nie dostaje komendy cudzej decyzji.
+  const widokP2 = playerView(state, 'p2');
+  assert.ok(
+    !widokP2.legalCommands.some((c) => c.type === 'resolve_exploit_choice'),
+    'cudza decyzja nie daje komend przeciwnikowi',
+  );
+});
