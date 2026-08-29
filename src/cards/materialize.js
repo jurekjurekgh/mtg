@@ -170,6 +170,13 @@ export function createCardDeck({ cardIds, ownerId, registry }) {
     if (card.transformTo) {
       const back = registry.get(card.transformTo);
       if (!back) throw new Error(`Brak drugiej strony transform: ${card.transformTo}`);
+      // CR 711.4a (M257/K5, Żywy Tester): DFC poza polem bitwy ma wyłącznie
+      // cechy twarzy przedniej. Karta z talii ZAWSZE wchodzi przodem (parser
+      // talii zamienia nazwę tyłu na front), więc `card` jest tu twarzą
+      // przednią pary — engine resetuje na nią twarz przy opuszczeniu pola
+      // bitwy (obrócony wilkołak odbity na rękę wraca przodem; rzut z ręki
+      // idzie na stos przodem — CR 711.7/711.8).
+      data.frontFaceId = card.id;
       data.transformTo = {
         cardId: back.id,
         // RODZAJ drugiej strony (CR 711.2): bez niego transformacja nie umiała

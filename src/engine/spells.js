@@ -1876,7 +1876,9 @@ function resolvePermanentSpell(state, stackId, object, before) {
       },
     });
     state.objects.set(newId, nightbound);
-    state.events.push(event('object_transformed', { objectId: newId, fromCardId: permanent.cardId, cardId: target.cardId, enteredNightbound: true }));
+    // controllerId: warstwa stołu kwalifikuje transform do panelu
+    // „Rozgrywka" po kontrolerze (isHumanHeadline, M257/K4).
+    state.events.push(event('object_transformed', { objectId: newId, fromCardId: permanent.cardId, cardId: target.cardId, enteredNightbound: true, controllerId: nightbound.controllerId }));
   }
   const enteredNow = state.objects.get(newId);
   // M154 (Warp): permanent rzucony za koszt warp — przy wejściu zbroimy

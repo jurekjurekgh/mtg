@@ -2522,7 +2522,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       },
     });
     state.objects.set(sourceObject.id, updated);
-    state.events.push(event('object_transformed', { objectId: sourceObject.id, fromCardId: sourceObject.cardId, cardId: target.cardId }));
+    // controllerId: warstwa stołu (isHumanHeadline, M100/E5) kwalifikuje
+    // transform własnego permanentu do panelu „Rozgrywka" po kontrolerze —
+    // bez tego pola wpis w HUMAN_DIGEST_EVENTS był martwy (audyt M257/K4:
+    // transform człowieka nie pokazywał się w podsumowaniu pauzy).
+    state.events.push(event('object_transformed', { objectId: sourceObject.id, fromCardId: sourceObject.cardId, cardId: target.cardId, controllerId: sourceObject.controllerId }));
     return;
   }
   if (effect.type === 'exile_all') {
@@ -4043,7 +4047,9 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.events.push(event('object_moved', {
       fromId: exileId, object: transformed, fromZone: 'exile', toZone: 'battlefield', transformReturn: true,
     }));
-    const transformedEvent = event('object_transformed', { objectId: bfId, fromCardId: object.cardId, cardId: target.cardId });
+    // controllerId: warstwa stołu kwalifikuje transform do panelu
+    // „Rozgrywka" po kontrolerze (isHumanHeadline, M257/K4).
+    const transformedEvent = event('object_transformed', { objectId: bfId, fromCardId: object.cardId, cardId: target.cardId, controllerId: transformed.controllerId });
     state.events.push(transformedEvent);
     return;
   }

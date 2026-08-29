@@ -102,8 +102,46 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
   const controllerAfterMove = (object.zone === 'battlefield' && toZone !== 'battlefield' && toZone !== 'stack')
     ? (object.ownerId ?? object.controllerId)
     : object.controllerId;
+  // CR 711.4a (M257/K5, Żywy Tester g1001): DFC poza polem bitwy ma wyłącznie
+  // cechy Twarzy PRZEDNIEJ. Obrócony na tył permanent (wilkołak), który
+  // opuszcza pole bitwy (bounce, śmierć, wygnanie), odwraca się na przód:
+  // w ręce/grobie/bibliotece widnieje przód, a rzut z ręki idzie na stos
+  // przodem (CR 711.7) i wchodzi przodem (CR 711.8). Twarzą przednią pary
+  // jest `frontFaceId` (snapshot z materializacji); cechy przedniej twarzy
+  // przy tylnym obrazku niesie `transformTo` (efekt transform buduje go z
+  // cech sprzed obrócenia) — odwracamy go w `transformTo` nowego obiektu,
+  // żeby flicker w obie strony dalej działał. LKI (CR 603.10) zachowuje
+  // twarz z pola bitwy: `rememberLastKnownObject` dostaje stary obiekt, a
+  // żaden z obecnych triggerów `leaves_battlefield` nie czyta P/T odchodzącego.
+  let dfcFaceReset = null;
+  if (object.zone === 'battlefield' && toZone !== 'battlefield'
+    && object.transformTo && object.frontFaceId && object.cardId !== object.frontFaceId) {
+    const front = object.transformTo;
+    dfcFaceReset = {
+      cardId: front.cardId,
+      cardName: front.cardName ?? object.cardName,
+      power: front.power,
+      toughness: front.toughness,
+      abilities: front.abilities,
+      keywords: front.keywords ?? [],
+      subtypes: front.subtypes ?? [],
+      ...(front.kind != null ? { kind: front.kind } : {}),
+      ...(front.types ? { types: front.types } : {}),
+      transformTo: Object.freeze({
+        cardId: object.cardId,
+        cardName: object.cardName,
+        power: object.power,
+        toughness: object.toughness,
+        abilities: object.abilities,
+        keywords: object.keywords ?? [],
+        subtypes: object.subtypes ?? [],
+        ...(object.kind != null ? { kind: object.kind } : {}),
+        ...(object.types ? { types: object.types } : {}),
+      }),
+    };
+  }
   const moved = Object.freeze({
-    ...object, id: newObjectId, zone: toZone, controllerId: controllerAfterMove,
+    ...object, ...dfcFaceReset, id: newObjectId, zone: toZone, controllerId: controllerAfterMove,
     // Crew Captain / enteredThisTurn: numer tury WEJŚCIA na pole bitwy.
     // Opuszczenie pola bitwy czyści flagę (nowy obiekt, CR 400.7).
     enteredOnTurn: toZone === 'battlefield' ? state.turn.number : null,
@@ -144,7 +182,10 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
     // informacji, choć sam grant nie przechodzi przez zmianę strefy.
     formerAbilityGrants: Object.freeze([...(object.abilityGrants ?? [])]),
     attachedTo: null,
-    kind: object.kind === 'aura' ? (object.baseKind ?? 'creature') : object.kind,
+    // CR 711.2: rodzaj twarzy przedniej przy DFCE (np. Incubator: tył to
+    // stwór, przód to artefakt) — reset twarzi (M257/K5) nadaje `kind`
+    // przedniej strony, a nie stalej `object.kind` (tylnej).
+    kind: object.kind === 'aura' ? (object.baseKind ?? 'creature') : (dfcFaceReset?.kind ?? object.kind),
     baseKind: null,
   });
   state.objects.delete(object.id); state.objects.set(newObjectId, moved);
