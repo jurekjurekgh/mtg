@@ -3038,6 +3038,16 @@ pięć napraw wyszło z lektury transkryptów. Szczegóły i dowody:
 - **E (bot):** `buff_attacking_creatures` w `TEMPORARY_PUMP_EFFECTS` +
   reprezentant zbioru (własny atakujący) — bot przestał palić {2} + tap w
   Głównej 1 i nadal używa premii w oknie walki (test E2 anty-over-fix).
+- **F (silnik + narzędzie, z próby pełnej macierzy):** obrońca w kroku obrażeń
+  dostaje `pass_priority` (reguła `closingCombatPassBlocked` — jedna funkcja
+  dla oferty i walidacji; zakaz domykającego passu dotyczy wyłącznie gracza
+  aktywnego, bo tylko on ma `resolve_combat`). Pełna runda passów w tym kroku
+  oddaje priorytet aktywnemu zamiast domykać krok (obrażenia nie zostaną
+  pominięte: regresja M172/C). Przed poprawką oferta obrońcy w oknie obrażeń
+  to było `concede` (+ ewentualna aktywacja) — martwy punkt, przez który
+  pełna macierz benchmarku kończyła się wyjątkiem aggro-bota w 15. turze.
+  Narzędzie: wyjątek kontrolera niesie krok/komendy, `runBenchmark` — adres
+  meczu (L88).
 
 ## M254 — Batch 51: 8 kart właściciela (2026-08-28, PR #87)
 

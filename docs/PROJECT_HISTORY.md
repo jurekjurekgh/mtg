@@ -19,7 +19,7 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
-- **Ostatnia aktualizacja:** 2026-08-29 (sesja arena/01a049c7: audyt PR #86 → A1 strażnik L16, porządki w `tmp-audyt-*`, **Batch 51: 8 kart właściciela (artId 572–579)**, uwagi z testów A–E, **M255: pętla jakości Żywym Testerem po Batchu 51 (18 partii, 5 napraw A–E)**, PR #87)
+- **Ostatnia aktualizacja:** 2026-08-29 (sesja arena/01a049c7: audyt PR #86 → A1 strażnik L16, porządki w `tmp-audyt-*`, **Batch 51: 8 kart właściciela (artId 572–579)**, uwagi z testów A–E, **M255: pętla jakości Żywym Testerem po Batchu 51 (18 partii, 5 napraw A–E) + znalezisko F z próby pełnej macierzy benchmarku**, PR #87)
 
 ## Sesja 2026-08-29 — M255: pętla jakości Żywym Testerem po Batchu 51 (PR #87)
 
@@ -70,6 +70,21 @@ w `test/m255-petla-jakosci.test.js`):**
   aktywował ją w Głównej 1, gdy nikt nie atakował (transkrypt tura 16: 2 many
   + tap na efekt wygasły w cleanup). Wpis w tabeli + **reprezentant zbioru**
   (własny atakujący) dla wspólnego mianownika — dopisek do L50.
+
+- **F. Znalezisko z próby pełnej macierzy benchmarku (silnik + narzędzie).**
+  `node tools/benchmark.mjs --full` (~23 400 meczów) kończył się wyjątkiem
+  aggro-bota „nie znalazł ruchu mimo legalnych komend” BEZ ADRESU meczu. Po
+  dopisaniu kontekstu do narzędzia: tura 15, `combat_damage`, priorytet p2,
+  oferta `activate_ability, concede` — obrońca nie miał pass ani
+  `resolve_combat`. Przyczyna: reguła M172/C (pass nie domknie kroku obrażeń)
+  żyła w dwóch kopiach (execute + oferta) i blokowała pass KAŻDEMU graczowi,
+  a alternatywa (`resolve_combat`) należy wyłącznie do aktywnego. Naprawa:
+  jedna funkcja `closingCombatPassBlocked` (zakaz tylko dla aktywnego; oferta
+  = walidacja) + pełna runda passów w tym kroku oddaje priorytet aktywnemu
+  zamiast domykać krok. Świadomie BEZ ślepego fallbacku w polityce bota.
+  Golden-master bota zmienił się w jednej z sześciu partii (101 → 224
+  decyzje = partia kończyła się przedwcześnie) — dowód martwego punktu.
+  Nowa lekcja **L88**.
 
 **Sprawdzone i uznane za poprawne (bez zmian):** Invasive Species (cel
 obowiązkowy, „inny permanent", lądy legalne — 7 opcji bez siebie), renown

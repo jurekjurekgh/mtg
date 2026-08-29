@@ -145,6 +145,57 @@ zawsze). Reprezentant = własny atakujący z `view.combat` (ADR 0017). Po
 naprawie: w `r2-twur-whwu-s37` bot Thunderstaffa w Głównej 1 już NIE rusza, a
 test E2 (anty-over-fix) potwierdza aktywację w oknie walki. Dopisek do L50.
 
+## Znalezisko F (silnik + narzędzie) — obrońca bez pass w kroku obrażeń (martwy punkt pełnej macierzy)
+
+**Źródło:** nie tester, tylko PRÓBA PEŁNEJ MACIERZY (wątpliwość 5 w PR #87):
+`node tools/benchmark.mjs --full` (~23 400 meczów, ~50 min) kończył się
+
+```
+Błąd benchmarku: Kontroler nie znalazł ruchu mimo legalnych komend
+```
+
+bez żadnego adresu. Narzędzie dostało kontekst (L88): kontroler wymienia
+krok i komendy, `runBenchmark` dokłada boty/talie/seed. Drugi bieg wskazał:
+
+```
+[tura 15 · combat/combat_damage · priorytet: p2 · komendy: activate_ability, concede]
+— mecz: random(final-fantasy) vs aggro(alara), seed 1001
+```
+
+**Przyczyna (silnik, nie bot):** reguła M172/C „pass nie może domknąć kroku
+obrażeń” istniała w DWÓCH KOPIACH — w `execute` (odrzucenie
+`combat_unresolved`) i w budowie oferty (`blockedByCombat`) — i obie blokowały
+pass KAŻDEMU graczowi, podczas gdy jedyna alternatywa (`resolve_combat`) jest
+oferowana wyłącznie graczowi AKTYWNEMU. Obrońca, który dostał priorytet przy
+`passes = 1` i pustym stosie (standardowo po akcji atakującego w oknie
+obrażeń — CR 117.3b oddaje priorytet aktywnemu), nie miał ani pass, ani
+`resolve_combat`: zostawał z samym `concede`. Dla człowieka oznacza to brak
+przycisku „Dalej” w oknie obrażeń.
+
+**Naprawa (wspólny mianownik, nie `if` po nazwie roli):**
+
+1. Jedna funkcja `closingCombatPassBlocked(state, playerId)` — oferta i
+   walidacja czytają tę samą regułę (L41/L48: kopie się rozjeżdżają).
+   Zakaz dotyczy wyłącznie gracza, który MA alternatywę (aktywny).
+2. Pełna runda passów w kroku obrażeń NIE domyka kroku: priorytet wraca do
+   aktywnego gracza, a licznik passów zostaje domknięty — jego pass jest
+   nadal odrzucany, więc obrażenia nie zostaną pominięte (regresja M172/C).
+3. Narzędzie: wyjątek aggro-bota niesie krok/komendy, `runBenchmark` — adres
+   meczu. Świadomie NIE dodano ślepego fallbacku w polityce bota („bierz
+   pierwszą legalną komendę”): ukryłby lukę polityki, a wyjątek z adresem
+   lokalizuje prawdziwą przyczynę w minutę.
+
+**Dowód, że to był martwy punkt, nie wycena:** golden-master bota
+(`test/bot-scoring-snapshot.test.js`) zmienił się w DOKŁADNIE jednej z sześciu
+partii: `dominaria-brg|mirrodin-wu@1001` — decyzje **101 → 224** (partia
+kończyła się przedwcześnie), `scoreSum` rośnie razem z długością partii. Fixture
+zregenerowano procedurą repo (`node tools/bot-scoring-snapshot.mjs --write`).
+
+**Testy:** F1 (obrońca ma pass), F2 (atakujący nadal nie ma — M172/C
+nienaruszone), F3 (pass nie domyka kroku: obrażenia padają po
+`resolve_combat`), F4 (mecz `random/final-fantasy vs aggro/alara`, seed 1001
+dochodzi do końca), F5 (wyjątek bota niesie kontekst).
+
 ## Sprawdzone i UZNANE za poprawne (bez zmian)
 
 - **Invasive Species**: cel obowiązkowy, „inny permanent", 7 opcji (bez siebie),
@@ -166,18 +217,22 @@ test E2 (anty-over-fix) potwierdza aktywację w oknie walki. Dopisek do L50.
 2. **Bloodrush poza zasięgiem detektorów**: w 18 partiach ani jednego okna.
    Warto dołożyć profil testera albo partię z wymuszoną ręką (seedowany deck
    stacking), żeby ćwiczyć mechaniki „z ręki”.
-3. Budżet lektury startowej rośnie: ~96,6k / 100k po tej sesji (+1,6k). Przy
-   kolejnej nowej lekcji trzeba będzie przenieść część starszych wpisów do
-   archiwum poza lekturą obowiązkową.
+3. Budżet lektury startowej rośnie: ~97,2k / 100k po tej sesji (+2,2k; L88
+   waży ~0,5k). Zapas ~2,8k tokenów wystarczy na jedną-dwie lekcje — potem
+   trzeba przenieść część starszych wpisów do archiwum poza lekturą
+   obowiązkową.
 
 ## Bramy
 
-- `npm test` **3687/3687** (było 3674; +13 nowych testów w
-  `test/m255-petla-jakosci.test.js`).
-- `npm run build` **56 modułów / 2882.5 kB**.
+- `npm test` **3692/3692** (było 3674; +18 nowych testów w
+  `test/m255-petla-jakosci.test.js`: A–E = 13, F = 5).
+- `npm run build` **56 modułów / 2884.2 kB**.
 - Strażniki dokumentacji (`docs-decisions`, `dokumentacja-budzet-lektury`): 17/17.
-- Weryfikacja mutacyjna: A→A1/A2/A3, B→B1/B2, C→C1/C2, D→D1/D2, E→E1 (każda
-  naprawa cofnięta jedną edycją czerwieni właściwy test).
+- Weryfikacja mutacyjna: A→A1/A2/A3, B→B1/B2, C→C1/C2, D→D1/D2, E→E1,
+  F→MUT1:(F1,F3,F4) / MUT2:(F2,F3) / MUT3:(F3) / MUT4:(F5) — każda naprawa
+  cofnięta jedną edycją czerwieni właściwy test.
+  Uwaga proceduralna: `git checkout -- <plik>` w skrypcie mutacji cofnął też
+  niezatwierdzoną poprawkę F — kopie zapasowe plików zamiast checkout.
 - Benchmark B0 (`npm run test:slow`) bez zmian: naprawy nie dotykają wyceny
   czarów ani punktacji poza jednym wpisem w tabeli `TEMPORARY_PUMP_EFFECTS`
   (uruchamia się wyłącznie dla zdolności typu „atakujące stwory +X/+0”).

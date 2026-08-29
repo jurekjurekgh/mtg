@@ -69,6 +69,34 @@ M2, nie code review). Wniosek praktyczny: reguła 1 obowiązuje także wobec
 strażników, które sam piszesz — i to w dniu ich powstania.
 
 
+## L88 (2026-08-29) — Błąd bez adresu: narzędzie długiego biegu musi powiedzieć GDZIE (i jedna reguła = jedna funkcja dla oferty i walidacji)
+
+**Objaw (pełna macierz benchmarku):** `node tools/benchmark.mjs --full`
+(~23 400 meczów, ~50 min) kończył się: „Kontroler nie znalazł ruchu mimo
+legalnych komend”. Zero informacji, który mecz — drugi bieg po to samo.
+Po dopisaniu kontekstu (kontroler widzi komendy, więc o nich mówi: wzorzec
+L73) diagnoza zajęła 60 s: tura 15, `combat_damage`, priorytet p2, oferta
+`activate_ability, concede`.
+
+**Przyczyna:** reguła M172/C „pass nie może domknąć kroku obrażeń” była
+SKOPIOWANA w `execute` (odrzucenie) i w budowie oferty — i obie kopie
+blokowały pass KAŻDEMU graczowi, podczas gdy jedyna alternatywa
+(`resolve_combat`) jest oferowana wyłącznie graczowi AKTYWNEMU. Obrońca
+zostawał z samym `concede`.
+
+**Ustalenia:** (1) zakaz dotyczy tylko aktywnego gracza (`closingCombatPassBlocked`
+— jedna funkcja dla oferty i walidacji; klasa L41/L48: kopie się rozjeżdżają);
+(2) pełna runda passów w kroku obrażeń NIE domyka kroku — priorytet wraca do
+aktywnego, licznik passów zostaje domknięty, więc obrażenia nie zostaną
+pompinięte.
+
+**Nauka dla narzędzi:** komunikat błędu narzędzia, które liczy godzinę, musi
+nieść ADRES (mecz/seed/stan) — inaczej kosztuje drugie tyle, co sam bieg. Bot,
+który nie znajduje ruchu, to sygnał o OFERCIE silnika, nie o polityce bota.
+
+**Sformalizowane w:** `test/m255-petla-jakosci.test.js` (F1–F5; F4 = mecz,
+który wykładał macierz: `random/final-fantasy vs aggro/alara`, seed 1001).
+
 ## L87 (2026-08-29) — Skutek, którego nie widać, zamienia się w komunikat, że go NIE BYŁO (dwie bramki: zdarzenie i bramka szumu)
 
 **Objaw (pętla jakości Żywym Testerem, Kulrath Mystic):** transkrypt partii
