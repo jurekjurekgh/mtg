@@ -241,7 +241,9 @@ export function describeSpellEffects(spell) {
   }
   const parts = (spell.effects ?? []).map((effect) => {
     if (effect.type === 'damage') return `Obrażenia ${effect.amount}`;
-    if (effect.type === 'pump') return `+${effect.power}/+${effect.toughness} do końca tury`;
+    // M255/D: „+${power}/+${toughness}” drukowało SUROWY SLUG, gdy wartość
+    // jest dynamiczna (Tarmogoyf). Ten sam helper co buff_* (`ptPair`).
+    if (effect.type === 'pump') return `${ptPair(effect.power ?? 0, effect.toughness ?? 0)} do końca tury`;
     if (effect.type === 'create_token') {
       // amount > 1: „N× token" (Gather the Townsfolk 2×, Howl 2×+, Undead Servant wg grobu).
       // Domyślny amount=1 (ETB tworzące jeden token, np. Crested Herdcaller 3/3) —
@@ -811,8 +813,26 @@ function ptAmount(n) {
 function ptPair(power, toughness) {
   const p = ptAmount(power ?? 0);
   const t = ptAmount(toughness ?? 0);
-  if (p === t && typeof power === 'string' && typeof toughness === 'string') return p;
-  return `${p}/${t}`;
+  const pDyn = typeof power === 'string';
+  const tDyn = typeof toughness === 'string';
+  if (!pDyn && !tDyn) return `${p}/${t}`;
+  // M255/D (pętla jakości, Altar of the Goyf / Jyoti / Tarmogoyf): wartość
+  // DYNAMICZNA (string) to DEFINICJA X, a nie liczba premii. Drukowanie jej
+  // samej („Gdy atakuje samotnie: liczba typów kart w grobach do końca tury”)
+  // brzmiało tak, jakby treścią efektu była definicja, a nie +X/+X — gracz
+  // nie widział, co właściwie dostaje stwór. Jedna reguła dla pary: premia
+  // zawsze ma znak, a definicje X/Y idą po „gdzie” (L41 — jedno źródło
+  // prawdy dla obu etykiet, które mogą nieść wartości dynamiczne: `ptPair`
+  // dla buff_* i `pump`).
+  // Równe definicje (Jyoti: source_power/source_power; Altar: liczba typów
+  // kart w grobach dla obu) pokazujemy RAZ (pin: test/bug-ptpair-description).
+  const pair = (pDyn && tDyn && p === t)
+    ? `+X/+X (X = ${p})`
+    : `${pDyn ? '+X' : p}/${tDyn ? '+Y' : t}${pDyn || tDyn ? ` (${[
+        ...(pDyn ? [`X = ${p}`] : []),
+        ...(tDyn ? [`Y = ${t}`] : []),
+      ].join(', ')})` : ''}`;
+  return pair;
 }
 
 /** Diament (2026-08-11): odmiana „obrażenie/obrażenia/obrażeń" wg liczby. */
@@ -832,7 +852,10 @@ function describeEffect(e) {
   // „efekt (undefined)" — pomijamy (audyt żywym testerem).
   if (!e || typeof e.type !== 'string' || e.type === '') return '';
   const generic = {
-    pump: () => `${signed(e.power ?? 0)}/${signed(e.toughness ?? 0)} do końca tury${e.upgradeIfCreatures ? ` (${signed(e.upgradeIfCreatures.power ?? 0)}/${signed(e.upgradeIfCreatures.toughness ?? 0)} przy ${e.upgradeIfCreatures.min}+ stworach)` : ''}`,
+    // M255/D: `signed()` nie znał wartości dynamicznych — dla „pump” z X
+    // (Tarmogoyf: liczba typów kart w grobach) panel drukowałby SUROWY SLUG.
+    // Ten sam helper co buff_* (`ptPair`), liczby bez zmian (D3).
+    pump: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} do końca tury${e.upgradeIfCreatures ? ` (${signed(e.upgradeIfCreatures.power ?? 0)}/${signed(e.upgradeIfCreatures.toughness ?? 0)} przy ${e.upgradeIfCreatures.min}+ stworach)` : ''}`,
     exile_if_dies_this_turn: () => 'jeśli miałby umrzeć w tej turze, wygnaj go zamiast tego',
     create_token: () => {
       const count = Number.isFinite(e.amount) && e.amount > 1 ? `×${e.amount} ` : '';

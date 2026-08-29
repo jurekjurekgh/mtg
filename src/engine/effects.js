@@ -1734,17 +1734,44 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       if (v === 'source_power') return effectivePower(sourceObject, state);
       return v ?? fb;
     };
+    const power = dyn(effect.power, 0);
+    const toughness = dyn(effect.toughness, 0);
+    const keywords = Object.freeze([...(effect.keywords ?? [])]);
     state.untilEndOfTurnBuffs = [
       ...(state.untilEndOfTurnBuffs ?? []),
       Object.freeze({
         objectId: targetId,
         controllerId: target.controllerId,
         opponent: false,
-        power: dyn(effect.power, 0),
-        toughness: dyn(effect.toughness, 0),
-        keywords: Object.freeze([...(effect.keywords ?? [])]),
+        power,
+        toughness,
+        keywords,
       }),
     ];
+    // M255/A (pętla jakości Żywym Testerem, Kulrath Mystic): skutek bez
+    // zdarzenia jest dla reszty systemu NIEWIDZIALNY, a `resolveTrigger`
+    // czyta „0 nowych zdarzeń” jako „trigger bez efektu” — log mówił
+    // graczowi „nie było czego wykonać” w chwili, gdy stwór realnie dostał
+    // +2/+0 i czujność (klasa M138/Z4 dla `set_base_pt_until_end_of_turn`).
+    // Ten sam wzorzec co masowe buffy (`emitMassBuff`): buff ogłasza się
+    // zdarzeniem, nawet gdy jedyną zmianą jest wpis w `untilEndOfTurnBuffs`.
+    // Dotyczy też Altara of the Goyf po naprawie M254/E — tam komunikat był
+    // prawdziwy (pompowany był artefakt), teraz byłby kłamstwem.
+    state.events.push(event('stats_modified', {
+      objectId: targetId,
+      cardId: target.cardId,
+      powerModifier: power,
+      toughnessModifier: toughness,
+      untilEndOfTurn: true,
+    }));
+    if (keywords.length > 0) {
+      state.events.push(event('keyword_granted', {
+        objectId: targetId,
+        cardId: target.cardId,
+        keywords: [...keywords],
+        untilEndOfTurn: true,
+      }));
+    }
     return;
   }
   // M115 (Krumar Initiate, TDM): „This creature endures X" — X z kosztu

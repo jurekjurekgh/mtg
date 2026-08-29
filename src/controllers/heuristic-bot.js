@@ -590,6 +590,11 @@ export const TEMPORARY_PUMP_EFFECTS = new Map([
   ['pump_by_gates', 'gateCount'],
   ['pump_by_creature_count', 'creatureCount'],
   ['buff_creature_until_end_of_turn', 'descriptor'],
+  // M255/E (pętla jakości Żywym Testerem, Thunderstaff): „atakujące stwory
+  // dostają +1/+0 do końca tury” ma ten sam kształt co pump — bez wpisu
+  // zdolność nie miała wyceny (gołe score = 2) i bot aktywowała ją w Głównej
+  // 1, gdy nikt nie atakował (2 many + tap na efekt, który wygasa w cleanup).
+  ['buff_attacking_creatures', 'descriptor'],
 ]);
 
 /**
@@ -2793,7 +2798,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // Pump bez jawnych celów działa na samo źródło (np. Warboar);
             // aura firebreathing pompuje zaczarowanego stwora.
             const enchantedId = effect.type === 'pump_enchanted_creature' ? source?.attachedTo : null;
-            const recipient = target ?? (enchantedId ? objectOnBoard(view, enchantedId) : null) ?? source;
+            // M255/E: „atakujące stwory dostają +X/+0” — odbiorcą jest ZBIÓR
+            // atakujących (CR 611.2c), nie cel i nie źródło. Bez
+            // reprezentanta zbioru `recipient` był artefaktem-źródłem, więc
+            // `combatTrickWindow` nie zachodził i bot dostawał karę „poza
+            // oknem walki” ZAWSZE (również w walce) albo (przed wpisem do
+            // tabeli) gołą bazę 2. Reprezentant = własny atakujący z
+            // PlayerView (ADR 0017); dalej obowiązują te same reguły co dla
+            // pumpa z pojedynczym celem (L28 — wspólny mianownik).
+            const attackingRecipientId = effect.type === 'buff_attacking_creatures'
+              ? (view.combat?.attackers ?? []).find((id) => objectOnBoard(view, id)?.controllerId === view.playerId)
+              : null;
+            const recipient = target ?? (enchantedId ? objectOnBoard(view, enchantedId) : null)
+              ?? (attackingRecipientId ? objectOnBoard(view, attackingRecipientId) : null) ?? source;
             // Savage Surge: ODKRĘCENIE celu obok pumpu („Untap that creature")
             // — premia tylko, gdy cel naprawdę jest zatapnięty (odkręcenie
             // nietapniętego stwora nic nie kupuje).
