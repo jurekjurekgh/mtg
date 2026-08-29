@@ -19,7 +19,46 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
-- **Ostatnia aktualizacja:** 2026-08-29 (sesja arena/01a04e98, etap 2: **petla jakości M257** — Żywy Tester na puli Innistrad (22 karty); **K5 naprawiony** (DFC poza polem bitwy wraca przodem, CR 711.4a/711.7/711.8, `3f4d122`) + **K4 naprawiony** (controllerId w `object_transformed` — transform człowieka w panelu Rozgrywka); K1/K3/K6/D0 zamknięte jako nie-błędy, K2 zgłoszone (kosmetyka); raport `docs/audits/AUDYT_M257_2026-08-29.md`; `test:all` 3740/3740; **PR #88**)
+- **Ostatnia aktualizacja:** 2026-08-29 (sesja arena/01a04e98, etap 3: **uwagi z testów** (talia Warhammer) — dwa błędy decyzji bota naprawione w root cause: **B** Rupture Spire „zapłać {1} albo poświęć” → bot zawsze poświęcał (brak case'u wyceny + enumeracja pay:false na czele; `6a0cd62`) i **A** Squire's Lightblade rzucany bez kreatury na stole (wycena rzutu equipmentu bez kontekstu nosiciela; `6a0cd62`); 8 testów regresji; `npm test` 3738/3738; build 2901.8 kB; **PR #88**)
+
+## Sesja 2026-08-29 (etap 3) — „Uwagi z testów”: dwa błędy decyzji bota (talia Warhammer) naprawione w root cause (arena/01a04e98, PR #88)
+
+**Zakres:** zgłoszenie właściciela po testach na talii **Warhammer
+Fantasy** (wU) — dwie konkretne decyzje bota: (A) Squire's Lightblade
+rzucana bez własnych kreatur na stole, (B) Rupture Spire — bot z 3
+nietapniętymi lądami wybierał POŚWIĘCENIE zamiast zapłaty {1}.
+
+**Naprawione (commit `6a0cd62`, 8 testów w `test/m257-uwagi-z-testow.test.js`):**
+- **B (root cause dwuczłonowy):** `scoreCommand` (heuristic-bot.js) nie
+  miało case'u dla `resolve_pay_or_sacrifice` (domyślnie 0) → remis z
+  wariantem „poświęć” (również 0), a stabilny sort w `chooseCommand`
+  bierze PIERWSZĄ ofertę — a w enumeracji (game-state.js:5488) na czele
+  stało `pay:false` (komentarz „Boty płacą (pierwsza oferta)” kłamał).
+  Bot więc **zawsze** poświęcał. Fix: jawna wycena (pay 90 / sacrifice 5
+  — silnik prezentuje decyzję TYLKO gdy opłacalna: `queuePayOrSacrifice`
+  bramkuje `producibleMana >= amount`, a w trakcie decyzji blokuje inne
+  akcje, więc płatność jest zawsze co najmniej tak dobra: CR 106.4,
+  `spendMana` auto-tapuje) + odwrócenie enumeracji na pay-first
+  (kolejność = intencja, M203/2; UI pokazuje zapłatę najpierw).
+  Ta sama klasa braków case'u domknięta zapobiegawczo dla
+  `resolve_counter_pay_choice` (85/10 — Frightful Delusion) i
+  `resolve_optional_pay_choice` (75/15 — „you may pay... When you do”,
+  bramka `canPayTrigger`).
+- **A (root cause):** wycena `cast_permanent` = `P.creatureBase` + P/T —
+  equipment to 0/0, więc Squire's Lightblade dostawała 70 (tyle co
+  zwykły stwór) niezależnie od kontekstu. Fix generyczny po deskryptorze
+  (ADR 0002): `card.equipment` + brak własnych kreatur = kara poniżej
+  passu (ETB „attach za darmo” fizzluje, CR 603.4b — kara mocniejsza;
+  bez ETB-attachu — słabsza, A4: Blazing Torch); nosiciel na stole =
+  premia za pompę (bez podwójnego liczenia keywordów — je wycenia
+  scoring Equip, M244). Efekt: bot trzyma equipment i gra stwora z ręki
+  PRZED nim (A2 — anti-overfix: po wejściu stwora rzut znów wart 64.8).
+
+**Wyniki:** `npm test` **3738/3738**; `npm run build` 56 modułów /
+2901.8 kB (dist przebudowany — poprzedni 2898.8 kB był stale po
+cofnięciu błędnej „poprawki” K6). Benchmark quick profile: heuristic
+**85.0% (571/672)** — po zmianie; baza 85.1% (M257/1), bez regresji;
+heuristic vs random 93.2%.
 
 ## Sesja 2026-08-29 (etap 2) — petla jakości M257: pool Innistrad, K5 (CR 711.4a) + K4 naprawione (arena/01a04e98, PR #88)
 
