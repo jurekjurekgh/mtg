@@ -721,6 +721,31 @@ export function maybeAddFaceDownFlyingCounter(state, controllerId, objectId) {
   if (hasSource) addCounter(state, objectId, 'flying', 1);
 }
 
+/**
+ * Odbiorcy efektu „każdy zakryty stwór, którego kontrolujesz" (Veiled
+ * Ascension). Wspólna definicja zbioru: efekt bierze z niej stwory do
+ * licznika, a raport „trigger bez efektu" w `triggers.js` pyta, czy zbiór
+ * jest pusty. Jedna reguła zamiast dwóch kopii (L41/L48 — kopie się
+ * rozjeżdżają); deskryptor po typie efektu, nie po nazwie karty (ADR 0002).
+ */
+export function faceDownCreaturesYouControl(state, controllerId) {
+  return [...state.objects.values()].filter((object) => object.zone === 'battlefield'
+    && object.controllerId === controllerId
+    && Boolean(object.faceDown)
+    && object.kind === 'creature');
+}
+
+/**
+ * Stwory, których kontroler NIE jest właścicielem (Trostani Discordant:
+ * „each player gains control of all creatures they own"). Ta sama reguła
+ * w obu miejscach — patrz `faceDownCreaturesYouControl`.
+ */
+export function creaturesNotControlledByOwner(state) {
+  return [...state.objects.values()].filter((object) => object.zone === 'battlefield'
+    && object.kind === 'creature'
+    && (object.ownerId ?? object.controllerId) !== object.controllerId);
+}
+
 export function applyEffect(state, effect, sourceObject, targets = [], context = {}) {
   // X-cost czary (Consume Spirit, Epic Experiment — Batch 30): efekty mogą
   // użyć amount: 'X' (lub amountFrom: 'X') — wartość X z obiektu stosu
@@ -1007,10 +1032,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // kontroli stwór ma chorobę atakową (CR 302.6 — dopóki jego nowy
     // kontroler nie rozpocznie z nim tury).
     const moved = [];
-    for (const object of [...state.objects.values()]) {
-      if (object.zone !== 'battlefield' || object.kind !== 'creature') continue;
+    for (const object of creaturesNotControlledByOwner(state)) {
       const ownerId = object.ownerId ?? object.controllerId;
-      if (ownerId === object.controllerId) continue;
       const updated = Object.freeze({ ...object, controllerId: ownerId, summoningSickness: true });
       state.objects.set(object.id, updated);
       state.events.push(event('control_changed', {
@@ -2174,10 +2197,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // on each face-down creature you control." — wszystkie zakryte stwory
   // kontrolera źródła dostają licznik flying.
   if (effect.type === 'add_flying_counter_to_face_down_you_control') {
-    const ctrl = sourceObject.controllerId;
-    for (const object of [...state.objects.values()]) {
-      if (object.zone !== 'battlefield' || object.controllerId !== ctrl) continue;
-      if (!object.faceDown || object.kind !== 'creature') continue;
+    for (const object of faceDownCreaturesYouControl(state, sourceObject.controllerId)) {
       addCounter(state, object.id, 'flying', 1);
     }
     return;

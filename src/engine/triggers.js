@@ -1,6 +1,8 @@
 import { event } from '../protocol/types.js';
 import { singleTargetOfStackEntry } from './objects.js';
-import { applyEffect } from './effects.js';
+import {
+  applyEffect, creaturesNotControlledByOwner, faceDownCreaturesYouControl,
+} from './effects.js';
 import { addCounter, hasCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { effectiveAbilities, effectiveKeywords, effectivePower } from './permanents.js';
@@ -1039,10 +1041,17 @@ export function resolveTriggerEntry(state, entry) {
   const producedNothing = state.events.length === beforeEffects;
   const noOpByState = producedNothing
     && applyTriggerEffectsWereNoOp(state, payload.ability, payload.targets ?? [], source);
+  // M256 (Żywy Tester, runda 2): „nie było czego wykonać" a „nikt nie pasuje
+  // do efektu" to dwa RÓŻNE komunikaty dla gracza — pierwszy sugeruje usterkę,
+  // drugi mówi, że karta nie miała na kim działać.
+  const noReceivers = producedNothing && !noOpByState
+    && triggerEffectsHadNoReceivers(state, payload.ability, source);
   const resolved = event('trigger_resolved', {
     objectId: entry.id, cardId: entry.cardId,
     trigger: payload.ability?.trigger?.event ?? null,
-    ...(producedNothing && !noOpByState ? { noEffect: true, reason: 'no_result' } : {}),
+    ...(producedNothing && !noOpByState
+      ? { noEffect: true, reason: noReceivers ? 'no_targets' : 'no_result' }
+      : {}),
   });
   state.events.push(resolved);
   return state.events.slice(before);
@@ -1059,6 +1068,40 @@ const STATE_IDEMPOTENT_EFFECTS = Object.freeze({
   tap_permanent: (object) => object?.tapped === true,
   untap_permanent: (object) => object?.tapped === false,
 });
+
+/**
+ * Efekty, które działają na ZBIÓR odbiorców („każdy zakryty stwór",
+ * „wszystkie stwory wracają do właściciela"): gdy zbiór jest pusty, trigger
+ * nie ma kogo ruszyć — a to NIE to samo, co „efekt wykonał się bez skutku".
+ * Gracz czytający „nie było czego wykonać" przy Veiled Ascension (żadnego
+ * zakrytego stwora) albo przy Trostani Discordant (nikt nie trzyma cudzych
+ * stworów) dostaje powód, który sugeruje usterkę; właściwy to „brak legalnych
+ * celów" (M189/Z2). Deskryptor po typie efektu (ADR 0002), selektor WSPÓLNY
+ * z efektem (`effects.js`) — jedna reguła, nie dwie kopie (L41/L48).
+ *
+ * Tabela rośnie wraz z obserwacjami Żywego Testera, tak jak
+ * `STATE_IDEMPOTENT_EFFECTS`; świadomie NIE ma tu `create_token`
+ * (Undead Servant przy pustym grobie to „nie było czego wykonać").
+ */
+const EMPTY_RECEIVER_EFFECTS = Object.freeze({
+  add_flying_counter_to_face_down_you_control: (state, effect, source) =>
+    faceDownCreaturesYouControl(state, source?.controllerId).length === 0,
+  control_to_owners_all_creatures: (state) =>
+    creaturesNotControlledByOwner(state).length === 0,
+});
+
+/**
+ * Czy trigger nie zrobił nic DLATEGO, że jego efekt nie miał odbiorców?
+ * Pytamy wyłącznie wtedy, gdy efekt wyprodukował zero zdarzeń — inaczej
+ * odpowiedź byłaby bez znaczenia (L83: warunek musi mierzyć regułę).
+ */
+function triggerEffectsHadNoReceivers(state, ability, source) {
+  const effects = (Array.isArray(ability?.effect) ? ability.effect : [ability?.effect])
+    .filter(Boolean)
+    .filter((effect) => EMPTY_RECEIVER_EFFECTS[effect.type]);
+  if (effects.length === 0) return false;
+  return effects.every((effect) => EMPTY_RECEIVER_EFFECTS[effect.type](state, effect, source));
+}
 
 function applyTriggerEffectsWereNoOp(state, ability, targets, source) {
   const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
