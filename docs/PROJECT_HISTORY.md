@@ -19,7 +19,59 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
-- **Ostatnia aktualizacja:** 2026-08-29 (sesja arena/01a04e98, etap 3: **uwagi z testów** (talia Warhammer) — dwa błędy decyzji bota naprawione w root cause: **B** Rupture Spire „zapłać {1} albo poświęć” → bot zawsze poświęcał (brak case'u wyceny + enumeracja pay:false na czele; `6a0cd62`) i **A** Squire's Lightblade rzucany bez kreatury na stole (wycena rzutu equipmentu bez kontekstu nosiciela; `6a0cd62`); 8 testów regresji; `npm test` 3738/3738; build 2901.8 kB; **PR #88**)
+- **Ostatnia aktualizacja:** 2026-08-29 (sesja arena/01a04e98, **etap 4**: **uwagi z testów runda 3** (talia Warhammer) — trzy błędy naprawione w root cause: **A** wypływ FoW przez warstwę ilustracji przy Morph twarzą w dół (paylod onCast niośce `faceDown`, warstwa dla ukrytych rzutów nie otwiera się — CR 708.2), **B** „Przygoda” (i inne rzuty) pod pass/poddaniem w menu „Twoje działania” (brak ranków cast_adventure/escape/flashback + pass/poddanie teraz Z ZASADY ostatnie), **C** Greatsword of Tyr „Equip {W}” akceptował jedną dowolną manę (deskryptor equipment bez `colors` w łańcuchu L21 + płatność bez wymogów koloru, rozjazd oferta/walidacja L48); 9 testów regresji; `npm test` 3747/3747; build 2906.9 kB; **PR #88**)
+
+## Sesja 2026-08-29 (etap 4) — „Uwagi z testów” runda 3: trzy błędy (talia Warhammer) naprawione w root cause (arena/01a04e98, PR #88)
+
+**Zakres:** zgłoszenie właściciela po dalszych testach na talii **Warhammer**
+(trzecia runda uwag; wcześniejsze: etap 3 `6a0cd62`). Trzy konkrety:
+(A) bot rzuca Morph twarzą w dół — log i Rozgrywka zachowują FoW, ALE
+warstwa wysoko-graficzna (FOT/KON/Scryfall przy rzucaniu) pokazywała
+DOKŁADNIE co bot rzucił; (B) „Przygoda: Gray Slaad” w menu „Twoje
+działania” na samym dole, pod pass — właściciel: inne efekty tam gdzie
+inne czary, a **pass i poddanie partii ZAWSZE ostatnie**; (C) Greatsword
+of Tyr — Oracle „Equip {W}”, a silnik akceptował jedną dowolną manę
+(właściciel zapłacił tapując Górę).
+
+**Naprawione (commit `93cf9a7`, 9 testów w `test/m257-uwagi-runda3.test.js`):**
+- **A (root cause):** zdarzenie `permanent_cast` NIESIE `faceDown`
+  (resources.js:933, engine od dawna), ale obserwator `onCast` sesji
+  dostawał tylko `cardId` — warstwa renderowała pełną definicję karty
+  (FOT/KON/Scryfall + podpis „Rzuca: Nieprzyjaciel”) = wypływ tożsamości
+  ukrytej (CR 708.2). Fix: paylod onCast niośce `faceDown`
+  (session.js `emitCastEvent`), a `onCastShowcase` (main.js) dla
+  `faceDown` w ogóle nie otwiera warstwy — zgodnie z właścicielem
+  („w ogóle ta warstwa nie powinna się pokazywać”). Dotyczy też własnego
+  morpha: rzucający zna swoją kartę (CR 708.6), a kafel i tak pokazuje
+  nazwę; warstwa dodałaby tylko pauzę.
+- **B (root cause):** sort panelu „Twoje działania” wg
+  `ACTION_RANK[type] ?? 99`, a mapa ranków nie znała `cast_adventure` /
+  `cast_adventure_creature` (ani `cast_escape`/`cast_flashback` /
+  `turn_manifest_face_up`) → 99 > pass(8)/concede(9) = Przygoda pod
+  pass/poddaniem. Fix: wszystkie rzuty w ranku 5 (razem z czarami) +
+  `actionMenuRank` (render.js, eksportowany, testowalny): pass=1000,
+  concede=1001 — Z ZASADY ostatnie, więc żadna nowa/nierankowana komenda
+  (fallback 99) nie wypadnie poniżej „Poddaj partię”.
+- **C (root cause dwuczłonowy):** (1) deskryptor `equipment` w danych
+  karty nie niosł `colors` — cały łańcuch L21 (card-data → registry.js →
+  identity.js) przepisywał `equipment` pole po polu, a `colors` nie było
+  na żadnej warstwie; (2) **rozjazd oferta/walidacja (L48)** — OFERTA
+  (abilities.js:576) sprawdzała `canPayColoredCost(equipment.colors)`,
+  ale PŁATNOŚĆ `activateEquip → spendMana` ignorowała kolory w ogóle.
+  Fix: `equipment: { equip: 1, colors: ['W'] }` + koszt zdolności
+  `cost: { mana: 1, colors: ['W'] }` (card-data), przepływ `colors` przez
+  registry.js i identity.js (warstwy L21), `spendMana(...,
+  colorRequirementsOf({colors: equipment.colors}))` w `activateEquip`
+  (płatność atomowa CR 601.2h — nieudana nie zostawia tapniętych źródeł),
+  pipy na kaflu (`equipLine`/`equipPips` — to samo rozbicie generic+kolory
+  co `costTextOf`, M138/Z10) i w wariantach `equipFor` (etykieta + pipy
+  per CEL — oferta i walidacja czytają pipy z WARIANTU obowiązującego dla
+  celu), fingerprint niesie `colors`. Audyt: z 12 sprzętów w danych TYLKO
+  Greatsword of Tyr ma kolorowy equip (reszta generyczna — bez `colors`,
+  zachowanie bez zmian, test C5 anti-overfix).
+
+**Wyniki:** `npm test` **3747/3747** (było 3738, +9); `npm run build`
+56 modułów / 2906.9 kB (było 2901.8 kB).
 
 ## Sesja 2026-08-29 (etap 3) — „Uwagi z testów”: dwa błędy decyzji bota (talia Warhammer) naprawione w root cause (arena/01a04e98, PR #88)
 
