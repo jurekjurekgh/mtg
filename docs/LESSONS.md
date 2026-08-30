@@ -34,6 +34,29 @@ M208.
 
 ---
 
+## L92 (2026-08-30) — Liczby „bieżącego stanu" aktualizuje się na KONIEC sesji; odświeżenie w środku PR gwarantuje dryf
+
+**Objaw (audyt PR #88, M258/A3):** README mówił „3735/3735 testów, 2894.7 kB"
+— to stan sprzed 8 etapów TEGO SAMEGO PR-a (naprawa D1 z audytu PR #87 weszła
+w etapie 1, potem etapy 3–10 dołożyły 76 testów i 39 kB). Recydywa D1 w
+kwartał, tym razem w obrębie jednej sesji.
+**Przyczyna:** „Bieżący stan" zaktualizowano w środku sesji (przy okazji
+innego zadania), a każdy kolejny zielony commit z definicji go dezaktualizuje.
+Kolejne etapy miały własne bramki (testy/build), ale żadna bramka nie patrzy
+na README — dokumentacja nie czerwienieje.
+**Reguła:**
+1. Sekcje „Bieżący stan" (liczby testów, rozmiar artefaktu, liczba kart)
+   odświeżasz w DOMYKANIU sesji — po ostatnim commicie funkcjonalnym, razem
+   z handoffem i opisem PR (checklista końca: ENVIRONMENT §7).
+2. Przy odświeżaniu liczby ZMIERZAJ (npm run test:all, npm run build) — nie
+   przepisuj z ostatniego logu etapu, bo on też może być wczorajszy (L56:
+   twierdzenie o danych sprawdzone poleceniem).
+3. Sygnał: PR, którego opis/README podaje liczbę testów, a diff ma >1 etap
+   funkcjonalny po wpisie „stan" — liczba jest podejrzana z definicji.
+**Strażnik:** `test/dokumentacja-budzet-lektury.test.js` pilnuje budżetu
+lektury, NIE zgodności liczb — egzekwowanie reguły 1 pozostaje procesowe
+(domknięcie sesji wg ENVIRONMENT §7).
+
 ## L83 (2026-08-28) — Strażnik skanujący ŹRÓDŁO czyta KONSTRUKTY, nie tekst: komentarz to nie pokrycie
 
 **Objaw:** `test/fingerprint-pending-decisions.test.js` (strażnik klasy L16,
