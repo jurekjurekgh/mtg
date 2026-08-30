@@ -170,7 +170,10 @@ test('params: removalEnemyBase realnie przepływa do wyceny czaru usuwającego',
 test('params: rodzina aura — wartości domyślne są dokładnie dawnymi stałymi', () => {
   assert.equal(DEFAULT_HEURISTIC_PARAMS.auraBase, 66);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.auraBuffWorthWeight, 2);
-  assert.equal(DEFAULT_HEURISTIC_PARAMS.auraHostileEnemyBase, 55);
+  // M257 r4/B6 T4: 55 → 65 — pierwsze strojenie rodziny aura (tuner
+  // tune-card.mjs, Hobble: proxy 0.5642 → 0.5668 na 12 seedach lustrzanych,
+  // monotonnie w dwóch krokach; benchmark 50 seedów bez regresji).
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.auraHostileEnemyBase, 65);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.auraHostileEnemyWorthWeight, 2);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.auraHostileOwnPenalty, 70);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.auraHostileWorthWeight, 1);

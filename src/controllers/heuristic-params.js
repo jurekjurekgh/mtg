@@ -137,7 +137,7 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // pilnuje, że domyślne nic nie zmieniają).
   auraBase: 66,
   auraBuffWorthWeight: 2,
-  auraHostileEnemyBase: 55,
+  auraHostileEnemyBase: 65,
   auraHostileEnemyWorthWeight: 2,
   auraHostileOwnPenalty: 70,
   auraHostileWorthWeight: 1,
