@@ -165,3 +165,52 @@ wchodzi do gry — nikt nie celuje w cudzego Morph inaczej niż już jest).
 `npm test` **3819/3819** (3810 + 3 D + 3 M + 3 R); build 56 mod/2939.9 kB;
 commity: `b14a532` (T1) → `3809b61` (F1) → `66a5e4c` (F2) → `3c7f33e`
 (F4+F5). Pozycja na starcie Etapu 2.3 (CR hunting).
+
+## Etap 2.3 — CR hunting: CR 202.3b, MV kopii tylnej twarzy DFC (`548ea00`)
+
+Metoda: przegląd strukturalny RODZINY kopiowania (L11 — wszystkie ścieżki
+jednej reguły czytane razem; L72 — przegląd rodzeństwa po fixie K2).
+Skatalogizowano wszystkie ścieżki kopiowania w silniku: `create_copy_token`
+(Cogwork Assembler — artefakty), `enterAsCopy` (Jwari Shapeshifter — Ally),
+`token_clone` (Moonlit Meditation). Reguła wzorcowa: **CR 202.3b** — kopia
+TYLNEJ twarzy DFC ma MV 0; kopia przedniej twarzy/permanentu — koszt
+pierwowzoru (CR 707.2/707.3 — koszt many jest wartością kopiowalną).
+
+**Znaleziona klasa błędu (trzy ścieżki, jeden root cause):**
+
+| Ścieżka | Objaw | Root cause |
+|---|---|---|
+| `create_copy_token` | `manaCost` przekazywany do `createBattlefieldToken` ginął CICHO — KAŻDY token-kopia miał MV 0 (kopia przedniej twarzy powinna dziedziczyć koszt pierwowzoru; MV obiektu czyta m.in. Divine Offering jako zysk życia) | destrukturyzacja fabryki (tokens.js) nie znała pola `manaCost` — kontrakt zerwany bez żadnego błędu |
+| `enterAsCopy` (Jwari) | koszt many NIE kopiowany wcale — kopia nosiła własny koszt Jwari (2) zamiast kosztu celu (CR 707.2) | pole pominięte na liście nadpisań w handlerze `resolve_enter_as_copy` |
+| `token_clone` (Moonlit) | jw. — kopia bez MV pierwowzoru | jw. |
+
+**Fix u root cause:** wspólny helper `copyManaValueOf()` (src/engine/identity.js)
+— tył w górę rozpoznawany po `cardId ≠ frontFaceId` → MV 0, w przeciwnym
+razie koszt pierwowzoru; `createBattlefieldToken` przyjmuje nowy parametr
+`manaCost` (domyślnie 0 — zwykłe tokeny bez zmian). Testy RED→GREEN:
+`test/m258-cr202-kopia-tylu-dfc.test.js` (C1 kopia tyłu → MV 0; C2 kopia
+przodu → koszt przedni — anty-over-fix; C3/C4 enterAsCopy: tył → 0, przód →
+koszt celu — to C4 spina CR 707.2: koszt many kopiowalny).
+
+**Osiągalność zweryfikowana po katalogu (16 DFC):** tylko dwa tyły to
+artefakty copyowalne przez Cogworka — Guidestone Compass (test C1) i Balamb
+Airborne (koszt przedni 0 = MV 0 „przypadkiem" zgodne); Jwari kopiuje
+wyłącznie Ally, więc C3/C4 wchodzą wprost do handlera (kontrakt generyczny,
+filtr Ally siedzi w enumeracji spells.js).
+
+**Znane ograniczenie (dokumentowane, nie naprawiane — L57):** token-kopia
+tylnej twarzy, który przekształci się z powrotem w przód (craft na kopii),
+zachowuje MV 0 zamiast kosztu przedniej strony — efekty `transform`/
+`craft_transform` celowo nie ruszają `manaCost` (trzymają 712.8e: permanent
+z tyłem w górze ma MV przedniej strony). Poprawny model wymagałby odrębnego
+pola MV od pola kosztu; scenariusz podwójnie wąski (kopia przekształconego
+Lodestone Needle + craft NA KOPII) — nie opłaca się.
+
+**Rodzina pay-or-sacrifice (kandydat #2 planu 2.3) — zweryfikowana CZYSTA:**
+wszystkie trzy człony rodziny strzegą płatności funkcją `producibleMana`/
+`canPayTrigger` PRZED kolejkowaniem decyzji, a przy braku many wybierają
+skutek automatycznie: `queuePayOrSacrifice` (Rupture Spire/echo — auto-
+poświęcenie, CR 118.12), `counter_spell_unless_pays` (Frightful Delusion —
+auto-kontr + discard), `fireOrQueuePay` (Panic Spellbomb/Zoraline — trigger
+nie odpala). Brak dywergencji do naprawienia.
+

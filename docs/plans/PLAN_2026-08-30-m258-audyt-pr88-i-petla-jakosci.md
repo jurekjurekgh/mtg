@@ -111,14 +111,30 @@ poprawny** — 10 mutacji (M1–M7, M9, M10 red; M8 obserwacja), bot-benchmark
       K2 (2.1) naprawione w `ccba0a3`: właściwa reguła to CR 202.3b (nie
       711.4b) — MV tylnej twarzy = koszt przedniej; fix w `cardInfo`
       (object.manaCost przed katalogiem), testy K2a–c RED→GREEN.
-- [ ] **2.3** Polowanie na niezgodności z CR (odznaka) innymi ścieżkami niż
+- [x] **2.3** Polowanie na niezgodności z CR (odznaka) innymi ścieżkami niż
       sesja poprzednia (L11: niespójności między podobnymi implementacjami,
       skan strukturalny; L72: przegląd rodzeństwa). Kandydaci: rodzina
       „pay or sacrifice / optional pay" (po fixie Rupture Spire), rodzina
       zmiany stref DFC (po K5), rodzina startera/CDM (po r5b B).
-- [ ] **2.4** Naprawy u root cause + testy (najpierw RED, potem GREEN;
+- [x] **2.4** Naprawy u root cause + testy (najpierw RED, potem GREEN;
       weryfikacja mutacyjna L61), aktualizacja `docs/PROJECT_HISTORY.md`
       i `docs/LESSONS.md` (jeśli nowa klasa pułapki).
+
+      WYKONANE (2.3): rodzina KOPIOWANIA (L11/L72 po K2) — trzy ścieżki
+      (`create_copy_token`/`enterAsCopy`/`token_clone`) niosły jedną klasę
+      błędu CR 202.3b/707.2 (kopia tyłu DFC miała koszt przedni albo — przez
+      cichy drop pola w `createBattlefieldToken` — KAŻDA kopia miała MV 0).
+      Fix `548ea00`: helper `copyManaValueOf` + parametr `manaCost` fabryki
+      tokenów; testy C1–C4 RED→GREEN. Rodzina pay-or-sacrifice (kandydat
+      #2) zweryfikowana CZYSTA (guardowie producibleMana/canPayTrigger przy
+      kolejkowaniu — szczegóły w raporcie audytu). Znane ograniczenie
+      (kopia tyłu + craft z powrotem → MV 0) udokumentowane w raporcie (L57).
+
+      WYKONANE (2.4): naprawa u root cause (wspólny helper zamiast trzech
+      lokalnych ternary), testy przed fixem RED (C1/C3/C4), po fixem GREEN
+      4/4 + suite `npm test` 3823/3823 i `npm run test:all` 3833/3833,
+      build 56 modułów / 2941.6 kB; PROJECT_HISTORY + LESSONS (L94)
+      zaktualizowane.
 
 ### Kryteria ukończenia Etapu 2
 

@@ -34,6 +34,26 @@ M208.
 
 ---
 
+## L94 (2026-08-30) — Fabryka z destrukturyzacją configu gubi nieznane pola PO CICHU; kontrakt pinuje się testem przez REALNĄ fabrykę
+
+**Objaw (CR hunting M258, Etap 2.3):** `create_copy_token` (effects.js)
+od lat przekazywał `manaCost: src.manaCost ?? 0` do `createBattlefieldToken`
+— a destrukturyzacja w tokens.js tego pola nie znała, więc KAŻDY
+token-kopia wchodził z MV 0. Nie było błędu, ostrzeżenia ani testu: piny
+kopiowania (M90/CR 707.8a, M141/B) sprawdzały transformTo/station/saga,
+a manaCost nigdy. Do tego `enterAsCopy` kosztu nie kopiował wcale (CR 707.2
+— koszt many jest wartością kopiowalną). Ujawnione dopiero pytaniem o CR
+202.3b (MV kopii tylnej twarzy DFC) zadawanym do WSZYSTKICH ścieżek rodziny.
+
+**Reguła:** jawna destrukturyzacja `{ pole = domyślne }` w fabryce to
+jawna LISTA DOZWOLONYCH PÓL — każde nowe pole od nadawcy ginie bez śladu
+(recydywa klasy L93/L21/M146, tym razem w fabryce tokenów zamiast
+materializacji talii). Przy dodawaniu pola do configu fabryki: (1) grep
+WSZYSTKICH nadawców, (2) pin w teście, który przechodzi przez REALNĄ
+fabrykę, nie przez własny helper zbudowany na createGameObject. Test
+anty-over-fix (kopia PRZODU zachowuje koszt) jest tu obowiązkowy — sam fix
+„tył → 0" przeszedłby zielono także z fabryką ignorującą pole.
+
 ## L93 (2026-08-30) — Jawna lista pól w warstwie transportowej musi pokrywać generator; test helperem OMUIJA tę warstwę
 
 **Objaw (Żywy Tester M258, srodziemie vs mirrodin-wu seed 3004):** Crawling

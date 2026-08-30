@@ -7001,9 +7001,20 @@ srodziemie/mirrodin-wu; zendikar/worek-dziki — spoza BENCH_DECKS).
 **Weryfikacja:** `npm test` **3819/3819** (+9 w sesji), build 56 modułów /
 2939.9 kB; mutacyjnie: deck.js → D1–D3 czerwone, objects.js → D3 czerwone.
 
-**Kolejny krok:** Etap 2.3 — CR hunting (kandydaci: MV kopii tylnej twarzy
-DFC wg CR 202.3b — create_copy_token kopiuje manaCost przedniej; rodzina
-pay-or-sacrifice; ward z F3).
+**Etap 2.3 — CR hunting (`548ea00`):** przegląd strukturalny rodziny
+kopiowania (L11/L72) znalazł jedną klasę błędu w trzech ścieżkach — kopia
+tylnej twarzy DFC miała MV przedniej strony (CR 202.3b: ma być 0), a przez
+CICHY drop pola `manaCost` w destrukturyzacji `createBattlefieldToken`
+KAŻDY token-kopia miał MV 0 (enterAsCopy z kolei nie kopiował kosztu wcale
+— CR 707.2). Fix u root cause: `copyManaValueOf()` (identity.js) + parametr
+`manaCost` fabryki tokenów; testy C1–C4 RED→GREEN. Rodzina pay-or-sacrifice
+zweryfikowana czysta (guardowie płatności przy kolejkowaniu). Nowa lekcja
+**L94** (cichy drop pól konfiguracyjnych w fabrykach). Szczegóły:
+`docs/audits/AUDYT_M258_ZYWY_TESTER_2026-08-30.md` (rozdział Etap 2.3).
+
+**Kolejny krok:** decyzja właściciela — F3 (ward przy cloak, Veiled
+Ascension: mechanika ward ALBO support.limitations) i ewentualny nowy
+batch kart / kolejna runda Żywego Testera.
 
 ## Zasada aktualizacji
 
