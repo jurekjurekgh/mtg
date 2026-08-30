@@ -33,12 +33,12 @@ definicji, ale dotyczy mechanik i danych ruszonych pośrednio.
 
 ### Kroki
 
-- [ ] **1.1** Przegląd całego diffa `src/` (21 plików, +817/−151) po osiach:
+- [x] **1.1** Przegląd całego diffa `src/` (21 plików, +817/−151) po osiach:
       poprawność vs CR, generyczność (ADR 0002 — zero warunków po nazwie/ID
       karty), spójność oferta↔walidacja (L48/L90), kompletność PlayerView
       (ADR 0017), dowiązania nowych pól (L84), brak globali Node w kodzie
       artefaktu (L58).
-- [ ] **1.2** Weryfikacja wąskich miejsc regułowych z PR #88:
+- [x] **1.2** Weryfikacja wąskich miejsc regułowych z PR #88:
       - K5: `frontFaceId` przez cały łańcuch (deck → installDeck → addObject
         → createGameObject) + reset twarzy w `moveObjectDirectly`
         (CR 711.4a/711.7; LKI CR 603.10);
@@ -54,19 +54,19 @@ definicji, ale dotyczy mechanik i danych ruszonych pośrednio.
         filtrem (L48);
       - F3: ninjutsu z pipami kolorów — oferta i płatność;
       - r5 C: Bone Splinters — osobne wybory (wizard) vs walidacja engine.
-- [ ] **1.3** Weryfikacja mutacyjna RED→GREEN kluczowych nowych testów
+- [x] **1.3** Weryfikacja mutacyjna RED→GREEN kluczowych nowych testów
       (wybór ≥5 plików): `audit-m257-fixes` (K5), `m257r5b-uwagi-testow`
       (starter), `m257ef-znalezione-petla` (E/F), `m257r5-uwagi-testow`,
       `m257r4-zyjwy-tester` (F3/F1), `m257-uwagi-z-testow` (pay-or-sacrifice).
-- [ ] **1.4** Regresja bota bez pełnego B0: `node --test
+- [x] **1.4** Regresja bota bez pełnego B0: `node --test
       test/bot-benchmark.test.js` (~2 min) + ewentualnie szybki profil
       `node tools/benchmark.mjs` (~2–4 min) — progi wg
       `test/bot-benchmark.test.js`.
-- [ ] **1.5** Strojenie bota z PR #88 (aura `auraHostileEnemyBase` 55→65,
+- [x] **1.5** Strojenie bota z PR #88 (aura `auraHostileEnemyBase` 55→65,
       tarcza 60 w combat_damage, wyceny r5b): sprawdzić golden-master
       (`test/bot-params.test.js`, snapshot) i zgodność z zasadą ADR 0002
       (parametry deskryptorowe, nie po nazwie karty).
-- [ ] **1.6** Raport: `docs/audits/AUDYT_PR88_<data>.md` + wynik w opisie PR;
+- [x] **1.6** Raport: `docs/audits/AUDYT_PR88_<data>.md` + wynik w opisie PR;
       potwierdzone znaleziska naprawiam od razu (osobne commity).
 
 ### Kryteria ukończenia Etapu 1
@@ -74,6 +74,12 @@ definicji, ale dotyczy mechanik i danych ruszonych pośrednio.
 - Każdy zmieniony plik `src/` z PR #88 przeglądnięty z opinią (tabela w
   raporcie); testy mutacyjne wykonane z zapisem wyników; benchmark slow
   zielony; raport w repo i w opisie PR.
+
+Wynik Etapu 1 (raport: `docs/audits/AUDYT_PR88_2026-08-30.md`): **silnikowo
+poprawny** — 10 mutacji (M1–M7, M9, M10 red; M8 obserwacja), bot-benchmark
+10/10, test:all 3811/3811. Znaleziska: **A1** piny gałęzi `cant_be_blocked`
+(L61 — mutacja M9 przechodziła cały rdzeń), **A2** martwa opcja
+`showCycleHint` (L67), **A3** README przestarzały (recydywa D1).
 
 ## Etap 2 — pętla jakości (ADR 0021 pkt 4)
 
