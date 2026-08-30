@@ -1,4 +1,4 @@
-import { createGameObject } from './identity.js';
+import { createGameObject, copyManaValueOf } from './identity.js';
 import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
 import { initialTurn, jumpToStep, nextTurnStep } from './turn.js';
@@ -3132,6 +3132,10 @@ export function execute(state, input) {
             abilities: [...(copyBase.abilities ?? target.abilities ?? [])],
             kind: copyBase.kind ?? target.kind,
             cardName: target.cardName ?? target.cardId,
+            // CR 707.2 + 202.3b (M258): koszt many jest wartością kopiowalną
+            // — do tej pory kopia „enter as copy" nosiła własny koszt Jwari
+            // zamiast kosztu celu. Wspólny helper z token-kopią (L48).
+            manaCost: copyManaValueOf(copyBase),
             // M141/B (station/saga): kopia traciła deskryptory station/saga
             // (jak token-kopia). CR 707.2 — kopiowalne są WSZYSTKIE cechy.
             ...(target.station ? { station: target.station } : {}),
@@ -3394,6 +3398,10 @@ export function execute(state, input) {
               const effs = Array.isArray(a.effect) ? a.effect : [a.effect];
               return !effs.some((e) => e?.type === 'transform');
             }),
+            // CR 707.3 + 202.3b (M258): token będący kopią dziedziczy MV
+            // pierwowzoru (kopia tylnej twarzy → 0) — jak pozostałe
+            // ścieżki kopiowania.
+            manaCost: copyManaValueOf(enchanted),
           });
         }
       }

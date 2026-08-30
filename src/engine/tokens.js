@@ -41,7 +41,7 @@ export function nextCopyNumber(state, name) {
   return max + 1;
 }
 
-export function createBattlefieldToken(state, controllerId, { cardId, name, kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [], keywords = [], abilities = [], cantBlock = false, toxic = null, transformTo = null, station = null, saga = null, tapped = false, copyNumber = null }) {
+export function createBattlefieldToken(state, controllerId, { cardId, name, kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [], keywords = [], abilities = [], cantBlock = false, toxic = null, transformTo = null, station = null, saga = null, tapped = false, copyNumber = null, manaCost = 0 }) {
   if (!state || !state.players.some((p) => p.id === controllerId)) throw new Error('Nieznany kontroler tokenu');
   if (!cardId || !name) throw new TypeError('Token wymaga cardId i nazwy');
   // Token niebędący stworem (np. Treasure — artefakt) nie ma statystyk:
@@ -55,7 +55,11 @@ export function createBattlefieldToken(state, controllerId, { cardId, name, kind
   const id = `token-${state.objectSequence++}`;
   const base = createGameObject({
     id, instanceId, cardId, controllerId, zone: 'battlefield',
-    kind, power, toughness, manaCost: 0, abilities,
+    kind, power, toughness,
+    // CR 707.3/202.3b (M258): zwykły token ma MV 0, ale token-KOPIA
+    // dziedziczy koszt many pierwowzoru (wywołujący przekazuje
+    // copyManaValueOf(...) — patrz create_copy_token, Moonlit Meditation).
+    manaCost, abilities,
     keywords, types, subtypes, colors,
     // Właścicielem tokenu jest gracz, pod czyją kontrolą wszedł na pole bitwy
     // (CR 111.2) — istotne przy efektach „creatures they own".

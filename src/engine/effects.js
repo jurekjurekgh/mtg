@@ -10,7 +10,7 @@ import { createBattlefieldToken, nextCopyNumber } from './tokens.js';
 
 import { effectiveProtectionFromColors } from './attachments.js';
 import { shuffle } from './shuffle.js';
-import { createGameObject } from './identity.js';
+import { createGameObject, copyManaValueOf } from './identity.js';
 import { attachEquipmentToCreature, detachAttachmentsFromHost } from './attachments.js';
 
 /**
@@ -1189,7 +1189,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       subtypes: [...(copyBase.subtypes ?? src.subtypes ?? [])],
       keywords: [...new Set([...(src.keywords ?? []), 'haste'])],
       abilities: [...(src.abilities ?? [])],
-      manaCost: src.manaCost ?? 0,
+      // CR 202.3b (M258): kopia TYLNEJ twarzy karty dwustronnej ma MV 0,
+      // a kopia przedniej/przodowej twarzy — koszt pierwowzoru. Wcześniej
+      // pole lądowało cicho w createBattlefieldToken (destrukturyzacja go
+      // nie znała), więc KAŻDY token-kopia miał MV 0 (Divine Offering
+      // dawałby 0 życia za kopię Wynnogiefu). Wspólny helper — patrz
+      // identity.js copyManaValueOf.
+      manaCost: copyManaValueOf(src),
       // M141/B (station + animacja, saga): token-kopia traciła deskryptor
       // station/saga — stąd np. kopia Wedgelight Rammer nie miała progu 9+
       // i nigdy nie stawała się stworem (CR 707.2 — kopiowalne wartości to
