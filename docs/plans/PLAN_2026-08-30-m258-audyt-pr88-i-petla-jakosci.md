@@ -83,11 +83,11 @@ poprawny** — 10 mutacji (M1–M7, M9, M10 red; M8 obserwacja), bot-benchmark
 
 ## Etap 2 — pętla jakości (ADR 0021 pkt 4)
 
-- [ ] **2.1** **K2 z audytu M257** (kosmetyka, kandydat wskazany w PR #88):
+- [x] **2.1** **K2 z audytu M257** (kosmetyka, kandydat wskazany w PR #88):
       kafel tylniej strony DFC na polu bitwy pokazuje koszt „0" — poprawka
       wg CR 711.4b (koszt/CMC tyłu = koszt przedniej strony obiektu); root
       cause w jednym odczycie (L41), test pinujący.
-- [ ] **2.2** Żywy Tester z perspektywy gracza na pulu kart **niewidzianych**
+- [x] **2.2** Żywy Tester z perspektywy gracza na pulu kart **niewidzianych**
       dotąd w audytach (pula = artId w `src/cards/card-data.js` vs
       `tools/collection-art-ids.csv`, po wykluczeniu pul już przepartionych:
       Innistrad, forgotten-realms, Warhammer, tarkir/wiedzmin/theros/
@@ -95,6 +95,22 @@ poprawny** — 10 mutacji (M1–M7, M9, M10 red; M8 obserwacja), bot-benchmark
       osie z `docs/setup/TESTER_STOLU.md`. Transkrypty poza repo (konwencja
       M253). Wymaga `npm run build` przed pomiarem (L76) i `npm i` w
       `tools/table-tester`.
+      **WYKONANE (raport: `docs/audits/AUDYT_M258_ZYWY_TESTER_2026-08-30.md`):**
+      6 partii seeds 3001–3006 (worek-mroczny/ravnica — świeży Batch 51,
+      srodziemie/mirrodin-wu, zendikar/worek-dziki — spoza BENCH_DECKS),
+      profile greedy×3/explorer/defensive/random, 0 zgłoszeń detektorów.
+      Znaleziska: **T1** sterownik nie domykał kreatora ofiary z PR #88
+      (`b14a532`); **F1** pięć deskryptorów mechanik (echo/madness/surge/
+      toxic/warp) ginęło po cichu w materializacji talii + echoUnpaid
+      nigdy nie stawiane na realnej ścieżce rzutu (`3809b61`, L93);
+      **F2** zakleszczenie decyzji madness przy odrzucaniu wielu kart
+      (`66a5e4c`); **F4+F5** Roiling Regrowth bez lądu nie szukał (CR
+      101.3) + fałszywe „może poświęcić" w logu (`3c7f33e`); **F3 OTWARTE**:
+      cloak bez ward {2} (Veiled Ascension) — decyzja właściciela.
+
+      K2 (2.1) naprawione w `ccba0a3`: właściwa reguła to CR 202.3b (nie
+      711.4b) — MV tylnej twarzy = koszt przedniej; fix w `cardInfo`
+      (object.manaCost przed katalogiem), testy K2a–c RED→GREEN.
 - [ ] **2.3** Polowanie na niezgodności z CR (odznaka) innymi ścieżkami niż
       sesja poprzednia (L11: niespójności między podobnymi implementacjami,
       skan strukturalny; L72: przegląd rodzeństwa). Kandydaci: rodzina

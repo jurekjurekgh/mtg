@@ -34,6 +34,39 @@ M208.
 
 ---
 
+## L93 (2026-08-30) — Jawna lista pól w warstwie transportowej musi pokrywać generator; test helperem OMUIJA tę warstwę
+
+**Objaw (Żywy Tester M258, srodziemie vs mirrodin-wu seed 3004):** Crawling
+Chorus (toxic 1) bił gracz trzy razy bez ani jednego znaku trucizny, a
+kafel pokazywał „Toksyczny”. Obiekt z materializacji talii miał
+`toxic=null` — karta definiuje `toxic: 1`, `gameObjectDataOf` je przenosi,
+ale `installDeck` (src/engine/deck.js) kładzie na obiekcie JAWNĄ listę pól
+i toxic (plus echo, madness, surge, warp) na niej nie było. Recydywa klasy
+M146/L21 w tej samej funkcji — renown wcześniej dodano, pięć innych pól nie.
+
+**Przyczyna podwójna:**
+1. Transport danych przez JAWNĄ listę pól (dwie listy do utrzymania:
+   generator `gameObjectDataOf` i kopia `installDeck`) — każde nowe pole
+   mechaniki trzeba dopisać w DWÓCH miejscach, a w drugim ginie po cichu.
+2. Testy jednostkowe (helper `putCard` + `...gameObjectDataOf(def)`)
+   OMUIJAŁY `installDeck` — wszystkie piny mechanik były zielone, mechaniki
+   martwe w każdej partii z talią.
+
+**Reguła:**
+1. Nowe pole mechaniki na `defineCard` → dopisz w `gameObjectDataOf`
+   ORAZ na liście `installDeck` (grep „M146" w deck.js). Lepszy kierunek
+   długoterminowy: transportować deskryptory zbiorczo (spread listy pól
+   mechanik), żeby lista była JEDNA.
+2. Piny mechanik krytycznych dla partii z talią idą przez
+   `setupCardMatch` (prawdziwa ścieżka: registry → createCardDeck →
+   installDeck → obiekt), nie przez `putCard` — wzorzec
+   `test/m258-zywy-tester-deskryptory.test.js` (D1–D3).
+3. Pełne partie botów (np. `real-cards-batch3`) łapią zakleszczenia
+   decyzji, których unit nie widzi — po każdej zmianie warstwy decyzji
+   odpal choć jeden test pełnej partii.
+
+---
+
 ## L92 (2026-08-30) — Liczby „bieżącego stanu" aktualizuje się na KONIEC sesji; odświeżenie w środku PR gwarantuje dryf
 
 **Objaw (audyt PR #88, M258/A3):** README mówił „3735/3735 testów, 2894.7 kB"

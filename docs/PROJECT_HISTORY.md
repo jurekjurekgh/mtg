@@ -6959,6 +6959,52 @@ powstała przez literówkę w nazwie talii w skrypcie przebiegu.
 **Weryfikacja:** `npm test` **3725/3725** (+18), build 56 modułów / 2893.8 kB,
 11 mutacji (MUT11 = mutant równoważny, opisany w raporcie). Nowa lekcja **L91**.
 
+## 2026-08-30 — M258: Etap 2 pętli jakości (PR #89) — K2 + Żywy Tester na nowej puli
+
+**Zakres:** fix K2 z audytu M257 (koszt kafelka tylnej twarzy DFC) + pełna
+runda Żywego Testera na puli kart niewidzianej w cyklu PR #88 + naprawy
+znalezisk. Audyt PR #88 i etap 1 (A1–A3) opisane wyżej w sesji z 2026-08-30.
+
+**K2 (ccba0a3):** kafel tylnej strony DFC pokazywał „0" — `cardInfo` czytał
+katalog bieżącej twarzy przed obiektem (tył nie ma wydrukowanego kosztu).
+Właściwa reguła: **CR 202.3b** (audyt M257 cytował 711.4b) — MV tylnej
+twarzy liczy się jakby miała koszt przedniej. Fix: `object.manaCost ??
+details.manaCost` (widok = publiczny MV, M149/ADR 0017). Testy K2a–c.
+
+**Żywy Tester (raport: `docs/audits/AUDYT_M258_ZYWY_TESTER_2026-08-30.md`):**
+6 partii seeds 3001–3006, profile greedy×3/explorer/defensive/random, talie
+wg priorytetu właściciela (worek-mroczny/ravnica — świeży Batch 51;
+srodziemie/mirrodin-wu; zendikar/worek-dziki — spoza BENCH_DECKS).
+0 zgłoszeń detektorów; 5 znalezisk:
+
+- **T1** (`b14a532`): sterownik run-game.mjs nie domykał kreatora
+  „cel + poświęcenie" z M257-r5/C (PR #88) — sacMode nie był NIGDY
+  przećwiczony na żywym stole (partia 3004 ginęła wyjątkiem).
+- **F1** (`3809b61`, **najcięższe**): pięć deskryptorów mechanik ginęło po
+  cichu w materializacji talii — installDeck (deck.js) ma jawną listę pól,
+  w której zabrakło echo/madness/surge/toxic/warp. W prawdziwych partiach:
+  Crawling Chorus bił bez trucizny, Bone Shredder nie pytał o echo, surge/
+  warp/madness bez ofert. Druga luka: echoUnpaid stawiane tylko w addObject
+  (helpery testowe), nigdy na realnej ścieżce stos → pole bitwy.
+  Testy przez setupCardMatch. Nowa lekcja **L93** (recydywa L21/M146).
+- **F2** (`66a5e4c`): regresja ujawniona przez F1 — odrzucanie WIELU kart
+  z madness w sekwencji zakleszczało decyzje (madness_unresolved; pełna
+  partia bota real-cards-batch3 ginęła wyjątkiem). Fix: kolejka
+  madnessQueue, promocja po zakończeniu sekwencji odrzuceń (CR 702.34a).
+- **F4+F5** (`3c7f33e`): Roiling Regrowth bez lądu na polu pomijał też
+  szukanie (instrukcja ≠ koszt, CR 101.3/608.2b) + log mówił „może
+  poświęcić" przy obowiązkowym poświęceniu (oś 2).
+- **F3 (OTWARTE):** cloak bez ward {2} (Veiled Ascension; mechanika ward
+  nie istnieje w silniku) — rekomendacja decyzji właściciela: wdrożyć ward
+  albo uczciwie odnotować w support.limitations.
+
+**Weryfikacja:** `npm test` **3819/3819** (+9 w sesji), build 56 modułów /
+2939.9 kB; mutacyjnie: deck.js → D1–D3 czerwone, objects.js → D3 czerwone.
+
+**Kolejny krok:** Etap 2.3 — CR hunting (kandydaci: MV kopii tylnej twarzy
+DFC wg CR 202.3b — create_copy_token kopiuje manaCost przedniej; rodzina
+pay-or-sacrifice; ward z F3).
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:
