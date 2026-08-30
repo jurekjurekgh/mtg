@@ -75,7 +75,7 @@ w testach, których F by nie ruszał, a bramka jest wspólna). Bramka każdego
 etapu: `node tools/run-tests.mjs all` (brama CI) + `node tools/build.mjs`;
 F dodatkowo benchmark quick przed/po (ADR 0018, bez `--full`).
 
-### Etap E — auto-rozstrzygnięcie mulligan-bottom przy wymuszonej liczbie
+### Etap E — auto-rozstrzygnięcie mulligan-bottom przy wymuszonej liczbie ✅ DONE (38dc74c)
 1. `game-state.js`, gałąź `keep: false` (mulligan londyński): po
    `const newHand = ...` — jeśli `newHand.length <= count`: ruchy
    `newHand` na spód (`moveObjectDirectly` + `object_moved` z
@@ -96,7 +96,7 @@ F dodatkowo benchmark quick przed/po (ADR 0018, bez `--full`).
    - RED→GREEN dowiedzione `git stash`.
 3. Bramka: `node tools/run-tests.mjs all` + `node tools/build.mjs`.
 
-### Etap F — regenerate: tylko pewna śmierć w tej turze
+### Etap F — regenerate: tylko pewna śmierć w tej turze ✅ DONE (6a390ef)
 1. `heuristic-bot.js` `isCreatureThreatened`: usunąć gałąź 3 (B3
    `removalSpells`); aktualizacja docblocka (M218/4 → M257/F: pewna śmierć =
    walka zadeklarowana albo lethal już zadany; spekulacja ręki wyjęta —
@@ -115,7 +115,7 @@ F dodatkowo benchmark quick przed/po (ADR 0018, bez `--full`).
 4. Benchmark quick PO — porównanie; bramka: `node tools/run-tests.mjs all`
    + `node tools/build.mjs`.
 
-### Etap G — dokumentacja — commit
+### Etap G — dokumentacja — commit ✅ IN PROGRESS
 - Opis PR #88: sekcja „Etap 10” (E/F) + „Jak sprawdzono” (bramki +
   benchmark); `docs/PROJECT_HISTORY.md` (wpis sesji); aktualizacja planu
   (odhaczenia). Push.

@@ -19,10 +19,57 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+- **Ostatnia aktualizacja:** 2026-08-30 (sesja arena/01a04e98, **E/F — znaleziska pętli jakości**: **E** — mulligan: odłożenie N kart na spód, gdy liczba kart w ręce = wymagana (mała biblioteka / 7. mulligan 7=7), wybór WYMUSZONY — silnik auto-rozstrzyga (wzorzec auto-akcji turowej CR 504.1/508.1; testy M100/E10 zaktualizowane — pinowały stare zachowanie), **F** — Regenerate = combat trick: usunięta spekulacja B3 („wróg ma open manę i removal w talii, który MOŻE zabić”) z wyceny zagrożenia (regeneracja trwa do końca tury — CR 702.14) + okno combat_damage: tarcza (2+60=62) wygrywa z `resolve_combat` (stała 50) — bot stawia tarczę PRZED obrażeniami; pewna śmierć = walka zadeklarowana (CR 510) albo lethal już zadany (SBA 704.5g); 6 testów (RED F1/F3 stashem); benchmark quick bez zmian (84.7%); `npm test` 3811/3811; build 2934.0 kB; **PR #88**)
 - **Ostatnia aktualizacja:** 2026-08-30 (sesja arena/01a04e98, **r5b „Uwagi z testów” część 2**: **A** — „Tasuj talię” bez komunikatu (tylko podmiana seeda), **B** — kto zaczyna partię = LOSOWE z seeda (`state.starterId`, deterministyczny rzut monetą; CR 103.7a/103.4 przymocowane do startera zamiast `players[0]`; collateral: 41 factory/pinów w 27 plikach testowych + golden-master bota zregenerowany), **C** — Awaken the Sleeper: bot ATAKUJE przejętym stworem (wycena celu castu: 3×power + equipment; pożyczona kreatura bez downside'u w `declare_attackers`), **D** — Ruthless Invasion: bez ataku w tej turze = NIE RZUCAM (okno + gotowi atakujący + usuwani blokerzy), płatność życiem {R/P} = tylko za LETHAL (martwa gałąż wyceny przeniesiona do pętli cast_spell + baza −1); benchmarki quick bez zmian (heuristic 84.7%); `npm test` 3805/3805; build 2932.3 kB; **PR #88**)
 - **Ostatnia aktualizacja:** 2026-08-30 (sesja arena/01a04e98, **r5 „Uwagi z testów”**: **A** — hover powiększonej karty Scryfall na miniaturkach w warstwie „Rozgrywka” (tor `scryfall` bez trybów FOT/KON), **B** — bot blokuje 3/3 przy 5 życiach swoim 2/2 (premia przeżycia w wycenie bloku: prógi życia ≤2/≤5/≤8), **C** — Bone Splinters: osobne wybory „cel czaru” + „cel poświęcenia” (wizard `renderMultiTargetWizard` + wymiar `sacrificeTargetId`), zamiast enumeracji kombinacji 3×3; fix M253: transkrypt benchmarku wdarł się do repo (fail CI); `npm test` 3787/3787; build 2924.8 kB; **PR #88**)
 - **Ostatnia aktualizacja (poprzednia):** 2026-08-30 (sesja arena/01a04e98, **r4 „Uwagi z testów” + strojenie + pętla bota**: **Fix A** — „Deklaracja atakujących” bez kreatur = auto-przejście (root cause: `legalAttackerOptions` zwracał `[[]]` → pusta „decyzja” wystawiana jako komenda; CR 508.1), **T1/T4** — rodzina aura do parametrów (11 kluczy, golden-master) + strojenie `auraHostileEnemyBase` 55→65 (tuner: proxy 0.5642→0.5668; benchmark 4200 meczów bez regresji — adopcja), **B7** — pętla jakości seeds 3001–3006 (oś: poprawność/logika/optymalność): **0 defektów** — 4 fałszywe alarmy zamknięte L57, w tym „re-Equip” z 3002 (pojazd crewowany: sprzęt odłącza się w cleanup, przypięcia świeże — CR 702.16/702.6); 3 testy inwariantów; `npm test` 3765/3765; build 2914.8 kB; **PR #88**)
 - **Ostatnia aktualizacja (poprzednia):** 2026-08-29 (sesja arena/01a04e98, **etap 5**: **pętla jakości Żywym Testerem** (właściciel: „może sam coś znajdziesz”) — 6 partii (tarkir-bg/wiedzmin, worek-basni/theros, warhammer-wu/worek-legend, seeds 2001–2006), 0 detektorów, 3 znaleziska: **F3** Kappa Tech-Wrecker „Ninjutsu {1}{G}" — pita zielona zgubiona w danych (koszt {2} generyczny), silnik (oferta + płatność) ignorował pipy KOLORÓW w ninjutsu — jedyne aktywowane kosztowanie bez koloru (L48) + kafel „Ninjutsu {2}” i gramatyka żeńska; **F1** „enters with a counter” niewidoczne na kaflu (7 kart: Trigon, Kappa, Servant of the Scale, Necrosquito, Voice of the Vermin, Swooping Protector, Creakwood Safewright); **F4** (narzędzie) profil defensive mulliganował do 0 kart (wzorzec bez granic słów łapał „zostaNIE 5”); 7 testów (RED→GREEN dowiedzone stashem), 8 fałszywych alarmów zamkniętych z L57 (m.in. Colossodon vanilla, Breaching Hippocamp untap stwora, własny morph w logu = zgodne z regułą rundy 3); `npm test` 3755/3755; build 2910.5 kB; **PR #88**)
+
+## Sesja 2026-08-30 — E/F: znaleziska pętli jakości (mulligan-bottom auto, regenerate = combat trick) (arena/01a04e98, PR #88)
+
+**Zlecenie:** znaleziska mojej pętli jakości z rund 4/5 („do
+zdiagnozowania”): (E) auto-rozstrzyganie wyboru odrzuceń, gdy liczba
+kart = wymagana; (F) Regenerate nie w G1 bez nadchodzącej śmierci —
+combat trick w momencie lethalu. Plan:
+`docs/plans/PLAN_2026-08-30-m257ef-znalezione-petla.md` (c467629,
+pushed przed kodem).
+
+**E (38dc74c) — mulligan-bottom wymuszony = auto-rozstrzygnięcie
+[engine]:** root cause: mała biblioteka po mulliganie dobiera <7 kart
+(bramka M100/E10) — `expected = min(count, ręka)`; gdy `ręka <= count`
+jedyna legalna kombinacja = CAŁA ręka (skrajnie: 0 kart; typowo: 7.
+mulligan, 7=7), a silnik/UI (wizard `mulliganBottomPlanOf`) wystawiały
+to jako decyzję. Fix (wzorzec auto-akcji turowej — drawStep CR 504.1,
+r4/A CR 508.1): gałąź `keep:false` w `execute()`, po wyliczeniu
+`newHand` — przy `newHand.length <= count` ruchy na spód +
+`mulligan_bottom_resolved` inline, `pendingMulliganBottom` nie jest
+stawiany (ten sam ślad eventów co droga przez komendę; priorytet dla
+gracza). 3 testy `test/m257ef-znalezione-petla.test.js` (E1 RED stashem;
+E2/E3 anti-overfix: 60 i 3 karty = wybór wystawiany). Testy M100/E10
+(test/mulligan.test.js): asercje pinające stare zachowanie (7. mulligan
+= decyzja 7/7) zaktualizowane — to dokładnie przypadek E.
+
+**F (6a390ef) — Regenerate = combat trick [bot]:** dwa root causes:
+(1) `isCreatureThreatened` (M218/4) — gałąź B3 („wróg ma otwartą manę
+i removal w talii, który MOŻE zabić” — hipergeometria) = spekulacja;
+w G1 strzelała WYŁĄCZNIE ona → bot stawiał tarcze „na wszelki
+wypadek” (2+30=32); regeneracja trwa do końca tury (CR 702.14) —
+reguła repo M236/2: B3 „za mało pewne”; (2) okno combat_damage —
+`resolve_combat` (stała 50) wygrywał z aktywacją (32): bot rozstrzygał
+walkę BEZ tarczy, choć stwór ginął. Fix: gałąź B3 usunięta (tylko 2
+użycia — regenerate; `removalSpells`/`opponentOpenMana` zostają dla
+reszty wycen) + w combat_damage premia zagrożenia 60 (2+60=62 > 50) —
+tarcza stoi PRZED obrażeniami, walkę bot domyka w następnej decyzji
+(−25 alreadyShielded, bez pętli). Pewna śmierć: walka zadeklarowana
+(symulacja CR 510) albo lethal już zadany (SBA 704.5g — „moment
+lethalu”). Znane ograniczenie: lethal spell na stosie (obrażenia nie
+zadane) — tarcza pod kontraktowalny threat to zakład. 3 testy (F1/F3
+RED stashem; F2 anti-overfix). Benchmark quick przed/po: BEZ ZMIAN
+(heuristic 84.7%, 75.3% vs aggro, 94.0% vs random — karta poza macierzą
+quick).
+
+**Bramki:** `npm test` 3811/3811 + build 2934.0 kB (E: 3808/3808,
+2933.3 kB).
 
 ## Sesja 2026-08-30 — r5b „Uwagi z testów” część 2: tasuj bez komunikatu, losowy starter, Awaken the Sleeper, Ruthless Invasion (arena/01a04e98, PR #88)
 
