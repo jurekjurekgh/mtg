@@ -1392,8 +1392,25 @@ export function execute(state, input) {
     }
     // Odłożenie N kart na spód — decyzja gracza (resolve_mulligan_bottom_choice).
     const newHand = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === playerId);
-    state.pendingMulliganBottom = { playerId, count, handIds: newHand, restorePriorityTo: playerId };
-    state.events.push(event('mulligan_bottom_required', { playerId, count }));
+    // M257/E (znalezisko pętli jakości): mała biblioteka — dobieramy mniej niż
+    // 7, więc `expected = min(count, newHand.length)` (CR 103.4 — „equal to
+    // that many", nie więcej niż masz). Gdy newHand.length <= count, JEDYNA
+    // legalna kombinacja to cała ręka — wybór nie istnieje. Auto-rozstrzygamy
+    // (wzorzec auto-akcji turowej: drawStep CR 504.1, r4/A CR 508.1) zamiast
+    // wystawiać bezsensowny ekran (w skrajnym wariancie: „wybierz 0 kart”).
+    if (newHand.length <= count) {
+      for (const id of newHand) {
+        const libId = `library-${state.objectSequence++}`;
+        const moved = moveObjectDirectly(state, id, 'library', libId);
+        state.events.push(event('object_moved', { fromId: id, object: moved, fromZone: 'hand', toZone: 'library', mulliganBottom: true }));
+      }
+      state.events.push(event('mulligan_bottom_resolved', { playerId, count }));
+    } else {
+      state.pendingMulliganBottom = { playerId, count, handIds: newHand, restorePriorityTo: playerId };
+      state.events.push(event('mulligan_bottom_required', { playerId, count }));
+    }
+    // Gracz decyduje dalej (keep albo kolejny mulligan) — priorytet ten sam
+    // co po drodze przez komendę resolve_mulligan_bottom_choice.
     state.turn.priorityPlayerId = playerId;
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }

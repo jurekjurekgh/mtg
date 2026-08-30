@@ -154,13 +154,19 @@ test('limit mulliganów: po 7. mulliganie oferta to wyłącznie keep (ręka 0 ka
   const state = match();
   const handOf = (pid) => state.zones.hand.filter((id) => state.objects.get(id).controllerId === pid);
   // 7 mulliganów p1 (każdy: keep:false → odłożenie count kart na spód).
+  // M257/E: przy 7. (count 7 = 7 kart ręki) wybór jest WYMUSZONY — silnik
+  // auto-rozstrzyga (pendingMulliganBottom nie istnieje).
   for (let n = 0; n < 7; n += 1) {
     const legal = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_mulligan_choice');
     assert.ok(legal.some((c) => c.keep === false), `mulligan #${n + 1} powinien być dostępny (count=${n})`);
     assert.ok(execute(state, { type: 'resolve_mulligan_choice', playerId: 'p1', keep: false }).ok);
     const bottom = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_mulligan_bottom_choice');
-    assert.ok(bottom, 'oczekująca decyzja odłożenia na spód');
-    assert.ok(execute(state, { type: 'resolve_mulligan_bottom_choice', playerId: 'p1', cardIds: bottom.cardIds }).ok);
+    if (n < 6) {
+      assert.ok(bottom, `oczekująca decyzja odłożenia na spód (#${n + 1}: ${n + 1} z 7)`);
+      assert.ok(execute(state, { type: 'resolve_mulligan_bottom_choice', playerId: 'p1', cardIds: bottom.cardIds }).ok);
+    } else {
+      assert.equal(bottom, undefined, '7. mulligan: 7 kart = wymagane 7 — auto-rozstrzygnięcie (M257/E)');
+    }
   }
   assert.equal(handOf('p1').length, 0, 'po 7. mulliganie ręka pusta (7 dobranych − 7 odłożonych)');
   const legal = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_mulligan_choice');
@@ -173,7 +179,10 @@ test('limit mulliganów: execute odrzuca 8. mulligan (bramka engine, CR 103.4)',
   for (let n = 0; n < 7; n += 1) {
     execute(state, { type: 'resolve_mulligan_choice', playerId: 'p1', keep: false });
     const bottom = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_mulligan_bottom_choice');
-    execute(state, { type: 'resolve_mulligan_bottom_choice', playerId: 'p1', cardIds: bottom.cardIds });
+    // M257/E: 7. mulligan (7 = 7 kart) auto-rozstrzygany — komendy nie ma.
+    if (bottom) {
+      execute(state, { type: 'resolve_mulligan_bottom_choice', playerId: 'p1', cardIds: bottom.cardIds });
+    }
   }
   const res = execute(state, { type: 'resolve_mulligan_choice', playerId: 'p1', keep: false });
   assert.equal(res.ok, false, '8. mulligan musi być odrzucony');
