@@ -15,6 +15,9 @@ test('automat tury ma jawny porządek kroków', () => {
 
 test('dwukrotne pass przechodzi do następnego kroku i resetuje priorytet', () => {
   const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   assert.equal(state.turn.step, 'untap');
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   const result = execute(state, { type: 'pass_priority', playerId: 'p2' });

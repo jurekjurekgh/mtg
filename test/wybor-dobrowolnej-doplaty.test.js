@@ -70,6 +70,9 @@ test('M101/B: zgłoszony przypadek — trigger Furious Forebear ({1}{W}) w prawd
     state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
   };
   const state = createGameState({ players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }], seed: 1 });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   addCard(state, 'ff', 'furious-forebear', 'graveyard');
   addCard(state, 'ofiara', 'monastery-flock', 'battlefield');
   addMana(state, 'p1', 4);

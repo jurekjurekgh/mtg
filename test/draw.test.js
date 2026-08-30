@@ -15,7 +15,7 @@ function toDraw(state) {
 }
 
 test('krok dobierania sam przenosi wierzchnią kartę biblioteki do ręki (CR 504.1)', () => {
-  const state = createGameState({ seed: 4, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const state = createGameState({ seed: 7, players: [{ id: 'p1' }, { id: 'p2' }] });
   addObject(state, { id: 'library-1', instanceId: 'i-1', cardId: 'Mountain', controllerId: 'p1', zone: 'library' });
   // Przeciwnik też potrzebuje kart: od M101/A dobranie jest akcją turową, więc
   // gracz z pustą biblioteką przegrywa w swoim kroku dobierania (CR 104.3c).
@@ -31,7 +31,7 @@ test('krok dobierania sam przenosi wierzchnią kartę biblioteki do ręki (CR 50
 });
 
 test('draw_card jest odrzucane poza krokiem draw', () => {
-  const state = createGameState({ seed: 4, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const state = createGameState({ seed: 7, players: [{ id: 'p1' }, { id: 'p2' }] });
   addObject(state, { id: 'library-1', instanceId: 'i-1', cardId: 'Mountain', controllerId: 'p1', zone: 'library' });
   const result = execute(state, { type: 'draw_card', playerId: 'p1', objectId: 'library-1' });
   assert.equal(result.ok, false);
@@ -39,7 +39,7 @@ test('draw_card jest odrzucane poza krokiem draw', () => {
 });
 
 test('krok draw dobiera dokładnie jedną kartę', () => {
-  const state = createGameState({ seed: 4, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const state = createGameState({ seed: 7, players: [{ id: 'p1' }, { id: 'p2' }] });
   addObject(state, { id: 'library-1', instanceId: 'i-1', cardId: 'Mountain', controllerId: 'p1', zone: 'library' });
   addObject(state, { id: 'library-2', instanceId: 'i-2', cardId: 'Forest', controllerId: 'p1', zone: 'library' });
   for (let i = 0; i < 8; i += 1) {

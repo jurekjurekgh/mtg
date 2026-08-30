@@ -6,6 +6,9 @@ import { untapControlled } from '../src/engine/permanents.js';
 
 test('creature z summoning sickness nie może atakować', () => {
   const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   state.turn.phase = 'combat'; state.turn.step = 'declare_attackers';
   addObject(state, { id: 'c', instanceId: 'i', cardId: 'C', controllerId: 'p1', zone: 'battlefield', kind: 'creature', power: 2, toughness: 2 });
   state.objects.set('c', Object.freeze({ ...state.objects.get('c'), summoningSickness: true }));
@@ -14,6 +17,9 @@ test('creature z summoning sickness nie może atakować', () => {
 
 test('untap początku tury usuwa summoning sickness kontrolowanych stworów', () => {
   const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   addObject(state, { id: 'c', instanceId: 'i', cardId: 'C', controllerId: 'p1', zone: 'battlefield', kind: 'creature', power: 2, toughness: 2 });
   state.objects.set('c', Object.freeze({ ...state.objects.get('c'), summoningSickness: true }));
   untapControlled(state, 'p1');

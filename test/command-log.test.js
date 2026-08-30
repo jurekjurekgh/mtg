@@ -5,6 +5,9 @@ import { replayFromState, serializeReplay, parseReplay } from '../src/engine/rep
 
 test('GameState zapisuje zaakceptowane komendy do replayu', () => {
   const state = createGameState({ seed: 123, players: [{ id: 'p1' }, { id: 'p2' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   execute(state, { type: 'pass_priority', playerId: 'p2' });
   execute(state, { type: 'pass_priority', playerId: 'p1' });

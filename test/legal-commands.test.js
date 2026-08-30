@@ -9,12 +9,14 @@ import { addObject, createGameState, execute, playerView } from '../src/engine/g
  */
 
 function freshState() {
-  return createGameState({ seed: 11, players: [{ id: 'p1' }, { id: 'p2' }] });
+  // M257-r5b/B: seed 7 = starter p1 (testy pliku operują turą p1; pełna runda
+  // na końcu asercją kończy na turze p2).
+  return createGameState({ seed: 7, players: [{ id: 'p1' }, { id: 'p2' }] });
 }
 
 function mainPhaseState() {
   const state = freshState();
-  state.turn = { ...state.turn, phase: 'precombat_main', step: 'main' };
+  state.turn = { ...state.turn, phase: 'precombat_main', step: 'main', activePlayerId: 'p1', priorityPlayerId: 'p1' };
   addObject(state, { id: 'l-hand', instanceId: 'il1', cardId: 'L1', controllerId: 'p1', zone: 'hand', kind: 'land' });
   addObject(state, { id: 'l-field', instanceId: 'il2', cardId: 'L2', controllerId: 'p1', zone: 'battlefield', kind: 'land' });
   addObject(state, { id: 'c-hand', instanceId: 'ic1', cardId: 'C1', controllerId: 'p1', zone: 'hand', kind: 'creature', power: 2, toughness: 2, manaCost: 1 });
@@ -28,7 +30,7 @@ function mainPhaseState() {
 
 function combatState() {
   const state = freshState();
-  state.turn = { ...state.turn, phase: 'combat', step: 'declare_attackers' };
+  state.turn = { ...state.turn, phase: 'combat', step: 'declare_attackers', activePlayerId: 'p1', priorityPlayerId: 'p1' };
   addObject(state, { id: 'a1', instanceId: 'ia1', cardId: 'A1', controllerId: 'p1', zone: 'battlefield', kind: 'creature', power: 2, toughness: 2 });
   addObject(state, { id: 'a2', instanceId: 'ia2', cardId: 'A2', controllerId: 'p1', zone: 'battlefield', kind: 'creature', power: 1, toughness: 1 });
   addObject(state, { id: 'b1', instanceId: 'ib1', cardId: 'B1', controllerId: 'p2', zone: 'battlefield', kind: 'creature', power: 2, toughness: 3 });
@@ -38,7 +40,7 @@ function combatState() {
 function drawState() {
   const state = freshState();
   addObject(state, { id: 'top', instanceId: 'it', cardId: 'X', controllerId: 'p1', zone: 'library' });
-  state.turn = { ...state.turn, phase: 'beginning', step: 'draw', priorityPlayerId: 'p1' };
+  state.turn = { ...state.turn, phase: 'beginning', step: 'draw', activePlayerId: 'p1', priorityPlayerId: 'p1' };
   return state;
 }
 

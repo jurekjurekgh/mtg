@@ -79,13 +79,16 @@ test('M101/A: passa w kroku dobierania NIE da się już zagrać bez dobrania', (
 
 test('M101/A: CR 103.7a — gracz rozpoczynający nie dobiera w pierwszej turze', () => {
   const state = makeState();
-  // Tura 1, aktywny = gracz rozpoczynający (players[0]).
-  state.turn = jumpToStep({ ...state.turn, number: 1, activePlayerId: 'p1' }, 'upkeep', 'p1');
-  const before = handOf(state, 'p1').length;
-  execute(state, { type: 'pass_priority', playerId: 'p1' });
-  execute(state, { type: 'pass_priority', playerId: 'p2' });
+  // Tura 1, aktywny = gracz rozpoczynający (M257-r5b/B: state.starterId —
+  // losowany z seeda, nie zawsze p1).
+  const starter = state.starterId;
+  const other = starter === 'p1' ? 'p2' : 'p1';
+  state.turn = jumpToStep({ ...state.turn, number: 1, activePlayerId: starter }, 'upkeep', starter);
+  const before = handOf(state, starter).length;
+  execute(state, { type: 'pass_priority', playerId: starter });
+  execute(state, { type: 'pass_priority', playerId: other });
   assert.equal(state.turn.step, 'draw');
-  assert.equal(handOf(state, 'p1').length, before, 'pierwsza tura rozpoczynającego — bez dobrania');
+  assert.equal(handOf(state, starter).length, before, 'pierwsza tura rozpoczynającego — bez dobrania');
 });
 
 test('M101/A: CR 104.3c — automatyczne dobranie z pustej biblioteki przegrywa partię', () => {

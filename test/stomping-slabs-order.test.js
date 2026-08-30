@@ -51,8 +51,10 @@ test('Stomping Slabs: commandLabel dla resolve_reveal_order pokazuje nazwy kart'
     registry,
   });
   // Rozstrzygnij mulligan + przejdź do main.
-  execute(state, { type: 'resolve_mulligan_choice', playerId: 'p1', keep: true });
-  execute(state, { type: 'resolve_mulligan_choice', playerId: 'p2', keep: true });
+  // M257-r5b/B: starter losowy — keepujemy wg aktualnej kolejki mulliganów.
+  for (const pid of [...state.pendingMulligans]) {
+    execute(state, { type: 'resolve_mulligan_choice', playerId: pid, keep: true });
+  }
   state.turn = jumpToStep(state.turn, 'main', 'p1');
   state.turn.activePlayerId = 'p1';
   state.turn.priorityPlayerId = 'p1';

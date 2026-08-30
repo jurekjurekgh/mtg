@@ -32,7 +32,9 @@ import { parseDeckText } from '../src/cards/deck-text.js';
 const REGISTRY = createCardRegistry();
 
 function game() {
-  return createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] }); // M257-r5b/B: pin aktora (starter losowy)
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
+  return state;
 }
 
 /** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */

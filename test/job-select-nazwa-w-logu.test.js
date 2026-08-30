@@ -29,6 +29,8 @@ const REGISTRY = createCardRegistry();
 /** Stół z Warrior's Sword (job select) gotowym do wejścia na pole bitwy. */
 function boardWithJobSelect() {
   const state = createGameState({ seed: 3, players: [{ id: 'p1' }, { id: 'p2' }] });
+  // M257-r5b/B: pin aktora (starter losowy) — test gra turą p1.
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   state.turn = jumpToStep(state.turn, 'main', 'p1');
   const card = REGISTRY.get('warriors-sword');
   addObject(state, {

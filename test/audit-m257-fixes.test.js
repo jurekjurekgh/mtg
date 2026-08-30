@@ -29,12 +29,16 @@ const BRG = parseDeckText(readFileSync('decks/innistrad-brg.txt', 'utf8'), REGIS
 const WU = parseDeckText(readFileSync('decks/innistrad-wu.txt', 'utf8'), REGISTRY).cardIds;
 
 function freshState() {
-  return setupCardMatch({
+  const state = setupCardMatch({
     seed: 11,
     players: [{ id: 'p1' }, { id: 'p2' }],
     decks: new Map([['p1', BRG], ['p2', WU]]),
     registry: REGISTRY,
   });
+  // M257-r5b/B: testy mechaniczne (bez semantyki mulligana) — czyszcimy
+  // wiszącą kolejkę mulliganów, żeby gate nie blokował legalCommands.
+  state.pendingMulligans = [];
+  return state;
 }
 
 function findCardId(state, cardId) {
@@ -74,7 +78,7 @@ function flipFrontToBack(state) {
   const ability = REGISTRY.get('scorned-villager').abilities.find((a) => a.trigger?.event === 'upkeep');
   assert.ok(ability, 'trigger upkeep w definicji Scorned Villager');
   state.turn = jumpToStep(state.turn, 'main', 'p1');
-  state.turn.activePlayerId = 'p1';
+  state.turn.activePlayerId = 'p1'; // M257-r5b/B: pin aktywności (starter losowy)
   state.turn.priorityPlayerId = 'p1';
   state.turn.passes = 0;
   queueTriggerToStack(state, ability, state.objects.get(bfId), [], []);
@@ -135,7 +139,7 @@ test('M257/K5: obrotu na polu bitwy NIE rusza reset (tylko wyjście z pola)', ()
   // ...a drugi obrót (przez trigger) dalej działa — flicker w obie strony.
   const ability = REGISTRY.get('scorned-villager').abilities.find((a) => a.trigger?.event === 'upkeep');
   state.turn = jumpToStep(state.turn, 'main', 'p1');
-  state.turn.activePlayerId = 'p1';
+  state.turn.activePlayerId = 'p1'; // M257-r5b/B: pin aktywności (starter losowy)
   state.turn.priorityPlayerId = 'p1';
   state.turn.passes = 0;
   queueTriggerToStack(state, ability, state.objects.get(bf2), [], []);
@@ -166,6 +170,7 @@ test('M257/K4: transform własnego permanentu widoczny w panelu Rozgrywka', asyn
   const bfId = moveObjectDirectly(state, hid, 'battlefield', `bf-digest-${hid}`).id;
   const ability = REGISTRY.get('scorned-villager').abilities.find((a) => a.trigger?.event === 'upkeep');
   state.turn = jumpToStep(state.turn, 'main', HUMAN_ID);
+  state.turn.activePlayerId = HUMAN_ID; // M257-r5b/B: pin aktywności (starter losowy)
   state.turn.activePlayerId = HUMAN_ID;
   state.turn.priorityPlayerId = HUMAN_ID;
   state.turn.passes = 0;

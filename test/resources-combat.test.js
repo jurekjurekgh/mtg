@@ -6,6 +6,9 @@ import { declareAttackers, declareBlockers, resolveCombatDamage } from '../src/e
 
 function combatState() {
   const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   state.turn.phase = 'combat';
   state.turn.step = 'declare_attackers';
   addObject(state, { id: 'a', instanceId: 'ia', cardId: 'A', controllerId: 'p1', zone: 'battlefield', kind: 'creature', power: 3, toughness: 2 });

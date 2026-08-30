@@ -32,6 +32,9 @@ import { initializeResources } from '../src/engine/resources.js';
 
 test('M2: land produkuje manę, a mana pozwala zagrać creatura', () => {
   const state = createGameState({ seed: 2, players: [{ id: 'p1' }, { id: 'p2' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   initializeResources(state);
   state.turn.phase = 'precombat_main';
   addObject(state, { id: 'land', instanceId: 'il', cardId: 'Mountain', controllerId: 'p1', zone: 'battlefield', kind: 'land' });

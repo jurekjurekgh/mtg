@@ -2,6 +2,7 @@ import { createGameObject } from './identity.js';
 import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
 import { initialTurn, jumpToStep, nextTurnStep } from './turn.js';
+import { createRng } from './rng.js';
 import { assertStateInvariants } from './invariants.js';
 import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, spendMana, spellManaPurpose, treasureManaAvailable, canPayMadnessCost } from './resources.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
@@ -74,10 +75,16 @@ export function createGameState({ seed, players }) {
   }
   const ids = players.map((p) => p.id);
   if (ids.some((id) => !id) || new Set(ids).size !== ids.length) throw new TypeError('Gracze muszą mieć unikalne id');
+  // M257-r5b/B (uwaga z testów): „Gracz zawsze zaczyna. Czy to kto zaczyna
+  // nie powinno być losowe?” — rzut monetą z seeda (deterministyczny,
+  // ADR 0005; 1v1 = 50/50). Reguły CR 103.7a/103.4 czytały players[0]
+  // na sztywno — teraz są przymocowane do `starterId`.
+  const starterId = ids[Math.floor(createRng(seed)() * ids.length)];
   const state = {
     seed,
+    starterId,
     players: players.map((p) => ({ id: p.id, name: p.name ?? p.id, life: 20, commanderCasts: 0, speed: 0 })),
-    turn: initialTurn(ids[0]),
+    turn: initialTurn(starterId),
     objects: new Map(),
     zones: Object.fromEntries(ZONES.map((zone) => [zone, []])),
     events: [],
@@ -629,7 +636,7 @@ function drawStepTurnBasedAction(state) {
   if (state.status !== 'active') return [];
   if (state.turn.step !== 'draw' || state.turn.drawnInStep) return [];
   const playerId = state.turn.activePlayerId;
-  if (state.turn.number === 1 && playerId === state.players[0].id) return [];
+  if (state.turn.number === 1 && playerId === state.starterId) return [];
   const result = performDrawStepDraw(state, playerId);
   return result.events ?? [];
 }
@@ -1334,7 +1341,7 @@ export function execute(state, input) {
       if (state.pendingMulligans.length > 0) {
         state.turn.priorityPlayerId = state.pendingMulligans[0];
       } else {
-        state.turn.priorityPlayerId = state.players[0].id;
+        state.turn.priorityPlayerId = state.starterId;
         state.events.push(event('game_started', {}));
         // CR 502.4: pierwsza tura też nie ma okna priorytetu w untapie —
         // po mulliganach gra rusza od upkeepu (CR 103.7/503.1). Bez tego
@@ -4699,7 +4706,7 @@ export function execute(state, input) {
   if (cmd.type === 'draw_card') {
     if (state.turn.step !== 'draw' || state.turn.activePlayerId !== cmd.playerId) return reject('wrong_timing');
     // CR 103.7a: pierwsza tura gry — aktywny gracz (startujący) nie dobiera.
-    if (state.turn.number === 1 && state.turn.activePlayerId === state.players[0].id) {
+    if (state.turn.number === 1 && state.turn.activePlayerId === state.starterId) {
       return reject('first_turn_no_draw');
     }
     // Akcja turowa: dokładnie jedno dobranie w kroku draw; znacznik znika

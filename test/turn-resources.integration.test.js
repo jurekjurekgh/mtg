@@ -6,6 +6,9 @@ import { tapObject } from '../src/engine/permanents.js';
 
 test('przejście do kolejnej tury automatycznie resetuje zasoby i untapuje permanenty', () => {
   const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   initializeResources(state);
   addObject(state, { id: 'p1-creature', instanceId: 'i1', cardId: 'Creature', controllerId: 'p1', zone: 'battlefield', kind: 'creature', power: 2, toughness: 2 });
   tapObject(state, 'p1-creature', 'p1');

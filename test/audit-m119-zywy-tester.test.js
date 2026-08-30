@@ -83,6 +83,11 @@ test('M119/Z3: warianty mulligana o tym samym składzie NIE dublują się', () =
     ['p2', Array(20).fill('basic-forest')],
   ]);
   const state = setupCardMatch({ seed: 5, players: [{ id: 'p1' }, { id: 'p2' }], decks, registry, openingHandSize: 7 });
+  // M257-r5b/B: starter losowy — keepujemy graczy przed p1 w kolejce,
+  // żeby p1 (podmiot testu) było głową kolejki mulliganów.
+  while (state.pendingMulligans.length && state.pendingMulligans[0] !== 'p1') {
+    execute(state, { type: 'resolve_mulligan_choice', playerId: state.pendingMulligans[0], keep: true });
+  }
   const hand = state.zones.hand.filter((id) => state.objects.get(id).controllerId === 'p1').slice(0, 7);
   state.pendingMulliganBottom = { playerId: 'p1', count: 3, handIds: hand, restorePriorityTo: 'p1' };
   state.status = 'active';
@@ -100,6 +105,9 @@ test('M119/Z3: enumeracja mulligana ma cap (lekcja L19)', () => {
   // Ręka z samych RÓŻNYCH kart nie daje się zdeduplikować — wtedy broni cap.
   const registry = createCardRegistry();
   const state = createGameState({ seed: 9, players: [{ id: 'p1' }, { id: 'p2' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   state.status = 'active';
   const distinct = ['basic-plains', 'basic-island', 'basic-swamp', 'basic-mountain',
     'basic-forest', 'highland-game', 'goblin-piker'];
@@ -364,6 +372,8 @@ test('M120: przy pełnym życiu przeciwnika Station nadal ma sens (anty-over-fix
 function selfHarmBoard({ hand = [], mine = [], foe = [] }) {
   const registry = createCardRegistry();
   const state = createGameState({ seed: 11, players: [{ id: 'p1' }, { id: 'p2' }] });
+  // M257-r5b/B: pin aktora (starter losowy) — bot gra turą p1.
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   state.turn = jumpToStep(state.turn, 'main', 'p1');
   state.turn.number = 8;
   let n = 0;

@@ -6,6 +6,9 @@ import { createRandomBot } from '../src/controllers/random-bot.js';
 
 function run() {
   const state = createGameState({ seed: 77, players: [{ id: 'p1' }, { id: 'p2' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   return runSimulation({
     state,
     controllers: new Map([
@@ -31,6 +34,9 @@ test('dwa RandomBot-y przechodzą przez deterministyczną symulację', () => {
 
 test('kontroler nie może wykonać komendy za innego gracza', () => {
   const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   assert.throws(() => runSimulation({
     state,
     controllers: new Map([['p1', { chooseCommand: () => ({ type: 'pass_priority', playerId: 'p2' }) }], ['p2', createRandomBot({ seed: 2 })]]),

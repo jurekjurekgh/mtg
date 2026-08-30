@@ -5,6 +5,9 @@ import { initializeResources, playLand, resetTurnResources } from '../src/engine
 
 test('gracz może zagrać jeden land w main phase', () => {
   const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   initializeResources(state);
   state.turn.phase = 'precombat_main';
   addObject(state, { id: 'l1', instanceId: 'i1', cardId: 'Mountain', controllerId: 'p1', zone: 'hand', kind: 'land' });
@@ -17,6 +20,9 @@ test('gracz może zagrać jeden land w main phase', () => {
 
 test('reset początku tury odnawia land drop i czyści manę', () => {
   const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   initializeResources(state);
   state.players[0].mana = 3;
   state.players[0].landPlays = 0;

@@ -29,6 +29,9 @@ const REGISTRY = createCardRegistry();
 /** Stol: wlasny stwor-gospodarz, jednokolorowy stwor wroga, Ward w rece. */
 function scenariusz(dodajWiedze = () => {}) {
   const state = createGameState({ players: [{ id: 'p1' }, { id: 'p2' }], registry: REGISTRY, seed: 11 });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   addObject(state, {
     id: 'mine', instanceId: 'mine-i', cardId: 'hill-giant', controllerId: 'p1', zone: 'battlefield',
     kind: 'creature', power: 3, toughness: 3, colors: ['G'], types: ['Creature'],
@@ -59,6 +62,9 @@ const wielokolorowyNaPolu = (state) => addObject(state, {
 
 test('M209/A: widok pola bitwy niesie kolory, ale zakryty permanent zostaje bezbarwny (CR 708.2)', () => {
   const state = createGameState({ players: [{ id: 'p1' }, { id: 'p2' }], registry: REGISTRY, seed: 5 });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   addObject(state, {
     id: 'gold', instanceId: 'gold-i', cardId: 'boros-challenger', controllerId: 'p2', zone: 'battlefield',
     kind: 'creature', power: 2, toughness: 3, colors: ['R', 'W'], types: ['Creature'],
@@ -129,6 +135,9 @@ test('M209/F: anty-over-fix — zwykla aura-buff dziala jak dotad', () => {
   // Regula ma dotyczyc WYLACZNIE aur, ktorych cala wartoscia jest ochrona.
   // Aura z pumpem musi zostac zagrana mimo braku wielokolorowych u wroga.
   const state = createGameState({ players: [{ id: 'p1' }, { id: 'p2' }], registry: REGISTRY, seed: 11 });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   addObject(state, {
     id: 'mine', instanceId: 'mine-i', cardId: 'hill-giant', controllerId: 'p1', zone: 'battlefield',
     kind: 'creature', power: 3, toughness: 3, colors: ['G'], types: ['Creature'],
