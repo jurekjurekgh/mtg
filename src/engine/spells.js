@@ -1863,6 +1863,10 @@ function resolvePermanentSpell(state, stackId, object, before) {
       // ten sam co w transform_permanent i crafcie: niesie też `kind`/`types`,
       // więc strona nocna zmieniająca rodzaj permanentu nie gubi typu.
       ...transformedCharacteristics(target, permanent),
+      // CR 202.3b (M258/Etap 2.3b): ta sama reguła MV co transform/craft —
+      // payload niesie koszt przedni, aplikujemy go przy wejściu nocną
+      // stroną (no-op dla zwykłych DFC, spread trzyma ten sam koszt).
+      manaCost: target.manaCost ?? permanent.manaCost ?? 0,
       transformTo: {
         cardId: permanent.cardId,
         cardName: permanent.cardName,
@@ -1873,6 +1877,7 @@ function resolvePermanentSpell(state, stackId, object, before) {
         keywords: permanent.keywords ?? [],
         subtypes: permanent.subtypes ?? [],
         types: permanent.types ?? [],
+        manaCost: permanent.manaCost ?? 0,
       },
     });
     state.objects.set(newId, nightbound);

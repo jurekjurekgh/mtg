@@ -3924,6 +3924,12 @@ export function execute(state, input) {
         ...moved,
         id: bfId, zone: 'battlefield',
         ...transformedCharacteristics(target, previousSide),
+        // CR 202.3b (M258/Etap 2.3b): MV po crafcie = koszt twarzy przedniej;
+        // payload transformTo niesie go od materialize. Token-kopia TYLNEJ
+        // twarzy (MV 0) craftujący się na przód dostaje koszt przedni
+        // (CR 707.8a); fallback = dotychczasowa wartość (zwykły DFC —
+        // identyczny wynik, spread trzymał koszt przedni).
+        manaCost: target.manaCost ?? moved.manaCost ?? 0,
         transformTo: {
           cardId: moved.cardId,
           cardName: moved.cardName ?? null,
@@ -3934,6 +3940,9 @@ export function execute(state, input) {
           keywords: moved.keywords ?? [],
           subtypes: previousSide.subtypes ?? moved.subtypes ?? [],
           types: previousSide.types ?? moved.types ?? [],
+          // MV obiektu z opuszczaną twarzą w górę (kontrakt symetryczny
+          // z efektem transform).
+          manaCost: target.manaCost ?? moved.manaCost ?? 0,
         },
       });
       state.objects.delete(sourceExileId);

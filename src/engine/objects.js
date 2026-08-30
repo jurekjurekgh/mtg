@@ -127,6 +127,10 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
       subtypes: front.subtypes ?? [],
       ...(front.kind != null ? { kind: front.kind } : {}),
       ...(front.types ? { types: front.types } : {}),
+      // Karta poza polem bitwy leży przodem (CR 711.4a) — jej MV to koszt
+      // przedni; payload przedniej twarzy niesie go od Etapu 2.3b. Zwykły
+      // DFC: spread i tak trzyma ten sam koszt (no-op).
+      ...(front.manaCost != null ? { manaCost: front.manaCost } : {}),
       transformTo: Object.freeze({
         cardId: object.cardId,
         cardName: object.cardName,
@@ -137,6 +141,10 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
         subtypes: object.subtypes ?? [],
         ...(object.kind != null ? { kind: object.kind } : {}),
         ...(object.types ? { types: object.types } : {}),
+        // MV z tylną twarzą w górę (koszt przedni) — kontrakt symetryczny
+        // z transform/craft, żeby powrót na pole i kolejna transformacja
+        // czytały właściwą wartość (M258/Etap 2.3b).
+        ...(object.manaCost != null ? { manaCost: object.manaCost ?? 0 } : {}),
       }),
     };
   }

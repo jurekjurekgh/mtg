@@ -2515,6 +2515,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       // artefaktem z P/T, więc nie mógł atakować ani blokować.
       ...(target.kind ? { kind: target.kind } : {}),
       ...(target.types ? { types: target.types } : {}),
+      // CR 202.3b (M258/Etap 2.3b): przy zmianie twarzy MV obiektu = koszt
+      // twarzy PRZEDNIEJ. Payload transformTo niesie właśnie to (materialize
+      // buduje go jako card.manaCost), więc aplikujemy go wprost; fallback
+      // = dotychczasowa wartość (zwykłe DFC: identyczny wynik, transform
+      // kosztu nie zmieniał). Różnica pojawia się dopiero przy tokenie-kopii
+      // TYLNEJ twarzy (MV 0), który wraca na przód — wtedy musi dostać
+      // koszt przedniej strony (CR 707.8a).
+      manaCost: target.manaCost ?? sourceObject.manaCost ?? 0,
       transformTo: {
         cardId: sourceObject.cardId,
         cardName: sourceObject.cardName,
@@ -2525,6 +2533,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         subtypes: sourceObject.subtypes ?? [],
         kind: sourceObject.kind,
         types: sourceObject.types ?? [],
+        // MV obiektu z TĄ (opuszczaną) twarzą w górę — symetryczny kontrakt:
+        // zwykły DFC = koszt przedni, token-kopia tyłu = 0 póki jest tyłem.
+        manaCost: sourceObject.manaCost ?? 0,
       },
     });
     state.objects.set(sourceObject.id, updated);
