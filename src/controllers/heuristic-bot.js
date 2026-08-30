@@ -706,9 +706,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const myLandCount = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
 
   /**
-   * M218/4 — czy stwór jest zagrożony w tej turze (regenerate).
-   * Zagrożenie = walka (ginie w symulacji CR 510) albo przeciwnik ma otwartą
-   * manę i removal (damage) który może go zabić (B3 model).
+   * M218/4, M257/F — czy stwór jest ZAGROŻONY PEWNĄ śmiercią w tej turze
+   * (regenerate jako combat trick).
+   *
+   * M257/F (znalezisko pętli jakości): usunięto gałąź 3 M218/4 — „przeciwnik
+   * ma otwartą manę i removal, który MOŻE go zabić” (B3, hipergeometria).
+   * To spekulacja ręki, nie pewna śmierć: regeneracja trwa do końca tury
+   * (CR 702.14), a wróg mógłby nie rzucić (albo mieć countera po drugiej
+   * stronie — tarcza byłaby stratą). Reguła repo (M236/2,
+   * permanentDoomedThisTurn): spekulacja „removal w ręce” jest „za mało
+   * pewna”, by uznać permanent za skazany. Regenerate w G1 bez nadchodzącej
+   * śmierci = czyste marnotrawstwo; sense ma W MOMENCIE LETHALU:
+   *   1. walka zadeklarowana, stwór ginie (symulacja CR 510, M218/2),
+   *   2. obrażenia śmiertelne JUŻ zadane (SBA 704.5g czeka).
    * Zero nazw kart (ADR 0002), czytamy wyłącznie PlayerView (ADR 0017).
    */
   const isCreatureThreatened = (view, creature) => {
@@ -719,15 +729,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if (outcome.attackerDies) return true;
       if (outcome.deadBlockers?.includes(creature.id)) return true;
     }
-    // 2. Obrażenia śmiertelne już zadane (SBA 704.5g)
+    // 2. Obrażenia śmiertelne już zadane (SBA 704.5g) — „moment lethalu”.
     if ((creature.damage ?? 0) >= (creature.toughness ?? 0)) return true;
-    // 3. Removal w zasięgu many wroga (B3 — hipergeometria)
-    if (removalSpells.size && opponentOpenMana(view) >= minRemovalCost) {
-      const toughness = (creature.toughness ?? 0) - (creature.damage ?? 0);
-      for (const info of removalSpells.values()) {
-        if (info.cost <= opponentOpenMana(view) && info.amount >= toughness) return true;
-      }
-    }
     return false;
   };
 
@@ -2880,7 +2883,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score -= 25;
           } else {
             const threatened = isCreatureThreatened(view, regenTarget);
-            score += threatened ? 30 : -20;
+            if (threatened) {
+              // M257/F: krok combat_damage = OSTATNIA szansa — krok domyka
+              // `resolve_combat` (stała 50), a tarcza musi stać PRZED nim.
+              // 2 + 60 = 62 > 50: bot stawia tarczę w tym oknie, a walkę
+              // rozstrzyga w następnej decyzji (wtedy alreadyShielded −25).
+              score += view.turn.step === 'combat_damage' ? 60 : 30;
+            } else {
+              score -= 20;
+            }
           }
         }
         for (const effect of effects) {
