@@ -3850,6 +3850,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (blockingSomething && lethalThreat && (attackThreat - stoppedDamage) < myLife(view)) {
           score += 30;
         }
+        // M257-r5 (uwaga z testów): wycena nie znała PRESJI ŻYCIA — przy 5
+        // życiach przepuszczenie ataku 3/3 zostawiało 2 życia, a wymiana 2/2
+        // za 3 obrażenia wyceniana była na -2, czyli gorzej niż pass (0).
+        // Ratunek życia pod presją jest warty więcej niż koszt bloku — płaska
+        // premia zależna od życia PO zablokowaniu REALNIE PRZEŻYTEGO wariantu.
+        // Warunek lifeAfter >= 1: premii nie daje blok, po którym i tak
+        // giniemy (3× 3/3 przy 5 życiu — M146 „nie marnuj blokera”).
+        if (blockingSomething) {
+          const lifeAfter = myLife(view) - (attackThreat - stoppedDamage);
+          if (lifeAfter >= 1 && lifeAfter <= 2) score += 6;
+          else if (lifeAfter >= 1 && lifeAfter <= 5) score += 4;
+          else if (lifeAfter >= 1 && lifeAfter <= 8) score += 2;
+        }
         return finish(score);
       }
       case 'resolve_combat': return finish(50);

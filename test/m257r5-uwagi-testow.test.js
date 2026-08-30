@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderBotMoves, createScryfallHover } from '../src/table/render.js';
+import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
+import { createGameState, playerView, addObject } from '../src/engine/game-state.js';
+import { jumpToStep } from '../src/engine/turn.js';
 
 /**
  * M257 r5 (uwagi z testów, runda 5) — trzy znaleziska właściciela:
@@ -99,4 +102,70 @@ test('r5/A: bez hovera miniaturka nie dostaje listenerów (dotyk — tap otwiera
     assert.equal(art.listeners.mouseenter, undefined, 'brak mouseenter bez hovera');
     assert.equal(art.listeners.mouseleave, undefined, 'brak mouseleave bez hovera');
   });
+});
+
+// ---------------------------------------------------------------------------
+// B — blok pod presją życia (scenariusz właściciela: 5 życia, 2/2 vs 3/3)
+// ---------------------------------------------------------------------------
+
+/**
+ * Plansza z uwagi: bot (p2) z jednym stworem `blockerPower/blockerTough`,
+ * przeciwnik (p1, aktywny) atakuje stworem 3/3. Krok `declare_blockers`,
+ * priorytet bota.
+ */
+function blockScenario(botLife, blockerPower = 2, blockerTough = 2) {
+  const state = createGameState({ seed: 3002, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.players.find((p) => p.id === 'p2').life = botLife;
+  state.turn = jumpToStep(state.turn, 'declare_blockers', 'p2');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p2';
+  const put = (id, controller, power, toughness) => {
+    addObject(state, {
+      id, instanceId: `i-${id}`, cardId: 'x-test', controllerId: controller,
+      ownerId: controller, zone: 'battlefield', kind: 'creature',
+      power, toughness, manaCost: 0, abilities: [], keywords: [],
+      subtypes: [], types: ['Creature'], colors: [],
+    });
+    state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
+  };
+  put('blk', 'p2', blockerPower, blockerTough);
+  put('atk1', 'p1', 3, 3);
+  state.combat = {
+    attackingPlayerId: 'p1', attackers: ['atk1'],
+    blockers: new Map(), blockedAttackers: new Set(),
+  };
+  return state;
+}
+
+function blockScores(state) {
+  const view = playerView(state, 'p2');
+  const bot = createHeuristicBot({ seed: 3002 });
+  bot.chooseCommand(view, {});
+  const entry = bot.trace().at(-1);
+  const opts = entry.options ?? [];
+  const pass = opts.find((o) => o.cmd.startsWith('pass'))?.score ?? 0;
+  const block = opts.find((o) => o.cmd.startsWith('block[') && o.cmd.includes('blk'))?.score ?? null;
+  return { pass, block, choice: bot.lastChoice ?? null, view, bot };
+}
+
+test('r5/B: 5 życia — bot BLOKUJE 3/3 stworem 2/2 (scenariusz właściciela)', () => {
+  const { pass, block } = blockScores(blockScenario(5));
+  assert.ok(block != null, 'oferta bloku 2/2 istnieje');
+  assert.ok(block > pass, `blok (${block}) musi wygrywać z passem (${pass}) przy 5 życiach — atak zostawia 2 życia`);
+});
+
+test('r5/B: 30 życia — blok 2/2 vs 3/3 NIE wygrywa z passem (anti-overfix: bez presji wycena jak dotąd)', () => {
+  const { pass, block } = blockScores(blockScenario(30));
+  assert.ok(block != null, 'oferta bloku istnieje (legalna)');
+  assert.ok(block < pass, `blok (${block}) poniżej passu (${pass}) przy 30 życiach — wymiana 2/2 za 3 obrażenia bez presji nie ma sensu`);
+});
+
+test('r5/B: 5 życia — komenda bota to deklaracja bloku (end-to-end)', () => {
+  const state = blockScenario(5);
+  const view = playerView(state, 'p2');
+  const bot = createHeuristicBot({ seed: 3002 });
+  const choice = bot.chooseCommand(view, {});
+  assert.equal(choice.type, 'declare_blockers',
+    `bot przy 5 życiach ma blokować, wybrał: ${choice.type}`);
+  assert.deepEqual((choice.assignments ?? {}).atk1, ['blk'], 'bloker 2/2 przy atakującym 3/3');
 });
