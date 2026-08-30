@@ -2132,6 +2132,33 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const combatOn = (view.combat?.attackers?.length ?? 0) > 0;
             score += combatOn ? 12 : -45;
           }
+          // M257-r5b/C (zgłoszenie właściciela, Awaken the Sleeper): czasowe
+          // przejęcie kreatury to SZTUCZKA BOJOWA — po rozstrzygnięciu cel
+          // jest odtapnięty i ma haste (generyczny efekt), więc atakuje W
+          // TEJ turze właściciela. Wcześniejsza usterka: efekt nie miał ŻADNEJ
+          // wyceny — wszystkie warianty celu dostawały bazę 50 i wygrywał
+          // pierwszy z enumeracji (bot przejmował pierwszą kreaturę, nie tę
+          // z equipmentem). Właściciel: „najlepiej przejąć kreaturę z
+          // założonym equipmentem… i go zniszczył” — decyzja o zniszczeniu
+          // (resolve_destroy_equipment_choice) idzie w ślad za wyborem celu.
+          if (effect.type === 'gain_control_until_end_of_turn') {
+            if (!target || target.controllerId === view.playerId) {
+              // Efekt musi uderzyć w kreaturę PRZECIWNIKA — własna kontrola
+              // nic nie daje (kara musi przebić bazę czaru).
+              score -= 40;
+            } else {
+              // Baza: 3 * power — atak, który stanie się w tej turze
+              // (obrażenia bojowe na właściciela).
+              const power = target.power ?? 0;
+              score += 3 * power;
+              // Equipment założone na celu: preferencja celu wyposażonego.
+              // M257-r5b/C: equipment = artefakt z deskryptorem `equipment`
+              // (widok: attachedTo + entry.equipment) — ADR 0002, bez nazw.
+              const equipmentCount = (view.zones.battlefield ?? []).filter(
+                (o) => o.attachedTo === target.id && o.equipment).length;
+              if (equipmentCount > 0) score += 25 + 5 * equipmentCount;
+            }
+          }
           // M109 (Sagittars' Volley): fala obrażeń w stwory przeciwnika
           // z keywordem — wartość rośnie z liczbą trafionych i zabitych.
           if (effect.type === 'damage_creatures_with_keyword') {
@@ -3663,6 +3690,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // na bloki — wartość NIE może zostać podratowana premią „otwartej
             // presji" (+8), dlatego tak nisko (poniżej passu).
             perAttacker = -12;
+          } else if (object.tempControlUntilEOT) {
+            // M257-r5b/C (zgłoszenie właściciela, Awaken the Sleeper):
+            // stwór POŻYCZONY — czasowa kontrola (generyczna flaga widoku z
+            // efektu gain_control_until_end_of_turn; po rozstrzygnięciu cel
+            // jest odtapnięty i ma haste). JEGO śmierć to NIE jest koszt
+            // bota: przeżyje → wraca do właściciela, zginie → WŁAŚCICIEL
+            // traci permanent. Właściciel: „jak już przejął to powinien
+            // zaatakować właściciela” — gałęzie downside'u go nie dotyczą.
+            if (canBeBlocked && blockers.length > 0) {
+              if (power >= strongestBlockerToughness) {
+                // Zabija najsilniejszego blokera — właściciel traci ten
+                // permanent; atakujący wraca do właściciela (przeżyje) albo
+                // ginie (strata właściciela) — w żadnym razie nie bota.
+                perAttacker = P.attackThroughBonus + strongestBlockerPower + strongestBlockerToughness;
+              } else {
+                // Chump: atakujący ginie (strata WŁAŚCICIELA), 0 obrażeń —
+                // neutralna wartość + bonus presji (atak to co najmniej
+                // groźba wymuszenia bloku), nigdy kara jak dla własnego.
+                perAttacker = P.attackThroughBonus;
+              }
+            } else {
+              perAttacker = power + P.attackThroughBonus; // otwarty / nie do zablokowania
+            }
           } else if (blockers.length === 0) {
             perAttacker = power + P.attackThroughBonus; // otwarty — czysta presja
           } else if (object.cantBlock && attackers.length > blockers.length) {
@@ -3769,6 +3819,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             for (const id of attackers) {
               const object = objectOnBoard(view, id);
               if (!object) continue;
+              // M257-r5b/C: stwór pożyczony (tempControlUntilEOT) — jego
+              // zniszczenie to strata WŁAŚCICIELA, nie koszt bota.
+              if (object.tempControlUntilEOT) continue;
               const killable = [...removalSpells.values()].some((r) => r.amount >= (object.toughness ?? 0) - (object.damage ?? 0));
               // Kara ~ wartość stwora × prawdopodobieństwo: atak 2/2 przy 70%
               // ryzyka removalu to strata (0 obrażeń i stwór w grobie).
