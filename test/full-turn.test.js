@@ -11,6 +11,9 @@ import { replayFromState, verifyReplay } from '../src/engine/replay.js';
 
 function buildState(seed = 5) {
   const state = createGameState({ seed, players: [{ id: 'p1', name: 'A' }, { id: 'p2', name: 'B' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   // CR 103.7a: pierwsza tura gry pomija draw step — testujemy pełną turę
   // z dobraniem, więc zaczynamy od tury 2.
   state.turn = { ...state.turn, number: 2 };

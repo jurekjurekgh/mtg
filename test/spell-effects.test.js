@@ -10,6 +10,9 @@ const MIGHT = { timing: 'instant', targets: [{ type: 'creature' }], effects: [{ 
 
 function duel() {
   const state = createGameState({ seed: 3, players: [{ id: 'p1' }, { id: 'p2' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   addMana(state, 'p1', 3);
   addMana(state, 'p2', 1);
   addObject(state, { id: 'rat', instanceId: 'ir', cardId: 'Rat', controllerId: 'p1', zone: 'battlefield', kind: 'creature', power: 1, toughness: 1 });

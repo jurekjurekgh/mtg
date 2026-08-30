@@ -7,7 +7,10 @@ import { createGameState, execute } from '../src/engine/game-state.js';
 // CR 104.3c: przegrywa gracz, który próbuje dobrać z pustej biblioteki.
 
 test('dobieranie z pustej biblioteki kończy partię przegraną aktywnego gracza', () => {
-  const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+  // M257-r5b/B: starter losowy — asercje testu (p1 = gracz rozpoczynający)
+  // wymagają seeda ze starterem p1 (seed 7); aktywności nie pinujemy.
+  const state = createGameState({ seed: 7, players: [{ id: 'p1' }, { id: 'p2' }] });
+
   // Obie biblioteki są puste. CR 103.7a zwalnia z dobierania TYLKO gracza
   // rozpoczynającego (p1) i tylko w turze 1, więc pierwszym graczem, który
   // musi dobrać, jest p2 na starcie tury 2 — i to on przegrywa.

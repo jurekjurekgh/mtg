@@ -201,6 +201,13 @@ export function defineCard(data) {
     equipment: data.equipment ? (() => {
       const base = {
         equip: data.equipment.equip,
+        // M257 r3 (Greatsword of Tyr, „Equip {W}"): pipy KOLORÓW kosztu
+        // equipu — jednostki `equip` oznaczone kolorami (reszta generyczna).
+        // To samo kodowanie co `cost.colors` czarów/suspend. Bez tego pola
+        // w łańcuchu (L21) walidacja brała koszt za generyczny (uwaga C).
+        ...(data.equipment.colors?.length
+          ? { colors: Object.freeze([...data.equipment.colors]) }
+          : {}),
         pump: data.equipment.pump ? Object.freeze({ ...data.equipment.pump }) : null,
         keywords: Object.freeze([...(data.equipment.keywords ?? [])]),
         subtypes: Object.freeze([...(data.equipment.subtypes ?? [])]),

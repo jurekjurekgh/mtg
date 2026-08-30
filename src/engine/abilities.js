@@ -573,7 +573,6 @@ export function legalActivatedAbilities(state, playerId) {
           object.equipment.equipFor?.equip ?? Infinity,
         );
         if (cheapestEquip > mana) continue;
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf({ colors: object.equipment.colors ?? [] }))) continue;
         for (const targetId of state.zones.battlefield) {
           const target = state.objects.get(targetId);
           // CR 702.6a: equipment nie może wyposażyć SAMEGO SIEBIE — oferta
@@ -586,14 +585,22 @@ export function legalActivatedAbilities(state, playerId) {
           // (tester kliknął to dwa razy z rzędu, tracąc manę i całą turę).
           // Przepięcie na INNEGO stwora pozostaje pełnoprawną ofertą.
           // Batch 48: koszt equipu dla TEGO celu (tanszy wariant po podtypie).
-          const equipForTarget = (object.equipment.equipFor
-            && (target?.subtypes ?? []).includes(object.equipment.equipFor.subtype))
+          const equipForActive = Boolean(object.equipment.equipFor
+            && (target?.subtypes ?? []).includes(object.equipment.equipFor.subtype));
+          const equipForTarget = equipForActive
             ? object.equipment.equipFor.equip
             : (object.equipment.equip ?? 0);
+          // M257 r3 (Greatsword of Tyr, „Equip {W}"): pipy kolorów z WARIANTU
+          // kosztu obowiązującego dla tego celu (dotąd pre-loop odczytywał
+          // tylko pipy wariantu bazowego — L48: oferta = walidacja).
+          const targetColors = equipForActive
+            ? (object.equipment.equipFor.colors ?? [])
+            : (object.equipment.colors ?? []);
           if (target?.zone === 'battlefield' && target.kind === 'creature'
             && target.controllerId === playerId && target.id !== id
             && equipForTarget <= mana
-            && object.attachedTo !== target.id) {
+            && object.attachedTo !== target.id
+            && canPayColoredCost(state, playerId, colorRequirementsOf({ colors: targetColors }))) {
             out.push({ objectId: id, abilityIndex: index, ability, targets: [targetId] });
           }
         }
@@ -1076,6 +1083,12 @@ export function legalActivatedAbilities(state, playerId) {
         const ability = object.abilities[index];
         if (ability?.type !== ABILITY_TYPE.activated || ability.keyword !== 'ninjutsu') continue;
         if ((ability.cost?.mana ?? 0) > baseMana) continue;
+        // M257 r4 (Kappa Tech-Wrecker, „Ninjutsu {1}{G}"): pipy kolorów
+        // kosztu — oferta bez tego pozwalała ninjutsu dowolną maną, a
+        // płatność ją przyjmowała (L48; jedyne aktywowane kosztowanie,
+        // które nie miało koloru — cycling/reinforce/bloodrush/channel/
+        // forecast/equip respektują pipy).
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
         for (const attackerId of unblocked) out.push({ objectId: id, abilityIndex: index, attackerId });
       }
     }
@@ -1929,11 +1942,21 @@ function activateEquip(state, playerId, object, abilityIndex, targets) {
   // vs „Equip {3}". Ta sama regula co w ofercie (L48: rozjazd = odrzucona
   // komenda, ktora UI wlasnie zaproponowalo).
   const equipTarget = state.objects.get(targets?.[0]);
-  const equipCost = (object.equipment.equipFor
-    && (equipTarget?.subtypes ?? []).includes(object.equipment.equipFor.subtype))
+  const equipForActive = Boolean(object.equipment.equipFor
+    && (equipTarget?.subtypes ?? []).includes(object.equipment.equipFor.subtype));
+  const equipCost = equipForActive
     ? object.equipment.equipFor.equip
     : (object.equipment.equip ?? 0);
-  spendMana(state, playerId, equipCost);
+  // M257 r3 (uwaga C właściciela, Greatsword of Tyr): koszt equipu bywa
+  // KOLOROWY (Oracle: „Equip {W}") — pipy czytamy z WARIANTU obowiązującego
+  // dla tego celu (jak oferta, L48). Płatność MUSI respektować pipy —
+  // rozjazd oferta/validacja = akceptowane „płatności" dowolną maną.
+  // spendMana jest atomowy (CR 601.2h) — nieudana płatność nie zostawia
+  // tapniętych źródeł.
+  const equipColors = equipForActive
+    ? (object.equipment.equipFor.colors ?? [])
+    : (object.equipment.colors ?? []);
+  spendMana(state, playerId, equipCost, colorRequirementsOf({ colors: equipColors }));
   // Audyt PR #41 (B7.2, CR 602.2a): equip trafia na STOS jako zdolność
   // aktywowana — przeciwnik może odpowiedzieć (np. zniszczyć cel); założenie
   // następuje przy rozstrzyganiu (resolveEquipEntry), a cel nielegalny przy
@@ -1943,7 +1966,8 @@ function activateEquip(state, playerId, object, abilityIndex, targets) {
     type: 'activated', keyword: 'equip',
     targets: Object.freeze([Object.freeze({ type: 'creature' })]),
     effect: Object.freeze({ type: '__equip_attach__' }),
-    cost: Object.freeze({ mana: object.equipment.equip ?? 0, colors: object.equipment.colors ?? [] }),
+    // M257 r3: koszt wariantu faktycznie opłaconego (Batch 48 + pipy kolorów).
+    cost: Object.freeze({ mana: equipCost, colors: equipColors }),
   });
   return queueActivatedAbilityToStack(state, {
     playerId, objectId: object.id, abilityIndex,
@@ -1971,7 +1995,10 @@ function activateNinjutsu(state, playerId, cardObject, abilityIndex, ability, at
   if (!state.combat.attackers.includes(attackerId) || state.combat.blockers.has(attackerId)) {
     throw new Error('Ninjutsu wymaga nieblokowanego atakującego');
   }
-  spendMana(state, playerId, ability.cost?.mana ?? 0);
+  // M257 r4 (Kappa Tech-Wrecker, „Ninjutsu {1}{G}"): pipy kolorów — spójnie
+  // z ofertą (L48). spendMana atomowy (CR 601.2h) — nieudana płatność nie
+  // zostawia tapniętych źródeł ani zwrotu atakującego (to następuje dalej).
+  spendMana(state, playerId, ability.cost?.mana ?? 0, colorRequirementsOf(ability.cost));
   // Zwrot atakującego do ręki to KOSZT (CR 702.48: „Return an unblocked
   // attacker you control to hand: ...") — następuje przed wejściem zdolności
   // na stos (CR 601.2h). Atakujący znika z combat PRZED zmianą strefy, żeby

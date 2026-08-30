@@ -27,7 +27,9 @@ import { verifyReplay, replayFromState } from '../src/engine/replay.js';
 const REGISTRY = createCardRegistry();
 
 function game() {
-  return createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] }); // M257-r5b/B: pin aktora (starter losowy)
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
+  return state;
 }
 
 /** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
@@ -125,10 +127,14 @@ function matchState(deckName, seed = 11) {
   const state = setupCardMatch({ seed, players: [{ id: 'p1' }, { id: 'p2' }], decks: new Map([['p1', cardIds], ['p2', cardIds]]), registry });
   // T4 (mulligan londyński): testy skupiają się na cyclingu — obaj gracze
   // zatrzymują ręce otwarcia (keep), gra rusza normalnie.
-  if (state.pendingMulligans.length > 0) {
-    execute(state, { type: 'resolve_mulligan_choice', playerId: 'p1', keep: true });
-    execute(state, { type: 'resolve_mulligan_choice', playerId: 'p2', keep: true });
+  // M257-r5b/B: starter losowy — keepujemy wg aktualnej kolejki mulliganów
+  // (przed B kolejka zawsze była p1→p2).
+  for (const pid of [...state.pendingMulligans]) {
+    execute(state, { type: 'resolve_mulligan_choice', playerId: pid, keep: true });
   }
+  // M257-r5b/B: starter losowy — testy operują turą p1, pin aktywności.
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
   return state;
 }
 
@@ -310,7 +316,7 @@ test('Backup: każdy bot rozstrzyga decyzję akceptowalną komendą (kontrakt Pl
 // --- Swampcycling -----------------------------------------------------------
 
 test('Swampcycling: zapłać {2}, odrzuć Maulera, znajdź Swampa do ręki (reveal) i potasuj', () => {
-  const state = matchState('mirrodin-brg', 11);
+  const state = matchState('mirrodin-brg', 7); // M257-r5b/B: seed 7 = starter p1 (CR 103.7a: tura 1 bez dobierania startera)
   // Normalizacja ręki otwarcia: usuwamy trafione tam Swampy, żeby licznik
   // końcowy był przewidywalny niezależnie od rozdania.
   for (const id of [...state.zones.hand]) {
@@ -371,12 +377,12 @@ test('Swampcycling: zapłać {2}, odrzuć Maulera, znajdź Swampa do ręki (reve
   assert.ok(searched?.shuffled);
   assert.equal(state.zones.library.length, libraryBefore - 1);
   // Kolejność biblioteki po tasowaniu nadal deterministyczna (ten sam seed).
-  const state2 = matchState('innistrad-brg', 11);
+  const state2 = matchState('innistrad-brg', 7);
   assert.doesNotThrow(() => playerView(state2, 'p1'));
 });
 
 test('Swampcycling: bez Swampa w bibliotece — tylko tasowanie, brak karty (fail to find)', () => {
-  const state = matchState('mirrodin-brg', 12);
+  const state = matchState('mirrodin-brg', 7); // M257-r5b/B: seed 7 = starter p1
   const swampIds = state.zones.library.filter((id) => state.objects.get(id)?.cardId === 'basic-swamp' && state.objects.get(id)?.controllerId === 'p1');
   state.zones.library = state.zones.library.filter((id) => !swampIds.includes(id));
   for (const id of swampIds) state.objects.delete(id);

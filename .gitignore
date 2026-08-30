@@ -36,3 +36,6 @@ tools/table-tester/**/*.zip
 # do opisu PR), a nie plik w historii. Tester nadal pisze `--out` gdzie
 # chce — po prostu nie commitujemy tego.
 tmp-audyt-*/
+# Transkrypty-PLIKI (nie katalogi) — r5: tmp-audyt-r5-bench-przed.txt wdarł
+# się do git mimo reguły katalogowej (git add wprost).
+tmp-audyt-*

@@ -600,6 +600,17 @@ test('Tasuj talię: przycisk podmienia seed na losowy (nie rusza bieżącej part
   assert.match(textOf(dom.get('turn-indicator')), /T\.\s*1|Tura 1/);
 });
 
+test('M257-r5b/A: tasowanie nie pokazuje komunikatu (tylko podmiana seeda)', () => {
+  restart('42');
+  dom.get('shuffle-seed').click();
+  const after = Number.parseInt(dom.get('seed').value, 10);
+  assert.ok(Number.isInteger(after) && after >= 1 && after <= 999999, `seed po tasowaniu: ${after}`);
+  // „niech nie pokazuje żadnego komunikatu bo on nic nie wnosi” — nowym
+  // stanem jest samo pole seeda; modal notice musi zostać zamknięty.
+  assert.doesNotMatch(dom.get('notice').className, /active/,
+    `tasowanie nie może otwierać komunikatu: ${textOf(dom.get('notice-body'))}`);
+});
+
 test('autosave: po zagraniu zapis trafia do localStorage, a Wznów autosave odtwarza partię', () => {
   localStorage.clear();
   restart('7');

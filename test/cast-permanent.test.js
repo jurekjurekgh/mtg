@@ -31,6 +31,9 @@ function resolveStack(state) {
 
 test('gracz może zagrać creature permanent za koszt many', () => {
   const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   initializeResources(state); addMana(state, 'p1', 3);
   state.turn.phase = 'precombat_main';
   addObject(state, { id: 'c-hand', instanceId: 'i', cardId: 'Creature', controllerId: 'p1', zone: 'hand', kind: 'creature', power: 2, toughness: 2, manaCost: 2 });
@@ -46,6 +49,9 @@ test('gracz może zagrać creature permanent za koszt many', () => {
 
 test('engine odrzuca zagranie permanenta bez many', () => {
   const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   initializeResources(state); state.turn.phase = 'precombat_main';
   addObject(state, { id: 'c', instanceId: 'i', cardId: 'C', controllerId: 'p1', zone: 'hand', kind: 'creature', power: 1, toughness: 1, manaCost: 1 });
   const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'c' });

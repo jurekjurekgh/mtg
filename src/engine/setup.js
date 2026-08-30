@@ -34,13 +34,15 @@ export function setupGame({ state, decks, seed, openingHandSize = 7 }) {
     }
   }
   // Mulligan londyński (CR 103.4): po rozdaniu każdy gracz decyduje o swojej
-  // ręce — sekwencyjnie, zaczyna gracz pierwszy (state.players[0]). Komenda
+  // ręce — sekwencyjnie, zaczyna STARTER (state.starterId — M257-r5b/B:
+  // „zaczyna gracz pierwszy” było zaszyte w players[0]). Komenda
   // resolve_mulligan_choice{keep: true|false}; mulligan = tasowanie ręki do
   // biblioteki + dobranie 7 + odłożenie N kart na spód (N = numer mulligana).
   if (openingHandSize > 0) {
-    state.pendingMulligans = state.players.map((p) => p.id);
+    state.pendingMulligans = [state.starterId,
+      ...state.players.map((p) => p.id).filter((id) => id !== state.starterId)];
     state.mulliganCounts = {};
-    state.turn.priorityPlayerId = state.players[0].id;
+    state.turn.priorityPlayerId = state.starterId;
     state.turn.passes = 0;
   }
   return state;

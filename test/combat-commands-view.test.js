@@ -4,6 +4,9 @@ import { addObject, createGameState, execute, playerView } from '../src/engine/g
 
 function combatState() {
   const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   state.turn = { ...state.turn, phase: 'combat', step: 'declare_attackers' };
   addObject(state, { id: 'ready', instanceId: 'i1', cardId: 'R', controllerId: 'p1', zone: 'battlefield', kind: 'creature', power: 2, toughness: 2 });
   addObject(state, { id: 'sick', instanceId: 'i2', cardId: 'S', controllerId: 'p1', zone: 'battlefield', kind: 'creature', power: 2, toughness: 2 });

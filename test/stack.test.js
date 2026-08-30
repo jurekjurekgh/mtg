@@ -7,6 +7,9 @@ const SHOCK = { timing: 'instant', targets: [{ type: 'creature' }], effects: [{ 
 
 function stateWithSpell() {
   const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   addMana(state, 'p1', 2);
   addObject(state, { id: 'shock', instanceId: 'is', cardId: 'Shock', controllerId: 'p1', zone: 'hand', kind: 'spell', manaCost: 1, spell: SHOCK });
   addObject(state, { id: 'bear', instanceId: 'ib', cardId: 'Bear', controllerId: 'p2', zone: 'battlefield', kind: 'creature', power: 2, toughness: 2 });

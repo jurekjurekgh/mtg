@@ -706,9 +706,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const myLandCount = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
 
   /**
-   * M218/4 — czy stwór jest zagrożony w tej turze (regenerate).
-   * Zagrożenie = walka (ginie w symulacji CR 510) albo przeciwnik ma otwartą
-   * manę i removal (damage) który może go zabić (B3 model).
+   * M218/4, M257/F — czy stwór jest ZAGROŻONY PEWNĄ śmiercią w tej turze
+   * (regenerate jako combat trick).
+   *
+   * M257/F (znalezisko pętli jakości): usunięto gałąź 3 M218/4 — „przeciwnik
+   * ma otwartą manę i removal, który MOŻE go zabić” (B3, hipergeometria).
+   * To spekulacja ręki, nie pewna śmierć: regeneracja trwa do końca tury
+   * (CR 702.14), a wróg mógłby nie rzucić (albo mieć countera po drugiej
+   * stronie — tarcza byłaby stratą). Reguła repo (M236/2,
+   * permanentDoomedThisTurn): spekulacja „removal w ręce” jest „za mało
+   * pewna”, by uznać permanent za skazany. Regenerate w G1 bez nadchodzącej
+   * śmierci = czyste marnotrawstwo; sense ma W MOMENCIE LETHALU:
+   *   1. walka zadeklarowana, stwór ginie (symulacja CR 510, M218/2),
+   *   2. obrażenia śmiertelne JUŻ zadane (SBA 704.5g czeka).
    * Zero nazw kart (ADR 0002), czytamy wyłącznie PlayerView (ADR 0017).
    */
   const isCreatureThreatened = (view, creature) => {
@@ -719,15 +729,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if (outcome.attackerDies) return true;
       if (outcome.deadBlockers?.includes(creature.id)) return true;
     }
-    // 2. Obrażenia śmiertelne już zadane (SBA 704.5g)
+    // 2. Obrażenia śmiertelne już zadane (SBA 704.5g) — „moment lethalu”.
     if ((creature.damage ?? 0) >= (creature.toughness ?? 0)) return true;
-    // 3. Removal w zasięgu many wroga (B3 — hipergeometria)
-    if (removalSpells.size && opponentOpenMana(view) >= minRemovalCost) {
-      const toughness = (creature.toughness ?? 0) - (creature.damage ?? 0);
-      for (const info of removalSpells.values()) {
-        if (info.cost <= opponentOpenMana(view) && info.amount >= toughness) return true;
-      }
-    }
     return false;
   };
 
@@ -1670,7 +1673,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // premiowała ją jak każdą aurę, bo patrzyła tylko na to, czy
           // gospodarz jest nasz.
           if (auraIsHostile(descriptor, card ? cardDef(card.cardId) : undefined)) {
-            if (!target) return finish(-50);
+            if (!target) return finish(-P.auraNoTargetPenalty);
             const worth = (target.power ?? 0) + (target.toughness ?? 0);
             // M200/H (uwaga właściciela, Grounded): aura, KTÓRA ODBIERA
             // keyword (losesKeywords), na stworze bez niego jest jałowa —
@@ -1683,13 +1686,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const lostKeywords = descriptor?.losesKeywords ?? [];
             if (lostKeywords.length > 0
               && !lostKeywords.some((k) => (target.keywords ?? []).includes(k))) {
-              return finish(-80 - worth);
+              return finish(-P.auraLosesKeywordsWastedPenalty - P.auraHostileWorthWeight * worth);
             }
             return finish(target.controllerId === view.playerId
-              ? -70 - worth              // unieruchamiam własnego stwora
-              : 55 + 2 * worth);         // unieruchamiam stwora wroga
+              ? -P.auraHostileOwnPenalty - P.auraHostileWorthWeight * worth      // unieruchamiam własnego stwora
+              : P.auraHostileEnemyBase + P.auraHostileEnemyWorthWeight * worth); // unieruchamiam stwora wroga
           }
-          if (!target || target.controllerId !== view.playerId) return finish(-50);
+          if (!target || target.controllerId !== view.playerId) return finish(-P.auraNoTargetPenalty);
           // M209 (audyt M207, Guildscorn Ward): aura, ktorej CALA wartoscia
           // jest OCHRONA przed konkretna jakoscia (CR 702.16b-e), jest jalowa,
           // gdy przeciwnik nie ma czym w nia uderzyc. Bot rzucal „protection
@@ -1741,22 +1744,46 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // silnik przy rozstrzyganiu ochrony (L41: jedna reguła, jeden
             // odczyt) — bot nie ma wlasnej kopii semantyki „multicolored".
             const threats = known.filter((o) => sourceHasProtectionQuality(protectionQuality, o)).length;
-            // Kara musi PRZEBIC baze aury (~66) — inaczej jest dekoracja
-            // (L3/L54). Brak zagrozen = nie rzucaj, trzymaj karte w rece.
-            if (threats === 0) return finish(-40);
+            // Kara musi PRZEBIC baze aury (~P.auraBase) — inaczej jest
+            // dekoracja (L3/L54). Brak zagrozen = nie rzucaj, trzymaj karte w rece.
+            if (threats === 0) return finish(-P.auraProtectionNoThreatPenalty);
             // Sa zagrozenia: wartosc rosnie z ich liczba, ale ochrona bez
             // pumpa nie jest tempem — zostaje ponizej zwyklego buffa.
             // M235: flash-aura ochronna poza oknem walki — kara (trzymaj kartę).
-            return finish(20 + 12 * threats + (target.power ?? 0) - offWindowFlashProtectionPenalty);
+            return finish(P.auraProtectionBase + P.auraProtectionThreatWeight * threats + (target.power ?? 0) - offWindowFlashProtectionPenalty);
           }
           const pump = pumpDesc;
           // M235: chooseColor-protection (Benevolent Blessing) trafia tu (nie do
           // isPureProtection) — kara okna dotyczy też jej, gdy jest flash i poza walką.
-          return finish(66 + 2 * ((target.power ?? 0) + pump.power) + ((target.toughness ?? 0) + pump.toughness)
+          return finish(P.auraBase + P.auraBuffWorthWeight * ((target.power ?? 0) + pump.power) + ((target.toughness ?? 0) + pump.toughness)
             - offWindowFlashProtectionPenalty);
         }
         const def = card ? cardDef(card.cardId) : undefined;
         let score = P.creatureBase + (card?.power ?? 0) * P.creaturePowerWeight + (card?.toughness ?? 0) * P.creatureToughnessWeight;
+        // M258/A (uwaga właściciela, Squire's Lightblade): wartość equipmentu
+        // żyje na NOSICIELU. Rzut przy braku własnych kreatur to marnowanie:
+        // ETB „attach za darmo" fizzluje (CR 603.4b), a karta czeka na stole
+        // za koszt equipu (tu {3} zamiast 0). Baza P.creatureBase (70 — tyle
+        // co stwór 0/0) nie zna tego kontekstu, więc bot rzucał flash-equipment
+        // na pusty stół. Reguła generyczna po deskryptorze (ADR 0002):
+        //  - bez nosiciela: kara PONIŻEJ passu (trzymaj kartę; gdy stwór jest
+        //    w ręce — grany jest PRZED equipmentem, bo ma wyższy score, a
+        //    wtedy ETB znajdzie legalny cel),
+        //  - z nosicielem: premia za pompę na stwora (attach sam wycenia
+        //    scoring Equip — M244 — więc tu tylko P/T, bez podwójnego
+        //    liczenia keywordów).
+        if (card?.equipment) {
+          const etbAttach = (def?.abilities ?? []).some((a) => a?.type === 'triggered'
+            && a.trigger?.event === 'enter_battlefield'
+            && a.trigger?.requiresTarget?.type === 'creature_you_control'
+            && (Array.isArray(a.effect) ? a.effect : [a.effect]).some((e) => e?.type === 'attach_self_to_target'));
+          if (myCreatures(view).length === 0) {
+            score -= etbAttach ? 100 : 75;
+          } else {
+            const pump = card.equipment.pump ?? {};
+            score += (pump.power ?? 0) * P.creaturePowerWeight + (pump.toughness ?? 0) * P.creatureToughnessWeight;
+          }
+        }
         // M146 (Jwari Shapeshifter): enterAsCopy bez celu na stole = 0/0,
         // który ginie od SBA zanim ETB się odpali (CR 704.5e). Nie zagrywaj.
         if (def?.enterAsCopy?.subtype) {
@@ -1892,6 +1919,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const isUtilityOnly = effects.length > 0 && effects.every((e) => e?.type
           && ['tap_permanent', 'tap_permanents', 'untap_permanent', 'lock_untap',
             'dont_untap_next_untap_step', 'cant_be_blocked', 'cant_block',
+            'creatures_cant_block_this_turn',
             'buff_opponents_creatures', 'buff_creatures_you_control'].includes(e.type));
         // Start PONIŻEJ passu (0): czysto-utylitarny czar z bezcelowym celem
         // (tap własnego landa, tap już zatapniętego, odkręcenie wroga) ma
@@ -2107,6 +2135,81 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (effect.type === 'grant_protection_until_end_of_turn') {
             const combatOn = (view.combat?.attackers?.length ?? 0) > 0;
             score += combatOn ? 12 : -45;
+          }
+          // M257-r5b/C (zgłoszenie właściciela, Awaken the Sleeper): czasowe
+          // przejęcie kreatury to SZTUCZKA BOJOWA — po rozstrzygnięciu cel
+          // jest odtapnięty i ma haste (generyczny efekt), więc atakuje W
+          // TEJ turze właściciela. Wcześniejsza usterka: efekt nie miał ŻADNEJ
+          // wyceny — wszystkie warianty celu dostawały bazę 50 i wygrywał
+          // pierwszy z enumeracji (bot przejmował pierwszą kreaturę, nie tę
+          // z equipmentem). Właściciel: „najlepiej przejąć kreaturę z
+          // założonym equipmentem… i go zniszczył” — decyzja o zniszczeniu
+          // (resolve_destroy_equipment_choice) idzie w ślad za wyborem celu.
+          if (effect.type === 'gain_control_until_end_of_turn') {
+            if (!target || target.controllerId === view.playerId) {
+              // Efekt musi uderzyć w kreaturę PRZECIWNIKA — własna kontrola
+              // nic nie daje (kara musi przebić bazę czaru).
+              score -= 40;
+            } else {
+              // Baza: 3 * power — atak, który stanie się w tej turze
+              // (obrażenia bojowe na właściciela).
+              const power = target.power ?? 0;
+              score += 3 * power;
+              // Equipment założone na celu: preferencja celu wyposażonego.
+              // M257-r5b/C: equipment = artefakt z deskryptorem `equipment`
+              // (widok: attachedTo + entry.equipment) — ADR 0002, bez nazw.
+              const equipmentCount = (view.zones.battlefield ?? []).filter(
+                (o) => o.attachedTo === target.id && o.equipment).length;
+              if (equipmentCount > 0) score += 25 + 5 * equipmentCount;
+            }
+          }
+          if (effect.type === 'creatures_cant_block_this_turn') {
+            // M257-r5b/D (zgłoszenie właściciela, Ruthless Invasion): czar
+            // jest wart TYLKO tyle, ile obrażeń realnie przepuści — i tylko
+            // gdy bot ZAMIERZA atakować w tej turze. D2: „Bot rzuca Ruthless
+            // Invasion po czym kończy turę bez ataku. No to już jest
+            // kompletny bezsens. Skoro nie zamierza atakować to ten czar to
+            // czyste marnotrawstwo.” D1: płatność życiem za {R/P} jest
+            // uzasadniona wyłącznie, gdy atak zabija przeciwnika W TEJ turze
+            // („chyba, że naprawdę policzy, że jego atak zabije
+            // przeciwnika w tej turze dzięki temu zakazowi blokowania”).
+            // Reguła po deskryptorze efektu (ADR 0002); baza czaru to −1
+            // (czysto-utylitarny, M146) — kara −90 musi go przebić.
+            const except = effect.exceptTypes ?? [];
+            // Okno: moja tura + krok PRZED walką (main1 / beginning_of_combat
+            // przed deklaracją). W main2 (po combacie) efekt już nic nie
+            // zmieni — „this turn” kończy się z moją turą.
+            const attackingWindow = myTurn(view)
+              && ['main1', 'beginning_of_combat'].includes(view.turn.step);
+            // Gotowi atakujący: nietapnięci, bez choroby (albo haste), moc > 0.
+            const attackers = myCreatures(view).filter((c) => !c.tapped
+              && (!c.summoningSickness || hasKeyword(c, 'haste')) && (c.power ?? 0) > 0);
+            const totalPower = attackers.reduce((sum, c) => sum + (c.power ?? 0), 0);
+            // Blokerzy, których czar faktycznie usuwa: nietapnięte stworы
+            // przeciwnika POZA wyjątkami (Ruthless: artifact-creatures
+            // blokują mimo zakazu). Zbiór ustala się przy rozstrzygnięciu —
+            // stwór wchodzący później blokuje normalnie (nota karty).
+            const blockers = enemyCreatures(view).filter((c) => !c.tapped
+              && !except.some((t) => (c.types ?? []).includes(t)));
+            const enemyLife = enemy(view)?.life ?? 0;
+            const lethal = totalPower >= enemyLife;
+            if (!attackingWindow || totalPower === 0) {
+              // D2: brak ataku w tej turze = karta na nic (karą −90 czar
+              // spada poniżej passu, w wariancie manowym i życiowym).
+              score -= 90;
+            } else if (blockers.length === 0) {
+              // Otwarte pole / tylko artifact-blokerzy: czar nie usuwa
+              // NICZEGO — atak i tak przechodzi albo i tak chumpuje.
+              // Wyjątek: LETHAL w tej turze (D1) — jedyny uzasadniony
+              // powód zapłacenia życiem za {R/P}.
+              if (lethal) score += 2 * totalPower + 50;
+              else score -= 90;
+            } else {
+              // Czar usuwa blokerów — obrażenia, które dzięki niemu
+              // przechodzą: 2*power za gotowego atakującego.
+              score += 2 * totalPower;
+              if (lethal) score += 50; // D1: premia lethal
+            }
           }
           // M109 (Sagittars' Volley): fala obrażeń w stwory przeciwnika
           // z keywordem — wartość rośnie z liczbą trafionych i zabitych.
@@ -2480,7 +2583,33 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // i czar wyglądał na dobry niezależnie od celu.
           if (effect.type === 'cant_be_blocked') {
             if (target && target.controllerId !== view.playerId) score -= 60;
-            else score += 10;
+            else if (!target) score -= 90;
+            else {
+              // M257-r5b/D (symetrycznie z Ruthless Invasion, zgłoszenie
+              // D2/D1 właściciela): „nie może być blokowany” na WŁASNYM
+              // stworze ma wartość tylko, gdy ten stwór realnie zaatakuje W
+              // TEJ turze — inaczej czar to czyste marnotrawstwo (bot rzucał
+              // i kończył turę bez ataku). Płatność życiem (phyrexian)
+              // uzasadnia wyłącznie lethal w tej turze (D1).
+              const attackingWindow = myTurn(view)
+                && ['main1', 'beginning_of_combat'].includes(view.turn.step);
+              const canAttack = !target.tapped
+                && (!target.summoningSickness || hasKeyword(target, 'haste'))
+                && (target.power ?? 0) > 0;
+              if (!attackingWindow || !canAttack) {
+                score -= 90;
+              } else {
+                const power = target.power ?? 0;
+                const blockers = enemyCreatures(view).filter((c) => !c.tapped);
+                const strongestToughness = blockers.reduce((m, c) => Math.max(m, c.toughness ?? 0), 0);
+                score += 2 * power;
+                // Atak „przechodzi”: brak blokerów albo stwór zabija
+                // najsilniejszego (power >= jego wytrzymałość).
+                if (blockers.length === 0 || power >= strongestToughness) score += P.attackThroughBonus;
+                // D1: LETHAL — atak zabija przeciwnika w tej turze.
+                if (power >= (enemy(view)?.life ?? 0)) score += 50;
+              }
+            }
           }
           // Uwaga B (2026-08-12): pumpy (pump, pump_by_creature_count — Might of
           // the Masses, pump_enchanted_creature) wzmacniają stwora-CELU. Wzmacnianie
@@ -2754,7 +2883,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score -= 25;
           } else {
             const threatened = isCreatureThreatened(view, regenTarget);
-            score += threatened ? 30 : -20;
+            if (threatened) {
+              // M257/F: krok combat_damage = OSTATNIA szansa — krok domyka
+              // `resolve_combat` (stała 50), a tarcza musi stać PRZED nim.
+              // 2 + 60 = 62 > 50: bot stawia tarczę w tym oknie, a walkę
+              // rozstrzyga w następnej decyzji (wtedy alreadyShielded −25).
+              score += view.turn.step === 'combat_damage' ? 60 : 30;
+            } else {
+              score -= 20;
+            }
           }
         }
         for (const effect of effects) {
@@ -3267,20 +3404,6 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score -= 10;
           }
           // ---- Batch 48 (L50/L51): wycena nowych efektow -----------------
-          if (effect.type === 'creatures_cant_block_this_turn') {
-            // Ruthless Invasion: warte tyle, ile obrazen przepusci. Liczymy
-            // moc GOTOWYCH atakujacych minus to, co i tak jest nieblokowalne;
-            // bez wlasnych atakujacych czar jest bezuzyteczny.
-            const except = effect.exceptTypes ?? [];
-            const readyPower = myCreatures(view)
-              .filter((c) => canAttackNow(c))
-              .reduce((sum, c) => sum + (c.power ?? 0), 0);
-            const blockersRemoved = enemyCreatures(view)
-              .filter((c) => !c.tapped && !except.some((t) => (c.types ?? []).includes(t))).length;
-            score += readyPower > 0 && blockersRemoved > 0
-              ? Math.min(40, readyPower * 3 + blockersRemoved * 4)
-              : -25;
-          }
           if (effect.type === 'your_creatures_gain_keywords_until_end_of_turn') {
             // Formidable (Stampeding Elk Herd): trample dla druzyny ma wartosc
             // tylko przy realnym ataku — trigger i tak odpala sie przy ataku,
@@ -3639,6 +3762,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // na bloki — wartość NIE może zostać podratowana premią „otwartej
             // presji" (+8), dlatego tak nisko (poniżej passu).
             perAttacker = -12;
+          } else if (object.tempControlUntilEOT) {
+            // M257-r5b/C (zgłoszenie właściciela, Awaken the Sleeper):
+            // stwór POŻYCZONY — czasowa kontrola (generyczna flaga widoku z
+            // efektu gain_control_until_end_of_turn; po rozstrzygnięciu cel
+            // jest odtapnięty i ma haste). JEGO śmierć to NIE jest koszt
+            // bota: przeżyje → wraca do właściciela, zginie → WŁAŚCICIEL
+            // traci permanent. Właściciel: „jak już przejął to powinien
+            // zaatakować właściciela” — gałęzie downside'u go nie dotyczą.
+            if (canBeBlocked && blockers.length > 0) {
+              if (power >= strongestBlockerToughness) {
+                // Zabija najsilniejszego blokera — właściciel traci ten
+                // permanent; atakujący wraca do właściciela (przeżyje) albo
+                // ginie (strata właściciela) — w żadnym razie nie bota.
+                perAttacker = P.attackThroughBonus + strongestBlockerPower + strongestBlockerToughness;
+              } else {
+                // Chump: atakujący ginie (strata WŁAŚCICIELA), 0 obrażeń —
+                // neutralna wartość + bonus presji (atak to co najmniej
+                // groźba wymuszenia bloku), nigdy kara jak dla własnego.
+                perAttacker = P.attackThroughBonus;
+              }
+            } else {
+              perAttacker = power + P.attackThroughBonus; // otwarty / nie do zablokowania
+            }
           } else if (blockers.length === 0) {
             perAttacker = power + P.attackThroughBonus; // otwarty — czysta presja
           } else if (object.cantBlock && attackers.length > blockers.length) {
@@ -3745,6 +3891,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             for (const id of attackers) {
               const object = objectOnBoard(view, id);
               if (!object) continue;
+              // M257-r5b/C: stwór pożyczony (tempControlUntilEOT) — jego
+              // zniszczenie to strata WŁAŚCICIELA, nie koszt bota.
+              if (object.tempControlUntilEOT) continue;
               const killable = [...removalSpells.values()].some((r) => r.amount >= (object.toughness ?? 0) - (object.damage ?? 0));
               // Kara ~ wartość stwora × prawdopodobieństwo: atak 2/2 przy 70%
               // ryzyka removalu to strata (0 obrażeń i stwór w grobie).
@@ -3825,6 +3974,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // przebija pass — bot wcześniej passował z blokerem na stole i ginął.
         if (blockingSomething && lethalThreat && (attackThreat - stoppedDamage) < myLife(view)) {
           score += 30;
+        }
+        // M257-r5 (uwaga z testów): wycena nie znała PRESJI ŻYCIA — przy 5
+        // życiach przepuszczenie ataku 3/3 zostawiało 2 życia, a wymiana 2/2
+        // za 3 obrażenia wyceniana była na -2, czyli gorzej niż pass (0).
+        // Ratunek życia pod presją jest warty więcej niż koszt bloku — płaska
+        // premia zależna od życia PO zablokowaniu REALNIE PRZEŻYTEGO wariantu.
+        // Warunek lifeAfter >= 1: premii nie daje blok, po którym i tak
+        // giniemy (3× 3/3 przy 5 życiu — M146 „nie marnuj blokera”).
+        if (blockingSomething) {
+          const lifeAfter = myLife(view) - (attackThreat - stoppedDamage);
+          if (lifeAfter >= 1 && lifeAfter <= 2) score += 6;
+          else if (lifeAfter >= 1 && lifeAfter <= 5) score += 4;
+          else if (lifeAfter >= 1 && lifeAfter <= 8) score += 2;
         }
         return finish(score);
       }
@@ -3957,6 +4119,30 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Bot poświęca Food, jeśli ma (większy buff).
         return finish(cmd.sacrifice ? 50 : 30);
       }
+      // M258/B (uwaga właściciela, Rupture Spire): „sacrifice it unless you
+      // pay {N}" (ETB) i ECHO. Silnik prezentuje decyzję TYLKO gdy jest
+      // opłacalna (queuePayOrSacrifice: producibleMana >= amount), a w trakcie
+      // decyzji blokuje WSZYSTKIE inne akcje (tylko ta komenda, produkcja
+      // many i CONCEDE). Płacenie jest więc zawsze co najmniej tak dobre jak
+      // poświęcenie: koszt idzie z puli albo auto-tapem (spendMana), a mana
+      // i tak by wyparowała na końcu kroku (CR 106.4) — permanent zostaje.
+      //
+      // Root cause błędu: komenda nie miała case'u (domyślnie 0) → remis z
+      // „poświęć" (również 0), a stabilny sort w greedyChoice bierze PIERWSZĄ
+      // ofertę — w enumeracji (game-state.js) na czele stało pay:false. Bot
+      // ZAWSZE poświęcał. L41: wybór z intencji, nie z pozycji w ofercie.
+      case 'resolve_pay_or_sacrifice':
+        return finish(cmd.pay ? 90 : 5);
+      // Batch 44 (Frightful Delusion): zapłać {N} i czar zostaje, albo pozwól
+      // skontrować. Silnik oferuje pay:true tylko gdy opłacalne; czar już na
+      // stosie jest niemal zawsze warty więcej niż koszt.
+      case 'resolve_counter_pay_choice':
+        return finish(cmd.pay ? 85 : 10);
+      // „You may pay ... When you do, ..." (Panic Spellbomb, Zoraline):
+      // trigger jest kolejkowany tylko gdy opłacalny (canPayTrigger) — efekt
+      // jest sensem karty, zapłata niemal zawsze na plusie.
+      case 'resolve_optional_pay_choice':
+        return finish(cmd.pay ? 75 : 15);
       case 'resolve_discover_choice': {
         // Geological Appraiser: rzuć bez kosztu albo weź do ręki.
         // Bot rzuca bez kosztu (darmowa karta na stole).

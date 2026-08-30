@@ -6,6 +6,8 @@ import { declareAttackers, declareBlockers } from '../src/engine/combat.js';
 function state() {
   const value = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
   value.turn.phase = 'combat'; value.turn.step = 'declare_attackers';
+  // M257-r5b/B: test operuje jako p1 — pin aktywności (starter jest losowy).
+  value.turn.activePlayerId = 'p1'; value.turn.priorityPlayerId = 'p1';
   for (const [id, controllerId] of [['a1', 'p1'], ['a2', 'p1'], ['b1', 'p2']]) {
     addObject(value, { id, instanceId: id, cardId: id, controllerId, zone: 'battlefield', kind: 'creature', power: 1, toughness: 1 });
   }

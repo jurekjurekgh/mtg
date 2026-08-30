@@ -5,6 +5,9 @@ import { initializeResources } from '../src/engine/resources.js';
 
 test('tapnięty land produkuje manę tylko raz przed untapem', () => {
   const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   initializeResources(state);
   addObject(state, { id: 'land', instanceId: 'i', cardId: 'Mountain', controllerId: 'p1', zone: 'battlefield', kind: 'land' });
   const first = execute(state, { type: 'tap_for_mana', playerId: 'p1', objectId: 'land' });

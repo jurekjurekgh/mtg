@@ -82,18 +82,91 @@ function stripComments(src) {
  * (czytane z literału tablicy) + ręczne projekcje (`state.<pole>`).
  * argumentem jest ŹRÓDŁO PO USUNIĘCIU KOMENTARZY — patrz `stripComments`.
  */
-function coveredFieldsInFingerprintSource(fingerprintSource) {
-  const covered = new Set();
-  const list = fingerprintSource.match(/PENDING_DECISION_FIELDS\s*=\s*Object\.freeze\(\[([\s\S]*?)\]\)/);
-  assert.ok(list, 'PENDING_DECISION_FIELDS znalezione w fingerprint.js');
-  for (const m of list[1].matchAll(/'([^']+)'/g)) covered.add(m[1]);
-  for (const m of fingerprintSource.matchAll(/state\.(pending[A-Z][A-Za-z]*)/g)) covered.add(m[1]);
-  return covered;
+/**
+ * Maskuje WSZYSTKO, co nie jest kodem: komentarze (`//`, `/* *\/`),
+ * CIĄGI ZNAKOWE ('…', "…") i treść szablonów (`…`, z zachowaniem kodu
+ * w interpolacjach ${…}, łącznie z zagnieżdżonymi szablonami).
+ *
+ * Znalezisko A2 (audyt PR #87, sesja arena/01a04e98): `stripComments`
+ * usuwał tylko KOMENTARZE — nazwa pola w CIĄGU ZNAKOWYM (np. komunikat
+ * `state.pendingZzz nie jest pokryte`) była skanem nieodróżnialna od
+ * odczytu w kodzie i zamykała klasę L16 tym samym sposobem co komentarz
+ * (L83: strażnik liczy KONSTRUKTY; wzmianka w tekście nie jest pokryciem).
+ */
+function maskNonCode(src) {
+  let out = '';
+  let i = 0;
+  const n = src.length;
+  const exprStack = []; // głębokość nawiasów ${…} szablonów
+  while (i < n) {
+    const ch = src[i];
+    const next = src[i + 1];
+    if (ch === '/' && next === '/') {
+      while (i < n && src[i] !== '\n') i += 1;
+      out += '\n';
+      continue;
+    }
+    if (ch === '/' && next === '*') {
+      i += 2;
+      while (i < n && !(src[i] === '*' && src[i + 1] === '/')) i += 1;
+      i += 2;
+      out += ' ';
+      continue;
+    }
+    if (ch === "'" || ch === '"') {
+      out += ch; i += 1;
+      while (i < n && src[i] !== ch && src[i] !== '\n') {
+        if (src[i] === '\\') { out += '  '; i += 2; continue; }
+        out += ' '; i += 1;
+      }
+      if (i < n && src[i] === ch) { out += ch; i += 1; }
+      continue;
+    }
+    if (ch === '`') {
+      out += ch; i += 1;
+      while (i < n) {
+        const c = src[i];
+        if (c === '\\') { out += '  '; i += 2; continue; }
+        if (c === '`') { out += '`'; i += 1; break; }
+        if (c === '$' && src[i + 1] === '{') {
+          exprStack.push(1);
+          out += '${'; i += 2;
+          break;
+        }
+        out += ' '; i += 1;
+      }
+      continue;
+    }
+    if (exprStack.length > 0) {
+      if (ch === '{') exprStack[exprStack.length - 1] += 1;
+      else if (ch === '}') {
+        exprStack[exprStack.length - 1] -= 1;
+        if (exprStack[exprStack.length - 1] === 0) exprStack.pop();
+      }
+      out += ch; i += 1;
+      continue;
+    }
+    out += ch; i += 1;
+  }
+  return out;
 }
 
-/** Kompozycja używana przez strażnika: surowy plik → kod bez komentarzy → pokryte pola. */
+/**
+ * Pola pokryte przez fingerprint. Dwa KONSTRUKTY, dwa skany (L83):
+ *  - wpisy w literale `PENDING_DECISION_FIELDS` (DANE — treść ciągów
+ *    znakowych jest tu pokryciem, ale komentarze NIE — stąd `stripComments`);
+ *  - odczyty `state.<pole>` w KODzie — skan po `maskNonCode`, bo nazwa
+ *    pola w ciągu znakowym (komunikat, łańcuch) nie jest odczytem.
+ */
 function coveredFieldsFromFingerprintFile(rawSource) {
-  return coveredFieldsInFingerprintSource(stripComments(rawSource));
+  const covered = new Set();
+  const noComments = stripComments(rawSource);
+  const list = noComments.match(/PENDING_DECISION_FIELDS\s*=\s*Object\.freeze\(\[([\s\S]*?)\]\)/);
+  assert.ok(list, 'PENDING_DECISION_FIELDS znalezione w fingerprint.js');
+  for (const m of list[1].matchAll(/'([^']+)'/g)) covered.add(m[1]);
+  const codeOnly = maskNonCode(rawSource);
+  for (const m of codeOnly.matchAll(/state\.(pending[A-Z][A-Za-z]*)/g)) covered.add(m[1]);
+  return covered;
 }
 
 /** Pola pokryte przez fingerprint (produkcyjna ścieżka strażnika). */
@@ -111,23 +184,30 @@ test('STRAŻNIK klasy L16: każdy pending blokujący grę jest pokryty w fingerp
     + 'w src/engine/fingerprint.js (albo mieć ręczną projekcję w stateFingerprint).');
 });
 
-test('A1 (pin strażnika): pokrycie wyłącznie KOMENTARZEM nie zamyka klasy L16', () => {
+test('A1+A2 (pin strażnika): pokrycie wyłącznie KOMENTARZEM albo CIĄGIEM ZNAKOWYM nie zamyka klasy L16', () => {
   // Znalezisko A1 z audytu PR #86: skan surowego źródła `fingerprint.js`
   // zaliczał wystąpienie nazwy w komentarzu jako pokrycie — nowa decyzja
-  // blokująca przechodziła strażnik bez wpisu w odcisku. Pin idzie na
-  // strażnika, nie na kod: jeśli skan znów zacznie czytać komentarze,
-  // ten test musi być czerwony (L13/L67 — detektor ma umieć krzyczeć).
+  // blokująca przechodziła strażnik bez wpisu w odcisku.
+  // Znalezisko A2 z audytu PR #87 (ta sesja): to samo otwierała TREŚĆ
+  // CIĄGU ZNAKOWEGO (np. komunikat 'state.pendingZzz nie jest pokryte') —
+  // `stripComments` maskował tylko komentarze. Pin idzie na strażnika, nie
+  // na kod: jeśli skan znów zacznie czytać nie-kod, test musi być czerwony
+  // (L13/L67/L83 — detektor ma umieć krzyczeć).
   const synthetic = [
     "const PENDING_DECISION_FIELDS = Object.freeze([",
     "  'pendingAmass',",
     "]);",
     "// pendingZzz opisana wyłącznie w komentarzu (klasa L31/L56):",
     "//   if (state.pendingZzz) return state.pendingZzz.playerId;",
+    "const komunikat = 'state.pendingSsss nie jest pokryte';",
+    "const szabl = `state.pendingTtt też tylko w szablonie`;",
     "export function stateFingerprint(state) { return { pendingDecisions: {} }; }",
   ].join('\n');
   const covered = coveredFieldsFromFingerprintFile(synthetic);
   assert.ok(covered.has('pendingAmass'), 'wpis w PENDING_DECISION_FIELDS jest pokryciem');
-  assert.ok(!covered.has('pendingZzz'), 'KOMENTARZ nie jest pokryciem fingerprintu');
+  assert.ok(!covered.has('pendingZzz'), 'KOMENTARZ nie jest pokryciem fingerprintu (A1)');
+  assert.ok(!covered.has('pendingSsss'), 'CIĄG ZNAKOWY nie jest pokryciem fingerprintu (A2)');
+  assert.ok(!covered.has('pendingTtt'), 'SZABLON ZNAKOWY nie jest pokryciem fingerprintu (A2)');
   // Dowód, że pin mierzy coś realnego: skan SUROWY (sprzed naprawy A1)
   // widział `pendingZzz` i przepuszczał taką decyzję.
   const rawSees = [...synthetic.matchAll(/pending[A-Z][A-Za-z]*/g)].some((m) => m[0] === 'pendingZzz');

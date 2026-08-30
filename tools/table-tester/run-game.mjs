@@ -850,7 +850,14 @@ export async function runTableGame({
         chosen = fresh[0] ?? pickRandom(opts);
       } else if (profile === 'defensive' && opts.length > 1) {
         // Ostrożny gracz woli opcję „nie rób nic/pomiń", gdy istnieje.
-        chosen = opts.find((b) => /pomij|nie |brak|zostaw/i.test(text(b))) ?? opts[0];
+        // M257r4/F4 (audyt Żywym Testerem g2004): STARE /pomij|nie |brak|zostaw/
+        // miało fałszywe trafienia BEZ granic słów — „nie " łapało „zostaNIE 5"
+        // w etykiecie mulligana („…dobierz 7 kart i odłóż 2 karty na spód
+        // (zostanie 5)"), więc profil MULLIGANOwał w pętlę do 0 kart (legalne,
+        // ale nieintendowane — defensive miał „trzymać" rękę). Granice słów:
+        // „Brak ataku", „Pomiń/Pominięcie", „Nie używaj", „Zostaw w wygnaniu"
+        // dalej się łapią; „zostanie" już nie.
+        chosen = opts.find((b) => /\bpomij|\bpomiń|\bbrak\b|\bzostaw\b|\bnie\b/i.test(text(b))) ?? opts[0];
       } else chosen = opts[0];
       clickedActions.add(normalize(text(chosen)));
       // M88: lista opcji i wybrana oznaczona ▶ — bez obcinania kontekstu

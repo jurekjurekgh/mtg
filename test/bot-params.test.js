@@ -164,3 +164,95 @@ test('params: removalEnemyBase realnie przepływa do wyceny czaru usuwającego',
   assert.ok(base != null && bumped != null, 'oba boty muszą widzieć wariant rzutu removalu');
   assert.ok(bumped > base, `podbita baza removalu ma zwiększyć wycenę (${bumped} > ${base})`);
 });
+
+// --- M257 r4/B6 T1: rodzina „aura” -------------------------------------------
+
+test('params: rodzina aura — wartości domyślne są dokładnie dawnymi stałymi', () => {
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.auraBase, 66);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.auraBuffWorthWeight, 2);
+  // M257 r4/B6 T4: 55 → 65 — pierwsze strojenie rodziny aura (tuner
+  // tune-card.mjs, Hobble: proxy 0.5642 → 0.5668 na 12 seedach lustrzanych,
+  // monotonnie w dwóch krokach; benchmark 50 seedów bez regresji).
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.auraHostileEnemyBase, 65);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.auraHostileEnemyWorthWeight, 2);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.auraHostileOwnPenalty, 70);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.auraHostileWorthWeight, 1);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.auraNoTargetPenalty, 50);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.auraLosesKeywordsWastedPenalty, 80);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.auraProtectionNoThreatPenalty, 40);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.auraProtectionBase, 20);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.auraProtectionThreatWeight, 12);
+  assert.ok(HEURISTIC_PARAM_KEYS.includes('auraBase'), 'auraBase w kontrakcie kluczy');
+});
+
+test('params: auraBase realnie przepływa do wyceny rzutu buff-aury', () => {
+  // Scena: własny 2/2 na stole + Nature's Embrace (+2/+2, {2}{G}) w ręce
+  // + 3 many. Podbicie auraBase musi zwiększyć wycenę rzutu na własnego
+  // stwora — dowód, że pokrętło działa (nie atrapa).
+  const build = () => {
+    const state = createGameState({ seed: 7, players: [{ id: 'p1' }, { id: 'p2' }] });
+    initializeResources(state);
+    state.turn = jumpToStep(state.turn, 'main1', 'p1');
+    state.turn.activePlayerId = 'p1';
+    state.turn.priorityPlayerId = 'p1';
+    addObject(state, {
+      id: 'c', instanceId: 'ic', cardId: 'C', controllerId: 'p1',
+      zone: 'battlefield', kind: 'creature', power: 2, toughness: 2,
+    });
+    const aura = registry.get('natures-embrace');
+    addObject(state, {
+      id: 'a', instanceId: 'ia', cardId: 'natures-embrace', controllerId: 'p1',
+      zone: 'hand', kind: 'enchantment', power: null, toughness: null, manaCost: aura.manaCost,
+      aura: aura.aura, types: ['Enchantment'], keywords: [], subtypes: [], abilities: [],
+    });
+    addMana(state, 'p1', 3);
+    return playerView(state, 'p1');
+  };
+  const scoreOf = (bot) => {
+    const view = build();
+    bot.chooseCommand(view);
+    const entry = bot.trace().at(-1);
+    const cast = entry.options.find((o) => o.cmd.startsWith('cast_permanent') && o.cmd.includes('a->c'));
+    return cast ? cast.score : null;
+  };
+  const base = scoreOf(createHeuristicBot({ seed: 1, registry }));
+  const bumped = scoreOf(createHeuristicBot({ seed: 1, params: { auraBase: 150 }, registry }));
+  assert.ok(base != null && bumped != null, 'oba boty muszą widzieć wariant rzutu aury');
+  assert.ok(bumped > base, `podbita baza aury ma zwiększyć wycenę rzutu (${bumped} > ${base})`);
+});
+
+test('params: auraHostileEnemyBase realnie przepływa do wyceny wrogiej aury', () => {
+  // Scena: wrogi 4/4 na stole + Hobble („can't attack”, auraIsHostile)
+  // w ręce + mana. Podbicie auraHostileEnemyBase musi zwiększyć wycenę
+  // rzutu na stwora WROGA (gałąź hostile, inna droga niż buff).
+  const build = () => {
+    const state = createGameState({ seed: 7, players: [{ id: 'p1' }, { id: 'p2' }] });
+    initializeResources(state);
+    state.turn = jumpToStep(state.turn, 'main1', 'p1');
+    state.turn.activePlayerId = 'p1';
+    state.turn.priorityPlayerId = 'p1';
+    addObject(state, {
+      id: 'foe', instanceId: 'ifoe', cardId: 'F', controllerId: 'p2',
+      zone: 'battlefield', kind: 'creature', power: 4, toughness: 4,
+    });
+    const aura = registry.get('hobble');
+    addObject(state, {
+      id: 'h', instanceId: 'ih', cardId: 'hobble', controllerId: 'p1',
+      zone: 'hand', kind: 'enchantment', power: null, toughness: null, manaCost: aura.manaCost,
+      aura: aura.aura, types: ['Enchantment'], keywords: [], subtypes: [], abilities: [],
+    });
+    addMana(state, 'p1', 3);
+    return playerView(state, 'p1');
+  };
+  const scoreOf = (bot) => {
+    const view = build();
+    bot.chooseCommand(view);
+    const entry = bot.trace().at(-1);
+    const cast = entry.options.find((o) => o.cmd.startsWith('cast_permanent') && o.cmd.includes('h->foe'));
+    return cast ? cast.score : null;
+  };
+  const base = scoreOf(createHeuristicBot({ seed: 1, registry }));
+  const bumped = scoreOf(createHeuristicBot({ seed: 1, params: { auraHostileEnemyBase: 150 }, registry }));
+  assert.ok(base != null && bumped != null, 'oba boty muszą widzieć wariant wrogiej aury');
+  assert.ok(bumped > base, `podbita baza wrogiej aury ma zwiększyć wycenę (${bumped} > ${base})`);
+});

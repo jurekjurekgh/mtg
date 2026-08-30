@@ -21,7 +21,7 @@ import { stateFingerprint } from '../engine/fingerprint.js';
 import { createCardRegistry, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, FACE_DOWN_LABEL, TURN_NAMES } from './session.js';
-import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt } from './render.js';
+import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt, createScryfallHover } from './render.js';
 import { installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
 import { effectiveSpellManaCost } from '../engine/spells.js';
@@ -31,9 +31,9 @@ import { parseManaCost } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
-import { createArtShowcaseQueue } from './art-showcase.js';
+import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard } from './choice-request.js';
-import { multiTargetPlanOf, mulliganBottomPlanOf } from './multi-target.js';
+import { multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf } from './multi-target.js';
 import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 
 function runEngineSmoke() {
@@ -150,6 +150,10 @@ function bootstrapTable() {
     manaWizardBody: el('mana-wizard-body'),
     botMoveBody: el('bot-move-body'),
   };
+  // M257 r5/A (uwaga właściciela): hover na miniaturkach w modalu
+  // „Rozgrywka” — powiększona karta ze Scryfall, tor stały (bez trybów
+  // FOT i KON). `null` na dotyku (tam tap otwiera pełny ekran).
+  const scryfallHover = createScryfallHover(els);
   /**
    * M198/B (screenshot właściciela): komunikaty systemowe zamiast pasa
    * czerwonego tekstu w układzie pokazują się w warstwie z guzikiem
@@ -372,6 +376,36 @@ function bootstrapTable() {
         slotLabels: multiPlan.slots
           ? (registry.get(sourceObject?.cardId)?.spell?.targets ?? []).map((spec) => targetTypeLabel(spec))
           : null,
+        onOpenCard: openCardFullscreen,
+        onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+    // M257-r5/C (uwaga z testów): koszt dodatkowy „poświęć stwora” (Bone
+    // Splinters, Severed Strands) — silnik enumeruje ILOCZYN (ofiara × cel)
+    // i panel pokazywał N×M przycisków („dostaję listę wszystkich
+    // kombinacji”). Teraz DWA osobne wybory ptaszkiem: cel czaru + stwór do
+    // poświęcenia; zatwierdzenie wraca do komendy z legalCommands (L48:
+    // bot i silnik bez zmian). Wyzwalacz (sacrificeCastPlanOf): cała grupa
+    // ma obowiązkowe poświęcenie, ≥1 cel i ≥2 ofiary — inaczej zwykła
+    // lista (Village Rites bez celu; Lash of the Balrog z wariantem
+    // payAltCost {4}, którego kreator by ukrył).
+    const sacrificePlan = sacrificeCastPlanOf(request.options ?? []);
+    if (sacrificePlan) {
+      const sourceObject = [...(choiceView.zones?.hand ?? []), ...(choiceView.zones?.battlefield ?? []),
+        ...(choiceView.zones?.graveyard ?? []), ...(choiceView.zones?.exile ?? [])]
+        .find((o) => o.id === sacrificePlan.objectId);
+      const targetSpec = ((registry.get(sourceObject?.cardId) ?? {}).spell?.targets ?? [])[0] ?? null;
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: sacrificePlan,
+        commands: request.options,
+        sourceName: sourceObject?.cardId ? session.nameOf(sourceObject.cardId) : null,
+        // Etykiety SEKCJI z Oracle (ADR 0002) + stały opis kosztu.
+        slotLabels: [targetSpec ? targetTypeLabel(targetSpec) : 'cel', 'Poświęcenie (koszt)'],
         onOpenCard: openCardFullscreen,
         onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
         onCancel: () => hideModal('choice-request'),
@@ -609,7 +643,16 @@ function bootstrapTable() {
    * Gdy tryb jest wyłączony albo karta nie ma ilustracji — zwraca false
    * (gra toczy się dalej bez pauzy, dokładnie jak dotąd).
    */
-  function onCastShowcase({ cardId, playerId }) {
+  function onCastShowcase({ cardId, playerId, faceDown }) {
+    // M257 r3 (uwaga A właściciela + doprecyzowanie): karta twarzą w dół
+    // (Morph, CR 708.2) ukrywa tożsamość PRZED PRZECIWNIKIEM — warstwa
+    // ilustracji (FOT/KON/Scryfall + podpis „Rzuca: Nieprzyjaciel") nie
+    // może zdradzić, co BOT rzucił ukrytego. Właściciel: „w ogóle ta warstwa
+    // nie powinna się pokazywać” (przy kartach ukrytych rzucanych przez
+    // bota), a potem doprecyzował: „własny morph gracza otwiera warstwę.
+    // FoW dotyczy tylko zagrań bota” — stąd krycie tylko gdy rzucający
+    // to bot (widok = HUMAN_ID; rzucający zna swoją kartę, CR 708.6).
+    if (isCastHiddenFromViewer({ faceDown, playerId }, HUMAN_ID)) return false;
     if (!session || !els.hiGfxToggle?.checked) return false;
     const card = session.cardDetails(cardId);
     if (!cardHasShowcaseArt(card)) return false;
@@ -1281,6 +1324,7 @@ function bootstrapTable() {
       // (dane z registry, jak w hover-preview).
       renderBotMoves(els.botMoveBody, moves, session, {
         onCardClick: (cardId) => openCardFullscreenByCardId(cardId),
+        hover: scryfallHover,
       });
       session.clearBotMoves();
       showModal('bot-move');
@@ -1632,8 +1676,9 @@ function bootstrapTable() {
     // „Tasuj talię" (2026-08-07): losowe ziarno — następne „Rozpocznij
     // partię" zagra z nowym tasowaniem. Bieżącej partii nie dotyka.
     el('shuffle-seed')?.addEventListener('click', () => {
+      // M257-r5b/A (uwaga z testów): bez komunikatu — „on nic nie wnosi”;
+      // nowym stanem jest samo pole seeda (klik „Rozpocznij partię” je czyta).
       el('seed').value = String(randomSeed());
-      showNotice(`Nowe ziarno: ${el('seed').value} — kliknij „Rozpocznij partię", żeby zagrać z tym tasowaniem.`);
     });
     el('export-replay').addEventListener('click', exportReplay);
     el('import-replay').addEventListener('click', importReplay);

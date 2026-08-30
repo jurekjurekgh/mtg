@@ -19,7 +19,461 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
-- **Ostatnia aktualizacja:** 2026-08-29 (sesja arena/01a049c7: audyt PR #86 → A1 strażnik L16, porządki w `tmp-audyt-*`, **Batch 51: 8 kart właściciela (artId 572–579)**, uwagi z testów A–E, **M255: pętla jakości Żywym Testerem po Batchu 51 (18 partii, 5 napraw A–E) + znalezisko F z próby pełnej macierzy benchmarku**, PR #87)
+- **Ostatnia aktualizacja:** 2026-08-30 (sesja arena/01a04e98, **E/F — znaleziska pętli jakości**: **E** — mulligan: odłożenie N kart na spód, gdy liczba kart w ręce = wymagana (mała biblioteka / 7. mulligan 7=7), wybór WYMUSZONY — silnik auto-rozstrzyga (wzorzec auto-akcji turowej CR 504.1/508.1; testy M100/E10 zaktualizowane — pinowały stare zachowanie), **F** — Regenerate = combat trick: usunięta spekulacja B3 („wróg ma open manę i removal w talii, który MOŻE zabić”) z wyceny zagrożenia (regeneracja trwa do końca tury — CR 702.14) + okno combat_damage: tarcza (2+60=62) wygrywa z `resolve_combat` (stała 50) — bot stawia tarczę PRZED obrażeniami; pewna śmierć = walka zadeklarowana (CR 510) albo lethal już zadany (SBA 704.5g); 6 testów (RED F1/F3 stashem); benchmark quick bez zmian (84.7%); `npm test` 3811/3811; build 2934.0 kB; **PR #88**)
+- **Ostatnia aktualizacja:** 2026-08-30 (sesja arena/01a04e98, **r5b „Uwagi z testów” część 2**: **A** — „Tasuj talię” bez komunikatu (tylko podmiana seeda), **B** — kto zaczyna partię = LOSOWE z seeda (`state.starterId`, deterministyczny rzut monetą; CR 103.7a/103.4 przymocowane do startera zamiast `players[0]`; collateral: 41 factory/pinów w 27 plikach testowych + golden-master bota zregenerowany), **C** — Awaken the Sleeper: bot ATAKUJE przejętym stworem (wycena celu castu: 3×power + equipment; pożyczona kreatura bez downside'u w `declare_attackers`), **D** — Ruthless Invasion: bez ataku w tej turze = NIE RZUCAM (okno + gotowi atakujący + usuwani blokerzy), płatność życiem {R/P} = tylko za LETHAL (martwa gałąż wyceny przeniesiona do pętli cast_spell + baza −1); benchmarki quick bez zmian (heuristic 84.7%); `npm test` 3805/3805; build 2932.3 kB; **PR #88**)
+- **Ostatnia aktualizacja:** 2026-08-30 (sesja arena/01a04e98, **r5 „Uwagi z testów”**: **A** — hover powiększonej karty Scryfall na miniaturkach w warstwie „Rozgrywka” (tor `scryfall` bez trybów FOT/KON), **B** — bot blokuje 3/3 przy 5 życiach swoim 2/2 (premia przeżycia w wycenie bloku: prógi życia ≤2/≤5/≤8), **C** — Bone Splinters: osobne wybory „cel czaru” + „cel poświęcenia” (wizard `renderMultiTargetWizard` + wymiar `sacrificeTargetId`), zamiast enumeracji kombinacji 3×3; fix M253: transkrypt benchmarku wdarł się do repo (fail CI); `npm test` 3787/3787; build 2924.8 kB; **PR #88**)
+- **Ostatnia aktualizacja (poprzednia):** 2026-08-30 (sesja arena/01a04e98, **r4 „Uwagi z testów” + strojenie + pętla bota**: **Fix A** — „Deklaracja atakujących” bez kreatur = auto-przejście (root cause: `legalAttackerOptions` zwracał `[[]]` → pusta „decyzja” wystawiana jako komenda; CR 508.1), **T1/T4** — rodzina aura do parametrów (11 kluczy, golden-master) + strojenie `auraHostileEnemyBase` 55→65 (tuner: proxy 0.5642→0.5668; benchmark 4200 meczów bez regresji — adopcja), **B7** — pętla jakości seeds 3001–3006 (oś: poprawność/logika/optymalność): **0 defektów** — 4 fałszywe alarmy zamknięte L57, w tym „re-Equip” z 3002 (pojazd crewowany: sprzęt odłącza się w cleanup, przypięcia świeże — CR 702.16/702.6); 3 testy inwariantów; `npm test` 3765/3765; build 2914.8 kB; **PR #88**)
+- **Ostatnia aktualizacja (poprzednia):** 2026-08-29 (sesja arena/01a04e98, **etap 5**: **pętla jakości Żywym Testerem** (właściciel: „może sam coś znajdziesz”) — 6 partii (tarkir-bg/wiedzmin, worek-basni/theros, warhammer-wu/worek-legend, seeds 2001–2006), 0 detektorów, 3 znaleziska: **F3** Kappa Tech-Wrecker „Ninjutsu {1}{G}" — pita zielona zgubiona w danych (koszt {2} generyczny), silnik (oferta + płatność) ignorował pipy KOLORÓW w ninjutsu — jedyne aktywowane kosztowanie bez koloru (L48) + kafel „Ninjutsu {2}” i gramatyka żeńska; **F1** „enters with a counter” niewidoczne na kaflu (7 kart: Trigon, Kappa, Servant of the Scale, Necrosquito, Voice of the Vermin, Swooping Protector, Creakwood Safewright); **F4** (narzędzie) profil defensive mulliganował do 0 kart (wzorzec bez granic słów łapał „zostaNIE 5”); 7 testów (RED→GREEN dowiedzone stashem), 8 fałszywych alarmów zamkniętych z L57 (m.in. Colossodon vanilla, Breaching Hippocamp untap stwora, własny morph w logu = zgodne z regułą rundy 3); `npm test` 3755/3755; build 2910.5 kB; **PR #88**)
+
+## Sesja 2026-08-30 — E/F: znaleziska pętli jakości (mulligan-bottom auto, regenerate = combat trick) (arena/01a04e98, PR #88)
+
+**Zlecenie:** znaleziska mojej pętli jakości z rund 4/5 („do
+zdiagnozowania”): (E) auto-rozstrzyganie wyboru odrzuceń, gdy liczba
+kart = wymagana; (F) Regenerate nie w G1 bez nadchodzącej śmierci —
+combat trick w momencie lethalu. Plan:
+`docs/plans/PLAN_2026-08-30-m257ef-znalezione-petla.md` (c467629,
+pushed przed kodem).
+
+**E (38dc74c) — mulligan-bottom wymuszony = auto-rozstrzygnięcie
+[engine]:** root cause: mała biblioteka po mulliganie dobiera <7 kart
+(bramka M100/E10) — `expected = min(count, ręka)`; gdy `ręka <= count`
+jedyna legalna kombinacja = CAŁA ręka (skrajnie: 0 kart; typowo: 7.
+mulligan, 7=7), a silnik/UI (wizard `mulliganBottomPlanOf`) wystawiały
+to jako decyzję. Fix (wzorzec auto-akcji turowej — drawStep CR 504.1,
+r4/A CR 508.1): gałąź `keep:false` w `execute()`, po wyliczeniu
+`newHand` — przy `newHand.length <= count` ruchy na spód +
+`mulligan_bottom_resolved` inline, `pendingMulliganBottom` nie jest
+stawiany (ten sam ślad eventów co droga przez komendę; priorytet dla
+gracza). 3 testy `test/m257ef-znalezione-petla.test.js` (E1 RED stashem;
+E2/E3 anti-overfix: 60 i 3 karty = wybór wystawiany). Testy M100/E10
+(test/mulligan.test.js): asercje pinające stare zachowanie (7. mulligan
+= decyzja 7/7) zaktualizowane — to dokładnie przypadek E.
+
+**F (6a390ef) — Regenerate = combat trick [bot]:** dwa root causes:
+(1) `isCreatureThreatened` (M218/4) — gałąź B3 („wróg ma otwartą manę
+i removal w talii, który MOŻE zabić” — hipergeometria) = spekulacja;
+w G1 strzelała WYŁĄCZNIE ona → bot stawiał tarcze „na wszelki
+wypadek” (2+30=32); regeneracja trwa do końca tury (CR 702.14) —
+reguła repo M236/2: B3 „za mało pewne”; (2) okno combat_damage —
+`resolve_combat` (stała 50) wygrywał z aktywacją (32): bot rozstrzygał
+walkę BEZ tarczy, choć stwór ginął. Fix: gałąź B3 usunięta (tylko 2
+użycia — regenerate; `removalSpells`/`opponentOpenMana` zostają dla
+reszty wycen) + w combat_damage premia zagrożenia 60 (2+60=62 > 50) —
+tarcza stoi PRZED obrażeniami, walkę bot domyka w następnej decyzji
+(−25 alreadyShielded, bez pętli). Pewna śmierć: walka zadeklarowana
+(symulacja CR 510) albo lethal już zadany (SBA 704.5g — „moment
+lethalu”). Znane ograniczenie: lethal spell na stosie (obrażenia nie
+zadane) — tarcza pod kontraktowalny threat to zakład. 3 testy (F1/F3
+RED stashem; F2 anti-overfix). Benchmark quick przed/po: BEZ ZMIAN
+(heuristic 84.7%, 75.3% vs aggro, 94.0% vs random — karta poza macierzą
+quick).
+
+**Bramki:** `npm test` 3811/3811 + build 2934.0 kB (E: 3808/3808,
+2933.3 kB).
+
+## Sesja 2026-08-30 — r5b „Uwagi z testów” część 2: tasuj bez komunikatu, losowy starter, Awaken the Sleeper, Ruthless Invasion (arena/01a04e98, PR #88)
+
+**Zlecenie właściciela (runda 5b):** (A) „Opcja 'Tasuj talię' niech nie
+pokazuje żadnego komunikatu… Tylko podmiana seeda w polu seeda.” (B)
+„Zauważyłem, że Gracz zawsze zaczyna. Czy to kto zaczyna nie powinno być
+losowe?” (C) „Karta Awaken the Sleeper… Przejął moją kreaturę, nic nie
+zrobił i zakończył turę. To bez sensu… Jak już przejął to powinien
+zaatakować właściciela. A najlepiej jakby przejął moją kreaturę z
+założonym equipmentem… i go zniszczył.” (D) „Czar Ruthless Invasion…
+D1. Ma czerwoną manę i koniecznie chce rzucić ten czar więc płaci
+życiem… D2. Bot rzuca Ruthless Invasion po czym kończy turę bez ataku —
+czyste marnotrawstwo.” Plan:
+`docs/plans/PLAN_2026-08-30-m257r5b-uwagi-testow.md` (856cef0).
+
+**A (49cb7f0) — „Tasuj talię” bez komunikatu [UI]:** handler `shuffle-seed`
+(`main.js`) pokazywał `showNotice` z 2026-08-07 — właściciel: komunikat
+nic nie wnosi. Fix: usunięty `showNotice`, zostaje podmiana
+`el('seed').value`. Test: seed zmieniony + modal notice nieaktywny.
+
+**B (0f389fa) — losowy starter [engine]:** root cause: `createGameState`
+startował od tablicy graczy (`initialTurn(ids[0])`) + CR 103.7a/103.4
+czytały `players[0]` na sztywno (4 miejsca: oferta doborania tury 1,
+priorytet po mulliganach, akcja turowa doborania, kolejność mulliganów
+w `setup.js`). Fix: `state.starterId = ids[floor(createRng(seed)() *
+ids.length)]` (deterministyczny rzut monetą z seeda, ADR 0005; 1v1 =
+50/50, rozkład 1–1000: 504/496) + reguły przymocowane do `starterId`.
+Collateral (testy zakładały „p1 zaczyna”): 41 factory/pinów w 27 plikach
+— pin aktora tam, gdzie test gra turą p1; seed 7 (starter p1) tam, gdzie
+test gra pełną rundę/CR 103.7a; asercje generyczne przez
+`state.starterId`; keep-y mulliganów wg aktualnej kolejki
+`pendingMulligans`. Golden-master bota (B6) świadoma regeneracja
+(baza `a6f2373` daje hash zgodny ze starym fixturem = różnica 100% od
+B). 4 testy `test/m257r5b-uwagi-testow.test.js`.
+
+**C (1179ce0) — Awaken the Sleeper: bot atakuje przejętym stworem [bot]:**
+dwa root causes: (1) wycena celu `cast_spell` nie miała gałęzi
+`gain_control_until_end_of_turn` — wszystkie warianty celu dostawały bazę
+50 i wygrywał pierwszy z enumeracji (bot przejmował pierwszą kreaturę,
+nie tę z equipmentem); (2) wycena `declare_attackers` karała „śmierć”
+atakującego jak stratę bota — a stwór pożyczony (generyczna flaga
+widoku `tempControlUntilEOT`) wraca do właściciela albo ginie JAKO STRATA
+WŁAŚCICIELA. Fix: wycena celu (3×power + `+25 + 5n` za equipment,
+−40 gdy cel nie jest wrogi) + gałąż pożyczonki w ataku (otwarte pole:
+power+bonus; zabijanie blokera: bonus + wartość usuniętego permanentu;
+chump: neutralny bonus presji — nigdy kara) + kara EV removalu pomija
+pożyczonki. 6 testów (RED stary kod: chump + wybór celu).
+
+**D (57bf588) — Ruthless Invasion: bez ataku = nie rzucam, życie =
+tylko za lethal [bot]:** dwa root causes: (1) MARTWA gałąż — wycena
+`creatures_cant_block_this_turn` stała w pętli `activate_ability`, a
+Ruthless to CZAR (pętla `cast_spell` jej nigdy nie przechodziła) → czar
+startował od bazy 50 i bot rzucał wariantem życiowym niezależnie od
+sytuacji („3 razy pod rząd w Głównej 1”); (2) brak gate'u „czy atak
+cokolwiek zrobi” (okno/faza, gotowi atakujący, realni blokerzy —
+artifact-creatures blokują mimo zakazu). Fix: czar czysto-utylitarny
+(baza −1, wzorzec M146) + wycena warunkowa w pętli cast_spell: okno
+(moja tura, main1/beginning_of_combat przed walką) + gotowi atakujący
+(nietapnięci, bez choroby/haste, power>0) + blokerzy usuwani przez czar;
+wartość 2×power, LETHAL w tej turze = +50 (D1: jedyny uzasadniony powód
+płacenia życiem za {R/P}); brak ataku/okna/usuwanych blokerów = −90
+(D2). Symetrycznie: celowany `cant_be_blocked` na własnym stworze
+(Enter the Enigma). 7 testów (RED stary kod: 4 testy — bot rzucał czary
+bez sensu).
+
+**Bramki:** `npm test` 3805/3805 + build 2932.3 kB; benchmarki quick
+(ADR 0018) przed/po C i D: bez zmian (heuristic 84.7%, 75.3% vs aggro,
+94.0% vs random — karta poza macierzą quick).
+
+## Sesja 2026-08-30 — r5 „Uwagi z testów”: hover w Rozgrywce, blok pod presją życia, Bone Splinters osobne wybory (arena/01a04e98, PR #88)
+
+**Zlecenie właściciela (runda 5):** (A) „Na warstwie Rozgrywka najechanie
+kursorem na miniaturkę karty powinno powodować wyświetlenie hovera
+powiększonej karty (ze scryfall) analogicznie jak na stole (bez trybów
+FOT i KON).” (B) „Bot ma 5 życia i na stole kreaturę 2/2. Ja atakuję
+kreaturą 3/3. Bot nie blokuje. To trochę bez sensu w takim stanie
+życia.” (C) „Czar Bone Splinters. Ponownie tworzenie wszystkich
+możliwych kombinacji zamiast osobnych wyborów 'ptaszkiem' wśród → cel
+czaru z możliwych celów i → cel poświęcenia z możliwych celów.” Plan:
+`docs/plans/PLAN_2026-08-30-m257r5-uwagi-testow.md` (9638a10).
+
+**A (7d1af53) — hover Scryfall w „Rozgrywce” [UI]:** miniaturki modala
+(`renderBotMoves`) nie miały `mouseenter/mouseleave` (kafle stołu mają);
+warstwa preview (z-index 2400) wyżej od modali (1500). Fix: gesty
+hoveru podpięte pod miniaturki, tor `scryfall` stały (bez trybów
+FOT/KON — cyklowanie scrollem dotyczy stołu).
+
+**B (69754b1) — blok pod presją życia [bot]:** root cause: wycena
+`declare_blockers` nie znała presji życia — blok 2/2 pod 3/3 =
+3−4−1 = −2 < 0 (pass) przy 5 życiach; bony życia (M146) działały tylko
+przy ataku LEATHALNYM. Fix: premia przeżycia do wariantu blokującego,
+gdy atak bez bloku zostawia gracza przy niskim życiu (progi: ≤2 → +6,
+≤5 → +4, ≤8 → +2; wysokie życie = wycena bez zmian — brak regresji).
+
+**C (9e9ad1c) — Bone Splinters: osobne wybory [UI]:** `legalSpellCasts`
+enumerowało iloczyn kartezjański (cel × `sacrificeTargetId`) jako
+osobne komendy — modal pokazywał KAŻDĄ kombinację (3×3 = 9 wierszy).
+Fix: `renderMultiTargetWizard` (wzorzec M195/C1 Fireball) zyskał wymiar
+POŚWIĘCENIA (slot `cmd.sacrificeTargetId`) — dwa ekrany „ptaszki”
+obok siebie; grupa kwalifikuje się, gdy wszystkie warianty niosą
+`sacrificeTargetId` + ≥1 cel + ≥2 unikalnych poświęceń (Lash of the
+Balrog z payAlt zostaje listą). 12 testów
+`test/m257r5-uwagi-testow.test.js` (RED→GREEN).
+
+**M253 (1eda1bd):** transkrypt benchmarku wdarł się do repo w commicie
+r5/B (fail CI) — usunięty + gitignore.
+
+**Bramki (per commit):** A 3768/3768 (2916.5 kB); B 3771/3771
+(2917.3 kB; benchmark quick 85.0%); C **3787/3787** (2924.8 kB).
+
+## Sesja 2026-08-30 — r4 „Uwagi z testów”: fix A (CR 508.1), strojenie rodziny aura, pętla jakości bota z bilansem 0 defektów (arena/01a04e98, PR #88)
+
+**Zlecenie właściciela:** (A) „Faza Deklaracja Atakujących — jeśli nie mam
+żadnej kreatury to nie powinienem wogóle dostawać takiej opcji, a dostaję”
++ kolejna Pętla „ze szczególnym uwzględnieniem poprawności, logiczności i
+optymalności działań bota” + „Możesz też przeprowadzić procedurę strojenia
+bota na jakiejś niestrojonej jeszcze rodzinie”. Plan:
+`docs/plans/PLAN_2026-08-30-m257r4-uwagi-i-strojenie.md` (eceb034).
+Raport: `docs/audits/AUDYT_M257R4B_BOT_2026-08-30.md`.
+
+**Fix A (dbfc312) — pusta „Deklaracja atakujących”:** root cause
+`legalAttackerOptions` przy zero atakujących zwracał `[[]]` (boundedSubsets
+z pustej listy) → generator wystawiał JEDNĄ komendę `declare_attackers` z
+pustym zestawem — decyzję, która nie istnieje. CR 508.1: bez legalnych
+atakujących deklaracja jest pusta i **automatyczna**. Fix: wzorzec
+auto-akcji turowej (jako drawStep CR 504.1) — `pass_priority` przy wejściu
+w krok z zerem opcji ataku auto-deklaruje pusty zbiór i skacze do
+`declare_blockers` (priorytet obrońcy); `declareAttackers(…, { pushToState })`
+(kolejność logu, wzorzec untapStep); wyjątki CR 510.1c dla walki z zero
+atakujących (pass domykający w combat_damage). Anti-overfix: 4 warianty
+ataku + goad. Golden-master: świadoma regeneracja (krótszy ślad bota;
+logika bez zmian). Testy: `test/m257-uwagi-runda4.test.js`.
+
+**T1 (65f88e3) — rodzina „aura” do parametrów:** 11 kluczy
+(`auraBase` 66 … `auraProtectionThreatWeight` 12; lista w audycie),
+domyślne = stare stałe co do punktu; golden-master w
+`test/bot-params.test.js` pilnuje anti-drift.
+
+**T4 (f481ff5) — `auraHostileEnemyBase` 55 → 65 (ADOPTOWANE):** tuner
+`tune-card.mjs` (Hobble, 12 seedów lustrzanych): proxy 0.564172 → 0.566821
+(monotonicznie, 2 kroki); benchmark potwierdzający 4200 meczów: 3541 →
+3542, jedyna zmiana forgotten-realms|innistrad-brg vs aggro 45 → 46%.
+Procedura i dowody wg `docs/setup/STROJENIE_BOTA.md` (tuner nie adoptuje
+automatycznie).
+
+**B7 (c807f5f) — pętla jakości (seeds 3001–3006): BILANS 0 DEFENKTÓW.**
+Oś wzmocniona: POPRAWNOŚĆ (CR), LOGICZNOŚĆ, OPTYMALNOŚĆ. Wyniki: Bot ×5
+(3001–3005), Gracz ×1 (3006). Fałszywe alarmy zamknięte L57: (1) 3002
+„re-Equip” — pojazd crewowany jest stworem tylko do końca tury, więc
+sprzęt odłącza się w cleanup (SBA, CR 702.16/702.6) i każde przypięcie
+jest świeże — bot grał wzorzec optymalny Irontread (załoga + full-equip →
+9/8 trample); (2) 3003 „pass z lądem” — Bell mill na t.1 zostawił 0
+landów; (3) 3004 „nie wyjaśnione zakończenie” — lethal t.16 (9 vs 7) + gap
+zapisu panelu narzędzia; (4) 3006 „1B removal przy „płatnej” mani” —
+{1}B wymaga many CZARNEJ; bot nie dobrał Swampa/Mountainu (brama koloru
+słuszna). Nowe testy inwariantów: `test/m257r4-petla3-bot.test.js`
+(odłączenie przy końcu animacji; pozycja 3002; filtr no-op M102/U9 +
+przepięcie M100/E13).
+
+**Operacyjnie:** sandbox resetował repo do klonu w trakcie sesji
+(reflog = clone+checkout; komity zaginęły lokalnie, remote i drzewo
+robocze przetrwały) — odtworzenie z diffa drzewa vs remote (dokładnie
+delta T4), commit + push bez strat. Potwierdza zasadę ADR 0020: każdy
+zielony commit = push natychmiast.
+
+**Bramki końcowe:** `npm test` **3765/3765**, `npm run build` 2914.8 kB
+(56 modułów), `test:slow` 10/10.
+
+## Sesja 2026-08-29 (etap 5) — pętla jakości Żywym Testerem: F3 ninjutsu {1}{G}, F1 liczniki wejścia, F4 driver (arena/01a04e98, PR #88)
+
+**Zakres:** pętla jakości na prośbę właściciela po rundzie 3 („Proponuję
+teraz Pętlę Jakości Żywym Testerem, może sam coś znajdziesz"). Talie z
+ostatnich rund nieprzetestowane + Batch 51: tarkir-bg ↔ wiedzmin
+(seeds 2001–2002, greedy/explorer), worek-basni ↔ theros (2003–2004,
+greedy/defensive), warhammer-wu ↔ worek-legend (2005–2006, greedy/random).
+Raport: `docs/audits/AUDYT_M257R4_ZYWY_TESTER_2026-08-29.md`.
+
+**F3 (dane + silnik + kafel) — Kappa Tech-Wrecker, „Ninjutsu {1}{G}":**
+Oracle (NEO #198; repo JSON + API Scryfall) — koszt ninjutsu z zieloną
+pitą, a w rejestrze `{mana: 2}` generyczny. Trzy warstwy: (1) dane
+→ `{mana: 2, colors: ['G']}` (semantyka: suma 2, pita G = {1}{G});
+(2) silnik — oferta w oknie combat_damage i `activateNinjutsu`
+nie respektowały `cost.colors` — audyt wykazał, że NINJUTSU to jedyne
+aktywowane kosztowanie bez koloru (cycling/reinforce/bloodrush/channel/
+forecast/equip mają canPayColoredCost + colorRequirementsOf) → dopięte
+(L48: oferta = walidacja; płatność atomowo CR 601.2h); (3) kafel —
+etykieta pipsów „Ninjutsu {1}{G}” + „wejdź zatapnięty i atakujący"
+(gramatyka). W rejestrze tylko 2 ninjutsu — Kitsune {3}{W} poprawna.
+Koszt rzutu {1}{G} (MANA_COSTS) i kreator many — od dawna OK. B7.2:
+pula testowa 2×{U} → {G}+generyczna (test korzystał ze starej dowolności).
+
+**F1 (kafel) — „enters with a counter”:** 7 kart wchodzi z licznikami,
+a opis kafla milczał (L1/ADR 0017). `cardInfo` + `rulesText`: linia
+„Wchodzi z 1 licznikiem X / z N licznikami X" (COUNTER_LABELS;
+ukryta przy faceDown). cardId: Trigon 3×charge, Kappa deathtouch,
+Servant of the Scale +1/+1, Necrosquito 2×oil, Voice of the Vermin
+shield, Swooping Protector shield, Creakwood Safewright 3×−1/−1.
+
+**F4 (narzędzie audytu) — defensive mulliganował do 0:** heurystyka
+„opcja pomiń" `/pomij|nie |brak|zostaw/` łapała „zosta**nie** 5"
+(w etykiecie mulligana) → pętla do pustej ręki (legalne,
+nieintendowane). Granice słów; zweryfikowane na żywo tym seidem
+(g2004b: „Zatrzymaj tę rękę", 0 detektorów).
+
+**Fałszywe alarmy (L57, NIE naprawiane):** Colossodon Yearling
+(vanilla 2/4), Greater Tanuki (CMC 6), Thistledown Players (nonland
+permanent), Breaching Hippocamp (untap another creature you control —
+bot bez innego stwora = poprawny „brak legalnych celów"), {2}{G}=CMC 3
+(błąd rachuby audytora), Kitsune (dane OK), „Atak: Woolly Loxodon
+(Morph)" (wŁASNY morph gracza — CR 708.6 + reguła rundy 3 „FoW dotyczy
+tylko zagrań bota" — zgodne), „tapnij Soldier (" (obcięcie TRANSKRYPTU
+do 90 znaków, nie UI). Fix rundy 2 (Rupture Spire) zweryfikowany na
+żywo w g2005.
+
+**Bramy:** `npm test` 3748 → **3755/3755** (+7), build 2907.7 →
+**2910.5 kB**. Commit `eb8246a`.
+
+## Sesja 2026-08-29 (etap 4) — „Uwagi z testów” runda 3: trzy błędy (talia Warhammer) naprawione w root cause (arena/01a04e98, PR #88)
+
+**Zakres:** zgłoszenie właściciela po dalszych testach na talii **Warhammer**
+(trzecia runda uwag; wcześniejsze: etap 3 `6a0cd62`). Trzy konkrety:
+(A) bot rzuca Morph twarzą w dół — log i Rozgrywka zachowują FoW, ALE
+warstwa wysoko-graficzna (FOT/KON/Scryfall przy rzucaniu) pokazywała
+DOKŁADNIE co bot rzucił; (B) „Przygoda: Gray Slaad” w menu „Twoje
+działania” na samym dole, pod pass — właściciel: inne efekty tam gdzie
+inne czary, a **pass i poddanie partii ZAWSZE ostatnie**; (C) Greatsword
+of Tyr — Oracle „Equip {W}”, a silnik akceptował jedną dowolną manę
+(właściciel zapłacił tapując Górę).
+
+**Naprawione (commity `93cf9a7` + `9cfb431` — doprecyzowanie A, 10 testów
+w `test/m257-uwagi-runda3.test.js`):**
+- **A (root cause):** zdarzenie `permanent_cast` NIESIE `faceDown`
+  (resources.js:933, engine od dawna), ale obserwator `onCast` sesji
+  dostawał tylko `cardId` — warstwa renderowała pełną definicję karty
+  (FOT/KON/Scryfall + podpis „Rzuca: Nieprzyjaciel”) = wypływ tożsamości
+  ukrytej (CR 708.2). Fix: paylod onCast niośce `faceDown`
+  (session.js `emitCastEvent`), a krycie warstwy jest WIDOKOWE — czysty
+  predykat `isCastHiddenFromViewer` (art-showcase.js, testowalny headless):
+  ukryty rzut jest z warstwy wykluczony TYLKO gdy rzuca nie-właściciel
+  widoku (bot); **własny morph gracza warstwę otwiera**
+  (doprecyzowanie właściciela: „wolałbym, żeby własny morph gracza
+  otwierał warstwę. FoW dotyczy tylko zagrań bota” — rzucający zna swoją
+  kartę, CR 708.6; ukryty rzut o nieznanym rzucającym = bezpieczne
+  krycie). `onCastShowcase` (main.js) decyduje na predykacie
+  (widok = HUMAN_ID).
+- **B (root cause):** sort panelu „Twoje działania” wg
+  `ACTION_RANK[type] ?? 99`, a mapa ranków nie znała `cast_adventure` /
+  `cast_adventure_creature` (ani `cast_escape`/`cast_flashback` /
+  `turn_manifest_face_up`) → 99 > pass(8)/concede(9) = Przygoda pod
+  pass/poddaniem. Fix: wszystkie rzuty w ranku 5 (razem z czarami) +
+  `actionMenuRank` (render.js, eksportowany, testowalny): pass=1000,
+  concede=1001 — Z ZASADY ostatnie, więc żadna nowa/nierankowana komenda
+  (fallback 99) nie wypadnie poniżej „Poddaj partię”.
+- **C (root cause dwuczłonowy):** (1) deskryptor `equipment` w danych
+  karty nie niosł `colors` — cały łańcuch L21 (card-data → registry.js →
+  identity.js) przepisywał `equipment` pole po polu, a `colors` nie było
+  na żadnej warstwie; (2) **rozjazd oferta/walidacja (L48)** — OFERTA
+  (abilities.js:576) sprawdzała `canPayColoredCost(equipment.colors)`,
+  ale PŁATNOŚĆ `activateEquip → spendMana` ignorowała kolory w ogóle.
+  Fix: `equipment: { equip: 1, colors: ['W'] }` + koszt zdolności
+  `cost: { mana: 1, colors: ['W'] }` (card-data), przepływ `colors` przez
+  registry.js i identity.js (warstwy L21), `spendMana(...,
+  colorRequirementsOf({colors: equipment.colors}))` w `activateEquip`
+  (płatność atomowa CR 601.2h — nieudana nie zostawia tapniętych źródeł),
+  pipy na kaflu (`equipLine`/`equipPips` — to samo rozbicie generic+kolory
+  co `costTextOf`, M138/Z10) i w wariantach `equipFor` (etykieta + pipy
+  per CEL — oferta i walidacja czytają pipy z WARIANTU obowiązującego dla
+  celu), fingerprint niesie `colors`. Audyt: z 12 sprzętów w danych TYLKO
+  Greatsword of Tyr ma kolorowy equip (reszta generyczna — bez `colors`,
+  zachowanie bez zmian, test C5 anti-overfix).
+
+**Wyniki:** `npm test` **3748/3748** (było 3738, +10); `npm run build`
+56 modułów / 2907.7 kB (było 2901.8 kB).
+
+## Sesja 2026-08-29 (etap 3) — „Uwagi z testów”: dwa błędy decyzji bota (talia Warhammer) naprawione w root cause (arena/01a04e98, PR #88)
+
+**Zakres:** zgłoszenie właściciela po testach na talii **Warhammer
+Fantasy** (wU) — dwie konkretne decyzje bota: (A) Squire's Lightblade
+rzucana bez własnych kreatur na stole, (B) Rupture Spire — bot z 3
+nietapniętymi lądami wybierał POŚWIĘCENIE zamiast zapłaty {1}.
+
+**Naprawione (commit `6a0cd62`, 8 testów w `test/m257-uwagi-z-testow.test.js`):**
+- **B (root cause dwuczłonowy):** `scoreCommand` (heuristic-bot.js) nie
+  miało case'u dla `resolve_pay_or_sacrifice` (domyślnie 0) → remis z
+  wariantem „poświęć” (również 0), a stabilny sort w `chooseCommand`
+  bierze PIERWSZĄ ofertę — a w enumeracji (game-state.js:5488) na czele
+  stało `pay:false` (komentarz „Boty płacą (pierwsza oferta)” kłamał).
+  Bot więc **zawsze** poświęcał. Fix: jawna wycena (pay 90 / sacrifice 5
+  — silnik prezentuje decyzję TYLKO gdy opłacalna: `queuePayOrSacrifice`
+  bramkuje `producibleMana >= amount`, a w trakcie decyzji blokuje inne
+  akcje, więc płatność jest zawsze co najmniej tak dobra: CR 106.4,
+  `spendMana` auto-tapuje) + odwrócenie enumeracji na pay-first
+  (kolejność = intencja, M203/2; UI pokazuje zapłatę najpierw).
+  Ta sama klasa braków case'u domknięta zapobiegawczo dla
+  `resolve_counter_pay_choice` (85/10 — Frightful Delusion) i
+  `resolve_optional_pay_choice` (75/15 — „you may pay... When you do”,
+  bramka `canPayTrigger`).
+- **A (root cause):** wycena `cast_permanent` = `P.creatureBase` + P/T —
+  equipment to 0/0, więc Squire's Lightblade dostawała 70 (tyle co
+  zwykły stwór) niezależnie od kontekstu. Fix generyczny po deskryptorze
+  (ADR 0002): `card.equipment` + brak własnych kreatur = kara poniżej
+  passu (ETB „attach za darmo” fizzluje, CR 603.4b — kara mocniejsza;
+  bez ETB-attachu — słabsza, A4: Blazing Torch); nosiciel na stole =
+  premia za pompę (bez podwójnego liczenia keywordów — je wycenia
+  scoring Equip, M244). Efekt: bot trzyma equipment i gra stwora z ręki
+  PRZED nim (A2 — anti-overfix: po wejściu stwora rzut znów wart 64.8).
+
+**Wyniki:** `npm test` **3738/3738**; `npm run build` 56 modułów /
+2901.8 kB (dist przebudowany — poprzedni 2898.8 kB był stale po
+cofnięciu błędnej „poprawki” K6). Benchmark quick profile: heuristic
+**85.0% (571/672)** — po zmianie; baza 85.1% (M257/1), bez regresji;
+heuristic vs random 93.2%.
+
+## Sesja 2026-08-29 (etap 2) — petla jakości M257: pool Innistrad, K5 (CR 711.4a) + K4 naprawione (arena/01a04e98, PR #88)
+
+**Zakres:** ADR 0021 (pętla domyślna) — Żywy Tester na nowym pulu
+(Innistrad, 22 karty nieprzetestowane); 6 partii seeds 1001–1006
+(`innistrad-brg` ↔ `innistrad-wu`, greedy) + czytanie transkryptów
+krok po kroku + weryfikacja L57 par transform (API Scryfall INR #212,
+ISD #185).
+
+**Naprawione (commit `3f4d122`, 5 testów w `test/audit-m257-fixes.test.js`):**
+- **K5 (CR 711.4a/711.7/711.8):** DFC opuszczający pole bitwy tyłem
+  (obrócony wilkołak odbity na rękę) zostawał w innej strefie TYŁEM i
+  z ręki wchodził na pole TYŁEM. Naprawa w choke poincie
+  `moveObjectDirectly`: `frontFaceId` (createCardDeck → installDeck →
+  kontrakt addObject → createGameObject) + reset cech na twarz przednią
+  przy wyjściu z pola bitwy (transformTo odwracane na tył — flicker w
+  obie strony zostaje; LKI CR 603.10 zachowuje twarz z pola bitwy).
+  Uwaga L21: `addObject` początkowo cicho gubił nowe pole (strażnik
+  kontraktu wskazał).
+- **K4 (M100/E5):** `object_transformed` bez kontrolera →
+  `isHumanHeadline` martwy → transform człowieka nie trafiał do panelu
+  „Rozgrywka". `controllerId` w zdarzeniu we wszystkich 4 miejscach
+  emisji (transform, transformReturn, craft, nightbound).
+
+**Zamknięte jako nie-błędy:** K1 (choroba = summoning sickness, CR 302.6),
+K3 (zlepienie linii kreatora many = spłaszczenie modala w testerze, UI
+poprawne), K6 (vigilance na Moonscarred Werewolf JEST w Oracle — API
+Scryfall; błędna „poprawka" złapana i cofnięta przez
+`card-sources-guard`), D0 (tylne strony DFC w taliach — parser talii
+zamienia nazwy tyłów na fronty, CR 711.4).
+
+**Zgłoszone (kosmetyka, następna runda):** K2 — kafel 2. strony DFC
+pokazuje koszt „0" (katalog bieżącej twarzy zamiast `manaCost` obiektu;
+CR 711.4b CMC = koszt przedniej).
+
+**Incydent:** restart sandboxa zresetował HEAD do punktu odgałęzienia
+(`15a2be5`); naprawa fetch + mixed reset na `1560322` (drzewo robocze
+= remote + zmiany sesji, zweryfikowane per-file). Macierz przebita po
+poprawkach (wynik 5:1 Bot:Gracz jak przed, detektory 0/6).
+
+**Bramy:** `npm test` 3730/3730, `test:all` **3740/3740**, build
+56 modułów / 2898.8 kB. Raport: `docs/audits/AUDYT_M257_2026-08-29.md`.
+
+## Sesja 2026-08-29 — audyt PR #87: 6 znalezisk, 4 naprawione (arena/01a04e98, PR #88)
+
+**Prompt:** „kontynuujemy projekt" — brak nazwanego tematu → ADR 0021 (pętla
+domyślna). Zakres: audyt scalonego PR #87 (squash `15a2be5`, 303 pliki,
++13 909/−98 250) wg ADR 0020 B + naprawa znalezisk + domknięcie dokumentacyjne
+sesji PR #87 (brak handoffu końcowego — D2).
+
+**Wynik audytu: silnikowo poprawny.** 8/8 kart Batchu 51 zgodne z Oracle
+(scryfall JSON + CR); renown = CR 702.112b (renowned do opuszczenia pola
+bitwy, brak powtórki triggera); Invasive Species: hexproof tylko wobec
+przeciwnika; M255/A modal — flaga `untilEndOfTurn:true` wyłącznie w
+set_base_pt/buff_creature, `mass_stats_modified` poza szumem celowo (L87).
+Weryfikacja mutacyjna deklarowanych napraw **6/6 RED→GREEN** (bloodrush
+filtr, renown, warunek MV, M255/F, M255/G, M256), strażnik M253 2/2,
+`test:slow` 10/10 (budżet ADR 0025), `test:all` 3735/3735.
+
+**Znaleziska (szczegóły: `docs/audits/AUDYT_PR87_2026-08-29.md`):**
+
+- **A2 (naprawione, `e596078`)** — strażnik klasy L16 zaliczał
+  `state.pendingX` w TREŚCI CIĄGU ZNAKOWYM jako pokrycie fingerprintu
+  (klasa A1/komentarzy: L83 — strażnik liczy KONSTRUKTY). Nowe `maskNonCode`
+  (komentarze + `'…'`/`"…"`/`` `…` `` z kodem w `${…}`) + dwa skany po
+  dwóch konstruktach + pin A1 rozszerzony o A2 (mutacja obchodząca
+  `maskNonCode` → RED).
+- **D1 (naprawione, `04c3c85`)** — README sprzed ~30 batchy: 2445/2445 →
+  3735/3735 (`test:all`), 51 mod/2072 kB → 56 mod/2894.7 kB, „138 kart" →
+  436 kart + 42 tokeny, „Batch 22" → Batch 52; luki `any target`/`Mesmerize`
+  z listy — od dawna zamknięte.
+- **D5 (naprawione, `a1800f1`)** — 5 bloków JSDoc w `src/engine/effects.js`
+  nad funkcją, której nie opisują (efekt patchy chirurgicznych): czysty
+  przenos nad właściwe funkcje (31−/31+, treść identyczna).
+- **D2 (naprawione, `d2e2d82`)** — sesja PR #87 bez handoffu końcowego
+  (2026-08-28c środkowy) → `docs/setup/HANDOFF_2026-08-29.md`.
+- **D3 (zgłoszenie właścicielowi)** — ADR-y 0001–0024 + README przepisane
+  (−10–25%) bez deklaracji zakresu w opisie PR #87; fakt-check: **zmysł
+  zachowany** (statusy/liczby/CR/progi bez zmian; legitymacyjne dopiski:
+  nota 2026-08-29 w ADR 0018, nowy ADR 0025), ale regresja typograficzna
+  `”`→`"`. Decyzja: przyjąć (przywracając `”`) albo poprzednią wersję.
+- **D4 (zgłoszenie)** — opis PR #87 nieaktualny przy domykaniu (bez M256/
+  ADR 0025, 3687 vs 3725 testów) → konwencja: domykanie sesji = świeży opis.
+
+**Wyniki:** `npm test` 3725/3725, `test:slow` 10/10, `test:all` 3735/3735,
+build 56 mod/2894.7 kB; szybki profil benchmarku 672 mecze: heuristic 85.1%
+(próbka `BENCH_DECKS`; pełny przebieg z PR #87 w `tools/b1-final-2026-08-29.*`
+— 5130 meczów, heuristic 80.8%). Pełna macierz B0 nie odpalana (ADR 0018/0025).
+
+**Następna sesja:** Etap 2 planu M257 — pętla jakości (Żywy Tester na
+następnej największej puli kart niewidzianych; polowanie na CR; bez nowego
+batcha kart) — szczegóły w `docs/setup/HANDOFF_2026-08-29.md`.
 
 ## Sesja 2026-08-29 — M255: pętla jakości Żywym Testerem po Batchu 51 (PR #87)
 

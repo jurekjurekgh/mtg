@@ -2052,7 +2052,12 @@ export function createSession(config) {
     // M254/C: `true` = warstwa się otworzyła (albo czeka w kolejce) — prośba
     // o wstrzymanie gry, żeby gracz zdążył zobaczyć KAŻDY rzut, nie tylko
     // ostatni z sekwencji (zgłoszenie: mój czar zniknął, pokazał się cudzy).
-    if (onCast({ cardId, playerId: e.playerId ?? null, eventType: e.type }) === true) {
+    // M257 r3 (uwaga A): `faceDown` (CR 708.2 — twarzą w dół = 2/2;
+    // tożsamość ukryta przed PRZECIWNIKIEM, rzucający zna swoją kartę,
+    // CR 708.6) — UI decyduje widokowo (main.js: ukryte zagranie bota jest
+    // z warstwy ilustracji wykluczane, własny morph gracza warstwę otwiera).
+    if (onCast({ cardId, playerId: e.playerId ?? null, eventType: e.type,
+      faceDown: Boolean(e.faceDown ?? e.object?.faceDown) }) === true) {
       awaitingArtAck = true;
     }
   }

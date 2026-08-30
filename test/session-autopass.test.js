@@ -189,11 +189,17 @@ test('Feature: wyciszona opcja nie przerywa auto-passu; odznaczona znów przeryw
     [BOT_ID, Array.from({ length: 8 }, () => 'basic-mountain')],
   ]);
   const ignored = new Set();
-  const session = createSession({ seed: 42, registry, decks, ignoredOptionKeys: ignored });
-  // Rozstrzygnij mulligan (zatrzymaj rękę), zanim zbudujemy scenę.
-  const mull = session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice');
-  assert.ok(mull, 'mulligan do rozstrzygnięcia');
-  assert.ok(session.apply({ ...mull, keep: true }).ok, 'keep po mulliganie');
+  // M257-r5b/B: starter losowy — scena zakłada, że tura 1 należy do człowieka
+  // (HUMAN_ID), więc seed musi dawać startera p1 (seed 7).
+  const session = createSession({ seed: 7, registry, decks, ignoredOptionKeys: ignored });
+  // Rozstrzygnij mulligany (zatrzymaj ręce), zanim zbudujemy scenę.
+  // M257-r5b/B: starter losowy — kolejka to [starter, other], więc keepujemy
+  // aż do wyczerpania kolejki (przed B to był dokładnie jeden mulligan).
+  while (true) {
+    const mull = session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice');
+    if (!mull) break;
+    assert.ok(session.apply({ ...mull, keep: true }).ok, 'keep po mulliganie');
+  }
   const state = session.state;
   // Scena: tura człowieka, main phase, priorytet u człowieka.
   state.turn = jumpToStep(state.turn, 'main', HUMAN_ID);

@@ -2,6 +2,7 @@ import { createGameObject } from './identity.js';
 import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
 import { initialTurn, jumpToStep, nextTurnStep } from './turn.js';
+import { createRng } from './rng.js';
 import { assertStateInvariants } from './invariants.js';
 import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, spendMana, spellManaPurpose, treasureManaAvailable, canPayMadnessCost } from './resources.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
@@ -74,10 +75,16 @@ export function createGameState({ seed, players }) {
   }
   const ids = players.map((p) => p.id);
   if (ids.some((id) => !id) || new Set(ids).size !== ids.length) throw new TypeError('Gracze muszą mieć unikalne id');
+  // M257-r5b/B (uwaga z testów): „Gracz zawsze zaczyna. Czy to kto zaczyna
+  // nie powinno być losowe?” — rzut monetą z seeda (deterministyczny,
+  // ADR 0005; 1v1 = 50/50). Reguły CR 103.7a/103.4 czytały players[0]
+  // na sztywno — teraz są przymocowane do `starterId`.
+  const starterId = ids[Math.floor(createRng(seed)() * ids.length)];
   const state = {
     seed,
+    starterId,
     players: players.map((p) => ({ id: p.id, name: p.name ?? p.id, life: 20, commanderCasts: 0, speed: 0 })),
-    turn: initialTurn(ids[0]),
+    turn: initialTurn(starterId),
     objects: new Map(),
     zones: Object.fromEntries(ZONES.map((zone) => [zone, []])),
     events: [],
@@ -464,7 +471,7 @@ export function createGameState({ seed, players }) {
 export const ADD_OBJECT_FIELDS = Object.freeze([
   'id', 'instanceId', 'cardId', 'controllerId', 'zone', 'kind', 'power', 'toughness',
   'manaCost', 'spell', 'abilities', 'morph', 'plot', 'plotted', 'entersWithCounters',
-  'entersWithCountersIf', 'keywords', 'subtypes', 'transformTo', 'types', 'entersTapped',
+  'entersWithCountersIf', 'keywords', 'subtypes', 'transformTo', 'frontFaceId', 'types', 'entersTapped',
   'entersTappedCondition', 'bestow', 'aura', 'equipment', 'backup', 'colors',
   'phyrexianManaCost', 'enchantPlayer', 'saga', 'station', 'ownerId', 'devour', 'endure', 'toxic', 'echo', 'chooseColor',
   'exploit', 'treasureAltCost', 'cardName', 'name', 'bloodthirst', 'renown', 'additionalCost',
@@ -533,12 +540,12 @@ function assertAddObjectContract(config) {
 
 export function addObject(state, config) {
   assertAddObjectContract(config);
-  const { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, renown = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false } = config;
+  const { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId = null, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, renown = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false } = config;
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, toxic, echo, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, renown, additionalCost, kicker, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, surge, manifestReady, manifestTurnUpCost, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, toxic, echo, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, renown, additionalCost, kicker, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, surge, manifestReady, manifestTurnUpCost, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady });
   const placed = zone === 'battlefield'
     // Batch 46 (Bone Shredder): permanent z echem wchodzi z nieopłaconym echem
     // — pierwszy WŁASNY upkeep po wejściu zapyta o zapłatę (CR 702.29).
@@ -564,7 +571,11 @@ export function addObject(state, config) {
  * mimo legalnych komend”.
  */
 function closingCombatPassBlocked(state, playerId) {
-  return state.turn.step === 'combat_damage' && Boolean(state.combat) && state.zones.stack.length === 0
+  // M257 r4/A: walka z ZERO atakujących nie może zadać obrażeń (CR 510.1c) —
+  // „pass nie pomija obrażeń" (M172/C) nie ma tu czego chronić, więc domykający
+  // pass przechodzi (bez niego pętla pass-only zastygałaby w combat_damage).
+  return state.turn.step === 'combat_damage' && Boolean(state.combat) && state.combat.attackers.length > 0
+    && state.zones.stack.length === 0
     && state.turn.passes + 1 >= state.players.length
     && state.turn.activePlayerId === playerId;
 }
@@ -625,7 +636,7 @@ function drawStepTurnBasedAction(state) {
   if (state.status !== 'active') return [];
   if (state.turn.step !== 'draw' || state.turn.drawnInStep) return [];
   const playerId = state.turn.activePlayerId;
-  if (state.turn.number === 1 && playerId === state.players[0].id) return [];
+  if (state.turn.number === 1 && playerId === state.starterId) return [];
   const result = performDrawStepDraw(state, playerId);
   return result.events ?? [];
 }
@@ -1330,7 +1341,7 @@ export function execute(state, input) {
       if (state.pendingMulligans.length > 0) {
         state.turn.priorityPlayerId = state.pendingMulligans[0];
       } else {
-        state.turn.priorityPlayerId = state.players[0].id;
+        state.turn.priorityPlayerId = state.starterId;
         state.events.push(event('game_started', {}));
         // CR 502.4: pierwsza tura też nie ma okna priorytetu w untapie —
         // po mulliganach gra rusza od upkeepu (CR 103.7/503.1). Bez tego
@@ -1381,8 +1392,25 @@ export function execute(state, input) {
     }
     // Odłożenie N kart na spód — decyzja gracza (resolve_mulligan_bottom_choice).
     const newHand = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === playerId);
-    state.pendingMulliganBottom = { playerId, count, handIds: newHand, restorePriorityTo: playerId };
-    state.events.push(event('mulligan_bottom_required', { playerId, count }));
+    // M257/E (znalezisko pętli jakości): mała biblioteka — dobieramy mniej niż
+    // 7, więc `expected = min(count, newHand.length)` (CR 103.4 — „equal to
+    // that many", nie więcej niż masz). Gdy newHand.length <= count, JEDYNA
+    // legalna kombinacja to cała ręka — wybór nie istnieje. Auto-rozstrzygamy
+    // (wzorzec auto-akcji turowej: drawStep CR 504.1, r4/A CR 508.1) zamiast
+    // wystawiać bezsensowny ekran (w skrajnym wariancie: „wybierz 0 kart”).
+    if (newHand.length <= count) {
+      for (const id of newHand) {
+        const libId = `library-${state.objectSequence++}`;
+        const moved = moveObjectDirectly(state, id, 'library', libId);
+        state.events.push(event('object_moved', { fromId: id, object: moved, fromZone: 'hand', toZone: 'library', mulliganBottom: true }));
+      }
+      state.events.push(event('mulligan_bottom_resolved', { playerId, count }));
+    } else {
+      state.pendingMulliganBottom = { playerId, count, handIds: newHand, restorePriorityTo: playerId };
+      state.events.push(event('mulligan_bottom_required', { playerId, count }));
+    }
+    // Gracz decyduje dalej (keep albo kolejny mulligan) — priorytet ten sam
+    // co po drodze przez komendę resolve_mulligan_bottom_choice.
     state.turn.priorityPlayerId = playerId;
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
@@ -3855,7 +3883,9 @@ export function execute(state, input) {
       state.zones.exile = state.zones.exile.filter((id) => id !== sourceExileId);
       state.zones.battlefield.push(bfId);
       state.events.push(event('object_moved', { fromId: sourceExileId, object: transformed, fromZone: 'exile', toZone: 'battlefield', craft: true }));
-      state.events.push(event('object_transformed', { objectId: bfId, fromCardId: moved.cardId, cardId: target.cardId }));
+      // controllerId: warstwa stołu kwalifikuje transform do panelu
+      // „Rozgrywka" po kontrolerze (isHumanHeadline, M257/K4).
+      state.events.push(event('object_transformed', { objectId: bfId, fromCardId: moved.cardId, cardId: target.cardId, controllerId: transformed.controllerId }));
     }
     state.pendingCraftExile = null;
     if (craft.restorePriorityTo && state.players.some((p) => p.id === craft.restorePriorityTo)) {
@@ -4177,7 +4207,7 @@ export function execute(state, input) {
         if (!state.pendingScry && !state.pendingSurveil && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingTriggerTargets.some((p) => triggerTargetDecisionPending(state, p)) && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingColorChoice && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !state.pendingGraveyardToTop && state.pendingBackups.length === 0 && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && state.pendingDeliriumTargets.length === 0 && state.pendingMentorTargets.length === 0 && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingDamageDivision && !state.pendingReplacementChoice) {
           state.turn.priorityPlayerId = state.turn.activePlayerId;
         }
-      } else if (state.turn.step === 'combat_damage' && state.combat) {
+      } else if (state.turn.step === 'combat_damage' && state.combat && state.combat.attackers.length > 0) {
         // M255/F: pełna runda passów w kroku obrażeń NIE domyka kroku —
         // obrażenia zadaje wyłącznie `resolve_combat` aktywnego gracza
         // (inaczej pass pomijałby damage: regresja M172/C). Priorytet wraca
@@ -4185,6 +4215,8 @@ export function execute(state, input) {
         // pass jest nadal odrzucany (closingCombatPassBlocked) i jedyną
         // drogą jest resolve_combat. Przed poprawką obrońca nie miał ani
         // pass, ani resolve_combat — zostawał z samym `concede`.
+        // M257 r4/A: wyjątek — walka bez atakujących nie ma obrażeń do
+        // „pominięcia" (CR 510.1c); przechodzi ogólna ścieżka nextTurnStep.
         state.turn.priorityPlayerId = state.turn.activePlayerId;
         events.push(event('priority_passed', { playerId: cmd.playerId, nextPlayerId: state.turn.activePlayerId }));
       } else {
@@ -4195,6 +4227,22 @@ export function execute(state, input) {
         // kartę SAM, bez decyzji i bez stosu (M101/A). Wykonujemy zaraz po
         // wejściu w krok, zanim ktokolwiek dostanie priorytet.
         events.push(...drawStepTurnBasedAction(state));
+        // M257 r4/A (uwaga właściciela): „Deklaracja atakujących" bez
+        // kreatur. CR 508.1: gdy aktywny gracz nie ma ŻADNEGO legalnego
+        // atakującego, deklaracja jest pusta i AUTOMATYCZNA — decyzja nie
+        // istnieje (dotąd generator wystawiał jedną komendę z pustym
+        // zestawem, bo legalAttackerOptions → [[]]). Auto-przejście przy
+        // wejściu w krok, wzorzec auto-dobrania (CR 504.1): eventy lokalnie
+        // (pushToState: false — kolejność logu), priorytet kroku blokujących
+        // dla obrońcy (jak w drodze przez komendę).
+        if (state.turn.step === 'declare_attackers'
+            && !legalAttackerOptions(state, state.turn.activePlayerId, COMBAT_OPTION_CAP)
+              .some((attackerIds) => attackerIds.length > 0)) {
+          events.push(declareAttackers(state, state.turn.activePlayerId, [], { pushToState: false }));
+          const defenderId = state.players.find((player) => player.id !== state.turn.activePlayerId).id;
+          state.turn = jumpToStep(state.turn, 'declare_blockers', defenderId);
+          events.push(event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step }));
+        }
         // CR 106.4: niewykorzystana mana znika z puli na końcu KAŻDEGO kroku
         // i fazy (wcześniej utrzymywała się do końca tury — tapnięte landy
         // „trzymały" manę przez walkę i fazy przeciwnika).
@@ -4675,7 +4723,7 @@ export function execute(state, input) {
   if (cmd.type === 'draw_card') {
     if (state.turn.step !== 'draw' || state.turn.activePlayerId !== cmd.playerId) return reject('wrong_timing');
     // CR 103.7a: pierwsza tura gry — aktywny gracz (startujący) nie dobiera.
-    if (state.turn.number === 1 && state.turn.activePlayerId === state.players[0].id) {
+    if (state.turn.number === 1 && state.turn.activePlayerId === state.starterId) {
       return reject('first_turn_no_draw');
     }
     // Akcja turowa: dokładnie jedno dobranie w kroku draw; znacznik znika
@@ -5475,7 +5523,11 @@ export function playerView(state, playerId) {
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activePayOrSacrifice) {
     // „Sacrifice it unless you pay {N}" (Rupture Spire, Temat 7): wybór
-    // kontrolera — zapłać albo poświęć. Boty płacą (pierwsza oferta).
+    // kontrolera — zapłać albo poświęć. Boty płacą (pierwsza oferta) — i tak
+    // TO jest od M258/B: dawniej na czele stało pay:false, a bot bez case'u
+    // wyceny (remis 0:0, stabilny sort) zawsze brał pierwszą ofertę =
+    // ZAWSZE poświęcał (uwaga właściciela). Kolejność = intencja (M203/2);
+    // bot i tak decyduje scorem (heuristic-bot: resolve_pay_or_sacrifice).
     // M101/B: komenda niesie KOSZT i źródło, żeby UI mogło opisać każdą opcję
     // z osobna („Zapłać {2}" / „Poświęć Rupture Spire") — bez tych danych
     // etykieta mogła mówić tylko o typie decyzji, jednakowo dla obu wariantów.
@@ -5483,8 +5535,8 @@ export function playerView(state, playerId) {
       cost: state.pendingPayOrSacrifice.amount ?? null,
       sourceId: state.pendingPayOrSacrifice.sourceId ?? null,
     };
-    legalCommands.push(command('resolve_pay_or_sacrifice', playerId, { pay: false, ...payOrSacInfo }));
     legalCommands.push(command('resolve_pay_or_sacrifice', playerId, { pay: true, ...payOrSacInfo }));
+    legalCommands.push(command('resolve_pay_or_sacrifice', playerId, { pay: false, ...payOrSacInfo }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeCounterPay) {
     // Batch 44 (Frightful Delusion): zapłać {N} (czar zostaje) albo nie płać
     // (czar skontrowany). Boty płacą (pierwsza oferta) — czar na stosie jest

@@ -18,7 +18,7 @@ export function createCardInstance({ id, cardId, ownerId }) {
   return Object.freeze({ id, cardId, ownerId });
 }
 
-export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', echo = null, chooseColor = null, power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, entersWithCountersIf = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, exploit = null, treasureAltCost = null, cardName = null, name = null, isToken = false, bloodthirst = null, renown = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false }) {
+export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', echo = null, chooseColor = null, power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, entersWithCountersIf = null, keywords = [], subtypes = [], transformTo = null, frontFaceId = null, types = [], entersTapped = false, entersTappedCondition = null, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, exploit = null, treasureAltCost = null, cardName = null, name = null, isToken = false, bloodthirst = null, renown = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false }) {
   if (!id || !instanceId || !cardId || !controllerId || !zone) {
     throw new TypeError('Obiekt gry wymaga id, instanceId, cardId, controllerId i zone');
   }
@@ -82,6 +82,9 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     entersWithCountersIf: entersWithCountersIf ? Object.freeze({ ...entersWithCountersIf }) : null,
     keywords: Object.freeze([...keywords]), subtypes: Object.freeze([...subtypes]),
     transformTo,
+    // M257/K5 (CR 711.4a): id twarzy PRZEDNIEJ pary transform — engine resetuje
+    // na nią DFC opuszczający pole bitwy tyłem (obrócony wilkołak na ręce).
+    frontFaceId,
     // M158/Batch 39: tymczasowe nadpisanie podtypów + utrata keywordów (EOT).
     subtypesBeforeOverride: subtypesBeforeOverride ? Object.freeze([...subtypesBeforeOverride]) : null,
     lostKeywordsUntilEOT: Object.freeze([...(lostKeywordsUntilEOT ?? [])]),
@@ -145,6 +148,11 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // gospodarza ZOSTAJE na polu bitwy odłączony (nie ginie jak aura).
     equipment: equipment ? (() => {
       const base = { equip: equipment.equip, pump: equipment.pump ? Object.freeze({ ...equipment.pump }) : null, keywords: Object.freeze([...(equipment.keywords ?? [])]), subtypes: Object.freeze([...(equipment.subtypes ?? [])]) };
+      // M257 r3 (Greatsword of Tyr, „Equip {W}"): pipy KOLORÓW kosztu equipu —
+      // trzecia warstwa łańcucha registry → gameObject (L21); bez niej
+      // walidacja płaciła dowolną maną, podczas gdy oferta wymagała białej
+      // (uwaga C właściciela). Pole tylko gdy niepuste (jak w registry).
+      if (equipment.colors?.length) base.colors = Object.freeze([...equipment.colors]);
       // Batch 48 (Steelclaw Lance): TANSZY equip dla podtypu („Equip Knight
       // {1}" obok „Equip {3}"). Trzecia warstwa przepisujaca equipment pole
       // po polu — bez tego deskryptor ginie w drodze na obiekt gry (L21).

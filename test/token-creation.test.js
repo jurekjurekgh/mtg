@@ -18,6 +18,8 @@ const SWARM = {
 function setup() {
   const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
   addMana(state, 'p1', 2);
+  // M257-r5b/B: pin aktora (starter losowy) — test gra turą p1.
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   state.turn = jumpToStep(state.turn, 'main', 'p1');
   addObject(state, { id: 'swarm', instanceId: 'isw', cardId: 'syn-swarmsummon', controllerId: 'p1', zone: 'hand', kind: 'spell', manaCost: 2, spell: SWARM });
   return state;

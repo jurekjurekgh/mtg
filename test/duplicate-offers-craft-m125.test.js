@@ -38,6 +38,8 @@ const REGISTRY = createCardRegistry();
 
 function makeState() {
   const state = createGameState({ seed: 5, players: [{ id: 'p1' }, { id: 'p2' }] });
+  // M257-r5b/B: pin aktora (starter losowy) — test gra turą p1.
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   state.turn = jumpToStep(state.turn, 'main', 'p1');
   state.turn.number = 6;
   return state;

@@ -19,7 +19,9 @@ import { parseDeckText } from '../src/cards/deck-text.js';
 const REGISTRY = createCardRegistry();
 
 function game(seed = 2026) {
-  return createGameState({ seed, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const state = createGameState({ seed, players: [{ id: 'p1' }, { id: 'p2' }] }); // M257-r5b/B: pin aktora (starter losowy)
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
+  return state;
 }
 
 function mainPhase(state, playerId = 'p1') {
@@ -429,11 +431,15 @@ test('Gurmag Drowner z TALII: exploit oferowany, gdy są inne stwory', () => {
   state.turn.activePlayerId = 'p1';
   state.turn.priorityPlayerId = 'p1';
   state.turn.number = 6;
-  // mulligan — obaj keep
-  for (const pid of ['p1', 'p2']) {
-    const keep = playerView(state, pid).legalCommands.find((c) => c.type === 'resolve_mulligan_choice' && c.keep);
-    if (keep) execute(state, keep);
+  // M257-r5b/B: starter losowy — keepujemy wg aktualnej kolejki mulliganów
+  // (przed B kolejka była zawsze p1→p2).
+  for (const pid of [...state.pendingMulligans]) {
+    execute(state, { type: 'resolve_mulligan_choice', playerId: pid, keep: true });
   }
+  // M257-r5b/B: keep-y resetują priorytet/aktywność na startera — re-pin
+  // aktora (test gra turą p1).
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
   // 2 inne stwory p1 z ręki na pole bitwy
   for (const cid of ['highland-game', 'dementia-bat']) {
     const obj = [...state.objects.values()].find((o) => o.cardId === cid && o.controllerId === 'p1' && o.zone === 'hand');

@@ -59,7 +59,10 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         keyword: 'ninjutsu',
-        cost: { mana: 2 },
+        // M257 r4 (Żywy Tester, g2004): Oracle „Ninjutsu {1}{G}" — pita
+        // ZIELONA. Wpis {mana: 2} (bez colors) pozwalał płacić dowolną maną
+        // (L57/ADR 0022; ta sama klasa co r3/C — pipy w kosztach).
+        cost: { mana: 2, colors: ['G'] },
       }),
       createAbility({
         type: ABILITY_TYPE.triggered,
@@ -2239,7 +2242,11 @@ export const REAL_CARDS = Object.freeze([
   defineCard({
     id: 'greatsword-of-tyr', name: 'Greatsword of Tyr', set: 'CLB',
     types: ['Artifact'], subtypes: ['Equipment'], colors: ['W'], manaCost: 2,
-    equipment: { equip: 1 },
+    // M257 r3 (uwaga C właściciela): Oracle = „Equip {W}" — pita KOLOROWA,
+    // nie generyczna {1}. `colors` w deskryptorze = pipy kosztu (jednostek
+    // `equip`), reszta generyczna — to samo kodowanie co koszt czarów/suspend
+    // (L57: docs/cards/scryfall-greatsword-of-tyr.json).
+    equipment: { equip: 1, colors: ['W'] },
     oracleText: 'Whenever equipped creature attacks, put a +1/+1 counter on it and tap up to one target creature defending player controls.\nEquip {W} ({W}: Attach to target creature you control. Equip only as a sorcery.)',
     imageUri: 'https://cards.scryfall.io/large/front/5/0/50088a60-642b-47ed-a289-ef0b617b688f.jpg?1783922813',
     abilities: [
@@ -2262,7 +2269,9 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         keyword: 'equip',
-        cost: { mana: 1 },
+        // M257 r3: Oracle „Equip {W}" — pita biała (koszt dla UI/wizarda;
+        // autorytatywny koszt płatności = deskryptor equipment.colors).
+        cost: { mana: 1, colors: ['W'] },
         effect: [],
       }),
     ],

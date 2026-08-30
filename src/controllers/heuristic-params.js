@@ -73,6 +73,24 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // własnym upkeepie/kroku bez walki to zmarnowana elastyczność (lepiej trzymać
   // kartę do właściwego okna). Deskryptor: flash + pure-protection (ADR 0002).
   'flashProtectionAuraOffWindowPenalty', // kara za rzut flash-aury ochronnej poza oknem walki
+  // Rodzina „aura” (M257 r4, B6 T1) — wycena rzutu aury/bestow w
+  // cast_permanent. Dotąd magiczne stałe w bloku aury scoreCommand: baza
+  // buffa 66, unieruchomienie stwora wroga/własnego (auraIsHostile:
+  // „doesn't untap”, „can't attack”), jałowa aura (brak celu, losesKeywords
+  // na stworze bez keyworda) i czysta ochrona (protection: z zagrozeniami /
+  // bez). Deskryptory: aura/bestow + losesKeywords/protection/pump (ADR
+  // 0002). Domyślne == dawne stałe co do punktu (kontrakt B6 T0).
+  'auraBase',                    // baza za rzucenie BUFF-aury na własnego stwora (dawniej 66)
+  'auraBuffWorthWeight',         // waga (moc+pump) gospodarza w wycenie buff-aury (dawniej *2)
+  'auraHostileEnemyBase',        // baza za UNIERUCHOMIENIE stwora wroga (dawniej 55)
+  'auraHostileEnemyWorthWeight', // waga worth (moc+wytrzymałość) unieruchamianego stwora wroga (dawniej *2)
+  'auraHostileOwnPenalty',       // kara za unieruchomienie WŁASNEGO stwora (dawniej -70)
+  'auraHostileWorthWeight',      // waga worth unieruchamianego stwora w karze (własny + losesKeywords) (dawniej *1)
+  'auraNoTargetPenalty',         // kara za aurę bez legalnego celu (hostile bez celu / buff bez gospodarza) (dawniej -50)
+  'auraLosesKeywordsWastedPenalty', // kara za losesKeywords na stworze BEZ żadnego z odbieranych keywordów (dawniej -80)
+  'auraProtectionNoThreatPenalty',  // kara za czystą ochronę, gdy przeciwnik nie ma zagrożeń tej jakości (dawniej -40)
+  'auraProtectionBase',          // baza czystej ochrony przy istniejących zagrożeniach (dawniej 20)
+  'auraProtectionThreatWeight',  // waga LICZBY zagrożeń, przed którymi aura chroni (dawniej *12)
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -110,10 +128,24 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // M235 — aura FLASH o czystej wartości ochronnej rzucona POZA oknem walki
   // (własny upkeep/draw/end, postcombat, tura przeciwnika przed deklaracją
   // ataków) marnuje elastyczność instanta. Kara musi przebić bazę takiej aury
-  // (do ~66 + 2·moc + wytrzymałość gospodarza), żeby wariant zszedł PONIŻEJ
-  // passu (0) — bot trzyma kartę do właściwego okna. W oknie walki kara nie
-  // działa, więc aura nadal wygrywa.
+  // (do ~auraBase + auraBuffWorthWeight·moc + wytrzymałość gospodarza), żeby
+  // wariant zszedł PONIŻEJ passu (0) — bot trzyma kartę do właściwego okna.
+  // W oknie walki kara nie działa, więc aura nadal wygrywa.
   flashProtectionAuraOffWindowPenalty: 120,
+  // M257 r4/B6 T1 — rodzina „aura”: ekstrakcja stałych bloku aury
+  // scoreCommand (domyślne = dawne stałe co do punktu; golden-master
+  // pilnuje, że domyślne nic nie zmieniają).
+  auraBase: 66,
+  auraBuffWorthWeight: 2,
+  auraHostileEnemyBase: 65,
+  auraHostileEnemyWorthWeight: 2,
+  auraHostileOwnPenalty: 70,
+  auraHostileWorthWeight: 1,
+  auraNoTargetPenalty: 50,
+  auraLosesKeywordsWastedPenalty: 80,
+  auraProtectionNoThreatPenalty: 40,
+  auraProtectionBase: 20,
+  auraProtectionThreatWeight: 12,
 });
 
 /**

@@ -48,6 +48,7 @@ function addCreature(state, id, ctrl, power, toughness, extra = {}) {
 }
 function mainPhase(state, pid = 'p1') {
   state.turn = jumpToStep(state.turn, 'main', pid);
+  state.turn.activePlayerId = pid; // M257-r5b/B: pin aktywności (starter losowy)
   state.turn.activePlayerId = pid;
   state.turn.priorityPlayerId = pid;
 }
@@ -122,6 +123,7 @@ test('BUG1: Forge Devil — „target creature\" może celować w siebie', () =>
 test('BUG5: goaded creature MOŻE blokować (CR 701.38b — goad to wymóg ataku)', () => {
   const state = game();
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = 'p1'; // M257-r5b/B: pin aktywności (starter losowy)
   state.turn.phase = 'combat';
   addCreature(state, 'atk', 'p1', 2, 2);
   addCreature(state, 'gb', 'p2', 1, 1);

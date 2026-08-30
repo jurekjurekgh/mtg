@@ -131,6 +131,9 @@ test('B2: damage_dealt blokera niesie kwotę ZADANĄ (po prewencji), lifelink od
 
 test('B2b: damage_to_controller raportuje kwotę zadaną po prewencji (CR 119.3)', () => {
   const state = createGameState({ seed: 3, players: [{ id: 'p1' }, { id: 'p2' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   addCreature(state, 'src', 'p1', 1, 1);
   state.damageShields = [{ targetId: 'p1', remaining: 1, sourceCardId: 'withstand' }];
   // Forge Devil: „it deals 1 damage to you" — kontroler ma tarczę 1.
@@ -144,6 +147,9 @@ test('B2b: damage_to_controller raportuje kwotę zadaną po prewencji (CR 119.3)
 
 test('B3: proliferate celuje w gracza ze znacznikami trucizny i dokłada poison (CR 701.27a)', () => {
   const state = createGameState({ seed: 5, players: [{ id: 'p1' }, { id: 'p2' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   addCreature(state, 'src', 'p1', 1, 1);
   const victim = state.players.find((p) => p.id === 'p2');
   victim.poison = 2; // trucizna z infect — pole player.poison (SBA)
@@ -157,6 +163,9 @@ test('B3: proliferate celuje w gracza ze znacznikami trucizny i dokłada poison 
 
 test('B3b: proliferate doprowadza poison do 10 i kończy grę (CR 104.2c/701.27a)', () => {
   const state = createGameState({ seed: 6, players: [{ id: 'p1' }, { id: 'p2' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   addCreature(state, 'src', 'p1', 1, 1);
   const victim = state.players.find((p) => p.id === 'p2');
   victim.poison = 9;
@@ -185,6 +194,9 @@ function resolveStack(state) {
 
 test('B4: mill_from_bottom bierze spód biblioteki GRACZA-CELU, nie koniec wspólnej listy (CR 401.4)', () => {
   const state = createGameState({ seed: 11, players: [{ id: 'p1' }, { id: 'p2' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   // Wspólna lista biblioteki: [p1-x, p2-a, p2-b, p1-y] — p1-y to karta P1 na
   // końcu listy (np. po scry-bottom albo mulligan-bottom P1). Spód biblioteki
   // P2 to p2-b (ostatnia WŁASNA karta P2), nie ostatni element listy.
@@ -225,6 +237,9 @@ test('B4: mill_from_bottom bierze spód biblioteki GRACZA-CELU, nie koniec wspó
 
 test('B5: bounce_permanent wraca na rękę WŁAŚCICIELA, nie kontrolera (CR 108.3/400.7)', () => {
   const state = createGameState({ seed: 13, players: [{ id: 'p1' }, { id: 'p2' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   addCreature(state, 'src', 'p1', 1, 1);
   // Stwór P2 przejęty przez P1 (Puppeteer Clique): ownerId = p2, controllerId = p1.
   addCreature(state, 'stolen', 'p1', 2, 2, { ownerId: 'p2' });

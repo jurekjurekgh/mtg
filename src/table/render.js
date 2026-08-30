@@ -298,9 +298,27 @@ export const OPTION_IGNORABLE_TYPES = Object.freeze([
 ]);
 
 const ACTION_RANK = Object.freeze({
-  resolve_mulligan_choice: -3, resolve_mulligan_bottom_choice: -3, resolve_backup: -2, resolve_scry: -1, resolve_surveil: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, suspend_card: 3, warp_card: 3, cast_permanent: 4, cast_spell: 5, cast_cleave: 5, activate_ability: 5,
+  resolve_mulligan_choice: -3, resolve_mulligan_bottom_choice: -3, resolve_backup: -2, resolve_scry: -1, resolve_surveil: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, suspend_card: 3, warp_card: 3, cast_permanent: 4, cast_spell: 5, cast_cleave: 5,
+  // M257 r3 (uwaga B właściciela): PRZYGODA (Gray Slaad) i inne rzuty, które
+  // tu nie były, spadały na fallback `?? 99` = PO pass/poddaniu. Właściciel:
+  // „Nie mogłaby się pokazywać tam gdzie inne czary?" — wszystkie czary
+  // razem, w ranku 5 (escape/flashback/adventure/obrócenie manifested).
+  cast_escape: 5, cast_flashback: 5, cast_adventure: 5, cast_adventure_creature: 5, turn_manifest_face_up: 5,
+  activate_ability: 5,
   declare_attackers: 5, declare_blockers: 6, resolve_combat: 7, pass_priority: 8, concede: 9,
 });
+
+/**
+ * M257 r3 (uwaga B właściciela): pozycja akcji w menu „Twoje działania".
+ * PASS i PODDAJĄCE SIĘ PARTII są ostatnie Z ZASADY (strukturalnie), a nie z
+ * ranku — nowa/nierankowana komenda (fallback 99) nigdy nie może wypaść
+ * poniżej „Poddaj partię". Test: test/m257-uwagi-runda3.test.js.
+ */
+export function actionMenuRank(type) {
+  if (type === 'pass_priority') return 1000;
+  if (type === 'concede') return 1001;
+  return ACTION_RANK[type] ?? 99;
+}
 
 /**
  * Grupuje warianty, które są jednym wyborem użytkownika: cel czaru/zdolności,
@@ -1489,7 +1507,19 @@ export function rulesText(info) {
   const abilityLine = info.abilities && info.abilities.length
     ? info.abilities.map((a) => {
       if (a.type === 'triggered') return describeTriggered(a, info.controllerId);
-      if (a.keyword === 'ninjutsu') return `Ninjutsu {${a.cost?.mana ?? '?'}}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca`;
+      if (a.keyword === 'ninjutsu') {
+        // M257 r4 (Żywy Tester g2004, Kappa Tech-Wrecker): (1) goły
+        // `cost.mana` gubił pipy kolorów („Ninjutsu {2}" zamiast {1}{G} —
+        // notacja jak MANA_COSTS: generyczny w klamkach + pipy, M138/Z10);
+        // (2) gramatyka: „zatapnięta/atakująca" (formy żeńskie) na karcie
+        // rodzaju męskiego.
+        const njColors = a.cost?.colors ?? [];
+        const njGeneric = Math.max(0, (a.cost?.mana ?? 0) - njColors.length);
+        const njCostStr = njGeneric > 0 || njColors.length === 0
+          ? `{${njGeneric}}${njColors.map((c) => `{${c}}`).join('')}`
+          : njColors.map((c) => `{${c}}`).join('');
+        return `Ninjutsu ${njCostStr || '{?}'}: wróć nieblokowanego atakującego, wejdź zatapnięty i atakujący`;
+      }
       if (a.keyword === 'megamorph') return `Megamorph {${a.cost?.mana ?? '?'}}: obróć twarzą do góry i połóż +1/+1`;
       if (a.keyword === 'morph') return `Morph {${a.cost?.mana ?? '?'}}: obróć twarzą do góry`;
       // M100/E10 (P9 — Żywy Tester h09/h13): zdolność equip już opisuje
@@ -1501,8 +1531,16 @@ export function rulesText(info) {
   const spellLine = info.spell ? describeSpellEffects(info.spell) : '';
   const plotLine = info.plot ? `Plot {${info.plot.cost ?? '?'}}: wygnaj z ręki, później rzuć bez kosztu` : '';
   const equip = info.equipment;
+  // M257 r3 (Greatsword of Tyr, „Equip {W}"): pipy KOLORÓW kosztu equipu —
+  // to samo rozbicie generic + kolory co costTextOf/abilityCostHtml (M138/Z10:
+  // goła liczba kłamała, że koszt płaci się dowolną maną). Zwraca treść
+  // wewnątrz klamerek („1”, „W”, „1, B”).
+  const equipPips = (n, colors = []) => {
+    const generic = Math.max(0, (n ?? 0) - colors.length);
+    return [generic > 0 ? String(generic) : '', ...colors].filter(Boolean).join(', ');
+  };
   const equipLine = equip
-    ? `Equip ${equip.equipFor ? `${equip.equipFor.subtype} {${equip.equipFor.equip}} · ` : ''}{${equip.equip ?? '?'}}${(equip.keywords ?? []).length ? ` — nosiciel: ${(equip.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : ''}${equip.pump ? ` ${signed(equip.pump.power ?? 0)}/${signed(equip.pump.toughness ?? 0)}` : ''}${equip.cantBeBlockedMaxPower != null ? ` — nosiciel o mocy ≤${equip.cantBeBlockedMaxPower} nie może być blokowany` : ''}`
+    ? `Equip ${equip.equipFor ? `${equip.equipFor.subtype} {${equipPips(equip.equipFor.equip, equip.equipFor.colors) || '?'}} · ` : ''}{${equipPips(equip.equip, equip.colors) || '?'}}${(equip.keywords ?? []).length ? ` — nosiciel: ${(equip.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : ''}${equip.pump ? ` ${signed(equip.pump.power ?? 0)}/${signed(equip.pump.toughness ?? 0)}` : ''}${equip.cantBeBlockedMaxPower != null ? ` — nosiciel o mocy ≤${equip.cantBeBlockedMaxPower} nie może być blokowany` : ''}`
     : '';
   const morphLine = info.morph && info.morph.megamorphCost != null
     ? `Megamorph {${info.morph.megamorphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt Megamorph (+1/+1)`
@@ -1580,7 +1618,20 @@ export function rulesText(info) {
       return `${roman}: ${chapterParts || '?'}`;
     }).join(' · ')}`
     : '';
-  return [keywordLine, spellLine, plotLine, equipLine, auraLine, abilityLine, morphLine, sagaLine, landLine].filter(Boolean).join(' · ');
+  // M257r4/F1 (audyt Żywym Testerem g2001): karta WCHODZI Z LICZNIKAMI —
+  // linia Oracle na kaflu (dotąd brak: Trigon of Corruption +3 charge,
+  // Kappa Tech-Wrecker licznik deathtouch, Servant of the Scale +1/+1 …).
+  // Odmiana po „z”: z 1 licznikiem / z N licznikami; etykiety z
+  // COUNTER_LABELS (ta sama konwencja co badge „Nx …” i „gdy ma licznik …”).
+  const entersCountersLine = (() => {
+    const ewc = info.entersWithCounters;
+    if (!ewc || typeof ewc !== 'object') return '';
+    const parts = Object.entries(ewc)
+      .filter(([, n]) => Number(n) > 0)
+      .map(([name, n]) => `z ${n === 1 ? '1 licznikiem' : `${n} licznikami`} ${COUNTER_LABELS[name] ?? name}`);
+    return parts.length ? `Wchodzi ${parts.join(', ')}` : '';
+  })();
+  return [keywordLine, spellLine, plotLine, equipLine, auraLine, abilityLine, morphLine, sagaLine, entersCountersLine, landLine].filter(Boolean).join(' · ');
 }
 
 /** Etykieta przycisku akcji — po polsku, z nazwami kart i celów.
@@ -2282,8 +2333,10 @@ export function commandLabel(cmd, session, view) {
         const targetEntry = targetId ? view.zones.battlefield.find((o) => o.id === targetId) : null;
         const equipForActive = Boolean(object?.equipment?.equipFor
           && (targetEntry?.subtypes ?? []).includes(object.equipment.equipFor.subtype));
+        // M257 r3: koszt wariantu equipFor niesie WŁASNE pipy kolorów
+        // (dotąd twarde `colors: []` — ukrywałoby „Equip Knight {W}”).
         const shownAbility = equipForActive
-          ? { ...ability, cost: { ...ability.cost, mana: object.equipment.equipFor.equip, colors: [] } }
+          ? { ...ability, cost: { ...ability.cost, mana: object.equipment.equipFor.equip, colors: object.equipment.equipFor.colors ?? [] } }
           : ability;
         return `Wyposaż: ${nameOfObjectId(cmd.objectId)} → ${target} (koszt ${abilityCostHtml(shownAbility)})`;
       }
@@ -2952,6 +3005,13 @@ export function cardInfo(session, object, combat = null) {
     // M159/Z4: rozdziały Sagi są treścią kafla (rulesText) — bez tego pola
     // Saga renderowała się bez żadnego opisu.
     saga: faceDown ? null : (details.saga || object.saga || null),
+    // M257r4/F1 (audyt Żywym Testerem g2001): „enters with a counter” to
+    // publiczny Oracle (wydrukowany tekst) — 7 kart (Trigon of Corruption,
+    // Kappa Tech-Wrecker, Servant of the Scale…) wchodziło z licznikami, a
+    // kafel nie pokazywał o tym ani słowa (klasa L1/ADR 0017: widoczny stan
+    // musi być widoczny na kaflu). Z rejestru dla kopii/tokenów ze stanu —
+    // jak equipment/saga.
+    entersWithCounters: faceDown ? null : (details.entersWithCounters || object.entersWithCounters || null),
     attachedTo: object.attachedTo ?? null,
     hostName: object.attachedTo ? (session.nameOfObject?.(object.attachedTo) ?? '') : '',
     // F (2026-08-11): karta-gospodarz pokazuje przypięte do niej aury/equipmenty
@@ -3287,7 +3347,7 @@ function hoverArtOf(info) {
   return artOf(info);
 }
 
-export function renderHoverPreview(host, info, hoverMode = 'scryfall') {
+export function renderHoverPreview(host, info, hoverMode = 'scryfall', { showCycleHint = true } = {}) {
   clear(host);
   const shape = hoverPreviewShape(hoverMode);
   const candidates = hoverImageSources(hoverArtOf(info), { hoverMode });
@@ -3309,9 +3369,26 @@ export function renderHoverPreview(host, info, hoverMode = 'scryfall') {
   attachImageWithFallback(img, candidates, null);
   const art = artOf(info);
   const hasLocal = art.artId != null && art.artId !== '';
-  const hint = hasLocal ? ' · scroll zmienia tor' : '';
+  // M257 r5/A: podgląd o torze STAŁYM (miniaturki w „Rozgrywce") nie cykluje
+  // scrollem — podpowiedź „scroll zmienia tor" byłaby kłamliwa.
+  const hint = hasLocal && showCycleHint ? ' · scroll zmienia tor' : '';
   div(host, 'hover-mode', `${hoverModeLabel(hoverMode)}${hint}`);
   return host;
+}
+
+/**
+ * M257 r5/A (uwaga właściciela): hover scryfall na miniaturkach w modalu
+ * „Rozgrywka" — ten sam podgląd co na stole (powiększona karta ze Scryfall),
+ * ale tor STAŁY (bez trybów FOT i KON i bez cyklowania scrollem).
+ * `null` na dotyku — na tablecie hover nie istnieje (jak na stole, M7c);
+ * tam miniaturkę otwiera tap (pełny ekran).
+ */
+export function createScryfallHover(els) {
+  if (TOUCH_DEVICE || !els?.hoverPreview) return null;
+  return {
+    start: (info, e) => showHoverPreviewAt(els, info, e, 'scryfall'),
+    end: () => { if (els.hoverPreview) els.hoverPreview.className = 'hover-preview'; },
+  };
 }
 
 /**
@@ -3432,7 +3509,7 @@ export function cardHasShowcaseArt(card) {
  * `closeBotMoveModal`): krzyżyk pauzuje auto-pass i zamyka modal — gracz
  * musi jawnie wykonać pass, żeby bot jechał dalej.
  */
-export function renderBotMoves(host, moves, session, { onCardClick = null } = {}) {
+export function renderBotMoves(host, moves, session, { onCardClick = null, hover = null } = {}) {
   clear(host);
   const list = Array.isArray(moves) ? moves : [];
   if (list.length === 0) {
@@ -3469,6 +3546,13 @@ export function renderBotMoves(host, moves, session, { onCardClick = null } = {}
             onTap: () => onCardClick(entry.cardId),
             onDoubleTap: () => onCardClick(entry.cardId),
           });
+        }
+        // M257 r5/A (uwaga właściciela): najechanie kursorem na miniaturkę
+        // pokazuje powiększoną kartę (Scryfall) — ten sam podgląd co na
+        // stole, ale bez trybów FOT i KON (tor stały; createScryfallHover).
+        if (hover?.start) {
+          art.addEventListener('mouseenter', (e) => hover.start(details, e));
+          art.addEventListener('mouseleave', hover.end);
         }
       }
     }
@@ -3540,6 +3624,28 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
 }
 
 /**
+ * Pokazuje powiększoną kartę (tor `mode`) w warstwie `els.hoverPreview`
+ * przy kursorze. Wspólna ścieżka hoveru stołu (tryby scryfall/FOT/KON,
+ * cyklowanie scrollem) i miniaturek w „Rozgrywce” (r5/A — tor stały).
+ */
+function showHoverPreviewAt(els, info, e, mode) {
+  if (!els.hoverPreview) return;
+  clear(els.hoverPreview);
+  renderHoverPreview(els.hoverPreview, info, mode);
+  const shape = hoverPreviewShape(mode);
+  const x = (e && typeof e.clientX === 'number') ? e.clientX : 0;
+  const y = (e && typeof e.clientY === 'number') ? e.clientY : 0;
+  const vw = (typeof window !== 'undefined' && window.innerWidth) || 0;
+  const vh = (typeof window !== 'undefined' && window.innerHeight) || 0;
+  // Pozycjonowanie jak w legacy: obok kursora, z odbiciem przy krawędzi.
+  const left = (vw && x + 15 + shape.width > vw) ? x - 15 - shape.width : x + 15;
+  const top = (vh && y + 15 + shape.height > vh) ? y - 15 - shape.height : y + 15;
+  els.hoverPreview.style.left = `${Math.max(0, left)}px`;
+  els.hoverPreview.style.top = `${Math.max(0, top)}px`;
+  els.hoverPreview.className = 'hover-preview active';
+}
+
+/**
  * Przerysowuje cały stół z aktualnego widoku sesji (M7).
  * @param {{ els: object, session: object, play: (cmd: object) => void,
  *   onCardClick: (objectId: string, cardId: string) => void,
@@ -3557,22 +3663,7 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   // wyłącznie menu kontekstowe (M7c).
   let currentHoverMode = hoverMode;
   const hover = TOUCH_DEVICE ? null : {
-    start: (info, e) => {
-      if (!els.hoverPreview) return;
-      clear(els.hoverPreview);
-      renderHoverPreview(els.hoverPreview, info, currentHoverMode);
-      const shape = hoverPreviewShape(currentHoverMode);
-      const x = (e && typeof e.clientX === 'number') ? e.clientX : 0;
-      const y = (e && typeof e.clientY === 'number') ? e.clientY : 0;
-      const vw = (typeof window !== 'undefined' && window.innerWidth) || 0;
-      const vh = (typeof window !== 'undefined' && window.innerHeight) || 0;
-      // Pozycjonowanie jak w legacy: obok kursora, z odbiciem przy krawędzi.
-      const left = (vw && x + 15 + shape.width > vw) ? x - 15 - shape.width : x + 15;
-      const top = (vh && y + 15 + shape.height > vh) ? y - 15 - shape.height : y + 15;
-      els.hoverPreview.style.left = `${Math.max(0, left)}px`;
-      els.hoverPreview.style.top = `${Math.max(0, top)}px`;
-      els.hoverPreview.className = 'hover-preview active';
-    },
+    start: (info, e) => showHoverPreviewAt(els, info, e, currentHoverMode),
     end: () => { if (els.hoverPreview) els.hoverPreview.className = 'hover-preview'; },
     cycle: (info, e) => {
       if (!els.hoverPreview) return;
@@ -3665,7 +3756,11 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   }
 
   // --- Akcje -----------------------------------------------------------
-  const commands = view.legalCommands.slice().sort((a, b) => (ACTION_RANK[a.type] ?? 99) - (ACTION_RANK[b.type] ?? 99));
+  // M257 r3 (uwaga B): `actionMenuRank` (nie surowy `ACTION_RANK`) — pass i
+  // poddanie partii są ostatnie Z ZASADY (1000/1001), a reszta wg ranku
+  // (nierankowane 99, czyli przed nimi). Właściciel: pass/poddaj zawsze na
+  // dole, „Przygoda" i inne efekty tam, gdzie inne czary.
+  const commands = view.legalCommands.slice().sort((a, b) => actionMenuRank(a.type) - actionMenuRank(b.type));
   // M102/U5 (zgłoszenie właściciela 2026-08-16): nagłówek „Twoje działania"
   // NIE pokazuje już liczby. Liczyła surowe `legalCommands`, więc po scaleniu
   // duplikatów (U4) i pogrupowaniu wariantów w modale nie zgadzała się nawet

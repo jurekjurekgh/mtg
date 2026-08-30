@@ -4,6 +4,9 @@ import { addObject, createGameState, execute, playerView } from '../src/engine/g
 
 function game() {
   const state = createGameState({ seed: 42, players: [{ id: 'p1' }, { id: 'p2' }] });
+
+  // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   addObject(state, { id: 'o-hand-1', instanceId: 'i-1', cardId: 'secret-card', controllerId: 'p2', zone: 'hand' });
   addObject(state, { id: 'o-hand-2', instanceId: 'i-2', cardId: 'public-card', controllerId: 'p1', zone: 'hand' });
   return state;
