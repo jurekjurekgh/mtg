@@ -56,7 +56,7 @@
 
 ## Etapy
 
-### Etap 1 — A: hover scryfall na miniaturkach w „Rozgrywce” — commit
+### Etap 1 — A: hover scryfall na miniaturkach w „Rozgrywce” ✅ DONE (7d1af53)
 - render.js:
   - wyciągnięcie pozycjonowania/pokazywania preview w `showHoverPreviewAt(els,
     info, e, mode)` (hover stołu zostaje identyczny, z cyklowaniem trybów);
@@ -73,7 +73,7 @@
   listenerów.
 - Bramki: `npm test` + `npm run build`. Commit + push.
 
-### Etap 2 — B: premia przeżycia w wycenie bloku — commit
+### Etap 2 — B: premia przeżycia w wycenie bloku ✅ DONE (69754b1)
 - RED: test właściciela (bot 5 życia, własny 2/2 bez choroby, atakujący 3/3,
   krok `declare_blockers`) — bot BLOKUJE; anti-overfix: 30 życia — wycena
   bloku poniżej passu (scenariusz bez zmian).
@@ -85,7 +85,7 @@
   tools/benchmark.mjs` (bez `--full`, ADR 0018).
 - Bramki: `npm test` + `npm run build`. Commit + push.
 
-### Etap 3 — C: ekran „cel + poświęcenie” (ptaszki) — commit
+### Etap 3 — C: ekran „cel + poświęcenie” (ptaszki) ✅ DONE (9e9ad1c)
 - multi-target.js:
   - `sacrificeCastPlanOf(commands)` — plan dla grupy rzutów, gdzie wszystkie
     warianty mają `sacrificeTargetId` i ≥1 cel oraz ≥2 unikalne poświęcenia
@@ -106,7 +106,7 @@
   zablokowany dopóki nie oba sloty, zatwierdzenie oddaje komendę z listy.
 - Bramki: `npm test` + `npm run build`. Commit + push.
 
-### Etap 4 — dokumentacja — commit
+### Etap 4 — dokumentacja — commit ✅ DONE (opis PR #88 + PROJECT_HISTORY; commit r5b-docs)
 - Opis PR #88: sekcja „Etap r5” (A/B/C + bramki + benchmark) + odświeżenie
   „Jak sprawdzono”; `docs/PROJECT_HISTORY.md` (wpis sesji); aktualizacja planu
   (odhaczenia + podsumowanie). Push.

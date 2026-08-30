@@ -91,13 +91,13 @@ C/D mierzone po B). Bramka każdego etapu: `node tools/run-tests.mjs all`
 (brama CI) + `node tools/build.mjs`; etapy bota (C, D) dodatkowo quick
 benchmark przed/po (ADR 0018, bez `--full`).
 
-### Etap A — „Tasuj talię” bez komunikatu [UI]
+### Etap A — „Tasuj talię” bez komunikatu [UI] ✅ DONE (49cb7f0)
 1. `main.js`: usunąć `showNotice` z handlera `shuffle-seed`.
 2. Test (rozbudowa `test/table-ui.test.js` lub nowy plik r5b): klik
    `shuffle-seed` → seed zmieniony (1..999999) + modal `notice` NIEAKTYWNY.
    RED: asercja braku komunikatu na starym kodzie.
 
-### Etap B — losowy starter [engine]
+### Etap B — losowy starter [engine] ✅ DONE (0f389fa)
 1. `game-state.js`: `createGameState` liczy `starterId`
    (`createRng(seed).next() * players.length` → indeks; 1v1 = 50/50),
    `turn: initialTurn(starterId)`; pola `state.starterId`.
@@ -115,7 +115,7 @@ benchmark przed/po (ADR 0018, bez `--full`).
 4. Benchmark przed/po (losowanie zmienia strony w meczach lustrzanych —
    spodziewany drobny przeskok, bez regresji w progu `bot-benchmark.test.js`).
 
-### Etap C — Awaken the Sleeper [bot]
+### Etap C — Awaken the Sleeper [bot] ✅ DONE (1179ce0)
 1. `declare_attackers` (heuristic-bot.js:3566+): dla atakującego z
    `tempControlUntilTurn === view.turn.number` (stwór pożyczony — generyczna
    flaga, bez nazw kart, ADR 0002; w PlayerView trzeba ją upewnić w
@@ -150,7 +150,7 @@ benchmark przed/po (ADR 0018, bez `--full`).
      silnika, że fix bota nie rusza reguł.
 4. Benchmark przed/po.
 
-### Etap D — Ruthless Invasion [bot]
+### Etap D — Ruthless Invasion [bot] ✅ DONE (57bf588)
 1. `cant_be_blocked` (heuristic-bot.js:2505) — wycena warunkowa:
    - cel WROGA: kara jak dziś (`-60`) — bez zmian;
    - cel WŁASNY: wartość tylko gdy stwór MOŻE realnie zaatakować w tej
@@ -194,7 +194,7 @@ benchmark przed/po (ADR 0018, bez `--full`).
 - (ogólnie) ADR 0016 B: chirurgicznie — etapy nie ruszają się wzajemnie;
   C i D dotykają różnych gałęzi wyceny.
 
-## Etap dokumentacji (na końcu, osobny commit)
+## Etap dokumentacji (na końcu, osobny commit) ✅ DONE
 
 - PR #88: tytuł „r1–r5” + sekcja r5b w opisie (zgłoszenia, root causes,
   benchmarki per etap);

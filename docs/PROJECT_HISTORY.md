@@ -19,8 +19,119 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
-- **Ostatnia aktualizacja:** 2026-08-30 (sesja arena/01a04e98, **r4 „Uwagi z testów” + strojenie + pętla bota**: **Fix A** — „Deklaracja atakujących” bez kreatur = auto-przejście (root cause: `legalAttackerOptions` zwracał `[[]]` → pusta „decyzja” wystawiana jako komenda; CR 508.1), **T1/T4** — rodzina aura do parametrów (11 kluczy, golden-master) + strojenie `auraHostileEnemyBase` 55→65 (tuner: proxy 0.5642→0.5668; benchmark 4200 meczów bez regresji — adopcja), **B7** — pętla jakości seeds 3001–3006 (oś: poprawność/logika/optymalność): **0 defektów** — 4 fałszywe alarmy zamknięte L57, w tym „re-Equip” z 3002 (pojazd crewowany: sprzęt odłącza się w cleanup, przypięcia świeże — CR 702.16/702.6); 3 testy inwariantów; `npm test` 3765/3765; build 2914.8 kB; **PR #88**)
+- **Ostatnia aktualizacja:** 2026-08-30 (sesja arena/01a04e98, **r5b „Uwagi z testów” część 2**: **A** — „Tasuj talię” bez komunikatu (tylko podmiana seeda), **B** — kto zaczyna partię = LOSOWE z seeda (`state.starterId`, deterministyczny rzut monetą; CR 103.7a/103.4 przymocowane do startera zamiast `players[0]`; collateral: 41 factory/pinów w 27 plikach testowych + golden-master bota zregenerowany), **C** — Awaken the Sleeper: bot ATAKUJE przejętym stworem (wycena celu castu: 3×power + equipment; pożyczona kreatura bez downside'u w `declare_attackers`), **D** — Ruthless Invasion: bez ataku w tej turze = NIE RZUCAM (okno + gotowi atakujący + usuwani blokerzy), płatność życiem {R/P} = tylko za LETHAL (martwa gałąż wyceny przeniesiona do pętli cast_spell + baza −1); benchmarki quick bez zmian (heuristic 84.7%); `npm test` 3805/3805; build 2932.3 kB; **PR #88**)
+- **Ostatnia aktualizacja:** 2026-08-30 (sesja arena/01a04e98, **r5 „Uwagi z testów”**: **A** — hover powiększonej karty Scryfall na miniaturkach w warstwie „Rozgrywka” (tor `scryfall` bez trybów FOT/KON), **B** — bot blokuje 3/3 przy 5 życiach swoim 2/2 (premia przeżycia w wycenie bloku: prógi życia ≤2/≤5/≤8), **C** — Bone Splinters: osobne wybory „cel czaru” + „cel poświęcenia” (wizard `renderMultiTargetWizard` + wymiar `sacrificeTargetId`), zamiast enumeracji kombinacji 3×3; fix M253: transkrypt benchmarku wdarł się do repo (fail CI); `npm test` 3787/3787; build 2924.8 kB; **PR #88**)
+- **Ostatnia aktualizacja (poprzednia):** 2026-08-30 (sesja arena/01a04e98, **r4 „Uwagi z testów” + strojenie + pętla bota**: **Fix A** — „Deklaracja atakujących” bez kreatur = auto-przejście (root cause: `legalAttackerOptions` zwracał `[[]]` → pusta „decyzja” wystawiana jako komenda; CR 508.1), **T1/T4** — rodzina aura do parametrów (11 kluczy, golden-master) + strojenie `auraHostileEnemyBase` 55→65 (tuner: proxy 0.5642→0.5668; benchmark 4200 meczów bez regresji — adopcja), **B7** — pętla jakości seeds 3001–3006 (oś: poprawność/logika/optymalność): **0 defektów** — 4 fałszywe alarmy zamknięte L57, w tym „re-Equip” z 3002 (pojazd crewowany: sprzęt odłącza się w cleanup, przypięcia świeże — CR 702.16/702.6); 3 testy inwariantów; `npm test` 3765/3765; build 2914.8 kB; **PR #88**)
 - **Ostatnia aktualizacja (poprzednia):** 2026-08-29 (sesja arena/01a04e98, **etap 5**: **pętla jakości Żywym Testerem** (właściciel: „może sam coś znajdziesz”) — 6 partii (tarkir-bg/wiedzmin, worek-basni/theros, warhammer-wu/worek-legend, seeds 2001–2006), 0 detektorów, 3 znaleziska: **F3** Kappa Tech-Wrecker „Ninjutsu {1}{G}" — pita zielona zgubiona w danych (koszt {2} generyczny), silnik (oferta + płatność) ignorował pipy KOLORÓW w ninjutsu — jedyne aktywowane kosztowanie bez koloru (L48) + kafel „Ninjutsu {2}” i gramatyka żeńska; **F1** „enters with a counter” niewidoczne na kaflu (7 kart: Trigon, Kappa, Servant of the Scale, Necrosquito, Voice of the Vermin, Swooping Protector, Creakwood Safewright); **F4** (narzędzie) profil defensive mulliganował do 0 kart (wzorzec bez granic słów łapał „zostaNIE 5”); 7 testów (RED→GREEN dowiedzone stashem), 8 fałszywych alarmów zamkniętych z L57 (m.in. Colossodon vanilla, Breaching Hippocamp untap stwora, własny morph w logu = zgodne z regułą rundy 3); `npm test` 3755/3755; build 2910.5 kB; **PR #88**)
+
+## Sesja 2026-08-30 — r5b „Uwagi z testów” część 2: tasuj bez komunikatu, losowy starter, Awaken the Sleeper, Ruthless Invasion (arena/01a04e98, PR #88)
+
+**Zlecenie właściciela (runda 5b):** (A) „Opcja 'Tasuj talię' niech nie
+pokazuje żadnego komunikatu… Tylko podmiana seeda w polu seeda.” (B)
+„Zauważyłem, że Gracz zawsze zaczyna. Czy to kto zaczyna nie powinno być
+losowe?” (C) „Karta Awaken the Sleeper… Przejął moją kreaturę, nic nie
+zrobił i zakończył turę. To bez sensu… Jak już przejął to powinien
+zaatakować właściciela. A najlepiej jakby przejął moją kreaturę z
+założonym equipmentem… i go zniszczył.” (D) „Czar Ruthless Invasion…
+D1. Ma czerwoną manę i koniecznie chce rzucić ten czar więc płaci
+życiem… D2. Bot rzuca Ruthless Invasion po czym kończy turę bez ataku —
+czyste marnotrawstwo.” Plan:
+`docs/plans/PLAN_2026-08-30-m257r5b-uwagi-testow.md` (856cef0).
+
+**A (49cb7f0) — „Tasuj talię” bez komunikatu [UI]:** handler `shuffle-seed`
+(`main.js`) pokazywał `showNotice` z 2026-08-07 — właściciel: komunikat
+nic nie wnosi. Fix: usunięty `showNotice`, zostaje podmiana
+`el('seed').value`. Test: seed zmieniony + modal notice nieaktywny.
+
+**B (0f389fa) — losowy starter [engine]:** root cause: `createGameState`
+startował od tablicy graczy (`initialTurn(ids[0])`) + CR 103.7a/103.4
+czytały `players[0]` na sztywno (4 miejsca: oferta doborania tury 1,
+priorytet po mulliganach, akcja turowa doborania, kolejność mulliganów
+w `setup.js`). Fix: `state.starterId = ids[floor(createRng(seed)() *
+ids.length)]` (deterministyczny rzut monetą z seeda, ADR 0005; 1v1 =
+50/50, rozkład 1–1000: 504/496) + reguły przymocowane do `starterId`.
+Collateral (testy zakładały „p1 zaczyna”): 41 factory/pinów w 27 plikach
+— pin aktora tam, gdzie test gra turą p1; seed 7 (starter p1) tam, gdzie
+test gra pełną rundę/CR 103.7a; asercje generyczne przez
+`state.starterId`; keep-y mulliganów wg aktualnej kolejki
+`pendingMulligans`. Golden-master bota (B6) świadoma regeneracja
+(baza `a6f2373` daje hash zgodny ze starym fixturem = różnica 100% od
+B). 4 testy `test/m257r5b-uwagi-testow.test.js`.
+
+**C (1179ce0) — Awaken the Sleeper: bot atakuje przejętym stworem [bot]:**
+dwa root causes: (1) wycena celu `cast_spell` nie miała gałęzi
+`gain_control_until_end_of_turn` — wszystkie warianty celu dostawały bazę
+50 i wygrywał pierwszy z enumeracji (bot przejmował pierwszą kreaturę,
+nie tę z equipmentem); (2) wycena `declare_attackers` karała „śmierć”
+atakującego jak stratę bota — a stwór pożyczony (generyczna flaga
+widoku `tempControlUntilEOT`) wraca do właściciela albo ginie JAKO STRATA
+WŁAŚCICIELA. Fix: wycena celu (3×power + `+25 + 5n` za equipment,
+−40 gdy cel nie jest wrogi) + gałąż pożyczonki w ataku (otwarte pole:
+power+bonus; zabijanie blokera: bonus + wartość usuniętego permanentu;
+chump: neutralny bonus presji — nigdy kara) + kara EV removalu pomija
+pożyczonki. 6 testów (RED stary kod: chump + wybór celu).
+
+**D (57bf588) — Ruthless Invasion: bez ataku = nie rzucam, życie =
+tylko za lethal [bot]:** dwa root causes: (1) MARTWA gałąż — wycena
+`creatures_cant_block_this_turn` stała w pętli `activate_ability`, a
+Ruthless to CZAR (pętla `cast_spell` jej nigdy nie przechodziła) → czar
+startował od bazy 50 i bot rzucał wariantem życiowym niezależnie od
+sytuacji („3 razy pod rząd w Głównej 1”); (2) brak gate'u „czy atak
+cokolwiek zrobi” (okno/faza, gotowi atakujący, realni blokerzy —
+artifact-creatures blokują mimo zakazu). Fix: czar czysto-utylitarny
+(baza −1, wzorzec M146) + wycena warunkowa w pętli cast_spell: okno
+(moja tura, main1/beginning_of_combat przed walką) + gotowi atakujący
+(nietapnięci, bez choroby/haste, power>0) + blokerzy usuwani przez czar;
+wartość 2×power, LETHAL w tej turze = +50 (D1: jedyny uzasadniony powód
+płacenia życiem za {R/P}); brak ataku/okna/usuwanych blokerów = −90
+(D2). Symetrycznie: celowany `cant_be_blocked` na własnym stworze
+(Enter the Enigma). 7 testów (RED stary kod: 4 testy — bot rzucał czary
+bez sensu).
+
+**Bramki:** `npm test` 3805/3805 + build 2932.3 kB; benchmarki quick
+(ADR 0018) przed/po C i D: bez zmian (heuristic 84.7%, 75.3% vs aggro,
+94.0% vs random — karta poza macierzą quick).
+
+## Sesja 2026-08-30 — r5 „Uwagi z testów”: hover w Rozgrywce, blok pod presją życia, Bone Splinters osobne wybory (arena/01a04e98, PR #88)
+
+**Zlecenie właściciela (runda 5):** (A) „Na warstwie Rozgrywka najechanie
+kursorem na miniaturkę karty powinno powodować wyświetlenie hovera
+powiększonej karty (ze scryfall) analogicznie jak na stole (bez trybów
+FOT i KON).” (B) „Bot ma 5 życia i na stole kreaturę 2/2. Ja atakuję
+kreaturą 3/3. Bot nie blokuje. To trochę bez sensu w takim stanie
+życia.” (C) „Czar Bone Splinters. Ponownie tworzenie wszystkich
+możliwych kombinacji zamiast osobnych wyborów 'ptaszkiem' wśród → cel
+czaru z możliwych celów i → cel poświęcenia z możliwych celów.” Plan:
+`docs/plans/PLAN_2026-08-30-m257r5-uwagi-testow.md` (9638a10).
+
+**A (7d1af53) — hover Scryfall w „Rozgrywce” [UI]:** miniaturki modala
+(`renderBotMoves`) nie miały `mouseenter/mouseleave` (kafle stołu mają);
+warstwa preview (z-index 2400) wyżej od modali (1500). Fix: gesty
+hoveru podpięte pod miniaturki, tor `scryfall` stały (bez trybów
+FOT/KON — cyklowanie scrollem dotyczy stołu).
+
+**B (69754b1) — blok pod presją życia [bot]:** root cause: wycena
+`declare_blockers` nie znała presji życia — blok 2/2 pod 3/3 =
+3−4−1 = −2 < 0 (pass) przy 5 życiach; bony życia (M146) działały tylko
+przy ataku LEATHALNYM. Fix: premia przeżycia do wariantu blokującego,
+gdy atak bez bloku zostawia gracza przy niskim życiu (progi: ≤2 → +6,
+≤5 → +4, ≤8 → +2; wysokie życie = wycena bez zmian — brak regresji).
+
+**C (9e9ad1c) — Bone Splinters: osobne wybory [UI]:** `legalSpellCasts`
+enumerowało iloczyn kartezjański (cel × `sacrificeTargetId`) jako
+osobne komendy — modal pokazywał KAŻDĄ kombinację (3×3 = 9 wierszy).
+Fix: `renderMultiTargetWizard` (wzorzec M195/C1 Fireball) zyskał wymiar
+POŚWIĘCENIA (slot `cmd.sacrificeTargetId`) — dwa ekrany „ptaszki”
+obok siebie; grupa kwalifikuje się, gdy wszystkie warianty niosą
+`sacrificeTargetId` + ≥1 cel + ≥2 unikalnych poświęceń (Lash of the
+Balrog z payAlt zostaje listą). 12 testów
+`test/m257r5-uwagi-testow.test.js` (RED→GREEN).
+
+**M253 (1eda1bd):** transkrypt benchmarku wdarł się do repo w commicie
+r5/B (fail CI) — usunięty + gitignore.
+
+**Bramki (per commit):** A 3768/3768 (2916.5 kB); B 3771/3771
+(2917.3 kB; benchmark quick 85.0%); C **3787/3787** (2924.8 kB).
 
 ## Sesja 2026-08-30 — r4 „Uwagi z testów”: fix A (CR 508.1), strojenie rodziny aura, pętla jakości bota z bilansem 0 defektów (arena/01a04e98, PR #88)
 
