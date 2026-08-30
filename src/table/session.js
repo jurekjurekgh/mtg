@@ -1709,7 +1709,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // karcie (Springbloom Druid), ale używa jej też Roiling Regrowth —
       // log pisał więc cudzą nazwę („co to za druid?”). Nazwa idzie z danych
       // zdarzenia; brak źródła = neutralny opis, nigdy zaszyta nazwa.
-      case 'springbloom_choice_required': return `${srcName(e)}${whoN(e.controllerId)} może poświęcić land`;
+      // M258/F5: Roiling Regrowth (obowiązkowe „Sacrifice a land.") nie jest
+      // „may" — log rozróżnia (oś 2: log to jedyne źródło wiedzy gracza).
+      case 'springbloom_choice_required':
+        return `${srcName(e)}${whoN(e.controllerId)} ${e.mandatory ? 'musi poświęcić ląd' : 'może poświęcić land'}`;
       // M201/C1: jeden czasownik po podmiocie (druga część jako fraza
       // rzeczownikowa) — inaczej „Poświęcasz land — szuka…”.
       // M202/C (uwaga właściciela): log mówił tylko „poświęca land”, więc przy

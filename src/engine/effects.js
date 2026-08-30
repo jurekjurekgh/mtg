@@ -4576,7 +4576,21 @@ function markTemporaryExile(state, exileId, sourceObject) {
       const obj = state.objects.get(id);
       return obj && obj.controllerId === controllerId && (obj.kind === 'land' || (obj.types ?? []).includes('Land'));
     });
-    if (lands.length === 0) return; // No land to sacrifice — do nothing
+    if (lands.length === 0) {
+      // M258/F4 (Żywy Tester, CR 101.3/608.2b): „Sacrifice a land." Roilinga
+      // to INSTRUKCJA rozstrzygnięcia, nie koszt dodatkowy — niemożliwą
+      // instrukcję pomija się, ale kolejne („Search...") trzeba wykonać.
+      // Opcjonalny Springbloom Druid („you may... If you do") bez lądu
+      // nie robi nic — bez szukania.
+      if (!effect.mandatory) return;
+      queueSearchChoice(state, sourceObject, {
+        qualifier: { types: ['Basic', 'Land'] },
+        destination: 'battlefield',
+        entersTapped: true,
+        chain: { remaining: 1, qualifier: { types: ['Basic', 'Land'] }, destination: 'battlefield', entersTapped: true },
+      });
+      return;
+    }
     state.pendingSpringbloom = {
       controllerId,
       sourceId: sourceObject.id,
@@ -4597,6 +4611,9 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // warstwa opisu pisała w logu cudzą nazwę (ADR 0002 w warstwie opisu).
     state.events.push(event('springbloom_choice_required', {
       controllerId, cardId: sourceObject?.cardId ?? null,
+      // M258/F5: opcjonalność poświęcenia to informacja regułowa — log nie
+      // może mówić „może" przy obowiązkowym poświęceniu (Roiling Regrowth).
+      mandatory: Boolean(effect.mandatory),
     }));
     return;
   }
