@@ -7024,7 +7024,8 @@ Testy C5–C8 i W1–W9; sanity 5 pełnych partii botów bez odrzuceń komend.
 Nowa lekcja **L95** (checklista integracji decyzji blokującej).
 
 **Kolejny krok:** ewentualny nowy batch kart / kolejna runda Żywego
-Testera / decyzje D3–D4 z HANDOFF_2026-08-29 (po stronie właściciela).
+Testera (D3/D4 z HANDOFF_2026-08-29 zamknięte decyzją właściciela —
+porzucone jako bezzasadne).
 
 ## Zasada aktualizacji
 

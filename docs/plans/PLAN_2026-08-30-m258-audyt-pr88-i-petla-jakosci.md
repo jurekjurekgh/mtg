@@ -170,8 +170,8 @@ poprawny** — 10 mutacji (M1–M7, M9, M10 red; M8 obserwacja), bot-benchmark
   walidacja) i KOLEJNOŚĆ bramek.
 - **L61:** test regresyjny dopiero po pokazaniu go czerwonym (mutacja/stash).
 - **Pełny B0 nie odpalam** (ADR 0018/0025) — wystarczy próbka szybka/slow.
-- **D3/D4** (decyzje właściciela z audytu PR #87) — pozostają otwarte; nie
-  dotykam ADR-ów bez decyzji.
+- **D3/D4** (zgłoszenia procesowe z audytu PR #87) — zamknięte decyzją
+  właściciela 2026-08-30 (bezzasadne/nieistotne — porzucone).
 - `edit_file` psuje polskie znaki — edycje plików PL przez `python3`
   (ENVIRONMENT §4).
 

@@ -130,7 +130,7 @@ silniku w ogóle** (żadna karta kolekcji jej nie ma), a
 płacisz/nie przy celowaniu — nowa klasa decyzji, bot + UI), albo (b)
 uczciwie odnotować w `support.limitations` („cloak bez ward {2}").
 Opcja (a) to feature — zostawiam właścicielowi (równolegle: D3/D4 z
-HANDOFF_2026-08-29). Praktyczny wpływ obecnie zerowy (ward nigdy nie
+HANDOFF_2026-08-29 — później zamknięte przez właściciela jako bezzasadne). Praktyczny wpływ obecnie zerowy (ward nigdy nie
 wchodzi do gry — nikt nie celuje w cudzego Morph inaczej niż już jest).
 
 **ROZSTRZYGNIĘCIE (2026-08-30, po Etapie 2.3):** właściciel wybrał (a) —
