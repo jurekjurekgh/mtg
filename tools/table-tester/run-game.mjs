@@ -696,6 +696,76 @@ export async function runTableGame({
     // cele (N)"), potem zatwierdź; gdy nie da się złożyć — anuluj.
     const multiConfirm = $$('#choice-request button').find((b) => /multi-target-confirm/.test(String(b.className)));
     if (multiConfirm) {
+      // M258 (pętla jakości, PR #89): KREATOR „CEL + POŚWIĘCENIE (KOSZT)"
+      // (sacMode z M257-r5/C — Lash of the Balrog). Intro tego kreatora nie
+      // niesie liczby („wskaż cel czaru oraz stwora do poświęcenia (koszt)"),
+      // więc `needed` wychodziło 1: po kliknięciu CELU Zatwierdź dalej gaśnie
+      // (brakuje OFIARY), a drugi klik pętla M203 cofała jako „ponad limit" —
+      // 5 prób i przerwana partia bez transkryptu, więc kreator poświęcenia
+      // z PR #88 nie był NIGDY przećwiczony na żywym stole. Wiersze celu to
+      // .multi-target-row BEZ slot-row, ofiary — .multi-target-slot-row.
+      // Polityka: legalna para cel+ofiara (najpierw omijamy parę cel=ofiara,
+      // czyli pewny fizzle CR 601.2c), legalność potwierdza silnik (L48).
+      if (/do poświęcenia \(kosz/.test(intro)) {
+        const allToggles = $$('#choice-request .multi-target-toggle').filter((b) => !b.disabled);
+        const isSacRow = (b) => String(b.parentElement?.className ?? '').includes('multi-target-slot-row');
+        const targetRows = allToggles.filter((b) => !isSacRow(b));
+        const sacRows = allToggles.filter(isSacRow);
+        const nameOfRow = (b) => text(b).replace(/^\s*\[[ x]?\]\s*/, '').trim();
+        logL(`  [sacrifice wizard] ${intro.slice(0, 90)} — celów ${targetRows.length}, ofiar ${sacRows.length}`);
+        const findConfirm = () => $$('#choice-request button')
+          .find((b) => /multi-target-confirm/.test(String(b.className)));
+        let onlyPair = null; // jedyna legalna para, jeśli bywa fizzle (cel = ofiara)
+        let played = false;
+        for (const t of targetRows) {
+          t.click();
+          await sleep(20);
+          for (const s of sacRows) {
+            s.click();
+            await sleep(20);
+            const c = findConfirm();
+            if (c && !c.disabled) {
+              if (nameOfRow(s) !== nameOfRow(t)) {
+                c.click();
+                await sleep(80);
+                logL(`  [sacrifice wizard] rzucono: cel „${nameOfRow(t)}", ofiara „${nameOfRow(s)}"`);
+                played = true;
+                break;
+              }
+              onlyPair = { t, s };
+            }
+            s.click();
+            await sleep(20);
+          }
+          if (played) break;
+          t.click(); // cofnij cel, próbuj następnego
+          await sleep(20);
+        }
+        if (!played && onlyPair) {
+          onlyPair.t.click();
+          await sleep(20);
+          onlyPair.s.click();
+          await sleep(20);
+          const c = findConfirm();
+          if (c && !c.disabled) {
+            c.click();
+            await sleep(80);
+            logL('  [sacrifice wizard] rzucono (jedyna legalna para to fizzle: cel = ofiara)');
+            played = true;
+          }
+        }
+        if (played) { multiWizardFailures = 0; multiWizardLastIntro = null; return true; }
+        multiWizardFailures = intro === multiWizardLastIntro ? multiWizardFailures + 1 : 1;
+        multiWizardLastIntro = intro;
+        logL(`  [sacrifice wizard] nie złożono legalnej pary (celów ${targetRows.length}, ofiar ${sacRows.length})`
+          + ` — anuluję (próba ${multiWizardFailures}/${MULTI_WIZARD_STUCK_LIMIT})`);
+        if (multiWizardFailures >= MULTI_WIZARD_STUCK_LIMIT) {
+          throw new Error(`Kreator poświęcenia nie do zamknięcia po ${multiWizardFailures} próbach: ${intro.slice(0, 120)}`);
+        }
+        const cancelSac = $$('#choice-request button').find((b) => /multi-target-cancel/.test(String(b.className)));
+        if (cancelSac) { cancelSac.click(); await sleep(60); }
+        return true;
+      }
       // M206: wiersze kreatora to PRZYCISKI `.multi-target-toggle` ze stanem
       // w tekście („[ ] Mountain" / „[x] Mountain"), a NIE `<input
       // type=checkbox>` w `.choice-request-option`. Poprzedni selektor nie
