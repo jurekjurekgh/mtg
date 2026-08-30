@@ -3386,7 +3386,12 @@ export function renderHoverPreview(host, info, hoverMode = 'scryfall', { showCyc
 export function createScryfallHover(els) {
   if (TOUCH_DEVICE || !els?.hoverPreview) return null;
   return {
-    start: (info, e) => showHoverPreviewAt(els, info, e, 'scryfall'),
+    start: (info, e) => showHoverPreviewAt(els, info, e, 'scryfall',
+      // M258/A2 (audyt PR #88): tor STAŁY nie cykluje scrollem — bez mylącej
+      // podpowiedzi. Opcja showCycleHint istniała od r5/A, ale nikt jej nie
+      // przekazał (martwa opcja, L67) — na kartach z artId miniaturka w
+      // „Rozgrywce" obiecywała „scroll zmienia tor", którego nie było.
+      { showCycleHint: false }),
     end: () => { if (els.hoverPreview) els.hoverPreview.className = 'hover-preview'; },
   };
 }
@@ -3628,10 +3633,10 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
  * przy kursorze. Wspólna ścieżka hoveru stołu (tryby scryfall/FOT/KON,
  * cyklowanie scrollem) i miniaturek w „Rozgrywce” (r5/A — tor stały).
  */
-function showHoverPreviewAt(els, info, e, mode) {
+function showHoverPreviewAt(els, info, e, mode, { showCycleHint = true } = {}) {
   if (!els.hoverPreview) return;
   clear(els.hoverPreview);
-  renderHoverPreview(els.hoverPreview, info, mode);
+  renderHoverPreview(els.hoverPreview, info, mode, { showCycleHint });
   const shape = hoverPreviewShape(mode);
   const x = (e && typeof e.clientX === 'number') ? e.clientX : 0;
   const y = (e && typeof e.clientY === 'number') ? e.clientY : 0;
