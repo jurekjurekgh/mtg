@@ -517,6 +517,8 @@ export function zoneLabel(zone) {
  */
 export const KEYWORD_EVENT_LABELS = Object.freeze({
   toxic: 'toksyczny (combat damage graczowi = poison)',
+  // M258/F3 (CR 702.21): kwantyfikator dopłaty dokleja etykieta zdarzenia.
+  ward: 'ward (przeciwnik dopłaca albo czar skontrowany)',
   echo: 'echo (zapłać w swoim upkeepie albo poświęć)',
   fabricate: 'fabricate (liczniki +1/+1 albo tokeny Servo)',
   haste: 'pośpiech', flying: 'latanie', trample: 'zadeptywanie', reach: 'zasięg',
@@ -1490,6 +1492,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'counter_pay_resolved': return e.paid
         ? `${nameOf(e.cardId)}: kontroler płaci — czar zostaje na stosie`
         : `${nameOf(e.cardId)}: bez zapłaty — czar skontrowany`;
+      // M258/F3 — ward (CR 702.21): decyzja dopłaty przy celowaniu w
+      // permanent z ward; skontrowany czar/zdolność też trafia do logu.
+      case 'ward_choice_required': return `${nameOf(e.cardId)} celuje w ${nameOfObject(e.wardSourceId)} — ward: zapłać {${e.amount}} albo czar skontrowany (${decisionOwnerNote(e.playerId)})`;
+      case 'ward_pay_resolved': return e.paid
+        ? `${nameOf(e.cardId)}: kontroler płaci {${e.amount}} — ward ominięty, czar zostaje`
+        : `${nameOf(e.cardId)}: bez zapłaty — skontrowany przez ward`;
       case 'pay_or_sacrifice_resolved': {
         // M184/Z5: przy poświęceniu obiekt już zmienił id (grób) — nazwa
         // z cardId (LKI), fallback na nameOfObject dla starych zdarzeń.

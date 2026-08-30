@@ -1671,6 +1671,10 @@ export function queueActivatedAbilityToStack(state, { playerId, objectId, abilit
   const stackGrantKeywords = collectGrantKeywords(stackEffectList);
   const activated = event('ability_activated', {
     playerId, objectId: effectSourceId, cardId: entry.cardId, abilityIndex,
+    // M258/F3 (ward): id WPISU na stosie — trigger ward musi wiedzieć, co
+    // kontrować przy odmowie zapłaty (zdarzenie niesie cele, ale nie id
+    // obiektu stosu; objectId to źródło zdolności, nie wpis).
+    stackEntryId: id,
     keyword: ability.keyword ?? null,
     effectTypes: stackEffectList.map((e) => e?.type).filter(Boolean),
     // M150/C2: kolory wyprodukowanej many w logu.

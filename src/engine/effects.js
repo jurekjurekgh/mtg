@@ -794,6 +794,33 @@ export function creaturesNotControlledByOwner(state) {
  * @param {object} sourceObject obiekt źródła (kontroler tokenów/obrażeń)
  * @param {string[]} targets id celów (dla damage/pump pierwszy cel)
  */
+/**
+ * M258/F3 — WARD (CR 702.21): kontrowanie obiektu na stosie. Czar-karta
+ * wraca do grobu właściciela (jak counter_spell, CR 701.2a); wpis
+ * zdolności (activated/trigger — pseudo-obiekt) znika ze stosu bez strefy
+ * docelowej: skontrowana zdolność po prostu nic nie robi.
+ */
+export function counterStackObject(state, stackId, { counteredBy = null, counteredByCardId = null, byWard = false } = {}) {
+  const object = state.objects.get(stackId);
+  if (!object || object.zone !== 'stack') return null;
+  if (object.activatedEntry || object.triggerEntry) {
+    state.zones.stack = state.zones.stack.filter((id) => id !== stackId);
+    state.objects.delete(stackId);
+    state.events.push(event('spell_countered', {
+      fromId: stackId, toId: null, cardId: object.cardId ?? null,
+      controllerId: object.controllerId, counteredBy, counteredByCardId, byWard,
+    }));
+    return object;
+  }
+  const graveId = `grave-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, stackId, 'graveyard', graveId);
+  state.events.push(event('spell_countered', {
+    fromId: stackId, toId: graveId, cardId: moved.cardId,
+    controllerId: moved.controllerId, counteredBy, counteredByCardId, byWard,
+  }));
+  return moved;
+}
+
 export function applyEffect(state, effect, sourceObject, targets = [], context = {}) {
   // X-cost czary (Consume Spirit, Epic Experiment — Batch 30): efekty mogą
   // użyć amount: 'X' (lub amountFrom: 'X') — wartość X z obiektu stosu
@@ -1582,11 +1609,16 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       power: 2, toughness: 2,
       types: ['Creature'],
       subtypes: [],
-      keywords: [],
+      // M258/F3 (CR 702.75): zakryty permanent to stwór 2/2 z WARD {2} —
+      // pełna mechanika CR 702.21 (decyzja właściciela: żadnych
+      // limitations), nie wpis w support.limitations. Keyword + kwota
+      // (czyta wardAmountOf).
+      keywords: ['ward'],
       abilities: [],
       colors: [],
       cardName: null,
       manaCost: 0,
+      ward: 2,
       summoningSickness: true,
       tapped: false,
     });

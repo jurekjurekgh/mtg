@@ -137,6 +137,9 @@ const PAYMENT_DECISION_TYPES = new Set([
   'resolve_pay_or_sacrifice',
   'resolve_optional_pay_choice',
   'resolve_counter_pay_choice',
+  // M258/F3 (ward, CR 702.21): dopłata ward — spendMana, więc te same
+  // reguły wyboru źródeł co pozostałe decyzje płatności.
+  'resolve_ward_pay_choice',
 ]);
 
 const WIZARD_CAST_TYPES = new Set(['cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape', 'cast_adventure', 'cast_adventure_creature']);

@@ -609,6 +609,19 @@ export function effectiveSubtypesOnBattlefield(state, object) {
  * Efektywne keywordy obiektu = własne + tymczasowe „do końca tury"
  * (keywordGrants — np. backup, CR 702.165a) + nadane przez załączniki.
  */
+/**
+ * M258/F3 — WARD (CR 702.21): kwota dopłaty dla przeciwnika celującego.
+ * Zwraca null, gdy obiekt nie ma warda (keyword czytany EFEKTYWNIE —
+ * granty/utrata), inaczej kwotę many z pola `ward`; domyślnie 2, bo
+ * jedyne źródło w katalogu to zakryte permanenty (cloak/disguise,
+ * CR 702.75: „2/2 creature with ward {2}").
+ */
+export function wardAmountOf(object, state = null) {
+  if (!object) return null;
+  if (!effectiveKeywords(object, state).includes('ward')) return null;
+  return object.ward ?? 2;
+}
+
 export function effectiveKeywords(object, state = null) {
   // CR 708.2a — face-down permanent (morph/megamorph) ma TYLKO cechy, które
   // sam określa: 2/2, bez nazwy, bez zdolności i bez keywordów. Keywordy
@@ -628,6 +641,12 @@ export function effectiveKeywords(object, state = null) {
     if ((object.counters ?? {}).flying > 0) counterKeywords.push('flying');
     if ((object.counters ?? {}).deathtouch > 0) counterKeywords.push('deathtouch');
     if ((object.counters ?? {}).lifelink > 0) counterKeywords.push('lifelink');
+    // M258/F3 (CR 702.75 + 702.21): zakryty permanent z CLOAK/DISGUISE to
+    // 2/2 Z WARD {2} — ward jest częścią definicji zakrycia (jak staty 2/2),
+    // a nie drukowanym keywordem zakrywanej karty, więc CR 708.2a go NIE
+    // tłumi (ruling cloak: „Other effects can still grant it any
+    // characteristics it doesn't have"). Morph bez warda: pole ward = null.
+    if (object.ward != null) counterKeywords.push('ward');
     return counterKeywords;
   }
   const base = [...(object.keywords ?? [])];

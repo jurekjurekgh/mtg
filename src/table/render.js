@@ -85,6 +85,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_pay_or_sacrifice: 'Zapłata albo poświęcenie',
   resolve_optional_pay_choice: 'Dobrowolna dopłata',
   resolve_counter_pay_choice: 'Zapłać albo czar skontrowany',
+  resolve_ward_pay_choice: 'Ward — dopłata albo kontr',
   resolve_moonlit_choice: 'Moonlit (wybór efektu)',
   resolve_damage_target: 'Cel obrażeń',
   resolve_reveal_order: 'Kolejność kart na wierzchu',
@@ -407,6 +408,7 @@ export function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_pay_or_sacrifice') return 'resolve_pay_or_sacrifice';
   if (command.type === 'resolve_optional_pay_choice') return 'resolve_optional_pay_choice';
   if (command.type === 'resolve_counter_pay_choice') return 'resolve_counter_pay_choice';
+  if (command.type === 'resolve_ward_pay_choice') return 'resolve_ward_pay_choice';
   if (command.type === 'resolve_moonlit_choice') return 'resolve_moonlit_choice';
   if (command.type === 'resolve_damage_target') return 'resolve_damage_target';
   if (command.type === 'resolve_reveal_order') return 'resolve_reveal_order';
@@ -731,6 +733,8 @@ const ABILITY_KEYWORD_LABELS = Object.freeze({
 export const KEYWORD_LABELS = Object.freeze({
   intimidate: 'zastraszenie (blok: artefakty/wspólny kolor)',
   toxic: 'Toksyczny (combat damage graczowi = poison)',
+  // M258/F3 (CR 702.21): kwantyfikator dokleja keywordLine („Ward {2}").
+  ward: 'Ward (przeciwnik dopłaca albo czar skontrowany)',
   echo: 'Echo (w pierwszym swoim upkeepie zapłać koszt echa albo poświęć)',
   fabricate: 'Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo)',
   flying: 'Latanie', vigilance: 'Czujność', transform: 'Transform', reach: 'Zasięg',
@@ -1493,7 +1497,11 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
 
 /** Tekst reguł do pola karty: keywordy, efekty czaru lub opis zdolności. */
 export function rulesText(info) {
-  if (info.faceDown) return '';
+  // M258/F3 (cloak, CR 702.75): zakryty permanent z ward {2} — ward jest
+  // cechą JAWNĄ zakrycia (jak staty 2/2), więc kafel go pokazuje mimo
+  // maskowania reszty tożsamości (CR 708.2a tłumi druk, nie definicję
+  // zakrycia). Zwykły morph bez warda: linia pusta jak dotąd.
+  if (info.faceDown && info.ward == null) return '';
   // M229 (audyt Żywym Testerem, Awaken the Sleeper): keywordy NADANE (granty do
   // EOT, załączniki) mają własny badge na kaflu (info.grantedKeywords, render
   // ~3026). Linia reguł pokazuje więc tylko keywordy WYDRUKOWANE — inaczej
@@ -1503,7 +1511,7 @@ export function rulesText(info) {
   const granted = new Set(info.grantedKeywords ?? []);
   const keywordLine = (info.keywords ?? [])
     .filter((kw) => !granted.has(kw))
-    .map((kw) => KEYWORD_LABELS[kw] ?? kw).join(' ');
+    .map((kw) => (kw === 'ward' && info.ward != null ? `Ward {${info.ward}}` : KEYWORD_LABELS[kw] ?? kw)).join(' ');
   const abilityLine = info.abilities && info.abilities.length
     ? info.abilities.map((a) => {
       if (a.type === 'triggered') return describeTriggered(a, info.controllerId);
@@ -1712,6 +1720,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_pay_or_sacrifice: 'Zapłata albo poświęcenie',
   resolve_optional_pay_choice: 'Dobrowolna dopłata',
   resolve_counter_pay_choice: 'Zapłać albo czar skontrowany',
+  resolve_ward_pay_choice: 'Ward — dopłata albo kontr',
   resolve_moonlit_choice: 'Moonlit — wybór efektu',
   resolve_reveal_order: 'Kolejność kart na wierzchu biblioteki',
 });
@@ -2554,6 +2563,14 @@ export function commandLabel(cmd, session, view) {
       if (cmd.pay) return `Zapłać${price ? ` ${price}` : ''} — ${spell} zostaje na stosie`;
       return `Nie płać — ${spell} zostaje skontrowany`;
     }
+    case 'resolve_ward_pay_choice': {
+      // M258/F3 — ward (CR 702.21): dopłać, żeby czar/zdolność przeszła,
+      // albo pozwól się skontrować. Cena i cel (obiekt na stosie) w komendzie.
+      const spell = cmd.targetId ? nameOfObjectId(cmd.targetId) : 'czar';
+      const price = cmd.cost != null && cmd.cost > 0 ? manaCostHtml(`{${cmd.cost}}`) : null;
+      if (cmd.pay) return `Zapłać${price ? ` ${price}` : ''} (ward) — ${spell} przechodzi`;
+      return `Nie płać (ward) — ${spell} skontrowany`;
+    }
     case 'resolve_food_choice': {
       // Insatiable Appetite: poświęć Food za większy buff albo nie.
       return cmd.sacrifice ? 'Poświęć Food (+5/+5)' : 'Bez poświęcenia Food (+3/+3)';
@@ -2928,7 +2945,9 @@ export function cardInfo(session, object, combat = null) {
   // załączony equipment pozostaje „Artifact — Equipment".
   const attachedAura = Boolean(object.attachedTo) && (object.kind === 'aura' || object.bestow || object.aura);
   const attachedEquipment = Boolean(object.attachedTo) && !attachedAura;
-  const keywordsNow = faceDown ? [] : (object.keywords?.length ? object.keywords : (details.keywords || []));
+  // M258/F3: ward zakrytego (cloak) jest jawny — keyword w widoku
+  // (reszta keywordów tłumiona przez CR 708.2a jak dotąd).
+  const keywordsNow = faceDown ? (object.ward != null ? ['ward'] : []) : (object.keywords?.length ? object.keywords : (details.keywords || []));
   return {
     objectId: object.id,
     cardId: faceDown ? null : cardId,
@@ -2956,6 +2975,8 @@ export function cardInfo(session, object, combat = null) {
     attachedAura,
     attachedEquipment,
     keywords: keywordsNow,
+    // M258/F3 (CR 702.21): kwota ward — keywordLine dokleja „Ward {2}".
+    ward: object.ward ?? null,
     // M168/B (uwaga właściciela): AKTYWNE zmiany na kafelu jako badge'e.
     // M175/A3: nadane keywordy jedzie JAWNIE z playerView (`grantedKeywords`
     // = efektywne − wydrukowane ze stanu) — stara różnica „effectiveKeywordsOf
