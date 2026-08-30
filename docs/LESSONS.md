@@ -34,6 +34,27 @@ M208.
 
 ---
 
+## L95 (2026-08-30) — Nowa decyzja blokująca to NIE handler: checklista ~10 punktów integracji; pierwsze redy testów to brakujące REJESTRY
+
+**Objaw (M258/F3 — ward):** mechanika resolve_ward_pay_choice działała
+regułowo po napisaniu handlera w game-state.js — a testy W2 padały na
+`invalid_command` (COMMAND_TYPES), potem na wyjątek w event() (EVENT_TYPES).
+Kolejne pominięcia czekały dalej: 6 list-strażników priorytetu (4274/5227/
+6118/6303/6420/6429 — pominięcie = nadpisanie priorytetu i zakleszczenie),
+klasyfikator poleceń OBU botów (heuristic + aggro), PAYMENT_DECISION_TYPES
+kreatora many, describeGameEvent, 3 mapy etykiet render.js + opis komendy.
+
+**Reguła:** „dodaję decyzję blokującą" = checklista: (1) stan pendingX
+w createGameState, (2) detektor decyzji blokujących, (3) bramka
+execute (z manaGeneratingCommandFor), (4) WSZYSTKIE strażniki priorytetu
+— grep po istniejącej decyzji-rodzeństwie (np. pendingCounterPay) i
+dopisz wszędzie tam, gdzie jest ono, (5) EVENT_TYPES + COMMAND_TYPES
+w protocol/types.js (walidacja rzuca zanim kontroler dojdzie do
+handlera!), (6) oferta legalCommands, (7) klasyfikator + wycena obu
+botów, (8) PAYMENT_DECISION_TYPES w mana-wizard, (9) describeGameEvent,
+(10) etykiety render. Test E2E przez execute() (nie przez helpery)
+łapie 1–2 natychmiast; greppowalne rodzeństwo łapie resztę.
+
 ## L94 (2026-08-30) — Fabryka z destrukturyzacją configu gubi nieznane pola PO CICHU; kontrakt pinuje się testem przez REALNĄ fabrykę
 
 **Objaw (CR hunting M258, Etap 2.3):** `create_copy_token` (effects.js)

@@ -136,6 +136,15 @@ poprawny** — 10 mutacji (M1–M7, M9, M10 red; M8 obserwacja), bot-benchmark
       build 56 modułów / 2941.6 kB; PROJECT_HISTORY + LESSONS (L94)
       zaktualizowane.
 
+      DODATKOWO (po decyzji właściciela „nie akceptuję żadnych
+      limitations"): (1) `b481387` — likwidacja „znanego ograniczenia"
+      z 2.3 (MV tokenu-kopii po transformacji w przód; CR 707.8a +
+      202.3b; testy C5–C8); (2) `f602ee4` — F3 ZAMKNIĘTE: WARD jako
+      pełna mechanika CR 702.21 (cloak = 2/2 z ward {2}; decyzja
+      blokująca resolve_ward_pay_choice; testy W1–W9 + sanity 5 pełnych
+      partii botów). Suite 3836/3836 (test) i 3846/3846 (test:all),
+      build 2957.4 kB; LESSONS L95.
+
 ### Kryteria ukończenia Etapu 2
 
 - ≥1 runda Żywego Testera z pełnym raportem (znaleziska/fałszywe alarmy

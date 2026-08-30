@@ -1,4 +1,4 @@
-# AUDYT ŻYWYM TESTEREM M258 (2026-08-30) — pętla jakości PR #89: 2 silnikowe + 1 narzędziowe znalezisko naprawione, 1 otwarte (ward)
+# AUDYT ŻYWYM TESTEREM M258 (2026-08-30) — pętla jakości PR #89: 2 silnikowe + 1 narzędziowe znalezisko naprawione; F3 (ward) domknięte decyzją właściciela
 
 **Sesja:** `arena/01a0526d-mtg` (PR #89). **Etap:** 2.2 planu
 `docs/plans/PLAN_2026-08-30-m258-audyt-pr88-i-petla-jakosci.md` — Żywy
@@ -116,7 +116,7 @@ kolejnych — po rozstrzygnięciu poprzedniej; bramka madness i
 - **F5:** log „może poświęcić land" także przy obowiązkowym poświęceniu —
   fałszywe „may" (oś 2). Zdarzenie niesie `mandatory`, opis rozgałęzia.
 
-### F3 (OTWARTE — decyzja właściciela): cloak bez ward {2} (Veiled Ascension)
+### F3 (NAPRAWIONE — `f602ee4`, decyzja właściciela „nie akceptuję żadnych limitations"): cloak bez ward {2} (Veiled Ascension)
 
 Veiled Ascension (MKC) cloakuje wierzch biblioteki. Implementacja poprawna
 co do istoty (prawdziwa karta idzie na stół twarzą w dół, 2/2, lata z
@@ -132,6 +132,15 @@ uczciwie odnotować w `support.limitations` („cloak bez ward {2}").
 Opcja (a) to feature — zostawiam właścicielowi (równolegle: D3/D4 z
 HANDOFF_2026-08-29). Praktyczny wpływ obecnie zerowy (ward nigdy nie
 wchodzi do gry — nikt nie celuje w cudzego Morph inaczej niż już jest).
+
+**ROZSTRZYGNIĘCIE (2026-08-30, po Etapie 2.3):** właściciel wybrał (a) —
+„Nie akceptuję żadnych limitations". Ward wdrożony jako PEŁNA mechanika
+CR 702.21 (commit `f602ee4`): trigger ward nad czarem/zdolnością
+celującą (LIFO), decyzja blokująca `resolve_ward_pay_choice` (zapłać
+albo kontr; bez many automatyczny kontr), kontr czarów i ZDOLNOŚCI
+(aktywowanych i triggerowanych z celem), boty, kreator many, log i
+kafel („Ward {2}" na zakrytym). Testy W1–W9 + sanity 5 pełnych partii
+botów (0 odrzuceń komend; zapłaty i kontry obserwowane).
 
 ## Fałszywe alarmy (odrzucone po weryfikacji — L57)
 
@@ -198,13 +207,18 @@ Airborne (koszt przedni 0 = MV 0 „przypadkiem" zgodne); Jwari kopiuje
 wyłącznie Ally, więc C3/C4 wchodzą wprost do handlera (kontrakt generyczny,
 filtr Ally siedzi w enumeracji spells.js).
 
-**Znane ograniczenie (dokumentowane, nie naprawiane — L57):** token-kopia
+**Znane ograniczenie → LIKWIDOWANE (`b481387`, decyzja właściciela „nie akceptuję żadnych limitations"):** pierwotna wersja tego rozdziału
 tylnej twarzy, który przekształci się z powrotem w przód (craft na kopii),
 zachowuje MV 0 zamiast kosztu przedniej strony — efekty `transform`/
 `craft_transform` celowo nie ruszają `manaCost` (trzymają 712.8e: permanent
 z tyłem w górze ma MV przedniej strony). Poprawny model wymagałby odrębnego
 pola MV od pola kosztu; scenariusz podwójnie wąski (kopia przekształconego
 Lodestone Needle + craft NA KOPII) — nie opłaca się.
+
+Po decyzji właściciela ograniczenie usunięte: payload transformTo dostał jednolitą
+semantykę (manaCost = MV obiektu z TĄ twarzą w górę = koszt przedniej, CR 202.3b
+zd. 1), a wszystkie ścieżki zmiany twarzy (transform, craft, exile_return,
+reset K5, nightbound) ją aplikują symetrycznie. Testy C5–C8 RED→GREEN.
 
 **Rodzina pay-or-sacrifice (kandydat #2 planu 2.3) — zweryfikowana CZYSTA:**
 wszystkie trzy człony rodziny strzegą płatności funkcją `producibleMana`/
@@ -214,3 +228,26 @@ poświęcenie, CR 118.12), `counter_spell_unless_pays` (Frightful Delusion —
 auto-kontr + discard), `fireOrQueuePay` (Panic Spellbomb/Zoraline — trigger
 nie odpala). Brak dywergencji do naprawienia.
 
+
+
+## Etap 2.3b + F3 — decyzja właściciela: „Nie akceptuję żadnych limitations"
+
+Po zamknięciu Etapu 2.3 właściciel odrzucił OBIE pozycje zostawione do
+decyzji (ograniczenie MV tokenu-kopii + F3 jako support.limitations).
+Obie wdrożone jako pełne reguły:
+
+| Pozycja | Commit | Zakres |
+|---|---|---|
+| MV dwustronnych tokenów-kopii (CR 707.8a + 202.3b) | `b481387` | jednolita semantyka payloadu transformTo (manaCost = MV z daną twarzą w górę); transform/craft/exile_return/K5-reset/nightbound aplikują ją symetrycznie; testy C5–C8 |
+| WARD (CR 702.21) — cloak 2/2 z ward {2} (CR 702.75) | `f602ee4` | trigger nad czarem/zdolnością celującą (LIFO, CR 603.3), decyzja blokująca resolve_ward_pay_choice, auto-kontr bez many, kontr czarów i zdolności (aktywowanych + triggerowanych z celem), effectiveKeywords nie tłumi warda dla faceDown, boty (heuristic/aggro), kreator many, log, kafel „Ward {2}"; testy W1–W9 |
+
+Weryfikacja: `npm test` **3836/3836**, `npm run test:all` **3846/3846**,
+build 56 modułów / **2957.4 kB**; sanity 5 pełnych partii botów na
+ravnica + 4× Veiled Ascension vs 4× Shock (seeds 71–75): 0 odrzuceń
+komend, ward odpala (decyzje zapłaty, zapłaty i kontry zaobserwowane).
+
+Nowa lekcja **L95**: nowa decyzja blokująca w silniku to NIE jeden
+handler — lista kontrolna punktów integracji (6 strażników priorytetu,
+EVENT_TYPES, COMMAND_TYPES, klasyfikatory obu botów, PAYMENT_DECISION_TYPES,
+log, 3 mapy render). Pierwsze dwa redy testów W2 to dokładnie pominięte
+wpisy w EVENT_TYPES/COMMAND_TYPES.

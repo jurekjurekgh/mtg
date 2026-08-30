@@ -6994,9 +6994,11 @@ srodziemie/mirrodin-wu; zendikar/worek-dziki — spoza BENCH_DECKS).
 - **F4+F5** (`3c7f33e`): Roiling Regrowth bez lądu na polu pomijał też
   szukanie (instrukcja ≠ koszt, CR 101.3/608.2b) + log mówił „może
   poświęcić" przy obowiązkowym poświęceniu (oś 2).
-- **F3 (OTWARTE):** cloak bez ward {2} (Veiled Ascension; mechanika ward
-  nie istnieje w silniku) — rekomendacja decyzji właściciela: wdrożyć ward
-  albo uczciwie odnotować w support.limitations.
+- **F3 (NAPRAWIONE — `f602ee4`):** cloak bez ward {2} — po decyzji
+  właściciela („nie akceptuję żadnych limitations") ward wdrożony jako
+  pełna mechanika CR 702.21 (trigger nad czarem/zdolnością celującą,
+  decyzja resolve_ward_pay_choice, auto-kontr bez many, kontr czarów
+  i zdolności, boty, kreator many, log, kafel).
 
 **Weryfikacja:** `npm test` **3819/3819** (+9 w sesji), build 56 modułów /
 2939.9 kB; mutacyjnie: deck.js → D1–D3 czerwone, objects.js → D3 czerwone.
@@ -7012,9 +7014,17 @@ zweryfikowana czysta (guardowie płatności przy kolejkowaniu). Nowa lekcja
 **L94** (cichy drop pól konfiguracyjnych w fabrykach). Szczegóły:
 `docs/audits/AUDYT_M258_ZYWY_TESTER_2026-08-30.md` (rozdział Etap 2.3).
 
-**Kolejny krok:** decyzja właściciela — F3 (ward przy cloak, Veiled
-Ascension: mechanika ward ALBO support.limitations) i ewentualny nowy
-batch kart / kolejna runda Żywego Testera.
+**Etap 2.3b + F3 (decyzja właściciela „nie akceptuję żadnych limitations"):**
+dwie pozycje zostawione jako „ograniczenia" wdrożone jako pełne reguły —
+(1) `b481387`: MV dwustronnych tokenów-kopii po transformacji z powrotem
+w przód (payload transformTo z jednolitą semantyką MV, aplikowany przez
+transform/craft/exile_return/K5-reset/nightbound; CR 707.8a + 202.3b);
+(2) `f602ee4`: WARD jako mechanika (CR 702.21, cloak = 2/2 z ward {2}).
+Testy C5–C8 i W1–W9; sanity 5 pełnych partii botów bez odrzuceń komend.
+Nowa lekcja **L95** (checklista integracji decyzji blokującej).
+
+**Kolejny krok:** ewentualny nowy batch kart / kolejna runda Żywego
+Testera / decyzje D3–D4 z HANDOFF_2026-08-29 (po stronie właściciela).
 
 ## Zasada aktualizacji
 
