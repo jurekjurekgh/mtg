@@ -87,6 +87,19 @@ export function installDeck(state, deck, { seed }) {
       renown: card.renown ?? null,
       treasureAltCost: card.treasureAltCost ?? null,
       additionalCost: card.additionalCost ?? null,
+      // M258 (Żywy Tester, L21/M146 — pięć deskryptorów ginących po cichu):
+      // echo (Bone Shredder), madness (Revolutionist, Terminal Agony),
+      // surge (Jwar Isle Avenger), toxic (Crawling Chorus), warp (Weftblade
+      // Enhancer). Helpery testowe robią `...gameObjectDataOf(def)`, więc
+      // testy jednostkowe były zielone, a w PRAWDZIWYCH partiach (ta ścieżka)
+      // mechaniki były martwe: Chorus bił bez trucizny (obserwowane na żywym
+      // stole seed 3004), Bone Shredder nie żądał echo, surge/warp/madness
+      // nie oferowały alternatywnych kosztów.
+      echo: card.echo ?? null,
+      madness: card.madness ?? null,
+      surge: card.surge ?? null,
+      toxic: card.toxic ?? null,
+      warp: card.warp ?? null,
       // Właściciel karty (CR 108.3) — jawny, żeby efekty „gains control of
       // all creatures they own" (Trostani Discordant) działały po zmianach
       // kontroli (reanimacja pod cudzą kontrolą).

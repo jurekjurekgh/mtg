@@ -145,6 +145,13 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
     // Crew Captain / enteredThisTurn: numer tury WEJŚCIA na pole bitwy.
     // Opuszczenie pola bitwy czyści flagę (nowy obiekt, CR 400.7).
     enteredOnTurn: toZone === 'battlefield' ? state.turn.number : null,
+    // M258 (Żywy Tester): ECHO (CR 702.29) — znacznik „nieopłacone echo"
+    // stawiało dotąd WYŁĄCZNIE addObject (helpery testowe), a realna ścieżka
+    // rzutu (stos → pole bitwy przez ten choke point) go pomijała: Bone
+    // Shredder rzucony z ręki nigdy nie pytał o płatność echo. Wchodzący
+    // permanent z `echo` wchodzi z echoUnpaid (flicker/reanimacja też —
+    // to nowy obiekt, „came under your control since your last upkeep").
+    ...(toZone === 'battlefield' && object.echo != null ? { echoUnpaid: true } : {}),
     damage: 0, powerModifier: 0, toughnessModifier: 0, chosenTargets: null,
     // CR 110.6/400.7: tapnięcie to status PERMANENTU — istnieje wyłącznie na
     // polu bitwy. Nowy obiekt nie pamięta poprzedniego istnienia, a permanent
