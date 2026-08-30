@@ -189,6 +189,10 @@ export function createGameState({ seed, players }) {
     // koszt madness po odrzuceniu karty z madness do exile.
     // Wpis: { playerId, objectId, cardId, restorePriorityTo }.
     pendingMadnessCast: null,
+    // M258: kolejka decyzji madness — patrz promoteNextMadness (karty z
+    // madness odrzucone w JEDNEJ sekwencji odrzuceń rozstrzygają się po
+    // kolei, po zakończeniu sekwencji).
+    madnessQueue: [],
     // M166/D (Inferno Titan): kwoty podziału obrażeń między wybrane cele.
     pendingDamageDivision: null,
     // M174/E (Halo Forager): decyzja „zapłać {X} i rzuć instant/sorcery
@@ -1071,7 +1075,12 @@ function firstPendingDecision(state) {
   if (state.pendingSatyrLook) return { playerId: state.pendingSatyrLook.playerId, kind: 'satyrLook' };
   if (state.pendingEscapeExile) return { playerId: state.pendingEscapeExile.playerId, kind: 'escapeExile' };
   if (state.pendingRevealChoice) return { playerId: state.pendingRevealChoice.playerId, kind: 'revealChoice' };
-  if (state.pendingMadnessCast) return { playerId: state.pendingMadnessCast.playerId, kind: 'madnessCast' };
+  // M258: podczas TRWAJĄCEJ sekwencji odrzuceń pierwszą decyzją jest
+  // odrzucanie (bramka madness ma wyjątek dla resolve_discard_choice) —
+  // oferta, walidacja i priorytet muszą wskazywać to samo (L48).
+  if (state.pendingMadnessCast && !state.pendingDiscardChoice) {
+    return { playerId: state.pendingMadnessCast.playerId, kind: 'madnessCast' };
+  }
   if (state.pendingDamageDivision) return { playerId: state.pendingDamageDivision.playerId, kind: 'damageDivision' };
   if (state.pendingGraveFreeCast) return { playerId: state.pendingGraveFreeCast.playerId, kind: 'graveFreeCast' };
   if (state.pendingEpicExperiment) return { playerId: state.pendingEpicExperiment.playerId, kind: 'epicExperiment' };
@@ -2163,11 +2172,38 @@ export function execute(state, input) {
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
 
+  // M258 (Żywy Tester → regresja z pełnej partii bota): promocja następnej
+  // decyzji madness z kolejki. Odrzucenie karty z madness w SEKWENCJI
+  // odrzuceń (cleanup z kilkoma kartami, Cathartic Reunion) nie otwiera
+  // decyzji natychmiast — w przeciwnym razie bramka madness (wyżej w
+  // execute) odrzucała resolve_discard_choice kolejnej karty
+  // ('madness_unresolved'), choć legalCommands oferowały odrzucanie — bot
+  // kończył partię wyjątkiem. Karty kolejkują się; promocja następuje po
+  // zakończeniu sekwencji odrzuceń, a potem po każdej rozstrzygniętej
+  // decyzji (kolejność odrzuceń = kolejność decyzji).
+  function promoteNextMadness(state) {
+    const next = (state.madnessQueue ?? []).shift();
+    if (!next) return null;
+    state.pendingMadnessCast = next;
+    const ev = event('madness_ready_required', {
+      playerId: next.playerId, objectId: next.objectId, cardId: next.cardId,
+      cost: state.objects.get(next.objectId)?.madness?.cost ?? null,
+    });
+    state.events.push(ev);
+    return ev;
+  }
+
   // M158/Batch 39 (Revolutionist, CR 702.34): Madness — jednorazowa decyzja
   // po odrzuceniu karty z madness do exile: rzuć za koszt madness (ignorując
   // timing — rzut następuje w rozstrzyganiu zdolności, jak rebound) albo
   // przełóż kartę do cmentarza.
-  if (state.pendingMadnessCast) {
+  // M258: gdyby (teoretycznie) sekwencja odrzuceń była wciąż otwarta, gdy
+  // czeka decyzja madness, bramka przepuszcza resolve_discard_choice — oferta
+  // (gałąź odrzuceń jest wcześniejsza w łańcuchu legalCommands) i walidacja
+  // muszą się zgadzać (L48; ten sam wzorzec co komentarz przy rebound/
+  // undercity niżej w pliku).
+  if (state.pendingMadnessCast
+    && !(state.pendingDiscardChoice && cmd.type === 'resolve_discard_choice')) {
     if (cmd.type !== 'resolve_madness_cast') return reject('madness_unresolved');
     if (cmd.playerId !== state.pendingMadnessCast.playerId) return reject('madness_not_your_decision');
     const pending = state.pendingMadnessCast;
@@ -2183,6 +2219,8 @@ export function execute(state, input) {
       if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) {
         state.turn.priorityPlayerId = pending.restorePriorityTo;
       }
+      // M258: następna zakolejkowana karta z madness przejmuje decyzję.
+      promoteNextMadness(state);
       return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
     }
     if (!card || card.zone !== 'exile' || !card.madnessReady) return reject('illegal_madness_cast');
@@ -2200,6 +2238,8 @@ export function execute(state, input) {
       if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) {
         state.turn.priorityPlayerId = pending.restorePriorityTo;
       }
+      // M258: następna zakolejkowana karta z madness przejmuje decyzję.
+      promoteNextMadness(state);
       return accepted(state, cmd, { ok: true, events: [...state.events.slice(before), e] });
     } catch (error) {
       return reject(`illegal_madness_cast:${error.message}`);
@@ -3520,6 +3560,10 @@ export function execute(state, input) {
         if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
           state.turn.priorityPlayerId = pending.restorePriorityTo;
         }
+        // M258: rezygnacja też zamyka sekwencję — promocja zakolejkowanego
+        // madness (karty odrzucone przed rezygnacją z reszty).
+        const promotedDecline = promoteNextMadness(state);
+        if (promotedDecline) events.push(promotedDecline);
         return accepted(state, cmd, { ok: true, events });
       }
       state.pendingDiscardChoice = {
@@ -3553,14 +3597,14 @@ export function execute(state, input) {
         playerId: pending.playerId, fromId: cmd.cardId, objectId: exileId,
         cardId: moved.cardId, choice: true, purpose: pending.purpose, toZone: 'exile', madness: true,
       }));
-      state.pendingMadnessCast = {
+      // M258: wpis do KOLEJKI, nie bezpośrednio do pendingMadnessCast —
+      // decyzja otwiera się po zakończeniu całej sekwencji odrzuceń
+      // (promoteNextMadness w gałęziach kończących poniżej). Natychmiastowe
+      // otwarcie blokowało kolejne odrzucania w tym samym efekcie.
+      state.madnessQueue.push({
         playerId: pending.playerId, objectId: exileId, cardId: moved.cardId,
         restorePriorityTo: state.turn.priorityPlayerId,
-      };
-      state.events.push(event('madness_ready_required', {
-        playerId: pending.playerId, objectId: exileId, cardId: moved.cardId,
-        cost: moved.madness?.cost ?? null,
-      }));
+      });
     } else {
       const graveId = `grave-${state.objectSequence++}`;
       moved = moveObjectDirectly(state, cmd.cardId, 'graveyard', graveId);
@@ -3623,6 +3667,12 @@ export function execute(state, input) {
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
+    // M258: sekwencja odrzuceń zakończona — jeśli w jej trakcie odrzucono
+    // kartę/karty z madness, PIERWSZA decyzja otwiera się teraz (CR 702.34a:
+    // opcja rzutu powstaje po dokończeniu efektu odrzucania); kolejne po
+    // rozstrzygnięciu tej (promoteNextMadness w bramce madness).
+    const promoted = promoteNextMadness(state);
+    if (promoted) resolvedEvents.push(promoted);
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
   }
   // Oczekująca decyzja „karta z ręki na wierzch biblioteki\" (Chittering Rats).
