@@ -115,7 +115,7 @@ F dodatkowo benchmark quick przed/po (ADR 0018, bez `--full`).
 4. Benchmark quick PO — porównanie; bramka: `node tools/run-tests.mjs all`
    + `node tools/build.mjs`.
 
-### Etap G — dokumentacja — commit ✅ IN PROGRESS
+### Etap G — dokumentacja — commit ✅ DONE (b7ee04f; PR #88 „Etap 10" + CI zielone)
 - Opis PR #88: sekcja „Etap 10” (E/F) + „Jak sprawdzono” (bramki +
   benchmark); `docs/PROJECT_HISTORY.md` (wpis sesji); aktualizacja planu
   (odhaczenia). Push.
