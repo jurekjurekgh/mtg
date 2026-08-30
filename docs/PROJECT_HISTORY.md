@@ -19,7 +19,66 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
-- **Ostatnia aktualizacja:** 2026-08-29 (sesja arena/01a04e98, **etap 5**: **pętla jakości Żywym Testerem** (właściciel: „może sam coś znajdziesz”) — 6 partii (tarkir-bg/wiedzmin, worek-basni/theros, warhammer-wu/worek-legend, seeds 2001–2006), 0 detektorów, 3 znaleziska: **F3** Kappa Tech-Wrecker „Ninjutsu {1}{G}" — pita zielona zgubiona w danych (koszt {2} generyczny), silnik (oferta + płatność) ignorował pipy KOLORÓW w ninjutsu — jedyne aktywowane kosztowanie bez koloru (L48) + kafel „Ninjutsu {2}” i gramatyka żeńska; **F1** „enters with a counter” niewidoczne na kaflu (7 kart: Trigon, Kappa, Servant of the Scale, Necrosquito, Voice of the Vermin, Swooping Protector, Creakwood Safewright); **F4** (narzędzie) profil defensive mulliganował do 0 kart (wzorzec bez granic słów łapał „zostaNIE 5”); 7 testów (RED→GREEN dowiedzone stashem), 8 fałszywych alarmów zamkniętych z L57 (m.in. Colossodon vanilla, Breaching Hippocamp untap stwora, własny morph w logu = zgodne z regułą rundy 3); `npm test` 3755/3755; build 2910.5 kB; **PR #88**)
+- **Ostatnia aktualizacja:** 2026-08-30 (sesja arena/01a04e98, **r4 „Uwagi z testów” + strojenie + pętla bota**: **Fix A** — „Deklaracja atakujących” bez kreatur = auto-przejście (root cause: `legalAttackerOptions` zwracał `[[]]` → pusta „decyzja” wystawiana jako komenda; CR 508.1), **T1/T4** — rodzina aura do parametrów (11 kluczy, golden-master) + strojenie `auraHostileEnemyBase` 55→65 (tuner: proxy 0.5642→0.5668; benchmark 4200 meczów bez regresji — adopcja), **B7** — pętla jakości seeds 3001–3006 (oś: poprawność/logika/optymalność): **0 defektów** — 4 fałszywe alarmy zamknięte L57, w tym „re-Equip” z 3002 (pojazd crewowany: sprzęt odłącza się w cleanup, przypięcia świeże — CR 702.16/702.6); 3 testy inwariantów; `npm test` 3765/3765; build 2914.8 kB; **PR #88**)
+- **Ostatnia aktualizacja (poprzednia):** 2026-08-29 (sesja arena/01a04e98, **etap 5**: **pętla jakości Żywym Testerem** (właściciel: „może sam coś znajdziesz”) — 6 partii (tarkir-bg/wiedzmin, worek-basni/theros, warhammer-wu/worek-legend, seeds 2001–2006), 0 detektorów, 3 znaleziska: **F3** Kappa Tech-Wrecker „Ninjutsu {1}{G}" — pita zielona zgubiona w danych (koszt {2} generyczny), silnik (oferta + płatność) ignorował pipy KOLORÓW w ninjutsu — jedyne aktywowane kosztowanie bez koloru (L48) + kafel „Ninjutsu {2}” i gramatyka żeńska; **F1** „enters with a counter” niewidoczne na kaflu (7 kart: Trigon, Kappa, Servant of the Scale, Necrosquito, Voice of the Vermin, Swooping Protector, Creakwood Safewright); **F4** (narzędzie) profil defensive mulliganował do 0 kart (wzorzec bez granic słów łapał „zostaNIE 5”); 7 testów (RED→GREEN dowiedzone stashem), 8 fałszywych alarmów zamkniętych z L57 (m.in. Colossodon vanilla, Breaching Hippocamp untap stwora, własny morph w logu = zgodne z regułą rundy 3); `npm test` 3755/3755; build 2910.5 kB; **PR #88**)
+
+## Sesja 2026-08-30 — r4 „Uwagi z testów”: fix A (CR 508.1), strojenie rodziny aura, pętla jakości bota z bilansem 0 defektów (arena/01a04e98, PR #88)
+
+**Zlecenie właściciela:** (A) „Faza Deklaracja Atakujących — jeśli nie mam
+żadnej kreatury to nie powinienem wogóle dostawać takiej opcji, a dostaję”
++ kolejna Pętla „ze szczególnym uwzględnieniem poprawności, logiczności i
+optymalności działań bota” + „Możesz też przeprowadzić procedurę strojenia
+bota na jakiejś niestrojonej jeszcze rodzinie”. Plan:
+`docs/plans/PLAN_2026-08-30-m257r4-uwagi-i-strojenie.md` (eceb034).
+Raport: `docs/audits/AUDYT_M257R4B_BOT_2026-08-30.md`.
+
+**Fix A (dbfc312) — pusta „Deklaracja atakujących”:** root cause
+`legalAttackerOptions` przy zero atakujących zwracał `[[]]` (boundedSubsets
+z pustej listy) → generator wystawiał JEDNĄ komendę `declare_attackers` z
+pustym zestawem — decyzję, która nie istnieje. CR 508.1: bez legalnych
+atakujących deklaracja jest pusta i **automatyczna**. Fix: wzorzec
+auto-akcji turowej (jako drawStep CR 504.1) — `pass_priority` przy wejściu
+w krok z zerem opcji ataku auto-deklaruje pusty zbiór i skacze do
+`declare_blockers` (priorytet obrońcy); `declareAttackers(…, { pushToState })`
+(kolejność logu, wzorzec untapStep); wyjątki CR 510.1c dla walki z zero
+atakujących (pass domykający w combat_damage). Anti-overfix: 4 warianty
+ataku + goad. Golden-master: świadoma regeneracja (krótszy ślad bota;
+logika bez zmian). Testy: `test/m257-uwagi-runda4.test.js`.
+
+**T1 (65f88e3) — rodzina „aura” do parametrów:** 11 kluczy
+(`auraBase` 66 … `auraProtectionThreatWeight` 12; lista w audycie),
+domyślne = stare stałe co do punktu; golden-master w
+`test/bot-params.test.js` pilnuje anti-drift.
+
+**T4 (f481ff5) — `auraHostileEnemyBase` 55 → 65 (ADOPTOWANE):** tuner
+`tune-card.mjs` (Hobble, 12 seedów lustrzanych): proxy 0.564172 → 0.566821
+(monotonicznie, 2 kroki); benchmark potwierdzający 4200 meczów: 3541 →
+3542, jedyna zmiana forgotten-realms|innistrad-brg vs aggro 45 → 46%.
+Procedura i dowody wg `docs/setup/STROJENIE_BOTA.md` (tuner nie adoptuje
+automatycznie).
+
+**B7 (c807f5f) — pętla jakości (seeds 3001–3006): BILANS 0 DEFENKTÓW.**
+Oś wzmocniona: POPRAWNOŚĆ (CR), LOGICZNOŚĆ, OPTYMALNOŚĆ. Wyniki: Bot ×5
+(3001–3005), Gracz ×1 (3006). Fałszywe alarmy zamknięte L57: (1) 3002
+„re-Equip” — pojazd crewowany jest stworem tylko do końca tury, więc
+sprzęt odłącza się w cleanup (SBA, CR 702.16/702.6) i każde przypięcie
+jest świeże — bot grał wzorzec optymalny Irontread (załoga + full-equip →
+9/8 trample); (2) 3003 „pass z lądem” — Bell mill na t.1 zostawił 0
+landów; (3) 3004 „nie wyjaśnione zakończenie” — lethal t.16 (9 vs 7) + gap
+zapisu panelu narzędzia; (4) 3006 „1B removal przy „płatnej” mani” —
+{1}B wymaga many CZARNEJ; bot nie dobrał Swampa/Mountainu (brama koloru
+słuszna). Nowe testy inwariantów: `test/m257r4-petla3-bot.test.js`
+(odłączenie przy końcu animacji; pozycja 3002; filtr no-op M102/U9 +
+przepięcie M100/E13).
+
+**Operacyjnie:** sandbox resetował repo do klonu w trakcie sesji
+(reflog = clone+checkout; komity zaginęły lokalnie, remote i drzewo
+robocze przetrwały) — odtworzenie z diffa drzewa vs remote (dokładnie
+delta T4), commit + push bez strat. Potwierdza zasadę ADR 0020: każdy
+zielony commit = push natychmiast.
+
+**Bramki końcowe:** `npm test` **3765/3765**, `npm run build` 2914.8 kB
+(56 modułów), `test:slow` 10/10.
 
 ## Sesja 2026-08-29 (etap 5) — pętla jakości Żywym Testerem: F3 ninjutsu {1}{G}, F1 liczniki wejścia, F4 driver (arena/01a04e98, PR #88)
 
