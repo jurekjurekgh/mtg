@@ -33,7 +33,7 @@ import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard } from './choice-request.js';
-import { multiTargetPlanOf, mulliganBottomPlanOf } from './multi-target.js';
+import { multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf } from './multi-target.js';
 import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 
 function runEngineSmoke() {
@@ -376,6 +376,36 @@ function bootstrapTable() {
         slotLabels: multiPlan.slots
           ? (registry.get(sourceObject?.cardId)?.spell?.targets ?? []).map((spec) => targetTypeLabel(spec))
           : null,
+        onOpenCard: openCardFullscreen,
+        onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+    // M257-r5/C (uwaga z testów): koszt dodatkowy „poświęć stwora” (Bone
+    // Splinters, Severed Strands) — silnik enumeruje ILOCZYN (ofiara × cel)
+    // i panel pokazywał N×M przycisków („dostaję listę wszystkich
+    // kombinacji”). Teraz DWA osobne wybory ptaszkiem: cel czaru + stwór do
+    // poświęcenia; zatwierdzenie wraca do komendy z legalCommands (L48:
+    // bot i silnik bez zmian). Wyzwalacz (sacrificeCastPlanOf): cała grupa
+    // ma obowiązkowe poświęcenie, ≥1 cel i ≥2 ofiary — inaczej zwykła
+    // lista (Village Rites bez celu; Lash of the Balrog z wariantem
+    // payAltCost {4}, którego kreator by ukrył).
+    const sacrificePlan = sacrificeCastPlanOf(request.options ?? []);
+    if (sacrificePlan) {
+      const sourceObject = [...(choiceView.zones?.hand ?? []), ...(choiceView.zones?.battlefield ?? []),
+        ...(choiceView.zones?.graveyard ?? []), ...(choiceView.zones?.exile ?? [])]
+        .find((o) => o.id === sacrificePlan.objectId);
+      const targetSpec = ((registry.get(sourceObject?.cardId) ?? {}).spell?.targets ?? [])[0] ?? null;
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: sacrificePlan,
+        commands: request.options,
+        sourceName: sourceObject?.cardId ? session.nameOf(sourceObject.cardId) : null,
+        // Etykiety SEKCJI z Oracle (ADR 0002) + stały opis kosztu.
+        slotLabels: [targetSpec ? targetTypeLabel(targetSpec) : 'cel', 'Poświęcenie (koszt)'],
         onOpenCard: openCardFullscreen,
         onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
         onCancel: () => hideModal('choice-request'),

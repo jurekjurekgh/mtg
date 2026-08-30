@@ -1,7 +1,7 @@
 import { choiceResponse } from '../protocol/types.js';
 import { OPTION_IGNORABLE_TYPES, polishPluralCount } from './render.js';
 import { commandOptionKey, FACE_DOWN_LABEL } from './session.js';
-import { commandForSelection, commandForMulliganSelection } from './multi-target.js';
+import { commandForSelection, commandForMulliganSelection, commandForSacrificeSelection } from './multi-target.js';
 
 function clearChoiceElement(element) {
   if (element) element.textContent = '';
@@ -680,6 +680,9 @@ export function renderDamageDivisionWizard(host, { view, session, candidateIds, 
  */
 export function renderMultiTargetWizard(host, { view, session, plan, commands, sourceName = null, intro = null, slotLabels: slotLabels_ = null, onComplete, onCancel, onOpenCard = null }) {
   clearChoiceElement(host);
+  // M257-r5/C: druga sekcja kreatora — stwór do poświęcenia (koszt dodatkowy).
+  // Wybór JEDNOKROTNY (jeden stwór = jedna płatność), niezależny od celu czaru.
+  const sacMode = Boolean(plan.sacrificeMode);
   const xLabel = plan.hasX ? ` oraz wartość X (${plan.xMin}–${plan.xMax})` : '';
   const range = plan.minTargets === plan.maxTargets
     ? `${plan.maxTargets}`
@@ -691,16 +694,26 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   // a nie jeden wór („zaznacz cele (2)"). Etykiety pozycji przekazuje
   // wywołujący z Oracle (`spell.targets`); bez nich zostaje numeracja.
   const slots = plan.slots ?? null;
-  const slotLabels = slots ? (slotLabels_ ?? []) : [];
+  // M257-r5/C: w trybie poświęcenia etykiety = nazwy SEKCJI („stwor” +
+  // „Poświęcenie (koszt)”), nie pozycji celu.
+  const slotLabels = slots || sacMode ? (slotLabels_ ?? []) : [];
   choiceNode(host, 'div', 'choice-request-intro',
     intro ?? (slots
       ? `${sourceName ? `${sourceName} — ` : ''}wskaż po jednym celu dla każdej pozycji:\n`
-      : `${sourceName ? `${sourceName} — ` : ''}zaznacz ${itemWord} (${range})${xLabel}:\n`));
+      : sacMode
+        ? `${sourceName ? `${sourceName} — ` : ''}wskaż cel czaru oraz stwora do poświęcenia (koszt):\n`
+        : `${sourceName ? `${sourceName} — ` : ''}zaznacz ${itemWord} (${range})${xLabel}:\n`));
 
   const chosen = new Set();
   let xValue = plan.hasX ? plan.xMin : null;
+  // M257-r5/C: druga sekcja kreatora — stwór do poświęcenia (koszt dodatkowy).
+  // Wybór JEDNOKROTNY (jeden stwór = jedna płatność), niezależny od celu czaru.
+  let sacrificeChoice = null;
   const list = choiceNode(host, 'div', 'multi-target-list');
-  const toggles = new Map();
+  // M257-r5/C: klucze toggles są ZAKRESOWE (`slot` = 'sac' | 'target' | null).
+  // W trybie poświęcenia pule CELU i OFIARY się nakładają (własny stwór jest
+  // i celem czaru, i kosztem), więc prosty id→node by się zderzył.
+  const toggleRows = [];
   let confirm = null;
   let statusEl = null;
   let xCounter = null;
@@ -718,13 +731,19 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   };
   const currentCommand = () => (plan.cardIdsMode
     ? commandForMulliganSelection(commands, [...chosen])
-    : slots
-      ? commandForSlots()
-      : commandForSelection(commands, { targets: [...chosen], xValue: plan.hasX ? xValue : null }));
+    : sacMode
+      ? commandForSacrificeSelection(commands, { targets: [...chosen], sacrifice: sacrificeChoice })
+      : slots
+        ? commandForSlots()
+        : commandForSelection(commands, { targets: [...chosen], xValue: plan.hasX ? xValue : null }));
 
   const refresh = () => {
-    for (const [id, node] of toggles) {
-      const picked = slots ? slotChoice.includes(id) : chosen.has(id);
+    for (const { node, id, slot } of toggleRows) {
+      const picked = slots
+        ? slotChoice.includes(id)
+        : sacMode && slot === 'sac'
+          ? id === sacrificeChoice
+          : chosen.has(id);
       node.textContent = `${picked ? '[x]' : '[ ]'} ${objectOrPlayerName(view, session, id)}`;
     }
     if (xCounter) xCounter.textContent = String(xValue ?? '');
@@ -738,6 +757,16 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
           .filter(Boolean);
         statusEl.textContent = missing.length === 0
           ? (cmd ? 'Wybrano komplet celów' : 'Wybór niedozwolony')
+          : `Brakuje: ${missing.join(', ')}`;
+      } else if (sacMode) {
+        // M257-r5/C: status wymienia brakujące SEKCJE, nie tylko licznik.
+        const sacLabel = slotLabels[1] ?? 'Poświęcenie (koszt)';
+        const missing = [
+          chosen.size === 0 ? (slotLabels[0] ?? 'cel') : null,
+          sacrificeChoice == null ? sacLabel : null,
+        ].filter(Boolean);
+        statusEl.textContent = missing.length === 0
+          ? (cmd ? `Wybrano: ${slotLabels[0] ?? 'cel'} + ${sacLabel}` : 'Wybór niedozwolony')
           : `Brakuje: ${missing.join(', ')}`;
       } else {
         statusEl.textContent = cmd
@@ -769,7 +798,7 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
         const row = choiceNode(list, 'div', 'multi-target-row multi-target-slot-row');
         const toggle = choiceNode(row, 'button', 'action multi-target-toggle');
         toggle.type = 'button';
-        toggles.set(id, toggle);
+        toggleRows.push({ node: toggle, id, slot: null });
         toggle.addEventListener('click', () => {
           slotChoice[slotIndex] = slotChoice[slotIndex] === id ? null : id;
           refresh();
@@ -778,14 +807,34 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       }
     });
   } else {
+    // M257-r5/C: trym poświęcenia dostaje NAGŁÓWKI sekcji (cele / ofiara).
+    if (sacMode) choiceNode(list, 'div', 'multi-target-slot-label', `${slotLabels[0] ?? 'Cel'}:`);
     for (const id of plan.targets) {
       const row = choiceNode(list, 'div', 'multi-target-row');
       const toggle = choiceNode(row, 'button', 'action multi-target-toggle');
       toggle.type = 'button';
-      toggles.set(id, toggle);
+      toggleRows.push({ node: toggle, id, slot: sacMode ? 'target' : null });
       toggle.addEventListener('click', () => {
         if (chosen.has(id)) chosen.delete(id);
         else chosen.add(id);
+        refresh();
+      });
+      addPeek(row, id);
+    }
+  }
+
+  // M257-r5/C: DRUGA sekcja — ofiara kosztu dodatkowego. Pule celów i ofiar
+  // się nakładają (własny stwór bywa celem i kosztem), stąd wybór jedyny,
+  // zakresowy (klik = zmiana), a nie współdzielony z celami zbiór `chosen`.
+  if (sacMode) {
+    choiceNode(list, 'div', 'multi-target-slot-label', `${slotLabels[1] ?? 'Poświęcenie (koszt)'}:`);
+    for (const id of plan.sacrifices) {
+      const row = choiceNode(list, 'div', 'multi-target-row multi-target-slot-row');
+      const toggle = choiceNode(row, 'button', 'action multi-target-toggle');
+      toggle.type = 'button';
+      toggleRows.push({ node: toggle, id, slot: 'sac' });
+      toggle.addEventListener('click', () => {
+        sacrificeChoice = sacrificeChoice === id ? null : id;
         refresh();
       });
       addPeek(row, id);

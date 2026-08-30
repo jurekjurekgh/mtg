@@ -132,6 +132,75 @@ export function commandForSelection(commands, { targets = [], xValue = null } = 
 }
 
 // ===========================================================================
+// M257-r5/C (uwaga z testów): koszt dodatkowy „poświęć stwora” — OSOBNE
+// wybory zamiast iloczynu.
+//
+// Zgłoszenie: „Bone Splinters — są dwa osobne wybory: cel czaru i stwór do
+// poświęcenia. Zamiast tego dostaję listę WSZYSTKICH kombinacji (cel ×
+// ofiara).” Silnik NIE zmienia się: bierze z legalCommands (bot + L48), a
+// człowiek dostaje DWA wiersze z ptaszkiem — cel czaru oraz stwór do
+// poświęcenia (koszt). Zatwierdzenie wraca do tej samej komendy z
+// legalCommands, więc walidacja silnika zostaje jedynym źródłem prawdy.
+// ===========================================================================
+
+/**
+ * Plan „cel + poświęcenie” dla grupy wariantów jednego rzutu albo null, gdy
+ * grupa nie pasuje. Wyzwalacz (celowo wąski):
+ *  - CAŁA grupa to `cast_spell` z OBOWIĄZKOWYM poświęceniem
+ *    (`sacrificeTargetId` zawsze ustawiony) — mieszanina wariantów
+ *    `payAltCost` (Lash of the Balrog: „sacrifice a creature OR pay {4}”)
+ *    zostaje zwykłą listą, bo kreator ukryłby wariant zapłaty maną;
+ *  - czar ma co najmniej JEDEN cel (Village Rites `targets: []` = zwykła
+ *    lista ofiar — i tak jest czytelna);
+ *  - ≥2 różne ofiary (jedna ofiara = jeden wiersz, kreator zbędny);
+ *  - wspólny obiekt rzutu (jedna karta, jeden tryb).
+ */
+export function sacrificeCastPlanOf(commands) {
+  const options = commands ?? [];
+  if (options.length < 2) return null;
+  const list = options.filter((cmd) => cmd?.type === 'cast_spell'
+    && cmd.sacrificeTargetId != null
+    && Array.isArray(cmd.targets) && cmd.targets.length >= 1);
+  if (list.length !== options.length) return null;
+  if (!list.every((cmd) => cmd.objectId === list[0].objectId
+    && (cmd.modeIndex ?? null) === (list[0].modeIndex ?? null))) return null;
+  const sacrifices = [];
+  for (const cmd of list) if (!sacrifices.includes(cmd.sacrificeTargetId)) sacrifices.push(cmd.sacrificeTargetId);
+  if (sacrifices.length < 2) return null;
+  const targets = [];
+  for (const cmd of list) for (const id of cmd.targets) if (!targets.includes(id)) targets.push(id);
+  const sizes = [...new Set(list.map((cmd) => cmd.targets.length))];
+  return {
+    type: 'cast_spell',
+    objectId: list[0].objectId,
+    modeIndex: list[0].modeIndex ?? null,
+    targets,
+    sacrifices,
+    // Pola w kształcie planu wielocelowego — renderMultiTargetWizard jest
+    // wspólny (`sacrificeMode` przełącza drugą sekcję + szukanie komendy).
+    minTargets: Math.min(...sizes),
+    maxTargets: Math.max(...sizes),
+    hasX: false,
+    sacrificeMode: true,
+  };
+}
+
+/**
+ * Komenda odpowiadająca parze (cele, ofiara) albo null — szukana wśród
+ * wariantów legalnych silnika (L48: UI nie buduje komendy z palca).
+ * Fizzle (cel = ofiara, CR 601.2c/608.2b) pozostaje osiągalny: taki wariant
+ * jest w legalCommands, więc zatwierdzenie go legalne.
+ */
+export function commandForSacrificeSelection(commands, { targets = [], sacrifice = null } = {}) {
+  const key = targetKey(targets);
+  return (commands ?? []).find((cmd) =>
+    cmd?.type === 'cast_spell'
+    && cmd.sacrificeTargetId === sacrifice
+    && Array.isArray(cmd.targets)
+    && targetKey(cmd.targets) === key) ?? null;
+}
+
+// ===========================================================================
 // M200/C (uwaga właściciela 2026-08-23): mulligan — odłożenie N kart na spód.
 //
 // Zgłoszenie: „zamiast dać wszystkie opcje kart z ptaszkiem do zaznaczania
