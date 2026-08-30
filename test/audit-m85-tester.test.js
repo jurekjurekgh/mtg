@@ -71,7 +71,11 @@ test('commandLabel szukania i Fertile Thicket używa nameOfObject', () => {
   const view = { zones: { hand: [], battlefield: [], stack: [], graveyard: [], library: [{ id: 'lib-1' }], exile: [] }, players: [] };
   assert.equal(commandLabel({ type: 'resolve_search_choice', found: 'lib-1' }, session, view), 'Szukanie: Forest');
   assert.match(commandLabel({ type: 'resolve_fertile_thicket', chosenCardId: 'lib-2' }, session, view), /Plains/);
-  assert.match(commandLabel({ type: 'resolve_fertile_thicket', skip: true }, session, view), /spód/);
+  // M260/A2 (zgłoszenie właściciela z PR #89): skip = rezygnacja z ZAGLĄDANIA
+  // (biblioteka nietknięta) — wcześniejsza etykieta „Odłóż wszystko na spód"
+  // opisywała inną opcję i myliła gracza.
+  assert.match(commandLabel({ type: 'resolve_fertile_thicket', skip: true }, session, view), /rezygnuj/i);
+  assert.ok(!/spód/.test(commandLabel({ type: 'resolve_fertile_thicket', skip: true }, session, view)));
 });
 
 test('bot nie punktuje Fireballa w siebie wyżej niż we wroga', () => {

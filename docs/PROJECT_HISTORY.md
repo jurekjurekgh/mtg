@@ -7038,6 +7038,38 @@ legalne (decki po sortowaniu MV, fixture golden-master — świadoma zmiana
 zachowania botów, benchmark 10/10); lekcja **L96**. Raport:
 `docs/audits/AUDYT_M259_BUG_HUNT_2026-08-30.md`.
 
+**M260 — uwagi z testów właściciela na PR #89 (Fertile Thicket, Pyxis,
+pusta biblioteka):** trzy zgłoszenia po challenge M259, rozstrzygnięte
+w całości. **A. Fertile Thicket** — silnik był zgodny z Oracle (skip,
+„bez landa” = cała piątka na spód, `bottomOrder` z walidacją permutacji),
+ale warstwa prezentacji kłamała: etykieta opcji „bez landa” miała fallback
+„basic land na wierzch biblioteki” (zgłoszenie: „co to za opcja???”), skip
+opisany jako „odłóż wszystko na spód”, a karty (Mountain/Island) były
+zdradzane w etykietach opcji PRZED decyzją o zaglądnięciu — „you may look”
+było pozorne; brakowało też sortera kolejności spodu. Naprawa: **nowy
+3-krokowy wizard** (`renderFertileThicketWizard`: zaglądnij? → wybór
+basic landa → kolejność spodu jak w Scry/Index), widok
+`pendingFertileThicket` w FoW (decydujący widzi karty i `basicLandIds`,
+przeciwnik tylko fakt), etykiety `commandLabel` zgodne z Oracle, log
+bez wycieku `basicLandCount` (look jest prywatny; jawny tylko odsłonięty
+basic land — „reveal up to one”). **B1. Pyxis of Pandemonium** — karty
+wygnane pierwszą zdolnością ({T}) są teraz odwrócone i bez podglądu dla
+OBU graczy (CR 406.3; wcześniej właściciel widział cardId/nazwę/podgląd —
+to nie morph, CR 708.6 nie ma zastosowania): widok zwraca minimalny
+kształt bez cech (cardId/kind/types/spell), `cardInfo` maskuje kafel
+(„Wygnana zakryta”, bez typu i statystyk), a poczekalnia wygnania pokazuje
+kartę ze statusem „Wygnana zakryta · odkryje ją druga zdolność źródła”
+(jak Plot/Suspend). **B2. pusta biblioteka** — potwierdzone zgodne z CR
+przez właściciela („nie ma tematu”): wygnanie Pyxisem przy pustej
+bibliotece NIE kończy gry; przegraną jest dopiero próba doboru (CR 704.5m,
+akcja turowa CR 504.1) — cały scenariusz zabezpieczony testem regresji.
+Testy M260 RED→GREEN 13/13 (silnik, widok FoW, wizard, etykiety, log,
+Pyxis, B2); zaktualizowane strażniki starych zachowań (m84/6 odmiana,
+m85 etykieta skip, m138/Z6 kształt linii types); suite 3860/3870 bez
+regresji; benchmark 672 mecze bez odrzuceń komend; build 56 modułów /
+2974.1 kB. Nowa lekcja **L97** (warstwa prezentacji kłamie przy
+poprawnym silniku; decyzja „you may look” nie może wyciekać treści).
+
 **Kolejny krok:** decyzja właściciela o scaleniu PR #89; ewentualnie nowy
 batch kart / kolejna runda Żywego Testera.
 

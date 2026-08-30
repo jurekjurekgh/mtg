@@ -5162,7 +5162,20 @@ export function playerView(state, playerId) {
       // OBU graczy. Zakryte wygnanie (`faceDown`) tożsamości nie ujawnia.
       const waiting = {};
       if (zone === 'exile') {
-        const hiddenIdentity = object.faceDown === true && object.controllerId !== playerId;
+        // M260/B1 (zgłoszenie właściciela z PR #89, Pyxis of Pandemonium):
+        // karta wygnana ZAKRYTA nie ujawnia tożsamości NIKOMU — CR 406.3
+        // („no player may look at it"), także właścicielowi. To NIE jest morph
+        // na polu bitwy (CR 708.6 pozwala kontrolerowi patrzeć na własne
+        // zakryte permanenty) — strefa decyduje o zasadzie. Zwracamy minimalny
+        // kształt: id, właściciel, strefa + znaczniki zakrycia/ukrycia, BEZ
+        // cech karty (cardId, kind, types, spell, statystyk) — wiedza „to
+        // stwór/instant” zmieniałaby decyzje przy drugiej zdolności Pyxis.
+        if (object.faceDown === true) {
+          return {
+            id: object.id, cardId: null, controllerId: object.controllerId, zone: object.zone,
+            faceDown: true, hidden: true,
+          };
+        }
         if (object.suspended) {
           waiting.suspended = true;
           waiting.timeCounters = object.timeCounters ?? 0;
@@ -5190,9 +5203,6 @@ export function playerView(state, playerId) {
         // cardId — deskryptor nie dokłada informacji ukrytej. Zakryte
         // wygnanie wychodzi wyżej z `hidden: true` i tu nie dociera.
         if (object.spell) waiting.spell = object.spell;
-        if (hiddenIdentity) {
-          return { id: object.id, controllerId: object.controllerId, zone: object.zone, ...waiting, cardId: null, hidden: true };
-        }
       }
       return {
         id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
@@ -6121,8 +6131,10 @@ export function playerView(state, playerId) {
     // Fertile Thicket (BFZ): ETB reveal — gracz wybiera 0 lub 1 basic land z top 5.
     // "You may" = can decline entirely.
     const pending = state.pendingFertileThicket;
-    legalCommands.push(command('resolve_fertile_thicket', playerId, { skip: true })); // decline
-    legalCommands.push(command('resolve_fertile_thicket', playerId, { chosenCardId: null })); // keep all on top
+    legalCommands.push(command('resolve_fertile_thicket', playerId, { skip: true })); // decline — „you may look", biblioteka nietknięta
+    // Bez basic landa: „...and the rest on the bottom in any order" — CAŁA
+    // piątka na spód (kolejność w cmd.bottomOrder, walidowana w handlerze).
+    legalCommands.push(command('resolve_fertile_thicket', playerId, { chosenCardId: null }));
     for (const landId of pending.basicLandIds) {
       legalCommands.push(command('resolve_fertile_thicket', playerId, { chosenCardId: landId }));
     }
@@ -6552,6 +6564,28 @@ export function playerView(state, playerId) {
       })
       : null,
   } : null;
+  // M260/A1 (zgłoszenie właściciela z PR #89): Fertile Thicket — „you may
+  // LOOK AT the top five” to decyzja o PATRZENIU, więc widok decydującego
+  // musi nieść karty (jak scry), a przeciwnikowi zostaje sam fakt decyzji.
+  // basicLandIds idą tylko do decydującego: to, które z oglądanych kart są
+  // basic landami, jest wiedzą PRYWATNĄ patrzącego (look ≠ reveal).
+  const pendingFertileThicketView = state.pendingFertileThicket ? {
+    playerId: state.pendingFertileThicket.controllerId,
+    sourceCardId: state.pendingFertileThicket.sourceCardId ?? null,
+    count: state.pendingFertileThicket.topCardIds.length,
+    cards: state.pendingFertileThicket.controllerId === playerId
+      ? state.pendingFertileThicket.topCardIds.map((id) => {
+        const object = state.objects.get(id);
+        return {
+          id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
+          kind: object.kind, power: object.power, toughness: object.toughness, manaCost: object.manaCost, spell: object.spell,
+        };
+      })
+      : null,
+    basicLandIds: state.pendingFertileThicket.controllerId === playerId
+      ? [...state.pendingFertileThicket.basicLandIds]
+      : null,
+  } : null;
   // Backup jest w całości informacją publiczną (pole bitwy): obaj gracze widzą
   // źródło, kolejkę i to, czyja to decyzja — jak przy fazie combat.
   const pendingBackupView = pendingBackup ? {
@@ -6748,7 +6782,7 @@ export function playerView(state, playerId) {
   }
   return Object.freeze({
     playerId, status: state.status, winnerId: state.winnerId, isDraw: Boolean(state.isDraw), players, turn: { ...state.turn },
-    zones, legalCommands, pendingScry, pendingSurveil, pendingBackup: pendingBackupView,
+    zones, legalCommands, pendingScry, pendingSurveil, pendingFertileThicket: pendingFertileThicketView, pendingBackup: pendingBackupView,
     pendingClash, pendingRoomTarget, pendingLegendChoice: pendingLegendChoiceView,
     pendingLookTopN: pendingLookTopNView,
     pendingManifestDread: pendingManifestDreadView,

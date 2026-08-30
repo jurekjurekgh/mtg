@@ -32,7 +32,7 @@ import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
-import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard } from './choice-request.js';
+import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderFertileThicketWizard } from './choice-request.js';
 import { multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf } from './multi-target.js';
 import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 
@@ -414,6 +414,29 @@ function bootstrapTable() {
       return;
     }
     const lookKind = lookWizardKindOf(request, choiceView);
+    // M260/A (uwaga właściciela z PR #89): Fertile Thicket — decyzja
+    // „zaglądnij?” musi zapaść PRZED pokazaniem kart, dlatego osobny wizard
+    // (look-wizard scry od razu pokazuje karty — tam „look” jest obowiązkowy).
+    if (lookKind === 'fertile') {
+      const pending = choiceView.pendingFertileThicket;
+      renderFertileThicketWizard(els.choiceRequestBody, {
+        cards: pending.cards.map((card) => ({ id: card.id, cardId: card.cardId, name: session.nameOf(card.cardId) })),
+        basicLandIds: pending.basicLandIds ?? [],
+        // M201/F: nazwa karty z danych (ADR 0002) — intro nazywa źródło decyzji.
+        sourceName: pending.sourceCardId ? session.nameOf(pending.sourceCardId) : null,
+        onOpenCard: (cardId) => openCardFullscreenByCardId(cardId),
+        // M112: klucz sondy dla kliknięć DOMYKAJĄCYCH wizard (rezygnacja,
+        // ostatnia karta sortera) — krok pośredni uczciwie bez klucza.
+        probeKeyFor: (built) => commandOptionKey({ type: 'resolve_fertile_thicket', playerId: choiceView.playerId, ...built }),
+        onComplete: (built) => {
+          hideModal('choice-request');
+          play({ type: 'resolve_fertile_thicket', playerId: choiceView.playerId, ...built });
+        },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
     if (lookKind) {
       const pending = lookKind === 'surveil' ? choiceView.pendingSurveil
         : lookKind === 'index' ? choiceView.pendingIndex

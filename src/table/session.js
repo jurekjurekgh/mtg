@@ -1709,10 +1709,16 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'exploit_choice_resolved': return e.skipped
         ? `Exploit: ${whoN(e.playerId)} nie poświęca — zdolność odpada`
         : null; // poświęcenie opisuje linia „exploited"
-      case 'fertile_thicket_reveal_started': return `${srcName(e)}${whoN(e.controllerId)} odsłania ${e.cardCount} ${polishPlural(e.cardCount, 'kartę', 'karty', 'kart')} z wierzchu biblioteki (bazowych landów: ${e.basicLandCount})`;
+      // M260/A (zgłoszenie właściciela z PR #89): Oracle mówi „you may LOOK
+      // AT the top five" — oglądanie jest PRYWATNE, więc log nie ujawnia
+      // ani kart, ani liczby basic landów (wyciek do przeciwnika). Jawny
+      // jest wyłącznie odsłonięty basic land („reveal up to one").
+      case 'fertile_thicket_reveal_started': return `${srcName(e)}${whoN(e.controllerId)} może zajrzeć w ${e.cardCount} ${polishPlural(e.cardCount, 'kartę', 'karty', 'kart')} z wierzchu biblioteki`;
       case 'fertile_thicket_resolved': return e.skipped
-        ? `${srcName(e)}${whoN(e.controllerId)} odkłada wszystkie odsłonięte karty na spód`
-        : `${srcName(e)}${whoN(e.controllerId)} kładzie wybranego landa na wierzch, resztę na spód`;
+        ? `${srcName(e)}${whoN(e.controllerId)} rezygnuje z zaglądania do biblioteki`
+        : e.chosenCardId == null
+          ? `${srcName(e)}${whoN(e.controllerId)} nie odsłania landa — obejrzane karty na spód biblioteki`
+          : `${srcName(e)}${whoN(e.controllerId)} odsłania ${nameOfObject(e.chosenCardId)} — na wierzch biblioteki, reszta na spód`;
       // M201/F (zgłoszenie właściciela): mechanika nazywa się po pierwszej
       // karcie (Springbloom Druid), ale używa jej też Roiling Regrowth —
       // log pisał więc cudzą nazwę („co to za druid?”). Nazwa idzie z danych

@@ -2839,11 +2839,15 @@ export function commandLabel(cmd, session, view) {
       return `Kopia czaru — cel: ${nameOfObjectId(cmd.targetId)}`;
     }
     case 'resolve_fertile_thicket': {
-      if (cmd.skip) return 'Odłóż wszystko na spód (bez landa)';
-      const landName = cmd.chosenCardId
-        ? escapeHtml(session.nameOfObject(cmd.chosenCardId))
-        : 'basic land';
-      return `${landName} na wierzch biblioteki`;
+      // M260/A2 (zgłoszenie właściciela z PR #89): poprzednie etykiety
+      // kłamały — skip opisywany jako „odłóż wszystko na spód" (a skip to
+      // rezygnacja z zaglądania — biblioteka NIETKNIĘTA), a opcja „bez
+      // landa" dostawała fallback „basic land na wierzch biblioteki"
+      // („co to za opcja???"). Oracle: reveal up to one BASIC land → na
+      // wierzch; reszta — na spód w dowolnej kolejności.
+      if (cmd.skip) return 'Zrezygnuj — nie zaglądam w bibliotekę';
+      if (cmd.chosenCardId == null) return 'Bez basic landa — obejrzane karty na spód';
+      return `${escapeHtml(session.nameOfObject(cmd.chosenCardId))} na wierzch biblioteki (reszta na spód)`;
     }
     default: return REASONING_ACTION_LABELS[cmd.type] ?? cmd.type;
   }
@@ -2927,11 +2931,16 @@ function combatRoleOf(object, combat, session) {
 export function cardInfo(session, object, combat = null) {
   const cardId = object.cardId;
   const faceDown = Boolean(object.faceDown);
+  // M260/B1 (zgłoszenie właściciela z PR #89, Pyxis of Pandemonium): karta
+  // wygnana ZAKRYTA nie ujawnia tożsamości NIKOMU (CR 406.3) — także
+  // właścicielowi. Własny zakryty permanent NA POLU BITWY to co innego
+  // (CR 708.6: kontroler może patrzeć) — strefa rozstrzyga.
+  const exiledFaceDown = faceDown && object.zone === 'exile';
   // M100/E12 (pytanie właściciela): WŁASNY zakryty permanent pokazuje
   // NAZWĘ (kontroler zna tożsamość — CR 708.6), ale wyłącznie nazwę:
   // reszta (tekst, staty blueprintu, art) zostaje zamaskowana, żeby kafel
   // nie wyglądał jak pełny stwór — jest „zakryty (morph)", 2/2.
-  const ownFaceDown = faceDown && object.controllerId === HUMAN_ID;
+  const ownFaceDown = faceDown && !exiledFaceDown && object.controllerId === HUMAN_ID;
   const details = faceDown ? {} : (session.cardDetails(cardId) || {});
   // M254/B (zgłoszenie właściciela): właściciel zna swoją kartę zakrytą
   // (CR 708.6 — tożsamość nie jest informacją ukrytą dla niego), więc
@@ -2955,12 +2964,16 @@ export function cardInfo(session, object, combat = null) {
     // Face-down permanent (morph/megamorph): 2/2 bez nazwy, kolorów i kosztu
     // — własny z nazwą i znacznikiem (E12), wrogi bezimienny (FoW, CR 708.2).
     name: faceDown
-      ? (ownFaceDown ? session.nameOf(object.cardId) : 'Face-down creature')
+      ? (exiledFaceDown
+        ? 'Wygnana zakryta'
+        : (ownFaceDown ? session.nameOf(object.cardId) : 'Face-down creature'))
       // M172/D: kafel kopii pokazuje „Nazwa (kopia N)" — rozróżnialna od oryginału.
       : (object.name ? (object.copyNumber ? `${object.name} (kopia ${object.copyNumber})` : object.name) : session.nameOf(cardId)),
     // M127 (uwaga A): znacznik z jednego źródła — „zakryty (Morph)" dla
     // własnego permanentu, sama nazwa mechaniki dla cudzego (FoW).
-    morphBadge: faceDown ? (ownFaceDown ? `zakryty (${FACE_DOWN_LABEL})` : FACE_DOWN_LABEL) : null,
+    // M260/B1: zakryte WYGNANIE nie jest morphem — sam znacznik nazwy
+    // wystarcza („Wygnana zakryta"), badge mechaniki pola bitwy myliłby.
+    morphBadge: faceDown ? (exiledFaceDown ? null : (ownFaceDown ? `zakryty (${FACE_DOWN_LABEL})` : FACE_DOWN_LABEL)) : null,
     colors,
     kind,
     // M138/Z6 (audyt Żywym Testerem): typy bierzemy ze STANU GRY, nie z rejestru
@@ -2970,7 +2983,7 @@ export function cardInfo(session, object, combat = null) {
     // dalej sam „Artifact — Spacecraft”, bez P/T i bez Latania. Gracz nie miał
     // jak zauważyć, że wrogi statek stał się atakującym. P/T obok czytano już
     // z obiektu — to była niespójność w jednym obiekcie danych.
-    types: faceDown ? ['Creature'] : (attachedAura ? ['Enchantment', 'Aura'] : (object.types?.length ? object.types : (details.types || []))),
+    types: faceDown ? (exiledFaceDown ? [] : ['Creature']) : (attachedAura ? ['Enchantment', 'Aura'] : (object.types?.length ? object.types : (details.types || []))),
     subtypes: faceDown ? [] : (attachedAura ? [] : (object.subtypes?.length ? object.subtypes : (details.subtypes || []))),
     attachedAura,
     attachedEquipment,
@@ -4260,7 +4273,12 @@ export function waitingExileEntries(view) {
     // M254/D (zgłoszenie właściciela, Wormfang Newt): wygnanie TYMCZASOWE
     // z linkiem powrotu („kiedy źródło opuści pole bitwy") — ta sama strefa
     // co Suspend/Plot, bo karta też stamtąd wraca (tylko bez liczników).
-    || o.temporaryExile);
+    || o.temporaryExile
+    // M260/B1 (zgłoszenie właściciela z PR #89, Pyxis of Pandemonium):
+    // karty wygnane ZAKRYTE pierwszą zdolnością — leżą w „poczekalni"
+    // jak Plot/Suspend (ADR 0017: skutek widoczny w grze musi być widoczny
+    // na stole), odwrócone i bez podglądu (CR 406.3).
+    || o.faceDown);
 }
 
 /** Opis stanu oczekiwania — jedno źródło dla kafla i dla podpowiedzi. */
@@ -4284,6 +4302,12 @@ export function waitingExileStatus(object) {
   }
   if (object.reboundReady) parts.push('Rebound · rzut w Twoim upkeepie');
   if (object.madnessReady) parts.push('Madness · czeka na decyzję rzutu');
+  // M260/B1 (Pyxis of Pandemonium): zakryte wygnanie — status mówi, że karta
+  // jest odwrócona i że odkryje ją druga zdolność źródła (permanenty wejdą
+  // wtedy na pole bitwy, właścicielem pozostaje dotychczasowy właściciel).
+  if (object.faceDown) {
+    parts.push('Wygnana zakryta · odkryje ją druga zdolność źródła');
+  }
   // M254/D: badge „wygnana tymczasowo przez <karta>" — nazwa źródła jest
   // informacją PUBLICZNĄ (wygnanie widać na stole), więc nie ma tu FoW.
   if (object.temporaryExile) {

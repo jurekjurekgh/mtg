@@ -34,6 +34,44 @@ M208.
 
 ---
 
+## L97 (2026-08-31) — Warstwa prezentacji potrafi skłamać przy w 100% poprawnym silniku; decyzja „you may look” nie może wyciekać treści przed wyborem
+
+**Objaw (M260, uwagi właściciela z PR #89):** trzy zgłoszenia do Fertile
+Thicket, przy których SILNIK był bezbłędny (skip/`chosenCardId:null`/
+`bottomOrder` — pełny Oracle, walidacja permutacji działała). Cała wina
+leżała w UI: (1) etykieta opcji „bez landa” miała fallback
+`'basic land na wierzch biblioteki'` („co to za opcja???”), (2) etykieta
+skip opisywaliśmy „Odłóż wszystko na spód” — czyli opcję INNĄ, (3) brak
+kroku „zaglądnij?” — opcje z nazwami Mountain/Island zdradzały karty,
+zanim gracz zdecydował, CZY patrzy, więc „you may look” było pozorne,
+a sortera kolejności spodu nie było w ogóle.
+
+**Przyczyna:** `commandLabel` liczy etykietę z SAMEJ komendy i nie wie,
+czym komenda jest w kontekście decyzji; etykiety powstawały „na oko”
+bez testu. Dodatkowo licznik `basicLandCount` w wydarzeniu startowym
+trafiał do WSPÓLNEGO logu — prywatna wiedza z „look” (ile basic landów
+na wierzchu) wyciekała przeciwnikowi.
+
+**Reguła:**
+1. Etykieta opcji opisuje skutek WŁASNEJ komendy — fallback tekstowy
+   („basic land…” zamiast nazwy z `nameOfObject`) to bug, nie ozdoba.
+2. Decyzja z wiedzą prywatną (look/scry-like) wymaga testu UI, że PRZED
+   decyzją nie pojawia się ŻADNA nazwa karty — w etykietach opcji,
+   podglądach i logu. Rezygnacja z „you may look” musi być możliwa
+   „na ślepo”.
+3. Log to też warstwa prezentacji: prywatne dane zdarzenia
+   (`basicLandCount`) nie idą do wspólnego opisu; jawne jest tylko to,
+   co Oracle nazywa reveal (tu: wybrany basic land).
+4. Poprawny silnik + brak asercji na etykiety = nierozpoznawalna
+   regresja UX. `commandLabel` i wizardy mają własne testy jak każdy
+   inny kontrakt.
+
+**Strażnik:** `test/m260-uwagi-wlasciciela.test.js` (13 testów: silnik,
+widok FoW, wizard 3-krokowy, etykiety, log, Pyxis CR 406.3, scenariusz
+pustej biblioteki). Czerwienieją po cofnięciu każdej z czterech napraw.
+
+---
+
 ## L96 (2026-08-30) — Snapshotty Scryfall w repo = darmowy masowy audyt danych kart; audytuj po registry.all(), nie po nazwie eksportu
 
 **Objaw (M259, brązowa odznaka):** 7 błędów vs zasady w katalogu kart

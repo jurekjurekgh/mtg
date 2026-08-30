@@ -97,7 +97,9 @@ test('M84/6: Fertile Thicket — „odsłania 1 kartę\" (odmiana)', async () =>
   const helpers = { nameOf: (c) => c, nameOfObject: () => 'x', isPlayer: (id) => id === 'p1' };
   const names = { p1: 'Ty', p2: 'Nieprzyjaciel' };
   const text = describeGameEvent({ type: 'fertile_thicket_reveal_started', controllerId: 'p1', cardCount: 1, basicLandCount: 1 }, helpers, names);
-  assert.match(text, /odsłani(asz|a) 1 kartę z wierzchu/i, text);
+  // M260/A: „you may LOOK AT” — oglądanie jest prywatne, więc komunikat
+  // mówi o MOŻLIWOŚCI zajrzenia (odmiana liczebnika bez zmian: 1 kartę).
+  assert.match(text, /zajrz(esz|eć) w 1 kartę z wierzchu/i, text);
 });
 
 // --- 7. damage_prevented ma powód ---
