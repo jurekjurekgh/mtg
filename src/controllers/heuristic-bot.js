@@ -1916,6 +1916,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const isUtilityOnly = effects.length > 0 && effects.every((e) => e?.type
           && ['tap_permanent', 'tap_permanents', 'untap_permanent', 'lock_untap',
             'dont_untap_next_untap_step', 'cant_be_blocked', 'cant_block',
+            'creatures_cant_block_this_turn',
             'buff_opponents_creatures', 'buff_creatures_you_control'].includes(e.type));
         // Start PONIŻEJ passu (0): czysto-utylitarny czar z bezcelowym celem
         // (tap własnego landa, tap już zatapniętego, odkręcenie wroga) ma
@@ -2157,6 +2158,54 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               const equipmentCount = (view.zones.battlefield ?? []).filter(
                 (o) => o.attachedTo === target.id && o.equipment).length;
               if (equipmentCount > 0) score += 25 + 5 * equipmentCount;
+            }
+          }
+          if (effect.type === 'creatures_cant_block_this_turn') {
+            // M257-r5b/D (zgłoszenie właściciela, Ruthless Invasion): czar
+            // jest wart TYLKO tyle, ile obrażeń realnie przepuści — i tylko
+            // gdy bot ZAMIERZA atakować w tej turze. D2: „Bot rzuca Ruthless
+            // Invasion po czym kończy turę bez ataku. No to już jest
+            // kompletny bezsens. Skoro nie zamierza atakować to ten czar to
+            // czyste marnotrawstwo.” D1: płatność życiem za {R/P} jest
+            // uzasadniona wyłącznie, gdy atak zabija przeciwnika W TEJ turze
+            // („chyba, że naprawdę policzy, że jego atak zabije
+            // przeciwnika w tej turze dzięki temu zakazowi blokowania”).
+            // Reguła po deskryptorze efektu (ADR 0002); baza czaru to −1
+            // (czysto-utylitarny, M146) — kara −90 musi go przebić.
+            const except = effect.exceptTypes ?? [];
+            // Okno: moja tura + krok PRZED walką (main1 / beginning_of_combat
+            // przed deklaracją). W main2 (po combacie) efekt już nic nie
+            // zmieni — „this turn” kończy się z moją turą.
+            const attackingWindow = myTurn(view)
+              && ['main1', 'beginning_of_combat'].includes(view.turn.step);
+            // Gotowi atakujący: nietapnięci, bez choroby (albo haste), moc > 0.
+            const attackers = myCreatures(view).filter((c) => !c.tapped
+              && (!c.summoningSickness || hasKeyword(c, 'haste')) && (c.power ?? 0) > 0);
+            const totalPower = attackers.reduce((sum, c) => sum + (c.power ?? 0), 0);
+            // Blokerzy, których czar faktycznie usuwa: nietapnięte stworы
+            // przeciwnika POZA wyjątkami (Ruthless: artifact-creatures
+            // blokują mimo zakazu). Zbiór ustala się przy rozstrzygnięciu —
+            // stwór wchodzący później blokuje normalnie (nota karty).
+            const blockers = enemyCreatures(view).filter((c) => !c.tapped
+              && !except.some((t) => (c.types ?? []).includes(t)));
+            const enemyLife = enemy(view)?.life ?? 0;
+            const lethal = totalPower >= enemyLife;
+            if (!attackingWindow || totalPower === 0) {
+              // D2: brak ataku w tej turze = karta na nic (karą −90 czar
+              // spada poniżej passu, w wariancie manowym i życiowym).
+              score -= 90;
+            } else if (blockers.length === 0) {
+              // Otwarte pole / tylko artifact-blokerzy: czar nie usuwa
+              // NICZEGO — atak i tak przechodzi albo i tak chumpuje.
+              // Wyjątek: LETHAL w tej turze (D1) — jedyny uzasadniony
+              // powód zapłacenia życiem za {R/P}.
+              if (lethal) score += 2 * totalPower + 50;
+              else score -= 90;
+            } else {
+              // Czar usuwa blokerów — obrażenia, które dzięki niemu
+              // przechodzą: 2*power za gotowego atakującego.
+              score += 2 * totalPower;
+              if (lethal) score += 50; // D1: premia lethal
             }
           }
           // M109 (Sagittars' Volley): fala obrażeń w stwory przeciwnika
@@ -2531,7 +2580,33 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // i czar wyglądał na dobry niezależnie od celu.
           if (effect.type === 'cant_be_blocked') {
             if (target && target.controllerId !== view.playerId) score -= 60;
-            else score += 10;
+            else if (!target) score -= 90;
+            else {
+              // M257-r5b/D (symetrycznie z Ruthless Invasion, zgłoszenie
+              // D2/D1 właściciela): „nie może być blokowany” na WŁASNYM
+              // stworze ma wartość tylko, gdy ten stwór realnie zaatakuje W
+              // TEJ turze — inaczej czar to czyste marnotrawstwo (bot rzucał
+              // i kończył turę bez ataku). Płatność życiem (phyrexian)
+              // uzasadnia wyłącznie lethal w tej turze (D1).
+              const attackingWindow = myTurn(view)
+                && ['main1', 'beginning_of_combat'].includes(view.turn.step);
+              const canAttack = !target.tapped
+                && (!target.summoningSickness || hasKeyword(target, 'haste'))
+                && (target.power ?? 0) > 0;
+              if (!attackingWindow || !canAttack) {
+                score -= 90;
+              } else {
+                const power = target.power ?? 0;
+                const blockers = enemyCreatures(view).filter((c) => !c.tapped);
+                const strongestToughness = blockers.reduce((m, c) => Math.max(m, c.toughness ?? 0), 0);
+                score += 2 * power;
+                // Atak „przechodzi”: brak blokerów albo stwór zabija
+                // najsilniejszego (power >= jego wytrzymałość).
+                if (blockers.length === 0 || power >= strongestToughness) score += P.attackThroughBonus;
+                // D1: LETHAL — atak zabija przeciwnika w tej turze.
+                if (power >= (enemy(view)?.life ?? 0)) score += 50;
+              }
+            }
           }
           // Uwaga B (2026-08-12): pumpy (pump, pump_by_creature_count — Might of
           // the Masses, pump_enchanted_creature) wzmacniają stwora-CELU. Wzmacnianie
@@ -3318,20 +3393,6 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score -= 10;
           }
           // ---- Batch 48 (L50/L51): wycena nowych efektow -----------------
-          if (effect.type === 'creatures_cant_block_this_turn') {
-            // Ruthless Invasion: warte tyle, ile obrazen przepusci. Liczymy
-            // moc GOTOWYCH atakujacych minus to, co i tak jest nieblokowalne;
-            // bez wlasnych atakujacych czar jest bezuzyteczny.
-            const except = effect.exceptTypes ?? [];
-            const readyPower = myCreatures(view)
-              .filter((c) => canAttackNow(c))
-              .reduce((sum, c) => sum + (c.power ?? 0), 0);
-            const blockersRemoved = enemyCreatures(view)
-              .filter((c) => !c.tapped && !except.some((t) => (c.types ?? []).includes(t))).length;
-            score += readyPower > 0 && blockersRemoved > 0
-              ? Math.min(40, readyPower * 3 + blockersRemoved * 4)
-              : -25;
-          }
           if (effect.type === 'your_creatures_gain_keywords_until_end_of_turn') {
             // Formidable (Stampeding Elk Herd): trample dla druzyny ma wartosc
             // tylko przy realnym ataku — trigger i tak odpala sie przy ataku,
