@@ -3347,7 +3347,7 @@ function hoverArtOf(info) {
   return artOf(info);
 }
 
-export function renderHoverPreview(host, info, hoverMode = 'scryfall') {
+export function renderHoverPreview(host, info, hoverMode = 'scryfall', { showCycleHint = true } = {}) {
   clear(host);
   const shape = hoverPreviewShape(hoverMode);
   const candidates = hoverImageSources(hoverArtOf(info), { hoverMode });
@@ -3369,9 +3369,26 @@ export function renderHoverPreview(host, info, hoverMode = 'scryfall') {
   attachImageWithFallback(img, candidates, null);
   const art = artOf(info);
   const hasLocal = art.artId != null && art.artId !== '';
-  const hint = hasLocal ? ' · scroll zmienia tor' : '';
+  // M257 r5/A: podgląd o torze STAŁYM (miniaturki w „Rozgrywce") nie cykluje
+  // scrollem — podpowiedź „scroll zmienia tor" byłaby kłamliwa.
+  const hint = hasLocal && showCycleHint ? ' · scroll zmienia tor' : '';
   div(host, 'hover-mode', `${hoverModeLabel(hoverMode)}${hint}`);
   return host;
+}
+
+/**
+ * M257 r5/A (uwaga właściciela): hover scryfall na miniaturkach w modalu
+ * „Rozgrywka" — ten sam podgląd co na stole (powiększona karta ze Scryfall),
+ * ale tor STAŁY (bez trybów FOT i KON i bez cyklowania scrollem).
+ * `null` na dotyku — na tablecie hover nie istnieje (jak na stole, M7c);
+ * tam miniaturkę otwiera tap (pełny ekran).
+ */
+export function createScryfallHover(els) {
+  if (TOUCH_DEVICE || !els?.hoverPreview) return null;
+  return {
+    start: (info, e) => showHoverPreviewAt(els, info, e, 'scryfall'),
+    end: () => { if (els.hoverPreview) els.hoverPreview.className = 'hover-preview'; },
+  };
 }
 
 /**
@@ -3492,7 +3509,7 @@ export function cardHasShowcaseArt(card) {
  * `closeBotMoveModal`): krzyżyk pauzuje auto-pass i zamyka modal — gracz
  * musi jawnie wykonać pass, żeby bot jechał dalej.
  */
-export function renderBotMoves(host, moves, session, { onCardClick = null } = {}) {
+export function renderBotMoves(host, moves, session, { onCardClick = null, hover = null } = {}) {
   clear(host);
   const list = Array.isArray(moves) ? moves : [];
   if (list.length === 0) {
@@ -3529,6 +3546,13 @@ export function renderBotMoves(host, moves, session, { onCardClick = null } = {}
             onTap: () => onCardClick(entry.cardId),
             onDoubleTap: () => onCardClick(entry.cardId),
           });
+        }
+        // M257 r5/A (uwaga właściciela): najechanie kursorem na miniaturkę
+        // pokazuje powiększoną kartę (Scryfall) — ten sam podgląd co na
+        // stole, ale bez trybów FOT i KON (tor stały; createScryfallHover).
+        if (hover?.start) {
+          art.addEventListener('mouseenter', (e) => hover.start(details, e));
+          art.addEventListener('mouseleave', hover.end);
         }
       }
     }
@@ -3600,6 +3624,28 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
 }
 
 /**
+ * Pokazuje powiększoną kartę (tor `mode`) w warstwie `els.hoverPreview`
+ * przy kursorze. Wspólna ścieżka hoveru stołu (tryby scryfall/FOT/KON,
+ * cyklowanie scrollem) i miniaturek w „Rozgrywce” (r5/A — tor stały).
+ */
+function showHoverPreviewAt(els, info, e, mode) {
+  if (!els.hoverPreview) return;
+  clear(els.hoverPreview);
+  renderHoverPreview(els.hoverPreview, info, mode);
+  const shape = hoverPreviewShape(mode);
+  const x = (e && typeof e.clientX === 'number') ? e.clientX : 0;
+  const y = (e && typeof e.clientY === 'number') ? e.clientY : 0;
+  const vw = (typeof window !== 'undefined' && window.innerWidth) || 0;
+  const vh = (typeof window !== 'undefined' && window.innerHeight) || 0;
+  // Pozycjonowanie jak w legacy: obok kursora, z odbiciem przy krawędzi.
+  const left = (vw && x + 15 + shape.width > vw) ? x - 15 - shape.width : x + 15;
+  const top = (vh && y + 15 + shape.height > vh) ? y - 15 - shape.height : y + 15;
+  els.hoverPreview.style.left = `${Math.max(0, left)}px`;
+  els.hoverPreview.style.top = `${Math.max(0, top)}px`;
+  els.hoverPreview.className = 'hover-preview active';
+}
+
+/**
  * Przerysowuje cały stół z aktualnego widoku sesji (M7).
  * @param {{ els: object, session: object, play: (cmd: object) => void,
  *   onCardClick: (objectId: string, cardId: string) => void,
@@ -3617,22 +3663,7 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   // wyłącznie menu kontekstowe (M7c).
   let currentHoverMode = hoverMode;
   const hover = TOUCH_DEVICE ? null : {
-    start: (info, e) => {
-      if (!els.hoverPreview) return;
-      clear(els.hoverPreview);
-      renderHoverPreview(els.hoverPreview, info, currentHoverMode);
-      const shape = hoverPreviewShape(currentHoverMode);
-      const x = (e && typeof e.clientX === 'number') ? e.clientX : 0;
-      const y = (e && typeof e.clientY === 'number') ? e.clientY : 0;
-      const vw = (typeof window !== 'undefined' && window.innerWidth) || 0;
-      const vh = (typeof window !== 'undefined' && window.innerHeight) || 0;
-      // Pozycjonowanie jak w legacy: obok kursora, z odbiciem przy krawędzi.
-      const left = (vw && x + 15 + shape.width > vw) ? x - 15 - shape.width : x + 15;
-      const top = (vh && y + 15 + shape.height > vh) ? y - 15 - shape.height : y + 15;
-      els.hoverPreview.style.left = `${Math.max(0, left)}px`;
-      els.hoverPreview.style.top = `${Math.max(0, top)}px`;
-      els.hoverPreview.className = 'hover-preview active';
-    },
+    start: (info, e) => showHoverPreviewAt(els, info, e, currentHoverMode),
     end: () => { if (els.hoverPreview) els.hoverPreview.className = 'hover-preview'; },
     cycle: (info, e) => {
       if (!els.hoverPreview) return;

@@ -21,7 +21,7 @@ import { stateFingerprint } from '../engine/fingerprint.js';
 import { createCardRegistry, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, FACE_DOWN_LABEL, TURN_NAMES } from './session.js';
-import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt } from './render.js';
+import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt, createScryfallHover } from './render.js';
 import { installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
 import { effectiveSpellManaCost } from '../engine/spells.js';
@@ -150,6 +150,10 @@ function bootstrapTable() {
     manaWizardBody: el('mana-wizard-body'),
     botMoveBody: el('bot-move-body'),
   };
+  // M257 r5/A (uwaga właściciela): hover na miniaturkach w modalu
+  // „Rozgrywka” — powiększona karta ze Scryfall, tor stały (bez trybów
+  // FOT i KON). `null` na dotyku (tam tap otwiera pełny ekran).
+  const scryfallHover = createScryfallHover(els);
   /**
    * M198/B (screenshot właściciela): komunikaty systemowe zamiast pasa
    * czerwonego tekstu w układzie pokazują się w warstwie z guzikiem
@@ -1290,6 +1294,7 @@ function bootstrapTable() {
       // (dane z registry, jak w hover-preview).
       renderBotMoves(els.botMoveBody, moves, session, {
         onCardClick: (cardId) => openCardFullscreenByCardId(cardId),
+        hover: scryfallHover,
       });
       session.clearBotMoves();
       showModal('bot-move');
