@@ -1676,8 +1676,9 @@ function bootstrapTable() {
     // „Tasuj talię" (2026-08-07): losowe ziarno — następne „Rozpocznij
     // partię" zagra z nowym tasowaniem. Bieżącej partii nie dotyka.
     el('shuffle-seed')?.addEventListener('click', () => {
+      // M257-r5b/A (uwaga z testów): bez komunikatu — „on nic nie wnosi”;
+      // nowym stanem jest samo pole seeda (klik „Rozpocznij partię” je czyta).
       el('seed').value = String(randomSeed());
-      showNotice(`Nowe ziarno: ${el('seed').value} — kliknij „Rozpocznij partię", żeby zagrać z tym tasowaniem.`);
     });
     el('export-replay').addEventListener('click', exportReplay);
     el('import-replay').addEventListener('click', importReplay);
