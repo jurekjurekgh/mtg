@@ -34,6 +34,36 @@ M208.
 
 ---
 
+## L96 (2026-08-30) — Snapshotty Scryfall w repo = darmowy masowy audyt danych kart; audytuj po registry.all(), nie po nazwie eksportu
+
+**Objaw (M259, brązowa odznaka):** 7 błędów vs zasady w katalogu kart
+(Instant zamiast Sorcery ×2, MV bez symboli phyrexian, złe subtypy ×2,
+koszt craft/echo bez pipów kolorowych) — po ~15 audytach PR i wielu
+bug-huntach. Wszystkie wykryte w ~30 minut MASOWYM porównaniem kart ze
+snapshotami `docs/cards/scryfall-*.json` (pola mechaniczne: CMC, P/T,
+typy, podtypy, kolory) + czytaniem zrzutu Oracle-vs-deskryptory — a nie
+czytaniem definicji jedna po drugiej.
+
+**Pułapki wykryte po drodze:**
+1. **~275 realnych kart żyje poza `REAL_CARDS`** (historycznie
+   dołożone do `VIRTUAL_BASIC_LANDS`) — audyt po eksporcie tablicy
+   omijał je w całości (wśród nich druga karta phyrexian!). Prawda
+   jest `createCardRegistry().all()`.
+2. Rozbieżności typów przy `//` (MDFC/DFC) to fałszywe alarmy — model
+   dwutwarzowy jest jawny; filtruj przed raportowaniem.
+3. Fałszywe poczucie bezpieczeństwa dają testy asercji danych: tablice
+   „oczekiwanych wartości" (batch11: `['porcelain-legionnaire', 3, 1, 2]`)
+   zamrażają BŁĘDNE dane razem z poprawnymi — strażnik musi liczyć
+   oczekiwaną wartość ze ŹRÓDŁA prawdy (MANA_COSTS), nie z ręki.
+
+**Reguła:** przy jakimkolwiek przeglądzie kart — najpierw automatyczne
+diffowanie pól ze snapshotami (one już są w repo dla 155+ kart), potem
+czytanie semantyczne tylko miejsc z rozbiejnością lub z mechaniką;
+zawsze po całym rejestru. A gdy konwencja deskryptora się zmienia
+(tu: manaCost = pełne MV), strażnik zgodności z MANA_COSTS musi znać
+NOWĄ konwencję i zapaść razem z nią (aktualizacja testu-strażnika to
+część fixu, nie opcja).
+
 ## L95 (2026-08-30) — Nowa decyzja blokująca to NIE handler: checklista ~10 punktów integracji; pierwsze redy testów to brakujące REJESTRY
 
 **Objaw (M258/F3 — ward):** mechanika resolve_ward_pay_choice działała

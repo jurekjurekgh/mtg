@@ -1267,14 +1267,18 @@ function firePayOrSacrifice(state, ability, source, events) {
  * wejściu). Wydzielona w Batchu 46, żeby obie ścieżki miały JEDNĄ regułę
  * płatności i te same zdarzenia (L41).
  */
-function queuePayOrSacrifice(state, source, amount, events, triggerEvent = 'echo') {
+function queuePayOrSacrifice(state, source, amount, events, triggerEvent = 'echo', colors = []) {
   const controllerId = source.controllerId;
   // Temat 7 (Rupture Spire, CR 601.2h/702.1): „sacrifice it unless you pay
   // {1}" — wybór należy do KONTROLERA. Gdy płatność jest możliwa (pula +
   // nietapnięte landy), kolejkujemy decyzję resolve_pay_or_sacrifice; samą
   // płatność (spendMana z auto-tapem) albo poświęcenie wykonuje komenda.
   // Bez możliwości zapłaty — automatyczne poświęcenie (jak dotąd).
-  const canPay = producibleMana(state, controllerId) >= amount;
+  // M259/B7 (CR 702.29 + 118.2): koszt echa {2}{B} wymaga pipa {B} —
+  // bramka opłacalności obejmuje KOLORY (pula + nietapnięte źródła), a sama
+  // płatność pobiera pipy (patrz resolve_pay_or_sacrifice → pay_mana).
+  const canPay = producibleMana(state, controllerId) >= amount
+    && (colors.length === 0 || canPayColoredCost(state, controllerId, [colors]));
   if (!canPay) {
     const before = state.events.length;
     applyEffect(state, { type: 'sacrifice_permanent' }, source, []);
@@ -1287,12 +1291,13 @@ function queuePayOrSacrifice(state, source, amount, events, triggerEvent = 'echo
     return true;
   }
   state.pendingPayOrSacrifice = {
-    playerId: controllerId, amount, sourceId: source.id,
+    playerId: controllerId, amount, sourceId: source.id, colors,
     restorePriorityTo: state.turn.priorityPlayerId,
   };
   state.turn.priorityPlayerId = controllerId;
   const required = event('pay_or_sacrifice_required', {
     playerId: controllerId, amount, sourceId: source.id, cardId: source.cardId,
+    colors,
   });
   state.events.push(required);
   events.push(required);
@@ -2766,7 +2771,7 @@ function processTriggersScan(state, recentEvents) {
         if (object.controllerId !== state.turn.activePlayerId) continue;
         const cost = object.echo ?? 0;
         state.objects.set(object.id, Object.freeze({ ...object, echoUnpaid: false }));
-        queuePayOrSacrifice(state, object, cost, events);
+        queuePayOrSacrifice(state, object, cost, events, 'echo', object.echoColors ?? []);
       }
     }
     // Suspend (CR 702.62a): „At the beginning of your upkeep, if this card is

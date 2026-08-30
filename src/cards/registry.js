@@ -266,6 +266,9 @@ export function defineCard(data) {
     toxic: data.toxic ?? null,
     // Batch 46 (Bone Shredder): koszt echa (CR 702.29).
     echo: data.echo ?? null,
+    // M259/B7 (CR 702.29 + 118.2): pipy kolorowe kosztu echa ({2}{B} — Bone
+    // Shredder); bez pola w defineCard deskryptor ginie po cichu (L21).
+    echoColors: data.echoColors ? Object.freeze([...data.echoColors]) : null,
     // Batch 46 (Manor Gate): „as this enters, choose a color…" na PERMANENCIE
     // (nie aurze) — { exclude: ['G'] } zawęża listę (CR 614.12).
     chooseColor: data.chooseColor ? Object.freeze({ ...data.chooseColor }) : null,

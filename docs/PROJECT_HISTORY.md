@@ -7023,9 +7023,23 @@ transform/craft/exile_return/K5-reset/nightbound; CR 707.8a + 202.3b);
 Testy C5–C8 i W1–W9; sanity 5 pełnych partii botów bez odrzuceń komend.
 Nowa lekcja **L95** (checklista integracji decyzji blokującej).
 
-**Kolejny krok:** ewentualny nowy batch kart / kolejna runda Żywego
-Testera (D3/D4 z HANDOFF_2026-08-29 zamknięte decyzją właściciela —
-porzucone jako bezzasadne).
+**M259 — brązowa odznaka wyłapywacza błędów (challenge właściciela):**
+„znajdź i napraw 5 unikalnych błędów vs zasady MtG" — wykonane z nadwykoną:
+**7 błędów, 4 klasy**, wszystkie naprawione. Metoda: masowe diffowanie kart
+ze snapshotami Scryfall + czytanie Oracle-vs-deskryptory (audyt po
+`registry.all()` — ~275 kart żyje poza REAL_CARDS!). Znaleziska: Courage
+in Crisis i Enter the Enigma jako Instant zamiast Sorcery (CR 307.1);
+**konwencja MV phyrexian** — {2}{W/P} liczone jako 2 zamiast 3 (CR 202.3;
+Divine Offering w puli dawał 2 życia zamiast 3; objęto też Ruthless
+Invasion); Wormfang Newt i Healer of the Glade z błędnymi subtypami
+(CR 205.1); craft Lodestone Needle {2}{U} i echo Bone Shreddera {2}{B}
+bez wymogu koloru (CR 118.2/702.29). Testy m259 RED→GREEN 11/11; regeneracje
+legalne (decki po sortowaniu MV, fixture golden-master — świadoma zmiana
+zachowania botów, benchmark 10/10); lekcja **L96**. Raport:
+`docs/audits/AUDYT_M259_BUG_HUNT_2026-08-30.md`.
+
+**Kolejny krok:** decyzja właściciela o scaleniu PR #89; ewentualnie nowy
+batch kart / kolejna runda Żywego Testera.
 
 ## Zasada aktualizacji
 

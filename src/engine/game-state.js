@@ -480,7 +480,7 @@ export const ADD_OBJECT_FIELDS = Object.freeze([
   'manaCost', 'spell', 'abilities', 'morph', 'plot', 'plotted', 'entersWithCounters',
   'entersWithCountersIf', 'keywords', 'subtypes', 'transformTo', 'frontFaceId', 'types', 'entersTapped',
   'entersTappedCondition', 'bestow', 'aura', 'equipment', 'backup', 'colors',
-  'phyrexianManaCost', 'enchantPlayer', 'saga', 'station', 'ownerId', 'devour', 'endure', 'toxic', 'echo', 'chooseColor',
+  'phyrexianManaCost', 'enchantPlayer', 'saga', 'station', 'ownerId', 'devour', 'endure', 'toxic', 'echo', 'echoColors', 'chooseColor',
   'exploit', 'treasureAltCost', 'cardName', 'name', 'bloodthirst', 'renown', 'additionalCost',
   'kicker', 'costReduction', 'adventure', 'buyback', 'protectionFromColors',
   'plottedAtTurn', 'enterAsCopy', 'suspend', 'suspended', 'timeCounters', 'suspendReady',
@@ -547,12 +547,12 @@ function assertAddObjectContract(config) {
 
 export function addObject(state, config) {
   assertAddObjectContract(config);
-  const { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId = null, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, renown = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false } = config;
+  const { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId = null, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, echoColors = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, renown = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false } = config;
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, toxic, echo, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, renown, additionalCost, kicker, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, surge, manifestReady, manifestTurnUpCost, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, toxic, echo, echoColors, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, renown, additionalCost, kicker, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, surge, manifestReady, manifestTurnUpCost, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady });
   const placed = zone === 'battlefield'
     // Batch 46 (Bone Shredder): permanent z echem wchodzi z nieopłaconym echem
     // — pierwszy WŁASNY upkeep po wejściu zapyta o zapłatę (CR 702.29).
@@ -2835,7 +2835,9 @@ export function execute(state, input) {
     const source = state.objects.get(pending.sourceId);
     state.pendingPayOrSacrifice = null;
     if (cmd.pay && source && source.zone === 'battlefield') {
-      applyEffect(state, { type: 'pay_mana', amount: pending.amount }, source, []);
+      // M259/B7: pipy kolorowe kosztu (echo {2}{B}) — pay_mana rozlicza je
+      // przez spendMana (auto-tap źródła kolorowego).
+      applyEffect(state, { type: 'pay_mana', amount: pending.amount, colors: pending.colors ?? [] }, source, []);
       state.events.push(event('pay_or_sacrifice_resolved', {
         // M184/Z5 (LKI, klasa spell_countered): nazwa po cardId — przy
         // poświęceniu obiekt zmienia id (grób) i nameOfObject widzi „?".
@@ -6384,8 +6386,10 @@ export function playerView(state, playerId) {
       if (symbols === 0) return [null];
       const out = [];
       const budget = manaAvailableFor(object);
+      // M259/B3 (CR 202.3): object.manaCost zawiera symbole phyrexian —
+      // wariant k wymaga manaCost - k many (reszta symbolem 2 życia).
       for (let k = 0; k <= symbols; k += 1) {
-        const manaNeeded = (object.manaCost ?? 0) + (symbols - k);
+        const manaNeeded = (object.manaCost ?? 0) - k;
         if (manaNeeded > budget) continue;
         if (2 * k > (player.life ?? 0)) continue;
         out.push(k);
@@ -6446,7 +6450,15 @@ export function playerView(state, playerId) {
       // Podstawa kosztu zawsze z many — bez niej permanent nie jest grywalny.
       // Koszt efektywny: modyfikatory z permanentów (Etherium Sculptor) mogą
       // obniżyć część generyczną już na etapie OFERTY rzutu.
-      if (effectiveSpellManaCost(state, object) > manaAvailableFor(object)) continue;
+      // M259/B3: bramka licuje się z wariantami phyrexian — najtańszy wariant
+      // płaci (manaCost - pipy opłacone życiem) many; porównywanie PEŁNEGO
+      // kosztu odcinało wariant życiowy przy puli mniejszej o 1 (regresja
+      // przy zmianie konwencji manaCost = pełna wartość MV).
+      {
+        const phyrexianSymbols0 = object.phyrexianManaCost ?? 0;
+        const lifePips = Math.min(phyrexianSymbols0, Math.floor((player.life ?? 0) / 2));
+        if (effectiveSpellManaCost(state, object) - lifePips > manaAvailableFor(object)) continue;
+      }
       // Kolejność wariantów (M203/2): przy konwencji „prezentacja =
       // enumeracja" iterujemy wprost — wariant manowy (k=null) jest pierwszy
       // w `phyrexianVariants`, więc i pierwszy na panelu (proste boty biorą

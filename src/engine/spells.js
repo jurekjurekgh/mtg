@@ -517,8 +517,9 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   const baseMana = (object.plotted || object.suspendReady || freeImpulse) ? 0 : effectiveSpellManaCost(state, object);
   const altManaExtra = (sacrificeCost && payAltCost) ? (orPayMana ?? 0) : 0;
   // Pip phyrexian płacony maną to pełna jednostka many (CR 118.9); pipy
-  // opłacone życiem nie biorą udziału w koszcie many.
-  const manaSpent = baseMana + altManaExtra + (phyrexianSymbols - lifePaid);
+  // opłacone życiem nie biorą udziału w koszcie many. M259/B3: baseMana
+  // (object.manaCost) zawiera już symbole phyrexian — odejmujemy lifePaid.
+  const manaSpent = baseMana + altManaExtra - lifePaid;
   if (2 * lifePaid > (player.life ?? 0)) throw new Error('Niewystarczające życie');
   spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId, lifePaid), spellManaPurpose(object));
   if (lifePaid > 0) changeLife(state, playerId, -2 * lifePaid);
@@ -2184,8 +2185,11 @@ export function legalSpellCasts(state, playerId) {
       }
       const base = effectiveSpellManaCost(state, object);
       const out = [];
+      // M259/B3: base (manaCost) zawiera symbole phyrexian — wariant k płaci
+      // base - k many + 2k życia (dotąd base +(symbols-k) przy manaCost bez
+      // symboli).
       for (let k = 0; k <= phyrexianSymbols; k += 1) {
-        if (base + (phyrexianSymbols - k) > manaAvailable(object)) continue;
+        if (base - k > manaAvailable(object)) continue;
         if (2 * k > (player.life ?? 0)) continue;
         if (!hasColorForSpell(state, playerId, object.cardId, k)) continue;
         out.push(k);
@@ -2296,7 +2300,9 @@ export function legalSpellCasts(state, playerId) {
         const baseCost = effectiveSpellManaCost(state, object);
         const bbCost = object.spell.buyback.cost ?? 0;
         for (const k of spellPhyrexianVariants) {
-          const pipMana = k == null ? 0 : (phyrexianSymbols - k);
+          // M259/B3: manaCost zawiera symbole phyrexian — wariant k obniża
+          // łączny koszt dokładnie o k jednostek (płacone życiem).
+          const pipMana = k == null ? 0 : -k;
           if (baseCost + bbCost + pipMana > manaAvailable(object)) continue;
           const cast2 = { objectId: id, targets: [], buyback: true };
           if (k != null) cast2.phyrexianPayWithLife = k;

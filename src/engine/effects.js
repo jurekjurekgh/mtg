@@ -2502,7 +2502,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'pay_mana') {
-    spendMana(state, sourceObject.controllerId, effect.amount ?? 0);
+    // M259/B7 (CR 118.2): pipy kolorowe płatności (echo {2}{B}) — każda
+    // jednostka colors to wymaganie [kolor] w formacie spendMana.
+    const pips = (effect.colors ?? []).map((color) => [color]);
+    spendMana(state, sourceObject.controllerId, effect.amount ?? 0, pips);
     return;
   }
   if (effect.type === 'return_permanent_from_graveyard') {

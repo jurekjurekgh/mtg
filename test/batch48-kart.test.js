@@ -340,7 +340,9 @@ test('B48/C3: Ruthless Invasion — nieartefaktowe stwory nie blokują w tej tur
   const card = REGISTRY.get('ruthless-invasion');
   assert.ok(card, 'karta w katalogu');
   assert.deepEqual(card.types, ['Sorcery']);
-  assert.equal(card.manaCost, 3, '{3} generyczne; pip {R/P} osobno (konwencja katalogu)');
+  // M259/B3: konwencja pełnego MV — manaCost liczy symbol {R/P} (CR 202.3);
+  // płatność odejmuje pipy opłacone życiem (4 maną albo 3 + 2 życia).
+  assert.equal(card.manaCost, 4, '{3}{R/P} = mana value 4');
   assert.equal(card.phyrexianManaCost, 1, '{R/P} — mana albo 2 życia');
   assert.deepEqual(card.spell.targets, [], 'czar bez celu — działa globalnie');
   const eff = card.spell.effects[0];

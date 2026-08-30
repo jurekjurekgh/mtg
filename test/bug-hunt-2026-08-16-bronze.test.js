@@ -151,8 +151,10 @@ test('B3: strażnik katalogu — manaCost KAŻDEJ karty równa się mana value j
     if (!costStr) continue;
     const parsed = parseManaCost(costStr);
     const mv = parsed.generic + parsed.colored.length + parsed.hybrid.length + parsed.phyrexian.length;
-    // Phyrexian: pip {W/P} jest osobnym polem (płatność maną albo 2 życiem).
-    const declared = (card.manaCost ?? 0) + (card.phyrexianManaCost ?? 0);
+    // M259/B3: od brązowej odznaki 2026-08-16 konwencja się zmieniła —
+    // manaCost niesie PEŁNĄ wartość MV (włącznie z symbolami phyrexian;
+    // płatność odejmuje pipy opłacone życiem), więc deskryptor = card.manaCost.
+    const declared = card.manaCost ?? 0;
     if (declared !== mv) mismatched.push(`${card.name}: ${costStr} => ${mv}, deskryptor ${declared}`);
   }
   assert.deepEqual(mismatched, []);

@@ -96,6 +96,9 @@ export function installDeck(state, deck, { seed }) {
       // stole seed 3004), Bone Shredder nie żądał echo, surge/warp/madness
       // nie oferowały alternatywnych kosztów.
       echo: card.echo ?? null,
+      // M259/B7: pipy kolorowe kosztu echa (Bone Shredder {2}{B}) — dotąd
+      // echo płacone było wyłącznie kwotą bezbarwną.
+      echoColors: card.echoColors ?? null,
       madness: card.madness ?? null,
       surge: card.surge ?? null,
       toxic: card.toxic ?? null,

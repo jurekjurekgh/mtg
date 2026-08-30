@@ -536,11 +536,13 @@ export const REAL_CARDS = Object.freeze([
   // gracz/permanent z licznikami) — batch22 (mechanika z commit b8c43a8).
   defineCard({
     id: 'courage-in-crisis', name: 'Courage in Crisis', set: 'WAR',
-    types: ['Instant'], colors: ['G'], manaCost: 3,
+    // M259/B1: Oracle to SORCERY ({2}{G}, WAR/CMM) — dotąd zamodelowana jako
+    // Instant (rzut w dowolnym momencie z priorytetem, CR 307.1 złamane).
+    types: ['Sorcery'], colors: ['G'], manaCost: 3,
     oracleText: 'Put a +1/+1 counter on target creature, then proliferate.',
     imageUri: 'https://cards.scryfall.io/large/front/6/7/67a22083-9ef9-4ff7-8502-3a77e69299df.jpg?1783933415',
     spell: {
-      timing: 'instant',
+      timing: 'sorcery',
       targets: [{ type: 'creature' }],
       effects: [
         { type: 'add_counter', counter: '+1/+1', amount: 1 },
@@ -597,7 +599,9 @@ export const REAL_CARDS = Object.freeze([
   // owner's control (return_exiled_to_battlefield czyta exiledCardId z LKI).
   defineCard({
     id: 'wormfang-newt', name: 'Wormfang Newt', set: 'JUD',
-    types: ['Creature'], subtypes: ['Salamander'], colors: ['U'],
+    // M259/B4: Oracle „Creature — Nightmare Salamander Beast" (JUD) — dotąd
+    // tylko Salamander; pełna linia typów (tribal: Nightmare/Beast, Changeling).
+    types: ['Creature'], subtypes: ['Nightmare', 'Salamander', 'Beast'], colors: ['U'],
     power: 2, toughness: 2, manaCost: 2,
     oracleText: 'When this creature enters, exile a land you control.\nWhen this creature leaves the battlefield, return the exiled card to the battlefield under its owner\'s control.',
     imageUri: 'https://cards.scryfall.io/large/front/d/f/df8012c1-76ec-4c36-8b38-5bc41ce5e156.jpg?1783945125',
@@ -678,7 +682,8 @@ export const REAL_CARDS = Object.freeze([
   // 9. Healer of the Glade (M20) {G} 1/2 Elf — ETB gain 3 life.
   defineCard({
     id: 'healer-of-the-glade', name: 'Healer of the Glade', set: 'M20',
-    types: ['Creature'], subtypes: ['Elf'], colors: ['G'],
+    // M259/B5: Oracle „Creature — Elemental" (M20) — dotąd Elf.
+    types: ['Creature'], subtypes: ['Elemental'], colors: ['G'],
     power: 1, toughness: 2, manaCost: 1,
     oracleText: 'When this creature enters, you gain 3 life.',
     imageUri: 'https://cards.scryfall.io/large/front/c/b/cbe262f2-e35b-4c85-938d-3e9e9c764c1b.jpg?1783932964',
@@ -698,11 +703,12 @@ export const REAL_CARDS = Object.freeze([
   // blocked + draw 1 (re-uses cant_be_blocked i draw_cards).
   defineCard({
     id: 'enter-the-enigma', name: 'Enter the Enigma', set: 'MKM',
-    types: ['Instant'], colors: ['U'], manaCost: 1,
+    // M259/B2: Oracle to SORCERY ({U}, DSK) — dotąd zamodelowana jako Instant.
+    types: ['Sorcery'], colors: ['U'], manaCost: 1,
     oracleText: 'Target creature can\'t be blocked this turn.\nDraw a card.',
     imageUri: 'https://cards.scryfall.io/large/front/c/f/cf5479c7-9e46-4a57-abe7-8cc670de89e4.jpg?1783909497',
     spell: {
-      timing: 'instant',
+      timing: 'sorcery',
       targets: [{ type: 'creature' }],
       effects: [
         { type: 'cant_be_blocked' },
@@ -1236,7 +1242,11 @@ export const REAL_CARDS = Object.freeze([
   defineCard({
     id: 'porcelain-legionnaire', name: 'Porcelain Legionnaire', set: 'NPH',
     types: ['Artifact', 'Creature'], subtypes: ['Phyrexian', 'Soldier'], colors: ['W'],
-    keywords: ['first_strike'], power: 3, toughness: 1, manaCost: 2, phyrexianManaCost: 1,
+    keywords: ['first_strike'], power: 3, toughness: 1,
+    // M259/B3 (CR 202.3): {2}{W/P} to mana value 3 — manaCost niesie PEŁNĄ
+    // wartość (włącznie z symbolami phyrexian), a płatność odejmuje symbole
+    // opłacone życiem (patrz resources.js/spells.js/game-state.js).
+    manaCost: 3, phyrexianManaCost: 1,
     oracleText: '({W/P} can be paid with either {W} or 2 life.)\nFirst strike',
     imageUri: 'https://cards.scryfall.io/large/front/2/6/2616aa0e-8413-4e63-877c-bffd5263f552.jpg?1783941324',
     artId: 345,
@@ -1746,7 +1756,9 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         keyword: 'craft',
-        cost: { mana: 3 },
+        // M259/B6: „Craft with artifact {2}{U}" — pip {U} obowiązuje (dotąd
+        // 3 bezbarwne; CR 118.2/601.2f).
+        cost: { mana: 3, colors: ['U'] },
         timing: 'sorcery',
         effect: { type: 'craft_transform' },
       }),
@@ -8944,7 +8956,9 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     id: 'bone-shredder', name: 'Bone Shredder', set: 'MH2',
     types: ['Creature'], subtypes: ['Phyrexian', 'Minion'], colors: ['B'],
     power: 1, toughness: 1, manaCost: 3, keywords: ['flying', 'echo'],
-    echo: 3,
+    // M259/B7: echo {2}{B} — echoColors niesie pipy kolorowe (dotąd koszt
+    // płatny 3 bezbarwnymi; CR 702.29 + 118.2).
+    echo: 3, echoColors: ['B'],
     oracleText: 'Flying\nEcho {2}{B} (At the beginning of your upkeep, if this came under your control since the beginning of your last upkeep, sacrifice it unless you pay its echo cost.)\nWhen this creature enters, destroy target nonartifact, nonblack creature.',
     imageUri: 'https://cards.scryfall.io/large/front/6/3/63d0b5f0-ed45-4b30-9c24-1c12011e3513.jpg?1783926787',
     abilities: [
@@ -9487,9 +9501,10 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   //     turn." Koszt {3}{R/P}: phyrexian można zapłacić 2 życiami.
   defineCard({
     id: 'ruthless-invasion', name: 'Ruthless Invasion', set: 'NPH',
-    // manaCost = część GENERYCZNA ({3}); pip phyrexian liczy phyrexianManaCost
-    // (konwencja katalogu, wzorzec Porcelain Legionnaire {2}{W/P} → manaCost 2).
-    types: ['Sorcery'], colors: ['R'], manaCost: 3, phyrexianManaCost: 1,
+    // M259/B3 (CR 202.3): manaCost = PEŁNA wartość kosztu ({3}{R/P} = 4,
+    // włącznie z symbolem phyrexian) — wspólna konwencja z Porcelain
+    // Legionnaire; płatność odejmuje pipy opłacone życiem.
+    types: ['Sorcery'], colors: ['R'], manaCost: 4, phyrexianManaCost: 1,
     oracleText: "({R/P} can be paid with either {R} or 2 life.)\nNonartifact creatures can't block this turn.",
     imageUri: 'https://cards.scryfall.io/large/front/b/c/bc2bbff9-af57-4858-9351-d148b8c4bc3a.jpg?1783941306',
     spell: {

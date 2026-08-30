@@ -56,6 +56,8 @@ export function gameObjectDataOf(card) {
     if (card.toxic != null) data.toxic = card.toxic;
     // Batch 46 (Bone Shredder): echo — koszt musi dojść na obiekt gry (L21).
     if (card.echo != null) data.echo = card.echo;
+    // M259/B7: pipy kolorowe kosztu echa ({2}{B}) — jw. (L21).
+    if (card.echoColors != null) data.echoColors = card.echoColors;
     // Exploit (CR 702.110, Silumgar Butcher): ETB z opcjonalnym poświęceniem
     // (resolve_exploit_choice); po poświęceniu trigger „exploits".
     if (card.exploit) data.exploit = card.exploit;

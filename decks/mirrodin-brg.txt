@@ -8,12 +8,12 @@
 1x Death-Hood Cobra
 1x Shatter
 1x Bone Shredder
-1x Ruthless Invasion
 1x Awaken the Sleeper
 1x Carrion Call
 1x Exterminator Magmarch
 1x Feed the Infection
 1x Necrosquito
+1x Ruthless Invasion
 1x Dementia Bat
 1x Spread the Sickness
 1x Gloomfang Mauler
