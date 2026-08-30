@@ -2977,7 +2977,14 @@ export function cardInfo(session, object, combat = null) {
     untapLockedNow: Boolean(object.untapLocked || object.dontUntapNextUntapStep),
     tempControlNow: Boolean(object.tempControlUntilEOT),
     cantRegenerateNow: Boolean(object.cantBeRegeneratedThisTurn),
-    manaCost: faceDown ? null : (details.manaCost ?? object.manaCost ?? null),
+    // M258/K2 (zgłoszone w audycie M257; CR 202.3b): mana value permanentu
+    // z TYLNĄ twarzą DFC w górę = koszt twarzy PRZEDNIEJ (tył nie ma
+    // wydrukowanego kosztu — katalog trzyma 0). Obiekt/widok niesie
+    // poprawne manaCost (transform go nie zmienia; M149: publiczny MV na
+    // polu bitwy), więc kafel czyta OBIEKT, a katalog jest tylko fallbackiem
+    // (L41: jedno źródło prawdy — nie wyprowadzaj z katalogu
+    // tego, co widok już niesie).
+    manaCost: faceDown ? null : (object.manaCost ?? details.manaCost ?? null),
     power: object.power ?? details.power,
     toughness: object.toughness ?? details.toughness,
     livePower: object.power ?? details.power,
