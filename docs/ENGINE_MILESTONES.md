@@ -3168,3 +3168,41 @@ Każda naprawa u root cause (ADR 0002), każda ze strażnikiem KLASOWYM
 
 **Wynik:** `npm test` **3970/3970** (+14), `npm run test:all` **3985/3985**,
 build **56 modułów / 3006.5 kB**.
+
+## M270 — Odznaka SREBRNA: 5 kolejnych unikalnych błędów CR (2026-09-01)
+
+Kontynuacja M269 (brąz) tą samą metodą, ale wyłącznie techniką **L107**
+(rodziny ścieżek duplikujących wspólny helper). Piąty błąd zamknął klasę,
+którą trzeci otworzył — to najlepszy dowód, że L107 działa jako *metoda*,
+a nie seria szczęśliwych trafień.
+
+**Naprawione:**
+6. **CR 400.7** — `enteredOnTurn` nie było ustawiane przy powrocie z wygnania
+   z transformacją i przy craft: obiekt wracał na pole bitwy jako „nowy",
+   ale bez znacznika tury wejścia (trzy emitery pola, dwa niekompletne).
+7. **CR 122.1e** — `destroy_equipment_attached` szło na sztywno do cmentarza
+   zamiast pytać `deathZoneFor`: ta sama luka finality co w błędzie #5,
+   tyle że na ścieżce niszczenia Equipmentu (L107 #2 — porównanie ładunków
+   dwóch emiterów jednego zdarzenia).
+8. **CR 122.1b** — licznik tarczy zdejmowany ręcznie w dwóch miejscach
+   zamiast helperem: brak `counter_removed`, więc log stołu i konsumenci
+   zdarzenia widzieli tylko część zdjęć tarczy.
+9. **CR 508.1c — DEADLOCK.** Goadowany stwór z „can't attack alone", będący
+   jedynym zdolnym do ataku: pusta deklaracja łamała wymóg ataku, a
+   deklaracja z nim łamała zakaz samotnego ataku — gracz nie miał **ani
+   jednej legalnej komendy**. Wymóg „attacks each combat IF ABLE" nie
+   dotyczy stwora, który legalnie zaatakować nie może. Naprawa w OBU
+   połowach: walidacja (`declareAttackers`) i oferta
+   (`legalAttackerOptions`) — klasyczne L48.
+10. **CR 122.1b + 704.5g** — TRZECIA kopia zdejmowania tarczy, pominięta
+    przy #8: state-based actions przy śmierci z obrażeń, czyli **najczęstsza
+    ścieżka w realnej grze**. Domknięcie klasy enumeracyjnie.
+
+Każda naprawa u root cause (ADR 0002), każda ze strażnikiem KLASOWYM
+i weryfikacją mutacyjną per ścieżka (L13). Nowe/rozszerzone testy:
+`m270-powrot-na-pole-entered` (4), `m270-zniszczenie-equipment-finality` (4),
+`m270-licznik-tarczy-rownowaznosc` (6), `m270-wymog-ataku-if-able` (4).
+
+**Wynik:** `npm test` **3990/3990**, `npm run test:all` **4003/4003**,
+build **56 modułów / 3010.8 kB**. Nowa lekcja: **L108**.
+

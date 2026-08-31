@@ -2346,3 +2346,28 @@ zawsze pusty → H2b; wycięcie wpisu `buff_land_creatures` → H4, H7;
 `sacrifice_each_other_creature` → H5, H7; `mill_cards` → H3, H7;
 `empty_library` → `no_targets` → H3; wycięcie masowej idempotentności
 (untap_all) → H6.
+
+## L108 — Deadlock reguł: szukaj par „musisz X" / „nie możesz X"
+
+Odkryte w M270 (błąd #9, CR 508.1c). Dotąd polowanie na błędy zakładało, że
+silnik robi coś **źle**. Istnieje groźniejsza klasa: silnik nie pozwala
+zrobić **niczego**. Goadowany stwór z „can't attack alone", jedyny zdolny do
+ataku, unieruchamiał krok deklaracji atakujących — każda możliwa komenda była
+odrzucana, partia stawała.
+
+Jak szukać: wypisz wszystkie ograniczenia jako WYMOGI („attacks each combat
+if able", „must be blocked", „must attack a Planeswalker if able") i ZAKAZY
+(„can't attack alone", „can't block", „can't attack unless..."). Dla każdej
+pary wymóg×zakaz dotyczącej tego samego obiektu sprawdź przypadek brzegowy,
+w którym zbiór alternatyw kurczy się do jednego elementu — tam wymóg i zakaz
+się spotykają. CR rozstrzyga to klauzulą **„if able"**: wymóg milczy, gdy
+czynność jest nielegalna. Silnik musi implementować „if able" jawnie, bo
+naiwny zapis („zawsze wymagaj") jest sprzeczny z zakazem.
+
+Test na deadlock jest tani i powinien być domyślnym elementem strażnika
+każdego kroku z wyborem: **„gracz ZAWSZE ma co najmniej jedną legalną
+opcję"** — enumerator skonfrontowany z walidacją (L48). Ten test wyłapał
+drugą połowę błędu #9, której naprawa pierwszej połowy nie ruszyła:
+`legalAttackerOptions` zwracało pustą listę, więc silnik nie proponował nawet
+legalnej deklaracji pustej.
+
