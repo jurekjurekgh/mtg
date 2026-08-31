@@ -34,6 +34,65 @@ M208.
 
 ---
 
+## L100 (2026-08-31) — Ten sam koszt renderowany w dwóch warstwach: zdarzenie musi nieść WSZYSTKIE składniki ceny, inaczej log kłamie obok poprawnego przycisku
+
+**Objaw (Żywy Tester M265, worek-basni vs final-fantasy seed 303):** modal
+„Rozgrywka" pisał „Zoraline, Cosmos Caller — zapłacić {2} i 2 życia?",
+a przycisk decyzji tuż pod nim „Zapłać {W}{B} + 2 życia — efekt odpali".
+Koszt Oracle to {W}{B}; „{2}" to cena, której w grze nie ma (za dwie many
+bezbarwne nie da się zapłacić dwóch pipów kolorowych).
+
+**Przyczyna:** dwie warstwy prezentacji czytają z DWÓCH różnych źródeł.
+Przycisk bierze koszt z `playerView` (`costColors` z `trigger.payColors` —
+`game-state.js:5726`), a opis zdarzenia z samego zdarzenia
+`optional_pay_required`, które niosło tylko `payMana`/`payLife`. Nikt nie
+zauważył, bo obie warstwy „działały", tylko mówiły co innego.
+
+**Reguła:**
+1. Zdarzenie opisujące DECYZJĘ o koszcie musi nieść komplet składników ceny
+   (kwota + pipy kolorów + życie + poświęcenia) — tyle, ile potrzeba, żeby
+   opis dało się złożyć bez sięgania do stanu. Bramka: czy `describeGameEvent`
+   umie odtworzyć dokładnie tę samą cenę co komenda w `legalCommands`?
+2. Naprawa idzie do EMITERA zdarzenia (`triggers.js`), nie do renderera —
+   renderer bez danych i tak nie ma czego pokazać.
+3. Do każdej takiej pary warstw pisz test SPÓJNOŚCI (`payColors` zdarzenia
+   `deepEqual` `costColors` komendy), nie tylko test tekstu — sam tekst
+   zielenieje po zahardkodowaniu jednej karty.
+4. Grep rodzeństwa: `pay_or_sacrifice_required`, `counter_pay_required`,
+   `ward_choice_required` renderują koszt jako gołe `{N}` — dziś to prawda
+   (koszty generyczne), ale pierwsza karta z kolorowym pipem w tych
+   mechanikach powtórzy błąd.
+
+**Strażnik:** `test/m265-optional-pay-colored-cost.test.js` (5 testów).
+Mutacje: usunięcie `payColors` ze zdarzenia (`triggers.js`) → testy 1, 2, 5;
+uproszczenie opisu do `{${e.payMana}}` (`session.js`) → testy 2, 3.
+
+## L99 (2026-08-31) — Fix wdrożony w dwóch warstwach potrzebuje pinu w OBU; test warstwy tekstu nie chroni warstwy obrazu
+
+**Objaw (audyt PR #90, mutacja M8):** M264 zamknął wyciek nazwy zakrytej
+karty przy `trigger_resolved` w DWÓCH miejscach `src/table/session.js` —
+w opisie tekstowym (`objectOrLki`) i w bramce SKANU karty (`hiddenLive`
+w `noteBotMove`). Test powstał tylko dla tekstu. Usunięcie `e.sourceId`
+z bramki skanu przechodziło cały `test/fow-facedown-names.test.js`
+(17/17 zielone), a w modalu obok poprawnego „Morph — trigger się
+rozstrzyga" pojawiała się MINIATURA realnej karty przeciwnika (CR 708.2).
+
+**Przyczyna:** ta sama informacja ukryta wycieka dwiema powierzchniami
+(nazwa i obraz), a plik testowy nazwany po zgłoszeniu („nazwy face-down")
+sugerował pełne pokrycie tematu. Recydywa klasy L41/L70.
+
+**Reguła:**
+1. Kiedy jedna naprawa dotyka N miejsc w kodzie, policz je jawnie w opisie
+   commita i dopisz N pinów — „ten sam plik" nie znaczy „ta sama warstwa".
+2. Dla FoW pytaj osobno o KAŻDĄ powierzchnię: tekst, skan/miniatura,
+   `playerView`, etykieta komendy, tytuł modala.
+3. Weryfikacja mutacyjna audytu ma celować w każdy człon warunku z osobna
+   (`[e.objectId, e.object?.id, e.sourceId]` → trzy mutacje, nie jedna).
+
+**Strażnik:** `test/fow-facedown-names.test.js`, test
+„M265: trigger_resolved od zakrytego źródła bota — modal bez SKANU karty".
+Mutacja: `hiddenLive` bez `e.sourceId` → RED.
+
 ## L98 (2026-08-31) — Buforowane „dopisywanie" zamyka paczkę na granicy domenowej; promocję zatrzymanej połowy robią punkty WZNOWIENIA, nie wspólna pętla gry
 
 **Objaw (M261, zgłoszenie właściciela):** modal „Rozgrywka" doklejał

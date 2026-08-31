@@ -1513,7 +1513,15 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       }
       case 'optional_pay_required': {
         const parts = [];
-        if (e.payMana) parts.push(`{${e.payMana}}`);
+        if (e.payMana) {
+          // M265: pipy kolorów wchodzą w miejsce części generycznej — ta sama
+          // składanka co w rendererze przycisku (`resolve_optional_pay_choice`),
+          // żeby log i decyzja mówiły o jednym koszcie ({W}{B}, nie {2}).
+          const colors = e.payColors ?? [];
+          const generic = Math.max(0, e.payMana - colors.length);
+          const symbols = `${generic > 0 ? `{${generic}}` : ''}${colors.map((c) => `{${c}}`).join('')}`;
+          parts.push(symbols || `{${e.payMana}}`);
+        }
         if (e.payLife) parts.push(`${e.payLife} życia`);
         return `${objectOrLki(e.sourceId, e.cardId)} — zapłacić ${parts.join(' i ')}? (${decisionOwnerNote(e.playerId)})`;
       }

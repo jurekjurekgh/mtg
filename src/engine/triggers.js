@@ -1573,6 +1573,12 @@ function fireOrQueuePay(state, ability, source, triggerTargets, events, extra, {
     const required = event('optional_pay_required', {
       playerId: source.controllerId, sourceId: source.id, cardId: source.cardId,
       payMana: trigger.payMana ?? 0, payLife: trigger.payLife ?? 0,
+      // M265 (Żywy Tester, worek-basni vs final-fantasy seed 303): koszt bywa
+      // KOLOROWY (Zoraline {W}{B}, Furious Forebear {1}{W}). Bez pipów opis
+      // zdarzenia pisał generyczne „{2}" — cenę, której w grze nie ma —
+      // podczas gdy przycisk decyzji (playerView.costColors) pokazywał
+      // prawidłowe {W}{B}. Zdarzenie musi nieść ten sam koszt co komenda.
+      payColors: trigger.payColors ?? [],
     });
     state.events.push(required);
     events.push(required);
