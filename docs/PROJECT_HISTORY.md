@@ -7165,6 +7165,45 @@ Commity: `a05eebe` (M261), `f82b455` (plan), `c410753` (Z1+Z2),
 **Kolejny krok:** decyzja właściciela o scaleniu PR #90; dalsza pętla
 jakości lub nowy batch kart.
 
+## 2026-08-31 — M264: Żywy Tester na puli niewidzianej (PR #90)
+
+Kontynuacja M263 (plan `PLAN_2026-08-31-m264-zywy-tester-pula-niewidziana.md`):
+Etap 2.1 — matryca 10 partii (seeds 4001–4010, `--steps 400`, profile
+greedy/explorer/defensive/random/impatient) na puli niewidzianej
+(forgotten-realms + karty M258–M262) + domknięcie luki pokrycia (seed
+4011, mirrodin-wu↔mirrodin-brg). Wszystkie transkrypty w `tmp-audyt-m264/`
+(poza repo). **Wynik: 11/11 partii, po dwóch naprawach 0 zgłoszeń
+detektorów** (raport: `docs/audits/AUDYT_M264_2026-08-31.md`).
+
+Znaleziska (naprawione u root cause, RED→GREEN, osobne commity):
+
+- **B (FoW, klasa M100)** — wyciek nazwy zakrytego źródła w rodzinie
+  triggerów (partia 4002: „Plains — trigger (ward)" przy cloaked 2/2).
+  Engine: `trigger_resolved` niósł tylko `objectId` usuniętego wpisu
+  stosu; renderer nazywał źródło po `e.cardId` (realne id karty).
+  Fix `82065e4`: `sourceId` w 8 punktach `resolveTriggerEntry` +
+  `optional_trigger_resolved`; `objectOrLki` w 11 gałęziach rodziny
+  triggerów; bramka `hiddenLive` modala obejmuje `e.sourceId`. Testy:
+  6 nowych w `fow-facedown-names.test.js` + W12 (ward `sourceId`).
+- **C (FA noop-detektora)** — kontr wardem klasyfikowany jako „jedyna
+  zmiana to zapłacony koszt" (sonda opcji „Stirring Bard → Morph");
+  `spell_countered` to realna odpowiedź gry, nie wada oferty (L12).
+  Fix `2247199`: `probe.countered` (noop-probe.js) + pominięcie
+  w `detectNoEffectOffers`; testy sondy i detektora.
+
+Weryfikacja żywa: partie 4001/4002 odtworzone deterministycznie —
+identyczny przebieg (Gracz krok 74 / Bot krok 170), 4002 po fixach:
+„DETEKTORY: brak zgłoszeń", w logu „Morph — trigger (ward)".
+`scan.mjs` (1182 trafień): kategorie intencjonalne (cel:, odmiana kart,
+choroba, Trigger:, pytania decyzji). Brak odrzuceń komend, `[STOP]`,
+`undefined`, `[object`.
+
+Suite: fast 3885/3885, `test:all` 3895/3895, build 56 modułów /
+2987.9 kB; PR #90 — 12 commitów (`82065e4`, `2247199` po `7cdf735`).
+
+**Kolejny krok:** Etap 2.3 — DFC: kopia frontu przez realną ścieżkę
+(`putCard`/`setupCardMatch`); decyzja właściciela o scaleniu PR #90.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:
