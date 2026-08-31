@@ -230,6 +230,18 @@ test('M258/W8: kafel zakrytego z ward pokazuje „Ward {2}" (oś 2 — to nie in
   assert.equal(info.ward, 2, 'cardInfo niesie wartość ward');
   const text = rulesText(info);
   assert.ok(text.includes('Ward {2}'), `linia reguł pokazuje „Ward {2}" (jest: „${text}")`);
+  // Audyt PR #89 (L1/ADR 0017): PRAWDZIWY kafel renderuje z wpisu playerView,
+  // nie z surowego obiektu — bez kwoty w widoku karta z widoku nie pokazywała
+  // „Ward {2}" mimo zielonego testu na surowym obiekcie.
+  for (const viewer of ['p1', 'p2']) {
+    const entry = playerView(state, viewer).zones.battlefield.find((o) => o.faceDown);
+    assert.ok(entry, `zakryty w widoku ${viewer}`);
+    assert.equal(entry.ward, 2, `playerView(${viewer}) niesie kwotę ward — RED przed fixem: undefined`);
+    const info2 = cardInfo(SESSION_MOCK, entry);
+    assert.ok((info2.keywords ?? []).includes('ward'), `cardInfo z widoku ${viewer} niesie keyword ward`);
+    assert.equal(info2.ward, 2, `cardInfo z widoku ${viewer} niesie wartość ward`);
+    assert.ok(rulesText(info2).includes('Ward {2}'), `kafel z widoku ${viewer} pokazuje „Ward {2}"`);
+  }
 });
 
 test('M258/W9: log opisuje decyzję ward (oś 2 — log to jedyne źródło wiedzy gracza)', () => {

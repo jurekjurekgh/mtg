@@ -4996,6 +4996,12 @@ export function playerView(state, playerId) {
           ? effectiveKeywords(object, state).filter((keyword) => !(object.keywords ?? []).includes(keyword))
           : effectiveKeywords(object, state);
         if (keywords.length) entry.keywords = keywords;
+        // M258/F3 + audyt PR #89 (W8, oś 2/ADR 0017): kwota ward jest JAWNĄ
+        // częścią definicji zakrycia (cloak: „2/2 z ward {2}\") — bez tego
+        // pola prawdziwy kafel (renderBattlefield czyta wpis z playerView)
+        // nie pokazywał „Ward {2}\", a test W8 sprawdzał cardInfo na SUROWYM
+        // obiekcie i luki nie widział.
+        if (object.ward != null) entry.ward = object.ward;
         // M175/A3 (uwaga właściciela, Death-Hood Cobra): NADANE keywordy
         // (granty do EOT, załączniki, anthemy, statyki warunkowe) jawnie w
         // widoku — render liczył je jako „efektywne − entry.keywords", a obie

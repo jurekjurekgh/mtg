@@ -99,6 +99,12 @@ export function installDeck(state, deck, { seed }) {
       // M259/B7: pipy kolorowe kosztu echa (Bone Shredder {2}{B}) — dotąd
       // echo płacone było wyłącznie kwotą bezbarwną.
       echoColors: card.echoColors ?? null,
+      // Audyt PR #89 (F1/L21 — jedyne ginące pole spośród 433 kart): Manor
+      // Gate „As this land enters, choose a color" — deskryptor z
+      // gameObjectDataOf docierał do wpisu TALII, ale ta jawna lista pól go
+      // nie przenosiła, więc w prawdziwej partii ląd wchodził bez decyzji
+      // koloru (testy B46 robiły `...gameObjectDataOf`, więc były zielone).
+      chooseColor: card.chooseColor ?? null,
       madness: card.madness ?? null,
       surge: card.surge ?? null,
       toxic: card.toxic ?? null,
