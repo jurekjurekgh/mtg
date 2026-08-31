@@ -459,9 +459,20 @@ function untilEndOfTurnBonuses(state, object) {
     // nim objęty (przedtem liczyła się tylko bieżąca kontrola, więc świeży
     // stwór „łapał" Angel of the Dawn czy Hysterical Blindness).
     if (Array.isArray(buff.objectIds) && !buff.objectIds.includes(object.id)) continue;
-    const applies = buff.opponent
+    // CR 611.2c (M269): zbiór dotkniętych obiektów jest ustalany RAZ, przy
+    // rozstrzygnięciu, i nie zmienia się do końca tury. Późniejsza zmiana
+    // KONTROLI nie zdejmuje buffa — efekt dotyczy konkretnych obiektów, a nie
+    // „tego, co kontrolujesz teraz". Dotąd filtr po bieżącym kontrolerze
+    // odbierał bonus stworowi przejętemu efektem „gain control until end of
+    // turn" (Spreading Insurrection, Puppeteer Clique): p1 buffował swoje
+    // stwory, p2 kradł jednego z nich i stwór natychmiast tracił +X/+X —
+    // a przy buffie ujemnym (Hysterical Blindness −4/−0) kradzież wręcz
+    // LECZYŁA osłabienie. Wpis ze zbiorem obiektów (objectId/objectIds) jest
+    // samowystarczalny: przynależność rozstrzyga zbiór, nie kontrola.
+    const hasFrozenScope = buff.objectId != null || Array.isArray(buff.objectIds);
+    const applies = hasFrozenScope || (buff.opponent
       ? object.controllerId !== buff.controllerId
-      : object.controllerId === buff.controllerId;
+      : object.controllerId === buff.controllerId);
     if (!applies) continue;
     out.power += buff.power ?? 0;
     out.toughness += buff.toughness ?? 0;
