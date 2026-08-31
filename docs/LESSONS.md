@@ -177,6 +177,18 @@ zauważył, bo obie warstwy „działały", tylko mówiły co innego.
    `ward_choice_required` renderują koszt jako gołe `{N}` — dziś to prawda
    (koszty generyczne), ale pierwsza karta z kolorowym pipem w tych
    mechanikach powtórzy błąd.
+   **DOMKNIĘTE w M266/E (2026-08-31).** Skan katalogu pokazał, że dla
+   MADNESS ta karta już istniała: Terminal Agony ({B}{R}) i Revolutionist
+   ({3}{R}) — log pisał „możesz rzucić za {2}", czyli cenę, której nie da
+   się zapłacić. Naprawa zgodnie z pkt 3 tej lekcji nie dołożyła trzeciej
+   kopii składanki: `costSymbols(amount, colors)` w `src/table/mana-icons.js`
+   jest teraz JEDYNYM źródłem dla obu warstw (opis zdarzenia w `session.js`
+   i etykieta przycisku w `render.js`), a `madness_ready_required` oraz
+   komendy `resolve_madness_cast`/`resolve_pay_or_sacrifice` niosą
+   `costColors`. Strażnik: `test/m266-koszt-pipy.test.js` (5 testów).
+   Wniosek na przyszłość: „dziś to prawda" w ostrzeżeniu o rodzeństwie
+   warto od razu zweryfikować SKANEM KATALOGU — ostrzeżenie z L100 opisywało
+   ryzyko przyszłe, a błąd był już w grze.
 
 **Strażnik:** `test/m265-optional-pay-colored-cost.test.js` (5 testów).
 Mutacje: usunięcie `payColors` ze zdarzenia (`triggers.js`) → testy 1, 2, 5;

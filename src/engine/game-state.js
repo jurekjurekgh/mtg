@@ -2192,6 +2192,9 @@ export function execute(state, input) {
     const ev = event('madness_ready_required', {
       playerId: next.playerId, objectId: next.objectId, cardId: next.cardId,
       cost: state.objects.get(next.objectId)?.madness?.cost ?? null,
+      // M266/E (L100 pkt 1): zdarzenie opisujące decyzję o koszcie musi nieść
+      // WSZYSTKIE składniki ceny — inaczej opis nie da się złożyć bez stanu.
+      costColors: state.objects.get(next.objectId)?.madness?.colors ?? null,
     });
     state.events.push(ev);
     return ev;
@@ -5717,6 +5720,9 @@ export function playerView(state, playerId) {
     const payOrSacInfo = {
       cost: state.pendingPayOrSacrifice.amount ?? null,
       sourceId: state.pendingPayOrSacrifice.sourceId ?? null,
+      // M266/E: `colors` istniało w stanie i w zdarzeniu, ale nie docierało
+      // do komendy — przycisk nie miał z czego złożyć pipów (L100 pkt 4).
+      costColors: state.pendingPayOrSacrifice.colors ?? null,
     };
     legalCommands.push(command('resolve_pay_or_sacrifice', playerId, { pay: true, ...payOrSacInfo }));
     legalCommands.push(command('resolve_pay_or_sacrifice', playerId, { pay: false, ...payOrSacInfo }));
@@ -6132,7 +6138,13 @@ export function playerView(state, playerId) {
     // cardId/objectId (etykieta UI nazywa kartę).
     const madnessPending = state.pendingMadnessCast;
     const madnessObj = state.objects.get(madnessPending.objectId);
-    const madnessIds = { objectId: madnessPending.objectId, cardId: madnessPending.cardId };
+    // M266/E (L100 pkt 4): oferta niesie KOMPLET ceny (kwota + pipy kolorów),
+    // żeby etykieta mogła pokazać {B}{R} zamiast nieopłacalnego {2}.
+    const madnessIds = {
+      objectId: madnessPending.objectId, cardId: madnessPending.cardId,
+      cost: madnessObj?.madness?.cost ?? null,
+      costColors: madnessObj?.madness?.colors ?? null,
+    };
     legalCommands.push(command('resolve_madness_cast', playerId, { cast: false, ...madnessIds }));
     if (madnessObj && madnessObj.zone === 'exile' && madnessObj.madnessReady
       && canPayMadnessCost(state, playerId, madnessObj)) {

@@ -11,7 +11,7 @@ import {
   manaEffectLabel,
   manaProducedLabel,
 } from './session.js';
-import { escapeHtml, manaCostHtml, manaSymbolsHtml } from './mana-icons.js';
+import { costSymbols, escapeHtml, manaCostHtml, manaSymbolsHtml } from './mana-icons.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { installTapGesture } from './gestures.js';
 
@@ -2558,10 +2558,7 @@ export function commandLabel(cmd, session, view) {
       if (cmd.cost != null && cmd.cost > 0) {
         // Koszt bywa kolorowy (Furious Forebear: payMana 2 + payColors ['W']
         // = {1}{W}) — pipy kolorów wchodzą w miejsce części generycznej.
-        const colors = cmd.costColors ?? [];
-        const generic = Math.max(0, cmd.cost - colors.length);
-        const symbols = `${generic > 0 ? `{${generic}}` : ''}${colors.map((c) => `{${c}}`).join('')}`;
-        parts.push(manaCostHtml(symbols || `{${cmd.cost}}`));
+        parts.push(manaCostHtml(costSymbols(cmd.cost, cmd.costColors)));
       }
       if (cmd.lifeCost != null && cmd.lifeCost > 0) parts.push(`${cmd.lifeCost} życia`);
       const price = parts.join(' + ');
@@ -2571,7 +2568,10 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_pay_or_sacrifice': {
       // M101/B: ta sama klasa błędu co wyżej („Zapłata albo poświęcenie" ×2).
       const source = cmd.sourceId ? nameOfObjectId(cmd.sourceId) : null;
-      const price = cmd.cost != null && cmd.cost > 0 ? manaCostHtml(`{${cmd.cost}}`) : null;
+      // M266/E (L100 pkt 4): pipy kolorów, gdy koszt je ma — jedna składanka
+      // (`costSymbols`) dla opisu zdarzenia i etykiety przycisku.
+      const price = cmd.cost != null && cmd.cost > 0
+        ? manaCostHtml(costSymbols(cmd.cost, cmd.costColors)) : null;
       if (cmd.pay) return `Zapłać${price ? ` ${price}` : ''}${source ? ` (zachowaj ${source})` : ''}`;
       return `Poświęć${source ? ` ${source}` : ' permanent'} (bez płacenia)`;
     }
@@ -2579,7 +2579,10 @@ export function commandLabel(cmd, session, view) {
       // Batch 44 (Frightful Delusion): zapłać {N}, żeby czar NIE został
       // skontrowany — albo odpuść (czar do grobu). Obie opcje z ceną i celem.
       const spell = cmd.targetId ? nameOfObjectId(cmd.targetId) : 'czar';
-      const price = cmd.cost != null && cmd.cost > 0 ? manaCostHtml(`{${cmd.cost}}`) : null;
+      // M266/E (L100 pkt 4): pipy kolorów, gdy koszt je ma — jedna składanka
+      // (`costSymbols`) dla opisu zdarzenia i etykiety przycisku.
+      const price = cmd.cost != null && cmd.cost > 0
+        ? manaCostHtml(costSymbols(cmd.cost, cmd.costColors)) : null;
       if (cmd.pay) return `Zapłać${price ? ` ${price}` : ''} — ${spell} zostaje na stosie`;
       return `Nie płać — ${spell} zostaje skontrowany`;
     }
@@ -2587,7 +2590,10 @@ export function commandLabel(cmd, session, view) {
       // M258/F3 — ward (CR 702.21): dopłać, żeby czar/zdolność przeszła,
       // albo pozwól się skontrować. Cena i cel (obiekt na stosie) w komendzie.
       const spell = cmd.targetId ? nameOfObjectId(cmd.targetId) : 'czar';
-      const price = cmd.cost != null && cmd.cost > 0 ? manaCostHtml(`{${cmd.cost}}`) : null;
+      // M266/E (L100 pkt 4): pipy kolorów, gdy koszt je ma — jedna składanka
+      // (`costSymbols`) dla opisu zdarzenia i etykiety przycisku.
+      const price = cmd.cost != null && cmd.cost > 0
+        ? manaCostHtml(costSymbols(cmd.cost, cmd.costColors)) : null;
       if (cmd.pay) return `Zapłać${price ? ` ${price}` : ''} (ward) — ${spell} przechodzi`;
       return `Nie płać (ward) — ${spell} skontrowany`;
     }
@@ -2718,8 +2724,12 @@ export function commandLabel(cmd, session, view) {
       // suspend, M151) — etykieta nazywa cel, inaczej N wpisów wygląda
       // identycznie.
       const madTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
+      // M266/E (L100 pkt 4): koszt madness bywa kolorowy (Terminal Agony
+      // {B}{R}) — etykieta pokazuje realną cenę, nie samo słowo „koszt madness".
+      const madPrice = cmd.cost != null && cmd.cost > 0
+        ? ` za ${manaCostHtml(costSymbols(cmd.cost, cmd.costColors))}` : ' za koszt madness';
       return cmd.cast
-        ? `Rzuć za koszt madness: ${nameOfObjectId(cmd.objectId ?? cmd.cardId)}${madTargets ? ` → cel: ${madTargets}` : ''}`
+        ? `Rzuć${madPrice}: ${nameOfObjectId(cmd.objectId ?? cmd.cardId)}${madTargets ? ` → cel: ${madTargets}` : ''}`
         : `Przełóż do cmentarza (rezygnacja z madness): ${nameOfObjectId(cmd.objectId ?? cmd.cardId)}`;
     }
     case 'resolve_reveal_choice': {

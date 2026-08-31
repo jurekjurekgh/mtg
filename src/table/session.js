@@ -6,6 +6,7 @@ import { parseReplay, playReplay, replayFromState, serializeReplay } from '../en
 import { stateFingerprint } from '../engine/fingerprint.js';
 import { createHeuristicBot } from '../controllers/heuristic-bot.js';
 import { effectiveKeywords } from '../engine/permanents.js';
+import { costSymbols } from './mana-icons.js';
 import { probeCommandEffect } from './noop-probe.js';
 
 /**
@@ -933,7 +934,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         return `${sourceName} — obrażenia przepadają: cel opuścił pole bitwy`;
       }
       case 'madness_ready_required':
-        return `${nameOf(e.cardId)} — odrzucona z madness: możesz rzucić za {${e.cost ?? '?'}} albo przełożyć do cmentarza`;
+        // M266/E (L100 pkt 4): koszt madness bywa KOLOROWY (Terminal Agony
+        // {B}{R}, Revolutionist {3}{R}) — „{2}" opisywało cenę, której w grze
+        // nie ma (dwie many bezbarwne nie zapłacą dwóch pipów).
+        return `${nameOf(e.cardId)} — odrzucona z madness: możesz rzucić za ${costSymbols(e.cost, e.costColors) || '?'} albo przełożyć do cmentarza`;
       case 'madness_declined':
         return `${nameOf(e.cardId)} — madness odrzucona, karta do cmentarza`;
       case 'reveal_choice_required':
@@ -1492,14 +1496,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         }
         return `${whoN(e.playerId)} rezygnuje z szukania i tasuje bibliotekę`;
       }
-      case 'pay_or_sacrifice_required': return `${nameOfObject(e.sourceId)} — zapłać {${e.amount}} albo ją poświęć (${decisionOwnerNote(e.playerId)})`;
-      case 'counter_pay_required': return `${nameOf(e.cardId)} zostanie skontrowany, chyba że kontroler zapłaci {${e.amount}}${e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : ''}`;
+      case 'pay_or_sacrifice_required': return `${nameOfObject(e.sourceId)} — zapłać ${costSymbols(e.amount, e.colors)} albo ją poświęć (${decisionOwnerNote(e.playerId)})`;
+      case 'counter_pay_required': return `${nameOf(e.cardId)} zostanie skontrowany, chyba że kontroler zapłaci ${costSymbols(e.amount, e.colors)}${e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : ''}`;
       case 'counter_pay_resolved': return e.paid
         ? `${nameOf(e.cardId)}: kontroler płaci — czar zostaje na stosie`
         : `${nameOf(e.cardId)}: bez zapłaty — czar skontrowany`;
       // M258/F3 — ward (CR 702.21): decyzja dopłaty przy celowaniu w
       // permanent z ward; skontrowany czar/zdolność też trafia do logu.
-      case 'ward_choice_required': return `${nameOf(e.cardId)} celuje w ${nameOfObject(e.wardSourceId)} — ward: zapłać {${e.amount}} albo czar skontrowany (${decisionOwnerNote(e.playerId)})`;
+      case 'ward_choice_required': return `${nameOf(e.cardId)} celuje w ${nameOfObject(e.wardSourceId)} — ward: zapłać ${costSymbols(e.amount, e.colors)} albo czar skontrowany (${decisionOwnerNote(e.playerId)})`;
       case 'ward_pay_resolved': return e.paid
         ? `${nameOf(e.cardId)}: kontroler płaci {${e.amount}} — ward ominięty, czar zostaje`
         : `${nameOf(e.cardId)}: bez zapłaty — skontrowany przez ward`;
@@ -1517,10 +1521,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
           // M265: pipy kolorów wchodzą w miejsce części generycznej — ta sama
           // składanka co w rendererze przycisku (`resolve_optional_pay_choice`),
           // żeby log i decyzja mówiły o jednym koszcie ({W}{B}, nie {2}).
-          const colors = e.payColors ?? [];
-          const generic = Math.max(0, e.payMana - colors.length);
-          const symbols = `${generic > 0 ? `{${generic}}` : ''}${colors.map((c) => `{${c}}`).join('')}`;
-          parts.push(symbols || `{${e.payMana}}`);
+          parts.push(costSymbols(e.payMana, e.payColors));
         }
         if (e.payLife) parts.push(`${e.payLife} życia`);
         return `${objectOrLki(e.sourceId, e.cardId)} — zapłacić ${parts.join(' i ')}? (${decisionOwnerNote(e.playerId)})`;
