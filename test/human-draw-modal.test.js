@@ -5,9 +5,16 @@
 // odfiltrowywało wszystkie źródła poza 'effect'). Gracz grający przez modale
 // (tak gra właściciel na telefonie) nie dostawał żadnej informacji o własnym
 // dobraniu — choć to własna karta (pełna legalność FoW) i dla niego
-// najważniejszy moment tury. Decyzja M98 („początek tury = treść") tu
-// wzmacniona: „Tura N — Ty" + „Dobierasz: X" to para nagłówkowa każdej
-// własnej tury. Dobranie BOTA w kroku dobierania zostaje szumem.
+// najważniejszy moment tury.
+//
+// KOREKTA M261 (2026-08-31): nagłówek „Tura N — Ty" jest OSTATNIĄ linią
+// bloku i zatrzymuje modal; „Dobierasz: X" wychodzi w KOLEJNYM bloku — po
+// kliknięciu „Rozumiem". Para nagłówkowa M100/E8 („Tura N — Ty" + „Dobierasz")
+// żyje więc w STRUMIENIU bloków, nie w jednym modalu: dobranie musi być
+// POPRZEDZONE nagłówkiem własnej tury (nigdy nie wisieć po turze bota),
+// a samo nie może ginąć.
+//
+// Dobranie BOTA w kroku dobierania NADAL zostaje szumem (FoW + gadatliwość).
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -40,7 +47,6 @@ function collectBlocks(session, { maxMoves = 260 } = {}) {
       ?? view.legalCommands.find((c) => c.type === 'pass_priority');
     if (!cmd) break;
     if (!session.apply(cmd).ok) break;
-    if (session.botPausePending) continue; // blok zostanie zebrany na górze pętli
   }
   return blocks;
 }
@@ -49,15 +55,18 @@ test('M100/E8: dobranie CZŁOWIEKA w kroku dobierania pokazuje się jako komunik
   let checked = 0;
   for (const seed of [42, 7, 11, 77]) {
     const blocks = collectBlocks(makeSession(seed));
-    for (const block of blocks) {
-      const turnIdx = block.findIndex((t) => /^Tura \d+ — Ty$/.test(t));
-      if (turnIdx < 0) continue; // blok bez startu mojej tury
-      const drawIdx = block.findIndex((t) => /^Dobierasz: /.test(t));
-      if (drawIdx < 0) continue; // czerwone przed E8: żadnej linii dobrania
-      // „Dobranie tury", nie skutek czaru: przed linią dobrania nie było
-      // własnego rzutu/zagrania w tym bloku.
-      const ownPlayIdx = block.findIndex((t) => /^(Rzucasz|Zagrywasz|Aktywujesz) /.test(t));
-      if (ownPlayIdx >= 0 && ownPlayIdx < drawIdx) continue;
+    // Śledzimy STRUMIEŃ: po nagłówku własnej tury (zamykającym blok) musi
+    // przyjść blok z „Dobierasz: X" — dobranie nie ginie po M261.
+    for (let i = 0; i < blocks.length; i += 1) {
+      const drawIdx = blocks[i].findIndex((t) => /^Dobierasz: /.test(t));
+      if (drawIdx < 0) continue;
+      let prevHeaderIdx = -1;
+      for (let j = i - 1; j >= 0; j -= 1) {
+        if (blocks[j].some((t) => /^Tura \d+ — Ty$/.test(t))) { prevHeaderIdx = j; break; }
+      }
+      assert.ok(prevHeaderIdx >= 0,
+        `seed ${seed}, blok #${i + 1}: „Dobierasz: X" bez poprzedzającego nagłówka „Tura N — Ty" ` +
+        `(${blocks[i].join(' | ')}) — para nagłówkowa M100/E8 zginęła`);
       checked += 1;
     }
   }
@@ -69,16 +78,18 @@ test('M100/E8: dobranie BOTA w kroku dobierania NADAL szumem (FoW + gadatliwoś�
   // dobranie przeciwnika w jego kroku dobierania nie jest informacją dla
   // gracza. (Dobrania bota z efektów były pokazywane od dawna bez nazwy
   // — tu pilnujemy tylko kroku dobierania.)
+  // Po M261 blok z nagłówkiem tury bota kończy się na nagłówku; blok NASTĘPNY
+  // może zacząć od upkeep, ale pierwsza treść kroku dobierania (przed pierwszym
+  // ruchem bota) nie może być „Nieprzyjaciel dobiera kartę".
   let botTurnDrawBlocks = 0;
   for (const seed of [42, 7, 11, 77]) {
     const blocks = collectBlocks(makeSession(seed));
-    for (const block of blocks) {
-      const turnIdx = block.findIndex((t) => /^Tura \d+ — Nieprzyjaciel$/.test(t));
-      if (turnIdx < 0) continue;
-      // Za nagłówkiem tury bota nie ma linii „Nieprzyjaciel dobiera kartę"
-      // jako pierwszej treści kroku dobierania (przed jego pierwszym ruchem).
-      const firstActionIdx = block.findIndex((t, i) => i > turnIdx && !/^Faza: /.test(t));
-      if (firstActionIdx > 0 && /^Nieprzyjaciel dobiera kartę/.test(block[firstActionIdx])) {
+    for (let i = 0; i + 1 < blocks.length; i += 1) {
+      const hasBotHeader = blocks[i].some((t) => /^Tura \d+ — Nieprzyjaciel$/.test(t));
+      if (!hasBotHeader) continue;
+      const next = blocks[i + 1];
+      const firstActionIdx = next.findIndex((t) => !/^Faza: /.test(t));
+      if (firstActionIdx > 0 && /^Nieprzyjaciel dobiera kartę/.test(next[firstActionIdx])) {
         botTurnDrawBlocks += 1;
       }
     }
