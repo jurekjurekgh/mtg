@@ -3180,11 +3180,20 @@ export function execute(state, input) {
             // (jak token-kopia). CR 707.2 — kopiowalne są WSZYSTKIE cechy.
             ...(target.station ? { station: target.station } : {}),
             ...(target.saga ? { saga: target.saga } : {}),
-            // M155: kopia karty DWUSTRONNEJ (enterAsCopy, np. Jwari
-            // Shapeshifter kopiujący stwora z craft/transform) musi też
-            // skopiować drugą stronę — inaczej zdolność craft/transform jest
-            // na kopii, ale bez transformTo (crash zamiast no-op).
-            ...(target.transformTo ? { transformTo: target.transformTo } : {}),
+            // M264/2.3 (CR 712.9): kopia na KARCIE jednostronnej (Jwari —
+            // zwykła karta wchodząca jako kopia) nie ma drugiej strony.
+            // „If a spell or ability instructs a player to transform ... any
+            // permanent that isn't represented by a double-faced token or a
+            // double-faced card, nothing happens." (przykład reguły: Clone
+            // jako kopia Wildblood Pack nie może się transformować).
+            // M155 kopiował `transformTo` — przez co kopia umiała się obrócić
+            // i przy DRUGIEJ transformacji przywracała cardId źródła
+            // (chimerę, np. transformTo.cardId = jwari-shapeshifter).
+            // Zdolności z bieżącej twarzy są nadal kopiowane (CR 707.2), ale
+            // bez transformTo są bezpiecznym no-op: efekty transform/
+            // craft_transform od M155 kończą się bez błędu, a oferta craft
+            // wymaga transformTo (abilities.js).
+            // frontFaceId celowo NIE jest kopiowany — kopia nie jest DFC.
           });
           const clean = { ...updated };
           delete clean.enteringAsCopy;
