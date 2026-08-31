@@ -244,6 +244,26 @@ test('M258/W8: kafel zakrytego z ward pokazuje „Ward {2}" (oś 2 — to nie in
   }
 });
 
+test('M258/W12 (M264): trigger_resolved niesie sourceId — renderer maskuje zakryte źródło', () => {
+  const state = game('p2');
+  const cloaked = cloakedCreature(state, 'p1');
+  putCard(state, 'shock', 'shock', 'p2', 'hand');
+  addMana(state, 'p2', 5, { colors: ['R'] });
+
+  const r = execute(state, { type: 'cast_spell', playerId: 'p2', objectId: 'shock', targets: [cloaked.id] });
+  assert.equal(r.ok, true, 'rzut Shocka się udał');
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  assert.ok(state.pendingWardPay, 'decyzja ward otwarta');
+  execute(state, { type: 'resolve_ward_pay_choice', playerId: 'p2', pay: false });
+
+  // Zdarzenie trigger_resolved musi wskazywać ŹRÓDŁO triggera — renderer
+  // rozstrzyga zakrycie po żywym obiekcie (RED przed fixem: brak sourceId).
+  const resolved = state.events.find((ev) => ev.type === 'trigger_resolved' && ev.ward);
+  assert.ok(resolved, 'trigger_resolved ward w strumieniu');
+  assert.equal(resolved.sourceId, cloaked.id, 'sourceId wskazuje zakryty permanent (RED przed fixem)');
+});
+
 test('M258/W9: log opisuje decyzję ward (oś 2 — log to jedyne źródło wiedzy gracza)', () => {
   const helpers = {
     nameOf: (cardId) => REGISTRY.get(cardId)?.name ?? cardId,

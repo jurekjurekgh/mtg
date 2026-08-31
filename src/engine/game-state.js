@@ -3128,6 +3128,7 @@ export function execute(state, input) {
     }
     state.events.push(event('optional_trigger_resolved', {
       playerId: pending.playerId, fired: Boolean(cmd.fire),
+      sourceId: pending.sourceId ?? null,
       sourceCardId: pending.sourceId ? (state.objects.get(pending.sourceId)?.cardId ?? null) : null,
     }));
     const resolvedEvents = state.events.slice(before);

@@ -1089,7 +1089,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'ability_triggered': {
         // Wybór celu już opisuje trigger_target_required — nie dubluj.
         if (e.awaitingTarget) return null;
-        if (e.backup) return `${nameOf(e.cardId)} — trigger Backup: kontroler wskazuje stwora na liczniki`;
+        if (e.backup) return `${objectOrLki(e.objectId, e.cardId)} — trigger Backup: kontroler wskazuje stwora na liczniki`;
         // M124 (zgłoszenie właściciela: „Chronic Flooding — trigger
         // (enchanted_permanent_tapped)"). M122 dodało etykietę i strażnika na
         // KOMPLETNOŚĆ mapy, ale ten `case` ma TRZY ścieżki renderu i tylko
@@ -1102,7 +1102,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const triggerLabel = triggerEventLabel(e.trigger, sourceCtrl);
         if (e.sacrificed) return `${nameOf(e.cardId)} — trigger (${triggerLabel}): brak zapłaty, permanent poświęcony`;
         if (e.paid != null) return `${nameOfObject(e.objectId)} — trigger (${triggerLabel}): zapłacono {${e.paid}}${e.autoTapped ? ` (auto-tap: ${nameOfObject(e.autoTapped)})` : ''}`;
-        const src = e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId);
+        // M264 (Żywy Tester, partia 4002): źródło triggera bywa ZAKRYTE
+        // (cloak 2/2 z ward {2}) — zdarzenie niesie realne cardId, ale nazwę
+        // daje ŻYWY obiekt (objectOrLki, reguła M100); cardId z LKI dopiero
+        // po odejściu ze stanu (CR 708.8/708.9). Bez tego log zdradzał
+        // „Plains — trigger (ward)" przy bezimiennym Morphu.
+        const src = objectOrLki(e.objectId, e.cardId);
         return `${src} — trigger (${triggerLabel})`;
       }
       // Pętla jakości Żywym Testerem (2026-08-26, g9 ravnica-bot Unstable
@@ -1148,10 +1153,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'cant_be_regenerated_set': return `${nameOf(e.cardId)} nie może być regenerowany do końca tury`;
       // D: modalny trigger (Etherwrought Page — „At the beginning of your
       // upkeep, choose one") — było surowe „modal_trigger_required".
-      case 'modal_trigger_required': return `${nameOf(e.cardId)} — wybierz tryb zdolności triggerowanej`;
+      case 'modal_trigger_required': return `${objectOrLki(e.sourceId, e.cardId)} — wybierz tryb zdolności triggerowanej`;
       case 'modal_trigger_resolved': {
         const mode = e.modeName ? ` — tryb: ${e.modeName}` : '';
-        return `${nameOf(e.cardId ?? nameOfObject(e.sourceId))} — gracz ${whoN(e.playerId)} wybiera tryb${mode}`;
+        return `${objectOrLki(e.sourceId, e.cardId)} — gracz ${whoN(e.playerId)} wybiera tryb${mode}`;
       }
       case 'hand_creature_choice_required': return `${srcName(e)}${whoN(e.playerId)} wybiera wielokolorowego stwora z ręki`;
       case 'hand_creature_choice_resolved': return e.putCreature
@@ -1510,7 +1515,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const parts = [];
         if (e.payMana) parts.push(`{${e.payMana}}`);
         if (e.payLife) parts.push(`${e.payLife} życia`);
-        return `${nameOf(e.cardId)} — zapłacić ${parts.join(' i ')}? (${decisionOwnerNote(e.playerId)})`;
+        return `${objectOrLki(e.sourceId, e.cardId)} — zapłacić ${parts.join(' i ')}? (${decisionOwnerNote(e.playerId)})`;
       }
       case 'optional_pay_resolved': return e.paid
         ? `${whoN(e.playerId)} płaci i odpala trigger`
@@ -1522,7 +1527,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
             : 'cel triggera');
         // M172/B: rozdział Sagi nazywa się tytułem z Oracle (Mesmerize).
         const chapter = e.chapterName ? ` — ${e.chapterName}` : '';
-        return `${nameOf(e.cardId)}${chapter} — wybierz ${hint} (${e.allowNone ? 'można odmówić' : 'wymagany'})`;
+        return `${objectOrLki(e.sourceId, e.cardId)}${chapter} — wybierz ${hint} (${e.allowNone ? 'można odmówić' : 'wymagany'})`;
       }
       case 'trigger_resolved': {
         // M106/Z2: powód „braku efektu" jest treścią dla gracza — inaczej
@@ -1536,15 +1541,15 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
             : e.reason === 'empty_library' ? 'pusta biblioteka'
             : e.reason === 'no_result' ? 'nie było czego wykonać'
             : 'warunek/cele nieaktualne';
-          return `${nameOf(e.cardId)} — trigger bez efektu (${why})`;
+          return `${objectOrLki(e.sourceId ?? e.objectId, e.cardId)} — trigger bez efektu (${why})`;
         }
-        return `${nameOf(e.cardId)} — trigger się rozstrzyga${e.delayed ? ' (opóźniony)' : ''}${e.saga ? ` (rozdział ${e.chapter})` : ''}`;
+        return `${objectOrLki(e.sourceId ?? e.objectId, e.cardId)} — trigger się rozstrzyga${e.delayed ? ' (opóźniony)' : ''}${e.saga ? ` (rozdział ${e.chapter})` : ''}`;
       }
       // D: cel triggera może być GRACZEM (Selhoff Occultist: „target player
       // mills") — nameOfObject dawał „?". Źródło: cardId zdarzenia, inaczej
       // lookup po sourceId (nigdy pusta nazwa przed myślnikiem).
       case 'trigger_target_resolved': {
-        const src = e.cardId ? nameOf(e.cardId) : nameOfObject(e.sourceId);
+        const src = objectOrLki(e.sourceId, e.cardId);
         if (e.noEffect) return `${src} — cel odrzucony, trigger bez efektu`;
         const target = e.targetId == null
           ? 'nic'
@@ -1554,14 +1559,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const autoNote = e.auto ? ' (jedyny legalny — automatycznie)' : '';
         return `${src} — cel: ${target}${autoNote}`;
       }
-      case 'optional_trigger_required': return `${nameOf(e.cardId)} — skorzystać z efektu „you may"? (${decisionOwnerNote(e.playerId)})`;
+      case 'optional_trigger_required': return `${objectOrLki(e.sourceId, e.cardId)} — skorzystać z efektu „you may"? (${decisionOwnerNote(e.playerId)})`;
       // M138/Z7 (audyt Żywym Testerem): „Nieprzyjaciel korzysta z efektu «you
       // may»” nie mówiło Z CZEGO. W partii chodziło o Soulbright Flamekin
       // (8 many z trzeciej aktywacji) — zapowiedź dużego ruchu, a gracz widział
       // zdanie bez podmiotu. Nazwa karty JEST w payloadzie (`sourceCardId`)
       // i była po prostu wyrzucana (oś 2: „wszystko poza szumem powinno tam być”).
       case 'optional_trigger_resolved': {
-        const from = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
+        const from = (e.sourceId || e.sourceCardId) ? ` (${objectOrLki(e.sourceId, e.sourceCardId)})` : '';
         return e.fired
           ? `${whoN(e.playerId)} korzysta z efektu „you may"${from}`
           : `${whoN(e.playerId)} rezygnuje z efektu „you may"${from}`;
@@ -2424,7 +2429,13 @@ export function createSession(config) {
       // (CR 708.8/708.9) — dlatego patrzymy na ŻYWY zakryty obiekt albo
       // flagę faceDown samego zdarzenia, nie na samo cardId.
       if (cardId) {
-        const hiddenLive = [e.objectId, e.object?.id]
+        // M264 (Żywy Tester, partia 4002): `trigger_resolved` niesie
+        // `objectId` WYDELETOWANEGO wpisu ze stosu (l. trackStack) — skan
+        // źródła triggera przechodziłby bramkę jako „niezakryty", a cardId
+        // (realne!) wyciekał do miniatury przy „trigger się rozstrzyga".
+        // Źródło jedzie w `sourceId` (M258/W12) — obejmujemy je w tej samej
+        // bramce co żywy obiekt (reguła M100: face-down ⇒ bez nazwy/skanu).
+        const hiddenLive = [e.objectId, e.object?.id, e.sourceId]
           .filter((id) => id != null)
           .map((id) => state.objects.get(id))
           .some((o) => o?.faceDown && o.controllerId !== HUMAN_ID);

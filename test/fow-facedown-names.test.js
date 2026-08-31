@@ -131,6 +131,90 @@ test('BUG A (reguła graniczna): LKI po ODEJŚCIU ze stołu jest legalne — naz
 });
 
 // ---------------------------------------------------------------------------
+// M264 (Żywy Tester, partia 4002): RODZINA TRIGGERÓW — zdarzenia niosą
+// `cardId` źródła, a renderer brał je bez sprawdzenia żywego obiektu:
+// log mówił „Plains — trigger (ward)" przy zakrytym celu-Morphu (cloak
+// z Veiled Ascension, 2/2 z ward {2} — CR 708.2: tożsamość zakryta).
+// Reguła M100 (objectOrLki): żywy obiekt POKAZUJE nazwę (face-down ⇒
+// „morph"), cardId z LKI dopiero po odejściu ze stanu (CR 708.8/708.9).
+// ---------------------------------------------------------------------------
+
+const PLAINS = 'basic-plains';
+
+test('M264: ability_triggered od zakrytego źródła — „morph — trigger", bez nazwy', () => {
+  const objects = new Map([['m1', { cardId: PLAINS, faceDown: true }]]);
+  const e = { type: 'ability_triggered', objectId: 'm1', cardId: PLAINS, trigger: 'ward' };
+  const text = describeGameEvent(e, helpersWith(objects), PLAYER_NAMES);
+  assert.ok(!text.includes('Plains'), `wyciek nazwy: ${text}`);
+  assert.ok(text.includes(FACE_DOWN_LABEL), text);
+  assert.ok(text.includes('ward'), text);
+});
+
+test('M264: trigger_resolved od zakrytego źródła — „morph — trigger się rozstrzyga"', () => {
+  const objects = new Map([['m1', { cardId: PLAINS, faceDown: true }]]);
+  const e = { type: 'trigger_resolved', objectId: 'trigger-1', sourceId: 'm1', cardId: PLAINS, ward: true };
+  const text = describeGameEvent(e, helpersWith(objects), PLAYER_NAMES);
+  assert.ok(!text.includes('Plains'), `wyciek nazwy: ${text}`);
+  assert.ok(text.includes(FACE_DOWN_LABEL), text);
+  assert.ok(text.includes('rozstrzyga'), text);
+});
+
+test('M264: trigger_target_required/trigger_target_resolved — źródło zakryte bez nazwy', () => {
+  const objects = new Map([['m1', { cardId: PLAINS, faceDown: true }]]);
+  const req = describeGameEvent(
+    { type: 'trigger_target_required', sourceId: 'm1', cardId: PLAINS, effectType: 'bounce_permanent', allowNone: false },
+    helpersWith(objects), PLAYER_NAMES);
+  assert.ok(!req.includes('Plains'), `wyciek nazwy (required): ${req}`);
+  assert.ok(req.includes(FACE_DOWN_LABEL), req);
+  const res = describeGameEvent(
+    { type: 'trigger_target_resolved', sourceId: 'm1', cardId: PLAINS, targetId: 'h1', auto: true },
+    helpersWith(objects), PLAYER_NAMES);
+  assert.ok(!res.includes('Plains'), `wyciek nazwy (resolved): ${res}`);
+  assert.ok(res.includes(FACE_DOWN_LABEL), res);
+});
+
+test('M264: modal_trigger_required/resolved — źródło zakryte bez nazwy', () => {
+  const objects = new Map([['m1', { cardId: PLAINS, faceDown: true }]]);
+  const req = describeGameEvent(
+    { type: 'modal_trigger_required', sourceId: 'm1', cardId: PLAINS, modeCount: 2 },
+    helpersWith(objects), PLAYER_NAMES);
+  assert.ok(!req.includes('Plains'), `wyciek nazwy (required): ${req}`);
+  assert.ok(req.includes(FACE_DOWN_LABEL), req);
+  const res = describeGameEvent(
+    { type: 'modal_trigger_resolved', sourceId: 'm1', cardId: PLAINS, playerId: 'p2', modeName: 'X' },
+    helpersWith(objects), PLAYER_NAMES);
+  assert.ok(!res.includes('Plains'), `wyciek nazwy (resolved): ${res}`);
+  assert.ok(res.includes(FACE_DOWN_LABEL), res);
+});
+
+test('M264: optional_trigger_required/resolved, optional_pay_required — źródło zakryte bez nazwy', () => {
+  const objects = new Map([['m1', { cardId: PLAINS, faceDown: true }]]);
+  const req = describeGameEvent(
+    { type: 'optional_trigger_required', sourceId: 'm1', cardId: PLAINS, playerId: 'p1' },
+    helpersWith(objects), PLAYER_NAMES);
+  assert.ok(!req.includes('Plains'), `wyciek nazwy (optional_trigger): ${req}`);
+  assert.ok(req.includes(FACE_DOWN_LABEL), req);
+  const res = describeGameEvent(
+    { type: 'optional_trigger_resolved', sourceId: 'm1', sourceCardId: PLAINS, playerId: 'p1', fired: true },
+    helpersWith(objects), PLAYER_NAMES);
+  assert.ok(!res.includes('Plains'), `wyciek nazwy (optional_resolved): ${res}`);
+  assert.ok(res.includes(FACE_DOWN_LABEL), res);
+  const pay = describeGameEvent(
+    { type: 'optional_pay_required', sourceId: 'm1', cardId: PLAINS, playerId: 'p1', payMana: 2 },
+    helpersWith(objects), PLAYER_NAMES);
+  assert.ok(!pay.includes('Plains'), `wyciek nazwy (optional_pay): ${pay}`);
+  assert.ok(pay.includes(FACE_DOWN_LABEL), pay);
+});
+
+test('M264 (reguła graniczna): trigger_resolved po ODEJŚCIU źródła — nazwa legalna (CR 708.8/708.9)', () => {
+  // Obiektu nie ma już w stanie — zdarzenie niesie cardId i wolno nim
+  // nazywać (jak „Segmented Krotiq ginie").
+  const e = { type: 'trigger_resolved', objectId: 'trigger-1', sourceId: 'gone1', cardId: PLAINS, ward: true };
+  const text = describeGameEvent(e, helpersWith(new Map()), PLAYER_NAMES);
+  assert.ok(text.includes('Plains'), `po odejściu źródła nazwa legalna, jest: ${text}`);
+});
+
+// ---------------------------------------------------------------------------
 // Część 2: widok decyzji podziału obrażeń (wizard) — cardId face-down celi
 // nie może wyciekać do PlayerView (ADR 0017 + CR 708.2)
 // ---------------------------------------------------------------------------
