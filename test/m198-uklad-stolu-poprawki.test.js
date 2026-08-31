@@ -145,11 +145,13 @@ test('M203/A: HTML ma po jednym boksie na gracza, w kolejnosci Gracz, Bot', () =
 
 // --- D ------------------------------------------------------------------
 
-test('M198/D: „Pokaz karty w strefach" to osobny, wycentrowany element', () => {
-  assert.match(HTML_CODE, /id="zone-inspector-open"/, 'przycisk ma wlasne miejsce w HTML');
-  assert.match(HTML, /\.zone-inspector-bar\s*\{[^}]*justify-content:\s*center/,
-    'pasek przycisku wycentrowany w CSS');
-  // Nie moze juz byc doklejany do boksu danych gracza.
+test('M198/D → M262: warstwa „Pokaż karty w strefach" USUNIĘTA — strefy na stole', () => {
+  // M262 (reforma stref, zgłoszenie właściciela 2026-08-31): inspektor
+  // stref znika — cmentarze i wygnanie są boksemi NA STOLE pod ręką Bota.
+  assert.doesNotMatch(HTML_CODE, /zone-inspector-open/, 'przycisk inspektora usunięty');
+  assert.doesNotMatch(HTML_CODE, /zone-inspector-bar/, 'pasek inspektora usunięty');
+  assert.doesNotMatch(HTML_CODE, /library-menu-panel/, 'modal inspektora usunięty');
+  // Boks danych gracza oczywiście dalej nie zawiera przycisku stref.
   const session = sessionAfterSteps(10);
   const view = session.view();
   const box = new MiniEl('div');

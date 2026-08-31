@@ -1534,7 +1534,11 @@ export function performActivation(state, ctx) {
   // wygnanie źródła z grobu jest kosztem — następuje PRZED efektem.
   if (cost.exileFromGraveyard) {
     const exileId = `exile-${state.objectSequence++}`;
-    const exiled = moveObjectDirectly(state, objectId, 'exile', exileId);
+    // M262: karta wygania SAMĄ SIEBIE jako koszt — badge „Wygnane: <ta sama
+    // karta>" (decyzja właściciela o self-exile).
+    const exiled = moveObjectDirectly(state, objectId, 'exile', exileId, {
+      exiledBy: state.objects.get(objectId)?.cardId ?? 'effect',
+    });
     state.events.push(event('object_exiled', { fromId: objectId, objectId: exileId, object: exiled, cardId: exiled.cardId, fromGraveyard: true }));
     effectSource = exiled;
   }

@@ -1895,6 +1895,8 @@ function resolvePermanentSpell(state, stackId, object, before) {
     state.delayedTriggers.push({
       type: 'exile_object', objectId: newId, playerId: enteredNow.controllerId,
       armedOnTurn: state.turn.number, anyPlayerEndStep: true, warp: true,
+      // M262: badge mechaniki — „Wygnane: Warp".
+      exiledBy: 'warp',
     });
   }
   // Wejście na pole bitwy — DOKŁADNIE jedno zdarzenie wejścia (jak
@@ -2026,7 +2028,8 @@ export function plotCard(state, playerId, objectId) {
   }
   spendMana(state, playerId, object.plot.cost ?? 0, plotColors);
   const exileId = `exile-${state.objectSequence++}`;
-  const moved = moveObjectDirectly(state, objectId, 'exile', exileId);
+  // M262: plot (CR 702.168a) — badge mechaniki „Wygnane: Plot".
+  const moved = moveObjectDirectly(state, objectId, 'exile', exileId, { exiledBy: 'plot' });
   const plotted = Object.freeze({ ...moved, plotted: true, plottedAtTurn: state.turn.number });
   state.objects.set(exileId, plotted);
   const plottedEvent = event('card_plotted', {
@@ -2062,7 +2065,8 @@ export function suspendCard(state, playerId, objectId) {
   }
   spendMana(state, playerId, object.suspend.cost ?? 0, suspendColors);
   const exileId = `exile-${state.objectSequence++}`;
-  const moved = moveObjectDirectly(state, objectId, 'exile', exileId);
+  // M262: suspend (CR 702.62a) — badge mechaniki „Wygnane: Suspend".
+  const moved = moveObjectDirectly(state, objectId, 'exile', exileId, { exiledBy: 'suspend' });
   const suspended = Object.freeze({
     ...moved, suspended: true, timeCounters: object.suspend.timeCounters ?? 4,
   });
@@ -2723,7 +2727,9 @@ export function resolveEscapeExile(state, playerId, exileIds) {
   state.spellsCastThisTurn += 1;
   for (const exId of exileIds) {
     const exileId = `exile-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, exId, 'exile', exileId);
+    // M262: escape (CR 702.26) — karta wygania materiał z grobu; źródłem
+    // jest karta uciekająca („Wygnane: <ta sama karta>", decyzja właściciela).
+    const moved = moveObjectDirectly(state, exId, 'exile', exileId, { exiledBy: object.cardId });
     state.events.push(event('object_moved', { fromId: exId, object: moved, fromZone: 'graveyard', toZone: 'exile', escape: true }));
   }
   const stackId = `spell-${state.objectSequence++}`;

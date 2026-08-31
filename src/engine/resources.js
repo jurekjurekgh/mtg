@@ -853,12 +853,14 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   state.spellsCastThisTurn += 1;
   if (exileCost) {
     const exileId = `exile-${state.objectSequence++}`;
-    const exiled = moveObjectDirectly(state, exileTargetId, 'exile', exileId);
+    // M262: źródłem wygnania jest karta, dla której płacono kosztem.
+    const exiled = moveObjectDirectly(state, exileTargetId, 'exile', exileId, { exiledBy: object.cardId });
     state.events.push(event('object_exiled', { fromId: exileTargetId, objectId: exileId, object: exiled, cardId: exiled.cardId, additionalCost: true }));
   }
   if (exileGraveCost) {
     const exileId = `exile-${state.objectSequence++}`;
-    const exiled = moveObjectDirectly(state, exileTargetId, 'exile', exileId);
+    // M262: j.w. — karta rzucona wygania materiał z grobu (escape-like).
+    const exiled = moveObjectDirectly(state, exileTargetId, 'exile', exileId, { exiledBy: object.cardId });
     // object_moved grób→exile: wspólna ścieżka zdarzeń dla triggera
     // „cards are put into exile from your graveyard” (Rakshasa Vizier) —
     // ta sama, którą emituje escape (spells.js).

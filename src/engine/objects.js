@@ -63,7 +63,32 @@ export function removeFromCombat(state, objectId) {
   return changed;
 }
 
-export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
+/**
+ * M262 (reforma stref, zgłoszenie właściciela 2026-08-31): jedyne miejsce,
+ * w którym obiekt trafia do wygnania — stempel `meta.exiledBy` mówi, CO
+ * go wygnało (cardId karty-źródła / keyword mechaniki / 'effect').
+ * Kolejność pochodzenia:
+ *  a) jawny argument `opts.exiledBy` (karta, która wygnała — efekt/koszt),
+ *  b) `temporaryExile.byCardId` (wygnanie tymczasowe M254/D: Newt/Butcher),
+ *  c) redirecty CR: `unearthExile` → 'unearth', `flashedBack` → 'flashback',
+ *  d) licznik `finality` → 'finality' (śmierć zamiast grobu),
+ *  e) znacznik `exileIfDiesThisTurn` → byCardId karty źródłowej,
+ *  f) centralny fallback 'effect' (stare zapisy bez meta → też „efekt").
+ * `meta` istnieje WYŁĄCZNIE w exile: opuszczenie strefy je czyści (CR 400.7
+ * — nowy obiekt nie dziedziczy historii), więc powrót i ponowne wygnanie
+ * dostanie świeże źródło.
+ */
+function deriveExiledBy(state, object, opts) {
+  return opts?.exiledBy
+    ?? object.temporaryExile?.byCardId
+    ?? (object.unearthExile ? 'unearth' : null)
+    ?? (object.flashedBack ? 'flashback' : null)
+    ?? (((object.counters ?? {}).finality ?? 0) > 0 ? 'finality' : null)
+    ?? (state.exileIfDiesThisTurn ?? []).find((entry) => entry.id === object.id)?.byCardId
+    ?? 'effect';
+}
+
+export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = {}) {
   const object = state.objects.get(objectId);
   assertZone(toZone);
   if (!object || !newObjectId || state.objects.has(newObjectId)) throw new Error('Nieprawidłowy ruch obiektu');
@@ -197,6 +222,9 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
     // informacji, choć sam grant nie przechodzi przez zmianę strefy.
     formerAbilityGrants: Object.freeze([...(object.abilityGrants ?? [])]),
     attachedTo: null,
+    // M262: stempel źródła wygnania — istnieje wyłącznie w exile (patrz
+    // deriveExiledBy). Poza exile meta znika (CR 400.7).
+    meta: toZone === 'exile' ? Object.freeze({ exiledBy: deriveExiledBy(state, object, opts) }) : null,
     // CR 711.2: rodzaj twarzy przedniej przy DFCE (np. Incubator: tył to
     // stwór, przód to artefakt) — reset twarzi (M257/K5) nadaje `kind`
     // przedniej strony, a nie stalej `object.kind` (tylnej).

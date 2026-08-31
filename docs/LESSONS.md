@@ -34,6 +34,43 @@ M208.
 
 ---
 
+## L98 (2026-08-31) — Buforowane „dopisywanie" zamyka paczkę na granicy domenowej; promocję zatrzymanej połowy robią punkty WZNOWIENIA, nie wspólna pętla gry
+
+**Objaw (M261, zgłoszenie właściciela):** modal „Rozgrywka" doklejał
+„Tura N — Ty" + „Dobierasz…" do ogona tury bota (rozstrzygnięty Divest,
+discardy z cleanup, obrażenia z walki) w jednym oknie — bufor ruchów
+narastał między pauzami bez świadomości, że przekroczył granicę tury.
+
+**Przyczyna:** bufor czyszczony był tylko przy POKAZANIU; wszystko, co
+nastąpiło między pauzami, lądowało w jednej paczce bez względu na to,
+czy zaczęła się nowa tura. Render rysuje JEDNĄ paczkę na raz, więc
+„naprawa w renderze" nie istnieje — granica musi być widoczna w buforze.
+
+**Reguła:**
+1. „Dopisywanie" w buforze UI zatrzymuje się na granicy, którą użytkownik
+   ma prawo zobaczyć jako OSOBNĄ paczkę (tu: tura). Sygnał podziału
+   niesie samo zdarzenie graniczne (`turn_started` przy niepustym
+   buforze → routing do `held`), nie heurystyka po treści.
+2. Promocję held → bufor wykonują TYLKO punkty wznowienia (klik
+   „Rozumiem", `continueBotPlay`/`continueArtPlay`/`recheckAutoPass`).
+   Wspólna pętla gry wołana także z `apply` NIE promuje — bufor zdążył
+   zebrać ogon, który ma być pokazany osobno, więc promocja w środku
+   skleiłaby paczki z powrotem (konkretny błąd z pierwszej wersji).
+3. Granica wymusza pauzę w KAŻDYM miejscu powstania bufora
+   (`streamAutoEvents` i `apply` — inaczej ogon wisi niepokazany do
+   najbliższej „naturalnej" pauzy) i sygnał konsumuje się raz, żeby nie
+   wyciekał do kolejnej komendy.
+4. Cały mechanizm gate'uje się na fladze trybu pauz — konsumenci
+   synchroniczni (testy silnika, benchmark) mają dostać STARE
+   zachowanie, held nie może się urodzić bez pauz.
+5. Test wariantów patrzy na BLOKI, nie na przebieg: co najwyżej jeden
+   nagłówek tury na blok i nagłówek zawsze pierwszą linią, na wielu
+   seedach — RED złapał „Divest zostaje rozstrzygnięty | Tura 3 — Ty".
+
+**Strażnik:** `test/m261-granica-tury-w-modalu.test.js` (3 testy, 8
+seedów) + `test/session-bot-pausa.test.js` (legalny powód pauzy:
+`botPauseAtTurnBoundary`, ogon tury bez zdarzeń „istotnych").
+
 ## L97 (2026-08-31) — Warstwa prezentacji potrafi skłamać przy w 100% poprawnym silniku; decyzja „you may look” nie może wyciekać treści przed wyborem
 
 **Objaw (M260, uwagi właściciela z PR #89):** trzy zgłoszenia do Fertile

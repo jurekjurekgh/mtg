@@ -3700,7 +3700,7 @@ function showHoverPreviewAt(els, info, e, mode, { showCycleHint = true } = {}) {
 export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, onDayNightClick = null, onPoisonCardClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
   const view = session.view();
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
-  for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'handEnemy', 'waitingZone', 'actions', 'log']) clear(els[key]);
+  for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'handEnemy', 'actions', 'log']) clear(els[key]);
 
   // Hover (desktop): powiększona karta pod kursorem — ta sama ilustracja co na
   // kaflu, w rozmiarze `large`, a przy jej braku syntetyczna twarz. Scroll nad
@@ -3784,15 +3784,15 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   // --- Bitwiska (wróg u góry, Ty na dole) ------------------------------
   // M201/B: ręka bota (rewersy + licznik) nad jego lądami.
   renderEnemyHand(els.handEnemy, els.handEnemyLabel, view, session, foe?.id);
-  // M201/A2: poczekalnia wygnania (suspend/plot/impuls/rebound/madness).
-  renderWaitingExile(els.waitingZone, els.waitingWrap, view, session, { onCardClick, hover, onCardDoubleClick });
   renderBattlefield(els.bfEnemy, view, session, foe?.id, true, onCardClick, hover, onCardDoubleClick);
   renderBattlefield(els.bfOwn, view, session, me?.id, false, onCardClick, hover, onCardDoubleClick);
 
-  // --- Groby i exile (warstwa inspektora stref) ------------------------
-  renderZonePile(els.graveOwn, view, session, me?.id, onCardClick, hover, onCardDoubleClick);
-  renderZonePile(els.graveEnemy, view, session, foe?.id, onCardClick, hover, onCardDoubleClick);
-  renderExile(els.exileZone, view, session, onCardClick, hover, onCardDoubleClick);
+  // --- M262 (reforma stref): cmentarze i wygnanie PROSTO NA STOLE ------
+  // Trzy boksy pod ręką Bota (Cmentarz Gracza → Wygnanie → Cmentarz Bota);
+  // inspektor stref i poczekalnia zostały usunięte.
+  renderGraveyardBox(els.graveOwn, els.graveOwnWrap, view, session, me?.id, onCardClick, hover, onCardDoubleClick);
+  renderExileBox(els.exileZone, els.exileZoneWrap, view, session, { onCardClick, hover, onCardDoubleClick });
+  renderGraveyardBox(els.graveEnemy, els.graveEnemyWrap, view, session, foe?.id, onCardClick, hover, onCardDoubleClick);
 
   // --- Ręka gracza -----------------------------------------------------
   const ownHandObjects = view.zones.hand.filter((o) => !o.hidden);
@@ -4211,13 +4211,21 @@ function renderBattlefield(host, view, session, controllerId, enemy, onCardClick
   }
 }
 
-function renderZonePile(host, view, session, controllerId, onCardClick, hover, onCardDoubleClick = null) {
+/**
+ * M262 (reforma stref, zgłoszenie właściciela 2026-08-31): cmentarz BĘDĄCY
+ * NA STOLE — karty jak karty stołowe (pełny rozmiar, hover, klik przez tile),
+ * kolejność przyrostowa od najstarszych (lewa) do najnowszych (prawa) —
+ * dokładnie kolejność arraya `zones.graveyard` (array push). BEZ etykiet
+ * grup (decyzja właściciela). Boks chowa się, gdy grób jest pusty.
+ */
+function renderGraveyardBox(host, wrap, view, session, controllerId, onCardClick, hover, onCardDoubleClick = null) {
   const pile = view.zones.graveyard.filter((o) => o.controllerId === controllerId);
-  if (pile.length === 0) {
-    div(host, 'zone-empty', 'Grób pusty');
-    return;
+  if (wrap) wrap.hidden = pile.length === 0;
+  if (!host || pile.length === 0) return 0;
+  for (const object of pile) {
+    tile(host, cardInfo(session, object), { session, onCardClick, hover, onCardDoubleClick });
   }
-  for (const object of pile) tile(host, cardInfo(session, object), { session, onCardClick, hover, onCardDoubleClick });
+  return pile.length;
 }
 
 /**
@@ -4255,32 +4263,12 @@ export function renderEnemyHand(host, label, view, session, enemyId) {
 }
 
 /**
- * M201/A2 (zgłoszenie właściciela, Mindstab): „poczekalnia” wygnania —
- * karty, które technicznie leżą w exile, ale CZEKAJĄ na swój moment:
- * suspend (CR 702.62a — liczniki czasu), plot (CR 702.168a), impuls
- * („zagraj do końca tury”), rebound (CR 702.97), madness (CR 702.35).
- * Dotąd wpadały do ukrytego worka i gracz nie wiedział ani co tam jest,
- * ani ile liczników zostało.
- *
- * CR 406.3: wygnanie jest domyślnie ODKRYTE — pokazujemy karty obu graczy
- * (zakryte wygnanie przeciwnika zostaje bezimienne, `hidden` z widoku).
- * Sekcja chowa się, gdy nie ma na co patrzeć (nie dokładamy pustego boksu
- * do układu stołu — uwaga właściciela z M198/A).
+ * M262 (reforma stref, zgłoszenie właściciela 2026-08-31): poczekalnia
+ * i inspektor stref ZNIKNĘŁY — wygnanie jest BOKSEM NA STOLE (patrz
+ * renderExileBox poniżej). Zostaje helper statusu karty w wygnaniu:
+ * liczniki suspend/plot, impuls, rebound, madness, zakrycie (M260/B1)
+ * i wygnanie tymczasowe (M254/D).
  */
-export function waitingExileEntries(view) {
-  return (view.zones?.exile ?? []).filter((o) => o.suspended || o.plotted || o.plottedAtTurn != null
-    || o.playableWithoutPaying || o.reboundReady || o.madnessReady
-    // M254/D (zgłoszenie właściciela, Wormfang Newt): wygnanie TYMCZASOWE
-    // z linkiem powrotu („kiedy źródło opuści pole bitwy") — ta sama strefa
-    // co Suspend/Plot, bo karta też stamtąd wraca (tylko bez liczników).
-    || o.temporaryExile
-    // M260/B1 (zgłoszenie właściciela z PR #89, Pyxis of Pandemonium):
-    // karty wygnane ZAKRYTE pierwszą zdolnością — leżą w „poczekalni"
-    // jak Plot/Suspend (ADR 0017: skutek widoczny w grze musi być widoczny
-    // na stole), odwrócone i bez podglądu (CR 406.3).
-    || o.faceDown);
-}
-
 /** Opis stanu oczekiwania — jedno źródło dla kafla i dla podpowiedzi. */
 export function waitingExileStatus(object) {
   const parts = [];
@@ -4319,27 +4307,60 @@ export function waitingExileStatus(object) {
   return parts.join(' · ');
 }
 
-export function renderWaitingExile(host, wrap, view, session, { onCardClick, hover, onCardDoubleClick } = {}) {
-  const entries = waitingExileEntries(view);
-  if (wrap) wrap.hidden = entries.length === 0;
-  if (!host || entries.length === 0) return 0;
-  for (const object of entries) {
-    const cell = div(host, 'waiting-cell');
-    const owner = PLAYER_NAMES[object.controllerId] ?? object.controllerId;
-    div(cell, 'waiting-owner', owner);
-    tile(cell, cardInfo(session, object), { session, size: 'sm', onCardClick, hover, onCardDoubleClick });
-    div(cell, 'waiting-status', waitingExileStatus(object));
-  }
-  return entries.length;
+/**
+ * M262: etykieta ŹRÓDŁA wygnania — nazwa karty z danych przez nameOf
+ * (ADR 0002), mechanika jako keyword („Plot", „Suspend"…), fallback
+ * „efekt" (także stare autosave'y bez meta).
+ */
+const EXILE_KEYWORD_LABELS = {
+  plot: 'Plot', suspend: 'Suspend', warp: 'Warp', madness: 'Madness',
+  escape: 'Escape', flashback: 'Flashback', unearth: 'Unearth', craft: 'Craft',
+  finality: 'Finality',
+};
+
+export function exileSourceLabel(session, exiledBy) {
+  if (exiledBy == null) return 'efekt';
+  if (EXILE_KEYWORD_LABELS[exiledBy]) return EXILE_KEYWORD_LABELS[exiledBy];
+  if (exiledBy === 'effect') return 'efekt';
+  return session.nameOf(exiledBy);
 }
 
-function renderExile(host, view, session, onCardClick, hover, onCardDoubleClick = null) {
-  const pile = view.zones.exile || [];
-  if (!pile.length) {
-    div(host, 'zone-empty', 'Exile pusty');
-    return;
+/**
+ * M262: badge'e karty w boksie wygnania (zlecenie właściciela):
+ * obowiązkowy WŁAŚCICIEL („Właściciel: Gracz/Bot" — etykiety panelu M197,
+ * nie „Ty/Nieprzyaciel"), obowiązkowe ŹRÓDŁO („Wygnane: …") i opcjonalny
+ * stan (liczniki plot/suspend, zakrycie, powrót). Badge'e są jawne także
+ * przy zakrytej karcie — CR 406.3 zakrywa KARTĘ, nie źródło wygnania.
+ */
+export function exileBadges(session, object) {
+  const viewerId = session.view().playerId;
+  const owner = object.controllerId === viewerId ? PLAYER_LABEL : BOT_LABEL;
+  const badges = [`Właściciel: ${owner}`, `Wygnane: ${exileSourceLabel(session, object.exiledBy)}`];
+  const status = waitingExileStatus(object);
+  if (status) badges.push(status);
+  return badges;
+}
+
+/**
+ * M262: boks WYGNANIA na stole (niebieskie tło). Agregacja właściciel →
+ * źródło (stabilne sortowanie), karty jak karty stołowe (tile z domyślnym
+ * rozmiarem, hover, klik — kontrakt identyczny z polem bitwy), badge'e
+ * POD kaflem. Zakryte karty pozostają zamaskowane (M260/B1) — badge'e jawne.
+ */
+function renderExileBox(host, wrap, view, session, { onCardClick, hover, onCardDoubleClick } = {}) {
+  const entries = view.zones?.exile ?? [];
+  if (wrap) wrap.hidden = entries.length === 0;
+  if (!host || entries.length === 0) return 0;
+  // Agregacja: karty Gracza przed kartami Bota, wewnątrz — po źródle
+  // wygnania (stabilne sortowanie zachowuje chronologię arraya).
+  const sorted = [...entries].sort((a, b) =>
+    String(a.controllerId).localeCompare(String(b.controllerId))
+    || String(a.exiledBy ?? '').localeCompare(String(b.exiledBy ?? '')));
+  for (const object of sorted) {
+    const cell = div(host, 'zone-card');
+    tile(cell, cardInfo(session, object), { session, onCardClick, hover, onCardDoubleClick });
+    const badges = div(cell, 'zone-badges');
+    for (const line of exileBadges(session, object)) div(badges, 'zone-badge', line);
   }
-  // onCardDoubleClick przekazywany jawnie (zgłoszenie 2026-08-06, poboczne):
-  // bez tego z exile nie dało się otworzyć pełnego ekranu karty dwuklikiem.
-  for (const object of pile) tile(host, cardInfo(session, object), { session, onCardClick, hover, onCardDoubleClick });
+  return entries.length;
 }

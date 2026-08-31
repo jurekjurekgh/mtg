@@ -7070,6 +7070,58 @@ regresji; benchmark 672 mecze bez odrzuceń komend; build 56 modułów /
 2974.1 kB. Nowa lekcja **L97** (warstwa prezentacji kłamie przy
 poprawnym silniku; decyzja „you may look” nie może wyciekać treści).
 
+**M261 — granica tury zamyka paczkę modala „Rozgrywka" (zgłoszenie
+właściciela 2026-08-31):** modal dopisywał zdarzenia przez granicę tury —
+ogon starej tury (rozstrzygnięcie czaru, obrażenia z walki, discardy z
+cleanup) doklejał się do „Tura N — Ty" + „Dobierasz…" w jednym oknie.
+Teraz dopisywanie zatrzymuje się na rozpoczęciu nowej tury: ogon czeka na
+„Rozumiem", a nowa tura otwiera ŚWIEŻY modal, którego pierwszą linią jest
+nagłówek „Tura N — <gracz>"; tury dwóch graczy nigdy nie łączą się w
+jednym modalu. Naprawa w buforze (session.js, zero zmian w renderze):
+`heldBotMoves` + `routingHeld` + `botTurnSplit` (gated na
+`pauseOnBotMoves` — konsumenci synchroniczni widzą stare zachowanie);
+`turn_started` przy niepustym buforze dzieli go, nagłówek nowej tury i
+wszystko dalej czeka w held; promocja held → bufor TYLKO przy wznowieniu
+(`continueBotPlay`/`continueArtPlay`/`recheckAutoPass`; advance wołany z
+apply świadomie nie promuje, żeby nie skleić tur z powrotem); granica
+wymusza pauzę (`streamAutoEvents`/`apply`), a nowy getter
+`botPauseAtTurnBoundary` mówi UI/testom, że pauza zamyka paczkę na
+granicy. Testy: `m261-granica-tury-w-modalu.test.js` (inwarianty bloków
+na 8 seedach; RED na seedzie 127: „Divest zostaje rozstrzygnięty |
+Tura 3 — Ty" w jednym bloku) + `session-bot-pausa` zna nowy legalny
+powód pauzy. Nowa lekcja **L98**.
+
+**M262 — reforma stref: cmentarze i wygnanie PROSTO NA STÓŁ (zgłoszenie
+właściciela 2026-08-31):** trzy strefy dodatkowe znikają z inspektora i
+poczekalni i stają się boksami na stole, pod ręką Bota — CMENTARZ GRACZA
+(czarne tło) → WYGNANIE (niebieskie tło) → CMENTARZ BOTA (czarne tło),
+widoczne tylko gdy niepuste. Karty jak karty stołowe: pełny rozmiar
+(tile z domyślnym size, nie 88px .zone-grid), normalny hover, klik
+identyczny z polem bitwy (menu kontekstowe / pełny ekran). Cmentarze:
+BEZ etykiet grup, kolejność przyrostowa od najstarszych (lewa) do
+najnowszych (prawa) — wprost kolejność arraya `zones.graveyard`, bez
+zmian silnika. **Exile: badge'e per karta** — obowiązkowy WŁAŚCICIEL
+(„Właściciel: Gracz/Bot"), obowiązkowe ŹRÓDŁO wygnania („Wygnane:
+Pandemonium" przez nameOf — ADR 0002; „Wygnane: Plot" dla mechanik),
+opcjonalny stan (liczniki plot/suspend, zakrycie, powrót); agregacja
+właściciel → źródło (stabilne sortowanie); zakryta karta pozostaje
+zamaskowana (M260/B1), ale badge'e są jawne — CR 406.3 zakrywa KARTĘ,
+nie fakt, kto wygnał. **Źródło wygnania w silniku:** `meta.exiledBy`
+stemplowane w JEDNYM choke poincie zmian stref (`moveObjectDirectly`,
+objects.js) — jawny argument `opts.exiledBy` na 22 witrynach (efekty,
+koszty, craft, plot/suspend/escape/madness/warp, delayed triggery),
+auto-deriwacja dla redirectów CR (unearth/flashback/finality) i
+`exileIfDiesThisTurn` (zmiana kształtu na `[{id, byCardId}]`),
+centralny fallback `effect` (stare autosave'y → „efekt"); `meta` istnieje
+wyłącznie w exile (CR 400.7 — opuszczenie strefy czyści). USUNIĘTE:
+warstwa „Pokaż karty w strefach" (przycisk + modal inspektora) oraz CAŁA
+poczekalnia (`#waiting-wrap`/`#waiting-zone`); przebudowane testy
+m198/D (inwersja), m201 (poczekalnia → badge'e), m254 (D1–D3 na
+`exiledBy`), m260/B1 (boks zamiast poczekalni), table-ui (pojazd testu
+tła modala: bot-move); m212/SŁOWNIK_REGUL +='Unearth' (keyword mechaniki
+koliguje z nazwą karty — jak Treasure/Island). Suite 3883/3883
+(wcześniej 3873 + 10 nowych), build 56 modułów / 2982.5 kB.
+
 **Kolejny krok:** decyzja właściciela o scaleniu PR #89; ewentualnie nowy
 batch kart / kolejna runda Żywego Testera.
 

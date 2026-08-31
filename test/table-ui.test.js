@@ -78,10 +78,9 @@ function installMiniDom() {
     // Wskaźnik tury (2026-08-07): stała informacja w lewym górnym rogu.
     'turn-indicator',
     'life-own', 'life-enemy', 'library-own', 'library-enemy',
-    // M197/A3A+A5: przycisk inspektora żyje w boksie liczników stref, a sekcja
-    // „podgląd topu (syntetyczny)" zniknęła — zostaje sam panel inspektora.
-    // M198/C+D: boksy per gracz + osobny przycisk inspektora.
-    'library-menu-panel', 'zone-inspector-close', 'zone-inspector-open',
+    // M262 (reforma stref): inspektor stref i poczekalnia USUNIĘTE —
+    // cmentarze/wygnanie to boksy na stole (grave-own-wrap, exile-zone-wrap,
+    // grave-enemy-wrap przychodzą z htmlIds z index.html).
     'meta-foe', 'meta-own',
     'replay-out', 'replay-summary', 'replay-download', 'replay-file',
     'actions-drawer', 'actions-drawer-close', 'actions-fab', 'actions-fab-count',
@@ -379,14 +378,19 @@ test('bug A (iOS): klik w tło świeżo otwartego modala jest ignorowany (odprys
   mock.timers.setTime(realNow);
   try {
     restart();
-    // M198/D: inspektor otwiera osobny, wycentrowany przycisk pod boksami.
-    dom.get('zone-inspector-open').click();
-    const panel = dom.get('library-menu-panel');
-    assert.equal(panel.className, 'modal active', 'panel biblioteki nie otworzył się');
+    // M262: pojazd testu to modal „Ruch bota" (inspektor stref usunięty) —
+    // gra do pierwszej pauzy po istotnym zagraniu bota.
+    const panel = dom.get('bot-move');
+    for (let i = 0; i < 200 && panel.className !== 'modal active'; i += 1) {
+      const button = pickActionButton(dom.get('actions'));
+      if (!button) break;
+      button.click();
+    }
+    assert.equal(panel.className, 'modal active', 'modal ruchu bota nie otworzył się');
     // Klik dokładnie w tło modala od razu po otwarciu — ignorowany.
     for (const fn of panel.listeners.click ?? []) fn({ target: panel });
     assert.equal(panel.className, 'modal active', 'odprysk zamknął świeży modal');
-    // Po oknie ochronnym celowy klik w tło zamyka.
+    // Po oknie ochronnym celowy klik w tło zamyka (modal bota pauzuje).
     mock.timers.tick(500);
     for (const fn of panel.listeners.click ?? []) fn({ target: panel });
     assert.equal(panel.className, 'modal', 'celowy klik w tło po oknie nie zamknął modala');

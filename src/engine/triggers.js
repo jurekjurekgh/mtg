@@ -856,7 +856,11 @@ function resolveDelayedTrigger(state, payload, events) {
     const object = state.objects.get(pending.objectId);
     if (!object || object.zone !== 'battlefield') return false;
     const exileId = `exile-${state.objectSequence++}`;
-    moveObjectDirectly(state, pending.objectId, 'exile', exileId);
+    // M262: badge źródła z chwili zakolejkowania (karta/efekt/mechanika);
+    // warp ma własny keyword.
+    moveObjectDirectly(state, pending.objectId, 'exile', exileId, {
+      exiledBy: pending.exiledBy ?? (pending.warp ? 'warp' : undefined),
+    });
     // M154 (Warp): wygnana w końcowym kroku karta dostaje `warpReady`, więc
     // można ją rzucić z exile w późniejszej turze za koszt warp (castPermanent
     // warpCast). Zwykłe exile_object (Puppeteer Clique) nic nie dokleja.

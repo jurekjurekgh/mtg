@@ -26,6 +26,10 @@ const SLOWNIK_REGUL = new Set([
   'Treasure', 'Clue', 'Food', 'Germ', 'Hero', 'Skeleton', 'Spirit', 'Clone',
   'Incubator', 'Phyrexian', 'Island', 'Plains', 'Swamp', 'Mountain', 'Forest',
   'Catacombs', 'Gate',
+  // M262: 'Unearth' to keyword mechaniki (CR 702.87) używany w etykietach
+  // źródeł wygnania (EXILE_KEYWORD_LABELS) — słownik reguł, nie odwołanie
+  // do karty o tej nazwie (analogicznie do Treasure/Island wyżej).
+  'Unearth',
 ]);
 const DOZWOLONE_ID = new Set([
   'basic-plains', 'basic-island', 'basic-swamp', 'basic-mountain', 'basic-forest',

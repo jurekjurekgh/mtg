@@ -927,7 +927,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (topId == null) return;
     const card = state.objects.get(topId);
     const exileId = `exile-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, topId, 'exile', exileId);
+    const moved = moveObjectDirectly(state, topId, 'exile', exileId, { exiledBy: sourceObject.cardId });
     // „Until the end of your NEXT turn" — jeśli to twoja tura, chodzi o tę
     // następną (numer + 2 przy dwóch graczach); poza swoją turą o najbliższą.
     const isMyTurn = state.turn.activePlayerId === controllerId;
@@ -1249,6 +1249,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       type: 'exile_object', objectId: token.id, playerId: ctrl,
       anyPlayerEndStep: true,
       armedOnTurn: state.turn.number, cardId: token.cardId,
+      // M262: badge „Wygnane: <źródło>" — token znika z efektu karty.
+      exiledBy: sourceObject.cardId,
     });
     return;
   }
@@ -2595,7 +2597,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       if (filterTypes.length > 0 && !filterTypes.every((type) => (object.types ?? []).includes(type))) continue;
       if (manaValueAtMost != null && (object.manaCost ?? 0) > manaValueAtMost) continue;
       const exileId = `exile-${state.objectSequence++}`;
-      const moved = moveObjectDirectly(state, objectId, 'exile', exileId);
+      const moved = moveObjectDirectly(state, objectId, 'exile', exileId, { exiledBy: sourceObject.cardId });
       state.events.push(event('object_moved', {
         fromId: objectId, object: moved, fromZone: 'battlefield', toZone: 'exile',
       }));
@@ -2644,8 +2646,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (targetId == null) return;
     const marked = state.objects.get(targetId);
     if (!marked || marked.zone !== 'battlefield') return;
-    if (!(state.exileIfDiesThisTurn ?? []).includes(targetId)) {
-      state.exileIfDiesThisTurn = [...(state.exileIfDiesThisTurn ?? []), targetId];
+    // M262: wpisy {id, byCardId} — śmierć zamiast grobu ma mieć badge
+    // źródła (karta, która naznaczyła cel).
+    if (!(state.exileIfDiesThisTurn ?? []).some((entry) => entry.id === targetId)) {
+      state.exileIfDiesThisTurn = [...(state.exileIfDiesThisTurn ?? []), { id: targetId, byCardId: sourceObject.cardId }];
     }
     state.events.push(event('exile_if_dies_marked', { objectId: targetId, cardId: marked.cardId }));
     return;
@@ -2659,7 +2663,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return;
     const exileId = `exile-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, targetId, 'exile', exileId);
+    const moved = moveObjectDirectly(state, targetId, 'exile', exileId, { exiledBy: sourceObject.cardId });
     state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'exile' }));
     return;
   }
@@ -2675,7 +2679,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (!object || object.zone !== 'battlefield') return;
     if ((object.types ?? []).includes('Land')) return; // nonland
     const exileId = `exile-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, targetId, 'exile', exileId);
+    const moved = moveObjectDirectly(state, targetId, 'exile', exileId, { exiledBy: sourceObject.cardId });
     state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'exile' }));
     const src = state.objects.get(sourceObject.id);
     if (src) {
@@ -2725,7 +2729,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     if (!object || object.zone !== 'battlefield') return;
     if (object.controllerId !== sourceObject.controllerId) return;
     const exileId = `exile-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, targetId, 'exile', exileId);
+    const moved = moveObjectDirectly(state, targetId, 'exile', exileId, { exiledBy: sourceObject.cardId });
     state.events.push(event('object_moved', {
       fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'exile',
     }));
@@ -2752,7 +2756,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
     const exileId = `exile-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, targetId, 'exile', exileId);
+    const moved = moveObjectDirectly(state, targetId, 'exile', exileId, { exiledBy: sourceObject.cardId });
     state.events.push(event('object_moved', {
       fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'exile',
     }));
@@ -2902,6 +2906,8 @@ function markTemporaryExile(state, exileId, sourceObject) {
         // „At the beginning of your NEXT end step" — trigger należy do
         // kontrolera i czeka na jego najbliższy krok end.
         armedOnTurn: state.turn.number, cardId: permanent.cardId,
+        // M262: źródłem wygnania jest karta, która postawiła permanenta.
+        exiledBy: sourceObject.cardId,
       });
     }
     return;
@@ -3281,7 +3287,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const live = state.objects.get(targetId);
     if (!live || live.zone !== 'battlefield' || live.kind !== 'creature') return;
     const exileId = `exile-${state.objectSequence++}`;
-    const exiled = moveObjectDirectly(state, targetId, 'exile', exileId);
+    const exiled = moveObjectDirectly(state, targetId, 'exile', exileId, { exiledBy: sourceObject.cardId });
     const src = state.objects.get(sourceObject.id);
     if (src) state.objects.set(sourceObject.id, Object.freeze({ ...src, banishedIds: [...(src.banishedIds ?? []), exileId] }));
     state.events.push(event('object_exiled', { fromId: targetId, objectId: exileId, object: exiled, cardId: exiled.cardId, banished: true }));
@@ -3699,7 +3705,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
       const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === player.id);
       if (topId == null) continue; // pusta biblioteka — ten gracz nic nie wygania
       const exileId = `exile-${state.objectSequence++}`;
-      const moved = moveObjectDirectly(state, topId, 'exile', exileId);
+      const moved = moveObjectDirectly(state, topId, 'exile', exileId, { exiledBy: sourceObject.cardId });
       state.objects.set(exileId, Object.freeze({ ...moved, faceDown: true }));
       exiledIds.push(exileId);
       // Zdarzenie BEZ cardId: karta jest zakryta, wiec jej nazwa nie jest
@@ -3763,7 +3769,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const exileIds = [];
     for (const id of topIds) {
       const exileId = `exile-${state.objectSequence++}`;
-      const moved = moveObjectDirectly(state, id, 'exile', exileId);
+      const moved = moveObjectDirectly(state, id, 'exile', exileId, { exiledBy: sourceObject.cardId });
       exileIds.push(exileId);
       state.events.push(event('card_revealed', { playerId: controllerId, objectId: exileId, cardId: moved?.cardId ?? null }));
     }
@@ -3810,7 +3816,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const exileIds = [];
     for (const id of exiled) {
       const exileId = `exile-${state.objectSequence++}`;
-      moveObjectDirectly(state, id, 'exile', exileId);
+      moveObjectDirectly(state, id, 'exile', exileId, { exiledBy: sourceObject.cardId });
       exileIds.push(exileId);
       state.events.push(event('card_revealed', { playerId: ownerId, objectId: exileId, cardId: state.objects.get(exileId)?.cardId }));
     }
@@ -4059,7 +4065,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // efekt nie ma czego przemieniać (CR 608.2b), bez błędu.
     if (!object || object.zone !== 'battlefield') return;
     const exileId = `exile-${state.objectSequence++}`;
-    const exiled = moveObjectDirectly(state, object.id, 'exile', exileId);
+    const exiled = moveObjectDirectly(state, object.id, 'exile', exileId, { exiledBy: sourceObject.cardId });
     state.events.push(event('object_moved', {
       fromId: object.id, object: exiled, fromZone: 'battlefield', toZone: 'exile', transformReturn: true,
     }));
@@ -4938,6 +4944,8 @@ function markTemporaryExile(state, exileId, sourceObject) {
       // step" — jak wyżej, najbliższy krok końcowy (M105/B6).
       anyPlayerEndStep: true,
       armedOnTurn: state.turn.number, cardId: permanent.cardId,
+      // M262: wygnanie z mechaniki unearth — badge mechaniki, nie karty.
+      exiledBy: 'unearth',
     });
     return;
   }

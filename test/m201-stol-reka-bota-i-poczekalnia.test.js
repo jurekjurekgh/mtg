@@ -13,7 +13,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { BOT_ID, HUMAN_ID, createSession } from '../src/table/session.js';
-import { renderEnemyHand, renderWaitingExile, renderTableView } from '../src/table/render.js';
+import { renderEnemyHand, renderTableView, exileBadges } from '../src/table/render.js';
 import { CARD_BACK_URL } from '../src/table/card-images.js';
 
 const REGISTRY = createCardRegistry();
@@ -92,68 +92,47 @@ test('M201/B: pusta ręka bota = brak rewersów i uczciwa etykieta', () => {
   assert.doesNotMatch(label.textContent, /\d/, 'pusta ręka: etykieta bez liczby')
 });
 
-test('M201/A2: poczekalnia pokazuje zawieszoną kartę z licznikami czasu', () => {
+// M262 (reforma stref): poczekalnia zniknęła — CAŁE wygnanie jest boksem
+// na stole (patrz m262-strefy-na-stole.test.js). Tu zostają kontrakty
+// badge'ów, które przejęły rolę starych testów poczekalni.
+
+test('M201/A2 → M262: zawieszona karta niesie liczniki czasu w badge', () => {
   const session = session2();
-  const view = session.view();
-  const waitingView = {
-    ...view,
-    zones: {
-      ...view.zones,
-      exile: [
-        { id: 'x1', cardId: 'mindstab', controllerId: HUMAN_ID, zone: 'exile', suspended: true, timeCounters: 3 },
-      ],
-    },
-  };
-  const host = new MiniEl('div');
-  const wrap = new MiniEl('div');
-  wrap.hidden = true;
-  renderWaitingExile(host, wrap, waitingView, session, {});
-  assert.equal(wrap.hidden, false, 'sekcja odsłania się, gdy jest co pokazać');
-  const text = host.textContent;
-  assert.match(text, /Mindstab/, 'nazwa karty (CR 406.3 — wygnanie jest jawne)');
-  assert.match(text, /3/, 'liczba liczników czasu');
+  const badges = exileBadges(session, {
+    id: 'x1', cardId: 'mindstab', controllerId: HUMAN_ID, zone: 'exile',
+    suspended: true, timeCounters: 3, exiledBy: 'suspend',
+  });
+  const text = badges.join(' · ');
+  assert.match(text, /Właściciel: Gracz/, 'badge właściciela (etykiety panelu M197)');
+  assert.match(text, /Wygnane: Suspend/, 'badge źródła — mechanika');
+  assert.match(text, /3 liczniki czasu/, 'liczba liczników czasu');
   assert.match(text, /[Zz]awiesz/, 'status „zawieszona”');
 });
 
-test('M201/A2: poczekalnia rozróżnia właściciela i status plot', () => {
+test('M201/A2 → M262: badge rozróżnia właściciela i status plot', () => {
   const session = session2();
-  const view = session.view();
-  const waitingView = {
-    ...view,
-    zones: {
-      ...view.zones,
-      exile: [
-        { id: 'x2', cardId: 'mindstab', controllerId: BOT_ID, zone: 'exile', plotted: true, plottedAtTurn: 2 },
-      ],
-    },
-  };
-  const host = new MiniEl('div');
-  const wrap = new MiniEl('div');
-  renderWaitingExile(host, wrap, waitingView, session, {});
-  const text = host.textContent;
-  assert.match(text, /Nieprzyjaciel/, 'kafel mówi, czyja to karta');
-  assert.match(text, /[Pp]lot/, 'status plot');
+  const badges = exileBadges(session, {
+    id: 'x2', cardId: 'mindstab', controllerId: BOT_ID, zone: 'exile',
+    plotted: true, plottedAtTurn: 2, exiledBy: 'plot',
+  });
+  const text = badges.join(' · ');
+  assert.match(text, /Właściciel: Bot/, 'badge mówi, czyja to karta');
+  assert.match(text, /Wygnane: Plot/, 'badge źródła — mechanika plot');
+  assert.match(text, /rzut bez kosztu od tury 3/, 'status plot z turą rzutu');
 });
 
-test('M201/A2: zwykła karta w wygnaniu NIE trafia do poczekalni (sekcja zostaje ukryta)', () => {
+test('M201/A2 → M262: ZWYKŁA karta w wygnaniu też leży w boksie na stole', () => {
+  // Odwrócona zasada starej poczekalni: boks wygnania to CAŁA strefa —
+  // karta, która niczego nie czeka (bez liczników), nadal jest na stole
+  // z badge właściciela i źródła.
   const session = session2();
-  const view = session.view();
-  const waitingView = {
-    ...view,
-    zones: { ...view.zones, exile: [{ id: 'x3', cardId: 'mindstab', controllerId: HUMAN_ID, zone: 'exile' }] },
-  };
-  const host = new MiniEl('div');
-  const wrap = new MiniEl('div');
-  wrap.hidden = false;
-  renderWaitingExile(host, wrap, waitingView, session, {});
-  assert.equal(wrap.hidden, true, 'poczekalnia to karty CZEKAJĄCE, nie całe wygnanie');
-  assert.equal(host.children.length, 0);
+  const badges = exileBadges(session, {
+    id: 'x3', cardId: 'mindstab', controllerId: HUMAN_ID, zone: 'exile',
+    exiledBy: 'faceless-butcher',
+  });
+  assert.deepEqual(badges, ['Właściciel: Gracz', 'Wygnane: Faceless Butcher'],
+    'zwykła karta: dokładnie właściciel + źródło, bez statusu');
 });
-
-// --- WIRING (L5: test funkcji ≠ test produktu) ----------------------------
-// Sekcje muszą być podpięte do renderTableView i do elementów z index.html,
-// inaczej powtórzyłaby się historia M200/B (mechanizm istniał, ale nikt go
-// nie wywoływał — linki w logu były martwe od urodzenia).
 
 test('M201/A2+B: renderTableView zapełnia rękę bota i poczekalnię na PRAWDZIWEJ partii', () => {
   const session = session2();
@@ -175,7 +154,8 @@ test('M201/A2+B: renderTableView zapełnia rękę bota i poczekalnię na PRAWDZI
 
   const els = {};
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn',
-    'exileZone', 'hand', 'handEnemy', 'handEnemyLabel', 'waitingZone', 'waitingWrap', 'actions', 'log',
+    'exileZone', 'hand', 'handEnemy', 'handEnemyLabel', 'actions', 'log',
+    'graveOwnWrap', 'exileZoneWrap', 'graveEnemyWrap',
     'turnIndicator', 'metaFoe', 'metaOwn', 'daynight', 'poison', 'undercity', 'turnHistory']) {
     els[key] = new MiniEl('div');
   }
@@ -188,7 +168,9 @@ test('M201/A2+B: renderTableView zapełnia rękę bota i poczekalnię na PRAWDZI
   // kart — liczbę widać po rewersach.
   assert.match(els.handEnemyLabel.textContent, /RĘKA BOTA/, 'etykieta ręki bota')
   assert.doesNotMatch(els.handEnemyLabel.textContent, /\d/, 'bez liczby kart w etykiecie');
-  assert.equal(els.waitingWrap.hidden, false, 'poczekalnia odsłonięta, bo karta czeka');
-  assert.match(els.waitingZone.textContent, /Mindstab/, 'zawieszona karta na stole');
-  assert.match(els.waitingZone.textContent, /licznik/, 'z licznikami czasu');
+  // M262: boks wygnania na stole zamiast poczekalni.
+  assert.equal(els.exileZoneWrap.hidden, false, 'boks wygnania odsłonięty, bo jest w nim karta');
+  assert.match(els.exileZone.textContent, /Mindstab/, 'zawieszona karta na stole');
+  assert.match(els.exileZone.textContent, /licznik/, 'z licznikami czasu');
+  assert.match(els.exileZone.textContent, /Wygnane: Suspend/, 'badge źródła suspend');
 });

@@ -6,7 +6,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { applyEffect } from '../src/engine/effects.js';
 import { lookWizardKindOf, renderFertileThicketWizard } from '../src/table/choice-request.js';
-import { commandLabel, cardInfo, waitingExileEntries, waitingExileStatus } from '../src/table/render.js';
+import { commandLabel, cardInfo, waitingExileStatus } from '../src/table/render.js';
 import { describeGameEvent } from '../src/table/session.js';
 
 // =============================================================================
@@ -416,15 +416,25 @@ test('M260/B1 (kafel): cardInfo maskuje zakryte wygnanie — bez nazwy, typu i p
   assert.equal(info.power ?? null, null, 'bez statystyk');
 });
 
-test('M260/B1 (poczekalnia): zakryta karta Pyxis w poczekalni wygnania ze statusem', () => {
-  const entry = { id: 'lib-p1', controllerId: 'p1', zone: 'exile', faceDown: true, hidden: true, cardId: null };
-  const other = { id: 'lib-p2', controllerId: 'p2', zone: 'exile', faceDown: true, hidden: true, cardId: null };
+test('M260/B1 → M262 (boks wygnania): zakryta karta Pyxis na stole ze statusem i źródłem', () => {
+  // M262: poczekalnia zniknęła — zakryte wygnanie leży w BOKSIE WYGNANIA
+  // na stole (jak Plot/Suspend), z jawnym badge źródła przy zamaskowanej
+  // tożsamości karty.
+  const entry = { id: 'lib-p1', controllerId: 'p1', zone: 'exile', faceDown: true, hidden: true, cardId: null, exiledBy: 'pyxis-of-pandemonium' };
+  const other = { id: 'lib-p2', controllerId: 'p2', zone: 'exile', faceDown: true, hidden: true, cardId: null, exiledBy: 'pyxis-of-pandemonium' };
   const view = { zones: { exile: [entry, other] } };
-  const entries = waitingExileEntries(view);
-  assert.equal(entries.length, 2, 'zakryte wygnanie w poczekalni — jak Plot/Suspend');
+  assert.equal(view.zones.exile.length, 2, 'zakryte wygnanie w boksie — jak Plot/Suspend');
   const status = waitingExileStatus(entry);
   assert.match(status, /[Zz]akryta/, 'status mówi, że karta jest zakryta');
   assert.match(status, /druga zdolność|odkry/, 'status mówi, że odkryje ją druga zdolność źródła');
+  // Źródło wygnania jest jawne także dla zakrytej karty (CR 406.3 zakrywa
+  // KARTĘ, nie fakt, kto wygnał) — realny przepływ Pyxis w m262-strefy.
+  const state = pyxisState();
+  for (const viewer of ['p1', 'p2']) {
+    for (const e of playerView(state, viewer).zones.exile) {
+      assert.equal(e.exiledBy, 'pyxis-of-pandemonium', `viewer ${viewer}: badge źródła Pyxis`);
+    }
+  }
 });
 
 // -----------------------------------------------------------------------------

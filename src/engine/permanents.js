@@ -1040,7 +1040,8 @@ export function detainUntilYourNextTurn(state, objectId, detainerId) {
 
 export function deathZoneFor(state, object) {
   if (((object?.counters ?? {}).finality ?? 0) > 0) return 'exile';
-  if ((state.exileIfDiesThisTurn ?? []).includes(object?.id)) return 'exile';
+  // M262: wpisy {id, byCardId} — sprawdzamy id obiektu w naznaczonych.
+  if ((state.exileIfDiesThisTurn ?? []).some((entry) => entry.id === object?.id)) return 'exile';
   return 'graveyard';
 }
 

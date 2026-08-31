@@ -3095,7 +3095,8 @@ export function execute(state, input) {
       const zone = object.zone;
       if (zone !== 'hand' && zone !== 'graveyard') continue;
       const exileId = `exile-${state.objectSequence++}`;
-      const moved = moveObjectDirectly(state, cardId, 'exile', exileId);
+      // M262: badge źródła — karta, której efekt wygania (M201/F: pending.cardId).
+      const moved = moveObjectDirectly(state, cardId, 'exile', exileId, { exiledBy: pending.cardId ?? 'effect' });
       state.events.push(event('object_exiled', { fromId: cardId, objectId: exileId, object: moved, cardId: moved.cardId, playerId: pending.playerId }));
     }
     state.events.push(event('reveal_exile_resolved', { playerId: pending.playerId, opponentId: pending.opponentId, cardId: pending.cardId ?? null }));
@@ -3643,7 +3644,8 @@ export function execute(state, input) {
     let moved = null;
     if (card.madness) {
       const exileId = `exile-${state.objectSequence++}`;
-      moved = moveObjectDirectly(state, cmd.cardId, 'exile', exileId);
+      // M262: madness to mechanika wygnania (CR 702.35) — badge „Wygnane: Madness".
+      moved = moveObjectDirectly(state, cmd.cardId, 'exile', exileId, { exiledBy: 'madness' });
       state.objects.set(exileId, Object.freeze({ ...state.objects.get(exileId), madnessReady: true }));
       state.events.push(event('card_discarded', {
         playerId: pending.playerId, fromId: cmd.cardId, objectId: exileId,
@@ -3947,12 +3949,15 @@ export function execute(state, input) {
     // 1. Exile the chosen artifact.
     const chosenObj = state.objects.get(cmd.targetId);
     if (!chosenObj) return reject('illegal_craft_target');
+    // M262: oba wygnania craftu (materiał + źródło) niosą kartę craftującą —
+    // self-exile źródła to „Wygnane: <ta sama karta>" (decyzja właściciela).
+    const craftCardId = state.objects.get(craft.sourceId)?.cardId ?? 'craft';
     const chosenExileId = `exile-${state.objectSequence++}`;
-    moveObjectDirectly(state, cmd.targetId, 'exile', chosenExileId);
+    moveObjectDirectly(state, cmd.targetId, 'exile', chosenExileId, { exiledBy: craftCardId });
     state.events.push(event('object_moved', { fromId: cmd.targetId, object: state.objects.get(chosenExileId), fromZone: chosenObj.zone, toZone: 'exile', craft: true }));
     // 2. Exile the source artifact.
     const sourceExileId = `exile-${state.objectSequence++}`;
-    moveObjectDirectly(state, craft.sourceId, 'exile', sourceExileId);
+    moveObjectDirectly(state, craft.sourceId, 'exile', sourceExileId, { exiledBy: craftCardId });
     state.events.push(event('object_moved', { fromId: craft.sourceId, object: state.objects.get(sourceExileId), fromZone: 'battlefield', toZone: 'exile', craft: true }));
     // 3. Return source transformed to battlefield.
     const bfId = `permanent-${state.objectSequence++}`;
@@ -5174,6 +5179,10 @@ export function playerView(state, playerId) {
           return {
             id: object.id, cardId: null, controllerId: object.controllerId, zone: object.zone,
             faceDown: true, hidden: true,
+            // M262: źródło wygnania jest jawne także przy zakrytej karcie
+            // (CR 406.3 zakrywa KARTĘ, nie fakt, kto wygnał) — stół pokazuje
+            // badge „Wygnane: …" bez zdradzania tożsamości karty.
+            exiledBy: object.meta?.exiledBy ?? null,
           };
         }
         if (object.suspended) {
@@ -5203,6 +5212,9 @@ export function playerView(state, playerId) {
         // cardId — deskryptor nie dokłada informacji ukrytej. Zakryte
         // wygnanie wychodzi wyżej z `hidden: true` i tu nie dociera.
         if (object.spell) waiting.spell = object.spell;
+        // M262 (reforma stref): źródło wygnania (karta/mechanika/efekt) —
+        // badge „Wygnane: …" w boksie wygnania na stole.
+        waiting.exiledBy = object.meta?.exiledBy ?? null;
       }
       return {
         id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
