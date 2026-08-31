@@ -1085,7 +1085,15 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
       : (object.aura?.enchantType === 'creature_or_vehicle' ? 'creature_or_vehicle' : 'creature');
     spellTargets = Object.freeze([Object.freeze({ type: auraHostType })]);
   }
-  spendMana(state, playerId, cost, coloredPipsOf(object.cardId), manaPurpose);
+  // M268 (L104/2): rzut za BESTOW płaci pipami kosztu bestow, nie karty
+  // bazowej — wzorzec madness (M161/O2) i cleave/escape (M267/C). Dziś
+  // Leafcrown Dryad ma ten sam {G} w obu kosztach, więc stary zapis trafiał
+  // przypadkiem; pierwsza karta o innym kolorze bestow płaciłaby złym.
+  const bestowRequirements = bestow ? (object.bestow?.colors ?? []).map((color) => [color]) : null;
+  if (bestowRequirements?.length && !canPayColoredCost(state, playerId, bestowRequirements)) {
+    throw new Error('Brak kolorowego źródła many');
+  }
+  spendMana(state, playerId, cost, bestowRequirements ?? coloredPipsOf(object.cardId), manaPurpose);
   state.spellsCastThisTurn += 1;
   const stackId = `spell-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'stack', stackId);

@@ -189,7 +189,10 @@ test('Leafcrown Dryad: materializacja i definicja — typy, reach, subtypy, best
   assert.deepEqual(def.subtypes, ['Nymph', 'Dryad']);
   assert.deepEqual(def.keywords, ['reach']);
   // Deskryptor bestow z definicji (CR 702.103): koszt {3}{G}=4, buff +2/+2 i reach.
-  assert.deepEqual(def.bestow, { cost: 4, pump: { power: 2, toughness: 2 }, keywords: ['reach'] });
+  // M268: `colors: ['G']` dopisane zgodnie z tym, co ten komentarz mówił od
+  // początku — Oracle to „Bestow {3}{G}", więc pip koloru należy do deskryptora
+  // (dotąd znała go tylko treść komentarza, nie dane).
+  assert.deepEqual(def.bestow, { cost: 4, colors: ['G'], pump: { power: 2, toughness: 2 }, keywords: ['reach'] });
   const data = gameObjectDataOf(def);
   assert.deepEqual({ kind: data.kind, power: data.power, toughness: data.toughness, manaCost: data.manaCost }, { kind: 'creature', power: 2, toughness: 2, manaCost: 2 });
   assert.deepEqual(data.bestow, def.bestow, 'obiekt gry musi nieść deskryptor bestow');

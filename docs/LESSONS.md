@@ -34,6 +34,50 @@ M208.
 
 ---
 
+## L105 (2026-08-31) — „Dziś to ryzyko, nie błąd" trzeba ZWERYFIKOWAĆ skanem, a nie założyć; sklejka pipów OBOK kwoty zawyża cenę
+
+**Objaw (M268, domknięcie punktów otwartych po M267):** handoff M267
+odnotował, że etykiety `bestow`/`morph` składają koszt po staremu, ale
+„dziś ich koszty są generyczne, więc to ryzyko, nie błąd". Skan całej
+rodziny alt-kosztów pokazał, że to nieprawda w DWÓCH miejscach naraz:
+- `leafcrown-dryad` „Bestow {3}{G}" i `tumbleweed-rising` „Plot {2}{G}"
+  nie miały `colors` w definicji (bliźniak `spinewoods-paladin` miał),
+- etykiety morph i kicker sklejały pipy OBOK pełnej kwoty:
+  Willbender („Morph {1}{U}", `morphCost: 2`, `colors: ['U']`) pokazywał
+  „{2}{U}" — TRZY many zamiast dwóch; Kor Sanctifiers („Kicker {W}",
+  `cost: 1`) pokazywał „{1}{W}" zamiast „{W}".
+
+**Przyczyna:** to samo, co L100/4 — powtórzona składanka „generic + pipy",
+tylko w wariancie groźniejszym. Poprzednie kopie liczyły
+`generic = cost - colors.length` (poprawnie), a te dwie doklejały pipy do
+NIEZMNIEJSZONEJ kwoty, więc cena rosła o liczbę pipów. Sześć kopii w jednej
+warstwie (plot, warp, suspend, bestow, surge, kicker, morph) rozjechało się
+dokładnie tam, gdzie nikt nie porównał wyniku z Oracle.
+
+**Reguła:**
+1. Zdanie „dziś to tylko ryzyko" jest HIPOTEZĄ o danych — zamyka się je
+   skanem katalogu w tej samej sesji, nie wpisem w handoffie. Koszt skanu
+   to kilkanaście linii; koszt pomyłki to błędna cena na przycisku.
+2. Pipy kolorów zawsze wchodzą W RAMACH kwoty (`{3}{G}` = 4 many), nigdy
+   obok niej. Jedyne dopuszczalne źródło to `costSymbols(amount, colors)` —
+   każda ręczna sklejka w warstwie widoku jest kopią do usunięcia.
+   Strażnik regexem szuka wzorca `.colors ?? []).map(...).join('')`
+   w `render.js` i wymusza zero trafień.
+3. Rodzina alt-kosztów ma być enumerowana Z NAZWY (bestow, plot, suspend,
+   madness, warp, surge, kicker, flashback, buyback, escape, cleave,
+   adventure, morph) — skan po jednej mechanice zamyka jeden przypadek.
+4. Morph jest w tej rodzinie WYJĄTKIEM: ma dwa koszty (`cost` = rzut
+   zakryty, zawsze {3} bezbarwnych wg CR 702.37a; `morphCost`/
+   `megamorphCost` = odkrycie, tu żyją pipy). Skaner porównujący Oracle
+   z polem `cost` da 6 fałszywych trafień — porównuj koszt ODKRYCIA.
+
+**Strażnik:** `test/m268-alt-koszt-pelna-rodzina.test.js` (11 testów:
+skan katalogu po 14 mechanikach, pinry bestow/plot/morph/kicker, test
+ŹRÓDŁA płatności bestow, strażnik regexowy przeciw kolejnym sklejkom).
+Mutacje: `colors` usunięte z normalizacji bestow → 4 RED; powrót do
+`coloredPipsOf(cardId)` w ścieżce bestow → 1 RED; pipy doklejone obok
+kwoty w morph → 1 RED.
+
 ## L104 (2026-08-31) — Poprawny wynik z niepoprawnego źródła to bug uśpiony: alt-koszt musi nieść WŁASNE pipy, nie pożyczać ich z kosztu bazowego
 
 **Objaw (Żywy Tester M267, profile explorer/hoarder, seedy 511/516/523):**

@@ -225,7 +225,8 @@ export const REAL_CARDS = Object.freeze([
     // Bestow {3}{G} (CR 702.103): alternatywny koszt — czar staje się czarem
     // aury z celem „stwór\"; po wejściu załączony NIE jest stworem, a po
     // odłączeniu znów nim jest. Buff zaczarowanego stwora: +2/+2 i reach.
-    bestow: { cost: 4, pump: { power: 2, toughness: 2 }, keywords: ['reach'] },
+    // M268: Oracle „Bestow {3}{G}" — pip koloru w definicji (klasa L104).
+    bestow: { cost: 4, colors: ['G'], pump: { power: 2, toughness: 2 }, keywords: ['reach'] },
     oracleText: 'Bestow {3}{G} (If you cast this card for its bestow cost, it\'s an Aura spell with enchant creature. It becomes a creature again if it\'s not attached.)\nReach\nEnchanted creature gets +2/+2 and has reach.',
     imageUri: 'https://cards.scryfall.io/large/front/8/2/8202e426-ad91-4d2e-9373-7a829b58fff5.jpg?1783939745',
     artId: 521,
@@ -1151,7 +1152,9 @@ export const REAL_CARDS = Object.freeze([
     types: ['Sorcery'], colors: ['G'], manaCost: 2,
     oracleText: 'Create an X/X green Elemental creature token, where X is the greatest power among creatures you control.\nPlot {2}{G}',
     imageUri: 'https://cards.scryfall.io/large/front/2/7/275d2d2a-ef85-48c9-919d-bc62cdad8a10.jpg?1783911802',
-    plot: { cost: 3 },
+    // M268: Oracle „Plot {2}{G}" — pip koloru jak u bliźniaka
+    // spinewoods-paladin („Plot {3}{G}", colors: ['G']).
+    plot: { cost: 3, colors: ['G'] },
     spell: {
       timing: 'sorcery', targets: [],
       effects: [{

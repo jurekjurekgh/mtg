@@ -147,6 +147,10 @@ export function defineCard(data) {
     // załączona aura daje zaczarowanemu stworowi (Leafcrown Dryad: +2/+2, reach).
     bestow: data.bestow ? Object.freeze({
       cost: data.bestow.cost,
+      // M268 (klasa L104/3): bestow był ostatnim deskryptorem kosztowym
+      // w tej normalizacji bez `colors` — pip {G} z Oracle ginął w drodze
+      // do rejestru, choć w card-data.js był widoczny.
+      colors: Object.freeze([...(data.bestow.colors ?? [])]),
       pump: Object.freeze({ ...data.bestow.pump }),
       keywords: Object.freeze([...(data.bestow.keywords ?? [])]),
     }) : null,

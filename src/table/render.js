@@ -2157,16 +2157,13 @@ export function commandLabel(cmd, session, view) {
     case 'tap_for_mana': return `Przygotuj manę: ${nameOfObjectId(cmd.objectId)}`;
     case 'plot_card': {
       const card = obj(cmd.objectId);
-      return `Plotuj: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.plot?.cost != null ? manaCostHtml(`{${card.plot.cost}}`) : '?'})`;
+      return `Plotuj: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.plot?.cost != null ? manaCostHtml(costSymbols(card.plot.cost, card.plot.colors)) : '?'})`;
     }
     case 'warp_card': {
       const card = obj(cmd.objectId);
       const wc = card?.warp;
-      const remaining = wc ? Math.max(0, (wc.cost ?? 0) - (wc.colors ?? []).length) : 0;
-      const costStr = wc
-        ? `${(wc.colors ?? []).map((c) => `{${c}}`).join('')}${remaining > 0 ? `{${remaining}}` : ''}`
-        : null;
-      const cost = costStr != null ? manaCostHtml(costStr) : '?';
+      // M268: jedna składanka kosztu dla całej warstwy (costSymbols, L100/3).
+      const cost = wc ? manaCostHtml(costSymbols(wc.cost, wc.colors)) : '?';
       return `Rzuć za warp: ${nameOfObjectId(cmd.objectId)} (koszt ${cost})`;
     }
     case 'suspend_card': {
@@ -2177,11 +2174,7 @@ export function commandLabel(cmd, session, view) {
       // 1 jednostka, czarna). Renderujemy pipy kolorów + pozostałą część
       // generyczną (to samo kodowanie co koszt czaru, render.js:920).
       const sc = card?.suspend;
-      const remaining = sc ? Math.max(0, (sc.cost ?? 0) - (sc.colors ?? []).length) : 0;
-      const costStr = sc
-        ? `${(sc.colors ?? []).map((c) => `{${c}}`).join('')}${remaining > 0 ? `{${remaining}}` : ''}`
-        : null;
-      const cost = costStr != null ? manaCostHtml(costStr) : '?';
+      const cost = sc ? manaCostHtml(costSymbols(sc.cost, sc.colors)) : '?';
       const n = sc?.timeCounters ?? 4;
       // M151: „4 liczników czasu" było złą odmianą (2–4 → „liczniki").
       return `Zawieś: ${nameOfObjectId(cmd.objectId)} (koszt ${cost}, ${n} ${polishPluralCount(n, 'licznik', 'liczniki', 'liczników')} czasu)`;
@@ -2190,22 +2183,25 @@ export function commandLabel(cmd, session, view) {
       const card = obj(cmd.objectId);
       if (cmd.bestow) {
         const host = nameOfObjectId(cmd.targets?.[0]);
-        return `Zagraj za bestow: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.bestow?.cost != null ? escapeHtml(String(card.bestow.cost)) : '?'}) → zaczaruj ${host}`;
+        // M268: Bestow bywa kolorowy (Leafcrown Dryad „Bestow {3}{G}") —
+        // gołe „4" opisywało cenę, której nie da się zapłacić bezbarwnymi.
+        const bestowCost = card?.bestow?.cost != null
+          ? manaCostHtml(costSymbols(card.bestow.cost, card.bestow.colors)) : '?';
+        return `Zagraj za bestow: ${nameOfObjectId(cmd.objectId)} (koszt ${bestowCost}) → zaczaruj ${host}`;
       }
       if (cmd.targets?.length && card?.aura) {
         const host = nameOfObjectId(cmd.targets[0]);
         return `Zagraj aurę: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)}) → zaczaruj ${host}`;
       }
-      if (cmd.faceDown) return `Zagraj: ${nameOfObjectId(cmd.objectId)} twarzą w dół (2/2, koszt ${card?.morph?.cost != null ? escapeHtml(String(card.morph.cost)) : '?'})`;
+      // M268: rzut ZAKRYTY kosztuje {3} bezbarwnych niezależnie od karty
+      // (CR 702.37a) — pipy koloru należą do kosztu ODKRYCIA, nie tego.
+      if (cmd.faceDown) return `Zagraj: ${nameOfObjectId(cmd.objectId)} twarzą w dół (2/2, koszt ${card?.morph?.cost != null ? manaCostHtml(costSymbols(card.morph.cost, [])) : '?'})`;
       // M223 (audyt Batch 50, Jwar Isle Avenger): surge to alternatywny,
       // TAŃSZY koszt — bez własnej etykiety wyglądał identycznie jak zwykły
       // rzut, więc gracz nie odróżniał wariantów (oś 2 audytu). Format jak warp.
       if (cmd.surgeCast) {
         const sc = card?.surge;
-        const costStr = sc
-          ? `${(sc.colors ?? []).map((c) => `{${c}}`).join('')}${Math.max(0, (sc.cost ?? 0) - (sc.colors ?? []).length) > 0 ? `{${Math.max(0, (sc.cost ?? 0) - (sc.colors ?? []).length)}}` : ''}`
-          : null;
-        const cost = costStr != null ? manaCostHtml(costStr) : '?';
+        const cost = sc ? manaCostHtml(costSymbols(sc.cost, sc.colors)) : '?';
         return `Rzuć za surge: ${nameOfObjectId(cmd.objectId)} (koszt ${cost})`;
       }
       // Phyrexian mana (CR 118.9): gracz wybiera, ile symboli {W/P} opłaci
@@ -2232,7 +2228,10 @@ export function commandLabel(cmd, session, view) {
       }
       if (cmd.kicked) {
         const kicker = card?.kicker ?? {};
-        const kickerHtml = manaCostHtml(`${kicker.cost != null ? `{${kicker.cost}}` : ''}${(kicker.colors ?? []).map((c) => `{${c}}`).join('')}`);
+        // M268: pipy W RAMACH kwoty. Stary zapis sklejał `{1}` + `{W}` dla
+        // Kor Sanctifiers („Kicker {W}" = 1 jednostka, biała) i pokazywał DWIE
+        // many — dopłata wyglądała na dwa razy droższą, niż jest.
+        const kickerHtml = manaCostHtml(costSymbols(kicker.cost, kicker.colors));
         return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)} + kicker ${kickerHtml})`;
       }
       return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)})`;
@@ -2395,8 +2394,16 @@ export function commandLabel(cmd, session, view) {
         const flipKind = KEYWORD_LABELS[flipKeyword] ?? flipKeyword;
         const flipCost = object?.morph?.megamorphCost ?? object?.morph?.morphCost;
         const flipColors = object?.morph?.colors ?? [];
-        const costHtml = manaCostHtml(`${flipCost != null ? `{${flipCost}}` : ''}${flipColors.map((c) => `{${c}}`).join('')}`);
-        return `Obróć twarzą do góry: ${nameOfObjectId(cmd.objectId)} (${flipKind} ${costHtml})`;
+        // M268: pipy wchodzą W RAMACH kwoty, nie obok niej. Stary zapis
+        // sklejał `{2}` + `{U}` dla Willbendera („Morph {1}{U}") i pokazywał
+        // TRZY many — etykieta zawyżała cenę odkrycia.
+        const costHtml = manaCostHtml(costSymbols(flipCost, flipColors));
+        // M268: nazwa ZAKRYTEJ karty niesie już znacznik „(Morph)", więc
+        // doklejanie nazwy mechaniki przy koszcie dawało „Willbender (Morph)
+        // (Morph {1}{U})". Gdy znacznik już jest, zostaje sam koszt.
+        const flipName = nameOfObjectId(cmd.objectId);
+        const kindShown = new RegExp(`\\(${flipKind}\\)`, 'i').test(flipName) ? '' : `${flipKind} `;
+        return `Obróć twarzą do góry: ${flipName} (${kindShown}${costHtml})`;
       }
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
       const xPart = cmd.xValue != null ? ` (X=${cmd.xValue})` : '';
