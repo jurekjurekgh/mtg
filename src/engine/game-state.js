@@ -22,7 +22,7 @@ import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOpti
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell } from './spells.js';
 import { legalActivatedAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
-import { addCounter } from './counters.js';
+import { addCounter, removeCounter } from './counters.js';
 import { runStateBasedActions, tryRegenerate } from './state-based.js';
 import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, fireWardTriggers } from './triggers.js';
 import { moveObjectDirectly } from './objects.js';
@@ -4820,20 +4820,31 @@ export function execute(state, input) {
     const object = state.objects.get(pending.objectId);
     const e = [];
     if (object && object.zone === 'battlefield') {
-      if (cmd.choice === 'shield') {
-        const next = { ...(object.counters ?? {}) };
-        next.shield = (next.shield ?? 0) - 1;
-        if (next.shield <= 0) delete next.shield;
-        state.objects.set(object.id, Object.freeze({ ...object, counters: Object.freeze(next) }));
+      // M270 (błąd #8): zdjęcie licznika shield idzie przez WSPÓLNY helper
+      // `removeCounter`, nie przez ręczne przepisanie `counters`. Bliźniacza
+      // ścieżka (markDamage w permanents.js) helpera używa, więc ta sama
+      // operacja raportowała się dwojako: przy obrażeniach log stołu pisał
+      // „traci 1 licznik shield" (counter_removed), a przy zastąpieniu
+      // zniszczenia — nic. Helper synchronizuje też rodzaj station (CR 205.1),
+      // czego ręczna ścieżka nie robiła.
+      // Kontrakt tej gałęzi: zdarzenia zbieramy do `e`, a do `state.events`
+      // trafiają RAZ, na końcu (`state.events.push(...e, resolved)`).
+      // `removeCounter` pushuje od razu, więc jego wpis wycinamy ze
+      // `state.events` i przekładamy do `e` — inaczej log miałby duplikat.
+      const zdejmijTarcze = () => {
+        if ((state.objects.get(object.id)?.counters?.shield ?? 0) > 0) {
+          const przed = state.events.length;
+          removeCounter(state, object.id, 'shield', 1);
+          e.push(...state.events.splice(przed));
+        }
         e.push(event('shield_consumed', { objectId: object.id, cardId: object.cardId, reason: 'destroy' }));
+      };
+      if (cmd.choice === 'shield') {
+        zdejmijTarcze();
       } else if (!tryRegenerate(state, object, e)) {
         // Tarcza regeneracji zniknęła między kolejką a decyzją (CR 701.12) —
         // gracz traci wybór, ale nie permanent bez powodu: zostaje tarcza.
-        const next = { ...(object.counters ?? {}) };
-        next.shield = (next.shield ?? 0) - 1;
-        if (next.shield <= 0) delete next.shield;
-        state.objects.set(object.id, Object.freeze({ ...object, counters: Object.freeze(next) }));
-        e.push(event('shield_consumed', { objectId: object.id, cardId: object.cardId, reason: 'destroy' }));
+        zdejmijTarcze();
       }
     }
     const resolved = event('replacement_choice_resolved', {
