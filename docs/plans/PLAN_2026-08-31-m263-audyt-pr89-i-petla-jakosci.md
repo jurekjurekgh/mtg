@@ -59,12 +59,12 @@ nagłówku, deferredTurnTail).
 
 ### Kroki
 
-- [ ] **1.1** Przegląd całego diffa `src/` (24 pliki, +1110/−237) po osiach:
+- [x] **1.1** Przegląd całego diffa `src/` (24 pliki, +1110/−237) po osiach:
       poprawność vs CR, generyczność (ADR 0002 — zero warunków po nazwie/ID
       karty), spójność oferta↔walidacja (L48/L90), kompletność PlayerView
       (ADR 0017, zwłaszcza `exiledBy`), brak globali Node w kodzie artefaktu
       (L58), determinizm/fingerprint (L16).
-- [ ] **1.2** Weryfikacja wąskich miejsc regułowych:
+- [x] **1.2** Weryfikacja wąskich miejsc regułowych:
       - F1: `installDeck` — jawna lista pól (echo/madness/surge/toxic/warp) —
         czy wszystkie deskryptory z `gameObjectDataOf` są przenoszone (L93);
       - C1–C8: `copyManaValueOf` + `manaCost` fabryki tokenów (L94) — czy
@@ -86,14 +86,16 @@ nagłówku, deferredTurnTail).
       - M260: Fertile Thicket — 3-krokowy wizard, FoW decyzji (look ≠ reveal),
         etykiety `commandLabel` (L97); Pyxis CR 406.3; B2 pusta biblioteka
         (CR 704.5m/504.1).
-- [ ] **1.3** Weryfikacja mutacyjna RED→GREEN kluczowych nowych testów
+- [x] **1.3** Weryfikacja mutacyjna RED→GREEN kluczowych nowych testów
       (≥5 plików): `m258-audyt-pr88`, `m258-f3-ward-cloak`,
       `m258-cr202-kopia-tylu-dfc`, `m261-granica-tury-w-modalu`,
       `m262-strefy-na-stole`, `m260-uwagi-wlasciciela`.
-- [ ] **1.4** Regresja bota bez pełnego B0: `node --test
+- [x] **1.4** Regresja bota bez pełnego B0: `node --test
       test/bot-benchmark.test.js` (~2 min); progi wg `test/bot-benchmark.test.js`.
-- [ ] **1.5** Raport: `docs/audits/AUDYT_PR89_2026-08-31.md` + wynik w opisie PR;
-      potwierdzone znaleziska naprawiam od razu (osobne commity).
+- [x] **1.5** Raport: `docs/audits/AUDYT_PR89_2026-08-31.md` + wynik w opisie PR;
+      potwierdzone znaleziska naprawiam od razu (osobne commity):
+      **Z1** chooseColor w installDeck i **Z2** ward w playerView (commit
+      `c410753`) + raport `78b520f` — zielone i wypchnięte.
 
 ### Kryteria ukończenia Etapu 1
 
