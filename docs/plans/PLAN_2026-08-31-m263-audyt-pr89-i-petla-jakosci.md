@@ -29,6 +29,32 @@ cloak, DFC MV (CR 202.3b/707.2/707.8a), madness, kopie tokenów,
 deskryptory w materializacji talii (echo/madness/surge/toxic/warp), Roiling
 Regrowth (pay-or-sacrifice), `meta.exiledBy` (CR 400.7), granica tury.
 
+## Zgłoszenie właściciela 2026-08-31 — korekta M261 (przerwała audyt)
+
+Właściciel zgłosił, że M261 (granica tury w modalu „Rozgrywka") nie działa
+tak, jak chciał: „Tura 1 — Ja", potem „Tura 2 — Nieprzyjaciel" ma robić
+**OBOWIĄZKOWY STOP — nagłówek niepomijalny, zaraz PO nim klik „Rozumiem"**;
+dotychczasowe przerwanie PRZED granicą tury usunąć (przy autopass bez komend
+w ogóle się nie zatrzymywało — leciała cała tura bota).
+
+- [x] **K.1** Przepisanie `src/table/session.js`: usunięte
+      `heldBotMoves`/`routingHeld`/`botTurnSplit`/`promoteHeldBotMoves`;
+      nagłówek zawsze w buforze; pauza PO nagłówku; `game_started`
+      syntezuje „Tura 1 — <gracz>"; ogon strumienia po nagłówku (upkeep,
+      triggery) odłożony do `deferredTurnTail` i wypuszczany po „Rozumiem".
+- [x] **K.2** Weryfikacja naiwnym driverem (seeds 127/42): nagłówek jest
+      OSTATNIĄ linią bloku granicznego; upkeep wychodzi w następnym bloku.
+- [x] **K.3** Adaptacja testów: `test/m261-granica-tury-w-modalu.test.js`
+      (nagłówek ostatnią linią, „Dobierasz" w osobnym bloku),
+      `test/human-draw-modal.test.js` (M100/E8: dobranie w strumieniu po
+      nagłówku własnej tury).
+- [x] **K.4** Zielona brama: `npm test` 3873/3873, `npm run test:slow`
+      10/10, `npm run build` (56 mod / 2985.0 kB); commit `a05eebe`.
+
+**Wniosek:** wracamy do audytu PR #89 (Etap 1) — sekcja „M261" w kroku 1.2
+wymaga aktualizacji o nowy, zaakceptowany kształt (brak held, pauza po
+nagłówku, deferredTurnTail).
+
 ## Etap 1 — audyt PR #89 (ADR 0020 B / ADR 0016)
 
 ### Kroki
