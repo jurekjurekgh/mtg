@@ -1078,10 +1078,21 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (attached.length === 0) return;
     if (effect.confirmed) {
       for (const att of attached) {
-        const destId = `grave-${state.objectSequence++}`;
-        moveObjectDirectly(state, att.id, 'graveyard', destId);
+        // M270 (błąd #7, CR 122.1e): zniszczenie Equipment to śmierć jak każda
+        // inna — strefę docelową wyznacza WSPÓLNY `deathZoneFor` (licznik
+        // finality / naznaczenie exileIfDiesThisTurn kierują do wygnania).
+        // Ta ścieżka szła na sztywno do cmentarza, więc Equipment zwrócone
+        // przez Zoraline („nonland permanent card with mana value 3 or less"
+        // — artefakty się kwalifikują) z licznikiem finality dawało się
+        // odzyskać drugi raz.
+        const toZone = deathZoneFor(state, att);
+        const destId = `${toZone}-${state.objectSequence++}`;
+        moveObjectDirectly(state, att.id, toZone, destId);
         state.events.push(event('permanent_destroyed', {
-          fromId: att.id, objectId: destId, cardId: att.cardId, controllerId: att.controllerId,
+          // `toZone` jest CZĘŚCIĄ faktu, nie ozdobą: triggery śmierci
+          // (triggers.js — `if (ev.toZone === 'exile') return`) muszą wiedzieć,
+          // że permanent poszedł do wygnania, więc „dies" się nie wydarzyło.
+          fromId: att.id, objectId: destId, cardId: att.cardId, controllerId: att.controllerId, toZone,
         }));
       }
       return;
