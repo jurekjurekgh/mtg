@@ -138,6 +138,24 @@ function probeFizzled(clone, eventsBefore, relevantIds) {
 }
 
 /**
+ * M264 (Żywy Tester, partia 4002): czy obiekt sondowanej komendy został
+ * SKONTROWANY regułą (ward {N} / counter_spell_unless_pays bez many na
+ * dopłatę)? Kontr ma własne zdarzenie `spell_countered` (fromId = obiekt
+ * ze stosu) — to REALNY SKUTEK, odpowiedź gry, a nie „jedyna zmiana to
+ * zapłacony koszt". W pasywnym klonie jedyną ścieżką auto-kontru jest
+ * decyzja bez many; przy mieli gracza otwiera się decyzja (blockedByChoice)
+ * i ta gałąź w ogóle nie dochodzi do klasyfikacji.
+ */
+function probeCountered(clone, eventsBefore, relevantIds) {
+  if (relevantIds.size === 0) return false;
+  for (const e of clone.events.slice(eventsBefore)) {
+    if (e?.type !== 'spell_countered') continue;
+    if (e.fromId != null && relevantIds.has(e.fromId)) return true;
+  }
+  return false;
+}
+
+/**
  * Sonda skutku komendy: wykonuje ją na klonie stanu z pasywnym przeciwnikiem
  * i dogrywa jej obiekty do zejścia ze stosu (bez żadnych decyzji graczy —
  * okna bez passu oznaczają blokujący wybór, czyli realny skutek).
@@ -309,6 +327,7 @@ export function probeCommandEffect(state, cmd, { maxCommands = MAX_PROBE_COMMAND
   return {
     ok: true,
     changed: beforeFp !== afterFp,
+    countered: probeCountered(clone, eventsBefore, relevantIds),
     effectDiffs: effectDiffs.slice(0, 24),
     ownLandTaps,
     ownOtherTaps,
