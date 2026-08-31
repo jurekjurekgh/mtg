@@ -67,6 +67,20 @@ test('L101: pełny koszt (także darmowy rzut opisany słownie) nie jest zgłasz
   assert.deepEqual(detectEmptyCostDescriptor(ok), [], 'wypełnione koszty są poprawne');
 });
 
+test('L101/kalibracja: NAZWA KEYWORDA w nawiasie to nie pusty koszt', () => {
+  // M267 (Żywy Tester, seedy 511/516, profile explorer i hoarder): detektor
+  // z M266/D zgłosił 11 fałszywych alarmów na wpisach Escape. „(Escape)" to
+  // GLOSA nazwy mechaniki — słowo kosztu stoi tam tuż przed nawiasem
+  // zamykającym, tak samo jak w realnym objawie „+ kicker )". Rozróżnia je
+  // kontekst: pusty koszt ma przed sobą „+" albo słowo „koszt".
+  const ok = [
+    '  AKCJE: Sweet Oblivion — Ucieczka (Escape): karty do wygnania (2 opcje)',
+    '  [modal choice] Ucieczka: Sleep of the Dead (koszt 3) (1 z 6)',
+    '  AKCJE: >> Rzuć: Kaervek (koszt 4B) — Suspend (zawieszenie)',
+  ];
+  assert.deepEqual(detectEmptyCostDescriptor(ok), [], 'glosa keyworda to nie brak kosztu');
+});
+
 test('C2: ta sama linia dwa razy w jednej paczce modala „Rozgrywka"', () => {
   const lines = [
     '  [ROZGRYWKA] Rozgrywka',

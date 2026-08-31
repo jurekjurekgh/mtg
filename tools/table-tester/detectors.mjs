@@ -1119,8 +1119,16 @@ export function detectGenericChoiceTitle(lines) {
  */
 export function detectEmptyCostDescriptor(lines) {
   const found = [];
-  // „koszt" albo nazwana dopłata, po której zamiast kwoty stoi ) lub koniec.
-  const EMPTY_COST = /\((?:koszt|cena)\s*\)|\b(kicker|warp|surge|suspend|bestow|plot|escape|koszt)\s*(?=[),]|$)/i;
+  // Pusty koszt = miejsce, gdzie etykieta ZAPOWIADA cenę, ale jej nie podaje:
+  //   „(koszt )"            — puste nawiasy kosztu,
+  //   „(koszt 2W + kicker )" — nazwana DOPŁATA (po „+") bez kwoty.
+  //
+  // M267 (kalibracja na seedach 511/516): pierwsza wersja pytała o samo słowo
+  // mechaniki przed nawiasem zamykającym i dała 11 fałszywych alarmów na
+  // „Ucieczka (Escape): karty do wygnania" — tam nawias to GLOSA nazwy
+  // keyworda, nie miejsce na cenę. Sygnałem zapowiedzi ceny jest „koszt/cena"
+  // albo dopłata po „+", nie sama nazwa mechaniki.
+  const EMPTY_COST = /\((?:koszt|cena)\s*\)|\+\s*(kicker|warp|surge|suspend|bestow|plot|escape|dopłata)\s*(?=[),]|$)/i;
   for (const line of lines) {
     if (!/AKCJE:|\[modal choice\]|RĘKA:/.test(line)) continue;
     const match = line.match(EMPTY_COST);
