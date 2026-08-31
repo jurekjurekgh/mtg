@@ -34,6 +34,42 @@ M208.
 
 ---
 
+## L103 (2026-08-31) — Skrót „na 1v1" w modelu karty zmienia REGUŁY: brak słowa „target" w Oracle ⇒ brak `targets`, zakres należy do efektu
+
+**Objaw (zgłoszenie właściciela M266/B):** log pisał „Nieprzyjaciel rzuca
+Liliana's Triumph → cel: Ty", a Oracle brzmi „Each opponent sacrifices
+a creature of their choice" — bez słowa „target".
+
+**Przyczyna:** M203/2 zamodelował „każdy przeciwnik" jako
+`targets: [{ type: 'player', opponent: true }]`. W 1v1 wskazuje to zawsze
+tę samą osobę, więc wyglądało na równoważne — ale równoważne NIE JEST.
+Czar bez celów (CR 115.1) i czar z celem różnią się obserwowalnie:
+z celem daje się zepsuć usunięciem celu, fizzluje przy hexproof/shroud
+gracza (CR 115.6) i pokazuje w UI wybór, którego karta nie oferuje.
+Skrót przeszedł, bo w 1v1 różnica ujawnia się dopiero przy hexproof.
+
+**Reguła:**
+1. `targets` w definicji karty deklaruje wyłącznie to, co Oracle nazywa
+   słowem „target". „Each opponent", „each player", „defending player"
+   to ZAKRES efektu — modeluj polem efektu (`scope: 'each_opponent'`),
+   wzorzec: `discard_each_opponent`.
+2. Gałąź efektu ma obsłużyć oba warianty, gdy istnieje karta-bliźniak
+   z celem (tu Grave Exchange: „TARGET player sacrifices…") — jedna gałąź,
+   dwie ścieżki, zero specjalnych przypadków po nazwie karty (ADR 0002).
+3. „W 1v1 wychodzi na to samo" nie jest argumentem: różnicę widać przez
+   hexproof, kontrę usuwającą cel i przez UI. Model ma być zgodny
+   z Oracle, nie z liczbą graczy przy stole.
+4. Strażnik jest KLASOWY: enumeruje katalog i sprawdza implikację
+   „brak słowa target w Oracle ⇒ brak `targets`" (spell + activated +
+   triggered). Pin na jedną kartę uśpiłby klasę — bliźniaki (np. Dreams
+   of Steel and Oil, poprawne, bo ma „Target opponent") wyglądają
+   identycznie w kodzie i różnią się TYLKO Oracle.
+
+**Strażnik:** `test/m266-zgloszenia-wlasciciela.test.js`, test „M266/B
+(klasa): żadna karta nie ma `targets` bez słowa target w Oracle" (skan
+katalogu, dziś 0 naruszeń). Mutacja: przywrócenie `targets` Liliana's
+Triumph → 4 testy RED (w tym klasowy).
+
 ## L102 (2026-08-31) — Rodzina ofert dzieli WYCENĘ i WIDOK: nowy członek bez pinu odziedziczy stary błąd; skutek niewidoczny w odcisku to fałszywy no-op
 
 **Objaw (Żywy Tester M265, dwa detektory, dwie partie):**

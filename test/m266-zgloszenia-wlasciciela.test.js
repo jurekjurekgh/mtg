@@ -169,3 +169,29 @@ test('M266/C2: rzut z madness emituje spell_cast DOKŁADNIE RAZ', () => {
   assert.equal(inState.length, 1, 'stan gry też ma jedno zdarzenie rzutu');
   assert.equal(state.zones.stack.length, 1, 'na stosie jest jeden czar');
 });
+
+test('M266/B (klasa): żadna karta nie ma `targets` bez słowa „target" w Oracle', () => {
+  // Root cause zgłoszenia B: Liliana's Triumph („Each opponent sacrifices…")
+  // była modelowana przez `targets: [{ type: 'player', opponent: true }]` —
+  // skrót działający na 1v1, ale zmieniający REGUŁY (CR 115.1/115.6: czar bez
+  // celów nie fizzluje przy hexproof i nie da się go zepsuć usunięciem celu).
+  // Ten strażnik jest KLASOWY (L101/2): enumeruje katalog zamiast pinować
+  // jedną kartę, więc następna karta „each opponent" nie prześliźnie się.
+  const registry = createCardRegistry();
+  const offenders = [];
+  for (const card of registry.all()) {
+    const hasTargetWord = /\btarget/i.test(card.oracleText ?? '');
+    if (hasTargetWord) continue;
+    const specs = [
+      ['spell', card.spell],
+      ...(card.activated ?? []).map((a, i) => [`activated[${i}]`, a]),
+      ...(card.triggered ?? []).map((a, i) => [`triggered[${i}]`, a]),
+    ];
+    for (const [where, spec] of specs) {
+      if (spec?.targets?.length) offenders.push(`${card.id} (${where})`);
+    }
+  }
+  assert.deepEqual(offenders, [],
+    'karty z `targets`, choć Oracle nie zawiera słowa „target" — zakres należy '
+    + 'do EFEKTU (scope), nie do listy celów');
+});
