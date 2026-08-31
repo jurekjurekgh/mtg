@@ -4112,6 +4112,15 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const transformed = Object.freeze({
       ...exiled,
       id: bfId, zone: 'battlefield', summoningSickness: true,
+      // M270 (CR 400.7): permanent WRACA na pole bitwy jako nowy obiekt, więc
+      // „wszedł na pole bitwy" W TEJ turze. Baza `exiled` pochodzi ze strefy
+      // wygnania, gdzie moveObjectDirectly ustawiło `enteredOnTurn: null`,
+      // a ręczne złożenie obiektu (ta ścieżka omija choke point) przenosiło
+      // tę wartość na pole bitwy. Skutkiem warunek „as long as it entered
+      // this turn" (Crew Captain — indestructible) i `onlyIfTargetEnteredThisTurn`
+      // czytały turę SPRZED wygnania: permanent, który wrócił właśnie teraz,
+      // nie był uznawany za świeżo przybyły.
+      enteredOnTurn: state.turn.number,
       // Komplet charakterystyk drugiej strony (CR 711.2) — wspólny helper
       // niesie też `kind`, którego wcześniej brakowało: strona zmieniająca
       // rodzaj permanentu (Incubator → Phyrexian) wracała z pola bitwy jako

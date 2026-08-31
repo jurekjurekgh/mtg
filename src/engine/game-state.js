@@ -4005,6 +4005,12 @@ export function execute(state, input) {
       const transformed = Object.freeze({
         ...moved,
         id: bfId, zone: 'battlefield',
+        // M270 (CR 400.7): ta sama klasa co transform-return w effects.js —
+        // craft składa obiekt RĘCZNIE (omija moveObjectDirectly), więc musi
+        // sam ostemplować turę wejścia. Baza `moved` przychodzi z wygnania
+        // z `enteredOnTurn: null`, przez co permanent wracający na pole bitwy
+        // nie liczył się jako „entered this turn" (Crew Captain).
+        enteredOnTurn: state.turn.number,
         ...transformedCharacteristics(target, previousSide),
         // CR 202.3b (M258/Etap 2.3b): MV po crafcie = koszt twarzy przedniej;
         // payload transformTo niesie go od materialize. Token-kopia TYLNEJ
