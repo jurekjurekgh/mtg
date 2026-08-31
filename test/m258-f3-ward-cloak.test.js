@@ -263,3 +263,52 @@ test('M258/W9: log opisuje decyzję ward (oś 2 — log to jedyne źródło wied
   const label = commandLabel({ type: 'resolve_ward_pay_choice', playerId: 'p2', pay: true, cost: 2, targetId: 'spell-1' }, SESSION_MOCK, SESSION_MOCK.view());
   assert.ok(typeof label === 'string' && label.length > 0, 'komenda resolve_ward_pay_choice ma etykietę panelu');
 });
+
+test('M258/W10: ward odpala także na KOPII czaru (Storm, CR 702.40a+702.21) — pin audytu A1', () => {
+  const state = game('p1');
+  const cloaked = cloakedCreature(state, 'p2');
+  putCard(state, 'ins', 'spreading-insurrection', 'p1', 'hand');
+  state.spellsCastThisTurn = 1; // 1 wcześniejszy czar → 1 kopia
+  addMana(state, 'p1', 9, { colors: ['R'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'ins' && (c.targets ?? [])[0] === cloaked.id);
+  assert.ok(cast, 'rzut Spreading Insurrection z celem');
+  assert.equal(execute(state, cast).ok, true);
+  // Ward ORYGINAŁU: LIFO — rozstrzyga się przed czarem.
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+  assert.ok(state.pendingWardPay, 'ward oryginału otwarty');
+  execute(state, { type: 'resolve_ward_pay_choice', playerId: 'p1', pay: true });
+  // Rozstrzygnięcie triggera Storma → kopia (spell_copied) z celem oryginału.
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+  assert.ok(state.zones.stack.some((id) => state.objects.get(id)?.isSpellCopy), 'kopia na stosie po stormie');
+  const copyTarget = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'resolve_copy_targets' && c.targetId === cloaked.id);
+  assert.ok(copyTarget, 'wybór celu kopii');
+  execute(state, copyTarget);
+  // Ward KOPII — też LIFO nad kopią.
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+  assert.ok(state.pendingWardPay, 'ward na KOPII otwarty (spell_copied — RED przed fixem A1: brak triggera)');
+  assert.equal(state.pendingWardPay.targetingStackId, copyTarget.copyId, 'ward dotyczy KOPII, nie oryginału');
+  assert.equal(state.pendingWardPay.amount, 2, 'kwota ward kopii = 2');
+});
+
+test('M258/W11: czar AURY celujący w ward — gałąź aura_spell_cast (pin audytu A1)', () => {
+  const state = game('p1');
+  const cloaked = cloakedCreature(state, 'p2');
+  putCard(state, 'embrace', 'serras-embrace', 'p1', 'hand');
+  addMana(state, 'p1', 6, { colors: ['W'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'embrace' && (c.targets ?? [])[0] === cloaked.id);
+  assert.ok(cast, 'ofiaru aury z celem');
+  const r = execute(state, cast);
+  assert.ok(r.ok, 'rzut aury przyjęty');
+  assert.ok(state.zones.stack.some((id) => state.objects.get(id)?.triggerEntry?.extra?.wardPay),
+    'ward nad aurą jest na stosie (aura_spell_cast — RED: brak gałęzi)');
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+  assert.ok(state.pendingWardPay, 'decyzja ward dla aury');
+  assert.equal(state.pendingWardPay.targetingCardId, 'serras-embrace');
+});
