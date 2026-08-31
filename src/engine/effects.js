@@ -3373,14 +3373,23 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const sameController = attackerId === source.controllerId;
     if (sameController && !source.tapped) return;
     const previous = source.controllerId;
+    const wasTapped = Boolean(source.tapped);
     state.objects.set(source.id, Object.freeze({ ...source, controllerId: attackerId, tapped: false }));
-    if (sameController) {
-      state.events.push(event('object_untapped', { objectId: source.id, cardId: source.cardId }));
-    } else {
+    if (!sameController) {
       state.events.push(event('control_changed', {
         objectId: source.id, cardId: source.cardId,
         controllerId: attackerId, fromControllerId: previous,
       }));
+    }
+    // M269 (błąd #3, lekcja L24 / CR 701.21a): „and untaps it" jest zdarzeniem
+    // widocznym dla reguł i dla gracza — NIEZALEŻNIE od tego, czy przy okazji
+    // zmienił się kontroler. Dotąd `object_untapped` powstawało wyłącznie
+    // w gałęzi „ten sam kontroler": gdy piłka realnie zmieniała ręce (ścieżka
+    // typowa — atakujący to przeciwnik), odkręcenie działo się po cichu.
+    // Żaden trigger „becomes untapped" go nie widział, a log stołu pokazywał
+    // samą zmianę kontroli, choć permanent stanął odkręcony.
+    if (wasTapped) {
+      state.events.push(event('object_untapped', { objectId: source.id, cardId: source.cardId }));
     }
     return;
   }
