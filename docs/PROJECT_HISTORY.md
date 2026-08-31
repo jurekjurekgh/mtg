@@ -7204,6 +7204,46 @@ Suite: fast 3885/3885, `test:all` 3895/3895, build 56 modułów /
 **Kolejny krok:** Etap 2.3 — DFC: kopia frontu przez realną ścieżkę
 (`putCard`/`setupCardMatch`); decyzja właściciela o scaleniu PR #90.
 
+## 2026-08-31 — M264 cz. 2: Etap 2.3 — DFC kopia frontu (PR #90)
+
+Domknięcie ostatniego otwartego punktu planu M264. Dwie rozłączne
+ścieżki „kopii karty dwustronnej" miały przeciwne braki:
+
+- **Token-kopie dwustronne (CR 707.8a)** — Cogwork Assembler → Lodestone
+  Needle oraz Incubator (CR 701.51) niosły `transformTo`, ale gubiły
+  `frontFaceId` (`createBattlefieldToken` w ogóle nie przyjmował tego
+  pola). Skutek: kopia TYLNEJ twarzy nie była rozpoznawalna jako
+  dwustronna — przy kopii-kopii (drugi Cogwork) `copyManaValueOf` nie
+  mógł policzyć MV 0 (CR 202.3b), a reset K5 (CR 711.4a) nie miałby się
+  jak odpalić. Fix (`5796c6c`): parametr `frontFaceId` w
+  `createBattlefieldToken` + przekazanie w `create_copy_token` (ze
+  źródła) i w `incubate` (front pary = `token_incubator`).
+- **enterAsCopy (CR 712.9)** — Jwari Shapeshifter to kopia na
+  JEDNOSTRONNEJ karcie, więc nie ma drugiej strony (przykład reguły:
+  Clone jako kopia Wildblood Pack nie może się transformować). M155
+  kopiował tam `transformTo`, przez co kopia umiała się obrócić, a druga
+  transformacja przywracała cardId źródła („chimerę",
+  transformTo.cardId = jwari-shapeshifter). Fix: usunięcie kopiowania —
+  skopiowane zdolności transform/craft zostają, ale są bezpiecznym
+  no-op (efekty już tak obsługują brak `transformTo`, oferta craft
+  wymaga go w abilities.js).
+- **Fingerprint (ADR 0005)** — `stateFingerprint` nosił `transformTo`,
+  ale nie `frontFaceId` (`037bf18`): stany różniące się tylko tożsamością
+  frontu pary były „identyczne" dla sondy noop i weryfikacji replayów.
+
+RED→GREEN: `test/copy-token-dfc.test.js` (C1–C3: frontFaceId tokenu,
+pętla transformacji w obie strony, Incubator) + nowy
+`test/m264-enter-as-copy-dfc.test.js` (A1–A4: brak drugiej strony,
+no-op transformu, kopia TYLNEJ twarzy, anty-over-fix pierwowzoru)
++ fingerprint test. Fast **3893/3893**, test:all **3903/3903**,
+build **56 modułów / 2989.5 kB**. Żywy Tester (worek-dziki vs
+zendikar, seeds 777 i 314): 2 partie — 0 zgłoszeń detektorów;
+`scan.mjs` na transkryptach — 276 trafień wyłącznie w kategoriach
+intencjonalnych, brak `[STOP]`/`undefined`/odrzuceń. Transkrypty:
+`tmp-audyt-m264/g4012-*`, `g4013-*` (poza repo).
+
+**Kolejny krok:** decyzja właściciela o scaleniu PR #90.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

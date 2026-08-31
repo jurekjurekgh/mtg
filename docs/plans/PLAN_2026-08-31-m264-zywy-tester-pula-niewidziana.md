@@ -1,8 +1,11 @@
 # PLAN 2026-08-31 — M264: kontynuacja M263 — Żywy Tester na puli niewidzianej (PR #90)
-> **Status 2026-08-31:** Etap 2.1 domknięty (11 partii, seeds 4001–4011);
-> Etap 2.2 — 2 znaleziska naprawione root-cause (B: wyciek FoW `82065e4`,
-> C: FA noop ward-kontr `2247199`); raport
-> `docs/audits/AUDYT_M264_2026-08-31.md`. Otwarte: Etap 2.3 (DFC-kopia frontu).
+> **Status 2026-08-31 (finalny):** Etap 2.1 domknięty (11 partii, seeds
+> 4001–4011); Etap 2.2 — 2 znaleziska naprawione root-cause (B: wyciek
+> FoW `82065e4`, C: FA noop ward-kontr `2247199`); **Etap 2.3 — DFC
+> domknięty** (`5796c6c`: frontFaceId dla dwustronnych token-kopii
+> 707.8a/701.51 + 712.9 dla enterAsCopy; RED→GREEN, test:all 3902/3902,
+> build 2989.5 kB, żywy przebieg 2 partie — 0 zgłoszeń). Raport:
+> `docs/audits/AUDYT_M264_2026-08-31.md`.
 
 **Sesja:** `arena/01a0577f-mtg` (ciąg dalszy, PR #90). **Baza:** `a2b0f88`
 (domknięcie M263). **Prompt:** „kontynuuj\" → ADR 0021: dopełnienie Etapu 2
