@@ -4370,7 +4370,17 @@ function markTemporaryExile(state, exileId, sourceObject) {
         // CR 701.27a: +1 licznik trucizny na graczu — pole player.poison
         // (poprzednio +1 szło do nigdzie nieczytanego player.counters.poison).
         if ((player.poison ?? 0) > 0) {
-          player.poison += 1;
+          // M269 (błąd #4): trucizna idzie przez WSPÓLNY helper
+          // `addPoisonCounters`, a nie przez `player.poison += 1`. Helper
+          // emituje `poison_counters_added` — jedyne zdarzenie, które
+          // rozumie log stołu („otrzymuje znaki trucizny") i heurystyczny bot
+          // (waga 45). Dotąd proliferate zgłaszał truciznę jako `counter_added`
+          // z `objectId` będącym ID GRACZA: log szukał obiektu o tym id,
+          // nie znajdował go i pisał „? dostaje +1 licznik poison" (klasa L29
+          // — fallback-znak zapytania), a bot nie widział postępu do wygranej
+          // przez truciznę (CR 704.5c). `counter_added` zostaje obok, żeby
+          // liczniki gracza i permanentów dalej miały wspólny strumień.
+          addPoisonCounters(state, player.id, 1);
           state.events.push(event('counter_added', {
             objectId: player.id, cardId: null, counter: 'poison', amount: 1,
             total: player.poison, fromProliferate: true,
