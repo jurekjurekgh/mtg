@@ -4372,22 +4372,32 @@ function markTemporaryExile(state, exileId, sourceObject) {
       }
       const obj = state.objects.get(targetId);
       if (!obj || obj.zone !== 'battlefield') continue;
-      const counters = obj.counters ?? {};
-      const updated = { ...counters };
-      for (const [name, count] of Object.entries(counters)) {
-        if (count > 0) {
-          updated[name] = count + 1;
-          state.events.push(event('counter_added', {
-            objectId: obj.id, cardId: obj.cardId, counter: name, amount: 1,
-            total: updated[name], fromProliferate: true,
-          }));
-          proliferated += 1;
+      // M269 (błąd #2): dokładanie liczników idzie przez WSPÓLNY helper
+      // `addCounter`, a nie przez własną re-inkarnację obiektu. Własna
+      // ścieżka pomijała `syncStationKind`, więc Spacecraft (station)
+      // dobity proliferatem do progu („It's an artifact creature at 6+")
+      // zostawał zwykłym artefaktem: nie mógł atakować ani blokować, a
+      // kafel dalej pokazywał „Artifact — Spacecraft". Helper emituje
+      // `counter_added` i synchronizuje rodzaj/typy (CR 205.1); znacznik
+      // `fromProliferate` dokładamy do wyemitowanego zdarzenia, żeby log
+      // nadal odróżniał proliferate od zwykłego dołożenia licznika.
+      const namesToBump = Object.entries(obj.counters ?? {})
+        .filter(([, count]) => count > 0)
+        .map(([name]) => name);
+      for (const name of namesToBump) {
+        const before = state.events.length;
+        addCounter(state, obj.id, name, 1);
+        // Zdarzenia są płaskie i zamrożone (protocol/types.js: { type, ...data }),
+        // więc znacznik dokładamy przez odtworzenie wpisu. Szukamy po INDEKSIE
+        // (a nie „ostatniego"), bo addCounter może dołożyć po nim kolejne
+        // zdarzenie — np. `station_status_changed` przy przekroczeniu progu.
+        for (let i = before; i < state.events.length; i += 1) {
+          if (state.events[i]?.type !== 'counter_added') continue;
+          const { type, ...data } = state.events[i];
+          state.events[i] = event('counter_added', { ...data, fromProliferate: true });
+          break;
         }
-      }
-      // Re-inkarnacja obiektu (frozen, więc nie mutujemy `counters` wprost;
-      // zamrażanie jest wymagane przez inwarianty, by LKI było niezmienne).
-      if (proliferated > 0 || Object.keys(updated).length > 0) {
-        state.objects.set(obj.id, Object.freeze({ ...obj, counters: updated }));
+        proliferated += 1;
       }
     }
     state.events.push(event('proliferated', { source: sourceObject.id, count: proliferated }));
