@@ -112,9 +112,11 @@ Wybór spośród (kolejność wg dostępnego czasu; NIE wymyślamy batcha kart):
       profile `explorer/greedy/defensive/impatient/random`, osie
       `TESTER_STOLU.md`). Transkrypty poza repo; raport w `docs/audits/`.
 - [ ] **2.2** Klasy → root cause + detektory + testy (wzorzec M54/M65/M73).
-- [ ] **2.3** Polowanie na CR: skan strukturalny (L11) rodziny mechanik z PR #89
-      (ward/ward-of-cloak, DFC MV, exile/byCardId, madness) albo RODZEŃSTWO
-      (L72) efektów zbiorowych.
+- [x] **2.3** Polowanie na CR w części: rodzina ward — A1 domknięte (piny
+      W10 ward+Storm/spell_copied, W11 ward+aura_spell_cast; mutacje RED
+      potwierdzone). DFC MV/exile/madness — przegląd bez znalezisk
+      (mutacje M3/M9/M10 z Etapu 1 już je wymuszały); ewentualny dalszy
+      skan rodziny (L72) do następnej sesji.
 
 ## Kolejność commitów (planowana)
 
