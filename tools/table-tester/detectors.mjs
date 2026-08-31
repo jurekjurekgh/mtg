@@ -533,6 +533,13 @@ export function detectNoEffectOffers(probeRecords) {
     if (MANA_ABILITY.test(label) || PASS_LABEL.test(label)) continue;
     if (source === 'modal' && DECLINE_OPTION.test(label)) continue;
     if (probe.blockedByChoice) continue; // otwarcie decyzji to skutek
+    // M264 (Żywy Tester, partia 4002): obiekt sondowanej komendy został
+    // SKONTROWANY regułą — ward {N} / counter_spell_unless_pays bez many
+    // (spell_countered). To realna odpowiedź gry, nie wada oferty: sonda
+    // widziała „tap kosztu i nic" (fingerprint wraca do stanu wyjściowego)
+    // i zgłaszała poprawną aktywację (Stirring Bard → Morph z ward) jako
+    // no-op — L12: szum przykrywa prawdziwe znaleziska.
+    if (probe.countered) continue;
     if (!probe.changed) {
       push(found, 'noop', `Oferta bez skutku${where} — kliknięcie nie zmienia stanu gry`, label);
       continue;

@@ -1,15 +1,23 @@
 // M261 — granica tury zamyka paczkę modala „Rozgrywka" (zgłoszenie
-// właściciela 2026-08-31): dopisywanie zdarzeń do bufora modala ma się
-// zatrzymywać na rozpoczęciu kolejnej TURY. Po informacji „Tura N — Ty /
-// Nieprzyaciel" modal kończy dopisywać i czeka na „Rozumiem"; dopiero po
-// kliknięciu otwiera się NOWY modal, który zaczyna się od nagłówka tury.
-// Chodzi o NIEŁĄCZENIE w jednym modalu tur graczy — np. ogon tury bota
-// (nieistotne zdarzenia końca tury) doklejony do „Tura N+1 — Ty" + dobrania.
+// właściciela 2026-08-31). KOREKTA właściciela z tego samego dnia: stop ma
+// być ZARAZ PO nagłówku „Tura N — Ty / Nieprzyaciel" (nie przed granicą,
+// jak w pierwotnej wersji M261, i nie zależnie od zawartości bufora — przy
+// autopass bez komend stary mechanizm w ogóle nie zatrzymywał i cała tura
+// bota leciała bez pauzy). Nagłówek jest NIEpomijalny i OBOWIĄZKOWY.
+//
+// Konsekwencja kontraktu: nagłówek tury jest OSTATNIĄ linią bloku modala
+// (modal kończy się na „Tura N — …"), a zdarzenia, które silnik wygenerował
+// w tym samym strumieniu za nagłówkiem (untapy, upkeep, triggery), wychodzą
+// dopiero po kliknięciu „Rozumiem" — w NASTĘPNYM bloku. Blok graniczny może
+// zawierać ogon starej tury PRZED nagłówkiem (np. „Nieprzyjaciel zatrzymuje
+// rękę otwarcia" + „Tura 1 — Ty").
 //
 // Test patrzy na INWARIANTY bloków modala (jak M252/human-draw-turn-header):
 //  1. każdy blok zawiera CO NAJWYŻEJ JEDEN nagłówek „Tura N — <gracz>";
-//  2. jeśli blok ma nagłówek, to jest jego PIERWSZĄ linią (nowa tura =
-//     nowy modal, nie doklejka do starej paczki).
+//  2. nagłówek jest OSTATNIĄ linią bloku — pauza następuje ZARAZ PO nim
+//     (stop-before-header i stop-w-środku-tury są wadliwe);
+//  3. „Dobierasz: X" (para nagłówkowa M100/E8) NIE jest doklejane do bloku
+//     z nagłówkiem — wychodzi w osobnym bloku po kliknięciu „Rozumiem".
 // Harness „zbiera bloki" dokładnie jak gracz klikający „Rozumiem".
 
 import { test } from 'node:test';
@@ -62,39 +70,48 @@ test('M261: jeden blok modala = jedna tura (co najwyżej jeden nagłówek „Tur
   }
 });
 
-test('M261: nagłówek „Tura N — …" zawsze OTWIERA blok (nowa tura = nowy modal)', () => {
+test('M261: nagłówek „Tura N — …" jest OSTATNIĄ linią bloku (STOP zaraz PO nagłówku)', () => {
   for (const seed of [127, 42, 7, 11, 77, 5, 99, 163]) {
     const blocks = collectBlocks(makeSession(seed));
     for (let i = 0; i < blocks.length; i += 1) {
       const headerIdx = blocks[i].findIndex((line) => HEADER_RE.test(line));
       if (headerIdx === -1) continue;
-      assert.equal(headerIdx, 0,
-        `seed ${seed}, blok #${i + 1}: nagłówek tury jest linią #${headerIdx + 1}, a nie pierwszą — ` +
-        `blok dokleja nową turę do starej paczki (linie: ${blocks[i].slice(0, 4).join(' | ')})`);
+      assert.equal(headerIdx, blocks[i].length - 1,
+        `seed ${seed}, blok #${i + 1}: po nagłówku „${blocks[i][headerIdx]}" są jeszcze linie ` +
+        `(${blocks[i].slice(headerIdx + 1).join(' | ')}) — pauza ma być ZARAZ PO nagłówku, ` +
+        'a zdarzenia zza niego (upkeep, triggery) wychodzą po „Rozumiem"');
     }
   }
 });
 
-test('M261: para „nagłówek tury + dobranie" nie jest doklejana do ogona poprzedniej tury', () => {
-  // Własna tura gracza: „Tura N — Ty" + „Ty dobiera: …" to OTWARCIE nowego
-  // modala — przed nimi nie może wisieć ogon tury bota (np. jego nieistotne
-  // zdarzenia końca tury). Szukamy bloków z dobieraniem i sprawdzamy, że
-  // linie PRZED nagłówkiem tury to wyłącznie nagłówki faz (szum „Faza:").
-  for (const seed of [127, 42, 7, 11]) {
+test('M261: „Dobierasz: X" wychodzi w OSOBNYM bloku, nie doklejone do nagłówka tury', () => {
+  // Własna tura gracza: „Tura N — Ty" zamyka modal (STOP), a „Dobierasz: X"
+  // pojawia się w następnym bloku — po kliknięciu „Rozumiem". Doklejenie
+  // dobrania do bloku nagłówkowego naruszałoby kontrakt „pauza zaraz po
+  // nagłówku"; oddzielenie od nagłówka NIE może jednak gubić linii dobrania.
+  for (const seed of [127, 42, 7, 11, 77, 5, 99, 163]) {
     const blocks = collectBlocks(makeSession(seed));
+    let headerBlocks = 0;
+    let drawBlocks = 0;
     for (let i = 0; i < blocks.length; i += 1) {
       const lines = blocks[i];
       const headerIdx = lines.findIndex((line) => HEADER_RE.test(line));
-      if (headerIdx === -1) continue;
-      const header = HEADER_RE.exec(lines[headerIdx]);
-      if (header[2] !== 'Ty') continue;
-      // Interesuje nas blok z dobieraniem gracza (para nagłówkowa M100/E8).
-      if (!lines.some((line, idx) => idx > headerIdx && /Dobierasz|dobiera/.test(line) && /Ty/.test(line))) continue;
-      const before = lines.slice(0, headerIdx);
-      assert.ok(before.every((line) => /^Faza:/.test(line)),
-        `seed ${seed}, blok #${i + 1}: przed „${lines[headerIdx]}" są treściwe linie z INNEJ tury ` +
-        `(${before.filter((l) => !/^Faza:/.test(l)).slice(0, 3).join(' | ')}) — ogon poprzedniej tury ` +
-        'musi zamknąć poprzedni modal, nie otwierać wspólny');
+      if (headerIdx !== -1) {
+        headerBlocks += 1;
+        assert.ok(headerIdx === lines.length - 1,
+          `seed ${seed}, blok #${i + 1}: nagłówek nie zamyka bloku (${JSON.stringify(lines)})`);
+      }
+      const drawIdx = lines.findIndex((line, idx) => /^Dobierasz: /.test(line));
+      if (drawIdx >= 0) {
+        drawBlocks += 1;
+        // Dobranie z kroku dobierania gracza: nigdy w bloku, który zamyka
+        // nagłówek tury (STOP jest zaraz po nagłówku).
+        assert.ok(headerIdx === -1,
+          `seed ${seed}, blok #${i + 1}: „Dobierasz" doklejone do bloku z nagłówkiem ` +
+          `(${JSON.stringify(lines)}) — ma wyjść po kliknięciu „Rozumiem"`);
+      }
     }
+    assert.ok(headerBlocks > 3, `seed ${seed}: harness ma obserwować kilka nagłówków (jest ${headerBlocks})`);
+    assert.ok(drawBlocks > 0, `seed ${seed}: harness ma zobaczyć własne dobranie jako komunikat (jest ${drawBlocks})`);
   }
 });

@@ -41,7 +41,7 @@ export function nextCopyNumber(state, name) {
   return max + 1;
 }
 
-export function createBattlefieldToken(state, controllerId, { cardId, name, kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [], keywords = [], abilities = [], cantBlock = false, toxic = null, transformTo = null, station = null, saga = null, tapped = false, copyNumber = null, manaCost = 0 }) {
+export function createBattlefieldToken(state, controllerId, { cardId, name, kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [], keywords = [], abilities = [], cantBlock = false, toxic = null, transformTo = null, frontFaceId = null, station = null, saga = null, tapped = false, copyNumber = null, manaCost = 0 }) {
   if (!state || !state.players.some((p) => p.id === controllerId)) throw new Error('Nieznany kontroler tokenu');
   if (!cardId || !name) throw new TypeError('Token wymaga cardId i nazwy');
   // Token niebędący stworem (np. Treasure — artefakt) nie ma statystyk:
@@ -93,6 +93,11 @@ export function createBattlefieldToken(state, controllerId, { cardId, name, kind
     // (craft/transform). Tokeny tworzone „z własnym zestawem cech" (Treasure,
     // Insect itd.) nie dostają tego pola.
     ...(transformTo ? { transformTo } : {}),
+    // M264/2.3 (CR 707.8a): tożsamość twarzy PRZEDNIEJ pary — inaczej
+    // `copyManaValueOf` (MV 0 dla kopii tyłu, 202.3b) i reset K5 (711.4a)
+    // nie rozpoznają dwustronnego tokenu. Idzie w parze z transformTo:
+    // bez drugiej strony nie ma czego identyfikować jako pary.
+    ...(transformTo && frontFaceId ? { frontFaceId } : {}),
   });
   state.objects.set(id, token);
   state.zones.battlefield.push(id);

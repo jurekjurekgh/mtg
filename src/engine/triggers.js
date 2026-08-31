@@ -943,7 +943,7 @@ export function resolveTriggerEntry(state, entry) {
       // CR 608.2b/707.10: czar zniknął ze stosu (kontrczar) albo nie było
       // czego liczyć — zdolność mówi to graczowi wprost (M106/Z2).
       state.events.push(event('trigger_resolved', {
-        objectId: entry.id, cardId: entry.cardId, storm: true, noEffect: true,
+        objectId: entry.id, sourceId: payload.sourceId, cardId: entry.cardId, storm: true, noEffect: true,
         reason: copies === 0 ? 'no_result' : 'no_targets',
       }));
       return state.events.slice(before);
@@ -988,7 +988,7 @@ export function resolveTriggerEntry(state, entry) {
       }));
     }
     state.events.push(event('trigger_resolved', {
-      objectId: entry.id, cardId: entry.cardId, storm: true, copies,
+      objectId: entry.id, sourceId: payload.sourceId, cardId: entry.cardId, storm: true, copies,
     }));
     return state.events.slice(before);
   }
@@ -996,7 +996,7 @@ export function resolveTriggerEntry(state, entry) {
     const localEvents = [];
     const handled = resolveDelayedTrigger(state, { ...payload, delayedType: extra.delayedType, delayed: extra.delayed }, localEvents);
     const resolved = event('trigger_resolved', {
-      objectId: entry.id, cardId: entry.cardId, delayed: true, noEffect: !handled,
+      objectId: entry.id, sourceId: payload.sourceId, cardId: entry.cardId, delayed: true, noEffect: !handled,
     });
     state.events.push(resolved);
     return state.events.slice(before);
@@ -1035,7 +1035,7 @@ export function resolveTriggerEntry(state, entry) {
       }
     }
     state.events.push(event('trigger_resolved', {
-      objectId: entry.id, cardId: entry.cardId, ward: true, noEffect: !targetingOnStack,
+      objectId: entry.id, sourceId: payload.sourceId, cardId: entry.cardId, ward: true, noEffect: !targetingOnStack,
     }));
     return state.events.slice(before);
   }
@@ -1061,7 +1061,7 @@ export function resolveTriggerEntry(state, entry) {
       }));
     }
     const resolved = event('trigger_resolved', {
-      objectId: entry.id, cardId: entry.cardId, suspend: true, noEffect: !card || card.zone !== 'exile' || !card.suspended,
+      objectId: entry.id, sourceId: payload.sourceId, cardId: entry.cardId, suspend: true, noEffect: !card || card.zone !== 'exile' || !card.suspended,
     });
     state.events.push(resolved);
     return state.events.slice(before);
@@ -1086,7 +1086,7 @@ export function resolveTriggerEntry(state, entry) {
       fireSagaChapter(state, source, extra.sagaChapter, localEvents, pt);
     }
     const resolved = event('trigger_resolved', {
-      objectId: entry.id, cardId: entry.cardId, saga: true, chapter: extra.sagaChapter,
+      objectId: entry.id, sourceId: payload.sourceId, cardId: entry.cardId, saga: true, chapter: extra.sagaChapter,
     });
     state.events.push(resolved);
     return state.events.slice(before);
@@ -1096,7 +1096,7 @@ export function resolveTriggerEntry(state, entry) {
   // player_casts_spell — bez tego „spellColorsInclude" nie zachodził).
   if (!conditionHolds(payload.ability?.trigger, state, source, payload.extra ?? {})) {
     const resolved = event('trigger_resolved', {
-      objectId: entry.id, cardId: entry.cardId, noEffect: true,
+      objectId: entry.id, sourceId: payload.sourceId, cardId: entry.cardId, noEffect: true,
     });
     state.events.push(resolved);
     return state.events.slice(before);
@@ -1130,7 +1130,7 @@ export function resolveTriggerEntry(state, entry) {
     ? triggerEffectsReasonForEmptyReceivers(state, payload.ability, source, payload.targets ?? [])
     : null;
   const resolved = event('trigger_resolved', {
-    objectId: entry.id, cardId: entry.cardId,
+    objectId: entry.id, sourceId: payload.sourceId, cardId: entry.cardId,
     trigger: payload.ability?.trigger?.event ?? null,
     ...(producedNothing && !noOpByState
       ? { noEffect: true, reason: emptyReceiverReason ?? 'no_result' }

@@ -1238,6 +1238,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       // „Ta karta nie ma drugiej strony (craft)" i przerywała partię (crash
       // ujawniony pełną macierzą benchmarku B0).
       ...(src.transformTo ? { transformTo: src.transformTo } : {}),
+      // M264/2.3 (CR 707.8a): dwustronny token zna też front pary — inaczej
+      // kopia TYLNEJ twarzy nie odróżnia się od zwykłego obiektu na tyle
+      // (MV 0 — CR 202.3b przez copyManaValueOf; reset K5 — CR 711.4a).
+      ...(src.transformTo && src.frontFaceId ? { frontFaceId: src.frontFaceId } : {}),
     });
     // M105/B6 (CR 603.7b): „Exile it at the beginning of THE NEXT end step"
     // — najbliższy krok końcowy, niezależnie od tego, czyja to tura.
@@ -1740,6 +1744,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         types: ['Artifact', 'Creature', 'Token'], subtypes: ['Phyrexian'],
         keywords: [], abilities: [],
       },
+      // M264/2.3 (CR 701.51 + 707.8a): Incubator to dwustronny token
+      // „z własnym zestawem cech" — zna front pary, więc ewentualna kopia
+      // Phyrexiana (tył) policzy MV 0 i reset K5 zadziała jak dla każdego
+      // dwustronnego obiektu (bez tego frontFaceId ginął na zawsze).
+      frontFaceId: 'token_incubator',
     });
     if (amount > 0) addCounter(state, token.id, '+1/+1', amount);
     return;

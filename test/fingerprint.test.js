@@ -88,3 +88,28 @@ test('M122: fingerprint odnotowuje cantBlock (efekt do końca tury)', () => {
   state.objects.set('def', Object.freeze({ ...state.objects.get('def'), cantBlock: true }));
   assert.notEqual(stateFingerprint(state), before, 'cantBlock musi być częścią odcisku stanu');
 });
+
+test('M264/2.3: fingerprint odnotowuje frontFaceId (dwustronny token — MV 0 / reset K5)', () => {
+  // ADR 0005: stan obejmuje wszystko, co wpływa na przyszły przebieg.
+  // frontFaceId decyduje o (a) MV kopii TYLNEJ twarzy = 0 (CR 202.3b przez
+  // copyManaValueOf) i (b) resetcie twarzy przy opuszczeniu pola bitwy
+  // (CR 711.4a / dfcFaceReset). Dwa stany różniące się tylko tym polem
+  // zachowują się inaczej, więc muszą mieć różne odciski — inaczej sonda
+  // „oferta bez skutku" i weryfikacja replayów zrównałyby je.
+  const make = (withFrontFaceId) => {
+    const state = createGameState({ seed: 7, players: [{ id: 'p1' }, { id: 'p2' }] });
+    addObject(state, {
+      id: 'needle', instanceId: 'i-needle', cardId: 'needle-back', controllerId: 'p1',
+      zone: 'battlefield', kind: 'artifact', power: null, toughness: null, manaCost: 0,
+      abilities: [], keywords: [], subtypes: [], types: ['Artifact'], colors: [],
+      transformTo: { cardId: 'needle-front', power: null, toughness: null },
+      frontFaceId: withFrontFaceId ? 'needle-front' : null,
+    });
+    return state;
+  };
+  assert.notEqual(
+    stateFingerprint(make(true)),
+    stateFingerprint(make(false)),
+    'frontFaceId musi być częścią odcisku stanu (ADR 0005)',
+  );
+});

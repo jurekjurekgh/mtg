@@ -1191,3 +1191,22 @@ test('M213/noop: REALNY no-op (koszt bez żadnego tapnięcia-skutku) nadal krzyc
   }]);
   assert.equal(found.length, 1, 'oferta, która naprawdę nic nie robi, musi być zgłoszona');
 });
+
+test('noop: kontr wardem/regułą (spell_countered) to realny skutek — nie zgłaszamy', () => {
+  // M264 (Żywy Tester, partia 4002): ward {2} zakrytego 2/2 auto-kontruje
+  // zdolność (gracz bez many na dopłatę). Sonda widziała „tap kosztu i nic"
+  // i zgłaszała poprawną aktywację jako no-op — kontr to odpowiedź gry,
+  // nie wada oferty (L12: szum przykrywa prawdziwe znaleziska).
+  const found = detectNoEffectOffers([{
+    label: 'Aktywuj: Stirring Bard (Ty) (koszt T) — zdobądź Postrach, Pośpiech do końca tury → cel: Morph (Nieprzyjaciel)',
+    source: 'modal',
+    scanned: true,
+    probe: probeOf({
+      changed: true,
+      ownOtherTaps: 1,
+      countered: true,
+      costSignature: { tap: true },
+    }),
+  }]);
+  assert.equal(found.length, 0);
+});

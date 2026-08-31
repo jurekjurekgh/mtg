@@ -14,6 +14,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { addMana } from '../src/engine/resources.js';
 import { attachEquipmentToCreature } from '../src/engine/attachments.js';
 import { stateFingerprint } from '../src/engine/fingerprint.js';
+import { applyEffect } from '../src/engine/effects.js';
 import { diffFingerprintPaths, probeCommandEffect } from '../src/table/noop-probe.js';
 
 const REGISTRY = createCardRegistry();
@@ -324,4 +325,41 @@ test('M213: tap ŹRÓDŁA to koszt, a tap CELU tym samym efektem to skutek', () 
   assert.ok(probe.ok, 'sonda musi wykonać komendę');
   assert.equal(probe.ownOtherTaps, 1, 'tapnięcie źródła = zapłacony koszt');
   assert.equal(probe.ownEffectTaps, 1, 'tapnięcie celu = SKUTEK, nie koszt');
+});
+
+// =============================================================================
+// M264 (Żywy Tester, partia 4002) — WARD KONTUUJE sondowaną komendę
+//
+// FA w g4002 (seed 4002, forgotten-realms↔ravnica): sonda opcji „Aktywuj:
+// Stirring Bard → cel: Morph (Nieprzyjaciel)" zgłosiła „jedyna zmiana to
+// zapłacony koszt", choć ward {2} zakrytego 2/2 SKONTROWAŁ zdolność
+// (spell_countered byWard, bez decyzji — gracz nie miał many na dopłatę).
+// Kontr regułą to REALNY SKUTEK (odpowiedź przeciwnika), nie wada oferty.
+// Ta sama klasa: counter_spell_unless_pays auto-kontrujący bez many.
+// =============================================================================
+
+function putCloaked(state, ownerId = 'p2') {
+  addRealCard(state, 'va', 'veiled-ascension', ownerId, 'battlefield');
+  addRealCard(state, 'lib-top', 'welder-automaton', ownerId, 'library');
+  applyEffect(state, { type: 'cloak' }, state.objects.get('va'), []);
+  return state.zones.battlefield
+    .map((id) => state.objects.get(id))
+    .find((o) => o.faceDown && o.controllerId === ownerId);
+}
+
+test('M264: zdolność celująca w ward bez many na dopłatę — kontr wardu to skutek, nie no-op', () => {
+  const state = newState();
+  const cloaked = putCloaked(state, 'p2');
+  assert.ok(cloaked, 'zakryty 2/2 z ward {2} powstał');
+  assert.equal(cloaked.ward, 2, 'ward {2} na zakrytym (cloak)');
+  addRealCard(state, 'bard', 'stirring-bard', 'p1', 'battlefield');
+  addRealCard(state, 'island1', 'basic-island', 'p1', 'battlefield'); // 1 mana < {2} → auto-kontr
+  const cmd = playerView(state, 'p1').legalCommands.find((c) => c.type === 'activate_ability'
+    && c.objectId === 'bard' && c.targets?.[0] === cloaked.id);
+  assert.ok(cmd, 'oferta aktywacji na zakrytego z wardem istnieje');
+  const probe = probeCommandEffect(state, cmd);
+  assert.equal(probe.ok, true, JSON.stringify(probe));
+  assert.equal(probe.changed, true);
+  assert.equal(probe.countered, true, 'ward skontrował zdolność — realny skutek (RED przed fixem)');
+  assert.equal(probe.fizzle, false, 'to nie fizzle — cel był legalny, kontr to odpowiedź wardu');
 });

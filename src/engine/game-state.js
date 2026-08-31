@@ -3128,6 +3128,7 @@ export function execute(state, input) {
     }
     state.events.push(event('optional_trigger_resolved', {
       playerId: pending.playerId, fired: Boolean(cmd.fire),
+      sourceId: pending.sourceId ?? null,
       sourceCardId: pending.sourceId ? (state.objects.get(pending.sourceId)?.cardId ?? null) : null,
     }));
     const resolvedEvents = state.events.slice(before);
@@ -3179,11 +3180,20 @@ export function execute(state, input) {
             // (jak token-kopia). CR 707.2 — kopiowalne są WSZYSTKIE cechy.
             ...(target.station ? { station: target.station } : {}),
             ...(target.saga ? { saga: target.saga } : {}),
-            // M155: kopia karty DWUSTRONNEJ (enterAsCopy, np. Jwari
-            // Shapeshifter kopiujący stwora z craft/transform) musi też
-            // skopiować drugą stronę — inaczej zdolność craft/transform jest
-            // na kopii, ale bez transformTo (crash zamiast no-op).
-            ...(target.transformTo ? { transformTo: target.transformTo } : {}),
+            // M264/2.3 (CR 712.9): kopia na KARCIE jednostronnej (Jwari —
+            // zwykła karta wchodząca jako kopia) nie ma drugiej strony.
+            // „If a spell or ability instructs a player to transform ... any
+            // permanent that isn't represented by a double-faced token or a
+            // double-faced card, nothing happens." (przykład reguły: Clone
+            // jako kopia Wildblood Pack nie może się transformować).
+            // M155 kopiował `transformTo` — przez co kopia umiała się obrócić
+            // i przy DRUGIEJ transformacji przywracała cardId źródła
+            // (chimerę, np. transformTo.cardId = jwari-shapeshifter).
+            // Zdolności z bieżącej twarzy są nadal kopiowane (CR 707.2), ale
+            // bez transformTo są bezpiecznym no-op: efekty transform/
+            // craft_transform od M155 kończą się bez błędu, a oferta craft
+            // wymaga transformTo (abilities.js).
+            // frontFaceId celowo NIE jest kopiowany — kopia nie jest DFC.
           });
           const clean = { ...updated };
           delete clean.enteringAsCopy;
@@ -4996,6 +5006,12 @@ export function playerView(state, playerId) {
           ? effectiveKeywords(object, state).filter((keyword) => !(object.keywords ?? []).includes(keyword))
           : effectiveKeywords(object, state);
         if (keywords.length) entry.keywords = keywords;
+        // M258/F3 + audyt PR #89 (W8, oś 2/ADR 0017): kwota ward jest JAWNĄ
+        // częścią definicji zakrycia (cloak: „2/2 z ward {2}\") — bez tego
+        // pola prawdziwy kafel (renderBattlefield czyta wpis z playerView)
+        // nie pokazywał „Ward {2}\", a test W8 sprawdzał cardInfo na SUROWYM
+        // obiekcie i luki nie widział.
+        if (object.ward != null) entry.ward = object.ward;
         // M175/A3 (uwaga właściciela, Death-Hood Cobra): NADANE keywordy
         // (granty do EOT, załączniki, anthemy, statyki warunkowe) jawnie w
         // widoku — render liczył je jako „efektywne − entry.keywords", a obie

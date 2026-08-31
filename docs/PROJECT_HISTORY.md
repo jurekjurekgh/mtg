@@ -7125,6 +7125,125 @@ koliguje z nazwą karty — jak Treasure/Island). Suite 3883/3883
 **Kolejny krok:** decyzja właściciela o scaleniu PR #89; ewentualnie nowy
 batch kart / kolejna runda Żywego Testera.
 
+## 2026-08-31 — M263: audyt PR #89 i pętla jakości (PR #90)
+
+Przerwa w trakcie audytu: zgłoszenie właściciela o granicy tury w modalu
+„Rozgrywka" (M261) — pauza ma być PO nagłówku „Tura X — gracz", nagłówek
+zawsze widoczny, STOP natychmiast po nim; stary mechanizm przerwania
+PRZED granicą (heldBotMoves/routingHeld/botTurnSplit) usunięty jako
+wadliwy (nie działał przy autopass bez komend). Nowy kształt: nagłówek
+zawsze w buforze, `game_started` syntezuje „Tura 1 — <gracz>", ogon
+strumienia po nagłówku (upkeep/triggery) idzie do `deferredTurnTail`
+i wypływa po „Rozumiem" — blok graniczny KOŃCZY się nagłówkiem. Testy:
+`m261-granica-tury-w-modalu` (3), `human-draw-modal` (M100/E8).
+
+**Audyt PR #89 (ADR 0020 B / 0016):** pełny przegląd 24 plików `src/`
+(+1110/−237) i 25 plików testów; 10 mutacji RED→GREEN (M1–M10 — każda
+złapana, zero RE). Dwa znaleziska naprawione od razu (osobny commit):
+
+- **Z1** — `chooseColor` (Manor Gate) ginął w `installDeck` (L21/F1):
+  deskryptor z `gameObjectDataOf` docierał do wpisu talii, ale jawna
+  lista pól go nie przenosiła — w prawdziwej partii ląd wchodził bez
+  decyzji koloru; enumeracja 433 kart: jedyne ginące pole. Fix
+  (`chooseColor` w `installDeck`) + test M258/D4 przez realną ścieżkę.
+- **Z2** — kwota `ward` nie docierała do kafela przez `playerView`
+  (oś 2/ADR 0017): M258/W8 sprawdzał `cardInfo` na surowym obiekcie,
+  a prawdziwy kafel renderuje z widoku. Fix (`entry.ward`) + W8
+  rozszerzony o playerView obu graczy.
+
+**Pętla jakości — A1 domknięte:** gałęzie `fireWardTriggers` dla
+`spell_copied` (Storm) i `aura_spell_cast` nie miały pinu testowego;
+dodane W10 (ward na kopii czaru ze Stormem — LIFO: oryginał, potem
+kopia, kwota 2) i W11 (Serra's Embrace — czar aury, trigger nad czarem);
+obie mutacje RED.
+
+Suite po przerwie: 3876/3876 (szybki rdzeń), `test:slow` 10/10,
+build 56 modułów / 2985.8 kB; benchmark bota 10/10 (~132 s).
+Commity: `a05eebe` (M261), `f82b455` (plan), `c410753` (Z1+Z2),
+`78b520f` (raport), `3d683ec` (plan domknięty), `8003ac1` (A1).
+
+**Kolejny krok:** decyzja właściciela o scaleniu PR #90; dalsza pętla
+jakości lub nowy batch kart.
+
+## 2026-08-31 — M264: Żywy Tester na puli niewidzianej (PR #90)
+
+Kontynuacja M263 (plan `PLAN_2026-08-31-m264-zywy-tester-pula-niewidziana.md`):
+Etap 2.1 — matryca 10 partii (seeds 4001–4010, `--steps 400`, profile
+greedy/explorer/defensive/random/impatient) na puli niewidzianej
+(forgotten-realms + karty M258–M262) + domknięcie luki pokrycia (seed
+4011, mirrodin-wu↔mirrodin-brg). Wszystkie transkrypty w `tmp-audyt-m264/`
+(poza repo). **Wynik: 11/11 partii, po dwóch naprawach 0 zgłoszeń
+detektorów** (raport: `docs/audits/AUDYT_M264_2026-08-31.md`).
+
+Znaleziska (naprawione u root cause, RED→GREEN, osobne commity):
+
+- **B (FoW, klasa M100)** — wyciek nazwy zakrytego źródła w rodzinie
+  triggerów (partia 4002: „Plains — trigger (ward)" przy cloaked 2/2).
+  Engine: `trigger_resolved` niósł tylko `objectId` usuniętego wpisu
+  stosu; renderer nazywał źródło po `e.cardId` (realne id karty).
+  Fix `82065e4`: `sourceId` w 8 punktach `resolveTriggerEntry` +
+  `optional_trigger_resolved`; `objectOrLki` w 11 gałęziach rodziny
+  triggerów; bramka `hiddenLive` modala obejmuje `e.sourceId`. Testy:
+  6 nowych w `fow-facedown-names.test.js` + W12 (ward `sourceId`).
+- **C (FA noop-detektora)** — kontr wardem klasyfikowany jako „jedyna
+  zmiana to zapłacony koszt" (sonda opcji „Stirring Bard → Morph");
+  `spell_countered` to realna odpowiedź gry, nie wada oferty (L12).
+  Fix `2247199`: `probe.countered` (noop-probe.js) + pominięcie
+  w `detectNoEffectOffers`; testy sondy i detektora.
+
+Weryfikacja żywa: partie 4001/4002 odtworzone deterministycznie —
+identyczny przebieg (Gracz krok 74 / Bot krok 170), 4002 po fixach:
+„DETEKTORY: brak zgłoszeń", w logu „Morph — trigger (ward)".
+`scan.mjs` (1182 trafień): kategorie intencjonalne (cel:, odmiana kart,
+choroba, Trigger:, pytania decyzji). Brak odrzuceń komend, `[STOP]`,
+`undefined`, `[object`.
+
+Suite: fast 3885/3885, `test:all` 3895/3895, build 56 modułów /
+2987.9 kB; PR #90 — 12 commitów (`82065e4`, `2247199` po `7cdf735`).
+
+**Kolejny krok:** Etap 2.3 — DFC: kopia frontu przez realną ścieżkę
+(`putCard`/`setupCardMatch`); decyzja właściciela o scaleniu PR #90.
+
+## 2026-08-31 — M264 cz. 2: Etap 2.3 — DFC kopia frontu (PR #90)
+
+Domknięcie ostatniego otwartego punktu planu M264. Dwie rozłączne
+ścieżki „kopii karty dwustronnej" miały przeciwne braki:
+
+- **Token-kopie dwustronne (CR 707.8a)** — Cogwork Assembler → Lodestone
+  Needle oraz Incubator (CR 701.51) niosły `transformTo`, ale gubiły
+  `frontFaceId` (`createBattlefieldToken` w ogóle nie przyjmował tego
+  pola). Skutek: kopia TYLNEJ twarzy nie była rozpoznawalna jako
+  dwustronna — przy kopii-kopii (drugi Cogwork) `copyManaValueOf` nie
+  mógł policzyć MV 0 (CR 202.3b), a reset K5 (CR 711.4a) nie miałby się
+  jak odpalić. Fix (`5796c6c`): parametr `frontFaceId` w
+  `createBattlefieldToken` + przekazanie w `create_copy_token` (ze
+  źródła) i w `incubate` (front pary = `token_incubator`).
+- **enterAsCopy (CR 712.9)** — Jwari Shapeshifter to kopia na
+  JEDNOSTRONNEJ karcie, więc nie ma drugiej strony (przykład reguły:
+  Clone jako kopia Wildblood Pack nie może się transformować). M155
+  kopiował tam `transformTo`, przez co kopia umiała się obrócić, a druga
+  transformacja przywracała cardId źródła („chimerę",
+  transformTo.cardId = jwari-shapeshifter). Fix: usunięcie kopiowania —
+  skopiowane zdolności transform/craft zostają, ale są bezpiecznym
+  no-op (efekty już tak obsługują brak `transformTo`, oferta craft
+  wymaga go w abilities.js).
+- **Fingerprint (ADR 0005)** — `stateFingerprint` nosił `transformTo`,
+  ale nie `frontFaceId` (`037bf18`): stany różniące się tylko tożsamością
+  frontu pary były „identyczne" dla sondy noop i weryfikacji replayów.
+
+RED→GREEN: `test/copy-token-dfc.test.js` (C1–C3: frontFaceId tokenu,
+pętla transformacji w obie strony, Incubator) + nowy
+`test/m264-enter-as-copy-dfc.test.js` (A1–A4: brak drugiej strony,
+no-op transformu, kopia TYLNEJ twarzy, anty-over-fix pierwowzoru)
++ fingerprint test. Fast **3893/3893**, test:all **3903/3903**,
+build **56 modułów / 2989.5 kB**. Żywy Tester (worek-dziki vs
+zendikar, seeds 777 i 314): 2 partie — 0 zgłoszeń detektorów;
+`scan.mjs` na transkryptach — 276 trafień wyłącznie w kategoriach
+intencjonalnych, brak `[STOP]`/`undefined`/odrzuceń. Transkrypty:
+`tmp-audyt-m264/g4012-*`, `g4013-*` (poza repo).
+
+**Kolejny krok:** decyzja właściciela o scaleniu PR #90.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

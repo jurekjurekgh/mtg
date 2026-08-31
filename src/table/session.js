@@ -1089,7 +1089,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'ability_triggered': {
         // Wybór celu już opisuje trigger_target_required — nie dubluj.
         if (e.awaitingTarget) return null;
-        if (e.backup) return `${nameOf(e.cardId)} — trigger Backup: kontroler wskazuje stwora na liczniki`;
+        if (e.backup) return `${objectOrLki(e.objectId, e.cardId)} — trigger Backup: kontroler wskazuje stwora na liczniki`;
         // M124 (zgłoszenie właściciela: „Chronic Flooding — trigger
         // (enchanted_permanent_tapped)"). M122 dodało etykietę i strażnika na
         // KOMPLETNOŚĆ mapy, ale ten `case` ma TRZY ścieżki renderu i tylko
@@ -1102,7 +1102,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const triggerLabel = triggerEventLabel(e.trigger, sourceCtrl);
         if (e.sacrificed) return `${nameOf(e.cardId)} — trigger (${triggerLabel}): brak zapłaty, permanent poświęcony`;
         if (e.paid != null) return `${nameOfObject(e.objectId)} — trigger (${triggerLabel}): zapłacono {${e.paid}}${e.autoTapped ? ` (auto-tap: ${nameOfObject(e.autoTapped)})` : ''}`;
-        const src = e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId);
+        // M264 (Żywy Tester, partia 4002): źródło triggera bywa ZAKRYTE
+        // (cloak 2/2 z ward {2}) — zdarzenie niesie realne cardId, ale nazwę
+        // daje ŻYWY obiekt (objectOrLki, reguła M100); cardId z LKI dopiero
+        // po odejściu ze stanu (CR 708.8/708.9). Bez tego log zdradzał
+        // „Plains — trigger (ward)" przy bezimiennym Morphu.
+        const src = objectOrLki(e.objectId, e.cardId);
         return `${src} — trigger (${triggerLabel})`;
       }
       // Pętla jakości Żywym Testerem (2026-08-26, g9 ravnica-bot Unstable
@@ -1148,10 +1153,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'cant_be_regenerated_set': return `${nameOf(e.cardId)} nie może być regenerowany do końca tury`;
       // D: modalny trigger (Etherwrought Page — „At the beginning of your
       // upkeep, choose one") — było surowe „modal_trigger_required".
-      case 'modal_trigger_required': return `${nameOf(e.cardId)} — wybierz tryb zdolności triggerowanej`;
+      case 'modal_trigger_required': return `${objectOrLki(e.sourceId, e.cardId)} — wybierz tryb zdolności triggerowanej`;
       case 'modal_trigger_resolved': {
         const mode = e.modeName ? ` — tryb: ${e.modeName}` : '';
-        return `${nameOf(e.cardId ?? nameOfObject(e.sourceId))} — gracz ${whoN(e.playerId)} wybiera tryb${mode}`;
+        return `${objectOrLki(e.sourceId, e.cardId)} — gracz ${whoN(e.playerId)} wybiera tryb${mode}`;
       }
       case 'hand_creature_choice_required': return `${srcName(e)}${whoN(e.playerId)} wybiera wielokolorowego stwora z ręki`;
       case 'hand_creature_choice_resolved': return e.putCreature
@@ -1510,7 +1515,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const parts = [];
         if (e.payMana) parts.push(`{${e.payMana}}`);
         if (e.payLife) parts.push(`${e.payLife} życia`);
-        return `${nameOf(e.cardId)} — zapłacić ${parts.join(' i ')}? (${decisionOwnerNote(e.playerId)})`;
+        return `${objectOrLki(e.sourceId, e.cardId)} — zapłacić ${parts.join(' i ')}? (${decisionOwnerNote(e.playerId)})`;
       }
       case 'optional_pay_resolved': return e.paid
         ? `${whoN(e.playerId)} płaci i odpala trigger`
@@ -1522,7 +1527,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
             : 'cel triggera');
         // M172/B: rozdział Sagi nazywa się tytułem z Oracle (Mesmerize).
         const chapter = e.chapterName ? ` — ${e.chapterName}` : '';
-        return `${nameOf(e.cardId)}${chapter} — wybierz ${hint} (${e.allowNone ? 'można odmówić' : 'wymagany'})`;
+        return `${objectOrLki(e.sourceId, e.cardId)}${chapter} — wybierz ${hint} (${e.allowNone ? 'można odmówić' : 'wymagany'})`;
       }
       case 'trigger_resolved': {
         // M106/Z2: powód „braku efektu" jest treścią dla gracza — inaczej
@@ -1536,15 +1541,15 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
             : e.reason === 'empty_library' ? 'pusta biblioteka'
             : e.reason === 'no_result' ? 'nie było czego wykonać'
             : 'warunek/cele nieaktualne';
-          return `${nameOf(e.cardId)} — trigger bez efektu (${why})`;
+          return `${objectOrLki(e.sourceId ?? e.objectId, e.cardId)} — trigger bez efektu (${why})`;
         }
-        return `${nameOf(e.cardId)} — trigger się rozstrzyga${e.delayed ? ' (opóźniony)' : ''}${e.saga ? ` (rozdział ${e.chapter})` : ''}`;
+        return `${objectOrLki(e.sourceId ?? e.objectId, e.cardId)} — trigger się rozstrzyga${e.delayed ? ' (opóźniony)' : ''}${e.saga ? ` (rozdział ${e.chapter})` : ''}`;
       }
       // D: cel triggera może być GRACZEM (Selhoff Occultist: „target player
       // mills") — nameOfObject dawał „?". Źródło: cardId zdarzenia, inaczej
       // lookup po sourceId (nigdy pusta nazwa przed myślnikiem).
       case 'trigger_target_resolved': {
-        const src = e.cardId ? nameOf(e.cardId) : nameOfObject(e.sourceId);
+        const src = objectOrLki(e.sourceId, e.cardId);
         if (e.noEffect) return `${src} — cel odrzucony, trigger bez efektu`;
         const target = e.targetId == null
           ? 'nic'
@@ -1554,14 +1559,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const autoNote = e.auto ? ' (jedyny legalny — automatycznie)' : '';
         return `${src} — cel: ${target}${autoNote}`;
       }
-      case 'optional_trigger_required': return `${nameOf(e.cardId)} — skorzystać z efektu „you may"? (${decisionOwnerNote(e.playerId)})`;
+      case 'optional_trigger_required': return `${objectOrLki(e.sourceId, e.cardId)} — skorzystać z efektu „you may"? (${decisionOwnerNote(e.playerId)})`;
       // M138/Z7 (audyt Żywym Testerem): „Nieprzyjaciel korzysta z efektu «you
       // may»” nie mówiło Z CZEGO. W partii chodziło o Soulbright Flamekin
       // (8 many z trzeciej aktywacji) — zapowiedź dużego ruchu, a gracz widział
       // zdanie bez podmiotu. Nazwa karty JEST w payloadzie (`sourceCardId`)
       // i była po prostu wyrzucana (oś 2: „wszystko poza szumem powinno tam być”).
       case 'optional_trigger_resolved': {
-        const from = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
+        const from = (e.sourceId || e.sourceCardId) ? ` (${objectOrLki(e.sourceId, e.sourceCardId)})` : '';
         return e.fired
           ? `${whoN(e.playerId)} korzysta z efektu „you may"${from}`
           : `${whoN(e.playerId)} rezygnuje z efektu „you may"${from}`;
@@ -1874,23 +1879,6 @@ export function createSession(config) {
    * modal w klikanie bez treści (decyzja właściciela).
    */
   const botMoves = [];
-  /**
-   * M261 (zgłoszenie właściciela 2026-08-31): granica tury zamyka paczkę
-   * modala „Rozgrywka". Gdy w buforze wiszą jeszcze niepokazane zdarzenia,
-   * a zaczyna się NOWA tura, nagłówek „Tura N — …" i wszystko po nim trafia
-   * do `heldBotMoves` — tur dwóch graczy NIE doklejamy do jednego modala.
-   * Promocja held → botMoves następuje dopiero przy WZNOWIENIU gry
-   * (klik „Rozumiem" / continueBotPlay / continueArtPlay / recheckAutoPass
-   * / drain w apply), więc nowa tura otwiera ŚWIEŻY modal.
-   *
-   * `routingHeld` — kolejne wpisy lecą do held; `botTurnSplit` — granica
-   * tury wymusi pauzę (istotność w streamAutoEvents, pauza w apply).
-   * Całość istnieje TYLKO przy pauseOnBotMoves: bez pauz held nigdy nie
-   * powstaje, więc konsumenci synchroniczni widzą stare zachowanie.
-   */
-  let heldBotMoves = [];
-  let routingHeld = false;
-  let botTurnSplit = false;
   /**
    * Przebieg pełnych tur (M25): co robił gracz i bot w poprzednich turach,
    * do zasilania AI fabularnym opisem. Każda ukończona tura to rekord
@@ -2283,19 +2271,8 @@ export function createSession(config) {
     // zaraz po rozstrzygnięciu (M99). Okno zamyka turn_started (noteBotMove).
   }
 
-  /** M261: wpisy zza granicy tury czekają w held na otwarcie nowego modala. */
   function pushBotMove(entry) {
-    (routingHeld ? heldBotMoves : botMoves).push(entry);
-  }
-
-  /**
-   * M261: promocja zatrzymanych wpisów — wywoływana przy WZNOWIENIU gry,
-   * nigdy w trakcie apply (ogon starej tury musi zdążyć opuścić bufor).
-   */
-  function promoteHeldBotMoves() {
-    if (heldBotMoves.length > 0) botMoves.push(...heldBotMoves);
-    heldBotMoves = [];
-    routingHeld = false;
+    botMoves.push(entry);
   }
 
   function noteBotMove(e) {
@@ -2340,15 +2317,30 @@ export function createSession(config) {
     // zagraniu landa panel pokazywał nieaktualne „Faza: Podtrzymanie” —
     // czyli land drop w upkeepie, coś nielegalnego wg CR 305.1. Nagłówek
     // i tak jest OCZEKUJĄCY (pokazuje się tylko razem z realną akcją).
-    if (!botActing && e.type !== 'turn_started' && e.type !== 'step_advanced'
+    if (!botActing && e.type !== 'turn_started' && e.type !== 'game_started'
+      && e.type !== 'step_advanced'
       && !inCombatReport && !isStackResolution && !isHumanHeadline && !isHumanDraw) return;
     let text;
     // Nowa tura: nagłówek „Tura N — <gracz>". Zawsze (uwaga A).
+    // M261 (korekta właściciela 2026-08-31): `turn_started` emituje engine
+    // dopiero od tury 2 — pierwszą turę otwiera `game_started`, więc nagłówek
+    // „Tura 1 — …" syntezujemy tutaj, żeby kontrakt „nagłówek tury jest
+    // obowiązkowy i niepomijalny" obejmował też start partii.
+    if (e.type === 'game_started') {
+      pendingBotPhase = null;
+      lastBotPhaseKey = null;
+      stackObjects.clear();
+      pushBotMove({ type: 'turn_started', text: `Tura ${state.turn.number} — ${who(state.turn.activePlayerId)}`, cardId: null });
+      return;
+    }
     if (e.type === 'turn_started') {
-      // M261: granica tury zamyka paczkę modala. Jeśli w buforze wisi jeszcze
-      // niepokazany ogon poprzedniej tury, nagłówek nowej tury (i wszystko
-      // dalej) trafia do held — po „Rozumiem" otworzy się świeży modal.
-      if (pauseOnBotMoves && botMoves.length > 0) { routingHeld = true; botTurnSplit = true; }
+      // M261 (korekta właściciela 2026-08-31): nagłówek tury jest
+      // OBOWIĄZKOWY i NIEpomijalny — nigdy nie czeka w osobnym buforze
+      // (dotąd `heldBotMoves` chował go przed granicą tury, a pauza
+      // zależała od niepustego botMoves — przy autopass bez komend cała
+      // tura bota leciała bez zatrzymania). Nagłówek wchodzi do bufora
+      // natychmiast; pauza następuje ZARAZ PO nim (turn_started jako
+      // significant w streamAutoEvents / pauza w apply).
       pendingBotPhase = null;
       lastBotPhaseKey = null;
       stackObjects.clear();
@@ -2437,7 +2429,13 @@ export function createSession(config) {
       // (CR 708.8/708.9) — dlatego patrzymy na ŻYWY zakryty obiekt albo
       // flagę faceDown samego zdarzenia, nie na samo cardId.
       if (cardId) {
-        const hiddenLive = [e.objectId, e.object?.id]
+        // M264 (Żywy Tester, partia 4002): `trigger_resolved` niesie
+        // `objectId` WYDELETOWANEGO wpisu ze stosu (l. trackStack) — skan
+        // źródła triggera przechodziłby bramkę jako „niezakryty", a cardId
+        // (realne!) wyciekał do miniatury przy „trigger się rozstrzyga".
+        // Źródło jedzie w `sourceId` (M258/W12) — obejmujemy je w tej samej
+        // bramce co żywy obiekt (reguła M100: face-down ⇒ bez nazwy/skanu).
+        const hiddenLive = [e.objectId, e.object?.id, e.sourceId]
           .filter((id) => id != null)
           .map((id) => state.objects.get(id))
           .some((o) => o?.faceDown && o.controllerId !== HUMAN_ID);
@@ -2480,6 +2478,15 @@ export function createSession(config) {
   const pauseOnBotMoves = config.pauseOnBotMoves === true;
   let awaitingBotAck = false;
   let isBotAdvancing = false;
+  // M261 (korekta właściciela 2026-08-31): silnik generuje w JEDNYM execute
+  // cały strumień granicy tury (`turn_started` + untapy + upkeep + triggery).
+  // STOP ma być ZARAZ PO NAGŁÓWKU — zdarzenia idące za nim w tym samym
+  // strumieniu odkładamy i wypuszczamy dopiero po „Rozumiem" (continueBotPlay),
+  // żeby modal nie pokazywał „Faza: Podtrzymanie" przed pauzą.
+  // Trzymamy też kontekst `botActing` z momentu odkładania: ogon po nagłówku
+  // z ruchu bota ma wejść do modala (jak wcześniej), a ogon z auto-passu
+  // człowieka — nie (bramka noteBotMove dla zdarzeń spoza ruchu bota stoi).
+  let deferredTurnTail = { botActing: false, events: [] };
   // Uwaga D/E: prawda tylko w gałęzi BOTA w advance() — botMoves/pauza dotyczą
   // wyłącznie ruchu bota, nie auto-passu faz człowieka.
   let botActing = false;
@@ -2494,7 +2501,12 @@ export function createSession(config) {
    */
   function streamAutoEvents(events) {
     let significant = false;
-    for (const e of events) {
+    // M261 (korekta właściciela 2026-08-31): strumień silnika może nieść CAŁĄ
+    // granicę tury w jednym execute (turn_started → untapy → upkeep → triggery).
+    // Pauza ma być ZARAZ PO NAGŁÓWKU — przetwarzamy zdarzenia tylko do włącznie
+    // nagłówka, resztę odkładamy (`deferredTurnTail`) i wypuszczamy po „Rozumiem".
+    for (let i = 0; i < events.length; i += 1) {
+      const e = events[i];
       // M151: główny log gracza nie przyjmuje szumu (mana/fazy) — patrz
       // MAIN_LOG_NOISE. noteBotMove/recordTurnEvent mają własne bramki.
       if (MAIN_LOG_NOISE.has(e.type)) {
@@ -2530,12 +2542,39 @@ export function createSession(config) {
       // przez następną komendę gracza (apply czyści bufor) — komunikat
       // pojawia się na starcie własnej tury jak ruch bota.
       if (e.type === 'card_drawn' && e.playerId === HUMAN_ID) significant = true;
+      // M261: granica tury (też `game_started` — otwarcie tury 1) w tym
+      // strumieniu — pauza PO nagłówku, zdarzenia zza nagłówka odkładamy.
+      if (e.type === 'turn_started' || e.type === 'game_started') {
+        deferredTurnTail = { botActing, events: events.slice(i + 1) };
+        return true;
+      }
     }
-    // M261: granica tury wymusiła podział bufora — pauza jest obowiązkowa,
-    // żeby ogon starej tury zamknął modal, a nowa tura (po promocji held)
-    // otworzyła świeży. Sygnał konsumujemy tutaj (raz na granicę).
-    if (botTurnSplit) { botTurnSplit = false; significant = true; }
+    // M261 (korekta właściciela 2026-08-31): granica tury = obowiązkowa
+    // pauza ZARAZ PO nagłówku. Sygnał niesie samo zdarzenie `turn_started`
+    // (a nie stan bufora — stary `botTurnSplit` zawodził przy autopass
+    // bez komend, gdzie bufor bywał pusty i cała tura bota leciała bez
+    // zatrzymania). Nagłówek jest już w buforze (noteBotMove).
     return significant;
+  }
+
+  /**
+   * M261 (korekta właściciela 2026-08-31): wypuszcza ogon strumienia, który
+   * silnik wygenerował w tym samym execute co nagłówek tury (untapy, upkeep,
+   * triggery). Zwraca, czy ogon niósł zdarzenie pauzowalne (wtedy gracz
+   * dostaje kolejny blok modala — np. „Faza: Podtrzymanie" + upkeep — zamiast
+   * widzieć go przed pauzą po nagłówku).
+   */
+  function flushDeferredTurnTail() {
+    if (deferredTurnTail.events.length === 0) return false;
+    const { botActing: wasBotActing, events: tail } = deferredTurnTail;
+    deferredTurnTail = { botActing: false, events: [] };
+    const prevBotActing = botActing;
+    botActing = wasBotActing;
+    try {
+      return streamAutoEvents(tail);
+    } finally {
+      botActing = prevBotActing;
+    }
   }
 
   /**
@@ -2555,6 +2594,18 @@ export function createSession(config) {
       // tego pętla przelatywała przez kolejne rzuty i gracz widział tylko
       // ostatni (a własny znikał w tej samej komendzie).
       if (awaitingArtAck) { isBotAdvancing = false; return; }
+      // M261 (korekta właściciela 2026-08-31): ogon strumienia po nagłówku
+      // tury (np. „Faza: Podtrzymanie" + upkeep z tego samego execute) był
+      // odłożony przy pauzie po nagłówku — wypuszczamy go PRZED kolejnym
+      // ruchem, żeby kolejność zdarzeń w logu i modalu się nie popsuła.
+      // (Przy włączonej pauzie tail może być niepusty tylko po continueBotPlay;
+      // przy wyłączonej — bo turn_started nie pauzuje — tutaj, w tej samej
+      // pętli, jeszcze przed następnym execute.)
+      if (flushDeferredTurnTail() && pauseOnBotMoves) {
+        awaitingBotAck = true;
+        isBotAdvancing = false;
+        return;
+      }
       if (state.turn.priorityPlayerId === BOT_ID) {
         const helpers = { simulate: makeSimulate(state) };
         const cmd = bot.chooseCommand(playerView(state, BOT_ID), helpers);
@@ -2809,17 +2860,18 @@ export function createSession(config) {
         (m) => m.type === 'turn_started' && m.text?.startsWith(`Tura ${state.turn.number} — `),
       );
       botMoves.length = 0;
-      // M261: jeśli przy wznowieniu (klik „Rozumiem") nie zdążył zadziałać
-      // żaden continue*, promujemy zatrzymany nagłówek tury tutaj — held
-      // jest starsze niż zdarzenia tej komendy, więc trafia do bufora jako
-      // pierwsze (chronologia: „Tura N — …" przed skutkami komendy).
-      promoteHeldBotMoves();
       // Konsument nie powinien aplikować komendy w trakcie pauzy (UI blokuje
       // ją modalem) — po UDANEJ komendzie niedokończoną pauzę ignorujemy
       // i gramy dalej.
       awaitingBotAck = false;
       let ownDraw = false;
-      for (const e of result.events) {
+      // M261 (korekta właściciela 2026-08-31): granica tury w strumieniu TEJ
+      // komendy (własny pass kończący turę → turn_started nowej) wymusza
+      // pauzę ZARAZ PO nagłówku, zanim bot ruszy. Sygnał niesie samo
+      // zdarzenie turn_started — niezależnie od zawartości bufora.
+      let turnStartedNow = false;
+      for (let i = 0; i < result.events.length; i += 1) {
+        const e = result.events[i];
         // M151: główny log gracza nie przyjmuje szumu (mana/fazy) — patrz
         // MAIN_LOG_NOISE; noteBotMove/recordTurnEvent mają własne bramki.
         if (MAIN_LOG_NOISE.has(e.type)) {
@@ -2841,8 +2893,22 @@ export function createSession(config) {
         // albo dobranie z efektu rozstrzygniętego w tej komendzie) ma dać
         // komunikat w „Rozgrywka" (UX właściciela 2026-08-15).
         if (e.type === 'card_drawn' && e.playerId === HUMAN_ID) ownDraw = true;
+        // M261: granica tury w tej komendzie — też game_started (tura 1).
+        // Resztę strumienia (upkeep po nagłówku) odkładamy — pauza ma być
+        // ZARAZ PO nagłówku, a ogon wychodzi po „Rozumiem" (advance → flush).
+        if (e.type === 'turn_started' || e.type === 'game_started') {
+          turnStartedNow = true;
+          deferredTurnTail = { botActing, events: result.events.slice(i + 1) };
+          break;
+        }
       }
-      const internalError = advanceGuarded();
+      // M261 (korekta właściciela 2026-08-31): pauza PO nagłówku nowej tury —
+      // obowiązkowa, niezależnie od zawartości bufora (stara logika
+      // `botTurnSplit` zależała od niepustego botMoves i ginęła przy
+      // autopass/fazach bez komend). Nagłówek już jest w buforze (noteBotMove),
+      // więc modal pokaże „Tura N — …" i zatrzyma grę przed ruchem bota.
+      const turnStartedPause = pauseOnBotMoves && turnStartedNow;
+      const internalError = turnStartedPause ? null : advanceGuarded();
       // M100/E8: modal własnego dobrania pokazuje parę nagłówkową tury
       // („Tura N — Ty" + „Ty dobiera: X"), nie samą linię — kontekst M98.
       //
@@ -2860,13 +2926,13 @@ export function createSession(config) {
       if (currentTurnHeader) {
         botMoves.unshift(currentTurnHeader);
       }
-      // M261: granica tury w trakcie tej komendy też zamyka paczkę modala —
-      // ogon starej tury czeka na „Rozumiem", a nowa tura otworzy świeży
-      // modal dopiero po promocji held (advance w continueBotPlay). Sygnał
-      // konsumujemy tutaj, żeby nie wyciekł do kolejnej komendy.
-      const turnSplitPause = botTurnSplit;
-      botTurnSplit = false;
-      if (pauseOnBotMoves && (ownDraw || turnSplitPause) && !awaitingBotAck) awaitingBotAck = true;
+      // M261 (korekta właściciela 2026-08-31): nagłówek nowej tury jest
+      // OBOWIĄZKOWY, a pauza następuje ZARAZ PO nim — zamiast zatrzymywać
+      // PRZED granicą tury (stary `botTurnSplit`, który zawodził przy
+      // autopass/fazach bez komend i chował nagłówek w held). Gramy dalej
+      // dopiero po „Rozumiem" (continueBotPlay).
+      if (pauseOnBotMoves && turnStartedNow) awaitingBotAck = true;
+      else if (pauseOnBotMoves && ownDraw && !awaitingBotAck) awaitingBotAck = true;
       // M254/C: `artPause` mówi UI, że po tej komendzie czeka warstwa grafik
       // (nie otwieraj modala „Ruch bota" — gracz ogląda teraz ilustracje).
       return { ok: true, botPause: awaitingBotAck, artPause: awaitingArtAck, ...(internalError ? { internalError } : {}) };
@@ -2874,12 +2940,12 @@ export function createSession(config) {
     /** Sesja czeka na potwierdzenie istotnego zagraniu bota (klik gracza). */
     get botPausePending() { return awaitingBotAck; },
     /**
-     * M261: bieżąca pauza zamyka paczkę na GRANICY TURY — bufor trzyma
-     * ogon starej tury, a nagłówek nowej („Tura N — …") czeka w held i
-     * otworzy świeży modal dopiero po „Rozumiem". Prawdziwe iff held
-     * niepuste przy pauzie: bez granicy held jest zawsze puste.
+     * M261: bieżąca pauza przyszła TUŻ PO nagłówku nowej tury — bufor
+     * modala zaczyna się od „Tura N — …". Relacja pomocnicza dla testów
+     * i detektorów; pauza na granicy tury jest teraz ZAWSZE obowiązkowa
+     * (korekta właściciela 2026-08-31).
      */
-    get botPauseAtTurnBoundary() { return awaitingBotAck && routingHeld; },
+    get botPauseAtTurnBoundary() { return awaitingBotAck && botMoves.some((m) => m.type === 'turn_started'); },
     /** M254/C: gra wstrzymana przez warstwę grafik (tryb wysoko-graficzny). */
     get artPausePending() { return awaitingArtAck; },
     /**
@@ -2890,8 +2956,6 @@ export function createSession(config) {
     continueArtPlay() {
       if (!awaitingArtAck) return { ok: true, artPause: false, botPause: awaitingBotAck };
       awaitingArtAck = false;
-      // M261: wznowienie po warstwie grafik promuje zatrzymaną granicę tury.
-      promoteHeldBotMoves();
       const internalError = advanceGuarded();
       return { ok: true, artPause: awaitingArtAck, botPause: awaitingBotAck, ...(internalError ? { internalError } : {}) };
     },
@@ -2902,10 +2966,6 @@ export function createSession(config) {
      */
     continueBotPlay() {
       if (!awaitingBotAck) return { ok: true, botPause: false };
-      // M261: „Rozumiem" zamyka modal ogona starej tury — dopiero teraz
-      // nagłówek nowej tury (i jej zdarzenia) wchodzi do bufora, więc
-      // świeży modal otworzy się wyłącznie nową turą.
-      promoteHeldBotMoves();
       const internalError = advanceGuarded();
       return { ok: true, botPause: awaitingBotAck, ...(internalError ? { internalError } : {}) };
     },
@@ -2916,9 +2976,6 @@ export function createSession(config) {
      * nadal wymaga decyzji.
      */
     recheckAutoPass() {
-      // M261: defensywnie — auto-pass po zmianie wyciszeń też jest wznowieniem
-      // (gdyby held czekało, routing zablokowałby bufor na stałe).
-      promoteHeldBotMoves();
       const internalError = advanceGuarded();
       return { ok: true, botPause: awaitingBotAck, ...(internalError ? { internalError } : {}) };
     },
@@ -2941,11 +2998,7 @@ export function createSession(config) {
       // Bufor modala mógł napełnić się przy startowym advance() świeżej
       // sesji (startGame) — wznowienie pokazuje wyłącznie akcję po zapisie.
       botMoves.length = 0;
-      // M261: zatrzymana granica tury ze starej partii nie ma sensu po
-      // wznowieniu — held czyścimy razem z buforem.
-      heldBotMoves = [];
-      routingHeld = false;
-      botTurnSplit = false;
+      deferredTurnTail = { botActing: false, events: [] };
       advance();
       return { steps: replay.commands.length, status: state.status };
     },

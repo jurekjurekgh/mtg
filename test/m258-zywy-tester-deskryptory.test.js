@@ -93,3 +93,20 @@ test('M258/D3: echo z talii działa — Bone Shredder wchodzi z echoUnpaid (CR 7
   assert.equal(state.objects.get(bfId).echoUnpaid, true,
     'stwór z echo wchodzi z echoUnpaid — upkeep zażąda płatności ofiary/kosztu');
 });
+
+test('M258/D4: chooseColor (Manor Gate) dociera do obiektu z TALII — audyt PR #89 F1', () => {
+  const state = setupCardMatch({
+    seed: 13,
+    players: [{ id: 'p1' }, { id: 'p2' }],
+    decks: new Map([['p1', ['manor-gate', 'basic-plains', 'basic-plains', 'basic-plains', 'basic-plains', 'basic-plains', 'basic-plains', 'basic-plains', 'basic-plains', 'basic-plains']],
+      ['p2', ['manor-gate', 'basic-plains', 'basic-plains', 'basic-plains', 'basic-plains', 'basic-plains', 'basic-plains', 'basic-plains', 'basic-plains', 'basic-plains']]]),
+    registry: REGISTRY,
+  });
+  state.pendingMulligans = [];
+  let gate = null;
+  for (const [id, o] of state.objects) {
+    if (o.cardId === 'manor-gate' && o.controllerId === 'p1') gate = o;
+  }
+  assert.ok(gate, 'Manor Gate w talii');
+  assert.deepEqual(gate.chooseColor, { exclude: ['G'] }, 'chooseColor na obiekcie z realnej ścieżki — RED przed fixem: null');
+});
