@@ -1690,6 +1690,14 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_backup: 'Backup — który stwór dostaje liczniki?',
   resolve_trigger_target: 'Cel wyzwalonej zdolności',
   resolve_grave_free_cast: 'Rzut z grobu za {X}',
+  // M266/C1 (zgłoszenie właściciela, Terminal Agony): decyzja rzutu z madness
+  // pokazywała generyczne „Wybierz: Wariant (5 opcji)". Rodzina jednorazowych
+  // decyzji „rzuć wygnany czar albo odpuść" dostaje deskryptory KOMPLETEM
+  // (klasa L102: nowy członek rodziny bez wpisu dziedziczy stary objaw).
+  resolve_madness_cast: 'Madness — rzucić czar czy przełożyć do cmentarza?',
+  resolve_suspend_cast: 'Suspend — rzucić zawieszony czar?',
+  resolve_rebound_cast: 'Rebound — rzucić czar ponownie?',
+  resolve_epic_choice: 'Epic — który czar skopiować?',
   resolve_delirium_target: 'Delirium — cel obrażeń',
   resolve_mentor_target: 'Mentor — kto dostaje licznik?',
   resolve_graveyard_top_choice: 'Karta z grobu na wierzch biblioteki',

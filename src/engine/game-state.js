@@ -2235,16 +2235,26 @@ export function execute(state, input) {
       // castPermanent. Dziś w katalogu tylko permanent (Revolutionist);
       // strażnik katalogu w test/m161-madness-spell-path.test.js sygnalizuje
       // pierwszą kartę czarową z madness.
-      const e = card.kind === 'spell'
-        ? castMadnessSpell(state, pending.playerId, pending.objectId, cmd.targets, cmd.modeIndex)
-        : castPermanent(state, pending.playerId, pending.objectId, { madnessCast: true });
+      // Oba castery wpychają zdarzenie rzutu do `state.events` samodzielnie
+      // (patrz niżej, M266/C2) — wynik komendy bierzemy z wycinka strumienia.
+      if (card.kind === 'spell') {
+        castMadnessSpell(state, pending.playerId, pending.objectId, cmd.targets, cmd.modeIndex);
+      } else {
+        castPermanent(state, pending.playerId, pending.objectId, { madnessCast: true });
+      }
       state.pendingMadnessCast = null;
       if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) {
         state.turn.priorityPlayerId = pending.restorePriorityTo;
       }
       // M258: następna zakolejkowana karta z madness przejmuje decyzję.
       promoteNextMadness(state);
-      return accepted(state, cmd, { ok: true, events: [...state.events.slice(before), e] });
+      // M266/C2 (zgłoszenie właściciela, Terminal Agony): `castMadnessSpell`
+      // i `castPermanent` SAME wpychają zdarzenie rzutu do `state.events`,
+      // więc doklejanie `e` do `slice(before)` duplikowało je w wyniku
+      // komendy — modal „Rozgrywka" otwierał się dwa razy, a log pokazywał
+      // „Rzucasz Terminal Agony → cel: …" dwukrotnie, choć czar poszedł na
+      // stos raz. Wynik komendy to wycinek strumienia zdarzeń, nic więcej.
+      return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
     } catch (error) {
       return reject(`illegal_madness_cast:${error.message}`);
     }

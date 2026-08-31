@@ -6712,15 +6712,18 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/8/4/84803db8-fdb0-462b-92f6-33d591593d2d.jpg',
     spell: {
       timing: 'instant',
-      // „Each opponent\" w formacie 1v1 = jedyny przeciwnik. Wybór poświęcanego
-      // stwora należy do CELU (blokująca decyzja resolve_sacrifice_choice).
-      // M203/2: deskryptor niesie `opponent: true` (jak Dreams of Steel and
-      // Oil) — bez niego rzucający był legalnym celem własnego „each
-      // opponent", czyli cel niezgodny z Oracle (CR 115.2: cel musi spełniać
-      // deskryptor celu). Dotąd „poprawny" cel brał się z kolejności ofert.
-      targets: [{ type: 'player', opponent: true }],
+      // M266/B (zgłoszenie właściciela): log pokazywał „rzuca Liliana's
+      // Triumph → cel: Ty", a Oracle NIE MA słowa „target" — „Each opponent
+      // sacrifices a creature of their choice". Czar bezcelowy (CR 115.1:
+      // cele ma wyłącznie czar, który je deklaruje). Modelowanie przez
+      // `targets: [{ type: 'player', opponent: true }]` (M203/2) było
+      // wygodnym skrótem na „ten jeden przeciwnik w 1v1", ale zmieniało
+      // REGUŁY: czar dawał się zepsuć usunięciem celu, fizzlował przy
+      // hexproof/shroud gracza (CR 115.6) i pokazywał wybór, którego nie ma.
+      // Zakres „each opponent" jest teraz w EFEKCIE (scope), jak w
+      // `discard_each_opponent`.
       effects: [
-        { type: 'player_sacrifices_creature' },
+        { type: 'player_sacrifices_creature', scope: 'each_opponent' },
         // Klauzula warunkowa (decyzja właściciela 2026-08-19): efekt kodujemy
         // z WYPRZEDZENIEM — generyczny warunek po typie Planeswalker i podtypie
         // Liliana (effects.js `conditional`). Działa od razu, gdy w katalogu

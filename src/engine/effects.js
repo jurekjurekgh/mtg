@@ -3626,10 +3626,17 @@ function markTemporaryExile(state, exileId, sourceObject) {
     return true; // decyzja blokuje dalsze efekty czaru
   }
   if (effect.type === 'player_sacrifices_creature') {
-    // Grave Exchange (drugi cel): „Target player sacrifices a creature of
-    // their choice." Wybór należy do CELU (blokująca decyzja resolve_sacrifice_choice,
-    // jak scry/surveil). Gracz bez stworów nie poświęca niczego.
-    const targetId = targets[effect.targetIndex ?? 0];
+    // Dwa warianty tej samej treści („a creature of their choice" — wybór
+    // należy do POŚWIĘCAJĄCEGO, blokująca decyzja resolve_sacrifice_choice):
+    //  - CELOWANY (Grave Exchange: „TARGET player sacrifices…") — gracz
+    //    z listy celów czaru;
+    //  - BEZCELOWY (M266/B, Liliana's Triumph: „EACH OPPONENT sacrifices…")
+    //    — Oracle nie mówi „target", więc czar nie ma celu (CR 115.1);
+    //    zakres liczymy z kontrolera źródła, jak w `discard_each_opponent`.
+    // Gracz bez stworów nie poświęca niczego.
+    const targetId = effect.scope === 'each_opponent'
+      ? (state.players.find((player) => player.id !== sourceObject.controllerId)?.id ?? null)
+      : targets[effect.targetIndex ?? 0];
     if (targetId == null) return;
     if (!state.players.some((player) => player.id === targetId)) throw new Error('Nieprawidłowy cel: gracz');
     const candidates = state.zones.battlefield.filter((objectId) => {
