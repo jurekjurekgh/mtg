@@ -34,6 +34,54 @@ M208.
 
 ---
 
+## L107 (2026-08-31) — Najbogatsza żyła błędów reguł: ścieżka, która robi to samo co wspólny helper, ale RĘCZNIE. Grep po mutacji pola, nie po nazwie mechaniki
+
+**Objaw (M269, brązowa odznaka — 4 z 5 błędów tą jedną techniką):** silnik ma
+choke pointy (`addCounter`, `addPoisonCounters`, `deathZoneFor`, `tapObject`,
+`moveObjectDirectly`), a obok nich żyją ścieżki, które ten sam skutek
+osiągają własnym kodem: `player.poison += 1` zamiast helpera, ręcznie złożone
+`counters` zamiast `addCounter`, `'graveyard'` na sztywno zamiast
+`deathZoneFor`. Kod działa i testy są zielone, bo GŁÓWNY skutek jest ten sam —
+gubią się SKUTKI UBOCZNE helpera: synchronizacja rodzaju (station), zdarzenie
+dla logu i bota, wybór strefy przy liczniku finality.
+
+**Przyczyna:** helper powstaje później niż jego pierwsi klienci albo dochodzi
+mu odpowiedzialność (L24: „tapnięcie musi emitować zdarzenie"), a ręczne
+kopie nikt nie migruje — nie ma jak ich znaleźć szukając po NAZWIE mechaniki,
+bo one tej nazwy nie zawierają.
+
+**Reguła:**
+1. **Szukaj po MUTACJI POLA, nie po nazwie funkcji.** `grep -rn "counters:
+   {" src/engine/`, `grep -rn "\.poison +="`, `grep -rn "tapped: true"`,
+   `grep -rn "'graveyard'"`. Każde trafienie spoza pliku-właściciela pola to
+   kandydat. To znalazło błędy #2, #4 i #5 w M269 w kilkanaście minut.
+2. **Policz emitery jednego zdarzenia i porównaj ich ładunki.**
+   `permanent_sacrificed` miało 10 emiterów; zestawienie pól obok siebie
+   (jedna linia na emiter, `tr -d '\n'`) natychmiast pokazało, które nie
+   pytają `deathZoneFor`.
+3. **Niespójność bywa WEWNĄTRZ jednej funkcji** — błąd #3 to `if/else`, gdzie
+   tylko jedna gałąź emitowała `object_untapped`. Czytaj obie gałęzie, nie
+   pierwszą.
+4. **Nie zgłaszaj tropu bez OBSERWOWALNEGO skutku.** W M269 odrzucono trzy
+   dobrze wyglądające tropy: kradzież czaru ze stosu (żadna karta w katalogu
+   tego nie robi), powrót kontroli do właściciela zamiast do poprzedniego
+   kontrolera (nieobserwowalne w 1v1), brak choroby przywołania na artefakcie
+   (nie jest stworem). Trop bez repro to hipoteza, nie błąd (L11).
+5. **Naprawa = użyć helpera, nie dopisać brakujący skutek na miejscu.**
+   Dopisanie drugiej kopii `syncStationKind` rozwiązałoby objaw i zostawiło
+   trzecią kopię na przyszłość (ADR 0002).
+6. **Znacznik doklejany do zdarzenia helpera szukaj po INDEKSIE, nie jako
+   „ostatnie zdarzenie"** — helper może dołożyć po nim własne (`addCounter`
+   emituje jeszcze `station_status_changed`).
+
+**Strażnik:** wzorzec strażnika dla tej klasy to test RÓWNOWAŻNOŚCI: ten sam
+skutek osiągnięty dwiema ścieżkami musi dać identyczny stan i ten sam typ
+zdarzenia (`m269-proliferate-station` H2, `m269-proliferate-trucizna` H2,
+`m269-poswiecenie-strefa-smierci`). Mutuj KAŻDĄ ścieżkę osobno — inaczej nie
+wiesz, czy test trafia w swoją gałąź.
+
+---
+
 ## L106 (2026-08-31) — Efekt „do końca tury" z ZAMROŻONYM zbiorem obiektów nie wolno dodatkowo filtrować po BIEŻĄCYM kontrolerze: kradzież stwora kasowała buff (i leczyła osłabienie)
 
 **Objaw (M269, odznaka, technika L11 #1):** p1 rzuca „Creatures you control

@@ -3129,3 +3129,42 @@ Downwind Ambushera (klasa M202/G) i TDZ przy premii za odkręcenie celu.
 **Wynik:** `npm test` **3661/3661** (+36 testów), build **55 modułów /
 2861.8 kB**, `npm run test:slow` (próbka B0) **9/9**. Złoty fixture bota
 zregenerowany, progi win-rate bez zmian.
+
+## M269 — Brązowa odznaka: 5 błędów reguł wykrytych polowaniem na niezgodności z CR (2026-08-31, PR #91 `arena/01a058db-mtg`)
+
+Pierwsza odznaka zdobyta metodą L11 (skan kodu silnika), a nie Żywym Testerem
+— po M267/M268 pięć z sześciu ostatnich lekcji dotyczyło warstwy prezentacji,
+więc szukaliśmy tam, gdzie tester z definicji nie widzi. Cztery z pięciu
+znalezisk pochodzą z techniki L11 #1 (niespójność między analogicznymi
+implementacjami tego samego mechanizmu).
+
+**Naprawione:**
+1. **CR 611.2c** — buff „do końca tury" znikał przy zmianie kontroli.
+   `untilEndOfTurnBonuses` filtrowała wpisy po BIEŻĄCYM kontrolerze, mimo
+   zamrożonego przy rozstrzygnięciu zbioru obiektów (M101/B2). Kradzież
+   buffowanego stwora kasowała +X/+X, a przy buffie ujemnym (Hysterical
+   Blindness) wręcz LECZYŁA osłabienie. → lekcja L106.
+2. **CR 701.27 + 205.1** — proliferate dokładał liczniki własną
+   re-inkarnacją obiektu zamiast helperem `addCounter`, omijając
+   `syncStationKind`: Spacecraft dobity proliferatem do progu station
+   zostawał zwykłym artefaktem (nie mógł atakować ani blokować).
+3. **CR 701.21a** — „gains control of this artifact and untaps it"
+   (Contested Game Ball) emitowało `object_untapped` tylko w gałęzi „ten sam
+   kontroler". W ścieżce typowej odkręcenie było ciche (klasa lekcji L24).
+4. **CR 701.27a** — proliferate trucizny nabijał `player.poison += 1`
+   z pominięciem `addPoisonCounters`: brak `poison_counters_added`, więc log
+   stołu pisał „? dostaje +1 licznik poison" (klasa L29), a heurystyczny bot
+   nie widział postępu do wygranej przez truciznę.
+5. **CR 701.17a + 122.1e** — cztery ścieżki poświęcenia (koszt dodatkowy,
+   exploit, devour, wybór ofiary / Food) szły na sztywno do cmentarza zamiast
+   pytać `deathZoneFor`: stwór z licznikiem finality dawał się reanimować
+   drugi raz.
+
+Każda naprawa u root cause (ADR 0002), każda ze strażnikiem KLASOWYM
+(mechanizm / równoważność ścieżek, nie nazwa karty) i weryfikacją mutacyjną
+(L13). Testy: `test/m269-buff-zmiana-kontroli.test.js` (4),
+`m269-proliferate-station` (4), `m269-untap-zdarzenie` (3),
+`m269-proliferate-trucizna` (3), `m269-poswiecenie-strefa-smierci` (5).
+
+**Wynik:** `npm test` **3970/3970** (+14), `npm run test:all` **3985/3985**,
+build **56 modułów / 3006.5 kB**.
