@@ -34,6 +34,49 @@ M208.
 
 ---
 
+## L106 (2026-08-31) — Efekt „do końca tury" z ZAMROŻONYM zbiorem obiektów nie wolno dodatkowo filtrować po BIEŻĄCYM kontrolerze: kradzież stwora kasowała buff (i leczyła osłabienie)
+
+**Objaw (M269, odznaka, technika L11 #1):** p1 rzuca „Creatures you control
+get +2/+2 until end of turn", p2 kradnie jednego z buffowanych stworów
+(`gain_control_until_end_of_turn` — Spreading Insurrection, Awaken the
+Sleeper) i stwór NATYCHMIAST traci bonus: 4/6 → 2/4. Symetrycznie przy
+buffie ujemnym (Hysterical Blindness „creatures your opponents control get
+-4/-0") przejęcie stwora go LECZYŁO. CR 611.2c: zbiór obiektów dotkniętych
+efektem ciągłym ustala się RAZ, przy rozstrzygnięciu, i nie zmienia się do
+końca tury.
+
+**Przyczyna:** `untilEndOfTurnBonuses` (`src/engine/permanents.js`) miała
+DWA niezależne filtry przynależności: zamrożony zbiór (`objectId` /
+`objectIds` — dołożony w M101/B2 właśnie po to, żeby świeży stwór nie łapał
+cudzego buffa) ORAZ starszy filtr po `object.controllerId === buff.controllerId`.
+Drugi filtr przetrwał jako pozostałość sprzed M101 i nikt nie zauważył, że
+teraz jest zarazem redundantny i szkodliwy: dopóki kontrola się nie zmienia,
+oba dają ten sam wynik, więc żaden test nie świecił na czerwono.
+
+**Reguła:**
+1. **Dwa filtry tej samej przynależności to jeden filtr za dużo.** Gdy
+   dokładasz precyzyjniejsze kryterium (zamrożony zbiór), STARE kryterium
+   trzeba usunąć w tym samym kroku — inaczej zostaje uśpiony bug, który
+   budzi się dopiero przy rzadkiej interakcji (tu: zmiana kontroli).
+2. **„Zamrożony przy rozstrzygnięciu" znaczy zamrożony na WSZYSTKO** — nie
+   tylko na wejście nowych permanentów, ale też na wyjście istniejących ze
+   strefy wpływu kontrolera. Zbiór jest samowystarczalny; nic poza nim nie
+   rozstrzyga przynależności.
+3. **Buff ujemny to ten sam mechanizm co dodatni** — test klasy musi
+   sprawdzać OBA znaki. Błąd, który „tylko zabiera bonus", w drugą stronę
+   daje przeciwnikowi darmowe uleczenie osłabionego stwora.
+4. **Sąsiedni rejestr sprawdź od razu**: `state.untilEndOfTurnProtections`
+   (ta sama rodzina „do końca tury") ma WYŁĄCZNIE `objectIds`, bez filtru
+   kontrolera — czyli poprawnie. Rozbieżność między bliźniaczymi rejestrami
+   jest sama w sobie sygnałem (L11 #1).
+
+**Strażnik:** `test/m269-buff-zmiana-kontroli.test.js` (4 testy: buff
+grupowy, buff ujemny, buff celowany `objectId`, kontrola negatywna — obiekt
+spoza zbioru mimo właściwej kontroli). Mutacja: `hasFrozenScope = false`
+(przywrócenie starego filtru) → 3/4 RED.
+
+---
+
 ## L105 (2026-08-31) — „Dziś to ryzyko, nie błąd" trzeba ZWERYFIKOWAĆ skanem, a nie założyć; sklejka pipów OBOK kwoty zawyża cenę
 
 **Objaw (M268, domknięcie punktów otwartych po M267):** handoff M267
