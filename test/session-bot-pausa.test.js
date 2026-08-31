@@ -52,10 +52,13 @@ function humanCommand(view) {
 /** Rozgrywa partię potwierdzając każdą pauzę; zwraca listę odwiedzonych pauz. */
 function playOutAckingPauses(session, { maxMoves = 500 } = {}) {
   const visited = [];
+  const boundaryPauseFlags = [];
   for (let i = 0; i < maxMoves && session.state.status === 'active'; i += 1) {
     if (session.botPausePending) {
       // typ|tekst — dobranie kroku dobierania CZŁOWIEKA też jest powodem
       // pauzy (M100/E8; dobranie bota nadal szumem i pauzy nie wywołuje).
+      // M261: odnotowujemy też, czy pauza zamyka paczkę na granicy tury.
+      boundaryPauseFlags.push(Boolean(session.botPauseAtTurnBoundary));
       visited.push(session.botMoves.map((m) => `${m.type}|${m.text ?? ''}`));
       session.clearBotMoves();
       session.continueBotPlay();
@@ -66,7 +69,7 @@ function playOutAckingPauses(session, { maxMoves = 500 } = {}) {
     const result = session.apply(humanCommand(view));
     assert.ok(result.ok, `komenda odrzucona: ${result.reason}`);
   }
-  return visited;
+  return { visited, boundaryPauseFlags };
 }
 
 test('pauza po każdym istotnym zagraniu bota: rzut, ląd, zdolność, zmiana strefy', () => {
@@ -75,13 +78,24 @@ test('pauza po każdym istotnym zagraniu bota: rzut, ląd, zdolność, zmiana st
   // (green +Knight of the Skyward Eye +4 Plains) — przelosowane hunterem.
   // M178 (talie per plan, tarkir vs warhammer) — hunter: 1, 4, 5, 6, 9…
   const session = createSession({ seed: 1, registry, decks, pauseOnBotMoves: true });
-  const visited = playOutAckingPauses(session);
+  const { visited, boundaryPauseFlags } = playOutAckingPauses(session);
   assert.equal(session.state.status, 'finished', 'partia nie doszła do końca');
   assert.ok(visited.length > 3, `za mało pauz w pełnej partii: ${visited.length}`);
-  for (const entries of visited) {
+  // M261: w pełnej partii granica tury przynajmniej raz zamyka paczkę
+  // modala (ogon starej tury czeka na „Rozumiem" przed „Tura N — …").
+  assert.ok(
+    boundaryPauseFlags.some(Boolean),
+    'brak pauzy na granicy tury w pełnej partii',
+  );
+  for (const [i, entries] of visited.entries()) {
     assert.ok(entries.length > 0, 'pauza z pustym buforem ruchów');
     // M100/E8: poza typami „istotnego zagrania" pauzę legalnie wywołuje
-    // wyłącznie własne dobranie („Dobierasz: …").
+    // własne dobranie („Dobierasz: …").
+    // M261 (zgłoszenie właściciela 2026-08-31): legalna jest też pauza
+    // zamykająca paczkę na GRANICY TURY — ogon starej tury (np. obrażenia
+    // z walki) dostaje własny modal, a „Tura N — …" otworzy świeży po
+    // „Rozumiem". Zdarzenia samego ogona nie muszą być „istotne".
+    if (boundaryPauseFlags[i]) continue;
     const pauseOk = (entry) => {
       const [type, text] = entry.split('|');
       return PAUSE_TYPES.has(type) || (type === 'card_drawn' && /^Dobierasz/.test(text ?? ''));
