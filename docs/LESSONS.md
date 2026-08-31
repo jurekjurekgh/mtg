@@ -34,6 +34,208 @@ M208.
 
 ---
 
+## L98 (2026-08-31) — Buforowane „dopisywanie" zamyka paczkę na granicy domenowej; promocję zatrzymanej połowy robią punkty WZNOWIENIA, nie wspólna pętla gry
+
+**Objaw (M261, zgłoszenie właściciela):** modal „Rozgrywka" doklejał
+„Tura N — Ty" + „Dobierasz…" do ogona tury bota (rozstrzygnięty Divest,
+discardy z cleanup, obrażenia z walki) w jednym oknie — bufor ruchów
+narastał między pauzami bez świadomości, że przekroczył granicę tury.
+
+**Przyczyna:** bufor czyszczony był tylko przy POKAZANIU; wszystko, co
+nastąpiło między pauzami, lądowało w jednej paczce bez względu na to,
+czy zaczęła się nowa tura. Render rysuje JEDNĄ paczkę na raz, więc
+„naprawa w renderze" nie istnieje — granica musi być widoczna w buforze.
+
+**Reguła:**
+1. „Dopisywanie" w buforze UI zatrzymuje się na granicy, którą użytkownik
+   ma prawo zobaczyć jako OSOBNĄ paczkę (tu: tura). Sygnał podziału
+   niesie samo zdarzenie graniczne (`turn_started` przy niepustym
+   buforze → routing do `held`), nie heurystyka po treści.
+2. Promocję held → bufor wykonują TYLKO punkty wznowienia (klik
+   „Rozumiem", `continueBotPlay`/`continueArtPlay`/`recheckAutoPass`).
+   Wspólna pętla gry wołana także z `apply` NIE promuje — bufor zdążył
+   zebrać ogon, który ma być pokazany osobno, więc promocja w środku
+   skleiłaby paczki z powrotem (konkretny błąd z pierwszej wersji).
+3. Granica wymusza pauzę w KAŻDYM miejscu powstania bufora
+   (`streamAutoEvents` i `apply` — inaczej ogon wisi niepokazany do
+   najbliższej „naturalnej" pauzy) i sygnał konsumuje się raz, żeby nie
+   wyciekał do kolejnej komendy.
+4. Cały mechanizm gate'uje się na fladze trybu pauz — konsumenci
+   synchroniczni (testy silnika, benchmark) mają dostać STARE
+   zachowanie, held nie może się urodzić bez pauz.
+5. Test wariantów patrzy na BLOKI, nie na przebieg: co najwyżej jeden
+   nagłówek tury na blok i nagłówek zawsze pierwszą linią, na wielu
+   seedach — RED złapał „Divest zostaje rozstrzygnięty | Tura 3 — Ty".
+
+**Strażnik:** `test/m261-granica-tury-w-modalu.test.js` (3 testy, 8
+seedów) + `test/session-bot-pausa.test.js` (legalny powód pauzy:
+`botPauseAtTurnBoundary`, ogon tury bez zdarzeń „istotnych").
+
+## L97 (2026-08-31) — Warstwa prezentacji potrafi skłamać przy w 100% poprawnym silniku; decyzja „you may look” nie może wyciekać treści przed wyborem
+
+**Objaw (M260, uwagi właściciela z PR #89):** trzy zgłoszenia do Fertile
+Thicket, przy których SILNIK był bezbłędny (skip/`chosenCardId:null`/
+`bottomOrder` — pełny Oracle, walidacja permutacji działała). Cała wina
+leżała w UI: (1) etykieta opcji „bez landa” miała fallback
+`'basic land na wierzch biblioteki'` („co to za opcja???”), (2) etykieta
+skip opisywaliśmy „Odłóż wszystko na spód” — czyli opcję INNĄ, (3) brak
+kroku „zaglądnij?” — opcje z nazwami Mountain/Island zdradzały karty,
+zanim gracz zdecydował, CZY patrzy, więc „you may look” było pozorne,
+a sortera kolejności spodu nie było w ogóle.
+
+**Przyczyna:** `commandLabel` liczy etykietę z SAMEJ komendy i nie wie,
+czym komenda jest w kontekście decyzji; etykiety powstawały „na oko”
+bez testu. Dodatkowo licznik `basicLandCount` w wydarzeniu startowym
+trafiał do WSPÓLNEGO logu — prywatna wiedza z „look” (ile basic landów
+na wierzchu) wyciekała przeciwnikowi.
+
+**Reguła:**
+1. Etykieta opcji opisuje skutek WŁASNEJ komendy — fallback tekstowy
+   („basic land…” zamiast nazwy z `nameOfObject`) to bug, nie ozdoba.
+2. Decyzja z wiedzą prywatną (look/scry-like) wymaga testu UI, że PRZED
+   decyzją nie pojawia się ŻADNA nazwa karty — w etykietach opcji,
+   podglądach i logu. Rezygnacja z „you may look” musi być możliwa
+   „na ślepo”.
+3. Log to też warstwa prezentacji: prywatne dane zdarzenia
+   (`basicLandCount`) nie idą do wspólnego opisu; jawne jest tylko to,
+   co Oracle nazywa reveal (tu: wybrany basic land).
+4. Poprawny silnik + brak asercji na etykiety = nierozpoznawalna
+   regresja UX. `commandLabel` i wizardy mają własne testy jak każdy
+   inny kontrakt.
+
+**Strażnik:** `test/m260-uwagi-wlasciciela.test.js` (13 testów: silnik,
+widok FoW, wizard 3-krokowy, etykiety, log, Pyxis CR 406.3, scenariusz
+pustej biblioteki). Czerwienieją po cofnięciu każdej z czterech napraw.
+
+---
+
+## L96 (2026-08-30) — Snapshotty Scryfall w repo = darmowy masowy audyt danych kart; audytuj po registry.all(), nie po nazwie eksportu
+
+**Objaw (M259, brązowa odznaka):** 7 błędów vs zasady w katalogu kart
+(Instant zamiast Sorcery ×2, MV bez symboli phyrexian, złe subtypy ×2,
+koszt craft/echo bez pipów kolorowych) — po ~15 audytach PR i wielu
+bug-huntach. Wszystkie wykryte w ~30 minut MASOWYM porównaniem kart ze
+snapshotami `docs/cards/scryfall-*.json` (pola mechaniczne: CMC, P/T,
+typy, podtypy, kolory) + czytaniem zrzutu Oracle-vs-deskryptory — a nie
+czytaniem definicji jedna po drugiej.
+
+**Pułapki wykryte po drodze:**
+1. **~275 realnych kart żyje poza `REAL_CARDS`** (historycznie
+   dołożone do `VIRTUAL_BASIC_LANDS`) — audyt po eksporcie tablicy
+   omijał je w całości (wśród nich druga karta phyrexian!). Prawda
+   jest `createCardRegistry().all()`.
+2. Rozbieżności typów przy `//` (MDFC/DFC) to fałszywe alarmy — model
+   dwutwarzowy jest jawny; filtruj przed raportowaniem.
+3. Fałszywe poczucie bezpieczeństwa dają testy asercji danych: tablice
+   „oczekiwanych wartości" (batch11: `['porcelain-legionnaire', 3, 1, 2]`)
+   zamrażają BŁĘDNE dane razem z poprawnymi — strażnik musi liczyć
+   oczekiwaną wartość ze ŹRÓDŁA prawdy (MANA_COSTS), nie z ręki.
+
+**Reguła:** przy jakimkolwiek przeglądzie kart — najpierw automatyczne
+diffowanie pól ze snapshotami (one już są w repo dla 155+ kart), potem
+czytanie semantyczne tylko miejsc z rozbiejnością lub z mechaniką;
+zawsze po całym rejestru. A gdy konwencja deskryptora się zmienia
+(tu: manaCost = pełne MV), strażnik zgodności z MANA_COSTS musi znać
+NOWĄ konwencję i zapaść razem z nią (aktualizacja testu-strażnika to
+część fixu, nie opcja).
+
+## L95 (2026-08-30) — Nowa decyzja blokująca to NIE handler: checklista ~10 punktów integracji; pierwsze redy testów to brakujące REJESTRY
+
+**Objaw (M258/F3 — ward):** mechanika resolve_ward_pay_choice działała
+regułowo po napisaniu handlera w game-state.js — a testy W2 padały na
+`invalid_command` (COMMAND_TYPES), potem na wyjątek w event() (EVENT_TYPES).
+Kolejne pominięcia czekały dalej: 6 list-strażników priorytetu (4274/5227/
+6118/6303/6420/6429 — pominięcie = nadpisanie priorytetu i zakleszczenie),
+klasyfikator poleceń OBU botów (heuristic + aggro), PAYMENT_DECISION_TYPES
+kreatora many, describeGameEvent, 3 mapy etykiet render.js + opis komendy.
+
+**Reguła:** „dodaję decyzję blokującą" = checklista: (1) stan pendingX
+w createGameState, (2) detektor decyzji blokujących, (3) bramka
+execute (z manaGeneratingCommandFor), (4) WSZYSTKIE strażniki priorytetu
+— grep po istniejącej decyzji-rodzeństwie (np. pendingCounterPay) i
+dopisz wszędzie tam, gdzie jest ono, (5) EVENT_TYPES + COMMAND_TYPES
+w protocol/types.js (walidacja rzuca zanim kontroler dojdzie do
+handlera!), (6) oferta legalCommands, (7) klasyfikator + wycena obu
+botów, (8) PAYMENT_DECISION_TYPES w mana-wizard, (9) describeGameEvent,
+(10) etykiety render. Test E2E przez execute() (nie przez helpery)
+łapie 1–2 natychmiast; greppowalne rodzeństwo łapie resztę.
+
+## L94 (2026-08-30) — Fabryka z destrukturyzacją configu gubi nieznane pola PO CICHU; kontrakt pinuje się testem przez REALNĄ fabrykę
+
+**Objaw (CR hunting M258, Etap 2.3):** `create_copy_token` (effects.js)
+od lat przekazywał `manaCost: src.manaCost ?? 0` do `createBattlefieldToken`
+— a destrukturyzacja w tokens.js tego pola nie znała, więc KAŻDY
+token-kopia wchodził z MV 0. Nie było błędu, ostrzeżenia ani testu: piny
+kopiowania (M90/CR 707.8a, M141/B) sprawdzały transformTo/station/saga,
+a manaCost nigdy. Do tego `enterAsCopy` kosztu nie kopiował wcale (CR 707.2
+— koszt many jest wartością kopiowalną). Ujawnione dopiero pytaniem o CR
+202.3b (MV kopii tylnej twarzy DFC) zadawanym do WSZYSTKICH ścieżek rodziny.
+
+**Reguła:** jawna destrukturyzacja `{ pole = domyślne }` w fabryce to
+jawna LISTA DOZWOLONYCH PÓL — każde nowe pole od nadawcy ginie bez śladu
+(recydywa klasy L93/L21/M146, tym razem w fabryce tokenów zamiast
+materializacji talii). Przy dodawaniu pola do configu fabryki: (1) grep
+WSZYSTKICH nadawców, (2) pin w teście, który przechodzi przez REALNĄ
+fabrykę, nie przez własny helper zbudowany na createGameObject. Test
+anty-over-fix (kopia PRZODU zachowuje koszt) jest tu obowiązkowy — sam fix
+„tył → 0" przeszedłby zielono także z fabryką ignorującą pole.
+
+## L93 (2026-08-30) — Jawna lista pól w warstwie transportowej musi pokrywać generator; test helperem OMUIJA tę warstwę
+
+**Objaw (Żywy Tester M258, srodziemie vs mirrodin-wu seed 3004):** Crawling
+Chorus (toxic 1) bił gracz trzy razy bez ani jednego znaku trucizny, a
+kafel pokazywał „Toksyczny”. Obiekt z materializacji talii miał
+`toxic=null` — karta definiuje `toxic: 1`, `gameObjectDataOf` je przenosi,
+ale `installDeck` (src/engine/deck.js) kładzie na obiekcie JAWNĄ listę pól
+i toxic (plus echo, madness, surge, warp) na niej nie było. Recydywa klasy
+M146/L21 w tej samej funkcji — renown wcześniej dodano, pięć innych pól nie.
+
+**Przyczyna podwójna:**
+1. Transport danych przez JAWNĄ listę pól (dwie listy do utrzymania:
+   generator `gameObjectDataOf` i kopia `installDeck`) — każde nowe pole
+   mechaniki trzeba dopisać w DWÓCH miejscach, a w drugim ginie po cichu.
+2. Testy jednostkowe (helper `putCard` + `...gameObjectDataOf(def)`)
+   OMUIJAŁY `installDeck` — wszystkie piny mechanik były zielone, mechaniki
+   martwe w każdej partii z talią.
+
+**Reguła:**
+1. Nowe pole mechaniki na `defineCard` → dopisz w `gameObjectDataOf`
+   ORAZ na liście `installDeck` (grep „M146" w deck.js). Lepszy kierunek
+   długoterminowy: transportować deskryptory zbiorczo (spread listy pól
+   mechanik), żeby lista była JEDNA.
+2. Piny mechanik krytycznych dla partii z talią idą przez
+   `setupCardMatch` (prawdziwa ścieżka: registry → createCardDeck →
+   installDeck → obiekt), nie przez `putCard` — wzorzec
+   `test/m258-zywy-tester-deskryptory.test.js` (D1–D3).
+3. Pełne partie botów (np. `real-cards-batch3`) łapią zakleszczenia
+   decyzji, których unit nie widzi — po każdej zmianie warstwy decyzji
+   odpal choć jeden test pełnej partii.
+
+---
+
+## L92 (2026-08-30) — Liczby „bieżącego stanu" aktualizuje się na KONIEC sesji; odświeżenie w środku PR gwarantuje dryf
+
+**Objaw (audyt PR #88, M258/A3):** README mówił „3735/3735 testów, 2894.7 kB"
+— to stan sprzed 8 etapów TEGO SAMEGO PR-a (naprawa D1 z audytu PR #87 weszła
+w etapie 1, potem etapy 3–10 dołożyły 76 testów i 39 kB). Recydywa D1 w
+kwartał, tym razem w obrębie jednej sesji.
+**Przyczyna:** „Bieżący stan" zaktualizowano w środku sesji (przy okazji
+innego zadania), a każdy kolejny zielony commit z definicji go dezaktualizuje.
+Kolejne etapy miały własne bramki (testy/build), ale żadna bramka nie patrzy
+na README — dokumentacja nie czerwienieje.
+**Reguła:**
+1. Sekcje „Bieżący stan" (liczby testów, rozmiar artefaktu, liczba kart)
+   odświeżasz w DOMYKANIU sesji — po ostatnim commicie funkcjonalnym, razem
+   z handoffem i opisem PR (checklista końca: ENVIRONMENT §7).
+2. Przy odświeżaniu liczby ZMIERZAJ (npm run test:all, npm run build) — nie
+   przepisuj z ostatniego logu etapu, bo on też może być wczorajszy (L56:
+   twierdzenie o danych sprawdzone poleceniem).
+3. Sygnał: PR, którego opis/README podaje liczbę testów, a diff ma >1 etap
+   funkcjonalny po wpisie „stan" — liczba jest podejrzana z definicji.
+**Strażnik:** `test/dokumentacja-budzet-lektury.test.js` pilnuje budżetu
+lektury, NIE zgodności liczb — egzekwowanie reguły 1 pozostaje procesowe
+(domknięcie sesji wg ENVIRONMENT §7).
+
 ## L83 (2026-08-28) — Strażnik skanujący ŹRÓDŁO czyta KONSTRUKTY, nie tekst: komentarz to nie pokrycie
 
 **Objaw:** `test/fingerprint-pending-decisions.test.js` (strażnik klasy L16,

@@ -240,7 +240,10 @@ test('M138/Z6: Spacecraft po przekroczeniu progu jest stworem w widoku OBU gracz
 
 test('M138/Z6: kafel bierze typy z OBIEKTU, nie ze statycznego rejestru', () => {
   const source = fs.readFileSync('src/table/render.js', 'utf8');
-  const line = source.split('\n').find((l) => /^\s*types: faceDown \? \['Creature'\]/.test(l));
+  // M260/B1: gałąź faceDown rozwinięta o zakryte WYGNANIE ([]) obok morpha
+  // (['Creature']) — strażnik rozpoznaje oba kształty, ale wciąż wymaga
+  // czytania object.types poza gałęzią zakrycia.
+  const line = source.split('\n').find((l) => /^\s*types: faceDown \?/.test(l));
   assert.ok(line, 'nie znaleziono miejsca budującego types w cardInfo');
   assert.ok(/object\.types/.test(line),
     'types kafla muszą pochodzić z object.types — inaczej Station/animacja nie są widoczne dla gracza');

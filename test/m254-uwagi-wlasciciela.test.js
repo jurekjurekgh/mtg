@@ -19,7 +19,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { effectivePower, effectiveToughness } from '../src/engine/permanents.js';
 import { scryfallCardUrl, scryfallImageUrl, hasPrintImage } from '../src/table/card-images.js';
-import { waitingExileEntries, waitingExileStatus, cardInfo, renderHoverPreview } from '../src/table/render.js';
+import { waitingExileStatus, cardInfo, renderHoverPreview } from '../src/table/render.js';
 import { createArtShowcaseQueue } from '../src/table/art-showcase.js';
 import { CARD_BACK_URL } from '../src/table/card-images.js';
 import { BOT_ID, HUMAN_ID, createSession } from '../src/table/session.js';
@@ -155,14 +155,16 @@ test('M254/D1: wygnany ląd leży w strefie wygnania tymczasowego z badge\'em ź
   const exiled = [...state.objects.values()].find((o) => o.zone === 'exile' && o.cardId === 'basic-forest');
   assert.ok(exiled, 'ląd wygnany przez ETB Newta');
   assert.equal(exiled.temporaryExile?.byCardId, 'wormfang-newt', 'znacznik niesie źródło wygnania');
-  // Stół (widok) — strefa „wygnania tymczasowego" to ta sama co Suspend/Plot.
+  // Stół (widok) — M262: całe wygnanie jest boksem na stole; badge źródła
+  // niesie kartę, która wygnała (wormfang-newt przez nameOf → Wormfang Newt).
   for (const who of ['p1', 'p2']) {
     const view = playerView(state, who);
-    const entries = waitingExileEntries(view);
-    assert.ok(entries.some((o) => o.cardId === 'basic-forest'),
-      `${who}: wygnany ląd musi być widoczny na stole w strefie tymczasowej`);
-    const status = waitingExileStatus(entries.find((o) => o.cardId === 'basic-forest'));
-    assert.match(status, /Wormfang Newt/, `badge nazywa źródło: ${status}`);
+    const entries = view.zones.exile;
+    const land = entries.find((o) => o.cardId === 'basic-forest');
+    assert.ok(land, `${who}: wygnany ląd musi być widoczny w boksie wygnania`);
+    assert.equal(land.exiledBy, 'wormfang-newt', `${who}: badge źródła wygnania`);
+    const status = waitingExileStatus(land);
+    assert.match(status, /Wormfang Newt/, `status nazywa źródło: ${status}`);
   }
 });
 
@@ -183,8 +185,8 @@ test('M254/D2 (anty-over-fix): po śmierci Newta ląd wraca i znika ze strefy ty
   assert.ok(back, 'ląd wrócił na pole bitwy pod kontrolą właściciela');
   assert.equal(back.temporaryExile ?? null, null, 'znacznik wyczyszczony po powrocie');
   const view = playerView(state, 'p1');
-  assert.ok(!waitingExileEntries(view).some((o) => o.cardId === 'basic-forest'),
-    'po powrocie karty nie ma już w strefie wygnania tymczasowego');
+  assert.ok(!(view.zones.exile ?? []).some((o) => o.cardId === 'basic-forest'),
+    'po powrocie karty nie ma już w boksie wygnania');
 });
 
 test('M254/D3: ta sama strefa dla Faceless Butchera (reguła po treści efektu, ADR 0002)', () => {
@@ -204,8 +206,9 @@ test('M254/D3: ta sama strefa dla Faceless Butchera (reguła po treści efektu, 
   assert.ok(exiled, 'stwór wygnany przez Butchera');
   assert.equal(exiled.temporaryExile?.byCardId, 'faceless-butcher');
   const view = playerView(state, 'p1');
-  assert.ok(waitingExileEntries(view).some((o) => o.cardId === 'goblin-piker'),
-    'wygnanie „until ~ leaves" korzysta z tej samej strefy co Wormfang Newt');
+  const butchered = (view.zones.exile ?? []).find((o) => o.cardId === 'goblin-piker');
+  assert.ok(butchered, 'wygnanie „until ~ leaves" korzysta z tej samej strefy co Wormfang Newt');
+  assert.equal(butchered.exiledBy, 'faceless-butcher', 'badge źródła: Faceless Butcher');
 });
 
 // =============================================================================

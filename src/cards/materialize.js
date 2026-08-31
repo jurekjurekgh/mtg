@@ -56,6 +56,8 @@ export function gameObjectDataOf(card) {
     if (card.toxic != null) data.toxic = card.toxic;
     // Batch 46 (Bone Shredder): echo — koszt musi dojść na obiekt gry (L21).
     if (card.echo != null) data.echo = card.echo;
+    // M259/B7: pipy kolorowe kosztu echa ({2}{B}) — jw. (L21).
+    if (card.echoColors != null) data.echoColors = card.echoColors;
     // Exploit (CR 702.110, Silumgar Butcher): ETB z opcjonalnym poświęceniem
     // (resolve_exploit_choice); po poświęceniu trigger „exploits".
     if (card.exploit) data.exploit = card.exploit;
@@ -189,10 +191,16 @@ export function createCardDeck({ cardIds, ownerId, registry }) {
         abilities: back.abilities ?? [],
         keywords: back.keywords ?? [],
         subtypes: back.subtypes ?? [],
-        // Linia typów i mana value drugiej strony (DFC ze zmianą typu, np.
-        // Jill → Shiva Saga): obiekt po transformacji też niesie typy.
+        // Linia typów drugiej strony (DFC ze zmianą typu, np. Jill → Shiva
+        // Saga): obiekt po transformacji też niesie typy.
         types: back.types ?? [],
-        manaCost: back.manaCost ?? 0,
+        // CR 202.3b (M258/Etap 2.3b): payload niesie MV obiektu z TĄ twarzą
+        // w górę, a nie drukowany koszt tyłu (tył nie ma kosztu — MV tylnej
+        // twarzy liczy się jakby miała koszt PRZEDNIEJ). Efekty transformu
+        // (transform/craft/exile_return_transformed) aplikują to pole przy
+        // zmianie twarzy; dawniej czytało je tylko exile_return_transformed
+        // i „przypadkiem" działało, bo Shiva miała w katalogu koszt = Jill.
+        manaCost: card.manaCost ?? 0,
         // Nazwa drugiej strony (DFC Legendary jak Shiva): obiekt po
         // transformacji zmienia cardName — prawo legend patrzy na WŁAŚCIWĄ stronę.
         cardName: back.name,

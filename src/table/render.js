@@ -85,6 +85,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_pay_or_sacrifice: 'Zapłata albo poświęcenie',
   resolve_optional_pay_choice: 'Dobrowolna dopłata',
   resolve_counter_pay_choice: 'Zapłać albo czar skontrowany',
+  resolve_ward_pay_choice: 'Ward — dopłata albo kontr',
   resolve_moonlit_choice: 'Moonlit (wybór efektu)',
   resolve_damage_target: 'Cel obrażeń',
   resolve_reveal_order: 'Kolejność kart na wierzchu',
@@ -407,6 +408,7 @@ export function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_pay_or_sacrifice') return 'resolve_pay_or_sacrifice';
   if (command.type === 'resolve_optional_pay_choice') return 'resolve_optional_pay_choice';
   if (command.type === 'resolve_counter_pay_choice') return 'resolve_counter_pay_choice';
+  if (command.type === 'resolve_ward_pay_choice') return 'resolve_ward_pay_choice';
   if (command.type === 'resolve_moonlit_choice') return 'resolve_moonlit_choice';
   if (command.type === 'resolve_damage_target') return 'resolve_damage_target';
   if (command.type === 'resolve_reveal_order') return 'resolve_reveal_order';
@@ -731,6 +733,8 @@ const ABILITY_KEYWORD_LABELS = Object.freeze({
 export const KEYWORD_LABELS = Object.freeze({
   intimidate: 'zastraszenie (blok: artefakty/wspólny kolor)',
   toxic: 'Toksyczny (combat damage graczowi = poison)',
+  // M258/F3 (CR 702.21): kwantyfikator dokleja keywordLine („Ward {2}").
+  ward: 'Ward (przeciwnik dopłaca albo czar skontrowany)',
   echo: 'Echo (w pierwszym swoim upkeepie zapłać koszt echa albo poświęć)',
   fabricate: 'Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo)',
   flying: 'Latanie', vigilance: 'Czujność', transform: 'Transform', reach: 'Zasięg',
@@ -1493,7 +1497,11 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
 
 /** Tekst reguł do pola karty: keywordy, efekty czaru lub opis zdolności. */
 export function rulesText(info) {
-  if (info.faceDown) return '';
+  // M258/F3 (cloak, CR 702.75): zakryty permanent z ward {2} — ward jest
+  // cechą JAWNĄ zakrycia (jak staty 2/2), więc kafel go pokazuje mimo
+  // maskowania reszty tożsamości (CR 708.2a tłumi druk, nie definicję
+  // zakrycia). Zwykły morph bez warda: linia pusta jak dotąd.
+  if (info.faceDown && info.ward == null) return '';
   // M229 (audyt Żywym Testerem, Awaken the Sleeper): keywordy NADANE (granty do
   // EOT, załączniki) mają własny badge na kaflu (info.grantedKeywords, render
   // ~3026). Linia reguł pokazuje więc tylko keywordy WYDRUKOWANE — inaczej
@@ -1503,7 +1511,7 @@ export function rulesText(info) {
   const granted = new Set(info.grantedKeywords ?? []);
   const keywordLine = (info.keywords ?? [])
     .filter((kw) => !granted.has(kw))
-    .map((kw) => KEYWORD_LABELS[kw] ?? kw).join(' ');
+    .map((kw) => (kw === 'ward' && info.ward != null ? `Ward {${info.ward}}` : KEYWORD_LABELS[kw] ?? kw)).join(' ');
   const abilityLine = info.abilities && info.abilities.length
     ? info.abilities.map((a) => {
       if (a.type === 'triggered') return describeTriggered(a, info.controllerId);
@@ -1712,6 +1720,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_pay_or_sacrifice: 'Zapłata albo poświęcenie',
   resolve_optional_pay_choice: 'Dobrowolna dopłata',
   resolve_counter_pay_choice: 'Zapłać albo czar skontrowany',
+  resolve_ward_pay_choice: 'Ward — dopłata albo kontr',
   resolve_moonlit_choice: 'Moonlit — wybór efektu',
   resolve_reveal_order: 'Kolejność kart na wierzchu biblioteki',
 });
@@ -2554,6 +2563,14 @@ export function commandLabel(cmd, session, view) {
       if (cmd.pay) return `Zapłać${price ? ` ${price}` : ''} — ${spell} zostaje na stosie`;
       return `Nie płać — ${spell} zostaje skontrowany`;
     }
+    case 'resolve_ward_pay_choice': {
+      // M258/F3 — ward (CR 702.21): dopłać, żeby czar/zdolność przeszła,
+      // albo pozwól się skontrować. Cena i cel (obiekt na stosie) w komendzie.
+      const spell = cmd.targetId ? nameOfObjectId(cmd.targetId) : 'czar';
+      const price = cmd.cost != null && cmd.cost > 0 ? manaCostHtml(`{${cmd.cost}}`) : null;
+      if (cmd.pay) return `Zapłać${price ? ` ${price}` : ''} (ward) — ${spell} przechodzi`;
+      return `Nie płać (ward) — ${spell} skontrowany`;
+    }
     case 'resolve_food_choice': {
       // Insatiable Appetite: poświęć Food za większy buff albo nie.
       return cmd.sacrifice ? 'Poświęć Food (+5/+5)' : 'Bez poświęcenia Food (+3/+3)';
@@ -2822,11 +2839,15 @@ export function commandLabel(cmd, session, view) {
       return `Kopia czaru — cel: ${nameOfObjectId(cmd.targetId)}`;
     }
     case 'resolve_fertile_thicket': {
-      if (cmd.skip) return 'Odłóż wszystko na spód (bez landa)';
-      const landName = cmd.chosenCardId
-        ? escapeHtml(session.nameOfObject(cmd.chosenCardId))
-        : 'basic land';
-      return `${landName} na wierzch biblioteki`;
+      // M260/A2 (zgłoszenie właściciela z PR #89): poprzednie etykiety
+      // kłamały — skip opisywany jako „odłóż wszystko na spód" (a skip to
+      // rezygnacja z zaglądania — biblioteka NIETKNIĘTA), a opcja „bez
+      // landa" dostawała fallback „basic land na wierzch biblioteki"
+      // („co to za opcja???"). Oracle: reveal up to one BASIC land → na
+      // wierzch; reszta — na spód w dowolnej kolejności.
+      if (cmd.skip) return 'Zrezygnuj — nie zaglądam w bibliotekę';
+      if (cmd.chosenCardId == null) return 'Bez basic landa — obejrzane karty na spód';
+      return `${escapeHtml(session.nameOfObject(cmd.chosenCardId))} na wierzch biblioteki (reszta na spód)`;
     }
     default: return REASONING_ACTION_LABELS[cmd.type] ?? cmd.type;
   }
@@ -2910,11 +2931,16 @@ function combatRoleOf(object, combat, session) {
 export function cardInfo(session, object, combat = null) {
   const cardId = object.cardId;
   const faceDown = Boolean(object.faceDown);
+  // M260/B1 (zgłoszenie właściciela z PR #89, Pyxis of Pandemonium): karta
+  // wygnana ZAKRYTA nie ujawnia tożsamości NIKOMU (CR 406.3) — także
+  // właścicielowi. Własny zakryty permanent NA POLU BITWY to co innego
+  // (CR 708.6: kontroler może patrzeć) — strefa rozstrzyga.
+  const exiledFaceDown = faceDown && object.zone === 'exile';
   // M100/E12 (pytanie właściciela): WŁASNY zakryty permanent pokazuje
   // NAZWĘ (kontroler zna tożsamość — CR 708.6), ale wyłącznie nazwę:
   // reszta (tekst, staty blueprintu, art) zostaje zamaskowana, żeby kafel
   // nie wyglądał jak pełny stwór — jest „zakryty (morph)", 2/2.
-  const ownFaceDown = faceDown && object.controllerId === HUMAN_ID;
+  const ownFaceDown = faceDown && !exiledFaceDown && object.controllerId === HUMAN_ID;
   const details = faceDown ? {} : (session.cardDetails(cardId) || {});
   // M254/B (zgłoszenie właściciela): właściciel zna swoją kartę zakrytą
   // (CR 708.6 — tożsamość nie jest informacją ukrytą dla niego), więc
@@ -2928,7 +2954,9 @@ export function cardInfo(session, object, combat = null) {
   // załączony equipment pozostaje „Artifact — Equipment".
   const attachedAura = Boolean(object.attachedTo) && (object.kind === 'aura' || object.bestow || object.aura);
   const attachedEquipment = Boolean(object.attachedTo) && !attachedAura;
-  const keywordsNow = faceDown ? [] : (object.keywords?.length ? object.keywords : (details.keywords || []));
+  // M258/F3: ward zakrytego (cloak) jest jawny — keyword w widoku
+  // (reszta keywordów tłumiona przez CR 708.2a jak dotąd).
+  const keywordsNow = faceDown ? (object.ward != null ? ['ward'] : []) : (object.keywords?.length ? object.keywords : (details.keywords || []));
   return {
     objectId: object.id,
     cardId: faceDown ? null : cardId,
@@ -2936,12 +2964,16 @@ export function cardInfo(session, object, combat = null) {
     // Face-down permanent (morph/megamorph): 2/2 bez nazwy, kolorów i kosztu
     // — własny z nazwą i znacznikiem (E12), wrogi bezimienny (FoW, CR 708.2).
     name: faceDown
-      ? (ownFaceDown ? session.nameOf(object.cardId) : 'Face-down creature')
+      ? (exiledFaceDown
+        ? 'Wygnana zakryta'
+        : (ownFaceDown ? session.nameOf(object.cardId) : 'Face-down creature'))
       // M172/D: kafel kopii pokazuje „Nazwa (kopia N)" — rozróżnialna od oryginału.
       : (object.name ? (object.copyNumber ? `${object.name} (kopia ${object.copyNumber})` : object.name) : session.nameOf(cardId)),
     // M127 (uwaga A): znacznik z jednego źródła — „zakryty (Morph)" dla
     // własnego permanentu, sama nazwa mechaniki dla cudzego (FoW).
-    morphBadge: faceDown ? (ownFaceDown ? `zakryty (${FACE_DOWN_LABEL})` : FACE_DOWN_LABEL) : null,
+    // M260/B1: zakryte WYGNANIE nie jest morphem — sam znacznik nazwy
+    // wystarcza („Wygnana zakryta"), badge mechaniki pola bitwy myliłby.
+    morphBadge: faceDown ? (exiledFaceDown ? null : (ownFaceDown ? `zakryty (${FACE_DOWN_LABEL})` : FACE_DOWN_LABEL)) : null,
     colors,
     kind,
     // M138/Z6 (audyt Żywym Testerem): typy bierzemy ze STANU GRY, nie z rejestru
@@ -2951,11 +2983,13 @@ export function cardInfo(session, object, combat = null) {
     // dalej sam „Artifact — Spacecraft”, bez P/T i bez Latania. Gracz nie miał
     // jak zauważyć, że wrogi statek stał się atakującym. P/T obok czytano już
     // z obiektu — to była niespójność w jednym obiekcie danych.
-    types: faceDown ? ['Creature'] : (attachedAura ? ['Enchantment', 'Aura'] : (object.types?.length ? object.types : (details.types || []))),
+    types: faceDown ? (exiledFaceDown ? [] : ['Creature']) : (attachedAura ? ['Enchantment', 'Aura'] : (object.types?.length ? object.types : (details.types || []))),
     subtypes: faceDown ? [] : (attachedAura ? [] : (object.subtypes?.length ? object.subtypes : (details.subtypes || []))),
     attachedAura,
     attachedEquipment,
     keywords: keywordsNow,
+    // M258/F3 (CR 702.21): kwota ward — keywordLine dokleja „Ward {2}".
+    ward: object.ward ?? null,
     // M168/B (uwaga właściciela): AKTYWNE zmiany na kafelu jako badge'e.
     // M175/A3: nadane keywordy jedzie JAWNIE z playerView (`grantedKeywords`
     // = efektywne − wydrukowane ze stanu) — stara różnica „effectiveKeywordsOf
@@ -2977,7 +3011,14 @@ export function cardInfo(session, object, combat = null) {
     untapLockedNow: Boolean(object.untapLocked || object.dontUntapNextUntapStep),
     tempControlNow: Boolean(object.tempControlUntilEOT),
     cantRegenerateNow: Boolean(object.cantBeRegeneratedThisTurn),
-    manaCost: faceDown ? null : (details.manaCost ?? object.manaCost ?? null),
+    // M258/K2 (zgłoszone w audycie M257; CR 202.3b): mana value permanentu
+    // z TYLNĄ twarzą DFC w górę = koszt twarzy PRZEDNIEJ (tył nie ma
+    // wydrukowanego kosztu — katalog trzyma 0). Obiekt/widok niesie
+    // poprawne manaCost (transform go nie zmienia; M149: publiczny MV na
+    // polu bitwy), więc kafel czyta OBIEKT, a katalog jest tylko fallbackiem
+    // (L41: jedno źródło prawdy — nie wyprowadzaj z katalogu
+    // tego, co widok już niesie).
+    manaCost: faceDown ? null : (object.manaCost ?? details.manaCost ?? null),
     power: object.power ?? details.power,
     toughness: object.toughness ?? details.toughness,
     livePower: object.power ?? details.power,
@@ -3386,7 +3427,12 @@ export function renderHoverPreview(host, info, hoverMode = 'scryfall', { showCyc
 export function createScryfallHover(els) {
   if (TOUCH_DEVICE || !els?.hoverPreview) return null;
   return {
-    start: (info, e) => showHoverPreviewAt(els, info, e, 'scryfall'),
+    start: (info, e) => showHoverPreviewAt(els, info, e, 'scryfall',
+      // M258/A2 (audyt PR #88): tor STAŁY nie cykluje scrollem — bez mylącej
+      // podpowiedzi. Opcja showCycleHint istniała od r5/A, ale nikt jej nie
+      // przekazał (martwa opcja, L67) — na kartach z artId miniaturka w
+      // „Rozgrywce" obiecywała „scroll zmienia tor", którego nie było.
+      { showCycleHint: false }),
     end: () => { if (els.hoverPreview) els.hoverPreview.className = 'hover-preview'; },
   };
 }
@@ -3628,10 +3674,10 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
  * przy kursorze. Wspólna ścieżka hoveru stołu (tryby scryfall/FOT/KON,
  * cyklowanie scrollem) i miniaturek w „Rozgrywce” (r5/A — tor stały).
  */
-function showHoverPreviewAt(els, info, e, mode) {
+function showHoverPreviewAt(els, info, e, mode, { showCycleHint = true } = {}) {
   if (!els.hoverPreview) return;
   clear(els.hoverPreview);
-  renderHoverPreview(els.hoverPreview, info, mode);
+  renderHoverPreview(els.hoverPreview, info, mode, { showCycleHint });
   const shape = hoverPreviewShape(mode);
   const x = (e && typeof e.clientX === 'number') ? e.clientX : 0;
   const y = (e && typeof e.clientY === 'number') ? e.clientY : 0;
@@ -3654,7 +3700,7 @@ function showHoverPreviewAt(els, info, e, mode) {
 export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, onDayNightClick = null, onPoisonCardClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
   const view = session.view();
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
-  for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'handEnemy', 'waitingZone', 'actions', 'log']) clear(els[key]);
+  for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'handEnemy', 'actions', 'log']) clear(els[key]);
 
   // Hover (desktop): powiększona karta pod kursorem — ta sama ilustracja co na
   // kaflu, w rozmiarze `large`, a przy jej braku syntetyczna twarz. Scroll nad
@@ -3738,15 +3784,15 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   // --- Bitwiska (wróg u góry, Ty na dole) ------------------------------
   // M201/B: ręka bota (rewersy + licznik) nad jego lądami.
   renderEnemyHand(els.handEnemy, els.handEnemyLabel, view, session, foe?.id);
-  // M201/A2: poczekalnia wygnania (suspend/plot/impuls/rebound/madness).
-  renderWaitingExile(els.waitingZone, els.waitingWrap, view, session, { onCardClick, hover, onCardDoubleClick });
   renderBattlefield(els.bfEnemy, view, session, foe?.id, true, onCardClick, hover, onCardDoubleClick);
   renderBattlefield(els.bfOwn, view, session, me?.id, false, onCardClick, hover, onCardDoubleClick);
 
-  // --- Groby i exile (warstwa inspektora stref) ------------------------
-  renderZonePile(els.graveOwn, view, session, me?.id, onCardClick, hover, onCardDoubleClick);
-  renderZonePile(els.graveEnemy, view, session, foe?.id, onCardClick, hover, onCardDoubleClick);
-  renderExile(els.exileZone, view, session, onCardClick, hover, onCardDoubleClick);
+  // --- M262 (reforma stref): cmentarze i wygnanie PROSTO NA STOLE ------
+  // Trzy boksy pod ręką Bota (Cmentarz Gracza → Wygnanie → Cmentarz Bota);
+  // inspektor stref i poczekalnia zostały usunięte.
+  renderGraveyardBox(els.graveOwn, els.graveOwnWrap, view, session, me?.id, onCardClick, hover, onCardDoubleClick);
+  renderExileBox(els.exileZone, els.exileZoneWrap, view, session, { onCardClick, hover, onCardDoubleClick });
+  renderGraveyardBox(els.graveEnemy, els.graveEnemyWrap, view, session, foe?.id, onCardClick, hover, onCardDoubleClick);
 
   // --- Ręka gracza -----------------------------------------------------
   const ownHandObjects = view.zones.hand.filter((o) => !o.hidden);
@@ -4165,13 +4211,21 @@ function renderBattlefield(host, view, session, controllerId, enemy, onCardClick
   }
 }
 
-function renderZonePile(host, view, session, controllerId, onCardClick, hover, onCardDoubleClick = null) {
+/**
+ * M262 (reforma stref, zgłoszenie właściciela 2026-08-31): cmentarz BĘDĄCY
+ * NA STOLE — karty jak karty stołowe (pełny rozmiar, hover, klik przez tile),
+ * kolejność przyrostowa od najstarszych (lewa) do najnowszych (prawa) —
+ * dokładnie kolejność arraya `zones.graveyard` (array push). BEZ etykiet
+ * grup (decyzja właściciela). Boks chowa się, gdy grób jest pusty.
+ */
+function renderGraveyardBox(host, wrap, view, session, controllerId, onCardClick, hover, onCardDoubleClick = null) {
   const pile = view.zones.graveyard.filter((o) => o.controllerId === controllerId);
-  if (pile.length === 0) {
-    div(host, 'zone-empty', 'Grób pusty');
-    return;
+  if (wrap) wrap.hidden = pile.length === 0;
+  if (!host || pile.length === 0) return 0;
+  for (const object of pile) {
+    tile(host, cardInfo(session, object), { session, onCardClick, hover, onCardDoubleClick });
   }
-  for (const object of pile) tile(host, cardInfo(session, object), { session, onCardClick, hover, onCardDoubleClick });
+  return pile.length;
 }
 
 /**
@@ -4209,27 +4263,12 @@ export function renderEnemyHand(host, label, view, session, enemyId) {
 }
 
 /**
- * M201/A2 (zgłoszenie właściciela, Mindstab): „poczekalnia” wygnania —
- * karty, które technicznie leżą w exile, ale CZEKAJĄ na swój moment:
- * suspend (CR 702.62a — liczniki czasu), plot (CR 702.168a), impuls
- * („zagraj do końca tury”), rebound (CR 702.97), madness (CR 702.35).
- * Dotąd wpadały do ukrytego worka i gracz nie wiedział ani co tam jest,
- * ani ile liczników zostało.
- *
- * CR 406.3: wygnanie jest domyślnie ODKRYTE — pokazujemy karty obu graczy
- * (zakryte wygnanie przeciwnika zostaje bezimienne, `hidden` z widoku).
- * Sekcja chowa się, gdy nie ma na co patrzeć (nie dokładamy pustego boksu
- * do układu stołu — uwaga właściciela z M198/A).
+ * M262 (reforma stref, zgłoszenie właściciela 2026-08-31): poczekalnia
+ * i inspektor stref ZNIKNĘŁY — wygnanie jest BOKSEM NA STOLE (patrz
+ * renderExileBox poniżej). Zostaje helper statusu karty w wygnaniu:
+ * liczniki suspend/plot, impuls, rebound, madness, zakrycie (M260/B1)
+ * i wygnanie tymczasowe (M254/D).
  */
-export function waitingExileEntries(view) {
-  return (view.zones?.exile ?? []).filter((o) => o.suspended || o.plotted || o.plottedAtTurn != null
-    || o.playableWithoutPaying || o.reboundReady || o.madnessReady
-    // M254/D (zgłoszenie właściciela, Wormfang Newt): wygnanie TYMCZASOWE
-    // z linkiem powrotu („kiedy źródło opuści pole bitwy") — ta sama strefa
-    // co Suspend/Plot, bo karta też stamtąd wraca (tylko bez liczników).
-    || o.temporaryExile);
-}
-
 /** Opis stanu oczekiwania — jedno źródło dla kafla i dla podpowiedzi. */
 export function waitingExileStatus(object) {
   const parts = [];
@@ -4251,6 +4290,12 @@ export function waitingExileStatus(object) {
   }
   if (object.reboundReady) parts.push('Rebound · rzut w Twoim upkeepie');
   if (object.madnessReady) parts.push('Madness · czeka na decyzję rzutu');
+  // M260/B1 (Pyxis of Pandemonium): zakryte wygnanie — status mówi, że karta
+  // jest odwrócona i że odkryje ją druga zdolność źródła (permanenty wejdą
+  // wtedy na pole bitwy, właścicielem pozostaje dotychczasowy właściciel).
+  if (object.faceDown) {
+    parts.push('Wygnana zakryta · odkryje ją druga zdolność źródła');
+  }
   // M254/D: badge „wygnana tymczasowo przez <karta>" — nazwa źródła jest
   // informacją PUBLICZNĄ (wygnanie widać na stole), więc nie ma tu FoW.
   if (object.temporaryExile) {
@@ -4262,27 +4307,60 @@ export function waitingExileStatus(object) {
   return parts.join(' · ');
 }
 
-export function renderWaitingExile(host, wrap, view, session, { onCardClick, hover, onCardDoubleClick } = {}) {
-  const entries = waitingExileEntries(view);
-  if (wrap) wrap.hidden = entries.length === 0;
-  if (!host || entries.length === 0) return 0;
-  for (const object of entries) {
-    const cell = div(host, 'waiting-cell');
-    const owner = PLAYER_NAMES[object.controllerId] ?? object.controllerId;
-    div(cell, 'waiting-owner', owner);
-    tile(cell, cardInfo(session, object), { session, size: 'sm', onCardClick, hover, onCardDoubleClick });
-    div(cell, 'waiting-status', waitingExileStatus(object));
-  }
-  return entries.length;
+/**
+ * M262: etykieta ŹRÓDŁA wygnania — nazwa karty z danych przez nameOf
+ * (ADR 0002), mechanika jako keyword („Plot", „Suspend"…), fallback
+ * „efekt" (także stare autosave'y bez meta).
+ */
+const EXILE_KEYWORD_LABELS = {
+  plot: 'Plot', suspend: 'Suspend', warp: 'Warp', madness: 'Madness',
+  escape: 'Escape', flashback: 'Flashback', unearth: 'Unearth', craft: 'Craft',
+  finality: 'Finality',
+};
+
+export function exileSourceLabel(session, exiledBy) {
+  if (exiledBy == null) return 'efekt';
+  if (EXILE_KEYWORD_LABELS[exiledBy]) return EXILE_KEYWORD_LABELS[exiledBy];
+  if (exiledBy === 'effect') return 'efekt';
+  return session.nameOf(exiledBy);
 }
 
-function renderExile(host, view, session, onCardClick, hover, onCardDoubleClick = null) {
-  const pile = view.zones.exile || [];
-  if (!pile.length) {
-    div(host, 'zone-empty', 'Exile pusty');
-    return;
+/**
+ * M262: badge'e karty w boksie wygnania (zlecenie właściciela):
+ * obowiązkowy WŁAŚCICIEL („Właściciel: Gracz/Bot" — etykiety panelu M197,
+ * nie „Ty/Nieprzyaciel"), obowiązkowe ŹRÓDŁO („Wygnane: …") i opcjonalny
+ * stan (liczniki plot/suspend, zakrycie, powrót). Badge'e są jawne także
+ * przy zakrytej karcie — CR 406.3 zakrywa KARTĘ, nie źródło wygnania.
+ */
+export function exileBadges(session, object) {
+  const viewerId = session.view().playerId;
+  const owner = object.controllerId === viewerId ? PLAYER_LABEL : BOT_LABEL;
+  const badges = [`Właściciel: ${owner}`, `Wygnane: ${exileSourceLabel(session, object.exiledBy)}`];
+  const status = waitingExileStatus(object);
+  if (status) badges.push(status);
+  return badges;
+}
+
+/**
+ * M262: boks WYGNANIA na stole (niebieskie tło). Agregacja właściciel →
+ * źródło (stabilne sortowanie), karty jak karty stołowe (tile z domyślnym
+ * rozmiarem, hover, klik — kontrakt identyczny z polem bitwy), badge'e
+ * POD kaflem. Zakryte karty pozostają zamaskowane (M260/B1) — badge'e jawne.
+ */
+function renderExileBox(host, wrap, view, session, { onCardClick, hover, onCardDoubleClick } = {}) {
+  const entries = view.zones?.exile ?? [];
+  if (wrap) wrap.hidden = entries.length === 0;
+  if (!host || entries.length === 0) return 0;
+  // Agregacja: karty Gracza przed kartami Bota, wewnątrz — po źródle
+  // wygnania (stabilne sortowanie zachowuje chronologię arraya).
+  const sorted = [...entries].sort((a, b) =>
+    String(a.controllerId).localeCompare(String(b.controllerId))
+    || String(a.exiledBy ?? '').localeCompare(String(b.exiledBy ?? '')));
+  for (const object of sorted) {
+    const cell = div(host, 'zone-card');
+    tile(cell, cardInfo(session, object), { session, onCardClick, hover, onCardDoubleClick });
+    const badges = div(cell, 'zone-badges');
+    for (const line of exileBadges(session, object)) div(badges, 'zone-badge', line);
   }
-  // onCardDoubleClick przekazywany jawnie (zgłoszenie 2026-08-06, poboczne):
-  // bez tego z exile nie dało się otworzyć pełnego ekranu karty dwuklikiem.
-  for (const object of pile) tile(host, cardInfo(session, object), { session, onCardClick, hover, onCardDoubleClick });
+  return entries.length;
 }

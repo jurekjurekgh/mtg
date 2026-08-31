@@ -517,6 +517,8 @@ export function zoneLabel(zone) {
  */
 export const KEYWORD_EVENT_LABELS = Object.freeze({
   toxic: 'toksyczny (combat damage graczowi = poison)',
+  // M258/F3 (CR 702.21): kwantyfikator dopłaty dokleja etykieta zdarzenia.
+  ward: 'ward (przeciwnik dopłaca albo czar skontrowany)',
   echo: 'echo (zapłać w swoim upkeepie albo poświęć)',
   fabricate: 'fabricate (liczniki +1/+1 albo tokeny Servo)',
   haste: 'pośpiech', flying: 'latanie', trample: 'zadeptywanie', reach: 'zasięg',
@@ -1490,6 +1492,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'counter_pay_resolved': return e.paid
         ? `${nameOf(e.cardId)}: kontroler płaci — czar zostaje na stosie`
         : `${nameOf(e.cardId)}: bez zapłaty — czar skontrowany`;
+      // M258/F3 — ward (CR 702.21): decyzja dopłaty przy celowaniu w
+      // permanent z ward; skontrowany czar/zdolność też trafia do logu.
+      case 'ward_choice_required': return `${nameOf(e.cardId)} celuje w ${nameOfObject(e.wardSourceId)} — ward: zapłać {${e.amount}} albo czar skontrowany (${decisionOwnerNote(e.playerId)})`;
+      case 'ward_pay_resolved': return e.paid
+        ? `${nameOf(e.cardId)}: kontroler płaci {${e.amount}} — ward ominięty, czar zostaje`
+        : `${nameOf(e.cardId)}: bez zapłaty — skontrowany przez ward`;
       case 'pay_or_sacrifice_resolved': {
         // M184/Z5: przy poświęceniu obiekt już zmienił id (grób) — nazwa
         // z cardId (LKI), fallback na nameOfObject dla starych zdarzeń.
@@ -1701,15 +1709,24 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'exploit_choice_resolved': return e.skipped
         ? `Exploit: ${whoN(e.playerId)} nie poświęca — zdolność odpada`
         : null; // poświęcenie opisuje linia „exploited"
-      case 'fertile_thicket_reveal_started': return `${srcName(e)}${whoN(e.controllerId)} odsłania ${e.cardCount} ${polishPlural(e.cardCount, 'kartę', 'karty', 'kart')} z wierzchu biblioteki (bazowych landów: ${e.basicLandCount})`;
+      // M260/A (zgłoszenie właściciela z PR #89): Oracle mówi „you may LOOK
+      // AT the top five" — oglądanie jest PRYWATNE, więc log nie ujawnia
+      // ani kart, ani liczby basic landów (wyciek do przeciwnika). Jawny
+      // jest wyłącznie odsłonięty basic land („reveal up to one").
+      case 'fertile_thicket_reveal_started': return `${srcName(e)}${whoN(e.controllerId)} może zajrzeć w ${e.cardCount} ${polishPlural(e.cardCount, 'kartę', 'karty', 'kart')} z wierzchu biblioteki`;
       case 'fertile_thicket_resolved': return e.skipped
-        ? `${srcName(e)}${whoN(e.controllerId)} odkłada wszystkie odsłonięte karty na spód`
-        : `${srcName(e)}${whoN(e.controllerId)} kładzie wybranego landa na wierzch, resztę na spód`;
+        ? `${srcName(e)}${whoN(e.controllerId)} rezygnuje z zaglądania do biblioteki`
+        : e.chosenCardId == null
+          ? `${srcName(e)}${whoN(e.controllerId)} nie odsłania landa — obejrzane karty na spód biblioteki`
+          : `${srcName(e)}${whoN(e.controllerId)} odsłania ${nameOfObject(e.chosenCardId)} — na wierzch biblioteki, reszta na spód`;
       // M201/F (zgłoszenie właściciela): mechanika nazywa się po pierwszej
       // karcie (Springbloom Druid), ale używa jej też Roiling Regrowth —
       // log pisał więc cudzą nazwę („co to za druid?”). Nazwa idzie z danych
       // zdarzenia; brak źródła = neutralny opis, nigdy zaszyta nazwa.
-      case 'springbloom_choice_required': return `${srcName(e)}${whoN(e.controllerId)} może poświęcić land`;
+      // M258/F5: Roiling Regrowth (obowiązkowe „Sacrifice a land.") nie jest
+      // „may" — log rozróżnia (oś 2: log to jedyne źródło wiedzy gracza).
+      case 'springbloom_choice_required':
+        return `${srcName(e)}${whoN(e.controllerId)} ${e.mandatory ? 'musi poświęcić ląd' : 'może poświęcić land'}`;
       // M201/C1: jeden czasownik po podmiocie (druga część jako fraza
       // rzeczownikowa) — inaczej „Poświęcasz land — szuka…”.
       // M202/C (uwaga właściciela): log mówił tylko „poświęca land”, więc przy
@@ -1857,6 +1874,23 @@ export function createSession(config) {
    * modal w klikanie bez treści (decyzja właściciela).
    */
   const botMoves = [];
+  /**
+   * M261 (zgłoszenie właściciela 2026-08-31): granica tury zamyka paczkę
+   * modala „Rozgrywka". Gdy w buforze wiszą jeszcze niepokazane zdarzenia,
+   * a zaczyna się NOWA tura, nagłówek „Tura N — …" i wszystko po nim trafia
+   * do `heldBotMoves` — tur dwóch graczy NIE doklejamy do jednego modala.
+   * Promocja held → botMoves następuje dopiero przy WZNOWIENIU gry
+   * (klik „Rozumiem" / continueBotPlay / continueArtPlay / recheckAutoPass
+   * / drain w apply), więc nowa tura otwiera ŚWIEŻY modal.
+   *
+   * `routingHeld` — kolejne wpisy lecą do held; `botTurnSplit` — granica
+   * tury wymusi pauzę (istotność w streamAutoEvents, pauza w apply).
+   * Całość istnieje TYLKO przy pauseOnBotMoves: bez pauz held nigdy nie
+   * powstaje, więc konsumenci synchroniczni widzą stare zachowanie.
+   */
+  let heldBotMoves = [];
+  let routingHeld = false;
+  let botTurnSplit = false;
   /**
    * Przebieg pełnych tur (M25): co robił gracz i bot w poprzednich turach,
    * do zasilania AI fabularnym opisem. Każda ukończona tura to rekord
@@ -2249,6 +2283,21 @@ export function createSession(config) {
     // zaraz po rozstrzygnięciu (M99). Okno zamyka turn_started (noteBotMove).
   }
 
+  /** M261: wpisy zza granicy tury czekają w held na otwarcie nowego modala. */
+  function pushBotMove(entry) {
+    (routingHeld ? heldBotMoves : botMoves).push(entry);
+  }
+
+  /**
+   * M261: promocja zatrzymanych wpisów — wywoływana przy WZNOWIENIU gry,
+   * nigdy w trakcie apply (ogon starej tury musi zdążyć opuścić bufor).
+   */
+  function promoteHeldBotMoves() {
+    if (heldBotMoves.length > 0) botMoves.push(...heldBotMoves);
+    heldBotMoves = [];
+    routingHeld = false;
+  }
+
   function noteBotMove(e) {
     trackStack(e);
     // Rejestrujemy zdarzenia z RZECZYWISTEGO ruchu bota (botActing).
@@ -2296,10 +2345,14 @@ export function createSession(config) {
     let text;
     // Nowa tura: nagłówek „Tura N — <gracz>". Zawsze (uwaga A).
     if (e.type === 'turn_started') {
+      // M261: granica tury zamyka paczkę modala. Jeśli w buforze wisi jeszcze
+      // niepokazany ogon poprzedniej tury, nagłówek nowej tury (i wszystko
+      // dalej) trafia do held — po „Rozumiem" otworzy się świeży modal.
+      if (pauseOnBotMoves && botMoves.length > 0) { routingHeld = true; botTurnSplit = true; }
       pendingBotPhase = null;
       lastBotPhaseKey = null;
       stackObjects.clear();
-      botMoves.push({ type: 'turn_started', text: `Tura ${state.turn.number} — ${who(e.playerId)}`, cardId: null });
+      pushBotMove({ type: 'turn_started', text: `Tura ${state.turn.number} — ${who(e.playerId)}`, cardId: null });
       return;
     }
     // Uwaga A (modal): pomiń library_searched bezpośrednio po
@@ -2365,7 +2418,7 @@ export function createSession(config) {
     }
     // Faza tylko razem z akcją (uwaga A).
     if (pendingBotPhase) {
-      botMoves.push(pendingBotPhase);
+      pushBotMove(pendingBotPhase);
       pendingBotPhase = null;
     }
     // Kartę do podglądu bierzemy z samego zdarzenia (cardId) albo z obiektu,
@@ -2411,7 +2464,7 @@ export function createSession(config) {
         }
       }
     }
-    botMoves.push({ type: e.type, text, cardId, hiddenDestination });
+    pushBotMove({ type: e.type, text, cardId, hiddenDestination });
   }
 
   // Filter: only record bot events in the modal
@@ -2467,7 +2520,7 @@ export function createSession(config) {
       } else if (e.type === 'object_untapped' && stunLockedObjectIds.has(e.objectId)) {
         stunLockedObjectIds.delete(e.objectId);
         significant = true;
-        botMoves.push({
+        pushBotMove({
           type: 'object_untapped',
           text: `${nameOfObject(e.objectId)} odkręca się (koniec liczników stun)`,
           cardId: e.cardId ?? null,
@@ -2478,6 +2531,10 @@ export function createSession(config) {
       // pojawia się na starcie własnej tury jak ruch bota.
       if (e.type === 'card_drawn' && e.playerId === HUMAN_ID) significant = true;
     }
+    // M261: granica tury wymusiła podział bufora — pauza jest obowiązkowa,
+    // żeby ogon starej tury zamknął modal, a nowa tura (po promocji held)
+    // otworzyła świeży. Sygnał konsumujemy tutaj (raz na granicę).
+    if (botTurnSplit) { botTurnSplit = false; significant = true; }
     return significant;
   }
 
@@ -2752,6 +2809,11 @@ export function createSession(config) {
         (m) => m.type === 'turn_started' && m.text?.startsWith(`Tura ${state.turn.number} — `),
       );
       botMoves.length = 0;
+      // M261: jeśli przy wznowieniu (klik „Rozumiem") nie zdążył zadziałać
+      // żaden continue*, promujemy zatrzymany nagłówek tury tutaj — held
+      // jest starsze niż zdarzenia tej komendy, więc trafia do bufora jako
+      // pierwsze (chronologia: „Tura N — …" przed skutkami komendy).
+      promoteHeldBotMoves();
       // Konsument nie powinien aplikować komendy w trakcie pauzy (UI blokuje
       // ją modalem) — po UDANEJ komendzie niedokończoną pauzę ignorujemy
       // i gramy dalej.
@@ -2798,13 +2860,26 @@ export function createSession(config) {
       if (currentTurnHeader) {
         botMoves.unshift(currentTurnHeader);
       }
-      if (ownDraw && pauseOnBotMoves && !awaitingBotAck) awaitingBotAck = true;
+      // M261: granica tury w trakcie tej komendy też zamyka paczkę modala —
+      // ogon starej tury czeka na „Rozumiem", a nowa tura otworzy świeży
+      // modal dopiero po promocji held (advance w continueBotPlay). Sygnał
+      // konsumujemy tutaj, żeby nie wyciekł do kolejnej komendy.
+      const turnSplitPause = botTurnSplit;
+      botTurnSplit = false;
+      if (pauseOnBotMoves && (ownDraw || turnSplitPause) && !awaitingBotAck) awaitingBotAck = true;
       // M254/C: `artPause` mówi UI, że po tej komendzie czeka warstwa grafik
       // (nie otwieraj modala „Ruch bota" — gracz ogląda teraz ilustracje).
       return { ok: true, botPause: awaitingBotAck, artPause: awaitingArtAck, ...(internalError ? { internalError } : {}) };
     },
     /** Sesja czeka na potwierdzenie istotnego zagraniu bota (klik gracza). */
     get botPausePending() { return awaitingBotAck; },
+    /**
+     * M261: bieżąca pauza zamyka paczkę na GRANICY TURY — bufor trzyma
+     * ogon starej tury, a nagłówek nowej („Tura N — …") czeka w held i
+     * otworzy świeży modal dopiero po „Rozumiem". Prawdziwe iff held
+     * niepuste przy pauzie: bez granicy held jest zawsze puste.
+     */
+    get botPauseAtTurnBoundary() { return awaitingBotAck && routingHeld; },
     /** M254/C: gra wstrzymana przez warstwę grafik (tryb wysoko-graficzny). */
     get artPausePending() { return awaitingArtAck; },
     /**
@@ -2815,6 +2890,8 @@ export function createSession(config) {
     continueArtPlay() {
       if (!awaitingArtAck) return { ok: true, artPause: false, botPause: awaitingBotAck };
       awaitingArtAck = false;
+      // M261: wznowienie po warstwie grafik promuje zatrzymaną granicę tury.
+      promoteHeldBotMoves();
       const internalError = advanceGuarded();
       return { ok: true, artPause: awaitingArtAck, botPause: awaitingBotAck, ...(internalError ? { internalError } : {}) };
     },
@@ -2825,6 +2902,10 @@ export function createSession(config) {
      */
     continueBotPlay() {
       if (!awaitingBotAck) return { ok: true, botPause: false };
+      // M261: „Rozumiem" zamyka modal ogona starej tury — dopiero teraz
+      // nagłówek nowej tury (i jej zdarzenia) wchodzi do bufora, więc
+      // świeży modal otworzy się wyłącznie nową turą.
+      promoteHeldBotMoves();
       const internalError = advanceGuarded();
       return { ok: true, botPause: awaitingBotAck, ...(internalError ? { internalError } : {}) };
     },
@@ -2835,6 +2916,9 @@ export function createSession(config) {
      * nadal wymaga decyzji.
      */
     recheckAutoPass() {
+      // M261: defensywnie — auto-pass po zmianie wyciszeń też jest wznowieniem
+      // (gdyby held czekało, routing zablokowałby bufor na stałe).
+      promoteHeldBotMoves();
       const internalError = advanceGuarded();
       return { ok: true, botPause: awaitingBotAck, ...(internalError ? { internalError } : {}) };
     },
@@ -2857,6 +2941,11 @@ export function createSession(config) {
       // Bufor modala mógł napełnić się przy startowym advance() świeżej
       // sesji (startGame) — wznowienie pokazuje wyłącznie akcję po zapisie.
       botMoves.length = 0;
+      // M261: zatrzymana granica tury ze starej partii nie ma sensu po
+      // wznowieniu — held czyścimy razem z buforem.
+      heldBotMoves = [];
+      routingHeld = false;
+      botTurnSplit = false;
       advance();
       return { steps: replay.commands.length, status: state.status };
     },

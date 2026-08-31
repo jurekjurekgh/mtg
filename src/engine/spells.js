@@ -517,8 +517,9 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   const baseMana = (object.plotted || object.suspendReady || freeImpulse) ? 0 : effectiveSpellManaCost(state, object);
   const altManaExtra = (sacrificeCost && payAltCost) ? (orPayMana ?? 0) : 0;
   // Pip phyrexian płacony maną to pełna jednostka many (CR 118.9); pipy
-  // opłacone życiem nie biorą udziału w koszcie many.
-  const manaSpent = baseMana + altManaExtra + (phyrexianSymbols - lifePaid);
+  // opłacone życiem nie biorą udziału w koszcie many. M259/B3: baseMana
+  // (object.manaCost) zawiera już symbole phyrexian — odejmujemy lifePaid.
+  const manaSpent = baseMana + altManaExtra - lifePaid;
   if (2 * lifePaid > (player.life ?? 0)) throw new Error('Niewystarczające życie');
   spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId, lifePaid), spellManaPurpose(object));
   if (lifePaid > 0) changeLife(state, playerId, -2 * lifePaid);
@@ -1863,6 +1864,10 @@ function resolvePermanentSpell(state, stackId, object, before) {
       // ten sam co w transform_permanent i crafcie: niesie też `kind`/`types`,
       // więc strona nocna zmieniająca rodzaj permanentu nie gubi typu.
       ...transformedCharacteristics(target, permanent),
+      // CR 202.3b (M258/Etap 2.3b): ta sama reguła MV co transform/craft —
+      // payload niesie koszt przedni, aplikujemy go przy wejściu nocną
+      // stroną (no-op dla zwykłych DFC, spread trzyma ten sam koszt).
+      manaCost: target.manaCost ?? permanent.manaCost ?? 0,
       transformTo: {
         cardId: permanent.cardId,
         cardName: permanent.cardName,
@@ -1873,6 +1878,7 @@ function resolvePermanentSpell(state, stackId, object, before) {
         keywords: permanent.keywords ?? [],
         subtypes: permanent.subtypes ?? [],
         types: permanent.types ?? [],
+        manaCost: permanent.manaCost ?? 0,
       },
     });
     state.objects.set(newId, nightbound);
@@ -1889,6 +1895,8 @@ function resolvePermanentSpell(state, stackId, object, before) {
     state.delayedTriggers.push({
       type: 'exile_object', objectId: newId, playerId: enteredNow.controllerId,
       armedOnTurn: state.turn.number, anyPlayerEndStep: true, warp: true,
+      // M262: badge mechaniki — „Wygnane: Warp".
+      exiledBy: 'warp',
     });
   }
   // Wejście na pole bitwy — DOKŁADNIE jedno zdarzenie wejścia (jak
@@ -2020,7 +2028,8 @@ export function plotCard(state, playerId, objectId) {
   }
   spendMana(state, playerId, object.plot.cost ?? 0, plotColors);
   const exileId = `exile-${state.objectSequence++}`;
-  const moved = moveObjectDirectly(state, objectId, 'exile', exileId);
+  // M262: plot (CR 702.168a) — badge mechaniki „Wygnane: Plot".
+  const moved = moveObjectDirectly(state, objectId, 'exile', exileId, { exiledBy: 'plot' });
   const plotted = Object.freeze({ ...moved, plotted: true, plottedAtTurn: state.turn.number });
   state.objects.set(exileId, plotted);
   const plottedEvent = event('card_plotted', {
@@ -2056,7 +2065,8 @@ export function suspendCard(state, playerId, objectId) {
   }
   spendMana(state, playerId, object.suspend.cost ?? 0, suspendColors);
   const exileId = `exile-${state.objectSequence++}`;
-  const moved = moveObjectDirectly(state, objectId, 'exile', exileId);
+  // M262: suspend (CR 702.62a) — badge mechaniki „Wygnane: Suspend".
+  const moved = moveObjectDirectly(state, objectId, 'exile', exileId, { exiledBy: 'suspend' });
   const suspended = Object.freeze({
     ...moved, suspended: true, timeCounters: object.suspend.timeCounters ?? 4,
   });
@@ -2179,8 +2189,11 @@ export function legalSpellCasts(state, playerId) {
       }
       const base = effectiveSpellManaCost(state, object);
       const out = [];
+      // M259/B3: base (manaCost) zawiera symbole phyrexian — wariant k płaci
+      // base - k many + 2k życia (dotąd base +(symbols-k) przy manaCost bez
+      // symboli).
       for (let k = 0; k <= phyrexianSymbols; k += 1) {
-        if (base + (phyrexianSymbols - k) > manaAvailable(object)) continue;
+        if (base - k > manaAvailable(object)) continue;
         if (2 * k > (player.life ?? 0)) continue;
         if (!hasColorForSpell(state, playerId, object.cardId, k)) continue;
         out.push(k);
@@ -2291,7 +2304,9 @@ export function legalSpellCasts(state, playerId) {
         const baseCost = effectiveSpellManaCost(state, object);
         const bbCost = object.spell.buyback.cost ?? 0;
         for (const k of spellPhyrexianVariants) {
-          const pipMana = k == null ? 0 : (phyrexianSymbols - k);
+          // M259/B3: manaCost zawiera symbole phyrexian — wariant k obniża
+          // łączny koszt dokładnie o k jednostek (płacone życiem).
+          const pipMana = k == null ? 0 : -k;
           if (baseCost + bbCost + pipMana > manaAvailable(object)) continue;
           const cast2 = { objectId: id, targets: [], buyback: true };
           if (k != null) cast2.phyrexianPayWithLife = k;
@@ -2712,7 +2727,9 @@ export function resolveEscapeExile(state, playerId, exileIds) {
   state.spellsCastThisTurn += 1;
   for (const exId of exileIds) {
     const exileId = `exile-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, exId, 'exile', exileId);
+    // M262: escape (CR 702.26) — karta wygania materiał z grobu; źródłem
+    // jest karta uciekająca („Wygnane: <ta sama karta>", decyzja właściciela).
+    const moved = moveObjectDirectly(state, exId, 'exile', exileId, { exiledBy: object.cardId });
     state.events.push(event('object_moved', { fromId: exId, object: moved, fromZone: 'graveyard', toZone: 'exile', escape: true }));
   }
   const stackId = `spell-${state.objectSequence++}`;

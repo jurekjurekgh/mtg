@@ -60,7 +60,8 @@ function tileText(cardId, kind) {
   }]);
   const els = {};
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn',
-    'exileZone', 'hand', 'handEnemy', 'handEnemyLabel', 'waitingZone', 'waitingWrap', 'actions', 'log']) {
+    'exileZone', 'hand', 'handEnemy', 'handEnemyLabel', 'actions', 'log',
+    'graveOwnWrap', 'exileZoneWrap', 'graveEnemyWrap']) {
     els[key] = new MiniEl(`#${key}`);
   }
   renderTableView({ els, session: minisession(view), play: () => {}, onCardClick: () => {} });

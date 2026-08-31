@@ -175,6 +175,16 @@ export function lookWizardKindOf(request, view) {
     }
     return 'index';
   }
+  // M260/A: Fertile Thicket — decyzja „zaglądnąć?” musi zapaść PRZED
+  // pokazaniem kart, więc zwykła lista opcji (z nazwami landów w etykietach)
+  // psuje „you may look”. Wizard dostaje karty z pendingFertileThicket.
+  if (type === 'resolve_fertile_thicket') {
+    const pending = view?.pendingFertileThicket;
+    if (!pending || pending.playerId !== view?.playerId || !Array.isArray(pending.cards) || pending.cards.length === 0) {
+      return null;
+    }
+    return 'fertile';
+  }
   if (type !== 'resolve_surveil' && type !== 'resolve_scry') return null;
   const pending = type === 'resolve_surveil' ? view?.pendingSurveil : view?.pendingScry;
   if (!pending || pending.playerId !== view?.playerId || !Array.isArray(pending.cards) || pending.cards.length === 0) {
@@ -341,6 +351,166 @@ export function renderLookWizard(host, { kind, cards, onComplete, onCancel, prob
     return host;
   }
   stepCard(0);
+  return host;
+}
+
+// =============================================================================
+// M260/A (uwaga właściciela z testów PR #89): Fertile Thicket — wizard
+// „zaglądnij → wybierz basic land → ułóż resztę na spodzie”.
+// =============================================================================
+
+/**
+ * Wizard decyzji Fertile Thicket (BFZ). Oracle: „you may LOOK AT the top five
+ * cards of your library. If you do, reveal up to one BASIC LAND card from
+ * among them, then put that card on top of your library and the rest on the
+ * bottom in any order.”
+ *
+ * Trzy kroki (zgłoszenie A1/A2/A3):
+ *  1. „Zaglądnij?” — decyduje O PATRZENIU, zanim UI pokaże JAKĄKOLIWIEK
+ *     nazwę karty (inaczej rezygnacja jest pozorna: gracz i tak widział
+ *     Mountain/Island w etykietach opcji).
+ *  2. Po zajrzeniu — pełna lista obejrzanych kart (klikalne nazwy) +
+ *     przycisk „<basic land> na wierzch biblioteki” dla KAŻDEGO basic landa
+ *     (nie-basic landy i nie-landy nie są do wzięcia — A2) + „Bez basic
+ *     landa” (cała piątka na spód).
+ *  3. Sorter kolejności spodu — klikana od najbliższej wierzchu, dokładnie
+ *     jak kolejność wierzchu w wizardzie scry/surveil (A3; engine waliduje
+ *     permutację `bottomOrder`).
+ *
+ * Kończy się onComplete: { skip: true } | { chosenCardId, bottomOrder }.
+ * chosenCardId może być null („bez landa”) — wtedy bottomOrder to cała piątka.
+ */
+export function renderFertileThicketWizard(host, { cards, basicLandIds = [], sourceName = null, onComplete, onCancel, onOpenCard = null, probeKeyFor = null }) {
+  const list = Array.isArray(cards) ? cards.slice() : [];
+  const basic = new Set(basicLandIds);
+  const bottomOrder = [];
+  let chosenCardId = null;
+
+  // M212/ADR 0002: nazwa karty przychodzi z DANYCH (sourceName ←
+  // pendingFertileThicket.sourceCardId); fallback opisuje mechanikę, nie kartę.
+  const title = sourceName ?? 'Zajrzenie w wierzch biblioteki';
+
+  const renderLookedCards = (mark) => {
+    const looked = choiceNode(host, 'div', 'look-wizard-cards');
+    list.forEach((card, index) => {
+      const row = choiceNode(looked, 'div', 'look-wizard-card', `\n${index + 1}. `);
+      if (onOpenCard && card.cardId) {
+        const nameSpan = choiceNode(row, 'span', 'look-wizard-card-name log-card', card.name);
+        nameSpan.dataset.cardId = card.cardId;
+        nameSpan.addEventListener('click', () => onOpenCard(card.cardId));
+      } else {
+        choiceNode(row, 'span', '', card.name ?? '');
+      }
+      // A2: basic landy oznaczone — gracz widzi, które może położyć na wierzch.
+      if (basic.has(card.id)) choiceNode(row, 'span', '', ' · basic land');
+      const suffix = mark === card.id ? ' → wierzch' : bottomOrder.includes(card.id)
+        ? ` → spód (${bottomOrder.indexOf(card.id) + 1}.)`
+        : '';
+      if (suffix) choiceNode(row, 'span', '', suffix);
+    });
+  };
+
+  const renderCancel = () => {
+    const cancel = choiceNode(host, 'button', 'ghost-btn look-wizard-cancel', 'Zamknij (dokończysz później)');
+    cancel.type = 'button';
+    cancel.addEventListener('click', () => onCancel?.());
+  };
+
+  /** Ostatni krok sortera: przycisk zna już CAŁĄ komendę (jak M136). */
+  const finish = () => {
+    onComplete?.({ chosenCardId, bottomOrder: [...bottomOrder] });
+  };
+  const probeKeyOfFinish = () => (probeKeyFor
+    ? probeKeyFor({ chosenCardId, bottomOrder: [...bottomOrder] })
+    : null);
+
+  // Krok 1 — decyzja o ZAGLĄDNIĘCIU (bez zdradzania kart).
+  const stepLook = () => {
+    clearChoiceElement(host);
+    choiceNode(host, 'div', 'choice-request-intro',
+      `${title} — możesz zajrzeć w ${list.length} ${polishPluralCount(list.length, 'kartę', 'karty', 'kart')} z wierzchu biblioteki.\n`);
+    const options = choiceNode(host, 'div', 'choice-request-options');
+    const look = choiceNode(options, 'button', 'action choice-request-option', 'Zaglądnij (obejrzyj karty)');
+    look.type = 'button';
+    look.addEventListener('click', () => stepChooseLand());
+    const decline = choiceNode(options, 'button', 'action choice-request-option', 'Zrezygnuj — nie zaglądam');
+    decline.type = 'button';
+    // „Zrezygnuj” domyka decyzję od razu — klucz sondy znany (M112).
+    const declineKey = probeKeyFor ? probeKeyFor({ skip: true }) : null;
+    if (declineKey && decline.dataset) decline.dataset.optionKey = declineKey;
+    decline.addEventListener('click', () => onComplete?.({ skip: true }));
+    renderCancel();
+  };
+
+  // Krok 2 — wybór basic landa na wierzch (albo nic).
+  const stepChooseLand = () => {
+    clearChoiceElement(host);
+    choiceNode(host, 'div', 'choice-request-intro', `Obejrzane karty (wybierz basic land na wierzch):\n`);
+    renderLookedCards(null);
+    const options = choiceNode(host, 'div', 'choice-request-options');
+    for (const card of list) {
+      if (!basic.has(card.id)) continue;
+      const button = choiceNode(options, 'button', 'action choice-request-option',
+        `${card.name} na wierzch biblioteki`);
+      button.type = 'button';
+      button.addEventListener('click', () => {
+        chosenCardId = card.id;
+        bottomOrder.length = 0;
+        stepBottomOrder();
+      });
+    }
+    const none = choiceNode(options, 'button', 'action choice-request-option',
+      'Bez basic landa — wszystko na spód');
+    none.type = 'button';
+    none.addEventListener('click', () => {
+      chosenCardId = null;
+      bottomOrder.length = 0;
+      stepBottomOrder();
+    });
+    renderCancel();
+  };
+
+  // Krok 3 — kolejność reszty na spodzie („in any order”, A3).
+  const stepBottomOrder = () => {
+    const remaining = list.map((c) => c.id).filter((id) => id !== chosenCardId);
+    if (remaining.length <= 1) {
+      // 0/1 karta — permutacja trywialna, pytanie nic nie wnosi.
+      bottomOrder.push(...remaining);
+      finish();
+      return;
+    }
+    clearChoiceElement(host);
+    choiceNode(host, 'div', 'choice-request-intro',
+      chosenCardId != null
+        ? `${list.find((c) => c.id === chosenCardId)?.name ?? 'Wybrany land'} na wierzch biblioteki. Odłóż pozostałe na spód — wybieraj po kolei (pierwsza wybrana będzie najbliżej wierzchu):\n`
+        : 'Odłóż obejrzane karty na spód — wybieraj po kolei (pierwsza wybrana będzie najbliżej wierzchu):\n');
+    renderLookedCards(chosenCardId);
+    const options = choiceNode(host, 'div', 'choice-request-options');
+    for (const id of remaining) {
+      if (bottomOrder.includes(id)) continue;
+      const card = list.find((c) => c.id === id);
+      const pos = bottomOrder.length + 1;
+      const button = choiceNode(options, 'button', 'action choice-request-option',
+        `${pos}. na spód: ${card?.name ?? id}`);
+      button.type = 'button';
+      const finishesNow = bottomOrder.length + 1 === remaining.length;
+      if (finishesNow) {
+        const key = probeKeyOfFinish();
+        if (key && button.dataset) button.dataset.optionKey = key;
+        button.addEventListener('click', () => { bottomOrder.push(id); finish(); });
+      } else {
+        button.addEventListener('click', () => { bottomOrder.push(id); stepBottomOrder(); });
+      }
+    }
+    renderCancel();
+  };
+
+  clearChoiceElement(host);
+  if (list.length === 0) {
+    choiceNode(host, 'div', 'zone-empty', 'Brak kart do decyzji.');
+    return host;
+  }
+  stepLook();
   return host;
 }
 

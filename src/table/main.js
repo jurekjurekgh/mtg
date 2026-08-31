@@ -32,7 +32,7 @@ import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
-import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard } from './choice-request.js';
+import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderFertileThicketWizard } from './choice-request.js';
 import { multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf } from './multi-target.js';
 import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 
@@ -109,13 +109,15 @@ function bootstrapTable() {
     graveEnemy: el('grave-enemy'),
     graveOwn: el('grave-own'),
     exileZone: el('exile-zone'),
+    // M262 (reforma stref): cmentarze i wygnanie są BOKSAMI NA STOLE —
+    // wrap chowa pusty boks (inspektor stref i poczekalnia usunięte).
+    graveOwnWrap: el('grave-own-wrap'),
+    exileZoneWrap: el('exile-zone-wrap'),
+    graveEnemyWrap: el('grave-enemy-wrap'),
     hand: el('hand'),
-    // M201/B + A2 (zgłoszenia właściciela): ręka bota (rewersy) i poczekalnia
-    // wygnania (suspend/plot/impuls) — sekcje stołu, nie inspektora stref.
+    // M201/B (zgłoszenie właściciela): ręka bota (rewersy) — sekcja stołu.
     handEnemy: el('hand-enemy'),
     handEnemyLabel: el('hand-enemy-label'),
-    waitingZone: el('waiting-zone'),
-    waitingWrap: el('waiting-wrap'),
     actions: el('actions'),
     log: el('log'),
     turnHistory: el('turn-history'),
@@ -414,6 +416,29 @@ function bootstrapTable() {
       return;
     }
     const lookKind = lookWizardKindOf(request, choiceView);
+    // M260/A (uwaga właściciela z PR #89): Fertile Thicket — decyzja
+    // „zaglądnij?” musi zapaść PRZED pokazaniem kart, dlatego osobny wizard
+    // (look-wizard scry od razu pokazuje karty — tam „look” jest obowiązkowy).
+    if (lookKind === 'fertile') {
+      const pending = choiceView.pendingFertileThicket;
+      renderFertileThicketWizard(els.choiceRequestBody, {
+        cards: pending.cards.map((card) => ({ id: card.id, cardId: card.cardId, name: session.nameOf(card.cardId) })),
+        basicLandIds: pending.basicLandIds ?? [],
+        // M201/F: nazwa karty z danych (ADR 0002) — intro nazywa źródło decyzji.
+        sourceName: pending.sourceCardId ? session.nameOf(pending.sourceCardId) : null,
+        onOpenCard: (cardId) => openCardFullscreenByCardId(cardId),
+        // M112: klucz sondy dla kliknięć DOMYKAJĄCYCH wizard (rezygnacja,
+        // ostatnia karta sortera) — krok pośredni uczciwie bez klucza.
+        probeKeyFor: (built) => commandOptionKey({ type: 'resolve_fertile_thicket', playerId: choiceView.playerId, ...built }),
+        onComplete: (built) => {
+          hideModal('choice-request');
+          play({ type: 'resolve_fertile_thicket', playerId: choiceView.playerId, ...built });
+        },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
     if (lookKind) {
       const pending = lookKind === 'surveil' ? choiceView.pendingSurveil
         : lookKind === 'index' ? choiceView.pendingIndex
@@ -1698,12 +1723,10 @@ function bootstrapTable() {
     });
     refreshResumePanel();
     // M197/A5: sekcja „Biblioteka — podgląd topu (syntetyczny)" usunięta.
-    // M198/D: inspektor otwiera osobny, wycentrowany przycisk pod boksami.
-    el('zone-inspector-open')?.addEventListener('click', () => showModal('library-menu-panel'));
+    // M262: inspektor stref usunięty — cmentarze i wygnanie widać na stole.
     // M198/B: zamknięcie komunikatu (guzik „Rozumiem" i ✕).
     el('notice-ok')?.addEventListener('click', () => hideModal('notice'));
     el('notice-close')?.addEventListener('click', () => hideModal('notice'));
-    el('zone-inspector-close').addEventListener('click', () => hideModal('library-menu-panel'));
     el('card-preview-close').addEventListener('click', () => hideModal('card-preview'));
     el('context-menu-close').addEventListener('click', () => hideModal('context-menu'));
     el('choice-request-close').addEventListener('click', () => hideModal('choice-request'));
@@ -1787,7 +1810,7 @@ function bootstrapTable() {
     // Klik w tlo warstwy (poza karta modala) zamyka ja; modal ruchu bota
     // PAUZUJE (closeBotMoveModalPause) — klik w tlo to gest „zamknij,
     // pauzuj", taki sam jak X. Wznowienie jest w „Rozumiem" (osobny handler).
-    for (const modalId of ['library-menu-panel', 'card-preview', 'context-menu', 'choice-request', 'bot-move', 'mana-wizard']) {
+    for (const modalId of ['card-preview', 'context-menu', 'choice-request', 'bot-move', 'mana-wizard']) {
       const modal = el(modalId);
       modal.addEventListener('click', (event) => {
         if (event.target !== modal) return;

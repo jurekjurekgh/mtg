@@ -40,6 +40,7 @@ dokument opisuje kontekst, wybór i jego konsekwencje.
 | [0023](0023-decks-per-plan-and-benchmark-sample.md) | Talie per PLAN (worki dla małych planów), singleton, landy 1:2; testy i benchmark na stałej próbce | Zaakceptowana |
 | [0024](0024-deck-split-by-colors-and-rotating-benchmark.md) | Podział talii planowej ≥30 kart nielandowych po kolorach (tożsamość bezkolorowych z produkcji many); rotująca auto-próbka benchmarku | Zaakceptowana |
 | [0025](0025-benchmark-match-budget-not-all-combinations.md) | Pełna macierz benchmarku pod budżet meczów (~6 000), nie pod wszystkie kombinacje; próbka par talii skaluje się z katalogiem | Zaakceptowana |
+| [0026](0026-zones-on-table-exiledby-contract.md) | Strefy dodatkowe na stole (boksy cmentarzy i wygnania) zamiast inspektora i poczekalni; kontrakt `meta.exiledBy` — źródło wygnania stemplowane w choke poincie zmian stref | Zaakceptowana |
 
 ## Gdzie zapisać regułę (ADR vs LESSONS vs handoff)
 

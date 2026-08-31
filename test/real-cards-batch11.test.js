@@ -179,7 +179,8 @@ test('Batch 11: sześć kart ma właściwe dane i status supported', () => {
     ['underdark-explorer', 5, 3, 5],
     ['angels-feather', null, null, 2],
     ['release-the-ants', null, null, 2],
-    ['porcelain-legionnaire', 3, 1, 2],
+    // M259/B3: {2}{W/P} = mana value 3 (konwencja pełnego MV w manaCost).
+    ['porcelain-legionnaire', 3, 1, 3],
     ['curate', null, null, 2],
     ['canonized-in-blood', null, null, 2],
   ];

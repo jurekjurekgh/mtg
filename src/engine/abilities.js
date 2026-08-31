@@ -1534,7 +1534,11 @@ export function performActivation(state, ctx) {
   // wygnanie źródła z grobu jest kosztem — następuje PRZED efektem.
   if (cost.exileFromGraveyard) {
     const exileId = `exile-${state.objectSequence++}`;
-    const exiled = moveObjectDirectly(state, objectId, 'exile', exileId);
+    // M262: karta wygania SAMĄ SIEBIE jako koszt — badge „Wygnane: <ta sama
+    // karta>" (decyzja właściciela o self-exile).
+    const exiled = moveObjectDirectly(state, objectId, 'exile', exileId, {
+      exiledBy: state.objects.get(objectId)?.cardId ?? 'effect',
+    });
     state.events.push(event('object_exiled', { fromId: objectId, objectId: exileId, object: exiled, cardId: exiled.cardId, fromGraveyard: true }));
     effectSource = exiled;
   }
@@ -1671,6 +1675,10 @@ export function queueActivatedAbilityToStack(state, { playerId, objectId, abilit
   const stackGrantKeywords = collectGrantKeywords(stackEffectList);
   const activated = event('ability_activated', {
     playerId, objectId: effectSourceId, cardId: entry.cardId, abilityIndex,
+    // M258/F3 (ward): id WPISU na stosie — trigger ward musi wiedzieć, co
+    // kontrować przy odmowie zapłaty (zdarzenie niesie cele, ale nie id
+    // obiektu stosu; objectId to źródło zdolności, nie wpis).
+    stackEntryId: id,
     keyword: ability.keyword ?? null,
     effectTypes: stackEffectList.map((e) => e?.type).filter(Boolean),
     // M150/C2: kolory wyprodukowanej many w logu.

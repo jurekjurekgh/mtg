@@ -18,7 +18,21 @@ export function createCardInstance({ id, cardId, ownerId }) {
   return Object.freeze({ id, cardId, ownerId });
 }
 
-export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', echo = null, chooseColor = null, power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, entersWithCountersIf = null, keywords = [], subtypes = [], transformTo = null, frontFaceId = null, types = [], entersTapped = false, entersTappedCondition = null, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, exploit = null, treasureAltCost = null, cardName = null, name = null, isToken = false, bloodthirst = null, renown = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false }) {
+/**
+ * CR 202.3b (M258): koszt many (proxy MV) KOPII obiektu gry. Permanent z tyłem
+ * karty dwustronnej w górę sam nosi koszt przedniej strony (712.8e — transform
+ * kosztu nie zmienia), ale jego kopia ma MV 0 („...the mana value of the copy
+ * is 0"). Wykrywanie tyłu: cardId ≠ frontFaceId. Jedna reguła dla wszystkich
+ * ścieżek kopiowania (token-kopia Cogworka, „enter as copy" Jwari, token_clone
+ * Moonlit Meditation — L11/L48: jedna reguła, wiele ścieżek).
+ */
+export function copyManaValueOf(source) {
+  if (!source) return 0;
+  if (source.frontFaceId && source.cardId !== source.frontFaceId) return 0;
+  return source.manaCost ?? 0;
+}
+
+export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', echo = null, echoColors = null, chooseColor = null, power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, entersWithCountersIf = null, keywords = [], subtypes = [], transformTo = null, frontFaceId = null, types = [], entersTapped = false, entersTappedCondition = null, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, ward = null, exploit = null, treasureAltCost = null, cardName = null, name = null, isToken = false, bloodthirst = null, renown = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false }) {
   if (!id || !instanceId || !cardId || !controllerId || !zone) {
     throw new TypeError('Obiekt gry wymaga id, instanceId, cardId, controllerId i zone');
   }
@@ -80,6 +94,10 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     reboundCast: Boolean(reboundCast),
     reboundReady: Boolean(reboundReady),
     entersWithCountersIf: entersWithCountersIf ? Object.freeze({ ...entersWithCountersIf }) : null,
+    // M258/F3 (CR 702.21): kwota Ward — ile many musi dopłacić przeciwnik
+    // celujący, żeby czar/zdolność nie został skontrowany. null = brak
+    // warda; keyword 'ward' niesie display, kwotę czyta wardAmountOf.
+    ward: ward ?? null,
     keywords: Object.freeze([...keywords]), subtypes: Object.freeze([...subtypes]),
     transformTo,
     // M257/K5 (CR 711.4a): id twarzy PRZEDNIEJ pary transform — engine resetuje
@@ -187,6 +205,9 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // Batch 46 (Bone Shredder) — ECHO (CR 702.29): koszt echa z karty oraz
     // znacznik „nieopłacone echo" stawiany przy wejściu na pole bitwy.
     echo: echo ?? null,
+    // M259/B7 (CR 702.29 + 118.2): pipy kolorowe kosztu echa ({2}{B} Bone
+    // Shreddera) — echoColors idzie przez strefy razem z kwotą.
+    echoColors: echoColors ?? null,
     echoUnpaid: false,
     // Batch 46 (Manor Gate): deskryptor wyboru koloru przy wejściu + wybrany
     // kolor (ustawiany przez resolve_color_choice; czyta go zdolność many).

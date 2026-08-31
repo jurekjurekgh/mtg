@@ -6959,6 +6959,172 @@ powstała przez literówkę w nazwie talii w skrypcie przebiegu.
 **Weryfikacja:** `npm test` **3725/3725** (+18), build 56 modułów / 2893.8 kB,
 11 mutacji (MUT11 = mutant równoważny, opisany w raporcie). Nowa lekcja **L91**.
 
+## 2026-08-30 — M258: Etap 2 pętli jakości (PR #89) — K2 + Żywy Tester na nowej puli
+
+**Zakres:** fix K2 z audytu M257 (koszt kafelka tylnej twarzy DFC) + pełna
+runda Żywego Testera na puli kart niewidzianej w cyklu PR #88 + naprawy
+znalezisk. Audyt PR #88 i etap 1 (A1–A3) opisane wyżej w sesji z 2026-08-30.
+
+**K2 (ccba0a3):** kafel tylnej strony DFC pokazywał „0" — `cardInfo` czytał
+katalog bieżącej twarzy przed obiektem (tył nie ma wydrukowanego kosztu).
+Właściwa reguła: **CR 202.3b** (audyt M257 cytował 711.4b) — MV tylnej
+twarzy liczy się jakby miała koszt przedniej. Fix: `object.manaCost ??
+details.manaCost` (widok = publiczny MV, M149/ADR 0017). Testy K2a–c.
+
+**Żywy Tester (raport: `docs/audits/AUDYT_M258_ZYWY_TESTER_2026-08-30.md`):**
+6 partii seeds 3001–3006, profile greedy×3/explorer/defensive/random, talie
+wg priorytetu właściciela (worek-mroczny/ravnica — świeży Batch 51;
+srodziemie/mirrodin-wu; zendikar/worek-dziki — spoza BENCH_DECKS).
+0 zgłoszeń detektorów; 5 znalezisk:
+
+- **T1** (`b14a532`): sterownik run-game.mjs nie domykał kreatora
+  „cel + poświęcenie" z M257-r5/C (PR #88) — sacMode nie był NIGDY
+  przećwiczony na żywym stole (partia 3004 ginęła wyjątkiem).
+- **F1** (`3809b61`, **najcięższe**): pięć deskryptorów mechanik ginęło po
+  cichu w materializacji talii — installDeck (deck.js) ma jawną listę pól,
+  w której zabrakło echo/madness/surge/toxic/warp. W prawdziwych partiach:
+  Crawling Chorus bił bez trucizny, Bone Shredder nie pytał o echo, surge/
+  warp/madness bez ofert. Druga luka: echoUnpaid stawiane tylko w addObject
+  (helpery testowe), nigdy na realnej ścieżce stos → pole bitwy.
+  Testy przez setupCardMatch. Nowa lekcja **L93** (recydywa L21/M146).
+- **F2** (`66a5e4c`): regresja ujawniona przez F1 — odrzucanie WIELU kart
+  z madness w sekwencji zakleszczało decyzje (madness_unresolved; pełna
+  partia bota real-cards-batch3 ginęła wyjątkiem). Fix: kolejka
+  madnessQueue, promocja po zakończeniu sekwencji odrzuceń (CR 702.34a).
+- **F4+F5** (`3c7f33e`): Roiling Regrowth bez lądu na polu pomijał też
+  szukanie (instrukcja ≠ koszt, CR 101.3/608.2b) + log mówił „może
+  poświęcić" przy obowiązkowym poświęceniu (oś 2).
+- **F3 (NAPRAWIONE — `f602ee4`):** cloak bez ward {2} — po decyzji
+  właściciela („nie akceptuję żadnych limitations") ward wdrożony jako
+  pełna mechanika CR 702.21 (trigger nad czarem/zdolnością celującą,
+  decyzja resolve_ward_pay_choice, auto-kontr bez many, kontr czarów
+  i zdolności, boty, kreator many, log, kafel).
+
+**Weryfikacja:** `npm test` **3819/3819** (+9 w sesji), build 56 modułów /
+2939.9 kB; mutacyjnie: deck.js → D1–D3 czerwone, objects.js → D3 czerwone.
+
+**Etap 2.3 — CR hunting (`548ea00`):** przegląd strukturalny rodziny
+kopiowania (L11/L72) znalazł jedną klasę błędu w trzech ścieżkach — kopia
+tylnej twarzy DFC miała MV przedniej strony (CR 202.3b: ma być 0), a przez
+CICHY drop pola `manaCost` w destrukturyzacji `createBattlefieldToken`
+KAŻDY token-kopia miał MV 0 (enterAsCopy z kolei nie kopiował kosztu wcale
+— CR 707.2). Fix u root cause: `copyManaValueOf()` (identity.js) + parametr
+`manaCost` fabryki tokenów; testy C1–C4 RED→GREEN. Rodzina pay-or-sacrifice
+zweryfikowana czysta (guardowie płatności przy kolejkowaniu). Nowa lekcja
+**L94** (cichy drop pól konfiguracyjnych w fabrykach). Szczegóły:
+`docs/audits/AUDYT_M258_ZYWY_TESTER_2026-08-30.md` (rozdział Etap 2.3).
+
+**Etap 2.3b + F3 (decyzja właściciela „nie akceptuję żadnych limitations"):**
+dwie pozycje zostawione jako „ograniczenia" wdrożone jako pełne reguły —
+(1) `b481387`: MV dwustronnych tokenów-kopii po transformacji z powrotem
+w przód (payload transformTo z jednolitą semantyką MV, aplikowany przez
+transform/craft/exile_return/K5-reset/nightbound; CR 707.8a + 202.3b);
+(2) `f602ee4`: WARD jako mechanika (CR 702.21, cloak = 2/2 z ward {2}).
+Testy C5–C8 i W1–W9; sanity 5 pełnych partii botów bez odrzuceń komend.
+Nowa lekcja **L95** (checklista integracji decyzji blokującej).
+
+**M259 — brązowa odznaka wyłapywacza błędów (challenge właściciela):**
+„znajdź i napraw 5 unikalnych błędów vs zasady MtG" — wykonane z nadwykoną:
+**7 błędów, 4 klasy**, wszystkie naprawione. Metoda: masowe diffowanie kart
+ze snapshotami Scryfall + czytanie Oracle-vs-deskryptory (audyt po
+`registry.all()` — ~275 kart żyje poza REAL_CARDS!). Znaleziska: Courage
+in Crisis i Enter the Enigma jako Instant zamiast Sorcery (CR 307.1);
+**konwencja MV phyrexian** — {2}{W/P} liczone jako 2 zamiast 3 (CR 202.3;
+Divine Offering w puli dawał 2 życia zamiast 3; objęto też Ruthless
+Invasion); Wormfang Newt i Healer of the Glade z błędnymi subtypami
+(CR 205.1); craft Lodestone Needle {2}{U} i echo Bone Shreddera {2}{B}
+bez wymogu koloru (CR 118.2/702.29). Testy m259 RED→GREEN 11/11; regeneracje
+legalne (decki po sortowaniu MV, fixture golden-master — świadoma zmiana
+zachowania botów, benchmark 10/10); lekcja **L96**. Raport:
+`docs/audits/AUDYT_M259_BUG_HUNT_2026-08-30.md`.
+
+**M260 — uwagi z testów właściciela na PR #89 (Fertile Thicket, Pyxis,
+pusta biblioteka):** trzy zgłoszenia po challenge M259, rozstrzygnięte
+w całości. **A. Fertile Thicket** — silnik był zgodny z Oracle (skip,
+„bez landa” = cała piątka na spód, `bottomOrder` z walidacją permutacji),
+ale warstwa prezentacji kłamała: etykieta opcji „bez landa” miała fallback
+„basic land na wierzch biblioteki” (zgłoszenie: „co to za opcja???”), skip
+opisany jako „odłóż wszystko na spód”, a karty (Mountain/Island) były
+zdradzane w etykietach opcji PRZED decyzją o zaglądnięciu — „you may look”
+było pozorne; brakowało też sortera kolejności spodu. Naprawa: **nowy
+3-krokowy wizard** (`renderFertileThicketWizard`: zaglądnij? → wybór
+basic landa → kolejność spodu jak w Scry/Index), widok
+`pendingFertileThicket` w FoW (decydujący widzi karty i `basicLandIds`,
+przeciwnik tylko fakt), etykiety `commandLabel` zgodne z Oracle, log
+bez wycieku `basicLandCount` (look jest prywatny; jawny tylko odsłonięty
+basic land — „reveal up to one”). **B1. Pyxis of Pandemonium** — karty
+wygnane pierwszą zdolnością ({T}) są teraz odwrócone i bez podglądu dla
+OBU graczy (CR 406.3; wcześniej właściciel widział cardId/nazwę/podgląd —
+to nie morph, CR 708.6 nie ma zastosowania): widok zwraca minimalny
+kształt bez cech (cardId/kind/types/spell), `cardInfo` maskuje kafel
+(„Wygnana zakryta”, bez typu i statystyk), a poczekalnia wygnania pokazuje
+kartę ze statusem „Wygnana zakryta · odkryje ją druga zdolność źródła”
+(jak Plot/Suspend). **B2. pusta biblioteka** — potwierdzone zgodne z CR
+przez właściciela („nie ma tematu”): wygnanie Pyxisem przy pustej
+bibliotece NIE kończy gry; przegraną jest dopiero próba doboru (CR 704.5m,
+akcja turowa CR 504.1) — cały scenariusz zabezpieczony testem regresji.
+Testy M260 RED→GREEN 13/13 (silnik, widok FoW, wizard, etykiety, log,
+Pyxis, B2); zaktualizowane strażniki starych zachowań (m84/6 odmiana,
+m85 etykieta skip, m138/Z6 kształt linii types); suite 3860/3870 bez
+regresji; benchmark 672 mecze bez odrzuceń komend; build 56 modułów /
+2974.1 kB. Nowa lekcja **L97** (warstwa prezentacji kłamie przy
+poprawnym silniku; decyzja „you may look” nie może wyciekać treści).
+
+**M261 — granica tury zamyka paczkę modala „Rozgrywka" (zgłoszenie
+właściciela 2026-08-31):** modal dopisywał zdarzenia przez granicę tury —
+ogon starej tury (rozstrzygnięcie czaru, obrażenia z walki, discardy z
+cleanup) doklejał się do „Tura N — Ty" + „Dobierasz…" w jednym oknie.
+Teraz dopisywanie zatrzymuje się na rozpoczęciu nowej tury: ogon czeka na
+„Rozumiem", a nowa tura otwiera ŚWIEŻY modal, którego pierwszą linią jest
+nagłówek „Tura N — <gracz>"; tury dwóch graczy nigdy nie łączą się w
+jednym modalu. Naprawa w buforze (session.js, zero zmian w renderze):
+`heldBotMoves` + `routingHeld` + `botTurnSplit` (gated na
+`pauseOnBotMoves` — konsumenci synchroniczni widzą stare zachowanie);
+`turn_started` przy niepustym buforze dzieli go, nagłówek nowej tury i
+wszystko dalej czeka w held; promocja held → bufor TYLKO przy wznowieniu
+(`continueBotPlay`/`continueArtPlay`/`recheckAutoPass`; advance wołany z
+apply świadomie nie promuje, żeby nie skleić tur z powrotem); granica
+wymusza pauzę (`streamAutoEvents`/`apply`), a nowy getter
+`botPauseAtTurnBoundary` mówi UI/testom, że pauza zamyka paczkę na
+granicy. Testy: `m261-granica-tury-w-modalu.test.js` (inwarianty bloków
+na 8 seedach; RED na seedzie 127: „Divest zostaje rozstrzygnięty |
+Tura 3 — Ty" w jednym bloku) + `session-bot-pausa` zna nowy legalny
+powód pauzy. Nowa lekcja **L98**.
+
+**M262 — reforma stref: cmentarze i wygnanie PROSTO NA STÓŁ (zgłoszenie
+właściciela 2026-08-31):** trzy strefy dodatkowe znikają z inspektora i
+poczekalni i stają się boksami na stole, pod ręką Bota — CMENTARZ GRACZA
+(czarne tło) → WYGNANIE (niebieskie tło) → CMENTARZ BOTA (czarne tło),
+widoczne tylko gdy niepuste. Karty jak karty stołowe: pełny rozmiar
+(tile z domyślnym size, nie 88px .zone-grid), normalny hover, klik
+identyczny z polem bitwy (menu kontekstowe / pełny ekran). Cmentarze:
+BEZ etykiet grup, kolejność przyrostowa od najstarszych (lewa) do
+najnowszych (prawa) — wprost kolejność arraya `zones.graveyard`, bez
+zmian silnika. **Exile: badge'e per karta** — obowiązkowy WŁAŚCICIEL
+(„Właściciel: Gracz/Bot"), obowiązkowe ŹRÓDŁO wygnania („Wygnane:
+Pandemonium" przez nameOf — ADR 0002; „Wygnane: Plot" dla mechanik),
+opcjonalny stan (liczniki plot/suspend, zakrycie, powrót); agregacja
+właściciel → źródło (stabilne sortowanie); zakryta karta pozostaje
+zamaskowana (M260/B1), ale badge'e są jawne — CR 406.3 zakrywa KARTĘ,
+nie fakt, kto wygnał. **Źródło wygnania w silniku:** `meta.exiledBy`
+stemplowane w JEDNYM choke poincie zmian stref (`moveObjectDirectly`,
+objects.js) — jawny argument `opts.exiledBy` na 22 witrynach (efekty,
+koszty, craft, plot/suspend/escape/madness/warp, delayed triggery),
+auto-deriwacja dla redirectów CR (unearth/flashback/finality) i
+`exileIfDiesThisTurn` (zmiana kształtu na `[{id, byCardId}]`),
+centralny fallback `effect` (stare autosave'y → „efekt"); `meta` istnieje
+wyłącznie w exile (CR 400.7 — opuszczenie strefy czyści). USUNIĘTE:
+warstwa „Pokaż karty w strefach" (przycisk + modal inspektora) oraz CAŁA
+poczekalnia (`#waiting-wrap`/`#waiting-zone`); przebudowane testy
+m198/D (inwersja), m201 (poczekalnia → badge'e), m254 (D1–D3 na
+`exiledBy`), m260/B1 (boks zamiast poczekalni), table-ui (pojazd testu
+tła modala: bot-move); m212/SŁOWNIK_REGUL +='Unearth' (keyword mechaniki
+koliguje z nazwą karty — jak Treasure/Island). Suite 3883/3883
+(wcześniej 3873 + 10 nowych), build 56 modułów / 2982.5 kB.
+
+**Kolejny krok:** decyzja właściciela o scaleniu PR #89; ewentualnie nowy
+batch kart / kolejna runda Żywego Testera.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

@@ -3,10 +3,11 @@ import { singleTargetOfStackEntry } from './objects.js';
 import {
   applyEffect, creaturesNotControlledByOwner, creaturesYouControl, faceDownCreaturesYouControl,
   landCreaturesYouControl, libraryCardsOf, millTargetPlayerId, otherCreaturesYouControl,
+  counterStackObject,
 } from './effects.js';
 import { addCounter, hasCounter } from './counters.js';
 import { changeLife } from './players.js';
-import { effectiveAbilities, effectiveKeywords, effectivePower } from './permanents.js';
+import { effectiveAbilities, effectiveKeywords, effectivePower, wardAmountOf } from './permanents.js';
 import { moveObjectDirectly } from './objects.js';
 import { tapLandForMana, canPayColoredCost, spendMana, producibleMana } from './resources.js';
 
@@ -759,6 +760,44 @@ export function fireTrigger(state, ability, source, targets, events, context = {
 }
 
 /**
+ * M258/F3 — WARD (CR 702.21): „Whenever this permanent becomes the target
+ * of a spell or ability an opponent controls, counter that spell or
+ * ability unless that player pays [cost]." Trigger ward kolejkujemy NAD
+ * obiekt celujący (czar/zdolność już na stosie) — po rundzie passów
+ * rozstrzygnie się PIERWSZY (LIFO, CR 603.3), czyli dokładnie tak, jak
+ * ward działa w papierze. Wywołania: skan zdarzeń rzutu (spell_cast/
+ * aura_spell_cast), aktywacji zdolności z celem (ability_activated z
+ * onStack), kopii czarów (spell_copied) i resolver celu triggera
+ * (game-state.js — pendingTriggerTargets).
+ */
+export function fireWardTriggers(state, casterId, targetingStackId, targetIds, events = []) {
+  if (!targetingStackId || !Array.isArray(targetIds)) return;
+  for (const targetId of targetIds) {
+    if (targetId == null) continue;
+    const target = state.objects.get(targetId);
+    // Ward chroni PERMANENTY (nie graczy, nie czary na stosie) i tylko
+    // przed czarami/zdolnościami PRZECIWNIKA kontrolera warda.
+    if (!target || target.zone !== 'battlefield' || target.kind === 'player') continue;
+    if (target.controllerId === casterId) continue;
+    const amount = wardAmountOf(target, state);
+    if (amount == null) continue;
+    const ability = Object.freeze({
+      type: 'triggered', keyword: 'ward',
+      trigger: Object.freeze({ event: 'ward' }),
+      effect: null,
+    });
+    // queueTriggerToStack dopisuje swoje zdarzenia do state.events SAM
+    // (parametr `events` to kolektor dla wywołującego — nie przekazujemy
+    // state.events, żeby nie dublować wpisów).
+    const local = [];
+    queueTriggerToStack(state, ability, target, [], local, {
+      wardPay: Object.freeze({ targetingStackId, amount }),
+    });
+    events.push(...local);
+  }
+}
+
+/**
  * T6 — TRIGGERY NA STOSIE (CR 603.3): zdolność triggerowana, która się
  * odpaliła, trafia na WSPÓLNY STOS (obok czarów) z wybranymi celami;
  * rozstrzyga się dopiero po pełnej rundzie passów (LIFO), jak czar.
@@ -817,7 +856,11 @@ function resolveDelayedTrigger(state, payload, events) {
     const object = state.objects.get(pending.objectId);
     if (!object || object.zone !== 'battlefield') return false;
     const exileId = `exile-${state.objectSequence++}`;
-    moveObjectDirectly(state, pending.objectId, 'exile', exileId);
+    // M262: badge źródła z chwili zakolejkowania (karta/efekt/mechanika);
+    // warp ma własny keyword.
+    moveObjectDirectly(state, pending.objectId, 'exile', exileId, {
+      exiledBy: pending.exiledBy ?? (pending.warp ? 'warp' : undefined),
+    });
     // M154 (Warp): wygnana w końcowym kroku karta dostaje `warpReady`, więc
     // można ją rzucić z exile w późniejszej turze za koszt warp (castPermanent
     // warpCast). Zwykłe exile_object (Puppeteer Clique) nic nie dokleja.
@@ -956,6 +999,44 @@ export function resolveTriggerEntry(state, entry) {
       objectId: entry.id, cardId: entry.cardId, delayed: true, noEffect: !handled,
     });
     state.events.push(resolved);
+    return state.events.slice(before);
+  }
+  // M258/F3 — WARD (CR 702.21): „counter that spell or ability unless that
+  // player pays {N}". Trigger jest NIEZALEŻNY od przetrwania permanentu z
+  // ward (brak intervening-if); gdy obiekt celujący zniknął ze stosu, nie
+  // ma czego kontrować (CR 608.2b). Kontroler czaru/zdolności zapłaci w
+  // decyzji blokującej (resolve_ward_pay_choice); bez many — automatyczny
+  // kontr (wzorzec queuePayOrSacrifice / counter_spell_unless_pays).
+  if (extra.wardPay) {
+    const targeting = state.objects.get(extra.wardPay.targetingStackId);
+    const targetingOnStack = Boolean(targeting && targeting.zone === 'stack');
+    if (targetingOnStack) {
+      const payer = targeting.controllerId;
+      if (producibleMana(state, payer) >= extra.wardPay.amount) {
+        state.pendingWardPay = {
+          playerId: payer,
+          amount: extra.wardPay.amount,
+          targetingStackId: extra.wardPay.targetingStackId,
+          wardSourceId: payload.sourceId,
+          wardCardId: entry.cardId ?? null,
+          targetingCardId: targeting.cardId ?? null,
+          restorePriorityTo: state.turn.priorityPlayerId,
+        };
+        state.turn.priorityPlayerId = payer;
+        state.events.push(event('ward_choice_required', {
+          playerId: payer, amount: extra.wardPay.amount,
+          targetingStackId: extra.wardPay.targetingStackId, cardId: targeting.cardId ?? null,
+          wardSourceId: payload.sourceId,
+        }));
+      } else {
+        counterStackObject(state, extra.wardPay.targetingStackId, {
+          counteredBy: payload.sourceId, counteredByCardId: entry.cardId ?? null, byWard: true,
+        });
+      }
+    }
+    state.events.push(event('trigger_resolved', {
+      objectId: entry.id, cardId: entry.cardId, ward: true, noEffect: !targetingOnStack,
+    }));
     return state.events.slice(before);
   }
   // Suspend (CR 702.62a, trzecia zdolność): „When the last time counter is
@@ -1190,14 +1271,18 @@ function firePayOrSacrifice(state, ability, source, events) {
  * wejściu). Wydzielona w Batchu 46, żeby obie ścieżki miały JEDNĄ regułę
  * płatności i te same zdarzenia (L41).
  */
-function queuePayOrSacrifice(state, source, amount, events, triggerEvent = 'echo') {
+function queuePayOrSacrifice(state, source, amount, events, triggerEvent = 'echo', colors = []) {
   const controllerId = source.controllerId;
   // Temat 7 (Rupture Spire, CR 601.2h/702.1): „sacrifice it unless you pay
   // {1}" — wybór należy do KONTROLERA. Gdy płatność jest możliwa (pula +
   // nietapnięte landy), kolejkujemy decyzję resolve_pay_or_sacrifice; samą
   // płatność (spendMana z auto-tapem) albo poświęcenie wykonuje komenda.
   // Bez możliwości zapłaty — automatyczne poświęcenie (jak dotąd).
-  const canPay = producibleMana(state, controllerId) >= amount;
+  // M259/B7 (CR 702.29 + 118.2): koszt echa {2}{B} wymaga pipa {B} —
+  // bramka opłacalności obejmuje KOLORY (pula + nietapnięte źródła), a sama
+  // płatność pobiera pipy (patrz resolve_pay_or_sacrifice → pay_mana).
+  const canPay = producibleMana(state, controllerId) >= amount
+    && (colors.length === 0 || canPayColoredCost(state, controllerId, [colors]));
   if (!canPay) {
     const before = state.events.length;
     applyEffect(state, { type: 'sacrifice_permanent' }, source, []);
@@ -1210,12 +1295,13 @@ function queuePayOrSacrifice(state, source, amount, events, triggerEvent = 'echo
     return true;
   }
   state.pendingPayOrSacrifice = {
-    playerId: controllerId, amount, sourceId: source.id,
+    playerId: controllerId, amount, sourceId: source.id, colors,
     restorePriorityTo: state.turn.priorityPlayerId,
   };
   state.turn.priorityPlayerId = controllerId;
   const required = event('pay_or_sacrifice_required', {
     playerId: controllerId, amount, sourceId: source.id, cardId: source.cardId,
+    colors,
   });
   state.events.push(required);
   events.push(required);
@@ -2280,6 +2366,18 @@ function processTriggersScan(state, recentEvents) {
     // „whenever a player casts a [kolor] spell" (Angel's Feather — dowolny
     // gracz, warunek na kolorze z deskryptora triggera). Źródło musi być na
     // polu bitwy, więc casting samego źródła go nie poświęca (nie było na polu bitwy).
+    // M258/F3 — WARD (CR 702.21): skan celów rzutu/aktywacji pod kątem
+    // permanentów przeciwnika z ward. Trigger ward ląduje NAD czarem/
+    // zdolnością celującą i rozstrzyga się przed nią (LIFO).
+    if (ev.type === 'spell_cast' || ev.type === 'permanent_cast' || ev.type === 'aura_spell_cast') {
+      fireWardTriggers(state, ev.playerId, ev.object?.id ?? null, ev.targets ?? [], events);
+    }
+    if (ev.type === 'ability_activated' && ev.onStack && ev.stackEntryId) {
+      fireWardTriggers(state, ev.playerId, ev.stackEntryId, ev.targets ?? [], events);
+    }
+    if (ev.type === 'spell_copied' && ev.objectId) {
+      fireWardTriggers(state, ev.playerId, ev.objectId, ev.targets ?? [], events);
+    }
     if (ev.type === 'spell_cast' || ev.type === 'permanent_cast' || ev.type === 'aura_spell_cast') {
       // Licznik rzutów PER GRACZ (Illvoi Operative: „your second spell each
       // turn" — transform używa globalnego spellsCastThisTurn). Każde
@@ -2677,7 +2775,7 @@ function processTriggersScan(state, recentEvents) {
         if (object.controllerId !== state.turn.activePlayerId) continue;
         const cost = object.echo ?? 0;
         state.objects.set(object.id, Object.freeze({ ...object, echoUnpaid: false }));
-        queuePayOrSacrifice(state, object, cost, events);
+        queuePayOrSacrifice(state, object, cost, events, 'echo', object.echoColors ?? []);
       }
     }
     // Suspend (CR 702.62a): „At the beginning of your upkeep, if this card is

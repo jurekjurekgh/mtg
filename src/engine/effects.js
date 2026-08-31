@@ -10,7 +10,7 @@ import { createBattlefieldToken, nextCopyNumber } from './tokens.js';
 
 import { effectiveProtectionFromColors } from './attachments.js';
 import { shuffle } from './shuffle.js';
-import { createGameObject } from './identity.js';
+import { createGameObject, copyManaValueOf } from './identity.js';
 import { attachEquipmentToCreature, detachAttachmentsFromHost } from './attachments.js';
 
 /**
@@ -794,6 +794,33 @@ export function creaturesNotControlledByOwner(state) {
  * @param {object} sourceObject obiekt źródła (kontroler tokenów/obrażeń)
  * @param {string[]} targets id celów (dla damage/pump pierwszy cel)
  */
+/**
+ * M258/F3 — WARD (CR 702.21): kontrowanie obiektu na stosie. Czar-karta
+ * wraca do grobu właściciela (jak counter_spell, CR 701.2a); wpis
+ * zdolności (activated/trigger — pseudo-obiekt) znika ze stosu bez strefy
+ * docelowej: skontrowana zdolność po prostu nic nie robi.
+ */
+export function counterStackObject(state, stackId, { counteredBy = null, counteredByCardId = null, byWard = false } = {}) {
+  const object = state.objects.get(stackId);
+  if (!object || object.zone !== 'stack') return null;
+  if (object.activatedEntry || object.triggerEntry) {
+    state.zones.stack = state.zones.stack.filter((id) => id !== stackId);
+    state.objects.delete(stackId);
+    state.events.push(event('spell_countered', {
+      fromId: stackId, toId: null, cardId: object.cardId ?? null,
+      controllerId: object.controllerId, counteredBy, counteredByCardId, byWard,
+    }));
+    return object;
+  }
+  const graveId = `grave-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, stackId, 'graveyard', graveId);
+  state.events.push(event('spell_countered', {
+    fromId: stackId, toId: graveId, cardId: moved.cardId,
+    controllerId: moved.controllerId, counteredBy, counteredByCardId, byWard,
+  }));
+  return moved;
+}
+
 export function applyEffect(state, effect, sourceObject, targets = [], context = {}) {
   // X-cost czary (Consume Spirit, Epic Experiment — Batch 30): efekty mogą
   // użyć amount: 'X' (lub amountFrom: 'X') — wartość X z obiektu stosu
@@ -900,7 +927,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (topId == null) return;
     const card = state.objects.get(topId);
     const exileId = `exile-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, topId, 'exile', exileId);
+    const moved = moveObjectDirectly(state, topId, 'exile', exileId, { exiledBy: sourceObject.cardId });
     // „Until the end of your NEXT turn" — jeśli to twoja tura, chodzi o tę
     // następną (numer + 2 przy dwóch graczach); poza swoją turą o najbliższą.
     const isMyTurn = state.turn.activePlayerId === controllerId;
@@ -1189,7 +1216,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       subtypes: [...(copyBase.subtypes ?? src.subtypes ?? [])],
       keywords: [...new Set([...(src.keywords ?? []), 'haste'])],
       abilities: [...(src.abilities ?? [])],
-      manaCost: src.manaCost ?? 0,
+      // CR 202.3b (M258): kopia TYLNEJ twarzy karty dwustronnej ma MV 0,
+      // a kopia przedniej/przodowej twarzy — koszt pierwowzoru. Wcześniej
+      // pole lądowało cicho w createBattlefieldToken (destrukturyzacja go
+      // nie znała), więc KAŻDY token-kopia miał MV 0 (Divine Offering
+      // dawałby 0 życia za kopię Wynnogiefu). Wspólny helper — patrz
+      // identity.js copyManaValueOf.
+      manaCost: copyManaValueOf(src),
       // M141/B (station + animacja, saga): token-kopia traciła deskryptor
       // station/saga — stąd np. kopia Wedgelight Rammer nie miała progu 9+
       // i nigdy nie stawała się stworem (CR 707.2 — kopiowalne wartości to
@@ -1216,6 +1249,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       type: 'exile_object', objectId: token.id, playerId: ctrl,
       anyPlayerEndStep: true,
       armedOnTurn: state.turn.number, cardId: token.cardId,
+      // M262: badge „Wygnane: <źródło>" — token znika z efektu karty.
+      exiledBy: sourceObject.cardId,
     });
     return;
   }
@@ -1576,11 +1611,16 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       power: 2, toughness: 2,
       types: ['Creature'],
       subtypes: [],
-      keywords: [],
+      // M258/F3 (CR 702.75): zakryty permanent to stwór 2/2 z WARD {2} —
+      // pełna mechanika CR 702.21 (decyzja właściciela: żadnych
+      // limitations), nie wpis w support.limitations. Keyword + kwota
+      // (czyta wardAmountOf).
+      keywords: ['ward'],
       abilities: [],
       colors: [],
       cardName: null,
       manaCost: 0,
+      ward: 2,
       summoningSickness: true,
       tapped: false,
     });
@@ -2464,7 +2504,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'pay_mana') {
-    spendMana(state, sourceObject.controllerId, effect.amount ?? 0);
+    // M259/B7 (CR 118.2): pipy kolorowe płatności (echo {2}{B}) — każda
+    // jednostka colors to wymaganie [kolor] w formacie spendMana.
+    const pips = (effect.colors ?? []).map((color) => [color]);
+    spendMana(state, sourceObject.controllerId, effect.amount ?? 0, pips);
     return;
   }
   if (effect.type === 'return_permanent_from_graveyard') {
@@ -2509,6 +2552,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       // artefaktem z P/T, więc nie mógł atakować ani blokować.
       ...(target.kind ? { kind: target.kind } : {}),
       ...(target.types ? { types: target.types } : {}),
+      // CR 202.3b (M258/Etap 2.3b): przy zmianie twarzy MV obiektu = koszt
+      // twarzy PRZEDNIEJ. Payload transformTo niesie właśnie to (materialize
+      // buduje go jako card.manaCost), więc aplikujemy go wprost; fallback
+      // = dotychczasowa wartość (zwykłe DFC: identyczny wynik, transform
+      // kosztu nie zmieniał). Różnica pojawia się dopiero przy tokenie-kopii
+      // TYLNEJ twarzy (MV 0), który wraca na przód — wtedy musi dostać
+      // koszt przedniej strony (CR 707.8a).
+      manaCost: target.manaCost ?? sourceObject.manaCost ?? 0,
       transformTo: {
         cardId: sourceObject.cardId,
         cardName: sourceObject.cardName,
@@ -2519,6 +2570,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         subtypes: sourceObject.subtypes ?? [],
         kind: sourceObject.kind,
         types: sourceObject.types ?? [],
+        // MV obiektu z TĄ (opuszczaną) twarzą w górę — symetryczny kontrakt:
+        // zwykły DFC = koszt przedni, token-kopia tyłu = 0 póki jest tyłem.
+        manaCost: sourceObject.manaCost ?? 0,
       },
     });
     state.objects.set(sourceObject.id, updated);
@@ -2543,7 +2597,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       if (filterTypes.length > 0 && !filterTypes.every((type) => (object.types ?? []).includes(type))) continue;
       if (manaValueAtMost != null && (object.manaCost ?? 0) > manaValueAtMost) continue;
       const exileId = `exile-${state.objectSequence++}`;
-      const moved = moveObjectDirectly(state, objectId, 'exile', exileId);
+      const moved = moveObjectDirectly(state, objectId, 'exile', exileId, { exiledBy: sourceObject.cardId });
       state.events.push(event('object_moved', {
         fromId: objectId, object: moved, fromZone: 'battlefield', toZone: 'exile',
       }));
@@ -2592,8 +2646,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (targetId == null) return;
     const marked = state.objects.get(targetId);
     if (!marked || marked.zone !== 'battlefield') return;
-    if (!(state.exileIfDiesThisTurn ?? []).includes(targetId)) {
-      state.exileIfDiesThisTurn = [...(state.exileIfDiesThisTurn ?? []), targetId];
+    // M262: wpisy {id, byCardId} — śmierć zamiast grobu ma mieć badge
+    // źródła (karta, która naznaczyła cel).
+    if (!(state.exileIfDiesThisTurn ?? []).some((entry) => entry.id === targetId)) {
+      state.exileIfDiesThisTurn = [...(state.exileIfDiesThisTurn ?? []), { id: targetId, byCardId: sourceObject.cardId }];
     }
     state.events.push(event('exile_if_dies_marked', { objectId: targetId, cardId: marked.cardId }));
     return;
@@ -2607,7 +2663,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return;
     const exileId = `exile-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, targetId, 'exile', exileId);
+    const moved = moveObjectDirectly(state, targetId, 'exile', exileId, { exiledBy: sourceObject.cardId });
     state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'exile' }));
     return;
   }
@@ -2623,7 +2679,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (!object || object.zone !== 'battlefield') return;
     if ((object.types ?? []).includes('Land')) return; // nonland
     const exileId = `exile-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, targetId, 'exile', exileId);
+    const moved = moveObjectDirectly(state, targetId, 'exile', exileId, { exiledBy: sourceObject.cardId });
     state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'exile' }));
     const src = state.objects.get(sourceObject.id);
     if (src) {
@@ -2673,7 +2729,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     if (!object || object.zone !== 'battlefield') return;
     if (object.controllerId !== sourceObject.controllerId) return;
     const exileId = `exile-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, targetId, 'exile', exileId);
+    const moved = moveObjectDirectly(state, targetId, 'exile', exileId, { exiledBy: sourceObject.cardId });
     state.events.push(event('object_moved', {
       fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'exile',
     }));
@@ -2700,7 +2756,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
     const exileId = `exile-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, targetId, 'exile', exileId);
+    const moved = moveObjectDirectly(state, targetId, 'exile', exileId, { exiledBy: sourceObject.cardId });
     state.events.push(event('object_moved', {
       fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'exile',
     }));
@@ -2850,6 +2906,8 @@ function markTemporaryExile(state, exileId, sourceObject) {
         // „At the beginning of your NEXT end step" — trigger należy do
         // kontrolera i czeka na jego najbliższy krok end.
         armedOnTurn: state.turn.number, cardId: permanent.cardId,
+        // M262: źródłem wygnania jest karta, która postawiła permanenta.
+        exiledBy: sourceObject.cardId,
       });
     }
     return;
@@ -3229,7 +3287,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const live = state.objects.get(targetId);
     if (!live || live.zone !== 'battlefield' || live.kind !== 'creature') return;
     const exileId = `exile-${state.objectSequence++}`;
-    const exiled = moveObjectDirectly(state, targetId, 'exile', exileId);
+    const exiled = moveObjectDirectly(state, targetId, 'exile', exileId, { exiledBy: sourceObject.cardId });
     const src = state.objects.get(sourceObject.id);
     if (src) state.objects.set(sourceObject.id, Object.freeze({ ...src, banishedIds: [...(src.banishedIds ?? []), exileId] }));
     state.events.push(event('object_exiled', { fromId: targetId, objectId: exileId, object: exiled, cardId: exiled.cardId, banished: true }));
@@ -3647,7 +3705,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
       const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === player.id);
       if (topId == null) continue; // pusta biblioteka — ten gracz nic nie wygania
       const exileId = `exile-${state.objectSequence++}`;
-      const moved = moveObjectDirectly(state, topId, 'exile', exileId);
+      const moved = moveObjectDirectly(state, topId, 'exile', exileId, { exiledBy: sourceObject.cardId });
       state.objects.set(exileId, Object.freeze({ ...moved, faceDown: true }));
       exiledIds.push(exileId);
       // Zdarzenie BEZ cardId: karta jest zakryta, wiec jej nazwa nie jest
@@ -3711,7 +3769,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const exileIds = [];
     for (const id of topIds) {
       const exileId = `exile-${state.objectSequence++}`;
-      const moved = moveObjectDirectly(state, id, 'exile', exileId);
+      const moved = moveObjectDirectly(state, id, 'exile', exileId, { exiledBy: sourceObject.cardId });
       exileIds.push(exileId);
       state.events.push(event('card_revealed', { playerId: controllerId, objectId: exileId, cardId: moved?.cardId ?? null }));
     }
@@ -3758,7 +3816,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const exileIds = [];
     for (const id of exiled) {
       const exileId = `exile-${state.objectSequence++}`;
-      moveObjectDirectly(state, id, 'exile', exileId);
+      moveObjectDirectly(state, id, 'exile', exileId, { exiledBy: sourceObject.cardId });
       exileIds.push(exileId);
       state.events.push(event('card_revealed', { playerId: ownerId, objectId: exileId, cardId: state.objects.get(exileId)?.cardId }));
     }
@@ -4007,7 +4065,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // efekt nie ma czego przemieniać (CR 608.2b), bez błędu.
     if (!object || object.zone !== 'battlefield') return;
     const exileId = `exile-${state.objectSequence++}`;
-    const exiled = moveObjectDirectly(state, object.id, 'exile', exileId);
+    const exiled = moveObjectDirectly(state, object.id, 'exile', exileId, { exiledBy: sourceObject.cardId });
     state.events.push(event('object_moved', {
       fromId: object.id, object: exiled, fromZone: 'battlefield', toZone: 'exile', transformReturn: true,
     }));
@@ -4576,7 +4634,21 @@ function markTemporaryExile(state, exileId, sourceObject) {
       const obj = state.objects.get(id);
       return obj && obj.controllerId === controllerId && (obj.kind === 'land' || (obj.types ?? []).includes('Land'));
     });
-    if (lands.length === 0) return; // No land to sacrifice — do nothing
+    if (lands.length === 0) {
+      // M258/F4 (Żywy Tester, CR 101.3/608.2b): „Sacrifice a land." Roilinga
+      // to INSTRUKCJA rozstrzygnięcia, nie koszt dodatkowy — niemożliwą
+      // instrukcję pomija się, ale kolejne („Search...") trzeba wykonać.
+      // Opcjonalny Springbloom Druid („you may... If you do") bez lądu
+      // nie robi nic — bez szukania.
+      if (!effect.mandatory) return;
+      queueSearchChoice(state, sourceObject, {
+        qualifier: { types: ['Basic', 'Land'] },
+        destination: 'battlefield',
+        entersTapped: true,
+        chain: { remaining: 1, qualifier: { types: ['Basic', 'Land'] }, destination: 'battlefield', entersTapped: true },
+      });
+      return;
+    }
     state.pendingSpringbloom = {
       controllerId,
       sourceId: sourceObject.id,
@@ -4597,6 +4669,9 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // warstwa opisu pisała w logu cudzą nazwę (ADR 0002 w warstwie opisu).
     state.events.push(event('springbloom_choice_required', {
       controllerId, cardId: sourceObject?.cardId ?? null,
+      // M258/F5: opcjonalność poświęcenia to informacja regułowa — log nie
+      // może mówić „może" przy obowiązkowym poświęceniu (Roiling Regrowth).
+      mandatory: Boolean(effect.mandatory),
     }));
     return;
   }
@@ -4869,6 +4944,8 @@ function markTemporaryExile(state, exileId, sourceObject) {
       // step" — jak wyżej, najbliższy krok końcowy (M105/B6).
       anyPlayerEndStep: true,
       armedOnTurn: state.turn.number, cardId: permanent.cardId,
+      // M262: wygnanie z mechaniki unearth — badge mechaniki, nie karty.
+      exiledBy: 'unearth',
     });
     return;
   }

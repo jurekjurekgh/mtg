@@ -63,7 +63,32 @@ export function removeFromCombat(state, objectId) {
   return changed;
 }
 
-export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
+/**
+ * M262 (reforma stref, zgłoszenie właściciela 2026-08-31): jedyne miejsce,
+ * w którym obiekt trafia do wygnania — stempel `meta.exiledBy` mówi, CO
+ * go wygnało (cardId karty-źródła / keyword mechaniki / 'effect').
+ * Kolejność pochodzenia:
+ *  a) jawny argument `opts.exiledBy` (karta, która wygnała — efekt/koszt),
+ *  b) `temporaryExile.byCardId` (wygnanie tymczasowe M254/D: Newt/Butcher),
+ *  c) redirecty CR: `unearthExile` → 'unearth', `flashedBack` → 'flashback',
+ *  d) licznik `finality` → 'finality' (śmierć zamiast grobu),
+ *  e) znacznik `exileIfDiesThisTurn` → byCardId karty źródłowej,
+ *  f) centralny fallback 'effect' (stare zapisy bez meta → też „efekt").
+ * `meta` istnieje WYŁĄCZNIE w exile: opuszczenie strefy je czyści (CR 400.7
+ * — nowy obiekt nie dziedziczy historii), więc powrót i ponowne wygnanie
+ * dostanie świeże źródło.
+ */
+function deriveExiledBy(state, object, opts) {
+  return opts?.exiledBy
+    ?? object.temporaryExile?.byCardId
+    ?? (object.unearthExile ? 'unearth' : null)
+    ?? (object.flashedBack ? 'flashback' : null)
+    ?? (((object.counters ?? {}).finality ?? 0) > 0 ? 'finality' : null)
+    ?? (state.exileIfDiesThisTurn ?? []).find((entry) => entry.id === object.id)?.byCardId
+    ?? 'effect';
+}
+
+export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = {}) {
   const object = state.objects.get(objectId);
   assertZone(toZone);
   if (!object || !newObjectId || state.objects.has(newObjectId)) throw new Error('Nieprawidłowy ruch obiektu');
@@ -127,6 +152,10 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
       subtypes: front.subtypes ?? [],
       ...(front.kind != null ? { kind: front.kind } : {}),
       ...(front.types ? { types: front.types } : {}),
+      // Karta poza polem bitwy leży przodem (CR 711.4a) — jej MV to koszt
+      // przedni; payload przedniej twarzy niesie go od Etapu 2.3b. Zwykły
+      // DFC: spread i tak trzyma ten sam koszt (no-op).
+      ...(front.manaCost != null ? { manaCost: front.manaCost } : {}),
       transformTo: Object.freeze({
         cardId: object.cardId,
         cardName: object.cardName,
@@ -137,6 +166,10 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
         subtypes: object.subtypes ?? [],
         ...(object.kind != null ? { kind: object.kind } : {}),
         ...(object.types ? { types: object.types } : {}),
+        // MV z tylną twarzą w górę (koszt przedni) — kontrakt symetryczny
+        // z transform/craft, żeby powrót na pole i kolejna transformacja
+        // czytały właściwą wartość (M258/Etap 2.3b).
+        ...(object.manaCost != null ? { manaCost: object.manaCost ?? 0 } : {}),
       }),
     };
   }
@@ -145,6 +178,13 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
     // Crew Captain / enteredThisTurn: numer tury WEJŚCIA na pole bitwy.
     // Opuszczenie pola bitwy czyści flagę (nowy obiekt, CR 400.7).
     enteredOnTurn: toZone === 'battlefield' ? state.turn.number : null,
+    // M258 (Żywy Tester): ECHO (CR 702.29) — znacznik „nieopłacone echo"
+    // stawiało dotąd WYŁĄCZNIE addObject (helpery testowe), a realna ścieżka
+    // rzutu (stos → pole bitwy przez ten choke point) go pomijała: Bone
+    // Shredder rzucony z ręki nigdy nie pytał o płatność echo. Wchodzący
+    // permanent z `echo` wchodzi z echoUnpaid (flicker/reanimacja też —
+    // to nowy obiekt, „came under your control since your last upkeep").
+    ...(toZone === 'battlefield' && object.echo != null ? { echoUnpaid: true } : {}),
     damage: 0, powerModifier: 0, toughnessModifier: 0, chosenTargets: null,
     // CR 110.6/400.7: tapnięcie to status PERMANENTU — istnieje wyłącznie na
     // polu bitwy. Nowy obiekt nie pamięta poprzedniego istnienia, a permanent
@@ -182,6 +222,9 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
     // informacji, choć sam grant nie przechodzi przez zmianę strefy.
     formerAbilityGrants: Object.freeze([...(object.abilityGrants ?? [])]),
     attachedTo: null,
+    // M262: stempel źródła wygnania — istnieje wyłącznie w exile (patrz
+    // deriveExiledBy). Poza exile meta znika (CR 400.7).
+    meta: toZone === 'exile' ? Object.freeze({ exiledBy: deriveExiledBy(state, object, opts) }) : null,
     // CR 711.2: rodzaj twarzy przedniej przy DFCE (np. Incubator: tył to
     // stwór, przód to artefakt) — reset twarzi (M257/K5) nadaje `kind`
     // przedniej strony, a nie stalej `object.kind` (tylnej).

@@ -640,9 +640,10 @@ export function canPayMadnessCost(state, playerId, object) {
   if (!object?.madness) return false;
   let cost = object.madness.cost ?? object.manaCost ?? 0;
   cost = reduceGenericCost(object.cardId, cost, costReductionForSpell(state, object) + conditionalCostReduction(state, object));
-  const phyrexian = object.phyrexianManaCost ?? 0;
-  // M202/N1: madness to alternatywny koszt RZUCENIA czaru (CR 702.71).
-  if (producibleMana(state, playerId, null, spellManaPurpose(object)) < cost + phyrexian) return false;
+  // M259/B3: manaCost od teraz niesie PEŁNĄ wartość kosztu (włącznie z
+  // symbolami phyrexian — CR 202.3), więc madness/manaCost nie potrzebuje
+  // doliczania phyrexian (dotąd podwójnie liczyło symbol przy rzucie).
+  if (producibleMana(state, playerId, null, spellManaPurpose(object)) < cost) return false;
   const requirements = (object.madness.colors ?? []).map((color) => [color]);
   return hasColorRequirements(state, playerId, requirements);
 }
@@ -775,7 +776,12 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   const lifePaid = phyrexian > 0 ? (phyrexianPayWithLife ?? 0) : 0;
   if (lifePaid < 0 || lifePaid > phyrexian) throw new Error('Nieprawidłowa liczba symboli phyrexian płaconych życiem');
   if (faceDown && lifePaid !== 0) throw new Error('Morph nie ma kosztu phyrexian');
-  const totalMana = cost + (phyrexian - lifePaid) + (kicker?.cost ?? 0);
+  // M259/B3 (CR 202.3/118.9): `cost` (z object.manaCost) OD TERAZ zawiera
+  // symbole phyrexian — każda opłacona życiem jednostka ODEJMUJE się od
+  // kosztu many (3 za {2}{W/P} maną; 2 + 2 życia za wariant życiowy).
+  // Wzór dotychczasowy `cost + (phyrexian - lifePaid)` zakładał, że manaCost
+  // symboli NIE zawiera (stare dane: Porcelain manaCost=2).
+  const totalMana = cost - lifePaid + (kicker?.cost ?? 0);
   // Opłacalność liczona po MANIE PRODUKOWALNEJ (pula + nietapnięte landy) —
   // spendMana sam do-tapuje brakujące landy. Koszt alternatywny ze Skarbów
   // ma własną walidację (treasureManaAvailable) poniżej.
@@ -847,12 +853,14 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   state.spellsCastThisTurn += 1;
   if (exileCost) {
     const exileId = `exile-${state.objectSequence++}`;
-    const exiled = moveObjectDirectly(state, exileTargetId, 'exile', exileId);
+    // M262: źródłem wygnania jest karta, dla której płacono kosztem.
+    const exiled = moveObjectDirectly(state, exileTargetId, 'exile', exileId, { exiledBy: object.cardId });
     state.events.push(event('object_exiled', { fromId: exileTargetId, objectId: exileId, object: exiled, cardId: exiled.cardId, additionalCost: true }));
   }
   if (exileGraveCost) {
     const exileId = `exile-${state.objectSequence++}`;
-    const exiled = moveObjectDirectly(state, exileTargetId, 'exile', exileId);
+    // M262: j.w. — karta rzucona wygania materiał z grobu (escape-like).
+    const exiled = moveObjectDirectly(state, exileTargetId, 'exile', exileId, { exiledBy: object.cardId });
     // object_moved grób→exile: wspólna ścieżka zdarzeń dla triggera
     // „cards are put into exile from your graveyard” (Rakshasa Vizier) —
     // ta sama, którą emituje escape (spells.js).

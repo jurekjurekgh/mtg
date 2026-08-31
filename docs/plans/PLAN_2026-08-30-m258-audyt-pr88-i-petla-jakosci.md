@@ -1,0 +1,180 @@
+# PLAN 2026-08-30 — M258: audyt PR #88 i pętla jakości (sesja arena/01a0526d)
+
+**Sesja:** `arena/01a0526d-mtg`. **Baza:** `main` @ `1605b56` (squash PR #88).
+**Prompt:** „kontynuujemy projekt" — brak nazwanego tematu → ADR 0021 (pętla
+domyślna: PR na starcie → audyt poprzedniego PR → niedokończony plan → pętla
+jakości). **Zasady:** ADR 0020 (PR przed kodowaniem, audyt przed nową pracą,
+inkrementalne commity, zakaz force push), ADR 0022 (pełny Oracle albo brak
+wsparcia), ADR 0018/0025 (pełny benchmark tylko na komendę właściciela).
+
+## Pomiar startowy
+
+- `npm test` (szybki rdzeń): **3801/3801 pass** (~135 s), 0 fail.
+- `npm run build`: OK, `dist/mtg-table.html` = **56 modułów / 2934.0 kB**
+  (zgodnie z ostatnim wpisem PR #88 — etap E/F: 2934.0 kB).
+- Gałąź sesji istnieje lokalnie, czysty working tree; repo po `--unshallow`
+  (pełna historia, diff audytu dostępny: `git diff 15a2be5 1605b56`).
+
+## Zakres PR #88 (do zaudytowania, squash `1605b56`, 95 plików, +5574/−268)
+
+Audyt PR #87 (A2 strażnik L16, D1 README, D5 JSDoc) + pętla jakości M257
+(K4 transform w panelu, K5 DFC tył→przód przy zmianie strefy CR 711.4a) +
+uwagi z testów r1–r5b (Rupture Spire pay-or-sacrifice, Squire's Lightblade,
+Morph FoW w warstwie ilustracji, kolejność menu działań, Greatsword of Tyr
+`Equip {W}`, ninjutsu z pipami kolorów F3, kafel „enters with a counter" F1,
+hover Scryfall, blok pod presją życia, Bone Splinters osobne wybory,
+„Tasuj talię", LOSOWY STARTER CR 103.7a, Awaken the Sleeper, Ruthless
+Invasion) + r4/r5b (auto-deklaracja atakujących CR 508.1, strojenie rodziny
+aura, mulligan-bottom auto CR 504.1, regenerate jako combat trick) +
+E/F pętli jakości. **Brak nowego batcha kart** — audyt kart nie dotyczy
+definicji, ale dotyczy mechanik i danych ruszonych pośrednio.
+
+## Etap 1 — audyt PR #88 (ADR 0020 B / ADR 0016)
+
+### Kroki
+
+- [x] **1.1** Przegląd całego diffa `src/` (21 plików, +817/−151) po osiach:
+      poprawność vs CR, generyczność (ADR 0002 — zero warunków po nazwie/ID
+      karty), spójność oferta↔walidacja (L48/L90), kompletność PlayerView
+      (ADR 0017), dowiązania nowych pól (L84), brak globali Node w kodzie
+      artefaktu (L58).
+- [x] **1.2** Weryfikacja wąskich miejsc regułowych z PR #88:
+      - K5: `frontFaceId` przez cały łańcuch (deck → installDeck → addObject
+        → createGameObject) + reset twarzy w `moveObjectDirectly`
+        (CR 711.4a/711.7; LKI CR 603.10);
+      - LOSOWY STARTER: `state.starterId` — CR 103.7a/103.4 przymocowane do
+        startera (nie `players[0]`); determinizm (ten sam seed = ten sam
+        starter);
+      - E: auto-rozstrzygnięcie mulligan-bottom przy `ręka <= count`
+        (wzorzec CR 504.1/508.1) — czy nie zjada decyzji, gdy wybór NIE jest
+        wymuszony;
+      - F: regenerate — usunięcie gałęzi B3 i okno combat_damage (ślad zdarzeń
+        przed `resolve_combat`);
+      - Greatsword of Tyr: `equipment.colors` → oferta i PŁATNOŚĆ tym samym
+        filtrem (L48);
+      - F3: ninjutsu z pipami kolorów — oferta i płatność;
+      - r5 C: Bone Splinters — osobne wybory (wizard) vs walidacja engine.
+- [x] **1.3** Weryfikacja mutacyjna RED→GREEN kluczowych nowych testów
+      (wybór ≥5 plików): `audit-m257-fixes` (K5), `m257r5b-uwagi-testow`
+      (starter), `m257ef-znalezione-petla` (E/F), `m257r5-uwagi-testow`,
+      `m257r4-zyjwy-tester` (F3/F1), `m257-uwagi-z-testow` (pay-or-sacrifice).
+- [x] **1.4** Regresja bota bez pełnego B0: `node --test
+      test/bot-benchmark.test.js` (~2 min) + ewentualnie szybki profil
+      `node tools/benchmark.mjs` (~2–4 min) — progi wg
+      `test/bot-benchmark.test.js`.
+- [x] **1.5** Strojenie bota z PR #88 (aura `auraHostileEnemyBase` 55→65,
+      tarcza 60 w combat_damage, wyceny r5b): sprawdzić golden-master
+      (`test/bot-params.test.js`, snapshot) i zgodność z zasadą ADR 0002
+      (parametry deskryptorowe, nie po nazwie karty).
+- [x] **1.6** Raport: `docs/audits/AUDYT_PR88_<data>.md` + wynik w opisie PR;
+      potwierdzone znaleziska naprawiam od razu (osobne commity).
+
+### Kryteria ukończenia Etapu 1
+
+- Każdy zmieniony plik `src/` z PR #88 przeglądnięty z opinią (tabela w
+  raporcie); testy mutacyjne wykonane z zapisem wyników; benchmark slow
+  zielony; raport w repo i w opisie PR.
+
+Wynik Etapu 1 (raport: `docs/audits/AUDYT_PR88_2026-08-30.md`): **silnikowo
+poprawny** — 10 mutacji (M1–M7, M9, M10 red; M8 obserwacja), bot-benchmark
+10/10, test:all 3811/3811. Znaleziska: **A1** piny gałęzi `cant_be_blocked`
+(L61 — mutacja M9 przechodziła cały rdzeń), **A2** martwa opcja
+`showCycleHint` (L67), **A3** README przestarzały (recydywa D1).
+
+## Etap 2 — pętla jakości (ADR 0021 pkt 4)
+
+- [x] **2.1** **K2 z audytu M257** (kosmetyka, kandydat wskazany w PR #88):
+      kafel tylniej strony DFC na polu bitwy pokazuje koszt „0" — poprawka
+      wg CR 711.4b (koszt/CMC tyłu = koszt przedniej strony obiektu); root
+      cause w jednym odczycie (L41), test pinujący.
+- [x] **2.2** Żywy Tester z perspektywy gracza na pulu kart **niewidzianych**
+      dotąd w audytach (pula = artId w `src/cards/card-data.js` vs
+      `tools/collection-art-ids.csv`, po wykluczeniu pul już przepartionych:
+      Innistrad, forgotten-realms, Warhammer, tarkir/wiedzmin/theros/
+      basnie/legendy); profile `explorer/greedy/defensive/impatient/random`,
+      osie z `docs/setup/TESTER_STOLU.md`. Transkrypty poza repo (konwencja
+      M253). Wymaga `npm run build` przed pomiarem (L76) i `npm i` w
+      `tools/table-tester`.
+      **WYKONANE (raport: `docs/audits/AUDYT_M258_ZYWY_TESTER_2026-08-30.md`):**
+      6 partii seeds 3001–3006 (worek-mroczny/ravnica — świeży Batch 51,
+      srodziemie/mirrodin-wu, zendikar/worek-dziki — spoza BENCH_DECKS),
+      profile greedy×3/explorer/defensive/random, 0 zgłoszeń detektorów.
+      Znaleziska: **T1** sterownik nie domykał kreatora ofiary z PR #88
+      (`b14a532`); **F1** pięć deskryptorów mechanik (echo/madness/surge/
+      toxic/warp) ginęło po cichu w materializacji talii + echoUnpaid
+      nigdy nie stawiane na realnej ścieżce rzutu (`3809b61`, L93);
+      **F2** zakleszczenie decyzji madness przy odrzucaniu wielu kart
+      (`66a5e4c`); **F4+F5** Roiling Regrowth bez lądu nie szukał (CR
+      101.3) + fałszywe „może poświęcić" w logu (`3c7f33e`); **F3 OTWARTE**:
+      cloak bez ward {2} (Veiled Ascension) — decyzja właściciela.
+
+      K2 (2.1) naprawione w `ccba0a3`: właściwa reguła to CR 202.3b (nie
+      711.4b) — MV tylnej twarzy = koszt przedniej; fix w `cardInfo`
+      (object.manaCost przed katalogiem), testy K2a–c RED→GREEN.
+- [x] **2.3** Polowanie na niezgodności z CR (odznaka) innymi ścieżkami niż
+      sesja poprzednia (L11: niespójności między podobnymi implementacjami,
+      skan strukturalny; L72: przegląd rodzeństwa). Kandydaci: rodzina
+      „pay or sacrifice / optional pay" (po fixie Rupture Spire), rodzina
+      zmiany stref DFC (po K5), rodzina startera/CDM (po r5b B).
+- [x] **2.4** Naprawy u root cause + testy (najpierw RED, potem GREEN;
+      weryfikacja mutacyjna L61), aktualizacja `docs/PROJECT_HISTORY.md`
+      i `docs/LESSONS.md` (jeśli nowa klasa pułapki).
+
+      WYKONANE (2.3): rodzina KOPIOWANIA (L11/L72 po K2) — trzy ścieżki
+      (`create_copy_token`/`enterAsCopy`/`token_clone`) niosły jedną klasę
+      błędu CR 202.3b/707.2 (kopia tyłu DFC miała koszt przedni albo — przez
+      cichy drop pola w `createBattlefieldToken` — KAŻDA kopia miała MV 0).
+      Fix `548ea00`: helper `copyManaValueOf` + parametr `manaCost` fabryki
+      tokenów; testy C1–C4 RED→GREEN. Rodzina pay-or-sacrifice (kandydat
+      #2) zweryfikowana CZYSTA (guardowie producibleMana/canPayTrigger przy
+      kolejkowaniu — szczegóły w raporcie audytu). Znane ograniczenie
+      (kopia tyłu + craft z powrotem → MV 0) udokumentowane w raporcie (L57).
+
+      WYKONANE (2.4): naprawa u root cause (wspólny helper zamiast trzech
+      lokalnych ternary), testy przed fixem RED (C1/C3/C4), po fixem GREEN
+      4/4 + suite `npm test` 3823/3823 i `npm run test:all` 3833/3833,
+      build 56 modułów / 2941.6 kB; PROJECT_HISTORY + LESSONS (L94)
+      zaktualizowane.
+
+      DODATKOWO (po decyzji właściciela „nie akceptuję żadnych
+      limitations"): (1) `b481387` — likwidacja „znanego ograniczenia"
+      z 2.3 (MV tokenu-kopii po transformacji w przód; CR 707.8a +
+      202.3b; testy C5–C8); (2) `f602ee4` — F3 ZAMKNIĘTE: WARD jako
+      pełna mechanika CR 702.21 (cloak = 2/2 z ward {2}; decyzja
+      blokująca resolve_ward_pay_choice; testy W1–W9 + sanity 5 pełnych
+      partii botów). Suite 3836/3836 (test) i 3846/3846 (test:all),
+      build 2957.4 kB; LESSONS L95.
+
+### Kryteria ukończenia Etapu 2
+
+- ≥1 runda Żywego Testera z pełnym raportem (znaleziska/fałszywe alarmy
+  zamknięte L57); potwierdzone błędy naprawione z testami; `npm test` +
+  `npm run build` zielone po każdym commicie.
+
+## Kolejność commitów (plan)
+
+1. PLAN (ten plik) + push + otwarcie PR (ADR 0020 A).
+2. Raport audytu PR #88 (+ ewentualne naprawy znalezisk — każdy osobno).
+3. Fix K2 (DFC tył koszt) — osobno.
+4. Pętla jakości: znaleziska → fixy osobno (każdy zielony).
+5. Domknięcie: PROJECT_HISTORY + handoff + opis PR (kumulatywnie).
+
+## Ryzyka i pułapki
+
+- **Sandbox reset** (ENVIRONMENT §2): push po każdym zielonym kroku; przed
+  pushem `git log --oneline -3` + `git status` + porównanie z remote.
+- **L76:** Żywy Tester mierzy `dist/` — `npm run build` po każdej zmianie.
+- **L57:** każde podejrzenie z transkryptu najpierw weryfikuję w Oracle
+  (`docs/cards/scryfall-*.json`) / CR, zanim dotknę kodu.
+- **L48/L90:** przy audycie każdej naprawy sprawdzam obie strony (oferta +
+  walidacja) i KOLEJNOŚĆ bramek.
+- **L61:** test regresyjny dopiero po pokazaniu go czerwonym (mutacja/stash).
+- **Pełny B0 nie odpalam** (ADR 0018/0025) — wystarczy próbka szybka/slow.
+- **D3/D4** (zgłoszenia procesowe z audytu PR #87) — zamknięte decyzją
+  właściciela 2026-08-30 (bezzasadne/nieistotne — porzucone).
+- `edit_file` psuje polskie znaki — edycje plików PL przez `python3`
+  (ENVIRONMENT §4).
+
+## Podsumowanie wykonania
+
+_(dopisane na końcu sesji)_
