@@ -4947,6 +4947,14 @@ export function playerView(state, playerId) {
           // jak `plot`, żeby etykieta akcji „Zawieś:" pokazała koszt (nie „?")
           // i poprawną odmianę liczby liczników. Suspend to publiczny Oracle.
           suspend: object.suspend ?? null,
+          // M265 (Żywy Tester, worek-legend vs tarkir-wur seed 323): panel
+          // pokazywał „Rzuć za warp: … (koszt ?)". Recydywa klasy L93/M151
+          // w tej samej liście: KAŻDY deskryptor kosztu alternatywnego jest
+          // publicznym Oracle (CR 601.2b) i musi dotrzeć do UI, inaczej
+          // etykieta wariantu kłamie o cenie. Strażnik klasowy enumeruje
+          // katalog: test/m265-hand-view-alt-cost-descriptors.test.js.
+          warp: object.warp ?? null, surge: object.surge ?? null,
+          kicker: object.kicker ?? null, treasureAltCost: object.treasureAltCost ?? null,
           // Kolory karty (publiczne) i fyryksyjskie symbole w koszcie —
           // bot planuje płatność „maną albo życiem" z widoku, nie z registry.
           colors: [...(object.colors ?? [])], phyrexianManaCost: object.phyrexianManaCost ?? 0,
@@ -5210,6 +5218,12 @@ export function playerView(state, playerId) {
         if (object.playableUntilTurn != null) waiting.playableUntilTurn = object.playableUntilTurn;
         if (object.reboundReady) waiting.reboundReady = true;
         if (object.madnessReady) waiting.madnessReady = true;
+        // M265: karta wygnana po rzucie za warp (CR EOE — warpReady) czeka na
+        // rzut Z EXILE za koszt warp. Bez deskryptora `warp` panel pokazywał
+        // „Rzuć za warp: … (koszt ?)" — ta sama luka co w ręce, druga strefa.
+        // Wygnanie jest jawne (CR 406.3), koszt to publiczny Oracle.
+        if (object.warpReady) waiting.warpReady = true;
+        if (object.warp) waiting.warp = object.warp;
         // M254/D (zgłoszenie właściciela, Wormfang Newt): wygnanie TYMCZASOWE
         // z linkiem powrotu — badge mówi, przez kogo karta została wygnana.
         // Wygnanie jest strefą jawną (CR 406.3), więc znacznik widzą obaj.

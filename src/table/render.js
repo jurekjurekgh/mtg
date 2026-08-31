@@ -2197,6 +2197,18 @@ export function commandLabel(cmd, session, view) {
         if (cmd.phyrexianPayWithLife > 0) parts.push(`${cmd.phyrexianPayWithLife}× po 2 życia`);
         return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)} · phyrexian ${parts.join(' + ')})`;
       }
+      // M265: wariant „tylko ze Skarbów" (Security Rhox, CR 601.2b) miał
+      // etykietę IDENTYCZNĄ ze zwykłym rzutem — panel oferował dwa takie
+      // same przyciski o różnym skutku (klasa M101/B). Koszt alternatywny
+      // z `treasureAltCost` + jawna informacja o źródle many.
+      if (cmd.treasureAlt) {
+        const alt = card?.treasureAltCost;
+        const colors = alt?.colors ?? [];
+        const generic = Math.max(0, (alt?.mana ?? 0) - colors.length);
+        const symbols = `${generic > 0 ? `{${generic}}` : ''}${colors.map((c) => `{${c}}`).join('')}`;
+        const cost = alt ? manaCostHtml(symbols || `{${alt.mana ?? 0}}`) : '?';
+        return `Zagraj za manę ze Skarbów: ${nameOfObjectId(cmd.objectId)} (koszt ${cost})`;
+      }
       if (cmd.kicked) {
         const kicker = card?.kicker ?? {};
         const kickerHtml = manaCostHtml(`${kicker.cost != null ? `{${kicker.cost}}` : ''}${(kicker.colors ?? []).map((c) => `{${c}}`).join('')}`);

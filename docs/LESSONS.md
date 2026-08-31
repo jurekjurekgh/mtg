@@ -34,6 +34,42 @@ M208.
 
 ---
 
+## L101 (2026-08-31) — Jawna lista pól WIDOKU to trzecia kopia tej samej listy; pin na jedną kartę nie chroni klasy, strażnik enumeruje katalog
+
+**Objaw (Żywy Tester M265, worek-legend vs tarkir-wur seed 323):** panel
+akcji pokazał „Rzuć za warp: Weftblade Enhancer (koszt ?)". Enumeracja
+katalogu wykazała cztery gubione deskryptory kosztu: `warp`
+(Weftblade Enhancer), `surge` (Jwar Isle Avenger), `kicker`
+(Kor Sanctifiers, „koszt {2}{W} + kicker " — pusta dopłata),
+`treasureAltCost` (Security Rhox — etykieta identyczna ze zwykłym rzutem,
+dwa nierozróżnialne przyciski o różnym skutku).
+
+**Przyczyna:** ta sama klasa co L93/L21/M151, ale w TRZECIEJ kopii listy pól
+— po `gameObjectDataOf` (generator) i `installDeck` (transport) jest jeszcze
+wpis strefy w `playerView` (`zone === 'hand'`, `zone === 'exile'`). M151
+dopisał tam `suspend` i zamknął temat jednym testem na jedną kartę; cztery
+pozostałe pola dojechały do katalogu później i nikt ich nie zauważył, bo
+silnik liczył ofertę poprawnie — kłamała tylko etykieta.
+
+**Reguła:**
+1. Koszt alternatywny (warp, surge, kicker, bestow, plot, suspend, morph,
+   adventure, alt-cost) to publiczny Oracle (CR 601.2b) — MUSI dotrzeć do
+   widoku w KAŻDEJ strefie, z której da się go zapłacić (ręka ORAZ exile:
+   `warpReady`, `suspendReady`, `madnessReady`, `reboundReady`).
+2. Strażnik takiej listy jest KLASOWY: enumeruje `REGISTRY.all()`, buduje
+   obiekt przez realną ścieżkę i porównuje pola wejścia z polami wpisu
+   widoku. Pin na konkretną kartę zamyka jeden przypadek i usypia klasę.
+3. Dwa różne koszty tej samej karty = dwie różne etykiety. Identyczny tekst
+   przy różnym skutku to błąd panelu (klasa M101/B), nawet gdy silnik działa.
+4. „Silnik liczy dobrze" nie zamyka zgłoszenia: `legalCommands` czyta
+   z OBIEKTU, `commandLabel` z WIDOKU — to dwa różne źródła.
+
+**Strażnik:** `test/m265-hand-view-alt-cost-descriptors.test.js` (6 testów,
+pierwszy enumeruje katalog). Mutacje: usunięcie `warp`/`surge`/`kicker`/
+`treasureAltCost` z wpisu ręki (`game-state.js`) → test 1 + testy etykiet;
+usunięcie `warp` z wpisu exile → test rzutu z wygnania; usunięcie gałęzi
+`cmd.treasureAlt` (`render.js`) → test Security Rhox.
+
 ## L100 (2026-08-31) — Ten sam koszt renderowany w dwóch warstwach: zdarzenie musi nieść WSZYSTKIE składniki ceny, inaczej log kłamie obok poprawnego przycisku
 
 **Objaw (Żywy Tester M265, worek-basni vs final-fantasy seed 303):** modal
