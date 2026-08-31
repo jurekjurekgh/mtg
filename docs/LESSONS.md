@@ -34,6 +34,45 @@ M208.
 
 ---
 
+## L104 (2026-08-31) — Poprawny wynik z niepoprawnego źródła to bug uśpiony: alt-koszt musi nieść WŁASNE pipy, nie pożyczać ich z kosztu bazowego
+
+**Objaw (Żywy Tester M267, profile explorer/hoarder, seedy 511/516/523):**
+panel pokazywał „Rzuć z Cleave: Lunar Rejection (koszt 4)" i „Ucieczka:
+Sweet Oblivion (koszt 4)", a Oracle mówi „Cleave {3}{U}" i „Escape {3}{U}".
+
+**Przyczyna — dwie warstwy, jedna klasa:**
+1. `colors` w ogóle nie istniało w definicjach trzech kart z cleave/escape,
+   a normalizacja w `registry.js` i tak by je ucięła: jawna lista pól
+   przepisywała `{ cost, exileCount }` / `{ manaCost, targets, effects }`.
+   To CZWARTA kopia listy pól z L101 (po generatorze, transporcie i widoku),
+   przy czym sąsiedni `buyback` w tym samym obiekcie już `colors` przepuszczał.
+2. Płatność (`spells.js`) brała pipy z `coloredPipsOf(object.cardId)` —
+   z kosztu BAZOWEGO karty. Wynik był poprawny, ale przypadkiem: wszystkie
+   trzy karty mają w koszcie bazowym ten sam {U} co w alt-koszcie.
+
+**Reguła:**
+1. Alternatywny koszt (cleave, escape, madness, suspend, plot, bestow) to
+   OSOBNA cena — jego pipy należą do jego deskryptora. Czytanie kolorów
+   z kosztu bazowego jest błędem nawet wtedy, gdy dziś daje dobry wynik:
+   pierwsza karta o innym kolorze alt-kosztu złamie regułę płatności
+   (CR 601.2b). Wzorzec zrobiony dobrze: madness (M161/O2).
+2. „Testy zielone i zachowanie poprawne" nie zamyka pytania o ŹRÓDŁO.
+   Gdy poprawność wynika ze zbiegu okoliczności w danych, strażnik ma
+   pinować źródło (skąd czytamy), nie tylko wynik — inaczej regres pojawi
+   się przy dodaniu karty, nie przy zmianie kodu.
+3. Dokładając pole do deskryptora karty, przejdź WSZYSTKIE kopie jawnej
+   listy pól (L101) — `registry.js` normalizacja jest czwartą i najłatwiej
+   o niej zapomnieć, bo test na definicję karty przechodzi, a pole ginie
+   dopiero w drodze do rejestru. Sygnał: pole widać w `card-data.js`,
+   a `REGISTRY.get(id)` go nie ma.
+4. Strażnik klasowy porównuje Oracle z definicją (regex po pipach
+   „Cleave {3}{U}") dla CAŁEGO katalogu, nie dla zgłoszonej karty.
+
+**Strażnik:** `test/m267-alt-koszt-kolory.test.js` (5 testów, w tym skan
+katalogu i test ŹRÓDŁA płatności czytający `spells.js`). Mutacje: usunięcie
+`colors` z normalizacji `registry.js` → testy 1–3; powrót do
+`coloredPipsOf(object.cardId)` w ścieżce cleave/escape → test 5.
+
 ## L103 (2026-08-31) — Skrót „na 1v1" w modelu karty zmienia REGUŁY: brak słowa „target" w Oracle ⇒ brak `targets`, zakres należy do efektu
 
 **Objaw (zgłoszenie właściciela M266/B):** log pisał „Nieprzyjaciel rzuca

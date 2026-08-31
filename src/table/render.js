@@ -2300,8 +2300,10 @@ export function commandLabel(cmd, session, view) {
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
       const card = obj(cmd.objectId);
+      // M267/C: koszt cleave bywa KOLOROWY (Lunar Rejection {3}{U}) —
+      // „{4}" opisywało cenę, której nie da się zapłacić czterema bezbarwnymi.
       const cleaveCost = card?.spell?.cleave?.manaCost != null
-        ? manaCostHtml(`{${card.spell.cleave.manaCost}}`)
+        ? manaCostHtml(costSymbols(card.spell.cleave.manaCost, card.spell.cleave.colors))
         : '?';
       return `Rzuć z Cleave: ${nameOfObjectId(cmd.objectId)} (koszt ${cleaveCost})${targets ? ` → cel: ${targets}` : ''}`;
     }
@@ -2311,7 +2313,9 @@ export function commandLabel(cmd, session, view) {
       const objCard = obj(cmd.objectId);
       const defCard = objCard?.cardId ? session.cardDetails(objCard.cardId) : null;
       const escCost = defCard?.spell?.escape?.cost;
-      const esc = escCost != null ? manaCostHtml(`{${escCost}}`) : '?';
+      // M267/C: Escape {3}{U} (Sweet Oblivion) / {2}{U} (Sleep of the Dead).
+      const esc = escCost != null
+        ? manaCostHtml(costSymbols(escCost, defCard?.spell?.escape?.colors)) : '?';
       const exiled = (cmd.escapeExileIds ?? []).map((id) => nameOfObjectId(id)).join(', ');
       const exilePart = exiled ? ` — wygnaj: ${exiled}` : '';
       return `Ucieczka: ${nameOfObjectId(cmd.objectId)} (koszt ${esc})${exilePart}`;

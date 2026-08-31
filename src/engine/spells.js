@@ -844,9 +844,17 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
     }
   }
   if (!object.plotted && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
+  // M267/C: pipy KOSZTU CLEAVE, nie karty (wzorzec madness M161/O2). Dotąd
+  // płatność czytała `coloredPipsOf(cardId)` i trafiała przypadkiem — koszt
+  // bazowy Lunar Rejection ma ten sam {U} co cleave. Pierwsza karta o innym
+  // kolorze alt-kosztu płaciłaby złym kolorem.
+  const cleaveRequirements = (object.spell.cleave.colors ?? []).map((color) => [color]);
   const manaSpent = object.plotted ? 0
-    : reduceAlternativeCost(state, object, object.spell.cleave.manaCost ?? 0, coloredPipsOf(object.cardId).map((req) => req[0]));
-  spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId), spellManaPurpose(object));
+    : reduceAlternativeCost(state, object, object.spell.cleave.manaCost ?? 0, cleaveRequirements.map((req) => req[0]));
+  if (!object.plotted && !canPayColoredCost(state, playerId, cleaveRequirements)) {
+    throw new Error('Brak kolorowego źródła many');
+  }
+  spendMana(state, playerId, manaSpent, cleaveRequirements, spellManaPurpose(object));
   consumePendingSpellDiscount(state, object);
   state.spellsCastThisTurn += 1;
   if (sacrificeCost) {
@@ -2722,7 +2730,13 @@ export function resolveEscapeExile(state, playerId, exileIds) {
   if (!valid) throw new Error('Nieprawidłowy koszt Escape (exile)');
   state.pendingEscapeExile = null;
   const manaSpent = pending.manaCost;
-  spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId), spellManaPurpose(object));
+  // M267/C: pipy KOSZTU ESCAPE (pending.colors pochodzi z deskryptora karty),
+  // nie kosztu bazowego — jak madness (M161/O2).
+  const escapeRequirements = (pending.colors ?? []).map((color) => [color]);
+  if (!canPayColoredCost(state, playerId, escapeRequirements)) {
+    throw new Error('Brak kolorowego źródła many');
+  }
+  spendMana(state, playerId, manaSpent, escapeRequirements, spellManaPurpose(object));
   consumePendingSpellDiscount(state, object);
   state.spellsCastThisTurn += 1;
   for (const exId of exileIds) {

@@ -42,8 +42,13 @@ test('D2.2: escape pokazuje koszt, nie „?"', () => {
   const session = sessionWith(REGISTRY, [], [], [graveObj]);
   const label = commandLabel({ type: 'cast_escape', objectId: 'so', targets: ['p2'], escapeExileIds: [] }, session, session.view());
   assert.ok(!label.includes('(koszt ?)'), `escape bez kosztu: ${label}`);
-  // Koszt many jest ikoną (span.ms) — sprawdzamy, że nie ma „?" i jest cyfra 4.
-  assert.ok(label.includes('>4</span>') || label.includes('4'), label);
+  // Koszt many jest ikoną (span.ms) — sprawdzamy, że nie ma „?" i jest cena.
+  // M267/C: Oracle Sweet Oblivion to „Escape {3}{U}", więc etykieta pokazuje
+  // {3}{U} (trzy generyczne + pip niebieski), a nie zsumowane „4" — cztery
+  // many bezbarwne nie zapłaciłyby tego kosztu. Pin zaktualizowany razem
+  // z decyzją; próg „nie ?" (sedno tego testu) bez zmian.
+  assert.ok(label.includes('>3</span>') || label.includes('3'), label);
+  assert.match(label, /\bU\b|ms-u/i, `pip koloru w koszcie escape: ${label}`);
 });
 
 // --- 3. Inspiring Bard: mode names po polsku --------------------------------

@@ -2027,7 +2027,9 @@ export const REAL_CARDS = Object.freeze([
       targets: [{ type: 'player' }],
       effects: [{ type: 'mill_cards', amount: 4 }],
       // Escape (CR 702.138): rzuć z grobu za {3}{U} + wygnaj 4 inne karty z grobu.
-      escape: { cost: 4, exileCount: 4 },
+      // M267/C: pipy kolorów alt-kosztu jadą z Oracle do DEFINICJI — etykieta
+      // i płatność czytają jedno źródło (koszt bazowy bywa innego koloru).
+      escape: { cost: 4, colors: ['U'], exileCount: 4 },
     },
     artId: 103,
     plan: 'Theros',
@@ -2469,7 +2471,9 @@ export const REAL_CARDS = Object.freeze([
       // podtypu celu — cleave celuje dowolnego stwora (creature), nie tylko
       // Wolf/Werewolf. Efekt i cele pochodzą z deskryptora cleave.
       cleave: {
+        // M267/C: Oracle „Cleave {3}{U}" — pip koloru w definicji.
         manaCost: 4,
+        colors: ['U'],
         targets: [{ type: 'creature' }],
         effects: [
           { type: 'bounce_permanent' },
@@ -8184,7 +8188,9 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         { type: 'dont_untap_next_untap_step' },
       ],
       // Escape (CR 702.138): rzuć z grobu za {2}{U} + wygnaj 3 inne karty z grobu.
-      escape: { cost: 3, exileCount: 3 },
+      // M267/C: pipy kolorów alt-kosztu jadą z Oracle do DEFINICJI — etykieta
+      // i płatność czytają jedno źródło (koszt bazowy bywa innego koloru).
+      escape: { cost: 3, colors: ['U'], exileCount: 3 },
     },
     artId: 11, plan: 'Theros',
     support: { status: 'supported', limitations: [] },

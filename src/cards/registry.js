@@ -346,7 +346,14 @@ function freezeSpell(spell) {
     }))) } : {}),
     // Escape (CR 702.138, Sweet Oblivion): czar można rzucić z grobu za koszt
     // escape + wygnanie N innych kart z grobu. Deskryptor { cost, exileCount }.
-    ...(spell.escape ? { escape: Object.freeze({ cost: spell.escape.cost, exileCount: spell.escape.exileCount }) } : {}),
+    // M267/C (klasa L101 — czwarta kopia jawnej listy pól): `colors` musi
+    // przejść przez normalizację, inaczej pip {U} z Oracle ginie w drodze do
+    // rejestru i etykieta pokazuje gołe „{3}" (sąsiedni buyback już to robi).
+    ...(spell.escape ? { escape: Object.freeze({
+      cost: spell.escape.cost,
+      colors: Object.freeze([...(spell.escape.colors ?? [])]),
+      exileCount: spell.escape.exileCount,
+    }) } : {}),
     // Obniżka kosztu warunkowa (Metalcraft, Stoic Rebuttal, CR 702.80):
     // „this spell costs {1} less to cast if you control three or more
     // artifacts\" — deskryptor { amount, condition } oceniany w chwili rzutu.
@@ -361,6 +368,8 @@ function freezeSpell(spell) {
     // effects). Nigdy nie zależy od nazwy karty (ADR 0002).
     ...(spell.cleave ? { cleave: Object.freeze({
       manaCost: spell.cleave.manaCost,
+      // M267/C: pipy kolorów alt-kosztu (Oracle „Cleave {3}{U}").
+      colors: Object.freeze([...(spell.cleave.colors ?? [])]),
       targets: Object.freeze((spell.cleave.targets ?? []).map((spec) => Object.freeze({ ...spec }))),
       effects: Object.freeze((spell.cleave.effects ?? []).map((effect) => Object.freeze({ ...effect }))),
     }) } : {}),
