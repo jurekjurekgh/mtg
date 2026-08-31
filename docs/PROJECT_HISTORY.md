@@ -7125,6 +7125,46 @@ koliguje z nazwą karty — jak Treasure/Island). Suite 3883/3883
 **Kolejny krok:** decyzja właściciela o scaleniu PR #89; ewentualnie nowy
 batch kart / kolejna runda Żywego Testera.
 
+## 2026-08-31 — M263: audyt PR #89 i pętla jakości (PR #90)
+
+Przerwa w trakcie audytu: zgłoszenie właściciela o granicy tury w modalu
+„Rozgrywka" (M261) — pauza ma być PO nagłówku „Tura X — gracz", nagłówek
+zawsze widoczny, STOP natychmiast po nim; stary mechanizm przerwania
+PRZED granicą (heldBotMoves/routingHeld/botTurnSplit) usunięty jako
+wadliwy (nie działał przy autopass bez komend). Nowy kształt: nagłówek
+zawsze w buforze, `game_started` syntezuje „Tura 1 — <gracz>", ogon
+strumienia po nagłówku (upkeep/triggery) idzie do `deferredTurnTail`
+i wypływa po „Rozumiem" — blok graniczny KOŃCZY się nagłówkiem. Testy:
+`m261-granica-tury-w-modalu` (3), `human-draw-modal` (M100/E8).
+
+**Audyt PR #89 (ADR 0020 B / 0016):** pełny przegląd 24 plików `src/`
+(+1110/−237) i 25 plików testów; 10 mutacji RED→GREEN (M1–M10 — każda
+złapana, zero RE). Dwa znaleziska naprawione od razu (osobny commit):
+
+- **Z1** — `chooseColor` (Manor Gate) ginął w `installDeck` (L21/F1):
+  deskryptor z `gameObjectDataOf` docierał do wpisu talii, ale jawna
+  lista pól go nie przenosiła — w prawdziwej partii ląd wchodził bez
+  decyzji koloru; enumeracja 433 kart: jedyne ginące pole. Fix
+  (`chooseColor` w `installDeck`) + test M258/D4 przez realną ścieżkę.
+- **Z2** — kwota `ward` nie docierała do kafela przez `playerView`
+  (oś 2/ADR 0017): M258/W8 sprawdzał `cardInfo` na surowym obiekcie,
+  a prawdziwy kafel renderuje z widoku. Fix (`entry.ward`) + W8
+  rozszerzony o playerView obu graczy.
+
+**Pętla jakości — A1 domknięte:** gałęzie `fireWardTriggers` dla
+`spell_copied` (Storm) i `aura_spell_cast` nie miały pinu testowego;
+dodane W10 (ward na kopii czaru ze Stormem — LIFO: oryginał, potem
+kopia, kwota 2) i W11 (Serra's Embrace — czar aury, trigger nad czarem);
+obie mutacje RED.
+
+Suite po przerwie: 3876/3876 (szybki rdzeń), `test:slow` 10/10,
+build 56 modułów / 2985.8 kB; benchmark bota 10/10 (~132 s).
+Commity: `a05eebe` (M261), `f82b455` (plan), `c410753` (Z1+Z2),
+`78b520f` (raport), `3d683ec` (plan domknięty), `8003ac1` (A1).
+
+**Kolejny krok:** decyzja właściciela o scaleniu PR #90; dalsza pętla
+jakości lub nowy batch kart.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:
