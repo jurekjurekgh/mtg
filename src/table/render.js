@@ -1830,9 +1830,22 @@ function choiceSourceTitle(cmd, session, view) {
   if (cmd.type === 'cast_spell' && cmd.sacrificeTargetId && !cmd.targets?.length) {
     return `Poświęć stwora — ${name}`;
   }
-  if (cmd.type === 'cast_spell' && cmd.targets?.length) {
+  // M267 (Żywy Tester, profil explorer, seed 506 — znalezisko detektora
+  // `detectGenericChoiceTitle` z M266/D): warunek TYTUŁU musi pokrywać
+  // warunek KLUCZA grupy (`choiceRequestGroupKey`), inaczej grupa powstaje
+  // bez nazwy. Klucz robi grupę także dla samego `modeIndex`, a tytuł pytał
+  // wyłącznie o `targets.length` — modalny czar, którego tryb celuje w 0–3
+  // stwory (You're Confronted by Robbers), wystawia ofertę „zero celów"
+  // jako pierwszą opcję i spadał na „Wybierz: Wariant (8 opcji)".
+  // Klasa L102/1: klucz i tytuł to dwie listy warunków o tej samej rodzinie.
+  if (cmd.type === 'cast_spell' && (cmd.targets?.length || cmd.modeIndex != null)) {
     const mode = (cmd.modeIndex != null && object.spell?.modes)
       ? object.spell.modes[cmd.modeIndex] : null;
+    // Bez celów w tej ofercie tytuł nie może obiecywać wyboru celu —
+    // decyzją jest sam TRYB czaru.
+    if (!cmd.targets?.length) {
+      return mode?.name ? `${name} — tryb: ${mode.name}` : `Tryb czaru: ${name}`;
+    }
     return mode?.name ? `Cel czaru: ${name} — ${mode.name}` : `Cel czaru: ${name}`;
   }
   if (cmd.type === 'cast_cleave' && cmd.targets?.length) return `Cel czaru (Cleave): ${name}`;
