@@ -5246,6 +5246,15 @@ export function playerView(state, playerId) {
         // badge „Wygnane: …" w boksie wygnania na stole.
         waiting.exiledBy = object.meta?.exiledBy ?? null;
       }
+      // M265 (Żywy Tester, theros vs worek-basni seed 332): deskryptor czaru
+      // dla kart w GROBIE — dokładnie ta sama luka co M212/Z7 w wygnaniu.
+      // Halo Forager rzuca instant/sorcery z DOWOLNEGO grobu, oferta jest
+      // enumerowana per zestaw celów, a wycena bota czytała `spell.effects`
+      // z widoku i dostawała pustkę: wszystkie cele remisowały i bot brał
+      // pierwszy z brzegu (zmierzone: tapnął WŁASNEGO atakującego).
+      // Grób jest strefą PUBLICZNĄ (CR 400.2), a wpis i tak niesie cardId —
+      // deskryptor nie dokłada informacji ukrytej.
+      if (zone === 'graveyard' && object.spell) waiting.spell = object.spell;
       return {
         id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
         plotted: Boolean(object.plotted), ...waiting,

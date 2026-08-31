@@ -34,6 +34,49 @@ M208.
 
 ---
 
+## L102 (2026-08-31) — Rodzina ofert dzieli WYCENĘ i WIDOK: nowy członek bez pinu odziedziczy stary błąd; skutek niewidoczny w odcisku to fałszywy no-op
+
+**Objaw (Żywy Tester M265, dwa detektory, dwie partie):**
+1. `theros` vs `worek-basni` seed 332 — bot rzucił Sleep of the Dead (tap
+   + „doesn't untap") we WŁASNEGO Blade-Blizzard Kitsune, który miał
+   atakować, płacąc za to {1}.
+2. `worek-mroczny` vs `alara` seed 331 — sonda zgłosiła „oferta bez skutku"
+   dla drugiej aktywacji Soulbright Flamekin, choć ta realnie przybliżała
+   trzecią rezolucję („add {R}×8").
+
+**Przyczyna (jedna klasa, dwie manifestacje):**
+1. Rodzina „darmowych rzutów" (suspend / rebound / madness / grave-free-cast)
+   enumeruje ofertę PER ZESTAW CELÓW. M212/Z7 dołożył `freeCastTargetPenalty`
+   trzem członkom; czwarty (`resolve_grave_free_cast`, Halo Forager) został
+   bez kary i bez pinu — wszystkie cele remisowały, bot brał pierwszy
+   z brzegu. Do tego wpis GROBU w `playerView` nie niósł `spell` (M212/Z7
+   naprawił to tylko dla WYGNANIA), więc nawet z karą wycena czytałaby pustkę.
+2. `abilityResolvedThisTurn` (postęp `onNthResolve`) nie był w
+   `stateFingerprint`, więc sonda nie widziała skutku, a dwa różne stany
+   miały identyczny odcisk (ADR 0005).
+
+**Reguła:**
+1. Naprawiając wycenę/widok dla JEDNEJ komendy, wypisz całą jej rodzinę
+   (komendy o tej samej strukturze oferty) i zamknij wszystkie naraz —
+   albo dopisz strażnika, który wymienia rodzinę z nazwy. Grep po nazwie
+   funkcji-kary (`freeCastTargetPenalty`) daje listę w sekundę.
+2. Deskryptor potrzebny wycenie musi być w widoku KAŻDEJ strefy jawnej,
+   z której da się zagrać (grób CR 400.2, wygnanie CR 406.3, nie tylko ta,
+   którą akurat zgłoszono).
+3. Każde pole stanu, które zmienia PRZYSZŁE możliwości (liczniki postępu,
+   „n-ty raz w tej turze", gotowości rzutu), należy do odcisku. Test:
+   czy da się zbudować dwa stany różniące się tylko tym polem i mające
+   ten sam fingerprint? Jeśli tak — sonda no-op jest na nie ślepa.
+4. Zgłoszenie sondy „bez skutku" weryfikuj najpierw wobec ODCISKU, dopiero
+   potem wobec reguł: fałszywy alarm zwykle oznacza brak pola w odcisku,
+   czyli prawdziwy błąd o warstwę niżej.
+
+**Strażnicy:** `test/m265-grave-free-cast-target.test.js` (4 testy),
+`test/m265-nth-resolve-fingerprint.test.js` (3 testy). Mutacje: usunięcie
+`freeCastTargetPenalty` z `resolve_grave_free_cast` → testy celu; usunięcie
+`spell` z wpisu grobu (`game-state.js`) → te same testy; usunięcie
+`abilityResolvedThisTurn` z `fingerprint.js` → testy odcisku i sondy.
+
 ## L101 (2026-08-31) — Jawna lista pól WIDOKU to trzecia kopia tej samej listy; pin na jedną kartę nie chroni klasy, strażnik enumeruje katalog
 
 **Objaw (Żywy Tester M265, worek-legend vs tarkir-wur seed 323):** panel

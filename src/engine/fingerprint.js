@@ -45,7 +45,7 @@ function stableStringify(value) {
  */
 export function stateFingerprint(state) {
   const objects = [...state.objects.values()]
-    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, keywordGrants, abilityGrants, typeGrant, subtypes, transformTo, frontFaceId, untapLockedBy, types, entersTapped, attachedTo, baseKind, bestow, aura, equipment, backup, colors, phyrexianManaCost, goaded, goadedUntilTurn, detained, detainedUntilTurn, hexproofUntilTurn, enchantPlayer, enchantedPlayerId, cantBlock, cantBlockPrinted, cantBeBlocked, lostKeywordsUntilEOT, subtypesBeforeOverride, madnessReady, manifestReady }) => ({
+    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, keywordGrants, abilityGrants, typeGrant, subtypes, transformTo, frontFaceId, untapLockedBy, types, entersTapped, attachedTo, baseKind, bestow, aura, equipment, backup, colors, phyrexianManaCost, goaded, goadedUntilTurn, detained, detainedUntilTurn, hexproofUntilTurn, enchantPlayer, enchantedPlayerId, cantBlock, cantBlockPrinted, cantBeBlocked, lostKeywordsUntilEOT, subtypesBeforeOverride, madnessReady, manifestReady, abilityResolvedThisTurn }) => ({
       id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets,
       abilities: abilities ?? [],
       counters: { ...(counters ?? {}) }, faceDown: Boolean(faceDown),
@@ -75,6 +75,13 @@ export function stateFingerprint(state) {
       // M187/N1: wydrukowane „can't block\" (token Mite) jest TRWAŁE i musi
       // być w odcisku niezależnie od efektu „until end of turn\".
       cantBlock: Boolean(cantBlock), cantBlockPrinted: Boolean(cantBlockPrinted), cantBeBlocked: Boolean(cantBeBlocked),
+      // M265 (Żywy Tester, worek-mroczny vs alara seed 331): licznik
+      // rozstrzygnięć zdolności z `onNthResolve` (Soulbright Flamekin —
+      // „if this is the THIRD time this ability has resolved this turn").
+      // Postęp do trzeciej rezolucji jest realnym skutkiem gry (ADR 0005),
+      // a bez niego sonda „oferta bez skutku" zgłaszała fałszywy no-op dla
+      // drugiej aktywacji na cel, który już ma trample (klasa L16/M122/#1).
+      abilityResolvedThisTurn: abilityResolvedThisTurn ?? 0,
       // M159/Z1 (Żywy Tester, klasa M122/#1): stan „do końca tury” i madness
       // na obiekcie też są częścią stanu gry (Wishful Merfolk — utrata
       // keywordów; Revolutionist — gotowość rzutu za madness z exile).
