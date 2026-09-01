@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { assertZone } from './zones.js';
+import { assertZone, deathZoneFor } from './zones.js';
 import { addCounter, removeCounter, syncStationKind } from './counters.js';
 import { attachmentGrant, attachmentsAttachedTo, effectiveColors, effectiveProtectionFromColors, effectiveProtectionQualities, isProtectedFromSource, sourceHasProtectionQuality } from './attachments.js';
 // M110: helpery ochrony przed JAKOŚCIĄ mieszkają w attachments.js (razem
@@ -48,6 +48,39 @@ function isActiveLockSource(state, objectId) {
     if ((object.untapLockedBy ?? []).includes(objectId)) return true;
   }
   return false;
+}
+
+/**
+ * Odkręcenie permanentu przez EFEKT (czar/zdolność), bez sprawdzania, kto go
+ * kontroluje — w odróżnieniu od `untapObject`, które obsługuje krok
+ * odkręcania i wymaga zgodności kontrolera.
+ *
+ * M272 (błąd #18): pięć ścieżek efektów odkręcających mutowało `tapped: false`
+ * RĘCZNIE, przez co omijały DWIE reguły, które zna `untapObject`:
+ *  - CR 122.1d/614.6 — licznik stun ZASTĘPUJE odkręcenie („instead remove a
+ *    stun counter"), i to przy odkręceniu z DOWOLNEGO powodu, nie tylko
+ *    w kroku odkręcania. Stwór ze stunem wstawał więc z Twiddle/Village
+ *    Bell-Ringer za darmo, zachowując licznik;
+ *  - blokada odkręcania (`untapLockedBy`: Spectral Prison, Lira) — permanent
+ *    „nie odkręca się" wstawał mimo aktywnej blokady.
+ *
+ * Zwraca true, gdy permanent FAKTYCZNIE się odkręcił (zdarzenie
+ * `object_untapped` wyemitowane) — zdjęcie licznika stun to nie odkręcenie,
+ * więc triggery „becomes untapped" nie odpalają (CR 122.1d, ruling WotC).
+ */
+export function untapByEffect(state, objectId, playerId = null) {
+  const object = state.objects.get(objectId);
+  if (!object || object.zone !== 'battlefield' || !object.tapped) return false;
+  if (isUntapLocked(state, object)) return false;
+  if ((object.counters ?? {}).stun > 0) {
+    removeCounter(state, objectId, 'stun', 1);
+    return false;
+  }
+  replaceObject(state, object, { tapped: false });
+  state.events.push(event('object_untapped', {
+    objectId, playerId: playerId ?? object.controllerId, cardId: object.cardId ?? null,
+  }));
+  return true;
 }
 
 export function untapObject(state, objectId, playerId) {
@@ -459,9 +492,20 @@ function untilEndOfTurnBonuses(state, object) {
     // nim objęty (przedtem liczyła się tylko bieżąca kontrola, więc świeży
     // stwór „łapał" Angel of the Dawn czy Hysterical Blindness).
     if (Array.isArray(buff.objectIds) && !buff.objectIds.includes(object.id)) continue;
-    const applies = buff.opponent
+    // CR 611.2c (M269): zbiór dotkniętych obiektów jest ustalany RAZ, przy
+    // rozstrzygnięciu, i nie zmienia się do końca tury. Późniejsza zmiana
+    // KONTROLI nie zdejmuje buffa — efekt dotyczy konkretnych obiektów, a nie
+    // „tego, co kontrolujesz teraz". Dotąd filtr po bieżącym kontrolerze
+    // odbierał bonus stworowi przejętemu efektem „gain control until end of
+    // turn" (Spreading Insurrection, Puppeteer Clique): p1 buffował swoje
+    // stwory, p2 kradł jednego z nich i stwór natychmiast tracił +X/+X —
+    // a przy buffie ujemnym (Hysterical Blindness −4/−0) kradzież wręcz
+    // LECZYŁA osłabienie. Wpis ze zbiorem obiektów (objectId/objectIds) jest
+    // samowystarczalny: przynależność rozstrzyga zbiór, nie kontrola.
+    const hasFrozenScope = buff.objectId != null || Array.isArray(buff.objectIds);
+    const applies = hasFrozenScope || (buff.opponent
       ? object.controllerId !== buff.controllerId
-      : object.controllerId === buff.controllerId;
+      : object.controllerId === buff.controllerId);
     if (!applies) continue;
     out.power += buff.power ?? 0;
     out.toughness += buff.toughness ?? 0;
@@ -1038,12 +1082,10 @@ export function detainUntilYourNextTurn(state, objectId, detainerId) {
   return updated;
 }
 
-export function deathZoneFor(state, object) {
-  if (((object?.counters ?? {}).finality ?? 0) > 0) return 'exile';
-  // M262: wpisy {id, byCardId} — sprawdzamy id obiektu w naznaczonych.
-  if ((state.exileIfDiesThisTurn ?? []).some((entry) => entry.id === object?.id)) return 'exile';
-  return 'graveyard';
-}
+// M271: definicja przeniesiona do `zones.js` (najniższa warstwa grafu), żeby
+// mogła z niej korzystać także `attachments.js` bez tworzenia cyklu importów.
+// Re-eksport zachowuje dotychczasową ścieżkę importu dla reszty silnika.
+export { deathZoneFor };
 
 export function grantKeywordsUntilEndOfTurn(state, objectId, keywords, options = {}) {
   const object = state.objects.get(objectId);

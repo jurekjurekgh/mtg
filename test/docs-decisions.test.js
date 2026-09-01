@@ -210,3 +210,130 @@ test('AGENTS.md kieruje do osi audytu i reguły naprawiania testera', () => {
   assert.match(agents, /Braki testera naprawia się w testerze/i,
     'AGENTS.md musi nieść regułę o naprawianiu narzędzia');
 });
+
+// ---------------------------------------------------------------------------
+// M275: archiwum decyzji (docs/decisions/archive/)
+//
+// Do archiwum trafia decyzja, która PRZESTAŁA obowiązywać — i dopiero PO
+// przeniesieniu wszystkich jej wciąż żywych ustaleń do dokumentu następcy.
+// Archiwum jest poza lekturą startową, więc musi być pilnowane: dokument
+// obowiązujący, który tam wyląduje, zniknie z pola widzenia sesji.
+// ---------------------------------------------------------------------------
+
+const ARCHIVE_DIR = path.join(DECISIONS_DIR, 'archive');
+
+function archivedFiles() {
+  if (!fs.existsSync(ARCHIVE_DIR)) return [];
+  return fs.readdirSync(ARCHIVE_DIR).filter((name) => /^\d{4}-.*\.md$/.test(name)).sort();
+}
+
+test('ADR archiwum: żadna zarchiwizowana decyzja nie ma statusu obowiązującego', () => {
+  for (const name of archivedFiles()) {
+    const tresc = fs.readFileSync(path.join(ARCHIVE_DIR, name), 'utf8');
+    const status = tresc.match(/^-\s*\*\*Status:\*\*\s*(.+)$/m)?.[1] ?? '';
+    assert.ok(
+      /Zastąpiona|Wycofana|Odrzucona/.test(status),
+      `${name}: w archiwum mogą leżeć wyłącznie decyzje zastąpione/wycofane/`
+      + `odrzucone, a ta ma status „${status.trim()}". Decyzja obowiązująca `
+      + 'w archiwum jest niewidoczna dla sesji (poza lekturą startową).',
+    );
+  }
+});
+
+test('ADR archiwum: każdy plik mówi, gdzie żyją jego zasady', () => {
+  for (const name of archivedFiles()) {
+    const tresc = fs.readFileSync(path.join(ARCHIVE_DIR, name), 'utf8');
+    assert.match(
+      tresc, /ZARCHIWIZOWANA \d{4}-\d{2}-\d{2}/,
+      `${name}: brak noty archiwizacyjnej z datą — czytelnik nie wie, że to `
+      + 'dokument historyczny.',
+    );
+    assert.match(
+      tresc, /\.\.\/\d{4}-[a-z0-9-]+\.md/,
+      `${name}: nota musi linkować do ADR-następcy, w którym żyją przeniesione `
+      + 'zasady (link względny ../NNNN-...md).',
+    );
+  }
+});
+
+test('ADR archiwum: jest wpisane do tabeli archiwum w README', () => {
+  const readme = fs.readFileSync(README, 'utf8');
+  for (const name of archivedFiles()) {
+    assert.ok(
+      readme.includes(`archive/${name}`),
+      `${name}: brak wiersza w sekcji „Archiwum" README — plik zniknąłby `
+      + 'z rejestru bez śladu.',
+    );
+  }
+});
+
+test('ADR archiwum: zarchiwizowana decyzja nie jest cytowana jako obowiązująca', () => {
+  // Kod i lektura startowa nie mogą odsyłać do archiwum jak do źródła zasad
+  // (poza README i samym archiwum, gdzie odsyłacz jest historyczny).
+  const zarchiwizowane = archivedFiles().map((n) => n.slice(0, 4));
+  const agents = fs.readFileSync('AGENTS.md', 'utf8');
+  for (const numer of zarchiwizowane) {
+    assert.ok(
+      !new RegExp(`ADR ${numer}\\b(?![^\\n]*archiw)`, 'i').test(agents),
+      `AGENTS.md powołuje się na ADR ${numer}, który jest w archiwum — `
+      + 'wskaż dokument następcy.',
+    );
+  }
+});
+
+// ---------------------------------------------------------------------------
+// M275: wpisy zbiorcze w LESSONS.md
+//
+// Kilka lekcji opisywało tę samą klasę błędu. Zebrano je we wpisy zbiorcze:
+// pełna reguła w jednym miejscu, pozostałe numery jako KOTWICE z odsyłaczem.
+// Numery lekcji są cytowane w kodzie ~1150 razy, więc kotwica musi istnieć
+// i realnie prowadzić do wpisu głównego.
+// ---------------------------------------------------------------------------
+
+test('LESSONS: mapa klas wskazuje istniejące lekcje, a kotwice prowadzą do wpisu głównego', () => {
+  const lessons = fs.readFileSync('docs/LESSONS.md', 'utf8');
+  const naglowki = new Set([...lessons.matchAll(/^##\s*(L\d+)\s*\(/gm)].map((m) => m[1]));
+
+  const wiersze = [...lessons.matchAll(/^\|[^|\n]+\|\s*\*\*(L\d+)\*\*\s*\|([^|\n]*)\|/gm)];
+  assert.ok(wiersze.length >= 5, 'mapa klas musi wymieniać wpisy zbiorcze');
+
+  for (const [, glowny, kotwiceRaw] of wiersze) {
+    assert.ok(naglowki.has(glowny), `mapa klas wskazuje nieistniejącą lekcję ${glowny}`);
+    const kotwice = [...kotwiceRaw.matchAll(/L\d+/g)].map((m) => m[0]);
+    for (const kotwica of kotwice) {
+      assert.ok(
+        naglowki.has(kotwica),
+        `kotwica ${kotwica} (klasa ${glowny}) nie ma własnego nagłówka — numer `
+        + 'cytowany w kodzie przestałby prowadzić gdziekolwiek',
+      );
+      // Treść kotwicy musi odsyłać do wpisu głównego.
+      const od = lessons.indexOf(`## ${kotwica} (`);
+      const nast = lessons.slice(od + 1).search(/^## L\d+ \(/m);
+      const tresc = nast === -1 ? lessons.slice(od) : lessons.slice(od, od + 1 + nast);
+      assert.ok(
+        tresc.includes(`(#${glowny.toLowerCase()}-`) || tresc.includes(`[${glowny}]`),
+        `${kotwica}: kotwica musi odsyłać do wpisu głównego ${glowny} `
+        + '(inaczej czytelnik dostaje skrót bez reguły)',
+      );
+    }
+  }
+});
+
+test('LESSONS: kotwica zachowuje własny KONKRET, nie jest samym odsyłaczem', () => {
+  // Skrócenie lekcji nie może wyciąć faktów (karta, test, plik, numer CR) —
+  // to one pozwalają rozpoznać klasę w nowym przebraniu.
+  const lessons = fs.readFileSync('docs/LESSONS.md', 'utf8');
+  const KOTWICE = ['L93', 'L94', 'L101', 'L61', 'L70', 'L26', 'L31', 'L44', 'L83', 'L40', 'L73', 'L75', 'L90'];
+  for (const nr of KOTWICE) {
+    const od = lessons.indexOf(`## ${nr} (`);
+    assert.ok(od !== -1, `brak lekcji ${nr}`);
+    const nast = lessons.slice(od + 1).search(/^## L\d+ \(/m);
+    const tresc = nast === -1 ? lessons.slice(od) : lessons.slice(od, od + 1 + nast);
+    const bezNaglowka = tresc.replace(/^##[^\n]*\n/, '').trim();
+    assert.ok(
+      bezNaglowka.length >= 300,
+      `${nr}: kotwica skrócona do samego odsyłacza (${bezNaglowka.length} zn.) — `
+      + 'musi zostać opis WŁASNEGO przypadku z faktami',
+    );
+  }
+});

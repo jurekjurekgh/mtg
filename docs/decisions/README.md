@@ -5,11 +5,9 @@ dokument opisuje kontekst, wybór i jego konsekwencje.
 
 ## Statusy
 
-- **Proponowana** — kierunek do dyskusji; nie jest jeszcze zobowiązaniem.
-- **Zaakceptowana** — obowiązuje w projekcie.
-- **Odrzucona** — rozważona, ale nieprzyjęta.
-- **Zastąpiona** — historyczna; nowszy ADR wskazuje aktualną decyzję.
-- **Wycofana** — nie ma już zastosowania.
+**Proponowana** (do dyskusji) · **Zaakceptowana** (obowiązuje) · **Odrzucona**
+(rozważona, nieprzyjęta) · **Zastąpiona** (nowszy ADR wskazuje aktualną) ·
+**Wycofana** (bez zastosowania).
 
 ## Decyzje
 
@@ -22,14 +20,13 @@ dokument opisuje kontekst, wybór i jego konsekwencje.
 | [0005](0005-deterministic-replayable-execution.md) | Deterministyczne i odtwarzalne wykonanie | Zaakceptowana |
 | [0006](0006-audit-before-table-extraction.md) | Audyt przed wydzieleniem Wirtualnego Stołu | Zaakceptowana |
 | [0007](0007-protected-main-and-mandatory-pull-requests.md) | Chroniony `main` i obowiązkowe Pull Requesty | Zaakceptowana |
-| [0008](0008-plain-javascript-esm-no-build.md) | Czysty JavaScript (ESM) bez kroku budowania | Zastąpiona przez 0011 |
 | [0009](0009-standalone-game-table-instead-of-extraction.md) | Standalone Game Table zamiast wydzielania z aplikacji | Zaakceptowana |
 | [0010](0010-card-rules-data-in-repository.md) | Dane reguł kart utrzymywane ręcznie w repozytorium | Zaakceptowana |
 | [0011](0011-modular-sources-single-file-artifact.md) | Modularne źródła, jednoplikowy artefakt i dwa tryby uruchomienia | Zaakceptowana |
 | [0012](0012-deck-builder-and-text-deck-format.md) | Kreator talii i wspólny tekstowy format talii | Zaakceptowana |
 | [0013](0013-agent-arena-sessions-and-mandatory-handoff.md) | Sesje Agent Arena i obowiązkowy handoff po scaleniu PR | Zaakceptowana |
 | [0014](0014-card-definitions-single-module.md) | Definicje kart w module `src/cards/card-data.js` (zastępuje §1 ADR 0010) | Zaakceptowana |
-| [0015](0015-colored-mana-pool.md) | Kolorowa pula many (MtG-correct; zastępuje bezbarwną pulę z M2) | Proponowana |
+| [0015](0015-colored-mana-pool.md) | Kolorowa pula many (MtG-correct; zastępuje bezbarwną pulę z M2) | Zaakceptowana |
 | [0016](0016-session-audit-and-surgical-patching.md) | Audyt poprzedniego PR na starcie sesji i chirurgiczne patchowanie | Zaakceptowana |
 | [0017](0017-playerview-completeness-contract.md) | Kompletność informacji publicznych w PlayerView (uzupełnia 0003) | Zaakceptowana |
 | [0018](0018-benchmark-full-only-on-owner-command.md) | Pełny benchmark B0 wyłącznie na wyraźną komendę właściciela; CLI domyślnie profil szybki | Zaakceptowana |
@@ -41,6 +38,7 @@ dokument opisuje kontekst, wybór i jego konsekwencje.
 | [0024](0024-deck-split-by-colors-and-rotating-benchmark.md) | Podział talii planowej ≥30 kart nielandowych po kolorach (tożsamość bezkolorowych z produkcji many); rotująca auto-próbka benchmarku | Zaakceptowana |
 | [0025](0025-benchmark-match-budget-not-all-combinations.md) | Pełna macierz benchmarku pod budżet meczów (~6 000), nie pod wszystkie kombinacje; próbka par talii skaluje się z katalogiem | Zaakceptowana |
 | [0026](0026-zones-on-table-exiledby-contract.md) | Strefy dodatkowe na stole (boksy cmentarzy i wygnania) zamiast inspektora i poczekalni; kontrakt `meta.exiledBy` — źródło wygnania stemplowane w choke poincie zmian stref | Zaakceptowana |
+| [0027](0027-platinum-badge-static-analyzer.md) | Odznaka platynowa: klasę błędów L107 tępi ANALIZATOR statyczny wpięty w `npm test` (choke pointy + kontrakty zdarzeń), a nie audyt wzrokowy; wymagane 5 błędów wskazanych przez narzędzie i jawna lista wyjątków | Zaakceptowana |
 
 ## Gdzie zapisać regułę (ADR vs LESSONS vs handoff)
 
@@ -103,3 +101,19 @@ naprawy błędu.
 
 Po zaakceptowaniu nie zmieniamy znaczenia historycznej decyzji. Jeżeli kierunek
 się zmieni, nowy ADR zastępuje poprzedni.
+
+## Archiwum
+
+Decyzje, które **przestały obowiązywać**, i których żywe zasady zostały
+przeniesione do nowszych ADR. Nie są lekturą startową — zostają jako zapis,
+dlaczego projekt wyglądał kiedyś inaczej.
+
+| ADR | Tytuł | Zastąpiona przez | Gdzie żyją jej zasady |
+|---|---|---|---|
+| [0008](archive/0008-plain-javascript-esm-no-build.md) | Czysty JavaScript (ESM) bez kroku budowania | [0011](0011-modular-sources-single-file-artifact.md) | ADR 0011 pkt 6 + „Czego świadomie nie dostajemy" |
+
+**Zasada archiwizacji:** do archiwum trafia wyłącznie dokument o statusie
+„Zastąpiona"/„Wycofana", i to dopiero PO przeniesieniu wszystkich jego wciąż
+obowiązujących ustaleń do dokumentu następcy. Archiwum nie jest wysypiskiem:
+jeśli po przeniesieniu nie zostaje nic poza historią — to jest właśnie sygnał,
+że plik należy tu przenieść.

@@ -1081,6 +1081,115 @@ export function detectTokenRawId(lines) {
   return found;
 }
 
+/**
+ * M266/D (klasa L102) — GENERYCZNY TYTUŁ GRUPY WYBORÓW.
+ *
+ * Zgłoszenie właściciela (Terminal Agony z madness): panel pokazał
+ * „Wybierz: Wariant (5 opcji)" — gracz nie wiedział, czego dotyczy decyzja.
+ * Przyczyną jest zawsze BRAK deskryptora danej komendy w mapie
+ * `CHOICE_GROUP_COMMAND_DESCRIPTORS` (render.js), więc `choiceGroupTitle`
+ * spada na fallback „Wariant"/„Cel". To ślad klasy L102 (rodzina komend
+ * uzupełniona częściowo) widoczny wprost w transkrypcie — dotąd żaden
+ * detektor go nie miał, więc 14 partii audytu M265 dało zero zgłoszeń (L27).
+ *
+ * „Cel" jest legalnym deskryptorem wyboru celu, więc zgłaszamy tylko
+ * „Wariant" — fallback, który nie niesie ŻADNEJ informacji.
+ */
+export function detectGenericChoiceTitle(lines) {
+  const found = [];
+  for (const line of lines) {
+    if (!/AKCJE:|\[modal choice\]/.test(line)) continue;
+    if (!/Wybierz:\s*Wariant\b/.test(line)) continue;
+    push(found, 'ui',
+      'Generyczny tytuł grupy „Wybierz: Wariant" — brak deskryptora komendy '
+      + '(CHOICE_GROUP_COMMAND_DESCRIPTORS); gracz nie wie, czego dotyczy wybór',
+      line.trim());
+  }
+  return found;
+}
+
+/**
+ * M266/D (klasa L101) — PUSTY DESKRYPTOR KOSZTU w etykiecie akcji.
+ *
+ * L101 opisała cztery koszty alternatywne (warp, surge, kicker,
+ * treasureAltCost), które nie dojeżdżały do wpisu strefy w `playerView`.
+ * Objaw w transkrypcie jest zawsze ten sam: etykieta zna SŁOWO kosztu, ale
+ * kwota jest pusta — „(koszt )", „+ kicker )". Wariant z „?" łapie już
+ * `detectRawText` (placeholder), ale pusty ciąg przechodził przez wszystko.
+ */
+export function detectEmptyCostDescriptor(lines) {
+  const found = [];
+  // Pusty koszt = miejsce, gdzie etykieta ZAPOWIADA cenę, ale jej nie podaje:
+  //   „(koszt )"            — puste nawiasy kosztu,
+  //   „(koszt 2W + kicker )" — nazwana DOPŁATA (po „+") bez kwoty.
+  //
+  // M267 (kalibracja na seedach 511/516): pierwsza wersja pytała o samo słowo
+  // mechaniki przed nawiasem zamykającym i dała 11 fałszywych alarmów na
+  // „Ucieczka (Escape): karty do wygnania" — tam nawias to GLOSA nazwy
+  // keyworda, nie miejsce na cenę. Sygnałem zapowiedzi ceny jest „koszt/cena"
+  // albo dopłata po „+", nie sama nazwa mechaniki.
+  const EMPTY_COST = /\((?:koszt|cena)\s*\)|\+\s*(kicker|warp|surge|suspend|bestow|plot|escape|dopłata)\s*(?=[),]|$)/i;
+  for (const line of lines) {
+    if (!/AKCJE:|\[modal choice\]|RĘKA:/.test(line)) continue;
+    const match = line.match(EMPTY_COST);
+    if (!match) continue;
+    push(found, 'ui',
+      `Pusty deskryptor kosztu w etykiecie („${match[0].trim()}") — pole kosztu `
+      + 'nie dotarło do widoku strefy (klasa L101)',
+      line.trim());
+  }
+  return found;
+}
+
+/**
+ * M266/D (zgłoszenie C2) — TEN SAM WPIS DWA RAZY W JEDNEJ PACZCE „Rozgrywka".
+ *
+ * Terminal Agony rzucona z madness pokazywała dwa modale i dwie linie
+ * „Rzucasz Terminal Agony" przy JEDNYM czarze na stosie: handler komendy
+ * doklejał zwrócone zdarzenie do wycinka strumienia, który już je zawierał.
+ * Klasa jest szersza niż jedna karta — każdy handler budujący wynik jako
+ * `slice(before)` plus ręcznie dopisane zdarzenie powtórzy ten błąd.
+ *
+ * Paczka = jeden blok modala (linia „[ROZGRYWKA] Rozgrywka" otwiera nowy).
+ * Powtórzenie w OSOBNYCH paczkach jest normalne (dwie tury, dwa dobrania).
+ *
+ * ZAKRES (kalibracja na 14 transkryptach audytu M265): naiwna reguła „ta sama
+ * linia dwa razy" dała 42 fałszywe alarmy — dwa tokeny tej samej nazwy, dwa
+ * triggery tej samej aury, dwie instancje obrażeń od tego samego stworzenia
+ * w różnych walkach to LEGALNE powtórzenia. Detektor pyta więc tylko o wpisy
+ * z natury jednorazowe dla danego obiektu: RZUT czaru i zagranie landa.
+ * Rzucenie dwóch kopii tej samej karty w jednej paczce jest teoretycznie
+ * możliwe, ale rzadkie na tyle, że warte spojrzenia (detektory zgłaszają
+ * „przyjrzyj się", nie „to błąd" — TESTER_STOLU.md).
+ */
+const DUPLICATE_LOG_IGNORED = /^(Faza:|Tura |Auto-pass|Krok |Rozgrywka$)/;
+/** Czynności jednorazowe dla obiektu — tylko tu duplikat w paczce jest podejrzany. */
+const DUPLICATE_LOG_ONCE_ONLY = /^(Rzucasz |Nieprzyjaciel rzuca |Zagrywasz |Nieprzyjaciel zagrywa )/;
+
+export function detectDuplicateLogEntry(lines) {
+  const found = [];
+  let seen = new Map();
+  const flush = () => { seen = new Map(); };
+  for (const line of lines) {
+    const marker = line.match(/^\s*\[ROZGRYWKA\]\s*(.*)$/);
+    if (!marker) continue;
+    const body = marker[1].trim();
+    if (body === '' || body === 'Rozgrywka') { flush(); continue; }
+    const entry = body.replace(/^•\s*/, '').trim();
+    if (!entry || DUPLICATE_LOG_IGNORED.test(entry)) continue;
+    if (!DUPLICATE_LOG_ONCE_ONLY.test(entry)) continue;
+    const count = (seen.get(entry) ?? 0) + 1;
+    seen.set(entry, count);
+    if (count === 2) {
+      push(found, 'info',
+        `Wpis „${entry.slice(0, 60)}" pojawia się dwukrotnie w JEDNEJ paczce `
+        + 'modala — duplikat zdarzenia w wyniku komendy (klasa M266/C2)',
+        line.trim());
+    }
+  }
+  return found;
+}
+
 export function runDetectors(lines, { actionRecords = [], windowRecords = null, profile = null, probeRecords = [], rejectionRecords = null, harmfulNames = new Set(), allCardNames = new Set(), myPermanentNames = new Set(), enemyPermanentNames = new Set() } = {}) {
   const all = [
     ...detectRawText(lines),
@@ -1116,6 +1225,11 @@ export function runDetectors(lines, { actionRecords = [], windowRecords = null, 
     ...detectLogNoiseLeak(lines),
     // M155 — wyciek raw id tokenu do kafli/celów (token_squirrel zamiast Squirrel).
     ...detectTokenRawId(lines),
+    // M266/D — trzy klasy ze zgłoszeń właściciela, przez które przeszedł
+    // komplet detektorów (14 partii audytu M265 = zero zgłoszeń, L27).
+    ...detectGenericChoiceTitle(lines),
+    ...detectEmptyCostDescriptor(lines),
+    ...detectDuplicateLogEntry(lines),
   ];
   // Deduplikacja: ten sam komunikat + dowód pojawia się raz.
   const seen = new Set();

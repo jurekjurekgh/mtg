@@ -214,6 +214,65 @@ test('M264 (reguła graniczna): trigger_resolved po ODEJŚCIU źródła — nazw
   assert.ok(text.includes('Plains'), `po odejściu źródła nazwa legalna, jest: ${text}`);
 });
 
+// M265 (audyt PR #90, mutacja M8 przeżyła): bramka FoW dla SKANU karty przy
+// `trigger_resolved`. Testy M264 pokrywały tylko warstwę TEKSTU
+// (`describeGameEvent` → objectOrLki); usunięcie `e.sourceId` z bramki
+// `hiddenLive` w noteBotMove przechodziło cały ten plik, a w modalu
+// „Rozgrywka" obok poprawnego „Morph — trigger się rozstrzyga" pojawiała się
+// MINIATURA realnej karty źródła (tu: wierzch biblioteki bota zakryty przez
+// cloak). To ten sam wyciek co BUG A, tylko inną powierzchnią (CR 708.2).
+test('M265: trigger_resolved od zakrytego źródła bota — modal bez SKANU karty (CR 708.2)', async () => {
+  const { applyEffect } = await import('../src/engine/effects.js');
+  const { addMana } = await import('../src/engine/resources.js');
+
+  const registry = createCardRegistry();
+  const decks = new Map([
+    [HUMAN_ID, parseDeckText('# Test M265 (człowiek)\n20x Shock\n20x Mountain', registry).cardIds],
+    [BOT_ID, parseDeckText('# Test M265 (bot)\n20x Veiled Ascension\n20x Forest', registry).cardIds],
+  ]);
+  const session = createSession({ registry, decks, seed: 5, pauseOnBotMoves: true });
+  const state = session.state;
+
+  // Dojedź do głównej fazy człowieka (mulligany/odpowiedzi bota po drodze).
+  for (let i = 0; i < 60 && state.status === 'active'; i += 1) {
+    if (session.botPausePending) { session.clearBotMoves(); session.continueBotPlay(); continue; }
+    const view = session.view();
+    if (view.turn?.activePlayerId === HUMAN_ID && view.turn?.step === 'main1') break;
+    const cmd = view.legalCommands.find((c) => c.type === 'pass_priority') ?? view.legalCommands[0];
+    if (!cmd || !session.apply(cmd).ok) break;
+  }
+
+  // Zakryty permanent BOTA: cloak (CR 702.75) → bezimienny 2/2 z ward {2},
+  // pod spodem REALNA karta z wierzchu biblioteki bota (Forest/Veiled Ascension).
+  const botPermanent = state.zones.battlefield
+    .map((id) => state.objects.get(id)).find((o) => o?.controllerId === BOT_ID);
+  applyEffect(state, { type: 'cloak' }, botPermanent ?? { id: 'src', controllerId: BOT_ID, ownerId: BOT_ID }, []);
+  const cloaked = state.zones.battlefield
+    .map((id) => state.objects.get(id)).find((o) => o?.faceDown && o.controllerId === BOT_ID);
+  assert.ok(cloaked, 'zakryty permanent bota powstał');
+  assert.ok(cloaked.cardId, 'pod spodem leży realna karta (to ona nie może wyciec)');
+
+  // Człowiek celuje w niego czarem → trigger ward → trigger_resolved (sourceId
+  // wskazuje ŻYWY zakryty obiekt, ale objectId to zdjęty ze stosu wpis triggera).
+  const shock = state.zones.hand
+    .map((id) => state.objects.get(id))
+    .find((o) => o?.controllerId === HUMAN_ID && o.cardId === 'shock');
+  assert.ok(shock, 'Shock w ręce człowieka');
+  addMana(state, HUMAN_ID, 5, { colors: ['R'] });
+  session.clearBotMoves();
+  assert.ok(session.apply({ type: 'cast_spell', playerId: HUMAN_ID, objectId: shock.id, targets: [cloaked.id] }).ok);
+  for (let i = 0; i < 40 && state.status === 'active' && !session.botPausePending; i += 1) {
+    const cmd = session.view().legalCommands.find((c) => c.type === 'pass_priority');
+    if (!cmd || !session.apply(cmd).ok) break;
+  }
+
+  const resolved = session.botMoves.find((m) => m.type === 'trigger_resolved');
+  assert.ok(resolved, `blok modala ma wpis o rozstrzygnięciu triggera: ${JSON.stringify(session.botMoves)}`);
+  assert.ok(resolved.text.includes(FACE_DOWN_LABEL), `tekst bez nazwy źródła: ${resolved.text}`);
+  assert.equal(resolved.cardId ?? null, null,
+    `skan zakrytego źródła triggera wycieka do modala (cardId=${resolved.cardId})`);
+});
+
 // ---------------------------------------------------------------------------
 // Część 2: widok decyzji podziału obrażeń (wizard) — cardId face-down celi
 // nie może wyciekać do PlayerView (ADR 0017 + CR 708.2)

@@ -72,3 +72,23 @@ export function manaSymbolsHtml(text) {
 export function manaCostHtml(costStr) {
   return manaSymbolsHtml(costStr);
 }
+
+/**
+ * Składa TEKST kosztu z kwoty i pipów kolorów: pipy wchodzą w miejsce części
+ * generycznej (madness Terminal Agony: cost 2 + colors [B,R] = „{B}{R}", nie
+ * „{2}{B}{R}" ani „{2}").
+ *
+ * M266/E (L100 pkt 4): ta składanka istniała w DWÓCH kopiach — w opisie
+ * zdarzenia (`session.js`) i w etykiecie przycisku (`render.js`). L100/3 mówi
+ * wprost, że dwie warstwy renderujące ten sam koszt muszą czytać z jednego
+ * źródła; trzecia kopia (madness) powtórzyłaby klasę, więc źródłem jest ta
+ * funkcja. Zwraca sam tekst symboli — HTML robi z niego `manaCostHtml`.
+ */
+export function costSymbols(amount, colors) {
+  const pips = Array.isArray(colors) ? colors : [];
+  const total = Number(amount) || 0;
+  if (total <= 0 && pips.length === 0) return '';
+  const generic = Math.max(0, total - pips.length);
+  const symbols = `${generic > 0 ? `{${generic}}` : ''}${pips.map((c) => `{${c}}`).join('')}`;
+  return symbols || `{${total}}`;
+}

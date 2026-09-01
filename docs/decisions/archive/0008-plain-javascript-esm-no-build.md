@@ -1,19 +1,24 @@
 # ADR 0008: Czysty JavaScript (ESM) bez kroku budowania
 
-- **Status:** Zastąpiona przez [ADR 0011](0011-modular-sources-single-file-artifact.md)
+- **Status:** Zastąpiona przez [ADR 0011](../0011-modular-sources-single-file-artifact.md)
+- **ZARCHIWIZOWANA 2026-09-01** — poza lekturą startową. Wszystkie ŻYWE zasady
+  tego dokumentu (język i moduły, `node:test`, JSDoc, struktura katalogów oraz
+  tabela „Czego świadomie nie dostajemy") zostały PRZENIESIONE do ADR 0011.
+  Ten plik zachowuje wyłącznie historyczne uzasadnienie decyzji „bez kroku
+  budowania", która już nie obowiązuje.
 - **Data:** 2026-07-31
 - **Decydenci:** właściciel projektu
 
-> **Uwaga.** Wybór języka (JavaScript + ESM), testowanie (`node --test`),
-> typowanie JSDoc i struktura katalogów **pozostają aktualne** — przejmuje je
-> ADR 0011. Nieaktualne jest wyłącznie założenie „bez kroku budowania": moduły
-> ES nie działają z `file://`, a właściciel gra na iPadzie. Sekcja „Czego
-> świadomie nie dostajemy" **nadal obowiązuje w całości**.
+> **Czytasz dokument ARCHIWALNY.** Obowiązujący stan zasad: [ADR 0011](../0011-modular-sources-single-file-artifact.md).
+> Nieaktualne jest tu wyłącznie założenie „bez kroku budowania" (moduły ES nie
+> działają z `file://`, a właściciel gra na iPadzie); pozostała treść została
+> przeniesiona do 0011 i tam jest utrzymywana. Ten plik zostaje jako zapis
+> tego, DLACZEGO decyzja wyglądała kiedyś inaczej.
 
 ## Kontekst
 
 `ARCHITECTURE.md` sugerował TypeScript i monorepo, z zastrzeżeniem potwierdzenia
-po audycie. Audyt ([AUDIT_LEGACY_APP.md](../AUDIT_LEGACY_APP.md)) ustalił fakty:
+po audycie. Audyt ([AUDIT_LEGACY_APP.md](../../AUDIT_LEGACY_APP.md)) ustalił fakty:
 obecna aplikacja to jeden plik HTML z vanilla JS, bez builda i `node_modules`;
 właściciel uruchamia ją przez otwarcie pliku i kopiuje między urządzeniami (w
 tym iPad); kod działa też w Node/JSDOM, więc logika nie jest przywiązana do
@@ -100,6 +105,6 @@ stały współpracownik.
 
 ## Powiązania
 
-- [Audyt istniejącej aplikacji](../AUDIT_LEGACY_APP.md)
-- [ADR 0002](0002-authoritative-card-agnostic-engine.md) · [ADR 0003](0003-player-specific-views-and-fow.md)
+- [Audyt istniejącej aplikacji](../../AUDIT_LEGACY_APP.md)
+- [ADR 0002](../0002-authoritative-card-agnostic-engine.md) · [ADR 0003](0003-player-specific-views-and-fow.md)
 - [Architektura](../ARCHITECTURE.md)

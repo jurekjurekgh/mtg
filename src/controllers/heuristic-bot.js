@@ -4327,7 +4327,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // (karta + efekt za samą manę); tanie czary lepsze. Rezygnacja przy
         // braku budżetu/sensu ma niski dodatni score (nie blokuje decyzji).
         if (cmd.decline) return finish(4);
-        return finish(Math.max(6, 40 - 3 * (cmd.xValue ?? 0)));
+        // M265 (Żywy Tester, theros vs worek-basni seed 332): oferta jest
+        // enumerowana PER ZESTAW CELÓW (epicCastOffers), więc stała wartość
+        // kazała botu brać pierwszy zestaw z brzegu — zmierzone: rzucił
+        // Sleep of the Dead (tap + „doesn't untap") we WŁASNEGO
+        // Blade-Blizzard Kitsune, który w tej samej turze miał atakować.
+        // Bliźniacza gałąź suspend/rebound/madness liczy tę karę od M212/Z7;
+        // ta jedna z rodziny jej nie miała (klasa L41). Deskryptor czaru
+        // wisi na karcie w GROBIE (strefa jawna, CR 400.2).
+        const graveCard = cmd.objectId
+          ? (view.zones.graveyard ?? []).find((o) => o.id === cmd.objectId)
+          : null;
+        const effects = graveCard?.spell?.effects ?? [];
+        return finish(Math.max(6, 40 - 3 * (cmd.xValue ?? 0))
+          - freeCastTargetPenalty(view, effects, cmd));
       }
       case 'resolve_madness_cast': {
         // M158/Batch 39: rzut za koszt madness to niemal zawsze zysk (karta

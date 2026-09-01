@@ -11,7 +11,7 @@ import {
   manaEffectLabel,
   manaProducedLabel,
 } from './session.js';
-import { escapeHtml, manaCostHtml, manaSymbolsHtml } from './mana-icons.js';
+import { costSymbols, escapeHtml, manaCostHtml, manaSymbolsHtml } from './mana-icons.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { installTapGesture } from './gestures.js';
 
@@ -1690,6 +1690,14 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_backup: 'Backup — który stwór dostaje liczniki?',
   resolve_trigger_target: 'Cel wyzwalonej zdolności',
   resolve_grave_free_cast: 'Rzut z grobu za {X}',
+  // M266/C1 (zgłoszenie właściciela, Terminal Agony): decyzja rzutu z madness
+  // pokazywała generyczne „Wybierz: Wariant (5 opcji)". Rodzina jednorazowych
+  // decyzji „rzuć wygnany czar albo odpuść" dostaje deskryptory KOMPLETEM
+  // (klasa L102: nowy członek rodziny bez wpisu dziedziczy stary objaw).
+  resolve_madness_cast: 'Madness — rzucić czar czy przełożyć do cmentarza?',
+  resolve_suspend_cast: 'Suspend — rzucić zawieszony czar?',
+  resolve_rebound_cast: 'Rebound — rzucić czar ponownie?',
+  resolve_epic_choice: 'Epic — który czar skopiować?',
   resolve_delirium_target: 'Delirium — cel obrażeń',
   resolve_mentor_target: 'Mentor — kto dostaje licznik?',
   resolve_graveyard_top_choice: 'Karta z grobu na wierzch biblioteki',
@@ -1822,9 +1830,22 @@ function choiceSourceTitle(cmd, session, view) {
   if (cmd.type === 'cast_spell' && cmd.sacrificeTargetId && !cmd.targets?.length) {
     return `Poświęć stwora — ${name}`;
   }
-  if (cmd.type === 'cast_spell' && cmd.targets?.length) {
+  // M267 (Żywy Tester, profil explorer, seed 506 — znalezisko detektora
+  // `detectGenericChoiceTitle` z M266/D): warunek TYTUŁU musi pokrywać
+  // warunek KLUCZA grupy (`choiceRequestGroupKey`), inaczej grupa powstaje
+  // bez nazwy. Klucz robi grupę także dla samego `modeIndex`, a tytuł pytał
+  // wyłącznie o `targets.length` — modalny czar, którego tryb celuje w 0–3
+  // stwory (You're Confronted by Robbers), wystawia ofertę „zero celów"
+  // jako pierwszą opcję i spadał na „Wybierz: Wariant (8 opcji)".
+  // Klasa L102/1: klucz i tytuł to dwie listy warunków o tej samej rodzinie.
+  if (cmd.type === 'cast_spell' && (cmd.targets?.length || cmd.modeIndex != null)) {
     const mode = (cmd.modeIndex != null && object.spell?.modes)
       ? object.spell.modes[cmd.modeIndex] : null;
+    // Bez celów w tej ofercie tytuł nie może obiecywać wyboru celu —
+    // decyzją jest sam TRYB czaru.
+    if (!cmd.targets?.length) {
+      return mode?.name ? `${name} — tryb: ${mode.name}` : `Tryb czaru: ${name}`;
+    }
     return mode?.name ? `Cel czaru: ${name} — ${mode.name}` : `Cel czaru: ${name}`;
   }
   if (cmd.type === 'cast_cleave' && cmd.targets?.length) return `Cel czaru (Cleave): ${name}`;
@@ -2136,16 +2157,13 @@ export function commandLabel(cmd, session, view) {
     case 'tap_for_mana': return `Przygotuj manę: ${nameOfObjectId(cmd.objectId)}`;
     case 'plot_card': {
       const card = obj(cmd.objectId);
-      return `Plotuj: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.plot?.cost != null ? manaCostHtml(`{${card.plot.cost}}`) : '?'})`;
+      return `Plotuj: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.plot?.cost != null ? manaCostHtml(costSymbols(card.plot.cost, card.plot.colors)) : '?'})`;
     }
     case 'warp_card': {
       const card = obj(cmd.objectId);
       const wc = card?.warp;
-      const remaining = wc ? Math.max(0, (wc.cost ?? 0) - (wc.colors ?? []).length) : 0;
-      const costStr = wc
-        ? `${(wc.colors ?? []).map((c) => `{${c}}`).join('')}${remaining > 0 ? `{${remaining}}` : ''}`
-        : null;
-      const cost = costStr != null ? manaCostHtml(costStr) : '?';
+      // M268: jedna składanka kosztu dla całej warstwy (costSymbols, L100/3).
+      const cost = wc ? manaCostHtml(costSymbols(wc.cost, wc.colors)) : '?';
       return `Rzuć za warp: ${nameOfObjectId(cmd.objectId)} (koszt ${cost})`;
     }
     case 'suspend_card': {
@@ -2156,11 +2174,7 @@ export function commandLabel(cmd, session, view) {
       // 1 jednostka, czarna). Renderujemy pipy kolorów + pozostałą część
       // generyczną (to samo kodowanie co koszt czaru, render.js:920).
       const sc = card?.suspend;
-      const remaining = sc ? Math.max(0, (sc.cost ?? 0) - (sc.colors ?? []).length) : 0;
-      const costStr = sc
-        ? `${(sc.colors ?? []).map((c) => `{${c}}`).join('')}${remaining > 0 ? `{${remaining}}` : ''}`
-        : null;
-      const cost = costStr != null ? manaCostHtml(costStr) : '?';
+      const cost = sc ? manaCostHtml(costSymbols(sc.cost, sc.colors)) : '?';
       const n = sc?.timeCounters ?? 4;
       // M151: „4 liczników czasu" było złą odmianą (2–4 → „liczniki").
       return `Zawieś: ${nameOfObjectId(cmd.objectId)} (koszt ${cost}, ${n} ${polishPluralCount(n, 'licznik', 'liczniki', 'liczników')} czasu)`;
@@ -2169,22 +2183,25 @@ export function commandLabel(cmd, session, view) {
       const card = obj(cmd.objectId);
       if (cmd.bestow) {
         const host = nameOfObjectId(cmd.targets?.[0]);
-        return `Zagraj za bestow: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.bestow?.cost != null ? escapeHtml(String(card.bestow.cost)) : '?'}) → zaczaruj ${host}`;
+        // M268: Bestow bywa kolorowy (Leafcrown Dryad „Bestow {3}{G}") —
+        // gołe „4" opisywało cenę, której nie da się zapłacić bezbarwnymi.
+        const bestowCost = card?.bestow?.cost != null
+          ? manaCostHtml(costSymbols(card.bestow.cost, card.bestow.colors)) : '?';
+        return `Zagraj za bestow: ${nameOfObjectId(cmd.objectId)} (koszt ${bestowCost}) → zaczaruj ${host}`;
       }
       if (cmd.targets?.length && card?.aura) {
         const host = nameOfObjectId(cmd.targets[0]);
         return `Zagraj aurę: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)}) → zaczaruj ${host}`;
       }
-      if (cmd.faceDown) return `Zagraj: ${nameOfObjectId(cmd.objectId)} twarzą w dół (2/2, koszt ${card?.morph?.cost != null ? escapeHtml(String(card.morph.cost)) : '?'})`;
+      // M268: rzut ZAKRYTY kosztuje {3} bezbarwnych niezależnie od karty
+      // (CR 702.37a) — pipy koloru należą do kosztu ODKRYCIA, nie tego.
+      if (cmd.faceDown) return `Zagraj: ${nameOfObjectId(cmd.objectId)} twarzą w dół (2/2, koszt ${card?.morph?.cost != null ? manaCostHtml(costSymbols(card.morph.cost, [])) : '?'})`;
       // M223 (audyt Batch 50, Jwar Isle Avenger): surge to alternatywny,
       // TAŃSZY koszt — bez własnej etykiety wyglądał identycznie jak zwykły
       // rzut, więc gracz nie odróżniał wariantów (oś 2 audytu). Format jak warp.
       if (cmd.surgeCast) {
         const sc = card?.surge;
-        const costStr = sc
-          ? `${(sc.colors ?? []).map((c) => `{${c}}`).join('')}${Math.max(0, (sc.cost ?? 0) - (sc.colors ?? []).length) > 0 ? `{${Math.max(0, (sc.cost ?? 0) - (sc.colors ?? []).length)}}` : ''}`
-          : null;
-        const cost = costStr != null ? manaCostHtml(costStr) : '?';
+        const cost = sc ? manaCostHtml(costSymbols(sc.cost, sc.colors)) : '?';
         return `Rzuć za surge: ${nameOfObjectId(cmd.objectId)} (koszt ${cost})`;
       }
       // Phyrexian mana (CR 118.9): gracz wybiera, ile symboli {W/P} opłaci
@@ -2197,9 +2214,24 @@ export function commandLabel(cmd, session, view) {
         if (cmd.phyrexianPayWithLife > 0) parts.push(`${cmd.phyrexianPayWithLife}× po 2 życia`);
         return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)} · phyrexian ${parts.join(' + ')})`;
       }
+      // M265: wariant „tylko ze Skarbów" (Security Rhox, CR 601.2b) miał
+      // etykietę IDENTYCZNĄ ze zwykłym rzutem — panel oferował dwa takie
+      // same przyciski o różnym skutku (klasa M101/B). Koszt alternatywny
+      // z `treasureAltCost` + jawna informacja o źródle many.
+      if (cmd.treasureAlt) {
+        const alt = card?.treasureAltCost;
+        const colors = alt?.colors ?? [];
+        const generic = Math.max(0, (alt?.mana ?? 0) - colors.length);
+        const symbols = `${generic > 0 ? `{${generic}}` : ''}${colors.map((c) => `{${c}}`).join('')}`;
+        const cost = alt ? manaCostHtml(symbols || `{${alt.mana ?? 0}}`) : '?';
+        return `Zagraj za manę ze Skarbów: ${nameOfObjectId(cmd.objectId)} (koszt ${cost})`;
+      }
       if (cmd.kicked) {
         const kicker = card?.kicker ?? {};
-        const kickerHtml = manaCostHtml(`${kicker.cost != null ? `{${kicker.cost}}` : ''}${(kicker.colors ?? []).map((c) => `{${c}}`).join('')}`);
+        // M268: pipy W RAMACH kwoty. Stary zapis sklejał `{1}` + `{W}` dla
+        // Kor Sanctifiers („Kicker {W}" = 1 jednostka, biała) i pokazywał DWIE
+        // many — dopłata wyglądała na dwa razy droższą, niż jest.
+        const kickerHtml = manaCostHtml(costSymbols(kicker.cost, kicker.colors));
         return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)} + kicker ${kickerHtml})`;
       }
       return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)})`;
@@ -2267,8 +2299,10 @@ export function commandLabel(cmd, session, view) {
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
       const card = obj(cmd.objectId);
+      // M267/C: koszt cleave bywa KOLOROWY (Lunar Rejection {3}{U}) —
+      // „{4}" opisywało cenę, której nie da się zapłacić czterema bezbarwnymi.
       const cleaveCost = card?.spell?.cleave?.manaCost != null
-        ? manaCostHtml(`{${card.spell.cleave.manaCost}}`)
+        ? manaCostHtml(costSymbols(card.spell.cleave.manaCost, card.spell.cleave.colors))
         : '?';
       return `Rzuć z Cleave: ${nameOfObjectId(cmd.objectId)} (koszt ${cleaveCost})${targets ? ` → cel: ${targets}` : ''}`;
     }
@@ -2278,7 +2312,9 @@ export function commandLabel(cmd, session, view) {
       const objCard = obj(cmd.objectId);
       const defCard = objCard?.cardId ? session.cardDetails(objCard.cardId) : null;
       const escCost = defCard?.spell?.escape?.cost;
-      const esc = escCost != null ? manaCostHtml(`{${escCost}}`) : '?';
+      // M267/C: Escape {3}{U} (Sweet Oblivion) / {2}{U} (Sleep of the Dead).
+      const esc = escCost != null
+        ? manaCostHtml(costSymbols(escCost, defCard?.spell?.escape?.colors)) : '?';
       const exiled = (cmd.escapeExileIds ?? []).map((id) => nameOfObjectId(id)).join(', ');
       const exilePart = exiled ? ` — wygnaj: ${exiled}` : '';
       return `Ucieczka: ${nameOfObjectId(cmd.objectId)} (koszt ${esc})${exilePart}`;
@@ -2358,8 +2394,16 @@ export function commandLabel(cmd, session, view) {
         const flipKind = KEYWORD_LABELS[flipKeyword] ?? flipKeyword;
         const flipCost = object?.morph?.megamorphCost ?? object?.morph?.morphCost;
         const flipColors = object?.morph?.colors ?? [];
-        const costHtml = manaCostHtml(`${flipCost != null ? `{${flipCost}}` : ''}${flipColors.map((c) => `{${c}}`).join('')}`);
-        return `Obróć twarzą do góry: ${nameOfObjectId(cmd.objectId)} (${flipKind} ${costHtml})`;
+        // M268: pipy wchodzą W RAMACH kwoty, nie obok niej. Stary zapis
+        // sklejał `{2}` + `{U}` dla Willbendera („Morph {1}{U}") i pokazywał
+        // TRZY many — etykieta zawyżała cenę odkrycia.
+        const costHtml = manaCostHtml(costSymbols(flipCost, flipColors));
+        // M268: nazwa ZAKRYTEJ karty niesie już znacznik „(Morph)", więc
+        // doklejanie nazwy mechaniki przy koszcie dawało „Willbender (Morph)
+        // (Morph {1}{U})". Gdy znacznik już jest, zostaje sam koszt.
+        const flipName = nameOfObjectId(cmd.objectId);
+        const kindShown = new RegExp(`\\(${flipKind}\\)`, 'i').test(flipName) ? '' : `${flipKind} `;
+        return `Obróć twarzą do góry: ${flipName} (${kindShown}${costHtml})`;
       }
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
       const xPart = cmd.xValue != null ? ` (X=${cmd.xValue})` : '';
@@ -2538,10 +2582,7 @@ export function commandLabel(cmd, session, view) {
       if (cmd.cost != null && cmd.cost > 0) {
         // Koszt bywa kolorowy (Furious Forebear: payMana 2 + payColors ['W']
         // = {1}{W}) — pipy kolorów wchodzą w miejsce części generycznej.
-        const colors = cmd.costColors ?? [];
-        const generic = Math.max(0, cmd.cost - colors.length);
-        const symbols = `${generic > 0 ? `{${generic}}` : ''}${colors.map((c) => `{${c}}`).join('')}`;
-        parts.push(manaCostHtml(symbols || `{${cmd.cost}}`));
+        parts.push(manaCostHtml(costSymbols(cmd.cost, cmd.costColors)));
       }
       if (cmd.lifeCost != null && cmd.lifeCost > 0) parts.push(`${cmd.lifeCost} życia`);
       const price = parts.join(' + ');
@@ -2551,7 +2592,10 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_pay_or_sacrifice': {
       // M101/B: ta sama klasa błędu co wyżej („Zapłata albo poświęcenie" ×2).
       const source = cmd.sourceId ? nameOfObjectId(cmd.sourceId) : null;
-      const price = cmd.cost != null && cmd.cost > 0 ? manaCostHtml(`{${cmd.cost}}`) : null;
+      // M266/E (L100 pkt 4): pipy kolorów, gdy koszt je ma — jedna składanka
+      // (`costSymbols`) dla opisu zdarzenia i etykiety przycisku.
+      const price = cmd.cost != null && cmd.cost > 0
+        ? manaCostHtml(costSymbols(cmd.cost, cmd.costColors)) : null;
       if (cmd.pay) return `Zapłać${price ? ` ${price}` : ''}${source ? ` (zachowaj ${source})` : ''}`;
       return `Poświęć${source ? ` ${source}` : ' permanent'} (bez płacenia)`;
     }
@@ -2559,7 +2603,10 @@ export function commandLabel(cmd, session, view) {
       // Batch 44 (Frightful Delusion): zapłać {N}, żeby czar NIE został
       // skontrowany — albo odpuść (czar do grobu). Obie opcje z ceną i celem.
       const spell = cmd.targetId ? nameOfObjectId(cmd.targetId) : 'czar';
-      const price = cmd.cost != null && cmd.cost > 0 ? manaCostHtml(`{${cmd.cost}}`) : null;
+      // M266/E (L100 pkt 4): pipy kolorów, gdy koszt je ma — jedna składanka
+      // (`costSymbols`) dla opisu zdarzenia i etykiety przycisku.
+      const price = cmd.cost != null && cmd.cost > 0
+        ? manaCostHtml(costSymbols(cmd.cost, cmd.costColors)) : null;
       if (cmd.pay) return `Zapłać${price ? ` ${price}` : ''} — ${spell} zostaje na stosie`;
       return `Nie płać — ${spell} zostaje skontrowany`;
     }
@@ -2567,7 +2614,10 @@ export function commandLabel(cmd, session, view) {
       // M258/F3 — ward (CR 702.21): dopłać, żeby czar/zdolność przeszła,
       // albo pozwól się skontrować. Cena i cel (obiekt na stosie) w komendzie.
       const spell = cmd.targetId ? nameOfObjectId(cmd.targetId) : 'czar';
-      const price = cmd.cost != null && cmd.cost > 0 ? manaCostHtml(`{${cmd.cost}}`) : null;
+      // M266/E (L100 pkt 4): pipy kolorów, gdy koszt je ma — jedna składanka
+      // (`costSymbols`) dla opisu zdarzenia i etykiety przycisku.
+      const price = cmd.cost != null && cmd.cost > 0
+        ? manaCostHtml(costSymbols(cmd.cost, cmd.costColors)) : null;
       if (cmd.pay) return `Zapłać${price ? ` ${price}` : ''} (ward) — ${spell} przechodzi`;
       return `Nie płać (ward) — ${spell} skontrowany`;
     }
@@ -2698,8 +2748,12 @@ export function commandLabel(cmd, session, view) {
       // suspend, M151) — etykieta nazywa cel, inaczej N wpisów wygląda
       // identycznie.
       const madTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
+      // M266/E (L100 pkt 4): koszt madness bywa kolorowy (Terminal Agony
+      // {B}{R}) — etykieta pokazuje realną cenę, nie samo słowo „koszt madness".
+      const madPrice = cmd.cost != null && cmd.cost > 0
+        ? ` za ${manaCostHtml(costSymbols(cmd.cost, cmd.costColors))}` : ' za koszt madness';
       return cmd.cast
-        ? `Rzuć za koszt madness: ${nameOfObjectId(cmd.objectId ?? cmd.cardId)}${madTargets ? ` → cel: ${madTargets}` : ''}`
+        ? `Rzuć${madPrice}: ${nameOfObjectId(cmd.objectId ?? cmd.cardId)}${madTargets ? ` → cel: ${madTargets}` : ''}`
         : `Przełóż do cmentarza (rezygnacja z madness): ${nameOfObjectId(cmd.objectId ?? cmd.cardId)}`;
     }
     case 'resolve_reveal_choice': {

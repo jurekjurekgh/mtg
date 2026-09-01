@@ -1,11 +1,12 @@
 import { event } from '../protocol/types.js';
 import { singleTargetOfStackEntry } from './objects.js';
 import {
-  applyEffect, creaturesNotControlledByOwner, creaturesYouControl, faceDownCreaturesYouControl,
+  applyEffect, applyEnterCounters, creaturesNotControlledByOwner, creaturesYouControl, faceDownCreaturesYouControl,
   landCreaturesYouControl, libraryCardsOf, millTargetPlayerId, otherCreaturesYouControl,
   counterStackObject,
 } from './effects.js';
 import { addCounter, hasCounter } from './counters.js';
+import { deathZoneFor } from './zones.js';
 import { changeLife } from './players.js';
 import { effectiveAbilities, effectiveKeywords, effectivePower, wardAmountOf } from './permanents.js';
 import { moveObjectDirectly } from './objects.js';
@@ -700,11 +701,18 @@ function fireSagaChapter(state, sagaObject, chapterNumber, events, chapterTarget
   if (chapterNumber >= chapters.length) {
     const current = state.objects.get(sagaObject.id);
     if (current && current.zone === 'battlefield' && current.saga) {
-      const graveId = `grave-${state.objectSequence++}`;
-      const moved = moveObjectDirectly(state, current.id, 'graveyard', graveId);
+      // M272 (błąd #17, CR 704.5s + 122.1e): po ostatnim rozdziale kontroler
+      // POŚWIĘCA Sagę — a poświęcenie to śmierć permanenta, więc obowiązuje
+      // zastąpienie strefy (licznik finality / „exile it instead"). M269
+      // (błąd #5) sprowadził cztery ścieżki poświęcenia do `deathZoneFor`,
+      // ale ta — jedyna poza game-state/effects/spells — została na sztywnym
+      // grobie: Saga z licznikiem finality dawała się odzyskać z cmentarza.
+      const toZone = deathZoneFor(state, current);
+      const graveId = `${toZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, current.id, toZone, graveId);
       const sacrificed = event('permanent_sacrificed', {
         fromId: current.id, objectId: graveId, playerId: current.controllerId,
-        cardId: moved.cardId, saga: true,
+        cardId: moved.cardId, saga: true, toZone,
       });
       state.events.push(sacrificed);
       events.push(sacrificed);
@@ -884,6 +892,9 @@ function resolveDelayedTrigger(state, payload, events) {
     const moved = moveObjectDirectly(state, pending.objectId, 'battlefield', newId);
     const permanent = Object.freeze({ ...moved, controllerId: pending.playerId, summoningSickness: true });
     state.objects.set(newId, permanent);
+    // M274 (#24, CR 121.6): opóźniony powrót na pole bitwy to też WEJŚCIE —
+    // liczniki wejścia obowiązują jak przy każdej innej ścieżce ETB.
+    applyEnterCounters(state, newId);
     const movedEvent = event('object_moved', {
       fromId: pending.objectId, object: permanent, fromZone: 'graveyard', toZone: 'battlefield', delayed: true,
     });
@@ -1573,6 +1584,12 @@ function fireOrQueuePay(state, ability, source, triggerTargets, events, extra, {
     const required = event('optional_pay_required', {
       playerId: source.controllerId, sourceId: source.id, cardId: source.cardId,
       payMana: trigger.payMana ?? 0, payLife: trigger.payLife ?? 0,
+      // M265 (Żywy Tester, worek-basni vs final-fantasy seed 303): koszt bywa
+      // KOLOROWY (Zoraline {W}{B}, Furious Forebear {1}{W}). Bez pipów opis
+      // zdarzenia pisał generyczne „{2}" — cenę, której w grze nie ma —
+      // podczas gdy przycisk decyzji (playerView.costColors) pokazywał
+      // prawidłowe {W}{B}. Zdarzenie musi nieść ten sam koszt co komenda.
+      payColors: trigger.payColors ?? [],
     });
     state.events.push(required);
     events.push(required);

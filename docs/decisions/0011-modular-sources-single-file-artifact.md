@@ -3,7 +3,8 @@
 - **Status:** Zaakceptowana
 - **Data:** 2026-07-31
 - **Decydenci:** właściciel projektu
-- **Zastępuje:** [ADR 0008](0008-plain-javascript-esm-no-build.md)
+- **Zastępuje:** ADR 0008 (zarchiwizowana — jej żywe zasady są tutaj: pkt 6
+  i sekcja „Czego świadomie nie dostajemy")
 
 ## Kontekst
 
@@ -62,16 +63,44 @@ samą sytuację), a zapis wymusza determinizm z ADR 0005. Autosave do
 `localStorage` zostaje jako wygoda, ale **nie jest trwałym zapisem**: Safari na
 iOS kasuje magazyny skryptowe po siedmiu dniach bez interakcji (ITP).
 
-## Co się zmienia względem ADR 0008
+**6. Język, testy i kontrakty** (przejęte z ADR 0008, obowiązują bez zmian):
 
-| Zagadnienie | ADR 0008 | ADR 0011 |
+- **Czysty JavaScript w ES Modules**, bez transpilacji. Te same pliki `.js`
+  działają w przeglądarce i w Node. Żadnych `.ts`, `.jsx`.
+- **Engine bez DOM i bez sieci** — pakiet reguł nie dotyka `document`,
+  `window`, `fetch` ani `localStorage`.
+- **Testy w `node:test`** — wbudowany runner, zero zależności deweloperskich.
+- **Kontrakty zamiast typów, trzy warstwy:** JSDoc (`@typedef`, `@param`);
+  funkcje fabryczne/walidujące na granicach modułów z jawnymi błędami; testy
+  inwariantów jako egzekutor kontraktu.
+- **Jedno narzędzie opcjonalne:** `tsc --checkJs --noEmit` na typach z JSDoc,
+  wyłącznie w CI.
+- **Struktura katalogów zamiast workspaces** (granice pilnują importy i testy):
+  `src/engine/` (reguły, stan, walidacja — zero DOM), `src/protocol/`
+  (kształty Command / Event / PlayerView / ChoiceRequest), `src/cards/`
+  (definicje + registry statusu wsparcia), `src/controllers/` (boty i adapter
+  człowieka), `src/table/` (UI Wirtualnego Stołu), `test/`.
+
+## Czego świadomie nie dostajemy
+
+Część decyzji, nie przypis — właściciel prosił o jawną listę. Przejęte z ADR
+0008 i nadal w mocy w całości.
+
+| Czego brakuje | Realny skutek | Jak to łagodzimy |
 |---|---|---|
-| Język i moduły, testy, typowanie | JS + ESM, `node --test`, JSDoc + opcjonalny `tsc --checkJs`, `src/…` | **bez zmian** |
-| Krok budowania | brak | **jest** — `build.mjs` w CI |
-| Uruchomienie u właściciela | serwer HTTP | **dwuklik na pliku lub adres URL** |
-| Wsparcie iPada | brak | **jest** |
+| Sprawdzania typów przy kompilacji | Literówka w polu (`cardId` vs `cardID`) wyjdzie w czasie działania | JSDoc + `tsc --checkJs` w CI + testy inwariantów |
+| Typów sumarycznych i wyczerpujących `switch` | Nowy rodzaj `Command` nie zgłosi pominiętych miejsc obsługi | Rejestr komend w jednym pliku + test „każda komenda ma handler" |
+| Kontroli, że kontroler nie sięgnie po ukryte pole | JS nie odróżni `PlayerView` od `GameState` | `PlayerView` jako nowy obiekt kopiujący tylko dozwolone pola (nigdy referencja do stanu) + test wycieku FoW |
+| Bezpiecznego masowego refaktoru | Zmiana nazwy pola w 50 miejscach bez wsparcia narzędzi | małe moduły, wysokie pokrycie testami, ograniczanie zasięgu zmian |
+| `readonly` i niemutowalności z języka | Ktoś może zmutować stan w obejściu API | jedna ścieżka mutacji w engine + `Object.freeze` na `PlayerView` |
+| Autouzupełniania z pełną wiernością | Wolniejsze pisanie kodu | JSDoc daje ~80% efektu w VS Code |
 
-Sekcja „Czego świadomie nie dostajemy" z ADR 0008 **pozostaje w mocy w całości**.
+**Czego JS nie uniemożliwia — wbrew obawom:** determinizm i seedowane RNG,
+zdarzenia i replay, projekcja `PlayerView`, walidacja komend, deklaratywne
+definicje kart, testy bez DOM, symulacje headless.
+
+**Realny próg bólu:** katalog > ~100 kart o złożonych interakcjach albo drugi
+stały współpracownik.
 
 ## Konsekwencje
 
@@ -97,7 +126,8 @@ Sekcja „Czego świadomie nie dostajemy" z ADR 0008 **pozostaje w mocy w cało�
 
 ## Rozważone alternatywy
 
-- **Utrzymanie ADR 0008 bez zmian** — uniemożliwia grę na iPadzie.
+- **Utrzymanie decyzji „bez kroku budowania" (ADR 0008)** — uniemożliwia grę
+  na iPadzie: moduły ES są blokowane z `file://`.
 - **Powrót do jednego pliku źródłowego** — struktura, którą audyt wskazał jako
   przyczynę problemów z utrzymaniem.
 - **Tylko hosting online** — utrata własnych ilustracji w grze.
@@ -107,6 +137,7 @@ Sekcja „Czego świadomie nie dostajemy" z ADR 0008 **pozostaje w mocy w cało�
 
 ## Powiązania
 
-- [ADR 0008](0008-plain-javascript-esm-no-build.md) (zastąpiona) · [ADR 0005](0005-deterministic-replayable-execution.md)
+- [ADR 0005](0005-deterministic-replayable-execution.md) · historia decyzji
+  o kroku budowania: [archiwum ADR 0008](archive/0008-plain-javascript-esm-no-build.md)
 - [ADR 0009](0009-standalone-game-table-instead-of-extraction.md) · [ADR 0010](0010-card-rules-data-in-repository.md)
 - [Audyt istniejącej aplikacji](../AUDIT_LEGACY_APP.md)

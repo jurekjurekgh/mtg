@@ -2,6 +2,7 @@ import { event } from '../protocol/types.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { deathZoneFor, effectiveKeywords, effectiveToughness } from './permanents.js';
 import { removeIllegalAttachments, detachAttachmentsFromHost } from './attachments.js';
+import { removeCounter } from './counters.js';
 
 /**
  * Regeneracja (CR 701.12): tarcza z efektu „regenerate" zastępuje następne
@@ -211,11 +212,23 @@ export function runStateBasedActions(state) {
     }
     // Shield: zniszczenie z obrażeń zastąp zdjęciem tarczy (CR 122.1b).
     if (!killedByZeroToughness && (object.counters?.shield ?? 0) > 0) {
-      const next = { ...(object.counters ?? {}) };
-      next.shield = (next.shield ?? 0) - 1;
-      if (next.shield <= 0) delete next.shield;
-      state.objects.set(object.id, Object.freeze({ ...object, counters: Object.freeze(next), damage: 0, damagedByDeathtouch: false }));
-      state.events.push(event('shield_consumed', { objectId: object.id, cardId: object.cardId, reason: 'destroy' }));
+      // M270 (błąd #10): TRZECIA kopia zdejmowania licznika shield — i zarazem
+      // najczęstsza ścieżka w grze (śmierć z obrażeń). Idzie przez WSPÓLNY
+      // helper `removeCounter`, jak dwie pozostałe (markDamage,
+      // resolve_replacement_choice): helper emituje `counter_removed`, którego
+      // ręczna wersja nie dawała, więc log stołu pokazywał zdjęcie tarczy
+      // tylko w części przypadków, a `syncStationKind` (CR 205.1) był
+      // pomijany. Obrażenia zdejmujemy PO zdjęciu licznika (CR 122.1b:
+      // zniszczenie zostaje zastąpione, więc stwór zostaje bez obrażeń).
+      const przed = state.events.length;
+      removeCounter(state, object.id, 'shield', 1);
+      events.push(...state.events.slice(przed));
+      const poZdjeciu = state.objects.get(object.id);
+      state.objects.set(object.id, Object.freeze({
+        ...poZdjeciu, damage: 0, damagedByDeathtouch: false,
+      }));
+      const consumed = event('shield_consumed', { objectId: object.id, cardId: object.cardId, reason: 'destroy' });
+      state.events.push(consumed); events.push(consumed);
       continue;
     }
     // Regeneracja (CR 701.12): zniszczenie z obrażeń zastępujemy odtapowaniem,

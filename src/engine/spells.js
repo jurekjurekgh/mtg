@@ -1,9 +1,10 @@
 import { event } from '../protocol/types.js';
+import { spellExitZone } from './zones.js';
 import { triggerTargetEffectFriendly } from './effect-intent.js';
 import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaPurpose } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource, transformedCharacteristics } from './permanents.js';
-import { applyEffect, dealNonCombatDamage, maybeAddFaceDownFlyingCounter } from './effects.js';
+import { applyEffect, applyEnterCounters, dealNonCombatDamage, maybeAddFaceDownFlyingCounter } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature, isLegalAuraHost, attachEquipmentToCreature } from './attachments.js';
 import { effectiveProtectionFromColors } from './attachments.js';
@@ -844,9 +845,17 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
     }
   }
   if (!object.plotted && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
+  // M267/C: pipy KOSZTU CLEAVE, nie karty (wzorzec madness M161/O2). Dotąd
+  // płatność czytała `coloredPipsOf(cardId)` i trafiała przypadkiem — koszt
+  // bazowy Lunar Rejection ma ten sam {U} co cleave. Pierwsza karta o innym
+  // kolorze alt-kosztu płaciłaby złym kolorem.
+  const cleaveRequirements = (object.spell.cleave.colors ?? []).map((color) => [color]);
   const manaSpent = object.plotted ? 0
-    : reduceAlternativeCost(state, object, object.spell.cleave.manaCost ?? 0, coloredPipsOf(object.cardId).map((req) => req[0]));
-  spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId), spellManaPurpose(object));
+    : reduceAlternativeCost(state, object, object.spell.cleave.manaCost ?? 0, cleaveRequirements.map((req) => req[0]));
+  if (!object.plotted && !canPayColoredCost(state, playerId, cleaveRequirements)) {
+    throw new Error('Brak kolorowego źródła many');
+  }
+  spendMana(state, playerId, manaSpent, cleaveRequirements, spellManaPurpose(object));
   consumePendingSpellDiscount(state, object);
   state.spellsCastThisTurn += 1;
   if (sacrificeCost) {
@@ -1392,7 +1401,19 @@ function resolveActivatedAbilityEntry(state, entry) {
       if (!isChannel && drawAmount != null) {
         for (let i = 0; i < drawAmount; i += 1) {
           const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === payload.playerId);
-          if (!topId) break;
+          if (!topId) {
+            // M272 (błąd #21, CR 704.5m + 104.4b): próba dobrania z PUSTEJ
+            // biblioteki to ZNACZNIK dla akcji stanowej, nie ciche „nic".
+            // Ścieżka cyklowania po prostu przerywała pętlę, więc gracz, który
+            // wycyklował ostatnią kartę, nigdy nie przegrywał — partia toczyła
+            // się dalej z pustą biblioteką. Znacznik kasuje przebieg SBA.
+            if (state.status === 'active') {
+              state.emptyLibraryDraw = {
+                ...(state.emptyLibraryDraw ?? {}), [payload.playerId]: true,
+              };
+            }
+            break;
+          }
           const handId = `hand-${state.objectSequence++}`;
           const drawn = moveObjectDirectly(state, topId, 'hand', handId);
           state.cardsDrawnThisTurn[payload.playerId] = (state.cardsDrawnThisTurn[payload.playerId] ?? 0) + 1;
@@ -1574,13 +1595,39 @@ export function resolveTopOfStack(state) {
       // stosu i modalny counter_spell był no-opem.
       return target.zone === 'battlefield' || target.zone === 'stack';
     });
+    // M271 (błąd #13, CR 608.2b): „If all its targets ... are now illegal,
+    // the spell or ability doesn't resolve." Ścieżka ZDOLNOŚCI ma ten test
+    // od M90, bliźniacza ścieżka CZARU MODALNEGO go NIE miała: tryb, który
+    // stracił jedyny cel, przechodził dalej z pustą listą i wykonywał swoje
+    // efekty NIECELOWANE. „Your Temple Is Under Attack" (tryb 2: „target
+    // opponent" + „each player draws") dawał obu graczom karty, mimo że czar
+    // w ogóle nie powinien się rozstrzygnąć.
+    // Warunek dotyczy WYŁĄCZNIE trybów, które celów wymagają — tryb bez
+    // celów rozstrzyga się normalnie.
+    const modeTargets = mode.targets ?? object.spell.targets ?? [];
+    if (modeTargets.length > 0 && liveChosen.length === 0) {
+      // M271 (błąd #14): także fizzle respektuje `exileInsteadOfGraveyard`.
+      const zoneFizzle = spellExitZone(object);
+      const graveFizzle = `${zoneFizzle}-${state.objectSequence++}`;
+      moveObjectDirectly(state, stackId, zoneFizzle, graveFizzle);
+      state.events.push(event('spell_resolved', {
+        fromId: stackId, toId: graveFizzle, cardId: object.cardId,
+        controllerId: object.controllerId,
+        fizzled: true, reason: 'no_legal_targets', modal: true,
+        modeIndex: object.chosenMode,
+        modeName: object.spell?.modes?.[object.chosenMode]?.name ?? null,
+      }));
+      return state.events.slice(before);
+    }
     for (const effect of mode.effects ?? []) {
       const effTargets = resolveModalEffectTargets(state, effect, object, liveChosen);
       if (effTargets === null) continue;
       applyEffect(state, effect, object, effTargets);
     }
-    const graveId = `grave-${state.objectSequence++}`;
-    moveObjectDirectly(state, stackId, 'graveyard', graveId);
+    // M271 (błąd #14): strefę zejścia liczy WSPÓLNY helper, nie sztywny grób.
+    const zoneModal = spellExitZone(object);
+    const graveId = `${zoneModal}-${state.objectSequence++}`;
+    moveObjectDirectly(state, stackId, zoneModal, graveId);
     state.events.push(event('spell_resolved', {
       fromId: stackId, toId: graveId, cardId: object.cardId, controllerId: object.controllerId,
       fizzled: false, modal: true, modeIndex: object.chosenMode,
@@ -1646,7 +1693,7 @@ export function resolveTopOfStack(state) {
   const reboundCast = Boolean(object.reboundCast && !object.isSpellCopy);
   // M174/E (Halo Forager): exileInsteadOfGraveyard — „If that spell would
   // be put into a graveyard, exile it instead" (dotyczy też fizzle niżej).
-  const zoneAfterResolve = (adventure || flashedBack || reboundCast || object.exileInsteadOfGraveyard) ? 'exile' : 'graveyard';
+  const zoneAfterResolve = spellExitZone(object, { adventure, flashedBack, reboundCast });
   const afterId = `${zoneAfterResolve}-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, stackId, zoneAfterResolve, afterId);
   // Rebound: zaznacz wygnaną kartę jako gotową do rzutu bez kosztu w przyszłym
@@ -1750,7 +1797,7 @@ export function finishPendingSpell(state, stackId, remainingEffects) {
     return state.events.slice(before);
   }
   const flashedBack = Boolean(object.flashedBack);
-  const zoneAfter = (flashedBack || object.exileInsteadOfGraveyard) ? 'exile' : 'graveyard';
+  const zoneAfter = spellExitZone(object, { flashedBack });
   const afterId = `${zoneAfter}-${state.objectSequence++}`;
   moveObjectDirectly(state, stackId, zoneAfter, afterId);
   const resolved = event('spell_resolved', { fromId: stackId, toId: afterId, cardId: object.cardId, controllerId: object.controllerId, fizzled: false, flashedBack });
@@ -1906,38 +1953,12 @@ function resolvePermanentSpell(state, stackId, object, before) {
     fromId: stackId, objectId: newId, object: enteredNow, cardId: enteredNow.cardId,
     controllerId: enteredNow.controllerId, resolved: true,
   }));
-  // Liczniki wejścia (CR 122.1a — Servant of the Scale) i bloodthirst — tylko
-  // dla obiektów jawnych (face-down stwór 2/2 nie ma cech karty, CR 702.36).
-  if (!permanent.faceDown && permanent.entersWithCounters) {
-    for (const [name, amount] of Object.entries(permanent.entersWithCounters)) {
-      addCounter(state, newId, name, amount);
-    }
-  }
-  // M108 (batch 33 — Somberwald Spider): liczniki wejścia WARUNKOWE
-  // („Morbid — enters with two +1/+1 counters if a creature died this turn",
-  // CR 614.1c/122.1a). Warunek sprawdzamy w chwili wejścia; deskryptor jest
-  // generyczny (`entersWithCountersIf: { morbid, counters }`), bez nazw kart.
-  if (!permanent.faceDown && permanent.entersWithCountersIf) {
-    const rule = permanent.entersWithCountersIf;
-    // M166/C (Adamant, ELD — Locthwain Paladin): „If at least three <color>
-    // mana was spent to cast this spell" — breakdown kolorów jedzie z
-    // obiektu stosu (manaColorsSpent z spendMana).
-    let holds = rule.morbid ? Boolean(state.creatureDiedThisTurn) : false;
-    if (!holds && rule.adamant) {
-      // M171/N1: wpis jednoznaczny (1 znak) liczy się, gdy jest tym kolorem;
-      // wildcard (>1 znaku — jednostka wielokolorowa, CR 106.7: kolor wybrał
-      // gracz przy produkcji) liczy się, gdy zawiera kolor adamant.
-      const spent = permanent.manaColorsSpent ?? [];
-      holds = spent.filter((color) => color === rule.adamant.color
-        || (color.length > 1 && color.includes(rule.adamant.color))).length >= (rule.adamant.min ?? 3);
-    }
-    if (holds) {
-      for (const [name, amount] of Object.entries(rule.counters ?? {})) addCounter(state, newId, name, amount);
-    }
-  }
-  if (!permanent.faceDown && object.bloodthirst && state.dealtDamageToOpponentThisTurn?.[permanent.controllerId]) {
-    addCounter(state, newId, '+1/+1', object.bloodthirst);
-  }
+  // Cechy WEJŚCIA na pole bitwy (liczniki wejścia CR 122.1a, warunkowe
+  // CR 614.1c, bloodthirst CR 702.54a) — M274: JEDNA implementacja dla
+  // wszystkich ścieżek wejścia (`applyEnterCounters` w effects.js). Wcześniej
+  // ta ścieżka miała własną kopię, a rodzina reanimacji nie miała żadnej:
+  // dokładnie wzorzec L107 (helper istnieje, ścieżka go omija).
+  applyEnterCounters(state, newId);
   // „You may have this creature enter as a copy of any <subtype> creature"
   // (CR 707): decyzja gracza PRZED SBA — flaga enteringAsCopy pomija 0/0
   // do czasu resolve_enter_as_copy (odmowa = 0/0 ginie SBA).
@@ -2722,7 +2743,13 @@ export function resolveEscapeExile(state, playerId, exileIds) {
   if (!valid) throw new Error('Nieprawidłowy koszt Escape (exile)');
   state.pendingEscapeExile = null;
   const manaSpent = pending.manaCost;
-  spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId), spellManaPurpose(object));
+  // M267/C: pipy KOSZTU ESCAPE (pending.colors pochodzi z deskryptora karty),
+  // nie kosztu bazowego — jak madness (M161/O2).
+  const escapeRequirements = (pending.colors ?? []).map((color) => [color]);
+  if (!canPayColoredCost(state, playerId, escapeRequirements)) {
+    throw new Error('Brak kolorowego źródła many');
+  }
+  spendMana(state, playerId, manaSpent, escapeRequirements, spellManaPurpose(object));
   consumePendingSpellDiscount(state, object);
   state.spellsCastThisTurn += 1;
   for (const exId of exileIds) {

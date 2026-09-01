@@ -7244,6 +7244,34 @@ intencjonalnych, brak `[STOP]`/`undefined`/odrzuceń. Transkrypty:
 
 **Kolejny krok:** decyzja właściciela o scaleniu PR #90.
 
+### M265 (2026-08-31, sesja arena/01a058db, PR #91)
+
+**Etap 1 — audyt PR #90** (`006fcb7..4e18fed`, 26 plików, +1480/−148):
+pełne czytanie diffa, sondy odtwarzające zachowanie na żywej sesji,
+**9 mutacji RED→GREEN**. Zero znalezisk regułowych. Hipoteza o gubionym
+`deferredTurnTail` przy końcu partii **obalona** trzema sondami (deck-out
+bota, deck-out gracza, śmierć z obrażeń na granicy tury). Jedno znalezisko
+w ochronie testowej: mutacja usuwająca `e.sourceId` z bramki skanu
+(`hiddenLive`) przechodziła cały `fow-facedown-names` — testy pokrywały
+tylko warstwę TEKSTU, nie MINIATURY (L99).
+
+**Etap 2 — pętla jakości** (14 partii Żywego Testera na taliach spoza puli
+M264, 5 profili gracza; 0 `[STOP]`, 0 `== LIMIT ==`). Cztery znaleziska,
+wszystkie naprawione u root cause:
+- **#2** log pisał „zapłacić {2}" tam, gdzie przycisk „Zapłać {W}{B}" —
+  `optional_pay_required` nie niosło `payColors` (L100);
+- **#3** „Rzuć za warp: … (koszt ?)" — cztery deskryptory kosztów
+  alternatywnych (`warp`, `surge`, `kicker`, `treasureAltCost`) gubione
+  w jawnej liście pól `playerView`; strażnik KLASOWY po `REGISTRY.all()` (L101);
+- **#4** bot tapował własnego atakującego przez Halo Forager —
+  `resolve_grave_free_cast` bez `freeCastTargetPenalty` + wpis grobu bez
+  deskryptora `spell` (L102);
+- **#5** `abilityResolvedThisTurn` (postęp `onNthResolve`) poza odciskiem
+  stanu → fałszywy no-op sondy (L102).
+
+Raport: `docs/audits/AUDYT_PR90_2026-08-31.md`. Lekcje L99–L102.
+Fast **3912/3912**, test:all **3922/3922**, build **56 modułów / 2994,1 kB**.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

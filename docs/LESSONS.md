@@ -32,7 +32,294 @@ narrację. L15–L19 są datowane po numerze kamienia milowego (M102/M103 =
 2026-08-16 wg `PROJECT_HISTORY.md`): oryginalne daty zaginęły przy migracji
 M208.
 
+## Wpisy zbiorcze (mapa klas)
+
+Kilka lekcji opisywało tę samą klasę błędu z różnych stron. M275 zebrał je we
+**wpisy zbiorcze**: pełna klasa, tabela wariantów i wspólna reguła mieszkają
+w jednym miejscu, a pozostałe numery zostają jako **kotwice** — krótki opis
+własnego przypadku plus odsyłacz. Numery lekcji są cytowane w kodzie ~1150
+razy, więc **żaden nie znika**.
+
+| Klasa | Wpis główny | Kotwice |
+|---|---|---|
+| Jawna lista pól gubi dane po cichu (fabryka → generator → transport → widok) | **L21** | L93, L94, L101 |
+| Weryfikacja mutacyjna: jedyny dowód, że test/detektor działa | **L13** | L61, L70 |
+| Strażnik mierzy regułę, nie tekst źródła | **L5** | L26, L31, L44, L83 |
+| Zero zgłoszeń detektorów to pomiar narzędzia | **L27** | L40, L73, L75 |
+| Oferta i walidacja: jeden filtr, porządek i rejestr | **L48** | L90 |
+| Choke point istnieje, ale ścieżka go omija | **L107** | L109, L110, L112, L113 |
+
+**Zasada scalania:** wpisy łączymy, gdy opisują JEDNĄ klasę — nigdy dlatego, że
+są stare. Lekcji nie kasujemy i nie skracamy o fakty (karta, test, numer CR);
+usuwamy wyłącznie powtórzoną regułę, zastępując ją odsyłaczem. Stara lekcja
+bywa cenniejsza od nowej, bo jej klasa zdążyła wrócić kilka razy.
+
 ---
+
+## L107 (2026-08-31) — Najbogatsza żyła błędów: ścieżka robiąca to samo co helper, ale RĘCZNIE. Grep po mutacji pola, nie po nazwie mechaniki
+
+**Objaw (M269–M273 — 13 błędów tą techniką):** silnik ma choke pointy
+(`addCounter`, `addPoisonCounters`, `deathZoneFor`, `untapObject`,
+`moveObjectDirectly`), a obok żyją ścieżki robiące to samo własnym kodem:
+`player.poison += 1`, ręcznie złożone `counters`, `'graveyard'` na sztywno,
+`tapped: false` przez `Object.freeze`, mutacja `state.zones` wprost. Testy są
+zielone, bo GŁÓWNY skutek się zgadza — giną SKUTKI UBOCZNE helpera: zdarzenie
+dla logu i bota, wybór strefy przy liczniku finality, wyjście z walki, efekty
+zastępujące (stun, indestructible, regeneracja).
+
+**Przyczyna:** helper powstaje później niż jego pierwsi klienci albo dochodzi
+mu odpowiedzialność, a ręcznych kopii nikt nie migruje — nie znajdziesz ich po
+NAZWIE mechaniki, bo one jej nie zawierają.
+
+**Reguła:**
+1. **Szukaj po MUTACJI POLA, nie po nazwie funkcji:** `grep -rn "tapped: true"`,
+   `grep -rn "\.poison +="`. Trafienie spoza pliku-właściciela = kandydat.
+2. **Porównuj ładunki emiterów** jednego zdarzenia — rozjazd pól to błąd
+   kontraktu widoczny dla konsumenta.
+3. **Strażnik SKANUJE ŹRÓDŁA**, nie scenariusz: obejmuje też przyszłe ścieżki.
+4. Od M273 klasy pilnuje automat — `tools/event-contract-audit.mjs` (ADR 0027,
+   L112): trzy wymiary skanu wpięte w `npm test`.
+
+## L106 (2026-08-31) — Efekt „do końca tury" z ZAMROŻONYM zbiorem obiektów nie wolno filtrować po BIEŻĄCYM kontrolerze
+
+**Objaw (M269):** po „Creatures you control get +2/+2 until end of turn"
+kradzież buffowanego stwora NATYCHMIAST kasowała bonus (4/6 → 2/4); buff
+ujemny po przejęciu LECZYŁ. CR 611.2c: zbiór obiektów efektu ciągłego ustala
+się RAZ, przy rozstrzygnięciu.
+
+**Przyczyna:** `untilEndOfTurnBonuses` (`permanents.js`) miała DWA filtry tej
+samej przynależności — zamrożony `objectIds` (M101/B2) i starszy
+`object.controllerId === buff.controllerId`. Póki kontrola się nie zmienia,
+dają ten sam wynik, więc żaden test nie świecił.
+
+**Reguła:** (1) Dokładając precyzyjniejsze kryterium, USUŃ stare — dwa filtry
+tej samej przynależności to jeden za dużo. (2) Redundancja jest niewidoczna,
+póki kryteria się zgadzają; testu szukaj tam, gdzie się rozjeżdżają (zmiana
+kontroli, typu, strefy).## L105 (2026-08-31) — „Dziś to ryzyko, nie błąd" trzeba ZWERYFIKOWAĆ skanem, a nie założyć; sklejka pipów OBOK kwoty zawyża cenę
+
+**Objaw (M268):** handoff M267 odnotował, że etykiety `bestow`/`morph`
+składają koszt po staremu, ale „dziś ich koszty są generyczne, więc to ryzyko,
+nie błąd". Skan rodziny alt-kosztów pokazał, że to nieprawda w DWÓCH miejscach:
+- `leafcrown-dryad` („Bestow {3}{G}") i `tumbleweed-rising` („Plot {2}{G}")
+  nie miały `colors` w definicji (bliźniak `spinewoods-paladin` miał);
+- morph i kicker sklejały pipy OBOK pełnej kwoty: Willbender („Morph {1}{U}",
+  `morphCost: 2`) pokazywał „{2}{U}" — TRZY many zamiast dwóch.
+
+**Przyczyna:** to samo co L100/4 — powtórzona składanka „generic + pipy", tylko
+groźniejsza. Poprawne kopie liczą `generic = cost - colors.length`, a te dwie
+doklejały pipy do NIEZMNIEJSZONEJ kwoty, więc cena rosła o liczbę pipów. Sześć
+kopii w jednej warstwie rozjechało się tam, gdzie nikt nie porównał z Oracle.
+
+**Reguła:**
+1. „Dziś to tylko ryzyko" jest HIPOTEZĄ o danych — zamyka się ją skanem
+   katalogu w tej samej sesji, nie wpisem w handoffie.
+2. Pipy kolorów wchodzą W RAMACH kwoty (`{3}{G}` = 4 many), nigdy obok.
+   Jedyne źródło to `costSymbols(amount, colors)`; strażnik regexem szuka
+   sklejek `.colors ?? []).map(...).join('')` w `render.js`.
+3. Rodzinę alt-kosztów enumeruj Z NAZWY (bestow, plot, suspend, madness, warp,
+   surge, kicker, flashback, buyback, escape, cleave, adventure, morph) — skan
+   po jednej mechanice zamyka jeden przypadek.
+4. Morph jest w tej rodzinie WYJĄTKIEM: ma dwa koszty (`cost` = rzut
+   zakryty, zawsze {3} bezbarwnych wg CR 702.37a; `morphCost`/
+   `megamorphCost` = odkrycie, tu żyją pipy). Skaner porównujący Oracle
+   z polem `cost` da 6 fałszywych trafień — porównuj koszt ODKRYCIA.
+
+**Strażnik:** `test/m268-alt-koszt-pelna-rodzina.test.js` (11 testów: skan
+katalogu po 14 mechanikach, piny bestow/plot/morph/kicker, test ŹRÓDŁA
+płatności, strażnik regexowy przeciw kolejnym sklejkom). Mutacje: `colors`
+z normalizacji bestow → 4 RED; `coloredPipsOf(cardId)` w bestow → 1 RED;
+pipy obok kwoty w morph → 1 RED.
+
+## L104 (2026-08-31) — Poprawny wynik z niepoprawnego źródła to bug uśpiony: alt-koszt musi nieść WŁASNE pipy, nie pożyczać ich z kosztu bazowego
+
+**Objaw (Żywy Tester M267, profile explorer/hoarder, seedy 511/516/523):**
+panel pokazywał „Rzuć z Cleave: Lunar Rejection (koszt 4)" i „Ucieczka:
+Sweet Oblivion (koszt 4)", a Oracle mówi „Cleave {3}{U}" i „Escape {3}{U}".
+
+**Przyczyna — dwie warstwy, jedna klasa:**
+1. `colors` w ogóle nie istniało w definicjach trzech kart z cleave/escape,
+   a normalizacja w `registry.js` i tak by je ucięła: jawna lista pól
+   przepisywała `{ cost, exileCount }` / `{ manaCost, targets, effects }`.
+   To CZWARTA kopia listy pól z L101 (po generatorze, transporcie i widoku),
+   przy czym sąsiedni `buyback` w tym samym obiekcie już `colors` przepuszczał.
+2. Płatność (`spells.js`) brała pipy z `coloredPipsOf(object.cardId)` —
+   z kosztu BAZOWEGO karty. Wynik był poprawny, ale przypadkiem: wszystkie
+   trzy karty mają w koszcie bazowym ten sam {U} co w alt-koszcie.
+
+**Reguła:**
+1. Alternatywny koszt (cleave, escape, madness, suspend, plot, bestow) to
+   OSOBNA cena — jego pipy należą do jego deskryptora. Czytanie kolorów
+   z kosztu bazowego jest błędem nawet gdy dziś daje dobry wynik: pierwsza
+   karta o innym kolorze alt-kosztu złamie płatność (CR 601.2b). Wzorzec
+   zrobiony dobrze: madness (M161/O2).
+2. „Testy zielone" nie zamyka pytania o ŹRÓDŁO. Gdy poprawność wynika ze
+   zbiegu okoliczności w danych, strażnik pinuje źródło, nie tylko wynik —
+   inaczej regres przyjdzie z nową kartą, nie ze zmianą kodu.
+3. Dokładając pole do deskryptora karty, przejdź WSZYSTKIE kopie jawnej listy
+   pól (L101); normalizacja w `registry.js` jest czwartą i najłatwiej o niej
+   zapomnieć. Sygnał: pole widać w `card-data.js`, a `REGISTRY.get(id)` nie.
+4. Strażnik porównuje Oracle z definicją (regex po pipach) dla CAŁEGO
+   katalogu, nie dla zgłoszonej karty.
+
+**Strażnik:** `test/m267-alt-koszt-kolory.test.js` (5 testów, w tym skan
+katalogu i test ŹRÓDŁA płatności czytający `spells.js`). Mutacje: usunięcie
+`colors` z normalizacji `registry.js` → testy 1–3; powrót do
+`coloredPipsOf(object.cardId)` w ścieżce cleave/escape → test 5.
+
+## L103 (2026-08-31) — Skrót „na 1v1" w modelu karty zmienia REGUŁY: brak słowa „target" w Oracle ⇒ brak `targets`, zakres należy do efektu
+
+**Objaw (zgłoszenie właściciela M266/B):** log pisał „Nieprzyjaciel rzuca
+Liliana's Triumph → cel: Ty", a Oracle brzmi „Each opponent sacrifices
+a creature of their choice" — bez słowa „target".
+
+**Przyczyna:** M203/2 zamodelował „każdy przeciwnik" jako
+`targets: [{ type: 'player', opponent: true }]`. W 1v1 wskazuje to zawsze tę
+samą osobę, więc wyglądało na równoważne — nie jest. Czar bez celów
+(CR 115.1) i czar z celem różnią się obserwowalnie: ten drugi fizzluje przy
+hexproof (CR 115.6), daje się zepsuć usunięciem celu i pokazuje w UI wybór,
+którego karta nie oferuje.
+
+**Reguła:**
+1. `targets` w definicji karty deklaruje wyłącznie to, co Oracle nazywa
+   słowem „target". „Each opponent", „each player", „defending player"
+   to ZAKRES efektu — modeluj polem efektu (`scope: 'each_opponent'`),
+   wzorzec: `discard_each_opponent`.
+2. Gałąź efektu ma obsłużyć oba warianty, gdy istnieje karta-bliźniak
+   z celem (tu Grave Exchange: „TARGET player sacrifices…") — jedna gałąź,
+   dwie ścieżki, zero specjalnych przypadków po nazwie karty (ADR 0002).
+3. „W 1v1 wychodzi na to samo" nie jest argumentem: różnicę widać przez
+   hexproof, kontrę usuwającą cel i przez UI. Model ma być zgodny
+   z Oracle, nie z liczbą graczy przy stole.
+4. Strażnik KLASOWY: skan katalogu sprawdza implikację „brak słowa target
+   w Oracle ⇒ brak `targets`". Pin na jedną kartę uśpiłby klasę — bliźniaki
+   (Dreams of Steel and Oil: poprawne, ma „Target opponent") wyglądają
+   identycznie w kodzie i różnią się TYLKO Oracle.
+
+**Strażnik:** `test/m266-zgloszenia-wlasciciela.test.js` (skan katalogu, dziś
+0 naruszeń). Mutacja: przywrócenie `targets` Liliana's Triumph → 4 RED.
+
+## L102 (2026-08-31) — Rodzina ofert dzieli WYCENĘ i WIDOK: nowy członek bez pinu odziedziczy stary błąd; skutek niewidoczny w odcisku to fałszywy no-op
+
+**Objaw (Żywy Tester M265, dwa detektory, dwie partie):**
+1. `theros` vs `worek-basni` seed 332 — bot rzucił Sleep of the Dead (tap
+   + „doesn't untap") we WŁASNEGO Blade-Blizzard Kitsune, który miał
+   atakować, płacąc za to {1}.
+2. `worek-mroczny` vs `alara` seed 331 — sonda zgłosiła „oferta bez skutku"
+   dla drugiej aktywacji Soulbright Flamekin, choć ta realnie przybliżała
+   trzecią rezolucję („add {R}×8").
+
+**Przyczyna (jedna klasa, dwie manifestacje):**
+1. Rodzina „darmowych rzutów" (suspend / rebound / madness / grave-free-cast)
+   enumeruje ofertę PER ZESTAW CELÓW. M212/Z7 dołożył `freeCastTargetPenalty`
+   trzem członkom; czwarty (`resolve_grave_free_cast`, Halo Forager) został
+   bez kary i bez pinu — wszystkie cele remisowały, bot brał pierwszy
+   z brzegu. Do tego wpis GROBU w `playerView` nie niósł `spell` (M212/Z7
+   naprawił to tylko dla WYGNANIA), więc nawet z karą wycena czytałaby pustkę.
+2. `abilityResolvedThisTurn` (postęp `onNthResolve`) nie był w
+   `stateFingerprint`, więc sonda nie widziała skutku, a dwa różne stany
+   miały identyczny odcisk (ADR 0005).
+
+**Reguła:**
+1. Naprawiając wycenę/widok dla JEDNEJ komendy, wypisz całą jej rodzinę
+   i zamknij wszystkie naraz — albo dopisz strażnika wymieniającego rodzinę
+   z nazwy. Grep po funkcji-karze (`freeCastTargetPenalty`) daje listę od ręki.
+2. Deskryptor potrzebny wycenie musi być w widoku KAŻDEJ strefy jawnej, z
+   której da się zagrać (grób CR 400.2, wygnanie CR 406.3) — nie tylko tej,
+   którą zgłoszono.
+3. Pole stanu zmieniające PRZYSZŁE możliwości (liczniki postępu, „n-ty raz
+   w turze") należy do odcisku. Test: czy dwa stany różniące się tylko tym
+   polem mają ten sam fingerprint? Jeśli tak, sonda no-op jest ślepa.
+4. Zgłoszenie sondy „bez skutku" weryfikuj najpierw wobec ODCISKU: fałszywy
+   alarm zwykle znaczy brak pola w odcisku, czyli błąd warstwę niżej.
+
+**Strażnicy:** `test/m265-grave-free-cast-target.test.js` (4 testy),
+`test/m265-nth-resolve-fingerprint.test.js` (3 testy). Mutacje: usunięcie
+`freeCastTargetPenalty` z `resolve_grave_free_cast` → testy celu; usunięcie
+`spell` z wpisu grobu (`game-state.js`) → te same testy; usunięcie
+`abilityResolvedThisTurn` z `fingerprint.js` → testy odcisku i sondy.
+
+## L101 (2026-08-31) — Jawna lista pól WIDOKU to czwarta kopia tej samej listy
+
+Panel pokazywał „Rzuć za warp: Weftblade Enhancer (koszt ?)". Enumeracja katalogu
+wykazała cztery gubione deskryptory kosztu w `playerView`: `warp`, `surge`,
+`kicker` i `treasureAltCost`. M151 dopisał tam wcześniej `suspend` i zamknął temat
+testem na JEDNĄ kartę — reszta dojechała później i nikt jej nie zauważył, bo
+silnik liczył ofertę poprawnie; kłamała tylko etykieta.
+
+→ **Pełna klasa i reguła: [L21](#l21-2026-08-16--jawna-lista-pól-gubi-dane-po-cichu--w-każdej-z-czterech-warstw).**
+Tu dodatkowo, specyficzne dla widoku:
+1. Koszt alternatywny (warp, surge, kicker, bestow, plot, suspend, morph,
+   adventure) to publiczny Oracle (CR 601.2b) — musi dotrzeć do widoku KAŻDEJ
+   strefy, z której da się go zapłacić (ręka ORAZ wygnanie: `warpReady`,
+   `suspendReady`, `madnessReady`, `reboundReady`).
+2. Dwa różne koszty tej samej karty = dwie różne etykiety; identyczny tekst przy
+   różnym skutku to błąd panelu, nawet gdy silnik działa.
+
+## L100 (2026-08-31) — Ten sam koszt renderowany w dwóch warstwach: zdarzenie musi nieść WSZYSTKIE składniki ceny, inaczej log kłamie obok poprawnego przycisku
+
+**Objaw (Żywy Tester M265, worek-basni vs final-fantasy seed 303):** modal
+„Rozgrywka" pisał „Zoraline, Cosmos Caller — zapłacić {2} i 2 życia?",
+a przycisk decyzji tuż pod nim „Zapłać {W}{B} + 2 życia — efekt odpali".
+Koszt Oracle to {W}{B}; „{2}" to cena, której w grze nie ma (za dwie many
+bezbarwne nie da się zapłacić dwóch pipów kolorowych).
+
+**Przyczyna:** dwie warstwy prezentacji czytają z DWÓCH różnych źródeł.
+Przycisk bierze koszt z `playerView` (`costColors` z `trigger.payColors` —
+`game-state.js:5726`), a opis zdarzenia z samego zdarzenia
+`optional_pay_required`, które niosło tylko `payMana`/`payLife`. Nikt nie
+zauważył, bo obie warstwy „działały", tylko mówiły co innego.
+
+**Reguła:**
+1. Zdarzenie opisujące DECYZJĘ o koszcie musi nieść komplet składników ceny
+   (kwota + pipy kolorów + życie + poświęcenia) — tyle, ile potrzeba, żeby
+   opis dało się złożyć bez sięgania do stanu. Bramka: czy `describeGameEvent`
+   umie odtworzyć dokładnie tę samą cenę co komenda w `legalCommands`?
+2. Naprawa idzie do EMITERA zdarzenia (`triggers.js`), nie do renderera —
+   renderer bez danych i tak nie ma czego pokazać.
+3. Do każdej takiej pary warstw pisz test SPÓJNOŚCI (`payColors` zdarzenia
+   `deepEqual` `costColors` komendy), nie tylko test tekstu — sam tekst
+   zielenieje po zahardkodowaniu jednej karty.
+4. Grep rodzeństwa: `pay_or_sacrifice_required`, `counter_pay_required`,
+   `ward_choice_required` renderowały koszt jako gołe `{N}`.
+   **DOMKNIĘTE w M266/E.** Skan katalogu pokazał, że dla MADNESS ta karta już
+   istniała (Terminal Agony {B}{R}, Revolutionist {3}{R}) — log pisał „rzuć za
+   {2}", cenę niemożliwą do zapłacenia. Naprawa nie dołożyła trzeciej kopii
+   składanki: `costSymbols(amount, colors)` (`src/table/mana-icons.js`) jest
+   JEDYNYM źródłem dla obu warstw, a `madness_ready_required` i komendy
+   `resolve_madness_cast`/`resolve_pay_or_sacrifice` niosą `costColors`.
+   Strażnik: `test/m266-koszt-pipy.test.js` (5). Wniosek: „dziś to prawda"
+   w ostrzeżeniu o rodzeństwie weryfikuj od razu SKANEM KATALOGU — błąd
+   zwykle już jest w grze.
+
+**Strażnik:** `test/m265-optional-pay-colored-cost.test.js` (5 testów).
+Mutacje: usunięcie `payColors` ze zdarzenia (`triggers.js`) → testy 1, 2, 5;
+uproszczenie opisu do `{${e.payMana}}` (`session.js`) → testy 2, 3.
+
+## L99 (2026-08-31) — Fix wdrożony w dwóch warstwach potrzebuje pinu w OBU; test warstwy tekstu nie chroni warstwy obrazu
+
+**Objaw (audyt PR #90, mutacja M8):** M264 zamknął wyciek nazwy zakrytej
+karty przy `trigger_resolved` w DWÓCH miejscach `src/table/session.js` —
+w opisie tekstowym (`objectOrLki`) i w bramce SKANU karty (`hiddenLive`
+w `noteBotMove`). Test powstał tylko dla tekstu. Usunięcie `e.sourceId`
+z bramki skanu przechodziło cały `test/fow-facedown-names.test.js`
+(17/17 zielone), a w modalu obok poprawnego „Morph — trigger się
+rozstrzyga" pojawiała się MINIATURA realnej karty przeciwnika (CR 708.2).
+
+**Przyczyna:** ta sama informacja ukryta wycieka dwiema powierzchniami
+(nazwa i obraz), a plik testowy nazwany po zgłoszeniu („nazwy face-down")
+sugerował pełne pokrycie tematu. Recydywa klasy L41/L70.
+
+**Reguła:**
+1. Kiedy jedna naprawa dotyka N miejsc w kodzie, policz je jawnie w opisie
+   commita i dopisz N pinów — „ten sam plik" nie znaczy „ta sama warstwa".
+2. Dla FoW pytaj osobno o KAŻDĄ powierzchnię: tekst, skan/miniatura,
+   `playerView`, etykieta komendy, tytuł modala.
+3. Weryfikacja mutacyjna audytu ma celować w każdy człon warunku z osobna
+   (`[e.objectId, e.object?.id, e.sourceId]` → trzy mutacje, nie jedna).
+
+**Strażnik:** `test/fow-facedown-names.test.js`, test
+„M265: trigger_resolved od zakrytego źródła bota — modal bez SKANU karty".
+Mutacja: `hiddenLive` bez `e.sourceId` → RED.
 
 ## L98 (2026-08-31) — Buforowane „dopisywanie" zamyka paczkę na granicy domenowej; promocję zatrzymanej połowy robią punkty WZNOWIENIA, nie wspólna pętla gry
 
@@ -160,58 +447,26 @@ botów, (8) PAYMENT_DECISION_TYPES w mana-wizard, (9) describeGameEvent,
 (10) etykiety render. Test E2E przez execute() (nie przez helpery)
 łapie 1–2 natychmiast; greppowalne rodzeństwo łapie resztę.
 
-## L94 (2026-08-30) — Fabryka z destrukturyzacją configu gubi nieznane pola PO CICHU; kontrakt pinuje się testem przez REALNĄ fabrykę
+## L94 (2026-08-30) — Fabryka z destrukturyzacją configu gubi nieznane pola PO CICHU
 
-**Objaw (CR hunting M258, Etap 2.3):** `create_copy_token` (effects.js)
-od lat przekazywał `manaCost: src.manaCost ?? 0` do `createBattlefieldToken`
-— a destrukturyzacja w tokens.js tego pola nie znała, więc KAŻDY
-token-kopia wchodził z MV 0. Nie było błędu, ostrzeżenia ani testu: piny
-kopiowania (M90/CR 707.8a, M141/B) sprawdzały transformTo/station/saga,
-a manaCost nigdy. Do tego `enterAsCopy` kosztu nie kopiował wcale (CR 707.2
-— koszt many jest wartością kopiowalną). Ujawnione dopiero pytaniem o CR
-202.3b (MV kopii tylnej twarzy DFC) zadawanym do WSZYSTKICH ścieżek rodziny.
+`create_copy_token` od lat przekazywał `manaCost` do `createBattlefieldToken`,
+a destrukturyzacja w `tokens.js` tego pola nie znała — KAŻDY token-kopia wchodził
+z MV 0 (CR 707.2: koszt many jest wartością kopiowalną). Bez błędu, ostrzeżenia
+i testu; piny kopiowania sprawdzały `transformTo`/`station`/`saga`, nigdy kosztu.
+Ujawnione pytaniem o CR 202.3b zadanym WSZYSTKIM ścieżkom rodziny.
 
-**Reguła:** jawna destrukturyzacja `{ pole = domyślne }` w fabryce to
-jawna LISTA DOZWOLONYCH PÓL — każde nowe pole od nadawcy ginie bez śladu
-(recydywa klasy L93/L21/M146, tym razem w fabryce tokenów zamiast
-materializacji talii). Przy dodawaniu pola do configu fabryki: (1) grep
-WSZYSTKICH nadawców, (2) pin w teście, który przechodzi przez REALNĄ
-fabrykę, nie przez własny helper zbudowany na createGameObject. Test
-anty-over-fix (kopia PRZODU zachowuje koszt) jest tu obowiązkowy — sam fix
-„tył → 0" przeszedłby zielono także z fabryką ignorującą pole.
+→ **Pełna klasa i reguła: [L21](#l21-2026-08-16--jawna-lista-pól-gubi-dane-po-cichu--w-każdej-z-czterech-warstw).**
 
-## L93 (2026-08-30) — Jawna lista pól w warstwie transportowej musi pokrywać generator; test helperem OMUIJA tę warstwę
+## L93 (2026-08-30) — Jawna lista pól w warstwie TRANSPORTOWEJ musi pokrywać generator
 
-**Objaw (Żywy Tester M258, srodziemie vs mirrodin-wu seed 3004):** Crawling
-Chorus (toxic 1) bił gracz trzy razy bez ani jednego znaku trucizny, a
-kafel pokazywał „Toksyczny”. Obiekt z materializacji talii miał
-`toxic=null` — karta definiuje `toxic: 1`, `gameObjectDataOf` je przenosi,
-ale `installDeck` (src/engine/deck.js) kładzie na obiekcie JAWNĄ listę pól
-i toxic (plus echo, madness, surge, warp) na niej nie było. Recydywa klasy
-M146/L21 w tej samej funkcji — renown wcześniej dodano, pięć innych pól nie.
+Crawling Chorus (`toxic: 1`) bił gracza trzy razy bez znaku trucizny: `installDeck`
+(`deck.js`) kładzie na obiekcie jawną listę pól, a `toxic`, `echo`, `madness`,
+`surge` i `warp` na niej nie było. Testy mechanik omijały tę warstwę, bo budowały
+obiekt helperem `putCard`.
 
-**Przyczyna podwójna:**
-1. Transport danych przez JAWNĄ listę pól (dwie listy do utrzymania:
-   generator `gameObjectDataOf` i kopia `installDeck`) — każde nowe pole
-   mechaniki trzeba dopisać w DWÓCH miejscach, a w drugim ginie po cichu.
-2. Testy jednostkowe (helper `putCard` + `...gameObjectDataOf(def)`)
-   OMUIJAŁY `installDeck` — wszystkie piny mechanik były zielone, mechaniki
-   martwe w każdej partii z talią.
-
-**Reguła:**
-1. Nowe pole mechaniki na `defineCard` → dopisz w `gameObjectDataOf`
-   ORAZ na liście `installDeck` (grep „M146" w deck.js). Lepszy kierunek
-   długoterminowy: transportować deskryptory zbiorczo (spread listy pól
-   mechanik), żeby lista była JEDNA.
-2. Piny mechanik krytycznych dla partii z talią idą przez
-   `setupCardMatch` (prawdziwa ścieżka: registry → createCardDeck →
-   installDeck → obiekt), nie przez `putCard` — wzorzec
-   `test/m258-zywy-tester-deskryptory.test.js` (D1–D3).
-3. Pełne partie botów (np. `real-cards-batch3`) łapią zakleszczenia
-   decyzji, których unit nie widzi — po każdej zmianie warstwy decyzji
-   odpal choć jeden test pełnej partii.
-
----
+→ **Pełna klasa i reguła: [L21](#l21-2026-08-16--jawna-lista-pól-gubi-dane-po-cichu--w-każdej-z-czterech-warstw).**
+Tu dodatkowo: pełne partie botów (`real-cards-batch3`) łapią zakleszczenia decyzji,
+których unit nie widzi — po zmianie warstwy decyzji odpal choć jeden taki test.
 
 ## L92 (2026-08-30) — Liczby „bieżącego stanu" aktualizuje się na KONIEC sesji; odświeżenie w środku PR gwarantuje dryf
 
@@ -236,37 +491,19 @@ na README — dokumentacja nie czerwienieje.
 lektury, NIE zgodności liczb — egzekwowanie reguły 1 pozostaje procesowe
 (domknięcie sesji wg ENVIRONMENT §7).
 
-## L83 (2026-08-28) — Strażnik skanujący ŹRÓDŁO czyta KONSTRUKTY, nie tekst: komentarz to nie pokrycie
+## L83 (2026-08-28) — Strażnik skanujący ŹRÓDŁO czyta KONSTRUKTY, nie tekst
 
-**Objaw:** `test/fingerprint-pending-decisions.test.js` (strażnik klasy L16,
-domykający pięć decyzji blokujących poza odciskiem stanu — N1 z PR #86) liczył
-pokrycie jako każde wystąpienie `pending*` w surowym pliku
-`src/engine/fingerprint.js`. Mutacja: `state.pendingZzz` w kodzie + wzmianka
-`pendingZzz` wyłącznie w komentarzu → strażnik zielony (2/2). Nowa decyzja
-znów wyciekłaby z fingerprintu.
-**Przyczyna:** regex po pliku nie odróżnia kodu od komentarza, a komentarz obok
-listy to pierwsze miejsce, gdzie autor opisuje nową decyzję. To L31 (strażnik
-pilnował danych, błąd był w kodzie) i L56 (zwolnienie po słowie kluczowym
-jest dziurą) przeniesione na skan źródła: kontrola mierzyła TEKST, nie regułę.
-**Reguła:**
-1. Strażnik wydobywa fakty z KONSTRUKTÓW (literał tablicy, odczyt
-   `state.pole`), a komentarze usuwa PRZED skanem (`stripComments`). Wzmianka
-   pola nie jest pokryciem z definicji.
-2. Pin na strażniku ma DWIE nogi (L67): (a) kompozycja nie liczy
-   zakomentowanego odczytu; (b) ścieżka produkcyjna idzie przez tę kompozycję.
-   Bez (b) obejście funkcji zostawia pin zielony — złapała to dopiero trzecia
-   mutacja.
-3. Sygnał: strażnik „udowadniający" własność regexem po całym pliku. Pytanie
-   kontrolne: czy da się przejść tę kontrolę bez zmiany kodu? Jeśli tak —
-   mierzy tekst.
-**Strażnik:** `test/fingerprint-pending-decisions.test.js` (`stripComments` +
-`coveredFieldsFromFingerprintFile` + pin A1 o dwóch nogach); raport
+`test/fingerprint-pending-decisions.test.js` liczył pokrycie jako każde
+wystąpienie `pending*` w surowym pliku. Mutacja: `state.pendingZzz` w kodzie
++ wzmianka `pendingZzz` wyłącznie w KOMENTARZU → strażnik zielony. Nowa decyzja
+znów wyciekłaby z odcisku stanu.
+
+→ **Pełna klasa: [L5](#l5-2026-08-14--strażnik-mierzy-regułę-a-nie-tekst-źródła).** Kluczowe: `stripComments` przed skanem, pin
+o dwóch nogach (kompozycja + ścieżka produkcyjna przez nią przechodzi).
+
+**Strażnik:** `test/fingerprint-pending-decisions.test.js` (`stripComments`
++ `coveredFieldsFromFingerprintFile` + pin A1); raport
 `docs/audits/AUDYT_PR86_2026-08-28.md`.
-**Powtórka w tej samej sesji:** własny `test/repo-artefakty-audytu.test.js`
-sprawdzał `.gitignore` przez `ignore.includes('tmp-audyt-*/')`, a komentarz nad
-regułą cytuje ją dosłownie — usunięcie reguły zostawiało strażnik zielony
-(wykryła mutacja M2, nie code review). Reguła 1 obowiązuje też wobec
-strażników, które sam piszesz, i to w dniu ich powstania.
 
 ## L88 (2026-08-29) — Błąd bez adresu: narzędzie długiego biegu musi powiedzieć GDZIE (i jedna reguła = jedna funkcja dla oferty i walidacji)
 
@@ -516,20 +753,16 @@ ta gałąź (`return` / `push` decyzji) wycina coś, co zdarzyło się niezależ
 Jeśli tak — `if` wokół decyzji, nie `return` z funkcji. Kolejność też jest
 regułą: replacement przed triggerem (devour), trigger przed decyzją (exploit).
 
-## L75 (2026-08-25) — Fałszywy alarm detektora kosztuje więcej niż cisza; ale zanim go uciszysz, sprawdź POMIAR
+## L75 (2026-08-25) — Fałszywy alarm detektora: napraw POMIAR, nie ucisz objawu
 
-**Objaw (M213):** Żywy Tester zgłosił 4 no-opy na „{2}, {T}: Tap target
-creature" wycelowanej we własnego stwora. Zdolność działa poprawnie — sonda
-dowiodła, że silnik nie oferuje tapowania już-tapniętego celu.
-**Przyczyna:** zdolność tapuje DWA permanenty naraz — źródło (koszt) i cel
-(skutek) — a sonda liczyła oba do jednego licznika, więc warunek „jedyna
-zmiana to zapłacony koszt" wychodził prawdą. Rozróżnienie jest strukturalne:
-płacących wskazuje KOMENDA (`objectId` + `tapCreatureId`/`crewCreatureIds`).
-**Reguła:** gdy detektor oskarża kod, który po sprawdzeniu jest poprawny,
-błąd leży w POMIARZE — napraw go tam, nie dopisując wyjątku na etykietę czy
-nazwę karty. Jeden licznik na dwa zjawiska zawsze skłamie, gdy wystąpią razem.
-Po uciszeniu alarmu udowodnij, że detektor NADAL krzyczy na prawdziwym
-przypadku (L67).
+M213: Żywy Tester zgłosił 4 no-opy na „{2}, {T}: Tap target creature". Sonda
+dowiodła, że silnik działa poprawnie — zdolność tapuje DWA permanenty naraz
+(źródło jako koszt, cel jako skutek), a detektor liczył oba jednym licznikiem,
+więc warunek „jedyna zmiana to zapłacony koszt" wychodził prawdą. Rozróżnienie
+jest strukturalne: płacących wskazuje KOMENDA (`objectId` + `tapCreatureId`).
+
+→ **Pełna klasa: [L27](#l27-2026-08-17--zero-zgłoszeń-detektorów-to-pomiar-narzędzia-nie-produktu).** Fałszywy alarm kosztuje więcej niż cisza, ale zanim go
+uciszysz — sprawdź, czy nie kłamie pomiar.
 
 ## L76 (2026-08-25) — Żywy Tester mierzy `dist/`, nie `src/`
 
@@ -572,20 +805,15 @@ helpera. Każda gałąź ma WŁASNĄ mutację i test: mutacja bliźniaczej gał�
 
 ## L73 (2026-08-25) — Detektor sprzężony z TRYBEM logowania milczy tam, gdzie audyt patrzy
 
-**Objaw (M212):** trzy partie Żywego Testera po naprawie dały 0 zgłoszeń —
-fałszywie: archiwalny transkrypt SPRZED naprawy zawierał wzorcowy przypadek
-(`Nieprzyjaciel rzuca Ojutai's Breath → cel: <własny stwór>`), którego
-detektor `detectBotSelfHarmOnOwnPermanents` też nie widział.
-**Przyczyna:** detektor ustalał właściciela celu, parsując snapshoty „MOJE
-POLA:” / „POLA WROGA:” z transkryptu. Audyt biega z `--quiet`, gdzie
-snapshotów prawie nie ma (w całym pliku JEDEN, na końcu). Warunek „cel stoi po
-stronie bota" nigdy nie był spełniony — detektor był martwy w jedynym trybie,
-w którym go używano.
-**Reguła:** detektor opiera się na danych STRUKTURALNYCH ze sterownika (L40/
-M99), nigdy na tym, ile narzędzie akurat wypisało. Gdy raportuje zero,
-udowodnij, że żyje: puść go na materiale z potwierdzonym błędem albo rozluźnij
-warunek. **Zero z martwego detektora wygląda identycznie jak zero z poprawnej
-gry.**
+M212: trzy partie po naprawie dały 0 zgłoszeń — fałszywie, bo archiwalny
+transkrypt SPRZED naprawy zawierał wzorcowy przypadek, którego detektor też nie
+widział. `detectBotSelfHarmOnOwnPermanents` ustalał właściciela celu, parsując
+snapshoty „MOJE POLA:” / „POLA WROGA:”, a audyt biega z `--quiet`, gdzie w całym
+pliku jest JEDEN snapshot. Detektor był martwy w jedynym trybie, w którym go
+używano.
+
+→ **Pełna klasa: [L27](#l27-2026-08-17--zero-zgłoszeń-detektorów-to-pomiar-narzędzia-nie-produktu).** Kluczowe: dane strukturalne ze sterownika zamiast
+tekstu transkryptu; **zero z martwego detektora wygląda jak zero z czystej gry**.
 
 ## L74 (2026-08-25) — Ustalenie o UI weryfikuj w DOM, nie w spłaszczonym transkrypcie
 
@@ -634,19 +862,15 @@ silnika je czyta i po co. Kolor obiektu = wyłącznie CR 202.2; produkowana mana
 = deskryptor `add_mana`. Test cementujący pomieszanie jest częścią błędu:
 poprawiamy go razem z kodem.
 
-## L70 (2026-08-25) — Weryfikacja mutacyjna wykrywa też kod NADMIAROWY, nie tylko brakujące testy
+## L70 (2026-08-25) — Weryfikacja mutacyjna wykrywa też kod NADMIAROWY
 
-**Objaw (M210):** gałąź „obiekt typu Land → kolor pusty" w `effectiveColors`
-(CR 202.2) po mutacji NIE uczyniła żadnego testu czerwonym, choć testy
-sprawdzały ten scenariusz.
-**Przyczyna:** regułę egzekwowały już dane kart (landy mają `colors: []`), więc
-gałąź była martwa — i BŁĘDNA: efekt animujący może kolor nadać (Genju of the
-Spires, „becomes a 6/1 red Spirit creature land", CR 613 warstwa 5), a
-zerowanie po typie by go zgubiło.
-**Reguła:** mutację robimy per GAŁĄŹ, nie per funkcja. Gałąź, której mutacja
-nie czerwieni testu, jest podejrzana z definicji: brakuje testu albo gałąź
-jest zbędna. Sprawdź najpierw, czy gałąź powinna istnieć — usunięcie
-nadmiarowej reguły jest lepsze niż utrwalenie jej testem.
+M210: mutacja gałęzi „obiekt typu Land → kolor pusty" (`effectiveColors`,
+CR 202.2) nie uczyniła żadnego testu czerwonym, bo regułę egzekwowały już dane
+kart. Gałąź była martwa **i błędna**: efekt animujący może kolor nadać (Genju of
+the Spires, CR 613 warstwa 5), a zerowanie po typie by go zgubiło.
+
+→ **Pełna procedura: [L13](#l13-2026-08-15--weryfikacja-mutacyjna-jedyny-dowód-że-test-lub-detektor-działa).** Mutuj per gałąź; gałąź bez czerwieni jest
+podejrzana — najpierw pytaj, czy powinna istnieć.
 
 ## L67 (2026-08-25) — Helper, który istnieje, ale nie jest wołany w gałęzi, gdzie miał chronić
 
@@ -756,25 +980,14 @@ z niewłaściwego powodu.
 **Strażnik:** `test/m206-audyt-rozgrywek.test.js` (A1/A1b/A1c — trzy jałowe
 okna; A2 — pump w realnej wymianie zostaje).
 
-## L61 (2026-08-25) — Test regresyjny bez WERYFIKACJI MUTACYJNEJ bywa ślepy: „zielony" nie znaczy „pilnuje"
+## L61 (2026-08-25) — Test regresyjny bez weryfikacji mutacyjnej bywa ślepy
 
-**Objaw (M205, audyt PR #77):** dwa testy „przypinające" fix deduplikacji
-przedruków modala były zielone. Po cofnięciu fiksu
-(`if (text !== prevBlock) deduped.push(...)` → `deduped.push(...)`) plik nadal
-dawał 91/91 pass.
-**Przyczyna:** dane nie miały kształtu, w którym fix działa: przypadek sklejał
-bloki bez separatora i powtarzał w każdym linię `• Tura 7 — Nieprzyjaciel`,
-a ta linia sama woła `flush()` w detektorze, więc licznik zerował się przez
-progiem. Test mierzył `flush()`, nie fix (L1 w wariancie najgroźniejszym: test
-istnieje, ma nazwę i komentarz, więc temat uchodzi za zabezpieczony).
-**Reguła:** test regresyjny liczy się dopiero, gdy pokazano, że czerwienieje po
-cofnięciu naprawy. Procedura (~30 s): (1) mutacja odwracająca fix jedną linią;
-(2) uruchom plik testu — MUSI paść właściwy test; (3) cofnij mutację,
-potwierdź zielone; (4) oba pomiary wpisz do commitu/raportu. Jeśli mutacja nie
-czerwieni, dane nie mają kształtu produkcyjnego — odtwórz je z REALNEGO
-artefaktu (tu: nagłówek kroku `--- krok N | T. X ---` między renderami).
-**Sygnał:** „przypięte testem" bez wyniku pomiaru przed/po = zdanie do
-sprawdzenia, nie do przyjęcia na wiarę.
+M205: dwa testy „przypinające" fix deduplikacji przedruków modala były zielone
+także po cofnięciu fiksu — dane nie miały kształtu, w którym fix działa (test
+mierzył `flush()`, nie naprawę). To L1 w najgroźniejszym wariancie: test
+istnieje, ma nazwę i komentarz, więc temat uchodzi za zabezpieczony.
+
+→ **Pełna procedura: [L13](#l13-2026-08-15--weryfikacja-mutacyjna-jedyny-dowód-że-test-lub-detektor-działa).**
 
 ## L62 (2026-08-25) — Kolejność renderu to część kontraktu: log rysowany od najnowszego łamie liczenie „nowych" po indeksie
 
@@ -1074,17 +1287,44 @@ PRZED `execute()`, „defensywnie" zakładając powodzenie.
 przyjęta. Operacje „na wszelki wypadek przed" zostawiają niespójność na każdej
 ścieżce błędu.
 
-## L5 (2026-08-14) — Test na obecność kodu to nie test zachowania
+## L5 (2026-08-14) — Strażnik mierzy REGUŁĘ, a nie tekst źródła
 
-**Objaw:** funkcja ptaszka wyciszenia miała pięć zielonych testów, a nie
-działała dla czarów z wariantami (M91/B).
-**Przyczyna:** testy regexami sprawdzały, czy w źródle są identyfikatory
-(`ignoredOptionKeys`, `action-ignore`). Kod istniał, ale nie był wywoływany dla
-tej ścieżki UI.
-**Reguła:** testy UI renderują i sprawdzają WYNIK (drzewo elementów, reakcja na
-zdarzenie), nie obecność napisów w pliku. Testy na źródło tylko jako
-uzupełnienie (strażnik konfiguracji). Kontrola: wyłącz fix i sprawdź, czy test
-czerwienieje (mutacja).
+**Wpis zbiorczy.** Numery L26, L31, L44 i L83 zostają jako kotwice i odsyłają tutaj.
+
+Strażnik, który da się przejść bez zmiany kodu, nie jest strażnikiem. Cztery
+warianty tej samej pomyłki:
+
+| Wariant | Przypadek | Dlaczego zielony |
+|---|---|---|
+| **grep po źródle** (L5) | ptaszek wyciszenia: pięć testów regexami na `ignoredOptionKeys` | kod istniał, ale nie był wołany w tej ścieżce UI |
+| **komentarz = pokrycie** (L83) | `fingerprint-pending-decisions`: liczył każde `pending*` w pliku | wzmianka w KOMENTARZU zaliczała pokrycie; nowa decyzja znów wyciekłaby z odcisku |
+| **słownik zamiast miejsc użycia** (L31) | „każdy event triggera ma wpis w `TRIGGER_EVENT_LABELS`" | ten sam `case` miał trzy `return`, słownika sięgał jeden — strażnik pilnował DANYCH, błąd był w KODZIE |
+| **„brak danych = pomijam"** (L26) | `imageUri` zgadza się z plikiem Scryfall | `if (!expected) continue` — 20 kart weszło bez pliku źródłowego, więc zasięg testu malał, a wynik sugerował coś odwrotnego |
+
+**Reguła:**
+1. Strażnik wydobywa fakty z KONSTRUKTÓW (literał tablicy, odczyt `state.pole`),
+   a komentarze usuwa PRZED skanem (`stripComments`). Wzmianka pola nie jest
+   pokryciem z definicji.
+2. Każda klauzula „nie mam danych, więc przepuszczam" wymaga DRUGIEGO testu na
+   OBECNOŚĆ tych danych. Pytanie: „co się stanie, gdy dane wejściowe znikną?" —
+   „test przejdzie" oznacza brak bramki.
+3. Dla mapy „identyfikator → tekst" potrzeba DWÓCH niezmienników: słownik
+   pokrywa wartości z danych **oraz** kod nie wstawia surowego identyfikatora
+   z pominięciem słownika (test czytający źródło).
+4. Pin ma DWIE nogi (L67): (a) kompozycja nie liczy zakomentowanego odczytu;
+   (b) ścieżka produkcyjna idzie przez tę kompozycję. Bez (b) obejście funkcji
+   zostawia pin zielony.
+5. Testy UI renderują i sprawdzają WYNIK (drzewo elementów, reakcja na
+   zdarzenie), nie obecność napisów w pliku.
+6. Pytanie kontrolne do każdego strażnika: **czy da się przejść tę kontrolę bez
+   zmiany kodu?** Jeśli tak — mierzy tekst. Obowiązuje też wobec strażników,
+   które sam piszesz, i to w dniu ich powstania (`repo-artefakty-audytu`
+   sprawdzał `.gitignore` przez `includes`, a komentarz cytował regułę
+   dosłownie — usunięcie reguły zostawiało zielono).
+
+**Przy okazji (L26):** ta sama sonda wykryła cztery rozjazdy TEKSTU reguł, w tym
+realny błąd (Cellar Door: katalog „mills 1", Oracle „puts the bottom card…").
+**`oracleText` to dane do maszynowej weryfikacji** (L23), nie komentarz.
 
 ## L6 (2026-08-14) — Zdarzenie musi nieść dane, których opis nie odtworzy
 
@@ -1190,28 +1430,45 @@ liczy CSS ani nakładek, więc sklejony wskaźnik tury i brak P/T na kaflach w
 transkrypcie NIE są błędami UI). Zanim zgłosisz bug, potwierdź źródło w kodzie.
 **Checklisty:** `docs/setup/TESTER_STOLU.md` → „Czego szukać".
 
-## L13 (2026-08-15) — Detektor, którego nie zweryfikowałeś mutacyjnie, nie działa
+## L13 (2026-08-15) — WERYFIKACJA MUTACYJNA: jedyny dowód, że test lub detektor działa
 
-Dziewięć detektorów Żywego Testera miało komplet testów jednostkowych i było
-„gotowe"; weryfikacja mutacyjna (świadome przywrócenie naprawionego buga)
-pokazała co innego:
-1. `detectNoResponseWindow` zgłaszał FAŁSZYWY alarm pod `--quiet` (czar
-   „Index": jedynym dowodem „okno było" była linia snapshotu, której w tym
-   trybie nie ma).
-2. `detectDeadEndWindow` pod `--quiet` widział JEDNO okno na partię zamiast
-   wszystkich.
-3. Przypadku właściciela „ekran z samym *Poddaj partię*" żaden z czterech
-   profili nie potrafił odtworzyć (wszystkie najpierw zamykały modal ruchu
-   bota) — trzeba było dopisać profil `impatient` (double-tap z telefonu).
+**Wpis zbiorczy.** Numery L61 i L70 zostają jako kotwice cytowań i odsyłają tutaj.
 
-Test jednostkowy dowodzi, że detektor reaguje na SPREPAROWANE wejście, nie że
-takie wejście powstanie w prawdziwym przebiegu.
-**Reguła:** każdy detektor przechodzi cykl „przywróć bug → narzędzie zgłasza →
-przywróć fix → 0 zgłoszeń", w OBU trybach logowania. Jeśli buga nie da się
-odtworzyć żadnym profilem, brakuje PROFILU, a nie dowodu, że błędu nie ma.
-**Efekt uboczny:** przy tej weryfikacji wyszły trzy realne błędy produkcyjne
-(log „wskazuje **?** z ręki przeciwnika", brak rozstrzygnięcia czaru bota w
-modalu i brak jego skutku `+3/+3`).
+„Zielony" nie znaczy „pilnuje". Trzy niezależne przypadki tej samej klasy:
+
+- **Detektor (L13, M102):** dziewięć detektorów Żywego Testera miało komplet
+  testów jednostkowych. Mutacja (świadome przywrócenie naprawionego buga)
+  pokazała, że `detectNoResponseWindow` daje FAŁSZYWY alarm pod `--quiet`,
+  `detectDeadEndWindow` widzi jedno okno na partię zamiast wszystkich, a
+  przypadku właściciela („ekran z samym *Poddaj partię*") nie odtwarzał ŻADEN
+  profil — brakowało profilu `impatient`, nie dowodu, że błędu nie ma.
+- **Test regresyjny (L61, M205):** dwa testy „przypinające" fix deduplikacji
+  były zielone także PO cofnięciu fiksu. Dane nie miały kształtu, w którym fix
+  działa: test mierzył `flush()`, nie naprawę.
+- **Gałąź kodu (L70, M210):** mutacja gałęzi „Land → kolor pusty"
+  (`effectiveColors`) nie uczyniła nic czerwonym, bo regułę egzekwowały już dane
+  kart. Gałąź była martwa **i błędna** — Genju of the Spires („becomes a 6/1 red
+  Spirit creature land", CR 613 warstwa 5) traciłby kolor.
+
+**Reguła:**
+1. Test regresyjny liczy się dopiero, gdy pokazano, że **czerwienieje po
+   cofnięciu naprawy**. Procedura (~30 s): mutacja odwracająca fix jedną linią →
+   uruchom plik testu (MUSI paść właściwy test) → cofnij → potwierdź zielone →
+   oba pomiary wpisz do commitu.
+2. Mutuj per GAŁĄŹ, nie per funkcję. Gałąź, której mutacja nie czerwieni, jest
+   podejrzana z definicji: albo brakuje testu, albo gałąź jest **zbędna**.
+   Najpierw sprawdź, czy powinna istnieć — usunięcie nadmiarowej reguły bije
+   utrwalenie jej testem.
+3. Detektor przechodzi cykl „przywróć bug → narzędzie zgłasza → przywróć fix →
+   0 zgłoszeń" w OBU trybach logowania. Test jednostkowy dowodzi reakcji na
+   SPREPAROWANE wejście, nie tego, że takie wejście powstanie w przebiegu.
+4. Gdy mutacja nie czerwieni, dane testu nie mają kształtu produkcyjnego —
+   odtwórz je z REALNEGO artefaktu.
+5. „Przypięte testem" bez pomiaru przed/po = zdanie do sprawdzenia, nie fakt.
+
+**Efekt uboczny (M102):** sama ta weryfikacja wykryła trzy realne błędy
+produkcyjne (log „wskazuje **?** z ręki przeciwnika", brak rozstrzygnięcia czaru
+bota w modalu, brak skutku `+3/+3`).
 
 ## L14 (2026-08-15) — Jedna instrukcja, dwie zasady: sklejone reguły to gotowy bug
 
@@ -1331,27 +1588,56 @@ pomiar obejmuje całą przestrzeń, którą widzi gracz, czy tylko ścieżkę
 sterownika? (Ujawniło w M104 dwa braki naraz: nieskanowane opcje modali i
 oferty panelu.)
 
-## L21 (2026-08-16) — Pole spoza kontraktu fabryki obiektu ginie po cichu (martwy test)
+## L21 (2026-08-16) — JAWNA LISTA PÓL gubi dane po cichu — w każdej z czterech warstw
 
-**Objaw:** testy „Rustvine: odkręć docelowy ląd" tworzyły ląd przez
-`addObject(state, { …, tapped: true })` i asertowały
-`state.objects.get('land').tapped === false` — przechodziły od zawsze, bo
-`addObject`/`createGameObject` nie mają `tapped` w destrukturyzacji (stan
-bojowy nadają efekty): ląd powstawał ODKRĘCONY, a asercja sprawdzała stan
-początkowy. Wyszło dopiero, gdy bramka ofert M104 przestała oferować odkręcanie
-nietapniętych lądów.
-**Przyczyna:** fabryka przyjmuje konfigurację i ignoruje nieznane klucze (bez
-ostrzeżenia). To samo dotyczy `summoningSickness`, `counters`, `cantBlock`.
-**Reguła:** stan spoza kontraktu ustawiaj JAWNIE po dodaniu obiektu
-(`state.objects.set(id, Object.freeze({ ...obj, tapped: true }))`). Sprawdź, czy
-asercja rozróżnia stan POCZĄTKOWY od skutku.
-**Domknięte w M137:** `addObject` porównuje klucze z `ADD_OBJECT_FIELDS` i dla
-pola spoza kontraktu wypisuje ostrzeżenie z podpowiedzią (`ADD_OBJECT_HINTS`)
-raz na pole; `MTG_STRICT_ADD_OBJECT=1` zamienia je w wyjątek. Twardy rzut
-wywalił 141 testów, bo pola wchodzą przez `...spread` w helperach (46 plików) —
-żaden statyczny fixer ich nie złapie, stąd tryb ostrzegawczy. Lekcja sama
-znalazła ofiarę: „BUG3 amass" oczekiwał 2 liczników, bo startowy z `counters:`
-ginął w fabryce (poprawne 3).
+**Wpis zbiorczy** dla jednej klasy błędu, która wystąpiła w czterech różnych
+warstwach. Numery L93, L94 i L101 zostają jako kotwice cytowań i odsyłają tutaj.
+
+**Klasa:** dane karty jadą do gry przez kilka miejsc, z których KAŻDE wymienia
+pola z nazwy (destrukturyzacja configu albo ręcznie budowany obiekt). Pole
+nieznane danej liście ginie **bez błędu, ostrzeżenia i czerwonego testu** —
+mechanika po prostu nie działa, a kafel dalej ją reklamuje.
+
+| Warstwa | Miejsce | Ofiara |
+|---|---|---|
+| **fabryka obiektu** (L21) | `addObject` / `createGameObject` | `tapped` w teście Rustvine: ląd powstawał odkręcony, asercja sprawdzała stan początkowy i była zielona od zawsze |
+| **generator danych karty** (L93) | `gameObjectDataOf` | — |
+| **transport talii** (L93) | `installDeck` (`deck.js`) | `toxic`, `echo`, `madness`, `surge`, `warp`: Crawling Chorus bił trzy razy bez znaku trucizny |
+| **fabryka tokenów** (L94) | `createBattlefieldToken` (`tokens.js`) | `manaCost`: KAŻDY token-kopia wchodził z MV 0 (CR 707.2 — koszt jest wartością kopiowalną) |
+| **widok gracza** (L101) | wpis strefy w `playerView` | `warp`, `surge`, `kicker`, `treasureAltCost`: „Rzuć za warp: … (koszt ?)" |
+
+**Dlaczego testy milczą:** piny mechanik budują obiekt WŁASNYM helperem
+(`putCard` + `...gameObjectDataOf(def)`), więc omijają transport i fabrykę.
+Wszystkie świecą zielono, a mechanika jest martwa w każdej partii z talią.
+
+**Reguła:**
+1. Dodając pole mechaniki do `defineCard`, przejdź **wszystkie cztery
+   warstwy** — nie tylko tę, w której zgłoszono błąd (grep „M146" w `deck.js`).
+   Kierunek docelowy: transportować deskryptory ZBIORCZO (spread listy pól),
+   żeby lista była jedna.
+2. Stan spoza kontraktu fabryki ustawiaj JAWNIE po dodaniu obiektu
+   (`state.objects.set(id, Object.freeze({ ...obj, tapped: true }))`)
+   i sprawdź, czy asercja odróżnia stan POCZĄTKOWY od skutku.
+3. Pin idzie przez **realną ścieżkę** (`setupCardMatch`: registry →
+   createCardDeck → installDeck → obiekt), nigdy przez własny helper.
+4. Strażnik jest KLASOWY: enumeruje `REGISTRY.all()`, buduje obiekt realną
+   drogą i porównuje pola wejścia z polami wyjścia. Pin na jedną kartę zamyka
+   jeden przypadek i usypia klasę.
+5. Test anty-over-fix obowiązkowy (np. kopia PRZODU zachowuje koszt) — sam fix
+   „tył → 0" przeszedłby zielono także z fabryką ignorującą pole.
+6. „Silnik liczy dobrze" nie zamyka zgłoszenia: `legalCommands` czyta
+   z OBIEKTU, `commandLabel` z WIDOKU — to dwa różne źródła.
+
+**Domknięte w M137 (warstwa fabryki):** `addObject` porównuje klucze
+z `ADD_OBJECT_FIELDS` i dla pola spoza kontraktu wypisuje ostrzeżenie
+z podpowiedzią raz na pole; `MTG_STRICT_ADD_OBJECT=1` zamienia je w wyjątek.
+Twardy rzut wywalił 141 testów (pola wchodzą przez `...spread` w 46 plikach),
+stąd tryb ostrzegawczy — wzorzec L38.
+
+**Strażnicy:** `test/m258-zywy-tester-deskryptory.test.js` (D1–D3, realna
+ścieżka talii) · `test/m265-hand-view-alt-cost-descriptors.test.js` (6, pierwszy
+enumeruje katalog). Mutacje: usunięcie pola z `installDeck` → D1–D3; usunięcie
+`warp`/`surge`/`kicker`/`treasureAltCost` z wpisu ręki → test 1 + etykiety.
 
 ## L22 (2026-08-16) — Akcja, która PRZEWIJA grę, musi kończyć się ponownym renderem
 
@@ -1417,44 +1703,54 @@ pełne partie.
 
 ## L26 (2026-08-17) — Strażnik z klauzulą „brak danych = pomijam" nie jest strażnikiem
 
-**Objaw:** w katalogu siedział adres ilustracji, którego nikt nie pobrał ze
-Scryfalla (`…/large/front/9/1/91b1f0f3-krumar-initiate.jpg` — nazwa karty w
-miejscu UUID zdradza, że powstał „z głowy"). Efekt: 404 i karta bez ilustracji,
-mimo istniejącego testu „imageUri każdej karty zgadza się z plikiem Scryfall".
-**Przyczyna:** test miał `if (!expected) continue` — brak pliku
-`docs/cards/scryfall-<id>.json` = nie sprawdzam. Dwadzieścia kart dwóch batchy
-weszło BEZ pliku źródłowego (ADR 0010 §2a): im więcej kart z pominięciem
-procedury, tym mniejszy zasięg testu — a zielony wynik sugerował coś
-odwrotnego.
-**Reguła:** każda klauzula „nie mam danych, więc przepuszczam" wymaga DRUGIEGO
-testu na OBECNOŚĆ tych danych. Pytanie przy strażniku: „co się stanie, gdy dane
-wejściowe znikną?" — „test przejdzie" oznacza brak bramki.
-**Przy okazji:** ta sama sonda wykryła cztery rozjazdy TEKSTU reguł, w tym
-realny błąd: Cellar Door miał w katalogu „Target player mills 1", a Oracle mówi
-„puts the bottom card of their library into their graveyard" (mechanika
-poprawna — `mill_from_bottom`, błędny był tekst dla gracza). **`oracleText` to
-też dane do maszynowej weryfikacji** (L23), nie komentarz.
+W katalogu siedział zmyślony adres ilustracji (nazwa karty w miejscu UUID) —
+404 i karta bez obrazka, mimo testu „imageUri zgadza się z plikiem Scryfall".
+Test miał `if (!expected) continue`, a 20 kart weszło BEZ pliku źródłowego
+(ADR 0010 §2a): im więcej kart z pominięciem procedury, tym mniejszy zasięg
+testu — a zielony wynik sugerował coś odwrotnego.
 
-## L27 (2026-08-17) — Zero zgłoszeń detektorów znaczy „nie mam takiej reguły", nie „jest czysto"
+→ **Pełna klasa: [L5](#l5-2026-08-14--strażnik-mierzy-regułę-a-nie-tekst-źródła).** Każde „nie mam danych, więc przepuszczam" wymaga
+drugiego testu na OBECNOŚĆ danych.
 
-**Objaw:** dwanaście partii Żywego Testera (8 kombinacji talii, 5 profili)
-zakończyło się „DETEKTORY: brak zgłoszeń". Ręczna lektura tych samych
-transkryptów dała pięć realnych błędów w pół godziny: log nie odmieniał
-liczników („dostaje +2 licznik"), mulligan pokazywał 35 opcji z piętnastoma
-nieodróżnialnymi, koszt „{2},{T}" renderował się jako „T2", bot filtrował manę
-bez powodu.
-**Przyczyna:** detektory sprawdzały to, co poprzednie audyty już znalazły
-(placeholdery, powtórzenia, oferty bez skutku, martwe okna); żaden nie patrzył
-na GRAMATYKĘ tekstu ani na odróżnialność opcji modala.
-**Reguła:** raport detektorów to DOLNA GRANICA, nigdy potwierdzenie jakości.
-Każda sesja audytowa czyta transkrypt ręcznie wzdłuż osi z
-`docs/setup/TESTER_STOLU.md`, a **każda klasa błędu znaleziona ręcznie kończy
-się nowym detektorem**. Detektor bez weryfikacji wstecznej na archiwum (czy
-zgłasza znane znalezisko? czy milczy na poprawnych danych?) jest wart tyle, co
-jego brak.
-**Pułapka techniczna:** `\b` w regexie NIE działa po polskich znakach
-diakrytycznych („kartę" → granica przed „kart" daje fałszywe alarmy). Granicę
-wyrazu w polskim tekście sprawdzaj przez `(?![\p{L}])` z flagą `u`.
+## L27 (2026-08-17) — ZERO ZGŁOSZEŃ detektorów to pomiar NARZĘDZIA, nie produktu
+
+**Wpis zbiorczy.** Numery L40, L73 i L75 zostają jako kotwice i odsyłają tutaj.
+
+Dwukrotnie ten sam wynik: 12 partii (L27) i 22 partie (L40) z pustą sekcją
+`== DETEKTORY ==`, a ręczna lektura TYCH SAMYCH transkryptów dała odpowiednio
+pięć i dziesięć realnych błędów — w tym bota płacącego maną za wzmacnianie
+CUDZYCH stworów 24 razy w jednej partii.
+
+**Cztery powody, dla których detektor milczy:**
+
+| Powód | Przypadek |
+|---|---|
+| **Nie ma takiej reguły** (L27) | detektory pilnowały tego, co znalazły poprzednie audyty; nikt nie patrzył na gramatykę tekstu ani odróżnialność opcji modala |
+| **Reguła zna jedną przekątną** (L40) | `detectBotSelfTargeting` pilnował efektu SZKODLIWEGO w SIEBIE; efekt KORZYSTNY w PRZECIWNIKA nie miał strażnika |
+| **Detektor jest martwy w używanym trybie** (L73) | ustalał właściciela celu z snapshotów „MOJE POLA:”, a audyt biega z `--quiet`, gdzie snapshotów prawie nie ma — warunek nigdy nie był spełniony |
+| **Pomiar myli dwa zjawiska** (L75) | zdolność tapuje ŹRÓDŁO (koszt) i CEL (skutek); jeden licznik na oba dawał „jedyna zmiana to zapłacony koszt" → fałszywy no-op |
+
+**Reguła:**
+1. Raport detektorów to DOLNA GRANICA. Czytaj „zero zgłoszeń" jako **„moje
+   reguły nie obejmują tego, co się wydarzyło"**.
+2. Każda sesja audytowa czyta transkrypt RĘCZNIE wzdłuż osi z
+   `docs/setup/TESTER_STOLU.md`, a **każda klasa znaleziona ręcznie kończy się
+   nowym detektorem**. Właściwa miara postępu: ile klas przestało być
+   niewidzialnych (z 10 znalezisk L40 trzy dały się skodyfikować — i w kontrolnym
+   biegu wykryły JEDENASTE, przeoczone ręcznie).
+3. **Weryfikacja DWUSTRONNA obowiązkowa:** na materiale sprzed naprawy detektor
+   MUSI zgłosić, po naprawie MUSI zamilknąć. Zero z martwego detektora wygląda
+   identycznie jak zero z poprawnej gry.
+4. Detektor opiera się na danych STRUKTURALNYCH ze sterownika, nigdy na tym, ile
+   narzędzie akurat wypisało w danym trybie logowania.
+5. Gdy detektor oskarża kod, który po sprawdzeniu jest POPRAWNY, błąd leży
+   w POMIARZE — napraw pomiar, nie dopisuj wyjątku na nazwę karty. Jeden licznik
+   na dwa zjawiska zawsze skłamie, gdy wystąpią razem. Po uciszeniu alarmu
+   udowodnij, że detektor nadal krzyczy na prawdziwym przypadku (L67).
+
+**Pułapka techniczna:** `\b` w regexie NIE działa po polskich diakrytykach
+(„kartę" → granica przed „kart" daje fałszywe alarmy). Używaj `(?![\p{L}])`
+z flagą `u`.
 
 ## L28 (2026-08-17) — Kary dopisywane „przy okazji zgłoszenia" zostawiają dziurę na każdy nowy typ
 
@@ -1506,19 +1802,18 @@ sprawdzaj strefę docelową KONKRETNEGO zdarzenia (naprawa zostawia jawny ślad
 
 ## L31 (2026-08-17) — Strażnik kompletności słownika nie zastępuje strażnika miejsc użycia
 
-M122 naprawiło wyciek sluga do logu i dołożyło test „każdy event triggera ma
-wpis w TRIGGER_EVENT_LABELS". Test zielony, a właściciel zobaczył „Chronic
-Flooding — trigger (enchanted_permanent_tapped)": ten sam `case` miał TRZY
-gałęzie `return` i tylko jedna sięgała po słownik. Strażnik pilnował DANYCH,
-błąd siedział w KODZIE.
-**Reguła:** dla mapy „identyfikator → tekst" potrzebne są DWA niezmienniki:
-(1) słownik pokrywa wszystkie wartości z danych, (2) kod nie wstawia surowego
-identyfikatora z pominięciem słownika (test czytający źródło:
-`assert.doesNotMatch(body, /\(\$\{e\.trigger\}\)/)`).
-**Powiązane:** gdy właściciel mówi „przycisk jest nieaktywny", zweryfikuj to
-dosłownie — tu `disabled` było `false`: przycisk działał, ale jego jedyny
-skutek (czyszczenie pustego zaznaczenia) był niewidoczny. „Brak skutku" prowadzi
-do innej naprawy niż „element zablokowany".
+M122 dołożyło test „każdy event triggera ma wpis w `TRIGGER_EVENT_LABELS`".
+Zielony — a właściciel zobaczył „Chronic Flooding — trigger
+(enchanted_permanent_tapped)": ten sam `case` miał TRZY gałęzie `return`
+i tylko jedna sięgała po słownik. Strażnik pilnował DANYCH, błąd siedział
+w KODZIE.
+
+→ **Pełna klasa: [L5](#l5-2026-08-14--strażnik-mierzy-regułę-a-nie-tekst-źródła).**
+
+**Osobna uwaga:** gdy właściciel mówi „przycisk jest nieaktywny", zweryfikuj to
+dosłownie — tu `disabled` było `false`: przycisk działał, ale jego jedyny skutek
+był niewidoczny. „Brak skutku" prowadzi do innej naprawy niż „element
+zablokowany".
 
 ## L32 (2026-08-17) — Gdy druga enumeracja tworzy duplikat, dedupuj wynik, nie dokładaj bramki
 
@@ -1637,23 +1932,16 @@ utrwalający „czysto" — skoro zmierzyłeś własność automatycznie, ten sa
 kosztuje jeden plik testowy. Bez niego przegląd jest ważny przez jeden commit.
 Sprawdź też stronę odwrotną rejestru (L29): martwych typów zdarzeń było 6.
 
-## L40 (2026-08-18) — „Detektory nie zgłosiły nic" to pomiar NARZĘDZIA, nie produktu
+## L40 (2026-08-18) — Każdy detektor koduje JEDNĄ hipotezę; druga przekątna jest niepilnowana
 
-**Objaw:** 22 partie Żywym Testerem (12 talii, 5 profili) i pusta sekcja
-`== DETEKTORY ==`; ręczna lektura tych samych transkryptów dała DZIESIĘĆ
-znalezisk, w tym bota płacącego maną za wzmacnianie MOICH stworów 24 razy w
-jednej partii.
-**Przyczyna:** każdy detektor koduje JEDNĄ hipotezę. `detectBotSelfTargeting`
-pilnował efektu SZKODLIWEGO w SIEBIE — druga przekątna (efekt KORZYSTNY w
-PRZECIWNIKA) nie miała strażnika. `detectNoEffectOffers` mierzył oferty, nie
-OPISY, więc kafel kłamiący o koszcie przechodził bez echa.
-**Reguła:** „zero zgłoszeń" czytaj jako „moje reguły nie obejmują tego, co się
-wydarzyło" (rozwinięcie L27). Po audycie pytaj o KLASĘ: jaka reguła znalazłaby
-to automatycznie? Z dziesięciu znalezisk trzy dały się zamienić w detektory —
-i w kontrolnym uruchomieniu wykryły JEDENASTE, którego ręcznie nie zauważyłem.
-Właściwa miara: ile klas błędów przestało być niewidzialnych.
-**Warunek:** detektor bez weryfikacji DWUSTRONNEJ jest bezwartościowy — na
-transkrypcie sprzed naprawy musi zgłosić, po naprawie musi zamilknąć.
+22 partie i pusta sekcja `== DETEKTORY ==`; ręczna lektura tych samych
+transkryptów dała DZIESIĘĆ znalezisk. `detectBotSelfTargeting` pilnował efektu
+SZKODLIWEGO w SIEBIE — wariant „efekt KORZYSTNY w PRZECIWNIKA" (bot wzmacniał
+moje stwory 24 razy w partii) nie miał strażnika. `detectNoEffectOffers` mierzył
+oferty, nie OPISY, więc kafel kłamiący o koszcie przechodził bez echa.
+
+**Reguła:** po audycie pytaj o KLASĘ — jaka reguła znalazłaby to automatycznie?
+→ **Pełna klasa: [L27](#l27-2026-08-17--zero-zgłoszeń-detektorów-to-pomiar-narzędzia-nie-produktu).**
 
 ## L41 (2026-08-18) — Trzy kopie tej samej logiki rozjeżdżają się cicho i kłamią graczowi
 
@@ -1712,17 +2000,17 @@ zdarzenia. Reguła kasująca obiekty przechodzi przez listę „kto o nie pyta".
 
 ## L44 (2026-08-18) — Komentarz z numerem reguły nie jest dowodem; sprawdź źródło
 
-**Objaw:** w silniku stało `// CR 701.38: goaded creatures can't block` w trzech
-miejscach z testem utrwalającym („deklaracja odrzucona"). CR 701.38b mówi
-wyłącznie o WYMOGACH ATAKU i zaznacza, że goad nie jest zdolnością — o
-blokowaniu nie ma słowa. Silnik odbierał obrońcy legalne bloki.
-**Przyczyna:** błędna interpretacja zyskuje pozory prawdy przez powtórzenie:
-komentarz cytuje numer, test „potwierdza", kolejne sesje omijają temat jako
-sprawdzony. Test pilnował zgodności z pierwotnym błędem, nie z zasadami.
+W silniku stało `// CR 701.38: goaded creatures can't block` w trzech miejscach,
+z testem utrwalającym. CR 701.38b mówi wyłącznie o WYMOGACH ATAKU — o blokowaniu
+ani słowa; silnik odbierał obrońcy legalne bloki. Błędna interpretacja zyskuje
+pozory prawdy przez powtórzenie: komentarz cytuje numer, test „potwierdza",
+kolejne sesje omijają temat jako sprawdzony.
+
 **Reguła:** gdy kod ogranicza graczowi legalną akcję, czytaj TREŚĆ reguły.
 Podejrzane są mechaniki „X nie może Y", gdzie oryginał brzmi „X musi Z" — wymóg
 łatwo zmienia się w pamięci w zakaz. Przy korekcie odwróć test i dopisz
-uzasadnienie.
+uzasadnienie. → Pokrewne: [L5](#l5-2026-08-14--strażnik-mierzy-regułę-a-nie-tekst-źródła) (test pilnował zgodności z błędem, nie
+z zasadami).
 
 ## L45 (2026-08-18) — Mgła wojny wycieka polami pobocznymi, nie tożsamością
 
@@ -1773,40 +2061,60 @@ trzymaj w jednym miejscu (`copyableDescriptorKeys`).
 Potrzebny test semantyczny: „token-kopia ma ten sam `station`/`saga` co
 oryginał" (po deskryptorach, ADR 0002).
 
-## L48 (2026-08-18) — Oferta vs walidacja muszą używać tego samego filtra (DEBT)
+## L48 (2026-08-18) — OFERTA i WALIDACJA to jeden filtr, jeden porządek i jeden rejestr
 
-**Objaw:** bot w benchmarku wybierał biały czar na cel z `protection from
-white` (Benevolent Blessing): `legalSpellCasts` oferował go (filtrował tylko
-`isProtectedFromSource`), a `validateTargets` odrzucał (sprawdzał też
-`effectiveProtectionFromColors`) — crash `illegal_spell: protection`, a
-`aggro-bot` nie znał `resolve_color_choice` → drugi crash „nie znalazł ruchu".
-**Przyczyna:** filtr ochrony ma dwie gałęzie (jakość, kolor); oferta znała
-jedną, walidacja obie. Dla czarów bez `sourceObject` ochrona kolorowa była
-niewidoczna. To samo w `aggro-bot`: lista `simple` z `resolve_*` rosła wraz z
-nowymi mechanikami (`resolve_color_choice` — M59, `resolve_index_choice` —
-M64).
-**Reguła:** nowy typ ochrony / nowy `pending*` trafia w TRZY miejsca naraz:
-(1) `legalTargetCandidates` (oferta, z `sourceObject`), (2) `validateTargets`,
-(3) oba boty (`heuristic` ma fallback `anyResolve`, `aggro` listę `simple` +
-fallback). Rozjazd oferta/walidacja to gotowy crash w benchmarku.
+**Wpis zbiorczy** — klasa z czterema powtórkami. Numer L90 zostaje jako kotwica
+i odsyła tutaj. Rozjazd oferty i walidacji to gotowy crash w benchmarku:
+silnik proponuje ruch, po czym sam go odrzuca („Bot wybrał nielegalną komendę").
+
+**Cztery warianty rozjazdu:**
+
+1. **Różny FILTR** (pierwotny L48). Bot wybierał biały czar na cel
+   z `protection from white`: `legalSpellCasts` filtrował tylko
+   `isProtectedFromSource`, a `validateTargets` sprawdzał też
+   `effectiveProtectionFromColors`. Dla czarów bez `sourceObject` ochrona
+   kolorowa była w ofercie niewidoczna.
+2. **Niepełny REJESTR** (L48, aggro-bot). Lista `simple` z komendami `resolve_*`
+   rosła wraz z mechanikami (`resolve_color_choice`, `resolve_index_choice`) —
+   bot nie znał nowej i „nie znalazł ruchu".
+3. **Niepełny SKAN RODZINY** (M254/A). `permanent_destroyed` (zniszczenie
+   EFEKTEM: Murder, Spin Out) nie było w skanie triggerów „leaves the
+   battlefield", który znał `creature_destroyed`, `permanent_sacrificed`,
+   `object_moved` i `object_exiled`. Wormfang Newt zniszczony CZAREM zostawiał
+   ląd w wygnaniu na zawsze, a zniszczony OBRAŻENIAMI oddawał go poprawnie.
+4. **Różny PORZĄDEK bramek** (M254/E oraz L90 — dwa niezależne przypadki).
+   Nie dwie kopie reguły, lecz **dwa porządki tej samej reguły**:
+   `execute` sprawdzał rebound PRZED undercity, a `legalCommands` PO — silnik
+   oferował `resolve_undercity_route` i sam go odrzucał. Identycznie
+   `exploit` vs cel triggera (pełna macierz stanęła na 58,5%, seed 1003).
+
+**Reguła:**
+1. Nowy typ ochrony albo nowy `pending*` trafia w TRZY miejsca naraz:
+   `legalTargetCandidates` (oferta, z `sourceObject`), `validateTargets`
+   i OBA boty (`heuristic` — fallback `anyResolve`; `aggro` — lista `simple`).
+2. Nowe zdarzenie z rodziny trafia do KAŻDEGO skanu tej rodziny (`dies`,
+   `leaves_battlefield`, „permanents you control leave").
+3. Kolejność „kto teraz decyduje" mieszka w JEDNEJ funkcji zwracającej
+   właściciela **i rodzaj** decyzji (`firstPendingDecision → { playerId, kind }`).
+   Zasada: **pierwszy właściciel decyzji = pierwsza bramka `execute` = pierwsza
+   gałąź ofert.**
+4. Bramka „coś czeka" jest warunkiem na WŁAŚCICIELA i RODZAJ, nigdy na sam fakt
+   niepustości kolejki — inaczej blokuje gracza, którego decyzja jest wcześniejsza.
+5. Predykat blokady jest jeden i wołają go OBIE strony (`exploitDecisionPendingFor`,
+   `closingCombatPassBlocked`).
+6. Przy N-tej powtórce klasy szukaj WSPÓLNEGO MIANOWNIKA, nie kolejnego
+   przypadku (L28).
+7. Martwy wartownik to też błąd: warunek, którego mutacja nie czerwieni, usuń
+   zamiast zostawiać jako „dokumentację zamiaru" (L5).
+
 **Sygnał:** po nowym deskryptorze ochrony albo `resolve_*` uruchom
 `node tools/benchmark.mjs --seeds 2` — `illegal_spell` lub „nie znalazł ruchu"
 oznacza niekompletną ofertę.
-**Dopisek (M254/A) — zdarzenia tej samej rodziny:** `permanent_destroyed`
-(zniszczenie EFEKTEM: Murder, Spin Out) nie było w skanie triggerów „when this
-permanent leaves the battlefield" — skan znał `creature_destroyed` (śmierć z
-obrażeń), `permanent_sacrificed`, `object_moved`, `object_exiled`. Wormfang
-Newt zniszczony czarem zostawiał ląd w exile na zawsze, zniszczony OBRAŻENIAMI
-oddawał go prawidłowo. Nowe zdarzenie z rodziny trafia do KAŻDEGO skanu tej
-rodziny (`dies`, `leaves_battlefield`, „permanents you control leave").
-**Dopisek 2 (M254) — ten sam filtr to za mało: musi zgadzać się KOLEJNOŚĆ
-bramek.** Pełna macierz kończyła się „Bot wybrał nielegalną komendę:
-rebound_unresolved": gracz miał naraz `pendingReboundCast` (Ojutai's Breath, CR
-702.97) i `pendingUndercityRoute` (M190/B); `execute` ma bramkę reboundu PRZED
-undercity, a `legalCommands` gałąź reboundu PO undercity — silnik oferował
-`resolve_undercity_route` i sam go odrzucał. Reguła przy
-`firstPendingDecisionPlayerId`: **pierwszy właściciel decyzji = pierwsza bramka
-`execute` = pierwsza gałąź ofert** (`test/m254-kolejnosc-pendingow.test.js`).
+
+**Strażnicy:** `test/m254-kolejnosc-pendingow.test.js` ·
+`test/m255-petla-jakosci.test.js` (G1: replay adresu z macierzy, seed 1003;
+G2: Exploit blokuje wyłącznie jako PIERWSZA decyzja). Mutacje: „bramka blokuje
+każdego" → G1 czerwone; „blokuje właściciela bez względu na porządek" → G1 czerwone.
 
 ## L49 (2026-08-18) — Plik startowy musi kazać CZYTAĆ ADR-y, zanim agent odezwie się w czacie
 
@@ -1873,7 +2181,6 @@ dokumentacji).
    zwalniała linie ze słowem „sprostowanie" — mutacja pokazała, że wystarczy
    postawić błędne zdanie obok tego słowa.
 
-
 ## L89 (2026-08-29) — Przebieg, którego nikt nie dograł: długi bieg loguje postęp, a rozmiar macierzy wyznacza budżet, nie liczba kombinacji
 
 **Objaw:** `node tools/benchmark.mjs --full` liczył się 63 minuty CPU bez jednej
@@ -1903,39 +2210,17 @@ nie boli, dopóki nikt jej nie sprawdzi.
 talii, pokrycie każdej talii, determinizm próbki); raport wypisuje
 `ZACINKI (watchdog N ms)` z adresem każdego przerwanego meczu.
 
-## L90 (2026-08-29) — Trzecia powtórka tej samej klasy: oferta i walidacja rozjechały się PORZĄDKIEM (Exploit vs cel triggera)
+## L90 (2026-08-29) — Trzecia powtórka klasy: oferta i walidacja rozjechały się PORZĄDKIEM
 
-**Objaw:** pierwsza w życiu pełna macierz, która w ogóle dobiegła do sensownego
-momentu, zatrzymała się na 58,5%: `Bot wybrał nielegalną komendę:
-exploit_unresolved — aggro(tarkir-bg) vs random(theros), seed 1003`. Bot dostał
-w ofercie `resolve_trigger_target` i `activate_ability`, a odrzuciła go bramka
-exploitu, której w ofercie nie było widać.
-**Przyczyna:** `firstPendingDecisionPlayerId` układał decyzje „cel triggera →
-exploit", a bramki w `execute` stały odwrotnie (exploit wcześniej). Gdy gracz
-miał obie decyzje naraz, oferta mówiła „najpierw cel triggera", walidacja —
-„tylko `resolve_exploit_choice`". Ta sama klasa co F i M254/E, tylko że nie
-dwie kopie jednej reguły, lecz **dwa porządki tej samej reguły**.
-**Reguła:**
-1. Kolejność „kto teraz decyduje" mieszka w JEDNEJ funkcji, która zwraca nie
-   tylko właściciela, ale i RODZAJ decyzji (`firstPendingDecision` →
-   `{ playerId, kind }`). Bramka execute pyta: „czy pierwsza decyzja jest MOJA
-   i tego rodzaju?" — nigdy „czy kolejka jest niepusta".
-2. Predykat blokady jest jeden i wołają go OBIE strony, oferta i walidacja
-   (`exploitDecisionPendingFor`; wzorzec z F — `closingCombatPassBlocked`).
-3. Bramka „coś czeka" ma być warunkiem na właściciela i rodzaj, nie na sam
-   fakt niepustości kolejki — inaczej blokuje gracza, którego decyzja jest
-   wcześniejsza.
-4. Przy N-tej powtórce jednej klasy szukaj WSPÓLNEGO MIANOWNIKA klasy, nie
-   kolejnego przypadku (L28).
-5. Martwy wartownik to też błąd: sprawdzony dodatkowy warunek okazał się
-   nadmiarowy (blok akcji jest już osłonięty wyżej) — mutacja go nie
-   czerwieniła, więc go usunąłem, zamiast zostawić jako „dokumentację zamiaru"
-   (L83: strażnik ma mierzyć regułę, nie tekst).
-**Strażnik:** `test/m255-petla-jakosci.test.js` — G1 (replay adresu z macierzy:
-`aggro(tarkir-bg)` vs `random(theros)`, seed 1003, mecz kończy się) i G2
-(Exploit blokuje wyłącznie jako PIERWSZA decyzja; opcja `skip` jest w ofercie;
-cudza decyzja nie daje komend). Mutacje: „bramka blokuje każdego" → G1
-czerwone; „blokuje właściciela bez względu na porządek" → G1 czerwone.
+Pierwsza pełna macierz, która dobiegła do sensownego momentu, stanęła na 58,5%:
+`exploit_unresolved — aggro(tarkir-bg) vs random(theros), seed 1003`. Bot dostał
+w ofercie `resolve_trigger_target`, a odrzuciła go bramka exploitu, której
+w ofercie nie było widać: `firstPendingDecisionPlayerId` układał decyzje „cel
+triggera → exploit", a bramki w `execute` stały odwrotnie.
+
+To nie dwie kopie jednej reguły, lecz **dwa porządki tej samej reguły**.
+
+→ **Pełna klasa i reguła: [L48](#l48-2026-08-18--oferta-i-walidacja-to-jeden-filtr-jeden-porządek-i-jeden-rejestr).**
 
 ## L91 (2026-08-29) — „Trigger bez efektu" ma trzy różne przyczyny; liczenie zdarzeń to ich przybliżenie, nie reguła
 
@@ -1986,3 +2271,128 @@ zawsze pusty → H2b; wycięcie wpisu `buff_land_creatures` → H4, H7;
 `sacrifice_each_other_creature` → H5, H7; `mill_cards` → H3, H7;
 `empty_library` → `no_targets` → H3; wycięcie masowej idempotentności
 (untap_all) → H6.
+
+## L108 (2026-08-31) — Deadlock reguł: szukaj par „musisz X" / „nie możesz X"
+
+Odkryte w M270 (błąd #9, CR 508.1c). Dotąd polowanie na błędy zakładało, że
+silnik robi coś **źle**. Istnieje groźniejsza klasa: silnik nie pozwala
+zrobić **niczego**. Goadowany stwór z „can't attack alone", jedyny zdolny do
+ataku, unieruchamiał krok deklaracji atakujących — każda możliwa komenda była
+odrzucana, partia stawała.
+
+Jak szukać: wypisz wszystkie ograniczenia jako WYMOGI („attacks each combat
+if able", „must be blocked", „must attack a Planeswalker if able") i ZAKAZY
+(„can't attack alone", „can't block", „can't attack unless..."). Dla każdej
+pary wymóg×zakaz dotyczącej tego samego obiektu sprawdź przypadek brzegowy,
+w którym zbiór alternatyw kurczy się do jednego elementu — tam wymóg i zakaz
+się spotykają. CR rozstrzyga to klauzulą **„if able"**: wymóg milczy, gdy
+czynność jest nielegalna. Silnik musi implementować „if able" jawnie, bo
+naiwny zapis („zawsze wymagaj") jest sprzeczny z zakazem.
+
+Test na deadlock jest tani i powinien być domyślnym elementem strażnika
+każdego kroku z wyborem: **„gracz ZAWSZE ma co najmniej jedną legalną
+opcję"** — enumerator skonfrontowany z walidacją (L48). Ten test wyłapał
+drugą połowę błędu #9, której naprawa pierwszej połowy nie ruszyła:
+`legalAttackerOptions` zwracało pustą listę, więc silnik nie proponował nawet
+legalnej deklaracji pustej.
+
+## L109 (2026-08-31) — „Komentarz tłumaczący duplikat" to znacznik błędu
+
+W M271 (błędy #11/#12) ręczna kopia kodu przenoszenia miała komentarz:
+„ruch zrealizowany wprost, żeby nie tworzyć cyklu importów". Komentarz był
+prawdziwy co do FAKTU (cykl istnieje i pilnuje go `test/module-graph.test.js`)
+i błędny co do WNIOSKU — duplikat nie był jedynym wyjściem. Kopia gubiła dwie
+korekty CR, które choke point wykonywał.
+
+Reguła: gdy komentarz uzasadnia, dlaczego dany kod NIE korzysta ze wspólnej
+ścieżki („żeby uniknąć cyklu", „dla wydajności", „bo tu jest inaczej"),
+traktuj to jak zgłoszenie błędu, nie jak dokumentację. Sprawdź, ilu korekt
+brakuje kopii względem oryginału — zwykle co najmniej jednej. Ograniczenie
+architektoniczne rozwiązuje się przesunięciem WARSTW (funkcja czysta w dół
+grafu, rejestr wstrzykiwany w górę), a nie powieleniem logiki.
+
+Zastosowane w M271: `deathZoneFor` i `spellExitZone` zeszły do `zones.js`
+(najniższa warstwa), a `mover.js` udostępnia choke point zmian stref warstwom
+niższym przez rejestrację. Osiem kopii reguły „gdzie ląduje czar" → jedna.
+
+→ Klasa nadrzędna: [L107](#l107-2026-08-31--najbogatsza-żyła-błędów-ścieżka-robiąca-to-samo-co-helper-ale-ręcznie-grep-po-mutacji-pola-nie-po-nazwie-mechaniki) (helper istnieje, ścieżka go omija).
+
+## L110 (2026-08-31) — Usunięcie duplikatu odsłania błędy, które maskował
+
+M271: zastąpienie ręcznej kopii choke pointem wywołało regresję — benchmark
+botów wywracał partię na inwariancie „załącznik wskazuje nieistniejącego
+gospodarza". Winna nie była nowa zmiana: ręczna kopia nie sprawdzała
+inwariantów, więc niespójny stan pośredni nikogo nie bolał. Prawdziwym błędem
+była kolejność odczepiania KILKU załączników (#16).
+
+1. Po sprowadzeniu ścieżki do helpera uruchom NAJSZERSZY zestaw
+   (`npm run test:all`, w tym benchmark botów) — `npm test` tego nie złapał.
+2. Nie cofaj naprawy i nie osłabiaj inwariantu; znajdź, co duplikat maskował.
+3. Inwarianty na końcu operacji widzą stan POŚREDNI przy rekurencji: pętla
+   zmieniająca wiele powiązanych obiektów musi najpierw zerwać wiązania,
+   potem stosować polityki.
+
+→ Klasa nadrzędna: [L107](#l107-2026-08-31--najbogatsza-żyła-błędów-ścieżka-robiąca-to-samo-co-helper-ale-ręcznie-grep-po-mutacji-pola-nie-po-nazwie-mechaniki).
+
+## L111 (2026-08-31) — sonda wołająca `applyEffect` pomija state-based actions
+
+M272: „zmiana kontroli nie usuwa atakującego z walki" (CR 506.4) wyglądało na
+błąd — repro przez `applyEffect` pokazywało stwora w `state.combat.attackers`.
+Regułę egzekwuje jednak `state-based.js` od M201; sonda nie przepuszczała
+stanu przez pętlę SBA, więc widziała stan pośredni. Naprawę wycofano.
+
+Przed uznaniem braku reguły za błąd: (1) repro przez PEŁNĄ komendę
+(`execute`), nie `applyEffect`; (2) grep zdarzenia w CAŁYM `src/` — reguła
+bywa w `state-based.js`; (3) test falsyfikacyjny: usuń własną łatkę i sprawdź,
+czy repro nadal przechodzi. Punkt 3 jako jedyny łapie to niezawodnie.
+
+## L112 (2026-09-01) — Klasę błędów tępi narzędzie, nie kolejna para oczu
+
+M273 (platyna, ADR 0027). 10 z 25 błędów czterech odznak to JEDEN wzorzec
+(L107): ścieżka omija choke point albo gubi pole zdarzenia oczekiwane przez
+konsumenta. Emitera bez `toZone` (#20) przeoczyłem wzrokiem — znalazł go skan.
+Gdy klasa wraca trzeci raz: przestań szukać egzemplarzy, napisz analizator.
+
+Wymiary skanu (`tools/event-contract-audit.mjs`, w `npm test`):
+1. ROZJAZD ŁADUNKÓW — pole w ≥60% i <100% emiterów zdarzenia: konsument
+   dostanie `undefined` (#22 `card_revealed.cardId`; #23 `spell_cast.colors`
+   w 5 ścieżkach alternatywnego rzucania — czar udawał bezbarwny).
+2. CECHY WEJŚCIA — ile ścieżek ETB zna cechę. Liczniki: 1 z 18 (#24,
+   CR 121.6 — reanimowany Servant of the Scale wracał jako 0/0).
+3. RĘCZNE MUTACJE `state.zones` — ominięcie choke pointu gubi jego reguły
+   (#25: skasowany token zostawiał wiszące id w `state.combat`, CR 506.4).
+
+Rygor, bez którego narzędzie szkodzi:
+- Trafienie weryfikuj wobec KONSUMENTA (grep pola w `session.js`,
+  `triggers.js`). Brak konsumenta = wyjątek, nie błąd: z 36 kandydatów realne
+  były 2.
+- Lista wyjątków JAWNA i z POWODEM; test sensowności uzasadnień wyłapał moje
+  własne „Jak wyżej".
+- Analizator też jest produktem: parser gubił pola po komentarzu — poprawka
+  plus test regresyjny. Fałszywy alarm poprawiaj w TEŚCIE, nie w kodzie.
+- Skan bije listę znalezisk: sam wskazywał ścieżki pominięte przez pierwszą
+  naprawę (#24, #25, M274). Zasięgu skanu pilnuje L113.
+
+→ Klasa, którą to narzędzie tępi: [L107](#l107-2026-08-31--najbogatsza-żyła-błędów-ścieżka-robiąca-to-samo-co-helper-ale-ręcznie-grep-po-mutacji-pola-nie-po-nazwie-mechaniki).
+
+## L113 (2026-09-01) — Filtr wyciszający w strażniku opisuje INTENCJĘ, nie ciąg znaków
+
+M274. Strażnik z M273 („każda ścieżka ETB zna liczniki") przepuścił trzy
+ścieżki. Dwie dziury:
+1. **Skanował jeden plik** (`effects.js`), a klasa mieszka w trzech (+
+   `triggers.js`, `game-state.js`). Zasięg skanu = zasięg KLASY, nie pliku
+   z pierwszym przypadkiem.
+2. **Wyciszenie po ciągu znaków**: filtr pomijał okno zawierające `faceDown`
+   (intencja: „wejście zakryte nie dostaje liczników", CR 708.2), ale Pyxis
+   ustawia `faceDown: false` — ODKRYWA kartę — więc wyciszył przypadek, którego
+   miał pilnować. Wyjątek zapisuj jako WARUNEK, nie jako obecność słowa.
+
+Po poszerzeniu skanu uruchom go od razu: poprawiony filtr sam wskazał czwartą
+ścieżkę (Dragon Arch), której nie dał ręczny przegląd.
+
+Strażnik to kod produkcyjny odznaki. Fałszywy alarm boli od razu, ale
+**fałszywe MILCZENIE jest gorsze** — udaje, że klasa jest zamknięta. Po
+napisaniu strażnika sprawdź, ile trafień pominął i czemu (u mnie 3 z 13).
+
+→ Klasa, której pilnuje naprawiony strażnik: [L107](#l107-2026-08-31--najbogatsza-żyła-błędów-ścieżka-robiąca-to-samo-co-helper-ale-ręcznie-grep-po-mutacji-pola-nie-po-nazwie-mechaniki).
+

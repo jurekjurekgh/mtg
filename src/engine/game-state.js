@@ -22,16 +22,16 @@ import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOpti
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell } from './spells.js';
 import { legalActivatedAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
-import { addCounter } from './counters.js';
+import { addCounter, removeCounter } from './counters.js';
 import { runStateBasedActions, tryRegenerate } from './state-based.js';
 import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, fireWardTriggers } from './triggers.js';
-import { moveObjectDirectly } from './objects.js';
+import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionQualities } from './attachments.js';
 import { createBattlefieldToken } from './tokens.js';
 import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom } from './effects.js';
 import { changeLife } from './players.js';
 import { shuffle } from './shuffle.js';
-import { applyRoomTargetChoice, applyEffect, drawPlayerCards, manifestCardFaceDown, counterStackObject } from './effects.js';
+import { applyRoomTargetChoice, applyEffect, applyEnterCounters, drawPlayerCards, manifestCardFaceDown, counterStackObject } from './effects.js';
 
 /**
  * Limit ofert „odłóż N kart na spód” przy mulliganie londyńskim (M119/Z3).
@@ -778,7 +778,12 @@ function payFreeCastAdditionalCost(state, playerId, obj, cmd) {
   const sacrifice = state.objects.get(cmd.sacrificeTargetId);
   if (!sacrifice || sacrifice.zone !== 'battlefield' || sacrifice.kind !== 'creature'
     || sacrifice.controllerId !== playerId) return 'additional_cost_unpaid';
-  const toZone = sacrifice.unearthExile ? 'exile' : 'graveyard';
+  // M269 (błąd #5): strefę śmierci wyznacza WSPÓLNY `deathZoneFor` (licznik
+  // finality — CR 122.1e, oraz naznaczenie exileIfDiesThisTurn). Ta ścieżka
+  // sprawdzała wyłącznie `unearthExile`, więc stwór z licznikiem finality
+  // poświęcony jako KOSZT DODATKOWY lądował w cmentarzu i dawał się
+  // reanimować drugi raz. `unearthExile` obsługuje sam moveObjectDirectly.
+  const toZone = deathZoneFor(state, sacrifice);
   const destId = `${toZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, cmd.sacrificeTargetId, toZone, destId);
   state.events.push(event('permanent_sacrificed', {
@@ -1825,8 +1830,10 @@ export function execute(state, input) {
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, landId, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
+      // M272 (błąd #20): `toZone` w zdarzeniu — po nim triggery śmierci
+      // rozpoznają wygnanie przez licznik finality (CR 122.1b).
       fromId: landId, objectId: destId, playerId: pending.controllerId,
-      cardId: moved.cardId, reason: 'springbloom_druid',
+      cardId: moved.cardId, reason: 'springbloom_druid', toZone,
     }));
     state.pendingSpringbloom = null;
     state.events.push(event('springbloom_resolved', {
@@ -2025,7 +2032,11 @@ export function execute(state, input) {
       const revealed = state.objects.get(cardId);
       if (revealed) {
         state.events.push(event('card_revealed', {
+          // M273 (błąd #22): log stołu woła `nameOf(e.cardId)` — bez tego pola
+          // odsłonięcie karty wypisywało się jako „odsłania ?" (klasa L29:
+          // fallback znaku zapytania). `fromId` to id OBIEKTU, nie karty.
           playerId: pending.playerId, fromId: cardId, object: revealed, fromZone: 'hand',
+          objectId: cardId, cardId: revealed.cardId ?? null,
         }));
       }
       // „this Saga deals 2 damage to target opponent or planeswalker" —
@@ -2166,6 +2177,12 @@ export function execute(state, input) {
       playerId: pending.playerId, fromId: cmd.objectId, object: stacked, cardId: card.cardId,
       targets: chosenTargets,
       targetCardIds: chosenTargets.map((id) => state.objects.get(id)?.cardId ?? null),
+      // M273 (błąd #23): `colors` to CZĘŚĆ kontraktu zdarzenia rzutu —
+      // triggers.js czyta `eventData.colors` dla „whenever a player casts
+      // a WHITE spell" (Angel's Feather) i dla „casts a COLORLESS spell".
+      // Brak pola dawał `?? []`, czyli czar udawał BEZBARWNY: trigger na
+      // kolor milczał, a trigger na bezbarwność odpalał fałszywie.
+      colors: [...(card.colors ?? [])],
       fromGraveyard: true, xPaid: xValue, manaSpent: xValue,
       ...(chosenMode != null ? { modeIndex: chosenMode } : {}),
     }));
@@ -2192,6 +2209,9 @@ export function execute(state, input) {
     const ev = event('madness_ready_required', {
       playerId: next.playerId, objectId: next.objectId, cardId: next.cardId,
       cost: state.objects.get(next.objectId)?.madness?.cost ?? null,
+      // M266/E (L100 pkt 1): zdarzenie opisujące decyzję o koszcie musi nieść
+      // WSZYSTKIE składniki ceny — inaczej opis nie da się złożyć bez stanu.
+      costColors: state.objects.get(next.objectId)?.madness?.colors ?? null,
     });
     state.events.push(ev);
     return ev;
@@ -2235,16 +2255,26 @@ export function execute(state, input) {
       // castPermanent. Dziś w katalogu tylko permanent (Revolutionist);
       // strażnik katalogu w test/m161-madness-spell-path.test.js sygnalizuje
       // pierwszą kartę czarową z madness.
-      const e = card.kind === 'spell'
-        ? castMadnessSpell(state, pending.playerId, pending.objectId, cmd.targets, cmd.modeIndex)
-        : castPermanent(state, pending.playerId, pending.objectId, { madnessCast: true });
+      // Oba castery wpychają zdarzenie rzutu do `state.events` samodzielnie
+      // (patrz niżej, M266/C2) — wynik komendy bierzemy z wycinka strumienia.
+      if (card.kind === 'spell') {
+        castMadnessSpell(state, pending.playerId, pending.objectId, cmd.targets, cmd.modeIndex);
+      } else {
+        castPermanent(state, pending.playerId, pending.objectId, { madnessCast: true });
+      }
       state.pendingMadnessCast = null;
       if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) {
         state.turn.priorityPlayerId = pending.restorePriorityTo;
       }
       // M258: następna zakolejkowana karta z madness przejmuje decyzję.
       promoteNextMadness(state);
-      return accepted(state, cmd, { ok: true, events: [...state.events.slice(before), e] });
+      // M266/C2 (zgłoszenie właściciela, Terminal Agony): `castMadnessSpell`
+      // i `castPermanent` SAME wpychają zdarzenie rzutu do `state.events`,
+      // więc doklejanie `e` do `slice(before)` duplikowało je w wyniku
+      // komendy — modal „Rozgrywka" otwierał się dwa razy, a log pokazywał
+      // „Rzucasz Terminal Agony → cel: …" dwukrotnie, choć czar poszedł na
+      // stos raz. Wynik komendy to wycinek strumienia zdarzeń, nic więcej.
+      return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
     } catch (error) {
       return reject(`illegal_madness_cast:${error.message}`);
     }
@@ -2325,6 +2355,12 @@ export function execute(state, input) {
       playerId: pending.playerId, fromId: pending.objectId, object: stacked, cardId: card.cardId,
       targets: chosenTargets,
       targetCardIds: chosenTargets.map((id) => state.objects.get(id)?.cardId ?? null),
+      // M273 (błąd #23): `colors` to CZĘŚĆ kontraktu zdarzenia rzutu —
+      // triggers.js czyta `eventData.colors` dla „whenever a player casts
+      // a WHITE spell" (Angel's Feather) i dla „casts a COLORLESS spell".
+      // Brak pola dawał `?? []`, czyli czar udawał BEZBARWNY: trigger na
+      // kolor milczał, a trigger na bezbarwność odpalał fałszywie.
+      colors: [...(card.colors ?? [])],
       suspend: true, manaSpent: 0,
       ...(chosenMode != null ? { modeIndex: chosenMode } : {}),
     }));
@@ -2406,6 +2442,12 @@ export function execute(state, input) {
       playerId: pending.playerId, fromId: pending.objectId, object: stacked, cardId: card.cardId,
       targets: chosenTargets,
       targetCardIds: chosenTargets.map((id) => state.objects.get(id)?.cardId ?? null),
+      // M273 (błąd #23): `colors` to CZĘŚĆ kontraktu zdarzenia rzutu —
+      // triggers.js czyta `eventData.colors` dla „whenever a player casts
+      // a WHITE spell" (Angel's Feather) i dla „casts a COLORLESS spell".
+      // Brak pola dawał `?? []`, czyli czar udawał BEZBARWNY: trigger na
+      // kolor milczał, a trigger na bezbarwność odpalał fałszywie.
+      colors: [...(card.colors ?? [])],
       rebound: true, manaSpent: 0,
       ...(chosenMode != null ? { modeIndex: chosenMode } : {}),
     }));
@@ -2498,6 +2540,12 @@ export function execute(state, input) {
       playerId: pending.playerId, fromId: cardId, object: stacked, cardId: exileObj.cardId,
       targets: chosenTargets,
       targetCardIds: chosenTargets.map((id) => state.objects.get(id)?.cardId ?? null),
+      // M273 (błąd #23): `colors` to CZĘŚĆ kontraktu zdarzenia rzutu —
+      // triggers.js czyta `eventData.colors` dla „whenever a player casts
+      // a WHITE spell" (Angel's Feather) i dla „casts a COLORLESS spell".
+      // Brak pola dawał `?? []`, czyli czar udawał BEZBARWNY: trigger na
+      // kolor milczał, a trigger na bezbarwność odpalał fałszywie.
+      colors: [...(exileObj.colors ?? [])],
       discover: true, epic: true, manaSpent: 0,
       ...(chosenMode != null ? { modeIndex: chosenMode, modeName: modeName_ } : {}),
     }));
@@ -2878,13 +2926,11 @@ export function execute(state, input) {
       if ((pending.amount ?? 0) > producibleMana(state, pending.playerId)) return reject('counter_pay_insufficient_mana');
       if ((pending.amount ?? 0) > 0) spendMana(state, pending.playerId, pending.amount, []);
     } else if (targetOnStack) {
-      const graveId = `grave-${state.objectSequence++}`;
-      const moved = moveObjectDirectly(state, pending.targetId, 'graveyard', graveId);
-      state.events.push(event('spell_countered', {
-        fromId: pending.targetId, toId: graveId, cardId: moved.cardId,
-        controllerId: moved.controllerId, counteredBy: pending.sourceId,
-        counteredByCardId: pending.sourceCardId,
-      }));
+      // M271 (błąd #15): piąta kopia kontry — przez WSPÓLNY helper, żeby
+      // respektowała `exileInsteadOfGraveyard` (Halo Forager, CR 118.9).
+      counterStackObject(state, pending.targetId, {
+        counteredBy: pending.sourceId, counteredByCardId: pending.sourceCardId,
+      });
     }
     state.events.push(event('counter_pay_resolved', {
       playerId: pending.playerId, paid: Boolean(cmd.pay), targetId: pending.targetId,
@@ -3042,9 +3088,18 @@ export function execute(state, input) {
     const target = state.objects.get(cmd.targetId);
     if (!target || target.zone !== 'battlefield' || target.kind !== 'creature' || target.controllerId !== pending.playerId) return reject('illegal_exploit_target');
     state.pendingExploits.shift();
-    const moved = moveObjectDirectly(state, cmd.targetId, 'graveyard', `grave-${state.objectSequence++}`);
+    // M269 (błąd #5): poświęcenie przez exploit to też śmierć — strefę
+    // wyznacza wspólny `deathZoneFor`.
+    // M272 (błąd #20): `toZone` jest CZĘŚCIĄ faktu — triggery śmierci
+    // (triggers.js: `if (ev.toZone === 'exile') return`) po nim rozpoznają,
+    // że permanent został wygnany przez licznik finality i „dies" się NIE
+    // wydarzyło (CR 122.1b). Bez tego pola exploit odpalał zdolności śmierci
+    // mimo wygnania. Prefiks id też musi zgadzać się ze strefą.
+    const exploitZone = deathZoneFor(state, target);
+    const moved = moveObjectDirectly(state, cmd.targetId, exploitZone, `${exploitZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`);
     state.events.push(event('permanent_sacrificed', {
-      fromId: cmd.targetId, objectId: moved.id, playerId: pending.playerId, cardId: moved.cardId, exploit: true,
+      fromId: cmd.targetId, objectId: moved.id, playerId: pending.playerId, cardId: moved.cardId,
+      exploit: true, toZone: exploitZone,
     }));
     state.events.push(event('exploited', { exploiterId: pending.sourceId, exploitedId: moved.id }));
     state.events.push(event('exploit_choice_resolved', { playerId: pending.playerId, sourceId: pending.sourceId, exploitedId: moved.id }));
@@ -3494,6 +3549,12 @@ export function execute(state, input) {
       // Token poza polem bitwy przestaje istnieć (CR 111.7) — NIE wchodzi do
       // biblioteki (inaczej surveil rzucającego łapał token jako wierzch,
       // a SBA kasowało go spod pendingSurveil — złamany niezmiennik).
+      // M273 (błąd #25): token znika z gry z POMINIĘCIEM choke pointu stref,
+      // więc trzeba jawnie przejść tę samą listę „kto o nim jeszcze pyta"
+      // (L43). `state.combat` trzymał wiszące id skasowanego tokena:
+      // atakujący/bloker, którego nie ma w `state.objects`. Ten sam rodzaj
+      // niespójności wywrócił partię w M271 (błąd #16).
+      if (state.combat) removeFromCombat(state, pending.targetId);
       state.objects.delete(pending.targetId);
       state.zones.battlefield = state.zones.battlefield.filter((id) => id !== pending.targetId);
       state.events.push(event('token_ceased_to_exist', {
@@ -3778,11 +3839,16 @@ export function execute(state, input) {
     if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') return reject('illegal_sacrifice_target');
     const pending = state.pendingSacrifice;
     const before = state.events.length;
-    const graveId = `grave-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, target.id, 'graveyard', graveId);
+    // M269 (błąd #5): wybór ofiary nie zmienia tego, że poświęcenie jest
+    // śmiercią (CR 701.17a) — ta sama wspólna strefa docelowa.
+    // M272 (błąd #20): strefa musi trafić do ZDARZENIA, bo po niej triggery
+    // śmierci poznają wygnanie przez finality (CR 122.1b).
+    const sacZone = deathZoneFor(state, target);
+    const graveId = `${sacZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, target.id, sacZone, graveId);
     state.events.push(event('permanent_sacrificed', {
       fromId: target.id, objectId: graveId, playerId: target.controllerId, cardId: moved.cardId,
-      sacrificeChoice: true,
+      sacrificeChoice: true, toZone: sacZone,
     }));
     state.pendingSacrifice = null;
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
@@ -3831,10 +3897,13 @@ export function execute(state, input) {
       const foodObj = state.objects.get(foodId);
       if (foodObj && foodObj.zone === 'battlefield') {
         const graveId = `grave-${state.objectSequence++}`;
-        moveObjectDirectly(state, foodId, 'graveyard', graveId);
+        // M269 (błąd #5): poświęcenie Jedzenia również respektuje deathZoneFor.
+        // M272 (błąd #20): i przekazuje strefę dalej w zdarzeniu (CR 122.1b).
+        const foodZone = deathZoneFor(state, foodObj);
+        moveObjectDirectly(state, foodId, foodZone, graveId);
         state.events.push(event('permanent_sacrificed', {
           fromId: foodId, objectId: graveId, playerId: food.playerId, cardId: foodObj.cardId,
-          sacrificeFood: true,
+          sacrificeFood: true, toZone: foodZone,
         }));
         sacrificed = true;
       }
@@ -3877,7 +3946,12 @@ export function execute(state, input) {
       const stacked = Object.freeze({ ...state.objects.get(stackId), tapped: false, chosenTargets: [], freeDiscover: true });
       state.objects.set(stackId, stacked);
       state.spellsCastThisTurn += 1;
-      state.events.push(event('spell_cast', { playerId: disc.playerId, fromId: disc.foundExileId, object: stacked, cardId: foundObj.cardId, targets: [], discover: true, manaSpent: 0 }));
+      state.events.push(event('spell_cast', {
+        // M273 (błąd #23): kolory czaru są częścią kontraktu zdarzenia.
+        playerId: disc.playerId, fromId: disc.foundExileId, object: stacked,
+        cardId: foundObj.cardId, targets: [], discover: true, manaSpent: 0,
+        colors: [...(foundObj.colors ?? [])],
+      }));
     } else if (cmd.castFree && (foundObj.kind === 'creature' || foundObj.kind === 'artifact' || foundObj.kind === 'enchantment')) {
       // Rzuć permanent bez kosztu many — idzie na STOS jak każdy rzut czaru
       // (CR 601); na pole bitwy wchodzi po rozstrzygnięciu (resolvePermanentSpell).
@@ -3889,7 +3963,14 @@ export function execute(state, input) {
       });
       state.objects.set(stackId, perm);
       state.spellsCastThisTurn += 1;
-      state.events.push(event('permanent_cast', { playerId: disc.playerId, fromId: disc.foundExileId, object: perm, manaCost: 0, discover: true, manaSpent: 0 }));
+      state.events.push(event('permanent_cast', {
+        // M273 (błąd #23): permanent_cast idzie tą samą ścieżką triggerów
+        // co spell_cast (triggers.js:2386), więc kontrakt jest ten sam —
+        // kolory rzucanego czaru muszą być w zdarzeniu.
+        playerId: disc.playerId, fromId: disc.foundExileId, object: perm,
+        manaCost: 0, discover: true, manaSpent: 0,
+        colors: [...(perm.colors ?? [])],
+      }));
     } else {
       // Do ręki.
       const handId = `hand-${state.objectSequence++}`;
@@ -3982,6 +4063,12 @@ export function execute(state, input) {
       const transformed = Object.freeze({
         ...moved,
         id: bfId, zone: 'battlefield',
+        // M270 (CR 400.7): ta sama klasa co transform-return w effects.js —
+        // craft składa obiekt RĘCZNIE (omija moveObjectDirectly), więc musi
+        // sam ostemplować turę wejścia. Baza `moved` przychodzi z wygnania
+        // z `enteredOnTurn: null`, przez co permanent wracający na pole bitwy
+        // nie liczył się jako „entered this turn" (Crew Captain).
+        enteredOnTurn: state.turn.number,
         ...transformedCharacteristics(target, previousSide),
         // CR 202.3b (M258/Etap 2.3b): MV po crafcie = koszt twarzy przedniej;
         // payload transformTo niesie go od materialize. Token-kopia TYLNEJ
@@ -4008,6 +4095,9 @@ export function execute(state, input) {
       state.objects.set(bfId, transformed);
       state.zones.exile = state.zones.exile.filter((id) => id !== sourceExileId);
       state.zones.battlefield.push(bfId);
+      // M273 (błąd #24): craft wprowadza permanent na pole bitwy — liczniki
+      // wejścia (CR 121.6) obowiązują jak przy każdym innym wejściu.
+      applyEnterCounters(state, bfId);
       state.events.push(event('object_moved', { fromId: sourceExileId, object: transformed, fromZone: 'exile', toZone: 'battlefield', craft: true }));
       // controllerId: warstwa stołu kwalifikuje transform do panelu
       // „Rozgrywka" po kontrolerze (isHumanHeadline, M257/K4).
@@ -4034,6 +4124,9 @@ export function execute(state, input) {
       const moved = moveObjectDirectly(state, cmd.targetId, 'battlefield', bfId);
       const permanent = Object.freeze({ ...moved, summoningSickness: true });
       state.objects.set(bfId, permanent);
+      // M274 (#24, CR 121.6): wprowadzenie stwora z RĘKI na pole bitwy
+      // (Dragon Arch) to wejście jak każde inne — liczniki wejścia obowiązują.
+      applyEnterCounters(state, bfId);
       state.events.push(event('permanent_entered_battlefield', {
         fromId: cmd.targetId, objectId: bfId, object: permanent, cardId: permanent.cardId,
         controllerId: pending.playerId, putFromHand: true,
@@ -4073,9 +4166,14 @@ export function execute(state, input) {
       return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
     }
     if (!legalDevourCandidates(state, pending).includes(cmd.targetId)) return reject('illegal_devour_target');
-    const moved = moveObjectDirectly(state, cmd.targetId, 'graveyard', `grave-${state.objectSequence++}`);
+    // M269 (błąd #5): devour pożera permanent przez poświęcenie — ta sama
+    // wspólna strefa śmierci (licznik finality → wygnanie).
+    // M272 (błąd #20): strefa śmierci trafia też do zdarzenia (CR 122.1b).
+    const devourZone = deathZoneFor(state, state.objects.get(cmd.targetId));
+    const moved = moveObjectDirectly(state, cmd.targetId, devourZone, `${devourZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`);
     state.events.push(event('permanent_sacrificed', {
-      fromId: cmd.targetId, objectId: moved.id, playerId: pending.playerId, cardId: moved.cardId, devour: true,
+      fromId: cmd.targetId, objectId: moved.id, playerId: pending.playerId, cardId: moved.cardId,
+      devour: true, toZone: devourZone,
     }));
     // Liczniki lądują na źródle — o ile nie opuściło pola bitwy (np. triggerem
     // z poświęcenia); licznika nie można położyć na obiekcie w innej strefie.
@@ -4789,20 +4887,31 @@ export function execute(state, input) {
     const object = state.objects.get(pending.objectId);
     const e = [];
     if (object && object.zone === 'battlefield') {
-      if (cmd.choice === 'shield') {
-        const next = { ...(object.counters ?? {}) };
-        next.shield = (next.shield ?? 0) - 1;
-        if (next.shield <= 0) delete next.shield;
-        state.objects.set(object.id, Object.freeze({ ...object, counters: Object.freeze(next) }));
+      // M270 (błąd #8): zdjęcie licznika shield idzie przez WSPÓLNY helper
+      // `removeCounter`, nie przez ręczne przepisanie `counters`. Bliźniacza
+      // ścieżka (markDamage w permanents.js) helpera używa, więc ta sama
+      // operacja raportowała się dwojako: przy obrażeniach log stołu pisał
+      // „traci 1 licznik shield" (counter_removed), a przy zastąpieniu
+      // zniszczenia — nic. Helper synchronizuje też rodzaj station (CR 205.1),
+      // czego ręczna ścieżka nie robiła.
+      // Kontrakt tej gałęzi: zdarzenia zbieramy do `e`, a do `state.events`
+      // trafiają RAZ, na końcu (`state.events.push(...e, resolved)`).
+      // `removeCounter` pushuje od razu, więc jego wpis wycinamy ze
+      // `state.events` i przekładamy do `e` — inaczej log miałby duplikat.
+      const zdejmijTarcze = () => {
+        if ((state.objects.get(object.id)?.counters?.shield ?? 0) > 0) {
+          const przed = state.events.length;
+          removeCounter(state, object.id, 'shield', 1);
+          e.push(...state.events.splice(przed));
+        }
         e.push(event('shield_consumed', { objectId: object.id, cardId: object.cardId, reason: 'destroy' }));
+      };
+      if (cmd.choice === 'shield') {
+        zdejmijTarcze();
       } else if (!tryRegenerate(state, object, e)) {
         // Tarcza regeneracji zniknęła między kolejką a decyzją (CR 701.12) —
         // gracz traci wybór, ale nie permanent bez powodu: zostaje tarcza.
-        const next = { ...(object.counters ?? {}) };
-        next.shield = (next.shield ?? 0) - 1;
-        if (next.shield <= 0) delete next.shield;
-        state.objects.set(object.id, Object.freeze({ ...object, counters: Object.freeze(next) }));
-        e.push(event('shield_consumed', { objectId: object.id, cardId: object.cardId, reason: 'destroy' }));
+        zdejmijTarcze();
       }
     }
     const resolved = event('replacement_choice_resolved', {
@@ -4947,6 +5056,14 @@ export function playerView(state, playerId) {
           // jak `plot`, żeby etykieta akcji „Zawieś:" pokazała koszt (nie „?")
           // i poprawną odmianę liczby liczników. Suspend to publiczny Oracle.
           suspend: object.suspend ?? null,
+          // M265 (Żywy Tester, worek-legend vs tarkir-wur seed 323): panel
+          // pokazywał „Rzuć za warp: … (koszt ?)". Recydywa klasy L93/M151
+          // w tej samej liście: KAŻDY deskryptor kosztu alternatywnego jest
+          // publicznym Oracle (CR 601.2b) i musi dotrzeć do UI, inaczej
+          // etykieta wariantu kłamie o cenie. Strażnik klasowy enumeruje
+          // katalog: test/m265-hand-view-alt-cost-descriptors.test.js.
+          warp: object.warp ?? null, surge: object.surge ?? null,
+          kicker: object.kicker ?? null, treasureAltCost: object.treasureAltCost ?? null,
           // Kolory karty (publiczne) i fyryksyjskie symbole w koszcie —
           // bot planuje płatność „maną albo życiem" z widoku, nie z registry.
           colors: [...(object.colors ?? [])], phyrexianManaCost: object.phyrexianManaCost ?? 0,
@@ -5210,6 +5327,12 @@ export function playerView(state, playerId) {
         if (object.playableUntilTurn != null) waiting.playableUntilTurn = object.playableUntilTurn;
         if (object.reboundReady) waiting.reboundReady = true;
         if (object.madnessReady) waiting.madnessReady = true;
+        // M265: karta wygnana po rzucie za warp (CR EOE — warpReady) czeka na
+        // rzut Z EXILE za koszt warp. Bez deskryptora `warp` panel pokazywał
+        // „Rzuć za warp: … (koszt ?)" — ta sama luka co w ręce, druga strefa.
+        // Wygnanie jest jawne (CR 406.3), koszt to publiczny Oracle.
+        if (object.warpReady) waiting.warpReady = true;
+        if (object.warp) waiting.warp = object.warp;
         // M254/D (zgłoszenie właściciela, Wormfang Newt): wygnanie TYMCZASOWE
         // z linkiem powrotu — badge mówi, przez kogo karta została wygnana.
         // Wygnanie jest strefą jawną (CR 406.3), więc znacznik widzą obaj.
@@ -5231,6 +5354,32 @@ export function playerView(state, playerId) {
         // M262 (reforma stref): źródło wygnania (karta/mechanika/efekt) —
         // badge „Wygnane: …" w boksie wygnania na stole.
         waiting.exiledBy = object.meta?.exiledBy ?? null;
+      }
+      // M265 (Żywy Tester, theros vs worek-basni seed 332): deskryptor czaru
+      // dla kart w GROBIE — dokładnie ta sama luka co M212/Z7 w wygnaniu.
+      // Halo Forager rzuca instant/sorcery z DOWOLNEGO grobu, oferta jest
+      // enumerowana per zestaw celów, a wycena bota czytała `spell.effects`
+      // z widoku i dostawała pustkę: wszystkie cele remisowały i bot brał
+      // pierwszy z brzegu (zmierzone: tapnął WŁASNEGO atakującego).
+      // Grób jest strefą PUBLICZNĄ (CR 400.2), a wpis i tak niesie cardId —
+      // deskryptor nie dokłada informacji ukrytej.
+      if (zone === 'graveyard' && object.spell) waiting.spell = object.spell;
+      // M274 (błąd #27, ADR 0017 + CR 400.2): GRÓB jest strefą PUBLICZNĄ, więc
+      // rodzaj karty, linia typów i statystyki są jawne — a widok ich nie
+      // niósł. Bot filtruje zawartość grobu dokładnie po tych polach
+      // (`o.kind === 'creature'`, `(o.types ?? []).includes('Artifact')`,
+      // `o.power` przy wycenie reanimacji z cudzego grobu) i dostawał
+      // `undefined`: stwór 3/3 w grobie przeciwnika wyceniał się na 0, więc
+      // reanimacja i odpowiedź na nią były dla bota niewidoczne. Wygnanie
+      // (strefa też jawna, CR 406.3) `kind`/`types` już wysyłało — grób został
+      // w tyle. Wpis i tak niesie `cardId`, więc to nie dokłada informacji
+      // ukrytej; zakryte karty wracają wyżej z `hidden: true`.
+      if (zone === 'graveyard') {
+        if (object.kind) waiting.kind = object.kind;
+        if ((object.types ?? []).length) waiting.types = [...object.types];
+        if (object.power != null) waiting.power = object.power;
+        if (object.toughness != null) waiting.toughness = object.toughness;
+        waiting.manaCost = object.manaCost ?? 0;
       }
       return {
         id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
@@ -5684,6 +5833,9 @@ export function playerView(state, playerId) {
     const payOrSacInfo = {
       cost: state.pendingPayOrSacrifice.amount ?? null,
       sourceId: state.pendingPayOrSacrifice.sourceId ?? null,
+      // M266/E: `colors` istniało w stanie i w zdarzeniu, ale nie docierało
+      // do komendy — przycisk nie miał z czego złożyć pipów (L100 pkt 4).
+      costColors: state.pendingPayOrSacrifice.colors ?? null,
     };
     legalCommands.push(command('resolve_pay_or_sacrifice', playerId, { pay: true, ...payOrSacInfo }));
     legalCommands.push(command('resolve_pay_or_sacrifice', playerId, { pay: false, ...payOrSacInfo }));
@@ -6099,7 +6251,13 @@ export function playerView(state, playerId) {
     // cardId/objectId (etykieta UI nazywa kartę).
     const madnessPending = state.pendingMadnessCast;
     const madnessObj = state.objects.get(madnessPending.objectId);
-    const madnessIds = { objectId: madnessPending.objectId, cardId: madnessPending.cardId };
+    // M266/E (L100 pkt 4): oferta niesie KOMPLET ceny (kwota + pipy kolorów),
+    // żeby etykieta mogła pokazać {B}{R} zamiast nieopłacalnego {2}.
+    const madnessIds = {
+      objectId: madnessPending.objectId, cardId: madnessPending.cardId,
+      cost: madnessObj?.madness?.cost ?? null,
+      costColors: madnessObj?.madness?.colors ?? null,
+    };
     legalCommands.push(command('resolve_madness_cast', playerId, { cast: false, ...madnessIds }));
     if (madnessObj && madnessObj.zone === 'exile' && madnessObj.madnessReady
       && canPayMadnessCost(state, playerId, madnessObj)) {

@@ -3129,3 +3129,410 @@ Downwind Ambushera (klasa M202/G) i TDZ przy premii za odkręcenie celu.
 **Wynik:** `npm test` **3661/3661** (+36 testów), build **55 modułów /
 2861.8 kB**, `npm run test:slow` (próbka B0) **9/9**. Złoty fixture bota
 zregenerowany, progi win-rate bez zmian.
+
+## M269 — Brązowa odznaka: 5 błędów reguł wykrytych polowaniem na niezgodności z CR (2026-08-31, PR #91 `arena/01a058db-mtg`)
+
+Pierwsza odznaka zdobyta metodą L11 (skan kodu silnika), a nie Żywym Testerem
+— po M267/M268 pięć z sześciu ostatnich lekcji dotyczyło warstwy prezentacji,
+więc szukaliśmy tam, gdzie tester z definicji nie widzi. Cztery z pięciu
+znalezisk pochodzą z techniki L11 #1 (niespójność między analogicznymi
+implementacjami tego samego mechanizmu).
+
+**Naprawione:**
+1. **CR 611.2c** — buff „do końca tury" znikał przy zmianie kontroli.
+   `untilEndOfTurnBonuses` filtrowała wpisy po BIEŻĄCYM kontrolerze, mimo
+   zamrożonego przy rozstrzygnięciu zbioru obiektów (M101/B2). Kradzież
+   buffowanego stwora kasowała +X/+X, a przy buffie ujemnym (Hysterical
+   Blindness) wręcz LECZYŁA osłabienie. → lekcja L106.
+2. **CR 701.27 + 205.1** — proliferate dokładał liczniki własną
+   re-inkarnacją obiektu zamiast helperem `addCounter`, omijając
+   `syncStationKind`: Spacecraft dobity proliferatem do progu station
+   zostawał zwykłym artefaktem (nie mógł atakować ani blokować).
+3. **CR 701.21a** — „gains control of this artifact and untaps it"
+   (Contested Game Ball) emitowało `object_untapped` tylko w gałęzi „ten sam
+   kontroler". W ścieżce typowej odkręcenie było ciche (klasa lekcji L24).
+4. **CR 701.27a** — proliferate trucizny nabijał `player.poison += 1`
+   z pominięciem `addPoisonCounters`: brak `poison_counters_added`, więc log
+   stołu pisał „? dostaje +1 licznik poison" (klasa L29), a heurystyczny bot
+   nie widział postępu do wygranej przez truciznę.
+5. **CR 701.17a + 122.1e** — cztery ścieżki poświęcenia (koszt dodatkowy,
+   exploit, devour, wybór ofiary / Food) szły na sztywno do cmentarza zamiast
+   pytać `deathZoneFor`: stwór z licznikiem finality dawał się reanimować
+   drugi raz.
+
+Każda naprawa u root cause (ADR 0002), każda ze strażnikiem KLASOWYM
+(mechanizm / równoważność ścieżek, nie nazwa karty) i weryfikacją mutacyjną
+(L13). Testy: `test/m269-buff-zmiana-kontroli.test.js` (4),
+`m269-proliferate-station` (4), `m269-untap-zdarzenie` (3),
+`m269-proliferate-trucizna` (3), `m269-poswiecenie-strefa-smierci` (5).
+
+**Wynik:** `npm test` **3970/3970** (+14), `npm run test:all` **3985/3985**,
+build **56 modułów / 3006.5 kB**.
+
+## M270 — Odznaka SREBRNA: 5 kolejnych unikalnych błędów CR (2026-09-01)
+
+Kontynuacja M269 (brąz) tą samą metodą, ale wyłącznie techniką **L107**
+(rodziny ścieżek duplikujących wspólny helper). Piąty błąd zamknął klasę,
+którą trzeci otworzył — to najlepszy dowód, że L107 działa jako *metoda*,
+a nie seria szczęśliwych trafień.
+
+**Naprawione:**
+6. **CR 400.7** — `enteredOnTurn` nie było ustawiane przy powrocie z wygnania
+   z transformacją i przy craft: obiekt wracał na pole bitwy jako „nowy",
+   ale bez znacznika tury wejścia (trzy emitery pola, dwa niekompletne).
+7. **CR 122.1e** — `destroy_equipment_attached` szło na sztywno do cmentarza
+   zamiast pytać `deathZoneFor`: ta sama luka finality co w błędzie #5,
+   tyle że na ścieżce niszczenia Equipmentu (L107 #2 — porównanie ładunków
+   dwóch emiterów jednego zdarzenia).
+8. **CR 122.1b** — licznik tarczy zdejmowany ręcznie w dwóch miejscach
+   zamiast helperem: brak `counter_removed`, więc log stołu i konsumenci
+   zdarzenia widzieli tylko część zdjęć tarczy.
+9. **CR 508.1c — DEADLOCK.** Goadowany stwór z „can't attack alone", będący
+   jedynym zdolnym do ataku: pusta deklaracja łamała wymóg ataku, a
+   deklaracja z nim łamała zakaz samotnego ataku — gracz nie miał **ani
+   jednej legalnej komendy**. Wymóg „attacks each combat IF ABLE" nie
+   dotyczy stwora, który legalnie zaatakować nie może. Naprawa w OBU
+   połowach: walidacja (`declareAttackers`) i oferta
+   (`legalAttackerOptions`) — klasyczne L48.
+10. **CR 122.1b + 704.5g** — TRZECIA kopia zdejmowania tarczy, pominięta
+    przy #8: state-based actions przy śmierci z obrażeń, czyli **najczęstsza
+    ścieżka w realnej grze**. Domknięcie klasy enumeracyjnie.
+
+Każda naprawa u root cause (ADR 0002), każda ze strażnikiem KLASOWYM
+i weryfikacją mutacyjną per ścieżka (L13). Nowe/rozszerzone testy:
+`m270-powrot-na-pole-entered` (4), `m270-zniszczenie-equipment-finality` (4),
+`m270-licznik-tarczy-rownowaznosc` (6), `m270-wymog-ataku-if-able` (4).
+
+**Wynik:** `npm test` **3990/3990**, `npm run test:all` **4003/4003**,
+build **56 modułów / 3010.8 kB**. Nowa lekcja: **L108**.
+
+## M271 — Odznaka ZŁOTA: 5 kolejnych unikalnych błędów CR (2026-09-01)
+
+Trzecia odznaka tej sesji (po brązie M269 i srebrze M270), ta sama metoda
+**L107**. Cechą wspólną całej piątki jest jeden wzorzec: reguła CR zapisana
+RÓWNOLEGLE w kilku miejscach zamiast we wspólnym helperze — i część kopii,
+która o niej zapomina.
+
+**Naprawione:**
+11. **CR 400.3 + 110.2a** — aura bez legalnego gospodarza (CR 704.5m)
+    opuszczała pole bitwy ręczną kopią kodu przenoszenia, więc ukradziona
+    aura lądowała w grobie ZŁODZIEJA zamiast właściciela.
+12. **CR 122.1e** — ta sama kopia ignorowała `deathZoneFor`: aura z licznikiem
+    finality szła do grobu zamiast na wygnanie i dawała się odzyskać.
+13. **CR 608.2b** — czar MODALNY, który stracił jedyny cel, rozstrzygał się
+    mimo wszystko i wykonywał efekty NIECELOWANE (bliźniacza ścieżka
+    zdolności miała ten test od M90).
+14. **CR 118.9** — dwie ścieżki modalne gubiły `exileInsteadOfGraveyard`
+    (Halo Forager): czar rzucony z grobu wracał do grobu i dawał się rzucić
+    ponownie.
+15. **CR 701.5a + 118.9** — to samo przy KONTRZE: pięć kopii kodu
+    kontrującego szło na sztywno do grobu. Domknięcie klasy otwartej przez #14.
+16. **Bonus** — odczepianie KILKU aur od jednego gospodarza sprawdzało
+    inwarianty na stanie pośrednim i wywracało partię wyjątkiem. Znaleziony
+    jako regresja naprawy #11/#12 przez benchmark botów, ale błąd samoistny.
+
+**Dług architektoniczny spłacony przy okazji:** reguła „gdzie ląduje czar po
+zejściu ze stosu" istniała w OŚMIU kopiach (`spells.js` + `effects.js` +
+`game-state.js`) — teraz jest jedna funkcja `spellExitZone` w `zones.js`.
+Podobnie `deathZoneFor` zeszło do `zones.js`, a nowy `mover.js` udostępnia
+choke point zmian stref warstwom leżącym niżej w grafie importów, bez cyklu.
+
+Każda naprawa u root cause (ADR 0002), każda ze strażnikiem KLASOWYM
+i weryfikacją mutacyjną per ścieżka (L13). Nowe testy:
+`m271-aura-bez-gospodarza-strefa` (7), `m271-czar-modalny-fizzle` (5),
+`m271-strefa-zejscia-czaru` (4), `m271-kontra-strefa-zejscia` (5).
+
+**Wynik:** `npm test` 4011/4011, `npm run test:all` **4022/4022**,
+build **57 modułów / 3016.3 kB**. Nowe lekcje: **L109**, **L110**.
+
+## M272 — Odznaka DIAMENTOWA: 5 kolejnych unikalnych błędów CR (2026-09-01)
+
+Piąta z rzędu seria po pięć błędów reguł, tą samą metodą L11 (repro przed
+naprawą → root cause → strażnik klasowy → weryfikacja mutacyjna per ścieżka).
+
+17. **CR 704.5s + 122.1e** — Saga poświęcana przez akcję stanową szła na
+    sztywno na cmentarz, z pominięciem `deathZoneFor`: Saga z licznikiem
+    finality dawała się odzyskać, choć powinna zostać wygnana.
+18. **CR 122.1d + 614.6** — liczniki stun tworzą efekt zastępujący działający
+    przy odkręceniu z DOWOLNEGO powodu. Znał go tylko helper `untapObject`;
+    PIĘĆ ścieżek efektów mutowało `tapped: false` ręcznie, omijając zarówno
+    stun, jak i blokadę odkręcania (`untapLockedBy`). Stwór ze stunem wstawał
+    z Twiddle za darmo, zachowując licznik. Nowy wspólny `untapByEffect`.
+19. **CR 701.7a + 702.12** — „destroy" to jedna procedura z warstwą efektów
+    zastępujących (indestructible → shield → regeneracja → strefa śmierci).
+    Znała ją tylko ścieżka `destroy_permanent`; bliźniacza
+    `destroy_equipment_attached` miała uboższą kopię i niszczyła chroniony
+    Equipment. Nowy wspólny `destroyPermanentByEffect`.
+20. **CR 122.1b** — PIĘĆ emiterów `permanent_sacrificed` przenosiło permanent
+    przez `deathZoneFor`, ale strefy nie przekazywało w ZDARZENIU. Triggery
+    śmierci filtrują po `ev.toZone === 'exile'`, więc zdolności „dies"
+    odpalały mimo wygnania przez finality. Piątego emitera (Springbloom Druid)
+    znalazł dopiero strażnik skanujący źródła — audyt ręczny go przeoczył.
+21. **CR 704.5m + 104.4b** — znacznik przegranej z pustej biblioteki stawiały
+    tylko dwie z czterech ścieżek dobierania. Wycyklowanie ostatniej karty nie
+    kończyło partii.
+
+**Fałszywy alarm wycofany w całości:** „zmiana kontroli nie usuwa z walki"
+(CR 506.4) okazała się artefaktem sondy wołającej `applyEffect` bez przebiegu
+akcji stanowych — regułę egzekwuje `state-based.js` od M201. Naprawa, import
+i strażnik cofnięte; wniosek zapisany jako **L111**.
+
+**Wzorzec L107 („helper istnieje, ścieżka go omija") dał w tej serii błędy
+#18, #19 i #20** — łącznie ósma, dziewiąta i dziesiąta ofiara. Najskuteczniejszym
+narzędziem okazał się strażnik SKANUJĄCY ŹRÓDŁA: sprawdza kontrakt u każdego
+emitera zdarzenia, także przyszłego, i dwukrotnie znalazł ścieżkę, której nie
+wychwycił audyt ręczny.
+
+Nowe testy: `m272-saga-poswiecenie-strefa` (5),
+`m272-stun-przy-odkrecaniu-efektem` (7), `m272-destroy-equipment-ochrona` (4),
+`m272-poswiecenie-strefa-w-zdarzeniu` (3),
+`m272-cyklowanie-pusta-biblioteka` (4).
+
+**Wynik:** `npm test` **4037/4037**, `node --test test/bot-benchmark.test.js`
+**10/10**, build **57 modułów / 3021,2 kB**. Nowa lekcja: **L111**.
+
+## M273 (2026-09-01) — Odznaka PLATYNOWA: analizator statyczny tępiący klasę L107
+
+Cztery poprzednie odznaki (M269 brąz, M270 srebro, M271 złoto, M272 diament)
+naprawiły 25 błędów reguł tą samą metodą ręczną. **10 z nich należało do
+jednego wzorca L107** — ścieżka omija choke point albo gubi pole zdarzenia
+oczekiwane przez konsumenta. Platyny (ADR 0027) nie zdobywa się liczbą
+błędów, tylko NARZĘDZIEM zamykającym drogę ich powstawania.
+
+**`tools/event-contract-audit.mjs`** — analizator statyczny wpięty w
+`npm test` (`test/m273-kontrakty-zdarzen.test.js`, 5 testów), trzy wymiary:
+
+1. **Rozjazd ładunków zdarzeń** — pole niesione przez ≥60% i <100% emiterów
+   danego typu: konsument (log stołu, triggery, bot) dostanie `undefined`.
+2. **Cechy wejścia na pole bitwy** — ile ścieżek ETB zna daną cechę.
+3. **Ręczne mutacje `state.zones`** — ominięcie choke pointu gubi jego reguły.
+
+**Lista wyjątków jest jawna i uzasadniona** (37 pozycji, ADR 0027 pkt 3):
+niestandardowy ładunek bywa świadomym kontraktem (wygnanie zakryte nie niesie
+`cardId` — mgła wojny; cel-gracz nie ma `cardId`). Osobny test pilnuje, że
+każdy wyjątek ma realny POWÓD — wyłapał moje własne leniwe „Jak wyżej".
+
+### Pięć błędów wskazanych PRZEZ NARZĘDZIE
+
+22. **Log kłamał (klasa L29)** — `card_revealed` z rozstrzygnięcia wyboru
+    odsłaniania niosło `fromId` i `object`, ale nie `cardId`, którego woła
+    `nameOf(e.cardId)`. Gracz czytał „odsłania ?".
+23. **CR 202.2** — PIĘĆ ścieżek alternatywnego rzucania (z grobu, suspend,
+    rebound, discover-czar, discover-permanent) nie niosło pola `colors`.
+    `triggers.js` czyta `eventData.colors` dla „whenever a player casts
+    a WHITE spell" (Angel's Feather) i „casts a COLORLESS spell": czar rzucony
+    taką ścieżką udawał BEZBARWNY — trigger na kolor milczał, a trigger na
+    bezbarwność odpaliłby fałszywie.
+24. **CR 121.6 + 614.1c** — liczniki WEJŚCIA znała 1 z 18 ścieżek
+    wprowadzających permanent. Reanimowany Servant of the Scale wracał jako
+    0/0 i ginął natychmiast (CR 704.5f), Trigon of Corruption tracił trzy
+    liczniki charge, Kappa Tech-Wrecker deathtouch. Wspólny helper
+    `applyEnterCounters` w dziesięciu ścieżkach; permanent zakryty liczników
+    nie dostaje (CR 708.2).
+25. **CR 506.4** — token skasowany BEZPOŚREDNIO z pola bitwy zostawiał wiszące
+    id w `state.combat` (atakujący/bloker bez obiektu w `state.objects`). Dwie
+    ścieżki omijały choke point, więc nie wołały `removeFromCombat`. Ten sam
+    rodzaj niespójności wywrócił partię w M271 (#16), tyle że dla załączników.
+
+Błędy #22 i #23 znalazł wymiar 1, #24 wymiar 2, #25 wymiar 3.
+
+**Skan źródeł znów bił audyt wzrokowy:** przy #24 i #25 strażnik sam wskazał
+ścieżki, których pierwsza naprawa nie objęła (odpowiednio 3 i 1).
+
+**Analizator też jest produktem (L12):** prototyp gubił pola stojące po
+komentarzu i produkował fałszywe braki (`permanent_sacrificed.fromId`,
+`spell_cast.manaSpent`). Poprawka plus dwa testy regresyjne na parser.
+Fałszywe alarmy strażników poprawiane w TESTACH, nie w działającym kodzie.
+
+**Odsiew:** z 36 kandydatów wymiaru 1 realnymi błędami były 2 — reszta to
+świadome kontrakty (zweryfikowane wobec konsumenta gałąź po gałęzi).
+Sprawdzone i odrzucone: `exile_all` bez ochrony (indestructible nie chroni
+przed wygnaniem), mielenie z pustej biblioteki (CR 701.13b nie jest
+przegraną), rodzina `destroy` (w pełni skonsolidowana po #19), `entersTapped`
+przy reanimacji (dotyczy wyłącznie lądów, które tymi ścieżkami nie chodzą),
+`dealDamageToPlayer` bez prewencji (martwy kod, używany tylko przez testy).
+
+Nowe testy: `m273-kontrakty-zdarzen` (5),
+`m273-liczniki-wejscia-reanimacja` (5), `m273-kasowanie-tokena-a-walka` (4).
+
+**Wynik:** `npm test` **4051/4051**, `node --test test/bot-benchmark.test.js`
+**10/10**, build **57 modułów / 3027,4 kB**. Nowa lekcja: **L112**.
+Nowy ADR: **0027**.
+
+## M274 (2026-09-01) — Kontynuacja platyny wg handoffu: analizator znajduje dalej
+
+Etap prowadzony wprost z trzech kierunków wskazanych w handoffie M273. Wszystkie
+trzy dały wynik — dowód, że analizator z ADR 0027 nie był jednorazowy.
+
+### Kierunek 1: bliźniacze implementacje (rodziny `exile` 13 / `return` 11)
+
+Porównanie zbioru helperów wołanych przez każdy wariant efektu wskazało trzy
+kolejne ścieżki ETB bez liczników wejścia: Pyxis of Pandemonium (`effects.js`),
+opóźniony powrót Plague Reavera (`triggers.js`) i Dragon Arch (`game-state.js`).
+
+**Ważniejsze od samych ścieżek: znalazły się tam, bo STRAŻNIK z M273 miał dwie
+dziury i przepuścił je cicho.**
+1. Skanował wyłącznie `effects.js`, a ścieżki ETB są też w `triggers.js`
+   i `game-state.js`.
+2. Filtr wykluczał okno zawierające `faceDown` (miał pomijać morph), ale Pyxis
+   ustawia `faceDown: false`, czyli ODKRYWA kartę — wyciszenie złapało ścieżkę,
+   której miało pilnować.
+
+Naprawiony skan (3 pliki, filtr po INTENCJI: `faceDown: true`, nie po samym
+ciągu znaków) sam wskazał trzecią ścieżkę — Dragon Arch, której nie było
+w moim ręcznym przeglądzie rodzin.
+
+### Kierunek 3: cechy wejścia inne niż liczniki
+
+26. **CR 702.54a** — bloodthirst działał wyłącznie przy rzucie. Słowo kluczowe
+    WYDRUKOWANE na karcie jest efektem zastępującym wejście, więc obowiązuje
+    także przy reanimacji: Gorehorn Minotaurs wracał bez dwóch liczników +1/+1.
+    Weryfikacja wobec CR przed naprawą (L57): ruling Bloodghasta rozróżnia
+    bloodthirst wydrukowany (każde wejście) od NADANEGO czarom przez inny
+    permanent (wymaga rzutu) — silnik zna tylko ten pierwszy.
+
+    **Konsolidacja przy okazji:** `spells.js` miał własną kopię logiki cech
+    wejścia (liczniki, warunkowe morbid/adamant, bloodthirst), a rodzina
+    reanimacji nie miała żadnej — wzorzec L107 w czystej postaci.
+    `applyEnterCounters` obejmuje teraz KOMPLET cech i jest jedynym źródłem dla
+    wszystkich ścieżek; z `spells.js` usunięte 1453 znaki duplikatu.
+
+### Kierunek 2: kontrakt widoku gracza
+
+27. **ADR 0017 + CR 400.2** — widok GROBU nie niósł `kind`, `types`, `power`,
+    `toughness` ani `manaCost`, a `heuristic-bot.js` filtruje zawartość grobu
+    dokładnie po tych polach (`o.kind === 'creature'`, `types.includes(
+    'Artifact')`, `o.power` przy wycenie reanimacji). Wszystkie dostawały
+    `undefined`: **stwór 3/3 w cudzym grobie wyceniał się na ZERO**, więc
+    reanimacja i odpowiedź na nią były dla bota niewidoczne. Wygnanie (strefa
+    też jawna, CR 406.3) `kind`/`types` już wysyłało — grób został w tyle.
+    Klasa L102 pkt 2.
+
+**Sprawdzone i odrzucone:** bounce tokena do ręki (SBA sprząta poprawnie,
+CR 111.7), indestructible w rodzinie `exile` (nie chroni przed wygnaniem),
+`entersWithCountersIf`/`renown` (brak kart w katalogu), `entersTapped` przy
+reanimacji (dotyczy tylko lądów), `sourceId` w widoku stosu (**fałszywy alarm
+mojej sondy** — pole jest wysyłane warunkowo dla zdolności aktywowanych,
+naprawione już w M175/A2), widok wygnania (kompletny).
+
+Nowe testy: `m274-widok-grobu-kontrakt` (4, w tym skan źródeł wyciągający
+z bota listę pól żądanych od grobu) oraz 4 testy dołożone do
+`m273-liczniki-wejscia-reanimacja` (Pyxis, Dragon Arch, bloodthirst
++ kontrola negatywna).
+
+**Wynik:** `npm test` **4059/4059**, `node --test test/bot-benchmark.test.js`
+**10/10**, build **57 modułów / 3029,6 kB**.
+
+## M275–M276 (2026-09-01) — Porządkowanie wiedzy + rodzina `damage`
+
+### M275: strukturalne łączenie lekcji i ADR-ów (decyzja właściciela)
+
+Właściciel odrzucił pomysł archiwizowania wpisów „bo stare": **starsze lekcje
+nie są mniej ważne — bywają cenniejsze, bo ich klasa zdążyła wrócić kilka razy.**
+Kierunek: łączyć to, co opisuje JEDNĄ klasę, a do archiwum przenosić wyłącznie
+decyzje NIEAKTUALNE.
+
+**Archiwum ADR** (`docs/decisions/archive/`): ADR 0008 („bez kroku budowania")
+miał status *Zastąpiona* od czasu ADR 0011, ale leżał w lekturze obowiązkowej —
+i, co ważniejsze, ADR 0011 tylko ODSYŁAŁ do jego sekcji „Czego świadomie nie
+dostajemy". Żywe zasady (język i moduły ESM, `node:test`, JSDoc, struktura
+katalogów, cała tabela kompromisów) przeniesione do ADR 0011; w archiwum zostało
+wyłącznie historyczne uzasadnienie decyzji, która już nie obowiązuje.
+
+**Wpisy zbiorcze w LESSONS.md** — pięć klas miało po kilka wpisów:
+
+| Klasa | Wpis główny | Kotwice |
+|---|---|---|
+| Jawna lista pól gubi dane po cichu (fabryka → generator → transport → widok) | L21 | L93, L94, L101 |
+| Weryfikacja mutacyjna: jedyny dowód działania | L13 | L61, L70 |
+| Strażnik mierzy regułę, nie tekst źródła | L5 | L26, L31, L44, L83 |
+| Zero zgłoszeń detektorów to pomiar narzędzia | L27 | L40, L73, L75 |
+| Oferta i walidacja: jeden filtr, porządek, rejestr | L48 | L90 |
+
+Wpis główny niesie tabelę wariantów i wspólną regułę; kotwica zachowuje opis
+WŁASNEGO przypadku (karta, test, plik, numer CR) plus odsyłacz. **Żaden numer nie
+znika** — są cytowane w kodzie ~1150 razy.
+
+Sześć nowych strażników (`test/docs-decisions.test.js`) pilnuje archiwum
+(tylko statusy zastąpiona/wycofana/odrzucona, nota z datą, link do następcy, wpis
+w README, zakaz cytowania z AGENTS.md) oraz integralności kotwic (każda prowadzi
+do wpisu głównego i zachowuje min. 300 znaków własnego konkretu).
+
+**Znalezione przez nowe strażniki:** AGENTS.md powoływał się na zarchiwizowany
+ADR 0008 jako źródło zasady „zero zależności"; lekcje L108–L113 (moje wpisy
+z tej i poprzedniej sesji) łamały obowiązkowy format nagłówka z datą; cztery
+kotwice rodziny L107 nie odsyłały do klasy nadrzędnej.
+
+Zapas budżetu lektury: **714 tokenów** (po M274 było ~0).
+
+### M276: rodzina `damage` — ostatnia niezbadana rodzina bliźniacza
+
+28. **CR 702.15 + 702.90b** — `damage_to_controller` (Forge Devil: „deals
+    1 damage to target creature and 1 damage to you") odtwarzało kontrakt
+    obrażeń WŁASNYM kodem (prewencja tarcz + `changeLife`), zamiast wołać choke
+    point `dealNonCombatDamage`. Gubiło przez to **lifelink** (Forge Devil
+    z licznikiem lifelink — CR 122.1b — nie dawał życia za obrażenia zadane
+    własnemu kontrolerowi, choć te same obrażenia zadane przeciwnikowi życie
+    dawały), **infect** (obrażenia w gracza mają dawać liczniki trucizny) oraz
+    filtr „prevent all damage this turn". Ta sama karta, dwie ścieżki, dwa
+    wyniki — klasa L107.
+
+Analizator rodzin pokazał, że 9 z 14 wariantów `damage` deleguje do choke
+pointu; z pięciu pozostałych cztery obrażeń w ogóle nie zadają (prewencja,
+reveal + trigger) — realny błąd był jeden.
+
+Nowe testy: `m276-obrazenia-choke-point` (6, w tym test RÓWNOWAŻNOŚCI obu
+ścieżek dla tego samego źródła i skan źródeł wymuszający choke point).
+
+**Wynik:** `npm test` **4071/4071**, `node --test test/bot-benchmark.test.js`
+**10/10**, build **57 modułów / 3029,5 kB**.
+
+## M277 (2026-09-01) — Domknięcie kierunków z handoffu: kontrakt renderu i statusy ADR
+
+Etap zamykający listę kierunków otwartych po M276. Dwa wyniki: jedna poprawka
+dokumentu, który kłamał o stanie faktycznym, i jeden strażnik utrwalający
+przegląd, który nie znalazł błędu.
+
+### ADR 0015 miał status „Proponowana", choć jest wdrożony od M41
+
+Uzupełnienie konsolidacji z M275 — tam przeglądałem ADR-y pod kątem decyzji
+NIEAKTUALNYCH, tu pod kątem zgodności statusu ze stanem kodu. „Kolorowa pula
+many" nosiła status propozycji, podczas gdy `player.manaPool`,
+`canPayColoredCost` i `spendMana` żyją w `src/engine/resources.js` od M41.
+Po poprawce **wszystkie 27 aktywnych ADR-ów ma status Zaakceptowana**, a
+dokumenty Zastąpiona/Wycofana mieszkają w `docs/decisions/archive/`.
+
+### Kontrakt widok ↔ render (kierunek 3): luki nie ma, jest strażnik
+
+M274 (#27) domknął kontrakt widok ↔ bot dla grobu. Druga strona: `cardInfo`
+w `render.js` czyta 43 pola z wpisu widoku, a `playerView` część dokłada
+warunkowo. Przegląd wykazał komplet — pola warunkowe pojawiają się, gdy cecha
+istnieje na obiekcie. Zamiast raportu „sprawdzone, czysto" został
+`test/m277-widok-render-kontrakt.test.js` (3 testy: implikacja „permanent ma
+cechę ⇒ widok ją niesie", skan źródeł `cardInfo` vs `playerView`, kontrola
+negatywna na mgłę wojny).
+
+**Metodycznie ważne:** pierwsza wersja skanu parsowała źródło `playerView`
+regexem i dawała fałszywe braki dla pól wchodzących spreadem (`counters`,
+`damage`, `toughness`). Zbiór „pól wysyłanych" buduję teraz z PRAWDZIWYCH
+wpisów widoku — narzędzie ma mierzyć zachowanie, nie tekst (L5).
+
+### Kierunki 1–2: przeczesane, czysto
+
+Rodziny `counter` (9), `tap` (10), `untap` (6), `sacrifice` (6), `mill` (3) —
+bez znalezisk. Odkręcanie w całości przechodzi przez `untapByEffect` po M272
+(także `attacker_gains_control_and_untaps`, którego mój pierwszy grep nie
+pokazał — wywołanie leży 27 linii od nagłówka, poza oknem skanu). Wszystkie
+13 emiterów `permanent_sacrificed` niesie `toZone`, więc klasa #20 się trzyma.
+Żadna ścieżka nie wyprowadza permanentu z pola bitwy ręczną mutacją
+`state.zones`, a każde ręczne przejście do strefy ukrytej ma korektę
+`ownerId` (CR 400.3).
+
+Odnotowane, nie naprawiane: `tapObject` nie ma odpowiednika `untapByEffect`
+dla CUDZYCH permanentów (rzuca wyjątkiem przy obcym kontrolerze), więc efekty
+tapujące cele przeciwnika mutują pole wprost. Każda z tych ścieżek emituje
+`object_tapped`, a tapowanie — w odróżnieniu od odkręcania (stun, CR 122.1d) —
+nie ma dziś w katalogu efektu zastępującego. To dług do spłaty, gdy pojawi się
+pierwsza karta z takim efektem, nie błąd.
+
+**Wynik:** `npm test` **4074/4074**, build **57 modułów / 3029,5 kB**.

@@ -247,7 +247,7 @@ Te reguły obowiązują każdego agenta bez wyjątku (szczegóły: `docs/WORKFLO
   (Etap B6). Osobny typ zadania: podczas gdy Żywy Tester szuka BŁĘDÓW
   poprawności, Strojenie Bota szuka lepszych WYCEN zagrań (bot ma grać mądrzej).
   Parametry deskryptorowe (ADR 0002), determinizm (ADR 0005), zero zależności ML
-  (ADR 0008). Golden-master `test/bot-scoring-snapshot.test.js` pilnuje, że
+  (ADR 0011: czysty JS, brak `node_modules` w środowisku uruchomieniowym). Golden-master `test/bot-scoring-snapshot.test.js` pilnuje, że
   refaktor przy domyślnych parametrach nie zmienia zachowania bota bit w bit;
   przyjęcie nowych wartości WYMAGA pełnego benchmarku (jak B4).
 

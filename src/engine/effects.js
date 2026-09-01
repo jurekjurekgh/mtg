@@ -1,10 +1,11 @@
 import { event } from '../protocol/types.js';
-import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
+import { spellExitZone } from './zones.js';
+import { untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { spendMana, addMana, producibleMana } from './resources.js';
 import { getSourceForObject } from './mana-sources.js';
-import { moveObjectDirectly, singleTargetOfStackEntry } from './objects.js';
+import { moveObjectDirectly, removeFromCombat, singleTargetOfStackEntry } from './objects.js';
 import { tryRegenerate } from './state-based.js';
 import { createBattlefieldToken, nextCopyNumber } from './tokens.js';
 
@@ -124,6 +125,9 @@ function thronePutChosenCreature(state, pending, targetId) {
     hexproofUntilTurn: state.turn.number + 2,
   });
   state.objects.set(newId, permanent);
+  // M273 (błąd #24): liczniki WEJŚCIA karty (CR 121.6) są niezależne od
+  // liczników nadawanych przez sam efekt — obie porcje się sumują.
+  applyEnterCounters(state, newId);
   state.events.push(event('object_moved', { fromId: targetId, object: permanent, fromZone: 'library', toZone: 'battlefield' }));
   state.events.push(event('permanent_entered_battlefield', {
     fromId: targetId, objectId: newId, object: permanent, cardId: permanent.cardId,
@@ -812,13 +816,119 @@ export function counterStackObject(state, stackId, { counteredBy = null, counter
     }));
     return object;
   }
-  const graveId = `grave-${state.objectSequence++}`;
-  const moved = moveObjectDirectly(state, stackId, 'graveyard', graveId);
+  // M271 (błąd #15, CR 701.5a + 118.9): skontrowany czar idzie do grobu
+  // WŁAŚCICIELA, ale zastąpienie „if it would be put into a graveyard, exile
+  // it instead" (Halo Forager) obowiązuje także tutaj — strefę wyznacza
+  // WSPÓLNY `spellExitZone`, ten sam co przy rozstrzygnięciu i fizzlu.
+  const zoneAfterCounter = spellExitZone(object);
+  const graveId = `${zoneAfterCounter}-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, stackId, zoneAfterCounter, graveId);
   state.events.push(event('spell_countered', {
     fromId: stackId, toId: graveId, cardId: moved.cardId,
     controllerId: moved.controllerId, counteredBy, counteredByCardId, byWard,
   }));
   return moved;
+}
+
+/**
+ * Kanoniczne „destroy" jednego permanentu (CR 701.7a) wraz z całą warstwą
+ * efektów zastępujących i chroniących, w kolejności wymaganej przez reguły:
+ *  1. indestructible (CR 702.12) — zniszczenie po prostu się nie dzieje;
+ *  2. licznik shield (CR 122.1) — pochłania zniszczenie i znika;
+ *  3. regeneracja (CR 701.15) — zastępuje zniszczenie;
+ *  4. strefa śmierci przez `deathZoneFor` (licznik finality / naznaczenie
+ *     wygnaniem, CR 122.1e) — a nie sztywno cmentarz.
+ *
+ * M272 (błąd #19): tę sekwencję znała TYLKO ścieżka `destroy_permanent`.
+ * `destroy_equipment_attached` (Awaken the Sleeper) miała własną, uboższą
+ * kopię — sprawdzała jedynie strefę śmierci, więc niezniszczalny lub
+ * regenerujący się Equipment i tak trafiał do grobu. Ósma ofiara wzorca L107.
+ *
+ * Zwraca true, gdy permanent FAKTYCZNIE został zniszczony.
+ */
+export function destroyPermanentByEffect(state, objectId, options = {}) {
+  const object = state.objects.get(objectId);
+  if (!object || object.zone !== 'battlefield') return false;
+  if (effectiveKeywords(object, state).includes('indestructible')) return false;
+  if ((object.counters?.shield ?? 0) > 0) {
+    const next = { ...(object.counters ?? {}) };
+    next.shield -= 1;
+    if (next.shield <= 0) delete next.shield;
+    state.objects.set(objectId, Object.freeze({ ...object, counters: Object.freeze(next) }));
+    state.events.push(event('shield_consumed', {
+      objectId, cardId: object.cardId, reason: options.reason ?? 'destroy',
+    }));
+    return false;
+  }
+  if (tryRegenerate(state, object)) return false;
+  const toZone = deathZoneFor(state, object);
+  const destId = `${toZone}-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, objectId, toZone, destId);
+  state.events.push(event('permanent_destroyed', {
+    // `toZone` jest CZĘŚCIĄ faktu, nie ozdobą: triggery śmierci sprawdzają,
+    // czy permanent poszedł do wygnania — wtedy „dies" się nie wydarzyło.
+    fromId: objectId, objectId: destId, playerId: object.controllerId,
+    cardId: moved.cardId, controllerId: object.controllerId, toZone,
+  }));
+  return true;
+}
+
+/**
+ * Liczniki WEJŚCIA na pole bitwy (CR 121.6 + 614.1c) — „enters with a +1/+1
+ * counter on it" to efekt zastępujący samo wejście, więc obowiązuje przy
+ * KAŻDYM wejściu: rzucie czaru, reanimacji z cmentarza, wprowadzeniu efektem.
+ *
+ * M273 (błąd #24): cechę obsługiwała wyłącznie ścieżka rozstrzygnięcia czaru
+ * permanentu (`resolvePermanentSpell` w spells.js) oraz ninjutsu. Rodzina
+ * reanimacji wprowadzała permanent gołym `moveObjectDirectly`, więc Servant
+ * of the Scale wracał na pole jako 0/0 i ginął natychmiast od akcji stanowej
+ * (CR 704.5f), Trigon of Corruption bez trzech liczników charge był
+ * bezużyteczny, a Kappa Tech-Wrecker tracił deathtouch.
+ *
+ * Wywoływać PO wejściu obiektu na pole bitwy, przed zdarzeniem wejścia.
+ * Karta zakryta (morph/manifest) liczników wejścia NIE dostaje — jest wtedy
+ * bezimiennym 2/2 bez zdolności (CR 708.2).
+ *
+ * M274 (błąd #26): helper obejmuje też BLOODTHIRST (CR 702.54a). To słowo
+ * kluczowe WYDRUKOWANE na karcie jest efektem zastępującym wejście, więc
+ * działa przy każdym wejściu — także gdy permanent trafia na pole bitwy bez
+ * rzucania (reanimacja). Rozróżnienie z rulingu Bloodghasta: bloodthirst
+ * NADANY czarom przez inny permanent (Bloodlord of Vaasgoth) wymaga rzutu,
+ * bo dotyczy CZARU — ale takiego efektu silnik nie zna, a `object.bloodthirst`
+ * pochodzi wyłącznie z definicji karty.
+ */
+export function applyEnterCounters(state, objectId) {
+  const object = state.objects.get(objectId);
+  if (!object || object.zone !== 'battlefield' || object.faceDown) return;
+  for (const [name, amount] of Object.entries(object.entersWithCounters ?? {})) {
+    addCounter(state, objectId, name, amount);
+  }
+  // Liczniki wejścia WARUNKOWE (CR 614.1c): „enters with two +1/+1 counters
+  // if a creature died this turn" (morbid) / „if at least three <color> mana
+  // was spent to cast this spell" (adamant). Deskryptor generyczny, bez nazw
+  // kart (ADR 0002). Adamant z natury dotyczy tylko rzutu — na ścieżce bez
+  // rzucania `manaColorsSpent` jest puste, więc warunek po prostu nie zachodzi.
+  const rule = object.entersWithCountersIf;
+  if (rule) {
+    let holds = rule.morbid ? Boolean(state.creatureDiedThisTurn) : false;
+    if (!holds && rule.adamant) {
+      // Wpis jednoznaczny (1 znak) liczy się, gdy jest tym kolorem; wildcard
+      // (>1 znaku — jednostka wielokolorowa, CR 106.7) gdy zawiera kolor.
+      const spent = object.manaColorsSpent ?? [];
+      holds = spent.filter((color) => color === rule.adamant.color
+        || (color.length > 1 && color.includes(rule.adamant.color))).length >= (rule.adamant.min ?? 3);
+    }
+    if (holds) {
+      for (const [name, amount] of Object.entries(rule.counters ?? {})) {
+        addCounter(state, objectId, name, amount);
+      }
+    }
+  }
+  // Bloodthirst N: „If an opponent was dealt damage this turn, this creature
+  // enters with N +1/+1 counters on it" — warunek sprawdzany przy WEJŚCIU.
+  if (object.bloodthirst && state.dealtDamageToOpponentThisTurn?.[object.controllerId]) {
+    addCounter(state, objectId, '+1/+1', object.bloodthirst);
+  }
 }
 
 export function applyEffect(state, effect, sourceObject, targets = [], context = {}) {
@@ -1050,7 +1160,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
     const controllerId = sourceObject.controllerId;
     const ownerId = object.ownerId ?? object.controllerId;
-    const untapped = object.tapped ? Object.freeze({ ...object, tapped: false }) : object;
+    // M272 (błąd #18): „untap it" z Awaken the Sleeper też podlega
+    // zastąpieniu przez licznik stun (CR 122.1d) i blokadzie odkręcania —
+    // odkręcenie wykonuje wspólny helper, a nie ręczna mutacja pola.
+    // Helper emituje `object_untapped` sam (patrz niżej: warunek na zdarzenie
+    // został usunięty), więc kolejność jest: najpierw odkręć, potem przejmij.
+    const faktycznieOdkrecony = untapByEffect(state, targetId, controllerId);
+    const untapped = state.objects.get(targetId) ?? object;
     const updated = Object.freeze({
       ...untapped,
       controllerId,
@@ -1065,7 +1181,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       controllerId, fromControllerId: object.controllerId, untilEndOfTurn: true,
     }));
     state.events.push(event('keyword_granted', { objectId: targetId, cardId: updated.cardId, keywords: ['haste'] }));
-    if (object.tapped) state.events.push(event('object_untapped', { objectId: targetId, playerId: controllerId }));
+    void faktycznieOdkrecony; // zdarzenie object_untapped emituje helper
     return;
   }
   if (effect.type === 'destroy_equipment_attached') {
@@ -1078,11 +1194,18 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (attached.length === 0) return;
     if (effect.confirmed) {
       for (const att of attached) {
-        const destId = `grave-${state.objectSequence++}`;
-        moveObjectDirectly(state, att.id, 'graveyard', destId);
-        state.events.push(event('permanent_destroyed', {
-          fromId: att.id, objectId: destId, cardId: att.cardId, controllerId: att.controllerId,
-        }));
+        // M270 (błąd #7, CR 122.1e): zniszczenie Equipment to śmierć jak każda
+        // inna — strefę docelową wyznacza WSPÓLNY `deathZoneFor` (licznik
+        // finality / naznaczenie exileIfDiesThisTurn kierują do wygnania).
+        // Ta ścieżka szła na sztywno do cmentarza, więc Equipment zwrócone
+        // przez Zoraline („nonland permanent card with mana value 3 or less"
+        // — artefakty się kwalifikują) z licznikiem finality dawało się
+        // odzyskać drugi raz.
+        // M272 (błąd #19): zniszczenie Equipment przechodzi przez ten sam
+        // helper co „destroy target permanent" — wcześniej ta ścieżka nie
+        // znała ani indestructible (CR 702.12), ani licznika shield, ani
+        // regeneracji, więc chroniony Equipment i tak lądował w grobie.
+        destroyPermanentByEffect(state, att.id);
       }
       return;
     }
@@ -1123,21 +1246,17 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Forge Devil: „it deals 1 damage to target creature and 1 damage to you."
     // „You" (kontroler źródła) nie jest celem — obrażenia trafiają w kontrolera,
     // niezależnie od innych celów efektu. To NIE są obrażenia combat.
-    if (!Number.isInteger(effect.amount) || effect.amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
     const targetId = sourceObject.controllerId;
-    // CR 119.3 (platynowa odznaka): event damage_dealt niesie kwotę FAKTYCZNIE
-    // zadaną (po prewencji tarcz) — spójnie z dealNonCombatDamage; poprzednio
-    // event raportował kwotę sprzed prewencji.
-    const dealt = effect.amount - preventDamageTo(state, targetId, effect.amount);
-    // LKI sourceCardId (jak dealNonCombatDamage): źródło mogło zginąć w SBA
-    // tego samego rozstrzygnięcia — log nie pokaże wtedy „?" (Forge Devil
-    // celujący w siebie, 1/1 ginie po 1 obrażenia).
-    const damage = event('damage_dealt', {
-      source: sourceObject.id, target: targetId, amount: dealt, combat: false,
-      sourceCardId: sourceObject.cardId ?? null,
-    });
-    state.events.push(damage);
-    if (dealt > 0) changeLife(state, targetId, -dealt);
+    // M276 (błąd #28): obrażenia w kontrolera idą przez CHOKE POINT
+    // `dealNonCombatDamage`, a nie własną kopią. Kopia znała tylko prewencję
+    // tarcz i zmianę życia, więc gubiła resztę kontraktu obrażeń:
+    // lifelink (CR 702.15 — Forge Devil z licznikiem lifelink, CR 122.1b,
+    // nie dawał życia), infect (CR 702.90b — obrażenia w gracza mają dawać
+    // liczniki trucizny, nie utratę życia) oraz filtr „prevent all damage
+    // this turn". Cel jest tu GRACZEM, więc gałęzie permanentowe choke pointu
+    // (protection, markDamage, deathtouch) po prostu nie zachodzą.
+    if (!Number.isInteger(effect.amount) || effect.amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
+    dealNonCombatDamage(state, sourceObject, targetId, effect.amount);
     return;
   }
   if (effect.type === 'pump') {
@@ -2264,6 +2383,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
     const permanent = Object.freeze({ ...moved, tapped: true, summoningSickness: true });
     state.objects.set(newId, permanent);
+    // M273 (błąd #24, CR 121.6 + 614.1c): liczniki WEJŚCIA obowiązują przy
+    // każdym wejściu na pole bitwy, także przy reanimacji — bez nich
+    // Servant of the Scale wraca jako 0/0 i ginie od razu (CR 704.5f).
+    applyEnterCounters(state, newId);
     state.events.push(event('object_moved', { fromId: targetId, object: permanent, fromZone: 'graveyard', toZone: 'battlefield' }));
     return;
   }
@@ -2456,10 +2579,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (!enchantedId) return;
     const object = state.objects.get(enchantedId);
     if (!object || object.zone !== 'battlefield') return;
-    if (object.tapped) {
-      state.objects.set(enchantedId, Object.freeze({ ...object, tapped: false }));
-      state.events.push(event('object_untapped', { objectId: enchantedId, playerId: sourceObject.controllerId }));
-    }
+    // M272 (błąd #18): wspólny helper — respektuje licznik stun (CR 122.1d)
+    // i blokadę odkręcania, których ręczna mutacja `tapped: false` nie znała.
+    untapByEffect(state, enchantedId, sourceObject.controllerId);
     return;
   }
   if (effect.type === 'untap_permanent') {
@@ -2470,10 +2592,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // (źródło triggera może być LKI stubem, gdy odeszło w oknie odpowiedzi).
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return;
-    if (object.tapped) {
-      state.objects.set(targetId, Object.freeze({ ...object, tapped: false }));
-      state.events.push(event('object_untapped', { objectId: targetId, playerId: sourceObject.controllerId }));
-    }
+    // M272 (błąd #18): wspólny helper (stun CR 122.1d + blokada odkręcania).
+    untapByEffect(state, targetId, sourceObject.controllerId);
     return;
   }
   if (effect.type === 'untap_all_creatures_you_control') {
@@ -2482,11 +2602,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // po jednym zdarzeniu object_untapped na stwora.
     const ctrl = sourceObject.controllerId;
     for (const object of creaturesYouControl(state, ctrl)) {
-      const objectId = object.id;
-      if (object.tapped) {
-        state.objects.set(objectId, Object.freeze({ ...object, tapped: false }));
-        state.events.push(event('object_untapped', { objectId, playerId: ctrl }));
-      }
+      // M272 (błąd #18): wspólny helper per stwór (stun CR 122.1d).
+      untapByEffect(state, object.id, ctrl);
     }
     return;
   }
@@ -2529,6 +2646,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
     const permanent = Object.freeze({ ...moved, summoningSickness: true });
     state.objects.set(newId, permanent);
+    // M273 (błąd #24, CR 121.6 + 614.1c): liczniki WEJŚCIA obowiązują przy
+    // każdym wejściu na pole bitwy, także przy reanimacji — bez nich
+    // Servant of the Scale wraca jako 0/0 i ginie od razu (CR 704.5f).
+    applyEnterCounters(state, newId);
     if (effect.finalityCounter) addCounter(state, newId, 'finality', 1);
     // Batch 24 (Unbreakable Bond): „return ... with a lifelink counter on it" —
     // wejście z licznikami (CR 122.1b — licznik lifelink nadaje keyword).
@@ -2836,27 +2957,9 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // zniszczyć — destroy nie ma efektu. To generyczna cecha obiektu, nie
     // warunek na nazwę karty (łagodzi deathtouch i śmiertelne obrażenia
     // już w state-based actions, tu chroni przed efektem „destroy").
-    if (effectiveKeywords(object, state).includes('indestructible')) return;
-    if ((object.counters?.shield ?? 0) > 0) {
-      const next = { ...(object.counters ?? {}) };
-      next.shield = next.shield - 1;
-      if (next.shield <= 0) delete next.shield;
-      state.objects.set(targetId, Object.freeze({ ...object, counters: Object.freeze(next) }));
-      state.events.push(event('shield_consumed', { objectId: targetId, cardId: object.cardId, reason: 'destroy' }));
-      return;
-    }
-    // Regeneracja (CR 701.12): efekt „destroy" jest zastępowany — permanent
-    // zostaje (odtapowany, bez obrażeń), tarcza zniknęła.
-    if (tryRegenerate(state, object)) return;
-    // Finality counter (CR 122.1b w pełnym wymiarze): „If this permanent would
-    // die, exile it instead" — dotyczy KAŻDEJ przyczyny śmierci, także
-    // zniszczenia efektem (wcześniej tylko zgony SBA).
-    const toZone = deathZoneFor(state, object);
-    const destId = `${toZone}-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, targetId, toZone, destId);
-    state.events.push(event('permanent_destroyed', {
-      fromId: targetId, objectId: destId, playerId: object.controllerId, cardId: moved.cardId, toZone,
-    }));
+    // M272 (błąd #19): pełna sekwencja destroy (indestructible → shield →
+    // regeneracja → strefa śmierci) mieszka we WSPÓLNYM helperze.
+    destroyPermanentByEffect(state, targetId);
     return;
   }
   if (effect.type === 'sacrifice_permanent') {
@@ -2887,6 +2990,9 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const newId = `permanent-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
     state.objects.set(newId, Object.freeze({ ...moved, summoningSickness: true }));
+    // M273 (błąd #24): najpierw liczniki WEJŚCIA karty (CR 121.6), potem
+    // licznik nadawany przez efekt („return with a -1/-1 counter on it").
+    applyEnterCounters(state, newId);
     addCounter(state, newId, effect.counter ?? '-1/-1', effect.amount ?? 1);
     state.events.push(event('object_moved', { fromId: targetId, object: state.objects.get(newId), fromZone: 'graveyard', toZone: 'battlefield' }));
     return;
@@ -2907,6 +3013,10 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const keywords = [...new Set([...(moved.keywords ?? []), ...(effect.grantKeywords ?? [])])];
     const permanent = Object.freeze({ ...moved, controllerId, keywords: Object.freeze(keywords), summoningSickness: true });
     state.objects.set(newId, permanent);
+    // M273 (błąd #24, CR 121.6 + 614.1c): liczniki WEJŚCIA obowiązują przy
+    // każdym wejściu na pole bitwy, także przy reanimacji — bez nich
+    // Servant of the Scale wraca jako 0/0 i ginie od razu (CR 704.5f).
+    applyEnterCounters(state, newId);
     state.events.push(event('object_moved', { fromId: targetId, object: permanent, fromZone: 'graveyard', toZone: 'battlefield' }));
     state.events.push(event('control_changed', { objectId: newId, cardId: permanent.cardId, controllerId, fromControllerId: moved.controllerId }));
     if (effect.exileAtNextEndStep) {
@@ -3373,15 +3483,26 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const sameController = attackerId === source.controllerId;
     if (sameController && !source.tapped) return;
     const previous = source.controllerId;
-    state.objects.set(source.id, Object.freeze({ ...source, controllerId: attackerId, tapped: false }));
-    if (sameController) {
-      state.events.push(event('object_untapped', { objectId: source.id, cardId: source.cardId }));
-    } else {
+    // M272 (błąd #18): „and untaps it" przechodzi przez wspólny helper —
+    // licznik stun (CR 122.1d) i blokada odkręcania obowiązują też tutaj.
+    // Helper emituje `object_untapped`, gdy permanent FAKTYCZNIE wstał.
+    const wasTapped = untapByEffect(state, source.id, attackerId);
+    const poOdkreceniu = state.objects.get(source.id) ?? source;
+    state.objects.set(source.id, Object.freeze({ ...poOdkreceniu, controllerId: attackerId }));
+    if (!sameController) {
       state.events.push(event('control_changed', {
         objectId: source.id, cardId: source.cardId,
         controllerId: attackerId, fromControllerId: previous,
       }));
     }
+    // M269 (błąd #3, lekcja L24 / CR 701.21a): „and untaps it" jest zdarzeniem
+    // widocznym dla reguł i dla gracza — NIEZALEŻNIE od tego, czy przy okazji
+    // zmienił się kontroler. Dotąd `object_untapped` powstawało wyłącznie
+    // w gałęzi „ten sam kontroler": gdy piłka realnie zmieniała ręce (ścieżka
+    // typowa — atakujący to przeciwnik), odkręcenie działo się po cichu.
+    // Żaden trigger „becomes untapped" go nie widział, a log stołu pokazywał
+    // samą zmianę kontroli, choć permanent stanął odkręcony.
+    void wasTapped; // zdarzenie object_untapped emituje wspólny helper
     return;
   }
   if (effect.type === 'sacrifice_self_if_counters_then_treasure') {
@@ -3567,15 +3688,13 @@ function markTemporaryExile(state, exileId, sourceObject) {
     if (targetId == null) return;
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'stack') return;
-    const graveId = `grave-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, targetId, 'graveyard', graveId);
-    state.events.push(event('spell_countered', {
-      fromId: targetId, toId: graveId, cardId: moved.cardId,
-      controllerId: moved.controllerId, counteredBy: sourceObject.id,
-      // LKI (CR 603.10): nazwa czaru-kontrującego po cardId — obiekt na stosie
-      // znika z state.objects po rozstrzygnięciu (audyt diamentowy: „(?)").
-      counteredByCardId: sourceObject.cardId,
-    }));
+    // M271 (błąd #15): kontra idzie przez WSPÓLNY `counterStackObject` —
+    // własna kopia gubiła `exileInsteadOfGraveyard` (Halo Forager).
+    // LKI (CR 603.10): nazwa kontrującego po cardId — obiekt na stosie znika
+    // z state.objects po rozstrzygnięciu (audyt diamentowy: „(?)").
+    counterStackObject(state, targetId, {
+      counteredBy: sourceObject.id, counteredByCardId: sourceObject.cardId,
+    });
     return;
   }
   if (effect.type === 'counter_spell_unless_pays') {
@@ -3592,13 +3711,10 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const amount = effect.amount ?? 1;
     const canPay = producibleMana(state, payerId) >= amount;
     if (!canPay) {
-      const graveId = `grave-${state.objectSequence++}`;
-      const moved = moveObjectDirectly(state, targetId, 'graveyard', graveId);
-      state.events.push(event('spell_countered', {
-        fromId: targetId, toId: graveId, cardId: moved.cardId,
-        controllerId: moved.controllerId, counteredBy: sourceObject.id,
-        counteredByCardId: sourceObject.cardId,
-      }));
+      // M271 (błąd #15): jak wyżej — wspólny helper, nie kopia.
+      counterStackObject(state, targetId, {
+        counteredBy: sourceObject.id, counteredByCardId: sourceObject.cardId,
+      });
       const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === payerId);
       if (handIds.length === 0) return; // bez ręki — nic więcej
       state.pendingDiscardChoice = {
@@ -3626,10 +3742,17 @@ function markTemporaryExile(state, exileId, sourceObject) {
     return true; // decyzja blokuje dalsze efekty czaru
   }
   if (effect.type === 'player_sacrifices_creature') {
-    // Grave Exchange (drugi cel): „Target player sacrifices a creature of
-    // their choice." Wybór należy do CELU (blokująca decyzja resolve_sacrifice_choice,
-    // jak scry/surveil). Gracz bez stworów nie poświęca niczego.
-    const targetId = targets[effect.targetIndex ?? 0];
+    // Dwa warianty tej samej treści („a creature of their choice" — wybór
+    // należy do POŚWIĘCAJĄCEGO, blokująca decyzja resolve_sacrifice_choice):
+    //  - CELOWANY (Grave Exchange: „TARGET player sacrifices…") — gracz
+    //    z listy celów czaru;
+    //  - BEZCELOWY (M266/B, Liliana's Triumph: „EACH OPPONENT sacrifices…")
+    //    — Oracle nie mówi „target", więc czar nie ma celu (CR 115.1);
+    //    zakres liczymy z kontrolera źródła, jak w `discard_each_opponent`.
+    // Gracz bez stworów nie poświęca niczego.
+    const targetId = effect.scope === 'each_opponent'
+      ? (state.players.find((player) => player.id !== sourceObject.controllerId)?.id ?? null)
+      : targets[effect.targetIndex ?? 0];
     if (targetId == null) return;
     if (!state.players.some((player) => player.id === targetId)) throw new Error('Nieprawidłowy cel: gracz');
     const candidates = state.zones.battlefield.filter((objectId) => {
@@ -3759,6 +3882,10 @@ function markTemporaryExile(state, exileId, sourceObject) {
         ...moved, controllerId: ownerId, faceDown: false,
         summoningSickness: (moved.types ?? []).includes('Creature'),
       }));
+      // M274 (#24, CR 121.6): wprowadzenie permanentu z wygnania to WEJŚCIE —
+      // liczniki wejścia obowiązują. Karta jest tu już odkryta (faceDown:
+      // false ustawione wyżej), więc helper nadaje liczniki.
+      applyEnterCounters(state, battlefieldId);
       state.events.push(event('permanent_entered_battlefield', {
         objectId: battlefieldId, object: state.objects.get(battlefieldId),
         cardId: moved.cardId ?? null, controllerId: ownerId, fromExile: true,
@@ -4040,6 +4167,12 @@ function markTemporaryExile(state, exileId, sourceObject) {
       // inaczej zostaje „wisząca" aura wskazująca nieistniejący obiekt
       // (inwariant wywraca partię). Ta sama reguła co w SBA (CR 111.7).
       detachAttachmentsFromHost(state, targetId);
+      // M273 (błąd #25): token znika z gry z POMINIĘCIEM choke pointu stref,
+      // więc trzeba jawnie przejść tę samą listę „kto o nim jeszcze pyta"
+      // (L43). `state.combat` trzymał wiszące id skasowanego tokena:
+      // atakujący/bloker, którego nie ma w `state.objects`. Ten sam rodzaj
+      // niespójności wywrócił partię w M271 (błąd #16).
+      if (state.combat) removeFromCombat(state, targetId);
       state.objects.delete(targetId);
       state.zones.battlefield = state.zones.battlefield.filter((id) => id !== targetId);
       state.events.push(event('token_ceased_to_exist', {
@@ -4096,6 +4229,15 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const transformed = Object.freeze({
       ...exiled,
       id: bfId, zone: 'battlefield', summoningSickness: true,
+      // M270 (CR 400.7): permanent WRACA na pole bitwy jako nowy obiekt, więc
+      // „wszedł na pole bitwy" W TEJ turze. Baza `exiled` pochodzi ze strefy
+      // wygnania, gdzie moveObjectDirectly ustawiło `enteredOnTurn: null`,
+      // a ręczne złożenie obiektu (ta ścieżka omija choke point) przenosiło
+      // tę wartość na pole bitwy. Skutkiem warunek „as long as it entered
+      // this turn" (Crew Captain — indestructible) i `onlyIfTargetEnteredThisTurn`
+      // czytały turę SPRZED wygnania: permanent, który wrócił właśnie teraz,
+      // nie był uznawany za świeżo przybyły.
+      enteredOnTurn: state.turn.number,
       // Komplet charakterystyk drugiej strony (CR 711.2) — wspólny helper
       // niesie też `kind`, którego wcześniej brakowało: strona zmieniająca
       // rodzaj permanentu (Incubator → Phyrexian) wracała z pola bitwy jako
@@ -4111,6 +4253,11 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.objects.set(bfId, transformed);
     state.zones.exile = state.zones.exile.filter((id) => id !== exileId);
     state.zones.battlefield.push(bfId);
+    // M273 (błąd #24): powrót transformowanej karty to WEJŚCIE na pole bitwy
+    // (CR 121.6) — liczniki wejścia obowiązują także tutaj. Ta ścieżka omija
+    // choke point stref (mutuje `state.zones` wprost), więc helper trzeba
+    // zawołać jawnie.
+    applyEnterCounters(state, bfId);
     state.events.push(event('object_moved', {
       fromId: exileId, object: transformed, fromZone: 'exile', toZone: 'battlefield', transformReturn: true,
     }));
@@ -4220,6 +4367,8 @@ function markTemporaryExile(state, exileId, sourceObject) {
     if (card.kind === 'land' || card.kind === 'spell') return;
     const bfId = `permanent-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, cardId, 'battlefield', bfId);
+    // M273 (błąd #24): liczniki wejścia — ta sama reguła co przy rzucie.
+    applyEnterCounters(state, bfId);
     state.events.push(event('permanent_entered_battlefield', {
       objectId: bfId, object: moved, cardId: moved.cardId,
       controllerId: moved.controllerId, fromGraveyard: true,
@@ -4354,7 +4503,17 @@ function markTemporaryExile(state, exileId, sourceObject) {
         // CR 701.27a: +1 licznik trucizny na graczu — pole player.poison
         // (poprzednio +1 szło do nigdzie nieczytanego player.counters.poison).
         if ((player.poison ?? 0) > 0) {
-          player.poison += 1;
+          // M269 (błąd #4): trucizna idzie przez WSPÓLNY helper
+          // `addPoisonCounters`, a nie przez `player.poison += 1`. Helper
+          // emituje `poison_counters_added` — jedyne zdarzenie, które
+          // rozumie log stołu („otrzymuje znaki trucizny") i heurystyczny bot
+          // (waga 45). Dotąd proliferate zgłaszał truciznę jako `counter_added`
+          // z `objectId` będącym ID GRACZA: log szukał obiektu o tym id,
+          // nie znajdował go i pisał „? dostaje +1 licznik poison" (klasa L29
+          // — fallback-znak zapytania), a bot nie widział postępu do wygranej
+          // przez truciznę (CR 704.5c). `counter_added` zostaje obok, żeby
+          // liczniki gracza i permanentów dalej miały wspólny strumień.
+          addPoisonCounters(state, player.id, 1);
           state.events.push(event('counter_added', {
             objectId: player.id, cardId: null, counter: 'poison', amount: 1,
             total: player.poison, fromProliferate: true,
@@ -4365,22 +4524,32 @@ function markTemporaryExile(state, exileId, sourceObject) {
       }
       const obj = state.objects.get(targetId);
       if (!obj || obj.zone !== 'battlefield') continue;
-      const counters = obj.counters ?? {};
-      const updated = { ...counters };
-      for (const [name, count] of Object.entries(counters)) {
-        if (count > 0) {
-          updated[name] = count + 1;
-          state.events.push(event('counter_added', {
-            objectId: obj.id, cardId: obj.cardId, counter: name, amount: 1,
-            total: updated[name], fromProliferate: true,
-          }));
-          proliferated += 1;
+      // M269 (błąd #2): dokładanie liczników idzie przez WSPÓLNY helper
+      // `addCounter`, a nie przez własną re-inkarnację obiektu. Własna
+      // ścieżka pomijała `syncStationKind`, więc Spacecraft (station)
+      // dobity proliferatem do progu („It's an artifact creature at 6+")
+      // zostawał zwykłym artefaktem: nie mógł atakować ani blokować, a
+      // kafel dalej pokazywał „Artifact — Spacecraft". Helper emituje
+      // `counter_added` i synchronizuje rodzaj/typy (CR 205.1); znacznik
+      // `fromProliferate` dokładamy do wyemitowanego zdarzenia, żeby log
+      // nadal odróżniał proliferate od zwykłego dołożenia licznika.
+      const namesToBump = Object.entries(obj.counters ?? {})
+        .filter(([, count]) => count > 0)
+        .map(([name]) => name);
+      for (const name of namesToBump) {
+        const before = state.events.length;
+        addCounter(state, obj.id, name, 1);
+        // Zdarzenia są płaskie i zamrożone (protocol/types.js: { type, ...data }),
+        // więc znacznik dokładamy przez odtworzenie wpisu. Szukamy po INDEKSIE
+        // (a nie „ostatniego"), bo addCounter może dołożyć po nim kolejne
+        // zdarzenie — np. `station_status_changed` przy przekroczeniu progu.
+        for (let i = before; i < state.events.length; i += 1) {
+          if (state.events[i]?.type !== 'counter_added') continue;
+          const { type, ...data } = state.events[i];
+          state.events[i] = event('counter_added', { ...data, fromProliferate: true });
+          break;
         }
-      }
-      // Re-inkarnacja obiektu (frozen, więc nie mutujemy `counters` wprost;
-      // zamrażanie jest wymagane przez inwarianty, by LKI było niezmienne).
-      if (proliferated > 0 || Object.keys(updated).length > 0) {
-        state.objects.set(obj.id, Object.freeze({ ...obj, counters: updated }));
+        proliferated += 1;
       }
     }
     state.events.push(event('proliferated', { source: sourceObject.id, count: proliferated }));
@@ -4594,6 +4763,9 @@ function markTemporaryExile(state, exileId, sourceObject) {
       ...moved, controllerId: ownerId, summoningSickness: true, temporaryExile: null,
     });
     state.objects.set(newId, permanent);
+    // M273 (błąd #24): powrót z wygnania to też WEJŚCIE na pole bitwy
+    // (CR 121.6) — liczniki wejścia obowiązują.
+    applyEnterCounters(state, newId);
     state.events.push(event('object_moved', {
       fromId: exiledCardId, object: permanent, fromZone: 'exile', toZone: 'battlefield',
       returnToOwner: true,
@@ -4946,6 +5118,8 @@ function markTemporaryExile(state, exileId, sourceObject) {
       summoningSickness: true, unearthExile: true,
     });
     state.objects.set(newId, permanent);
+    // M273 (błąd #24): liczniki wejścia — ta sama reguła co przy rzucie.
+    applyEnterCounters(state, newId);
     state.events.push(event('object_moved', { fromId: sourceObject.id, object: permanent, fromZone: 'graveyard', toZone: 'battlefield', unearth: true }));
     state.delayedTriggers.push({
       type: 'exile_object', objectId: newId, playerId: ownerId,

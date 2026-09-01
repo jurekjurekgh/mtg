@@ -225,7 +225,8 @@ export const REAL_CARDS = Object.freeze([
     // Bestow {3}{G} (CR 702.103): alternatywny koszt — czar staje się czarem
     // aury z celem „stwór\"; po wejściu załączony NIE jest stworem, a po
     // odłączeniu znów nim jest. Buff zaczarowanego stwora: +2/+2 i reach.
-    bestow: { cost: 4, pump: { power: 2, toughness: 2 }, keywords: ['reach'] },
+    // M268: Oracle „Bestow {3}{G}" — pip koloru w definicji (klasa L104).
+    bestow: { cost: 4, colors: ['G'], pump: { power: 2, toughness: 2 }, keywords: ['reach'] },
     oracleText: 'Bestow {3}{G} (If you cast this card for its bestow cost, it\'s an Aura spell with enchant creature. It becomes a creature again if it\'s not attached.)\nReach\nEnchanted creature gets +2/+2 and has reach.',
     imageUri: 'https://cards.scryfall.io/large/front/8/2/8202e426-ad91-4d2e-9373-7a829b58fff5.jpg?1783939745',
     artId: 521,
@@ -1151,7 +1152,9 @@ export const REAL_CARDS = Object.freeze([
     types: ['Sorcery'], colors: ['G'], manaCost: 2,
     oracleText: 'Create an X/X green Elemental creature token, where X is the greatest power among creatures you control.\nPlot {2}{G}',
     imageUri: 'https://cards.scryfall.io/large/front/2/7/275d2d2a-ef85-48c9-919d-bc62cdad8a10.jpg?1783911802',
-    plot: { cost: 3 },
+    // M268: Oracle „Plot {2}{G}" — pip koloru jak u bliźniaka
+    // spinewoods-paladin („Plot {3}{G}", colors: ['G']).
+    plot: { cost: 3, colors: ['G'] },
     spell: {
       timing: 'sorcery', targets: [],
       effects: [{
@@ -2027,7 +2030,9 @@ export const REAL_CARDS = Object.freeze([
       targets: [{ type: 'player' }],
       effects: [{ type: 'mill_cards', amount: 4 }],
       // Escape (CR 702.138): rzuć z grobu za {3}{U} + wygnaj 4 inne karty z grobu.
-      escape: { cost: 4, exileCount: 4 },
+      // M267/C: pipy kolorów alt-kosztu jadą z Oracle do DEFINICJI — etykieta
+      // i płatność czytają jedno źródło (koszt bazowy bywa innego koloru).
+      escape: { cost: 4, colors: ['U'], exileCount: 4 },
     },
     artId: 103,
     plan: 'Theros',
@@ -2469,7 +2474,9 @@ export const REAL_CARDS = Object.freeze([
       // podtypu celu — cleave celuje dowolnego stwora (creature), nie tylko
       // Wolf/Werewolf. Efekt i cele pochodzą z deskryptora cleave.
       cleave: {
+        // M267/C: Oracle „Cleave {3}{U}" — pip koloru w definicji.
         manaCost: 4,
+        colors: ['U'],
         targets: [{ type: 'creature' }],
         effects: [
           { type: 'bounce_permanent' },
@@ -6712,15 +6719,18 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/8/4/84803db8-fdb0-462b-92f6-33d591593d2d.jpg',
     spell: {
       timing: 'instant',
-      // „Each opponent\" w formacie 1v1 = jedyny przeciwnik. Wybór poświęcanego
-      // stwora należy do CELU (blokująca decyzja resolve_sacrifice_choice).
-      // M203/2: deskryptor niesie `opponent: true` (jak Dreams of Steel and
-      // Oil) — bez niego rzucający był legalnym celem własnego „each
-      // opponent", czyli cel niezgodny z Oracle (CR 115.2: cel musi spełniać
-      // deskryptor celu). Dotąd „poprawny" cel brał się z kolejności ofert.
-      targets: [{ type: 'player', opponent: true }],
+      // M266/B (zgłoszenie właściciela): log pokazywał „rzuca Liliana's
+      // Triumph → cel: Ty", a Oracle NIE MA słowa „target" — „Each opponent
+      // sacrifices a creature of their choice". Czar bezcelowy (CR 115.1:
+      // cele ma wyłącznie czar, który je deklaruje). Modelowanie przez
+      // `targets: [{ type: 'player', opponent: true }]` (M203/2) było
+      // wygodnym skrótem na „ten jeden przeciwnik w 1v1", ale zmieniało
+      // REGUŁY: czar dawał się zepsuć usunięciem celu, fizzlował przy
+      // hexproof/shroud gracza (CR 115.6) i pokazywał wybór, którego nie ma.
+      // Zakres „each opponent" jest teraz w EFEKCIE (scope), jak w
+      // `discard_each_opponent`.
       effects: [
-        { type: 'player_sacrifices_creature' },
+        { type: 'player_sacrifices_creature', scope: 'each_opponent' },
         // Klauzula warunkowa (decyzja właściciela 2026-08-19): efekt kodujemy
         // z WYPRZEDZENIEM — generyczny warunek po typie Planeswalker i podtypie
         // Liliana (effects.js `conditional`). Działa od razu, gdy w katalogu
@@ -8181,7 +8191,9 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         { type: 'dont_untap_next_untap_step' },
       ],
       // Escape (CR 702.138): rzuć z grobu za {2}{U} + wygnaj 3 inne karty z grobu.
-      escape: { cost: 3, exileCount: 3 },
+      // M267/C: pipy kolorów alt-kosztu jadą z Oracle do DEFINICJI — etykieta
+      // i płatność czytają jedno źródło (koszt bazowy bywa innego koloru).
+      escape: { cost: 3, colors: ['U'], exileCount: 3 },
     },
     artId: 11, plan: 'Theros',
     support: { status: 'supported', limitations: [] },

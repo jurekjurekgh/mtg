@@ -353,7 +353,11 @@ test('M262: trzy boksy stref są w HTML pod ręką Bota', () => {
   assert.ok(iGrave !== -1 && iExile !== -1 && iEnemyGrave !== -1, 'wszystkie boksy istnieją');
   assert.ok(iGrave < iExile && iExile < iEnemyGrave, 'kolejność: Gracz → Exile → Bot');
   assert.ok(iEnemyHand < iGrave, 'boksy POD ręką Bota');
-  // Kolory: cmentarze czarne, wygnanie niebieskie (decyzja właściciela).
-  assert.match(HTML_CODE, /\.zone-box-grave\s*\{[^}]*background:\s*#000/, 'cmentarz: czarne tło');
+  // Kolory: cmentarze CIEMNOSZARE, wygnanie niebieskie.
+  // M266/A (korekta właściciela 2026-08-31): pierwotna decyzja M262 brzmiała
+  // „cmentarze czarne", ale w realnej grze #000 wyglądało jak dziura w stole.
+  // Nowa decyzja: ciemny szary. Szczegółowy próg jasności pinuje
+  // test/m266-zgloszenia-wlasciciela.test.js (A).
+  assert.match(HTML_CODE, /\.zone-box-grave\s*\{[^}]*background:\s*#333/, 'cmentarz: ciemnoszare tło');
   assert.match(HTML_CODE, /\.zone-box-exile\s*\{[^}]*background:\s*#0(?!00)\d/, 'wygnanie: niebieskie tło');
 });

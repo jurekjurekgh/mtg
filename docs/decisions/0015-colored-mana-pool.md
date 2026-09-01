@@ -1,6 +1,9 @@
 # ADR 0015: Kolorowa pula many (MtG-correct)
 
-- **Status:** Proponowana (decyzja właściciela 2026-08-06: „zdecydowanie 1")
+- **Status:** Zaakceptowana
+- **Wdrożona:** M41+ (`player.manaPool`, `canPayColoredCost`, `spendMana`
+  w `src/engine/resources.js`); status „Proponowana" wisiał do 2026-09-01
+  mimo decyzji właściciela z 2026-08-06 („zdecydowanie 1") i wdrożenia.
 - **Data:** 2026-08-06
 - **Kontekst:** [ADR 0013](0013-agent-arena-sessions-and-mandatory-handoff.md),
   historia milestone'ów (M2 → M41)
