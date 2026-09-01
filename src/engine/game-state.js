@@ -7084,6 +7084,10 @@ export function playerView(state, playerId) {
     pendingRevealExile: state.pendingRevealExile ? {
       playerId: state.pendingRevealExile.playerId,
       opponentId: state.pendingRevealExile.opponentId,
+      // Pętla jakości (klasa L102/1): źródło decyzji (czar na stosie —
+      // informacja publiczna) dla tytułu modala; silnik nosi je już jako
+      // cardId (M201/F „źródło do opisów"), brakowało tylko widoku.
+      sourceCardId: state.pendingRevealExile.cardId ?? null,
       handCardIds: [...state.pendingRevealExile.handIds],
       graveCardIds: [...state.pendingRevealExile.graveIds],
       chosenHand: state.pendingRevealExile.chosenHand,

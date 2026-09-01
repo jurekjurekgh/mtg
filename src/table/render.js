@@ -433,7 +433,7 @@ export function choiceRequestGroupKey(command) {
   return null;
 }
 
-function choiceRequestType(commands) {
+export function choiceRequestType(commands) {
   const first = commands[0];
   if (first.type === 'cast_escape') return 'escape';
   if (first.type === 'resolve_escape_exile') return 'escape_exile';
@@ -1733,6 +1733,19 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_moonlit_choice: 'Moonlit — wybór efektu',
   resolve_reveal_order: 'Kolejność kart na wierzchu biblioteki',
   resolve_look_top_choice: 'Karta z odsłoniętych do ręki',
+  // Pętla jakości (klasa L102/1, zamykana strażnikiem
+  // test/wybierz-wariant-klasa.test.js): stałokluczowe typy grupy MUSZĄ mieć
+  // deskryptor fallbacku — trzecie znalezisko Żywego Testera
+  // (resolve_reveal_exile_hand) pokazało, że brak wpisu = „Wybierz: Wariant".
+  resolve_copy_targets: 'Kopia czaru — wybór celu',
+  resolve_exploit_choice: 'Exploit — poświęcić stwora?',
+  resolve_fabricate: 'Fabricate — liczniki czy tokeny?',
+  resolve_manifest_dread: 'Manifest Dread — karta na pole bitwy',
+  resolve_optional_draw: 'Dobór dobrowolny (you may)',
+  resolve_reveal_choice: 'Ujawnij z ręki — obrażenia',
+  resolve_reveal_exile_hand: 'Karta z ręki do wygnania',
+  resolve_reveal_exile_grave: 'Karta z grobu do wygnania',
+  resolve_satyr_look_choice: 'Ląd z odsłoniętych do ręki',
 });
 
 /**
@@ -1824,6 +1837,15 @@ function choiceSourceTitle(cmd, session, view) {
   // pendingManifestDread/pendingSatyrLook (ADR 0002).
   if (cmd?.type === 'resolve_look_top_choice' && view?.pendingLookTopN?.sourceCardId) {
     return `${session.nameOf(view.pendingLookTopN.sourceCardId)} — karta z odsłoniętych do ręki`;
+  }
+  // Pętla jakości (klasa L102/1): Dreams of Steel and Oil — decyzja „wygnij
+  // kartę z ręki/grobu przeciwnika". Nazwa źródła (czar na stosie — publiczna)
+  // jedzie z pendingu (M201/F); deskryptor fallbacku w
+  // CHOICE_GROUP_COMMAND_DESCRIPTORS.
+  if ((cmd?.type === 'resolve_reveal_exile_hand' || cmd?.type === 'resolve_reveal_exile_grave')
+    && view?.pendingRevealExile?.sourceCardId) {
+    const zone = cmd.type === 'resolve_reveal_exile_hand' ? 'ręki' : 'grobu';
+    return `${session.nameOf(view.pendingRevealExile.sourceCardId)} — karta z ${zone} do wygnania`;
   }
   if (!cmd || cmd.objectId == null) return null;
   const zones = ['hand', 'battlefield', 'stack', 'graveyard', 'library'];
