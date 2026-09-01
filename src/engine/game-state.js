@@ -31,7 +31,7 @@ import { createBattlefieldToken } from './tokens.js';
 import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom } from './effects.js';
 import { changeLife } from './players.js';
 import { shuffle } from './shuffle.js';
-import { applyRoomTargetChoice, applyEffect, drawPlayerCards, manifestCardFaceDown, counterStackObject } from './effects.js';
+import { applyRoomTargetChoice, applyEffect, applyEnterCounters, drawPlayerCards, manifestCardFaceDown, counterStackObject } from './effects.js';
 
 /**
  * Limit ofert „odłóż N kart na spód” przy mulliganie londyńskim (M119/Z3).
@@ -4089,6 +4089,9 @@ export function execute(state, input) {
       state.objects.set(bfId, transformed);
       state.zones.exile = state.zones.exile.filter((id) => id !== sourceExileId);
       state.zones.battlefield.push(bfId);
+      // M273 (błąd #24): craft wprowadza permanent na pole bitwy — liczniki
+      // wejścia (CR 121.6) obowiązują jak przy każdym innym wejściu.
+      applyEnterCounters(state, bfId);
       state.events.push(event('object_moved', { fromId: sourceExileId, object: transformed, fromZone: 'exile', toZone: 'battlefield', craft: true }));
       // controllerId: warstwa stołu kwalifikuje transform do panelu
       // „Rozgrywka" po kontrolerze (isHumanHeadline, M257/K4).

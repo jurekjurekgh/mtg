@@ -4213,6 +4213,11 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.objects.set(bfId, transformed);
     state.zones.exile = state.zones.exile.filter((id) => id !== exileId);
     state.zones.battlefield.push(bfId);
+    // M273 (błąd #24): powrót transformowanej karty to WEJŚCIE na pole bitwy
+    // (CR 121.6) — liczniki wejścia obowiązują także tutaj. Ta ścieżka omija
+    // choke point stref (mutuje `state.zones` wprost), więc helper trzeba
+    // zawołać jawnie.
+    applyEnterCounters(state, bfId);
     state.events.push(event('object_moved', {
       fromId: exileId, object: transformed, fromZone: 'exile', toZone: 'battlefield', transformReturn: true,
     }));
