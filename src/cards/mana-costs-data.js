@@ -426,4 +426,14 @@ export const MANA_COSTS = {
   "thunderstaff": "{3}",
   "savage-surge": "{1}{G}",
   "kulrath-mystic": "{2}{U}",
+  // Batch 52 (2026-09-01) — koszty wprost z Oracle (docs/cards/scryfall-*.json).
+  "loporrit-scout": "{2}{G}",
+  "ulna-alley-shopkeep": "{2}{B}",
+  "vaan-street-thief": "{2}{R}",
+  "kill-shot": "{2}{W}",
+  "merfolk-falconer": "{3}{U}{U}",
+  "jolrael-mwonvuli-recluse": "{1}{G}",
+  "fourth-bridge-prowler": "{B}",
+  "leonin-surveyor": "{1}{W}",
+  "cemetery-recruitment": "{1}{B}",
 };
