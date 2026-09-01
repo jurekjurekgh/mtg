@@ -10260,7 +10260,10 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.triggered,
         trigger: {
-          event: 'enter_battlefield', mayFire: true,
+          event: 'enter_battlefield',
+          // „you may have target creature..." — opcjonalność całości jest
+          // w OPCJONALNYM CELU (spec.optional), nie w mayFire (mayFire jest
+          // dla „you may" BEZ celu — Angel's Feather).
           requiresTarget: { type: 'creature', optional: true },
         },
         effect: { type: 'buff_creature_until_end_of_turn', power: -1, toughness: -1 },

@@ -3536,3 +3536,57 @@ nie ma dziś w katalogu efektu zastępującego. To dług do spłaty, gdy pojawi 
 pierwsza karta z takim efektem, nie błąd.
 
 **Wynik:** `npm test` **4074/4074**, build **57 modułów / 3029,5 kB**.
+
+## M278 — Batch 52: 9 kart właściciela (2026-09-01, PR #92)
+
+**Zakres:** Loporrit Scout (FIN), Ulna Alley Shopkeep (SOS), Vaan, Street
+Thief (FIN), Kill Shot (KTK), Merfolk Falconer (ZNR), Jolrael, Mwonvuli
+Recluse (MKC), Fourth Bridge Prowler (AER), Leonin Surveyor (DFT), Cemetery
+Recruitment (EMN). Plan: `docs/plans/PLAN_2026-09-01-batch52-kart.md`.
+Dane Oracle ze Scryfalla przed kodowaniem (ADR 0010 §2a); artId/plan ze
+słownika `tools/collection-art-ids.csv` (580–588).
+
+**Nowe mechaniki (generyczne, ADR 0002):**
+
+- **Infusion** (Ulna Alley Shopkeep, CR — „as long as you gained life this
+  turn") — licznik `state.lifeGainedThisTurn` per gracz (choke point
+  `changeLife`), reset przy zmianie tury; static condition `gainedLifeThisTurn`
+  → pump +2/+0.
+- **`you_cast_kicked_spell`** (Merfolk Falconer) — trigger na rzucie z
+  opłaconym kickerem (`permanent_cast.kicked` / `object.wasKicked`) → scry 2.
+- **`you_draw_second_card_each_turn`** (Jolrael) — trigger na doborze, po
+  którym `cardsDrawnThisTurn` dobił do 2 (licznik per gracz) → token 2/2 Cat;
+  aktywowane `set_base_pt_creatures_you_control` z `power: 'hand_size'`
+  (X = karty w ręce, CR 608.2g) → per-creature `tempBasePT` + `stats_modified`.
+- **`any_combat_damage_to_player` z filtrem podtypów** (Vaan, „one or more
+  Scouts, Pirates and/or Rogues") — dedup po kluczu `kontroler|podtypy`;
+  efekt `exile_top_of_player_library_and_may_cast` (blokująca decyzja
+  `resolve_exile_cast`; rzut TERAZ ignorujący timing — ruling WotC; rezygnacja
+  → Treasure) oraz `you_cast_spell_you_dont_own` (ownerId ≠ controllerId,
+  CR 109.4) → `add_counter_to_creatures_you_control` per podtyp.
+- **`activePlayerIsController`** (Leonin Surveyor) — first strike tylko w
+  turze kontrolera; start engines + max speed z grobu (wzorzec Glitch Ghost
+  Surveyor, M202).
+- **`drawIfSubtypes`** (Cemetery Recruitment) — po zwrocie z grobu do ręki,
+  jeśli karta ma podtyp z listy → dobierz (filtr po podtypie, ADR 0002).
+- **`buff_creature_until_end_of_turn` z ujemnym znakiem** (Fourth Bridge
+  Prowler) — ETB „you may" przez OPCJONALNY CEL (`requiresTarget.optional`),
+  nie `mayFire` (to drugie jest dla „you may" bez celu).
+
+**Świadome ograniczenia:** rzut Vaana z wygnania obejmuje proste
+instant/sorcery (bez X/fireball/additionalCost) i permanenty niebędące aurami
+— land i karty spoza zakresu dają tylko rezygnację → Treasure (zakres tożsamy
+z bramką, L48).
+
+**Wycena bota:** `set_base_pt_creatures_you_control` w IDEMPOTENT_EOT_EFFECTS
+(B1), `buff_creature_until_end_of_turn` klasyfikowany po znaku w
+effect-intent (618), `return_card_from_graveyard_to_hand` w REVIEWED_UNVALUED
+(własna karta z grobu). Golden-master bota zregenerowany (batch zmienia
+partie), progi win-rate bez zmian.
+
+**Talie (ADR 0023):** Kaladesh dobiło do 15 kart i auto-awansowało z worka do
+własnej talii (M181); Thunder Junction wróciło do `worek-dziki` (bilans:
+legendy 18, dzikie 17).
+
+**Wynik:** `npm test` **4113/4113** (+28 testów `test/batch52-kart.test.js`),
+test:all **4123/4123**, build **57 modułów / 3064,9 kB**.

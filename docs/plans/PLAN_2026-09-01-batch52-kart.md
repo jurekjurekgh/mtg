@@ -65,12 +65,12 @@ nieobsługiwana; `limitations` puste lub tylko strukturalne), **ADR 0020**
 
 ## Etap 4 — etykiety, klasyfikacje, talie, testy
 
-- [ ] Etykiety PL dla nowych zdarzeń/efektów (strażnik M122, M202/C,
+- [x] Etykiety PL dla nowych zdarzeń/efektów (strażnik M122, M202/C,
       KEYWORD_LABELS / KEYWORD_EVENT_LABELS).
-- [ ] Klasyfikacja nowych efektów w heuristic-bocie (strażnik 616/618) +
+- [x] Klasyfikacja nowych efektów w heuristic-bocie (strażnik 616/618) +
       klasyfikacja zdolności aktywowanej Jolrael bez `{T}` (B1, M255/C1).
-- [ ] `node tools/generate-plan-decks.mjs` → decks/ (M178 + M33).
-- [ ] Testy nowych mechanik (per `test/real-cards-batchNN.test.js` / wzorzec).
-- [ ] `npm test` + `npm run build` zielone; aktualizacja README,
-      PROJECT_HISTORY, ENGINE_MILESTONES.
-- [ ] Push na `arena/01a05d4f-mtg`, opis PR #92 (batch 52).
+- [x] `node tools/generate-plan-decks.mjs` → decks/ (M178 + M33; 23 talii).
+- [x] Testy nowych mechanik (`test/batch52-kart.test.js`, 28 testów).
+- [x] `npm test` + `npm run build` zielone; aktualizacja README,
+      PROJECT_HISTORY, ENGINE_MILESTONES (M278).
+- [x] Push na `arena/01a05d4f-mtg`; opis PR #92 (batch 52).
