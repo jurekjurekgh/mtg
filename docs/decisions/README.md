@@ -26,7 +26,7 @@ dokument opisuje kontekst, wybór i jego konsekwencje.
 | [0012](0012-deck-builder-and-text-deck-format.md) | Kreator talii i wspólny tekstowy format talii | Zaakceptowana |
 | [0013](0013-agent-arena-sessions-and-mandatory-handoff.md) | Sesje Agent Arena i obowiązkowy handoff po scaleniu PR | Zaakceptowana |
 | [0014](0014-card-definitions-single-module.md) | Definicje kart w module `src/cards/card-data.js` (zastępuje §1 ADR 0010) | Zaakceptowana |
-| [0015](0015-colored-mana-pool.md) | Kolorowa pula many (MtG-correct; zastępuje bezbarwną pulę z M2) | Proponowana |
+| [0015](0015-colored-mana-pool.md) | Kolorowa pula many (MtG-correct; zastępuje bezbarwną pulę z M2) | Zaakceptowana |
 | [0016](0016-session-audit-and-surgical-patching.md) | Audyt poprzedniego PR na starcie sesji i chirurgiczne patchowanie | Zaakceptowana |
 | [0017](0017-playerview-completeness-contract.md) | Kompletność informacji publicznych w PlayerView (uzupełnia 0003) | Zaakceptowana |
 | [0018](0018-benchmark-full-only-on-owner-command.md) | Pełny benchmark B0 wyłącznie na wyraźną komendę właściciela; CLI domyślnie profil szybki | Zaakceptowana |
