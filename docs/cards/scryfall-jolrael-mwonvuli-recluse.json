@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Jolrael%2C+Mwonvuli+Recluse&set=mkc",
+  "print": "mkc",
+  "name": "Jolrael, Mwonvuli Recluse",
+  "mana_cost": "{1}{G}",
+  "cmc": 2.0,
+  "type_line": "Legendary Creature — Human Druid",
+  "oracle_text": "Whenever you draw your second card each turn, create a 2/2 green Cat creature token.\n{4}{G}{G}: Until end of turn, creatures you control have base power and toughness X/X, where X is the number of cards in your hand.",
+  "power": "1",
+  "toughness": "2",
+  "colors": [
+    "G"
+  ],
+  "set": "mkc",
+  "set_name": "Murders at Karlov Manor Commander",
+  "collector_number": "173",
+  "rarity": "rare",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/1/8/188f9016-275f-4060-8b11-9cdeef3759bd.jpg?1783912990",
+    "normal": "https://cards.scryfall.io/normal/front/1/8/188f9016-275f-4060-8b11-9cdeef3759bd.jpg?1783912990"
+  },
+  "pobrano": "2026-09-01"
+}

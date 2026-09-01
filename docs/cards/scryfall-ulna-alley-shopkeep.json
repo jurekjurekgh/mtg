@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Ulna+Alley+Shopkeep&set=sos",
+  "print": "sos",
+  "name": "Ulna Alley Shopkeep",
+  "mana_cost": "{2}{B}",
+  "cmc": 3.0,
+  "type_line": "Creature — Goblin Warlock",
+  "oracle_text": "Menace (This creature can't be blocked except by two or more creatures.)\nInfusion — This creature gets +2/+0 as long as you gained life this turn.",
+  "power": "2",
+  "toughness": "3",
+  "colors": [
+    "B"
+  ],
+  "set": "sos",
+  "set_name": "Secrets of Strixhaven",
+  "collector_number": "103",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/2/c25e1ae5-f17c-4eee-98f1-5681981af31c.jpg?1783903673",
+    "normal": "https://cards.scryfall.io/normal/front/c/2/c25e1ae5-f17c-4eee-98f1-5681981af31c.jpg?1783903673"
+  },
+  "pobrano": "2026-09-01"
+}
