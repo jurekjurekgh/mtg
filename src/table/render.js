@@ -1672,6 +1672,7 @@ const CHOICE_GROUP_TYPE_DESCRIPTORS = Object.freeze({
   value: 'Wartość X',
   phyrexian: 'Zapłata: mana czy życie?',
   escape: 'Ucieczka (Escape) — karty do wygnania',
+  escape_exile: 'Ucieczka (Escape) — karty do wygnania',
   'room-target': 'Cel pokoju lochu',
 });
 
@@ -1802,6 +1803,17 @@ function choiceSourceTitle(cmd, session, view) {
   // info publiczna) jadę z pendingu — nigdy z nazwy w warstwie opisu (ADR 0002).
   if (cmd?.type === 'resolve_manifest_dread' && view?.pendingManifestDread?.sourceCardId) {
     return `${session.nameOf(view.pendingManifestDread.sourceCardId)} — zmanifestuj jedną z 2 kart (druga do grobu)`;
+  }
+  // Pętla jakości (Żywy Tester, theros vs warhammer-wu, seed 308, profil
+  // impatient): decyzja „wybierz karty do wygnania za Escape”
+  // (resolve_escape_exile) — grupa miała typ `escape_exile`, którego nie znała
+  // żadna mapa deskryptorów, więc tytuł spadał na „Wybierz: Wariant
+  // (10 opcji)”. Bliźniacza decyzja cast_escape nazywa czar — ta sama klasa
+  // co M240/B i M251/B (klucz i tytuł to dwie listy warunków o tej samej
+  // rodzinie). Źródło (karta w grobie — strefa publiczna) jedzie z pendingu,
+  // nigdy z nazwy zaszytej w warstwie opisu (ADR 0002).
+  if (cmd?.type === 'resolve_escape_exile' && view?.pendingEscapeExile?.sourceCardId) {
+    return `${session.nameOf(view.pendingEscapeExile.sourceCardId)} — Ucieczka (Escape): karty do wygnania`;
   }
   if (!cmd || cmd.objectId == null) return null;
   const zones = ['hand', 'battlefield', 'stack', 'graveyard', 'library'];
