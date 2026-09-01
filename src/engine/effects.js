@@ -125,6 +125,9 @@ function thronePutChosenCreature(state, pending, targetId) {
     hexproofUntilTurn: state.turn.number + 2,
   });
   state.objects.set(newId, permanent);
+  // M273 (błąd #24): liczniki WEJŚCIA karty (CR 121.6) są niezależne od
+  // liczników nadawanych przez sam efekt — obie porcje się sumują.
+  applyEnterCounters(state, newId);
   state.events.push(event('object_moved', { fromId: targetId, object: permanent, fromZone: 'library', toZone: 'battlefield' }));
   state.events.push(event('permanent_entered_battlefield', {
     fromId: targetId, objectId: newId, object: permanent, cardId: permanent.cardId,
@@ -868,6 +871,30 @@ export function destroyPermanentByEffect(state, objectId, options = {}) {
     cardId: moved.cardId, controllerId: object.controllerId, toZone,
   }));
   return true;
+}
+
+/**
+ * Liczniki WEJŚCIA na pole bitwy (CR 121.6 + 614.1c) — „enters with a +1/+1
+ * counter on it" to efekt zastępujący samo wejście, więc obowiązuje przy
+ * KAŻDYM wejściu: rzucie czaru, reanimacji z cmentarza, wprowadzeniu efektem.
+ *
+ * M273 (błąd #24): cechę obsługiwała wyłącznie ścieżka rozstrzygnięcia czaru
+ * permanentu (`resolvePermanentSpell` w spells.js) oraz ninjutsu. Rodzina
+ * reanimacji wprowadzała permanent gołym `moveObjectDirectly`, więc Servant
+ * of the Scale wracał na pole jako 0/0 i ginął natychmiast od akcji stanowej
+ * (CR 704.5f), Trigon of Corruption bez trzech liczników charge był
+ * bezużyteczny, a Kappa Tech-Wrecker tracił deathtouch.
+ *
+ * Wywoływać PO wejściu obiektu na pole bitwy, przed zdarzeniem wejścia.
+ * Karta zakryta (morph/manifest) liczników wejścia NIE dostaje — jest wtedy
+ * bezimiennym 2/2 bez zdolności (CR 708.2).
+ */
+export function applyEnterCounters(state, objectId) {
+  const object = state.objects.get(objectId);
+  if (!object || object.zone !== 'battlefield' || object.faceDown) return;
+  for (const [name, amount] of Object.entries(object.entersWithCounters ?? {})) {
+    addCounter(state, objectId, name, amount);
+  }
 }
 
 export function applyEffect(state, effect, sourceObject, targets = [], context = {}) {
@@ -2326,6 +2353,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
     const permanent = Object.freeze({ ...moved, tapped: true, summoningSickness: true });
     state.objects.set(newId, permanent);
+    // M273 (błąd #24, CR 121.6 + 614.1c): liczniki WEJŚCIA obowiązują przy
+    // każdym wejściu na pole bitwy, także przy reanimacji — bez nich
+    // Servant of the Scale wraca jako 0/0 i ginie od razu (CR 704.5f).
+    applyEnterCounters(state, newId);
     state.events.push(event('object_moved', { fromId: targetId, object: permanent, fromZone: 'graveyard', toZone: 'battlefield' }));
     return;
   }
@@ -2585,6 +2616,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
     const permanent = Object.freeze({ ...moved, summoningSickness: true });
     state.objects.set(newId, permanent);
+    // M273 (błąd #24, CR 121.6 + 614.1c): liczniki WEJŚCIA obowiązują przy
+    // każdym wejściu na pole bitwy, także przy reanimacji — bez nich
+    // Servant of the Scale wraca jako 0/0 i ginie od razu (CR 704.5f).
+    applyEnterCounters(state, newId);
     if (effect.finalityCounter) addCounter(state, newId, 'finality', 1);
     // Batch 24 (Unbreakable Bond): „return ... with a lifelink counter on it" —
     // wejście z licznikami (CR 122.1b — licznik lifelink nadaje keyword).
@@ -2925,6 +2960,9 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const newId = `permanent-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
     state.objects.set(newId, Object.freeze({ ...moved, summoningSickness: true }));
+    // M273 (błąd #24): najpierw liczniki WEJŚCIA karty (CR 121.6), potem
+    // licznik nadawany przez efekt („return with a -1/-1 counter on it").
+    applyEnterCounters(state, newId);
     addCounter(state, newId, effect.counter ?? '-1/-1', effect.amount ?? 1);
     state.events.push(event('object_moved', { fromId: targetId, object: state.objects.get(newId), fromZone: 'graveyard', toZone: 'battlefield' }));
     return;
@@ -2945,6 +2983,10 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const keywords = [...new Set([...(moved.keywords ?? []), ...(effect.grantKeywords ?? [])])];
     const permanent = Object.freeze({ ...moved, controllerId, keywords: Object.freeze(keywords), summoningSickness: true });
     state.objects.set(newId, permanent);
+    // M273 (błąd #24, CR 121.6 + 614.1c): liczniki WEJŚCIA obowiązują przy
+    // każdym wejściu na pole bitwy, także przy reanimacji — bez nich
+    // Servant of the Scale wraca jako 0/0 i ginie od razu (CR 704.5f).
+    applyEnterCounters(state, newId);
     state.events.push(event('object_moved', { fromId: targetId, object: permanent, fromZone: 'graveyard', toZone: 'battlefield' }));
     state.events.push(event('control_changed', { objectId: newId, cardId: permanent.cardId, controllerId, fromControllerId: moved.controllerId }));
     if (effect.exileAtNextEndStep) {
@@ -4280,6 +4322,8 @@ function markTemporaryExile(state, exileId, sourceObject) {
     if (card.kind === 'land' || card.kind === 'spell') return;
     const bfId = `permanent-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, cardId, 'battlefield', bfId);
+    // M273 (błąd #24): liczniki wejścia — ta sama reguła co przy rzucie.
+    applyEnterCounters(state, bfId);
     state.events.push(event('permanent_entered_battlefield', {
       objectId: bfId, object: moved, cardId: moved.cardId,
       controllerId: moved.controllerId, fromGraveyard: true,
@@ -4674,6 +4718,9 @@ function markTemporaryExile(state, exileId, sourceObject) {
       ...moved, controllerId: ownerId, summoningSickness: true, temporaryExile: null,
     });
     state.objects.set(newId, permanent);
+    // M273 (błąd #24): powrót z wygnania to też WEJŚCIE na pole bitwy
+    // (CR 121.6) — liczniki wejścia obowiązują.
+    applyEnterCounters(state, newId);
     state.events.push(event('object_moved', {
       fromId: exiledCardId, object: permanent, fromZone: 'exile', toZone: 'battlefield',
       returnToOwner: true,
@@ -5026,6 +5073,8 @@ function markTemporaryExile(state, exileId, sourceObject) {
       summoningSickness: true, unearthExile: true,
     });
     state.objects.set(newId, permanent);
+    // M273 (błąd #24): liczniki wejścia — ta sama reguła co przy rzucie.
+    applyEnterCounters(state, newId);
     state.events.push(event('object_moved', { fromId: sourceObject.id, object: permanent, fromZone: 'graveyard', toZone: 'battlefield', unearth: true }));
     state.delayedTriggers.push({
       type: 'exile_object', objectId: newId, playerId: ownerId,
