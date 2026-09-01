@@ -1246,21 +1246,17 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Forge Devil: „it deals 1 damage to target creature and 1 damage to you."
     // „You" (kontroler źródła) nie jest celem — obrażenia trafiają w kontrolera,
     // niezależnie od innych celów efektu. To NIE są obrażenia combat.
-    if (!Number.isInteger(effect.amount) || effect.amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
     const targetId = sourceObject.controllerId;
-    // CR 119.3 (platynowa odznaka): event damage_dealt niesie kwotę FAKTYCZNIE
-    // zadaną (po prewencji tarcz) — spójnie z dealNonCombatDamage; poprzednio
-    // event raportował kwotę sprzed prewencji.
-    const dealt = effect.amount - preventDamageTo(state, targetId, effect.amount);
-    // LKI sourceCardId (jak dealNonCombatDamage): źródło mogło zginąć w SBA
-    // tego samego rozstrzygnięcia — log nie pokaże wtedy „?" (Forge Devil
-    // celujący w siebie, 1/1 ginie po 1 obrażenia).
-    const damage = event('damage_dealt', {
-      source: sourceObject.id, target: targetId, amount: dealt, combat: false,
-      sourceCardId: sourceObject.cardId ?? null,
-    });
-    state.events.push(damage);
-    if (dealt > 0) changeLife(state, targetId, -dealt);
+    // M276 (błąd #28): obrażenia w kontrolera idą przez CHOKE POINT
+    // `dealNonCombatDamage`, a nie własną kopią. Kopia znała tylko prewencję
+    // tarcz i zmianę życia, więc gubiła resztę kontraktu obrażeń:
+    // lifelink (CR 702.15 — Forge Devil z licznikiem lifelink, CR 122.1b,
+    // nie dawał życia), infect (CR 702.90b — obrażenia w gracza mają dawać
+    // liczniki trucizny, nie utratę życia) oraz filtr „prevent all damage
+    // this turn". Cel jest tu GRACZEM, więc gałęzie permanentowe choke pointu
+    // (protection, markDamage, deathtouch) po prostu nie zachodzą.
+    if (!Number.isInteger(effect.amount) || effect.amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
+    dealNonCombatDamage(state, sourceObject, targetId, effect.amount);
     return;
   }
   if (effect.type === 'pump') {
