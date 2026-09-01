@@ -6902,6 +6902,9 @@ export function playerView(state, playerId) {
   // odsłonięte karty są jawne dla decydenta (jak index).
   const pendingLookTopNView = state.pendingLookTopN ? {
     playerId: state.pendingLookTopN.playerId,
+    // Pętla jakości: źródło decyzji dla tytułu modala (publiczne — permanent
+    // na polu bitwy), ten sam wzorzec co pendingManifestDread/pendingSatyrLook.
+    sourceCardId: state.pendingLookTopN.sourceCardId ?? null,
     count: state.pendingLookTopN.objectIds.length,
     cards: state.pendingLookTopN.playerId === playerId
       ? state.pendingLookTopN.objectIds.map((id) => {

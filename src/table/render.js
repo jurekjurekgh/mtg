@@ -1732,6 +1732,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_ward_pay_choice: 'Ward — dopłata albo kontr',
   resolve_moonlit_choice: 'Moonlit — wybór efektu',
   resolve_reveal_order: 'Kolejność kart na wierzchu biblioteki',
+  resolve_look_top_choice: 'Karta z odsłoniętych do ręki',
 });
 
 /**
@@ -1814,6 +1815,15 @@ function choiceSourceTitle(cmd, session, view) {
   // nigdy z nazwy zaszytej w warstwie opisu (ADR 0002).
   if (cmd?.type === 'resolve_escape_exile' && view?.pendingEscapeExile?.sourceCardId) {
     return `${session.nameOf(view.pendingEscapeExile.sourceCardId)} — Ucieczka (Escape): karty do wygnania`;
+  }
+  // Pętla jakości (Żywy Tester, tarkir-wur vs innistrad-brg, seed 316):
+  // decyzja „look top N, jedną do ręki” (resolve_look_top_choice — Gurmag
+  // Drowner, Merchant's Dockhand) nie miała ani gałęzi tytułu, ani
+  // deskryptora — spadała na „Wybierz: Wariant (4 opcje)”. Klasa L102/1;
+  // źródło (permanent na polu bitwy — publiczne) jedzie z pendingu jak
+  // pendingManifestDread/pendingSatyrLook (ADR 0002).
+  if (cmd?.type === 'resolve_look_top_choice' && view?.pendingLookTopN?.sourceCardId) {
+    return `${session.nameOf(view.pendingLookTopN.sourceCardId)} — karta z odsłoniętych do ręki`;
   }
   if (!cmd || cmd.objectId == null) return null;
   const zones = ['hand', 'battlefield', 'stack', 'graveyard', 'library'];

@@ -4939,6 +4939,11 @@ function markTemporaryExile(state, exileId, sourceObject) {
       objectIds: [...topIds],
       restTo: 'library_bottom',
       restorePriorityTo: state.turn.priorityPlayerId,
+      // Pętla jakości (Żywy Tester, tarkir-wur vs innistrad-brg, seed 316):
+      // źródło decyzji (permanent na polu bitwy — informacja publiczna) dla
+      // tytułu modala, jak pendingManifestDread (M251/B) i pendingSatyrLook
+      // (M240/B) — bez nazw w warstwie opisu (ADR 0002).
+      sourceCardId: sourceObject?.cardId ?? null,
     };
     state.turn.priorityPlayerId = controllerId;
     state.events.push(event('look_top_started', {
@@ -4989,6 +4994,9 @@ function markTemporaryExile(state, exileId, sourceObject) {
       playerId: controllerId,
       objectIds: [...topIds],
       restorePriorityTo: state.turn.priorityPlayerId,
+      // Pętla jakości: źródło decyzji dla tytułu modala (permanent na polu
+      // bitwy — informacja publiczna); ten sam wzorzec co M251/B i M240/B.
+      sourceCardId: sourceObject?.cardId ?? null,
     };
     state.turn.priorityPlayerId = controllerId;
     state.events.push(event('look_top_started', {
