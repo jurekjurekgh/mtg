@@ -3245,3 +3245,48 @@ i weryfikacją mutacyjną per ścieżka (L13). Nowe testy:
 **Wynik:** `npm test` 4011/4011, `npm run test:all` **4022/4022**,
 build **57 modułów / 3016.3 kB**. Nowe lekcje: **L109**, **L110**.
 
+## M272 — Odznaka DIAMENTOWA: 5 kolejnych unikalnych błędów CR (2026-09-01)
+
+Piąta z rzędu seria po pięć błędów reguł, tą samą metodą L11 (repro przed
+naprawą → root cause → strażnik klasowy → weryfikacja mutacyjna per ścieżka).
+
+17. **CR 704.5s + 122.1e** — Saga poświęcana przez akcję stanową szła na
+    sztywno na cmentarz, z pominięciem `deathZoneFor`: Saga z licznikiem
+    finality dawała się odzyskać, choć powinna zostać wygnana.
+18. **CR 122.1d + 614.6** — liczniki stun tworzą efekt zastępujący działający
+    przy odkręceniu z DOWOLNEGO powodu. Znał go tylko helper `untapObject`;
+    PIĘĆ ścieżek efektów mutowało `tapped: false` ręcznie, omijając zarówno
+    stun, jak i blokadę odkręcania (`untapLockedBy`). Stwór ze stunem wstawał
+    z Twiddle za darmo, zachowując licznik. Nowy wspólny `untapByEffect`.
+19. **CR 701.7a + 702.12** — „destroy" to jedna procedura z warstwą efektów
+    zastępujących (indestructible → shield → regeneracja → strefa śmierci).
+    Znała ją tylko ścieżka `destroy_permanent`; bliźniacza
+    `destroy_equipment_attached` miała uboższą kopię i niszczyła chroniony
+    Equipment. Nowy wspólny `destroyPermanentByEffect`.
+20. **CR 122.1b** — PIĘĆ emiterów `permanent_sacrificed` przenosiło permanent
+    przez `deathZoneFor`, ale strefy nie przekazywało w ZDARZENIU. Triggery
+    śmierci filtrują po `ev.toZone === 'exile'`, więc zdolności „dies"
+    odpalały mimo wygnania przez finality. Piątego emitera (Springbloom Druid)
+    znalazł dopiero strażnik skanujący źródła — audyt ręczny go przeoczył.
+21. **CR 704.5m + 104.4b** — znacznik przegranej z pustej biblioteki stawiały
+    tylko dwie z czterech ścieżek dobierania. Wycyklowanie ostatniej karty nie
+    kończyło partii.
+
+**Fałszywy alarm wycofany w całości:** „zmiana kontroli nie usuwa z walki"
+(CR 506.4) okazała się artefaktem sondy wołającej `applyEffect` bez przebiegu
+akcji stanowych — regułę egzekwuje `state-based.js` od M201. Naprawa, import
+i strażnik cofnięte; wniosek zapisany jako **L111**.
+
+**Wzorzec L107 („helper istnieje, ścieżka go omija") dał w tej serii błędy
+#18, #19 i #20** — łącznie ósma, dziewiąta i dziesiąta ofiara. Najskuteczniejszym
+narzędziem okazał się strażnik SKANUJĄCY ŹRÓDŁA: sprawdza kontrakt u każdego
+emitera zdarzenia, także przyszłego, i dwukrotnie znalazł ścieżkę, której nie
+wychwycił audyt ręczny.
+
+Nowe testy: `m272-saga-poswiecenie-strefa` (5),
+`m272-stun-przy-odkrecaniu-efektem` (7), `m272-destroy-equipment-ochrona` (4),
+`m272-poswiecenie-strefa-w-zdarzeniu` (3),
+`m272-cyklowanie-pusta-biblioteka` (4).
+
+**Wynik:** `npm test` **4037/4037**, `node --test test/bot-benchmark.test.js`
+**10/10**, build **57 modułów / 3021,2 kB**. Nowa lekcja: **L111**.
