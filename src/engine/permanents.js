@@ -50,6 +50,39 @@ function isActiveLockSource(state, objectId) {
   return false;
 }
 
+/**
+ * Odkręcenie permanentu przez EFEKT (czar/zdolność), bez sprawdzania, kto go
+ * kontroluje — w odróżnieniu od `untapObject`, które obsługuje krok
+ * odkręcania i wymaga zgodności kontrolera.
+ *
+ * M272 (błąd #18): pięć ścieżek efektów odkręcających mutowało `tapped: false`
+ * RĘCZNIE, przez co omijały DWIE reguły, które zna `untapObject`:
+ *  - CR 122.1d/614.6 — licznik stun ZASTĘPUJE odkręcenie („instead remove a
+ *    stun counter"), i to przy odkręceniu z DOWOLNEGO powodu, nie tylko
+ *    w kroku odkręcania. Stwór ze stunem wstawał więc z Twiddle/Village
+ *    Bell-Ringer za darmo, zachowując licznik;
+ *  - blokada odkręcania (`untapLockedBy`: Spectral Prison, Lira) — permanent
+ *    „nie odkręca się" wstawał mimo aktywnej blokady.
+ *
+ * Zwraca true, gdy permanent FAKTYCZNIE się odkręcił (zdarzenie
+ * `object_untapped` wyemitowane) — zdjęcie licznika stun to nie odkręcenie,
+ * więc triggery „becomes untapped" nie odpalają (CR 122.1d, ruling WotC).
+ */
+export function untapByEffect(state, objectId, playerId = null) {
+  const object = state.objects.get(objectId);
+  if (!object || object.zone !== 'battlefield' || !object.tapped) return false;
+  if (isUntapLocked(state, object)) return false;
+  if ((object.counters ?? {}).stun > 0) {
+    removeCounter(state, objectId, 'stun', 1);
+    return false;
+  }
+  replaceObject(state, object, { tapped: false });
+  state.events.push(event('object_untapped', {
+    objectId, playerId: playerId ?? object.controllerId, cardId: object.cardId ?? null,
+  }));
+  return true;
+}
+
 export function untapObject(state, objectId, playerId) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId) throw new Error('Nie można untapować tego obiektu');

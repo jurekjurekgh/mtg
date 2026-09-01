@@ -1,6 +1,6 @@
 import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
-import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
+import { untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { spendMana, addMana, producibleMana } from './resources.js';
@@ -1056,7 +1056,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
     const controllerId = sourceObject.controllerId;
     const ownerId = object.ownerId ?? object.controllerId;
-    const untapped = object.tapped ? Object.freeze({ ...object, tapped: false }) : object;
+    // M272 (błąd #18): „untap it" z Awaken the Sleeper też podlega
+    // zastąpieniu przez licznik stun (CR 122.1d) i blokadzie odkręcania —
+    // odkręcenie wykonuje wspólny helper, a nie ręczna mutacja pola.
+    // Helper emituje `object_untapped` sam (patrz niżej: warunek na zdarzenie
+    // został usunięty), więc kolejność jest: najpierw odkręć, potem przejmij.
+    const faktycznieOdkrecony = untapByEffect(state, targetId, controllerId);
+    const untapped = state.objects.get(targetId) ?? object;
     const updated = Object.freeze({
       ...untapped,
       controllerId,
@@ -1071,7 +1077,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       controllerId, fromControllerId: object.controllerId, untilEndOfTurn: true,
     }));
     state.events.push(event('keyword_granted', { objectId: targetId, cardId: updated.cardId, keywords: ['haste'] }));
-    if (object.tapped) state.events.push(event('object_untapped', { objectId: targetId, playerId: controllerId }));
+    void faktycznieOdkrecony; // zdarzenie object_untapped emituje helper
     return;
   }
   if (effect.type === 'destroy_equipment_attached') {
@@ -2473,10 +2479,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (!enchantedId) return;
     const object = state.objects.get(enchantedId);
     if (!object || object.zone !== 'battlefield') return;
-    if (object.tapped) {
-      state.objects.set(enchantedId, Object.freeze({ ...object, tapped: false }));
-      state.events.push(event('object_untapped', { objectId: enchantedId, playerId: sourceObject.controllerId }));
-    }
+    // M272 (błąd #18): wspólny helper — respektuje licznik stun (CR 122.1d)
+    // i blokadę odkręcania, których ręczna mutacja `tapped: false` nie znała.
+    untapByEffect(state, enchantedId, sourceObject.controllerId);
     return;
   }
   if (effect.type === 'untap_permanent') {
@@ -2487,10 +2492,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // (źródło triggera może być LKI stubem, gdy odeszło w oknie odpowiedzi).
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return;
-    if (object.tapped) {
-      state.objects.set(targetId, Object.freeze({ ...object, tapped: false }));
-      state.events.push(event('object_untapped', { objectId: targetId, playerId: sourceObject.controllerId }));
-    }
+    // M272 (błąd #18): wspólny helper (stun CR 122.1d + blokada odkręcania).
+    untapByEffect(state, targetId, sourceObject.controllerId);
     return;
   }
   if (effect.type === 'untap_all_creatures_you_control') {
@@ -2499,11 +2502,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // po jednym zdarzeniu object_untapped na stwora.
     const ctrl = sourceObject.controllerId;
     for (const object of creaturesYouControl(state, ctrl)) {
-      const objectId = object.id;
-      if (object.tapped) {
-        state.objects.set(objectId, Object.freeze({ ...object, tapped: false }));
-        state.events.push(event('object_untapped', { objectId, playerId: ctrl }));
-      }
+      // M272 (błąd #18): wspólny helper per stwór (stun CR 122.1d).
+      untapByEffect(state, object.id, ctrl);
     }
     return;
   }
@@ -3390,8 +3390,12 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const sameController = attackerId === source.controllerId;
     if (sameController && !source.tapped) return;
     const previous = source.controllerId;
-    const wasTapped = Boolean(source.tapped);
-    state.objects.set(source.id, Object.freeze({ ...source, controllerId: attackerId, tapped: false }));
+    // M272 (błąd #18): „and untaps it" przechodzi przez wspólny helper —
+    // licznik stun (CR 122.1d) i blokada odkręcania obowiązują też tutaj.
+    // Helper emituje `object_untapped`, gdy permanent FAKTYCZNIE wstał.
+    const wasTapped = untapByEffect(state, source.id, attackerId);
+    const poOdkreceniu = state.objects.get(source.id) ?? source;
+    state.objects.set(source.id, Object.freeze({ ...poOdkreceniu, controllerId: attackerId }));
     if (!sameController) {
       state.events.push(event('control_changed', {
         objectId: source.id, cardId: source.cardId,
@@ -3405,9 +3409,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // typowa — atakujący to przeciwnik), odkręcenie działo się po cichu.
     // Żaden trigger „becomes untapped" go nie widział, a log stołu pokazywał
     // samą zmianę kontroli, choć permanent stanął odkręcony.
-    if (wasTapped) {
-      state.events.push(event('object_untapped', { objectId: source.id, cardId: source.cardId }));
-    }
+    void wasTapped; // zdarzenie object_untapped emituje wspólny helper
     return;
   }
   if (effect.type === 'sacrifice_self_if_counters_then_treasure') {
