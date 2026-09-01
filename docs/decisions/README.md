@@ -20,7 +20,6 @@ dokument opisuje kontekst, wybór i jego konsekwencje.
 | [0005](0005-deterministic-replayable-execution.md) | Deterministyczne i odtwarzalne wykonanie | Zaakceptowana |
 | [0006](0006-audit-before-table-extraction.md) | Audyt przed wydzieleniem Wirtualnego Stołu | Zaakceptowana |
 | [0007](0007-protected-main-and-mandatory-pull-requests.md) | Chroniony `main` i obowiązkowe Pull Requesty | Zaakceptowana |
-| [0008](0008-plain-javascript-esm-no-build.md) | Czysty JavaScript (ESM) bez kroku budowania | Zastąpiona przez 0011 |
 | [0009](0009-standalone-game-table-instead-of-extraction.md) | Standalone Game Table zamiast wydzielania z aplikacji | Zaakceptowana |
 | [0010](0010-card-rules-data-in-repository.md) | Dane reguł kart utrzymywane ręcznie w repozytorium | Zaakceptowana |
 | [0011](0011-modular-sources-single-file-artifact.md) | Modularne źródła, jednoplikowy artefakt i dwa tryby uruchomienia | Zaakceptowana |
@@ -102,3 +101,19 @@ naprawy błędu.
 
 Po zaakceptowaniu nie zmieniamy znaczenia historycznej decyzji. Jeżeli kierunek
 się zmieni, nowy ADR zastępuje poprzedni.
+
+## Archiwum
+
+Decyzje, które **przestały obowiązywać**, i których żywe zasady zostały
+przeniesione do nowszych ADR. Nie są lekturą startową — zostają jako zapis,
+dlaczego projekt wyglądał kiedyś inaczej.
+
+| ADR | Tytuł | Zastąpiona przez | Gdzie żyją jej zasady |
+|---|---|---|---|
+| [0008](archive/0008-plain-javascript-esm-no-build.md) | Czysty JavaScript (ESM) bez kroku budowania | [0011](0011-modular-sources-single-file-artifact.md) | ADR 0011 pkt 6 + „Czego świadomie nie dostajemy" |
+
+**Zasada archiwizacji:** do archiwum trafia wyłącznie dokument o statusie
+„Zastąpiona"/„Wycofana", i to dopiero PO przeniesieniu wszystkich jego wciąż
+obowiązujących ustaleń do dokumentu następcy. Archiwum nie jest wysypiskiem:
+jeśli po przeniesieniu nie zostaje nic poza historią — to jest właśnie sygnał,
+że plik należy tu przenieść.
