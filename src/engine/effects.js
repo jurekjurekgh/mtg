@@ -888,12 +888,46 @@ export function destroyPermanentByEffect(state, objectId, options = {}) {
  * Wywoływać PO wejściu obiektu na pole bitwy, przed zdarzeniem wejścia.
  * Karta zakryta (morph/manifest) liczników wejścia NIE dostaje — jest wtedy
  * bezimiennym 2/2 bez zdolności (CR 708.2).
+ *
+ * M274 (błąd #26): helper obejmuje też BLOODTHIRST (CR 702.54a). To słowo
+ * kluczowe WYDRUKOWANE na karcie jest efektem zastępującym wejście, więc
+ * działa przy każdym wejściu — także gdy permanent trafia na pole bitwy bez
+ * rzucania (reanimacja). Rozróżnienie z rulingu Bloodghasta: bloodthirst
+ * NADANY czarom przez inny permanent (Bloodlord of Vaasgoth) wymaga rzutu,
+ * bo dotyczy CZARU — ale takiego efektu silnik nie zna, a `object.bloodthirst`
+ * pochodzi wyłącznie z definicji karty.
  */
 export function applyEnterCounters(state, objectId) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield' || object.faceDown) return;
   for (const [name, amount] of Object.entries(object.entersWithCounters ?? {})) {
     addCounter(state, objectId, name, amount);
+  }
+  // Liczniki wejścia WARUNKOWE (CR 614.1c): „enters with two +1/+1 counters
+  // if a creature died this turn" (morbid) / „if at least three <color> mana
+  // was spent to cast this spell" (adamant). Deskryptor generyczny, bez nazw
+  // kart (ADR 0002). Adamant z natury dotyczy tylko rzutu — na ścieżce bez
+  // rzucania `manaColorsSpent` jest puste, więc warunek po prostu nie zachodzi.
+  const rule = object.entersWithCountersIf;
+  if (rule) {
+    let holds = rule.morbid ? Boolean(state.creatureDiedThisTurn) : false;
+    if (!holds && rule.adamant) {
+      // Wpis jednoznaczny (1 znak) liczy się, gdy jest tym kolorem; wildcard
+      // (>1 znaku — jednostka wielokolorowa, CR 106.7) gdy zawiera kolor.
+      const spent = object.manaColorsSpent ?? [];
+      holds = spent.filter((color) => color === rule.adamant.color
+        || (color.length > 1 && color.includes(rule.adamant.color))).length >= (rule.adamant.min ?? 3);
+    }
+    if (holds) {
+      for (const [name, amount] of Object.entries(rule.counters ?? {})) {
+        addCounter(state, objectId, name, amount);
+      }
+    }
+  }
+  // Bloodthirst N: „If an opponent was dealt damage this turn, this creature
+  // enters with N +1/+1 counters on it" — warunek sprawdzany przy WEJŚCIU.
+  if (object.bloodthirst && state.dealtDamageToOpponentThisTurn?.[object.controllerId]) {
+    addCounter(state, objectId, '+1/+1', object.bloodthirst);
   }
 }
 

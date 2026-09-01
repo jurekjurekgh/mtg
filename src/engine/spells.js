@@ -4,7 +4,7 @@ import { triggerTargetEffectFriendly } from './effect-intent.js';
 import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaPurpose } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource, transformedCharacteristics } from './permanents.js';
-import { applyEffect, dealNonCombatDamage, maybeAddFaceDownFlyingCounter } from './effects.js';
+import { applyEffect, applyEnterCounters, dealNonCombatDamage, maybeAddFaceDownFlyingCounter } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature, isLegalAuraHost, attachEquipmentToCreature } from './attachments.js';
 import { effectiveProtectionFromColors } from './attachments.js';
@@ -1953,38 +1953,12 @@ function resolvePermanentSpell(state, stackId, object, before) {
     fromId: stackId, objectId: newId, object: enteredNow, cardId: enteredNow.cardId,
     controllerId: enteredNow.controllerId, resolved: true,
   }));
-  // Liczniki wejścia (CR 122.1a — Servant of the Scale) i bloodthirst — tylko
-  // dla obiektów jawnych (face-down stwór 2/2 nie ma cech karty, CR 702.36).
-  if (!permanent.faceDown && permanent.entersWithCounters) {
-    for (const [name, amount] of Object.entries(permanent.entersWithCounters)) {
-      addCounter(state, newId, name, amount);
-    }
-  }
-  // M108 (batch 33 — Somberwald Spider): liczniki wejścia WARUNKOWE
-  // („Morbid — enters with two +1/+1 counters if a creature died this turn",
-  // CR 614.1c/122.1a). Warunek sprawdzamy w chwili wejścia; deskryptor jest
-  // generyczny (`entersWithCountersIf: { morbid, counters }`), bez nazw kart.
-  if (!permanent.faceDown && permanent.entersWithCountersIf) {
-    const rule = permanent.entersWithCountersIf;
-    // M166/C (Adamant, ELD — Locthwain Paladin): „If at least three <color>
-    // mana was spent to cast this spell" — breakdown kolorów jedzie z
-    // obiektu stosu (manaColorsSpent z spendMana).
-    let holds = rule.morbid ? Boolean(state.creatureDiedThisTurn) : false;
-    if (!holds && rule.adamant) {
-      // M171/N1: wpis jednoznaczny (1 znak) liczy się, gdy jest tym kolorem;
-      // wildcard (>1 znaku — jednostka wielokolorowa, CR 106.7: kolor wybrał
-      // gracz przy produkcji) liczy się, gdy zawiera kolor adamant.
-      const spent = permanent.manaColorsSpent ?? [];
-      holds = spent.filter((color) => color === rule.adamant.color
-        || (color.length > 1 && color.includes(rule.adamant.color))).length >= (rule.adamant.min ?? 3);
-    }
-    if (holds) {
-      for (const [name, amount] of Object.entries(rule.counters ?? {})) addCounter(state, newId, name, amount);
-    }
-  }
-  if (!permanent.faceDown && object.bloodthirst && state.dealtDamageToOpponentThisTurn?.[permanent.controllerId]) {
-    addCounter(state, newId, '+1/+1', object.bloodthirst);
-  }
+  // Cechy WEJŚCIA na pole bitwy (liczniki wejścia CR 122.1a, warunkowe
+  // CR 614.1c, bloodthirst CR 702.54a) — M274: JEDNA implementacja dla
+  // wszystkich ścieżek wejścia (`applyEnterCounters` w effects.js). Wcześniej
+  // ta ścieżka miała własną kopię, a rodzina reanimacji nie miała żadnej:
+  // dokładnie wzorzec L107 (helper istnieje, ścieżka go omija).
+  applyEnterCounters(state, newId);
   // „You may have this creature enter as a copy of any <subtype> creature"
   // (CR 707): decyzja gracza PRZED SBA — flaga enteringAsCopy pomija 0/0
   // do czasu resolve_enter_as_copy (odmowa = 0/0 ginie SBA).

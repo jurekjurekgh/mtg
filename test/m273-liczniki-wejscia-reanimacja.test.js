@@ -188,3 +188,39 @@ test('M274: wprowadzenie stwora z RĘKI (Dragon Arch) nadaje liczniki wejścia',
   assert.ok(permanent, 'stwór wszedł na pole bitwy');
   assert.equal(permanent.counters?.['+1/+1'] ?? 0, 1, 'licznik wejścia nadany');
 });
+
+test('M274 (#26, CR 702.54a): BLOODTHIRST działa przy reanimacji, nie tylko przy rzucie', () => {
+  // „Bloodthirst N (If an opponent was dealt damage this turn, this creature
+  // enters with N +1/+1 counters on it)" — słowo kluczowe WYDRUKOWANE na
+  // karcie jest efektem zastępującym WEJŚCIE, więc obowiązuje także wtedy,
+  // gdy permanent trafia na pole bitwy bez rzucania.
+  // (Ruling Bloodghasta: rzutu wymaga tylko bloodthirst NADANY czarom przez
+  // inny permanent — takiego efektu silnik nie zna.)
+  const cardId = 'gorehorn-minotaurs';
+  const karta = registry.get(cardId);
+  assert.ok(karta.bloodthirst > 0, 'warunek wstępny: karta ma bloodthirst');
+
+  for (const typ of ['return_permanent_from_graveyard', 'return_to_battlefield_tapped']) {
+    const { state } = stanZKarta(cardId);
+    // Warunek bloodthirst SPEŁNIONY: przeciwnik dostał obrażenia w tej turze.
+    state.dealtDamageToOpponentThisTurn = { p1: true };
+    applyEffect(state, { type: typ }, state.objects.get('src'), ['g1']);
+    const permanent = [...state.objects.values()]
+      .find((o) => o.zone === 'battlefield' && o.cardId === cardId);
+    assert.equal(
+      permanent.counters?.['+1/+1'] ?? 0, karta.bloodthirst,
+      `${typ}: bloodthirst ${karta.bloodthirst} nadany przy wejściu`,
+    );
+  }
+});
+
+test('M274: bloodthirst NIE działa, gdy przeciwnik nie oberwał w tej turze', () => {
+  // Kontrola negatywna — inaczej test wyżej byłby zielony także wtedy, gdyby
+  // liczniki nadawano bezwarunkowo.
+  const { state } = stanZKarta('gorehorn-minotaurs');
+  state.dealtDamageToOpponentThisTurn = {};
+  applyEffect(state, { type: 'return_permanent_from_graveyard' }, state.objects.get('src'), ['g1']);
+  const permanent = [...state.objects.values()]
+    .find((o) => o.zone === 'battlefield' && o.cardId === 'gorehorn-minotaurs');
+  assert.equal(permanent.counters?.['+1/+1'] ?? 0, 0, 'brak liczników bez spełnionego warunku');
+});
