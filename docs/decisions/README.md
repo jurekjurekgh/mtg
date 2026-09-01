@@ -5,11 +5,9 @@ dokument opisuje kontekst, wybór i jego konsekwencje.
 
 ## Statusy
 
-- **Proponowana** — kierunek do dyskusji; nie jest jeszcze zobowiązaniem.
-- **Zaakceptowana** — obowiązuje w projekcie.
-- **Odrzucona** — rozważona, ale nieprzyjęta.
-- **Zastąpiona** — historyczna; nowszy ADR wskazuje aktualną decyzję.
-- **Wycofana** — nie ma już zastosowania.
+**Proponowana** (do dyskusji) · **Zaakceptowana** (obowiązuje) · **Odrzucona**
+(rozważona, nieprzyjęta) · **Zastąpiona** (nowszy ADR wskazuje aktualną) ·
+**Wycofana** (bez zastosowania).
 
 ## Decyzje
 

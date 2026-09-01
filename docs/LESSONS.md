@@ -36,45 +36,44 @@ M208.
 
 ## L107 (2026-08-31) — Najbogatsza żyła błędów: ścieżka robiąca to samo co helper, ale RĘCZNIE. Grep po mutacji pola, nie po nazwie mechaniki
 
-**Objaw (M269–M272 — 10 błędów tą jedną techniką):** silnik ma choke pointy
-(`addCounter`, `addPoisonCounters`, `deathZoneFor`, `tapObject`, `untapObject`,
-`moveObjectDirectly`), a obok żyją ścieżki osiągające ten sam skutek własnym
-kodem: `player.poison += 1`, ręcznie złożone `counters`, `'graveyard'` na
-sztywno, `tapped: false` przez `Object.freeze`. Testy są zielone, bo GŁÓWNY
-skutek się zgadza — gubią się SKUTKI UBOCZNE helpera: zdarzenie dla logu i
-bota, synchronizacja rodzaju, wybór strefy przy liczniku finality, efekty
+**Objaw (M269–M273 — 13 błędów tą techniką):** silnik ma choke pointy
+(`addCounter`, `addPoisonCounters`, `deathZoneFor`, `untapObject`,
+`moveObjectDirectly`), a obok żyją ścieżki robiące to samo własnym kodem:
+`player.poison += 1`, ręcznie złożone `counters`, `'graveyard'` na sztywno,
+`tapped: false` przez `Object.freeze`, mutacja `state.zones` wprost. Testy są
+zielone, bo GŁÓWNY skutek się zgadza — giną SKUTKI UBOCZNE helpera: zdarzenie
+dla logu i bota, wybór strefy przy liczniku finality, wyjście z walki, efekty
 zastępujące (stun, indestructible, regeneracja).
 
 **Przyczyna:** helper powstaje później niż jego pierwsi klienci albo dochodzi
-mu odpowiedzialność, a ręcznych kopii nikt nie migruje — nie znajdziesz ich
-szukając po NAZWIE mechaniki, bo one tej nazwy nie zawierają.
+mu odpowiedzialność, a ręcznych kopii nikt nie migruje — nie znajdziesz ich po
+NAZWIE mechaniki, bo one jej nie zawierają.
 
 **Reguła:**
 1. **Szukaj po MUTACJI POLA, nie po nazwie funkcji:** `grep -rn "tapped: true"`,
-   `grep -rn "\.poison +="`, `grep -rn "'graveyard'"`. Każde trafienie spoza
-   pliku-właściciela pola to kandydat.
-2. **Policz emitery jednego zdarzenia i porównaj ich ładunki** — rozjazd pól
-   (np. brak `toZone`) to błąd kontraktu, który widzi konsument zdarzenia.
-3. **Pisz strażnika SKANUJĄCEGO ŹRÓDŁA**, nie scenariuszowego: sprawdza
-   kontrakt u każdego emitera, także przyszłego. Dwukrotnie w M272 znalazł
-   ścieżkę przeoczoną przez audyt wzrokowy.
-4. Od M273 klasy pilnuje automat — `tools/choke-point-audit.mjs` (ADR 0027).## L106 (2026-08-31) — Efekt „do końca tury" z ZAMROŻONYM zbiorem obiektów nie wolno filtrować po BIEŻĄCYM kontrolerze
+   `grep -rn "\.poison +="`. Trafienie spoza pliku-właściciela = kandydat.
+2. **Porównuj ładunki emiterów** jednego zdarzenia — rozjazd pól to błąd
+   kontraktu widoczny dla konsumenta.
+3. **Strażnik SKANUJE ŹRÓDŁA**, nie scenariusz: obejmuje też przyszłe ścieżki.
+4. Od M273 klasy pilnuje automat — `tools/event-contract-audit.mjs` (ADR 0027,
+   L112): trzy wymiary skanu wpięte w `npm test`.
 
-**Objaw (M269):** p1 rzuca „Creatures you control get +2/+2 until end of
-turn", p2 kradnie buffowanego stwora — bonus NATYCHMIAST znika (4/6 → 2/4).
-Symetrycznie buff ujemny (−4/−0) po przejęciu stwora go LECZYŁ. CR 611.2c:
-zbiór obiektów dotkniętych efektem ciągłym ustala się RAZ, przy
-rozstrzygnięciu, i nie zmienia się do końca tury.
+## L106 (2026-08-31) — Efekt „do końca tury" z ZAMROŻONYM zbiorem obiektów nie wolno filtrować po BIEŻĄCYM kontrolerze
+
+**Objaw (M269):** po „Creatures you control get +2/+2 until end of turn"
+kradzież buffowanego stwora NATYCHMIAST kasowała bonus (4/6 → 2/4); buff
+ujemny po przejęciu LECZYŁ. CR 611.2c: zbiór obiektów efektu ciągłego ustala
+się RAZ, przy rozstrzygnięciu.
 
 **Przyczyna:** `untilEndOfTurnBonuses` (`permanents.js`) miała DWA filtry tej
-samej przynależności: zamrożony zbiór (`objectIds`, dołożony w M101/B2) oraz
-starszy `object.controllerId === buff.controllerId`. Dopóki kontrola się nie
-zmienia, oba dają ten sam wynik — więc żaden test nie świecił.
+samej przynależności — zamrożony `objectIds` (M101/B2) i starszy
+`object.controllerId === buff.controllerId`. Póki kontrola się nie zmienia,
+dają ten sam wynik, więc żaden test nie świecił.
 
-**Reguła:** (1) Dwa filtry tej samej przynależności to jeden za dużo — dokładając
-precyzyjniejsze kryterium, USUŃ stare. (2) Redundancja jest niewidoczna, póki
-oba kryteria się zgadzają; testu szukaj tam, gdzie się rozjeżdżają (zmiana
-kontroli, zmiana typu, zmiana stref).## L105 (2026-08-31) — „Dziś to ryzyko, nie błąd" trzeba ZWERYFIKOWAĆ skanem, a nie założyć; sklejka pipów OBOK kwoty zawyża cenę
+**Reguła:** (1) Dokładając precyzyjniejsze kryterium, USUŃ stare — dwa filtry
+tej samej przynależności to jeden za dużo. (2) Redundancja jest niewidoczna,
+póki kryteria się zgadzają; testu szukaj tam, gdzie się rozjeżdżają (zmiana
+kontroli, typu, strefy).## L105 (2026-08-31) — „Dziś to ryzyko, nie błąd" trzeba ZWERYFIKOWAĆ skanem, a nie założyć; sklejka pipów OBOK kwoty zawyża cenę
 
 **Objaw (M268, domknięcie punktów otwartych po M267):** handoff M267
 odnotował, że etykiety `bestow`/`morph` składają koszt po staremu, ale
@@ -137,20 +136,17 @@ Sweet Oblivion (koszt 4)", a Oracle mówi „Cleave {3}{U}" i „Escape {3}{U}".
 **Reguła:**
 1. Alternatywny koszt (cleave, escape, madness, suspend, plot, bestow) to
    OSOBNA cena — jego pipy należą do jego deskryptora. Czytanie kolorów
-   z kosztu bazowego jest błędem nawet wtedy, gdy dziś daje dobry wynik:
-   pierwsza karta o innym kolorze alt-kosztu złamie regułę płatności
-   (CR 601.2b). Wzorzec zrobiony dobrze: madness (M161/O2).
-2. „Testy zielone i zachowanie poprawne" nie zamyka pytania o ŹRÓDŁO.
-   Gdy poprawność wynika ze zbiegu okoliczności w danych, strażnik ma
-   pinować źródło (skąd czytamy), nie tylko wynik — inaczej regres pojawi
-   się przy dodaniu karty, nie przy zmianie kodu.
-3. Dokładając pole do deskryptora karty, przejdź WSZYSTKIE kopie jawnej
-   listy pól (L101) — `registry.js` normalizacja jest czwartą i najłatwiej
-   o niej zapomnieć, bo test na definicję karty przechodzi, a pole ginie
-   dopiero w drodze do rejestru. Sygnał: pole widać w `card-data.js`,
-   a `REGISTRY.get(id)` go nie ma.
-4. Strażnik klasowy porównuje Oracle z definicją (regex po pipach
-   „Cleave {3}{U}") dla CAŁEGO katalogu, nie dla zgłoszonej karty.
+   z kosztu bazowego jest błędem nawet gdy dziś daje dobry wynik: pierwsza
+   karta o innym kolorze alt-kosztu złamie płatność (CR 601.2b). Wzorzec
+   zrobiony dobrze: madness (M161/O2).
+2. „Testy zielone" nie zamyka pytania o ŹRÓDŁO. Gdy poprawność wynika ze
+   zbiegu okoliczności w danych, strażnik pinuje źródło, nie tylko wynik —
+   inaczej regres przyjdzie z nową kartą, nie ze zmianą kodu.
+3. Dokładając pole do deskryptora karty, przejdź WSZYSTKIE kopie jawnej listy
+   pól (L101); normalizacja w `registry.js` jest czwartą i najłatwiej o niej
+   zapomnieć. Sygnał: pole widać w `card-data.js`, a `REGISTRY.get(id)` nie.
+4. Strażnik porównuje Oracle z definicją (regex po pipach) dla CAŁEGO
+   katalogu, nie dla zgłoszonej karty.
 
 **Strażnik:** `test/m267-alt-koszt-kolory.test.js` (5 testów, w tym skan
 katalogu i test ŹRÓDŁA płatności czytający `spells.js`). Mutacje: usunięcie
@@ -216,19 +212,16 @@ Triumph → 4 testy RED (w tym klasowy).
 
 **Reguła:**
 1. Naprawiając wycenę/widok dla JEDNEJ komendy, wypisz całą jej rodzinę
-   (komendy o tej samej strukturze oferty) i zamknij wszystkie naraz —
-   albo dopisz strażnika, który wymienia rodzinę z nazwy. Grep po nazwie
-   funkcji-kary (`freeCastTargetPenalty`) daje listę w sekundę.
-2. Deskryptor potrzebny wycenie musi być w widoku KAŻDEJ strefy jawnej,
-   z której da się zagrać (grób CR 400.2, wygnanie CR 406.3, nie tylko ta,
-   którą akurat zgłoszono).
-3. Każde pole stanu, które zmienia PRZYSZŁE możliwości (liczniki postępu,
-   „n-ty raz w tej turze", gotowości rzutu), należy do odcisku. Test:
-   czy da się zbudować dwa stany różniące się tylko tym polem i mające
-   ten sam fingerprint? Jeśli tak — sonda no-op jest na nie ślepa.
-4. Zgłoszenie sondy „bez skutku" weryfikuj najpierw wobec ODCISKU, dopiero
-   potem wobec reguł: fałszywy alarm zwykle oznacza brak pola w odcisku,
-   czyli prawdziwy błąd o warstwę niżej.
+   i zamknij wszystkie naraz — albo dopisz strażnika wymieniającego rodzinę
+   z nazwy. Grep po funkcji-karze (`freeCastTargetPenalty`) daje listę od ręki.
+2. Deskryptor potrzebny wycenie musi być w widoku KAŻDEJ strefy jawnej, z
+   której da się zagrać (grób CR 400.2, wygnanie CR 406.3) — nie tylko tej,
+   którą zgłoszono.
+3. Pole stanu zmieniające PRZYSZŁE możliwości (liczniki postępu, „n-ty raz
+   w turze") należy do odcisku. Test: czy dwa stany różniące się tylko tym
+   polem mają ten sam fingerprint? Jeśli tak, sonda no-op jest ślepa.
+4. Zgłoszenie sondy „bez skutku" weryfikuj najpierw wobec ODCISKU: fałszywy
+   alarm zwykle znaczy brak pola w odcisku, czyli błąd warstwę niżej.
 
 **Strażnicy:** `test/m265-grave-free-cast-target.test.js` (4 testy),
 `test/m265-nth-resolve-fingerprint.test.js` (3 testy). Mutacje: usunięcie
@@ -297,21 +290,16 @@ zauważył, bo obie warstwy „działały", tylko mówiły co innego.
    `deepEqual` `costColors` komendy), nie tylko test tekstu — sam tekst
    zielenieje po zahardkodowaniu jednej karty.
 4. Grep rodzeństwa: `pay_or_sacrifice_required`, `counter_pay_required`,
-   `ward_choice_required` renderują koszt jako gołe `{N}` — dziś to prawda
-   (koszty generyczne), ale pierwsza karta z kolorowym pipem w tych
-   mechanikach powtórzy błąd.
-   **DOMKNIĘTE w M266/E (2026-08-31).** Skan katalogu pokazał, że dla
-   MADNESS ta karta już istniała: Terminal Agony ({B}{R}) i Revolutionist
-   ({3}{R}) — log pisał „możesz rzucić za {2}", czyli cenę, której nie da
-   się zapłacić. Naprawa zgodnie z pkt 3 tej lekcji nie dołożyła trzeciej
-   kopii składanki: `costSymbols(amount, colors)` w `src/table/mana-icons.js`
-   jest teraz JEDYNYM źródłem dla obu warstw (opis zdarzenia w `session.js`
-   i etykieta przycisku w `render.js`), a `madness_ready_required` oraz
-   komendy `resolve_madness_cast`/`resolve_pay_or_sacrifice` niosą
-   `costColors`. Strażnik: `test/m266-koszt-pipy.test.js` (5 testów).
-   Wniosek na przyszłość: „dziś to prawda" w ostrzeżeniu o rodzeństwie
-   warto od razu zweryfikować SKANEM KATALOGU — ostrzeżenie z L100 opisywało
-   ryzyko przyszłe, a błąd był już w grze.
+   `ward_choice_required` renderowały koszt jako gołe `{N}`.
+   **DOMKNIĘTE w M266/E.** Skan katalogu pokazał, że dla MADNESS ta karta już
+   istniała (Terminal Agony {B}{R}, Revolutionist {3}{R}) — log pisał „rzuć za
+   {2}", cenę niemożliwą do zapłacenia. Naprawa nie dołożyła trzeciej kopii
+   składanki: `costSymbols(amount, colors)` (`src/table/mana-icons.js`) jest
+   JEDYNYM źródłem dla obu warstw, a `madness_ready_required` i komendy
+   `resolve_madness_cast`/`resolve_pay_or_sacrifice` niosą `costColors`.
+   Strażnik: `test/m266-koszt-pipy.test.js` (5). Wniosek: „dziś to prawda"
+   w ostrzeżeniu o rodzeństwie weryfikuj od razu SKANEM KATALOGU — błąd
+   zwykle już jest w grze.
 
 **Strażnik:** `test/m265-optional-pay-colored-cost.test.js` (5 testów).
 Mutacje: usunięcie `payColors` ze zdarzenia (`triggers.js`) → testy 1, 2, 5;
@@ -2182,7 +2170,6 @@ dokumentacji).
    zwalniała linie ze słowem „sprostowanie" — mutacja pokazała, że wystarczy
    postawić błędne zdanie obok tego słowa.
 
-
 ## L89 (2026-08-29) — Przebieg, którego nikt nie dograł: długi bieg loguje postęp, a rozmiar macierzy wyznacza budżet, nie liczba kombinacji
 
 **Objaw:** `node tools/benchmark.mjs --full` liczył się 63 minuty CPU bez jednej
@@ -2341,11 +2328,11 @@ niższym przez rejestrację. Osiem kopii reguły „gdzie ląduje czar" → jedn
 
 ## L110 — Usunięcie duplikatu odsłania błędy, które maskował
 
-W M271 zastąpienie ręcznej kopii wywołaniem choke pointu wywołało regresję:
-benchmark botów zaczął wywracać partię na inwariancie „załącznik wskazuje
-nieistniejącego gospodarza". Przyczyną nie była nowa zmiana — ręczna kopia po
-prostu nie sprawdzała inwariantów, więc niespójny stan pośredni nikogo nie
-bolał. Prawdziwym błędem była kolejność odczepiania KILKU załączników (#16).
+M271: zastąpienie ręcznej kopii choke pointem wywołało regresję — benchmark
+botów wywracał partię na inwariancie „załącznik wskazuje nieistniejącego
+gospodarza". Winna nie była nowa zmiana: ręczna kopia nie sprawdzała
+inwariantów, więc niespójny stan pośredni nikogo nie bolał. Prawdziwym błędem
+była kolejność odczepiania KILKU załączników (#16).
 
 1. Po sprowadzeniu ścieżki do helpera uruchom NAJSZERSZY zestaw
    (`npm run test:all`, w tym benchmark botów) — `npm test` tego nie złapał.
@@ -2356,14 +2343,39 @@ bolał. Prawdziwym błędem była kolejność odczepiania KILKU załączników (
 
 ## L111 — sonda wołająca `applyEffect` pomija state-based actions
 
-W M272 uznałem za błąd, że zmiana kontroli nad atakującym nie usuwa go z walki
-(CR 506.4). Repro przez `applyEffect` pokazywało stwora dalej w
-`state.combat.attackers` — ale regułę egzekwuje `state-based.js` od M201.
-Sonda nie przepuszczała stanu przez pętlę SBA, więc widziała stan pośredni,
-nieodróżnialny od braku reguły. Naprawę wycofano w całości.
+M272: „zmiana kontroli nie usuwa atakującego z walki" (CR 506.4) wyglądało na
+błąd — repro przez `applyEffect` pokazywało stwora w `state.combat.attackers`.
+Regułę egzekwuje jednak `state-based.js` od M201; sonda nie przepuszczała
+stanu przez pętlę SBA, więc widziała stan pośredni. Naprawę wycofano.
 
 Przed uznaniem braku reguły za błąd: (1) repro przez PEŁNĄ komendę
-(`execute`), nie `applyEffect`; (2) grep nazwy zdarzenia w CAŁYM `src/` —
-reguła bywa w `state-based.js`; (3) test falsyfikacyjny przed commitem: usuń
-własną łatkę i sprawdź, czy repro nadal przechodzi. Punkt 3 kosztuje minutę
-i jako jedyny łapie to niezawodnie.
+(`execute`), nie `applyEffect`; (2) grep zdarzenia w CAŁYM `src/` — reguła
+bywa w `state-based.js`; (3) test falsyfikacyjny: usuń własną łatkę i sprawdź,
+czy repro nadal przechodzi. Punkt 3 jako jedyny łapie to niezawodnie.
+
+## L112 — Klasę błędów tępi narzędzie, nie kolejna para oczu
+
+M273 (platyna, ADR 0027). 10 z 25 błędów czterech odznak to JEDEN wzorzec
+(L107): ścieżka omija choke point albo gubi pole zdarzenia oczekiwane przez
+konsumenta. Emitera bez `toZone` (#20) przeoczyłem wzrokiem — znalazł go skan.
+Gdy klasa wraca trzeci raz: przestań szukać egzemplarzy, napisz analizator.
+
+Wymiary skanu (`tools/event-contract-audit.mjs`, wpięte w `npm test`):
+1. ROZJAZD ŁADUNKÓW — pole w ≥60% i <100% emiterów zdarzenia: konsument
+   dostanie `undefined` (#22 `card_revealed.cardId`; #23 `spell_cast.colors`
+   w 5 ścieżkach alternatywnego rzucania — czar udawał bezbarwny).
+2. CECHY WEJŚCIA — ile ścieżek ETB zna cechę. Liczniki wejścia: 1 z 18
+   (#24, CR 121.6 — reanimowany Servant of the Scale wracał jako 0/0).
+3. RĘCZNE MUTACJE `state.zones` — ominięcie choke pointu gubi jego reguły
+   (#25: skasowany token zostawiał wiszące id w `state.combat`, CR 506.4).
+
+Rygor, bez którego narzędzie szkodzi:
+- Trafienie weryfikuj wobec KONSUMENTA (grep pola w `session.js`,
+  `triggers.js`). Brak konsumenta = wyjątek, nie błąd: z 36 kandydatów
+  realne były 2, reszta to świadome kontrakty.
+- Lista wyjątków JAWNA i z POWODEM; test sensowności uzasadnień wyłapał
+  moje własne „Jak wyżej".
+- Analizator też jest produktem: parser gubił pola po komentarzu — poprawka
+  plus test regresyjny. Fałszywy alarm poprawiaj w TEŚCIE, nie w kodzie.
+- Skan bije listę znalezisk: przy #24 i #25 sam wskazał ścieżki, których
+  pierwsza naprawa nie objęła (3 i 1).

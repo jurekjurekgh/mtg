@@ -228,13 +228,57 @@ export function formatViolations(violations) {
   )).join('\n');
 }
 
+/**
+ * Drugi wymiar analizatora: ŚCIEŻKI OMIJAJĄCE CHOKE POINT STREF.
+ *
+ * `moveObjectDirectly` (objects.js) to jedyne legalne przejście między
+ * strefami — niesie reguły, o których łatwo zapomnieć: unearth/flashback
+ * (CR 702.83b/702.34b), `removeFromCombat` (CR 506.4), reset stanu obiektu
+ * (CR 400.7), korektę kontrolera na właściciela (CR 400.3 + 110.2a).
+ *
+ * Ścieżka mutująca `state.zones` wprost omija je wszystkie. Czasem jest to
+ * uzasadnione (przetasowanie biblioteki, kolejność scry — to nie zmiana
+ * strefy), ale usunięcie permanentu z pola bitwy albo skasowanie obiektu
+ * nigdy nie powinno pomijać listy konsumentów (L43).
+ *
+ * Błąd #25 (M273): dwie ścieżki kasujące token z pola bitwy zostawiały
+ * wiszące id w `state.combat`.
+ */
+export function auditBattlefieldDeletions({ rootDir = '.', files = AUDITED_FILES } = {}) {
+  const violations = [];
+  for (const file of files) {
+    const lines = fs.readFileSync(path.resolve(rootDir, file), 'utf8').split('\n');
+    lines.forEach((line, index) => {
+      const deleted = line.match(/state\.objects\.delete\(([^)]+)\)/)?.[1]?.trim();
+      if (!deleted) return;
+      const window = lines.slice(Math.max(0, index - 12), index + 8).join('\n');
+      const escaped = deleted.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const removesFromBattlefield = new RegExp(
+        `zones\\.battlefield = state\\.zones\\.battlefield\\.filter\\(\\(id\\) => id !== ${escaped}\\)`,
+      );
+      if (!removesFromBattlefield.test(window)) return;
+      if (/removeFromCombat/.test(window)) return;
+      violations.push({ file, line: index + 1, objectRef: deleted });
+    });
+  }
+  return violations;
+}
+
 // Uruchomienie bezpośrednie: raport dla człowieka (npm test woła funkcję).
 if (process.argv[1] && process.argv[1].endsWith('event-contract-audit.mjs')) {
   const violations = auditEventContracts();
+  const deletions = auditBattlefieldDeletions();
   if (violations.length === 0) {
     console.log('Kontrakty zdarzeń: brak naruszeń.');
   } else {
     console.log(formatViolations(violations));
-    console.log(`\nRAZEM naruszeń: ${violations.length}`);
+    console.log(`\nRAZEM naruszeń kontraktu: ${violations.length}`);
+  }
+  if (deletions.length === 0) {
+    console.log('Kasowanie obiektów z pola bitwy: brak naruszeń.');
+  } else {
+    for (const d of deletions) {
+      console.log(`${d.file}:${d.line} — delete(${d.objectRef}) z pola bitwy bez removeFromCombat`);
+    }
   }
 }

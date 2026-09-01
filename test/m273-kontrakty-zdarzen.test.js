@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  auditEventContracts, formatViolations, collectEmitters, CONTRACT_EXCEPTIONS,
+  auditEventContracts, auditBattlefieldDeletions, formatViolations, collectEmitters,
+  CONTRACT_EXCEPTIONS,
 } from '../tools/event-contract-audit.mjs';
 
 /**
@@ -57,4 +58,16 @@ test('parser radzi sobie z polami zagnieżdżonymi i rozwinięciem', () => {
   const [emiter] = collectEmitters(zrodlo, 'test.js');
   // Pola zagnieżdżone (a, b) NIE mogą wyciec na poziom kontraktu.
   assert.deepEqual([...emiter.fields].sort(), ['baza', 'last', 'meta', 'objectId']);
+});
+
+test('choke point stref: kasowanie obiektu z pola bitwy przechodzi przez removeFromCombat', () => {
+  // Drugi wymiar analizatora (błąd #25): ścieżka mutująca `state.zones`
+  // wprost omija reguły choke pointu — m.in. wyjście z walki (CR 506.4).
+  const violations = auditBattlefieldDeletions();
+  assert.equal(
+    violations.length, 0,
+    'Obiekt kasowany z pola bitwy bez removeFromCombat — w state.combat zostanie '
+    + 'wiszące id nieistniejącego obiektu:\n'
+    + violations.map((v) => `    ${v.file}:${v.line} (delete ${v.objectRef})`).join('\n'),
+  );
 });
