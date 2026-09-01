@@ -28,16 +28,16 @@ kontynuacja platyny (M274, #26–#27), konsolidacja wiedzy (M275), rodzina
 
 Kryteria ukończenia etapu:
 
-- [ ] przeczytany CAŁY diff `4e18fed..3c23e03` (87 plików: src, tools,
+- [x] przeczytany CAŁY diff `4e18fed..3c23e03` (87 plików: src, tools,
       testy, docs);
-- [ ] dla każdej zmiany silnika: zgodność z CR/Oracle i ADR 0002 (brak
+- [x] dla każdej zmiany silnika: zgodność z CR/Oracle i ADR 0002 (brak
       przypadków po nazwie/ID karty), brak regresji zachowań;
-- [ ] weryfikacja mutacyjna RED→GREEN kluczowych nowych testów (L61/L34:
+- [x] weryfikacja mutacyjna RED→GREEN kluczowych nowych testów (L61/L34:
       baza z `git show`), min. 5 mutacji;
-- [ ] sprawdzenie kontraktu widoku (ADR 0017) dla nowych pól i fingerprintu
+- [x] sprawdzenie kontraktu widoku (ADR 0017) dla nowych pól i fingerprintu
       (ADR 0005, klasa L16);
-- [ ] raport `docs/audits/AUDYT_PR91_2026-09-01.md` + wynik w opisie PR;
-- [ ] znaleziska naprawione u root cause z testem RED→GREEN (osobne commity).
+- [x] raport `docs/audits/AUDYT_PR91_2026-09-01.md` + wynik w opisie PR;
+- [x] znaleziska naprawione u root cause z testem RED→GREEN (osobne commity).
 
 ## Etap 2 — pętla jakości (ADR 0021 §4), kierunki z handoffu M277
 
