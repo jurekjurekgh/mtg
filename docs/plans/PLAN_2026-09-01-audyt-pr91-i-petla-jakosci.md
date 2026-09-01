@@ -43,17 +43,17 @@ Kryteria ukończenia etapu:
 
 Po audycie, w kolejności (każdy podetap = osobny zielony commit):
 
-- 2.1 **Żywy Tester** (`tools/table-tester`, `docs/setup/TESTER_STOLU.md`):
+- [x] 2.1 **Żywy Tester** (`tools/table-tester`, `docs/setup/TESTER_STOLU.md`):
       ostatnie partie były w M265 (14 partii, seedy 301–333); od tego czasu
       8+ błędów naprawiono statycznie. Bierzemy matrycę na puli rzadziej
       audytowanej i sprawdzamy, czy analizator nie przegapił czegoś, co
       widać dopiero w grze. Lektura transkryptów wzdłuż osi 1–4; każde
       podejrzenie weryfikowane wobec Oracle/CR PRZED naprawą (L57).
-- 2.2 **Analizator rodzin jako narzędzie stałe** (kierunek 2 z M277):
+- [x] 2.2 **Analizator rodzin jako narzędzie stałe** (kierunek 2 z M277):
       `/tmp/fam*.mjs` (ad hoc w M274/M276/M277) → `tools/` obok
       `event-contract-audit.mjs`, z testem. Uwaga L113: zasięg skanu =
       zasięg klasy, nie pliku z pierwszym przypadkiem.
-- 2.3 **Polowanie na niezgodności z CR** innymi ścieżkami niż M269–M274
+- [ ] 2.3 **Polowanie na niezgodności z CR** (częściowo pokryte przez 2.1/2.2) innymi ścieżkami niż M269–M274
       (tamte: choke pointy stref, kontrakty zdarzeń, cechy wejścia, liczniki,
       widok grobu). NIE dotykać: `tapObject` dla cudzych permanentów — dług
       udokumentowany w M277, nie naprawiać na zapas.

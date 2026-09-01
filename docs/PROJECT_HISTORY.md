@@ -7272,6 +7272,39 @@ wszystkie naprawione u root cause:
 Raport: `docs/audits/AUDYT_PR90_2026-08-31.md`. Lekcje L99–L102.
 Fast **3912/3912**, test:all **3922/3922**, build **56 modułów / 2994,1 kB**.
 
+### Sesja arena/01a05d4f (2026-09-01, PR #92) — audyt PR #91 + pętla jakości
+
+**Etap 1 — audyt PR #91** (`4e18fed..3c23e03`, 87 plików): pełne czytanie
+diffa (src/tools/testy/docs), doczytanie ADR 0025–0027, **5 mutacji
+RED→GREEN** (toZone emitera springbloom_druid, combat „if able" CR 508.1c,
+`applyEnterCounters` CR 121.6, fizzle czaru modalnego CR 608.2b,
+`spellExitZone` CR 118.9). Zero znalezisk regułowych. Potwierdzone kontrakty:
+widok ADR 0017 (grób: kind/types/power/manaCost/spell), fingerprint ADR 0005
+(`abilityResolvedThisTurn`), ADR 0002 (brak nowych hardkodów po nazwie karty).
+`bot-benchmark` 10/10. Raport: `docs/audits/AUDYT_PR91_2026-09-01.md`.
+
+**Etap 2 — pętla jakości** (16 partii Żywego Testera na taliach spoza
+`BENCH_DECKS` — wiedzmin/srodziemie/ravnica/mirrodin-*/tarkir-*/warhammer-*/
+worek-* — profile greedy/random/defensive/explorer/impatient/hoarder, seedy
+301–308 i 311–318; 0 `[STOP]`, 0 `== LIMIT ==`). Trzy wyniki:
+
+- **2.2 analizator rodzin jako narzędzie stałe** (`tools/family-audit.mjs`,
+  kierunek 2 z handoffu M277): przeniesienie ad hoc `/tmp/fam*.mjs`
+  (M274/M276/M277) do `tools/`; dwa wymiary skanu — rodziny efektów
+  (damage/untap/mill/destroy) i rodziny pól (życie/trucizna) — z jawną listą
+  wyjątków (ADR 0027 pkt 3). Weryfikacja mutacyjna: `damage_to_controller`
+  z `changeLife(-)` zamiast `dealNonCombatDamage` → 1 fail (RED) → GREEN.
+- **2.1 znalezisko #1** (theros vs warhammer-wu, seed 308, impatient): grupa
+  `resolve_escape_exile` spadała na „Wybierz: Wariant (10 opcji)" — typ grupy
+  `escape_exile` nie miał deskryptora ani gałęzi tytułu (L102/1). Fix:
+  `choiceSourceTitle` nazywa kartę + deskryptor fallback; RED→GREEN.
+- **2.1 znalezisko #2** (tarkir-wur vs innistrad-brg, seed 316, explorer):
+  grupa `resolve_look_top_choice` (Gurmag Drowner/Merchant's Dockhand) spadała
+  na „Wybierz: Wariant (4 opcje)". Fix: `pendingLookTopN` niesie sourceCardId
+  (wzorzec M251/B/M240/B), widok eksponuje je, tytuł nazywa źródło; RED→GREEN.
+
+Fast **4081/4081**, test:all **4091/4091**, build **57 modułów / 3031,7 kB**.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:
