@@ -3486,3 +3486,53 @@ Nowe testy: `m276-obrazenia-choke-point` (6, w tym test RÓWNOWAŻNOŚCI obu
 
 **Wynik:** `npm test` **4071/4071**, `node --test test/bot-benchmark.test.js`
 **10/10**, build **57 modułów / 3029,5 kB**.
+
+## M277 (2026-09-01) — Domknięcie kierunków z handoffu: kontrakt renderu i statusy ADR
+
+Etap zamykający listę kierunków otwartych po M276. Dwa wyniki: jedna poprawka
+dokumentu, który kłamał o stanie faktycznym, i jeden strażnik utrwalający
+przegląd, który nie znalazł błędu.
+
+### ADR 0015 miał status „Proponowana", choć jest wdrożony od M41
+
+Uzupełnienie konsolidacji z M275 — tam przeglądałem ADR-y pod kątem decyzji
+NIEAKTUALNYCH, tu pod kątem zgodności statusu ze stanem kodu. „Kolorowa pula
+many" nosiła status propozycji, podczas gdy `player.manaPool`,
+`canPayColoredCost` i `spendMana` żyją w `src/engine/resources.js` od M41.
+Po poprawce **wszystkie 27 aktywnych ADR-ów ma status Zaakceptowana**, a
+dokumenty Zastąpiona/Wycofana mieszkają w `docs/decisions/archive/`.
+
+### Kontrakt widok ↔ render (kierunek 3): luki nie ma, jest strażnik
+
+M274 (#27) domknął kontrakt widok ↔ bot dla grobu. Druga strona: `cardInfo`
+w `render.js` czyta 43 pola z wpisu widoku, a `playerView` część dokłada
+warunkowo. Przegląd wykazał komplet — pola warunkowe pojawiają się, gdy cecha
+istnieje na obiekcie. Zamiast raportu „sprawdzone, czysto" został
+`test/m277-widok-render-kontrakt.test.js` (3 testy: implikacja „permanent ma
+cechę ⇒ widok ją niesie", skan źródeł `cardInfo` vs `playerView`, kontrola
+negatywna na mgłę wojny).
+
+**Metodycznie ważne:** pierwsza wersja skanu parsowała źródło `playerView`
+regexem i dawała fałszywe braki dla pól wchodzących spreadem (`counters`,
+`damage`, `toughness`). Zbiór „pól wysyłanych" buduję teraz z PRAWDZIWYCH
+wpisów widoku — narzędzie ma mierzyć zachowanie, nie tekst (L5).
+
+### Kierunki 1–2: przeczesane, czysto
+
+Rodziny `counter` (9), `tap` (10), `untap` (6), `sacrifice` (6), `mill` (3) —
+bez znalezisk. Odkręcanie w całości przechodzi przez `untapByEffect` po M272
+(także `attacker_gains_control_and_untaps`, którego mój pierwszy grep nie
+pokazał — wywołanie leży 27 linii od nagłówka, poza oknem skanu). Wszystkie
+13 emiterów `permanent_sacrificed` niesie `toZone`, więc klasa #20 się trzyma.
+Żadna ścieżka nie wyprowadza permanentu z pola bitwy ręczną mutacją
+`state.zones`, a każde ręczne przejście do strefy ukrytej ma korektę
+`ownerId` (CR 400.3).
+
+Odnotowane, nie naprawiane: `tapObject` nie ma odpowiednika `untapByEffect`
+dla CUDZYCH permanentów (rzuca wyjątkiem przy obcym kontrolerze), więc efekty
+tapujące cele przeciwnika mutują pole wprost. Każda z tych ścieżek emituje
+`object_tapped`, a tapowanie — w odróżnieniu od odkręcania (stun, CR 122.1d) —
+nie ma dziś w katalogu efektu zastępującego. To dług do spłaty, gdy pojawi się
+pierwsza karta z takim efektem, nie błąd.
+
+**Wynik:** `npm test` **4074/4074**, build **57 modułów / 3029,5 kB**.
