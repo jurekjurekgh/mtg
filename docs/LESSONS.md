@@ -34,98 +34,47 @@ M208.
 
 ---
 
-## L107 (2026-08-31) — Najbogatsza żyła błędów reguł: ścieżka, która robi to samo co wspólny helper, ale RĘCZNIE. Grep po mutacji pola, nie po nazwie mechaniki
+## L107 (2026-08-31) — Najbogatsza żyła błędów: ścieżka robiąca to samo co helper, ale RĘCZNIE. Grep po mutacji pola, nie po nazwie mechaniki
 
-**Objaw (M269, brązowa odznaka — 4 z 5 błędów tą jedną techniką):** silnik ma
-choke pointy (`addCounter`, `addPoisonCounters`, `deathZoneFor`, `tapObject`,
-`moveObjectDirectly`), a obok nich żyją ścieżki, które ten sam skutek
-osiągają własnym kodem: `player.poison += 1` zamiast helpera, ręcznie złożone
-`counters` zamiast `addCounter`, `'graveyard'` na sztywno zamiast
-`deathZoneFor`. Kod działa i testy są zielone, bo GŁÓWNY skutek jest ten sam —
-gubią się SKUTKI UBOCZNE helpera: synchronizacja rodzaju (station), zdarzenie
-dla logu i bota, wybór strefy przy liczniku finality.
+**Objaw (M269–M272 — 10 błędów tą jedną techniką):** silnik ma choke pointy
+(`addCounter`, `addPoisonCounters`, `deathZoneFor`, `tapObject`, `untapObject`,
+`moveObjectDirectly`), a obok żyją ścieżki osiągające ten sam skutek własnym
+kodem: `player.poison += 1`, ręcznie złożone `counters`, `'graveyard'` na
+sztywno, `tapped: false` przez `Object.freeze`. Testy są zielone, bo GŁÓWNY
+skutek się zgadza — gubią się SKUTKI UBOCZNE helpera: zdarzenie dla logu i
+bota, synchronizacja rodzaju, wybór strefy przy liczniku finality, efekty
+zastępujące (stun, indestructible, regeneracja).
 
 **Przyczyna:** helper powstaje później niż jego pierwsi klienci albo dochodzi
-mu odpowiedzialność (L24: „tapnięcie musi emitować zdarzenie"), a ręczne
-kopie nikt nie migruje — nie ma jak ich znaleźć szukając po NAZWIE mechaniki,
-bo one tej nazwy nie zawierają.
+mu odpowiedzialność, a ręcznych kopii nikt nie migruje — nie znajdziesz ich
+szukając po NAZWIE mechaniki, bo one tej nazwy nie zawierają.
 
 **Reguła:**
-1. **Szukaj po MUTACJI POLA, nie po nazwie funkcji.** `grep -rn "counters:
-   {" src/engine/`, `grep -rn "\.poison +="`, `grep -rn "tapped: true"`,
-   `grep -rn "'graveyard'"`. Każde trafienie spoza pliku-właściciela pola to
-   kandydat. To znalazło błędy #2, #4 i #5 w M269 w kilkanaście minut.
-2. **Policz emitery jednego zdarzenia i porównaj ich ładunki.**
-   `permanent_sacrificed` miało 10 emiterów; zestawienie pól obok siebie
-   (jedna linia na emiter, `tr -d '\n'`) natychmiast pokazało, które nie
-   pytają `deathZoneFor`.
-3. **Niespójność bywa WEWNĄTRZ jednej funkcji** — błąd #3 to `if/else`, gdzie
-   tylko jedna gałąź emitowała `object_untapped`. Czytaj obie gałęzie, nie
-   pierwszą.
-4. **Nie zgłaszaj tropu bez OBSERWOWALNEGO skutku.** W M269 odrzucono trzy
-   dobrze wyglądające tropy: kradzież czaru ze stosu (żadna karta w katalogu
-   tego nie robi), powrót kontroli do właściciela zamiast do poprzedniego
-   kontrolera (nieobserwowalne w 1v1), brak choroby przywołania na artefakcie
-   (nie jest stworem). Trop bez repro to hipoteza, nie błąd (L11).
-5. **Naprawa = użyć helpera, nie dopisać brakujący skutek na miejscu.**
-   Dopisanie drugiej kopii `syncStationKind` rozwiązałoby objaw i zostawiło
-   trzecią kopię na przyszłość (ADR 0002).
-6. **Znacznik doklejany do zdarzenia helpera szukaj po INDEKSIE, nie jako
-   „ostatnie zdarzenie"** — helper może dołożyć po nim własne (`addCounter`
-   emituje jeszcze `station_status_changed`).
+1. **Szukaj po MUTACJI POLA, nie po nazwie funkcji:** `grep -rn "tapped: true"`,
+   `grep -rn "\.poison +="`, `grep -rn "'graveyard'"`. Każde trafienie spoza
+   pliku-właściciela pola to kandydat.
+2. **Policz emitery jednego zdarzenia i porównaj ich ładunki** — rozjazd pól
+   (np. brak `toZone`) to błąd kontraktu, który widzi konsument zdarzenia.
+3. **Pisz strażnika SKANUJĄCEGO ŹRÓDŁA**, nie scenariuszowego: sprawdza
+   kontrakt u każdego emitera, także przyszłego. Dwukrotnie w M272 znalazł
+   ścieżkę przeoczoną przez audyt wzrokowy.
+4. Od M273 klasy pilnuje automat — `tools/choke-point-audit.mjs` (ADR 0027).## L106 (2026-08-31) — Efekt „do końca tury" z ZAMROŻONYM zbiorem obiektów nie wolno filtrować po BIEŻĄCYM kontrolerze
 
-**Strażnik:** wzorzec strażnika dla tej klasy to test RÓWNOWAŻNOŚCI: ten sam
-skutek osiągnięty dwiema ścieżkami musi dać identyczny stan i ten sam typ
-zdarzenia (`m269-proliferate-station` H2, `m269-proliferate-trucizna` H2,
-`m269-poswiecenie-strefa-smierci`). Mutuj KAŻDĄ ścieżkę osobno — inaczej nie
-wiesz, czy test trafia w swoją gałąź.
+**Objaw (M269):** p1 rzuca „Creatures you control get +2/+2 until end of
+turn", p2 kradnie buffowanego stwora — bonus NATYCHMIAST znika (4/6 → 2/4).
+Symetrycznie buff ujemny (−4/−0) po przejęciu stwora go LECZYŁ. CR 611.2c:
+zbiór obiektów dotkniętych efektem ciągłym ustala się RAZ, przy
+rozstrzygnięciu, i nie zmienia się do końca tury.
 
----
+**Przyczyna:** `untilEndOfTurnBonuses` (`permanents.js`) miała DWA filtry tej
+samej przynależności: zamrożony zbiór (`objectIds`, dołożony w M101/B2) oraz
+starszy `object.controllerId === buff.controllerId`. Dopóki kontrola się nie
+zmienia, oba dają ten sam wynik — więc żaden test nie świecił.
 
-## L106 (2026-08-31) — Efekt „do końca tury" z ZAMROŻONYM zbiorem obiektów nie wolno dodatkowo filtrować po BIEŻĄCYM kontrolerze: kradzież stwora kasowała buff (i leczyła osłabienie)
-
-**Objaw (M269, odznaka, technika L11 #1):** p1 rzuca „Creatures you control
-get +2/+2 until end of turn", p2 kradnie jednego z buffowanych stworów
-(`gain_control_until_end_of_turn` — Spreading Insurrection, Awaken the
-Sleeper) i stwór NATYCHMIAST traci bonus: 4/6 → 2/4. Symetrycznie przy
-buffie ujemnym (Hysterical Blindness „creatures your opponents control get
--4/-0") przejęcie stwora go LECZYŁO. CR 611.2c: zbiór obiektów dotkniętych
-efektem ciągłym ustala się RAZ, przy rozstrzygnięciu, i nie zmienia się do
-końca tury.
-
-**Przyczyna:** `untilEndOfTurnBonuses` (`src/engine/permanents.js`) miała
-DWA niezależne filtry przynależności: zamrożony zbiór (`objectId` /
-`objectIds` — dołożony w M101/B2 właśnie po to, żeby świeży stwór nie łapał
-cudzego buffa) ORAZ starszy filtr po `object.controllerId === buff.controllerId`.
-Drugi filtr przetrwał jako pozostałość sprzed M101 i nikt nie zauważył, że
-teraz jest zarazem redundantny i szkodliwy: dopóki kontrola się nie zmienia,
-oba dają ten sam wynik, więc żaden test nie świecił na czerwono.
-
-**Reguła:**
-1. **Dwa filtry tej samej przynależności to jeden filtr za dużo.** Gdy
-   dokładasz precyzyjniejsze kryterium (zamrożony zbiór), STARE kryterium
-   trzeba usunąć w tym samym kroku — inaczej zostaje uśpiony bug, który
-   budzi się dopiero przy rzadkiej interakcji (tu: zmiana kontroli).
-2. **„Zamrożony przy rozstrzygnięciu" znaczy zamrożony na WSZYSTKO** — nie
-   tylko na wejście nowych permanentów, ale też na wyjście istniejących ze
-   strefy wpływu kontrolera. Zbiór jest samowystarczalny; nic poza nim nie
-   rozstrzyga przynależności.
-3. **Buff ujemny to ten sam mechanizm co dodatni** — test klasy musi
-   sprawdzać OBA znaki. Błąd, który „tylko zabiera bonus", w drugą stronę
-   daje przeciwnikowi darmowe uleczenie osłabionego stwora.
-4. **Sąsiedni rejestr sprawdź od razu**: `state.untilEndOfTurnProtections`
-   (ta sama rodzina „do końca tury") ma WYŁĄCZNIE `objectIds`, bez filtru
-   kontrolera — czyli poprawnie. Rozbieżność między bliźniaczymi rejestrami
-   jest sama w sobie sygnałem (L11 #1).
-
-**Strażnik:** `test/m269-buff-zmiana-kontroli.test.js` (4 testy: buff
-grupowy, buff ujemny, buff celowany `objectId`, kontrola negatywna — obiekt
-spoza zbioru mimo właściwej kontroli). Mutacja: `hasFrozenScope = false`
-(przywrócenie starego filtru) → 3/4 RED.
-
----
-
-## L105 (2026-08-31) — „Dziś to ryzyko, nie błąd" trzeba ZWERYFIKOWAĆ skanem, a nie założyć; sklejka pipów OBOK kwoty zawyża cenę
+**Reguła:** (1) Dwa filtry tej samej przynależności to jeden za dużo — dokładając
+precyzyjniejsze kryterium, USUŃ stare. (2) Redundancja jest niewidoczna, póki
+oba kryteria się zgadzają; testu szukaj tam, gdzie się rozjeżdżają (zmiana
+kontroli, zmiana typu, zmiana stref).## L105 (2026-08-31) — „Dziś to ryzyko, nie błąd" trzeba ZWERYFIKOWAĆ skanem, a nie założyć; sklejka pipów OBOK kwoty zawyża cenę
 
 **Objaw (M268, domknięcie punktów otwartych po M267):** handoff M267
 odnotował, że etykiety `bestow`/`morph` składają koszt po staremu, ale
@@ -2392,38 +2341,29 @@ niższym przez rejestrację. Osiem kopii reguły „gdzie ląduje czar" → jedn
 
 ## L110 — Usunięcie duplikatu odsłania błędy, które maskował
 
-W M271 naprawa #11/#12 (zastąpienie ręcznej kopii wywołaniem choke pointu)
-wywołała regresję: benchmark botów zaczął wywracać partię na inwariancie
-„załącznik wskazuje nieistniejącego gospodarza". Przyczyną NIE była nowa
-zmiana — ręczna kopia po prostu nie sprawdzała inwariantów, więc niespójny
-stan pośredni nikogo nie bolał. Prawdziwym błędem była kolejność operacji
-przy odczepianiu KILKU załączników naraz (błąd #16).
+W M271 zastąpienie ręcznej kopii wywołaniem choke pointu wywołało regresję:
+benchmark botów zaczął wywracać partię na inwariancie „załącznik wskazuje
+nieistniejącego gospodarza". Przyczyną nie była nowa zmiana — ręczna kopia po
+prostu nie sprawdzała inwariantów, więc niespójny stan pośredni nikogo nie
+bolał. Prawdziwym błędem była kolejność odczepiania KILKU załączników (#16).
 
-Wnioski praktyczne:
-1. Po sprowadzeniu ścieżki do wspólnego helpera uruchom NAJSZERSZY dostępny
-   zestaw (`npm run test:all`, w tym benchmark botów) — sam `npm test` tego
-   nie złapał. Regresja pojawiła się dopiero w losowej partii na seedzie 2028.
-2. Gdy taka regresja wystąpi, nie cofaj naprawy i nie osłabiaj inwariantu.
-   Znajdź, co duplikat maskował — to zwykle osobny, samoistny błąd wart
-   własnego strażnika.
-3. Inwarianty wołane na końcu operacji widzą stan POŚREDNI, jeśli operacja
-   wywołuje samą siebie rekurencyjnie (tu: przenoszenie gospodarza →
-   odczepianie → przenoszenie aury). Pętla, która zmienia wiele obiektów
-   powiązanych, musi najpierw zerwać wiązania, a potem stosować polityki.
+1. Po sprowadzeniu ścieżki do helpera uruchom NAJSZERSZY zestaw
+   (`npm run test:all`, w tym benchmark botów) — `npm test` tego nie złapał.
+2. Nie cofaj naprawy i nie osłabiaj inwariantu; znajdź, co duplikat maskował.
+3. Inwarianty na końcu operacji widzą stan POŚREDNI przy rekurencji: pętla
+   zmieniająca wiele powiązanych obiektów musi najpierw zerwać wiązania,
+   potem stosować polityki.
 
 ## L111 — sonda wołająca `applyEffect` pomija state-based actions
 
 W M272 uznałem za błąd, że zmiana kontroli nad atakującym nie usuwa go z walki
 (CR 506.4). Repro przez `applyEffect` pokazywało stwora dalej w
-`state.combat.attackers` — ale regułę egzekwuje `state-based.js:95–124` od M201.
+`state.combat.attackers` — ale regułę egzekwuje `state-based.js` od M201.
 Sonda nie przepuszczała stanu przez pętlę SBA, więc widziała stan pośredni,
-nieodróżnialny od braku reguły. Naprawę i strażnika wycofano w całości.
+nieodróżnialny od braku reguły. Naprawę wycofano w całości.
 
-Przed uznaniem braku reguły za błąd:
-1. Repro przez PEŁNĄ komendę (`execute`), nie przez `applyEffect` — albo jawny
-   przebieg SBA.
-2. Grep nazwy zdarzenia w CAŁYM `src/`: reguła bywa w `state-based.js`, a nie
-   w rodzinie efektów, którą właśnie czytasz.
-3. Test falsyfikacyjny PRZED commitem: usuń własną łatkę i sprawdź, czy repro
-   nadal przechodzi. Jeśli tak — łatka jest zbędna. Punkt 3 kosztuje minutę
-   i jako jedyny łapie to niezawodnie.
+Przed uznaniem braku reguły za błąd: (1) repro przez PEŁNĄ komendę
+(`execute`), nie `applyEffect`; (2) grep nazwy zdarzenia w CAŁYM `src/` —
+reguła bywa w `state-based.js`; (3) test falsyfikacyjny przed commitem: usuń
+własną łatkę i sprawdź, czy repro nadal przechodzi. Punkt 3 kosztuje minutę
+i jako jedyny łapie to niezawodnie.

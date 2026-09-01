@@ -41,6 +41,7 @@ dokument opisuje kontekst, wybór i jego konsekwencje.
 | [0024](0024-deck-split-by-colors-and-rotating-benchmark.md) | Podział talii planowej ≥30 kart nielandowych po kolorach (tożsamość bezkolorowych z produkcji many); rotująca auto-próbka benchmarku | Zaakceptowana |
 | [0025](0025-benchmark-match-budget-not-all-combinations.md) | Pełna macierz benchmarku pod budżet meczów (~6 000), nie pod wszystkie kombinacje; próbka par talii skaluje się z katalogiem | Zaakceptowana |
 | [0026](0026-zones-on-table-exiledby-contract.md) | Strefy dodatkowe na stole (boksy cmentarzy i wygnania) zamiast inspektora i poczekalni; kontrakt `meta.exiledBy` — źródło wygnania stemplowane w choke poincie zmian stref | Zaakceptowana |
+| [0027](0027-platinum-badge-static-analyzer.md) | Odznaka platynowa: klasę błędów L107 tępi ANALIZATOR statyczny wpięty w `npm test` (choke pointy + kontrakty zdarzeń), a nie audyt wzrokowy; wymagane 5 błędów wskazanych przez narzędzie i jawna lista wyjątków | Zaakceptowana |
 
 ## Gdzie zapisać regułę (ADR vs LESSONS vs handoff)
 
