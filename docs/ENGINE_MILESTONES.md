@@ -3358,3 +3358,67 @@ Nowe testy: `m273-kontrakty-zdarzen` (5),
 **Wynik:** `npm test` **4051/4051**, `node --test test/bot-benchmark.test.js`
 **10/10**, build **57 modułów / 3027,4 kB**. Nowa lekcja: **L112**.
 Nowy ADR: **0027**.
+
+## M274 (2026-09-01) — Kontynuacja platyny wg handoffu: analizator znajduje dalej
+
+Etap prowadzony wprost z trzech kierunków wskazanych w handoffie M273. Wszystkie
+trzy dały wynik — dowód, że analizator z ADR 0027 nie był jednorazowy.
+
+### Kierunek 1: bliźniacze implementacje (rodziny `exile` 13 / `return` 11)
+
+Porównanie zbioru helperów wołanych przez każdy wariant efektu wskazało trzy
+kolejne ścieżki ETB bez liczników wejścia: Pyxis of Pandemonium (`effects.js`),
+opóźniony powrót Plague Reavera (`triggers.js`) i Dragon Arch (`game-state.js`).
+
+**Ważniejsze od samych ścieżek: znalazły się tam, bo STRAŻNIK z M273 miał dwie
+dziury i przepuścił je cicho.**
+1. Skanował wyłącznie `effects.js`, a ścieżki ETB są też w `triggers.js`
+   i `game-state.js`.
+2. Filtr wykluczał okno zawierające `faceDown` (miał pomijać morph), ale Pyxis
+   ustawia `faceDown: false`, czyli ODKRYWA kartę — wyciszenie złapało ścieżkę,
+   której miało pilnować.
+
+Naprawiony skan (3 pliki, filtr po INTENCJI: `faceDown: true`, nie po samym
+ciągu znaków) sam wskazał trzecią ścieżkę — Dragon Arch, której nie było
+w moim ręcznym przeglądzie rodzin.
+
+### Kierunek 3: cechy wejścia inne niż liczniki
+
+26. **CR 702.54a** — bloodthirst działał wyłącznie przy rzucie. Słowo kluczowe
+    WYDRUKOWANE na karcie jest efektem zastępującym wejście, więc obowiązuje
+    także przy reanimacji: Gorehorn Minotaurs wracał bez dwóch liczników +1/+1.
+    Weryfikacja wobec CR przed naprawą (L57): ruling Bloodghasta rozróżnia
+    bloodthirst wydrukowany (każde wejście) od NADANEGO czarom przez inny
+    permanent (wymaga rzutu) — silnik zna tylko ten pierwszy.
+
+    **Konsolidacja przy okazji:** `spells.js` miał własną kopię logiki cech
+    wejścia (liczniki, warunkowe morbid/adamant, bloodthirst), a rodzina
+    reanimacji nie miała żadnej — wzorzec L107 w czystej postaci.
+    `applyEnterCounters` obejmuje teraz KOMPLET cech i jest jedynym źródłem dla
+    wszystkich ścieżek; z `spells.js` usunięte 1453 znaki duplikatu.
+
+### Kierunek 2: kontrakt widoku gracza
+
+27. **ADR 0017 + CR 400.2** — widok GROBU nie niósł `kind`, `types`, `power`,
+    `toughness` ani `manaCost`, a `heuristic-bot.js` filtruje zawartość grobu
+    dokładnie po tych polach (`o.kind === 'creature'`, `types.includes(
+    'Artifact')`, `o.power` przy wycenie reanimacji). Wszystkie dostawały
+    `undefined`: **stwór 3/3 w cudzym grobie wyceniał się na ZERO**, więc
+    reanimacja i odpowiedź na nią były dla bota niewidoczne. Wygnanie (strefa
+    też jawna, CR 406.3) `kind`/`types` już wysyłało — grób został w tyle.
+    Klasa L102 pkt 2.
+
+**Sprawdzone i odrzucone:** bounce tokena do ręki (SBA sprząta poprawnie,
+CR 111.7), indestructible w rodzinie `exile` (nie chroni przed wygnaniem),
+`entersWithCountersIf`/`renown` (brak kart w katalogu), `entersTapped` przy
+reanimacji (dotyczy tylko lądów), `sourceId` w widoku stosu (**fałszywy alarm
+mojej sondy** — pole jest wysyłane warunkowo dla zdolności aktywowanych,
+naprawione już w M175/A2), widok wygnania (kompletny).
+
+Nowe testy: `m274-widok-grobu-kontrakt` (4, w tym skan źródeł wyciągający
+z bota listę pól żądanych od grobu) oraz 4 testy dołożone do
+`m273-liczniki-wejscia-reanimacja` (Pyxis, Dragon Arch, bloodthirst
++ kontrola negatywna).
+
+**Wynik:** `npm test` **4059/4059**, `node --test test/bot-benchmark.test.js`
+**10/10**, build **57 modułów / 3029,6 kB**.

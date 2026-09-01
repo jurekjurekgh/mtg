@@ -75,47 +75,38 @@ tej samej przynależności to jeden za dużo. (2) Redundancja jest niewidoczna,
 póki kryteria się zgadzają; testu szukaj tam, gdzie się rozjeżdżają (zmiana
 kontroli, typu, strefy).## L105 (2026-08-31) — „Dziś to ryzyko, nie błąd" trzeba ZWERYFIKOWAĆ skanem, a nie założyć; sklejka pipów OBOK kwoty zawyża cenę
 
-**Objaw (M268, domknięcie punktów otwartych po M267):** handoff M267
-odnotował, że etykiety `bestow`/`morph` składają koszt po staremu, ale
-„dziś ich koszty są generyczne, więc to ryzyko, nie błąd". Skan całej
-rodziny alt-kosztów pokazał, że to nieprawda w DWÓCH miejscach naraz:
-- `leafcrown-dryad` „Bestow {3}{G}" i `tumbleweed-rising` „Plot {2}{G}"
-  nie miały `colors` w definicji (bliźniak `spinewoods-paladin` miał),
-- etykiety morph i kicker sklejały pipy OBOK pełnej kwoty:
-  Willbender („Morph {1}{U}", `morphCost: 2`, `colors: ['U']`) pokazywał
-  „{2}{U}" — TRZY many zamiast dwóch; Kor Sanctifiers („Kicker {W}",
-  `cost: 1`) pokazywał „{1}{W}" zamiast „{W}".
+**Objaw (M268):** handoff M267 odnotował, że etykiety `bestow`/`morph`
+składają koszt po staremu, ale „dziś ich koszty są generyczne, więc to ryzyko,
+nie błąd". Skan rodziny alt-kosztów pokazał, że to nieprawda w DWÓCH miejscach:
+- `leafcrown-dryad` („Bestow {3}{G}") i `tumbleweed-rising` („Plot {2}{G}")
+  nie miały `colors` w definicji (bliźniak `spinewoods-paladin` miał);
+- morph i kicker sklejały pipy OBOK pełnej kwoty: Willbender („Morph {1}{U}",
+  `morphCost: 2`) pokazywał „{2}{U}" — TRZY many zamiast dwóch.
 
-**Przyczyna:** to samo, co L100/4 — powtórzona składanka „generic + pipy",
-tylko w wariancie groźniejszym. Poprzednie kopie liczyły
-`generic = cost - colors.length` (poprawnie), a te dwie doklejały pipy do
-NIEZMNIEJSZONEJ kwoty, więc cena rosła o liczbę pipów. Sześć kopii w jednej
-warstwie (plot, warp, suspend, bestow, surge, kicker, morph) rozjechało się
-dokładnie tam, gdzie nikt nie porównał wyniku z Oracle.
+**Przyczyna:** to samo co L100/4 — powtórzona składanka „generic + pipy", tylko
+groźniejsza. Poprawne kopie liczą `generic = cost - colors.length`, a te dwie
+doklejały pipy do NIEZMNIEJSZONEJ kwoty, więc cena rosła o liczbę pipów. Sześć
+kopii w jednej warstwie rozjechało się tam, gdzie nikt nie porównał z Oracle.
 
 **Reguła:**
-1. Zdanie „dziś to tylko ryzyko" jest HIPOTEZĄ o danych — zamyka się je
-   skanem katalogu w tej samej sesji, nie wpisem w handoffie. Koszt skanu
-   to kilkanaście linii; koszt pomyłki to błędna cena na przycisku.
-2. Pipy kolorów zawsze wchodzą W RAMACH kwoty (`{3}{G}` = 4 many), nigdy
-   obok niej. Jedyne dopuszczalne źródło to `costSymbols(amount, colors)` —
-   każda ręczna sklejka w warstwie widoku jest kopią do usunięcia.
-   Strażnik regexem szuka wzorca `.colors ?? []).map(...).join('')`
-   w `render.js` i wymusza zero trafień.
-3. Rodzina alt-kosztów ma być enumerowana Z NAZWY (bestow, plot, suspend,
-   madness, warp, surge, kicker, flashback, buyback, escape, cleave,
-   adventure, morph) — skan po jednej mechanice zamyka jeden przypadek.
+1. „Dziś to tylko ryzyko" jest HIPOTEZĄ o danych — zamyka się ją skanem
+   katalogu w tej samej sesji, nie wpisem w handoffie.
+2. Pipy kolorów wchodzą W RAMACH kwoty (`{3}{G}` = 4 many), nigdy obok.
+   Jedyne źródło to `costSymbols(amount, colors)`; strażnik regexem szuka
+   sklejek `.colors ?? []).map(...).join('')` w `render.js`.
+3. Rodzinę alt-kosztów enumeruj Z NAZWY (bestow, plot, suspend, madness, warp,
+   surge, kicker, flashback, buyback, escape, cleave, adventure, morph) — skan
+   po jednej mechanice zamyka jeden przypadek.
 4. Morph jest w tej rodzinie WYJĄTKIEM: ma dwa koszty (`cost` = rzut
    zakryty, zawsze {3} bezbarwnych wg CR 702.37a; `morphCost`/
    `megamorphCost` = odkrycie, tu żyją pipy). Skaner porównujący Oracle
    z polem `cost` da 6 fałszywych trafień — porównuj koszt ODKRYCIA.
 
-**Strażnik:** `test/m268-alt-koszt-pelna-rodzina.test.js` (11 testów:
-skan katalogu po 14 mechanikach, pinry bestow/plot/morph/kicker, test
-ŹRÓDŁA płatności bestow, strażnik regexowy przeciw kolejnym sklejkom).
-Mutacje: `colors` usunięte z normalizacji bestow → 4 RED; powrót do
-`coloredPipsOf(cardId)` w ścieżce bestow → 1 RED; pipy doklejone obok
-kwoty w morph → 1 RED.
+**Strażnik:** `test/m268-alt-koszt-pelna-rodzina.test.js` (11 testów: skan
+katalogu po 14 mechanikach, piny bestow/plot/morph/kicker, test ŹRÓDŁA
+płatności, strażnik regexowy przeciw kolejnym sklejkom). Mutacje: `colors`
+z normalizacji bestow → 4 RED; `coloredPipsOf(cardId)` w bestow → 1 RED;
+pipy obok kwoty w morph → 1 RED.
 
 ## L104 (2026-08-31) — Poprawny wynik z niepoprawnego źródła to bug uśpiony: alt-koszt musi nieść WŁASNE pipy, nie pożyczać ich z kosztu bazowego
 
@@ -160,12 +151,11 @@ Liliana's Triumph → cel: Ty", a Oracle brzmi „Each opponent sacrifices
 a creature of their choice" — bez słowa „target".
 
 **Przyczyna:** M203/2 zamodelował „każdy przeciwnik" jako
-`targets: [{ type: 'player', opponent: true }]`. W 1v1 wskazuje to zawsze
-tę samą osobę, więc wyglądało na równoważne — ale równoważne NIE JEST.
-Czar bez celów (CR 115.1) i czar z celem różnią się obserwowalnie:
-z celem daje się zepsuć usunięciem celu, fizzluje przy hexproof/shroud
-gracza (CR 115.6) i pokazuje w UI wybór, którego karta nie oferuje.
-Skrót przeszedł, bo w 1v1 różnica ujawnia się dopiero przy hexproof.
+`targets: [{ type: 'player', opponent: true }]`. W 1v1 wskazuje to zawsze tę
+samą osobę, więc wyglądało na równoważne — nie jest. Czar bez celów
+(CR 115.1) i czar z celem różnią się obserwowalnie: ten drugi fizzluje przy
+hexproof (CR 115.6), daje się zepsuć usunięciem celu i pokazuje w UI wybór,
+którego karta nie oferuje.
 
 **Reguła:**
 1. `targets` w definicji karty deklaruje wyłącznie to, co Oracle nazywa
@@ -178,16 +168,13 @@ Skrót przeszedł, bo w 1v1 różnica ujawnia się dopiero przy hexproof.
 3. „W 1v1 wychodzi na to samo" nie jest argumentem: różnicę widać przez
    hexproof, kontrę usuwającą cel i przez UI. Model ma być zgodny
    z Oracle, nie z liczbą graczy przy stole.
-4. Strażnik jest KLASOWY: enumeruje katalog i sprawdza implikację
-   „brak słowa target w Oracle ⇒ brak `targets`" (spell + activated +
-   triggered). Pin na jedną kartę uśpiłby klasę — bliźniaki (np. Dreams
-   of Steel and Oil, poprawne, bo ma „Target opponent") wyglądają
+4. Strażnik KLASOWY: skan katalogu sprawdza implikację „brak słowa target
+   w Oracle ⇒ brak `targets`". Pin na jedną kartę uśpiłby klasę — bliźniaki
+   (Dreams of Steel and Oil: poprawne, ma „Target opponent") wyglądają
    identycznie w kodzie i różnią się TYLKO Oracle.
 
-**Strażnik:** `test/m266-zgloszenia-wlasciciela.test.js`, test „M266/B
-(klasa): żadna karta nie ma `targets` bez słowa target w Oracle" (skan
-katalogu, dziś 0 naruszeń). Mutacja: przywrócenie `targets` Liliana's
-Triumph → 4 testy RED (w tym klasowy).
+**Strażnik:** `test/m266-zgloszenia-wlasciciela.test.js` (skan katalogu, dziś
+0 naruszeń). Mutacja: przywrócenie `targets` Liliana's Triumph → 4 RED.
 
 ## L102 (2026-08-31) — Rodzina ofert dzieli WYCENĘ i WIDOK: nowy członek bez pinu odziedziczy stary błąd; skutek niewidoczny w odcisku to fałszywy no-op
 
@@ -231,20 +218,17 @@ Triumph → 4 testy RED (w tym klasowy).
 
 ## L101 (2026-08-31) — Jawna lista pól WIDOKU to trzecia kopia tej samej listy; pin na jedną kartę nie chroni klasy, strażnik enumeruje katalog
 
-**Objaw (Żywy Tester M265, worek-legend vs tarkir-wur seed 323):** panel
-akcji pokazał „Rzuć za warp: Weftblade Enhancer (koszt ?)". Enumeracja
-katalogu wykazała cztery gubione deskryptory kosztu: `warp`
-(Weftblade Enhancer), `surge` (Jwar Isle Avenger), `kicker`
-(Kor Sanctifiers, „koszt {2}{W} + kicker " — pusta dopłata),
-`treasureAltCost` (Security Rhox — etykieta identyczna ze zwykłym rzutem,
-dwa nierozróżnialne przyciski o różnym skutku).
+**Objaw (Żywy Tester M265, seed 323):** panel pokazał „Rzuć za warp:
+Weftblade Enhancer (koszt ?)". Enumeracja katalogu wykazała cztery gubione
+deskryptory kosztu: `warp`, `surge`, `kicker` (Kor Sanctifiers: „koszt {2}{W}
++ kicker " — pusta dopłata) i `treasureAltCost` (Security Rhox: etykieta
+identyczna ze zwykłym rzutem, dwa nierozróżnialne przyciski).
 
-**Przyczyna:** ta sama klasa co L93/L21/M151, ale w TRZECIEJ kopii listy pól
-— po `gameObjectDataOf` (generator) i `installDeck` (transport) jest jeszcze
-wpis strefy w `playerView` (`zone === 'hand'`, `zone === 'exile'`). M151
-dopisał tam `suspend` i zamknął temat jednym testem na jedną kartę; cztery
-pozostałe pola dojechały do katalogu później i nikt ich nie zauważył, bo
-silnik liczył ofertę poprawnie — kłamała tylko etykieta.
+**Przyczyna:** klasa L93/L21/M151, ale w TRZECIEJ kopii listy pól — po
+`gameObjectDataOf` (generator) i `installDeck` (transport) jest jeszcze wpis
+strefy w `playerView`. M151 dopisał tam `suspend` i zamknął temat testem na
+JEDNĄ kartę; cztery pozostałe pola dojechały później i nikt ich nie zauważył,
+bo silnik liczył ofertę poprawnie — kłamała tylko etykieta.
 
 **Reguła:**
 1. Koszt alternatywny (warp, surge, kicker, bestow, plot, suspend, morph,
@@ -2360,22 +2344,41 @@ M273 (platyna, ADR 0027). 10 z 25 błędów czterech odznak to JEDEN wzorzec
 konsumenta. Emitera bez `toZone` (#20) przeoczyłem wzrokiem — znalazł go skan.
 Gdy klasa wraca trzeci raz: przestań szukać egzemplarzy, napisz analizator.
 
-Wymiary skanu (`tools/event-contract-audit.mjs`, wpięte w `npm test`):
+Wymiary skanu (`tools/event-contract-audit.mjs`, w `npm test`):
 1. ROZJAZD ŁADUNKÓW — pole w ≥60% i <100% emiterów zdarzenia: konsument
    dostanie `undefined` (#22 `card_revealed.cardId`; #23 `spell_cast.colors`
    w 5 ścieżkach alternatywnego rzucania — czar udawał bezbarwny).
-2. CECHY WEJŚCIA — ile ścieżek ETB zna cechę. Liczniki wejścia: 1 z 18
-   (#24, CR 121.6 — reanimowany Servant of the Scale wracał jako 0/0).
+2. CECHY WEJŚCIA — ile ścieżek ETB zna cechę. Liczniki: 1 z 18 (#24,
+   CR 121.6 — reanimowany Servant of the Scale wracał jako 0/0).
 3. RĘCZNE MUTACJE `state.zones` — ominięcie choke pointu gubi jego reguły
    (#25: skasowany token zostawiał wiszące id w `state.combat`, CR 506.4).
 
 Rygor, bez którego narzędzie szkodzi:
 - Trafienie weryfikuj wobec KONSUMENTA (grep pola w `session.js`,
-  `triggers.js`). Brak konsumenta = wyjątek, nie błąd: z 36 kandydatów
-  realne były 2, reszta to świadome kontrakty.
-- Lista wyjątków JAWNA i z POWODEM; test sensowności uzasadnień wyłapał
-  moje własne „Jak wyżej".
+  `triggers.js`). Brak konsumenta = wyjątek, nie błąd: z 36 kandydatów realne
+  były 2.
+- Lista wyjątków JAWNA i z POWODEM; test sensowności uzasadnień wyłapał moje
+  własne „Jak wyżej".
 - Analizator też jest produktem: parser gubił pola po komentarzu — poprawka
   plus test regresyjny. Fałszywy alarm poprawiaj w TEŚCIE, nie w kodzie.
-- Skan bije listę znalezisk: przy #24 i #25 sam wskazał ścieżki, których
-  pierwsza naprawa nie objęła (3 i 1).
+- Skan bije listę znalezisk: sam wskazywał ścieżki pominięte przez pierwszą
+  naprawę (#24, #25, M274). Zasięgu skanu pilnuje L113.
+
+## L113 — Filtr wyciszający w strażniku opisuje INTENCJĘ, nie ciąg znaków
+
+M274. Strażnik z M273 („każda ścieżka ETB zna liczniki") przepuścił trzy
+ścieżki. Dwie dziury:
+1. **Skanował jeden plik** (`effects.js`), a klasa mieszka w trzech (+
+   `triggers.js`, `game-state.js`). Zasięg skanu = zasięg KLASY, nie pliku
+   z pierwszym przypadkiem.
+2. **Wyciszenie po ciągu znaków**: filtr pomijał okno zawierające `faceDown`
+   (intencja: „wejście zakryte nie dostaje liczników", CR 708.2), ale Pyxis
+   ustawia `faceDown: false` — ODKRYWA kartę — więc wyciszył przypadek, którego
+   miał pilnować. Wyjątek zapisuj jako WARUNEK, nie jako obecność słowa.
+
+Po poszerzeniu skanu uruchom go od razu: poprawiony filtr sam wskazał czwartą
+ścieżkę (Dragon Arch), której nie dał ręczny przegląd.
+
+Strażnik to kod produkcyjny odznaki. Fałszywy alarm boli od razu, ale
+**fałszywe MILCZENIE jest gorsze** — udaje, że klasa jest zamknięta. Po
+napisaniu strażnika sprawdź, ile trafień pominął i czemu (u mnie 3 z 13).
