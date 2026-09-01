@@ -42,3 +42,28 @@ export function deathZoneFor(state, object) {
   return 'graveyard';
 }
 
+/**
+ * Strefa, do której czar schodzi ze stosu — po rozstrzygnięciu, fizzlu
+ * (CR 608.2b) albo skontrowaniu (CR 701.5a).
+ *
+ * M271 (błędy #14 i #15): regułę liczyło RÓWNOLEGLE osiem miejsc w
+ * `spells.js` i `effects.js`; część gubiła `exileInsteadOfGraveyard`
+ * (Halo Forager, CR 118.9: „If that spell would be put into a graveyard this
+ * turn, exile it instead"), więc czar rzucony z grobu wracał do grobu i dawał
+ * się rzucić ponownie.
+ *
+ * Mieszka w `zones.js` — najniższej warstwie grafu importów — bo potrzebują
+ * jej zarówno `spells.js`, jak i `effects.js` (a `spells` importuje
+ * `effects`, więc helper w `spells` oznaczałby CYKL; pilnuje tego
+ * `test/module-graph.test.js`).
+ *
+ * `adventure` (CR 715.3), `flashedBack` (CR 702.34b) i `reboundCast`
+ * (CR 702.97) dotyczą wyłącznie pełnej ścieżki rozstrzygnięcia — przekazuje
+ * je caller.
+ */
+export function spellExitZone(object, { adventure = false, flashedBack = false, reboundCast = false } = {}) {
+  return (adventure || flashedBack || reboundCast || object?.exileInsteadOfGraveyard)
+    ? 'exile'
+    : 'graveyard';
+}
+

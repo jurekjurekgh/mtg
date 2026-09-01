@@ -2896,13 +2896,11 @@ export function execute(state, input) {
       if ((pending.amount ?? 0) > producibleMana(state, pending.playerId)) return reject('counter_pay_insufficient_mana');
       if ((pending.amount ?? 0) > 0) spendMana(state, pending.playerId, pending.amount, []);
     } else if (targetOnStack) {
-      const graveId = `grave-${state.objectSequence++}`;
-      const moved = moveObjectDirectly(state, pending.targetId, 'graveyard', graveId);
-      state.events.push(event('spell_countered', {
-        fromId: pending.targetId, toId: graveId, cardId: moved.cardId,
-        controllerId: moved.controllerId, counteredBy: pending.sourceId,
-        counteredByCardId: pending.sourceCardId,
-      }));
+      // M271 (błąd #15): piąta kopia kontry — przez WSPÓLNY helper, żeby
+      // respektowała `exileInsteadOfGraveyard` (Halo Forager, CR 118.9).
+      counterStackObject(state, pending.targetId, {
+        counteredBy: pending.sourceId, counteredByCardId: pending.sourceCardId,
+      });
     }
     state.events.push(event('counter_pay_resolved', {
       playerId: pending.playerId, paid: Boolean(cmd.pay), targetId: pending.targetId,

@@ -1,4 +1,5 @@
 import { event } from '../protocol/types.js';
+import { spellExitZone } from './zones.js';
 import { triggerTargetEffectFriendly } from './effect-intent.js';
 import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaPurpose } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
@@ -1790,25 +1791,6 @@ export function finishPendingSpell(state, stackId, remainingEffects) {
   const resolved = event('spell_resolved', { fromId: stackId, toId: afterId, cardId: object.cardId, controllerId: object.controllerId, fizzled: false, flashedBack });
   state.events.push(resolved);
   return state.events.slice(before);
-}
-
-/**
- * Strefa, do której czar schodzi ze stosu po rozstrzygnięciu/fizzlu.
- *
- * M271 (błąd #14): regułę „gdzie ląduje czar" liczyły RÓWNOLEGLE cztery
- * miejsca w tym pliku, a dwa z nich (fizzle czaru modalnego i rozstrzygnięcie
- * trybu modalnego) szły na sztywno do grobu, gubiąc `exileInsteadOfGraveyard`
- * (Halo Forager, CR 118.9: „If that spell would be put into a graveyard this
- * turn, exile it instead"). Czar rzucony z grobu Foragerem wracał więc do
- * grobu i dawał się rzucić ponownie.
- *
- * `adventure` (CR 715.3), `flashedBack` (CR 702.34b) i `rebound` (CR 702.97)
- * dotyczą wyłącznie pełnej ścieżki rozstrzygnięcia — przekazuje je caller.
- */
-function spellExitZone(object, { adventure = false, flashedBack = false, reboundCast = false } = {}) {
-  return (adventure || flashedBack || reboundCast || object.exileInsteadOfGraveyard)
-    ? 'exile'
-    : 'graveyard';
 }
 
 /** Rozstrzygnięcie czaru aury (bestow albo czystej) — patrz resolveTopOfStack. */

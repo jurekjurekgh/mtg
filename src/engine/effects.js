@@ -1,4 +1,5 @@
 import { event } from '../protocol/types.js';
+import { spellExitZone } from './zones.js';
 import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife } from './players.js';
@@ -812,8 +813,13 @@ export function counterStackObject(state, stackId, { counteredBy = null, counter
     }));
     return object;
   }
-  const graveId = `grave-${state.objectSequence++}`;
-  const moved = moveObjectDirectly(state, stackId, 'graveyard', graveId);
+  // M271 (błąd #15, CR 701.5a + 118.9): skontrowany czar idzie do grobu
+  // WŁAŚCICIELA, ale zastąpienie „if it would be put into a graveyard, exile
+  // it instead" (Halo Forager) obowiązuje także tutaj — strefę wyznacza
+  // WSPÓLNY `spellExitZone`, ten sam co przy rozstrzygnięciu i fizzlu.
+  const zoneAfterCounter = spellExitZone(object);
+  const graveId = `${zoneAfterCounter}-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, stackId, zoneAfterCounter, graveId);
   state.events.push(event('spell_countered', {
     fromId: stackId, toId: graveId, cardId: moved.cardId,
     controllerId: moved.controllerId, counteredBy, counteredByCardId, byWard,
@@ -3587,15 +3593,13 @@ function markTemporaryExile(state, exileId, sourceObject) {
     if (targetId == null) return;
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'stack') return;
-    const graveId = `grave-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, targetId, 'graveyard', graveId);
-    state.events.push(event('spell_countered', {
-      fromId: targetId, toId: graveId, cardId: moved.cardId,
-      controllerId: moved.controllerId, counteredBy: sourceObject.id,
-      // LKI (CR 603.10): nazwa czaru-kontrującego po cardId — obiekt na stosie
-      // znika z state.objects po rozstrzygnięciu (audyt diamentowy: „(?)").
-      counteredByCardId: sourceObject.cardId,
-    }));
+    // M271 (błąd #15): kontra idzie przez WSPÓLNY `counterStackObject` —
+    // własna kopia gubiła `exileInsteadOfGraveyard` (Halo Forager).
+    // LKI (CR 603.10): nazwa kontrującego po cardId — obiekt na stosie znika
+    // z state.objects po rozstrzygnięciu (audyt diamentowy: „(?)").
+    counterStackObject(state, targetId, {
+      counteredBy: sourceObject.id, counteredByCardId: sourceObject.cardId,
+    });
     return;
   }
   if (effect.type === 'counter_spell_unless_pays') {
@@ -3612,13 +3616,10 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const amount = effect.amount ?? 1;
     const canPay = producibleMana(state, payerId) >= amount;
     if (!canPay) {
-      const graveId = `grave-${state.objectSequence++}`;
-      const moved = moveObjectDirectly(state, targetId, 'graveyard', graveId);
-      state.events.push(event('spell_countered', {
-        fromId: targetId, toId: graveId, cardId: moved.cardId,
-        controllerId: moved.controllerId, counteredBy: sourceObject.id,
-        counteredByCardId: sourceObject.cardId,
-      }));
+      // M271 (błąd #15): jak wyżej — wspólny helper, nie kopia.
+      counterStackObject(state, targetId, {
+        counteredBy: sourceObject.id, counteredByCardId: sourceObject.cardId,
+      });
       const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === payerId);
       if (handIds.length === 0) return; // bez ręki — nic więcej
       state.pendingDiscardChoice = {
