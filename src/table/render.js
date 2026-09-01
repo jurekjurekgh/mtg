@@ -1740,7 +1740,9 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_copy_targets: 'Kopia czaru — wybór celu',
   resolve_exploit_choice: 'Exploit — poświęcić stwora?',
   resolve_fabricate: 'Fabricate — liczniki czy tokeny?',
-  resolve_manifest_dread: 'Manifest Dread — karta na pole bitwy',
+  // małą literą: „manifest dread" to mechanika (CR 701.34), a „Manifest
+  // Dread" to KARTA w katalogu — strażnik m212 zabrania literału z nazwą karty.
+  resolve_manifest_dread: 'manifest dread — zmanifestuj jedną z 2 kart',
   resolve_optional_draw: 'Dobór dobrowolny (you may)',
   resolve_reveal_choice: 'Ujawnij z ręki — obrażenia',
   resolve_reveal_exile_hand: 'Karta z ręki do wygnania',
