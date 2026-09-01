@@ -2032,7 +2032,11 @@ export function execute(state, input) {
       const revealed = state.objects.get(cardId);
       if (revealed) {
         state.events.push(event('card_revealed', {
+          // M273 (błąd #22): log stołu woła `nameOf(e.cardId)` — bez tego pola
+          // odsłonięcie karty wypisywało się jako „odsłania ?" (klasa L29:
+          // fallback znaku zapytania). `fromId` to id OBIEKTU, nie karty.
           playerId: pending.playerId, fromId: cardId, object: revealed, fromZone: 'hand',
+          objectId: cardId, cardId: revealed.cardId ?? null,
         }));
       }
       // „this Saga deals 2 damage to target opponent or planeswalker" —
@@ -2173,6 +2177,12 @@ export function execute(state, input) {
       playerId: pending.playerId, fromId: cmd.objectId, object: stacked, cardId: card.cardId,
       targets: chosenTargets,
       targetCardIds: chosenTargets.map((id) => state.objects.get(id)?.cardId ?? null),
+      // M273 (błąd #23): `colors` to CZĘŚĆ kontraktu zdarzenia rzutu —
+      // triggers.js czyta `eventData.colors` dla „whenever a player casts
+      // a WHITE spell" (Angel's Feather) i dla „casts a COLORLESS spell".
+      // Brak pola dawał `?? []`, czyli czar udawał BEZBARWNY: trigger na
+      // kolor milczał, a trigger na bezbarwność odpalał fałszywie.
+      colors: [...(card.colors ?? [])],
       fromGraveyard: true, xPaid: xValue, manaSpent: xValue,
       ...(chosenMode != null ? { modeIndex: chosenMode } : {}),
     }));
@@ -2345,6 +2355,12 @@ export function execute(state, input) {
       playerId: pending.playerId, fromId: pending.objectId, object: stacked, cardId: card.cardId,
       targets: chosenTargets,
       targetCardIds: chosenTargets.map((id) => state.objects.get(id)?.cardId ?? null),
+      // M273 (błąd #23): `colors` to CZĘŚĆ kontraktu zdarzenia rzutu —
+      // triggers.js czyta `eventData.colors` dla „whenever a player casts
+      // a WHITE spell" (Angel's Feather) i dla „casts a COLORLESS spell".
+      // Brak pola dawał `?? []`, czyli czar udawał BEZBARWNY: trigger na
+      // kolor milczał, a trigger na bezbarwność odpalał fałszywie.
+      colors: [...(card.colors ?? [])],
       suspend: true, manaSpent: 0,
       ...(chosenMode != null ? { modeIndex: chosenMode } : {}),
     }));
@@ -2426,6 +2442,12 @@ export function execute(state, input) {
       playerId: pending.playerId, fromId: pending.objectId, object: stacked, cardId: card.cardId,
       targets: chosenTargets,
       targetCardIds: chosenTargets.map((id) => state.objects.get(id)?.cardId ?? null),
+      // M273 (błąd #23): `colors` to CZĘŚĆ kontraktu zdarzenia rzutu —
+      // triggers.js czyta `eventData.colors` dla „whenever a player casts
+      // a WHITE spell" (Angel's Feather) i dla „casts a COLORLESS spell".
+      // Brak pola dawał `?? []`, czyli czar udawał BEZBARWNY: trigger na
+      // kolor milczał, a trigger na bezbarwność odpalał fałszywie.
+      colors: [...(card.colors ?? [])],
       rebound: true, manaSpent: 0,
       ...(chosenMode != null ? { modeIndex: chosenMode } : {}),
     }));
@@ -2518,6 +2540,12 @@ export function execute(state, input) {
       playerId: pending.playerId, fromId: cardId, object: stacked, cardId: exileObj.cardId,
       targets: chosenTargets,
       targetCardIds: chosenTargets.map((id) => state.objects.get(id)?.cardId ?? null),
+      // M273 (błąd #23): `colors` to CZĘŚĆ kontraktu zdarzenia rzutu —
+      // triggers.js czyta `eventData.colors` dla „whenever a player casts
+      // a WHITE spell" (Angel's Feather) i dla „casts a COLORLESS spell".
+      // Brak pola dawał `?? []`, czyli czar udawał BEZBARWNY: trigger na
+      // kolor milczał, a trigger na bezbarwność odpalał fałszywie.
+      colors: [...(exileObj.colors ?? [])],
       discover: true, epic: true, manaSpent: 0,
       ...(chosenMode != null ? { modeIndex: chosenMode, modeName: modeName_ } : {}),
     }));
@@ -3912,7 +3940,12 @@ export function execute(state, input) {
       const stacked = Object.freeze({ ...state.objects.get(stackId), tapped: false, chosenTargets: [], freeDiscover: true });
       state.objects.set(stackId, stacked);
       state.spellsCastThisTurn += 1;
-      state.events.push(event('spell_cast', { playerId: disc.playerId, fromId: disc.foundExileId, object: stacked, cardId: foundObj.cardId, targets: [], discover: true, manaSpent: 0 }));
+      state.events.push(event('spell_cast', {
+        // M273 (błąd #23): kolory czaru są częścią kontraktu zdarzenia.
+        playerId: disc.playerId, fromId: disc.foundExileId, object: stacked,
+        cardId: foundObj.cardId, targets: [], discover: true, manaSpent: 0,
+        colors: [...(foundObj.colors ?? [])],
+      }));
     } else if (cmd.castFree && (foundObj.kind === 'creature' || foundObj.kind === 'artifact' || foundObj.kind === 'enchantment')) {
       // Rzuć permanent bez kosztu many — idzie na STOS jak każdy rzut czaru
       // (CR 601); na pole bitwy wchodzi po rozstrzygnięciu (resolvePermanentSpell).
@@ -3924,7 +3957,14 @@ export function execute(state, input) {
       });
       state.objects.set(stackId, perm);
       state.spellsCastThisTurn += 1;
-      state.events.push(event('permanent_cast', { playerId: disc.playerId, fromId: disc.foundExileId, object: perm, manaCost: 0, discover: true, manaSpent: 0 }));
+      state.events.push(event('permanent_cast', {
+        // M273 (błąd #23): permanent_cast idzie tą samą ścieżką triggerów
+        // co spell_cast (triggers.js:2386), więc kontrakt jest ten sam —
+        // kolory rzucanego czaru muszą być w zdarzeniu.
+        playerId: disc.playerId, fromId: disc.foundExileId, object: perm,
+        manaCost: 0, discover: true, manaSpent: 0,
+        colors: [...(perm.colors ?? [])],
+      }));
     } else {
       // Do ręki.
       const handId = `hand-${state.objectSequence++}`;
