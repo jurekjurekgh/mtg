@@ -7305,6 +7305,31 @@ worek-* — profile greedy/random/defensive/explorer/impatient/hoarder, seedy
 
 Fast **4081/4081**, test:all **4091/4091**, build **57 modułów / 3031,7 kB**.
 
+### Faza B (2026-09-01, PR #92) — Żywy Tester + analiza inteligencji bota
+
+Zlecenie właściciela: „testy Żywym Testerem połączone z analizą inteligencji
+bota, aż do wykorzystania budżetu". **20 partii** (seedy 401–420; bot gra
+15 różnych talii — w tym 4 z próbki benchmarku i 3 worki; profile gracza
+greedy/defensive/explorer/random/hoarder/impatient). Transkrypty:
+`tmp-audyt-bot/` (poza repo).
+
+- **Znalezisko (naprawione u root cause):** klasa L102/1 zamknięta. Grupa
+  `resolve_reveal_exile_hand` (Dreams of Steel and Oil) pokazywała „Wybierz:
+  Wariant (3 opcje)" — skan `choiceRequestGroupKey` wykazał **9
+  stałokluczowych typów** bez fallbacku tytułu (copy_targets, exploit,
+  fabricate, manifest_dread, optional_draw, reveal_choice,
+  reveal_exile_hand/grave, satyr_look). Deskryptory dla wszystkich +
+  `sourceCardId` w `pendingRevealExile` + **strażnik klasowy**
+  `test/wybierz-wariant-klasa.test.js` (RED: 9 typów → GREEN).
+- **Inteligencja bota: poprawna.** Zero zgłoszeń detektorów osi 1 w 20
+  partiach; przegląd decyzji potwierdził wyceny (symetryczny mill M162/B,
+  combat simulation, `effectIsInertNow` dla pustej biblioteki). Obserwacje
+  nie-błędne: Withstand jako cantrip (mikro-tempo), bot agnostyczny wobec
+  planu talii (ADR 0022 nie wymaga awareness talii).
+- Raport: `docs/audits/AUDYT_BOT_INTELIGENCJA_ZYWTESTER_2026-09-01.md`.
+
+Fast **4084/4084**, test:all **4094/4094**, build **57 modułów / 3033,4 kB**.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:
