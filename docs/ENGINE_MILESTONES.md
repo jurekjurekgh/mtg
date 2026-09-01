@@ -3290,3 +3290,71 @@ Nowe testy: `m272-saga-poswiecenie-strefa` (5),
 
 **Wynik:** `npm test` **4037/4037**, `node --test test/bot-benchmark.test.js`
 **10/10**, build **57 modułów / 3021,2 kB**. Nowa lekcja: **L111**.
+
+## M273 (2026-09-01) — Odznaka PLATYNOWA: analizator statyczny tępiący klasę L107
+
+Cztery poprzednie odznaki (M269 brąz, M270 srebro, M271 złoto, M272 diament)
+naprawiły 25 błędów reguł tą samą metodą ręczną. **10 z nich należało do
+jednego wzorca L107** — ścieżka omija choke point albo gubi pole zdarzenia
+oczekiwane przez konsumenta. Platyny (ADR 0027) nie zdobywa się liczbą
+błędów, tylko NARZĘDZIEM zamykającym drogę ich powstawania.
+
+**`tools/event-contract-audit.mjs`** — analizator statyczny wpięty w
+`npm test` (`test/m273-kontrakty-zdarzen.test.js`, 5 testów), trzy wymiary:
+
+1. **Rozjazd ładunków zdarzeń** — pole niesione przez ≥60% i <100% emiterów
+   danego typu: konsument (log stołu, triggery, bot) dostanie `undefined`.
+2. **Cechy wejścia na pole bitwy** — ile ścieżek ETB zna daną cechę.
+3. **Ręczne mutacje `state.zones`** — ominięcie choke pointu gubi jego reguły.
+
+**Lista wyjątków jest jawna i uzasadniona** (37 pozycji, ADR 0027 pkt 3):
+niestandardowy ładunek bywa świadomym kontraktem (wygnanie zakryte nie niesie
+`cardId` — mgła wojny; cel-gracz nie ma `cardId`). Osobny test pilnuje, że
+każdy wyjątek ma realny POWÓD — wyłapał moje własne leniwe „Jak wyżej".
+
+### Pięć błędów wskazanych PRZEZ NARZĘDZIE
+
+22. **Log kłamał (klasa L29)** — `card_revealed` z rozstrzygnięcia wyboru
+    odsłaniania niosło `fromId` i `object`, ale nie `cardId`, którego woła
+    `nameOf(e.cardId)`. Gracz czytał „odsłania ?".
+23. **CR 202.2** — PIĘĆ ścieżek alternatywnego rzucania (z grobu, suspend,
+    rebound, discover-czar, discover-permanent) nie niosło pola `colors`.
+    `triggers.js` czyta `eventData.colors` dla „whenever a player casts
+    a WHITE spell" (Angel's Feather) i „casts a COLORLESS spell": czar rzucony
+    taką ścieżką udawał BEZBARWNY — trigger na kolor milczał, a trigger na
+    bezbarwność odpaliłby fałszywie.
+24. **CR 121.6 + 614.1c** — liczniki WEJŚCIA znała 1 z 18 ścieżek
+    wprowadzających permanent. Reanimowany Servant of the Scale wracał jako
+    0/0 i ginął natychmiast (CR 704.5f), Trigon of Corruption tracił trzy
+    liczniki charge, Kappa Tech-Wrecker deathtouch. Wspólny helper
+    `applyEnterCounters` w dziesięciu ścieżkach; permanent zakryty liczników
+    nie dostaje (CR 708.2).
+25. **CR 506.4** — token skasowany BEZPOŚREDNIO z pola bitwy zostawiał wiszące
+    id w `state.combat` (atakujący/bloker bez obiektu w `state.objects`). Dwie
+    ścieżki omijały choke point, więc nie wołały `removeFromCombat`. Ten sam
+    rodzaj niespójności wywrócił partię w M271 (#16), tyle że dla załączników.
+
+Błędy #22 i #23 znalazł wymiar 1, #24 wymiar 2, #25 wymiar 3.
+
+**Skan źródeł znów bił audyt wzrokowy:** przy #24 i #25 strażnik sam wskazał
+ścieżki, których pierwsza naprawa nie objęła (odpowiednio 3 i 1).
+
+**Analizator też jest produktem (L12):** prototyp gubił pola stojące po
+komentarzu i produkował fałszywe braki (`permanent_sacrificed.fromId`,
+`spell_cast.manaSpent`). Poprawka plus dwa testy regresyjne na parser.
+Fałszywe alarmy strażników poprawiane w TESTACH, nie w działającym kodzie.
+
+**Odsiew:** z 36 kandydatów wymiaru 1 realnymi błędami były 2 — reszta to
+świadome kontrakty (zweryfikowane wobec konsumenta gałąź po gałęzi).
+Sprawdzone i odrzucone: `exile_all` bez ochrony (indestructible nie chroni
+przed wygnaniem), mielenie z pustej biblioteki (CR 701.13b nie jest
+przegraną), rodzina `destroy` (w pełni skonsolidowana po #19), `entersTapped`
+przy reanimacji (dotyczy wyłącznie lądów, które tymi ścieżkami nie chodzą),
+`dealDamageToPlayer` bez prewencji (martwy kod, używany tylko przez testy).
+
+Nowe testy: `m273-kontrakty-zdarzen` (5),
+`m273-liczniki-wejscia-reanimacja` (5), `m273-kasowanie-tokena-a-walka` (4).
+
+**Wynik:** `npm test` **4051/4051**, `node --test test/bot-benchmark.test.js`
+**10/10**, build **57 modułów / 3027,4 kB**. Nowa lekcja: **L112**.
+Nowy ADR: **0027**.
