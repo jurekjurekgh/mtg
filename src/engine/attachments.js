@@ -269,9 +269,27 @@ function detachOrphanedAttachment(state, attachment, hostId, events) {
  */
 export function detachAttachmentsFromHost(state, hostId) {
   const events = [];
-  for (const object of [...state.objects.values()]) {
-    if (object.zone !== 'battlefield' || object.attachedTo !== hostId) continue;
-    detachOrphanedAttachment(state, object, hostId, events);
+  const osierocone = [...state.objects.values()]
+    .filter((object) => object.zone === 'battlefield' && object.attachedTo === hostId);
+  // M271 (błąd #16): NAJPIERW zrywamy WSZYSTKIE wiązania z odchodzącym
+  // gospodarzem, dopiero potem stosujemy politykę per załącznik.
+  //
+  // Dlaczego kolejność ma znaczenie: polityka czystej aury (CR 704.5m)
+  // przenosi ją do grobu, a każde przeniesienie kończy się sprawdzeniem
+  // inwariantów stanu. Przy DWÓCH załącznikach na jednym gospodarzu
+  // sprawdzenie wypadało w ŚRODKU pętli — gdy drugi załącznik wciąż
+  // wskazywał już skasowanego gospodarza — i wywracało partię wyjątkiem
+  // „Załącznik X wskazuje nieistniejącego gospodarza Y".
+  // Zerwanie wiązań z góry sprawia, że stan pośredni jest spójny.
+  for (const object of osierocone) {
+    const aktualny = state.objects.get(object.id);
+    if (!aktualny) continue;
+    state.objects.set(object.id, Object.freeze({ ...aktualny, attachedTo: null }));
+  }
+  for (const object of osierocone) {
+    const aktualny = state.objects.get(object.id);
+    if (!aktualny) continue;
+    detachOrphanedAttachment(state, aktualny, hostId, events);
   }
   return events;
 }

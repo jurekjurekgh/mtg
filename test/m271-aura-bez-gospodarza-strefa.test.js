@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { createGameState, addObject } from '../src/engine/game-state.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
-import { removeIllegalAttachments } from '../src/engine/attachments.js';
+import { removeIllegalAttachments, detachAttachmentsFromHost } from '../src/engine/attachments.js';
+import { moveObjectDirectly } from '../src/engine/objects.js';
 import { addCounter } from '../src/engine/counters.js';
 
 /**
@@ -84,5 +85,56 @@ test('zdarzenie niesie strefę docelową, a obiekt jest w niej faktycznie', () =
     assert.equal(zdarzenie.toId, moved.id, `${nazwa}: log wskazuje właściwy obiekt`);
     assert.ok(state.zones[moved.zone].includes(moved.id), `${nazwa}: obiekt wpisany do strefy`);
     assert.ok(!state.zones.battlefield.includes('a'), `${nazwa}: zdjęty z pola bitwy`);
+  }
+});
+
+/**
+ * M271 (błąd #16) — znaleziony jako regresja własnej naprawy #11/#12, ale
+ * błąd JEST samoistny: polityka czystej aury przenosi ją do grobu, a każde
+ * przeniesienie kończy się sprawdzeniem inwariantów. Przy DWÓCH załącznikach
+ * na jednym gospodarzu sprawdzenie wypadało w ŚRODKU pętli odczepiania, gdy
+ * drugi załącznik wciąż wskazywał skasowanego gospodarza — partia wywracała
+ * się wyjątkiem. Wykryte przez benchmark botów (seed 2028).
+ */
+function gospodarzZAurami(ile) {
+  const registry = createCardRegistry();
+  const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const stwor = registry.get('highland-game');
+  addObject(state, {
+    id: 'host', instanceId: 'ih', cardId: 'highland-game', controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', ...gameObjectDataOf(stwor), types: stwor.types,
+  });
+  for (let i = 0; i < ile; i += 1) {
+    const descriptor = registry.get('hobble');
+    addObject(state, {
+      id: `a${i}`, instanceId: `ia${i}`, cardId: 'hobble', controllerId: 'p1', ownerId: 'p1',
+      zone: 'battlefield', ...gameObjectDataOf(descriptor),
+      types: descriptor.types, subtypes: descriptor.subtypes,
+    });
+    state.objects.set(`a${i}`, Object.freeze({
+      ...state.objects.get(`a${i}`), attachedTo: 'host', kind: 'aura', baseKind: 'enchantment',
+    }));
+  }
+  return state;
+}
+
+test('#16: gospodarz z KILKOMA aurami odchodzi bez łamania inwariantów', () => {
+  for (const ile of [1, 2, 3]) {
+    const state = gospodarzZAurami(ile);
+    assert.doesNotThrow(
+      () => moveObjectDirectly(state, 'host', 'graveyard', 'grave-host'),
+      `${ile} aur: przeniesienie gospodarza nie może wywrócić partii`,
+    );
+    const wGrobie = [...state.objects.values()].filter((o) => o.cardId === 'hobble' && o.zone === 'graveyard');
+    assert.equal(wGrobie.length, ile, `${ile} aur: wszystkie trafiły do grobu (CR 704.5m)`);
+  }
+});
+
+test('#16: po odczepieniu żaden załącznik nie wskazuje znikniętego gospodarza', () => {
+  const state = gospodarzZAurami(3);
+  detachAttachmentsFromHost(state, 'host');
+  for (const object of state.objects.values()) {
+    if (object.attachedTo == null) continue;
+    assert.ok(state.objects.has(object.attachedTo), `${object.id} wskazuje żywego gospodarza`);
   }
 });
