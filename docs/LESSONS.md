@@ -2371,3 +2371,43 @@ drugą połowę błędu #9, której naprawa pierwszej połowy nie ruszyła:
 `legalAttackerOptions` zwracało pustą listę, więc silnik nie proponował nawet
 legalnej deklaracji pustej.
 
+## L109 — „Komentarz tłumaczący duplikat" to znacznik błędu
+
+W M271 (błędy #11/#12) ręczna kopia kodu przenoszenia miała komentarz:
+„ruch zrealizowany wprost, żeby nie tworzyć cyklu importów". Komentarz był
+prawdziwy co do FAKTU (cykl istnieje i pilnuje go `test/module-graph.test.js`)
+i błędny co do WNIOSKU — duplikat nie był jedynym wyjściem. Kopia gubiła dwie
+korekty CR, które choke point wykonywał.
+
+Reguła: gdy komentarz uzasadnia, dlaczego dany kod NIE korzysta ze wspólnej
+ścieżki („żeby uniknąć cyklu", „dla wydajności", „bo tu jest inaczej"),
+traktuj to jak zgłoszenie błędu, nie jak dokumentację. Sprawdź, ilu korekt
+brakuje kopii względem oryginału — zwykle co najmniej jednej. Ograniczenie
+architektoniczne rozwiązuje się przesunięciem WARSTW (funkcja czysta w dół
+grafu, rejestr wstrzykiwany w górę), a nie powieleniem logiki.
+
+Zastosowane w M271: `deathZoneFor` i `spellExitZone` zeszły do `zones.js`
+(najniższa warstwa), a `mover.js` udostępnia choke point zmian stref warstwom
+niższym przez rejestrację. Osiem kopii reguły „gdzie ląduje czar" → jedna.
+
+## L110 — Usunięcie duplikatu odsłania błędy, które maskował
+
+W M271 naprawa #11/#12 (zastąpienie ręcznej kopii wywołaniem choke pointu)
+wywołała regresję: benchmark botów zaczął wywracać partię na inwariancie
+„załącznik wskazuje nieistniejącego gospodarza". Przyczyną NIE była nowa
+zmiana — ręczna kopia po prostu nie sprawdzała inwariantów, więc niespójny
+stan pośredni nikogo nie bolał. Prawdziwym błędem była kolejność operacji
+przy odczepianiu KILKU załączników naraz (błąd #16).
+
+Wnioski praktyczne:
+1. Po sprowadzeniu ścieżki do wspólnego helpera uruchom NAJSZERSZY dostępny
+   zestaw (`npm run test:all`, w tym benchmark botów) — sam `npm test` tego
+   nie złapał. Regresja pojawiła się dopiero w losowej partii na seedzie 2028.
+2. Gdy taka regresja wystąpi, nie cofaj naprawy i nie osłabiaj inwariantu.
+   Znajdź, co duplikat maskował — to zwykle osobny, samoistny błąd wart
+   własnego strażnika.
+3. Inwarianty wołane na końcu operacji widzą stan POŚREDNI, jeśli operacja
+   wywołuje samą siebie rekurencyjnie (tu: przenoszenie gospodarza →
+   odczepianie → przenoszenie aury). Pętla, która zmienia wiele obiektów
+   powiązanych, musi najpierw zerwać wiązania, a potem stosować polityki.
+

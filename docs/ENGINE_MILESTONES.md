@@ -3206,3 +3206,42 @@ i weryfikacją mutacyjną per ścieżka (L13). Nowe/rozszerzone testy:
 **Wynik:** `npm test` **3990/3990**, `npm run test:all` **4003/4003**,
 build **56 modułów / 3010.8 kB**. Nowa lekcja: **L108**.
 
+## M271 — Odznaka ZŁOTA: 5 kolejnych unikalnych błędów CR (2026-09-01)
+
+Trzecia odznaka tej sesji (po brązie M269 i srebrze M270), ta sama metoda
+**L107**. Cechą wspólną całej piątki jest jeden wzorzec: reguła CR zapisana
+RÓWNOLEGLE w kilku miejscach zamiast we wspólnym helperze — i część kopii,
+która o niej zapomina.
+
+**Naprawione:**
+11. **CR 400.3 + 110.2a** — aura bez legalnego gospodarza (CR 704.5m)
+    opuszczała pole bitwy ręczną kopią kodu przenoszenia, więc ukradziona
+    aura lądowała w grobie ZŁODZIEJA zamiast właściciela.
+12. **CR 122.1e** — ta sama kopia ignorowała `deathZoneFor`: aura z licznikiem
+    finality szła do grobu zamiast na wygnanie i dawała się odzyskać.
+13. **CR 608.2b** — czar MODALNY, który stracił jedyny cel, rozstrzygał się
+    mimo wszystko i wykonywał efekty NIECELOWANE (bliźniacza ścieżka
+    zdolności miała ten test od M90).
+14. **CR 118.9** — dwie ścieżki modalne gubiły `exileInsteadOfGraveyard`
+    (Halo Forager): czar rzucony z grobu wracał do grobu i dawał się rzucić
+    ponownie.
+15. **CR 701.5a + 118.9** — to samo przy KONTRZE: pięć kopii kodu
+    kontrującego szło na sztywno do grobu. Domknięcie klasy otwartej przez #14.
+16. **Bonus** — odczepianie KILKU aur od jednego gospodarza sprawdzało
+    inwarianty na stanie pośrednim i wywracało partię wyjątkiem. Znaleziony
+    jako regresja naprawy #11/#12 przez benchmark botów, ale błąd samoistny.
+
+**Dług architektoniczny spłacony przy okazji:** reguła „gdzie ląduje czar po
+zejściu ze stosu" istniała w OŚMIU kopiach (`spells.js` + `effects.js` +
+`game-state.js`) — teraz jest jedna funkcja `spellExitZone` w `zones.js`.
+Podobnie `deathZoneFor` zeszło do `zones.js`, a nowy `mover.js` udostępnia
+choke point zmian stref warstwom leżącym niżej w grafie importów, bez cyklu.
+
+Każda naprawa u root cause (ADR 0002), każda ze strażnikiem KLASOWYM
+i weryfikacją mutacyjną per ścieżka (L13). Nowe testy:
+`m271-aura-bez-gospodarza-strefa` (7), `m271-czar-modalny-fizzle` (5),
+`m271-strefa-zejscia-czaru` (4), `m271-kontra-strefa-zejscia` (5).
+
+**Wynik:** `npm test` 4011/4011, `npm run test:all` **4022/4022**,
+build **57 modułów / 3016.3 kB**. Nowe lekcje: **L109**, **L110**.
+
