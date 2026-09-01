@@ -648,7 +648,7 @@ export function canPayMadnessCost(state, playerId, object) {
   return hasColorRequirements(state, playerId, requirements);
 }
 
-export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, treasureAlt = false, warpCast = false, madnessCast = false, surgeCast = false } = {}) {
+export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, treasureAlt = false, warpCast = false, madnessCast = false, surgeCast = false, vaanCast = false } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   // Zaplotowana karta leży w exile (plotted: true) i rzuca się BEZ kosztu many
@@ -687,10 +687,10 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // timing — także w cleanup (odrzucenie ponad limit ręki) i w turze
   // przeciwnika. Bez wyjątku bramka odrzucała rzut, a heuristic-bot zawsze
   // wybierał cast:true → crash sesji „Bot wybrał nielegalną komendę".
-  if (!hasFlash && !madnessCast && (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase))) throw new Error('Zagranie poza main phase');
+  if (!hasFlash && !madnessCast && !vaanCast && (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase))) throw new Error('Zagranie poza main phase');
   // Timing sorcery (CR 307.1/117.1a): rzut permanenta bez flash wymaga
   // PUSTEGO stosu — czar idzie na stos i rozstrzyga się po rundzie passów.
-  if (!hasFlash && !madnessCast && state.zones.stack.length > 0) throw new Error('Zagranie przy niepustym stosie');
+  if (!hasFlash && !madnessCast && !vaanCast && state.zones.stack.length > 0) throw new Error('Zagranie przy niepustym stosie');
   if (warpCast && !object.warp) throw new Error('Ta karta nie ma mechaniki warp');
   if (madnessCast && !object.madness) throw new Error('Ta karta nie ma mechaniki madness');
   // Surge (CR 702.111): koszt ALTERNATYWNY rzutu z ręki, legalny gdy ty (lub

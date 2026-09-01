@@ -178,6 +178,18 @@ function staticConditionHolds(state, object, condition) {
   // Flaga enteredOnTurn (numer tury wejścia) — NIE summoning sickness:
   // kradzież/zmiana kontroli nakłada SS (CR 302.6) bez wejścia na pole bitwy.
   if (condition.enteredThisTurn) return object.enteredOnTurn === state?.turn?.number;
+  // „During your turn" / „during opponents' turns" (Leonin Surveyor — first
+  // strike): porównanie aktywnego gracza z KONTROLEREM obiektu (CR 109.5 —
+  // „you/your" to kontroler karty). activePlayerIsController=false pokrywa
+  // „as long as it's NOT your turn".
+  if (condition.activePlayerIsController != null) {
+    return (state?.turn?.activePlayerId === object.controllerId) === condition.activePlayerIsController;
+  }
+  // „As long as you gained life this turn" (Ulna Alley Shopkeep — Infusion):
+  // licznik zyskanego życia per gracz (players.changeLife), zerowany z turą.
+  if (condition.gainedLifeThisTurn) {
+    return ((state?.lifeGainedThisTurn ?? {})[object.controllerId] ?? 0) > 0;
+  }
   if (condition.minCardsDrawnThisTurn != null) {
     const drawn = (state?.cardsDrawnThisTurn ?? {})[object.controllerId] ?? 0;
     return drawn >= condition.minCardsDrawnThisTurn;

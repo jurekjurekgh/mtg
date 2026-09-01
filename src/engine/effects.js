@@ -1063,6 +1063,39 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }));
     return;
   }
+  // Vaan, Street Thief (FIN): „exile the top card of that player's library.
+  // You may cast it. If you don't, create a Treasure token." Gracz, z którego
+  // biblioteki wygnano kartę, to poszkodowany (context.damagedPlayerId —
+  // trigger any_combat_damage_to_player). Rzut „teraz" to blokująca decyzja
+  // resolve_exile_cast (karta oznaczona playableUntilTurn jak impulse, a
+  // vaanCast omija timing — ruling WotC: rzucasz, póki zdolność jest na
+  // stosie, ignorując ograniczenia typu czaru).
+  if (effect.type === 'exile_top_of_player_library_and_may_cast') {
+    const controllerId = sourceObject.controllerId;
+    const libraryOwnerId = context.damagedPlayerId ?? controllerId;
+    const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === libraryOwnerId);
+    if (topId == null) return; // pusta biblioteka — nic do wygnania ani rzucenia
+    const card = state.objects.get(topId);
+    const exileId = `exile-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, topId, 'exile', exileId, { exiledBy: sourceObject.cardId });
+    state.objects.set(exileId, Object.freeze({ ...moved, playableUntilTurn: state.turn.number }));
+    state.events.push(event('object_exiled', {
+      fromId: topId, objectId: exileId, object: state.objects.get(exileId),
+      cardId: card?.cardId ?? null,
+    }));
+    state.pendingExileCast = {
+      playerId: controllerId,
+      objectId: exileId,
+      cardId: card?.cardId ?? null,
+      sourceId: sourceObject.id,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('exile_cast_required', {
+      playerId: controllerId, objectId: exileId, cardId: card?.cardId ?? null,
+    }));
+    return true; // decyzja blokuje dalsze efekty zdolności
+  }
   if (effect.type === 'fabricate') {
     const amount = effect.amount ?? 1;
     const controllerId = sourceObject.controllerId;
@@ -2418,6 +2451,19 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     return;
   }
+  // Vaan, Street Thief (FIN): „put a +1/+1 counter on each Scout, Pirate, and
+  // Rogue you control". Generycznie: licznik na każdym stworze kontrolera
+  // źródła o podtypie z listy (ADR 0002 — filtr po podtypach, nie nazwach).
+  if (effect.type === 'add_counter_to_creatures_you_control') {
+    const subtypes = effect.subtypes ?? [];
+    for (const object of [...state.objects.values()]) {
+      if (object.zone !== 'battlefield' || object.controllerId !== sourceObject.controllerId) continue;
+      if (object.kind !== 'creature') continue;
+      if (subtypes.length && !(object.subtypes ?? []).some((sub) => subtypes.includes(sub))) continue;
+      addCounter(state, object.id, effect.counter ?? '+1/+1', effect.amount ?? 1);
+    }
+    return;
+  }
   // Warunkowe rozgałęzienie efektów (Trade Route Envoy: „draw a card if you
   // control a creature with a counter on it. If you don't, put a +1/+1 counter
   // on this creature"). Generyczne if/then/else po deskryptorze warunku —
@@ -3196,6 +3242,13 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.events.push(event('object_moved', {
       fromId: targetId, object: moved, fromZone: 'graveyard', toZone: 'hand',
     }));
+    // Cemetery Recruitment (EMN): „If it's a Zombie card, draw a card."
+    // Generycznie: po powrocie, jeśli karta ma podtyp z listy — dobierz
+    // (filtr po podtypie, nie nazwie — ADR 0002).
+    if (effect.drawIfSubtypes?.length
+      && (moved.subtypes ?? []).some((sub) => effect.drawIfSubtypes.includes(sub))) {
+      drawPlayerCards(state, sourceObject.controllerId, 1, 'effect');
+    }
     return;
   }
   if (effect.type === 'put_graveyard_card_on_bottom') {
@@ -5273,6 +5326,31 @@ function markTemporaryExile(state, exileId, sourceObject) {
       objectId: targetId, cardId: object.cardId,
       basePower: newPower, baseToughness: newToughness, untilEndOfTurn: true,
     }));
+    return;
+  }
+  // Jolrael, Mwonvuli Recluse (MKC): „Until end of turn, creatures you
+  // control have base power and toughness X/X, where X is the number of cards
+  // in your hand." Masowa wersja set_base_pt_until_end_of_turn — tempBasePT na
+  // każdym stworze kontrolera źródła (czyszczone w cleanup, jak pojedyncze).
+  // X liczony przy rozstrzygnięciu (CR 608.2g) z liczby kart w ręce.
+  if (effect.type === 'set_base_pt_creatures_you_control') {
+    const x = (effect.power === 'hand_size')
+      ? state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === sourceObject.controllerId).length
+      : (effect.power ?? 0);
+    // Zdarzenie PER STWÓR (jak pojedynczy set_base_pt_until_end_of_turn):
+    // stats_modified z basePower/baseToughness — konsument logu opisuje
+    // „X staje się X/X do końca tury". Masowy wariant nie używa
+    // mass_stats_modified (ten niesie modyfikatory +X/+Y, nie bazę).
+    for (const object of [...state.objects.values()]) {
+      if (object.zone !== 'battlefield' || object.controllerId !== sourceObject.controllerId || object.kind !== 'creature') continue;
+      state.objects.set(object.id, Object.freeze({
+        ...object, tempBasePT: Object.freeze({ power: x, toughness: x }),
+      }));
+      state.events.push(event('stats_modified', {
+        objectId: object.id, cardId: object.cardId,
+        basePower: x, baseToughness: x, untilEndOfTurn: true,
+      }));
+    }
     return;
   }
   if (effect.type === 'set_saddled') {

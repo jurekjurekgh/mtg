@@ -43,6 +43,9 @@ export function triggerEffectIsHostile(effect) {
   if (!effect?.type) return false;
   if (HOSTILE_TRIGGER_TARGET_EFFECTS.has(effect.type)) return true;
   if (effect.type === 'pump' && ((effect.power ?? 0) < 0 || (effect.toughness ?? 0) < 0)) return true;
+  // Batch 52 (Fourth Bridge Prowler): ujemny buff „-1/-1 do końca tury" wobec
+  // dowolnego stwora to efekt wrogi — ta sama reguła co ujemny pump (ADR 0002).
+  if (effect.type === 'buff_creature_until_end_of_turn' && ((effect.power ?? 0) < 0 || (effect.toughness ?? 0) < 0)) return true;
   if (effect.type === 'add_counter' && HOSTILE_COUNTERS.has(effect.counter)) return true;
   return false;
 }
@@ -70,5 +73,10 @@ export function triggerTargetEffectFriendly(ability) {
     // friendly=false i bot obdarzał NAJSŁABSZEGO własnego stwora (kara
     // -20-wartość zamiast premii 30+wartość).
     || (e?.type === 'transfer_counters_on_dies' && typeof e.counter === 'string'
-      && e.counter.startsWith('+')));
+      && e.counter.startsWith('+'))
+    // Batch 52: dodatni buff „+X/+Y do końca tury" wobec dowolnego stwora
+    // jest przyjazny (ujemny klasyfikuje triggerEffectIsHostile powyżej).
+    || (e?.type === 'buff_creature_until_end_of_turn'
+      && (e.power ?? 0) >= 0 && (e.toughness ?? 0) >= 0
+      && (e.power ?? 0) + (e.toughness ?? 0) > 0));
 }

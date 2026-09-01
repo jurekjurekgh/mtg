@@ -66,7 +66,7 @@ export function plottedCastAllowed(state, playerId, object) {
     && state.zones.stack.length === 0;
 }
 
-function requireSpell(state, playerId, objectId, targets, cleaved) {
+function requireSpell(state, playerId, objectId, targets, cleaved, vaanCast = false) {
   const object = state.objects.get(objectId);
   // Batch 46 (Gila Courser): karta wygnana „impulse" jest grywalna z exile
   // do końca twojej następnej tury — za PEŁNY koszt (w odróżnieniu od plot).
@@ -85,7 +85,10 @@ function requireSpell(state, playerId, objectId, targets, cleaved) {
   }
   if (timing === 'sorcery') {
     const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
-    if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) {
+    // Vaan, Street Thief: rzut „teraz" przy rozstrzyganiu zdolności ignoruje
+    // timing czaru (CR 601.2b pomijany — ruling WotC: rzucasz, póki zdolność
+    // jest na stosie), jak madness/suspend/rebound.
+    if (!vaanCast && (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0)) {
       throw new Error('Czar sorcery tylko w swoją fazę main przy pustym stosie');
     }
   } else if (timing !== 'instant') {
@@ -450,7 +453,7 @@ export function effectiveSpellManaCost(state, object) {
 }
 
 /** Rzuca czar: płaci koszt, kładzie obiekt na stos z wybranymi celami. */
-export function castSpell(state, playerId, objectId, targets, sacrificeTargetId, modeIndex, stunTargetId, buyback = false, payAltCost = false, xValue, phyrexianPayWithLife = 0) {
+export function castSpell(state, playerId, objectId, targets, sacrificeTargetId, modeIndex, stunTargetId, buyback = false, payAltCost = false, xValue, phyrexianPayWithLife = 0, vaanCast = false) {
   const preObject = state.objects.get(objectId);
   // Modal „Choose one" (Aerith Rescue Mission): osobna ścieżka walidacji —
   // cele i efekty pochodzą z wybranego trybu, a nie z nadrzędnego deskryptora.
@@ -467,7 +470,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   if (preObject?.spell?.fireball) {
     return castFireball(state, playerId, objectId, targets, xValue);
   }
-  const { object, targetSpec, chosen } = requireSpell(state, playerId, objectId, targets);
+  const { object, targetSpec, chosen } = requireSpell(state, playerId, objectId, targets, false, vaanCast);
   const player = state.players.find((entry) => entry.id === playerId);
   const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object);
   // Dodatkowy koszt „sacrifice a creature" (Village Rites): walidacja celu-

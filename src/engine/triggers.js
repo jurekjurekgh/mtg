@@ -2140,14 +2140,25 @@ function processTriggersScan(state, recentEvents) {
       // komendę, gdy DOWOLNY stwór kontrolera źródła zadał obrażenia graczowi
       // (grupowanie jak leftBattlefield — zdarzenie per stwór, trigger per
       // kontroler). Źródło triggera samo może być stworem lub nie (Disa).
-      if (source && !anyCombatDamageControllers.has(source.controllerId)) {
-        anyCombatDamageControllers.add(source.controllerId);
+      if (source) {
+        // Vaan, Street Thief (FIN): „Whenever one or more Scouts, Pirates,
+        // and/or Rogues you control deal combat damage to a player" — trigger
+        // z FILTREM PODTYPÓW na stworze zadającym obrażenia. Dedup „raz na
+        // kontrolera" musi uwzględniać filtr: stwór spoza podtypów nie
+        // oznaczający kontrolera jako „obsłużonego", żeby późniejszy trafny
+        // stwór w tej samej walce i tak odpalił trigger (dedup po kluczu
+        // `kontroler|podtypy`, a nie po samym kontrolerze).
+        const dealtSubtypes = source.subtypes ?? [];
         for (const candidate of state.objects.values()) {
           if (candidate.zone !== 'battlefield' || candidate.controllerId !== source.controllerId) continue;
           for (const ability of effectiveAbilities(candidate)) {
-            if (ability?.trigger?.event === 'any_combat_damage_to_player') {
-              tryFire(state, ability, candidate, [], events, { damagedPlayerId: ev.target });
-            }
+            if (ability?.trigger?.event !== 'any_combat_damage_to_player') continue;
+            const filter = ability.trigger.subtypes;
+            if (filter?.length && !dealtSubtypes.some((sub) => filter.includes(sub))) continue;
+            const key = `${source.controllerId}|${filter?.length ? [...filter].sort().join(',') : 'any'}`;
+            if (anyCombatDamageControllers.has(key)) continue;
+            anyCombatDamageControllers.add(key);
+            tryFire(state, ability, candidate, [], events, { damagedPlayerId: ev.target });
           }
         }
       }
@@ -2466,6 +2477,23 @@ function processTriggersScan(state, recentEvents) {
             // nie odpala — źródło nie jest jeszcze na polu bitwy (jak prowess).
             if (source.controllerId !== ev.playerId || castNumberThisTurn !== 2) continue;
             queueTriggerToStack(state, ability, source, [], events);
+          } else if (triggerEvent === 'you_cast_kicked_spell') {
+            // Merfolk Falconer (ZNR): „Whenever you cast a kicked spell, scry 2".
+            // Kicker opłaca się jako wariant rzutu — permanent_cast niesie flagę
+            // `kicked` (resources.js), a spell_cast — gdyby kiedyś dostał kickera
+            // — nie; sprawdzamy oba (eventData.kicked lub object.wasKicked).
+            if (source.controllerId !== ev.playerId) continue;
+            const kicked = ev.kicked === true || ev.object?.wasKicked === true;
+            if (!kicked) continue;
+            queueTriggerToStack(state, ability, source, [], events);
+          } else if (triggerEvent === 'you_cast_spell_you_dont_own') {
+            // Vaan, Street Thief (FIN): „Whenever you cast a spell you don't
+            // own". Czar kontrolowany przez gracza, ale WŁAŚCICIELEM jest
+            // inny gracz (ownerId na obiekcie stosu; kradzież przez efekty
+            // „cast from exile/graveyard" — Halo Forager, Vaan).
+            if (source.controllerId !== ev.playerId) continue;
+            if (!ev.object || ev.object.ownerId == null || ev.object.ownerId === ev.playerId) continue;
+            queueTriggerToStack(state, ability, source, [], events);
           } else if (triggerEvent === 'player_casts_spell') {
             // Przez tryFire — zdolność może nieść mayFire („you may" —
             // Angel's Feather, Temat 2) albo requiresTarget; kontekst
@@ -2500,6 +2528,21 @@ function processTriggersScan(state, recentEvents) {
             // Heroic: trigger z requiresTarget (tap creature opponent controls) —
             // cel wybiera kontroler przez queueTargetDecision (tryFire).
             tryFire(state, ability, targetedCreature, [], events, { spellCardId: ev.cardId ?? null });
+          }
+        }
+      }
+    }
+    // „Whenever you draw your second card each turn\" (Jolrael, Mwonvuli
+    // Recluse): odpala przy DOBRANIU, po którym licznik cardsDrawnThisTurn
+    // dobił do 2 (licznik per gracz — jak you_cast_second_spell_each_turn).
+    // card_drawn to jedyne zdarzenie dobrania (draw step i efekty).
+    if (ev.type === 'card_drawn' && ev.playerId != null
+      && (state.cardsDrawnThisTurn?.[ev.playerId] ?? 0) === 2) {
+      for (const source of state.objects.values()) {
+        if (source.zone !== 'battlefield' || source.controllerId !== ev.playerId) continue;
+        for (const ability of effectiveAbilities(source)) {
+          if (ability?.trigger?.event === 'you_draw_second_card_each_turn') {
+            queueTriggerToStack(state, ability, source, [], events);
           }
         }
       }

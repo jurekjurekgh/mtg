@@ -60,6 +60,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_legend_choice: 'Prawo legend (który zostaje?)',
   resolve_trigger_target: 'Cel triggera (wybór)',
   resolve_grave_free_cast: 'Darmowy rzut z grobu (zapłać {X})',
+  resolve_exile_cast: 'Rzut wygnanej karty (Vaan)',
   resolve_opponent_target: 'Wskaż cel obrażeń (wybór przeciwnika)',
   resolve_optional_trigger_choice: 'Efekt „you may"',
   resolve_enter_as_copy: 'Wejście jako kopia',
@@ -371,6 +372,7 @@ export function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_sacrifice_choice') return 'resolve_sacrifice_choice';
   if (command.type === 'resolve_trigger_target') return 'resolve_trigger_target';
   if (command.type === 'resolve_grave_free_cast') return 'resolve_grave_free_cast';
+  if (command.type === 'resolve_exile_cast') return 'resolve_exile_cast';
   if (command.type === 'resolve_opponent_target') return 'resolve_opponent_target';
   if (command.type === 'resolve_search_choice') return 'resolve_search_choice';
   if (command.type === 'resolve_color_choice') return 'resolve_color_choice';
@@ -462,6 +464,7 @@ export function choiceRequestType(commands) {
   if (first.type === 'resolve_food_choice') return 'sacrifice';
   if (first.type === 'resolve_amass_choice') return 'target';
   if (first.type === 'resolve_discover_choice') return 'command';
+  if (first.type === 'resolve_exile_cast') return 'command';
   if (first.type === 'resolve_explore_choice') return 'command';
   if (first.type === 'resolve_craft_exile') return 'command';
   if (first.type === 'resolve_hand_creature') return 'target';
@@ -1153,6 +1156,10 @@ function describeEffect(e) {
     return_card_from_graveyard_to_hand: () => 'wróć kartę z grobu na rękę',
     reveal_hand_choose_discard: () => 'odsłoń rękę i odrzuć wybraną kartę',
     search_library_to_battlefield_tapped: () => 'szukaj w bibliotece landa na pole bitwy (zatapniętego)',
+    // Batch 52 (Vaan, Jolrael).
+    exile_top_of_player_library_and_may_cast: () => 'wygnij wierzch biblioteki poszkodowanego — możesz rzucić tę kartę (inaczej Skarb)',
+    add_counter_to_creatures_you_control: () => `połóż licznik ${e.counter ?? '+1/+1'} na twoich stworach${(e.subtypes ?? []).length ? ` (${e.subtypes.join(', ')})` : ''}`,
+    set_base_pt_creatures_you_control: () => 'twoje stwory mają bazowe X/X do końca tury (X = liczba kart w twojej ręce)',
   };
   const fn = generic[e.type];
   if (fn) return fn();
@@ -1696,6 +1703,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   // decyzji „rzuć wygnany czar albo odpuść" dostaje deskryptory KOMPLETEM
   // (klasa L102: nowy członek rodziny bez wpisu dziedziczy stary objaw).
   resolve_madness_cast: 'Madness — rzucić czar czy przełożyć do cmentarza?',
+  resolve_exile_cast: 'Vaan — rzucić wygnaną kartę czy stworzyć Skarb?',
   resolve_suspend_cast: 'Suspend — rzucić zawieszony czar?',
   resolve_rebound_cast: 'Rebound — rzucić czar ponownie?',
   resolve_epic_choice: 'Epic — który czar skopiować?',
@@ -2801,6 +2809,13 @@ export function commandLabel(cmd, session, view) {
       return cmd.cast
         ? `Rzuć${madPrice}: ${nameOfObjectId(cmd.objectId ?? cmd.cardId)}${madTargets ? ` → cel: ${madTargets}` : ''}`
         : `Przełóż do cmentarza (rezygnacja z madness): ${nameOfObjectId(cmd.objectId ?? cmd.cardId)}`;
+    }
+    case 'resolve_exile_cast': {
+      // Vaan, Street Thief: rzut TERAZ (za normalny koszt) albo Treasure.
+      const vaanTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
+      return cmd.cast
+        ? `Rzuć wygnaną: ${nameOfObjectId(cmd.cardId ?? cmd.objectId)}${vaanTargets ? ` → cel: ${vaanTargets}` : ''}`
+        : 'Zrezygnuj — stwórz token Skarb (Treasure)';
     }
     case 'resolve_reveal_choice': {
       if (cmd.cardId == null) return 'Nie ujawniaj (bez obrażeń)';

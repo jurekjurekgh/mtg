@@ -219,6 +219,8 @@ function defaultBotFactory(seed, ctx) {
     search_library_to_battlefield_tapped: 'szukanie karty — na pole bitwy zatapniętą',
     search_library_to_hand: 'szukanie karty do ręki',
     set_saddled: 'osiodłanie',
+    // Batch 52 (Jolrael): bazowe X/X (X = karty w ręce) twoim stworom.
+    set_base_pt_creatures_you_control: 'ustawienie bazowego P/T twoich stworów do końca tury',
     surveil: 'surveil (podgląd wierzchu biblioteki)',
     tap_permanent: 'zatapianie celu',
     unearth_return: 'powrót karty z grobu na pole bitwy (unearth)',
@@ -451,6 +453,10 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   dealt_damage: 'otrzymanie obrażeń',
   enchanted_creature_dealt_damage: 'zaczarowany stwór otrzymał obrażenia',
   you_cast_spell_targeting_permanent: 'rzucenie czaru celującego w permanent',
+  // Batch 52 (Vaan, Merfolk Falconer, Jolrael).
+  you_cast_spell_you_dont_own: 'rzucenie czaru, którego nie posiadasz',
+  you_cast_kicked_spell: 'rzucenie czaru z opłaconym kickerem',
+  you_draw_second_card_each_turn: 'dobranie drugiej karty w turze',
 });
 
 /**
@@ -940,6 +946,11 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         return `${nameOf(e.cardId)} — odrzucona z madness: możesz rzucić za ${costSymbols(e.cost, e.costColors) || '?'} albo przełożyć do cmentarza`;
       case 'madness_declined':
         return `${nameOf(e.cardId)} — madness odrzucona, karta do cmentarza`;
+      case 'exile_cast_required':
+        return `${whoN(e.playerId)} wygania wierzch biblioteki ${nameOf(e.cardId)} — rzucić teraz czy stworzyć Skarb?`;
+      case 'exile_cast_resolved':
+        if (e.declined) return `${nameOf(e.cardId ?? e.objectId)} zostaje w wygnaniu — ${whoN(e.playerId)} tworzy token Skarb`;
+        return `${nameOf(e.cardId ?? e.objectId)} — rzucona z wygnania`;
       case 'reveal_choice_required':
         return `możesz ujawnić kartę (${e.subtype ?? '?'}) z ręki — ${e.amount ?? 2} obrażenia przeciwnika`;
       case 'reveal_choice_resolved':
