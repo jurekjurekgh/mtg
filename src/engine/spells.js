@@ -1582,6 +1582,28 @@ export function resolveTopOfStack(state) {
       // stosu i modalny counter_spell był no-opem.
       return target.zone === 'battlefield' || target.zone === 'stack';
     });
+    // M271 (błąd #13, CR 608.2b): „If all its targets ... are now illegal,
+    // the spell or ability doesn't resolve." Ścieżka ZDOLNOŚCI ma ten test
+    // od M90, bliźniacza ścieżka CZARU MODALNEGO go NIE miała: tryb, który
+    // stracił jedyny cel, przechodził dalej z pustą listą i wykonywał swoje
+    // efekty NIECELOWANE. „Your Temple Is Under Attack" (tryb 2: „target
+    // opponent" + „each player draws") dawał obu graczom karty, mimo że czar
+    // w ogóle nie powinien się rozstrzygnąć.
+    // Warunek dotyczy WYŁĄCZNIE trybów, które celów wymagają — tryb bez
+    // celów rozstrzyga się normalnie.
+    const modeTargets = mode.targets ?? object.spell.targets ?? [];
+    if (modeTargets.length > 0 && liveChosen.length === 0) {
+      const graveFizzle = `grave-${state.objectSequence++}`;
+      moveObjectDirectly(state, stackId, 'graveyard', graveFizzle);
+      state.events.push(event('spell_resolved', {
+        fromId: stackId, toId: graveFizzle, cardId: object.cardId,
+        controllerId: object.controllerId,
+        fizzled: true, reason: 'no_legal_targets', modal: true,
+        modeIndex: object.chosenMode,
+        modeName: object.spell?.modes?.[object.chosenMode]?.name ?? null,
+      }));
+      return state.events.slice(before);
+    }
     for (const effect of mode.effects ?? []) {
       const effTargets = resolveModalEffectTargets(state, effect, object, liveChosen);
       if (effTargets === null) continue;
