@@ -2411,3 +2411,28 @@ Wnioski praktyczne:
    odczepianie → przenoszenie aury). Pętla, która zmienia wiele obiektów
    powiązanych, musi najpierw zerwać wiązania, a potem stosować polityki.
 
+## L111 — sonda wołająca `applyEffect` pomija state-based actions
+
+W M272 zgłosiłem „błąd" polegający na tym, że zmiana kontroli nad atakującym
+stworem nie usuwa go z walki (CR 506.4). Repro było jednoznaczne: po
+`applyEffect(gain_control...)` stwór dalej figurował w `state.combat.attackers`.
+Napisałem naprawę, strażnika i dopiero rozbieżność w nazwie pola (`reason:
+'control_changed'` vs faktyczne `controller_changed`) ujawniła prawdę: regułę
+egzekwuje `src/engine/state-based.js:95–124` od czasu M201. Cała naprawa
+została wycofana.
+
+Przyczyna fałszywego alarmu: sonda wołająca `applyEffect` (albo mutująca stan
+ręcznie) NIE przepuszcza stanu przez pętlę state-based actions. Efekt widać
+„zamrożony" w połowie — dokładnie tak, jak wyglądałby brak reguły.
+
+Zasada przed uznaniem braku reguły za błąd:
+1. Przepuść repro przez PEŁNĄ komendę (`execute`), a nie przez `applyEffect`;
+   albo jawnie uruchom przebieg SBA. Dopiero taki stan jest legalny.
+2. Zgrepuj nazwę spodziewanego zdarzenia w CAŁYM `src/` — nie tylko tam, gdzie
+   spodziewasz się emitera. Reguła bywa zaimplementowana w `state-based.js`,
+   a nie w rodzinie efektów, którą właśnie czytasz.
+3. Test falsyfikacyjny PRZED commitem: usuń własną łatkę i sprawdź, czy repro
+   nadal przechodzi. Jeśli tak — łatka jest zbędna, niezależnie od tego, jak
+   przekonująco wyglądała sonda.
+
+Punkt 3 kosztuje minutę i jako jedyny wyłapuje ten błąd niezawodnie.
