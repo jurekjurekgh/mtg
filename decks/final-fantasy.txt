@@ -9,7 +9,9 @@
 1x White Mage's Staff
 1x Gaelicat
 1x Jill, Shiva's Dominant
+1x Loporrit Scout
 1x Mysidian Elder
+1x Vaan, Street Thief
 1x Aerith Rescue Mission
 1x Call the Mountain Chocobo
 1x Warrior's Sword
@@ -19,3 +21,4 @@
 2x Island
 1x Swamp
 2x Mountain
+1x Forest

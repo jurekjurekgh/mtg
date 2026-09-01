@@ -279,6 +279,9 @@ const HANDLED_TRIGGER_EVENTS = new Set([
   'permanents_you_control_leave_battlefield',
   'player_casts_spell', 'turned_face_up', 'upkeep', 'when_you_cast_spell',
   'you_cast_noncreature_spell', 'you_cast_second_spell_each_turn',
+  // Batch 52 (Vaan, Merfolk Falconer, Jolrael).
+  'you_cast_spell_you_dont_own', 'you_cast_kicked_spell',
+  'you_draw_second_card_each_turn',
   'spell_targets_this_creature',
   // M109 (Tiller of Flesh): „whenever you cast a spell that targets one or
   // more permanents" — incubate 2.

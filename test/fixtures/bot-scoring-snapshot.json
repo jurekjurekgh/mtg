@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "overallHash": "002ff6bbb68f03407e77e9f2619c4d8ba7afe913d3a4c54752aa2da79ff13ccb",
+  "overallHash": "45a90d2902ebb4c9823dac4eef98a4754d16d1bc506cc242c792d29545fc3403",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
@@ -46,42 +46,45 @@
     {
       "pair": "dominaria-brg|mirrodin-wu",
       "seed": 1000,
-      "hash": "d56c4ddb5962d35a392114a4d91ab5f66ac10723631bfacd76a033c619751a20",
-      "decisions": 224,
-      "scoreSum": 2754.9,
+      "hash": "87668bf9eaf16ffb0bf4ea1c81e5d8f9758d742e4c1b7759da6d3abaf9a95386",
+      "decisions": 172,
+      "scoreSum": 2444.4,
       "chosenKinds": {
-        "attack": 7,
-        "block": 7,
-        "cast_permanent": 8,
+        "activate_ability": 2,
+        "attack": 4,
+        "block": 6,
+        "cast_permanent": 5,
         "cast_spell": 1,
-        "pass_priority": 185,
-        "play_land": 5,
-        "resolve_combat": 9,
+        "pass_priority": 136,
+        "play_land": 6,
+        "resolve_combat": 7,
+        "resolve_discard_choice": 2,
         "resolve_mulligan_choice": 1,
+        "resolve_reveal_exile_hand": 1,
         "resolve_trigger_target": 1
       }
     },
     {
       "pair": "dominaria-brg|mirrodin-wu",
       "seed": 1001,
-      "hash": "e4eee624c9fe521417026781d87e6e8ed901e17f125642c411ac4079fc211533",
-      "decisions": 220,
-      "scoreSum": 2966.5,
+      "hash": "db2d1c3259d0fe58b9d0f5e4da7206bf0d0c095744b8481e4ecb2789eb9e6c3b",
+      "decisions": 250,
+      "scoreSum": 3189.6,
       "chosenKinds": {
-        "activate_ability": 3,
-        "attack": 7,
-        "block": 7,
+        "activate_ability": 4,
+        "attack": 8,
+        "block": 9,
         "cast_flashback": 1,
-        "cast_permanent": 5,
+        "cast_permanent": 9,
         "cast_spell": 2,
-        "pass_priority": 172,
-        "play_land": 7,
-        "resolve_combat": 9,
+        "pass_priority": 191,
+        "play_land": 8,
+        "resolve_combat": 10,
         "resolve_discard_choice": 3,
         "resolve_mulligan_choice": 1,
-        "resolve_suspend_cast": 1,
-        "resolve_trigger_target": 1,
-        "suspend_card": 1
+        "resolve_satyr_look_choice": 1,
+        "resolve_search_choice": 2,
+        "resolve_trigger_target": 1
       }
     },
     {
