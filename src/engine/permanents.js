@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { assertZone } from './zones.js';
+import { assertZone, deathZoneFor } from './zones.js';
 import { addCounter, removeCounter, syncStationKind } from './counters.js';
 import { attachmentGrant, attachmentsAttachedTo, effectiveColors, effectiveProtectionFromColors, effectiveProtectionQualities, isProtectedFromSource, sourceHasProtectionQuality } from './attachments.js';
 // M110: helpery ochrony przed JAKOŚCIĄ mieszkają w attachments.js (razem
@@ -1049,12 +1049,10 @@ export function detainUntilYourNextTurn(state, objectId, detainerId) {
   return updated;
 }
 
-export function deathZoneFor(state, object) {
-  if (((object?.counters ?? {}).finality ?? 0) > 0) return 'exile';
-  // M262: wpisy {id, byCardId} — sprawdzamy id obiektu w naznaczonych.
-  if ((state.exileIfDiesThisTurn ?? []).some((entry) => entry.id === object?.id)) return 'exile';
-  return 'graveyard';
-}
+// M271: definicja przeniesiona do `zones.js` (najniższa warstwa grafu), żeby
+// mogła z niej korzystać także `attachments.js` bez tworzenia cyklu importów.
+// Re-eksport zachowuje dotychczasową ścieżkę importu dla reszty silnika.
+export { deathZoneFor };
 
 export function grantKeywordsUntilEndOfTurn(state, objectId, keywords, options = {}) {
   const object = state.objects.get(objectId);

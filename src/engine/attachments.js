@@ -1,4 +1,6 @@
 import { event } from '../protocol/types.js';
+import { deathZoneFor } from './zones.js';
+import { moveObject } from './mover.js';
 
 /**
  * Załączniki — aury (bestow i czyste) oraz equipmenty (CR 301.5, 303.4,
@@ -234,30 +236,28 @@ function detachOrphanedAttachment(state, attachment, hostId, events) {
     return;
   }
   // Czysta aura (CR 704.5m): bez legalnego zaczarowanego obiektu trafia
-  // do grobu właściciela. Ruch zrealizowany wprost (bez moveObjectDirectly,
-  // żeby nie tworzyć cyklu attachments → objects → attachments).
-  // Root cause (Batch 24, ujawnione przez Feedback na aury Hobble): aura
-  // opuszczająca pole bitwy musi NAJPIERW odczepić WŁASNE załączniki — inaczej
-  // Feedback (aura na enchantment) wisiałby na usuniętym obiekcie
-  // („załącznik wskazuje nieistniejącego gospodarza"). To samo robi
-  // moveObjectDirectly dla zwykłych ruchów; tu ruch jest ręczny.
-  detachAttachmentsFromHost(state, attachment.id);
-  const graveId = `grave-${state.objectSequence++}`;
-  state.zones.battlefield = state.zones.battlefield.filter((id) => id !== attachment.id);
-  state.zones.graveyard.push(graveId);
-  const moved = Object.freeze({
-    ...attachment, id: graveId, zone: 'graveyard',
-    damage: 0, powerModifier: 0, toughnessModifier: 0, chosenTargets: null,
-    counters: {}, faceDown: false,
-    attachedTo: null,
-    kind: attachment.baseKind ?? 'enchantment',
-    baseKind: null,
-  });
-  state.objects.delete(attachment.id);
-  state.objects.set(graveId, moved);
+  // do grobu WŁAŚCICIELA.
+  // M271 (błędy #11 i #12): ruch szedł tu RĘCZNIE, z pominięciem jedynego
+  // choke pointu zmian stref, „żeby nie tworzyć cyklu importów". Cykl jest
+  // realny (pilnuje go test/module-graph.test.js), ale rozwiązaniem jest
+  // rejestr `mover.js`, a nie duplikat logiki — kopia gubiła DWIE korekty,
+  // które choke point wykonuje:
+  //  - CR 400.3 + 110.2a: poza polem bitwy obiekt należy do WŁAŚCICIELA,
+  //    więc ukradziona aura lądowała w grobie ZŁODZIEJA (błąd #11);
+  //  - CR 122.1e: `deathZoneFor` (finality / „exile if it would die") był
+  //    ignorowany, więc aura z finality szła do grobu i dawała się odzyskać
+  //    (błąd #12).
+  // Odczepienie WŁASNYCH załączników aury (Feedback na Hobble, Batch 24)
+  // wykonuje teraz sam choke point — nie duplikujemy go tutaj.
+  // `kind` też ustawia choke point: bestow wraca do bycia stworem
+  // (CR 702.103b), czysta aura zostaje enchantmentem.
+  const toZone = deathZoneFor(state, attachment);
+  const newId = `${toZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`;
+  const moved = moveObject(state, attachment.id, toZone, newId);
   const e = event('permanent_put_into_graveyard', {
-    fromId: attachment.id, toId: graveId, cardId: moved.cardId,
+    fromId: attachment.id, toId: newId, cardId: moved.cardId,
     controllerId: moved.controllerId, reason: 'aura_without_legal_host',
+    toZone,
   });
   state.events.push(e); events.push(e);
 }

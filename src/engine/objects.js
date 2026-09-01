@@ -3,6 +3,7 @@ import { assertZone } from './zones.js';
 import { assertStateInvariants } from './invariants.js';
 import { detachAttachmentsFromHost } from './attachments.js';
 import { syncStationKind } from './counters.js';
+import { registerMover } from './mover.js';
 
 /**
  * Rejestr LKI nazw (CR 603.10): identyfikator → ostatnia znana tożsamość
@@ -322,3 +323,7 @@ export function singleTargetOfStackEntry(object) {
   const spellSpec = (object.spell?.targets ?? [])[0];
   return chosen.length === 1 && spellSpec ? { targetId: chosen[0], spec: spellSpec, kind: 'spell' } : null;
 }
+
+// Rejestracja jedynego choke pointu zmian stref dla warstw leżących NIŻEJ
+// w grafie importów (attachments.js) — patrz `mover.js`.
+registerMover(moveObjectDirectly);
