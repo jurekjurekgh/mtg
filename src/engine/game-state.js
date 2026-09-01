@@ -25,7 +25,7 @@ import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModif
 import { addCounter, removeCounter } from './counters.js';
 import { runStateBasedActions, tryRegenerate } from './state-based.js';
 import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, fireWardTriggers } from './triggers.js';
-import { moveObjectDirectly } from './objects.js';
+import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionQualities } from './attachments.js';
 import { createBattlefieldToken } from './tokens.js';
 import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom } from './effects.js';
@@ -3549,6 +3549,12 @@ export function execute(state, input) {
       // Token poza polem bitwy przestaje istnieć (CR 111.7) — NIE wchodzi do
       // biblioteki (inaczej surveil rzucającego łapał token jako wierzch,
       // a SBA kasowało go spod pendingSurveil — złamany niezmiennik).
+      // M273 (błąd #25): token znika z gry z POMINIĘCIEM choke pointu stref,
+      // więc trzeba jawnie przejść tę samą listę „kto o nim jeszcze pyta"
+      // (L43). `state.combat` trzymał wiszące id skasowanego tokena:
+      // atakujący/bloker, którego nie ma w `state.objects`. Ten sam rodzaj
+      // niespójności wywrócił partię w M271 (błąd #16).
+      if (state.combat) removeFromCombat(state, pending.targetId);
       state.objects.delete(pending.targetId);
       state.zones.battlefield = state.zones.battlefield.filter((id) => id !== pending.targetId);
       state.events.push(event('token_ceased_to_exist', {

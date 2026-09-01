@@ -5,7 +5,7 @@ import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { spendMana, addMana, producibleMana } from './resources.js';
 import { getSourceForObject } from './mana-sources.js';
-import { moveObjectDirectly, singleTargetOfStackEntry } from './objects.js';
+import { moveObjectDirectly, removeFromCombat, singleTargetOfStackEntry } from './objects.js';
 import { tryRegenerate } from './state-based.js';
 import { createBattlefieldToken, nextCopyNumber } from './tokens.js';
 
@@ -4133,6 +4133,12 @@ function markTemporaryExile(state, exileId, sourceObject) {
       // inaczej zostaje „wisząca" aura wskazująca nieistniejący obiekt
       // (inwariant wywraca partię). Ta sama reguła co w SBA (CR 111.7).
       detachAttachmentsFromHost(state, targetId);
+      // M273 (błąd #25): token znika z gry z POMINIĘCIEM choke pointu stref,
+      // więc trzeba jawnie przejść tę samą listę „kto o nim jeszcze pyta"
+      // (L43). `state.combat` trzymał wiszące id skasowanego tokena:
+      // atakujący/bloker, którego nie ma w `state.objects`. Ten sam rodzaj
+      // niespójności wywrócił partię w M271 (błąd #16).
+      if (state.combat) removeFromCombat(state, targetId);
       state.objects.delete(targetId);
       state.zones.battlefield = state.zones.battlefield.filter((id) => id !== targetId);
       state.events.push(event('token_ceased_to_exist', {
