@@ -1401,7 +1401,19 @@ function resolveActivatedAbilityEntry(state, entry) {
       if (!isChannel && drawAmount != null) {
         for (let i = 0; i < drawAmount; i += 1) {
           const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === payload.playerId);
-          if (!topId) break;
+          if (!topId) {
+            // M272 (błąd #21, CR 704.5m + 104.4b): próba dobrania z PUSTEJ
+            // biblioteki to ZNACZNIK dla akcji stanowej, nie ciche „nic".
+            // Ścieżka cyklowania po prostu przerywała pętlę, więc gracz, który
+            // wycyklował ostatnią kartę, nigdy nie przegrywał — partia toczyła
+            // się dalej z pustą biblioteką. Znacznik kasuje przebieg SBA.
+            if (state.status === 'active') {
+              state.emptyLibraryDraw = {
+                ...(state.emptyLibraryDraw ?? {}), [payload.playerId]: true,
+              };
+            }
+            break;
+          }
           const handId = `hand-${state.objectSequence++}`;
           const drawn = moveObjectDirectly(state, topId, 'hand', handId);
           state.cardsDrawnThisTurn[payload.playerId] = (state.cardsDrawnThisTurn[payload.playerId] ?? 0) + 1;
