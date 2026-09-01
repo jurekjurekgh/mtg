@@ -6,6 +6,7 @@ import {
   counterStackObject,
 } from './effects.js';
 import { addCounter, hasCounter } from './counters.js';
+import { deathZoneFor } from './zones.js';
 import { changeLife } from './players.js';
 import { effectiveAbilities, effectiveKeywords, effectivePower, wardAmountOf } from './permanents.js';
 import { moveObjectDirectly } from './objects.js';
@@ -700,11 +701,18 @@ function fireSagaChapter(state, sagaObject, chapterNumber, events, chapterTarget
   if (chapterNumber >= chapters.length) {
     const current = state.objects.get(sagaObject.id);
     if (current && current.zone === 'battlefield' && current.saga) {
-      const graveId = `grave-${state.objectSequence++}`;
-      const moved = moveObjectDirectly(state, current.id, 'graveyard', graveId);
+      // M272 (błąd #17, CR 704.5s + 122.1e): po ostatnim rozdziale kontroler
+      // POŚWIĘCA Sagę — a poświęcenie to śmierć permanenta, więc obowiązuje
+      // zastąpienie strefy (licznik finality / „exile it instead"). M269
+      // (błąd #5) sprowadził cztery ścieżki poświęcenia do `deathZoneFor`,
+      // ale ta — jedyna poza game-state/effects/spells — została na sztywnym
+      // grobie: Saga z licznikiem finality dawała się odzyskać z cmentarza.
+      const toZone = deathZoneFor(state, current);
+      const graveId = `${toZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, current.id, toZone, graveId);
       const sacrificed = event('permanent_sacrificed', {
         fromId: current.id, objectId: graveId, playerId: current.controllerId,
-        cardId: moved.cardId, saga: true,
+        cardId: moved.cardId, saga: true, toZone,
       });
       state.events.push(sacrificed);
       events.push(sacrificed);
