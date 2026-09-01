@@ -5364,6 +5364,23 @@ export function playerView(state, playerId) {
       // Grób jest strefą PUBLICZNĄ (CR 400.2), a wpis i tak niesie cardId —
       // deskryptor nie dokłada informacji ukrytej.
       if (zone === 'graveyard' && object.spell) waiting.spell = object.spell;
+      // M274 (błąd #27, ADR 0017 + CR 400.2): GRÓB jest strefą PUBLICZNĄ, więc
+      // rodzaj karty, linia typów i statystyki są jawne — a widok ich nie
+      // niósł. Bot filtruje zawartość grobu dokładnie po tych polach
+      // (`o.kind === 'creature'`, `(o.types ?? []).includes('Artifact')`,
+      // `o.power` przy wycenie reanimacji z cudzego grobu) i dostawał
+      // `undefined`: stwór 3/3 w grobie przeciwnika wyceniał się na 0, więc
+      // reanimacja i odpowiedź na nią były dla bota niewidoczne. Wygnanie
+      // (strefa też jawna, CR 406.3) `kind`/`types` już wysyłało — grób został
+      // w tyle. Wpis i tak niesie `cardId`, więc to nie dokłada informacji
+      // ukrytej; zakryte karty wracają wyżej z `hidden: true`.
+      if (zone === 'graveyard') {
+        if (object.kind) waiting.kind = object.kind;
+        if ((object.types ?? []).length) waiting.types = [...object.types];
+        if (object.power != null) waiting.power = object.power;
+        if (object.toughness != null) waiting.toughness = object.toughness;
+        waiting.manaCost = object.manaCost ?? 0;
+      }
       return {
         id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
         plotted: Boolean(object.plotted), ...waiting,
