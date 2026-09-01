@@ -2550,6 +2550,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               score += 10 + gyValue;
             }
           }
+          // Batch 52 (Cemetery Recruitment): zwrot karty STWORA z grobu do
+          // RĘKI to card advantage (jak dobranie) + ciało karty. Bez wyceny
+          // warianty remisowały na bazie 50 i bot brał PIERWSZĄ kartę z grobu
+          // (najgorszą), nie najcenniejszą — „remis wariantów przez brak
+          // case'a" (L50). Zombie → dodatkowe dobranie (CR 608.2g — podtyp
+          // sprawdzany z odzyskanej karty). Generycznie po deskryptorze
+          // (ADR 0002), zero nazw kart.
+          if (effect.type === 'return_card_from_graveyard_to_hand') {
+            const slot = cmd.targets?.[effect.targetIndex ?? 0] ?? null;
+            const gyCard = slot ? (view.zones.graveyard ?? []).find((o) => o.id === slot) : null;
+            if (gyCard) {
+              const gyDef = cardDef(gyCard.cardId);
+              const gyValue = ((gyCard.power ?? gyDef?.power ?? 0) * 2)
+                + (gyCard.toughness ?? gyDef?.toughness ?? 0);
+              score += P.drawCardValue + gyValue;
+              const gySubtypes = gyCard.subtypes ?? gyDef?.subtypes ?? [];
+              if ((effect.drawIfSubtypes ?? []).some((s) => gySubtypes.includes(s))) {
+                score += P.drawCardValue; // Zombie → dobranie
+              }
+            }
+          }
           // M156/Q1 (pętla jakości, Withstand — cantrip z prewencją „any
           // target"): prewencja bez wyceny = remis wariantów → bot rzucał
           // „prevent the next 3 damage" na STWORA PRZECIWNIKA (czysta strata
@@ -2748,7 +2769,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           return finish(score);
         }
         const source = cmd.objectId ? objectOnBoard(view, cmd.objectId) : null;
-        const abilityObject = source ?? handCard(view, cmd.objectId);
+        // M279 (Batch 52, Leonin Surveyor): zdolności aktywowane Z GROBU
+        // (fromGraveyard — Leonin „{3} exile: dobierz", Glitch Ghost Surveyor,
+        // Reassembling Skeleton, Survivor of Korlis…) nie były rozpoznawane —
+        // `source` (pola bitwy) i `handCard` (ręka) ich nie widzą, więc `ability`
+        // było undefined i pętla efektów nie wyceniała NICZEGO (gołe score=2).
+        // `zoneCard` skanuje wszystkie strefy widoku — ta sama reguła co w
+        // gałęzi czarów (Escape/Flashback, M103/D); L41: bliźniacze gałęzie.
+        const abilityObject = source ?? handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
         const def = abilityObject ? cardDef(abilityObject.cardId) : undefined;
         // M237/3 (audyt Żywym Testerem, Blazing Torch): zdolność NADANA przez
         // equipment (grantedFromEquipment) ma index względem
@@ -3559,6 +3587,44 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // castability po kolorze); dziś bez niej — deskryptorem, nie nazwą
             // karty (ADR 0002).
             score -= 8;
+          }
+          // Batch 52 (audyt Żywym Testerem, Leonin Surveyor „{3}, exile z
+          // grobu: dobierz"): `draw_cards` ze zdolności AKTYWOWANEJ nie miało
+          // wyceny w tej ścieżce (bliźniacza gałąź czarów ją ma — L41). Bot
+          // widział gołe score=2 i potrafił przełożyć dobranie karty na pass
+          // albo inny trywialny wariant. Wartość = karta (P.drawCardValue),
+          // jak w cast_spell — generycznie po typie efektu (ADR 0002).
+          if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') {
+            score += P.drawCardValue * (Number.isInteger(effect.amount) ? effect.amount : 1);
+          }
+          // Batch 52 (Jolrael, Mwonvuli Recluse): „{4}{G}{G}: twoje stwory
+          // mają bazowe X/X do końca tury (X = karty w ręce)". Bez wyceny
+          // zdolność dostawała gołe score=2 i bot aktywował ją nawet, gdy
+          // OSŁABIAŁA własną planszę (6/6 → 2/2 przy 2 kartach w ręce).
+          // Wartość = suma zmian P/T po własnej stronie; kara, gdy netto nie
+          // wzmacnia albo okno jest złe (efekt wygasa w cleanup — CR 514.2).
+          if (effect.type === 'set_base_pt_creatures_you_control') {
+            const handCount = (view.zones.hand ?? []).filter((o) => o.controllerId === view.playerId).length;
+            const ownCreatures = (view.zones.battlefield ?? [])
+              .filter((o) => o.kind === 'creature' && o.controllerId === view.playerId);
+            if (ownCreatures.length === 0) {
+              score -= 20; // nie ma kogo zmienić — 6 many za nic
+            } else {
+              let net = 0;
+              for (const c of ownCreatures) {
+                net += (handCount - (c.power ?? 0)) * 2 + (handCount - (c.toughness ?? 0));
+              }
+              if (net <= 0) {
+                // Nie zmienia albo OSŁABIA własną planszę — kara przebija bazę.
+                score -= 30;
+              } else {
+                const precombat = myTurn(view) && view.turn.phase === 'precombat_main';
+                const defends = !myTurn(view)
+                  && (view.turn.step === 'declare_attackers' || view.turn.step === 'declare_blockers');
+                if (precombat || defends) score += Math.min(net, 30);
+                else score -= 12; // X/X wyparuje w cleanup bez udziału w walce
+              }
+            }
           }
         }
         if (cmd.xValue != null) score -= Math.min(cmd.xValue ?? 0, 2) * 0.5; // koszt {X} — drobna kara

@@ -3590,3 +3590,31 @@ legendy 18, dzikie 17).
 
 **Wynik:** `npm test` **4113/4113** (+28 testów `test/batch52-kart.test.js`),
 test:all **4123/4123**, build **57 modułów / 3065.1 kB**.
+
+## M279 — Żywy Tester na batchu 52 + audyt wyceny bota (2026-09-01, PR #92)
+
+Zlecenie właściciela: „testy Żywym Testerem na taliach z nowymi kartami
+i baczny audyt poprawności kart oraz poprawności bota w ich użyciu".
+Metodyka `docs/setup/TESTER_STOLU.md`.
+
+**Karty:** 28 testów batch 52 zielonych; żywe partie potwierdziły kluczowe
+zachowania (Leonin draw z grobu, Cemetery Recruitment zwrot, Fourth Bridge
+Prowler odmowa celu bez wrogiego stwora). Zero zgłoszeń detektorów dla nowych
+kart (2 „noop” z Discover = pre-existing, poza batch 52).
+
+**Bot — trzy luki wyceny zamknięte u root cause (+5 testów regresyjnych
+`test/batch52-bot-wycena.test.js`):**
+
+- `return_card_from_graveyard_to_hand` (Cemetery Recruitment) — wyjście z
+  REVIEWED_UNVALUED: card advantage + ciało + bonus `drawIfSubtypes` (Zombie);
+  warianty celu przestały remisować.
+- `set_base_pt_creatures_you_control` (Jolrael) — wycena sumy zmian P/T +
+  okno; bot przestał aktywować X/X, gdy osłabiało własną planszę.
+- zdolności `fromGraveyard` — `abilityObject` rozszerzony o `zoneCard` (L41),
+  więc `draw_cards`/scry/token z grobu dostają realną wycenę zamiast gołych 2 pkt.
+
+Golden-master bota zregenerowany (świadoma zmiana wycen), progi win-rate bez
+zmian.
+
+**Wynik:** `npm test` **4118/4118** (+5 testów `test/batch52-bot-wycena.test.js`),
+test:all **4128/4128**, build **57 modułów / 3069.2 kB**.

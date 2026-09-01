@@ -7375,6 +7375,44 @@ do własnej talii (M181); Thunder Junction wróciło do `worek-dziki`
 
 Fast **4113/4113**, test:all **4123/4123**, build **57 modułów / 3065.1 kB**.
 
+### Żywy Tester na batchu 52 + audyt wyceny bota (2026-09-01, PR #92)
+
+Zlecenie właściciela: „testy Żywym Testerem na taliach z nowymi kartami
+i baczny audyt poprawności kart oraz poprawności bota w ich użyciu".
+Metodyka `docs/setup/TESTER_STOLU.md`: świeży build, `run-game.mjs` na
+taliach z nowymi kartami, transkrypty poza repo (`/tmp`).
+
+**Karty (poprawność):** 28 testów `test/batch52-kart.test.js` zielonych.
+Żywe partie (bot gra taliami alara/dominaria-brg/kaladesh/final-fantasy/
+innistrad-brg/tarkir-wur/zendikar/worek-legend, 20+ partii, seedy 501–509,
+601–612, 701–706) potwierdziły: Leonin Surveyor dobiera z grobu przy max
+speed, Cemetery Recruitment zwraca stwora z grobu, Fourth Bridge Prowler
+odmawia celu ETB przy braku wrogiego stwora, triggery/statiki Jolrael/Merfolk
+Falconer/Loporrit/Ulna działają. Zero zgłoszeń detektorów dla nowych kart
+(jedyne 2 zgłoszenia „noop” dotyczyły Discover — Geological Appraiser,
+pre-existing, poza batch 52).
+
+**Bot (wyceny) — trzy luki zamknięte u root cause + 5 testów regresyjnych**
+(`test/batch52-bot-wycena.test.js`):
+
+- **`return_card_from_graveyard_to_hand`** (Cemetery Recruitment) — REVERSAL
+  decyzji REVIEWED_UNVALUED z batch 52: card advantage (jak dobranie) + ciało
+  karty + bonus `drawIfSubtypes` (Zombie → dobranie). Wcześniej warianty celu
+  remisowały na bazie 50 i bot brał PIERWSZĄ (najgorszą) kartę z grobu.
+- **`set_base_pt_creatures_you_control`** (Jolrael) — bot aktywował X/X nawet
+  gdy OSŁABIAŁ własną planszę (6/6 → 2/2 przy 2 kartach w ręce, gołe score=2).
+  Wycena sumy zmian P/T po własnej stronie + okno (Główna 1 / obrona).
+- **zdolności aktywowane Z GROBU** (`fromGraveyard`) — `abilityObject` nie
+  widział karty w grobie (tylko pola bitwy i ręka), więc efekty z grobu
+  (`draw_cards` Leonin/Glitch Ghost Surveyor, scry Survivor of Korlis, token
+  Goldmeadow Harrier…) dostawały gołe 2 pkt. Rozszerzenie o `zoneCard`
+  (L41 — ta sama reguła co Escape/Flashback czarów, M103/D).
+
+Golden-master bota zregenerowany (`bot-scoring-snapshot.mjs --write`) —
+świadoma zmiana wycen, nie refaktor. Progi win-rate bez zmian.
+
+Fast **4118/4118**, test:all **4128/4128**, build **57 modułów / 3069,2 kB**.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

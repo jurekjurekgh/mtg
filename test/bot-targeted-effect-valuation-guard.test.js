@@ -50,9 +50,6 @@ const REVIEWED_UNVALUED = new Map([
   // Zwrot karty stwora z grobu (Grave Exchange) — warianty to karty WŁASNE
   // równorzędne; brak szkody dla strony (pierwsza oferta).
   ['return_creature_card_to_hand', 'warianty równoważne (własna karta z grobu)'],
-  // Batch 52 (Cemetery Recruitment): zwrot WŁASNEJ karty stwora z grobu —
-  // warianty równorzędne; brak szkody dla strony (pierwsza oferta).
-  ['return_card_from_graveyard_to_hand', 'warianty równoważne (własna karta z grobu)'],
   // Kopia artefaktu (Cogwork Assembler) — kandydaci to WŁASNE artefakty;
   // remis wybiera pierwszy (suboptimalnie, bez szkody dla strony).
   // Świadome: poprawa wymaga wyceny wartości artefaktu — patrz backlog.
