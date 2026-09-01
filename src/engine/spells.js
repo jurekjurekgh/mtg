@@ -1593,8 +1593,10 @@ export function resolveTopOfStack(state) {
     // celów rozstrzyga się normalnie.
     const modeTargets = mode.targets ?? object.spell.targets ?? [];
     if (modeTargets.length > 0 && liveChosen.length === 0) {
-      const graveFizzle = `grave-${state.objectSequence++}`;
-      moveObjectDirectly(state, stackId, 'graveyard', graveFizzle);
+      // M271 (błąd #14): także fizzle respektuje `exileInsteadOfGraveyard`.
+      const zoneFizzle = spellExitZone(object);
+      const graveFizzle = `${zoneFizzle}-${state.objectSequence++}`;
+      moveObjectDirectly(state, stackId, zoneFizzle, graveFizzle);
       state.events.push(event('spell_resolved', {
         fromId: stackId, toId: graveFizzle, cardId: object.cardId,
         controllerId: object.controllerId,
@@ -1609,8 +1611,10 @@ export function resolveTopOfStack(state) {
       if (effTargets === null) continue;
       applyEffect(state, effect, object, effTargets);
     }
-    const graveId = `grave-${state.objectSequence++}`;
-    moveObjectDirectly(state, stackId, 'graveyard', graveId);
+    // M271 (błąd #14): strefę zejścia liczy WSPÓLNY helper, nie sztywny grób.
+    const zoneModal = spellExitZone(object);
+    const graveId = `${zoneModal}-${state.objectSequence++}`;
+    moveObjectDirectly(state, stackId, zoneModal, graveId);
     state.events.push(event('spell_resolved', {
       fromId: stackId, toId: graveId, cardId: object.cardId, controllerId: object.controllerId,
       fizzled: false, modal: true, modeIndex: object.chosenMode,
@@ -1676,7 +1680,7 @@ export function resolveTopOfStack(state) {
   const reboundCast = Boolean(object.reboundCast && !object.isSpellCopy);
   // M174/E (Halo Forager): exileInsteadOfGraveyard — „If that spell would
   // be put into a graveyard, exile it instead" (dotyczy też fizzle niżej).
-  const zoneAfterResolve = (adventure || flashedBack || reboundCast || object.exileInsteadOfGraveyard) ? 'exile' : 'graveyard';
+  const zoneAfterResolve = spellExitZone(object, { adventure, flashedBack, reboundCast });
   const afterId = `${zoneAfterResolve}-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, stackId, zoneAfterResolve, afterId);
   // Rebound: zaznacz wygnaną kartę jako gotową do rzutu bez kosztu w przyszłym
@@ -1780,12 +1784,31 @@ export function finishPendingSpell(state, stackId, remainingEffects) {
     return state.events.slice(before);
   }
   const flashedBack = Boolean(object.flashedBack);
-  const zoneAfter = (flashedBack || object.exileInsteadOfGraveyard) ? 'exile' : 'graveyard';
+  const zoneAfter = spellExitZone(object, { flashedBack });
   const afterId = `${zoneAfter}-${state.objectSequence++}`;
   moveObjectDirectly(state, stackId, zoneAfter, afterId);
   const resolved = event('spell_resolved', { fromId: stackId, toId: afterId, cardId: object.cardId, controllerId: object.controllerId, fizzled: false, flashedBack });
   state.events.push(resolved);
   return state.events.slice(before);
+}
+
+/**
+ * Strefa, do której czar schodzi ze stosu po rozstrzygnięciu/fizzlu.
+ *
+ * M271 (błąd #14): regułę „gdzie ląduje czar" liczyły RÓWNOLEGLE cztery
+ * miejsca w tym pliku, a dwa z nich (fizzle czaru modalnego i rozstrzygnięcie
+ * trybu modalnego) szły na sztywno do grobu, gubiąc `exileInsteadOfGraveyard`
+ * (Halo Forager, CR 118.9: „If that spell would be put into a graveyard this
+ * turn, exile it instead"). Czar rzucony z grobu Foragerem wracał więc do
+ * grobu i dawał się rzucić ponownie.
+ *
+ * `adventure` (CR 715.3), `flashedBack` (CR 702.34b) i `rebound` (CR 702.97)
+ * dotyczą wyłącznie pełnej ścieżki rozstrzygnięcia — przekazuje je caller.
+ */
+function spellExitZone(object, { adventure = false, flashedBack = false, reboundCast = false } = {}) {
+  return (adventure || flashedBack || reboundCast || object.exileInsteadOfGraveyard)
+    ? 'exile'
+    : 'graveyard';
 }
 
 /** Rozstrzygnięcie czaru aury (bestow albo czystej) — patrz resolveTopOfStack. */
