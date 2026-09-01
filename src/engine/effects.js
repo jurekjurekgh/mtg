@@ -827,6 +827,49 @@ export function counterStackObject(state, stackId, { counteredBy = null, counter
   return moved;
 }
 
+/**
+ * Kanoniczne „destroy" jednego permanentu (CR 701.7a) wraz z całą warstwą
+ * efektów zastępujących i chroniących, w kolejności wymaganej przez reguły:
+ *  1. indestructible (CR 702.12) — zniszczenie po prostu się nie dzieje;
+ *  2. licznik shield (CR 122.1) — pochłania zniszczenie i znika;
+ *  3. regeneracja (CR 701.15) — zastępuje zniszczenie;
+ *  4. strefa śmierci przez `deathZoneFor` (licznik finality / naznaczenie
+ *     wygnaniem, CR 122.1e) — a nie sztywno cmentarz.
+ *
+ * M272 (błąd #19): tę sekwencję znała TYLKO ścieżka `destroy_permanent`.
+ * `destroy_equipment_attached` (Awaken the Sleeper) miała własną, uboższą
+ * kopię — sprawdzała jedynie strefę śmierci, więc niezniszczalny lub
+ * regenerujący się Equipment i tak trafiał do grobu. Ósma ofiara wzorca L107.
+ *
+ * Zwraca true, gdy permanent FAKTYCZNIE został zniszczony.
+ */
+export function destroyPermanentByEffect(state, objectId, options = {}) {
+  const object = state.objects.get(objectId);
+  if (!object || object.zone !== 'battlefield') return false;
+  if (effectiveKeywords(object, state).includes('indestructible')) return false;
+  if ((object.counters?.shield ?? 0) > 0) {
+    const next = { ...(object.counters ?? {}) };
+    next.shield -= 1;
+    if (next.shield <= 0) delete next.shield;
+    state.objects.set(objectId, Object.freeze({ ...object, counters: Object.freeze(next) }));
+    state.events.push(event('shield_consumed', {
+      objectId, cardId: object.cardId, reason: options.reason ?? 'destroy',
+    }));
+    return false;
+  }
+  if (tryRegenerate(state, object)) return false;
+  const toZone = deathZoneFor(state, object);
+  const destId = `${toZone}-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, objectId, toZone, destId);
+  state.events.push(event('permanent_destroyed', {
+    // `toZone` jest CZĘŚCIĄ faktu, nie ozdobą: triggery śmierci sprawdzają,
+    // czy permanent poszedł do wygnania — wtedy „dies" się nie wydarzyło.
+    fromId: objectId, objectId: destId, playerId: object.controllerId,
+    cardId: moved.cardId, controllerId: object.controllerId, toZone,
+  }));
+  return true;
+}
+
 export function applyEffect(state, effect, sourceObject, targets = [], context = {}) {
   // X-cost czary (Consume Spirit, Epic Experiment — Batch 30): efekty mogą
   // użyć amount: 'X' (lub amountFrom: 'X') — wartość X z obiektu stosu
@@ -1097,15 +1140,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         // przez Zoraline („nonland permanent card with mana value 3 or less"
         // — artefakty się kwalifikują) z licznikiem finality dawało się
         // odzyskać drugi raz.
-        const toZone = deathZoneFor(state, att);
-        const destId = `${toZone}-${state.objectSequence++}`;
-        moveObjectDirectly(state, att.id, toZone, destId);
-        state.events.push(event('permanent_destroyed', {
-          // `toZone` jest CZĘŚCIĄ faktu, nie ozdobą: triggery śmierci
-          // (triggers.js — `if (ev.toZone === 'exile') return`) muszą wiedzieć,
-          // że permanent poszedł do wygnania, więc „dies" się nie wydarzyło.
-          fromId: att.id, objectId: destId, cardId: att.cardId, controllerId: att.controllerId, toZone,
-        }));
+        // M272 (błąd #19): zniszczenie Equipment przechodzi przez ten sam
+        // helper co „destroy target permanent" — wcześniej ta ścieżka nie
+        // znała ani indestructible (CR 702.12), ani licznika shield, ani
+        // regeneracji, więc chroniony Equipment i tak lądował w grobie.
+        destroyPermanentByEffect(state, att.id);
       }
       return;
     }
@@ -2853,27 +2892,9 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // zniszczyć — destroy nie ma efektu. To generyczna cecha obiektu, nie
     // warunek na nazwę karty (łagodzi deathtouch i śmiertelne obrażenia
     // już w state-based actions, tu chroni przed efektem „destroy").
-    if (effectiveKeywords(object, state).includes('indestructible')) return;
-    if ((object.counters?.shield ?? 0) > 0) {
-      const next = { ...(object.counters ?? {}) };
-      next.shield = next.shield - 1;
-      if (next.shield <= 0) delete next.shield;
-      state.objects.set(targetId, Object.freeze({ ...object, counters: Object.freeze(next) }));
-      state.events.push(event('shield_consumed', { objectId: targetId, cardId: object.cardId, reason: 'destroy' }));
-      return;
-    }
-    // Regeneracja (CR 701.12): efekt „destroy" jest zastępowany — permanent
-    // zostaje (odtapowany, bez obrażeń), tarcza zniknęła.
-    if (tryRegenerate(state, object)) return;
-    // Finality counter (CR 122.1b w pełnym wymiarze): „If this permanent would
-    // die, exile it instead" — dotyczy KAŻDEJ przyczyny śmierci, także
-    // zniszczenia efektem (wcześniej tylko zgony SBA).
-    const toZone = deathZoneFor(state, object);
-    const destId = `${toZone}-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, targetId, toZone, destId);
-    state.events.push(event('permanent_destroyed', {
-      fromId: targetId, objectId: destId, playerId: object.controllerId, cardId: moved.cardId, toZone,
-    }));
+    // M272 (błąd #19): pełna sekwencja destroy (indestructible → shield →
+    // regeneracja → strefa śmierci) mieszka we WSPÓLNYM helperze.
+    destroyPermanentByEffect(state, targetId);
     return;
   }
   if (effect.type === 'sacrifice_permanent') {

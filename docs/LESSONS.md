@@ -2413,26 +2413,17 @@ Wnioski praktyczne:
 
 ## L111 — sonda wołająca `applyEffect` pomija state-based actions
 
-W M272 zgłosiłem „błąd" polegający na tym, że zmiana kontroli nad atakującym
-stworem nie usuwa go z walki (CR 506.4). Repro było jednoznaczne: po
-`applyEffect(gain_control...)` stwór dalej figurował w `state.combat.attackers`.
-Napisałem naprawę, strażnika i dopiero rozbieżność w nazwie pola (`reason:
-'control_changed'` vs faktyczne `controller_changed`) ujawniła prawdę: regułę
-egzekwuje `src/engine/state-based.js:95–124` od czasu M201. Cała naprawa
-została wycofana.
+W M272 uznałem za błąd, że zmiana kontroli nad atakującym nie usuwa go z walki
+(CR 506.4). Repro przez `applyEffect` pokazywało stwora dalej w
+`state.combat.attackers` — ale regułę egzekwuje `state-based.js:95–124` od M201.
+Sonda nie przepuszczała stanu przez pętlę SBA, więc widziała stan pośredni,
+nieodróżnialny od braku reguły. Naprawę i strażnika wycofano w całości.
 
-Przyczyna fałszywego alarmu: sonda wołająca `applyEffect` (albo mutująca stan
-ręcznie) NIE przepuszcza stanu przez pętlę state-based actions. Efekt widać
-„zamrożony" w połowie — dokładnie tak, jak wyglądałby brak reguły.
-
-Zasada przed uznaniem braku reguły za błąd:
-1. Przepuść repro przez PEŁNĄ komendę (`execute`), a nie przez `applyEffect`;
-   albo jawnie uruchom przebieg SBA. Dopiero taki stan jest legalny.
-2. Zgrepuj nazwę spodziewanego zdarzenia w CAŁYM `src/` — nie tylko tam, gdzie
-   spodziewasz się emitera. Reguła bywa zaimplementowana w `state-based.js`,
-   a nie w rodzinie efektów, którą właśnie czytasz.
+Przed uznaniem braku reguły za błąd:
+1. Repro przez PEŁNĄ komendę (`execute`), nie przez `applyEffect` — albo jawny
+   przebieg SBA.
+2. Grep nazwy zdarzenia w CAŁYM `src/`: reguła bywa w `state-based.js`, a nie
+   w rodzinie efektów, którą właśnie czytasz.
 3. Test falsyfikacyjny PRZED commitem: usuń własną łatkę i sprawdź, czy repro
-   nadal przechodzi. Jeśli tak — łatka jest zbędna, niezależnie od tego, jak
-   przekonująco wyglądała sonda.
-
-Punkt 3 kosztuje minutę i jako jedyny wyłapuje ten błąd niezawodnie.
+   nadal przechodzi. Jeśli tak — łatka jest zbędna. Punkt 3 kosztuje minutę
+   i jako jedyny łapie to niezawodnie.
