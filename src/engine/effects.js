@@ -3852,6 +3852,10 @@ function markTemporaryExile(state, exileId, sourceObject) {
         ...moved, controllerId: ownerId, faceDown: false,
         summoningSickness: (moved.types ?? []).includes('Creature'),
       }));
+      // M274 (#24, CR 121.6): wprowadzenie permanentu z wygnania to WEJŚCIE —
+      // liczniki wejścia obowiązują. Karta jest tu już odkryta (faceDown:
+      // false ustawione wyżej), więc helper nadaje liczniki.
+      applyEnterCounters(state, battlefieldId);
       state.events.push(event('permanent_entered_battlefield', {
         objectId: battlefieldId, object: state.objects.get(battlefieldId),
         cardId: moved.cardId ?? null, controllerId: ownerId, fromExile: true,

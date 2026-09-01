@@ -4124,6 +4124,9 @@ export function execute(state, input) {
       const moved = moveObjectDirectly(state, cmd.targetId, 'battlefield', bfId);
       const permanent = Object.freeze({ ...moved, summoningSickness: true });
       state.objects.set(bfId, permanent);
+      // M274 (#24, CR 121.6): wprowadzenie stwora z RĘKI na pole bitwy
+      // (Dragon Arch) to wejście jak każde inne — liczniki wejścia obowiązują.
+      applyEnterCounters(state, bfId);
       state.events.push(event('permanent_entered_battlefield', {
         fromId: cmd.targetId, objectId: bfId, object: permanent, cardId: permanent.cardId,
         controllerId: pending.playerId, putFromHand: true,

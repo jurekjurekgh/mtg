@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createCardRegistry } from '../src/cards/card-data.js';
-import { createGameState, addObject } from '../src/engine/game-state.js';
+import { createGameState, addObject, execute } from '../src/engine/game-state.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { applyEffect, applyEnterCounters } from '../src/engine/effects.js';
 
@@ -112,17 +112,79 @@ test('SKAN ŹRÓDEŁ: każda ścieżka wprowadzająca permanent zna liczniki wej
   // Strażnik klasowy (wariant L107/15): nowa ścieżka ETB dopisana w
   // przyszłości też musi obsłużyć liczniki wejścia — albo przez helper
   // `applyEnterCounters`, albo jawnie przez `entersWithCounters`.
-  const zrodlo = fs.readFileSync('src/engine/effects.js', 'utf8');
-  const linie = zrodlo.split('\n');
-  linie.forEach((linia, index) => {
-    if (!/moveObjectDirectly\(state, [^,]+, 'battlefield'/.test(linia)) return;
-    const okno = linie.slice(index, index + 16).join('\n');
-    // Żeton i kopia nie mają karty źródłowej z licznikami wejścia.
-    if (/token|createToken|enterAsCopy|manifest|cloak|faceDown/i.test(okno)) return;
-    assert.ok(
-      /applyEnterCounters|entersWithCounters/.test(okno),
-      `effects.js:${index + 1} — permanent wchodzi na pole bitwy bez obsługi `
-      + 'liczników wejścia (CR 121.6). Zawołaj applyEnterCounters(state, id).',
-    );
+  //
+  // M274: pierwsza wersja tego skanu miała DWIE dziury i przepuściła dwie
+  // realne ścieżki (Pyxis of Pandemonium, opóźniony powrót Plague Reavera):
+  //  1. skanowała tylko `effects.js`, a ścieżki ETB są też w `triggers.js`
+  //     i `game-state.js`;
+  //  2. filtr wykluczał okno zawierające `faceDown` (żeby pominąć morph),
+  //     ale Pyxis ustawia `faceDown: false`, czyli ODKRYWA kartę — wykluczenie
+  //     złapało ścieżkę, która liczniki dostać powinna.
+  // Wniosek (L12): filtr wyciszający musi opisywać INTENCJĘ (wejście zakryte),
+  // nie przypadkowy ciąg znaków.
+  const PLIKI = ['src/engine/effects.js', 'src/engine/triggers.js', 'src/engine/game-state.js'];
+  for (const plik of PLIKI) {
+    const linie = fs.readFileSync(plik, 'utf8').split('\n');
+    linie.forEach((linia, index) => {
+      if (!/moveObjectDirectly\(state, [^,]+, 'battlefield'/.test(linia)) return;
+      const okno = linie.slice(index, index + 16).join('\n');
+      // Żeton i kopia nie mają karty źródłowej z licznikami wejścia; permanent
+      // wchodzący ZAKRYTY ich nie dostaje (CR 708.2) — ale `faceDown: false`
+      // to jawne odkrycie, więc nie wycisza.
+      if (/token|createToken|enterAsCopy|manifest|cloak/i.test(okno)) return;
+      if (/faceDown:\s*(true|Boolean\()/.test(okno)) return;
+      assert.ok(
+        /applyEnterCounters|entersWithCounters/.test(okno),
+        `${plik}:${index + 1} — permanent wchodzi na pole bitwy bez obsługi `
+        + 'liczników wejścia (CR 121.6). Zawołaj applyEnterCounters(state, id).',
+      );
+    });
+  }
+});
+
+test('M274: Pyxis wprowadza permanent z wygnania Z licznikami wejścia', () => {
+  // „Turns face up all cards they own exiled with this artifact, then puts all
+  // permanent cards among them onto the battlefield" — karta jest ODKRYWANA
+  // przed wejściem, więc liczniki wejścia jej przysługują (CR 121.6).
+  const cardId = 'servant-of-the-scale';
+  const karta = registry.get(cardId);
+  const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+  addObject(state, {
+    id: 'ex1', instanceId: 'iex1', cardId, controllerId: 'p1', ownerId: 'p1',
+    zone: 'exile', ...gameObjectDataOf(karta), types: karta.types,
   });
+  state.objects.set('ex1', Object.freeze({ ...state.objects.get('ex1'), faceDown: true }));
+  const zrodlo = registry.get('twiddle');
+  addObject(state, {
+    id: 'pyx', instanceId: 'ipyx', cardId: 'twiddle', controllerId: 'p1', ownerId: 'p1',
+    zone: 'graveyard', ...gameObjectDataOf(zrodlo), types: zrodlo.types,
+  });
+  state.objects.set('pyx', Object.freeze({ ...state.objects.get('pyx'), exiledCardIds: ['ex1'] }));
+
+  applyEffect(state, { type: 'turn_up_exiled_and_put_permanents' }, state.objects.get('pyx'), []);
+
+  const permanent = [...state.objects.values()]
+    .find((o) => o.zone === 'battlefield' && o.cardId === cardId);
+  assert.ok(permanent, 'permanent wszedł na pole bitwy');
+  assert.equal(permanent.faceDown, false, 'karta została odkryta przed wejściem');
+  assert.equal(permanent.counters?.['+1/+1'] ?? 0, 1, 'licznik wejścia nadany');
+});
+
+test('M274: wprowadzenie stwora z RĘKI (Dragon Arch) nadaje liczniki wejścia', () => {
+  const cardId = 'servant-of-the-scale';
+  const karta = registry.get(cardId);
+  const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+  addObject(state, {
+    id: 'h1', instanceId: 'ih1', cardId, controllerId: 'p1', ownerId: 'p1',
+    zone: 'hand', ...gameObjectDataOf(karta), types: karta.types,
+  });
+  state.pendingHandCreature = { playerId: 'p1', candidateIds: ['h1'], sourceCardId: null };
+
+  const wynik = execute(state, { type: 'resolve_hand_creature', playerId: 'p1', targetId: 'h1' });
+  assert.equal(wynik.ok, true, `komenda przyjęta (${wynik.error ?? ''})`);
+
+  const permanent = [...state.objects.values()]
+    .find((o) => o.zone === 'battlefield' && o.cardId === cardId);
+  assert.ok(permanent, 'stwór wszedł na pole bitwy');
+  assert.equal(permanent.counters?.['+1/+1'] ?? 0, 1, 'licznik wejścia nadany');
 });

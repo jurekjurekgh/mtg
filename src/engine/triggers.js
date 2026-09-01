@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { singleTargetOfStackEntry } from './objects.js';
 import {
-  applyEffect, creaturesNotControlledByOwner, creaturesYouControl, faceDownCreaturesYouControl,
+  applyEffect, applyEnterCounters, creaturesNotControlledByOwner, creaturesYouControl, faceDownCreaturesYouControl,
   landCreaturesYouControl, libraryCardsOf, millTargetPlayerId, otherCreaturesYouControl,
   counterStackObject,
 } from './effects.js';
@@ -892,6 +892,9 @@ function resolveDelayedTrigger(state, payload, events) {
     const moved = moveObjectDirectly(state, pending.objectId, 'battlefield', newId);
     const permanent = Object.freeze({ ...moved, controllerId: pending.playerId, summoningSickness: true });
     state.objects.set(newId, permanent);
+    // M274 (#24, CR 121.6): opóźniony powrót na pole bitwy to też WEJŚCIE —
+    // liczniki wejścia obowiązują jak przy każdej innej ścieżce ETB.
+    applyEnterCounters(state, newId);
     const movedEvent = event('object_moved', {
       fromId: pending.objectId, object: permanent, fromZone: 'graveyard', toZone: 'battlefield', delayed: true,
     });
