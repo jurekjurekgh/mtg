@@ -7373,7 +7373,7 @@ zregenerowane (batch zmienia partie), bez zmiany progów.
 do własnej talii (M181); Thunder Junction wróciło do `worek-dziki`
 (bilans: legendy 18, dzikie 17). 23 talii w `decks/`.
 
-Fast **4113/4113**, test:all **4123/4123**, build **57 modułów / 3064,9 kB**.
+Fast **4113/4113**, test:all **4123/4123**, build **57 modułów / 3065.1 kB**.
 
 ## Zasada aktualizacji
 

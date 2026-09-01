@@ -3589,4 +3589,4 @@ własnej talii (M181); Thunder Junction wróciło do `worek-dziki` (bilans:
 legendy 18, dzikie 17).
 
 **Wynik:** `npm test` **4113/4113** (+28 testów `test/batch52-kart.test.js`),
-test:all **4123/4123**, build **57 modułów / 3064,9 kB**.
+test:all **4123/4123**, build **57 modułów / 3065.1 kB**.
