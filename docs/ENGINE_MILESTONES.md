@@ -3422,3 +3422,67 @@ z bota listę pól żądanych od grobu) oraz 4 testy dołożone do
 
 **Wynik:** `npm test` **4059/4059**, `node --test test/bot-benchmark.test.js`
 **10/10**, build **57 modułów / 3029,6 kB**.
+
+## M275–M276 (2026-09-01) — Porządkowanie wiedzy + rodzina `damage`
+
+### M275: strukturalne łączenie lekcji i ADR-ów (decyzja właściciela)
+
+Właściciel odrzucił pomysł archiwizowania wpisów „bo stare": **starsze lekcje
+nie są mniej ważne — bywają cenniejsze, bo ich klasa zdążyła wrócić kilka razy.**
+Kierunek: łączyć to, co opisuje JEDNĄ klasę, a do archiwum przenosić wyłącznie
+decyzje NIEAKTUALNE.
+
+**Archiwum ADR** (`docs/decisions/archive/`): ADR 0008 („bez kroku budowania")
+miał status *Zastąpiona* od czasu ADR 0011, ale leżał w lekturze obowiązkowej —
+i, co ważniejsze, ADR 0011 tylko ODSYŁAŁ do jego sekcji „Czego świadomie nie
+dostajemy". Żywe zasady (język i moduły ESM, `node:test`, JSDoc, struktura
+katalogów, cała tabela kompromisów) przeniesione do ADR 0011; w archiwum zostało
+wyłącznie historyczne uzasadnienie decyzji, która już nie obowiązuje.
+
+**Wpisy zbiorcze w LESSONS.md** — pięć klas miało po kilka wpisów:
+
+| Klasa | Wpis główny | Kotwice |
+|---|---|---|
+| Jawna lista pól gubi dane po cichu (fabryka → generator → transport → widok) | L21 | L93, L94, L101 |
+| Weryfikacja mutacyjna: jedyny dowód działania | L13 | L61, L70 |
+| Strażnik mierzy regułę, nie tekst źródła | L5 | L26, L31, L44, L83 |
+| Zero zgłoszeń detektorów to pomiar narzędzia | L27 | L40, L73, L75 |
+| Oferta i walidacja: jeden filtr, porządek, rejestr | L48 | L90 |
+
+Wpis główny niesie tabelę wariantów i wspólną regułę; kotwica zachowuje opis
+WŁASNEGO przypadku (karta, test, plik, numer CR) plus odsyłacz. **Żaden numer nie
+znika** — są cytowane w kodzie ~1150 razy.
+
+Sześć nowych strażników (`test/docs-decisions.test.js`) pilnuje archiwum
+(tylko statusy zastąpiona/wycofana/odrzucona, nota z datą, link do następcy, wpis
+w README, zakaz cytowania z AGENTS.md) oraz integralności kotwic (każda prowadzi
+do wpisu głównego i zachowuje min. 300 znaków własnego konkretu).
+
+**Znalezione przez nowe strażniki:** AGENTS.md powoływał się na zarchiwizowany
+ADR 0008 jako źródło zasady „zero zależności"; lekcje L108–L113 (moje wpisy
+z tej i poprzedniej sesji) łamały obowiązkowy format nagłówka z datą; cztery
+kotwice rodziny L107 nie odsyłały do klasy nadrzędnej.
+
+Zapas budżetu lektury: **714 tokenów** (po M274 było ~0).
+
+### M276: rodzina `damage` — ostatnia niezbadana rodzina bliźniacza
+
+28. **CR 702.15 + 702.90b** — `damage_to_controller` (Forge Devil: „deals
+    1 damage to target creature and 1 damage to you") odtwarzało kontrakt
+    obrażeń WŁASNYM kodem (prewencja tarcz + `changeLife`), zamiast wołać choke
+    point `dealNonCombatDamage`. Gubiło przez to **lifelink** (Forge Devil
+    z licznikiem lifelink — CR 122.1b — nie dawał życia za obrażenia zadane
+    własnemu kontrolerowi, choć te same obrażenia zadane przeciwnikowi życie
+    dawały), **infect** (obrażenia w gracza mają dawać liczniki trucizny) oraz
+    filtr „prevent all damage this turn". Ta sama karta, dwie ścieżki, dwa
+    wyniki — klasa L107.
+
+Analizator rodzin pokazał, że 9 z 14 wariantów `damage` deleguje do choke
+pointu; z pięciu pozostałych cztery obrażeń w ogóle nie zadają (prewencja,
+reveal + trigger) — realny błąd był jeden.
+
+Nowe testy: `m276-obrazenia-choke-point` (6, w tym test RÓWNOWAŻNOŚCI obu
+ścieżek dla tego samego źródła i skan źródeł wymuszający choke point).
+
+**Wynik:** `npm test` **4071/4071**, `node --test test/bot-benchmark.test.js`
+**10/10**, build **57 modułów / 3029,5 kB**.
