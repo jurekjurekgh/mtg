@@ -1830,8 +1830,10 @@ export function execute(state, input) {
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, landId, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
+      // M272 (błąd #20): `toZone` w zdarzeniu — po nim triggery śmierci
+      // rozpoznają wygnanie przez licznik finality (CR 122.1b).
       fromId: landId, objectId: destId, playerId: pending.controllerId,
-      cardId: moved.cardId, reason: 'springbloom_druid',
+      cardId: moved.cardId, reason: 'springbloom_druid', toZone,
     }));
     state.pendingSpringbloom = null;
     state.events.push(event('springbloom_resolved', {
@@ -3060,9 +3062,16 @@ export function execute(state, input) {
     state.pendingExploits.shift();
     // M269 (błąd #5): poświęcenie przez exploit to też śmierć — strefę
     // wyznacza wspólny `deathZoneFor`.
-    const moved = moveObjectDirectly(state, cmd.targetId, deathZoneFor(state, target), `grave-${state.objectSequence++}`);
+    // M272 (błąd #20): `toZone` jest CZĘŚCIĄ faktu — triggery śmierci
+    // (triggers.js: `if (ev.toZone === 'exile') return`) po nim rozpoznają,
+    // że permanent został wygnany przez licznik finality i „dies" się NIE
+    // wydarzyło (CR 122.1b). Bez tego pola exploit odpalał zdolności śmierci
+    // mimo wygnania. Prefiks id też musi zgadzać się ze strefą.
+    const exploitZone = deathZoneFor(state, target);
+    const moved = moveObjectDirectly(state, cmd.targetId, exploitZone, `${exploitZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`);
     state.events.push(event('permanent_sacrificed', {
-      fromId: cmd.targetId, objectId: moved.id, playerId: pending.playerId, cardId: moved.cardId, exploit: true,
+      fromId: cmd.targetId, objectId: moved.id, playerId: pending.playerId, cardId: moved.cardId,
+      exploit: true, toZone: exploitZone,
     }));
     state.events.push(event('exploited', { exploiterId: pending.sourceId, exploitedId: moved.id }));
     state.events.push(event('exploit_choice_resolved', { playerId: pending.playerId, sourceId: pending.sourceId, exploitedId: moved.id }));
@@ -3796,13 +3805,16 @@ export function execute(state, input) {
     if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') return reject('illegal_sacrifice_target');
     const pending = state.pendingSacrifice;
     const before = state.events.length;
-    const graveId = `grave-${state.objectSequence++}`;
     // M269 (błąd #5): wybór ofiary nie zmienia tego, że poświęcenie jest
     // śmiercią (CR 701.17a) — ta sama wspólna strefa docelowa.
-    const moved = moveObjectDirectly(state, target.id, deathZoneFor(state, target), graveId);
+    // M272 (błąd #20): strefa musi trafić do ZDARZENIA, bo po niej triggery
+    // śmierci poznają wygnanie przez finality (CR 122.1b).
+    const sacZone = deathZoneFor(state, target);
+    const graveId = `${sacZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, target.id, sacZone, graveId);
     state.events.push(event('permanent_sacrificed', {
       fromId: target.id, objectId: graveId, playerId: target.controllerId, cardId: moved.cardId,
-      sacrificeChoice: true,
+      sacrificeChoice: true, toZone: sacZone,
     }));
     state.pendingSacrifice = null;
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
@@ -3852,10 +3864,12 @@ export function execute(state, input) {
       if (foodObj && foodObj.zone === 'battlefield') {
         const graveId = `grave-${state.objectSequence++}`;
         // M269 (błąd #5): poświęcenie Jedzenia również respektuje deathZoneFor.
-        moveObjectDirectly(state, foodId, deathZoneFor(state, foodObj), graveId);
+        // M272 (błąd #20): i przekazuje strefę dalej w zdarzeniu (CR 122.1b).
+        const foodZone = deathZoneFor(state, foodObj);
+        moveObjectDirectly(state, foodId, foodZone, graveId);
         state.events.push(event('permanent_sacrificed', {
           fromId: foodId, objectId: graveId, playerId: food.playerId, cardId: foodObj.cardId,
-          sacrificeFood: true,
+          sacrificeFood: true, toZone: foodZone,
         }));
         sacrificed = true;
       }
@@ -4102,9 +4116,12 @@ export function execute(state, input) {
     if (!legalDevourCandidates(state, pending).includes(cmd.targetId)) return reject('illegal_devour_target');
     // M269 (błąd #5): devour pożera permanent przez poświęcenie — ta sama
     // wspólna strefa śmierci (licznik finality → wygnanie).
-    const moved = moveObjectDirectly(state, cmd.targetId, deathZoneFor(state, state.objects.get(cmd.targetId)), `grave-${state.objectSequence++}`);
+    // M272 (błąd #20): strefa śmierci trafia też do zdarzenia (CR 122.1b).
+    const devourZone = deathZoneFor(state, state.objects.get(cmd.targetId));
+    const moved = moveObjectDirectly(state, cmd.targetId, devourZone, `${devourZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`);
     state.events.push(event('permanent_sacrificed', {
-      fromId: cmd.targetId, objectId: moved.id, playerId: pending.playerId, cardId: moved.cardId, devour: true,
+      fromId: cmd.targetId, objectId: moved.id, playerId: pending.playerId, cardId: moved.cardId,
+      devour: true, toZone: devourZone,
     }));
     // Liczniki lądują na źródle — o ile nie opuściło pola bitwy (np. triggerem
     // z poświęcenia); licznika nie można położyć na obiekcie w innej strefie.
