@@ -4869,7 +4869,10 @@ export function execute(state, input) {
       // accepted() skanuje result.events pod kątem triggerów dies/leaves.
       // Wcześniej tylko [e] — poświęcony kosztem stwór nie odpalał dies.
       const before = state.events.length;
-      const e = castSpell(state, cmd.playerId, cmd.objectId, cmd.targets, cmd.sacrificeTargetId, cmd.modeIndex, cmd.stunTargetId, cmd.buyback, cmd.payAltCost, cmd.xValue, cmd.phyrexianPayWithLife);
+      // Uwaga (audyt PR #93): 12. argument castSpell to `abilityWindowCast` i go
+      // komenda NIE ustawia — uprawnienie do rzutu z exile w oknie zdolności
+      // pochodzi wyłącznie z `resolve_exile_cast`. 13. to `kicked` (CR 702.33).
+      const e = castSpell(state, cmd.playerId, cmd.objectId, cmd.targets, cmd.sacrificeTargetId, cmd.modeIndex, cmd.stunTargetId, cmd.buyback, cmd.payAltCost, cmd.xValue, cmd.phyrexianPayWithLife, false, Boolean(cmd.kicked));
       const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
       return accepted(state, cmd, { ok: true, events });
     } catch (error) {

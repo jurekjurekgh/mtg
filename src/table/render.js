@@ -2376,7 +2376,15 @@ export function commandLabel(cmd, session, view) {
         if (cmd.phyrexianPayWithLife > 0) parts.push(`${cmd.phyrexianPayWithLife}× po 2 życia`);
         phy = ` · phyrexian ${parts.join(' + ')}`;
       }
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)}${xPart}${phy})${targets ? ` → cel: ${targets}` : ''}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
+      // Kicker (CR 702.33, audyt PR #93): wariant z dopłatą musi różnić się
+      // etykietą od naturalnego rzutu — dwa identyczne przyciski o różnym
+      // skutku to klasa M101/B. Kicker kosztuje tyle, ile jego pipy, i NIE
+      // podlega obniżkom (CR 601.2f) — Format jak przy `cast_permanent`.
+      const kickerDef = cmd.kicked ? obj(cmd.objectId)?.kicker : null;
+      const kickerPart = kickerDef
+        ? ` + kicker ${manaCostHtml(costSymbols(kickerDef.cost, kickerDef.colors))}`
+        : '';
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)}${xPart}${kickerPart}${phy})${targets ? ` → cel: ${targets}` : ''}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');

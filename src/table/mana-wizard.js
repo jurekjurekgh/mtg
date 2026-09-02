@@ -276,9 +276,11 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
     const requirements = baseColorRequirements(parsed);
     return buildDescriptor(object, totalNeeded, requirements, costStr, totalNeeded - requirements.length);
   }
-  if (cmd.type === 'cast_permanent' && cmd.kicked) {
+  if ((cmd.type === 'cast_permanent' || cmd.type === 'cast_spell') && cmd.kicked) {
     // Kicker (CR 702.33): zwykły koszt + dodatkowy koszt kickera (liczba
     // bez obniżek), pipy kickera dokładają się do wymagań kolorów.
+    // Audyt PR #93: ścieżka czarów (castSpell) rozlicza kickera tak samo jak
+    // permanentów, więc i liczenie w wizardzie musi obejmować `cast_spell`.
     const kicker = object.kicker;
     if (!kicker || !Number.isInteger(kicker.cost)) return null;
     const requirements = [...baseColorRequirements(parsed), ...(kicker.colors ?? []).map((color) => [color])];

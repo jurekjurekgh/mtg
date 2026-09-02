@@ -1044,6 +1044,10 @@ function bootstrapTable() {
       // pokazuje JEDNĄ opcję otwierającą modal wyboru kreatury do wygnania).
       if (cmd.type === 'cast_permanent' && cmd.exileTargetId != null) return `perm-exile:${cmd.objectId}`;
       if (cmd.type === 'cast_permanent' && cmd.kicked) return `perm-k:${cmd.objectId}`;
+      // Kicker na CZARZE (CR 702.33, audyt PR #93): bez własnego klucza
+      // wariant kicked zbiłby się z naturalnym rzutem w jedną grupę i panel
+      // pokazał tylko jeden z dwóch przycisków (oferta nieosiągalna kliknięciem).
+      if (cmd.type === 'cast_spell' && cmd.kicked) return `spell-k:${cmd.objectId}`;
       if (cmd.type === 'cast_adventure') return `adv:${cmd.objectId}`;
       if (cmd.type === 'cast_adventure_creature') return `advc:${cmd.objectId}`;
       if (cmd.type === 'activate_ability' && (cmd.targets?.length || cmd.xValue != null || cmd.attackerId != null || cmd.crewCreatureIds?.length)) return `ability:${cmd.objectId}:${cmd.abilityIndex}`;

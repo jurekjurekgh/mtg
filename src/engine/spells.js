@@ -460,8 +460,17 @@ export function effectiveSpellManaCost(state, object) {
 }
 
 /** Rzuca czar: płaci koszt, kładzie obiekt na stos z wybranymi celami. */
-export function castSpell(state, playerId, objectId, targets, sacrificeTargetId, modeIndex, stunTargetId, buyback = false, payAltCost = false, xValue, phyrexianPayWithLife = 0, abilityWindowCast = false) {
+export function castSpell(state, playerId, objectId, targets, sacrificeTargetId, modeIndex, stunTargetId, buyback = false, payAltCost = false, xValue, phyrexianPayWithLife = 0, abilityWindowCast = false, kicked = false) {
   const preObject = state.objects.get(objectId);
+  // Kicker (CR 702.33) na instantach i sorcerych rozlicza TA funkcja. Ścieżki
+  // z własną walidacją kosztu (tryby „choose one\", koszt X, Fireball) idą do
+  // osobnych funkcji, które kickera nie znają — JAWNY błąd zamiast cichego
+  // zignorowania (L5: naprawa u źródła, nie maskowanie; oferta i tak takich
+  // wariantów nie enumeruje, więc to bramka na wypadek błędnego płatnika).
+  if (kicked && ((preObject?.spell?.modes && modeIndex != null)
+    || preObject?.spell?.xCost || preObject?.spell?.fireball)) {
+    throw new Error('Kicker nie łączy się z rzutem modalnym, z kosztem X ani z Fireballem');
+  }
   // Modal „Choose one" (Aerith Rescue Mission): osobna ścieżka walidacji —
   // cele i efekty pochodzą z wybranego trybu, a nie z nadrzędnego deskryptora.
   if (preObject?.spell?.modes && modeIndex != null) {
@@ -522,6 +531,22 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   const lifePaid = phyrexianSymbols > 0 ? (phyrexianPayWithLife ?? 0) : 0;
   if (lifePaid < 0 || lifePaid > phyrexianSymbols) throw new Error('Nieprawidłowa liczba symboli phyrexian płaconych życiem');
   if (!object.plotted && !object.suspendReady && !freeImpulse && !hasColorForObject(state, playerId, object, lifePaid)) throw new Error('Brak kolorowego źródła many');
+  // Kicker (CR 702.33) na czarach — ta sama zasada co na ścieżce permanentów
+  // (`castPermanent` w resources.js): „You may pay an additional [cost] as you
+  // cast this spell." — koszt dodatkowy dokłada się do sumy, JEGO pipy kolorów
+  // do wymagań, a fakt opłacenia ląduje na obiekcie stosu (`wasKicked`) i
+  // w zdarzeniu `spell_cast` (`kicked`) — tam, gdzie patrzą triggery
+  // „if it was kicked" oraz „whenever you cast a kicked spell" (Merfolk
+  // Falconer). Decyzja właściciela (audyt PR #93): silnik obsługuje kickera
+  // także na instantach i sorcerych — to nie `limitations`, tylko brakująca
+  // ścieżka rozliczenia kosztu.
+  if (kicked && !object.kicker) throw new Error('Ta karta nie ma mechaniki kicker');
+  const kicker = kicked ? (object.kicker ?? null) : null;
+  const kickerPips = (kicker?.colors ?? []).map((color) => [color]);
+  if (kickerPips.length > 0
+    && !canPayColoredCost(state, playerId, [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips])) {
+    throw new Error('Brak kolorowego źródła many na kickera');
+  }
   // Warunkowa obniżka kosztu (Metalcraft, Stoic Rebuttal) oraz modyfikatory
   // z permanentów (Etherium Sculptor): płacimy efektywny koszt wyliczony
   // w chwili rzutu (warunki i modyfikatory oceniane na bieżącej planszy).
@@ -530,9 +555,11 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // Pip phyrexian płacony maną to pełna jednostka many (CR 118.9); pipy
   // opłacone życiem nie biorą udziału w koszcie many. M259/B3: baseMana
   // (object.manaCost) zawiera już symbole phyrexian — odejmujemy lifePaid.
-  const manaSpent = baseMana + altManaExtra - lifePaid;
+  // Kicker to koszt DODATKOWY (CR 601.2f): nie podlega obnizkom kosztu czaru
+  // i placa go takze rzuty „without paying its mana cost" (plot/suspend).
+  const manaSpent = baseMana + altManaExtra - lifePaid + (kicker?.cost ?? 0);
   if (2 * lifePaid > (player.life ?? 0)) throw new Error('Niewystarczające życie');
-  spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId, lifePaid), spellManaPurpose(object));
+  spendMana(state, playerId, manaSpent, [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips], spellManaPurpose(object));
   if (lifePaid > 0) changeLife(state, playerId, -2 * lifePaid);
   consumePendingSpellDiscount(state, object);
   state.spellsCastThisTurn += 1;
@@ -568,6 +595,9 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   const reboundCast = Boolean(object.spell?.rebound && object.zone === 'hand');
   const stacked = Object.freeze({
     ...moved, tapped: false, chosenTargets: chosen.slice(), wasBuyback, reboundCast,
+    // CR 702.33a: „was kicked" to własność CZARU na stosie — trigger wchodzący
+    // po rozstrzygnięciu czyta ją z obiektu, nie ze zdarzenia rzutu.
+    wasKicked: Boolean(kicker),
     ...(sacrificedToughness != null ? { sacrificedToughness } : {}),
   });
   state.objects.set(stackId, stacked);
@@ -611,6 +641,10 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     // Phyrexian mana (CR 118.9) — publiczne: ile symboli i czy opłacono
     // życiem (jak permanent_cast; log i panel nazywają wybór).
     phyrexianSymbols, phyrexianPaidWithLife: lifePaid,
+    // Fakt użycia kickera (jawny w logu i dla triggerów „whenever you cast a
+    // kicked spell" — triggers.js czyta `ev.kicked`; lustrzane pole
+    // `permanent_cast` w resources.js).
+    kicked: Boolean(kicker),
   });
   state.events.push(e);
   // Storm (CR 702.40a): „When you cast this spell, copy it for each spell cast
@@ -2233,6 +2267,32 @@ export function legalSpellCasts(state, playerId) {
       return out;
     })();
     if (spellPhyrexianVariants.length === 0) continue;
+    // Kicker (CR 702.33, audyt PR #93): wariant z dodatkowym kosztem —
+    // dokładany PO zwykłych wariantach, żeby pierwsza pozycja panelu została
+    // najtańszym naturalnym rzutem (proste boty i tester stołu biorą pierwszą;
+    // ten sam porządek co przy `cast_permanent` w playerView). Enumerujemy
+    // tylko tam, gdzie walidacja potrafi kickera rozliczyć (ścieżka prosta —
+    // tryby, koszt X i Fireball mają osobne funkcje rzutu bez kickera).
+    // L48: oferta liczy tak samo jak płatność — koszt AND pipy kolorów kickera.
+    const freeCastForKicker = () => Boolean(object.plotted || object.suspendReady
+      || (object.zone === 'exile' && object.playableWithoutPaying === true));
+    const pushKickerSpellCasts = (cast) => {
+      if (!object.kicker) return;
+      const kickerCost = object.kicker.cost ?? 0;
+      const kickerPips = (object.kicker.colors ?? []).map((color) => [color]);
+      const freeCast = freeCastForKicker();
+      const base = freeCast ? 0 : effectiveSpellManaCost(state, object);
+      for (const k of spellPhyrexianVariants) {
+        // M259/B3: wariant phyrexianu płacony życiem obniża sumę o k.
+        if (base + kickerCost - (k ?? 0) > manaAvailable(object)) continue;
+        const pips = freeCast ? [] : coloredPipsOf(object.cardId, k ?? 0);
+        if (pips.length + kickerPips.length > 0
+          && !canPayColoredCost(state, playerId, [...pips, ...kickerPips])) continue;
+        const kickedCast = { ...cast, kicked: true };
+        if (k != null) kickedCast.phyrexianPayWithLife = k;
+        casts.push(kickedCast);
+      }
+    };
     const pushSpellCast = (cast) => {
       // Kolejność panelu (M203/2): przy konwencji „prezentacja = enumeracja"
       // wariant manowy (k=null) jest PIERWSZY wprost z tablicy wariantów —
@@ -2240,6 +2300,7 @@ export function legalSpellCasts(state, playerId) {
       for (const k of spellPhyrexianVariants) {
         casts.push(k == null ? cast : { ...cast, phyrexianPayWithLife: k });
       }
+      pushKickerSpellCasts(cast);
     };
     if (object.spell.timing === 'sorcery') {
       const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
