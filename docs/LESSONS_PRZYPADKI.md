@@ -1348,3 +1348,29 @@ przetrwała.
 −4,00 → +7,00. Flocker 0/5 (defender) → Servant: +8,00 → +7,00 i bot nadal płaci.
 Ruch boczny między dwoma atakującymi o tej samej sile: −4,00 w obu konfiguracjach
 (bez zmian). Własność anty-ping-pongowa: 40/40 par, ≥3 dozwolone awanse.
+
+
+## L122 — talia audytowa, której nie da się zbudować (tura 10)
+
+**Objaw.** Kreator celów wielokrotnych (picker, M288/A) jest w Teście, ale rzadki:
+12 partii dało 3 otwarcia i jedno zatwierdzenie (§13.4). Chciałem to pogrubić
+własnym materiałem — talią z 12 kartami wielocelowymi i 12 ciałami.
+
+**Przyczyna blokady.** `decks/*.txt` nie są swobodnym zasobem: ADR 0023 (pilnuje go
+`test/repo-decks.test.js`, wpis M178) wymaga, by każda wspierana karta leżała w
+dokładnie jednej talii, a `test/m132-proporcje-landow.test.js` pilnuje proporcji lądów.
+Projekt łamał oba. Trzecia droga — przepisać talie — jest zamknięta przez własne
+doświadczenie sesji: talie karmią `tools/benchmark.mjs` i `tools/bot-tie-audit.mjs`, a
+zmiana składu par unieważniłaby porównania A/B z tur 7-10 (lekcja o porównywaniu tylko
+tego samego profilu).
+
+**Pomiar zamiast obejścia.** 443 karty wspierane, w tym: 7 z >1 celem, 15 z
+poświęceniem lub odrzuceniem w koszcie, 12 equipmentów; kart wolnych (nieprzypisanych
+do żadnej talii) — zero. Najgestojsza dostępna para (`ravnica` vs `worek-dziki`, po 3
+karty pickerowe) w 4 partiach dała 40 wpisów `kreator many`, 12 `[combat wizard]` i
+zero otwarć kreatora wielocelowego. Czyli surowiec się wyczerpał, a nie chęć.
+
+**Rozwiązanie.** Pokrycie rodziny wielocelowej rośnie przez nowe karty w katalogu
+(backlog §1). Talia `wielocelowa` stanie się legalna sama, bo nowe karty nie mają
+jeszcze przypisania — przepis (12 nazw + proporcja lądów) został w §13.8 raportu,
+żeby nikt nie układał go drugi raz.

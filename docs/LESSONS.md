@@ -1952,3 +1952,19 @@ a nie obietnicą.
 
 **Strażnik:** `test/uwagi-tura9-bot-rowne-ciala-equip.test.js` (T9/5 i T9/6 — obie
 strony, T9/3 — antysymetria na 40 parach, T9/8 — jedno miejsce definicji wagi).
+## L122 (2026-09-02) — Materiał do audytu przepuść przez niezmienniki repo w tej samej minucie
+
+**Przypadek:** żeby podnieść pokrycie kreatora celów w Żywym Testerze, ułożyłem
+talię `decks/wielocelowa.txt` (12 kart pickerowych + 12 ciał). Zanim zdążyłem
+wymyśleć obejście, dwa strażniki powiedziały „nie": M132/B (3,00 nielandowych na ląd
+przy progu 2,00) i M178/ADR 0023 (każda wspierana karta w DOKŁADNIE jednej talii —
+11 z 12 moich kart już gdzieś leżało).
+
+**Reguła:** niezmiennik, który mówi „brak materiału", jest rozstrzygnięciem projektu,
+nie błędem formatowym do obejścia. Czytaj komunikat strażnika do końca: tu pierwszy
+był formatowy (lądy), a drugi zasadniczy — i to on pokazał, że realnym problemem jest
+surowiec (7 na 443 kart z >1 celem), nie brak chęci. Trzecia droga (przenieść karty
+między taliami) była gorsza niż brak talii, bo talie karmią benchmark i audyt remisów.
+
+**Strażnik:** `test/repo-decks.test.js` + `test/m132-proporcje-landow.test.js`;
+wniosek zapisany w `docs/backlog.md` §1 i §4.

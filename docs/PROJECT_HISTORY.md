@@ -7742,6 +7742,27 @@ Brama wagowa: `git worktree` na `54c4371` vs kandydat, `--seeds 24`, 2016 meczó
 (§13.7). Lekcja: **L121 — weto przeciw marnotrawstwu sprawdzaj też w drugą stronę,
 czy nie mrozi naprawy**.
 
+### Tura 10, dopisek (2026-09-02): talia pod kreator celów — zatrzymana przez ADR 0023, nie przez lenistwo
+
+Równolegle z M289 spróbowałem pogrubić pokrycie pickera w Żywym Testerze własnym
+materiałem: `decks/wielocelowa.txt` (12 kart otwierających kreator + 12 ciał). Zabiły
+to dwa strażniki repo: `test/m132-proporcje-landow.test.js` (3,00 nielandowych na ląd
+przy progu 2,00) i `test/repo-decks.test.js` w wpisie M178/ADR 0023 (każda wspierana
+karta w DOKŁADNIE jednej talii — 11 z 12 moich kart już gdzieś leżało). Nie
+przepisywałem talii, bo `decks/*.txt` karmią `tools/benchmark.mjs` i
+`tools/bot-tie-audit.mjs`, a zmiana składu par unieważniłaby porównania A/B z tur
+7-10; i nie obejrzałem niezmiennika, bo on był rozstrzygnięciem projektu, nie
+formalnością. Zamiast tego pomiar surowca: 443 karty wspierane, w tym 7 z >1 celem,
+15 z poświęceniem/odrzuceniem, 12 equipmentów, **kart wolnych zero**. Najgestojsza
+para `ravnica` vs `worek-dziki` w 4 partiach (explorer/greedy/random/defensive, seedy
+911-914): 40 wpisów `kreator many`, 12 `[combat wizard]`, zero otwarć kreatora
+wielocelowego, `DETEKTORY: brak zgłoszeń` wszędzie. Wniosek w `docs/backlog.md` §1 i
+§4: pokrycie rodziny wielocelowej rośnie przez nowe karty w katalogu, a talia
+`wielocelowa` będzie legalna sama, bo nowe karty nie mają jeszcze przypisania —
+przepis zostawiony w §13.8 raportu. Lekcja: **L122 — materiał do audytu przepuść
+przez niezmienniki repo w tej samej minucie; „brak materiału" to zwykle brak
+surowca, a nie brak chęci**.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

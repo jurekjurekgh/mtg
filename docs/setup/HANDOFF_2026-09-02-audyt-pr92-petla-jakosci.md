@@ -503,3 +503,22 @@ testem w tej samej turze co pierwszą.
 poprawka slice'iem starła nagłówek rejestru. Ratunek: `git checkout docs/LESSONS.md` i
 wklejenie na KONIEC (rejestr jest chronologiczny: L119, L120, L121 na końcu). Przed
 każdym masowym cięciem doków — `git show HEAD:<plik> | head -3` do porównania.
+
+
+### Tura 10, dopisek: czemu NIE ma talii pod picker (i co ją odblokuje)
+
+Próba `decks/wielocelowa.txt` (12 kart pickerowych + 12 ciał + lądy) została
+zawetowana przez dwa strażniki repo i **pliku w repo nie ma** — nie dlatego, że
+pomysł był zły, tylko dlatego, że `decks/*.txt` są objęte ADR 0023 (każda wspierana
+karta w dokładnie jednej talii; kart wolnych: zero) i M132/B (lądy 1:2). Przenoszenie
+kart między taliami odrzucone: unieważniłoby porównania A/B bota z tur 7-10.
+
+Co zostaje po próbie (to są liczby do cytowania, nie wrażenie): 443 karty wspierane →
+7 z >1 celem, 15 z poświęceniem/odrzuceniem w koszcie, 12 equipmentów; najgestojsza
+para `ravnica` vs `worek-dziki` w 4 partiach: 0 otwarć kreatora wielocelowego (za to
+40 `kreator many` i 12 `[combat wizard]`), detektory czyste. Czyli pokrycie pickerem w
+teście na żywo wymaga **nowych kart**, nie nowego talonu — przepis talii leży
+w `docs/audits/AUDYT_PR92_2026-09-02.md` §13.8 i stanie się legalny w momencie, gdy
+dopiszecie karty z >1 celem (nowe karty nie mają jeszcze przypisania). L122 w
+rejestrze mówi, żebym następnym razem odpalił strażników talii w tej samej minucie,
+w której piszę talie.

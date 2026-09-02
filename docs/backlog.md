@@ -18,6 +18,15 @@ kompaktowane, repo nie.
 
 ## 1. Karty (lista właściciela)
 
+- **Karty wielocelowe (cele >1) — podstawa pod audyt na żywo** (pomiar w
+  `docs/audits/AUDYT_PR92_2026-09-02.md` §13.8): spośród 443 kart wspieranych tylko
+  7 deklaruje >1 celu, a talie testowe są w całości rozdzielone (ADR 0023: każda
+  wspierana karta w dokładnie jednej talii, kart wolnych = 0), więc nie da się
+  ułożyć talonu pod kreator celów bez nowych kart. 4-6 kart z >1 celem (albo
+  z pozycjami „X lub Y") załatwia dwie rzeczy naraz: rodzinę kart, której dziś
+  brakuje, i pokrycie pickera w Teście (talia `wielocelowa` staje się legalna sama,
+  bo nowe karty nie mają jeszcze przypisania — przepis w §13.8).
+
 _(pusto — batch 34 zamknięty w całości: 10 z 10 kart, M113–M116.
 Następna lista właściciela wchodzi tutaj.)_
 
@@ -155,6 +164,12 @@ Następna lista właściciela wchodzi tutaj.)_
   (scry/surveil/look), steppery podziału obrażeń, `mana-wizard`. Kryterium:
   czy ekran ma „pozycje do zapunktowania", bo wtedy picker daje mu natywny
   `<input>` (dotyk 44 px) i klik w nazwę = pełny ekran karty.
+- **Talia pod picker nie powstanie przez tasowanie** (tura 10, §13.8): próba
+  `decks/wielocelowa.txt` wpadła w `test/m132-proporcje-landow.test.js` (lądy) i
+  `test/repo-decks.test.js` (M178/ADR 0023 — 11 z 12 kart już gdzieś leżało).
+  Przenoszenie kart między taliami odrzucone świadomie: `decks/*.txt` karmią
+  benchmark i audyt remisów, a zmiana składu par unieważnia porównania A/B z tur
+  7-10. Czekamy na nowe karty (§1).
 - **Kontrakt testera na markup pickera** — `tools/table-tester/run-game.mjs`
   klika `.multi-target-toggle` i czyta `checked` (fallback na tekst „[x]"), a
   nazwę bierze z `.picker-name`. Jeśli picker zmieni strukturę wiersza, tester
