@@ -4083,10 +4083,10 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   // --- Liczniki trucizny (M157/F) — panel jak Undercity/Day/Night --------
   // M169/M: Poison Token klikalny — main przekazuje handler pełnego ekranu
   // (karta specjalna spoza rejestru, jak Day/Night i Undercity).
-  renderPoisonPanel(els, view, { onOpenCard: onPoisonCardClick });
+  renderPoisonPanel(els, view, { onOpenCard: onPoisonCardClick, hover });
 
   // --- Loch Undercity (M24) -------------------------------------------
-  renderUndercity(els, session, view, { onClick: onUndercityClick });
+  renderUndercity(els, session, view, { onClick: onUndercityClick, hover });
 }
 
 /**
@@ -4108,7 +4108,29 @@ const POISON_COUNTER_CARD = Object.freeze({
   imageUri: 'https://cards.scryfall.io/large/front/8/a/8a9cb417-8709-4336-be36-2fb0cea31fe1.jpg?1783904328',
 });
 
-export function renderPoisonPanel(els, view, { onOpenCard = null } = {}) {
+/**
+ * Uwaga B (2026-09-02, uwagi właściciela z żywej gry): jedno podpięcie hovera
+ * dla WSZYSTKICH kart specjalnych na stole (loch Undercity, znacznik dzień/noc,
+ * liczniki trucizny) — powiększony druk pod kursorem, tak jak na kaflach.
+ *
+ * Wcześniej każdy panel powtarzał te trzy linie, a dwa z nich nigdy nie
+ * dostała obiektu `hover` od `renderTableView`: klik działał, najechanie nie.
+ * Test na samym komponencie tego nie łapał, bo podawał `hover` samodzielnie —
+ * dlatego ten helper jest JEDYNYM miejscem podłączania, a jego użycie w
+ * wywołaniach sprawdza strażnik w testach (L16: pilnuj drutu, nie żarówki).
+ *
+ * Zwraca true, gdy hover faktycznie podpięto (na dotyku `hover` jest nullem —
+ * tam powiększenie zastępuje tapnięcie, M7c).
+ */
+export function attachSpecialCardHover(card, hover, info) {
+  if (!card || !hover || typeof hover.start !== 'function') return false;
+  card.addEventListener('mouseenter', (e) => hover.start(info, e));
+  if (hover.end) card.addEventListener('mouseleave', hover.end);
+  if (hover.cycle) card.addEventListener('wheel', (e) => hover.cycle(info, e));
+  return true;
+}
+
+export function renderPoisonPanel(els, view, { onOpenCard = null, hover = null } = {}) {
   if (!els.poison) return;
   const any = (view.players ?? []).some((p) => (p.poison ?? 0) > 0);
   els.poison.hidden = !any;
@@ -4121,6 +4143,13 @@ export function renderPoisonPanel(els, view, { onOpenCard = null } = {}) {
     card.className = 'poison-card clickable';
     card.addEventListener('click', () => onOpenCard(POISON_COUNTER_CARD));
   }
+  // Uwaga B (2026-09-02): panel liczników trucizny był jedynym miejscu na
+  // stole bez jakiejkolwiek ścieżki hovera — karta miała klik i nic więcej.
+  attachSpecialCardHover(card, hover, {
+    name: POISON_COUNTER_CARD.name,
+    imageUri: POISON_COUNTER_CARD.imageUri,
+    artId: null, set: null, colors: [], kind: 'card', types: ['Counter'], faceDown: false,
+  });
   const img = document.createElement('img');
   img.src = POISON_COUNTER_CARD.imageUri;
   img.alt = POISON_COUNTER_CARD.name;
@@ -4154,16 +4183,11 @@ export function renderDayNight(els, session, view, { onClick = null, hover = nul
     if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
     if (onClick) onClick();
   });
-  if (hover && hover.start) {
-    const info = {
-      name: DAY_NIGHT_TOKEN.name,
-      imageUri: designation === 'night' ? DAY_NIGHT_TOKEN.imageUriNight : DAY_NIGHT_TOKEN.imageUriDay,
-      artId: null, set: null, colors: [], kind: 'card', types: ['Card', 'Card'], faceDown: false,
-    };
-    card.addEventListener('mouseenter', (e) => hover.start(info, e));
-    card.addEventListener('mouseleave', hover.end);
-    if (hover.cycle) card.addEventListener('wheel', (e) => hover.cycle(info, e));
-  }
+  attachSpecialCardHover(card, hover, {
+    name: DAY_NIGHT_TOKEN.name,
+    imageUri: designation === 'night' ? DAY_NIGHT_TOKEN.imageUriNight : DAY_NIGHT_TOKEN.imageUriDay,
+    artId: null, set: null, colors: [], kind: 'card', types: ['Card', 'Card'], faceDown: false,
+  });
   const info = div(els.daynight, 'daynight-info');
   div(info, 'daynight-status', designation === 'night' ? 'Noc' : 'Dzień');
   // M200/G (uwaga właściciela): opis zgodny z IMPLEMENTACJĄ (M68,
@@ -4199,16 +4223,14 @@ export function renderUndercity(els, session, view, { onClick = null, hover = nu
     if (onClick) onClick();
   });
   // M153/C: hover jak dla pozostałych kart — powiększony druk pod kursorem.
-  if (hover && hover.start) {
-    const hInfo = {
-      name: UNDERCITY_DUNGEON.name,
-      imageUri: UNDERCITY_DUNGEON.imageUri,
-      artId: null, set: null, colors: [], kind: 'card', types: ['Dungeon'], faceDown: false,
-    };
-    card.addEventListener('mouseenter', (e) => hover.start(hInfo, e));
-    card.addEventListener('mouseleave', hover.end);
-    if (hover.cycle) card.addEventListener('wheel', (e) => hover.cycle(hInfo, e));
-  }
+  // Uwaga B (2026-09-02): podpięcie idzie przez wspólny helper, a wywołanie
+  // z `renderTableView` MUSI przekazywać `hover` — przez rok przekazywał go
+  // tylko Day/Night, więc na stole loch reagował wyłącznie na klik.
+  attachSpecialCardHover(card, hover, {
+    name: UNDERCITY_DUNGEON.name,
+    imageUri: UNDERCITY_DUNGEON.imageUri,
+    artId: null, set: null, colors: [], kind: 'card', types: ['Dungeon'], faceDown: false,
+  });
   const info = div(els.undercity, 'undercity-info');
   div(info, 'undercity-init', view.initiativePlayerId != null
     ? `Inicjatywa: ${PLAYER_NAMES[view.initiativePlayerId] ?? view.initiativePlayerId}`
