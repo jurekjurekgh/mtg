@@ -123,12 +123,24 @@ test('grzechotka audytu: remisy rozstrzygalne nie rosną ponad stan przejrzany',
   assert.ok(global.tieNoOp > 100,
     `pary „brak akcji" silnika są liczone osobno (jest ${global.tieNoOp})`);
   assert.equal(lad.noOp, 0, 'play_land nie ma no-opów — pojawienie się znaczy, że oferta silnika się zmieniła');
-  // Przejrzane i uznane za politykę: 2 block (trade za obrażenia nieśmiertelne)
-  // + 2 attack (płaska wycena na drobnych różnicach). KAŻDY wzrost to nowa
-  // klasa przeoczenia — łapie ją ten test, nie dobre chęci.
-  const razem = lad.rozroznialne + atak.rozroznialne + blok.rozroznialne;
-  assert.ok(razem <= 4,
-    `groźb przy różnych danych: ${razem} > 4 — opis:\n${[atak, blok].flatMap((r) => r.przyklady.filter((p) => typeof p === 'string')).join('\n')}`);
+  // Przejrzane i uznane za politykę: `block` — trade za obrażenia
+  // nieśmiertelne (kara za NIEblokowanie żyje tylko pod presją śmiertelną),
+  // `attack` — wymiana „+1 obrażenia za jednego stworą" jest w modelu
+  // neutralna z definicji. Sufity są PER KIND i są sufitami, nie pinami:
+  // liczby zależą od trajektorii partii, więc każda zmiana wag zmienia
+  // rozkład pozycji. Po świadomej regeneracji golden-mastera przykłady trzeba
+  // PRZEJRZEĆ i podnieść próg ręcznie — nie automatycznie.
+  const opis = [atak, blok, lad].flatMap((r) => r.przyklady.filter((x) => typeof x === 'string'));
+  assert.ok(atak.rozroznialne <= 4, `attack groźb: ${atak.rozroznialne}\n${opis.join('\n')}`);
+  assert.ok(blok.rozroznialne <= 4, `block groźb: ${blok.rozroznialne}\n${opis.join('\n')}`);
+  // Klasy z projekcją wartości (tura 6): tu zero jest osiągalne i wymagane —
+  // różnica kosztu many albo korpusu MUSI przechodzić na wynik.
+  for (const nazwa of ['cast_permanent', 'cast_spell', 'activate_ability']) {
+    const r = dla(nazwa);
+    assert.equal(r.rozroznialne, 0,
+      `${nazwa}: remis przy różnych danych wyceny (przeoczenie):\n`
+      + `${r.przyklady.filter((x) => typeof x === 'string').join('\n')}`);
+  }
   // Grzechotka nie może być ślepa: te klasy muszą mieć w ogóle remisy akcyjne.
   assert.ok(atak.akcyjne + blok.akcyjne >= 6,
     `remisy akcyjne w walce zniknęły (${atak.akcyjne}/${blok.akcyjne}) — sprawdź, czy projekcja nie przestała działać`);

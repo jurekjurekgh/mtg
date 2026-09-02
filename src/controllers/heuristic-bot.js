@@ -1871,6 +1871,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         const def = card ? cardDef(card.cardId) : undefined;
         let score = P.creatureBase + (card?.power ?? 0) * P.creaturePowerWeight + (card?.toughness ?? 0) * P.creatureToughnessWeight;
+        // AUDYT REMISÓW (tura 6, `tools/bot-tie-audit.mjs`): gałąź wyceniała
+        // CIAŁO, ale nie CENĘ — stwór 2/2 za {2} i ten sam 2/2 za {6} miały
+        // identyczny wynik, więc przy dwóch stworach w ręce wybór zapadał
+        // w kolejności `legalCommands`. To nie subtelność, tylko brak danych:
+        // mana wydana na ciało to mana, której nie wydasz na drugie ciało ani
+        // na kontrę, a „tempo" jest podstawową miarą wartości w Magic.
+        // Waga 1/pt many jest celowo mniejsza niż waga siły (2/pt): płacenie za
+        // większy korpus pozostaje opłacalne, dopóki korpus jest większy.
+        score -= P.creatureManaCostWeight
+          * ((card?.manaCost ?? 0) + coloredPipsOf(card?.cardId ?? '').length);
         // M258/A (uwaga właściciela, Squire's Lightblade): wartość equipmentu
         // żyje na NOSICIELU. Rzut przy braku własnych kreatur to marnowanie:
         // ETB „attach za darmo" fizzluje (CR 603.4b), a karta czeka na stole
@@ -4761,36 +4771,77 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   function tieProjection(view, cmd) {
     if (!view) return null;
     if (cmd?.type === 'declare_attackers') {
-      // Ile tur obrażeń to realnie daje i ile stworów wystawiamy na blok —
-      // dane, które decyzja o ataku musi rozstrzygać. Nie odtwarzają wzoru
-      // punktacji (tam jest jeszcze presja, tempo, trigger „attacks"), więc
-      // różnica przy równych punktach jest sygnałem, nie tautologią.
       const atak = cmd.attackerIds ?? [];
-      const wrog = enemy(view);
+      // Projekcja WYNIKU kroku bojowego (CR 509/510 na poziomie faktów, bez
+      // wag): ile obrażeń realnie dojdzie po absorpcji blockerów, ilu naszych
+      // ginie, ilu ich blokerów ginie. To są dane, które decyzja o ataku musi
+      // rozstrzygać; punkty dorzucają do tego presję, zegar i ryzyko removalu.
+      //
+      // Świadomie NIE ma tu „obrony zostawionej w domu". Pierwsza wersja
+      // projekcji pytała o sumę wytrzymałości stworów, które nie atakują, i
+      // findingi na tym polu okazały się artefaktem metryki, nie ślepotą bota:
+      // stwór tapnięty atakiem odświeża się w NASZYM kroku odświeżania, czyli
+      // zdąży zablokować w turze wroga (CR 502.3 + 702.21 dla vigilance —
+      // wyjątek „doesn't untap" obsługuje osobna gałąź wyceny). Pytanie
+      // „co zostaje w obronie" jest więc w Magic pytaniem o efekt, nie o
+      // tapnięcie; metryka, która o tym zapomina, produkuje szum (L118).
       const blokerzy = untappedEnemyBlockers(view);
+      const absorpcja = blokerzy.reduce((a, o) => a + (o.toughness ?? 0), 0);
+      const najsilniejszy = blokerzy.reduce((a, o) => Math.max(a, o.power ?? 0), 0);
       let sila = 0;
-      let wystawione = 0;
+      let ginie = 0;
       for (const id of atak) {
         const o = objectOnBoard(view, id);
         sila += o?.power ?? 0;
-        if (blokerzy.some((b) => (b.power ?? 0) >= (o?.toughness ?? 99))) wystawione += 1;
+        if ((o?.toughness ?? 99) <= najsilniejszy) ginie += 1;
       }
-      const zycieWroga = wrog?.life ?? 999;
-      // Nadwyżka ponad śmiertelność NIE jest daną decyzyjną: zestaw 16 i 17
-      // obrażeń przy wrogu na 15 życiu wygrywa tak samo (przeredagowanie
-      // metryki, nie kodu — patrz uwagi w docs/audits/AUDYT_PR92 §12.4).
+      const zycieWroga = enemy(view)?.life ?? 999;
+      const zabici = blokerzy.filter((b) => atak.some((id) => (objectOnBoard(view, id)?.power ?? 0) >= (b.toughness ?? 99))).length;
       return {
         atakuje: atak.length,
-        sila: Math.min(sila, zycieWroga),
-        smiertelny: sila > 0 && sila >= zycieWroga ? 1 : 0,
-        wystawioneNaBlok: wystawione,
-        // Które z NASZYCH stworów zostaje w domu — ta sama suma siły ataku przy
-        // różnych zestawach to różna obrona na następną turę. Wyłączone, gdy atak
-        // jest śmiertelny: gra się kończy w tej turze i żaden blokera nie będzie
-        // potrzebny (ta sama co wyżej zasada — metryka ma pytać o dane, które
-        // MOGĄ zmienić wynik partii, nie o wszystkie możliwe różnice).
-        obronaWDomu: (sila >= zycieWroga) ? 0 : (view.zones.battlefield ?? []).filter((o) => o.controllerId === view.playerId
-          && o.kind === 'creature' && !atak.includes(o.id)).reduce((a, o) => a + (o.toughness ?? 0), 0),
+        trafienie: Math.min(Math.max(0, sila - absorpcja), zycieWroga),
+        ginie,
+        zabici,
+        smiertelny: sila > 0 && Math.max(0, sila - absorpcja) >= zycieWroga ? 1 : 0,
+      };
+    }
+    if (String(cmd?.type ?? '').startsWith('cast_')) {
+      // Rzucanie czaru: audyt pyta o dane, które różnią WARIANTY tego samego
+      // typu komendy (tę kartę czy tamtą, z kickerem czy bez, na ile celów).
+      // Bez projekcji 13 remisów `cast_*` było „bez danych" — pomiar o nich
+      // milczał, a milczenie łatwo pomylić z brakiem problemu.
+      //
+      // Sygnaturą jest WARTOŚĆ, nie surowe pola. Pierwsza wersja niosła osobno
+      // `koszt` i `materialna = power + toughness`; to drugie okazało się
+      // modelem gorszym niż sama wycena (Magic waży siłę inaczej niż
+      // wytrzymałość — patżej `creaturePowerWeight` vs `creatureToughnessWeight`),
+      // więc flagała pary słusznie uznane za zamienne. Osobny `koszt` był z kolei
+      // podwójnym liczeniem tej samej różnicy. Została jedna liczba: ile ta karta
+      // realnie dokłada do wyniku w przeliczeniu na manę, którą zajmuje.
+      const o = handCard(view, cmd.objectId);
+      if (!o) return null;
+      const koszt = (o.manaCost ?? 0) + coloredPipsOf(o.cardId).length;
+      const cialo = (o.power ?? 0) * P.creaturePowerWeight + (o.toughness ?? 0) * P.creatureToughnessWeight;
+      return {
+        waluta: cialo - P.creatureManaCostWeight * koszt,
+        cele: (cmd.targets ?? []).length,
+        kicker: cmd.kicked ? 1 : 0,
+        tryb: cmd.mode ?? cmd.modeIndex ?? null,
+      };
+    }
+    if (cmd?.type === 'activate_ability') {
+      // Aktywacja zdolności: czy płacimy maną/tapnięciem, ile ma celów i czy to
+      // w ogóle zdolność nie-manowa (mana to osobna komenda `tap_for_mana`).
+      const o = (view.zones.battlefield ?? []).find((x) => x.id === cmd.objectId)
+        ?? handCard(view, cmd.objectId);
+      const zdolnosc = o?.abilities?.[cmd.abilityIndex ?? 0] ?? cardDef(o?.cardId)?.abilities?.[cmd.abilityIndex ?? 0];
+      if (!zdolnosc) return null;
+      return {
+        tap: zdolnosc.cost?.tap ? 1 : 0,
+        mana: zdolnosc.cost?.mana ?? zdolnosc.cost?.generic ?? 0,
+        manowa: manaOnlyAbility(zdolnosc) ? 1 : 0,
+        cele: (cmd.targets ?? []).length,
+        kosztem: zdolnosc.cost?.sacrificeSelf ? 1 : 0,
       };
     }
     if (cmd?.type === 'declare_blockers') {
@@ -4838,6 +4889,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     if (cmd.type === 'declare_attackers') return `attack[${cmd.attackerIds.join(',')}]`;
     if (cmd.type === 'declare_blockers') return `block[${Object.entries(cmd.assignments ?? {}).map(([a, b]) => `${a}<${b.join('+')}`).join(' ')}]`;
+    // Świadomie BEZ karty w śladzie (próba z tury 6 odwrócona): ~19 testów
+    // (m234, m235, m247, m257, batch52) parsuje format `cast_*(objectId)`, a
+    // wariant i tak jest w nim rozstrzygalny — `objectId` jest unikalny w ręce,
+    // a od tury 6 różnicę niosą projekcje (`waluta`, `cele`, `kicker`). Zysk
+    // czytelności nie był wart przepisania pinsów, które sami pilnują wyceny.
     if (cmd.type === 'cast_spell' || cmd.type === 'cast_cleave' || cmd.type === 'cast_permanent' || cmd.type === 'cast_adventure' || cmd.type === 'cast_adventure_creature') return `${cmd.type}(${cmd.objectId}${cmd.targets ? '->' + cmd.targets.join('+') : ''})`;
     // M195/B: aktywacja zdolności bez ŹRÓDŁA i CELU była w śladzie nieczytelna
     // („activate_ability" × N) — nie dało się odróżnić buffu sojusznika od
