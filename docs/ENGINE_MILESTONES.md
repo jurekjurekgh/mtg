@@ -3996,4 +3996,4 @@ boczny między atakującymi zostaje −4,00.
 **Akceptacja wagowa:** `git worktree` na `54c4371` vs kandydat,
 `node tools/benchmark.mjs --seeds 24` (2016 meczów) — wynik w §13.7 raportu; progiem
 planu jest brak regresji, a nie wzrost. Bramy: `test/uwagi-tura9-bot-rowne-ciala-equip.test.js`
-8/8, subset reżimu bota 242/242, `npm test` 4240/4240.
+8/8, subset reżimu bota 242/242, `npm test` 4240/4240, `npm run test:all` 4250/4250.

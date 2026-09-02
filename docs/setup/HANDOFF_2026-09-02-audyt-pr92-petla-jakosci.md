@@ -488,7 +488,7 @@ blokerów (`attackerNeutralizedByProtection`, CR 702.16c) → połowa wagi `pump
 między równymi atakującymi), T9/3 to antysymetria na 40 parach, T9/8 pilnuje, że
 waga ma jedno miejsce w pliku.
 
-**Bramy:** subset reżimu bota 242/242 · `npm test` 4240/4240 · benchmark A/B na `--seeds 24`
+**Bramy:** subset reżimu bota 242/242 · `npm test` 4240/4240 · `npm run test:all` 4250/4250 (brama PR, CI zielony) · benchmark A/B na `--seeds 24`
 (2016 meczów, baseline z worktree na `54c4371`): **Werdykt: agregat identyczny** — heuristic 85,5% (1723/2016) w obu gałęziach, aggro 24,6% (248/1008), random 4,5% (45/1008). To nie jest dowód „nic nie zmieniliśmy": ta pozycja (sprzęt na ciele, które nie atakuje, z równym co do siły kandydatem obok) nie zdarza się w talach benchmarku, więc win-rate nie ma czego mierzyć. Dowodem działania naprawy są stoły w `test/uwagi-tura9-bot-rowne-ciala-equip.test.js`, a benchmarkiem zamknęliśmy tylko tylną furtkę (że nic nie zepsuliśmy w reszcie gry bota).. Progiem planu był brak
 regresji, nie wzrost.
 
