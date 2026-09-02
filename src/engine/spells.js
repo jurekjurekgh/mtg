@@ -66,14 +66,21 @@ export function plottedCastAllowed(state, playerId, object) {
     && state.zones.stack.length === 0;
 }
 
-function requireSpell(state, playerId, objectId, targets, cleaved, vaanCast = false) {
+function requireSpell(state, playerId, objectId, targets, cleaved, abilityWindowCast = false) {
   const object = state.objects.get(objectId);
   // Batch 46 (Gila Courser): karta wygnana „impulse" jest grywalna z exile
   // do końca twojej następnej tury — za PEŁNY koszt (w odróżnieniu od plot).
   const impulse = object?.zone === 'exile' && object.playableUntilTurn != null
     && state.turn.number <= object.playableUntilTurn;
   const plotted = object?.zone === 'exile' && (object.plotted || object.suspendReady);
-  if (!object || object.controllerId !== playerId || (!['hand', 'exile'].includes(object.zone)) || object.kind !== 'spell' || (object.zone === 'exile' && !plotted && !impulse)) {
+  // Audyt PR #92: `abilityWindowCast` to osobne uprawnienie do rzutu z exile —
+  // „karta leży w exile, bo właśnie wygnała ją zdolność, która wciąż jest na
+  // stosie i o rzucie decyduje". Ściślejsze niż dawny stempel
+  // `playableUntilTurn`: okno znika razem z decyzją, więc nie da się z niego
+  // skorzystać „później w turze" (ruling WotC dla Vaana, 2025-02-10).
+  // Nazwa jest celowo bezimienna (ADR 0002) — to mechanika, nie karta.
+  if (!object || object.controllerId !== playerId || (!['hand', 'exile'].includes(object.zone)) || object.kind !== 'spell'
+    || (object.zone === 'exile' && !plotted && !impulse && !abilityWindowCast)) {
     throw new Error('To nie jest rzucalny czar z ręki, zaplotowany albo gotowy z suspendu z exile');
   }
   if (!object.spell || !object.spell.effects?.length) throw new Error('Obiekt nie ma deskryptora czaru');
@@ -85,10 +92,10 @@ function requireSpell(state, playerId, objectId, targets, cleaved, vaanCast = fa
   }
   if (timing === 'sorcery') {
     const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
-    // Vaan, Street Thief: rzut „teraz" przy rozstrzyganiu zdolności ignoruje
+    // Rzucenie w oknie zdolności (np. „you may cast it" przy wygnaniu) ignoruje
     // timing czaru (CR 601.2b pomijany — ruling WotC: rzucasz, póki zdolność
     // jest na stosie), jak madness/suspend/rebound.
-    if (!vaanCast && (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0)) {
+    if (!abilityWindowCast && (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0)) {
       throw new Error('Czar sorcery tylko w swoją fazę main przy pustym stosie');
     }
   } else if (timing !== 'instant') {
@@ -453,7 +460,7 @@ export function effectiveSpellManaCost(state, object) {
 }
 
 /** Rzuca czar: płaci koszt, kładzie obiekt na stos z wybranymi celami. */
-export function castSpell(state, playerId, objectId, targets, sacrificeTargetId, modeIndex, stunTargetId, buyback = false, payAltCost = false, xValue, phyrexianPayWithLife = 0, vaanCast = false) {
+export function castSpell(state, playerId, objectId, targets, sacrificeTargetId, modeIndex, stunTargetId, buyback = false, payAltCost = false, xValue, phyrexianPayWithLife = 0, abilityWindowCast = false) {
   const preObject = state.objects.get(objectId);
   // Modal „Choose one" (Aerith Rescue Mission): osobna ścieżka walidacji —
   // cele i efekty pochodzą z wybranego trybu, a nie z nadrzędnego deskryptora.
@@ -470,7 +477,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   if (preObject?.spell?.fireball) {
     return castFireball(state, playerId, objectId, targets, xValue);
   }
-  const { object, targetSpec, chosen } = requireSpell(state, playerId, objectId, targets, false, vaanCast);
+  const { object, targetSpec, chosen } = requireSpell(state, playerId, objectId, targets, false, abilityWindowCast);
   const player = state.players.find((entry) => entry.id === playerId);
   const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object);
   // Dodatkowy koszt „sacrifice a creature" (Village Rites): walidacja celu-

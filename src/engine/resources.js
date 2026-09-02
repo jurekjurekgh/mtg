@@ -648,7 +648,7 @@ export function canPayMadnessCost(state, playerId, object) {
   return hasColorRequirements(state, playerId, requirements);
 }
 
-export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, treasureAlt = false, warpCast = false, madnessCast = false, surgeCast = false, vaanCast = false } = {}) {
+export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, treasureAlt = false, warpCast = false, madnessCast = false, surgeCast = false, abilityWindowCast = false } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   // Zaplotowana karta leży w exile (plotted: true) i rzuca się BEZ kosztu many
@@ -677,7 +677,11 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // Bez tej bramki oferta pokazywala ruch, ktorego walidacja nie przyjmowala.
   const impulseLive = object?.zone === 'exile' && object.playableUntilTurn != null
     && state.turn.number <= object.playableUntilTurn;
-  if (!player || !object || object.controllerId !== playerId || (object.zone !== 'hand' && !plotted && !warpReady && !madnessLive && !impulseLive)) throw new Error('Nielegalny permanent');
+  // Audyt PR #92: rzut w oknie nierozstrzygniętej zdolności (patrz
+  // `requireSpell` w spells.js) jest samodzielnym uprawnieniem do wzięcia
+  // karty z exile — bez stempla `playableUntilTurn` na obiekcie, bo oknem
+  // jest decyzja, a nie efekt trwający do końca tury.
+  if (!player || !object || object.controllerId !== playerId || (object.zone !== 'hand' && !plotted && !warpReady && !madnessLive && !impulseLive && !abilityWindowCast)) throw new Error('Nielegalny permanent');
   if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') throw new Error('Ten obiekt nie jest zagrywalnym permanentem');
   // Flash (CR 702.8): permanent z flash można zagrać w każdej fazie (jak instant);
   // bez flash — tylko w swojej main phase (plot też rzuca się jako sorcery).
@@ -687,10 +691,10 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // timing — także w cleanup (odrzucenie ponad limit ręki) i w turze
   // przeciwnika. Bez wyjątku bramka odrzucała rzut, a heuristic-bot zawsze
   // wybierał cast:true → crash sesji „Bot wybrał nielegalną komendę".
-  if (!hasFlash && !madnessCast && !vaanCast && (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase))) throw new Error('Zagranie poza main phase');
+  if (!hasFlash && !madnessCast && !abilityWindowCast && (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase))) throw new Error('Zagranie poza main phase');
   // Timing sorcery (CR 307.1/117.1a): rzut permanenta bez flash wymaga
   // PUSTEGO stosu — czar idzie na stos i rozstrzyga się po rundzie passów.
-  if (!hasFlash && !madnessCast && !vaanCast && state.zones.stack.length > 0) throw new Error('Zagranie przy niepustym stosie');
+  if (!hasFlash && !madnessCast && !abilityWindowCast && state.zones.stack.length > 0) throw new Error('Zagranie przy niepustym stosie');
   if (warpCast && !object.warp) throw new Error('Ta karta nie ma mechaniki warp');
   if (madnessCast && !object.madness) throw new Error('Ta karta nie ma mechaniki madness');
   // Surge (CR 702.111): koszt ALTERNATYWNY rzutu z ręki, legalny gdy ty (lub

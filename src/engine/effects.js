@@ -1069,8 +1069,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // You may cast it. If you don't, create a Treasure token." Gracz, z którego
   // biblioteki wygnano kartę, to poszkodowany (context.damagedPlayerId —
   // trigger any_combat_damage_to_player). Rzut „teraz" to blokująca decyzja
-  // resolve_exile_cast (karta oznaczona playableUntilTurn jak impulse, a
-  // vaanCast omija timing — ruling WotC: rzucasz, póki zdolność jest na
+  // resolve_exile_cast (blokująca decyzja na stosie), a uprawnienie do rzutu
+  // z exile i poza timingiem daje flaga `abilityWindowCast` w
+  // requireSpell/castPermanent — ruling WotC: rzucasz, póki zdolność jest na
   // stosie, ignorując ograniczenia typu czaru).
   if (effect.type === 'exile_top_of_player_library_and_may_cast') {
     const controllerId = sourceObject.controllerId;
@@ -1080,7 +1081,16 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const card = state.objects.get(topId);
     const exileId = `exile-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, topId, 'exile', exileId, { exiledBy: sourceObject.cardId });
-    state.objects.set(exileId, Object.freeze({ ...moved, playableUntilTurn: state.turn.number }));
+    // Audyt PR #92 (ruling WotC 2025-02-10): „You cast the exiled card while
+    // Vaan's first ability is still on the stack. You can’t wait to cast it
+    // later in the turn". OKNEM RZUTU jest więc sama nierozstrzygnięta
+    // decyzja `pendingExileCast` (poniżej), a NIE stempel na obiekcie.
+    // Dawniej efekt doklejał `playableUntilTurn: state.turn.number` — po
+    // rezygnacji karta zostawała w exile „rzucalna do końca tury" i dało się
+    // ją rzucić później za pełny koszt. Uprawnienie do rzutu z exile daje
+    // teraz wyłącznie flaga `abilityWindowCast` w `requireSpell`/`castPermanent`.
+    // (Impuls, plot i suspend MAJĄ własny stempel — tam okno jest efektem
+    // trwającym wiele tur i nie jest decyzją na stosie.)
     state.events.push(event('object_exiled', {
       fromId: topId, objectId: exileId, object: state.objects.get(exileId),
       cardId: card?.cardId ?? null,

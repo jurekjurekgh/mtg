@@ -2245,7 +2245,7 @@ export function execute(state, input) {
   // z ofertą: prosty instant/sorcery (bez xCost/fireball/additionalCost) albo
   // permanent niebędący aurą. Land i karty spoza zakresu → tylko rezygnacja
   // (treasure) — jak pay_x_cast_from_graveyard ogranicza się do prostych
-  // czarów. vaanCast w castSpell/castPermanent omija bramki timingu (CR 601.2b
+  // czarów. abilityWindowCast w castSpell/castPermanent omija bramki timingu (CR 601.2b
   // ignorowany, gdyż rzut następuje w trakcie rozstrzygania zdolności).
   if (state.pendingExileCast) {
     if (cmd.type !== 'resolve_exile_cast') return reject('exile_cast_unresolved');
@@ -2289,11 +2289,15 @@ export function execute(state, input) {
       // wykrywa trigger „you cast a spell you don't own". Karta w exile ma
       // controllerId właściciela; nadpisujemy go dla ścieżki rzutu.
       state.objects.set(pending.objectId, Object.freeze({ ...card, controllerId: pending.playerId }));
+      // 12. argument castSpell to `abilityWindowCast` (rzut w oknie zdolności:
+      // z exile i poza timingiem) — JEDYNE źródło tego uprawnienia, bo
+      // komenda `cast_spell`/`cast_permanent` nie ma takiego pola (bramka
+      // decyzji wyżej odrzuca inne komendy, dopóki okno jest otwarte).
       if (card.kind === 'spell') {
         castSpell(state, pending.playerId, pending.objectId, cmd.targets ?? [], undefined,
           cmd.modeIndex, undefined, false, false, undefined, 0, true);
       } else {
-        castPermanent(state, pending.playerId, pending.objectId, { vaanCast: true });
+        castPermanent(state, pending.playerId, pending.objectId, { abilityWindowCast: true });
       }
       state.pendingExileCast = null;
       if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) {
