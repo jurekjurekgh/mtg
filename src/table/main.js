@@ -1249,10 +1249,15 @@ function bootstrapTable() {
       // przyczyny bez zduplikowania zdania, więc gałąź buduje teraz <spany>
       // (te same klasy co w trybie aktywnym: ti-life / ti-life foe).
       el.textContent = '';
+      // Separator w TEKŚCIE, nie tylko w CSS (`gap` flexa): tester i czytnik
+      // ekranu czytają `textContent`, a tam bez spacji wychodziło
+      // „wygrywa BotGracz: 0 ż.Bot: 20 ż." (zmierzone w transkrypcie Żywego
+      // Testera po M288/D).
+      let notei = 0;
       const note = (cls, text) => {
         const s = document.createElement('span');
         s.className = cls;
-        s.textContent = text;
+        s.textContent = (notei++ === 0 ? '' : ' · ') + text;
         el.appendChild(s);
       };
       note('ti-result', view.isDraw ? 'Koniec partii — REMIS'

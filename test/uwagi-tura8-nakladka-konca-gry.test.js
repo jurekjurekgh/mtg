@@ -135,3 +135,19 @@ test('D: partia skończona wyczerpaniem biblioteki — nakładka ma życia i win
   // Etykieta ta sama co w logu — jedno źródło (patrz strażnik powyżej).
   assert.equal(info.losses[0].label, 'pusta biblioteka');
 });
+
+test('D: wiersze w nakładce są rozdzielone w TEKŚCIE (tester i czytnik ekranu)', () => {
+  // Zmierzony objaw po pierwszej wersji naprawy: transkrypt Żywego Testera
+  // pokazywał „Koniec partii — wygrywa BotGracz: 0 ż.Bot: 20 ż." — Flex `gap`
+  // rozdziela wizualnie, ale `textContent` (tester, a11y) już nie.
+  const src = fs.readFileSync('src/table/main.js', 'utf8');
+  const start = src.indexOf('function updateTurnIndicator');
+  const body = src.slice(start, src.indexOf('\n  }', start));
+  assert.match(body, /notei\+\+ === 0 \? '' : ' · '/,
+    'gałąź kończąca wstawia separator do tekstu, nie tylko do CSS');
+  // Nakładka jest `aria-live="polite"` (index.html) — treść czytają czytniki
+  // ekranu, więc separator musi być w tekście, nie w stylu.
+  const html = fs.readFileSync('src/table/index.html', 'utf8');
+  assert.match(html, /id="turn-indicator"[^>]*aria-live="polite"/,
+    'nakładka ogłasza treść — dlatego separator liczy się w textContent');
+});
