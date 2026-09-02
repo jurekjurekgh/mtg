@@ -262,6 +262,37 @@ export function getSourceForObject(gameObject, state = null) {
  * Wszystkie kontrolowane źródła many gracza (tapped i untapped) – do checku kolorów.
  * Filtruje źródła o amount 0 (np. token_food, które nie daje many).
  */
+/**
+ * Ile i jakich kolorów many da karta-ląd PO ZAGRANIU, czytane z DEFINICJI karty
+ * (audyt bota PR #93 tura 5).
+ *
+ * Po co: wycena `play_land` musi wiedzieć, co produkuje ląd leżący JESZCZE w
+ * ręce. Obiekt w `playerView.zones.hand` nie ma ani zmaterializowanych
+ * zdolności, ani podtypów — `getSourceForObject` nie ma z czego rozwiązać, a
+ * kopia logiki w kontrolerze byłaby drugim definiowaniem tej samej reguły
+ * (klasa L21). Dlatego jest to CIEŃK I adapter: buduje obiekt-pozorny z pól
+ * definicji i deleguje do `getSourceForObject`, więc podtypy podstawowe
+ * (CR 305.6), deskryptor zdolności, zdolność skarbowa i mapa źródeł zostają w
+ * jednym miejscu.
+ *
+ * `state` bywa potrzebny tylko do warunków sprawdzających inne permanenty
+ * (tron Urzy); bez niego wynik jest zachowawczy.
+ */
+export function manaSourceOfCardDefinition(cardId, definition = null, state = null) {
+  const def = definition ?? null;
+  if (!def || !(def.types ?? []).includes('Land')) return null;
+  return getSourceForObject({
+    id: `definition:${cardId}`,
+    cardId,
+    kind: 'land',
+    zone: 'hand',
+    types: def.types ?? [],
+    subtypes: def.subtypes ?? [],
+    abilities: def.abilities ?? [],
+    colors: def.colors ?? [],
+  }, state);
+}
+
 export function allControlledManaSources(state, playerId) {
   const sources = [];
   for (const id of state.zones.battlefield) {

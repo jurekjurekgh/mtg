@@ -1,5 +1,7 @@
 import { createRng } from '../engine/rng.js';
 import { sourceHasProtectionQuality } from '../engine/attachments.js';
+import { getSourceForObject, manaSourceOfCardDefinition } from '../engine/mana-sources.js';
+import { coloredPipsOf } from '../engine/mana-cost.js';
 import { createCardRegistry } from '../cards/card-data.js';
 import { probAtLeastOne } from '../engine/hypergeom.js';
 import { normalizeHeuristicWeights } from './heuristic-weights.js';
@@ -1139,6 +1141,99 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
   const cardDef = (cardId) => (cardId ? registry.get(cardId) : undefined);
 
+  /**
+   * Który ląd z ręki zagrać, gdy jest ich więcej niż jeden (audyt bota, PR #93 t. 5).
+   *
+   * Przed tą zmianą `play_land` miał wycenę PŁASKĄ 90, więc przy dwóch ziemiach
+   * w ręce bot brał pierwszą z listy `legalCommands`. Wybór manabazy to jedna z
+   * ważniejszych decyzji w Magic, a tu była arbitralna. Skala zmierzona przez
+   * `tools/bot-tie-audit.mjs` (12 partii, 1025 decyzji z alternatywami): 34,1%
+   * to remis na maksimum punktów, a `play_land` był drugi co wielkość (75
+   * remisów). Po naprawie: 30,4% ogólem i 39 dla lądu — wszystkie 39 to pary
+   * lądów o IDENTYCZNEJ projekcji danych (dwa lasy), czyli remis uczciwy.
+   *
+   * Delta NIE rusza bazowej wartości grania lądu (90 — ląd nadal bije większość
+   * innych akcji), tylko porusza wybór miedzy lądami. Zamienne lądy pozostaja w
+   * remisie: sztuczne rozsanianie identycznych wariantów byłoby kłamstwem wyceny,
+   * a strażnik ma mierzyć regułe, nie szum (L5).
+   *
+   * Dane wyłączenie deklaratywne (ADR 0002 — zero nazw kart w bocie): kolory
+   * kandydata z DEFINICJI karty przez `manaSourceOfCardDefinition` (CR 305.6 +
+   * deskryptor zdolności), kolory lądów na polu bitwy przez TE SAME rozwiazanie
+   * co silnik (`getSourceForObject`), zapotrzebowanie reki przez `coloredPipsOf`
+   * (tabela kosztów). `landAnaliza` liczy dane, `landPlayDelta` przekłada je na
+   * punkty, `tieProjection` wystawia je do śladu — jeden źródło prawdy, inaczej
+   * bramka remisów stalaby na innej arytmetyce niz wycena i milczała przy błedzie.
+   */
+  const manaOnlyAbility = (ability) => {
+    // Zdolność, której jedyne efekty to „Add …" — czysto manowa (CR 605.1b).
+    const efekty = Array.isArray(ability?.effect) ? ability.effect
+      : (ability?.effect ? [ability.effect] : []);
+    return efekty.length > 0 && efekty.every((e) => e?.type === 'add_mana');
+  };
+
+  /** Stan faktów o lądzie i rekem, potrzebny do wyboru (bez punktów). */
+  function landAnaliza(view, objectId) {
+    const ja = view.playerId;
+    const karta = (view.zones.hand ?? []).find((o) => o?.id === objectId);
+    const def = cardDef(karta?.cardId);
+    const pola = (view.zones.battlefield ?? [])
+      .filter((o) => o?.controllerId === ja && o.kind === 'land');
+    const dostepne = new Map();
+    for (const o of pola) {
+      for (const kolor of getSourceForObject(o, null)?.colors ?? []) {
+        dostepne.set(kolor, (dostepne.get(kolor) ?? 0) + 1);
+      }
+    }
+    // Czego brakuje do zagrania kart z ręki: pip nieopłacony żadnym kolorem
+    // dostepnym stale. Liczymy zapotrzebowanie (ile pipów koloru), nie liste
+    // zyczen — ląd placący DWA takie pipy jest wart dwa razy wiecej.
+    const potrzeby = new Map();
+    for (const o of view.zones.hand ?? []) {
+      if (!o || o.kind === 'land' || o.id === objectId) continue;
+      for (const jednostka of coloredPipsOf(o.cardId)) {
+        if (jednostka.some((k) => (dostepne.get(k) ?? 0) > 0)) continue;
+        for (const k of jednostka) potrzeby.set(k, (potrzeby.get(k) ?? 0) + 1);
+      }
+    }
+    const zrodlo = manaSourceOfCardDefinition(karta?.cardId, def, null);
+    const kolory = zrodlo?.colors ?? [];
+    let pokrywa = 0;
+    for (const k of kolory) pokrywa += potrzeby.get(k) ?? 0;
+    return {
+      def, pola, potrzeby, kolory, pokrywa,
+      ilosc: zrodlo?.amount ?? 1,
+      nowyKolor: kolory.length > 0 && !kolory.some((k) => dostepne.get(k)),
+      dodatkowaZdolnosc: (def?.abilities ?? []).some((a) => a?.type === 'activated'
+        && !manaOnlyAbility(a)),
+      entersTapped: Boolean(def?.entersTapped),
+    };
+  }
+
+  function landPlayDelta(view, objectId) {
+    const a = landAnaliza(view, objectId);
+    let delta = 0;
+    // Pokrycie zapotrzebowania: satysfakcja ROSNĄCA, ale nasycana poniżej sufitu
+    // delty. Wcześniejsza postać (10 + min(6, n−1) DLA KAŻDEGO koloru, potem
+    // wspólna klampa) zgrywała do jednego wyniku ląd pokrywający 2 i 3 kolory —
+    // audyt remisorów złapał to jako remis przy różnych danych (16 takich
+    // decyzji na 12 partiach). Sumaryczne pokrycie mapowane monotonicznie: 1→10, 2→12,
+    // 3→14, 4→15, ≥5→16. Od 5 pipów różnica przestaje być widoczna — świadomie,
+    // bo ląd nie ma prawa przeskoczyć przez to np. śmiertelnego ataku ( baza 90).
+    const sygnaly = [];
+    for (const k of a.kolory) if (a.potrzeby.get(k)) sygnaly.push(a.potrzeby.get(k));
+    const lacznePokrycie = sygnaly.reduce((x, y) => x + y, 0);
+    if (lacznePokrycie > 0) delta += [10, 12, 14, 15, 16][Math.min(4, lacznePokrycie - 1)];
+    if (a.potrzeby.size > 0 && a.kolory.length === 0) delta -= 3;  // bezbarwny przy brakach koloru
+    if (a.nowyKolor) delta += 3;                                    // pierwszy takiego koloru
+    if (a.ilosc >= 2) delta += 4;                                   // {T}: Add {C}{C} i podobne
+    if (a.entersTapped) delta -= 8;                                 // mana dopiero w nastepnej turze
+    // Ląd z zdolnościa poza manową (cykl, token, tarcza) zyskuje, gdy manabaza
+    // jest juz wystarczajaca — wtedy liczy sie uzytecznosc, nie kolor.
+    if (a.pola.length >= 2 && a.dodatkowaZdolnosc) delta += 2;
+    return Math.max(-14, Math.min(16, delta));
+  }
+
   // ===========================================================================
   // M121 — EFEKTY OFENSYWNE WYMIERZONE WE WŁASNE PERMANENTY / W SIEBIE.
   //
@@ -1597,7 +1692,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     switch (cmd.type) {
       case 'concede': return finish(NEVER);
       case 'draw_card': return finish(100);
-      case 'play_land': return finish(90);
+      case 'play_land': return finish(90 + landPlayDelta(view, cmd.objectId));
       case 'tap_for_mana': {
         // Własne kroki początkowe/końcowe: mana wyparuje na końcu kroku,
         // a land zostaje zatapiany całą turę — gorzej niż pass.
@@ -4653,7 +4748,33 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return scored;
   }
 
-  function summarize(cmd) {
+  /**
+   * Projekcja DANYCH, na których bot oparł decyzję — wyłącznie dla audytu
+   * (`tools/bot-tie-audit.mjs`). Same punkty nie odpowiadaja na pytanie, czy ex
+   * aequo bylo uczciwe: 93 = 93 moze znac „dwa lasy, nic do rozstrzygniecia"
+   * albo „ktoś przestał patrzec przed druga cecha". Projekcja zwraca to, co
+   * `landPlayDelta` realnie wzielo pod uwage (te same dane, ta sama funkcja),
+   * wiec bramka lapie regresje: usuniecie delty ⇒ roznica w projekcji przy
+   * rownych punktach ⇒ RED. Zwraca null dla komend bez zdefiniowanej projekcji —
+   * audyt liczy je jako „bez danych" i nie udaje, ze je ocenil.
+   */
+  function tieProjection(view, cmd) {
+    if (cmd?.type !== 'play_land' || !view) return null;
+    const o = (view.zones.hand ?? []).find((x) => x?.id === cmd.objectId);
+    if (!o) return null;
+    const a = landAnaliza(view, cmd.objectId);
+    return {
+      karta: o.cardId ?? null,
+      kolory: [...a.kolory].sort().join(''),   // do raportu, NIE do sygnatury
+      pokrywa: a.pokrywa,
+      tapped: a.entersTapped,
+      zdolnosc: a.dodatkowaZdolnosc,
+      ilosc: a.ilosc,
+      nowyKolor: a.nowyKolor,
+    };
+  }
+
+  function summarize(cmd, view = null) {
     // M203/2: warianty scry/surveil były w śladzie nieodróżnialne (oba
     // streszczały się do `resolve_scry`), więc diagnostyka i test wyceny
     // musiały parować opcje z `legalCommands` PO INDEKSIE — a opcje w śladzie
@@ -4675,6 +4796,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (cmd.type === 'activate_ability') {
       return `activate_ability(${cmd.objectId}#${cmd.abilityIndex ?? 0}${(cmd.targets ?? []).length ? '->' + cmd.targets.join('+') : ''})`;
     }
+    if (cmd.type === 'play_land') {
+      // Ślad ma nazywać WARIANT (lekcja M195/B i M203/2, ta sama co wyżej): przy
+      // dwóch ziemiach w ręce oba warianty streszczały się do `play_land`, więc
+      // audyt remisorów (`tools/bot-tie-audit.mjs`) nie odróżniał „dwa lasy —
+      // remis uczciwy" od „góra i las — bot nie ocenił". Karta w śladzie czyni
+      // remis rozstrzygalnym dla bramki.
+      const o = (view?.zones?.hand ?? []).find((x) => x?.id === cmd.objectId);
+      return `play_land(${cmd.objectId}${o?.cardId ? ':' + o.cardId : ''})`;
+    }
     return cmd.type;
   }
 
@@ -4690,11 +4820,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const pool = scored.slice(0, Math.min(3, scored.length));
         pick = pool[Math.floor(rng() * pool.length)];
       }
-      history.push({
+      const wpis = {
         turn: view.turn.number, step: view.turn.step,
-        chosen: summarize(pick.cmd), score: pick.score,
-        options: scored.map((entry) => ({ cmd: summarize(entry.cmd), score: entry.score })),
-      });
+        chosen: summarize(pick.cmd, view), score: pick.score,
+        options: scored.map((entry) => ({ cmd: summarize(entry.cmd, view), score: entry.score })),
+      };
+      // Ex aequo na maksimum: doklej projekcję danych wszystkich wariantów z
+      // górnej półki, żeby audyt mógł ocenić, czy remis był uczciwy (tieProjection).
+      // Koszt: tylko przy remisach, a wpis i tak powstaje.
+      if (scored.length > 1 && Number.isFinite(pick.score)) {
+        const naMaks = scored.filter((x) => x.score === pick.score);
+        if (naMaks.length > 1) {
+          wpis.tie = naMaks.map((x) => ({ cmd: summarize(x.cmd, view), proj: tieProjection(view, x.cmd) }));
+        }
+      }
+      history.push(wpis);
       return pick.cmd;
     },
     /** Ślad uzasadnień punktowych — diagnostyka decyzji bota. */
