@@ -3786,3 +3786,26 @@ i `event-contract-audit` bez naruszeń, `npm run benchmark` **bez zmian**
 regresji nietknięte. Rejestr lekcji nietknięty: budżet lektury startowej ma
 455 B zapasu (M282), więc narracja tury poszła do §10 raportu
 `docs/audits/AUDYT_PR92_2026-09-02.md`, nie do `docs/LESSONS.md`.
+
+## M284 (2026-09-02) — budżet lektury startowej odzyskany kondensacją rejestru (PR #93, tura 4)
+
+Decyzja właściciela: miejsce w lekturze startowej robi się **streszczeniem, nie
+podniesieniem progu**. `docs/LESSONS.md` 151 441 → 113 852 B (75 z 116 wpisów w
+postaci: nagłówek + jednozdaniowy `**Przypadek**` + `**Reguła**` + `**Strażnik**`
++ odsyłacz), cała proza (Objaw, Przyczyna, tabele wariantów, dowody mutacyjne) w
+`docs/LESSONS_PRZYPADKI.md` pod tym samym numerem — 2 272 → 65 885 B, plik poza
+lekturą obowiązkową. Lektura startowa: 242 564 B / 280 000 (zapas zamiast 455 B
+jest ~80-krotnie większy), `AGENTS.md` §0 dostał wpisany przepis, jak to robić.
+
+Wzorzec wpisu w rejestrze opisuje stan faktyczny (bez pól Objaw/Przyczyna), a
+`test/docs-decisions.test.js` pilnuje samego wyniesienia: odsyłacz musi mieć
+adresata w archiwum, archiwum nie może śmiecić wpisami bez lekcji, skrót musi
+zostać regułą (≥50 wyniesień, zakaz powrotu prozy do templatu). Przy okazji
+naprawione dwie wady rejestru z PR #92: urwany cytat w L91 i pospolite `.**` na
+końcu ośmiu linii odsyłacza w kotwicach.
+
+**Bramy:** `npm test` **4187/4187**, `npm run test:all` **4197/4197** (0 fail),
+`npm run build` bez zmiany (**58 modułów / 3111,8 kB** — zmiana jest dokumentacyjna
+plus jeden test), strażnicy dokumentacji **24/24**. Commity: `19ab3ed`, `dbf5b16`,
+ten dokumentacyjny. Numery w message `dbf5b16` (240 265 / 39 735 B) są sprzed
+ostatniej edycji nagłówka rejestru; stan końcowy to wiersz wyżej.

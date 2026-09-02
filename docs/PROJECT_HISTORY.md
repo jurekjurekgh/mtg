@@ -7599,6 +7599,35 @@ dokładnie tyle wynosi delta `npm test` 4168 → 4186. Piny
 `colors`) i `test/real-cards-batch28.test.js` (Skarb z `TREASURE_TOKEN_EFFECT`
 zamiast pisanego ręcznie) są zaktualizowane, nie nowe.
 
+### Audyt PR #92, tura 4 (2026-09-02, noc): budżet lektury odzyskany kondensacją rejestru
+
+Właściciel rozstrzygnął wątek z §9 raportu: przed dopisaniem czegokolwiek
+nowego sesja ma **zaoszczędzić miejsce** w lekturze startowej (streszczenia,
+zespolenia, mniej prozy). Nie wybrano żadnego z trzech wariantów §9 (próg /
+podział rejestru / wyniesienie klas) — rejestr miał już wpisaną umowę wynoszenia
+narracji do `docs/LESSONS_PRZYPADKI.md`, więc zastosowano ją konsekwentnie do
+całego rejestru: 75 z 116 wpisów skrócono do `**Przypadek** + **Reguła** +
+**Strażnik**`, proza pojechała w archiwum bez przepisania (kontrola w skrypcie:
+każdy zakres w backtickach, każdy `CR x.y`, `Mnnn` i ścieżka `test/…` z oryginału
+musi zostać w unii rejestr ∪ archiwum; 23 wpisy, gdzie to nie zachodziło,
+zostały nietknięte). Lektura startowa: 279 545 → 242 564 B / 280 000
+(86 413 → ~86 600 tokenów), czyli zapas 455 B zamienił się w ~37 kB.
+
+Kondensacja nie wisi na dobrej woli: `test/docs-decisions.test.js` sprawdza
+odsyłacze w obie strony i to, że skrócony wpis nadal ma regułę, a wzorzec wpisu
+w nagłówku rejestru przestał kazać pisać Objawa. Cztery mutacje kontrolne RED
+(dwie pierwsze zielone, bo mutacja nie była stanem sprzed naprawy — L114).
+Naprawione dwie wady rejestru z PR #92: urwany cytat w L91 i `.**` na końcu
+ośmiu kotwic. Pytanie właściciela o rulingi dla ~500 kart rozpisane w §11.5
+raportu: rekomendacja to **nie hurtować** (Scryfall bez ścieżki masowej, brak
+egressu w `bash`, 429 wywołań `fetch_page`), tylko „przy kartce" + kolejka
+priorytetu + opcjonalny test pokrycia dla kart z `limitations`.
+
+Bramy: `npm test` 4187/4187, `npm run test:all` 4197/4197 (0 fail), build bez
+zmiany 58 modułów / 3111,8 kB, strażnicy dokumentacji 24/24. Commity tury:
+`19ab3ed` (rejestr + archiwum), `dbf5b16` (strażnik kondensacji + wzorzec wpisu),
+ten dokumentacyjny. Narracja jest w §11 raportu `AUDYT_PR92_2026-09-02.md`.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

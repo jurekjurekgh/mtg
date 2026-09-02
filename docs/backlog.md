@@ -81,6 +81,18 @@ Następna lista właściciela wchodzi tutaj.)_
   wykonać offline (egress z sandboxa zablokowany). Pomysł: narzędzie
   dopisujące `rulings` do snapshotów + test porównujący ograniczenia kart z
   listą rulingów.
+- **[tura 4, decyzja właściciela jeszcze nie zapadła]** czy dociągać rulingi do
+  reszty katalogu (441 snapshotów, `rulings` ma 10, w tym 4 puste = „ściągnięto,
+  WotC nie ma nic"). Stanowisko sesji: **nie hurtowo** — Scryfall nie ma ścieżki
+  masowej (odpowiedź `/cards/search` zwraca tylko `rulings_uri`, sprawdzone
+  2026-09-02), w sandboxie nie ma egressu z `bash`, więc 429 kart to 429
+  wywołań `fetch_page` na dziurę, której nie widać. Zamiast tego: (1) zasada
+  „przy kartce" już obowiązuje (ADR 0022 + `HOW_TO_ADD_CARD.md`), więc pokrycie
+  rośnie samo na kartach dotykanych; (2) kolejka priorytetu: `limitations`
+  niepuste, mechaniki spięte nietypowym CR, karty z ustaleń Żywego Testera;
+  (3) jeśli ma być gwarancja liczbową — test pokrycia „każda karta
+  z `support.limitations` ma `rulings` w snapshocie (choćby pustą listę)", ~30
+  kart. Narracja i pomiary: §11.5 raportu `docs/audits/AUDYT_PR92_2026-09-02.md`.
 
 - **[zamknięte w PR #93, `9d0ba7b`]** ogon `castSpell` to jeden obiekt
   `options`, nie sześć flag pozycyjnych. Historia: każda kolejna ability-grant

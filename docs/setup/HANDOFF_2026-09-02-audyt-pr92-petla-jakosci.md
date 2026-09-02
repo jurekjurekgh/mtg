@@ -195,3 +195,46 @@ targeted" — zob. test 4 w `test/audyt-kontrzenie-zdolnosci.test.js`).
 
 **Bramy na koniec tury 3:** patrz §10 raportu audytu (tam są świeże liczby
 `npm test` / `test:all` / build / benchmark / strażników dokumentacji).
+
+## Stan po turze 4 (2026-09-02, noc): budżet startowy ma zapas, rejestr ma strażnika kondensacji
+
+Właściciel rozstrzygnął wątek 6 (budżet lektury): **próg zostaje 100k tokenów**,
+sesja ma zwalniać miejsce streszczeniem. Wykonane w `19ab3ed` i `dbf5b16`.
+
+| wątek z tury 2/3 | status po turze 4 |
+|---|---|
+| 6. budżet lektury startowej | **ZAMKNIĘTE** — rejestr 151 441 → 113 852 B, lektura 242 564 / 280 000 B, zapas ~37 kB (≈26 medianowych lekcji); przepis „jak odzyskać miejsce" wpisany w `AGENTS.md` §0 |
+| 1–4 (options, Skarb, okno impulsu, kontr-zdolności) | zamknięte w turze 3 (`9d0ba7b`, `5d7b3f4`, `62e03e6`, `9f1c37c`) |
+| 5. talie z generatora | stosowane w praktyce; bez zmian |
+| 7. numery w docs brać z pomiaru, nie z pamięci | **nadal aktualne i znowu pomocne**: message `dbf5b16` podał 240 265 / 39 735 B zmierzone przed ostatnią edycją nagłówka rejestru; poprawne liczby są w M284 i §11 raportu. Reguła: mierzyć PO ostatnim zapisie, a w message commita wpisywać liczby policzone przez skrypt |
+| nowe: rulingi dla reszty katalogu | **czeka na decyzję właściciela** — stanowisko sesji i pomiar: §11.5 raportu oraz wpis w `docs/backlog.md` |
+
+Jak czytać rejestr po kondensacji (to nie jest powrót do starego stanu):
+`docs/LESSONS.md` = reguły i strażnicy, `docs/LESSONS_PRZYPADKI.md` = pełna
+narracja pod tym samym numerem (`grep -n '## L48' docs/LESSONS_PRZYPADKI.md`).
+Nowa lekcja: nagłówek + `**Przypadek:**` (jedno zdanie z kartą/testem/CR) +
+`**Reguła:**` + `**Strażnik:**`; jeśli trzeba więcej miejsca — skondensuj
+najgrubszy wpis, nie podnoś progu.
+
+Czego nie robić w ciemno (pułapki potwierdzone w tej turze):
+1. **Ścieżki względne w `write_file`/`edit_file` liczą się od `/home/user`, a nie
+   od `cwd` podanego w `bash`** — jedyny sposób, by nie pisać obok repo, to ścieżka
+   bezwzględna `/home/user/mtg/...`.
+2. **`cd repo && (coś) & python3 <<Heredoc`** wysyła całe `cd` w tło, więc reszta
+   komendy leci w `/home/user` (`FileNotFoundError` zamiast pracy). Jedna komenda =
+   jeden `cwd`.
+3. **Transformacje tekstu rejestrów robić skryptem w pliku, nie heredokiem** z
+   cudzysłowami; i **nie szukać „pierwszego zdania" regexem z `.*?` na pliku
+   100 kB** — przy braku dopasowania potrafi się zapętlić (timeout 300 s).
+   Kontrole mutacyjne odpalać w kopii drzewa w `/tmp/mut`, nigdy w repo.
+4. **Strażnik formy wpisu** (`test/docs-decisions.test.js`) RED-uje, jeśli wpis z
+   odsyłaczem straci `**Reguła**`/`**Zasada**`/`**Wniosek**`/`**Strażnik**` —
+   skracając rejestr, zostawiaj któryś z nich.
+5. **Dodanie karty do katalogu** nadal wymaga `node tools/generate-plan-decks.mjs`
+   (ADR 0023) i wpisu w `src/cards/mana-costs-data.js` (bez niego `coloredPipsOf`
+   = 0); nie edytować `decks/*.txt` ręcznie.
+
+Bramy końcowe tury 4: `npm test` 4187/4187 · `npm run test:all` 4197/4197 (0 fail) ·
+build 58 modułów / 3111,8 kB · strażnicy dokumentacji 24/24 · CI `test` pass
+dla `0197792` (`gh pr checks 93`), dla `19ab3ed`/`dbf5b16` do odczytu w następnej
+turze.
