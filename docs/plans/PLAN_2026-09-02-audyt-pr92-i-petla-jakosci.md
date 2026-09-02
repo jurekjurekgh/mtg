@@ -160,3 +160,24 @@ wdrożono w turze 2 (osobne commity, każdy zielony):
 Punkty planu z tury 1 (2.1–2.3) pozostają bez zmian; §6 raportu (odrzucone
 podejrzenia) nie wymagał wznowienia. Kolejne polowanie: cienie danych karty w
 `mana-sources.js`/`resources.js` (Skarb) — patrz §9 raportu.
+
+
+---
+
+## Dodatek (tura 8, 2026-09-02): uwagi właściciela z gry na żywym stole (A–D)
+
+Właściciel przetestował stół i zgłosił cztery uwagi. Zakres tej tury = one, w tej
+kolejności; każda jako osobny, zielony commit.
+
+| # | zgłoszenie | rozpoznane sedno | próg akceptacji |
+|---|---|---|---|
+| A | „modal Knockout Maneuver jest dziwny — zaznaczanie nie w polach do zapunktowania; zróbcie jeden wspólny helper do efektów wielocelowych w stylu blokowania/Fireball" | kreator wielocelowy (`renderMultiTargetWizard`) rysuje wiersze jako `<button>` z tekstem `[ ] / [x]` i osobnym przyciskiem „Podgląd", a **nie ma ani jednej reguły CSS** (`.multi-target-*` nie istnieje w `index.html`); wizard walki ma natywne `<input type=checkbox>` w `<label>` i pełny styl dotykowy | wspólny helper wiersza wyboru (`src/table/picker.js`) używany przez oba kreatory; logika dalej per efekt; `tools/table-tester` nadal klika `.multi-target-toggle`; testy UI przerobione na nową strukturę |
+| B | „karty specjalne (Undercity, Day/Night, Poison) mają powiększać się na hover jak zwykłe karty — teraz działa tylko klik" | `renderUndercity` **dostaje** opcję `hover`, ale `renderTableView` jej NIE przekazuje; `renderPoisonPanel` w ogóle nie przyjmuje hoveru; żadna z trzech kart nie ma reguły `:hover` na ilustracji (stół ma `.tile .cardvis .card-img:hover`) | hover podpięty we wszystkich trzech (wraz z wirowaniem torów), reguła `:hover` w CSS, test **sprawdzający przekazanie** (nie tylko sam komponent — to on puścił błąd) |
+| C | „bot przełożył Thieves' Tools dwukrotnie w jednej turze — po co płacić equip na pierwszego, skoro zaraz na drugiego; ukrócić" | gałąź przeniesienia sprzętu między WŁASNYMI nosicielami liczy tylko `delta = power(cel) − power(nosiciel)` i **pomija badanie M244, czy sprzęt w ogóle coś celowi dodaje** (Thieves' Tools = warunkowa ewazja „cantBeBlockedMaxPower: 3" → na 7/7 Martucie martwa, pompa żadna). Zmierzony repro: `activate_ability(tools#0->marut) score=+11,00` przy `attachedTo=porter` | jedna wycena „payloadu" sprzętu dla obu gałęzi; przeniesienie na nosiciela, któremu sprzęt nic nie daje, schodzi poniżej passu; test anty-prze-fix (płaska pompa +2/+2 nadal może się przeprowadzać); benchmark `--seeds 24` przed/po — próg: brak regresji |
+| D | „w nakładce końca gry dodaj życie końcowe obu graczy i — jeśli koniec gry to wyczerpanie biblioteki — u kogo" | `updateTurnIndicator` w gałęzi kończącej pisze samo `Koniec partii — wygrywa X` `textContent`, a przyczyna przegranej jest już w zdarzeniu `player_lost.reason` (`life_zero` / `poison_ten` / `empty_library`) i w `player_conceded` — tłumaczy ją tabela etykiet w `session.js` (ta sama powinna obsłużyć overlay) | overlay: zwycięzca + `Gracz N ż. — Bot M ż.` + przyczyna (pusta biblioteka/trucizna/poddanie), test jedn. na czystej funkcji + strażnik, że main.js jej używa |
+
+**Bramy całej tury:** `npm test` na zero failów, `npm run test:all` (brama PR),
+`npm run build` + partia Żywego Testera po zmianach UI (A, B) i po zmianie wag bota
+(C) — detektory „brak zgłoszeń", benchmark A/B na tej samej próbie, dokumentacja ze
+strażnikami doków. **Nie robimy:** nowych lekcji bez zwolnienia miejsca (budżet
+lektury), podnoszenia progu, zmian w katalogu kart.
