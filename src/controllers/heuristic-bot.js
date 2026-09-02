@@ -1476,6 +1476,52 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const canAttackNow = (object) => Boolean(object) && !object.tapped && !object.summoningSickness;
 
   /**
+   * M288/C (uwaga właściciela z żywej gry, 2026-09-02): JEDNA definicja tego,
+   * co equipment REALNIE daje danemu nosicielowi.
+   *
+   * Zgłoszenie: „Bot w jednej turze przełożył Thieves' Tools dwukrotnie — raz
+   * wyposażył jednego swojego stwora, a zaraz po chwili drugiego. To bez sensu:
+   * po co wydawał manę na wyposażenie pierwszego, skoro zaraz chciał go
+   * przełożyć na drugiego? To trzeba ukrócić."
+   *
+   * Zmierzone repro (ta para kart, `attachedTo` na własnym stworze):
+   * przeniesienie sprzętu na Maruta (7/7) wyceniało się na +11,00, bo gałąź
+   * przeniesienia liczyła WYŁĄCZNIE `delta = power(cel) − power(nosiciel)`.
+   * Thieves' Tools nie ma pompy, a jego warunkowa ewazja
+   * (`cantBeBlockedMaxPower: 3`) jest na 7/7 martwa — czyli zapłacone {2} za
+   * nic. Wycena M244 (D/G/F) już to umiała, ale była wgałęziona tylko przy
+   * PIERWSZYM założeniu sprzętu. Stąd wspólny predykat dla obu gałęzi (L28).
+   *
+   * `value` to tylko porządek wielkości (do porównania nosicieli); liczby,
+   * które trafiają do scoringu, są w wywołaniach — jedno źródło faktów, nie
+   * jedno źródło wagi (patrz L119 o metryce gorszej od modelu).
+   */
+  function equipValuation(view, source, creature) {
+    const def = source?.equipment;
+    if (!def || !creature) return { value: 0, nothingAdded: true };
+    const grants = def.keywords ?? [];
+    const keywords = new Set([...(creature.keywords ?? []), ...(creature.grantedKeywords ?? [])]);
+    const freshGrants = grants.filter((kw) => !keywords.has(kw));
+    const pumpPower = def.pump?.power ?? 0;
+    const pumpToughness = def.pump?.toughness ?? 0;
+    const hasteAdds = freshGrants.includes('haste') && creature.summoningSickness === true;
+    const blockers = untappedEnemyBlockers(view);
+    const effectivePower = (creature.power ?? 0) + (creature.grantedPower ?? 0);
+    const conditionalEvasion = def.cantBeBlockedMaxPower != null
+      && effectivePower <= def.cantBeBlockedMaxPower;
+    const grantsEvasion = (freshGrants.includes('flying')
+      && blockers.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach')))
+      || conditionalEvasion;
+    // F (M244): nosiciel, który nie może atakować, nie wyciąga nic z grantu
+    // ofensywnego — zostaje mu tylko P/T do obrony.
+    const ofensywne = creature.cantAttackStatic === true ? 0 : ((grantsEvasion ? 8 : 0) + (hasteAdds ? 6 : 0));
+    const value = 2 * pumpPower + pumpToughness + ofensywne;
+    const nothingAdded = pumpPower === 0 && pumpToughness === 0 && !grantsEvasion && !hasteAdds
+      && freshGrants.every((kw) => kw === 'haste');
+    return { value, nothingAdded };
+  }
+
+  /**
    * Kara za rzucenie czaru/zagranie permanentu, gdy kontroler ma na polu bitwy
    * stwora z triggerem „when you cast a spell" (Illusory Demon — poświęcenie
    * źródła). Wartość stracimy przy każdym czarze — generyczny deskryptor.
@@ -3781,7 +3827,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const wornByMine = Boolean(wearer) && wearer.controllerId === view.playerId;
             if (wornByMine) {
               const delta = (target.power ?? 0) - (wearer.power ?? 0);
-              if (delta >= 2) score += 4 + delta;
+              // M288/C (sedno zgłoszenia): PRZENIESIENIE sprzętu było wyceniane
+              // po samej sile nosiciela, więc bot płacił {2} za ruch, który nic
+              // nie zmieniał — a potem płacił {2} jeszcze raz, za ruch z powrotem.
+              // Dziś przeniesienie przechodzi TE SAME badania co pierwsze założenie:
+              //  - jeśli celowi sprzęt niczego nie dodaje (brak pompy, martwa
+              //    warunkowa ewazja, granty już obecne) — kara jak za rzut w próżnię;
+              //  - jeśli dodaje, ale MNIJEJ niż obecnemu nosicielowi, przeprowadzka
+              //    jest pogorszeniem planszy, nie poprawą.
+              const payload = equipValuation(view, source, target);
+              const wornPayload = equipValuation(view, source, wearer);
+              if (payload.nothingAdded) score -= 12;
+              else if (payload.value > wornPayload.value) {
+                // NAPRAWA, nie kaprys: na obecnym nosicielu efekt sprzętu jest
+                // martwy, a na celu żyje (np. warunkowa ewazja progu 3 na 3/2
+                // zamiast na 7/7). Taka przeprowadzka kupuje realną wartość i
+                // nie może być blokowana regułą „większy nosiciel" (M100/E13).
+                score += 4 + (payload.value - wornPayload.value);
+              }
+              else if (delta >= 2 && payload.value >= wornPayload.value) score += 4 + delta;
               else score -= 6;
             } else {
               // M221/E (zgłoszenie właściciela): equipment zwiększający siłę
@@ -3818,10 +3882,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               const neutralized = attackerNeutralizedByProtection(target, blockersNow);
               // „Nic nie dodaje" (D/G): bez pompy, bez nowych użytecznych
               // keywordów (haste liczymy tylko przy chorobie), bez ewazji.
-              const nothingAdded = pumpPower === 0 && pumpToughness === 0
-                && !grantsEvasion
-                && !hasteAdds
-                && freshGrants.every((kw) => kw === 'haste');
+              // M288/C: definicja „nic nie dodaje" mieszka w `equipValuation`
+              // (ta sama, którą bada gałąź przeniesienia) — inaczej dwie gałęzie
+              // equipu miałyby dwa modele świata (L28).
+              const nothingAdded = equipValuation(view, source, target).nothingAdded;
               if (target.cantAttackStatic === true) {
                 // F: sprzęt na stworze, który NIE MOŻE atakować (obrońca bez
                 // latającego / defender / detain / aura Hobble) — premia
