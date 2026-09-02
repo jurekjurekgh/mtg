@@ -30,15 +30,20 @@ nieaktualną oznaczamy z odsyłaczem do nowszej.
 ```
 ## LN (YYYY-MM-DD) — reguła w jednym zdaniu
 
-**Objaw:** co było widać — z konkretem (karta, test, komunikat).
-**Przyczyna:** gdzie w kodzie lub umowie leży wina.
+**Przypadek:** JEDNO zdanie z konkretami (karta, test, numer CR) — po nim
+poznaje się klasę w nowym przebraniu.
 **Reguła:** 1–4 punkty, imperatyw.
 **Strażnik:** `plik/funkcja` — co czerwienieje po cofnięciu naprawy.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (LN)
 ```
 
+W rejestrze nie ma osobnych pól **Objaw** i **Przyczyna** — to proza, więc idzie
+do archiwum pod tym samym numerem (pilnuje tego `test/docs-decisions.test.js`:
+odsyłacz musi mieć adresata, a wpis — regułę lub strażnika).
+
 Wpis niesie FAKTY (nazwy plików, testów, kart, numery CR) i regułę — nie
-narrację (ta zostaje w `docs/audits/`). Rejestr waży niemal cały budżet lektury
-startowej (`test/dokumentacja-budzet-lektury.test.js`, 100k tokenów), więc nowy
+narrację (ta zostaje w `docs/audits/`). Rejestr to największa pozycja budżetu lektury
+startowej (~113 kB z ~240 kB po kondensacji PR #93) (`test/dokumentacja-budzet-lektury.test.js`, 100k tokenów), więc nowy
 wpis płaci się skróceniem innego — progu NIE podnosimy. L15–L19 są datowane po
 numerze kamienia milowego (M102/M103 = 2026-08-16 wg `PROJECT_HISTORY.md`):
 oryginalne daty zaginęły przy migracji M208.

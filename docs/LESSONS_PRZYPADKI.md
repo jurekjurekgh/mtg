@@ -1,13 +1,20 @@
 # Przypadki do lekcji z `docs/LESSONS.md`
 
 Ten plik to **archiwum narracji** (Objaw + Przyczyna) dla wpisów, których treść w
-`docs/LESSONS.md` jest skondensowana do reguły i strażnika. Powód: rejestr lekcji
-waży niemal cały budżet lektury startowej (`test/dokumentacja-budzet-lektury.test.js`,
+`docs/LESSONS.md` jest skondensowana do reguły i strażnika. Powód: rejestr lekcji to
+największa pozycja budżetu lektury startowej (`test/dokumentacja-budzet-lektury.test.js`,
 100k tokenów), a AGENTS.md §0 wprost wyznacza to miejsce na opowieść — nie jest
 lekturą obowiązkową, sięga się tu grepem po numerze lekcji.
 
 Reguły NIE mieszkają tutaj: są w `docs/LESSONS.md`, razem ze strażnikami. Numery
 wpisów są zachowane 1:1 z rejestrem, więc cytowania w kodzie działają jak dotąd.
+
+Archiwum rośnie razem z rejestrem: każdy odsyłacz `→ narracja: … (LN)` musi tu mieć
+swój nagłówek, a każdy nagłówek — swój wpis w rejestrze. Pilnuje tego
+`test/docs-decisions.test.js`, więc nie ma ryzyka, że narracja przepada po cichu.
+
+Kondensacja PR #93 (2026-09-02): 75 z 116 wpisów rejestru straciło prozę na rzecz
+reguły i strażnika; stąd tu 77 przypadków (dwa wcześniejsze: L91, L106).
 
 ## L91 (2026-08-29) — przypadek
 
