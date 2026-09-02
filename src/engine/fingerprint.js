@@ -10,6 +10,11 @@
 const PENDING_DECISION_FIELDS = Object.freeze([
   'pendingAbilityActivation', 'pendingAmass', 'pendingColorChoice',
   'pendingEscapeExile',
+  // Audyt PR #92 (2026-09-02, znalezisko 2): te dwie decyzje blokują grę
+  // w firstPendingDecision, ale nie było ich w odcisku — strażnik L16 był
+  // wtedy vacuous (delegat), więc luka nie świeciła. `pendingWardPay` żyje
+  // od M157, `pendingExileCast` wszedł w batchu 52 (Vaan, Street Thief).
+  'pendingWardPay', 'pendingExileCast',
   // Audyt PR #86 (N1, klasa L16 — skan firstPendingDecisionPlayerId ×
   // fingerprint): te decyzje blokowały grę, ale nie były w odcisku.
   // Strażnik: test/fingerprint-pending-decisions.test.js.
