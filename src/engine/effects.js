@@ -2,7 +2,7 @@ import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
 import { untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
-import { addPoisonCounters, changeLife, recordCardDrawn } from './players.js';
+import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor } from './players.js';
 import { spendMana, addMana, producibleMana } from './resources.js';
 import { getSourceForObject } from './mana-sources.js';
 import { moveObjectDirectly, removeFromCombat, singleTargetOfStackEntry } from './objects.js';
@@ -37,7 +37,7 @@ export const UNDERCITY_ROOMS = Object.freeze([
   // 5. Arena — goad docelowego stwora (musi atakować do końca tury; wybór celu).
   Object.freeze({ name: 'Arena', effects: Object.freeze([Object.freeze({ type: 'goad', target: 'creature' })]), leadsTo: Object.freeze(['Archives', 'Catacombs']) }),
   // 6. Stash — token Treasure (ze zdolnością „{T}, Sacrifice: Add one mana
-  //    of any color\", jak każdy Skarb w MtG; mana oznaczona fromTreasure —
+  //    of any color”, jak każdy Skarb w MtG; mana oznaczona fromTreasure —
   //    Marut, Batch 16. Deskryptor pisany z ręki: effects.js nie importuje
   //    abilities.js, żeby nie tworzyć cyklu modułów).
   Object.freeze({ name: 'Stash', effects: Object.freeze([Object.freeze({
@@ -1672,7 +1672,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   if (effect.type === 'living_weapon') {
     // Living weapon (CR 702.91, Strandwalker): „When this Equipment enters,
     // create a 0/0 black Phyrexian Germ creature token, then attach this to
-    // it.\" — jak job_select, ale token to 0/0 Germ (żyje dzięki +2/+4
+    // it.” — jak job_select, ale token to 0/0 Germ (żyje dzięki +2/+4
     // z equipmentu). Deskryptor tokenu generyczny (dane karty, ADR 0002).
     const ctrl = sourceObject.controllerId;
     const germ = createBattlefieldToken(state, ctrl, {
@@ -1712,7 +1712,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   }
   // Efekt zastępczy tworzenia tokenów (CR 614; Moonlit Meditation, EOE):
   // „The first time you would create one or more tokens each turn, you may
-  // instead create that many tokens that are copies of enchanted permanent.\"
+  // instead create that many tokens that are copies of enchanted permanent.”
   //
   // M117 (ADR 0002): engine szuka DESKRYPTORA `aura.replaceTokenCreation`,
   // a nie konkretnego `cardId`. Wcześniej warunek brzmiał
@@ -1874,7 +1874,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   // M109 (Tiller of Flesh — incubate N, CR 701.47): „Create an Incubator token
-  // with N +1/+1 counters on it and \"{2}: Transform this token.\" It transforms
+  // with N +1/+1 counters on it and ”{2}: Transform this token.” It transforms
   // into a 0/0 Phyrexian artifact creature." Token jest DWUSTRONNY (CR 707.8a):
   // strona przednia to artefakt, tylna — artefaktowy stwór 0/0; liczniki
   // zostają na permanencie po przemianie (CR 707.9), więc na stole to N/N.
@@ -2484,7 +2484,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         && Object.values(object.counters ?? {}).some((count) => count > 0));
     }
     // Liliana's Triumph (Batch 37): „If you control a Liliana planeswalker,
-    // each opponent also discards a card.\" — generyczny warunek po typie
+    // each opponent also discards a card.” — generyczny warunek po typie
     // i podtypie PLANESWALKERA (ADR 0002: brak nazw kart). Działa od razu,
     // gdy w katalogu pojawi się jakikolwiek planeswalker o podtypie Liliana
     // (decyzja właściciela 2026-08-19 — kodujemy efekt z wyprzedzeniem).
@@ -2559,8 +2559,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   }
   if (effect.type === 'tap_permanent') {
     // `targetIndex` wskazuje inną pozycję na liście celów (Greatsword of Tyr:
-    // „tap up to one target creature defending player controls\" — cel 1).
-    // „Up to one\" zrealizowane deterministycznie: brak celu = brak efektu.
+    // „tap up to one target creature defending player controls” — cel 1).
+    // „Up to one” zrealizowane deterministycznie: brak celu = brak efektu.
     const targetId = targets[effect.targetIndex ?? 0];
     if (targetId == null) return;
     const object = state.objects.get(targetId);
@@ -2646,7 +2646,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   }
   if (effect.type === 'untap_all_creatures_you_control') {
     // Village Bell-Ringer: „When this creature enters, untap all creatures you
-    // control.\" — odkręca KAŻDEGO stwora kontrolera źródła (CR 701.16a),
+    // control.” — odkręca KAŻDEGO stwora kontrolera źródła (CR 701.16a),
     // po jednym zdarzeniu object_untapped na stwora.
     const ctrl = sourceObject.controllerId;
     for (const object of creaturesYouControl(state, ctrl)) {
@@ -2991,7 +2991,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
   }
   if (effect.type === 'destroy_permanent') {
     // Destroy target artifact/permanent (Shatter, CR 701.7): cel trafia do grobu
-    // (zmiana strefy battlefield → graveyard), co odpala trigger „dies\" przez
+    // (zmiana strefy battlefield → graveyard), co odpala trigger „dies” przez
     // zdarzenie object_moved (jak sacrifice). W engine bez regeneracji destroy
     // i sacrifice różnią się wyłącznie eventem.
     // `targetIndex` wskazuje pozycję na liście celów (konwencja reszty
@@ -3305,15 +3305,11 @@ function markTemporaryExile(state, exileId, sourceObject) {
     return;
   }
   if (effect.type === 'start_engines') {
-    // „Start your engines!" (DFT, Glitch Ghost Surveyor): jeśli gracz nie ma
-    // speed, startuje od 1 (CR: speed jest cechą GRACZA, trwa po odejściu
-    // źródła). Wzrost speed — patrz triggers.js (raz na turę przy obrażeniach
-    // przeciwnika, max 4).
-    const player = state.players.find((pl) => pl.id === sourceObject.controllerId);
-    if (player && (player.speed ?? 0) < 1) {
-      player.speed = 1;
-      state.events.push(event('speed_changed', { playerId: player.id, speed: 1 }));
-    }
+    // „Start your engines!" (DFT): jeden choke point `startEnginesFor`
+    // (players.js) — ten sam, który woła akcja stanowa w `state-based.js`.
+    // Ścieżka efektowa zostaje dla kart, które kazzą „start your engines!"
+    // JAKO EFEKT (nie jako zdolność ciągłą); wzrost prędkości — triggers.js.
+    startEnginesFor(state, sourceObject.controllerId);
     return;
   }
   if (effect.type === 'redirect_spell_target') {
@@ -3500,7 +3496,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     return;
   }
   if (effect.type === 'cant_block') {
-    // Panic Spellbomb: „Target creature can't block this turn.\" Tymczasowy
+    // Panic Spellbomb: „Target creature can't block this turn.” Tymczasowy
     // znacznik na obiekcie — zdejmowany w cleanup razem z innymi grantami.
     const targetId = targets[0];
     if (!targetId) return;
@@ -3699,7 +3695,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
   }
   if (effect.type === 'sacrifice_food_choice') {
     // Insatiable Appetite: „You may sacrifice a Food. If you do, +5/+5.
-    // Otherwise, +3/+3.\" Blokująca decyzja — jak scry/surveil: czar
+    // Otherwise, +3/+3.” Blokująca decyzja — jak scry/surveil: czar
     // wstrzymuje rozstrzyganie do resolve_food_choice.
     const controllerId = sourceObject.controllerId;
     const foodCandidates = state.zones.battlefield.filter((id) => {
@@ -3708,7 +3704,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
         && (object.subtypes ?? []).includes('Food');
     });
     if (foodCandidates.length === 0) {
-      // Brak Food — automatycznie „Otherwise\": +3/+3 na celu.
+      // Brak Food — automatycznie „Otherwise”: +3/+3 na celu.
       const creatureId = targets[0];
       if (creatureId) {
         const creatureObj = state.objects.get(creatureId);
@@ -4250,9 +4246,9 @@ function markTemporaryExile(state, exileId, sourceObject) {
     return;
   }
   if (effect.type === 'exile_return_transformed') {
-    // „Exile this permanent, then return it to the battlefield transformed\"
+    // „Exile this permanent, then return it to the battlefield transformed”
     // (Jill → Shiva; Saga III Shivy: powrót STRONĄ PRZEDNIA — ta sama
-    // mechanika: deskryptor transformTo wskazuje zawsze „inną\" stronę).
+    // mechanika: deskryptor transformTo wskazuje zawsze „inną” stronę).
     // Nowy obiekt (CR 400.7): liczniki i modyfikacje nie przechodzą, wchodzi
     // z summoning sickness jak każdy permanent wchodzący na pole bitwy.
     const target = sourceObject.transformTo;
@@ -4324,7 +4320,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
   }
   if (effect.type === 'prevent_damage_this_turn') {
     // „Prevent all damage that would be dealt to artifact creatures this
-    // turn\" (Ethersworn Shieldmage, CR 614 w minimalnym wymiarze): filtr
+    // turn” (Ethersworn Shieldmage, CR 614 w minimalnym wymiarze): filtr
     // celu jest generyczny ({ typesInclude, isCreature }); obowiązuje do
     // cleanup (game-state zeruje state.preventDamageThisTurn). Dotyczy
     // stworów OBU graczy spełniających filtr — jak w tekście karty.
@@ -4431,7 +4427,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     return;
   }
   if (effect.type === 'sacrifice_each_other_creature') {
-    // „Sacrifice each other creature you control\" (Plague Reaver, end-step
+    // „Sacrifice each other creature you control” (Plague Reaver, end-step
     // trigger): wszystkie inne stwory kontrolera źródła trafiają do grobu.
     // Pętla po kopii listy — każde poświęcenie to zmiana strefy (CR 400.7).
     const controllerId = sourceObject.controllerId;
@@ -4449,10 +4445,10 @@ function markTemporaryExile(state, exileId, sourceObject) {
   }
   if (effect.type === 'return_to_battlefield_under_control_at_upkeep') {
     // Plague Reaver: „Return this creature to the battlefield under that
-    // player's control at the beginning of their next upkeep.\" Opóźniony
+    // player's control at the beginning of their next upkeep.” Opóźniony
     // trigger (CR 603.7): wpis wskazuje obiekt ŹRÓDŁA W GROBIE (zdolność
     // kosztuje sacrifice — abilities.js przekazuje obiekt z grobu) i gracza-
-    // cel; rozstrzyga go blok upkeep w triggers.js. „Next upkeep\" — gdy cel
+    // cel; rozstrzyga go blok upkeep w triggers.js. „Next upkeep” — gdy cel
     // aktywowałby we WŁASNEJ turze, najbliższy upkeep się nie liczy (wpis
     // armedAt to odnotowuje).
     const targetPlayerId = targets[0];
@@ -4473,7 +4469,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     return;
   }
   if (effect.type === 'tap_all_lands_opponents_control') {
-    // „Tap all lands your opponents control\" (Saga III Shivy — Cold Snap):
+    // „Tap all lands your opponents control” (Saga III Shivy — Cold Snap):
     // każdy land (kind land albo typ Land, także land creature) kontrolowany
     // przez każdego przeciwnika kontrolera źródła zostaje zatapnięty.
     const controllerId = sourceObject.controllerId;
@@ -4492,7 +4488,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
   }
   if (effect.type === 'station_counters') {
     // Station (Wedgelight Rammer, Warmaker Gunship): „Tap another creature you
-    // control: Put charge counters equal to its power on this Spacecraft.\"
+    // control: Put charge counters equal to its power on this Spacecraft.”
     // Zatapnięty w koszcie stwór przychodzi jako targets[0] (abilities.js
     // tapOtherCreature). D (2026-08-11): zdolność idzie na STOS — przeciwnik
     // mógł odpowiedzieć instanitem (usunąć zatapniętego stwora), więc przy
@@ -5062,8 +5058,8 @@ function markTemporaryExile(state, exileId, sourceObject) {
   }
   // Satyr Wayfinder (M15): „When this creature enters, reveal the top four
   // cards of your library. You may put a land card from among them into your
-  // hand. Put the rest into your graveyard.\" — blokująca decyzja kontrolera:
-  // może wybrać LĄD z odsłoniętych do ręki (lub zrezygnować — „you may\");
+  // hand. Put the rest into your graveyard.” — blokująca decyzja kontrolera:
+  // może wybrać LĄD z odsłoniętych do ręki (lub zrezygnować — „you may”);
   // reszta (i te bez wyboru) idzie do grobu. Nowy pendingSatyrLook.
   if (effect.type === 'reveal_top_pick_land_rest_grave') {
     const controllerId = sourceObject.controllerId;

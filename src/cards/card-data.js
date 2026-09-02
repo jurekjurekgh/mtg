@@ -4070,8 +4070,13 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       // cecha GRACZA — trwa po odejściu źródła, wzrost przy obrażeniach
       // przeciwnika w triggers.js, max 4).
       createAbility({
-        type: ABILITY_TYPE.triggered,
-        trigger: { event: 'enter_battlefield' },
+        // “Start your engines!” — zdolność STATYCZNA, nie trigger: prędkość
+        // startuje jako akcja stanowa, gdy tylko kontrolujesz permanent z tą
+        // zdolnością (ruling WotC 2025-02-07, zapisany w snapshotach
+        // docs/cards/scryfall-*.json w polu `rulings`; obsługa:
+        // `runStateBasedActions`). Dzięki temu działa też przejęcie cudzego
+        // permanentu oraz zdolność nadana — a utrata źródła nie cofa prędkości.
+        type: ABILITY_TYPE.static,
         effect: [{ type: 'start_engines' }],
       }),
       // „Max speed — {3}, Exile this card from your graveyard: Draw a card."
@@ -10284,8 +10289,13 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/e/0/e08e4107-213f-491b-a032-8e3367009ba8.jpg?1783907918',
     abilities: [
       createAbility({
-        type: ABILITY_TYPE.triggered,
-        trigger: { event: 'enter_battlefield' },
+        // “Start your engines!” — zdolność STATYCZNA, nie trigger: prędkość
+        // startuje jako akcja stanowa, gdy tylko kontrolujesz permanent z tą
+        // zdolnością (ruling WotC 2025-02-07, zapisany w snapshotach
+        // docs/cards/scryfall-*.json w polu `rulings`; obsługa:
+        // `runStateBasedActions`). Dzięki temu działa też przejęcie cudzego
+        // permanentu oraz zdolność nadana — a utrata źródła nie cofa prędkości.
+        type: ABILITY_TYPE.static,
         effect: [{ type: 'start_engines' }],
       }),
       createAbility({

@@ -136,6 +136,17 @@ export const FIELD_FAMILIES = [
     legal: ['player.poison === 9;', 'const poison = player.poison;'],
   },
   {
+    id: 'speed',
+    label: 'prędkość gracza (DFT „Start your engines!”)',
+    owner: 'src/engine/players.js',
+    pattern: /\.speed\s*(?:\+=|-=|=(?!=))/,
+    why: 'pisze player.speed poza setPlayerSpeed/startEnginesFor — gubi zdarzenie speed_changed'
+      + ' i klamrę 0..4; prędkość to akcja stanowa, nie czyjś zapis w locie',
+    bypass: ['player.speed = 3;', 'state.players[0].speed += 1;', 'p.speed = 0;'],
+    legal: ['const s = player.speed;', 'if (player.speed >= 4) return;', 'speed: 0,',
+      'state.speedIncreasedThisTurn = {};'],
+  },
+  {
     // Rodzina z audytu PR #92 (znalezisko 3): licznik dobrań w turze był
     // podnoszony trzema rozjechanymi ścieżkami, a wyzwalacz Jolrael czytał
     // WARTOŚĆ KOŃCOWĄ stanu po komendzie — „draw two" dawało dwa wyzwalacze,

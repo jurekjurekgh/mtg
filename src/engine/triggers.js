@@ -7,7 +7,7 @@ import {
 } from './effects.js';
 import { addCounter, hasCounter } from './counters.js';
 import { deathZoneFor } from './zones.js';
-import { changeLife } from './players.js';
+import { changeLife, setPlayerSpeed } from './players.js';
 import { effectiveAbilities, effectiveKeywords, effectivePower, wardAmountOf } from './permanents.js';
 import { moveObjectDirectly } from './objects.js';
 import { tapLandForMana, canPayColoredCost, spendMana, producibleMana } from './resources.js';
@@ -64,9 +64,11 @@ function bumpSpeedIfOpponentDamaged(state, source) {
   if (state.turn.activePlayerId !== controllerId) return; // tylko własna tura
   if (state.speedIncreasedThisTurn?.[controllerId]) return; // raz na turę
   if ((player.speed ?? 0) >= 4) return; // max speed
-  player.speed = (player.speed ?? 0) + 1;
+  // Zapis wyłącznie przez choke point `setPlayerSpeed` (players.js) — ten sam,
+  // który stosuje akcję stanową „Start your engines!” (state-based.js). Bramka
+  // „czy wolno wzrosnąć” zostaje tutaj (to warunek triggera), mutacja nie.
+  state.events.push(...setPlayerSpeed(state, controllerId, (player.speed ?? 0) + 1));
   state.speedIncreasedThisTurn = { ...(state.speedIncreasedThisTurn ?? {}), [controllerId]: true };
-  state.events.push(event('speed_changed', { playerId: controllerId, speed: player.speed }));
 }
 
 /**
