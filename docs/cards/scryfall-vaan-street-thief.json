@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Vaan%2C+Street+Thief&set=fin",
+  "print": "fin",
+  "name": "Vaan, Street Thief",
+  "mana_cost": "{2}{R}",
+  "cmc": 3.0,
+  "type_line": "Legendary Creature — Human Scout",
+  "oracle_text": "Whenever one or more Scouts, Pirates, and/or Rogues you control deal combat damage to a player, exile the top card of that player's library. You may cast it. If you don't, create a Treasure token.\nWhenever you cast a spell you don't own, put a +1/+1 counter on each Scout, Pirate, and Rogue you control.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "R"
+  ],
+  "set": "fin",
+  "set_name": "Final Fantasy",
+  "collector_number": "168",
+  "rarity": "rare",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/0/50e1ec29-9de3-4f1b-b818-057e030d475b.jpg?1783906593",
+    "normal": "https://cards.scryfall.io/normal/front/5/0/50e1ec29-9de3-4f1b-b818-057e030d475b.jpg?1783906593"
+  },
+  "pobrano": "2026-09-01"
+}

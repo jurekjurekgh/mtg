@@ -219,6 +219,8 @@ function defaultBotFactory(seed, ctx) {
     search_library_to_battlefield_tapped: 'szukanie karty — na pole bitwy zatapniętą',
     search_library_to_hand: 'szukanie karty do ręki',
     set_saddled: 'osiodłanie',
+    // Batch 52 (Jolrael): bazowe X/X (X = karty w ręce) twoim stworom.
+    set_base_pt_creatures_you_control: 'ustawienie bazowego P/T twoich stworów do końca tury',
     surveil: 'surveil (podgląd wierzchu biblioteki)',
     tap_permanent: 'zatapianie celu',
     unearth_return: 'powrót karty z grobu na pole bitwy (unearth)',
@@ -451,6 +453,10 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   dealt_damage: 'otrzymanie obrażeń',
   enchanted_creature_dealt_damage: 'zaczarowany stwór otrzymał obrażenia',
   you_cast_spell_targeting_permanent: 'rzucenie czaru celującego w permanent',
+  // Batch 52 (Vaan, Merfolk Falconer, Jolrael).
+  you_cast_spell_you_dont_own: 'rzucenie czaru, którego nie posiadasz',
+  you_cast_kicked_spell: 'rzucenie czaru z opłaconym kickerem',
+  you_draw_second_card_each_turn: 'dobranie drugiej karty w turze',
 });
 
 /**
@@ -940,6 +946,11 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         return `${nameOf(e.cardId)} — odrzucona z madness: możesz rzucić za ${costSymbols(e.cost, e.costColors) || '?'} albo przełożyć do cmentarza`;
       case 'madness_declined':
         return `${nameOf(e.cardId)} — madness odrzucona, karta do cmentarza`;
+      case 'exile_cast_required':
+        return `${whoN(e.playerId)} wygania wierzch biblioteki ${nameOf(e.cardId)} — rzucić teraz czy stworzyć Skarb?`;
+      case 'exile_cast_resolved':
+        if (e.declined) return `${nameOf(e.cardId ?? e.objectId)} zostaje w wygnaniu — ${whoN(e.playerId)} tworzy token Skarb`;
+        return `${nameOf(e.cardId ?? e.objectId)} — rzucona z wygnania`;
       case 'reveal_choice_required':
         return `możesz ujawnić kartę (${e.subtype ?? '?'}) z ręki — ${e.amount ?? 2} obrażenia przeciwnika`;
       case 'reveal_choice_resolved':
@@ -1839,6 +1850,12 @@ export function createSession(config) {
   // warstwę z ilustracjami. Sesja tylko GO WOŁA — decyzję o wyświetleniu i cały
   // DOM trzyma UI. Zero wpływu na przebieg gry (obserwator, nie mutator).
   const onCast = typeof config.onCast === 'function' ? config.onCast : null;
+  // B (uwaga właściciela): obserwator TRANSFORMACJI karty dwustronnej — ten
+  // sam kontrakt co `onCast` (zwraca `true` = warstwa się pokazała, prośba o
+  // pauzę prezentacyjną), ale dla zdarzenia `object_transformed`. Decyzję
+  // o wyświetleniu (tylko PIERWSZE odwrócenie, ptaszek trybu, ilustracje)
+  // trzyma UI — sesja tylko go woła, zero wpływu na przebieg gry.
+  const onTransform = typeof config.onTransform === 'function' ? config.onTransform : null;
   /**
    * M254/C (zgłoszenie właściciela): pauza PREZENTACYJNA. Osobna od
    * `awaitingBotAck`, bo „Ruch bota" i warstwa grafik to dwie różne warstwy
@@ -2089,6 +2106,29 @@ export function createSession(config) {
     // z warstwy ilustracji wykluczane, własny morph gracza warstwę otwiera).
     if (onCast({ cardId, playerId: e.playerId ?? null, eventType: e.type,
       faceDown: Boolean(e.faceDown ?? e.object?.faceDown) }) === true) {
+      awaitingArtAck = true;
+    }
+  }
+
+  /**
+   * B (uwaga właściciela): powiadamia obserwatora trybu wysoko-graficznego
+   * o TRANSFORMACJI karty dwustronnej (`object_transformed`). Wołane z obu
+   * ścieżek zdarzeń (ruch gracza `apply` i ruchy bota `streamAutoEvents`),
+   * dokładnie jak `emitCastEvent` — więc warstwa pokazuje się dla kart OBU
+   * stron. `cardId` to NOWA strona (twarz, w którą karta się obróciła);
+   * `fromCardId` — strona opuszczana. UI (main.js) decyduje, czy pokazać
+   * (tylko pierwsze odwrócenie danego permanentu).
+   */
+  function emitTransformEvent(e) {
+    if (!onTransform || e.type !== 'object_transformed') return;
+    const cardId = e.cardId ?? null;
+    if (!cardId) return;
+    if (onTransform({
+      cardId,
+      playerId: e.controllerId ?? null,
+      objectId: e.objectId ?? null,
+      fromCardId: e.fromCardId ?? null,
+    }) === true) {
       awaitingArtAck = true;
     }
   }
@@ -2528,6 +2568,7 @@ export function createSession(config) {
       noteBotMove(e);
       recordTurnEvent(e);
       emitCastEvent(e);
+      emitTransformEvent(e);
       if (BOT_PAUSE_EVENTS.has(e.type)) significant = true;
       // M157/D: koniec blokady stun ma być WIDOCZNY na stole. (a) zdjęcie
       // licznika stun = pauza (gracz widzi zejście licznika na kaflu);
@@ -2898,6 +2939,7 @@ export function createSession(config) {
         noteBotMove(e);
         recordTurnEvent(e);
         emitCastEvent(e);
+        emitTransformEvent(e);
         // M100/E8: własne dobranie (klik „dobierz kartę" w kroku dobierania
         // albo dobranie z efektu rozstrzygniętego w tej komendzie) ma dać
         // komunikat w „Rozgrywka" (UX właściciela 2026-08-15).

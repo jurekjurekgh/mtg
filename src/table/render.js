@@ -60,6 +60,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_legend_choice: 'Prawo legend (który zostaje?)',
   resolve_trigger_target: 'Cel triggera (wybór)',
   resolve_grave_free_cast: 'Darmowy rzut z grobu (zapłać {X})',
+  resolve_exile_cast: 'Rzut wygnanej karty (Vaan)',
   resolve_opponent_target: 'Wskaż cel obrażeń (wybór przeciwnika)',
   resolve_optional_trigger_choice: 'Efekt „you may"',
   resolve_enter_as_copy: 'Wejście jako kopia',
@@ -351,6 +352,15 @@ export function choiceRequestGroupKey(command) {
   if (command.type === 'cast_permanent' && command.phyrexianPayWithLife != null) {
     return `permanent-x:${command.objectId}`;
   }
+  // C (uwaga właściciela, Makeshift Mauler): warianty kosztu „wygnaj kartę
+  // stwora z grobu / stwora z pola bitwy" (exileTargetId) grupują się po
+  // karcie — bez tego panel pokazywał N identycznych przycisków „Rzuć:
+  // Makeshift Mauler" (po jednym na kandydata) i nie otwierał modala wyboru
+  // kreatury do wygnania. Klucz analogiczny do `permanent:<objectId>` dla
+  // celów aury, ale po osobnym polu kosztu (ADR 0002 — po kształcie komendy).
+  if (command.type === 'cast_permanent' && command.exileTargetId != null) {
+    return `permanent-exile:${command.objectId}`;
+  }
   if (command.type === 'activate_ability'
     && (command.targets?.length || command.xValue != null || command.attackerId != null || command.tapCreatureId != null || command.tapOtherCreatureId != null || command.crewCreatureIds?.length
       // M160/B1 (Seismic Monstrosaur): warianty kosztu „poświęć ląd” (jeden
@@ -371,6 +381,7 @@ export function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_sacrifice_choice') return 'resolve_sacrifice_choice';
   if (command.type === 'resolve_trigger_target') return 'resolve_trigger_target';
   if (command.type === 'resolve_grave_free_cast') return 'resolve_grave_free_cast';
+  if (command.type === 'resolve_exile_cast') return 'resolve_exile_cast';
   if (command.type === 'resolve_opponent_target') return 'resolve_opponent_target';
   if (command.type === 'resolve_search_choice') return 'resolve_search_choice';
   if (command.type === 'resolve_color_choice') return 'resolve_color_choice';
@@ -433,7 +444,7 @@ export function choiceRequestGroupKey(command) {
   return null;
 }
 
-function choiceRequestType(commands) {
+export function choiceRequestType(commands) {
   const first = commands[0];
   if (first.type === 'cast_escape') return 'escape';
   if (first.type === 'resolve_escape_exile') return 'escape_exile';
@@ -462,6 +473,7 @@ function choiceRequestType(commands) {
   if (first.type === 'resolve_food_choice') return 'sacrifice';
   if (first.type === 'resolve_amass_choice') return 'target';
   if (first.type === 'resolve_discover_choice') return 'command';
+  if (first.type === 'resolve_exile_cast') return 'command';
   if (first.type === 'resolve_explore_choice') return 'command';
   if (first.type === 'resolve_craft_exile') return 'command';
   if (first.type === 'resolve_hand_creature') return 'target';
@@ -1153,6 +1165,10 @@ function describeEffect(e) {
     return_card_from_graveyard_to_hand: () => 'wróć kartę z grobu na rękę',
     reveal_hand_choose_discard: () => 'odsłoń rękę i odrzuć wybraną kartę',
     search_library_to_battlefield_tapped: () => 'szukaj w bibliotece landa na pole bitwy (zatapniętego)',
+    // Batch 52 (Vaan, Jolrael).
+    exile_top_of_player_library_and_may_cast: () => 'wygnij wierzch biblioteki poszkodowanego — możesz rzucić tę kartę (inaczej Skarb)',
+    add_counter_to_creatures_you_control: () => `połóż licznik ${e.counter ?? '+1/+1'} na twoich stworach${(e.subtypes ?? []).length ? ` (${e.subtypes.join(', ')})` : ''}`,
+    set_base_pt_creatures_you_control: () => 'twoje stwory mają bazowe X/X do końca tury (X = liczba kart w twojej ręce)',
   };
   const fn = generic[e.type];
   if (fn) return fn();
@@ -1672,6 +1688,7 @@ const CHOICE_GROUP_TYPE_DESCRIPTORS = Object.freeze({
   value: 'Wartość X',
   phyrexian: 'Zapłata: mana czy życie?',
   escape: 'Ucieczka (Escape) — karty do wygnania',
+  escape_exile: 'Ucieczka (Escape) — karty do wygnania',
   'room-target': 'Cel pokoju lochu',
 });
 
@@ -1695,6 +1712,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   // decyzji „rzuć wygnany czar albo odpuść" dostaje deskryptory KOMPLETEM
   // (klasa L102: nowy członek rodziny bez wpisu dziedziczy stary objaw).
   resolve_madness_cast: 'Madness — rzucić czar czy przełożyć do cmentarza?',
+  resolve_exile_cast: 'Vaan — rzucić wygnaną kartę czy stworzyć Skarb?',
   resolve_suspend_cast: 'Suspend — rzucić zawieszony czar?',
   resolve_rebound_cast: 'Rebound — rzucić czar ponownie?',
   resolve_epic_choice: 'Epic — który czar skopiować?',
@@ -1731,6 +1749,22 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_ward_pay_choice: 'Ward — dopłata albo kontr',
   resolve_moonlit_choice: 'Moonlit — wybór efektu',
   resolve_reveal_order: 'Kolejność kart na wierzchu biblioteki',
+  resolve_look_top_choice: 'Karta z odsłoniętych do ręki',
+  // Pętla jakości (klasa L102/1, zamykana strażnikiem
+  // test/wybierz-wariant-klasa.test.js): stałokluczowe typy grupy MUSZĄ mieć
+  // deskryptor fallbacku — trzecie znalezisko Żywego Testera
+  // (resolve_reveal_exile_hand) pokazało, że brak wpisu = „Wybierz: Wariant".
+  resolve_copy_targets: 'Kopia czaru — wybór celu',
+  resolve_exploit_choice: 'Exploit — poświęcić stwora?',
+  resolve_fabricate: 'Fabricate — liczniki czy tokeny?',
+  // małą literą: „manifest dread" to mechanika (CR 701.34), a „Manifest
+  // Dread" to KARTA w katalogu — strażnik m212 zabrania literału z nazwą karty.
+  resolve_manifest_dread: 'manifest dread — zmanifestuj jedną z 2 kart',
+  resolve_optional_draw: 'Dobór dobrowolny (you may)',
+  resolve_reveal_choice: 'Ujawnij z ręki — obrażenia',
+  resolve_reveal_exile_hand: 'Karta z ręki do wygnania',
+  resolve_reveal_exile_grave: 'Karta z grobu do wygnania',
+  resolve_satyr_look_choice: 'Ląd z odsłoniętych do ręki',
 });
 
 /**
@@ -1803,6 +1837,35 @@ function choiceSourceTitle(cmd, session, view) {
   if (cmd?.type === 'resolve_manifest_dread' && view?.pendingManifestDread?.sourceCardId) {
     return `${session.nameOf(view.pendingManifestDread.sourceCardId)} — zmanifestuj jedną z 2 kart (druga do grobu)`;
   }
+  // Pętla jakości (Żywy Tester, theros vs warhammer-wu, seed 308, profil
+  // impatient): decyzja „wybierz karty do wygnania za Escape”
+  // (resolve_escape_exile) — grupa miała typ `escape_exile`, którego nie znała
+  // żadna mapa deskryptorów, więc tytuł spadał na „Wybierz: Wariant
+  // (10 opcji)”. Bliźniacza decyzja cast_escape nazywa czar — ta sama klasa
+  // co M240/B i M251/B (klucz i tytuł to dwie listy warunków o tej samej
+  // rodzinie). Źródło (karta w grobie — strefa publiczna) jedzie z pendingu,
+  // nigdy z nazwy zaszytej w warstwie opisu (ADR 0002).
+  if (cmd?.type === 'resolve_escape_exile' && view?.pendingEscapeExile?.sourceCardId) {
+    return `${session.nameOf(view.pendingEscapeExile.sourceCardId)} — Ucieczka (Escape): karty do wygnania`;
+  }
+  // Pętla jakości (Żywy Tester, tarkir-wur vs innistrad-brg, seed 316):
+  // decyzja „look top N, jedną do ręki” (resolve_look_top_choice — Gurmag
+  // Drowner, Merchant's Dockhand) nie miała ani gałęzi tytułu, ani
+  // deskryptora — spadała na „Wybierz: Wariant (4 opcje)”. Klasa L102/1;
+  // źródło (permanent na polu bitwy — publiczne) jedzie z pendingu jak
+  // pendingManifestDread/pendingSatyrLook (ADR 0002).
+  if (cmd?.type === 'resolve_look_top_choice' && view?.pendingLookTopN?.sourceCardId) {
+    return `${session.nameOf(view.pendingLookTopN.sourceCardId)} — karta z odsłoniętych do ręki`;
+  }
+  // Pętla jakości (klasa L102/1): Dreams of Steel and Oil — decyzja „wygnij
+  // kartę z ręki/grobu przeciwnika". Nazwa źródła (czar na stosie — publiczna)
+  // jedzie z pendingu (M201/F); deskryptor fallbacku w
+  // CHOICE_GROUP_COMMAND_DESCRIPTORS.
+  if ((cmd?.type === 'resolve_reveal_exile_hand' || cmd?.type === 'resolve_reveal_exile_grave')
+    && view?.pendingRevealExile?.sourceCardId) {
+    const zone = cmd.type === 'resolve_reveal_exile_hand' ? 'ręki' : 'grobu';
+    return `${session.nameOf(view.pendingRevealExile.sourceCardId)} — karta z ${zone} do wygnania`;
+  }
   if (!cmd || cmd.objectId == null) return null;
   const zones = ['hand', 'battlefield', 'stack', 'graveyard', 'library'];
   let object = null;
@@ -1826,6 +1889,17 @@ function choiceSourceTitle(cmd, session, view) {
     if (cmd.bestow) return `Bestow: ${name}`;
     if (object.aura) return `Aura: ${name}`;
     return `Cel dla: ${name}`;
+  }
+  // C (uwaga właściciela, Makeshift Mauler / Fear of Abduction): tytuł musi
+  // pokrywać warunek KLUCZA grupy (klasa L102/1) — warianty kosztu „wygnaj
+  // stwora" grupują się po karcie, więc tytuł nazywa czynność i strefę
+  // kosztu (grób vs pole bitwy), a nie generyczny „Wariant".
+  if (cmd.type === 'cast_permanent' && cmd.exileTargetId != null) {
+    const exileZone = ['hand', 'battlefield', 'stack', 'graveyard', 'library']
+      .map((z) => (view?.zones?.[z] ?? []).find((o) => o.id === cmd.exileTargetId))
+      .find((o) => o != null)?.zone;
+    const source = exileZone === 'graveyard' ? 'z grobu' : 'z pola bitwy';
+    return `Wygnaj stwora ${source} (koszt) — ${name}`;
   }
   if (cmd.type === 'cast_spell' && cmd.sacrificeTargetId && !cmd.targets?.length) {
     return `Poświęć stwora — ${name}`;
@@ -2233,6 +2307,14 @@ export function commandLabel(cmd, session, view) {
         // many — dopłata wyglądała na dwa razy droższą, niż jest.
         const kickerHtml = manaCostHtml(costSymbols(kicker.cost, kicker.colors));
         return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)} + kicker ${kickerHtml})`;
+      }
+      // C (uwaga właściciela, Makeshift Mauler / Fear of Abduction): wariant
+      // kosztu „wygnaj kartę stwora z grobu / stwora z pola bitwy"
+      // (CR 601.2h) — etykieta mówi, KTÓRY stwór zostanie wygnany, żeby opcje
+      // w modalu wyboru były rozróżnialne (bez tego każda brzmiała identycznie
+      // „Zagraj: Makeshift Mauler").
+      if (cmd.exileTargetId != null) {
+        return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)}) — wygnaj ${nameOfObjectId(cmd.exileTargetId)}`;
       }
       return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)})`;
     }
@@ -2755,6 +2837,13 @@ export function commandLabel(cmd, session, view) {
       return cmd.cast
         ? `Rzuć${madPrice}: ${nameOfObjectId(cmd.objectId ?? cmd.cardId)}${madTargets ? ` → cel: ${madTargets}` : ''}`
         : `Przełóż do cmentarza (rezygnacja z madness): ${nameOfObjectId(cmd.objectId ?? cmd.cardId)}`;
+    }
+    case 'resolve_exile_cast': {
+      // Vaan, Street Thief: rzut TERAZ (za normalny koszt) albo Treasure.
+      const vaanTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
+      return cmd.cast
+        ? `Rzuć wygnaną: ${nameOfObjectId(cmd.cardId ?? cmd.objectId)}${vaanTargets ? ` → cel: ${vaanTargets}` : ''}`
+        : 'Zrezygnuj — stwórz token Skarb (Treasure)';
     }
     case 'resolve_reveal_choice': {
       if (cmd.cardId == null) return 'Nie ujawniaj (bez obrażeń)';
@@ -3546,10 +3635,12 @@ export function renderCardFullscreen(host, info, { positionText = null } = {}) {
  * @param {HTMLElement} host kontener warstwy (czyszczony)
  * @param {object} card definicja karty z rejestru (potrzebne: artId, name)
  */
-export function renderCardArtShowcase(host, card, { casterName = null } = {}) {
+export function renderCardArtShowcase(host, card, { casterName = null, verb = 'Rzuca' } = {}) {
   clear(host);
   if (!host || !card) return host;
-  if (casterName) div(host, 'showcase-caster', `Rzuca: ${casterName}`);
+  // B (DFC): podpis warstwy — „Rzuca: <gracz>" przy rzucie, „Przemiana:
+  // <karta>" przy transformacji (verb/label dostarcza main.js).
+  if (casterName) div(host, 'showcase-caster', `${verb}: ${casterName}`);
   const buildLocal = (variant) => {
     const url = localArtUrl(card, variant);
     if (!url) return null;

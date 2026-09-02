@@ -1,0 +1,21 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Kill+Shot&set=ktk",
+  "print": "ktk",
+  "name": "Kill Shot",
+  "mana_cost": "{2}{W}",
+  "cmc": 3.0,
+  "type_line": "Instant",
+  "oracle_text": "Destroy target attacking creature.",
+  "colors": [
+    "W"
+  ],
+  "set": "ktk",
+  "set_name": "Khans of Tarkir",
+  "collector_number": "15",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/3/f30d4136-78a3-4760-83af-d365cc97d118.jpg?1783939094",
+    "normal": "https://cards.scryfall.io/normal/front/f/3/f30d4136-78a3-4760-83af-d365cc97d118.jpg?1783939094"
+  },
+  "pobrano": "2026-09-01"
+}

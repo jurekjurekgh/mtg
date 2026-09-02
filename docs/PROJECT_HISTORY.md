@@ -7272,6 +7272,147 @@ wszystkie naprawione u root cause:
 Raport: `docs/audits/AUDYT_PR90_2026-08-31.md`. Lekcje L99–L102.
 Fast **3912/3912**, test:all **3922/3922**, build **56 modułów / 2994,1 kB**.
 
+### Sesja arena/01a05d4f (2026-09-01, PR #92) — audyt PR #91 + pętla jakości
+
+**Etap 1 — audyt PR #91** (`4e18fed..3c23e03`, 87 plików): pełne czytanie
+diffa (src/tools/testy/docs), doczytanie ADR 0025–0027, **5 mutacji
+RED→GREEN** (toZone emitera springbloom_druid, combat „if able" CR 508.1c,
+`applyEnterCounters` CR 121.6, fizzle czaru modalnego CR 608.2b,
+`spellExitZone` CR 118.9). Zero znalezisk regułowych. Potwierdzone kontrakty:
+widok ADR 0017 (grób: kind/types/power/manaCost/spell), fingerprint ADR 0005
+(`abilityResolvedThisTurn`), ADR 0002 (brak nowych hardkodów po nazwie karty).
+`bot-benchmark` 10/10. Raport: `docs/audits/AUDYT_PR91_2026-09-01.md`.
+
+**Etap 2 — pętla jakości** (16 partii Żywego Testera na taliach spoza
+`BENCH_DECKS` — wiedzmin/srodziemie/ravnica/mirrodin-*/tarkir-*/warhammer-*/
+worek-* — profile greedy/random/defensive/explorer/impatient/hoarder, seedy
+301–308 i 311–318; 0 `[STOP]`, 0 `== LIMIT ==`). Trzy wyniki:
+
+- **2.2 analizator rodzin jako narzędzie stałe** (`tools/family-audit.mjs`,
+  kierunek 2 z handoffu M277): przeniesienie ad hoc `/tmp/fam*.mjs`
+  (M274/M276/M277) do `tools/`; dwa wymiary skanu — rodziny efektów
+  (damage/untap/mill/destroy) i rodziny pól (życie/trucizna) — z jawną listą
+  wyjątków (ADR 0027 pkt 3). Weryfikacja mutacyjna: `damage_to_controller`
+  z `changeLife(-)` zamiast `dealNonCombatDamage` → 1 fail (RED) → GREEN.
+- **2.1 znalezisko #1** (theros vs warhammer-wu, seed 308, impatient): grupa
+  `resolve_escape_exile` spadała na „Wybierz: Wariant (10 opcji)" — typ grupy
+  `escape_exile` nie miał deskryptora ani gałęzi tytułu (L102/1). Fix:
+  `choiceSourceTitle` nazywa kartę + deskryptor fallback; RED→GREEN.
+- **2.1 znalezisko #2** (tarkir-wur vs innistrad-brg, seed 316, explorer):
+  grupa `resolve_look_top_choice` (Gurmag Drowner/Merchant's Dockhand) spadała
+  na „Wybierz: Wariant (4 opcje)". Fix: `pendingLookTopN` niesie sourceCardId
+  (wzorzec M251/B/M240/B), widok eksponuje je, tytuł nazywa źródło; RED→GREEN.
+
+Fast **4081/4081**, test:all **4091/4091**, build **57 modułów / 3031,7 kB**.
+
+### Faza B (2026-09-01, PR #92) — Żywy Tester + analiza inteligencji bota
+
+Zlecenie właściciela: „testy Żywym Testerem połączone z analizą inteligencji
+bota, aż do wykorzystania budżetu". **20 partii** (seedy 401–420; bot gra
+15 różnych talii — w tym 4 z próbki benchmarku i 3 worki; profile gracza
+greedy/defensive/explorer/random/hoarder/impatient). Transkrypty:
+`tmp-audyt-bot/` (poza repo).
+
+- **Znalezisko (naprawione u root cause):** klasa L102/1 zamknięta. Grupa
+  `resolve_reveal_exile_hand` (Dreams of Steel and Oil) pokazywała „Wybierz:
+  Wariant (3 opcje)" — skan `choiceRequestGroupKey` wykazał **9
+  stałokluczowych typów** bez fallbacku tytułu (copy_targets, exploit,
+  fabricate, manifest_dread, optional_draw, reveal_choice,
+  reveal_exile_hand/grave, satyr_look). Deskryptory dla wszystkich +
+  `sourceCardId` w `pendingRevealExile` + **strażnik klasowy**
+  `test/wybierz-wariant-klasa.test.js` (RED: 9 typów → GREEN).
+- **Inteligencja bota: poprawna.** Zero zgłoszeń detektorów osi 1 w 20
+  partiach; przegląd decyzji potwierdził wyceny (symetryczny mill M162/B,
+  combat simulation, `effectIsInertNow` dla pustej biblioteki). Obserwacje
+  nie-błędne: Withstand jako cantrip (mikro-tempo), bot agnostyczny wobec
+  planu talii (ADR 0022 nie wymaga awareness talii).
+- Raport: `docs/audits/AUDYT_BOT_INTELIGENCJA_ZYWTESTER_2026-09-01.md`.
+
+Fast **4084/4084**, test:all **4094/4094**, build **57 modułów / 3033,4 kB**.
+
+### Batch 52 (2026-09-01, PR #92) — 9 kart właściciela (artId 580–588)
+
+Zlecenie właściciela: „Najwyższa pora na nowy batch kart". Pełna procedura
+`HOW_TO_ADD_CARD.md`: Scryfall najpierw (ADR 0010 §2a) → `artId` ze słownika
+→ `defineCard` → talie → testy → dokumentacja. Karty: Loporrit Scout (FIN),
+Ulna Alley Shopkeep (SOS), Vaan Street Thief (FIN), Kill Shot (KTK), Merfolk
+Falconer (ZNR), Jolrael Mwonvuli Recluse (MKC), Fourth Bridge Prowler (AER),
+Leonin Surveyor (DFT), Cemetery Recruitment (EMN). Plan:
+`docs/plans/PLAN_2026-09-01-batch52-kart.md`.
+
+**Nowe mechaniki (generyczne, ADR 0002):**
+
+- **Infusion** (Ulna Alley Shopkeep) — licznik `lifeGainedThisTurn` per gracz
+  (choke point `changeLife`, reset tury) + static condition `gainedLifeThisTurn`.
+- **`you_cast_kicked_spell`** (Merfolk Falconer) — rzut z opłaconym kickerem
+  (`permanent_cast.kicked` / `object.wasKicked`) → scry 2.
+- **`you_draw_second_card_each_turn`** (Jolrael) — drugi dobór w turze
+  (licznik `cardsDrawnThisTurn` >= 2) → token 2/2 Cat; aktywowane masowe
+  bazowe X/X (X = karty w ręce) → per-creature `tempBasePT` + `stats_modified`.
+- **`any_combat_damage_to_player` z filtrem podtypów** (Vaan) — dedup po
+  kluczu `kontroler|podtypy`; efekt `exile_top_of_player_library_and_may_cast`
+  (blokująca decyzja `resolve_exile_cast`, rzut TERAZ ignorujący timing —
+  ruling WotC, inaczej Treasure) + `you_cast_spell_you_dont_own`
+  (ownerId ≠ controllerId) → licznik +1/+1 na podtypy.
+- **`activePlayerIsController`** (Leonin Surveyor) — first strike tylko w
+  turze kontrolera; start engines + max speed z grobu (wzorzec Glitch Ghost
+  Surveyor).
+- **`drawIfSubtypes`** (Cemetery Recruitment) — po zwrocie z grobu, jeśli
+  karta ma podtyp z listy → dobierz.
+- **`return_card_from_graveyard_to_hand` + `buff_creature_until_end_of_turn`
+  z ujemnym znakiem** (Fourth Bridge Prowler) — opcjonalny cel ETB
+  (`requiresTarget.optional`, nie `mayFire`).
+
+**Wycena bota:** `set_base_pt_creatures_you_control` idempotentne (B1),
+`buff_creature_until_end_of_turn` klasyfikowany po znaku
+(przyjazny/wrogi — effect-intent), `return_card_from_graveyard_to_hand`
+w `REVIEWED_UNVALUED` (własna karta z grobu). Agregaty golden-mastera
+zregenerowane (batch zmienia partie), bez zmiany progów.
+
+**Talie (ADR 0023):** Kaladesh dobiło do 15 kart i auto-awansowało z worka
+do własnej talii (M181); Thunder Junction wróciło do `worek-dziki`
+(bilans: legendy 18, dzikie 17). 23 talii w `decks/`.
+
+Fast **4113/4113**, test:all **4123/4123**, build **57 modułów / 3065.1 kB**.
+
+### Żywy Tester na batchu 52 + audyt wyceny bota (2026-09-01, PR #92)
+
+Zlecenie właściciela: „testy Żywym Testerem na taliach z nowymi kartami
+i baczny audyt poprawności kart oraz poprawności bota w ich użyciu".
+Metodyka `docs/setup/TESTER_STOLU.md`: świeży build, `run-game.mjs` na
+taliach z nowymi kartami, transkrypty poza repo (`/tmp`).
+
+**Karty (poprawność):** 28 testów `test/batch52-kart.test.js` zielonych.
+Żywe partie (bot gra taliami alara/dominaria-brg/kaladesh/final-fantasy/
+innistrad-brg/tarkir-wur/zendikar/worek-legend, 20+ partii, seedy 501–509,
+601–612, 701–706) potwierdziły: Leonin Surveyor dobiera z grobu przy max
+speed, Cemetery Recruitment zwraca stwora z grobu, Fourth Bridge Prowler
+odmawia celu ETB przy braku wrogiego stwora, triggery/statiki Jolrael/Merfolk
+Falconer/Loporrit/Ulna działają. Zero zgłoszeń detektorów dla nowych kart
+(jedyne 2 zgłoszenia „noop” dotyczyły Discover — Geological Appraiser,
+pre-existing, poza batch 52).
+
+**Bot (wyceny) — trzy luki zamknięte u root cause + 5 testów regresyjnych**
+(`test/batch52-bot-wycena.test.js`):
+
+- **`return_card_from_graveyard_to_hand`** (Cemetery Recruitment) — REVERSAL
+  decyzji REVIEWED_UNVALUED z batch 52: card advantage (jak dobranie) + ciało
+  karty + bonus `drawIfSubtypes` (Zombie → dobranie). Wcześniej warianty celu
+  remisowały na bazie 50 i bot brał PIERWSZĄ (najgorszą) kartę z grobu.
+- **`set_base_pt_creatures_you_control`** (Jolrael) — bot aktywował X/X nawet
+  gdy OSŁABIAŁ własną planszę (6/6 → 2/2 przy 2 kartach w ręce, gołe score=2).
+  Wycena sumy zmian P/T po własnej stronie + okno (Główna 1 / obrona).
+- **zdolności aktywowane Z GROBU** (`fromGraveyard`) — `abilityObject` nie
+  widział karty w grobie (tylko pola bitwy i ręka), więc efekty z grobu
+  (`draw_cards` Leonin/Glitch Ghost Surveyor, scry Survivor of Korlis, token
+  Goldmeadow Harrier…) dostawały gołe 2 pkt. Rozszerzenie o `zoneCard`
+  (L41 — ta sama reguła co Escape/Flashback czarów, M103/D).
+
+Golden-master bota zregenerowany (`bot-scoring-snapshot.mjs --write`) —
+świadoma zmiana wycen, nie refaktor. Progi win-rate bez zmian.
+
+Fast **4118/4118**, test:all **4128/4128**, build **57 modułów / 3069,2 kB**.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

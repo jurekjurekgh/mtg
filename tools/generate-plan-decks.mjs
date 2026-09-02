@@ -101,9 +101,15 @@ export const WOREK_DECKS = Object.freeze({
   Theros: 'worek-legend', 'Śródziemie': 'worek-legend',
   Amonkhet: 'worek-legend', Shandalar: 'worek-legend', Rabiah: 'worek-legend',
   Rath: 'worek-legend', Arcavios: 'worek-legend',
-  'The Edge': 'worek-legend', 'Thunder Junction': 'worek-legend',
+  'The Edge': 'worek-legend',
   // Batch 50: Fiora (świat Commander Legends — intrygi/szlachta) → legendy.
   Fiora: 'worek-legend',
+  // Batch 52: Kaladesh dobiło do 15 wspieranych kart (+Fourth Bridge Prowler)
+  // i WYSZŁO z worka jako własna talia (auto-awans M181) — worek-dziki spadł
+  // do 11 kart nielandowych, poniżej minimum walidatora. Thunder Junction
+  // (pogranicze/„dziki zachód") wraca z legend do dzikich (ADR 0023 §4).
+  // Bilans: legendy 18, dzikie 17. Wpis Kaladesh zostaje jako MARTWY po awansie.
+  'Thunder Junction': 'worek-dziki',
   Ixalan: 'worek-dziki', Kaladesh: 'worek-dziki', Muraganda: 'worek-dziki',
   'Final Fantasy': 'worek-mroczny', Duskmourn: 'worek-mroczny',
   Lorwyn: 'worek-mroczny',

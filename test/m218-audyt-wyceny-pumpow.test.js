@@ -300,6 +300,17 @@ function duelBoard({ botAttacks, botPower, botToughness, botKeywords = [], foePo
   state.combat = botAttacks
     ? { attackers: ['wolf'], attackingPlayerId: 'p2', blockers: new Map([['wolf', ['foe']]]), blockedAttackers: new Set(['wolf']) }
     : { attackers: ['foe'], attackingPlayerId: 'p1', blockers: new Map([['foe', ['wolf']]]), blockedAttackers: new Set(['foe']) };
+  // M280/D: syntetyczna plansza nie modeluje biblioteki, a rider „Dobierz
+  // kartę" (Fleeting Distraction) przy pustej bibliotece wygląda jak deck-out
+  // (CR 121.4/704.5b) — bot odmawiał rzutu debuffu, choć test sprawdza WYNIK
+  // WALKI, nie bibliotekę. Kilka kart przywraca realne warunki.
+  for (let i = 0; i < 5; i += 1) {
+    addObject(state, {
+      id: `lib-${i}`, instanceId: `i-lib-${i}`, cardId: 'hill-giant', controllerId: 'p2', ownerId: 'p2',
+      zone: 'library', kind: 'creature', power: 3, toughness: 3, manaCost: 4,
+      abilities: [], keywords: [], subtypes: ['Giant'], types: ['Creature'], colors: ['R'],
+    });
+  }
   return state;
 }
 

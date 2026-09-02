@@ -15,6 +15,16 @@ export function changeLife(state, playerId, amount) {
   const player = state.players.find((entry) => entry.id === playerId);
   const before = player.life;
   player.life += amount;
+  // „Gained life this turn" (Ulna Alley Shopkeep — Infusion; CR 122.1b):
+  // licznik zyskanego życia per gracz, zerowany przy zmianie tury (jak
+  // cardsDrawnThisTurn). changeLife to jedyny choke point zmiany życia, więc
+  // obejmuje gain_life, gain_life_target i lifelink (CR 702.15).
+  if (amount > 0) {
+    state.lifeGainedThisTurn = {
+      ...(state.lifeGainedThisTurn ?? {}),
+      [playerId]: (state.lifeGainedThisTurn?.[playerId] ?? 0) + amount,
+    };
+  }
   const events = [event('life_changed', { playerId, before, after: player.life, amount })];
   state.events.push(...events);
   return events;

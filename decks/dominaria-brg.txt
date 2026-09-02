@@ -5,6 +5,7 @@
 1x Blanchwood Prowler
 1x Garruk's Companion
 1x Goblin Picker
+1x Jolrael, Mwonvuli Recluse
 1x Expunge
 1x Mournful Zombie
 1x Phyrexian Rager
@@ -16,6 +17,6 @@
 1x Disa the Restless
 1x Final Parting
 1x Mindstab
-4x Swamp
-2x Mountain
-2x Forest
+5x Swamp
+1x Mountain
+3x Forest

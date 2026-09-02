@@ -767,6 +767,13 @@ export const REAL_CARDS = Object.freeze([
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Chatter of the Squirrel'] },
   }),
   defineCard({
+    id: 'token_cat', name: 'Cat', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Cat'], colors: ['G'],
+    power: 2, toughness: 2, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/b/d/bdc3ab55-8b33-4604-ad78-26edbb23d218.jpg?1783912616',  // tmkc (Jolrael, Mwonvuli Recluse)
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Jolrael, Mwonvuli Recluse'] },
+  }),
+  defineCard({
     id: 'token_bird_chocobo', name: 'Bird', set: null,
     types: ['Creature', 'Token'], subtypes: ['Bird'], colors: ['G'],
     power: 2, toughness: 2, manaCost: 0,
@@ -10105,6 +10112,220 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['mana value to koszt many z karty (CR 202.3) — mana WYDANA po zniżkach nie ma znaczenia'],
   }),
 
+  // =========================================================================
+  // Batch 52 (9 kart, lista właściciela 2026-09-01). Dane Oracle ze Scryfalla:
+  // docs/cards/scryfall-*.json (ADR 0010 §2a); artId/plan z
+  // tools/collection-art-ids.csv (580–588).
+  // =========================================================================
+
+  // 580FIN Loporrit Scout (FIN) {2}{G} 3/2 Rabbit Scout — „Whenever another
+  // creature you control enters, this creature gets +1/+1 until end of turn."
+  defineCard({
+    id: 'loporrit-scout', name: 'Loporrit Scout', set: 'FIN',
+    types: ['Creature'], subtypes: ['Rabbit', 'Scout'], colors: ['G'],
+    power: 3, toughness: 2, manaCost: 3,
+    oracleText: 'Whenever another creature you control enters, this creature gets +1/+1 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/a/1/a182bc66-bfda-4bf5-bd12-3de5dba60945.jpg?1783906585',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'another_creature_enters', youControl: true },
+        effect: { type: 'pump', power: 1, toughness: 1 },
+      }),
+    ],
+    artId: 580, plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 581SOS Ulna Alley Shopkeep (SOS) {2}{B} 2/3 Goblin Warlock — Menace;
+  // Infusion — „gets +2/+0 as long as you gained life this turn."
+  defineCard({
+    id: 'ulna-alley-shopkeep', name: 'Ulna Alley Shopkeep', set: 'SOS',
+    types: ['Creature'], subtypes: ['Goblin', 'Warlock'], colors: ['B'],
+    keywords: ['menace'], power: 2, toughness: 3, manaCost: 3,
+    oracleText: 'Menace (This creature can\'t be blocked except by two or more creatures.)\nInfusion — This creature gets +2/+0 as long as you gained life this turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/2/c25e1ae5-f17c-4eee-98f1-5681981af31c.jpg?1783903673',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { gainedLifeThisTurn: true },
+        pump: { power: 2, toughness: 0 },
+      }),
+    ],
+    artId: 581, plan: 'Arcavios',
+    support: { status: 'supported', limitations: [] },
+    notes: ['infusion: zyskanie życia liczone per gracz w bieżącej turze (licznik zerowany przy zmianie tury — changeLife/cardsDrawnThisTurn); pump +2/+0 znika, gdy tura się kończy'],
+  }),
+
+  // 582FIN Vaan, Street Thief (FIN) {2}{R} 2/2 Legendary Human Scout.
+  defineCard({
+    id: 'vaan-street-thief', name: 'Vaan, Street Thief', set: 'FIN',
+    types: ['Legendary', 'Creature'], subtypes: ['Human', 'Scout'], colors: ['R'],
+    power: 2, toughness: 2, manaCost: 3,
+    oracleText: 'Whenever one or more Scouts, Pirates, and/or Rogues you control deal combat damage to a player, exile the top card of that player\'s library. You may cast it. If you don\'t, create a Treasure token.\nWhenever you cast a spell you don\'t own, put a +1/+1 counter on each Scout, Pirate, and Rogue you control.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/0/50e1ec29-9de3-4f1b-b818-057e030d475b.jpg?1783906593',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'any_combat_damage_to_player', subtypes: ['Scout', 'Pirate', 'Rogue'] },
+        effect: [{ type: 'exile_top_of_player_library_and_may_cast' }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'you_cast_spell_you_dont_own' },
+        effect: [{
+          type: 'add_counter_to_creatures_you_control', counter: '+1/+1', amount: 1,
+          subtypes: ['Scout', 'Pirate', 'Rogue'],
+        }],
+      }),
+    ],
+    artId: 582, plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['pierwsza zdolność: karta wygnana z biblioteki POSZKODOWANEGO; rzut „teraz" jest blokującą decyzją (resolve_exile_cast) ignorującą timing (ruling WotC — rzucasz, póki zdolność jest na stosie); rezygnacja tworzy Skarb. Rzut za normalny koszt; land i czary spoza prostego zakresu (additionalCost/X/Fireball) dają tylko rezygnację→Skarb. Druga zdolność: rzut karty, której nie posiadasz (ownerId ≠ kontroler) — licznik +1/+1 na każdy podtyp kontrolera'],
+  }),
+
+  // 583KTK Kill Shot (KTK) {2}{W} Instant — „Destroy target attacking creature."
+  defineCard({
+    id: 'kill-shot', name: 'Kill Shot', set: 'KTK',
+    types: ['Instant'], colors: ['W'], manaCost: 3,
+    oracleText: 'Destroy target attacking creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/3/f30d4136-78a3-4760-83af-d365cc97d118.jpg?1783939094',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'attacking_creature' }],
+      effects: [{ type: 'destroy_permanent' }],
+    },
+    artId: 583, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+    notes: ['cel wyłącznie spośród atakujących (CR 508.1k) — poza fazą walki brak legalnych celów'],
+  }),
+
+  // 584ZNR Merfolk Falconer (ZNR) {3}{U}{U} 4/4 Merfolk Wizard — Flying;
+  // „Whenever you cast a kicked spell, scry 2."
+  defineCard({
+    id: 'merfolk-falconer', name: 'Merfolk Falconer', set: 'ZNR',
+    types: ['Creature'], subtypes: ['Merfolk', 'Wizard'], colors: ['U'],
+    keywords: ['flying'], power: 4, toughness: 4, manaCost: 5,
+    oracleText: 'Flying\nWhenever you cast a kicked spell, scry 2. (Look at the top two cards of your library, then put any number of them on the bottom and the rest on top in any order.)',
+    imageUri: 'https://cards.scryfall.io/large/front/a/c/acb0d55a-9d6a-443d-aa82-5cea93188fd2.jpg?1783929392',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'you_cast_kicked_spell' },
+        effect: { type: 'scry', amount: 2 },
+      }),
+    ],
+    artId: 584, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+    notes: ['kicker to opcjonalny koszt dodatkowy rzutu (wariant kicked) — tylko czary rzucone z opłaconym kickerem odpalają scry 2'],
+  }),
+
+  // 585MKC Jolrael, Mwonvuli Recluse (MKC) {1}{G} 1/2 Legendary Human Druid.
+  defineCard({
+    id: 'jolrael-mwonvuli-recluse', name: 'Jolrael, Mwonvuli Recluse', set: 'MKC',
+    types: ['Legendary', 'Creature'], subtypes: ['Human', 'Druid'], colors: ['G'],
+    power: 1, toughness: 2, manaCost: 2,
+    oracleText: 'Whenever you draw your second card each turn, create a 2/2 green Cat creature token.\n{4}{G}{G}: Until end of turn, creatures you control have base power and toughness X/X, where X is the number of cards in your hand.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/8/188f9016-275f-4060-8b11-9cdeef3759bd.jpg?1783912990',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'you_draw_second_card_each_turn' },
+        effect: [{
+          type: 'create_token', cardId: 'token_cat', name: 'Cat',
+          kind: 'creature', power: 2, toughness: 2, colors: ['G'],
+          types: ['Creature'], subtypes: ['Cat'], amount: 1,
+        }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 6, colors: ['G', 'G'] },
+        effect: { type: 'set_base_pt_creatures_you_control', power: 'hand_size' },
+      }),
+    ],
+    artId: 585, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+    notes: ['druga karta dobrana w turze (licznik per gracz, zerowany z turą) tworzy token 2/2 Cat; aktywowana zdolność ustawia BAZOWE X/X (X = liczba kart w ręce, CR 608.2g) wszystkim twoim stwórom do końca tury — jak tempBasePT z set_base_pt_until_end_of_turn'],
+  }),
+
+  // 586AER Fourth Bridge Prowler (AER) {B} 1/1 Human Rogue — ETB „you may
+  // have target creature get -1/-1 until end of turn."
+  defineCard({
+    id: 'fourth-bridge-prowler', name: 'Fourth Bridge Prowler', set: 'AER',
+    types: ['Creature'], subtypes: ['Human', 'Rogue'], colors: ['B'],
+    power: 1, toughness: 1, manaCost: 1,
+    oracleText: 'When this creature enters, you may have target creature get -1/-1 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/3/73aaaa09-c985-42f8-b426-06fd3b8de66d.jpg?1783936763',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          // „you may have target creature..." — opcjonalność całości jest
+          // w OPCJONALNYM CELU (spec.optional), nie w mayFire (mayFire jest
+          // dla „you may" BEZ celu — Angel's Feather).
+          requiresTarget: { type: 'creature', optional: true },
+        },
+        effect: { type: 'buff_creature_until_end_of_turn', power: -1, toughness: -1 },
+      }),
+    ],
+    artId: 586, plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+    notes: ['„you may" — odmowa wyboru celu = brak efektu (opcjonalny trigger + optional cel)'],
+  }),
+
+  // 587DFT Leonin Surveyor (DFT) {1}{W} 2/2 Cat Scout — Start your engines!;
+  // first strike podczas twojej tury; Max speed — {3} exile z grobu: dobierz.
+  defineCard({
+    id: 'leonin-surveyor', name: 'Leonin Surveyor', set: 'DFT',
+    types: ['Creature'], subtypes: ['Cat', 'Scout'], colors: ['W'],
+    power: 2, toughness: 2, manaCost: 2,
+    oracleText: 'Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nDuring your turn, this creature has first strike.\nMax speed — {3}, Exile this card from your graveyard: Draw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/0/e08e4107-213f-491b-a032-8e3367009ba8.jpg?1783907918',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'start_engines' }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { activePlayerIsController: true },
+        keywords: ['first_strike'],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        fromGraveyard: true,
+        cost: { mana: 3, exileFromGraveyard: true },
+        condition: { maxSpeed: true },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+    ],
+    artId: 587, plan: 'Alara',
+    support: { status: 'supported', limitations: [] },
+    notes: ['speed: start 1 przy ETB, wzrost raz na turę aktywnego gracza przy utracie życia przeciwnika (max 4); first strike tylko podczas twojej tury (staticConditionHolds activePlayerIsController); „max speed" bramkuje zdolność z grobu'],
+  }),
+
+  // 588EMN Cemetery Recruitment (EMN) {1}{B} Sorcery — „Return target creature
+  // card from your graveyard to your hand. If it's a Zombie card, draw a card."
+  defineCard({
+    id: 'cemetery-recruitment', name: 'Cemetery Recruitment', set: 'EMN',
+    types: ['Sorcery'], colors: ['B'], manaCost: 2,
+    oracleText: 'Return target creature card from your graveyard to your hand. If it\'s a Zombie card, draw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/a/3a23adea-9f4a-409c-a37d-323eee781273.jpg?1783937486',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature_card_in_graveyard' }],
+      effects: [{
+        type: 'return_card_from_graveyard_to_hand',
+        cardKind: 'creature',
+        drawIfSubtypes: ['Zombie'],
+      }],
+    },
+    artId: 588, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+    notes: ['draw po powrocie wyłącznie, gdy odzyskana karta ma podtyp Zombie (CR 608.2g — podtyp sprawdzany z karty w ręce, bez zmiany strefy)'],
+  }),
 
 ]);
 
@@ -10117,6 +10338,8 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
 export const TOKEN_IMAGES = Object.freeze({
   // Squirrel 1/1 G (TMSH 14) — api.scryfall.com/cards/fd0474f3-682d-4c6d-b902-84f3250aa269
   token_squirrel: 'https://cards.scryfall.io/large/front/f/d/fd0474f3-682d-4c6d-b902-84f3250aa269.jpg?1783902800',
+  // Cat 2/2 G (TMKC 15 — druk Jolrael, Mwonvuli Recluse).
+  token_cat: 'https://cards.scryfall.io/large/front/b/d/bdc3ab55-8b33-4604-ad78-26edbb23d218.jpg?1783912616',
 });
 
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */

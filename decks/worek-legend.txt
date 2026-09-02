@@ -4,27 +4,22 @@
 1x Supernatural Stamina
 1x Curate (STX)
 1x Emissary Escort
-1x Fake Your Own Death
 1x Illvoi Operative
-1x Sterling Keykeeper
-1x Trained Arynx
-1x Tumbleweed Rising
 1x Diplomatic Relations
 1x Frontline War-Rager
-1x Gila Courser
 1x Lotusguard Disciple
 1x Moonlit Meditation
 1x Nanoform Sentinel
 1x Pain for All
 1x Ruinous Rampage
+1x Ulna Alley Shopkeep
 1x Vow of Flight
 1x Warmaker Gunship
 1x Wedgelight Rammer
-1x Spinewoods Paladin
 1x Weftblade Enhancer
 1x Sifter Wurm
-3x Plains
+1x Plains
 3x Island
-1x Swamp
-3x Mountain
-2x Forest
+2x Swamp
+2x Mountain
+1x Forest

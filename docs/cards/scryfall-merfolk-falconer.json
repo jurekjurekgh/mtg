@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Merfolk+Falconer&set=znr",
+  "print": "znr",
+  "name": "Merfolk Falconer",
+  "mana_cost": "{3}{U}{U}",
+  "cmc": 5.0,
+  "type_line": "Creature — Merfolk Wizard",
+  "oracle_text": "Flying\nWhenever you cast a kicked spell, scry 2.",
+  "power": "4",
+  "toughness": "4",
+  "colors": [
+    "U"
+  ],
+  "set": "znr",
+  "set_name": "Zendikar Rising",
+  "collector_number": "69",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/a/c/acb0d55a-9d6a-443d-aa82-5cea93188fd2.jpg?1783929392",
+    "normal": "https://cards.scryfall.io/normal/front/a/c/acb0d55a-9d6a-443d-aa82-5cea93188fd2.jpg?1783929392"
+  },
+  "pobrano": "2026-09-01"
+}

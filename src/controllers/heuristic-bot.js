@@ -404,6 +404,9 @@ export const IDEMPOTENT_EOT_EFFECTS = new Set([
   'becomes_subtype_until_end_of_turn', 'animate_permanent_until_end_of_turn',
   'lock_untap', 'dont_untap_next_untap_step', 'tap_permanent', 'untap_permanent',
   'set_saddled',
+  // Batch 52 (Jolrael): bazowe X/X do końca tury — ponowna aktywacja nie
+  // kumuluje (set, nie suma), więc idempotentne.
+  'set_base_pt_creatures_you_control',
 ]);
 
 /**
@@ -703,6 +706,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // mana wyparuje na końcu kroku, a stwór zostaje zatapiany całą turę.
   const wastefulStep = (view) => myTurn(view) && ['untap', 'upkeep', 'draw', 'end', 'cleanup'].includes(view.turn.step);
   const myLibraryCount = (view) => view.zones.library.filter((o) => o.controllerId === view.playerId).length;
+  /**
+   * D (zgłoszenie właściciela, Deepwood Denizen): dobieranie kart, które
+   * OPRÓŻNIA własną bibliotekę, to wyrok — CR 121.4/704.5b: próba dobrania
+   * z pustej biblioteki przegrywa partię, a dobranie OSTATNIEJ karty zostawia
+   * gracza bez szansy na najbliższe dobranie. Kara przebija wartość karty
+   * (P.drawCardValue), więc wariant schodzi poniżej passu i bot nie
+   * deck-outuje się „od razu". Reguła po liczbie kart w bibliotece
+   * (informacja publiczna, ADR 0017), bez nazw kart (ADR 0002).
+   */
+  const drawDeckingPenalty = (view, amount = 1) => {
+    const remaining = myLibraryCount(view) - amount;
+    return remaining <= 0 ? -(P.drawCardValue * amount + 40) : 0;
+  };
   const myLandCount = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
 
   /**
@@ -1422,7 +1438,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent' || type === 'cast_adventure_creature') return 'permanent';
     if (type === 'cast_spell' || type === 'cast_cleave' || type === 'cast_adventure' || type === 'plot_card' || type === 'suspend_card' || type === 'warp_card' || type === 'draw_card') return 'spell';
-    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_undercity_route' || type === 'resolve_fabricate' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_library_placement' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_counter_pay_choice' || type === 'resolve_ward_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_satyr_look_choice' || type === 'resolve_epic_choice' || type === 'resolve_suspend_cast' || type === 'resolve_rebound_cast' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice' || type === 'resolve_replacement_choice' || type === 'resolve_copy_targets' || type === 'resolve_opponent_target' || type === 'resolve_damage_division' || type === 'resolve_grave_free_cast') return 'ability';
+    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_undercity_route' || type === 'resolve_fabricate' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_library_placement' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_counter_pay_choice' || type === 'resolve_ward_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_satyr_look_choice' || type === 'resolve_epic_choice' || type === 'resolve_suspend_cast' || type === 'resolve_rebound_cast' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice' || type === 'resolve_replacement_choice' || type === 'resolve_copy_targets' || type === 'resolve_opponent_target' || type === 'resolve_damage_division' || type === 'resolve_grave_free_cast' || type === 'resolve_exile_cast') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
     return null;
@@ -2456,7 +2472,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             else score += 6 * affected;
           }
           // Dobranie kart z czaru to przewaga kartowa.
-          if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') score += P.drawCardValue * (effect.amount ?? 1);
+          if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') {
+            const drawAmount = Number.isInteger(effect.amount) ? effect.amount : 1;
+            score += P.drawCardValue * drawAmount + drawDeckingPenalty(view, drawAmount);
+          }
           // M218/4 — scry/surveil jako CZAR: okno jak przy zdolności (M211/A1).
           // Dla czystego scry/surveil (np. Index) kara musi przebić bazę 50 (L3),
           // więc -60; dla mieszanych (Curate: surveil+draw) kara łagodna -12,
@@ -2545,6 +2564,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               const gyValue = ((gyCard.power ?? gyDef?.power ?? 0) * 2)
                 + (gyCard.toughness ?? gyDef?.toughness ?? 0);
               score += 10 + gyValue;
+            }
+          }
+          // Batch 52 (Cemetery Recruitment): zwrot karty STWORA z grobu do
+          // RĘKI to card advantage (jak dobranie) + ciało karty. Bez wyceny
+          // warianty remisowały na bazie 50 i bot brał PIERWSZĄ kartę z grobu
+          // (najgorszą), nie najcenniejszą — „remis wariantów przez brak
+          // case'a" (L50). Zombie → dodatkowe dobranie (CR 608.2g — podtyp
+          // sprawdzany z odzyskanej karty). Generycznie po deskryptorze
+          // (ADR 0002), zero nazw kart.
+          if (effect.type === 'return_card_from_graveyard_to_hand') {
+            const slot = cmd.targets?.[effect.targetIndex ?? 0] ?? null;
+            const gyCard = slot ? (view.zones.graveyard ?? []).find((o) => o.id === slot) : null;
+            if (gyCard) {
+              const gyDef = cardDef(gyCard.cardId);
+              const gyValue = ((gyCard.power ?? gyDef?.power ?? 0) * 2)
+                + (gyCard.toughness ?? gyDef?.toughness ?? 0);
+              score += P.drawCardValue + gyValue;
+              const gySubtypes = gyCard.subtypes ?? gyDef?.subtypes ?? [];
+              if ((effect.drawIfSubtypes ?? []).some((s) => gySubtypes.includes(s))) {
+                score += P.drawCardValue; // Zombie → dobranie
+              }
             }
           }
           // M156/Q1 (pętla jakości, Withstand — cantrip z prewencją „any
@@ -2745,7 +2785,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           return finish(score);
         }
         const source = cmd.objectId ? objectOnBoard(view, cmd.objectId) : null;
-        const abilityObject = source ?? handCard(view, cmd.objectId);
+        // M279 (Batch 52, Leonin Surveyor): zdolności aktywowane Z GROBU
+        // (fromGraveyard — Leonin „{3} exile: dobierz", Glitch Ghost Surveyor,
+        // Reassembling Skeleton, Survivor of Korlis…) nie były rozpoznawane —
+        // `source` (pola bitwy) i `handCard` (ręka) ich nie widzą, więc `ability`
+        // było undefined i pętla efektów nie wyceniała NICZEGO (gołe score=2).
+        // `zoneCard` skanuje wszystkie strefy widoku — ta sama reguła co w
+        // gałęzi czarów (Escape/Flashback, M103/D); L41: bliźniacze gałęzie.
+        const abilityObject = source ?? handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
         const def = abilityObject ? cardDef(abilityObject.cardId) : undefined;
         // M237/3 (audyt Żywym Testerem, Blazing Torch): zdolność NADANA przez
         // equipment (grantedFromEquipment) ma index względem
@@ -3557,6 +3604,45 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // karty (ADR 0002).
             score -= 8;
           }
+          // Batch 52 (audyt Żywym Testerem, Leonin Surveyor „{3}, exile z
+          // grobu: dobierz"): `draw_cards` ze zdolności AKTYWOWANEJ nie miało
+          // wyceny w tej ścieżce (bliźniacza gałąź czarów ją ma — L41). Bot
+          // widział gołe score=2 i potrafił przełożyć dobranie karty na pass
+          // albo inny trywialny wariant. Wartość = karta (P.drawCardValue),
+          // jak w cast_spell — generycznie po typie efektu (ADR 0002).
+          if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') {
+            const drawAmount = Number.isInteger(effect.amount) ? effect.amount : 1;
+            score += P.drawCardValue * drawAmount + drawDeckingPenalty(view, drawAmount);
+          }
+          // Batch 52 (Jolrael, Mwonvuli Recluse): „{4}{G}{G}: twoje stwory
+          // mają bazowe X/X do końca tury (X = karty w ręce)". Bez wyceny
+          // zdolność dostawała gołe score=2 i bot aktywował ją nawet, gdy
+          // OSŁABIAŁA własną planszę (6/6 → 2/2 przy 2 kartach w ręce).
+          // Wartość = suma zmian P/T po własnej stronie; kara, gdy netto nie
+          // wzmacnia albo okno jest złe (efekt wygasa w cleanup — CR 514.2).
+          if (effect.type === 'set_base_pt_creatures_you_control') {
+            const handCount = (view.zones.hand ?? []).filter((o) => o.controllerId === view.playerId).length;
+            const ownCreatures = (view.zones.battlefield ?? [])
+              .filter((o) => o.kind === 'creature' && o.controllerId === view.playerId);
+            if (ownCreatures.length === 0) {
+              score -= 20; // nie ma kogo zmienić — 6 many za nic
+            } else {
+              let net = 0;
+              for (const c of ownCreatures) {
+                net += (handCount - (c.power ?? 0)) * 2 + (handCount - (c.toughness ?? 0));
+              }
+              if (net <= 0) {
+                // Nie zmienia albo OSŁABIA własną planszę — kara przebija bazę.
+                score -= 30;
+              } else {
+                const precombat = myTurn(view) && view.turn.phase === 'precombat_main';
+                const defends = !myTurn(view)
+                  && (view.turn.step === 'declare_attackers' || view.turn.step === 'declare_blockers');
+                if (precombat || defends) score += Math.min(net, 30);
+                else score -= 12; // X/X wyparuje w cleanup bez udziału w walce
+              }
+            }
+          }
         }
         if (cmd.xValue != null) score -= Math.min(cmd.xValue ?? 0, 2) * 0.5; // koszt {X} — drobna kara
         // Equip: załączenie na własnym stworze jest tym lepsze, im większy
@@ -4355,6 +4441,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           ? view.zones.exile.find((o) => o.id === cmd.objectId)
           : null;
         return finish(60 - freeCastTargetPenalty(view, madnessCard?.spell?.effects ?? [], cmd));
+      }
+      case 'resolve_exile_cast': {
+        // Vaan, Street Thief: rzut ukradzionej karty za normalny koszt to
+        // zwykle czysta przewaga (karta + efekt, gracz nie traci własnej);
+        // rezygnacja daje tylko Treasure (mały zysk). Penalizujemy rzut
+        // z nieprzyjaznym celem (freeCastTargetPenalty — ta sama reguła co
+        // suspend/rebound/madness/grave free cast).
+        if (!cmd.cast) return finish(6);
+        const exiledCard = cmd.objectId
+          ? view.zones.exile.find((o) => o.id === cmd.objectId)
+          : null;
+        return finish(52 - freeCastTargetPenalty(view, exiledCard?.spell?.effects ?? [], cmd));
       }
       case 'resolve_reveal_choice': {
         // M158/Batch 39 (Invasion of the Giants II): ujawnij Olbrzyma za 2
