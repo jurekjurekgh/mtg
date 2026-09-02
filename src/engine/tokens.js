@@ -8,6 +8,40 @@ import { effectivePower, effectiveToughness } from './permanents.js';
  * tworzy obiekt bezpośrednio przez createGameObject i jawne strefy.
  */
 
+/**
+ * SKARB (Treasure) — jedna definicja w silniku (audyt PR #93, decyzja
+ * właściciela: „Skarby składamy z katalogu tokenów, nie ręcznie w efekcie").
+ *
+ * Powstania Skarbu było w rdzeniu sześć (Stash w lochu Undercity, Marut
+ * i rezygnacja z rzutu w oknie zdolności) i KAŻDE pisało ten sam deskryptor
+ * od nowa. Taki zapis dryfuje: pominięte `fromTreasure` albo inna opłata
+ * oznaczają, że dwa Skarby w tej samej grze grają różnie (klasa L14: jedna
+ * zasada — jedna implementacja).
+ *
+ * Druga połówka prawdy o Skarbie leży w KATALOGU tokenów
+ * (`token_treasure` w `src/cards/card-data.js`) — silnik celowo nie importuje
+ * katalogu (ADR 0002), więc równość obu definicji pilnuje test
+ * `test/audyt-treasure-katalog.test.js`.
+ *
+ * Deskryptor zdolności jest pisany jawnie (bez `createAbility` z
+ * abilities.js), bo `abilities.js` importuje `effects.js` i powstałby cykl
+ * modułów.
+ */
+export const TREASURE_TOKEN_ABILITY = Object.freeze({
+  type: 'activated', timing: 'instant', keyword: null,
+  cost: Object.freeze({ tap: true, sacrificeSelf: true }),
+  effect: Object.freeze({ type: 'add_mana', amount: 1, fromTreasure: true }),
+  trigger: null, targets: null, cycling: null, condition: null, pump: null,
+  keywords: null, oncePerTurn: false, mustAttack: false,
+});
+
+/** Efekt `create_token` dla Skarbu — gotowy do wstawienia w deskryptor karty. */
+export const TREASURE_TOKEN_EFFECT = Object.freeze({
+  type: 'create_token', cardId: 'token_treasure', name: 'Treasure', kind: 'artifact',
+  colors: [], types: Object.freeze(['Artifact']), subtypes: Object.freeze(['Treasure']),
+  abilities: Object.freeze([TREASURE_TOKEN_ABILITY]),
+});
+
 /** Stała definicja tokenu (do rozszerzeń poza engine). */
 export function createToken({ name = 'Token', kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [] }) {
   if (!name || !kind) throw new TypeError('Token musi mieć nazwę i rodzaj');

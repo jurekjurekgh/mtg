@@ -839,6 +839,18 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_treasure', name: 'Treasure', set: null,
     types: ['Artifact', 'Token'], subtypes: ['Treasure'], colors: [],
     manaCost: 0,
+    // Zdolność Skarbu należy do DEFINICJI tokena (jak `token_food`), a nie do
+    // efektu, który go tworzy — audyt PR #93 (decyzja właściciela: „Skarby
+    // składamy z katalogu tokenów"). Silnik nie importuje katalogu (ADR 0002),
+    // więc drugie odbicie tej samej zasady trzyma `TREASURE_TOKEN_EFFECT`
+    // w tokens.js; ich równość pilnuje test/audyt-treasure-katalog.test.js.
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true, sacrificeSelf: true },
+        effect: { type: 'add_mana', amount: 1, fromTreasure: true },
+      }),
+    ],
     imageUri: 'https://cards.scryfall.io/large/front/7/e/7ec6f053-96f7-4e57-b2eb-4e7699a40a4f.jpg?1783911520',  // totj
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
   }),

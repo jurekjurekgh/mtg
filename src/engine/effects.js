@@ -7,7 +7,7 @@ import { spendMana, addMana, producibleMana } from './resources.js';
 import { getSourceForObject } from './mana-sources.js';
 import { moveObjectDirectly, removeFromCombat, singleTargetOfStackEntry } from './objects.js';
 import { tryRegenerate } from './state-based.js';
-import { createBattlefieldToken, nextCopyNumber } from './tokens.js';
+import { createBattlefieldToken, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
 
 import { effectiveProtectionFromColors } from './attachments.js';
 import { shuffle } from './shuffle.js';
@@ -36,21 +36,10 @@ export const UNDERCITY_ROOMS = Object.freeze([
   Object.freeze({ name: 'Trap!', effects: Object.freeze([Object.freeze({ type: 'lose_life', amount: 5, target: 'player' })]), leadsTo: Object.freeze(['Archives']) }),
   // 5. Arena — goad docelowego stwora (musi atakować do końca tury; wybór celu).
   Object.freeze({ name: 'Arena', effects: Object.freeze([Object.freeze({ type: 'goad', target: 'creature' })]), leadsTo: Object.freeze(['Archives', 'Catacombs']) }),
-  // 6. Stash — token Treasure (ze zdolnością „{T}, Sacrifice: Add one mana
-  //    of any color”, jak każdy Skarb w MtG; mana oznaczona fromTreasure —
-  //    Marut, Batch 16. Deskryptor pisany z ręki: effects.js nie importuje
-  //    abilities.js, żeby nie tworzyć cyklu modułów).
-  Object.freeze({ name: 'Stash', effects: Object.freeze([Object.freeze({
-    type: 'create_token', cardId: 'token_treasure', name: 'Treasure', kind: 'artifact',
-    colors: [], types: ['Artifact'], subtypes: ['Treasure'],
-    abilities: [Object.freeze({
-      type: 'activated', timing: 'instant', keyword: null,
-      cost: Object.freeze({ tap: true, sacrificeSelf: true }),
-      effect: Object.freeze({ type: 'add_mana', amount: 1, fromTreasure: true }),
-      trigger: null, targets: null, cycling: null, condition: null, pump: null,
-      keywords: null, oncePerTurn: false, mustAttack: false,
-    })],
-  })]), leadsTo: Object.freeze(['Catacombs']) }),
+  // 6. Stash — token Treasure („{T}, Sacrifice this artifact: Add one mana of
+  //    any color”). Współdzielony deskryptor Skarba (audyt PR #93) — patrz
+  //    `TREASURE_TOKEN_EFFECT` w tokens.js.
+  Object.freeze({ name: 'Stash', effects: Object.freeze([TREASURE_TOKEN_EFFECT]), leadsTo: Object.freeze(['Catacombs']) }),
   // 7. Archives — dobierz kartę.
   Object.freeze({ name: 'Archives', effects: Object.freeze([Object.freeze({ type: 'draw_cards', amount: 1 })]), leadsTo: Object.freeze(['Throne of the Dead Three']) }),
   // 8. Catacombs — 4/1 czarny Skeleton z menace.
@@ -3577,17 +3566,9 @@ function markTemporaryExile(state, exileId, sourceObject) {
     if (have < (effect.threshold ?? 5)) return;   // ponizej progu — nic sie nie dzieje
     const controllerId = source.controllerId;
     applyEffect(state, { type: 'sacrifice_permanent' }, source, []);
-    applyEffect(state, {
-      type: 'create_token', cardId: 'token_treasure', name: 'Treasure', kind: 'artifact',
-      colors: [], types: ['Artifact'], subtypes: ['Treasure'],
-      abilities: [Object.freeze({
-        type: 'activated', timing: 'instant', keyword: null,
-        cost: Object.freeze({ tap: true, sacrificeSelf: true }),
-        effect: Object.freeze({ type: 'add_mana', amount: 1, fromTreasure: true }),
-        trigger: null, targets: null, cycling: null, condition: null, pump: null,
-        keywords: null, oncePerTurn: false, mustAttack: false,
-      })],
-    }, { ...source, controllerId }, []);
+    // Skarb z tej samej współdzielonej definicji co Stash i rezygnacja
+    // z rzutu w oknie zdolności (audyt PR #93).
+    applyEffect(state, TREASURE_TOKEN_EFFECT, { ...source, controllerId }, []);
     return;
   }
   if (effect.type === 'subtype_spells_gain_flash_and_etb_fight_this_turn') {

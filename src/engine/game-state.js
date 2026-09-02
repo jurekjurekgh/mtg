@@ -27,7 +27,7 @@ import { runStateBasedActions, tryRegenerate } from './state-based.js';
 import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, fireWardTriggers } from './triggers.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities } from './attachments.js';
-import { createBattlefieldToken } from './tokens.js';
+import { createBattlefieldToken, TREASURE_TOKEN_EFFECT } from './tokens.js';
 import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom } from './effects.js';
 import { changeLife, recordCardDrawn } from './players.js';
 import { shuffle } from './shuffle.js';
@@ -2260,17 +2260,11 @@ export function execute(state, input) {
       state.pendingExileCast = null;
       // „If you don't [cast it], create a Treasure token." Źródło triggera
       // mogło opuścić pole bitwy — token tworzy KONTROLER zdolności (LKI).
-      applyEffect(state, {
-        type: 'create_token', cardId: 'token_treasure', name: 'Treasure', kind: 'artifact',
-        colors: [], types: ['Artifact'], subtypes: ['Treasure'],
-        abilities: [Object.freeze({
-          type: 'activated', timing: 'instant', keyword: null,
-          cost: Object.freeze({ tap: true, sacrificeSelf: true }),
-          effect: Object.freeze({ type: 'add_mana', amount: 1, fromTreasure: true }),
-          trigger: null, targets: null, cycling: null, condition: null, pump: null,
-          keywords: null, oncePerTurn: false, mustAttack: false,
-        })],
-      }, { id: pending.sourceId, controllerId: pending.playerId, cardId: pending.cardId, zone: 'none', kind: null }, []);
+      // Skarb z JEDNEJ współdzielonej definicji (tokens.js) — patrz
+      // `TREASURE_TOKEN_EFFECT`; dawniej to samo literalne pole było pisane
+      // ponownie przy każdym powstaniu Skarbu (audyt PR #93).
+      applyEffect(state, TREASURE_TOKEN_EFFECT,
+        { id: pending.sourceId, controllerId: pending.playerId, cardId: pending.cardId, zone: 'none', kind: null }, []);
       if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) {
         state.turn.priorityPlayerId = pending.restorePriorityTo;
       }
