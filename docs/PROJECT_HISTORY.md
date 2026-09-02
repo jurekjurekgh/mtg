@@ -7545,6 +7545,60 @@ Nowe testy: **21** (silniki 5, okno Vaana 3, Skarb 3, kicker 6, grupowanie 4) �
 delta `npm test` 4147 → 4168 dokładnie tyle wynosi; plik
 `audyt-pr92-grupowe-trygery.test.js` tylko zaktualizowany o tag, nie nowy.
 
+### Audyt PR #92, tura 3 (2026-09-02): cztery wątki z tury 2 zamknięte, w tym kontrzenie zdolności
+
+Tura wzięła to, co tura 2 odłożyła (pkt 1–5 §9 raportu + wątki 3, 4 i 6 z jej
+HANDOFF-u), w kolejności: długi ogon API → fakt w danych karty → rodzina pól →
+mechanika, bez której reszta była nie-do-zmierzania.
+
+- **A — `castSpell` przez `options`** (`9d0ba7b`). Sześć flag pozycyjnych
+  sklejonych w jeden obiekt, wzorowany na `castPermanent` od początku.
+  Argumenty liczone raz, wołający po trzech ścieżkach zamiast dwunastu pozycji.
+  Sześć testów w `test/audyt-castspell-opcje.test.js`: sygnatura (7 pozycyjnych
+  + `options`), odrzucenie nieznanej opcji (a nie jej ciche zignorowanie),
+  dotarcie znanych do logiki, mapowanie komendy `cast_spell`, skan źródła
+  (każda flaga w ciele `castSpell` jest na liście opcji i każda opcja jest
+  użyta) oraz zamrożenie listy `CAST_SPELL_OPTIONS`.
+- **B — Skarb bez ID karty w rdzeniu** (`5d7b3f4`). Kolory jednostki są DANĄ
+  deskryptora (katalog tokenów, `TREASURE_TOKEN_EFFECT` i sześć efektów
+  `create_token`, które kolorów nigdy nie wypisały), zdolność czytana po koszcie
+  `{T, sacrificeSelf}` + znaczniku `fromTreasure`, a pula skarbowej many niesie
+  własne kolory (`player.treasureManaColors`). Wpis `'token_treasure'` z
+  `MANA_SOURCE_MAP` usunięty — mapa była „cieniem danych karty" we własnym
+  rozumieniu (komentarz w tym pliku + strażnik M193/A).
+  Nowe `test/audyt-treasure-bez-id.test.js` (5 testów), w tym skan tekstu
+  `src/engine/*.js`: jedno wystąpienie pilnowanego literału w KOMENTARZU też
+  łamie bramkę (i słusznie — komentarz z ID to pierwszy krok do kodu z ID).
+- **C — okno impulsu z choke pointem** (`62e03e6`). Nowy moduł
+  `src/engine/impulse-window.js` (58. w bundlu) pisze `playableUntilTurn` /
+  `playableWithoutPaying` i czyta je przez pięć funkcji; `tools/family-audit.mjs`
+  ma rodziny `impulse-window` i `impulse-free-cast`, a `test/family-audit.test.js`
+  ósmy test pilnuje, żeby warunek ważności okna nie został znów przepisany ręcznie
+  w żadnym z plików-czytelników.
+- **D — kontrzenie zdolności** (`9f1c37c`). Stifle (CNS #108, snapshot z
+  rulingami WotC 2004-10-04), typ celu `ability_on_stack`, efekt
+  `counter_ability` przez wspólny `counterStackObject`, `abilityEffects` w
+  `playerView`, wycena w botu w tej samej klasie co kontrczar. Pytanie z tury 2
+  („co z `pendingExileCast` Vaana przy kontrze całego triggeru") zamknięte
+  testem: ani wygnania, ani Skarbu, ani decyzji; obrażenia walki zostają.
+  Katalog urósł o jedną kartę, więc `tools/generate-plan-decks.mjs` dopisał
+  `1x Stifle` do `decks/wiedzmin.txt` (ADR 0023: dokładnie jedna talia).
+
+**Czego tura nie ruszyła (świadomie):** rejestru `docs/LESSONS.md` — zapas
+budżetu lektury to 455 B (tura 2, M282), a każda nowa lekcja wymagałaby
+wycięcia cudzej. Narracja jest w §10 raportu `AUDYT_PR92_2026-09-02.md`;
+decyzja o progu (a/b/c z §9) czeka na właściciela.
+
+Bramy: `npm test` 4186/4186, `npm run test:all` 4196/4196 (0 fail), `npm run build`
+58 modułów / 3111,8 kB, `family-audit` i `event-contract-audit` bez naruszeń,
+`npm run benchmark` bez zmiany (heuristic 82,7%, aggro 28,9%), strażnicy
+dokumentacji 23/23. Nowe testy tury: **18** (options 6, Skarb-bez-ID 5,
+rodzina impulsu 1 w `test/family-audit.test.js`, kontrzenie zdolności 6) —
+dokładnie tyle wynosi delta `npm test` 4168 → 4186. Piny
+`test/audyt-treasure-katalog.test.js` (równość definicji rozszerzona o
+`colors`) i `test/real-cards-batch28.test.js` (Skarb z `TREASURE_TOKEN_EFFECT`
+zamiast pisanego ręcznie) są zaktualizowane, nie nowe.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

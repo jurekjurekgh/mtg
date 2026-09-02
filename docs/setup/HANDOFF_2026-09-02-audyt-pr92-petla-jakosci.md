@@ -142,3 +142,56 @@ Wątki, które sama ta tura odkryła i zostawia (kolejność = spodziewany zysk)
 7. **Narzędzia do powtórzenia:** rodzina pól w `family-audit` za każdym razem,
    gdy naprawa wprowadza choke point (bez tego strażnik jest vacuouski —
    L113); kontrola mutacji w stronę ZACISKAJĄCĄ bramkę (L114).
+
+## Stan po turze 3 (2026-09-02, godz. wieczorna): cztery wątki z listy zamknięte
+
+Z siedmiu wątków powyżej sesja wzięła 1, 2, 3 i 4 — wszystkie są w kodzie, z testami i
+pushnięte osobno: `9d0ba7b` (A: `castSpell` przez `options`), `5d7b3f4` (B: Skarb
+czytany z deskryptora zdolności, nie z ID karty), `62e03e6` (C: choke point
+`src/engine/impulse-window.js` + rodziny `impulse-window`/`impulse-free-cast` w
+audycie), `9f1c37c` (D: Stifle, `ability_on_stack`, `counter_ability`,
+`abilityEffects` w `playerView`). Narracja i liczby: §10 raportu
+`docs/audits/AUDYT_PR92_2026-09-02.md`, M283 w `docs/ENGINE_MILESTONES.md`.
+
+Status dawnej listy:
+
+1. **zamknięte (B).** `MANA_SOURCE_MAP` nie ma wpisu dla Skarba; `resources.js`
+   nie porównuje `cardId`; kolory są DANĄ definicji tokena (sześć efektów
+   `create_token` też je dostało). Napomknienie: golden-master wycen bota nie
+   drgnął, bo `getSourceForObject` zwraca dokładnie to co wcześniej.
+2. **zamknięte (A).** Sygnatura `castSpell` to 7 pozycyjnych + `options`;
+   `CAST_SPELL_OPTIONS` jest zamrożone, a skan źródła pilnuje, że każda flaga w
+   ciele funkcji jest na liście i każda opcja jest użyta.
+3. **zamknięte (D) + jedno sprostowanie.** Pytanie „co z `pendingExileCast`
+   przy kontrze całego triggeru" ma test: skontrowana zdolność się nie
+   rozstrzyga — brak wygnania, brak Skarbu, brak decyzji (CR 118.12/608.2a).
+   Natomiast zdanie „ścieżka odrzucona (`target_unsupported`) zwraca priorytet i
+   zostawia kartę w exile" jest NIEAKTUALNE: `target_unsupported` nie istnieje w
+   silniku (grep po `src/` daje tylko `unsupported:<cardId>` w deck-builderze i
+   status rejestru). Natomiast samo pozostanie karty w exile po rezygnacji z
+   rzutu jest ZGODNE z kartą (Vaan nie ma klauzuli zwrotu), więc nie ma czego
+   naprawiać.
+4. **zamknięte (C).** Pula pól impulsu ma właściciela i dwie rodziny w audycie.
+   Uwaga dla następnej tury: rodzina pól bez `bypass`/`legal` w
+   `test/family-audit.test.js` jest martwa (L113), a skan audytora jest
+   tekstowy i liczy się z KOMENTARZAMI — literał `'token_treasure'` w
+   komentarzu `resources.js` RED-ował bramkę (słusznie: komentarz z ID karty to
+   pierwszy krok do kodu z ID karty).
+5. nietknięte — pułapki harnessu (L116) aktualne; tura 3 dorzuciła dwie własne,
+   opisane w komentarzach `test/audyt-kontrzenie-zdolnosci.test.js`
+   (`gameObjectDataOf` nie przenosi podtypów → trigger Vaana nie wpada; komendy z
+   `playerView` nie niosą `cardId` → filtr po `cardId` daje pusty pin).
+6. **nadal czeka na właściciela** — budżet lektury startowej (455 B zapasu).
+   Tura 3 celowo NIE dopisała lekcji do `docs/LESSONS.md`; narracja poszła do
+   raportu audytu. Trzy wyjścia (próg / trwały podział rejestr↔przypadki /
+   wyniesienie klas pilnowanych przez automaty) pozostają do wyboru.
+7. nietknięte, zastosowane w praktyce (rodziny pól przy C, kontrola mutacji przy
+   B i C).
+
+Czego NIE robić w ciemno: `docs/LESSONS.md` bez zwolnienia miejsca (pkt 6);
+`git push --force`; scalania PR-a #93; „poprawiania" faktu, że zdolność many nie
+wchodzi na stos (to CR 605.1a i ono realizuje klauzulę „Mana abilities can't be
+targeted" — zob. test 4 w `test/audyt-kontrzenie-zdolnosci.test.js`).
+
+**Bramy na koniec tury 3:** patrz §10 raportu audytu (tam są świeże liczby
+`npm test` / `test:all` / build / benchmark / strażników dokumentacji).

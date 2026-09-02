@@ -54,9 +54,10 @@ Następna lista właściciela wchodzi tutaj.)_
 - **[zamknięte w PR #93, `49bfe25`]** `TREASURE_TOKEN_EFFECT` w
   `src/engine/tokens.js` (3 miejsca w rdzeniu), zdolność Skarbu wreszcie w
   definicji `token_treasure`, a `test/audyt-treasure-katalog.test.js` pilnuje
-  zgodności obu źródeł (skan katalogu, pin anty-vacuous). Zostaje cień
-  danych: `mana-sources.js` i `cardId === 'token_treasure'` w `resources.js`
-  — patrz §9 raportu. Historia: Treasure z `resolve_exile_cast` (Vaan)
+  zgodności obu źródeł (skan katalogu, pin anty-vacuous). Cień danych
+  zniknął w turze 3 (`5d7b3f4`): kolory są DANĄ definicji tokena, koszyk
+  skarbowy czyta deskryptor zdolności (`treasureManaAbilityOf`), a pula many
+  niesie własne kolory — §10 raportu. Historia: Treasure z `resolve_exile_cast` (Vaan)
   składany ręcznie
   (`applyEffect({ type: 'create_token' })` z własnoręcznie złożonym obiektem)
   zamiast z katalogu tokenów — kopia opisu tokenu poza źródłem prawdy
@@ -80,6 +81,25 @@ Następna lista właściciela wchodzi tutaj.)_
   wykonać offline (egress z sandboxa zablokowany). Pomysł: narzędzie
   dopisujące `rulings` do snapshotów + test porównujący ograniczenia kart z
   listą rulingów.
+
+- **[zamknięte w PR #93, `9d0ba7b`]** ogon `castSpell` to jeden obiekt
+  `options`, nie sześć flag pozycyjnych. Historia: każda kolejna ability-grant
+  dokładała argument, a pomyłka w kolejności jest niema (`undefined` zamiast
+  błędnego typu). Pomysł był w §9 raportu z tury 2.
+- **[zamknięte w PR #93, `5d7b3f4`]** Skarb przestaje być nazwą karty w rdzeniu
+  (kolory w danych definicji, predykat zdolnościowy zamiast `cardId ===`,
+  `player.treasureManaColors` zamiast literału pięciu kolorów, wpis z
+  `MANA_SOURCE_MAP` usunięty). Historia: klasa ADR 0002; zgłoszenie właściciela
+  „Skarby składamy z katalogu tokenów".
+- **[zamknięte w PR #93, `62e03e6`]** rodzina pól `playableUntilTurn` /
+  `playableWithoutPaying` w `tools/family-audit.mjs` + choke point
+  `src/engine/impulse-window.js`. Historia: siedem zapisów w dwóch plikach i
+  trzynaście odczytów w czterech, żadnego właściciela (wątek 4 z HANDOFF tury 2).
+- **[zamknięte w PR #93, `9f1c37c`]** kontrzenie zdolności: Stifle (CNS #108) z
+  typem celu `ability_on_stack`, efektem `counter_ability` i `abilityEffects` w
+  `playerView`. Historia: `counterStackObject` umiał zdjąć wpis zdolności, ale
+  nikt go o to nie prosił, więc pytanie o `pendingExileCast` Vaana przy kontrze
+  całego triggeru było nie-do-udowodnienia (§9 pkt 3 raportu z tury 2).
 
 ## 3. Bot
 

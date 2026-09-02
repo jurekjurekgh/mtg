@@ -3740,3 +3740,49 @@ sklejona głowica wpisu L105 odzyskała własny nagłówek. Lektura: ~99,84k.
 `event-contract-audit` bez naruszeń, zero zmian w katalogu kart poza
 deskryptorami (tagi grupowania, zdolność tokenu Skarbu, zdolność `static`
 dwóch silników), zero zmian wycen bota (golden-master nietknięty).
+
+## M283 (2026-09-02) — Audyt PR #92 tura 3: API, fakt w danych, rodzina pól, kontrzenie zdolności (arena/01a06193, PR #93)
+
+**Ogon `options` w `castSpell`.** Sześć flag pozycyjnych (kicker,
+`abilityWindowCast`, madness, warp, freeImpulse, `phyrexianPayWithLife`)
+sklejone w jeden obiekt `options`, tak jak `castPermanent` robi od początku.
+Sama zmiana jest zerowa behawioralnie; wartościowa jest jej konsekwencja —
+`requireSpell` i trzej wołający przestali się mijać o jedno przesunięcie
+argumentu, a to był mechanism, w którym taki błąd jest niemy (pozycja jest
+`undefined`, nie błędnym typem).
+
+**Skarb przestał być nazwą karty w rdzeniu.** Kolory jednostki to dana
+deskryptora (`effect.colors` w katalogu tokenów, w `TREASURE_TOKEN_EFFECT` i w
+sześciu efektach `create_token`, które ich nigdy nie miały), zdolność czyta
+`treasureManaAbilityOf` po koszcie `{T, sacrificeSelf}` i znaczniku
+`fromTreasure`, a `player.treasureManaColors` niesie kolory tego, co faktycznie
+wyprodukowano. Wpis `'token_treasure'` w `MANA_SOURCE_MAP` zniknął — mapa,
+która sama siebie oskarżała w komentarzu o bycie „cieniem danych karty", trzymała
+tę samą regułę co dwa literały w `resources.js`. Dwie mutacje (przywrócenie
+porównań po `cardId`; usunięcie kolorów z danych) RED-ują właściwe testy — fakt
+mieszka tam, gdzie powinien.
+
+**Okno impulsu ma właściciela.** Nowy `src/engine/impulse-window.js` to jedyny
+pisarz `playableUntilTurn`/`playableWithoutPaying`; siedem zapisów w dwóch
+plikach i trzynaście odczytów w czterech przeszło przez pięć funkcji. Audyt
+rodzin (`tools/family-audit.mjs`) dostał rodziny `impulse-window` i
+`impulse-free-cast` — wcześniej pola te nie miały nadzoru właśnie dlatego, że
+nikt nie wpisał ich do `FIELD_FAMILIES` (wątek 4 z HANDOFF tury 2).
+
+**Zdolność na stosie daje się skontrować.** Stifle (CNS #108, snapshot z
+rulingami WotC) + typ celu `ability_on_stack` + efekt `counter_ability` przez
+wspólny `counterStackObject`; `playerView` projection dostał `abilityEffects`,
+żeby bot i stół widziały, CO jest kontrace (ADR 0017). To zamknęło pytanie z §9
+o `pendingExileCast` Vaana: skontrowany trigger nie rozstrzyga się, więc nie ma
+wygnania, nie ma Skarbu i nie ma decyzji (CR 118.12/608.2a) — a obrażenia, które
+go uruchomiły, zostają. „Mana abilities can't be targeted" wyszło z konstrukcji
+(CR 605.1a — zdolność many nie wchodzi na stos) i test 4 pilnuje, żeby nikt
+tego nie „poprawił".
+
+**Bramy:** `npm test` **4186/4186**, `npm run test:all` **4196/4196** (0 fail),
+`npm run build` **58 modułów / 3111,8 kB**, `family-audit` (dwie nowe rodziny)
+i `event-contract-audit` bez naruszeń, `npm run benchmark` **bez zmian**
+(heuristic 82,7%, aggro 28,9%) — nowa karta nie gra w BENCH_DECKS, progi
+regresji nietknięte. Rejestr lekcji nietknięty: budżet lektury startowej ma
+455 B zapasu (M282), więc narracja tury poszła do §10 raportu
+`docs/audits/AUDYT_PR92_2026-09-02.md`, nie do `docs/LESSONS.md`.
