@@ -112,11 +112,12 @@ test('C: przeniesienie, które BUDZI efekt sprzętu, jest dozwolone (anty-over-f
 
 test('C: płaska pompa może wędrować za większym ciałem (M100/E13 nietknięte)', () => {
   // Squire's Lightblade: +1/+0 dla każdego — wartość nosiciela liczona ciałem,
-  // więc przeniesienie z 2/1 na 6/5 pozostaje sensowne.
+  // więc przeniesienie z 2/1 na Maruta 7/7 pozostaje sensowne. (Zmienna nazywała
+  // się `naMaruta` po poprzedniej wersji stołu, a szukała `->marut`.)
   const oceny = ocenyEquipu(stół({ equipmentId: 'blad', cardId: 'squires-lightblade', attachedTo: 'porter' }), 'blad');
-  const naKrotiq = oceny.equip.find((o) => o.cmd.includes('->marut'));
-  assert.ok(naKrotiq, `oczekiwano oferty na Maruta: ${oceny.equip.map((e) => e.cmd).join(', ')}`);
-  assert.ok(naKrotiq.score > 0, `sprzęt z pompą na 7/7 = PREMIA: score=${naKrotiq.score.toFixed(2)}`);
+  const naMaruta = oceny.equip.find((o) => o.cmd.includes('->marut'));
+  assert.ok(naMaruta, `oczekiwano oferty na Maruta: ${oceny.equip.map((e) => e.cmd).join(', ')}`);
+  assert.ok(naMaruta.score > 0, `sprzęt z pompą na 7/7 = PREMIA: score=${naMaruta.score.toFixed(2)}`);
 });
 
 test('C: ping-pong sprzętu nie jest nagradzany w żadną stronę', () => {
