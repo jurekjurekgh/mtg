@@ -624,6 +624,14 @@ function bootstrapTable() {
    */
   let artShowcaseOpenedAt = 0;
   /**
+   * B (uwaga właściciela): permanenty, których PIERWSZE odwrócenie już
+   * pokazało warstwę wysoko-graficzną. Kolejne odwrócenia tej samej karty
+   * (wilkołaki transformują się co upkeep) nie otwierają warstwy — gracz
+   * widział już obie strony. Klucz = objectId permanentu (trwały przez
+   * całą partię; czyszczony w startGame).
+   */
+  const transformedShowcaseShown = new Set();
+  /**
    * M254/C (zgłoszenie właściciela): KOLEJKA rzutów. Wcześniej warstwa
    * otwierała się w trakcie pętli `advance()`, więc kolejne rzuty w jednej
    * sekwencji nadpisywały ją i gracz widział wyłącznie OSTATNI (własny czar
@@ -638,13 +646,13 @@ function bootstrapTable() {
   // Moduł czysty (testowalny headless) — kolejka mówi, KIEDY otworzyć warstwę.
   const artShowcaseQueue = createArtShowcaseQueue({
     isOpen: artShowcaseOpen,
-    open: ({ cardId, playerId }) => openArtShowcase(cardId, playerId),
+    open: ({ cardId, playerId, verb, label }) => openArtShowcase(cardId, playerId, { verb, label }),
   });
   /** Otwiera kolejny rzut z kolejki (jeśli jest). Zwraca true, gdy otwarto. */
   function openNextArtShowcase() {
     return artShowcaseQueue.next();
   }
-  function openArtShowcase(cardId, playerId = null) {
+  function openArtShowcase(cardId, playerId = null, { verb = 'Rzuca', label = null } = {}) {
     if (!session || !els.artShowcase) return false;
     if (!els.hiGfxToggle?.checked) return false;
     const card = session.cardDetails(cardId);
@@ -652,10 +660,12 @@ function bootstrapTable() {
     // I1 (zgłoszenie właściciela 2026-08-28): warstwa odpala się dla kart
     // OBU stron — mała podpowiedź, KTO rzucił („Czarodziejka"/„Nieprzyjaciel",
     // imiona jak w sekcji „Przebieg tur"; fallback: nazwa gracza z widoku).
-    const casterName = TURN_NAMES[playerId]
+    // B (DFC): dla transformacji podpis brzmi „Przemiana: <karta>", nie
+    // „Rzuca: <gracz>" — `label` nadpisuje podmiot, `verb` — czasownik.
+    const casterName = label ?? TURN_NAMES[playerId]
       ?? session.view()?.players?.find((pl) => pl.id === playerId)?.name
       ?? null;
-    renderCardArtShowcase(els.artShowcase, card, { casterName });
+    renderCardArtShowcase(els.artShowcase, card, { casterName, verb });
     els.artShowcase.className = 'art-showcase active';
     els.artShowcase.setAttribute('aria-hidden', 'false');
     artShowcaseOpenedAt = Date.now();
@@ -683,6 +693,27 @@ function bootstrapTable() {
     if (!cardHasShowcaseArt(card)) return false;
     // 'opened' | 'queued' — w obu przypadkach gra ma stanąć.
     return artShowcaseQueue.push({ cardId, playerId }) != null;
+  }
+
+  /**
+   * B (uwaga właściciela): obserwator `onTransform` — PIERWSZE odwrócenie
+   * dwustronnej karty otwiera warstwę wysoko-graficzną (FOT, KON, Scryfall
+   * NOWEJ strony), jeśli ptaszek trybu włączony — analogicznie do rzutu
+   * czaru. Każde KOLEJNE odwrócenie tego samego permanentu jest pomijane
+   * (gracz widział już obie strony). Podpis „Przemiana: <karta>".
+   */
+  function onTransformShowcase({ cardId, playerId, objectId }) {
+    if (!session || !els.hiGfxToggle?.checked) return false;
+    if (objectId == null || transformedShowcaseShown.has(objectId)) return false;
+    const card = session.cardDetails(cardId);
+    if (!cardHasShowcaseArt(card)) return false;
+    transformedShowcaseShown.add(objectId);
+    return artShowcaseQueue.push({
+      cardId,
+      playerId,
+      verb: 'Przemiana',
+      label: card.name ?? session.nameOf(cardId) ?? null,
+    }) != null;
   }
 
   /** Zamknięcie warstwy: następny rzut z kolejki albo wznowienie gry (M254/C). */
@@ -958,6 +989,18 @@ function bootstrapTable() {
     const view = session.view();
     const legalCommands = view.legalCommands || [];
     
+    // A (uwaga właściciela): karta dwustronna (DFC) NA STOLE. Silnik przy
+    // każdej transformacji WYMIENIA `cardId` i `transformTo.cardId`, więc
+    // `transformToCardId` w widoku pola bitwy ZAWSZE wskazuje stronę przeciwną
+    // (także po craft/incubate, gdzie tył nie ma linku powrotnego w rejestrze).
+    // Obie strony są publiczne (CR 711/712). Dla takiej karty kliknięcie
+    // ZAWSZE otwiera warstwę Działania z podglądem OBU stron — nawet bez
+    // żadnych zdolności. Strefy spoza pola bitwy (grób/wygnanie/ręka) zachowują
+    // dotychczasowe zachowanie — tam DFC ma wyłącznie twarz przednią (CR 711.4a).
+    const viewEntry = view.zones.battlefield.find((o) => o.id === objectId);
+    const otherSideId = viewEntry?.transformToCardId ?? null;
+    const isDfc = Boolean(otherSideId);
+
     // Filtrowanie akcji dla tej karty (także ataki/bloki)
     const actions = legalCommands.filter((cmd) => {
       if (cmd.objectId === objectId) return true;
@@ -966,7 +1009,7 @@ function bootstrapTable() {
       return false;
     });
 
-    if (actions.length === 0) {
+    if (actions.length === 0 && !isDfc) {
       openCardFullscreen(objectId);
       return;
     }
@@ -996,6 +1039,10 @@ function bootstrapTable() {
       if (cmd.type === 'cast_cleave' && cmd.targets?.length) return `cleave:${cmd.objectId}`;
       if (cmd.type === 'cast_permanent' && cmd.targets?.length) return `perm:${cmd.objectId}:${Boolean(cmd.bestow)}`;
       if (cmd.type === 'cast_permanent' && cmd.phyrexianPayWithLife != null) return `perm-x:${cmd.objectId}`;
+      // C (Makeshift Mauler): warianty kosztu „wygnaj stwora" grupują się po
+      // karcie — spójnie z choiceRequestGroupKey w render.js (menu kontekstowe
+      // pokazuje JEDNĄ opcję otwierającą modal wyboru kreatury do wygnania).
+      if (cmd.type === 'cast_permanent' && cmd.exileTargetId != null) return `perm-exile:${cmd.objectId}`;
       if (cmd.type === 'cast_permanent' && cmd.kicked) return `perm-k:${cmd.objectId}`;
       if (cmd.type === 'cast_adventure') return `adv:${cmd.objectId}`;
       if (cmd.type === 'cast_adventure_creature') return `advc:${cmd.objectId}`;
@@ -1056,14 +1103,38 @@ function bootstrapTable() {
       }
     }
     
-    const previewBtn = document.createElement('button');
-    previewBtn.className = 'ghost-btn';
-    previewBtn.textContent = 'Pełny podgląd karty';
-    previewBtn.addEventListener('click', () => {
-      hideModal('context-menu');
-      openCardFullscreen(objectId);
-    });
-    actionsWrap.appendChild(previewBtn);
+    if (isDfc) {
+      // A (uwaga właściciela): DFC zawsze dostaje oba podglądy — bieżącej
+      // strony (powiększenie Scryfall na pełną stronę) i DRUGIEJ strony
+      // (pełnoekranowy Scryfall tyłu). Kolejność: najpierw druga strona
+      // (najczęściej „co jest na odwrocie"), potem bieżąca.
+      const backBtn = document.createElement('button');
+      backBtn.className = 'ghost-btn';
+      backBtn.textContent = 'Pokaż podgląd drugiej strony karty';
+      backBtn.addEventListener('click', () => {
+        hideModal('context-menu');
+        openCardFullscreenByCardId(otherSideId);
+      });
+      actionsWrap.appendChild(backBtn);
+
+      const frontBtn = document.createElement('button');
+      frontBtn.className = 'ghost-btn';
+      frontBtn.textContent = 'Pokaż podgląd karty';
+      frontBtn.addEventListener('click', () => {
+        hideModal('context-menu');
+        openCardFullscreen(objectId);
+      });
+      actionsWrap.appendChild(frontBtn);
+    } else {
+      const previewBtn = document.createElement('button');
+      previewBtn.className = 'ghost-btn';
+      previewBtn.textContent = 'Pełny podgląd karty';
+      previewBtn.addEventListener('click', () => {
+        hideModal('context-menu');
+        openCardFullscreen(objectId);
+      });
+      actionsWrap.appendChild(previewBtn);
+    }
 
     body.appendChild(actionsWrap);
     showModal('context-menu');
@@ -1643,7 +1714,12 @@ function bootstrapTable() {
         // M254/C: obserwator zwraca `true`, gdy warstwa naprawdę się pokazała
         // — wtedy sesja wstrzymuje grę do jej zamknięcia.
         onCast: (payload) => onCastShowcase(payload),
+        // B (uwaga właściciela): obserwator transformacji DFC — pierwsze
+        // odwrócenie otwiera warstwę wysoko-graficzną (jeśli tryb włączony).
+        onTransform: (payload) => onTransformShowcase(payload),
       });
+      // B: nowa partia czyści rejestr odwróceń pokazanych na warstwie.
+      transformedShowcaseShown.clear();
       // Nowa gra unieważnia wstrzymany rzut kreatora many (E.3a): deskryptor
       // odnosił się do starej sesji, więc zamykamy modal i zapominamy komendę.
       closeManaWizard();

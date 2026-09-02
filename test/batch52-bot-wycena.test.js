@@ -156,7 +156,11 @@ test('B52-bot: Leonin Surveyor — dobranie z grobu wycenione jak karta (nie go�
   addMana(state, 'p1', 3, { colors: ['W'] });
   state.players.find((p) => p.id === 'p1').speed = 4; // max speed
   put(state, 'leonin', 'leonin-surveyor', 'p1', 'graveyard');
-  put(state, 'l1', 'highland-game', 'p1', 'library');
+  // M280/D: dobranie OSTATNIEJ karty biblioteki jest karane (deck-out,
+  // CR 121.4/704.5b), więc scenariusz testu nie może mieć jednej karty —
+  // inaczej „dobranie z grobu" zeszłoby pod pass i test wyceniałby
+  // deck-out, a nie wartość karty. Pięć kart = bezpieczne dobranie.
+  for (let i = 1; i <= 5; i += 1) put(state, `l${i}`, 'highland-game', 'p1', 'library');
   const view = playerView(state, 'p1');
   const { chosen, options } = decide(view);
   const draw = scoreOf(options, 'activate_ability(leonin#2)');

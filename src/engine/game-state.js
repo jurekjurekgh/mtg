@@ -26,7 +26,7 @@ import { addCounter, removeCounter } from './counters.js';
 import { runStateBasedActions, tryRegenerate } from './state-based.js';
 import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, fireWardTriggers } from './triggers.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
-import { detachAttachmentsFromHost, effectiveProtectionQualities } from './attachments.js';
+import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities } from './attachments.js';
 import { createBattlefieldToken } from './tokens.js';
 import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom } from './effects.js';
 import { changeLife } from './players.js';
@@ -5189,6 +5189,19 @@ export function playerView(state, playerId) {
         // i celu). ADR 0017. Zakryty permanent nie ma cech (CR 708.2) — dla
         // przeciwnika koszt zostaje ukryty.
         if (!hiddenFromViewer) entry.manaCost = object.manaCost ?? 0;
+        // A (uwaga właściciela): identyfikator DRUGIEJ STRONY karty dwustronnej.
+        // Obie strony DFC są informacją publiczną (CR 711/712 — gracz może
+        // obejrzeć obie), więc widok niesie `transformTo.cardId`, a nie tylko
+        // bieżący `cardId`. Silnik przy każdej transformacji WYMIENIA
+        // `cardId` i `transformTo.cardId`, więc to pole ZAWSZE wskazuje
+        // stronę przeciwną — także po craft/incubate, gdzie definicja tyłu
+        // w rejestrze nie ma już linku powrotnego. UI (menu „Twoje działania")
+        // czyta stąd podgląd drugiej strony. Zakryty permanent (CR 708.2)
+        // tożsamości nie ujawnia — pole idzie wyłącznie do widza, który
+        // kartę zna (ADR 0017).
+        if (!hiddenFromViewer && object.transformTo?.cardId) {
+          entry.transformToCardId = object.transformTo.cardId;
+        }
         // M209 (audyt M207, Guildscorn Ward): KOLORY permanentu to informacja
         // publiczna wydrukowana na karcie (CR 105.2) — bez niej bot nie mial
         // jak ocenic, czy „protection from multicolored" cokolwiek blokuje,
@@ -5276,7 +5289,18 @@ export function playerView(state, playerId) {
         // nie nazwy kart (ADR 0002).
         {
           const protQualities = effectiveProtectionQualities(state, object);
-          if (protQualities.length > 0) entry.protection = protQualities.map((q) => ({ ...q }));
+          const qualities = protQualities.map((q) => ({ ...q }));
+          // E (uwaga właściciela, Benevolent Blessing): ochrona przed KOLOREM
+          // (CR 702.16 — `chosenColor` aury / `protectionFromColors`) nie jest
+          // „jakością" (effectiveProtectionQualities czyta wyłącznie
+          // deskryptory jakości i granty until-end-of-turn), więc widok jej
+          // nie niósł i badge na zaczarowanym stworze pokazywał samo
+          // „zaczarowana: Benevolent Blessing" bez koloru. Dokładamy kolory
+          // jako jakość `{ colors: [...] }` — ten sam kształt, który rozumie
+          // `protectionBadges` („Ochrona przed: Czarny"), ADR 0017/0002.
+          const protColors = effectiveProtectionFromColors(state, object);
+          if (protColors.length > 0) qualities.push({ colors: protColors });
+          if (qualities.length > 0) entry.protection = qualities;
         }
         // M186/Z1 (Żywy Tester, ravnica vs innistrad s9): „can't attack/block
         // alone" JAWNIE w widoku — wizard walki walidował po entry.abilities,
@@ -6166,8 +6190,28 @@ export function playerView(state, playerId) {
     legalCommands.push(command('resolve_food_choice', playerId, { sacrifice: false }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeDiscover) {
     // Oczekująca decyzja Discover (Geological Appraiser): rzuć bez kosztu
-    // albo weź do ręki.
-    legalCommands.push(command('resolve_discover_choice', playerId, { castFree: true }));
+    // albo weź do ręki. F (uwaga właściciela, „noop Discover"): oferta
+    // „rzuć za darmo" była pokazywana także dla kart, których ścieżka
+    // darmowego rzutu NIE obsługuje (czary z celami, kosztami dodatkowymi,
+    // X/Fireball, mody) — czar wchodził na stos bez celów i fizzlował
+    // (CR 608.2b), a Żywy Tester zgłaszał ofertę jako no-op. Oferujemy
+    // darmowy rzut wyłącznie dla kart w „prostym zakresie" — ta sama bramka
+    // co Vaan `resolve_exile_cast` (oferta = walidacja), zaostrzona
+    // o cele: Discover nie enumeruje celów, więc celowany czar nie jest
+    // darmowo rzucalny. Reszta trafia do „weź do ręki" (zawsze legalny
+    // wynik Discover — CR 701.53).
+    const discoverCard = state.objects.get(state.pendingDiscover.foundExileId);
+    const discoverFreeCastable = Boolean(discoverCard) && (
+      (['creature', 'artifact', 'enchantment'].includes(discoverCard.kind) && !discoverCard.aura)
+      || (discoverCard.kind === 'spell'
+        && ['instant', 'sorcery'].includes(discoverCard.spell?.timing)
+        && !discoverCard.spell?.additionalCost && !discoverCard.spell?.xCost
+        && !discoverCard.spell?.fireball && !discoverCard.spell?.modes
+        && !(discoverCard.spell?.targets ?? []).length)
+    );
+    if (discoverFreeCastable) {
+      legalCommands.push(command('resolve_discover_choice', playerId, { castFree: true }));
+    }
     legalCommands.push(command('resolve_discover_choice', playerId, { castFree: false }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeExplore) {
     // Oczekująca decyzja Explore (Guidestone Compass): wierzch albo grób.

@@ -352,6 +352,15 @@ export function choiceRequestGroupKey(command) {
   if (command.type === 'cast_permanent' && command.phyrexianPayWithLife != null) {
     return `permanent-x:${command.objectId}`;
   }
+  // C (uwaga właściciela, Makeshift Mauler): warianty kosztu „wygnaj kartę
+  // stwora z grobu / stwora z pola bitwy" (exileTargetId) grupują się po
+  // karcie — bez tego panel pokazywał N identycznych przycisków „Rzuć:
+  // Makeshift Mauler" (po jednym na kandydata) i nie otwierał modala wyboru
+  // kreatury do wygnania. Klucz analogiczny do `permanent:<objectId>` dla
+  // celów aury, ale po osobnym polu kosztu (ADR 0002 — po kształcie komendy).
+  if (command.type === 'cast_permanent' && command.exileTargetId != null) {
+    return `permanent-exile:${command.objectId}`;
+  }
   if (command.type === 'activate_ability'
     && (command.targets?.length || command.xValue != null || command.attackerId != null || command.tapCreatureId != null || command.tapOtherCreatureId != null || command.crewCreatureIds?.length
       // M160/B1 (Seismic Monstrosaur): warianty kosztu „poświęć ląd” (jeden
@@ -1881,6 +1890,17 @@ function choiceSourceTitle(cmd, session, view) {
     if (object.aura) return `Aura: ${name}`;
     return `Cel dla: ${name}`;
   }
+  // C (uwaga właściciela, Makeshift Mauler / Fear of Abduction): tytuł musi
+  // pokrywać warunek KLUCZA grupy (klasa L102/1) — warianty kosztu „wygnaj
+  // stwora" grupują się po karcie, więc tytuł nazywa czynność i strefę
+  // kosztu (grób vs pole bitwy), a nie generyczny „Wariant".
+  if (cmd.type === 'cast_permanent' && cmd.exileTargetId != null) {
+    const exileZone = ['hand', 'battlefield', 'stack', 'graveyard', 'library']
+      .map((z) => (view?.zones?.[z] ?? []).find((o) => o.id === cmd.exileTargetId))
+      .find((o) => o != null)?.zone;
+    const source = exileZone === 'graveyard' ? 'z grobu' : 'z pola bitwy';
+    return `Wygnaj stwora ${source} (koszt) — ${name}`;
+  }
   if (cmd.type === 'cast_spell' && cmd.sacrificeTargetId && !cmd.targets?.length) {
     return `Poświęć stwora — ${name}`;
   }
@@ -2287,6 +2307,14 @@ export function commandLabel(cmd, session, view) {
         // many — dopłata wyglądała na dwa razy droższą, niż jest.
         const kickerHtml = manaCostHtml(costSymbols(kicker.cost, kicker.colors));
         return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)} + kicker ${kickerHtml})`;
+      }
+      // C (uwaga właściciela, Makeshift Mauler / Fear of Abduction): wariant
+      // kosztu „wygnaj kartę stwora z grobu / stwora z pola bitwy"
+      // (CR 601.2h) — etykieta mówi, KTÓRY stwór zostanie wygnany, żeby opcje
+      // w modalu wyboru były rozróżnialne (bez tego każda brzmiała identycznie
+      // „Zagraj: Makeshift Mauler").
+      if (cmd.exileTargetId != null) {
+        return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)}) — wygnaj ${nameOfObjectId(cmd.exileTargetId)}`;
       }
       return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)})`;
     }
@@ -3607,10 +3635,12 @@ export function renderCardFullscreen(host, info, { positionText = null } = {}) {
  * @param {HTMLElement} host kontener warstwy (czyszczony)
  * @param {object} card definicja karty z rejestru (potrzebne: artId, name)
  */
-export function renderCardArtShowcase(host, card, { casterName = null } = {}) {
+export function renderCardArtShowcase(host, card, { casterName = null, verb = 'Rzuca' } = {}) {
   clear(host);
   if (!host || !card) return host;
-  if (casterName) div(host, 'showcase-caster', `Rzuca: ${casterName}`);
+  // B (DFC): podpis warstwy — „Rzuca: <gracz>" przy rzucie, „Przemiana:
+  // <karta>" przy transformacji (verb/label dostarcza main.js).
+  if (casterName) div(host, 'showcase-caster', `${verb}: ${casterName}`);
   const buildLocal = (variant) => {
     const url = localArtUrl(card, variant);
     if (!url) return null;

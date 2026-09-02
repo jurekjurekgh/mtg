@@ -706,6 +706,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // mana wyparuje na końcu kroku, a stwór zostaje zatapiany całą turę.
   const wastefulStep = (view) => myTurn(view) && ['untap', 'upkeep', 'draw', 'end', 'cleanup'].includes(view.turn.step);
   const myLibraryCount = (view) => view.zones.library.filter((o) => o.controllerId === view.playerId).length;
+  /**
+   * D (zgłoszenie właściciela, Deepwood Denizen): dobieranie kart, które
+   * OPRÓŻNIA własną bibliotekę, to wyrok — CR 121.4/704.5b: próba dobrania
+   * z pustej biblioteki przegrywa partię, a dobranie OSTATNIEJ karty zostawia
+   * gracza bez szansy na najbliższe dobranie. Kara przebija wartość karty
+   * (P.drawCardValue), więc wariant schodzi poniżej passu i bot nie
+   * deck-outuje się „od razu". Reguła po liczbie kart w bibliotece
+   * (informacja publiczna, ADR 0017), bez nazw kart (ADR 0002).
+   */
+  const drawDeckingPenalty = (view, amount = 1) => {
+    const remaining = myLibraryCount(view) - amount;
+    return remaining <= 0 ? -(P.drawCardValue * amount + 40) : 0;
+  };
   const myLandCount = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
 
   /**
@@ -2459,7 +2472,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             else score += 6 * affected;
           }
           // Dobranie kart z czaru to przewaga kartowa.
-          if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') score += P.drawCardValue * (effect.amount ?? 1);
+          if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') {
+            const drawAmount = Number.isInteger(effect.amount) ? effect.amount : 1;
+            score += P.drawCardValue * drawAmount + drawDeckingPenalty(view, drawAmount);
+          }
           // M218/4 — scry/surveil jako CZAR: okno jak przy zdolności (M211/A1).
           // Dla czystego scry/surveil (np. Index) kara musi przebić bazę 50 (L3),
           // więc -60; dla mieszanych (Curate: surveil+draw) kara łagodna -12,
@@ -3595,7 +3611,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // albo inny trywialny wariant. Wartość = karta (P.drawCardValue),
           // jak w cast_spell — generycznie po typie efektu (ADR 0002).
           if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') {
-            score += P.drawCardValue * (Number.isInteger(effect.amount) ? effect.amount : 1);
+            const drawAmount = Number.isInteger(effect.amount) ? effect.amount : 1;
+            score += P.drawCardValue * drawAmount + drawDeckingPenalty(view, drawAmount);
           }
           // Batch 52 (Jolrael, Mwonvuli Recluse): „{4}{G}{G}: twoje stwory
           // mają bazowe X/X do końca tury (X = karty w ręce)". Bez wyceny

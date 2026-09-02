@@ -57,6 +57,17 @@ function setup({ enemyCreature, combat = false }) {
     };
   }
   addMana(state, 'p1', 4, { colors: ['U', 'U', 'U', 'U'] });
+  // M280/D: w syntetycznym stanie biblioteka była pusta, przez co rider
+  // „Dobierz kartę” (Fleeting Distraction) wyglądał jak deck-out (CR 121.4/
+  // 704.5b) i bot odmawiał rzutu debuffu — test sprawdza KIEROWANIE debuffu,
+  // nie bibliotekę. Kilka kart modeluje prawdziwą grę.
+  for (let i = 0; i < 5; i += 1) {
+    addObject(state, {
+      id: `lib-${i}`, instanceId: `i-lib-${i}`, cardId: 'hill-giant', controllerId: 'p1', ownerId: 'p1',
+      zone: 'library', kind: 'creature', power: 3, toughness: 3, manaCost: 4,
+      abilities: [], keywords: [], subtypes: ['Giant'], types: ['Creature'], colors: ['R'],
+    });
+  }
   return state;
 }
 
