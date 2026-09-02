@@ -2,6 +2,7 @@ import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
 import { triggerTargetEffectFriendly } from './effect-intent.js';
 import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaPurpose } from './resources.js';
+import { canPlayByImpulseFromExile, isImpulseWindowLive, isFreeImpulseCast } from './impulse-window.js';
 import { moveObjectDirectly } from './objects.js';
 import { deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource, transformedCharacteristics } from './permanents.js';
 import { applyEffect, applyEnterCounters, dealNonCombatDamage, maybeAddFaceDownFlyingCounter } from './effects.js';
@@ -70,8 +71,7 @@ function requireSpell(state, playerId, objectId, targets, cleaved, abilityWindow
   const object = state.objects.get(objectId);
   // Batch 46 (Gila Courser): karta wygnana „impulse" jest grywalna z exile
   // do końca twojej następnej tury — za PEŁNY koszt (w odróżnieniu od plot).
-  const impulse = object?.zone === 'exile' && object.playableUntilTurn != null
-    && state.turn.number <= object.playableUntilTurn;
+  const impulse = canPlayByImpulseFromExile(object, state);
   const plotted = object?.zone === 'exile' && (object.plotted || object.suspendReady);
   // Audyt PR #92: `abilityWindowCast` to osobne uprawnienie do rzutu z exile —
   // „karta leży w exile, bo właśnie wygnała ją zdolność, która wciąż jest na
@@ -543,7 +543,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // Suspend (CR 702.62): rzut po zdjęciu ostatniego licznika czasu — bez kosztu.
   // Batch 47: impulse „bez placenia" (Caves of Chaos Adventurer po ukonczonym
   // lochu) omija koszt i kolorowa walidacje — jak plot/suspend.
-  const freeImpulse = object.zone === 'exile' && object.playableWithoutPaying === true;
+  const freeImpulse = isFreeImpulseCast(object);
   // Phyrexian mana (CR 118.9): każdy pip {R/P} płaci się maną LUB 2 życiem —
   // ta sama reguła co ścieżka permanentów (cast_permanent: warianty
   // phyrexianPayWithLife + changeLife). Batch 48 (Ruthless Invasion): PIERWSZY
@@ -2246,7 +2246,7 @@ export function legalSpellCasts(state, playerId) {
       // Adventurer) jest grywalna z exile do konca wskazanej tury. Dotad
       // requireSpell ja przyjmowal, ale OFERTA jej nie enumerowala, wiec
       // gracz nie mial jej w „Twoje dzialania" (klasa L48).
-      const impulseLive = obj?.playableUntilTurn != null && state.turn.number <= obj.playableUntilTurn;
+      const impulseLive = isImpulseWindowLive(obj, state);
       return obj?.plotted || obj?.suspendReady || impulseLive;
     }),
   ];
@@ -2254,7 +2254,7 @@ export function legalSpellCasts(state, playerId) {
     const object = state.objects.get(id);
     if (object?.controllerId !== playerId || object.kind !== 'spell' || !object.spell) continue;
     // „Without paying its mana cost" (ukonczony loch) — jak plot.
-    const freeImpulseCast = object.zone === 'exile' && object.playableWithoutPaying === true;
+    const freeImpulseCast = isFreeImpulseCast(object);
     if (freeImpulseCast) {
       if (object.spell.timing === 'sorcery') {
         const mainPhaseFree = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
@@ -2298,7 +2298,7 @@ export function legalSpellCasts(state, playerId) {
     // tryby, koszt X i Fireball mają osobne funkcje rzutu bez kickera).
     // L48: oferta liczy tak samo jak płatność — koszt AND pipy kolorów kickera.
     const freeCastForKicker = () => Boolean(object.plotted || object.suspendReady
-      || (object.zone === 'exile' && object.playableWithoutPaying === true));
+      || isFreeImpulseCast(object));
     const pushKickerSpellCasts = (cast) => {
       if (!object.kicker) return;
       const kickerCost = object.kicker.cost ?? 0;
@@ -2604,8 +2604,7 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   // enumerowała tryby impulse-czaru z exile (Your Temple Is Under Attack po
   // ukończonym lochu), a execute je odrzucał — rozjazd oferty i wykonania
   // (L48/L41). Mirror gałęzi z requireSpell.
-  const impulse = object?.zone === 'exile' && object.playableUntilTurn != null
-    && state.turn.number <= object.playableUntilTurn;
+  const impulse = canPlayByImpulseFromExile(object, state);
   const plottedLike = object?.zone === 'exile' && (object.plotted || object.suspendReady);
   if (!object || object.controllerId !== playerId || !['hand', 'exile'].includes(object.zone)
     || object.kind !== 'spell' || (object.zone === 'exile' && !plottedLike && !impulse)) {
@@ -2621,8 +2620,7 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   // nie zmienia kosztu rzutu, więc nie ma powodu, by omijał Etherium Sculptor.
   // Rzut bez płacenia (plot albo impulse „without paying its mana cost" po
   // ukończonym lochu) kosztuje 0; zwykły impulse — pełny koszt.
-  const freeCast = object.plotted || object.suspendReady
-    || (object.zone === 'exile' && object.playableWithoutPaying === true);
+  const freeCast = object.plotted || object.suspendReady || isFreeImpulseCast(object);
   const modalCost = freeCast ? 0 : effectiveSpellManaCost(state, object);
   if (modalCost > producibleMana(state, playerId, null, spellManaPurpose(object))) throw new Error('Niewystarczająca mana');
   if (!freeCast && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');

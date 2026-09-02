@@ -4,6 +4,7 @@ import {
 } from './card-images.js';
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
+import { hasFreeCastStamp, impulseWindowOf } from '../engine/impulse-window.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import {
   PLAYER_NAMES, HUMAN_ID, commandOptionKey, TRIGGER_EVENT_LABELS,
@@ -4436,9 +4437,9 @@ export function waitingExileStatus(object) {
       ? `Plot · rzut bez kosztu od tury ${object.plottedAtTurn + 1}`
       : 'Plot · rzut bez kosztu w kolejnej turze');
   }
-  if (object.playableWithoutPaying) {
-    parts.push(object.playableUntilTurn != null
-      ? `Impuls · zagrywalna do końca tury ${object.playableUntilTurn}`
+  if (hasFreeCastStamp(object)) {
+    parts.push(impulseWindowOf(object) != null
+      ? `Impuls · zagrywalna do końca tury ${impulseWindowOf(object)}`
       : 'Impuls · zagrywalna bez płacenia');
   }
   if (object.reboundReady) parts.push('Rebound · rzut w Twoim upkeepie');

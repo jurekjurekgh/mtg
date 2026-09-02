@@ -32,6 +32,7 @@ import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTop
 import { changeLife, recordCardDrawn } from './players.js';
 import { shuffle } from './shuffle.js';
 import { applyRoomTargetChoice, applyEffect, applyEnterCounters, drawPlayerCards, manifestCardFaceDown, counterStackObject } from './effects.js';
+import { carryImpulseWindow, hasFreeCastStamp, isImpulseWindowLive } from './impulse-window.js';
 
 /**
  * Limit ofert „odłóż N kart na spód” przy mulliganie londyńskim (M119/Z3).
@@ -5474,8 +5475,10 @@ export function playerView(state, playerId) {
           waiting.timeCounters = object.timeCounters ?? 0;
         }
         if (object.plottedAtTurn != null) waiting.plottedAtTurn = object.plottedAtTurn;
-        if (object.playableWithoutPaying) waiting.playableWithoutPaying = true;
-        if (object.playableUntilTurn != null) waiting.playableUntilTurn = object.playableUntilTurn;
+        // Okno impulsu jedzie na obiekt stosu JEDNYM ruchem (audyt PR #93):
+        // dawniej dwa niezależne `if`-y sklejały pola i wystarczyło, że któreś
+        // z nich zmieni nazwę, żeby rzut zgubił „bez płacenia".
+        carryImpulseWindow(object, waiting);
         if (object.reboundReady) waiting.reboundReady = true;
         if (object.madnessReady) waiting.madnessReady = true;
         // M265: karta wygnana po rzucie za warp (CR EOE — warpReady) czeka na
@@ -6704,8 +6707,8 @@ export function playerView(state, playerId) {
         // Po ukonczonym lochu gra sie bez placenia, inaczej za pelny koszt.
         if (object?.controllerId === playerId && !object.plotted && !object.aura
           && (object.kind === 'creature' || object.kind === 'artifact' || object.kind === 'enchantment')
-          && object.playableUntilTurn != null && state.turn.number <= object.playableUntilTurn) {
-          const freeCast = object.playableWithoutPaying === true;
+          && isImpulseWindowLive(object, state)) {
+          const freeCast = hasFreeCastStamp(object);
           const affordable = freeCast
             || (effectiveSpellManaCost(state, object) <= manaAvailableFor(object)
               && hasColorForCardId(state, playerId, object.cardId, 0));

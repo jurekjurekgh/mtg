@@ -1,4 +1,5 @@
 import test from 'node:test';
+import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {
   auditFamilies, collectEffectBranches, formatFamilyViolations,
@@ -111,4 +112,38 @@ test('audyt wykrywa wariant obrażeń z surową mutacją życia (kontrola narzę
   const viaChoke = damageFamily.choke.some((c) => c.test(branch.body));
   assert.ok(manualHit, 'sygnał ręcznej mutacji został rozpoznany');
   assert.equal(viaChoke, false, 'brak choke pointu w wariancie z surową mutacją');
+});
+
+test('okno impulsu jest rodzina pilnowaną przez choke point (audyt PR #93, watek 4)', () => {
+  const families = ['impulse-window', 'impulse-free-cast'].map((id) => {
+    const fam = FIELD_FAMILIES.find((f) => f.id === id);
+    assert.ok(fam, `brak rodziny ${id} — playableUntilTurn/playableWithoutPaying mogą znowu pisać trzy pliki`);
+    assert.equal(fam.owner, 'src/engine/impulse-window.js',
+      `właścicielem ${id} jest choke point impulse-window.js, nie plik, który akurat o tym pamiętał`);
+    return fam;
+  });
+  // 1) Surowych zapisów nie ma w plikach, które kiedyś kleiły pola ręcznie.
+  for (const file of ['src/engine/effects.js', 'src/engine/game-state.js', 'src/engine/spells.js',
+    'src/engine/resources.js', 'src/table/render.js']) {
+    const source = fs.readFileSync(new URL(`../${file}`, import.meta.url), 'utf8')
+      .replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+    for (const fam of families) {
+      const hit = source.split('\n').find((line) => fam.pattern.test(line));
+      assert.equal(hit, undefined, `${file} zapisuje ${fam.label} własnym kodem (ma iść przez impulse-window.js): ${hit?.trim()}`);
+    }
+  }
+  // 2) Warunek „okno żyje" nie może być znów przepisany w cudzym pliku —
+  //    to jest dokładnie ta duplikacja, przez którą oferta i walidacja
+  //    mogły się rozjechać (L48).
+  for (const file of ['src/engine/spells.js', 'src/engine/resources.js', 'src/engine/game-state.js']) {
+    const source = fs.readFileSync(new URL(`../${file}`, import.meta.url), 'utf8')
+      .replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+    assert.doesNotMatch(source, /state\.turn\.number\s*<=\s*\w+\?\.playableUntilTurn/,
+      `${file} liczy ważność okna impulsu ręcznie — jedyna forma to isImpulseWindowLive/canPlayByImpulseFromExile`);
+  }
+  // 3) Czytacze choke pointu są NAPRAWDĘ użyte (strażnik bez użycia = dekoracja).
+  const used = ['src/engine/spells.js', 'src/engine/resources.js', 'src/engine/game-state.js']
+    .map((file) => fs.readFileSync(new URL(`../${file}`, import.meta.url), 'utf8'))
+    .filter((src) => /isImpulseWindowLive|canPlayByImpulseFromExile|isFreeImpulseCast|hasFreeCastStamp|carryImpulseWindow/.test(src)).length;
+  assert.ok(used >= 3, `choke point czyta tylko ${used} z 3 plików — pomocy nikt nie użył`);
 });

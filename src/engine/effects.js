@@ -4,6 +4,7 @@ import { untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTu
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor } from './players.js';
 import { spendMana, addMana, producibleMana } from './resources.js';
+import { impulseWindowFields, stampImpulseWindow } from './impulse-window.js';
 import { getSourceForObject } from './mana-sources.js';
 import { moveObjectDirectly, removeFromCombat, singleTargetOfStackEntry } from './objects.js';
 import { tryRegenerate } from './state-based.js';
@@ -1032,7 +1033,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // „Until the end of your NEXT turn" — jeśli to twoja tura, chodzi o tę
     // następną (numer + 2 przy dwóch graczach); poza swoją turą o najbliższą.
     const isMyTurn = state.turn.activePlayerId === controllerId;
-    const playableUntilTurn = state.turn.number + (isMyTurn ? 2 : 1);
+    // Stempel pisany przez choke point (audyt PR #93, tura 3) — dawniej dwie
+    // ręczne klejenia pól w jednym if-ie (obiekt + zdarzenie), które mogły się
+    // rozjechać bez żadnego testu.
+    const oknoImpulsu = { untilTurn: state.turn.number + (isMyTurn ? 2 : 1) };
     // Batch 47 (Caves of Chaos Adventurer): „If you've COMPLETED A DUNGEON,
     // you may play that card this turn without paying its mana cost.
     // Otherwise, you may play that card this turn." Warunek jest deskryptorem
@@ -1041,16 +1045,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Dead Three). Bez deskryptora zachowanie zostaje jak dotąd — karta
     // grywalna za pełny koszt (Gila Courser).
     const freeCondition = effect.freeIfCondition ?? null;
-    const withoutPaying = freeCondition?.type === 'completed_dungeon'
+    oknoImpulsu.withoutPaying = freeCondition?.type === 'completed_dungeon'
       && hasCompletedDungeon(state, controllerId);
-    state.objects.set(exileId, Object.freeze({
-      ...moved, playableUntilTurn,
-      ...(withoutPaying ? { playableWithoutPaying: true } : {}),
-    }));
+    state.objects.set(exileId, stampImpulseWindow(moved, oknoImpulsu));
+    const stempl = impulseWindowFields(oknoImpulsu);
     state.events.push(event('object_exiled', {
       fromId: topId, objectId: exileId, object: state.objects.get(exileId),
-      cardId: card?.cardId ?? null, playerId: controllerId, playableUntilTurn,
-      ...(withoutPaying ? { playableWithoutPaying: true } : {}),
+      cardId: card?.cardId ?? null, playerId: controllerId, ...stempl,
     }));
     return;
   }

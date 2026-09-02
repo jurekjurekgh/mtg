@@ -7,6 +7,7 @@ import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, canPayManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, matchColorRequirements, coloredPipsOf, consumePendingSpellDiscount } from './mana-cost.js';
 import { allControlledManaSources, getSourceForObject, manaUnitKey, treasureManaAbilityOf, ANY_COLOR_MANA } from './mana-sources.js';
+import { canPlayByImpulseFromExile, isFreeImpulseCast } from './impulse-window.js';
 
 /** Idempotentna inicjalizacja zasobów; createGameState wykonuje ją automatycznie. */
 export function initializeResources(state) {
@@ -700,7 +701,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // plot. Flagę ustawia efekt wygnania (exile_top_playable_until_next_turn),
   // tutaj tylko ZERUJEMY koszt; bez tego pole byłoby martwe (L48: oferta
   // i płatność muszą znać tę samą regułę).
-  const freeImpulse = object?.zone === 'exile' && object.playableWithoutPaying === true;
+  const freeImpulse = isFreeImpulseCast(object);
   // M158/Batch 39 (CR 702.34): rzut za koszt madness z exile (karta
   // odrzucona z madnessReady) — timing ignorowany (rzut w rozstrzyganiu
   // zdolności, jak rebound/suspend).
@@ -715,8 +716,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // Batch 47 (Gila Courser, Caves of Chaos Adventurer): PERMANENT wygnany
   // impulsem jest grywalny z exile do konca wskazanej tury (CR 601.2b).
   // Bez tej bramki oferta pokazywala ruch, ktorego walidacja nie przyjmowala.
-  const impulseLive = object?.zone === 'exile' && object.playableUntilTurn != null
-    && state.turn.number <= object.playableUntilTurn;
+  const impulseLive = canPlayByImpulseFromExile(object, state);
   // Audyt PR #92: rzut w oknie nierozstrzygniętej zdolności (patrz
   // `requireSpell` w spells.js) jest samodzielnym uprawnieniem do wzięcia
   // karty z exile — bez stempla `playableUntilTurn` na obiekcie, bo oknem

@@ -181,6 +181,46 @@ export const FIELD_FAMILIES = [
       'const drawn = (state?.cardsDrawnThisTurn ?? {})[object.controllerId] ?? 0;',
     ],
   },
+  // Rodziny z audytu PR #93 (tura 3, watek 4 z HANDOFF): okno impulsu. Dwa pola,
+  // ktore zawsze chodza parami (stempel okna + zwolnienie z kosztu), a zapisywaly
+  // je recznie trzy pliki i czytalo osiem. Wlascicielem jest choke point
+  // `impulse-window.js` — poza nim wolno te pola tylko czytac.
+  {
+    id: 'impulse-window',
+    label: 'stempel okna impulsu',
+    owner: 'src/engine/impulse-window.js',
+    pattern: /\bplayableUntilTurn\s*[:=](?!=)/,
+    why: 'pisze playableUntilTurn poza impulse-window.js — pomija choke point, a z nim '
+      + 'gaśnie para pol (okno + zwolnienie z kosztu) i rozjeżdża się oferta z walidacją (L48)',
+    bypass: [
+      'waiting.playableUntilTurn = 7;',
+      'state.objects.get(id).playableUntilTurn = turn;',
+      'Object.freeze({ ...moved, playableUntilTurn: 4 }),',
+    ],
+    legal: [
+      'if (object.playableUntilTurn != null) {',
+      'const live = state.turn.number <= object.playableUntilTurn;',
+      'playableUntilTurn,',
+      'const until = impulseWindowOf(object);',
+    ],
+  },
+  {
+    id: 'impulse-free-cast',
+    label: 'flaga rzutu bez placenia',
+    owner: 'src/engine/impulse-window.js',
+    pattern: /\bplayableWithoutPaying\s*[:=](?!=)/,
+    why: 'pisze playableWithoutPaying poza impulse-window.js — flaga bez okna to darmowy rzut '
+      + 'bez terminu ważności (CR 701.51b „without paying its mana cost" żyje tyle, co impuls)',
+    bypass: [
+      'target.playableWithoutPaying = true;',
+      'Object.freeze({ ...moved, playableWithoutPaying: true }),',
+      'exiled.playableWithoutPaying = free;',
+    ],
+    legal: [
+      'const free = object.playableWithoutPaying === true;',
+      'if (object.playableWithoutPaying) {',
+    ],
+  },
 ];
 
 function stripComments(source) {
