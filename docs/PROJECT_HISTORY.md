@@ -7413,6 +7413,72 @@ Golden-master bota zregenerowany (`bot-scoring-snapshot.mjs --write`) —
 
 Fast **4118/4118**, test:all **4128/4128**, build **57 modułów / 3069,2 kB**.
 
+### Audyt PR #92 — pięć znalezisk pętli jakości (2026-09-02, PR #93)
+
+Zlecenie właściciela: „kontynuujemy projekt" → domyślna pętla sesji
+(ADR 0020/0021): PR #93 przed kodowaniem, audyt ostatnio scalonego PR #92,
+inkrementalne commity (każdy zielony), bez force pusha.
+
+**Znaleziska w PR #92 (squash `db0c493`) i ich naprawy:**
+
+1. **+ 2. (razem, wspólny korzeń)** — `pendingWardPay` i `pendingExileCast`
+   blokowały priorytet, ale wypadły z projekcji odcisku stanu (ADR 0005), a
+   strażnik w `test/fingerprint-pending-decisions.test.js` był **vacuous**:
+   ground truth liczony regexem od delegata `firstPendingDecisionPlayerId`
+   dawał zbiór pusty (L26/L112 — fałszywe milczenie bramki jest gorsze niż
+   fałszywy alarm). Naprawa: skan obu ciał + próg liczebności (`>= 50`, realnie
+   64 pola) + pin nie-vacuous + oba pola w `PENDING_DECISION_FIELDS`.
+2. **Jolrael, Mwonvuli Recluse („draw your second card each turn")** — warunek
+   czytał `state.players[…].cardsDrawnThisTurn === 2` (STAN po komendzie), a
+   licznik podnoszą trzy rozjechane ścieżki → batch „draw two" dawał DWA
+   wyzwalacze, a dobranie w kroku + „draw two" — ŻADEN (repro
+   `scratch/repro-jolrael.mjs`). Naprawa u korzenia: choke point
+   `recordCardDrawn` w `players.js` stempluje `drawNumberThisTurn` w zdarzeniu
+   `card_drawn` (wszystkie ścieżki, mulligan jawnie `null` — CR 701.3b),
+   trigger czyta `ev.drawNumberThisTurn === 2`.
+3. **Grupowe triggery „one or more … deal combat damage to a player"** —
+   dedup po kluczu `kontroler|filtry` (PR #92 dopisał filtry podtypów Vaana,
+   nie zmieniając wymiaru sprawcy) kasował drugą instancję zdolności, mimo że
+   CR 603.3 każe każdej wyzwolić osobno. Klucz liczony od żywiciela i indeksu
+   zdolności; zbiór przemianowany na `groupedCombatDamageFires`.
+4. **Darmowy rzut z Discover** — M280/F zawęziło samą OFERTĘ, walidacja w
+   `execute()` została starsza i szersza: `castFree: true` dla czaru celowanego
+   kładło czar na stosie bez celów (fizzle, CR 608.2b). Ten sam filtr miał trzy
+   kopie (oferta Discover, bramka Vaana, oferta Vaana) rozjechane w obie strony.
+   Jeden predykat `outsideHandCastScope(card, { allowTargets })` w czterech
+   miejscach (L48: oferta = walidacja).
+
+**Strażnicy klasy (punkt 2.2):** rodzina pól `draws` w `tools/family-audit.mjs`
+(każdy zapis `cardsDrawnThisTurn` poza choke pointem = naruszenie) i pola
+WYMAGANE w `tools/event-contract-audit.mjs` (`CONTRACT_REQUIRED_FIELDS`) — te
+drugie pojawiły się, bo sprawdziłem własne założenie z nagłówka testu:
+analizator ADR 0027 milczał po usunięciu stempla z emitera mulliganu, gdyż
+reguła większościowa nie działa dla rodzin dwuemiterowych (1/2 = 50% < próg
+60%). Oba uzbrojone w piny anty-vacuous (L112).
+
+**Punkt 2.3 planu (mechaniczny przegląd `pending*`):** 68 nazw w `src/engine/`,
+64 w blokadzie priorytetu, **68 w odcisku (100%)**; cztery poza blokadą to
+księgowość przejściowa, nie decyzje gracza (`pendingAbilityActivation`,
+`pendingDevourEtbs`, `pendingSpellDiscounts`, `pendingSpellReturnToHand` — każda
+sparowana z prawdziwym pendingiem albo konsumowana natychmiast).
+
+**Zweryfikowane i odrzucone (bez zmian):** `ownerId` wierzchu biblioteki u Vaana
+(Oracle mówi „an opponent's library"), pokrycie warstw w `resolve_exile_cast`,
+kontrakt `object_transformed` (4/4 emitera), Merfolk Falconer (silnik nie ma
+ścieżki kickera na instant/sorcery — zapisane w § otwarte), Ulna/Infusion,
+Leonin `activePlayerIsController`. Claim planu „Rulingi WotC dla Vaana" nie do
+potwierdzenia z repo — snapshoty `docs/cards/scryfall-*.json` nie mają `rulings`.
+
+**L48 dostało rozszerzenie** o czwarty kierunek rozjazdu: zawężenie samej
+oferty (bez walidacji) nie domyka luki — bramka w `execute()` jest jedyną
+granicą dla sterowników nieschodzących z `legalCommands`.
+
+**Liczby:** `npm test` 4131 → **4143/4143**, `npm run test:all` **4153/4153**,
+build 3080,2 → **3084,1 kB**, `test/bot-benchmark.test.js` 10/10 (powtórzone po
+zmianie liczby triggerów), `tools/event-contract-audit.mjs` i
+`tools/family-audit.mjs` bez naruszeń, `oracle-coverage --only` 9 kart batchu 52
+= 100%. Raport: `docs/audits/AUDYT_PR92_2026-09-02.md`.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

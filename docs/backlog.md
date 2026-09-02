@@ -39,6 +39,29 @@ Następna lista właściciela wchodzi tutaj.)_
 - **Puste kolejki decyzji** — przegląd, czy każda blokująca decyzja ma opis
   w logu (lekcja L24) i wycenę w bocie (żeby nie brał zawsze pierwszej oferty).
 
+- **Grupowanie wyzwalaczy po kontrolerze — rodzina do przejścia** (rozpoznanie
+  z audytu PR #92, 2026-09-02). Znalezisko 4 naprawił klucz w
+  `any_combat_damage_to_player`; ta sama forma (jeden trigger na kontrolera na
+  ZDARZENIE, a nie na INSTANCJĘ zdolności — CR 603.3) została w
+  `leftBattlefield` i w kilku innych grupach w `src/engine/triggers.js`.
+  Żeby to ruszyć: policzyć per grupa, czy istnieją karty, które SLUSZNIE chcą
+  jednego odpalenia na kontrolera (to by znaczyło, że klucz jest celowy) —
+  bez tej listy zmiana jest ryzykowna i nie powinna iść przy okazji.
+- **Treasure z `resolve_exile_cast` (Vaan)** składany ręcznie
+  (`applyEffect({ type: 'create_token' })` z własnoręcznie złożonym obiektem)
+  zamiast z katalogu tokenów — kopia opisu tokenu poza źródłem prawdy
+  (klasa L107). Dziś działa; pomysł: wspólny `createToken(state, 'Treasure')`.
+- **Kicker na instant/sorcery** — silnik nie ogarnia kosztu dodanego
+  „Kicker" przy czarach innych niż creature w tej samej kolejce płatności
+  (Merfolk Falconer z batchu 52 ma trigger czytający `ev.kicked` ∪
+  `object.wasKicked`, więc sama reakcja jest gotowa). Decyzja o zakresie obsługi
+  należy do właściciela (ADR 0022).
+- **Snapshoty Scryfall bez `rulings`** — `docs/cards/scryfall-*.json` niosą
+  `text`, ale nie rulingi WotC, więc audyt „zgodne z Rulingami" nie da się
+  wykonać offline (egress z sandboxa zablokowany). Pomysł: narzędzie
+  dopisujące `rulings` do snapshotów + test porównujący ograniczenia kart z
+  listą rulingów.
+
 ## 3. Bot
 
 - **B4/B5 z `docs/BOT_ROADMAP.md`** (kolejne progi jakości gry).

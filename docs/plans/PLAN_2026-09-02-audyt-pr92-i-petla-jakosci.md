@@ -38,8 +38,9 @@ Kryteria ukończenia:
 - [x] kontrakty: widok (ADR 0017), fingerprint (ADR 0005 / L16), ładunki
       zdarzeń (ADR 0027 / L112);
 - [x] raport `docs/audits/AUDYT_PR92_2026-09-02.md` + wynik w opisie PR;
-- [ ] każde znalezisko naprawione u root cause z testem RED→GREEN (osobny
-      commit) — patrz sekcja poniżej.
+- [x] każde znalezisko naprawione u root cause z testem RED→GREEN (osobny
+      commit) — zrobione: `fb92c01` (1+2), `094a8c0` (3), `0b409fd` (4),
+      `10f7a39` (5); szczegóły i werdykt w `docs/audits/AUDYT_PR92_2026-09-02.md`.
 
 ### Znaleziska (potwierdzone repro, przed naprawą)
 
@@ -93,15 +94,29 @@ Obserwacje bez naprawy (udokumentowane, nie na zapas):
 
 - [x] 2.1 naprawy znalezisk 1–5 (po jednym commicie, każde z testem RED→GREEN
       i weryfikacją mutacyjną).
-- [ ] 2.2 **strażnik klasowy dla Findingu 3/4**: licznik „druga karta w turze”
-      i dedup wyzwalaczy grupowych muszą być JEDNYM źródłem — skan źródeł
-      (każdy `card_drawn` niesie `drawNumberThisTurn`; każda rodzina triggerów
-      grupowych dedupuje po obiekcie-żywicielu zdolności).
-- [ ] 2.3 polowanie na niezgodności z CR ścieżką NIEWYKORZYSTANĄ w M269–M277:
+- [x] 2.2 **strażnik klasowy dla Findingu 3/4** — zrobione w dwóch
+      mechanizmach: rodzina pól `draws` w `tools/family-audit.mjs` (każdy zapis
+      `cardsDrawnThisTurn` poza `players.js` = naruszenie) oraz
+      `CONTRACT_REQUIRED_FIELDS` w `tools/event-contract-audit.mjs` (KAŻDY
+      emiter `card_drawn` musi nieść `drawNumberThisTurn`). Przy okazji wyszło,
+      że reguła większościowa `CONTRACT_RATIO = 0.6` milczy dla rodzin
+      dwuemiterowych (1/2 = 50%) — stąd wymóg deklaratywny. Dedup grupowych
+      triggerów pozostaje pilnowany testem behawioralnym
+      (`test/audyt-pr92-grupowe-trygery.test.js`, oba kierunki), bo strukturalny
+      skan klucza grupowania byłby zgadywanką; siostrzana grupa
+      `leftBattlefield` zapisana w `docs/backlog.md`.
+      Piny anty-vacuous: `test/family-audit.test.js` (próbki bypass/legal per
+      rodzina) i `test/m273-kontrakty-zdarzen.test.js` (mechanizm na syntetycznych
+      emiterach + brak jednoczesnego wyjątku).
+- [x] 2.3 polowanie na niezgodności z CR ścieżką NIEWYKORZYSTANĄ w M269–M277:
       porównanie „ostatnia mila” między deskryptorem karty a realnym zachowaniem
       enumeracji (oferta = walidacja) dla decyzji blokujących. Start: pełny
       przegląd pól `pending*` → oferta → walidacja → fingerprint (mechanicznie,
-      nie wzrokiem).
+      nie wzrokiem). **Wynik (raport, §5):** 68 nazw `pending*` w `src/engine/`,
+      64 blokują priorytet, 68 w projekcji odcisku (100% po `fb92c01`);
+      4 pozablokadowe to księgowość przejściowa (`pendingAbilityActivation`,
+      `pendingDevourEtbs`, `pendingSpellDiscounts`, `pendingSpellReturnToHand`)
+      — każda sprawdzona ręcznie pod kątem „czy gracz musi na nią czekać”.
 - [x] NIE dotykać: `tapObject` dla cudzych permanentów (dług udokumentowany w
       M277, nie naprawiać na zapas).
 

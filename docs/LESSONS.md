@@ -2116,6 +2116,19 @@ oznacza niekompletną ofertę.
 G2: Exploit blokuje wyłącznie jako PIERWSZA decyzja). Mutacje: „bramka blokuje
 każdego" → G1 czerwone; „blokuje właściciela bez względu na porządek" → G1 czerwone.
 
+**Rozszerzenie (2026-09-02, audyt PR #92 / `docs/audits/AUDYT_PR92_2026-09-02.md`) —
+piąty wariant: rozjazd w DRUGĄ stronę.** Naprawa zgłoszenia „oferta jest no-opem"
+skręciła filtr oferty, ale **nie ruszyła walidacji** (M280/F). Efekt: gracz i bot
+nic już nie widzą, natomiast `resolve_discover_choice { castFree: true }` wysłany
+wprost — przez test, replay albo sterownika budującego komendy samodzielnie —
+nadal był przyjmowany i kładł czar na stosie bez celów (fizzle, CR 608.2b).
+Wniosek, którego brakowało w punktach 1–3: **zawężenie samej oferty nie jest
+naprawą**. Ofertę czytają UI i boty, `execute()` czytają WSZYSCY; więc filtr musi
+mieć jedno ciało wołane z obu stron (u nas: `outsideHandCastScope`), a zmiana
+którejkolwiek strony wymaga drugiej w tym samym commicie. Test dowodowy: assertion
+na ODRZUCENIE komendy spoza oferty, nie tylko na brak oferty (samo „oferta pusta"
+byłoby zielone również przy lukawej walidacji).
+
 ## L49 (2026-08-18) — Plik startowy musi kazać CZYTAĆ ADR-y, zanim agent odezwie się w czacie
 
 **Objaw:** nowa sesja zapytała właściciela „co robimy?" zamiast wykonać ADR

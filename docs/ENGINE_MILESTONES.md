@@ -3618,3 +3618,55 @@ zmian.
 
 **Wynik:** `npm test` **4118/4118** (+5 testów `test/batch52-bot-wycena.test.js`),
 test:all **4128/4128**, build **57 modułów / 3069.2 kB**.
+
+---
+
+## M281 (2026-09-02) — Audyt PR #92: pięć znalezisk pętli jakości (arena/01a06193, PR #93)
+
+> **Uwaga numeracyjna (żeby nie szukać dziury):** M280 figuruje w
+> `docs/audits/AUDYT_M280_AF_ZYWTESTER_2026-09-02.md` i w
+> `docs/PROJECT_HISTORY.md`, ale nie dostało wpisu tutaj — stąd przeskok
+> M279 → M281. Uzupełnianie M280 *post factum* byłoby falsyfikowaniem
+> rejestru, więc zostaje adnotacja.
+
+Sesja bez nowego tematu od właściciela („kontynuujemy projekt") → pętla
+domyślna ADR 0021: PR przed kodowaniem, audyt ostatnio scalonego PR-a,
+każdy commit osobno zielony.
+
+**Co wyszło z audytu (detale: `docs/audits/AUDYT_PR92_2026-09-02.md`):**
+
+| # | defekt | naprawa | commit |
+|---|---|---|---|
+| 1+2 | dwa `pending*` poza odciskiem stanu, a strażnik L16 vacuous (ground truth z ciała-delegata = `[]`) | skan obu ciał + próg liczebności + pin nie-vacuous + `pendingWardPay`/`pendingExileCast` w `PENDING_DECISION_FIELDS` | `fb92c01` |
+| 3 | Jolrael liczył „drugie dobranie" ze STANU; trzy ścieżki podnosiły licznik rozjechanie → batch 1+2 dawał 2 triggery, 2+1 zero | choke point `recordCardDrawn` stempluje `drawNumberThisTurn` w `card_drawn`; mulligan jawnie `null` (CR 701.3b) | `094a8c0` |
+| 4 | grupowe triggery „one or more … deal combat damage to a player" dedupowane po KONTROLERZE → druga instancja zdolności milczała (CR 603.3) | klucz per żywiciel + indeks zdolności + filtr + poszkodowany | `0b409fd` |
+| 5 | oferta Discover zawężona (M280/F), walidacja została szersza → fizzle poza ofertą; trzy kopie filtru rozjechane | `outsideHandCastScope(card, { allowTargets })` — jeden predykat dla ofert i walidacji Discovera i Vaana | `10f7a39` |
+
+**Przegląd mechaniczny (punkt 2.3 planu):** 68 nazw `pending*` w silniku,
+64 blokują priorytet, 68 w projekcji odcisku (100%); 4 pozostałe to
+księgowość przejściowa sparowana z prawdziwą decyzją — sprawdzone ręcznie,
+nie tylko policzone.
+
+**Bramy:** `npm test` **4143/4143**, `npm run test:all` **4153/4153**, build
+**57 modułów / 3084,1 kB**, `node --test test/bot-benchmark.test.js` **10/10**,
+`tools/event-contract-audit.mjs` i `tools/family-audit.mjs` bez naruszeń,
+`tools/oracle-coverage.mjs --only` dla 9 kart batchu 52 = **100%**. Zero nowych
+kart, zero zmian w UI, zero zmian wycen bota (golden-master nietknięty).
+
+**Strażnicy klasy (punkt 2.2 planu):** rodzina pól `draws` w
+`tools/family-audit.mjs` (każdy zapis `cardsDrawnThisTurn` poza `players.js` =
+naruszenie) oraz `CONTRACT_REQUIRED_FIELDS` w `tools/event-contract-audit.mjs` —
+te drugie powstało, bo przy testowaniu własnego założenia wyszło, że reguła
+większościowa (`CONTRACT_RATIO = 0.6`) nie widzi brakującego pola w rodzinie
+dwuemiterowej (1/2 = 50%). Oba strażniki mają piny anty-vacuous (próbki
+`bypass`/`legal` w `test/family-audit.test.js`, syntetyczni emiterzy w
+`test/m273-kontrakty-zdarzen.test.js`).
+
+**Lekcje:** L48 rozszerzone o „zawężenie samej oferty nie domyka luki";
+odkrycie, że `addObject` odrzuca pola spoza kontraktu (L21), udokumentowane
+w teście — bez tego pozytywowana ścieżka Vaana wydaje się zepsuta.
+
+**Otwarte (trafiło do `docs/backlog.md`):** siostrzana grupa `leftBattlefield`
+(też per kontroler), Treasure Vaana składany ręcznie zamiast z katalogu
+tokenów (klasa L107), brak `rulings` w snapshotach Scryfall, kicker na
+instant/sorcery (Merfolk Falconer).
