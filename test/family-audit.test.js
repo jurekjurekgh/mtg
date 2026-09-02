@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   auditFamilies, collectEffectBranches, formatFamilyViolations,
-  FAMILY_EXCEPTIONS, EFFECT_FAMILIES,
+  FAMILY_EXCEPTIONS, EFFECT_FAMILIES, FIELD_FAMILIES, AUDITED_FILES,
 } from '../tools/family-audit.mjs';
 
 /**
@@ -67,6 +67,38 @@ test('parser dopasowuje zagnieżdżone klamry (nie ucina gałęzi na pierwszym }
   const [branch] = collectEffectBranches(zrodlo);
   assert.match(branch.body, /for \(const t of targets\)/);
   assert.match(branch.body, /dealNonCombatDamage/);
+});
+
+test('każda rodzina pól ma zęby — wszczepione omijanie musi pasować, a legalne formy nie (pin anty-vacuous)', () => {
+  // Rodzina pól, której wzór nie dopasowuje NIC, jest gorsza niż jej brak:
+  // udaje, że klasa „ścieżka mutuje pole sama" jest pilnowana (L26/L112 —
+  // fałszywe milczenie bramki). Dowód z audytu PR #92: strażnik odcisku
+  // przechodził vacuous, bo zbiór oczekiwany był pusty. Dlatego KAŻDA rodzina
+  // musi samej sobie czerwienić na próbce `bypass` i nie może się czepiać
+  // form `legal` (inaczej strażnik jest albo martwy, albo krzyczy na wszystko).
+  for (const family of FIELD_FAMILIES) {
+    assert.ok(Array.isArray(family.bypass) && family.bypass.length >= 2,
+      `rodzina ${family.id} nie ma próbek bypassu — nie da się udowodnić, że wzór działa`);
+    assert.ok(Array.isArray(family.legal) && family.legal.length >= 1,
+      `rodzina ${family.id} nie ma próbek legalnych — wzór może łapać wszystko`);
+    for (const line of family.bypass) {
+      assert.match(line, family.pattern,
+        `rodzina ${family.id} NIE widzi omijania w: ${line} — wzór jest za wąski`);
+    }
+    for (const line of family.legal) {
+      assert.doesNotMatch(line, family.pattern,
+        `rodzina ${family.id} MYLI legalny zapis z omijaniem: ${line} — wzór jest za szeroki`);
+    }
+  }
+});
+
+test('licznik dobrań jest chroniony jako rodzina (audyt PR #92, znalezisko 3)', () => {
+  const draws = FIELD_FAMILIES.find((f) => f.id === 'draws');
+  assert.ok(draws, 'brak rodziny `draws` — ścieżki podnoszące cardsDrawnThisTurn są bez nadzoru');
+  assert.equal(draws.owner, 'src/engine/players.js',
+    'właścicielem licznika jest choke point recordCardDrawn w players.js');
+  assert.ok(AUDITED_FILES.includes('src/engine/effects.js') && AUDITED_FILES.includes('src/engine/spells.js'),
+    'pliki z rozjechanymi ścieżkami dobrań muszą być w skanie');
 });
 
 test('audyt wykrywa wariant obrażeń z surową mutacją życia (kontrola narzędzia)', () => {

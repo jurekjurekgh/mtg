@@ -121,6 +121,10 @@ export const FIELD_FAMILIES = [
     owner: 'src/engine/players.js',
     pattern: /\.life\s*(?:\+=|-=|=(?!=))/,
     why: 'zmienia życie poza changeLife — gubi zdarzenie life_changed i kontrakt logu/bota',
+    // Próbki pinu anty-vacuous (patrz `test/family-audit.test.js`): `bypass`
+    // MUSI pasować do wzoru, `legal` NIE może.
+    bypass: ['state.players[0].life += 1;', 'p.life = 20;', 'target.life -= 3;'],
+    legal: ['const before = player.life;', 'if (player.life <= 0) {', 'life: player.life'],
   },
   {
     id: 'poison',
@@ -128,6 +132,43 @@ export const FIELD_FAMILIES = [
     owner: 'src/engine/players.js',
     pattern: /\.poison\s*(?:\+=|-=|=(?!=))/,
     why: 'zmienia truciznę poza addPoisonCounters — gubi zdarzenie poison_counters_added',
+    bypass: ['player.poison = 10;', 'state.players[1].poison += 1;'],
+    legal: ['player.poison === 9;', 'const poison = player.poison;'],
+  },
+  {
+    // Rodzina z audytu PR #92 (znalezisko 3): licznik dobrań w turze był
+    // podnoszony trzema rozjechanymi ścieżkami, a wyzwalacz Jolrael czytał
+    // WARTOŚĆ KOŃCOWĄ stanu po komendzie — „draw two" dawało dwa wyzwalacze,
+    // a „1 + 2" none. Odtąd jedynym miejscem zapisu jest `recordCardDrawn`
+    // (players.js), które razem z licznikiem stempluje `drawNumberThisTurn`
+    // w zdarzeniu `card_drawn`.
+    //
+    // Zasięg wzoru (świadomie węższy niż „każde przypisanie"): łapie zapis
+    // per gracz (`state.cardsDrawnThisTurn[id] = 3`, `+= 1`, `p.cardsDrawnThisTurn++`,
+    // `state.players[i].cardsDrawnThisTurn = 2`) — to jest klasa błędu
+    // „ścieżka podnosi licznik sama". Nie łapie przerzucenia całego obiektu
+    // składnią (`state.cardsDrawnThisTurn = { ...x, [id]: 2 }`), bo tym samym
+    // wzorem zeruje się licznik przy starcie tury w `game-state.js` (w bloku
+    // resetów `spellsCastThisTurn`/`lifeGainedThisTurn`), a fałszywy alarm na
+    // każdym progu tury kosztowałby więcej, niż wart jest ten rzadki zapis.
+    // Nie łapie też formy przedrostkowej `++x.cardsDrawnThisTurn` (pole jest
+    // potem, nie przed operatorem) — w kodzie produkcyjnym nikt jej nie używa,
+    // a jej obsługa kosztowałaby wzór łapiący komentarze.
+    id: 'draws',
+    label: 'licznik dobrań w turze',
+    owner: 'src/engine/players.js',
+    pattern: /\.cardsDrawnThisTurn\s*(?:\[[^\]]+\])?\s*(?:\+=|\+\+|=(?!=)\s*\d)/,
+    why: 'podnosi licznik dobrań poza recordCardDrawn — gubi stemplowanie drawNumberThisTurn w card_drawn (CR 122.5)',
+    bypass: [
+      'state.cardsDrawnThisTurn[p.id] = 2;',
+      'p.cardsDrawnThisTurn += 1;',
+      'state.players[1].cardsDrawnThisTurn = 3;',
+    ],
+    legal: [
+      'state.cardsDrawnThisTurn = {};',
+      'const n = (state.cardsDrawnThisTurn?.[playerId] ?? 0) + 1;',
+      'const drawn = (state?.cardsDrawnThisTurn ?? {})[object.controllerId] ?? 0;',
+    ],
   },
 ];
 

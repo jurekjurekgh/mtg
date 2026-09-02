@@ -143,6 +143,49 @@ export const CONTRACT_EXCEPTIONS = {
 /** Próg: pole uznajemy za część kontraktu, gdy niesie je >= tyle emiterów. */
 export const CONTRACT_RATIO = 0.6;
 
+/**
+ * Pola WYMAGANE u WSZYSTKICH emiterów danego typu — niezależnie od progu
+ * większościowego.
+ *
+ * Dlaczego osobno: reguła `CONTRACT_RATIO` milczy dokładnie tam, gdzie rodzina
+ * jest mała. Dowód z audytu PR #92 (znalezisko 3): `card_drawn` ma dwóch
+ * emiterów (choke point `recordCardDrawn` + mulligan), więc usunięcie
+ * stempla `drawNumberThisTurn` z jednego dawało pokrycie 1/2 = 50% < 0,6 i
+ * analizator NIC nie zgłaszał — a porządek dobrania jest tym polem, przez które
+ * Jolrael, Visionage Druid liczył źle. Wymóg deklaratywny zamyka dziurę
+ * „mała rodzina, duże znaczenie" (L112: fałszywe milczenie bramki).
+ *
+ * Świadomie BEZ wyjątków: emiter, który nie ma czego wpisać, wpisuje `null`
+ * jawnie (tak robi mulligan — CR 701.3b), bo konsument ma rozróżniać
+ * „brak pola" od „pola z wartością pustą".
+ */
+export const CONTRACT_REQUIRED_FIELDS = {
+  card_drawn: ['drawNumberThisTurn'],
+};
+
+/** Naruszenia pól wymaganych: każde pole z listy musi być u KAŻDEGO emitera typu. */
+export function findMissingRequiredFields(emitters) {
+  const byType = new Map();
+  for (const emitter of emitters) {
+    if (!byType.has(emitter.type)) byType.set(emitter.type, []);
+    byType.get(emitter.type).push(emitter);
+  }
+  const violations = [];
+  for (const [type, fields] of Object.entries(CONTRACT_REQUIRED_FIELDS)) {
+    const list = byType.get(type) ?? [];
+    for (const field of fields) {
+      const missing = list.filter((emitter) => !emitter.fields.has(field));
+      if (!missing.length) continue;
+      violations.push({
+        type, field, required: true,
+        have: list.length - missing.length, total: list.length,
+        missing: missing.map((emitter) => `${emitter.file}:${emitter.line}`),
+      });
+    }
+  }
+  return violations;
+}
+
 function stripComments(source) {
   return source.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
 }
@@ -197,7 +240,9 @@ export function auditEventContracts({ rootDir = '.', files = AUDITED_FILES } = {
     if (!byType.has(emitter.type)) byType.set(emitter.type, []);
     byType.get(emitter.type).push(emitter);
   }
-  const violations = [];
+  // Najpierw wymogi deklaratywne (bez progu i bez minimum liczby emiterów),
+  // potem rozjazd większościowy.
+  const violations = findMissingRequiredFields(emitters);
   for (const [type, list] of byType) {
     if (list.length < 2) continue;
     const counts = new Map();
@@ -223,7 +268,7 @@ export function auditEventContracts({ rootDir = '.', files = AUDITED_FILES } = {
 
 export function formatViolations(violations) {
   return violations.map((v) => (
-    `${v.type}.${v.field}: niesie ${v.have}/${v.total} emiterów, BRAK w:\n`
+    `${v.required ? '[pole WYMAGANE] ' : ''}${v.type}.${v.field}: niesie ${v.have}/${v.total} emiterów, BRAK w:\n`
     + v.missing.map((m) => `    ${m}`).join('\n')
   )).join('\n');
 }

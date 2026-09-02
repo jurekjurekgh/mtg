@@ -1,4 +1,4 @@
-// Audyt PR #92 (2026-09-02), znalezisko 5 — „prosty zakres\" darmowego rzutu:
+// Audyt PR #92 (2026-09-02), znalezisko 5 — „prosty zakres” darmowego rzutu:
 // oferta została zawężona w M280/F, ale walidacja w `execute()` została po
 // staremu. Skutek: `resolve_discover_choice { castFree: true }` dla czaru
 // celowanego/X/modów był AKCEPTOWANY i kładł czar na stos bez celów
