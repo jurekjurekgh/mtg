@@ -417,3 +417,11 @@ testera jest celowo krótki).
 **Lekcja tury (L120, rejestr + archiwum):** opcjonalna zależność komponentu to
 dziura w drucie — zielony test komponentu z podanym stubem nie dowodzi, że
 aplikacja tę zależność podaje; każda rodzina klas DOM musi mieć regułę CSS.
+
+**Własny błąd procesowy z tej tury (nie dotyczy kodu, ale warto znać):** commit
+`d5bb962` zrobiłem przez `git commit -m "..."` z cudzysłowem podwójnym, więc bash
+wykonał zawartość backticków w treści komunikatu i dwa cytaty zniknęły z message
+(zostało „… wyszukiwała ofertę ;"). Poprawki nie ma: zmiana message
+wymagałaby force pushu, a go nie robimy. Reguła potwierdzona na żywym ciele:
+**komunikaty przez `git commit -F <plik>`** — tak powstało sześć wcześniejszych
+commitów tury i żaden się nie rozleciał.
