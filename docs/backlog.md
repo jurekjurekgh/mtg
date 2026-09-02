@@ -125,6 +125,15 @@ Następna lista właściciela wchodzi tutaj.)_
   wyceny: `grep -n "score +=\|score -=" src/controllers/heuristic-bot.js` i
   porównać z dostępnymi `*Valuation`/predykatami. Każda taka rozbieżność to
   decyzja podejmowana bez części danych (klasa L119).
+- **Waga „spożytkowania" w `equipValuation`** (zgłoszone w §13.6 raportu, tura 9):
+  ładunek sprzętu jest liczony od pompy i grantów, a nie od tego, co nosiciel umie
+  z tym zrobić. Efekt: pompowany 3/2 vanilla i 3/3 z lataniem są równoważni (oba
+  kierunki przeniesienia = −4,00), podobnie jak równe co do siły ciało z defenderem.
+  Mana nie jest spalona (drabina każe stać), ale wybór nosiciela może być gorszy.
+  Gdyby wejść w to wagowo: tylko przez `node tools/benchmark.mjs --seeds 24`
+  przed/po (próg: brak regresji) i z anty-ping-pongowym testem
+  `test/uwagi-tura9-bot-rowne-ciala-equip.test.js` jako bramą (własność z §13.6
+  musi pozostać prawdziwa).
 
 ## 4. Stół i Żywy Tester
 

@@ -425,3 +425,44 @@ wykonał zawartość backticków w treści komunikatu i dwa cytaty zniknęły z 
 wymagałaby force pushu, a go nie robimy. Reguła potwierdzona na żywym ciele:
 **komunikaty przez `git commit -F <plik>`** — tak powstało sześć wcześniejszych
 commitów tury i żaden się nie rozleciał.
+
+
+---
+
+## Tura 9 (2026-09-02): pytanie kontrolne o equip — drabina `wornByMine` obciążona testem
+
+**Pytanie właściciela (w skrócie):** „Naprawiłeś to, żeby nie przerzucał na
+kreaturę, której equipment nic nie daje, i super. Ale gdyby były dwie kreatury,
+którym obu ten equipment daje pompę — czy zablokowane jest bezsensowne wydawanie
+many na dwukrotne przerzucanie? Chodzi o to, żeby wybrał najlepszy cel i tam już
+zostawił."
+
+**Odpowiedź: tak, jest zablokowane, i to jest własność strukturalna.** Cztery
+szczeble w `src/controllers/heuristic-bot.js` (gałąź `wornByMine`, ~linia 3830):
+nic-nie-dodaje → −12; ładunek wyraźnie większy (budzi martwy efekt) → +4 +różnica;
+ciało ≥ 2 siły większe i ładunek nie gorszy → +4 +delta; reszta (w tym dwa równe
+ciała z tą samą pompą) → −6, więc wygrywa pass. Każdy szczebel jest
+antysymetryczny, zatem X->Y i Y->X nie mogą być jednocześnie dodatnie — nie ma jak
+powstać ping-pong.
+
+**Jak to powtórzyć:** `node --test test/uwagi-tura9-bot-rowne-ciala-equip.test.js`
+(7/7). Numery z pomiaru: Wooden Stake na 2/1 vs kandydat 2/2 → −4,00 przy passie
+0,00; Brawler's Plate (+2/+2, trample, equip {4}) na tej samej parze → −4,00;
+schody 2/1 → 2/2 → 7/7 → `->marut = +10,00`, `->dryada = −4,00` (jeden krok, nie
+dwa opłacone equipy); Monastery Flock (0/5, defender) → Undead Servant → +8,00
+(naprawa dozwolona). Test T9/3 sam wypisuje pary, jeśli drabina przestanie być
+antysymetryczna, i wymaga ≥3 dozwolonych awansów, żeby nie przejść „przez pusto".
+
+**Czego NIE zrobiliśmy i dlaczego:** nie zmieniliśmy żadnej wagi (pytanie było o
+pokrycie, nie o błąd), więc nie było benchmarku A/B ani nowego milestonu; nie
+dodaliśmy kary za „ruch boczny" między równymi ciałami — one już są pod
+progiem; dwie granice modelu (patrz §13.6 raportu) wpisaliśmy do `docs/backlog.md`
+§3 jako zmiany wymagające `--seeds 24`.
+
+**Uwaga o warsztacie (też L120 z innej strony):** pierwsza wersja scenariuszy
+nadpisywała `power`/`toughness` i `cantAttackStatic` wprost na obiektach — `playerView`
+projektuje wyłącznie pola liczone przez silnik (`power` nosiciela zawiera już
+pompę ze sprzętu, a `cantAttackStatic` ustawia `staticAttackPrevented`), więc
+„reprezentacja" milczała o 1 sile i nie pokazywała defendera w ogóle. Pomiary
+przepisaliśmy na same prawdziwe karty; `addObject` przy okazji przypomniał
+ostrzeżeniem L21, że pola spoza kontraktu giną.

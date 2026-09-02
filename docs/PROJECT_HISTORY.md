@@ -6310,7 +6310,7 @@ po U7 — ostatnie trzy błędy wyszły dopiero z **ręcznej analizy transkrypt�
 pod kątem wzorca „oferta, która nic nie zmienia albo jest pewną stratą".
 Ten wzorzec dał U8, U9 i U10. (2) Połowa tropów to fałszywe alarmy; każdy
 zweryfikowany trop zapisano w planie, żeby następna sesja ich nie powtarzała
-(T4′, `aura_spell_cast`, „1 opcja", dwa landy pod rząd).
+(T4', `aura_spell_cast`, „1 opcja", dwa landy pod rząd).
 
 **Wynik:** `npm test` **1838/1838**, build 50 modułów / 1693.9 kB, Żywy Tester
 bez zgłoszeń detektorów w 14 partiach (11 kombinacji talii, 4 profile gracza).
@@ -7694,6 +7694,29 @@ Akceptacja zmiany wadze bota: `--seeds 24`, 2016 meczów, baseline z worktree
 `ae8bc24` → **85,5% (1724) vs 85,5% (1723)**, czyli szum; przyjęto dla spójności
 modelu, nie dla win-rate. `npm test` 4224/4224, `test:all` 4234/4234, build 59
 modułów / 3140,2 kB, 32 nowe testy. Narracja: §13 raportu, M288, L120.
+
+### Pytanie kontrolne po turze 8 (2026-09-02, tura 9): czy drabina equipu łapie przepięcie między równymi ciałami
+
+Właściciel dopytał o sedno zgłoszenia C: naprawa zabrała manę za przeniesienie
+sprzętu, który „nic nie daje", ale co z przypadkiem, w którym obie kreatury
+profitują z pompy — czy bot nie zacznie wtedy kursować tam i z powrotem,
+zabierając sprzęt z ciała lepszej od gorszej? Odpowiedź padła liczbami, nie
+deklaracją: gałąź `wornByMine` jest drabiną czterech szczebli (nic-nie-dodaje
+→ −12; wyraźnie większy ładunek → premia naprawy; ciało ≥ 2 siły i ładunek nie
+gorszy → premia; wszystko inne → −6), a każdy szczebel jest antysymetryczny, więc
+ruch w obie strony nie może być dodatni jednocześnie. Dołączony test
+`test/uwagi-tura9-bot-rowne-ciala-equip.test.js` (7/7) mierzy to na prawdziwych
+kartach: Wooden Stake na 2/1 z kandydatem 2/2 = −4,00 (pass), Brawler's Plate
+{4} na tej samej parze = −4,00, schody 2/1 → 2/2 → 7/7 = jeden krok na Maruta
+(+10,00, pośrednie ciało −4,00), a sprzęt uwięziony na defenderze schodzi na
+atakującego (+8,00). Własność anty-ping-pongowa jest sprawdzana na wszystkich 40
+parami konfiguracjach (5 ciał × 2 sprzęty), z wymuszoną obecnością ≥3 dozwolonych
+awansów, żeby test nie był pusty. Dwie granice modelu (ładunek liczony od pompy,
+nie od tego, co nosiciel umie z nią zrobić → równe co do siły ciało z lataniem
+czy z defenderem nie wyciąga sprzętu od siebie) trafiły do `docs/backlog.md` §3
+jako zmiany wagowe, które bez benchmarku A/B na `--seeds 24` byłyby gustem; ta
+tura nie rusza `src/`, więc nie ma nowego milestonu ani A/B. Narracja: §13.6
+raportu.
 
 ## Zasada aktualizacji
 
