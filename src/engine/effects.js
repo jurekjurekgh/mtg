@@ -3740,6 +3740,23 @@ function markTemporaryExile(state, exileId, sourceObject) {
     });
     return;
   }
+  if (effect.type === 'counter_ability') {
+    // Stifle: „Counter target activated or triggered ability." Cel wskazano przy
+    // rzucie, tu tylko rozstrzygamy: jeśli zdolności już na stosie nie ma
+    // (skontrowana wcześniej, zniknęła), nie ma efektu (CR 608.2b). Contra idzie
+    // przez WSPÓLNY `counterStackObject` — ta sama droga co ward i Negate, więc
+    // „zdolność skontrowana" nie może się różnić od „czar skontrowany" w
+    // zdarzeniach ani w sprzątaniu stosu.
+    const targetId = targets[0];
+    if (targetId == null) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'stack') return;
+    if (!object.activatedEntry && !object.triggerEntry) return;
+    counterStackObject(state, targetId, {
+      counteredBy: sourceObject.id, counteredByCardId: sourceObject.cardId,
+    });
+    return;
+  }
   if (effect.type === 'counter_spell_unless_pays') {
     // Batch 44 (Frightful Delusion): „Counter target spell unless its
     // controller pays {1}. That player discards a card." — decyzja należy do

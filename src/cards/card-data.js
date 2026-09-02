@@ -1583,6 +1583,26 @@ export const REAL_CARDS = Object.freeze([
     notes: ['„noncreature spell" = czar na stosie niebędący stworem (instants/sorceries i czyste aury); cast bestow (stwór) nie jest celem Negate'],
   }),
 
+  // Audyt PR #93 (tura 3), wątek 3 z HANDOFF: pierwsza karta w katalogu, która
+  // CELEJE ZDOLNOŚĆ na stosie, a nie czar — kontrzenie wyzwalanych zdolności
+  // nie miało dotąd żadnej drogi, więc i semantyka „cały trigger skontrowany"
+  // (ani wygnania, ani Skarbu przy Vaanie) była nie-do-przetestowania.
+  defineCard({
+    id: 'stifle', name: 'Stifle', set: 'CNS',
+    types: ['Instant'], colors: ['U'], manaCost: 1,
+    oracleText: "Counter target activated or triggered ability. (Mana abilities can\'t be targeted.)",
+    imageUri: 'https://cards.scryfall.io/large/front/6/1/616d1b20-61c1-4d39-a9b5-ad9fd61699e4.jpg?1783939358',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'ability_on_stack' }],
+      effects: [{ type: 'counter_ability' }],
+    },
+    plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+    notes: ['„Mana abilities can\'t be targeted" bierze się z konstrukcji silnika: zdolność many '
+      + 'rozstrzyga się bez stosu (CR 605.1a), więc nie ma wpisu, który można by skontrować'],
+  }),
+
   // =========================================================================
   // Batch 14 (10 kart, 2026-08-04)
   // =========================================================================

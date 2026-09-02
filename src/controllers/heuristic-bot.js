@@ -1974,7 +1974,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Batch 44 (Frightful Delusion): „counter unless pays" to słabszy
         // kontrczar (przeciwnik może się wykupić za {1}), ale ta sama klasa
         // decyzji — nigdy we własny czar; premia jak counter_spell.
-        if (effects.some((effect) => effect?.type === 'counter_spell' || effect?.type === 'counter_spell_unless_pays')) {
+        // Audyt PR #93: `counter_ability` (Stifle) to ta sama klasa decyzji —
+        // nigdy we własną zdolność (koszt już zapłacony, CR 118.12 nie zwraca
+        // nic), a cel bez wpływu oznacza „trzymaj kontrę".
+        if (effects.some((effect) => effect?.type === 'counter_spell' || effect?.type === 'counter_spell_unless_pays'
+          || effect?.type === 'counter_ability')) {
           const stack = view.zones.stack ?? [];
           const targets = cmd.targets ?? [];
           const ownTarget = targets.some((id) => {
@@ -2011,6 +2015,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               const effs = [
                 ...((entry.spell?.effects) ?? []),
                 ...((entry.spell?.modes ?? []).flatMap((m) => m.effects ?? [])),
+                // Zdolność na stosie nie ma `spell` — jej deskryptor mieszka w
+                // `abilityEffects` (playerView, audyt PR #93). [x].flat() bo
+                // efekt zdolności bywa pojedynczym obiektem, nie tablicą.
+                ...[entry.abilityEffects].flat().filter(Boolean),
               ];
               // Sam tap/untap/self-mill/scry jednego permanentu = niski wpływ.
               return effs.some((e) => HIGH_IMPACT.has(e?.type));

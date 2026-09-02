@@ -5440,6 +5440,12 @@ export function playerView(state, playerId) {
           // T6: zdolność triggerowana na stosie (pseudo-obiekt kind 'trigger').
           trigger: Boolean(object.triggerEntry),
           triggerEvent: object.triggerEntry?.ability?.trigger?.event ?? null,
+          // Audyt PR #93 (tura 3): EFEKTY zdolności leżącej na stosie. Bez nich
+          // ani stół, ani bot nie wiedzą, CO kontruje Stifle — a to ta sama
+          // klasa co `spell` czaru na stosie: deskryptor jest publiczny od
+          // chwili, gdy wpis wszedł na stos (ADR 0017).
+          abilityEffects: object.activatedEntry?.ability?.effect
+            ?? object.triggerEntry?.ability?.effect ?? null,
         };
       }
       // M201/A2 (zgłoszenie właściciela, Mindstab): karty „w poczekalni”

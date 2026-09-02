@@ -177,6 +177,7 @@ export const MANA_COSTS = {
   "mystic-sanctuary": "",
   "nefarious-imp": "{2}{B}",
   "negate": "{1}{U}",
+  "stifle": "{U}",
   "negate-m15": "{1}{U}",
   "nightshade-harvester": "{3}{B}",
   "panic-spellbomb": "{1}",

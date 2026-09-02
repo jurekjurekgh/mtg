@@ -183,6 +183,7 @@ const TARGET_TYPE_LABELS = Object.freeze({
   noncreature_spell_on_stack: 'czar niebędący stworem na stosie',
   spell_on_stack: 'czar na stosie',
   artifact_spell_on_stack: 'czar-artefakt na stosie',
+  ability_on_stack: 'aktywowana albo wyzwalana zdolność na stosie',
   opponent: 'przeciwnik',
   // M126/#4 (Żywy Tester): w tekście kafli świeciły surowe slugi
   // („cel: creature_without_subtype", „cel: equipment_you_control").
@@ -968,6 +969,7 @@ function describeEffect(e) {
     cloak: () => 'cloak (wierzch biblioteki twarzą w dół jako 2/2)',
     control_to_owners_all_creatures: () => 'kontrola stworów wraca do właścicieli',
     counter_spell: () => 'skontruj czar',
+    counter_ability: () => 'skontruj zdolność',
     counter_spell_unless_pays: (effect) => `skontruj czar, chyba że kontroler zapłaci {${effect?.amount ?? 1}}; ten gracz odrzuca kartę`,
     fireball_resolve: () => 'X obrażeń podzielone po równo między cele',
     craft_transform: () => 'craft — transform',
