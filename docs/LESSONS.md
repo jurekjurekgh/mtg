@@ -1891,3 +1891,23 @@ zero, którego projekt nie obwieścił, jest kłamstwem w teście (ADR 0019).
 `tools/bot-tie-audit.mjs` (`tieNoOp`, `tieAkcyjne`, klasyfikacja po projekcji).
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L118). → Pokrewne: L18, L5, L117.
 
+## L119 (2026-09-02) — Metryka audytowa nie może być modelem gorszym od mierzonego kodu
+
+**Przypadek:** audyt remisorów bota (M286→M287). Projekcja „wartość ciała" liczona
+jako `power + toughness` flagowala pary slusznie uznane za zamienne, bo sama wycena
+waży siłę i wytrzymałość inaczej (2/pt vs 1/pt); projekcja „obrona zostawiona w
+domu" flagowala rzekomy brak ostrożności, którego nie ma — stwór tapnięty atakiem
+odswieza się w naszym następnym kroku odswiezania, czyli zdąży zablokować (CR 502.3,
+wyjątek „doesn't untap" ma osobną gałąź). Równolegle ta sama metryka, ale liczona po
+składnikach, znalazła rzecz prawdziwą: `cast_permanent` w ogóle nie znał kosztu many.
+**Reguła:** porównuj warianty po **wejściach, które mierzony kod konsumuje**, w
+jednostkach, które ten kod szanuje — jeśli audyt ma gorszy model świata niż
+badany kod, produkuje findingi pozorne i zagłusza prawdziwe. Analogicznie od strony
+produkcyjnej: gałąź z `finish(score)` nie dowodzi, że wycena widzi wszystkie
+istotne dane (tu: pełna formuła bez jednego składnika = wybór z kolejności listy).
+**Strażnik:** `test/audyt-bot-cena-stwora.test.js` (pin arytmetyczny
+`Δwyniku = Δkoszt × waga × waga rodziny`, kierunek na parach z katalogu,
+kontra-przykład „większy korpus broni ceny") + grzechotka per kind w
+`test/audyt-bot-walka-remisy.test.js`; pomiar: `tools/bot-tie-audit.mjs`.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L119). → Pokrewne: L117, L118, L5.
+

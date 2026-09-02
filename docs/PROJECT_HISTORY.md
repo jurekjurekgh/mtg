@@ -7657,6 +7657,23 @@ między realnymi wariantami (12,4% decyzji akcyjnych) i 4 groźby przejrzane:
 grzechotka `<= 4` zamiast udawanego zera. Narracja: §12.4–12.5 raportu, M286,
 lekcja L118. Commit `cf978f0`; `npm test` 4195/4195, benchmark bez zmian (83,6%).
 
+### Audyt PR #92, tura 7 (2026-09-02): rzut stwora poznał cenę many, metryka — własne ograniczenia
+
+Krok planu brzmiał „zaostrzyć wycenę ataku, ale tylko przez benchmark". Nie został
+wykonany jako zaostrzenie ataku: grzechotka audytu pokazała większą dziurę obok.
+`cast_permanent` wyceniał korpus, ale nie koszt — 2/2 za {2} i 2/2 za {6} miały
+identyczny wynik, więc wybór między stworami w ręce zapadał w kolejności listy.
+Naprawione nowym nazwanym parametrem `creatureManaCostWeight` (1 punkt za punkt
+many). Benchmark z baseline'em na tej samej próbie: quick 83,6% → 83,8%, a na 2016
+meczach 85,7% → **85,5%** (Δ = −3 mecze = szum), więc przyjęto to **ze względu na
+lukę modelową, nie na win-rate** (próg planu: brak regresji). Projekcje dostały też klasy, o których pomiar
+milczał (`cast_*`, `activate_ability`) — wszystkie ich remisy okazały się równe po
+stronie danych (0 groźb). Dwa wcześniejsze „findingi" były wymysłem samej metryki:
+suma P/T jako wartość ciała (model gorszy niż mierzona wycena, która waży siłę i
+wytrzymałość inaczej) oraz obrona zostawiana w domu (nieprawda regułowa — atakujące
+stwory odświeżają się przed turą wroga, CR 502.3). Narracja: §12.6–12.7 raportu,
+M287 w kamieniach milowych, lekcja L119. `npm test` 4199/4199.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

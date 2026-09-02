@@ -111,7 +111,7 @@ sklejać znaczniki konfliktu.
 
 - **Arbitralny egress HTTPS jest zablokowany, ale rejestr npm NIE.**
   Zmierzone 2026-08-24 (M202): `curl https://api.scryfall.com/...` → kod 000,
-  `fetch` w Node → `fetch failed`, za to `npm i` w `tools/table-tester`
+  `fetch` w Node → `ECONNRESET`/`fetch failed`, za to `npm i` w `tools/table-tester`
   przechodzi (63 pakiety, ~1 s). Czyli: Żywego Testera da się uruchomić
   w sesji (nie trzeba zainstalowanego wcześniej `node_modules`), ale danych
   kart z Scryfalla nadal pobieraj narzędziem `fetch_page` i zapisuj do

@@ -3866,3 +3866,40 @@ z pomiaru, udowodnij w teście, że jest równoważna.
 **Bramy:** `npm test` **4195/4195** (3 nowe testy), golden-master regenerowany
 przez metadane śladu (wagi bez zmian), benchmark quick **heuristic 83,6% /
 aggro 28,9%** — identycznie, co jest tu wynikiem pożądanym. Commit: `cf978f0`.
+
+## M287 (2026-09-02) — wycena rzutu stwora poznała cenę many; projekcje rzutów i zdolności (PR #93, tura 7)
+
+**Znalezisko.** Grzechotka audytu (M286) zmierzyła 4 na 8 remisów `cast_permanent`
+pomiędzy parami stworów o identycznym korpusie i **różnym koszcie** (ex aequo 73,8
+/ 74,7 / 71,1). Formuła gałęzi to `creatureBase + power × 2 + toughness × 1` — bez
+żadnego składnika kosztowego, więc „tempo" nie istniało w wyborze, choć istniało w
+każdym innym miejscu projektu. Naprawa: `creatureManaCostWeight` (nowy nazwany
+parametr, domyślnie 1 punkt za punkt many, tj. mniej niż waga siły, żeby większy
+korpus obronił swoją cenę) odjąć od wyniku rzutu stwora.
+
+**Akceptacja wyłącznie liczbowa** (plan wymagał benchmarku, nie testu), z baseline'em
+zmierzonym na tej samej próbie (`git worktree` na `HEAD`): quick 83,6% → 83,8%;
+`--seeds 24` 2016 meczów: **85,7% → 85,5%** (Δ = −3 mecze, czyli szum). Werdykt:
+**neutralne**, przyjęte ze względu na lukę modelową (formuła bez składnika ceny),
+nie ze względu na win-rate — próg planu brzmiał „brak regresji". Plus 4 testy jednostkowe (`test/audyt-bot-cena-stwora.test.js`) z pinem
+arytmetycznym `Δwyniku = Δkoszt × waga × waga rodziny` — 3,6 dla 4 many, bo
+`permanent` ma wagę 0,9.
+
+**Projekcje dalej.** `cast_*` i `activate_ability` dostały `tieProjection`, więc
+21 remisów, o których pomiar milczał, stało się mierzalnych: wszystkie okazały się
+równe po stronie danych (0 groźb). Przy okazji wypadły dwie wady samej metryki:
+suma P/T jako „wartość ciała" (model gorszy niż mierzony kod — siła i
+wytrzymałość ważą inaczej) oraz „obrona zostawiona w domu" (fałsz regułowy: atak
+tapuje do *naszego* następnego kroku odświeżania, CR 502.3, wyjątek „doesn't
+untap" ma osobną gałąź). Oba pola usunięte; dla rzutów została jedna liczba
+`waluta` = wycena korpusu minus koszt.
+
+**Cofnięte świadomie:** rozszerzenie `summarize` o `cardId` dla `cast_*` — ~19
+testów (m234/m235/m247/m257/batch52) parsuje format `cast_*(objectId)`; wariant
+jest w nim rozstrzygalny, a dane różnicujące niesie projekcja. Zysk czytelności
+nie był wart przepisania pinsów pilnujących wyceny.
+
+**Bramy:** `npm test` **4199/4199** (4 nowe testy + grzechotka przerobiona na
+sufity per kind), golden-master zregenerowany (świadoma zmiana wyceny), benchmark
+`--seeds 24`: heuristic 85,5% (baseline 85,7%) / aggro 24,5% / random 4,5%. Commity: kod z testami,
+osobno dokumentacja.

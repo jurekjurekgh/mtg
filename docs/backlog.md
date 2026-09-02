@@ -153,7 +153,10 @@ są zamknięte (ląd naprawiony, block = polityka), jedna czeka na decyzję licz
   liczona względem obrażeń, które i tak dopinają — ale **tylko przez benchmark**
   (`node tools/benchmark.mjs` przed/po, próg przyjęcia = brak regresji; ADR 0018
   profil quick na start). Bez tej weryfikacji zmiana jest gustem, nie wynikiem.
-- **Projektowanie projekcji dalszych klas:** `cast_permanent` 8, `cast_spell` 5,
+- **ZAMKNIĘTE w turze 7 (M287).** `cast_permanent` nie znał kosztu many — naprawione
+  `creatureManaCostWeight`, zaakceptowane benchmarkiem 2016 meczów (heuristic 85,5%).
+  Projekcje doszły dla `cast_*` i `activate_ability`: 0 groźb, czyli pomiar już nie milczy.
+- **Projektowanie projekcji dalszych klas:** `cast_spell` 5,
   `activate_ability` 8, `resolve_discard_choice` 7 — dziś `bez-danych` = `akcyjne`,
   czyli pomiar o nich milczy. Wzorzec: `tieProjection` w `heuristic-bot.js` +
   grzechotka w teście (patrz `test/audyt-bot-walka-remisy.test.js`).

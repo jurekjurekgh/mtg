@@ -295,3 +295,56 @@ Stan: 100 remisów między realnymi wariantami (12,4% decyzji akcyjnych), 0 gro�
 **Uwaga o narzędziach:** `gh pr edit --body-file` w tym sandboxie nie stosuje
 zmiany (zwraca 0!), PATCH przez `gh api -X PATCH repos/.../pulls/93 --input plik.json`
 działa — ciało PR-a #93 ma sekcje Tura 1–5, do uzupełnienia o 6.
+
+---
+
+## Tura 7 (2026-09-02): audyt bota #3 — cena many weszła do wyceny rzutu
+
+**Zrobione (`a951461` + commit dokumentacyjny):** `creatureManaCostWeight` (1/pt
+many) w gałęzi `cast_permanent` — wcześniejsza formuła znała korpus, ale nie cenę,
+więc 2/2 za {2} i 2/2 za {6} były tym samym wyborem. Akceptacja **liczbowa z
+baseline'em na tej samej próbie** (`git worktree` na `HEAD`): 2016 meczów
+85,7% → 85,5% (Δ = −3 mecze = szum), quick 83,6% → 83,8%. Przyjęto ze względu na
+lukę modelową, nie na win-rate (próg planu = brak regresji). Projekcje `tieProjection`
+dla `cast_*` i `activate_ability` (21 remisów przestało być „bez danych", wszystkie
+wyszły równe ⇒ 0 groźb) i dwie korekty samej metryki (`materialna` jako suma P/T —
+model gorszy od mierzonego kodu; `obronaWDomu` — fałsz regułowy wg CR 502.3).
+Żywy Tester po zmianie: 12 gier, „brak zgłoszeń" w 12/12.
+
+| brama | wynik |
+|---|---|
+| `npm test` / `npm run test:all` | **4199/4199** · **4209/4209** (0 fail) |
+| `npm run build` | 58 modułów / 3126,4 kB |
+| benchmark `--seeds 24` | heuristic 85,5% (baseline 85,7%) — neutralne |
+| benchmark quick | heuristic 83,8% (baseline 83,6%) |
+| grzechotka remisów | `play_land` 0, `cast_*` 0, `activate_ability` 0; sufity `attack` ≤ 4, `block` ≤ 4 |
+
+**Kolejny krok, w tej kolejności:**
+1. **Decyzja właściciela (nie techniczna):** czy trzymamy `creatureManaCostWeight=1`
+   przy zmierzonej neutralności. Argument „za": zniknęła arbitralność wyboru i jest
+   punkt zaczepienia dla tunera B6; „przeciw": każda waga to powierzchnia ataku dla
+   kolejnych dostrajań. Można też podnieść do 2 (równo wadze siły) i zmierzyć
+   ponownie — wtedy pytanie brzmi, czy bot zacznie przesadnie preferować tanie
+   szczury (test 3 w `test/audyt-bot-cena-stwora.test.js` pilnuje, żeby nie).
+2. `resolve_*` (discard 7, trigger_target 3, search 3, exploit 3, graveyard_top 3 …)
+   — wciąż `bez-danych = akcyjne`. Potrzebują projekcji „wybór spośród obiektów":
+   dla każdego kandydata jego `waluta`/ciało/koszt, nie tylko id.
+3. Block/attack: jedyne sensowne zaostrzenie to **asymetria wymiany** (czy ginie
+   stwór o większej wartości niż ten, którego zabijamy) — dziś model używa mocy jako
+   jedynej proxy. Zmiana wymaga benchmarkerów (przynajmniej 2016 meczów), bo na
+   quicku efekt rzędu 0,2 pp jest nieodróżnialny od szumu.
+4. `--seeds 24` warto wpisać do `package.json` jako `npm run benchmark:duzy` —
+   dzisiejszy A/B robiło się ręcznie na worktree, a to jest jedyny uczciwy sposób
+   mierzenia małych zmian wag.
+
+**Uwagi praktyczne z tej tury:**
+- `git worktree add --detach /tmp/mtgbase HEAD` = tani baseline pod benchmark
+  (uruchamiać `cd /tmp/mtgbase && node tools/benchmark.mjs`; po wszystkim
+  `git worktree remove`). Działa, bo `benchmark.mjs` liczy ścieżki od siebie.
+- Po przebudowie sandboxa `dist/mtg-table.html` znika, a Żywy Tester bez niego
+  nie startuje (`BŁĄD: Brak artefaktu`) — `npm run build` przed pierwszą partią.
+- Item „ENVIRONMENT.md kłamie o egressie" był **nieaktualny** (plik ma poprawną
+  sekcję od M202); doprecyzowałem tylko kod błędu `fetch` na `ECONNRESET`.
+- Rozszerzanie `summarize` o `cardId` dla `cast_*` zostało **cofnięte**: ~19 testów
+  parsuje `cast_*(objectId)`. Przy grze z formatem śladu najpierw `grep -rn
+  "cast_spell(\|cast_permanent(" test/ | wc -l`.

@@ -1250,3 +1250,35 @@ okazji wyszło, że metryka też wymaga wysycenia: przy ataku śmiertelnym róż
 16 wobec 17 obrażeń nie istnieje dla wyniku partii, więc raportowanie jej jako
 „przeoczenia wyceny" byłoby generowaniem szumu. Reguła jest ogólna: porównuj
 dokładnie tyle, ile może zmienić losy gry, ani bita więcej.
+
+## L119 (2026-09-02) — dwie fałszywe alarmy i jeden prawdziwy, ten sam przyrząd
+
+Przyrząd do audytu remisów (M285/M286) porównywał warianty ex aequo po „danych,
+które wycena powinna widzieć". Definicja tych danych była pisana *obok* wyceny i to
+był błąd metodologiczny, nie edytorski.
+
+Pierwszy alarm: „bot jest ślepy na to, ilu stworów zostawia w obronie". Brzmiało
+rozsądnie — atak wszystkich naraz to klasyczny błąd słabego gracza. Ale w Magic
+twory tapnięte atakiem odświeżają się w **naszym** następnym kroku odświeżania, a
+potem dopiero przychodzi tura przeciwnika: atakujący zdąży zablokować. Pytanie
+„czy zostawiasz obrońców" ma sens tylko wtedy, gdy coś blokuje odświeżanie
+(„doesn't untap"), a na to wycena ma osobną gałąź. Finding był wymysłem projekcji.
+
+Drugi alarm: „bot jest ślepy na różnicę ciało/cena". Tu projekcja liczyła wartość
+korpusu jako `power + toughness`. Sama wycena liczy `2 × power + 1 × toughness`.
+Stąd dwa stworów „5" o różnym rozkładzie siły i wytrzymałości było dla audytu
+różnych, a dla gry zamiennych — znowu szum.
+
+Trzeci przypadek był prawdziwy i wyglądał nudno: `cast_permanent` miał pełną
+formułę, mnożniki, kary za jałowość, premie za ewazję — i **żadnego składnika
+kosztowego**. Dopóki metryka nie zaczęła porównywać dokładnie tych liczb, które
+formuła konsumuje (stąd `waluta` = wycena korpusu minus koszt), nic nie wskazywało,
+że dwie karty o tym samym korpusie i różnej cenie są dla bota tym samym wyborem.
+Po naprawie (`creatureManaCostWeight`, zaakceptowanej benchmarkiem 2016 meczów)
+licznik groźb dla tej klasy spadł do zera sam — bez jednego wyjątku wpisanego w
+narzędzie.
+
+Wniosek, który warto zapamiętać: przyrząd pomiarowy dziedziczy godność tylko z
+modelu, który mierzy. Jeśli audyt ma *inną* arytmetykę niż kod, to nie audytuje
+kodu, tylko siebie — i kłamie w obie strony: straszy szumem i przeoczy właściwy
+błąd.
