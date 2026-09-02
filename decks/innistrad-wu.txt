@@ -1,5 +1,6 @@
 # Innistrad (WU)
 
+1x Blazing Torch
 1x Dream Twist
 1x Gather the Townsfolk
 1x Lunar Rejection
@@ -18,5 +19,5 @@
 1x Elgaud Inquisitor
 1x Makeshift Mauler
 1x Murder of Crows
-3x Plains
+4x Plains
 6x Island

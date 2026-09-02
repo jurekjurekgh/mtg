@@ -31,16 +31,19 @@ for (const file of deckFiles) {
 }
 
 test('M228 (ADR 0024): Innistrad po podziale kolorystycznym — dwie talie ≥15', () => {
-  // Innistrad (36 kart nielandowych — Batch 52 dodał Cemetery Recruitment)
-  // przekroczyło próg 30 i zostało PODZIELONE na innistrad-wu i innistrad-brg
-  // (ADR 0024). Każda połowa: landy = ceil(nielandów/2). Suma nielandów = 36
-  // (żadna karta nie zginęła).
+  // Innistrad (37 kart nielandowych — Batch 52 dodał Cemetery Recruitment, a M291
+  // dołożył Dual Shot) przekroczyło próg 30 i zostało PODZIELONE na innistrad-wu i
+  // innistrad-brg (ADR 0024). Każda połowa: landy = ceil(nielandów/2). Suma
+  // nielandów = 37 (żadna karta nie zginęła). Uwaga dla czytającego diff talii:
+  // przy nowym klocku generator przestawia też istniejące karty między połówkami
+  // (Blazing Torch poszedł brg → wu), bo podział kolorystyczny liczy leak/imbalance
+  // dla całości planu — to nie błąd, to deterministyczna odpowiedź na zmianę składu.
   const registry = createCardRegistry();
   const wu = summarizeDeck(parseDeckText(fs.readFileSync('decks/innistrad-wu.txt', 'utf8'), registry).cardIds, registry);
   const brg = summarizeDeck(parseDeckText(fs.readFileSync('decks/innistrad-brg.txt', 'utf8'), registry).cardIds, registry);
   assert.ok(wu.spells >= 15, `innistrad-wu ma ${wu.spells} nielandów (>=15)`);
   assert.ok(brg.spells >= 15, `innistrad-brg ma ${brg.spells} nielandów (>=15)`);
-  assert.equal(wu.spells + brg.spells, 36, 'suma nielandów obu połówek = 36');
+  assert.equal(wu.spells + brg.spells, 37, 'suma nielandów obu połówek = 37');
   assert.equal(wu.lands, Math.ceil(wu.spells / 2), 'wu: landy = ceil(nielandów/2)');
   assert.equal(brg.lands, Math.ceil(brg.spells / 2), 'brg: landy = ceil(nielandów/2)');
 });

@@ -166,3 +166,25 @@ test('T11/8: premię ciała liczy JEDNO miejsce i nie podwaja ewazji grantowanej
   assert.equal((src.match(/const bearingEvasion =/g) ?? []).length, 1,
     'na całym pliku jest jedna definicja bearingEvasion');
 });
+
+test('T11/9: zamknięty przypadek z backlogu §3 — para o IDENTYCZNYCH statystykach', () => {
+  // Przed M290 backlog ostrzegał: „latacz 3/3 vs vanilla 3/3 — oba kierunki
+  // −4,00". Gorehorn Minotaurs i Angel of the Dawn to ta sama para 3/3, różni je
+  // tylko latanie, więc to czysty test samej osi „jakość ciała".
+  const naLatacz = oceny(stow({ worn: 'gorehorn-minotaurs', creatury: ['gorehorn-minotaurs', 'angel-of-the-dawn'] }));
+  const naVanilla = oceny(stow({ worn: 'angel-of-the-dawn', creatury: ['angel-of-the-dawn', 'gorehorn-minotaurs'] }));
+  assert.ok(cel(naLatacz, 'angel-of-the-dawn') > 0,
+    `vanilla 3/3 -> latacz 3/3 to poprawka: ${cel(naLatacz, 'angel-of-the-dawn')}`);
+  assert.ok(cel(naVanilla, 'gorehorn-minotaurs') < 0,
+    `ruch w drugą stronę nadal zablokowany: ${cel(naVanilla, 'gorehorn-minotaurs')}`);
+  // Ta sama para z ciężkim sprzętem (+2/+2 z trample) — premia nie rośnie
+  // proporcjonalnie do ładunku, tylko raz na punkt siły.
+  const ciezkoLatacz = oceny(stow({
+    eqCard: 'brawlers-plate', worn: 'gorehorn-minotaurs', creatury: ['gorehorn-minotaurs', 'angel-of-the-dawn'],
+  }));
+  const ciezkoVanilla = oceny(stow({
+    eqCard: 'brawlers-plate', worn: 'angel-of-the-dawn', creatury: ['angel-of-the-dawn', 'gorehorn-minotaurs'],
+  }));
+  assert.ok(cel(ciezkoLatacz, 'angel-of-the-dawn') > 0, `${cel(ciezkoLatacz, 'angel-of-the-dawn')}`);
+  assert.ok(cel(ciezkoVanilla, 'gorehorn-minotaurs') < 0, `${cel(ciezkoVanilla, 'gorehorn-minotaurs')}`);
+});

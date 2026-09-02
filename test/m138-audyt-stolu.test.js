@@ -189,13 +189,16 @@ test('M138/Z2: Goblin Picker — dane karty niosą koszt, którego kafel nie pok
 // Z5/Z8 — typ celu z parametrem
 // ---------------------------------------------------------------------------
 
-test('M138/Z5: sparametryzowane typy celu mają obsługę parametru w opisie', () => {
+test('M138/Z5: sparametryzowane typy celu mają obsługę parametru w opisie', async () => {
   const source = fs.readFileSync('src/table/render.js', 'utf8');
   const parametrised = new Map();
   const walk = (spec, cardName) => {
     if (!spec?.type) return;
     const extra = Object.keys(spec).filter((k) => k !== 'type');
-    if (extra.length) parametrised.set(spec.type, cardName);
+    // M291: `extra` niesie tez klucze obsługiwane wspólną gałęzią `targetTypeLabel`
+    // (jak `optional`), więc zapamiętujemy listę kluczy — poniżej rozróżniamy
+    // „parametr obsłużony generalnie” od „parametr w ogóle nie trafił do etykiety”.
+    if (extra.length) parametrised.set(spec.type, { card: cardName, extra });
   };
   for (const card of ALL_CARDS) {
     for (const ability of card.abilities ?? []) {
@@ -212,10 +215,21 @@ test('M138/Z5: sparametryzowane typy celu mają obsługę parametru w opisie', (
   const labelFn = /const targetTypeLabel = \(spec\) => \{([\s\S]*?)\n\};/.exec(source);
   assert.ok(labelFn, 'targetTypeLabel musi przyjmować SPEC (nie sam string), żeby znać parametr');
   const missing = [];
-  for (const [type, card] of parametrised) {
+  const generycznyOptional = /if \(spec\.optional\) return/.test(labelFn[1]);
+  for (const [type, info] of parametrised) {
     // player+opponent opisuje samo słowo „przeciwnik” — parametr nie zmienia treści.
     if (type === 'player') continue;
-    if (!labelFn[1].includes(`'${type}'`)) missing.push(`${type} (${card})`);
+    if (labelFn[1].includes(`'${type}'`)) continue;
+    // Parametr `optional` ma wspólną gałąż w `targetTypeLabel`, więc typ nie musi mieć
+    // własnego `case` — ale sprawdzamy to w RUNTIME: etykieta musi mówić graczowi
+    // o opcjonalności (M291: dwa sloty `creature` + `optional` w Coordinated Assault).
+    if (generycznyOptional && info.extra.length === 1 && info.extra[0] === 'optional') {
+      const { targetTypeLabel } = await import('../src/table/render.js');
+      assert.match(targetTypeLabel({ type, optional: true }), /opcjonaln/i,
+        `etykieta celu ${type} (${info.card}) gubi informację o opcjonalności`);
+      continue;
+    }
+    missing.push(`${type} (${info.card})`);
   }
   assert.deepEqual(missing, [], `typ celu gubi parametr w etykiecie: ${missing.join(', ')}`);
 });

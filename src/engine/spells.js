@@ -1728,6 +1728,21 @@ export function resolveTopOfStack(state) {
   if (!fizzled) {
     const effects = object.cleaved && object.spell.cleave ? (object.spell.cleave.effects ?? object.spell.effects) : object.spell.effects;
     for (let i = 0; i < effects.length; i += 1) {
+      // M291 (ADR 0022 „each of", tor CZARU): `allTargets: true` = ten sam efekt
+      // na KAŻDYM wskazanym celu, z listą celów zwężoną do jednego. To dokładne
+      // odbicie fan-outu triggerów (`applyTriggerEffects` w triggers.js, M157
+      // F4(a) — Weftblade Enhancer); bez flagi efekt dostaje CAŁĄ listę i czyta
+      // `targets[0]`, więc przy dwóch celach pompowałby ten sam obiekt dwa razy.
+      // Cele niewskazane (null — „up to N") są pomijane. Efekt blokujący decyzją
+      // (scry/surveil → `state.pendingSpell`, dokończany w finishPendingSpell bez
+      // tej wiedzy) się z tym wzorcem nie łączy — pilnuje tego strażnik rejestru.
+      if (effects[i].allTargets === true) {
+        for (const targetId of legalTargets) {
+          if (targetId == null) continue;
+          applyEffect(state, { ...effects[i], allTargets: undefined }, object, [targetId]);
+        }
+        continue;
+      }
       // Blokująca decyzja w środku listy efektów (surveil/scry — np. Curate:
       // „Surveil 2, then draw a card") wstrzymuje rozstrzyganie: pozostałe
       // efekty dokończy komenda resolve_* (patrz finishPendingSpell), a czar
