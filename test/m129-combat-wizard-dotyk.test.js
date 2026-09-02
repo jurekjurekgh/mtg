@@ -144,7 +144,7 @@ test('M129 (anty-over-fix): klik w nazwę karty nadal otwiera podgląd, nie prze
   });
   const row = host.children[1].children[0];
   const input = row.children.find((c) => c.tagName === 'input');
-  const name = row.children.find((c) => c.className === 'combat-wizard-name');
+  const name = row.children.find((c) => String(c.className).includes('combat-wizard-name'));
   assert.ok(input && name, 'wiersz ma ptaszek i klikalną nazwę');
   name.click();
   assert.deepEqual(opened, ['a1'], 'klik w nazwę otwiera podgląd karty');

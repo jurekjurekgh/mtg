@@ -883,6 +883,47 @@
   .combat-wizard-attacker { margin-top: 10px; }
   .combat-wizard-sub { font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
   .combat-wizard-error { color: var(--red); font-weight: 600; margin-top: 8px; }
+  /* ==========================================================================
+     M288/A (uwaga właściciela z żywej gry): WSPÓLNA RODZINA WIERSZY WYBORU.
+
+     Zgłoszenie: „modal Knockout Maneuver jest zupełnie inny niż pozostałe
+     modale wielocelowe, np. blokowania czy Fireball — warto przerobić na jeden
+     wspólny helper do efektów wielocelowych w stylu blokowania".
+
+     Root cause był trywialny i wymierny: kreator wielocelowy i kreator kosztu
+     escape NIE MIAŁY ani jednej reguły CSS (`.multi-target-*`, `.escape-exile-*`
+     nie istniały w tym pliku), więc ich wiersze były gołymi `<button>` z marką
+     w tekście i osobnym przyciskiem „Podgląd". Wizard walki miał pełną obsługę
+     dotyku z M129/C. Dziś oba (i wybór atakujących/bloków, i cele wielokrotne,
+     i pozycje celu, i poświęcenie, i mulligan, i escape) rysuje
+     `src/table/picker.js`, a reguły poniżej są JEDNE — klasy `picker-*` to
+     nazwa rodziny, `combat-wizard-*` zostają w selektorach dla zgodności
+     (test dotyku m129, stare zrzuty widoku). */
+  .picker-list { display: flex; flex-direction: column; gap: 6px; }
+  .picker-row {
+    display: flex; align-items: center; gap: 12px;
+    min-height: 44px; padding: 8px 12px; margin: 0;
+    border: 1px solid var(--border); border-radius: 10px; background: #fff;
+    cursor: pointer; touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(202,138,4,.18);
+  }
+  .picker-row:has(.picker-toggle:checked) { border-color: var(--gold); background: #ca8a040f; }
+  .picker-row:active { transform: translateY(1px); }
+  .picker-toggle {
+    width: 24px; height: 24px; flex-shrink: 0; margin: 0;
+    accent-color: var(--gold, #e6c36a); cursor: pointer;
+  }
+  .picker-toggle:disabled { cursor: default; opacity: .55; }
+  .picker-name {
+    flex: 1; min-width: 0; font-size: 14px; line-height: 1.3;
+    padding: 6px 2px; text-decoration: underline dotted var(--border-2);
+    text-underline-offset: 3px;
+  }
+  .picker-name.is-openable:hover { color: var(--gold, #e6c36a); }
+  .picker-section { font-size: 13px; font-weight: 700; color: var(--muted); margin: 10px 0 6px; }
+  .picker-status { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .picker-status.is-problem { color: var(--red); font-weight: 600; }
+
   /* Steppery przydziału obrażeń to ta sama rodzina dotykowa (M129). */
   .damage-wizard-row {
     display: flex; align-items: center; gap: 10px; flex-wrap: wrap;

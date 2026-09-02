@@ -1,4 +1,5 @@
 import { choiceResponse } from '../protocol/types.js';
+import { renderPickerRow, renderPickerSection } from './picker.js';
 import { OPTION_IGNORABLE_TYPES, polishPluralCount } from './render.js';
 import { commandOptionKey, FACE_DOWN_LABEL } from './session.js';
 import { commandForSelection, commandForMulliganSelection, commandForSacrificeSelection } from './multi-target.js';
@@ -597,24 +598,26 @@ export function renderCombatWizard(host, { kind, view, session, options, onCompl
   choiceNode(host, 'div', 'choice-request-intro', intro);
   const list = choiceNode(host, 'div', 'combat-wizard-list');
 
-  const renderRow = (id, checked, disabled, label, onChange) => {
-    const row = choiceNode(list, 'label', 'combat-wizard-row');
-    const input = choiceNode(row, 'input', 'combat-wizard-toggle');
-    input.type = 'checkbox';
-    input.checked = checked;
-    input.disabled = Boolean(disabled);
-    input.addEventListener('change', () => {
-      onChange(input.checked);
+  // M288/A: wiersz buduje WSPÓLNY picker (picker.js) — ten sam co kreator
+  // wielocelowy i kreator kosztu escape. Klasy `combat-wizard-*` zostają, więc
+  // CSS z M129/C i testy dotyku (m129-*) nie widzą różnicy; zmieniło się tylko
+  // to, że markup przestał być kopiowany w trzech miejscach.
+  const renderRow = (id, checked, disabled, label, onChange) => renderPickerRow(list, {
+    id,
+    label,
+    checked,
+    disabled,
+    rowClassName: 'combat-wizard-row',
+    toggleClassName: 'combat-wizard-toggle',
+    nameClassName: 'combat-wizard-name',
+    onToggle: (on) => {
+      onChange(on);
       // M112: po zmianie zaznaczenia klucz sondy musi opisywać NOWY wybór.
       if (typeof host.__refreshCombatProbeKey === 'function') host.__refreshCombatProbeKey();
-    });
+    },
     // Uwaga C: nazwa stwora klikalna (fullscreen karty) + P/T w nawiasie.
-    const nameEl = choiceNode(row, 'span', 'combat-wizard-name', label);
-    if (onOpenCard) {
-      nameEl.addEventListener('click', (e) => { e?.stopPropagation?.(); e?.preventDefault?.(); onOpenCard(id); });
-    }
-    return row;
-  };
+    onOpenCard: onOpenCard ?? undefined,
+  }).row;
 
   const renderAttackerBlockers = (attackerId) => {
     const attackerLabel = objectName(view, session, attackerId) + creaturePT(view, attackerId);
@@ -864,8 +867,8 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   // a nie jeden wór („zaznacz cele (2)"). Etykiety pozycji przekazuje
   // wywołujący z Oracle (`spell.targets`); bez nich zostaje numeracja.
   const slots = plan.slots ?? null;
-  // M257-r5/C: w trybie poświęcenia etykiety = nazwy SEKCJI („stwor” +
-  // „Poświęcenie (koszt)”), nie pozycji celu.
+  // M257-r5/C: w trybie poświęcenia etykiety = nazwy SEKCJI („stwor" +
+  // „Poświęcenie (koszt)"), nie pozycji celu.
   const slotLabels = slots || sacMode ? (slotLabels_ ?? []) : [];
   choiceNode(host, 'div', 'choice-request-intro',
     intro ?? (slots
@@ -874,24 +877,32 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
         ? `${sourceName ? `${sourceName} — ` : ''}wskaż cel czaru oraz stwora do poświęcenia (koszt):\n`
         : `${sourceName ? `${sourceName} — ` : ''}zaznacz ${itemWord} (${range})${xLabel}:\n`));
 
+  // =====================================================================
+  // M288/A (uwaga właściciela z żywej gry): wiersze wyboru NIE są już własną
+  // konstrukcją tego kreatora (button z marką `[ ]`/`[x]` w tekście + osobny
+  // przycisk „Podgląd", bez ani jednej reguły CSS), tylko wspólnym pickerem
+  // z `src/table/picker.js` — tym samym, na którym stoi wybór atakujących,
+  // bloków i kosztu escape. Logika wyboru (które wiersze, kiedy „Zatwierdź"
+  // gaśnie) zostaje per efekt, bo taką ustala silnik przez `legalCommands`.
+  // =====================================================================
   const chosen = new Set();
   let xValue = plan.hasX ? plan.xMin : null;
-  // M257-r5/C: druga sekcja kreatora — stwór do poświęcenia (koszt dodatkowy).
-  // Wybór JEDNOKROTNY (jeden stwór = jedna płatność), niezależny od celu czaru.
   let sacrificeChoice = null;
-  const list = choiceNode(host, 'div', 'multi-target-list');
-  // M257-r5/C: klucze toggles są ZAKRESOWE (`slot` = 'sac' | 'target' | null).
+  // M257-r5/C: klucze toggles są ZAKRESOWE (`slot` = 'sac' | numer pozycji | null).
   // W trybie poświęcenia pule CELU i OFIARY się nakładają (własny stwór jest
-  // i celem czaru, i kosztem), więc prosty id→node by się zderzył.
-  const toggleRows = [];
+  // i celem czaru, i kosztem), więc nie mogą współdzielić zbioru `chosen`.
+  const rows = [];
+  const list = choiceNode(host, 'div', 'multi-target-list picker-list');
   let confirm = null;
   let statusEl = null;
   let xCounter = null;
 
-  // M207: w trybie pozycyjnym kolejnosc celow NIESIE ZNACZENIE (pozycja 0 to
-  // inny slot niz pozycja 1), wiec komende skladamy z wyborow per-pozycja,
-  // a nie ze zbioru `chosen`. `commandForSelection` porownuje zbiory
-  // (targetKey sortuje), wiec dla pozycji uzywamy dopasowania po kolejnosci.
+  const isPlayer = (id) => (view?.players ?? []).some((pl) => pl.id === id);
+
+  // M207: w trybie pozycyjnym kolejność celów NIESIE ZNACZENIE (pozycja 0 to
+  // inny slot niż pozycja 1), więc komendę składamy z wyborów per-pozycja,
+  // a nie ze zbioru `chosen`. `commandForSelection` porównuje zbiory
+  // (targetKey sortuje), więc dla pozycji używamy dopasowania po kolejności.
   const slotChoice = slots ? slots.map(() => null) : null;
   const commandForSlots = () => {
     if (slotChoice.some((id) => id == null)) return null;
@@ -907,42 +918,79 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
         ? commandForSlots()
         : commandForSelection(commands, { targets: [...chosen], xValue: plan.hasX ? xValue : null }));
 
+  const pickOf = ({ id, slot }) => (slot == null
+    ? chosen.has(id)
+    : slot === 'sac'
+      ? id === sacrificeChoice
+      : slotChoice[slot] === id);
+
+  const syncRows = () => {
+    for (const row of rows) row.handle.setChecked(pickOf(row));
+  };
+
+  const addRow = (id, slot) => {
+    const handle = renderPickerRow(list, {
+      id,
+      label: objectOrPlayerName(view, session, id),
+      // Pozycja celu i poświęcenie (koszt) są JEDNOWYBOROWE — radio w grupie
+      // daje wzajemne wykluczenie natywnie, bez ręcznego odznaczania sióstr.
+      kind: (typeof slot === 'number' || slot === 'sac') ? 'radio' : 'checkbox',
+      group: typeof slot === 'number' ? `multi-target-slot-${slot}` : (slot === 'sac' ? 'multi-target-sac' : null),
+      rowClassName: slot == null ? 'multi-target-row' : 'multi-target-row multi-target-slot-row',
+      toggleClassName: 'multi-target-toggle',
+      nameClassName: 'multi-target-name',
+      onToggle: (on) => {
+        if (slot == null) {
+          if (on) chosen.add(id); else chosen.delete(id);
+        } else if (slot === 'sac') {
+          if (on) sacrificeChoice = id;
+          else if (sacrificeChoice === id) sacrificeChoice = null;
+        } else {
+          if (on) slotChoice[slot] = id;
+          else if (slotChoice[slot] === id) slotChoice[slot] = null;
+        }
+        refresh();
+      },
+      // Gracz nie ma karty do pokazania — dawny `addPeek` pomijał go w ten sam
+      // sposób (M206); nazwa zostaje wtedy zwykłym tekstem.
+      onOpenCard: isPlayer(id) ? null : onOpenCard,
+    });
+    rows.push({ id, slot, handle });
+  };
+
+  const setStatus = (text, problem) => {
+    if (!statusEl) return;
+    statusEl.textContent = String(text);
+    statusEl.className = problem
+      ? 'picker-status multi-target-status is-problem'
+      : 'picker-status multi-target-status';
+  };
+
   const refresh = () => {
-    for (const { node, id, slot } of toggleRows) {
-      const picked = slots
-        ? slotChoice.includes(id)
-        : sacMode && slot === 'sac'
-          ? id === sacrificeChoice
-          : chosen.has(id);
-      node.textContent = `${picked ? '[x]' : '[ ]'} ${objectOrPlayerName(view, session, id)}`;
-    }
+    syncRows();
     if (xCounter) xCounter.textContent = String(xValue ?? '');
     const cmd = currentCommand();
-    if (statusEl) {
-      if (slots) {
-        // Pozycje bez wyboru trzeba WYMIENIC — samo wyszarzone „Zatwierdz"
-        // nie mowi graczowi, czego brakuje (to bylo sedno zgloszenia).
-        const missing = slotChoice
-          .map((id, i) => (id == null ? (slotLabels[i] ?? `cel ${i + 1}`) : null))
-          .filter(Boolean);
-        statusEl.textContent = missing.length === 0
-          ? (cmd ? 'Wybrano komplet celów' : 'Wybór niedozwolony')
-          : `Brakuje: ${missing.join(', ')}`;
-      } else if (sacMode) {
-        // M257-r5/C: status wymienia brakujące SEKCJE, nie tylko licznik.
-        const sacLabel = slotLabels[1] ?? 'Poświęcenie (koszt)';
-        const missing = [
-          chosen.size === 0 ? (slotLabels[0] ?? 'cel') : null,
-          sacrificeChoice == null ? sacLabel : null,
-        ].filter(Boolean);
-        statusEl.textContent = missing.length === 0
-          ? (cmd ? `Wybrano: ${slotLabels[0] ?? 'cel'} + ${sacLabel}` : 'Wybór niedozwolony')
-          : `Brakuje: ${missing.join(', ')}`;
-      } else {
-        statusEl.textContent = cmd
-          ? `Wybrano ${itemWord}: ${chosen.size}${plan.hasX ? ` · X = ${xValue}` : ''}`
-          : `Wybór niedozwolony (${itemWord}: ${chosen.size}${plan.hasX ? `, X = ${xValue}` : ''})`;
-      }
+    if (slots) {
+      // Pozycje bez wyboru trzeba WYMIENIĆ — samo wyszarzone „Zatwierdź"
+      // nie mówi graczowi, czego brakuje (to było sedno zgłoszenia).
+      const missing = slotChoice
+        .map((id, i) => (id == null ? (slotLabels[i] ?? `cel ${i + 1}`) : null))
+        .filter(Boolean);
+      if (missing.length > 0) setStatus(`Brakuje: ${missing.join(', ')}`, true);
+      else setStatus(cmd ? 'Wybrano komplet celów' : 'Wybór niedozwolony', !cmd);
+    } else if (sacMode) {
+      // M257-r5/C: status wymienia brakujące SEKCJE, nie tylko licznik.
+      const sacLabel = slotLabels[1] ?? 'Poświęcenie (koszt)';
+      const missing = [
+        chosen.size === 0 ? (slotLabels[0] ?? 'cel') : null,
+        sacrificeChoice == null ? sacLabel : null,
+      ].filter(Boolean);
+      if (missing.length > 0) setStatus(`Brakuje: ${missing.join(', ')}`, true);
+      else setStatus(cmd ? `Wybrano: ${slotLabels[0] ?? 'cel'} + ${sacLabel}` : 'Wybór niedozwolony', !cmd);
+    } else if (cmd) {
+      setStatus(`Wybrano ${itemWord}: ${chosen.size}${plan.hasX ? ` · X = ${xValue}` : ''}`, false);
+    } else {
+      setStatus(`Wybór niedozwolony (${itemWord}: ${chosen.size}${plan.hasX ? `, X = ${xValue}` : ''})`, true);
     }
     if (confirm) {
       confirm.disabled = !cmd;
@@ -950,65 +998,27 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     }
   };
 
-  const addPeek = (row, id) => {
-    if (!onOpenCard || view.players?.some((pl) => pl.id === id)) return;
-    const peek = choiceNode(row, 'button', 'ghost-btn multi-target-peek', 'Podgląd');
-    peek.type = 'button';
-    peek.addEventListener('click', () => onOpenCard(id));
-  };
-
   if (slots) {
-    // Sekcja na KAZDA pozycje celu, z naglowkiem z Oracle („twoj stwor",
-    // „stwor przeciwnika", „karta-stwor w grobie", „gracz"). W obrebie
-    // pozycji wybor jest JEDNOKROTNY - kliniecie zastepuje poprzedni.
+    // Sekcja na KAŻDĄ pozycję celu, z nagłówkiem z Oracle („twój stwór",
+    // „stwór przeciwnika", „karta-stwór w grobie", „gracz"). W obrębie
+    // pozycji wybór jest JEDNOKROTNY — kliknięcie zastępuje poprzedni.
     slots.forEach((ids, slotIndex) => {
       const label = slotLabels[slotIndex] ?? `cel ${slotIndex + 1}`;
-      choiceNode(list, 'div', 'multi-target-slot-label', `${slotIndex + 1}. ${label}:`);
-      for (const id of ids) {
-        const row = choiceNode(list, 'div', 'multi-target-row multi-target-slot-row');
-        const toggle = choiceNode(row, 'button', 'action multi-target-toggle');
-        toggle.type = 'button';
-        toggleRows.push({ node: toggle, id, slot: null });
-        toggle.addEventListener('click', () => {
-          slotChoice[slotIndex] = slotChoice[slotIndex] === id ? null : id;
-          refresh();
-        });
-        addPeek(row, id);
-      }
+      renderPickerSection(list, `${slotIndex + 1}. ${label}:`, { className: 'multi-target-slot-label' });
+      for (const id of ids) addRow(id, slotIndex);
     });
   } else {
-    // M257-r5/C: trym poświęcenia dostaje NAGŁÓWKI sekcji (cele / ofiara).
-    if (sacMode) choiceNode(list, 'div', 'multi-target-slot-label', `${slotLabels[0] ?? 'Cel'}:`);
-    for (const id of plan.targets) {
-      const row = choiceNode(list, 'div', 'multi-target-row');
-      const toggle = choiceNode(row, 'button', 'action multi-target-toggle');
-      toggle.type = 'button';
-      toggleRows.push({ node: toggle, id, slot: sacMode ? 'target' : null });
-      toggle.addEventListener('click', () => {
-        if (chosen.has(id)) chosen.delete(id);
-        else chosen.add(id);
-        refresh();
-      });
-      addPeek(row, id);
-    }
+    // M257-r5/C: tryb poświęcenia dostaje NAGŁÓWKI sekcji (cele / ofiara).
+    if (sacMode) renderPickerSection(list, `${slotLabels[0] ?? 'Cel'}:`, { className: 'multi-target-slot-label' });
+    for (const id of plan.targets) addRow(id, null);
   }
 
   // M257-r5/C: DRUGA sekcja — ofiara kosztu dodatkowego. Pule celów i ofiar
   // się nakładają (własny stwór bywa celem i kosztem), stąd wybór jedyny,
-  // zakresowy (klik = zmiana), a nie współdzielony z celami zbiór `chosen`.
+  // zakresowy (radio w grupie), a nie współdzielony z celami zbiór `chosen`.
   if (sacMode) {
-    choiceNode(list, 'div', 'multi-target-slot-label', `${slotLabels[1] ?? 'Poświęcenie (koszt)'}:`);
-    for (const id of plan.sacrifices) {
-      const row = choiceNode(list, 'div', 'multi-target-row multi-target-slot-row');
-      const toggle = choiceNode(row, 'button', 'action multi-target-toggle');
-      toggle.type = 'button';
-      toggleRows.push({ node: toggle, id, slot: 'sac' });
-      toggle.addEventListener('click', () => {
-        sacrificeChoice = sacrificeChoice === id ? null : id;
-        refresh();
-      });
-      addPeek(row, id);
-    }
+    renderPickerSection(list, `${slotLabels[1] ?? 'Poświęcenie (koszt)'}:`, { className: 'multi-target-slot-label' });
+    for (const id of plan.sacrifices) addRow(id, 'sac');
   }
 
   if (plan.hasX) {
@@ -1021,7 +1031,7 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     plus.addEventListener('click', () => { if (xValue < plan.xMax) { xValue += 1; refresh(); } });
   }
 
-  statusEl = choiceNode(host, 'div', 'multi-target-status', '');
+  statusEl = choiceNode(host, 'div', 'picker-status multi-target-status', '');
   const buttons = choiceNode(host, 'div', 'choice-request-actions');
   confirm = choiceNode(buttons, 'button', 'primary-btn multi-target-confirm', 'Zatwierdź wybór');
   confirm.type = 'button';
@@ -1309,19 +1319,21 @@ export function renderEscapeExileWizard(host, { candidates, exileCount, sourceNa
   });
 
   for (const candidate of candidates) {
-    const row = choiceNode(list, 'label', 'escape-exile-row');
-    const input = choiceNode(row, 'input', 'escape-exile-toggle');
-    input.type = 'checkbox';
-    input.checked = false;
-    input.addEventListener('change', () => {
-      if (input.checked) picked.add(candidate.id); else picked.delete(candidate.id);
-      refresh();
+    // M288/A: te same wiersze co w wizardzie walki i kreatorze celów — przez
+    // wspólny picker. Osobny przycisk „🔍 Podgląd karty" zniknął: nazwa karty
+    // otwiera pełny ekran (jedna konwencja dla wszystkich kreatorów).
+    renderPickerRow(list, {
+      id: candidate.cardId ?? candidate.id,
+      label: candidate.name ?? candidate.id,
+      rowClassName: 'escape-exile-row',
+      toggleClassName: 'escape-exile-toggle',
+      nameClassName: 'escape-exile-name',
+      onToggle: (on) => {
+        if (on) picked.add(candidate.id); else picked.delete(candidate.id);
+        refresh();
+      },
+      onOpenCard: typeof onOpenCard === 'function' ? (cardId) => onOpenCard(cardId) : undefined,
     });
-    choiceNode(row, 'span', 'escape-exile-name', candidate.name ?? candidate.id);
-    if (typeof onOpenCard === 'function' && candidate.cardId) {
-      const spy = choiceNode(row, 'button', 'card-preview-btn', '🔍 Podgląd karty');
-      spy.addEventListener('click', (ev) => { ev.preventDefault?.(); ev.stopPropagation?.(); onOpenCard(candidate.cardId); });
-    }
   }
   refresh();
   return host;

@@ -198,6 +198,7 @@ function withMiniDom(run) {
     constructor(tag) {
       this.tagName = tag; this.children = []; this.listeners = {};
       this.className = ''; this.text = ''; this.dataset = {}; this.disabled = false;
+      this.type = ''; this.checked = false;
       this.classList = { toggle: () => {}, add: () => {}, remove: () => {} };
     }
     set textContent(v) { this.text = String(v); this.children = []; }
@@ -205,7 +206,25 @@ function withMiniDom(run) {
     appendChild(c) { this.children.push(c); return c; }
     replaceChildren(...n) { this.children = n.flat(); }
     addEventListener(t, l) { (this.listeners[t] ??= []).push(l); }
-    click() { for (const l of this.listeners.click ?? []) l({}); }
+    /**
+     * Mini-DOM naśladuje AKTYWACJĘ przeglądarki (to samo robi jsdom, na którym
+     * jeździ Żywy Tester): klik w ptaszek przełącza zaznaczenie i ogłasza
+     * `change`, klik w `<label>` trafia w jego ptaszek. Bez tego testy klikałyby
+     * w węzeł, który nic nie robi, i merzyły nie to, co widzi gracz.
+     * M288/A: od tej zmiany ptaszkiem jest NATYWNE `<input>` (jak w wizardzie
+     * walki), a nie przycisk ze stanem w tekście.
+     */
+    click() {
+      const input = this.tagName === 'input' ? this
+        : (this.children ?? []).find((c) => c.tagName === 'input') ?? null;
+      if (input && (input.type === 'checkbox' || input.type === 'radio')) {
+        if (input.disabled) return;
+        input.checked = input.type === 'radio' ? true : !input.checked;
+        for (const l of input.listeners.change ?? []) l({ stopPropagation() {}, preventDefault() {} });
+        return;
+      }
+      for (const l of this.listeners.click ?? []) l({});
+    }
     /** Wszystkie węzły drzewa (do wyszukiwania przycisków w teście). */
     all() { return [this, ...this.children.flatMap((c) => (c.all ? c.all() : [c]))]; }
     find(pred) { return this.all().find(pred); }
@@ -308,7 +327,12 @@ test('M195/C: zatwierdzenie jest ZABLOKOWANE, gdy wybór nielegalny', async () =
 //
 // Te testy pinują KONTRAKT, na którym opiera się sterownik: wiersz wyboru
 // jest klikalny, niesie stan w tekście i reaguje na kliknięcie.
-test('M206: wiersz wyboru to klikalny przycisk .multi-target-toggle (kontrakt testera)', async () => {
+// M288/A (uwaga właściciela): kontrakt testera PRZENIÓSŁ SIĘ z przycisku ze
+// stanem w tekście na NATYWNY ptaszek `<input>` w `<label>` — dokładnie ten,
+// na którym od M129/C stoi wybór atakujących i bloków. tester klika
+// `.multi-target-toggle` (teraz to input) i czyta `checked`; nazwa celu siedzi
+// w `.picker-name`, więc `nameOfRow` ma z czego brać tekst.
+test('M288/A + M206: wiersz wyboru to natywny ptaszek .multi-target-toggle w <label> (kontrakt testera)', async () => {
   const { renderMultiTargetWizard } = await import('../src/table/choice-request.js');
   const commands = wrapCommands();
   const plan = multiTargetPlanOf(commands);
@@ -319,19 +343,26 @@ test('M206: wiersz wyboru to klikalny przycisk .multi-target-toggle (kontrakt te
     });
     const toggles = host.findAll((n) => String(n.className).includes('multi-target-toggle'));
     assert.equal(toggles.length, plan.targets.length,
-      'każdy cel ma własny przycisk zaznaczenia');
+      'każdy cel ma własny ptaszek zaznaczenia');
     for (const toggle of toggles) {
-      assert.equal(typeof toggle.click, 'function', 'wiersz musi być klikalny');
+      assert.equal(String(toggle.tagName).toLowerCase(), 'input', 'ptaszek to <input>, nie <button>');
+      assert.equal(toggle.type, 'checkbox', 'wiele celów = checkboxy');
+      assert.equal(typeof toggle.click, 'function', 'ptaszek musi być klikalny');
+      const row = host.findAll((n) => String(n.className).includes('multi-target-row'))
+        .find((r) => (r.children ?? []).includes(toggle));
+      assert.ok(row, 'ptaszek siedzi w WIERSZU (celem dotyku jest cały <label>, M129/C)');
+      assert.ok(String(row.tagName).toLowerCase() === 'label', `wiersz to <label>, jest: ${row.tagName}`);
     }
-    // Kreator NIE używa <input type=checkbox> — sterownik testera nie może
-    // ich szukać (to była przyczyna zawieszania się przebiegów).
-    const inputs = host.findAll((n) => String(n.tagName).toLowerCase() === 'input');
-    assert.equal(inputs.length, 0,
-      'zaznaczenia w kreatorze to przyciski ze stanem w tekście, nie <input type=checkbox>');
+    // Jeden wspólny helper: te same klasy co w wizardzie walki (picker-*).
+    const pickerRows = host.findAll((n) => String(n.className).includes('picker-row'));
+    assert.equal(pickerRows.length, plan.targets.length, 'każdy wiersz należy do rodziny picker-*');
+    // Osobny przycisk „Podgląd" zniknął — nazwa otwiera kartę.
+    const peek = host.findAll((n) => String(n.className).includes('multi-target-peek'));
+    assert.equal(peek.length, 0, 'żadnych przycisków „Podgląd" obok wierszy');
   });
 });
 
-test('M206: stan zaznaczenia jest widoczny w TEKŚCIE wiersza ([ ] / [x])', async () => {
+test('M288/A + M206: stan zaznaczenia siedzi w ptaszku (checked), nazwa w wierszu', async () => {
   const { renderMultiTargetWizard } = await import('../src/table/choice-request.js');
   const commands = wrapCommands();
   withMiniDom((host) => {
@@ -340,11 +371,14 @@ test('M206: stan zaznaczenia jest widoczny w TEKŚCIE wiersza ([ ] / [x])', asyn
       sourceName: 'Wrap in Flames', onComplete: () => {}, onCancel: () => {},
     });
     const toggle = host.find((n) => String(n.className).includes('multi-target-toggle'));
-    assert.match(toggle.textContent, /^\[ \]/, 'niezaznaczony wiersz zaczyna się od „[ ]”');
+    assert.equal(toggle.checked, false, 'niezaznaczony ptaszek jest pusty');
     toggle.click();
-    assert.match(toggle.textContent, /^\[x\]/, 'po kliknięciu wiersz pokazuje „[x]”');
+    assert.equal(toggle.checked, true, 'klik w wiersz zaznacza ptaszek (cały wiersz = cel dotyku)');
     toggle.click();
-    assert.match(toggle.textContent, /^\[ \]/, 'ponowne kliknięcie odznacza');
+    assert.equal(toggle.checked, false, 'ponowny klik odznacza');
+    const name = host.find((n) => String(n.className).includes('picker-name'));
+    assert.match(name.textContent, /hill-giant|Hill Giant/,
+      'nazwa celu jest w wierszu (stąd tester bierze nameOfRow): ' + name.textContent);
   });
 });
 
@@ -368,10 +402,10 @@ test('M206: wiersz celu mówi, CZYJ jest permanent (lustrzana plansza)', async (
       view, session, plan: multiTargetPlanOf(commands), commands,
       sourceName: 'Wrap in Flames', onComplete: () => {}, onCancel: () => {},
     });
-    const labels = host.findAll((n) => String(n.className).includes('multi-target-toggle'))
+    const labels = host.findAll((n) => String(n.className).includes('picker-name'))
       .map((n) => n.textContent);
-    assert.equal(labels[0], '[ ] Hill Giant (Ty)', `mój stwór oznaczony: ${labels[0]}`);
-    assert.equal(labels[1], '[ ] Hill Giant (Nieprzyjaciel)', `wrogi stwór oznaczony: ${labels[1]}`);
+    assert.equal(labels[0], 'Hill Giant (Ty)', `mój stwór oznaczony: ${labels[0]}`);
+    assert.equal(labels[1], 'Hill Giant (Nieprzyjaciel)', `wrogi stwór oznaczony: ${labels[1]}`);
     // Etykiety wrogich stworów są identyczne (to ta sama karta u tego samego
     // gracza) — rozróżnia je pozycja, tak jak w zwykłych listach celów.
     assert.equal(labels[1], labels[2]);
@@ -386,13 +420,13 @@ test('M206: gracz jako cel zostaje bez znacznika kontrolera', async () => {
       view: VIEW, session: SESSION, plan: multiTargetPlanOf(commands), commands,
       sourceName: 'Fireball', onComplete: () => {}, onCancel: () => {},
     });
-    const labels = host.findAll((n) => String(n.className).includes('multi-target-toggle'))
+    const labels = host.findAll((n) => String(n.className).includes('picker-name'))
       .map((n) => n.textContent);
     // VIEW.players: p2 → „Nieprzyjaciel"; gracz nie jest permanentem na polu
     // bitwy, więc nie dostaje nawiasu z kontrolerem.
     // Gracz nie jest permanentem na polu bitwy, więc nie dostaje nawiasu
     // z kontrolerem — inaczej niż stwór wroga („hill-giant (Nieprzyjaciel)").
-    assert.deepEqual(labels, ['[ ] hill-giant (Ty)', '[ ] hill-giant (Nieprzyjaciel)', '[ ] Nieprzyjaciel'],
+    assert.deepEqual(labels, ['hill-giant (Ty)', 'hill-giant (Nieprzyjaciel)', 'Nieprzyjaciel'],
       `stwory ze znacznikiem, gracz bez: ${JSON.stringify(labels)}`);
   });
 });
@@ -504,6 +538,7 @@ test('M207/B4: w obrębie pozycji wybór jest JEDNOKROTNY, a status mówi czego 
       onComplete: (cmd) => { submitted = cmd; }, onCancel: () => {},
     });
     const status = () => host.find((n) => String(n.className).includes('multi-target-status')).textContent;
+    const names = () => host.findAll((n) => String(n.className).includes('picker-name'));
     const confirm = host.find((n) => String(n.className).includes('multi-target-confirm'));
     const toggles = host.findAll((n) => String(n.className).includes('multi-target-toggle'));
 
@@ -511,12 +546,16 @@ test('M207/B4: w obrębie pozycji wybór jest JEDNOKROTNY, a status mówi czego 
       'na starcie status WYMIENIA brakujące pozycje, nie milczy');
     assert.equal(confirm.disabled, true);
 
+    assert.equal(names().length, 4, 'cztery wiersze: dwie karty grobu + dwóch graczy');
+    assert.deepEqual(host.findAll((n) => String(n.className).includes('multi-target-toggle'))
+      .map((n) => n.type), ['radio', 'radio', 'radio', 'radio'],
+      'POZYCJE CELU są jednowyborowe — ptaszki typu radio (jak pola do zapunktowania)');
     toggles[0].click();                       // gy1 (pozycja 0)
     assert.match(status(), /^Brakuje: gracz$/, `po wyborze karty: ${status()}`);
     toggles[1].click();                       // gy2 — TA SAMA pozycja
     assert.match(status(), /^Brakuje: gracz$/, 'druga karta zastępuje pierwszą, nie dokłada się');
-    assert.equal(toggles[0].textContent.startsWith('[ ]'), true, 'poprzedni wybór pozycji odznaczony');
-    assert.equal(toggles[1].textContent.startsWith('[x]'), true, 'nowy wybór pozycji zaznaczony');
+    assert.equal(toggles[0].checked, false, 'poprzedni wybór pozycji odznaczony (model → DOM)');
+    assert.equal(toggles[1].checked, true, 'nowy wybór pozycji zaznaczony');
 
     toggles[3].click();                       // gracz p2 (pozycja 1)
     assert.equal(confirm.disabled, false, 'komplet pozycji odblokowuje zatwierdzenie');

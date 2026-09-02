@@ -711,7 +711,16 @@ export async function runTableGame({
         const isSacRow = (b) => String(b.parentElement?.className ?? '').includes('multi-target-slot-row');
         const targetRows = allToggles.filter((b) => !isSacRow(b));
         const sacRows = allToggles.filter(isSacRow);
-        const nameOfRow = (b) => text(b).replace(/^\s*\[[ x]?\]\s*/, '').trim();
+        // M288/A: nazwa celu nie siedzi już w tekście ptaszka, tylko w osobnej
+        // etykiecie `.picker-name` w tym samym wierszu (te nazwy porównuje
+        // polityka „nie wybieraj ofiary będącej celem", więc muszą być czytane).
+        const nameOfRow = (b) => {
+          const fromText = text(b).replace(/^\s*\[[ x]?\]\s*/, '').trim();
+          if (fromText) return fromText;
+          const row = b.closest?.('label') ?? b.parentElement;
+          const nameEl = row?.querySelector?.('.picker-name') ?? row;
+          return text(nameEl).trim();
+        };
         logL(`  [sacrifice wizard] ${intro.slice(0, 90)} — celów ${targetRows.length}, ofiar ${sacRows.length}`);
         const findConfirm = () => $$('#choice-request button')
           .find((b) => /multi-target-confirm/.test(String(b.className)));
@@ -766,9 +775,10 @@ export async function runTableGame({
         if (cancelSac) { cancelSac.click(); await sleep(60); }
         return true;
       }
-      // M206: wiersze kreatora to PRZYCISKI `.multi-target-toggle` ze stanem
-      // w tekście („[ ] Mountain" / „[x] Mountain"), a NIE `<input
-      // type=checkbox>` w `.choice-request-option`. Poprzedni selektor nie
+      // M206 → M288/A: selektorem testera jest `.multi-target-toggle`. Dawniej
+      // był to PRZYCISK ze stanem w tekście („[ ] Mountain" / „[x] Mountain"),
+      // dziś to natywny `<input type=checkbox>` w `<label>` (picker.js — ten sam
+      // wiersz co w wizardzie walki). Poprzedni selektor nie
       // pasował do niczego, więc `boxes` było zawsze puste: kreator nigdy nie
       // dostawał zaznaczenia, „Zatwierdź" zostawał wyłączony, a „Anuluj"
       // otwierał ten sam modal od nowa — tester kręcił się w kółko
@@ -782,7 +792,11 @@ export async function runTableGame({
       // albo „Mulligan: zaznacz 2 karty…". Bierzemy pierwszą liczbę z intro,
       // a przy zakresie „N–M" wystarczy minimum.
       const needed = Number((intro.match(/zaznacz(?: cele)?\s*\(?(\d+)/) ?? [])[1] ?? 1);
-      const isChecked = (b) => /^\s*\[x\]/.test(text(b));
+      // M288/A (uwaga właściciela z żywej gry): kreator wielocelowy przeszedł na
+      // NATYWNE ptaszki `<input>` (ten sam picker co w wizardzie walki), więc
+      // stan trzeba czytać z `checked`. Tekstowa marka „[x]" zostaje jako
+      // fallback — inne mody kreatora (i starsze artefakty) nadal mogą jej użyć.
+      const isChecked = (b) => b.checked === true || /^\s*\[x\]/.test(text(b));
       // M207: przy „up to N" (Wrap in Flames, You're Confronted by Robbers)
       // dolna granica wynosi ZERO, więc „Zatwierdź" jest aktywny od razu.
       // Warunek „klikaj, dopóki Zatwierdź wyłączony" kończył się wtedy po
