@@ -2532,12 +2532,16 @@ function processTriggersScan(state, recentEvents) {
         }
       }
     }
-    // „Whenever you draw your second card each turn\" (Jolrael, Mwonvuli
-    // Recluse): odpala przy DOBRANIU, po którym licznik cardsDrawnThisTurn
-    // dobił do 2 (licznik per gracz — jak you_cast_second_spell_each_turn).
-    // card_drawn to jedyne zdarzenie dobrania (draw step i efekty).
-    if (ev.type === 'card_drawn' && ev.playerId != null
-      && (state.cardsDrawnThisTurn?.[ev.playerId] ?? 0) === 2) {
+    // „Whenever you draw your second card each turn" (Jolrael, Mwonvuli
+    // Recluse): odpala PRZY ZDARZENIU dobrania, które jest drugie w turze —
+    // porządek niesie zdarzenie (`drawNumberThisTurn`, choke point
+    // `recordCardDrawn`), NIE licznik odczytany po całej komendzie. Różnica
+    // robi się przy dobraniach wsadowych: „draw two" na starcie tury to
+    // JEDEN wyzwalacz (ordery 1 i 2), a przy 1 + 2 odpala drugi dobór, choć
+    // licznik kończy na 3 (audyt PR #92, znalezisko 3). Mulligan ma jawne
+    // null — karty wzięte po mulliganie nie są dobraniami (CR 701.3b).
+    // card_drawn to jedyne zdarzenie dobrania (draw step, efekty, cycling).
+    if (ev.type === 'card_drawn' && ev.playerId != null && ev.drawNumberThisTurn === 2) {
       for (const source of state.objects.values()) {
         if (source.zone !== 'battlefield' || source.controllerId !== ev.playerId) continue;
         for (const ability of effectiveAbilities(source)) {

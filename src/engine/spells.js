@@ -10,7 +10,7 @@ import { attachAuraToCreature, isLegalAuraHost, attachEquipmentToCreature } from
 import { effectiveProtectionFromColors } from './attachments.js';
 import { addCounter } from './counters.js';
 import { shuffle } from './shuffle.js';
-import { changeLife } from './players.js';
+import { changeLife, recordCardDrawn } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, canPayManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, coloredPipsOf, consumePendingSpellDiscount } from './mana-cost.js';
 import { allControlledManaSources } from './mana-sources.js';
@@ -1419,8 +1419,9 @@ function resolveActivatedAbilityEntry(state, entry) {
           }
           const handId = `hand-${state.objectSequence++}`;
           const drawn = moveObjectDirectly(state, topId, 'hand', handId);
-          state.cardsDrawnThisTurn[payload.playerId] = (state.cardsDrawnThisTurn[payload.playerId] ?? 0) + 1;
-          state.events.push(event('card_drawn', { playerId: payload.playerId, fromId: topId, object: drawn }));
+          // A92/3: cycling to pełnoprawne dobranie (CR 122.12) — idzie przez
+          // ten sam choke point co krok dobierania i efekt `draw_cards`.
+          recordCardDrawn(state, payload.playerId, { fromId: topId, object: drawn });
         }
         state.events.push(event('ability_resolved', {
           playerId: payload.playerId, sourceId: payload.sourceId, cardId: entry.cardId,

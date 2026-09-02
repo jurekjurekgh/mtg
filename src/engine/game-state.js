@@ -29,7 +29,7 @@ import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities } from './attachments.js';
 import { createBattlefieldToken } from './tokens.js';
 import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom } from './effects.js';
-import { changeLife } from './players.js';
+import { changeLife, recordCardDrawn } from './players.js';
 import { shuffle } from './shuffle.js';
 import { applyRoomTargetChoice, applyEffect, applyEnterCounters, drawPlayerCards, manifestCardFaceDown, counterStackObject } from './effects.js';
 
@@ -630,9 +630,9 @@ function performDrawStepDraw(state, playerId, objectId = null) {
   const drawn = Object.freeze({ ...object, id: newObjectId, zone: 'hand' });
   state.objects.delete(object.id);
   state.objects.set(drawn.id, drawn);
-  state.cardsDrawnThisTurn[playerId] = (state.cardsDrawnThisTurn[playerId] ?? 0) + 1;
-  const drawnEvent = event('card_drawn', { playerId, fromId: object.id, object: drawn, source: 'draw_step' });
-  state.events.push(drawnEvent);
+  // A92/3: licznik + zdarzenie przez JEDEN choke point (players.recordCardDrawn)
+  // — dawniej osobny inkrement i zdarzenie bez porządku dobrania.
+  const drawnEvent = recordCardDrawn(state, playerId, { fromId: object.id, object: drawn, source: 'draw_step' });
   state.turn.drawnInStep = true;
   return { ok: true, events: [drawnEvent] };
 }
@@ -1415,7 +1415,12 @@ export function execute(state, input) {
       const newId = `hand-${state.objectSequence++}`;
       const moved = moveObjectDirectly(state, topId, 'hand', newId);
       drawn.push(moved);
-      state.events.push(event('card_drawn', { playerId, fromId: topId, object: moved, mulligan: true }));
+      // CR 701.3b: karty wzięte po mulliganie NIE są dobraniami — licznik
+      //      tury ich nie liczy, a kontrakt `drawNumberThisTurn` jest
+      //      wypełniony JAWNYM null (ADR 0027: brak pola to rozjazd ładunków).
+      state.events.push(event('card_drawn', {
+        playerId, fromId: topId, object: moved, mulligan: true, drawNumberThisTurn: null,
+      }));
     }
     // Odłożenie N kart na spód — decyzja gracza (resolve_mulligan_bottom_choice).
     const newHand = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === playerId);

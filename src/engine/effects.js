@@ -2,7 +2,7 @@ import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
 import { untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
-import { addPoisonCounters, changeLife } from './players.js';
+import { addPoisonCounters, changeLife, recordCardDrawn } from './players.js';
 import { spendMana, addMana, producibleMana } from './resources.js';
 import { getSourceForObject } from './mana-sources.js';
 import { moveObjectDirectly, removeFromCombat, singleTargetOfStackEntry } from './objects.js';
@@ -476,9 +476,11 @@ export function drawPlayerCards(state, playerId, amount, source = 'effect') {
     const drawnObj = Object.freeze({ ...object, id: newId, zone: 'hand' });
     state.objects.delete(topId);
     state.objects.set(newId, drawnObj);
-    state.cardsDrawnThisTurn[playerId] = (state.cardsDrawnThisTurn[playerId] ?? 0) + 1;
+    // A92/3: porządek dobrania stempluje choke point `recordCardDrawn`
+    // (players.js) — dawny własny inkrement nie mówił nic o tym, KTÓRA to
+    // karta w turze, więc triggery „druga karta” czytały licznik po fakcie.
+    recordCardDrawn(state, playerId, { fromId: topId, object: drawnObj, source });
     drawn += 1;
-    state.events.push(event('card_drawn', { playerId, fromId: topId, object: drawnObj, source }));
   }
   // CR 704.5m: gracz, który MUSI dobrać więcej kart, niż ma w bibliotece,
   // dobiera pozostałe, a następnie PRZEGRYWA — ale przegrana jest AKCJĄ

@@ -47,3 +47,28 @@ export function addPoisonCounters(state, playerId, amount) {
   return events;
 }
 
+/**
+ * Jedyny choke point licznika dobrań w turze (analogicznie do `changeLife`
+ * dla życia): podnosi `state.cardsDrawnThisTurn` i STEMUPLUJE porządek
+ * dobrania w zdarzeniu `card_drawn` (`drawNumberThisTurn`).
+ *
+ * Dlaczego porządek musi iść ZE ZDARZENIA, nie ze stanu: skan triggerów
+ * (`processTriggers`) biegnie PO CAŁEJ komendzie, więc odczyt
+ * `state.cardsDrawnThisTurn === 2` po komendzie widzi wartość KOŃCOWĄ —
+ * „draw two” na starcie tury dawało dwa wyzwalacze Jolrael, a dobranie
+ * w kroku + „draw two” nie dawało żadnego (audyt PR #92, znalezisko 3).
+ *
+ * Zakres: dobrania w rozumieniu CR 122.12. Karty wzięte po mulliganie NIE są
+ * dobraniami (CR 701.3b) i nie przechodzą tędy — ich `card_drawn` nosi
+ * jawne `drawNumberThisTurn: null`, bo kontrakt pola musi być wypełniony
+ * u WSZYSTKICH emiterów (ADR 0027).
+ */
+export function recordCardDrawn(state, playerId, payload = {}) {
+  const drawNumberThisTurn = (state.cardsDrawnThisTurn?.[playerId] ?? 0) + 1;
+  state.cardsDrawnThisTurn = {
+    ...(state.cardsDrawnThisTurn ?? {}), [playerId]: drawNumberThisTurn,
+  };
+  const drawnEvent = event('card_drawn', { ...payload, playerId, drawNumberThisTurn });
+  state.events.push(drawnEvent);
+  return drawnEvent;
+}
